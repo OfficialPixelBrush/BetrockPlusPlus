@@ -4,7 +4,7 @@
 #include <sstream>
 #include <cstdint>
 #include <memory>
-#include <pixnbt.h>
+// #include <pixnbt.h>
 #include "blocks.h"
 #include "enums/labels.h"
 

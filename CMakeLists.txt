@@ -9,6 +9,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(BetrockPlusPlus VERSION 0.1.0)
 
+find_package(libdeflate CONFIG REQUIRED)
+
 include_directories(
     "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared"
@@ -115,7 +117,8 @@ target_compile_options(BetrockPlusPlus PRIVATE
 
 target_link_libraries(
     BetrockPlusPlus
-    deflate
+    PRIVATE
+    $<IF:$<TARGET_EXISTS:libdeflate::libdeflate_shared>,libdeflate::libdeflate_shared,libdeflate::libdeflate_static>
     #${LUA_LIBRARIES}
     #Threads::Threads
 )
