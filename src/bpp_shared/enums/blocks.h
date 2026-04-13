@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ * 
+*/
+
 #pragma once
 #include <cstdint>
 
@@ -40,7 +47,7 @@ enum BlockType : int8_t {
 	BLOCK_PISTON = 33,
 	BLOCK_PISTON_HEAD = 34,
 	BLOCK_WOOL = 35,
-	// There is no block 36
+	// Block 36 is used for Piston-related stuff
 	BLOCK_DANDELION = 37,
 	BLOCK_ROSE = 38,
 	BLOCK_MUSHROOM_BROWN = 39,

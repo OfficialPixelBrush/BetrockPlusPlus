@@ -12,12 +12,11 @@ project(BetrockPlusPlus VERSION 0.1.0)
 find_package(libdeflate CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
-find_package(glad CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(OpenAL CONFIG REQUIRED)
 
 include_directories(
-    "${PROJECT_SOURCE_DIR}/include"
+    "${PROJECT_SOURCE_DIR}/external/glad/include"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums"
 )
@@ -25,13 +24,15 @@ include_directories(
 add_executable(
     BetrockPlusPlus
 
+    external/glad/src/glad.c
+
     src/main.cpp
     src/bpp_server/server.cpp
     src/bpp_client/client.cpp
     src/bpp_shared/shared.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/enums/drops.cpp
-    src/bpp_shared/enums/labels.cpp
+    src/bpp_shared/strings/labels.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -126,7 +127,6 @@ target_link_libraries(
     $<IF:$<TARGET_EXISTS:libdeflate::libdeflate_shared>,libdeflate::libdeflate_shared,libdeflate::libdeflate_static>
     OpenGL::GL
     glfw
-    glad::glad
     glm::glm
     OpenAL::OpenAL
     #${LUA_LIBRARIES}
