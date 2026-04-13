@@ -43,3 +43,4 @@
 /.vs
 /out
 CMakeSettings.json
+/.cache

@@ -1,13 +1,21 @@
+/*
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ * 
+*/
+
 #include "labels.h"
+#include <cstddef>
 
 // Get the appropriate Label for the passed id
 std::string IdToLabel(int16_t id) {
 	if (id > SLOT_EMPTY) {
 		if (id < BLOCK_MAX) {
-			return blockLabels[id];
+			return blockLabels[size_t(id)];
 		}
 		if (id >= ITEM_SHOVEL_IRON) {
-			return itemLabels[id - ITEM_SHOVEL_IRON];
+			return itemLabels[size_t(id - ITEM_SHOVEL_IRON)];
 		}
 	}
 	return "Invalid";

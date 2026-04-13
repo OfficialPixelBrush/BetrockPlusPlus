@@ -1,5 +1,18 @@
+/*
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ * 
+*/
+
 #include "biomes.h"
 
+/**
+ * @brief Get the Top Block object
+ * 
+ * @param biome The biome to get the top/surface block of
+ * @return The top/surface block BlockType
+ */
 BlockType GetTopBlock(Biome biome) {
 	if (biome == BIOME_DESERT || biome == BIOME_ICEDESERT) {
 		return BLOCK_SAND;
@@ -7,6 +20,13 @@ BlockType GetTopBlock(Biome biome) {
 	return BLOCK_GRASS;
 }
 
+
+/**
+ * @brief Get the Filler Block object
+ * 
+ * @param biome The biome to get the filler block of
+ * @return The filler block BlockType
+ */
 BlockType GetFillerBlock(Biome biome) {
 	if (biome == BIOME_DESERT || biome == BIOME_ICEDESERT) {
 		return BLOCK_SAND;
@@ -16,6 +36,13 @@ BlockType GetFillerBlock(Biome biome) {
 
 Biome BiomeLUT[64 * 64];
 
+/**
+ * @brief Get the correct biome based on the passed temperature and humidity values
+ * 
+ * @param temperature Temperature value
+ * @param humidity Humidity/Downfall value
+ * @return The appropriate Biome for the passed values
+ */
 Biome GetBiome(float temperature, float humidity) {
 	humidity *= temperature;
 	if (temperature < 0.1f) {
@@ -51,6 +78,10 @@ Biome GetBiome(float temperature, float humidity) {
 	return BIOME_RAINFOREST;
 }
 
+/**
+ * @brief Generates the Biome LUT that is used in b1.7.3
+ * 
+ */
 void GenerateBiomeLookup() {
 	for (int32_t temp = 0; temp < 64; ++temp) {
 		for (int32_t humi = 0; humi < 64; ++humi) {
@@ -59,6 +90,13 @@ void GenerateBiomeLookup() {
 	}
 }
 
+/**
+ * @brief Gets the appropriate biome from the Biome LUT
+ * 
+ * @param temperature Temperature value
+ * @param humidity Humidity/Downfall value
+ * @return The appropriate Biome for the passed values
+ */
 Biome GetBiomeFromLookup(float temperature, float humidity) {
 	int32_t temp = int32_t(temperature * 63.0f);
 	int32_t humi = int32_t(humidity * 63.0f);

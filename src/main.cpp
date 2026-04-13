@@ -1,6 +1,7 @@
 #include <iostream>
 #include <numeric_structs.h>
 #include "bpp_shared/NBT/example.h"
+#include "bpp_client/client.h"
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     #if defined(_WIN32) || defined(_WIN64)
@@ -30,6 +31,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     std::cout << b2 << std::endl;
 
     NBTexample::test();
+
+    std::cout << clientTest() << std::endl;
 
     return 0;
 }

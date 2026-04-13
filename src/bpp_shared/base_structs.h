@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ * 
+*/
+
 #pragma once
 #include <iostream>
 #include <string>
@@ -6,7 +13,7 @@
 #include <memory>
 // #include <pixnbt.h>
 #include "blocks.h"
-#include "enums/labels.h"
+#include "strings/labels.h"
 
 #define ITEM_INVALID -1
 

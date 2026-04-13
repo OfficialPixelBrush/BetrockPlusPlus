@@ -1,4 +1,13 @@
+/*
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ * 
+*/
+
 #include "drops.h"
+
+// TODO: This whole thing should be scrapped and reworked. It's awful!
 
 // Returns true if the destroyed item maintains its NBT data upon being dropped
 bool KeepDamageOnDrop(int16_t id) { return id == BLOCK_WOOL || id == BLOCK_SLAB || id == BLOCK_DOUBLE_SLAB; }

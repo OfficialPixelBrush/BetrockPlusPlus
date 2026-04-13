@@ -35,15 +35,15 @@ Linux (Debian/Ubuntu)
 sudo apt install git cmake build-essential libdeflate-dev libglfw3-dev libglm-dev libopenal-dev
 ```
 
-Glad is not available via apt, install via vcpkg:
+Linux (RHEL/Fedora)
 ```bash
-vcpkg install glad:x64-linux
+sudo dnf install git cmake gcc gcc-c++ make libdeflate-devel glfw-devel glm-devel openal-soft-devel
 ```
 
 Windows (10/11)
 ```powershell
 # Install dependencies using vcpkg
-.\vcpkg install libdeflate glfw3 glad glm openal-soft
+.\vcpkg install libdeflate glfw3 glm openal-soft
 ```
 
 ## Building
