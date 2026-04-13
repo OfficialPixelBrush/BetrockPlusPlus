@@ -18,6 +18,15 @@ A full, from-scratch reimplementation of Minecraft Beta 1.7.3.
 This is another project that's part of/worked on by the OpenBeta Community. We have a [Discord Server](https://discord.gg/JHTz2HSKrf)!
 
 # Contributing
+Please read the [CONTRIBUTING](https://github.com/OfficialPixelBrush/BetrockServer/blob/main/CONTRIBUTING.md) page.
+
+## AI policy
+
+Generally, we're perfectly fine with using AI-assisted code in our codebase.
+
+What we *don't* want are slop-commits that just rewrite stuff for the sake of rewriting it. We don't want purely AI-generated code that adds 5 new files with comments that mean nothing.
+
+Keep it reasonable, don't overdo it. This is supposed to be a learning-exercise and fun project for whoever wants to get involved, and to foster a better understanding of how Beta Minecraft works. This project doesn't need to be finished overnight in a half-broken state that nobody understands.
 
 # Related projects
 
