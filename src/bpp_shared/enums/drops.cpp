@@ -1,7 +1,7 @@
 #include "drops.h"
 
 // Returns true if the destroyed item maintains its NBT data upon being dropped
-bool KeepDamageOnDrop(int8_t id) { return id == BLOCK_WOOL || id == BLOCK_SLAB || id == BLOCK_DOUBLE_SLAB; }
+bool KeepDamageOnDrop(int16_t id) { return id == BLOCK_WOOL || id == BLOCK_SLAB || id == BLOCK_DOUBLE_SLAB; }
 
 // Returns true for all blocks that do not drop anything when they're destroyed
 bool NoDrop(Item item) {
