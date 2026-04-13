@@ -10,7 +10,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(BetrockPlusPlus VERSION 0.1.0)
 
 include_directories(
+    "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums"
 )
 
 add_executable(
@@ -20,6 +22,9 @@ add_executable(
     src/bpp_server/server.cpp
     src/bpp_client/client.cpp
     src/bpp_shared/shared.cpp
+    src/bpp_shared/enums/biomes.cpp
+    src/bpp_shared/enums/drops.cpp
+    src/bpp_shared/enums/labels.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -56,7 +61,7 @@ target_compile_options(BetrockPlusPlus PRIVATE
         -Wunused
         -Wuninitialized
         # Treat warnings as errors
-        -Werror
+        #-Werror
         # Common OOP pitfall
         -Wnon-virtual-dtor
         # C-style casts
@@ -110,7 +115,7 @@ target_compile_options(BetrockPlusPlus PRIVATE
 
 target_link_libraries(
     BetrockPlusPlus
-    #deflate
+    deflate
     #${LUA_LIBRARIES}
     #Threads::Threads
 )

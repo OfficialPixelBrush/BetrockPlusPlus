@@ -32,7 +32,7 @@ Keep it reasonable, don't overdo it. This is supposed to be a learning-exercise 
 
 Linux (Debian/Ubuntu)
 ```bash
-sudo apt install git cmake build-essential
+sudo apt install git cmake build-essential libdeflate-dev
 ```
 
 ## Building
