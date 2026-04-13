@@ -1,7 +1,14 @@
 #include <iostream>
-#include "bpp_shared/numeric_structs.h"
+#include <numeric_structs.h>
 
-int main(int argc, char** argv) {
+int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
+    #if defined(_WIN32) || defined(_WIN64)
+        std::cout << "Running on Windows\n";
+    #elif defined(__linux__)
+        std::cout << "Running on Linux\n";
+    #else
+        std::cout << "Running on an unknown/unsupported platform\n";
+    #endif
     Int3 int3{2,156,16};
     std::cout << int3 << std::endl;
     std::cout << int3.x << std::endl;
@@ -11,8 +18,6 @@ int main(int argc, char** argv) {
 
     Vec3 vec3{2.5, 1235.5134, 5245.2};
     std::cout << vec3 << std::endl;
-    std::cout << vec3.x << std::endl;
-    std::cout << vec3.data[2] << std::endl;
     vec3 = vec3*5;
     std::cout << vec3 << std::endl;
     vec3 = vec3*2.1;
