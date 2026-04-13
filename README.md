@@ -17,7 +17,7 @@ A full, from-scratch reimplementation of Minecraft Beta 1.7.3.
 ## Discord
 This is another project that's part of/worked on by the OpenBeta Community. We have a [Discord Server](https://discord.gg/JHTz2HSKrf)!
 
-# Contributing
+## Contributing
 Please read the [CONTRIBUTING](https://github.com/OfficialPixelBrush/BetrockServer/blob/main/CONTRIBUTING.md) page.
 
 ## AI policy
@@ -27,6 +27,21 @@ Generally, we're perfectly fine with adding code that was created with the help 
 What we *don't* want are slop-commits that just rewrite stuff for the sake of rewriting it. We don't want or need a 505k line mega-commit that adds 26 new files, that all have duplicated functionality, or breath other parts of the code.
 
 Keep it reasonable, don't overdo it. This is supposed to be a learning-exercise and fun project for whoever wants to get involved, and to foster a better understanding of how Beta Minecraft works. This project doesn't need to be finished overnight in a half-broken state that nobody understands.
+
+## Dependencies
+
+Linux (Debian/Ubuntu)
+```bash
+sudo apt install git cmake build-essential
+```
+
+## Building
+
+```bash
+cmake -S . -B build
+cd build
+```
+
 
 # Related projects
 

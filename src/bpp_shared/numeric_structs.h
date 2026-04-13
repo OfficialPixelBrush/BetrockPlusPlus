@@ -23,6 +23,10 @@ struct TriNumber {
         // For accessing as array
         T data[3];
     };
+
+    constexpr TriNumber(T x, T y, T z) : x(x), y(y), z(z) {}
+    constexpr TriNumber() : x(0), y(0), z(0) {}
+
     bool operator==(const TriNumber& other) const {
         return x == other.x && y == other.y && z == other.z;
     }
@@ -120,6 +124,10 @@ struct BiNumber {
         // For accessing as array
         T data[2];
     };
+
+    constexpr BiNumber(T x, T y) : x(x), y(y) {}
+    constexpr BiNumber() : x(0), y(0) {}
+    
     bool operator==(const BiNumber& other) const {
         return x == other.x && y == other.y;
     }
