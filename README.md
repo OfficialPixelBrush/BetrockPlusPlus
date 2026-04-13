@@ -35,7 +35,7 @@ Linux (Debian/Ubuntu)
 sudo apt install git cmake build-essential libdeflate-dev libglfw3-dev libglm-dev libopenal-dev
 ```
 
-glad is not available via apt, install via vcpkg:
+Glad is not available via apt, install via vcpkg:
 ```bash
 vcpkg install glad:x64-linux
 ```
