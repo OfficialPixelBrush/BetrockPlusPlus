@@ -144,7 +144,7 @@ struct BiNumber {
     template<typename U>
     auto operator*(const U& other) const {
         using R = std::common_type_t<T, U>;
-        return TriNumber<R>{
+        return BiNumber<R>{
             static_cast<R>(x) * other,
             static_cast<R>(y) * other
         };
@@ -154,7 +154,7 @@ struct BiNumber {
     template<typename U>
     auto operator/(const U& other) const {
         using R = std::common_type_t<T, U>;
-        return TriNumber<R>{
+        return BiNumber<R>{
             static_cast<R>(x) / other,
             static_cast<R>(y) / other,
         };
