@@ -35,13 +35,18 @@ Linux (Debian/Ubuntu)
 sudo apt install git cmake build-essential libdeflate-dev
 ```
 
+Windows (10/11)
+```powershell
+# Install dependencies using vcpkg
+.\vcpkg install libdeflate glfw3 glad glm openal-soft
+```
+
 ## Building
 
 ```bash
 cmake -S . -B build
 cd build
 ```
-
 
 # Related projects
 
