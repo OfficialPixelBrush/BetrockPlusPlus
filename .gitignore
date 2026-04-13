@@ -40,3 +40,5 @@
 # debug information files
 *.dwo
 /build
+/.vs
+/out
