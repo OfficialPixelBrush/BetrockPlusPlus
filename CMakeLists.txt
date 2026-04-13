@@ -34,7 +34,7 @@ add_executable(
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/enums/drops.cpp
     src/bpp_shared/strings/labels.cpp
- "src/bpp_client/glfw_context.h")
+ "src/bpp_client/glfw_context.h" "src/bpp_client/renderers/blocks/context.h" "src/bpp_client/renderers/world_renderer.h" "src/bpp_client/renderers/world_renderer.cpp" "src/bpp_client/renderers/sub_chunk.h" "src/bpp_client/renderers/sub_chunk_mesher.h" "src/bpp_client/renderers/sub_chunk_,mesher.cpp" "src/bpp_shared/world/chunk.h")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(BetrockPlusPlus PRIVATE
