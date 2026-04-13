@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include "client.h"
 
+// This window size seems really random but its the size beta uses
 Client::Client() : window(854, 480, "Betrock++") {
     // Set up shared context before registering any callbacks
     ctx = { &window, &input };
@@ -16,6 +17,9 @@ Client::Client() : window(854, 480, "Betrock++") {
 
 // **NOTICE**
 // For now, the tick function is unique to the client for testing purposes.
+// This means that the client will run its own "simulated" server, just without any packet handling
+// This allows me to test things such as generation, multithreaded mesh building / chunk loading / lighting, etc. 
+// Without needing to implement any of the network code first.
 // In the future, the client will use an integrated server to run single player instances
 void Client::tick() {
 
