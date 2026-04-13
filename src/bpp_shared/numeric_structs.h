@@ -87,8 +87,11 @@ struct TriNumber {
         };
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const TriNumber& vec) {
-        os << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
+    friend std::ostream& operator<<(std::ostream& os, const TriNumber& val) {
+        os  << "(" 
+            << static_cast<int64_t>(val.x) << ", "
+            << static_cast<int64_t>(val.y) << ", "
+            << static_cast<int64_t>(val.z) << ")";
         return os;
     }
     
@@ -156,9 +159,11 @@ struct BiNumber {
             static_cast<R>(y) / other,
         };
     }
-
-    friend std::ostream& operator<<(std::ostream& os, const BiNumber& vec) {
-        os << "(" << vec.x << ", " << vec.y << ")";
+    
+    friend std::ostream& operator<<(std::ostream& os, const BiNumber& val) {
+        os  << "(" 
+            << static_cast<int64_t>(val.x) << ", "
+            << static_cast<int64_t>(val.y) << ")";
         return os;
     }
     

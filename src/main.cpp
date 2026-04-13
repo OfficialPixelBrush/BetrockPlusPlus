@@ -18,5 +18,10 @@ int main(int argc, char** argv) {
     vec3 = vec3*2.1;
     std::cout << vec3 << std::endl;
 
+    
+    Byte2 b2;
+    b2 = Byte2{5,16};
+    std::cout << b2 << std::endl;
+
     return 0;
 }
