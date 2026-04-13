@@ -46,11 +46,15 @@ target_compile_options(BetrockPlusPlus PRIVATE
     -Wuninitialized
     -Werror               # Treat warnings as errors
     -Wnon-virtual-dtor    # Common OOP pitfall
-    -Wold-style-cast
-    -Woverloaded-virtual
-    -Wnull-dereference
-    -Wdouble-promotion
-    -Wformat=2
+    -Wold-style-cast      # C-style casts
+    -Woverloaded-virtual  # Hides virtual functions
+    -Wnull-dereference    # Dereferencing null pointers
+    -Wdouble-promotion    # Implicit float → double conversions
+    -Wformat=2            # More printf/scanf format checks
+    -Wmissing-field-initializers # Warn if struct initialization is missing fields
+    -Wredundant-decls     # Multiple declarations of the same function/variable
+    -Wfloat-equal         # Comparing floating-point values for equality can be iffy
+    -Wunreachable-code    # Warn about code that will never be executed
 )
 
 target_link_libraries(
