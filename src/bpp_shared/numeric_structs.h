@@ -186,7 +186,7 @@ struct BiNumber {
 
 /* --- Pre-defined Tri and Bi numbers --- */
 
-// Vector/Double
+// Vector/Double (64-Bit float)
 typedef TriNumber<double> Vec3;
 typedef BiNumber<double> Vec2;
 
@@ -195,7 +195,7 @@ typedef BiNumber<double> Vec2;
 #define VEC2_ZERO       Vec2{0.0, 0.0}
 #define VEC2_ONE        Vec2{1.0, 1.0}
 
-// Float
+// Float (32-Bit float)
 typedef TriNumber<float> Float3;
 typedef BiNumber<float> Float2;
 
@@ -205,44 +205,69 @@ typedef BiNumber<float> Float2;
 #define FLOAT2_ONE      Float2{1.0f, 1.0f}
 
 // 8-Bit Integer
-typedef TriNumber<int8_t> Int3_8;
-typedef BiNumber<int8_t> Int2_8;
+typedef TriNumber<int8_t> Int8_3;
+typedef BiNumber<int8_t> Int8_2;
 
-#define INT3_8_ZERO     Int3_8{0, 0, 0}
-#define INT3_8_ONE      Int3_8{1, 1, 1}
-#define INT2_8_ZERO     Int2_8{0, 0}
-#define INT2_8_ONE      Int2_8{1, 1}
+#define INT8_3_ZERO     Int8_3{0, 0, 0}
+#define INT8_3_ONE      Int8_3{1, 1, 1}
+#define INT8_2_ZERO     Int8_2{0, 0}
+#define INT8_2_ONE      Int8_2{1, 1}
+
+typedef Int8_3 Byte3;
+typedef Int8_2 Byte2;
+
+#define BYTE3_ZERO      INT8_3_ZERO
+#define BYTE3_ONE       INT8_3_ONE
+#define BYTE2_ZERO      INT8_2_ZERO
+#define BYTE2_ONE       INT8_2_ONE
 
 // 16-Bit Integer
-typedef TriNumber<int16_t> Int3_16;
-typedef BiNumber<int16_t> Int2_16;
+typedef TriNumber<int16_t> Int16_3;
+typedef BiNumber<int16_t> Int16_2;
 
-#define INT3_16_ZERO    Int3_16{0, 0, 0}
-#define INT3_16_ONE     Int3_16{1, 1, 1}
-#define INT2_16_ZERO    Int2_16{0, 0}
-#define INT2_16_ONE     Int2_16{1, 1}
+#define INT16_3_ZERO    Int16_3{0, 0, 0}
+#define INT16_3_ONE     Int16_3{1, 1, 1}
+#define INT16_2_ZERO    Int16_2{0, 0}
+#define INT16_2_ONE     Int16_2{1, 1}
+
+typedef Int16_3 Short3;
+typedef Int16_2 Short2;
+
+#define SHORT3_ZERO     INT16_3_ZERO
+#define SHORT3_ONE      INT16_3_ONE
+#define SHORT2_ZERO     INT16_2_ZERO
+#define SHORT2_ONE      INT16_2_ONE
 
 // 32-Bit Integer (default)
-typedef TriNumber<int32_t> Int3_32;
-typedef BiNumber<int32_t> Int2_32;
-typedef Int3_32 Int3;
-typedef Int2_32 Int2;
+typedef TriNumber<int32_t> Int32_3;
+typedef BiNumber<int32_t> Int32_2;
 
-#define INT3_32_ZERO    Int3_32{0, 0, 0}
-#define INT3_32_ONE     Int3_32{1, 1, 1}
-#define INT2_32_ZERO    Int2_32{0, 0}
-#define INT2_32_ONE     Int2_32{1, 1}
+#define INT32_3_ZERO    Int32_3{0, 0, 0}
+#define INT32_3_ONE     Int32_3{1, 1, 1}
+#define INT32_2_ZERO    Int32_2{0, 0}
+#define INT32_2_ONE     Int32_2{1, 1}
 
-#define INT3_ZERO       INT3_32_ZERO
-#define INT3_ONE        INT3_32_ONE
-#define INT2_ZERO       INT2_32_ZERO
-#define INT2_ONE        INT2_32_ONE
+typedef Int32_3 Int3;
+typedef Int32_2 Int2;
+
+#define INT3_ZERO       INT32_3_ZERO
+#define INT3_ONE        INT32_3_ONE
+#define INT2_ZERO       INT32_2_ZERO
+#define INT2_ONE        INT32_2_ONE
 
 // 64-Bit Integer
-typedef TriNumber<int64_t> Int3_64;
-typedef BiNumber<int64_t> Int2_64;
+typedef TriNumber<int64_t> Int64_3;
+typedef BiNumber<int64_t> Int64_2;
 
-#define INT3_64_ZERO    Int3_64{0, 0, 0}
-#define INT3_64_ONE     Int3_64{1, 1, 1}
-#define INT2_64_ZERO    Int2_64{0, 0}
-#define INT2_64_ONE     Int2_64{1, 1}
+#define INT64_3_ZERO    Int64_3{0, 0, 0}
+#define INT64_3_ONE     Int64_3{1, 1, 1}
+#define INT64_2_ZERO    Int64_2{0, 0}
+#define INT64_2_ONE     Int64_2{1, 1}
+
+typedef Int64_3 Long3;
+typedef Int64_2 Long2;
+
+#define LONG3_ZERO      INT64_3_ZERO
+#define LONG3_ONE       INT64_3_ONE
+#define LONG2_ZERO      INT64_2_ZERO
+#define LONG2_ONE       INT64_2_ONE
