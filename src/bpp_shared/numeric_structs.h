@@ -187,13 +187,13 @@ struct BiNumber {
 /* --- Pre-defined Tri and Bi numbers --- */
 
 // Vector/Double
-typedef TriNumber<double> Vector3;
-typedef BiNumber<double> Vector2;
+typedef TriNumber<double> Vec3;
+typedef BiNumber<double> Vec2;
 
-#define VECTOR3_ZERO    Vector3{0.0, 0.0, 0.0}
-#define VECTOR3_ONE     Vector3{1.0, 1.0, 1.0}
-#define VECTOR2_ZERO    Vector2{0.0, 0.0}
-#define VECTOR2_ONE     Vector2{1.0, 1.0}
+#define VEC3_ZERO       Vec3{0.0, 0.0, 0.0}
+#define VEC3_ONE        Vec3{1.0, 1.0, 1.0}
+#define VEC2_ZERO       Vec2{0.0, 0.0}
+#define VEC2_ONE        Vec2{1.0, 1.0}
 
 // Float
 typedef TriNumber<float> Float3;
