@@ -32,7 +32,12 @@ Keep it reasonable, don't overdo it. This is supposed to be a learning-exercise 
 
 Linux (Debian/Ubuntu)
 ```bash
-sudo apt install git cmake build-essential libdeflate-dev
+sudo apt install git cmake build-essential libdeflate-dev libglfw3-dev libglm-dev libopenal-dev
+```
+
+glad is not available via apt, install via vcpkg:
+```bash
+vcpkg install glad:x64-linux
 ```
 
 Windows (10/11)
