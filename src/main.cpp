@@ -1,5 +1,6 @@
 #include <iostream>
 #include <numeric_structs.h>
+#include "bpp_shared/NBT/example.h"
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     #if defined(_WIN32) || defined(_WIN64)
@@ -27,6 +28,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     Byte2 b2;
     b2 = Byte2{5,16};
     std::cout << b2 << std::endl;
+
+    NBTexample::test();
 
     return 0;
 }
