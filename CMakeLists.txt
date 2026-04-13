@@ -23,38 +23,89 @@ add_executable(
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    if(UNIX AND NOT APPLE)
-        target_compile_options(BetrockPlusPlus PRIVATE -ggdb)
-        target_compile_options(BetrockPlusPlus PRIVATE -fsanitize=address)
-        target_link_options(BetrockPlusPlus PRIVATE -fsanitize=address)
-    endif()
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+    target_compile_options(BetrockPlusPlus PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:
+            # Full debug info (GDB-specific)
+            $<$<PLATFORM_ID:Linux>:-ggdb>
+            # AddressSanitizer (Linux only)
+            $<$<PLATFORM_ID:Linux>:-fsanitize=address>
+            # General debug symbols (fallback for non-Linux)
+            -g
+        >
+    )
+    target_link_options(BetrockPlusPlus PRIVATE
+        # Link AddressSanitizer runtime (Linux only)
+        $<$<AND:$<CXX_COMPILER_ID:GNU,Clang>,$<PLATFORM_ID:Linux>>:
+            -fsanitize=address
+        >
+    )
 endif()
 
 # If we're being extra pedantic
 target_compile_options(BetrockPlusPlus PRIVATE
-    # Make code more secure
-    -Wall
-    -Wextra
-    # Can't use pedantic, otherwise it'll complain about anonymous structs/unions
-    #-Wpedantic           # Enforce strict ISO compliance
-    -Wconversion          # Implicit conversions (int32_t → float, etc.)
-    -Wsign-conversion     # Sign mismatches
-    -Wshadow              # Variable shadowing
-    -Wunused              # Unused variables, params, etc.
-    -Wuninitialized
-    -Werror               # Treat warnings as errors
-    -Wnon-virtual-dtor    # Common OOP pitfall
-    -Wold-style-cast      # C-style casts
-    -Woverloaded-virtual  # Hides virtual functions
-    -Wnull-dereference    # Dereferencing null pointers
-    -Wdouble-promotion    # Implicit float → double conversions
-    -Wformat=2            # More printf/scanf format checks
-    -Wmissing-field-initializers # Warn if struct initialization is missing fields
-    -Wredundant-decls     # Multiple declarations of the same function/variable
-    -Wfloat-equal         # Comparing floating-point values for equality can be iffy
-    -Wunreachable-code    # Warn about code that will never be executed
+    $<$<CXX_COMPILER_ID:GNU,Clang>:
+        -Wall
+        -Wextra
+        # Implicit conversions (int32_t -> float, etc.)
+        -Wconversion
+        # Sign mismatches
+        -Wsign-conversion
+        # Variable shadowing
+        -Wshadow
+        # Unused variables, params, etc.
+        -Wunused
+        -Wuninitialized
+        # Treat warnings as errors
+        -Werror
+        # Common OOP pitfall
+        -Wnon-virtual-dtor
+        # C-style casts
+        -Wold-style-cast
+        # Hides virtual functions
+        -Woverloaded-virtual
+        # Dereferencing null pointers
+        -Wnull-dereference
+        # Implicit float -> double conversions
+        -Wdouble-promotion
+        # More printf/scanf format checks
+        -Wformat=2
+        # Warn if struct initialization is missing fields
+        -Wmissing-field-initializers
+        # Multiple declarations of the same function/variable
+        -Wredundant-decls
+        # Comparing floating-point values for equality can be iffy
+        -Wfloat-equal
+        # Warn about code that will never be executed (Clang only)
+        $<$<CXX_COMPILER_ID:Clang>:-Wunreachable-code>
+    >
+    $<$<CXX_COMPILER_ID:MSVC>:
+        # Enable most warnings / treat warnings as errors
+        /W4
+        /WX
+        # Strict standards conformance
+        /permissive-
+        # Suppress "nonstandard extension: nameless struct/union" (no equivalent, extension is intentional)
+        /wd4201
+        # Implicit conversions (no direct equiv to -Wconversion, C4244 is closest)
+        /w14244
+        # Sign mismatches (C4245: signed/unsigned mismatch)
+        /w14245
+        # Variable shadowing (C4456/C4457/C4458/C4459)
+        /w14456
+        /w14457
+        /w14458
+        /w14459
+        # Unreachable code (C4702)
+        /w14702
+        # Missing return statement (C4715)
+        /w14715
+        # Destructor not virtual (C4265)
+        /w14265
+        # Hides virtual functions (C4264)
+        /w14264
+        # Uninitialized variables (C4700: uninitialized local variable used)
+        /w14700
+    >
 )
 
 target_link_libraries(
