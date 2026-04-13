@@ -11,6 +11,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     #else
         std::cout << "Running on an unknown/unsupported platform\n";
     #endif
+        
+    std::cout << "--Running test suite...--\n";
     Int3 int3{2,156,16};
     std::cout << int3 << std::endl;
     std::cout << int3.x << std::endl;
@@ -30,9 +32,13 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     b2 = Byte2{5,16};
     std::cout << b2 << std::endl;
 
+    // Test NBT example
     NBTexample::test();
 
-    std::cout << clientTest() << std::endl;
+    std::cout << "--All tests finished successfully.--\n";
+
+    Client client;
+    client.run();
 
     return 0;
 }

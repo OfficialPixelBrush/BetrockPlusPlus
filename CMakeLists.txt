@@ -29,11 +29,12 @@ add_executable(
     src/main.cpp
     src/bpp_server/server.cpp
     src/bpp_client/client.cpp
+    src/bpp_client/inputs.cpp
     src/bpp_shared/shared.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/enums/drops.cpp
     src/bpp_shared/strings/labels.cpp
-)
+ "src/bpp_client/glfw_context.h")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(BetrockPlusPlus PRIVATE
