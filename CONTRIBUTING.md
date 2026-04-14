@@ -37,4 +37,15 @@ cmake --build . --config Debug
 - Run `clang-format -i` over the files you changed
 - Do not use raw block IDs. Make use of the Blocks enum
 - Enums **must** have a type
-- Provide a short description what a file is for
+- Provide a short description what a file is for the relevant file, why it exists and what its used for
+- PLEASE include the copyright notice at the top. This also serves as a nice way for people to get credited, if the git history is ever lost. **Any** change will get you added to there (within reason).
+
+Use the template below if you're creating a new page.
+```text
+/*
+ * Copyright (c) [year], [name] <temp@example.com>
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ * 
+*/
+```
