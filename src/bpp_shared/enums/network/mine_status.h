@@ -8,8 +8,8 @@
 #pragma once
 #include <cstdint>
 
-typedef int32_t EntityId;
-
-typedef int16_t ItemId;
-typedef int8_t ItemAmount;
-typedef int16_t ItemDamage;
+enum MineStatus : int8_t {
+    DIGGING_STARTED     = 0,
+    DIGGING_FINISHED    = 2,
+    DROPPED_ITEM        = 4
+};
