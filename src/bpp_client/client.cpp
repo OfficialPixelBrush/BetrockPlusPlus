@@ -37,11 +37,11 @@ void Client::render([[maybe_unused]] float partial_tick) {
 }
 
 int Client::run() {
-    float lastTime = (float)glfwGetTime();
+    float lastTime = float(glfwGetTime());
 
     while (!window.shouldClose()) {
         int   ticks_ran = 0;
-        float now = (float)glfwGetTime();
+        float now = float(glfwGetTime());
         float delta = now - lastTime;
         lastTime = now;
         accumulator += delta;

@@ -83,12 +83,12 @@ struct NBTwriter {
     }
 
     int64_t writeTag(std::vector<uint8_t>& out, const Tag& tag, bool payload = false) {
-        if (!payload) out.push_back((uint8_t)tag.type);
+        if (!payload) out.push_back(uint8_t(tag.type));
         if (!payload && tag.type != TAG_END) writeString(out, tag.name);
 
         switch (tag.type) {
         case TAG_END: break;
-        case TAG_BYTE:   out.push_back((uint8_t)tag.byteValue); break;
+        case TAG_BYTE:   out.push_back(uint8_t(tag.byteValue)); break;
         case TAG_SHORT:  writeI16(out, tag.shortValue); break;
         case TAG_INT:    writeI32(out, tag.intValue); break;
         case TAG_LONG:   writeI64(out, tag.longValue); break;
@@ -97,22 +97,22 @@ struct NBTwriter {
         case TAG_STRING: writeString(out, tag.stringValue); break;
 
         case TAG_BYTEARRAY: {
-            writeI32(out, (int32_t)tag.byteArray.size());
+            writeI32(out, int32_t(tag.byteArray.size()));
             for (int8_t b : tag.byteArray)
-                out.push_back((uint8_t)b);
+                out.push_back(uint8_t(b));
             break;
         }
 
         case TAG_INTARRAY: {
-            writeI32(out, (int32_t)tag.intArray.size());
+            writeI32(out, int32_t(tag.intArray.size()));
             for (int32_t b : tag.intArray)
                 writeI32(out, b);
             break;
         }
 
         case TAG_LIST: {
-            writeI8(out, (int8_t)tag.listType);
-            writeI32(out, (int32_t)tag.list.size());
+            writeI8(out, int8_t(tag.listType));
+            writeI32(out, int32_t(tag.list.size()));
             for (const Tag& element : tag.list)
                 writeTag(out, element, true);
             break;
@@ -122,7 +122,7 @@ struct NBTwriter {
             for (const auto& [key, child] : tag.compound)
                 writeTag(out, child);
             // TAG_END terminates the compound
-            out.push_back((uint8_t)TAG_END);
+            out.push_back(uint8_t(TAG_END));
             break;
         }
 
@@ -135,7 +135,7 @@ struct NBTwriter {
 
     // Write helpers
     void writeI32(std::vector<uint8_t>& out, int32_t v) {
-        uint32_t u = (uint32_t)v;
+        uint32_t u = uint32_t(v);
         out.push_back((u >> 24) & 0xFF);
         out.push_back((u >> 16) & 0xFF);
         out.push_back((u >> 8) & 0xFF);
@@ -143,34 +143,34 @@ struct NBTwriter {
     }
 
     void writeI64(std::vector<uint8_t>& out, int64_t v) {
-        writeI32(out, (int32_t)(((uint64_t)v >> 32) & 0xFFFFFFFF));
-        writeI32(out, (int32_t)((uint64_t)v & 0xFFFFFFFF));
+        writeI32(out, int32_t((uint64_t(v) >> 32) & 0xFFFFFFFF));
+        writeI32(out, int32_t((uint64_t(v) & 0xFFFFFFFF)));
     }
 
     void writeI16(std::vector<uint8_t>& out, int16_t v) {
-        uint16_t u = (uint16_t)v;
+        uint16_t u = uint16_t(v);
         out.push_back((u >> 8) & 0xFF);
         out.push_back(u & 0xFF);
     }
 
     void writeI8(std::vector<uint8_t>& out, int8_t v) {
-        out.push_back((uint8_t)v);
+        out.push_back(uint8_t(v));
     }
 
     void writeF32(std::vector<uint8_t>& out, float v) {
         uint32_t raw;
         memcpy(&raw, &v, 4);
-        writeI32(out, (int32_t)raw);
+        writeI32(out, int32_t(raw));
     }
 
     void writeF64(std::vector<uint8_t>& out, double v) {
         uint64_t raw;
         memcpy(&raw, &v, 8);
-        writeI64(out, (int64_t)raw);
+        writeI64(out, int64_t(raw));
     }
 
     void writeString(std::vector<uint8_t>& out, const std::string& s) {
-        writeI16(out, (int16_t)s.size());
+        writeI16(out, int16_t(s.size()));
         out.insert(out.end(), s.begin(), s.end());
     }
 };
@@ -203,14 +203,14 @@ struct NBTParser {
 
         case TAG_BYTEARRAY: {
             int32_t count = readI32();
-            tag.byteArray.reserve(count);
+            tag.byteArray.reserve(size_t(count));
             for (int i = 0; i < count; i++) tag.byteArray.push_back(readI8());
             break;
         }
 
         case TAG_INTARRAY: {
             int32_t count = readI32();
-            tag.intArray.reserve(count);
+            tag.intArray.reserve(size_t(count));
             for (int i = 0; i < count; i++) tag.intArray.push_back(readI32());
             break;
         }
@@ -222,11 +222,11 @@ struct NBTParser {
             if (innerType == TAG_END && count > 0)
                 throw std::runtime_error("Invalid TAG_List");
 
-            tag.list.reserve(count);
+            tag.list.reserve(size_t(count));
             for (int i = 0; i < count; i++)
-                tag.list.push_back(parsePayload((TagType)innerType));
+                tag.list.push_back(parsePayload(TagType(innerType)));
 
-            tag.listType = (TagType)innerType;
+            tag.listType = TagType(innerType);
             break;
         }
 
@@ -250,7 +250,7 @@ struct NBTParser {
     Tag parseTag() {
         if (pos >= length) throw std::runtime_error("Unexpected end of NBT data");
 
-        TagType type = (TagType)data[pos++];
+        TagType type = TagType(data[pos++]);
         if (type == TAG_END)
             return Tag{ TAG_END, "" };   // no name for TAG_End
 
@@ -261,50 +261,53 @@ struct NBTParser {
     // Read helpers
     int32_t readI32() {
         if (pos + 4 > length) throw std::runtime_error("NBT: unexpected end");
-        uint32_t v = ((uint32_t)data[pos] << 24)
-            | ((uint32_t)data[pos + 1] << 16)
-            | ((uint32_t)data[pos + 2] << 8)
-            | (uint32_t)data[pos + 3];
+        uint32_t v = (uint32_t(data[pos]) << 24)
+            | (uint32_t(data[pos + 1]) << 16)
+            | (uint32_t(data[pos + 2]) << 8)
+            | (uint32_t(data[pos + 3]));
         pos += 4;
-        return (int32_t)v;
+        return int32_t(v);
     }
 
     int64_t readI64() {
-        uint32_t hi = (uint32_t)readI32();
-        uint32_t lo = (uint32_t)readI32();
-        return (int64_t)(((uint64_t)hi << 32) | lo);
+        uint32_t hi = uint32_t(readI32());
+        uint32_t lo = uint32_t(readI32());
+        return int64_t((uint64_t(hi) << 32) | lo);
     }
 
     int16_t readI16() {
         if (pos + 2 > length) throw std::runtime_error("NBT: i16 out of bounds");
-        uint16_t v = ((uint16_t)data[pos] << 8) | data[pos + 1];
+        uint16_t v = static_cast<uint16_t>(
+            (static_cast<uint16_t>(data[pos]) << 8)
+            | static_cast<uint16_t>(data[pos + 1])
+        );
         pos += 2;
-        return (int16_t)v;
+        return int16_t(v);
     }
 
     int8_t readI8() {
         if (pos >= length) throw std::runtime_error("NBT: i8 out of bounds");
-        return (int8_t)data[pos++];
+        return int8_t(data[pos++]);
     }
 
     float readF32() {
-        uint32_t raw = (uint32_t)readI32();
+        uint32_t raw = uint32_t(readI32());
         float f;
         memcpy(&f, &raw, 4);
         return f;
     }
 
     double readF64() {
-        uint64_t raw = (uint64_t)readI64();
+        uint64_t raw = uint64_t(readI64());
         double d;
         memcpy(&d, &raw, 8);
         return d;
     }
 
     std::string readString() {
-        uint16_t len = (uint16_t)readI16();
+        uint16_t len = uint16_t(readI16());
         if (pos + len > length) throw std::runtime_error("NBT: string out of bounds");
-        std::string s((const char*)data + pos, len);
+        std::string s(reinterpret_cast<const char*>(data) + pos, len);
         pos += len;
         return s;
     }
