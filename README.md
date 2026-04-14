@@ -52,3 +52,6 @@ cd build
 - [Technical Beta Wiki](https://officialpixelbrush.github.io/beta-wiki) (technical protocol and implementation reference)
 - [Betrock](https://github.com/OfficialPixelBrush/Betrock) (McRegion world explorer)
 - [BetrockServer](https://github.com/OfficialPixelBrush/BetrockServer) (Minecraft Beta 1.7.3 Server written in C++)
+
+# Credits
+- Barak Shoshany. Licensed under the MIT license. BS::thread_pool. https://github.com/bshoshany/thread-pool
