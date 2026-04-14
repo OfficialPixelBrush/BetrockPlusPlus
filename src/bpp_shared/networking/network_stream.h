@@ -60,13 +60,18 @@ class NetworkStream {
         
         template<typename T = int>
         void Write(const T& data) {
-            if constexpr (std::is_same_v<T, bool>) {
-                int8_t boolData = static_cast<int8_t>(data);
-                send(clientSocket, &boolData, sizeof(int8_t), 0);
-            } else {
+            #if defined(_WIN32) || defined(_WIN64)
                 T networkData = byteswap_any(data);
-                send(clientSocket, &networkData, sizeof(T), 0);
-            }
+                send(clientSocket, reinterpret_cast<const char*>(&networkData), sizeof(T), 0);
+            #else
+                if constexpr (std::is_same_v<T, bool>) {
+                    int8_t boolData = static_cast<int8_t>(data);
+                    send(clientSocket, &boolData, sizeof(int8_t), 0);
+                } else {
+                    T networkData = byteswap_any(data);
+                    send(clientSocket, &networkData, sizeof(T), 0);
+                }
+            #endif
         }
 
         // String-16 Read-Write
