@@ -34,7 +34,13 @@ bool NetworkStream::NewClient() {
 }
 
 NetworkStream::~NetworkStream() {
-    close(clientSocket);
+    #if defined(_WIN32) || defined(_WIN64)
+        closesocket(clientSocket);
+        // TODO: Clean-up WSA when the server closes
+        // WSACleanup();
+    #else
+        close(clientSocket);
+    #endif
 }
 
 // Automatically converts to String-16/UCS-2 when sending
@@ -48,7 +54,11 @@ void NetworkStream::Write(const std::string& str)
         data.push_back(static_cast<uint8_t>(c));
         data.push_back(0x00);
     }
-    send(clientSocket, data.data(), data.size(), 0);
+    #if defined(_WIN32) || defined(_WIN64)
+        send(clientSocket, reinterpret_cast<const char*>(data.data()), data.size(), 0);
+    #else
+        send(clientSocket, data.data(), data.size(), 0);
+    #endif
 }
 
 template<>
