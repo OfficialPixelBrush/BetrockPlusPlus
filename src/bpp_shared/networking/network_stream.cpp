@@ -15,7 +15,7 @@ NetworkStream::NetworkStream(int p_client_socket) {
 NetworkStream::~NetworkStream() {
     if (client_socket != INVALID_SOCKET) {
         #if defined(_WIN32) || defined(_WIN64)
-            shutdown(socket, SD_BOTH);
+            shutdown(client_socket, SD_BOTH);
             closesocket(client_socket);
             // TODO: Clean-up WSA when the server closes
             // WSACleanup();

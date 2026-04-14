@@ -38,7 +38,7 @@ ServerManager::~ServerManager() {
     // Close server
     if (server_socket != INVALID_SOCKET) {
         #if defined(_WIN32) || defined(_WIN64)
-            shutdown(socket, SD_BOTH);
+            shutdown(server_socket, SD_BOTH);
             closesocket(server_socket);
             // Clean-up WSA when the server closes
             WSACleanup();
