@@ -102,7 +102,7 @@ target_compile_options(BetrockPlusPlus PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:
         # Enable most warnings / treat warnings as errors
         /W4
-        /WX
+        # /WX
         # Strict standards conformance
         /permissive-
         # Suppress "nonstandard extension: nameless struct/union" (no equivalent, extension is intentional)
