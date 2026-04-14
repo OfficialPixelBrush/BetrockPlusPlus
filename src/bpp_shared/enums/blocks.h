@@ -34,6 +34,7 @@ enum BlockType : int8_t {
 	BLOCK_SPONGE = 19,
 	BLOCK_GLASS = 20,
 	BLOCK_ORE_LAPIS_LAZULI = 21,
+	BLOCK_LAPIS_LAZULI = 22,
 	BLOCK_DISPENSER = 23,
 	BLOCK_SANDSTONE = 24,
 	BLOCK_NOTEBLOCK = 25,
@@ -47,7 +48,7 @@ enum BlockType : int8_t {
 	BLOCK_PISTON = 33,
 	BLOCK_PISTON_HEAD = 34,
 	BLOCK_WOOL = 35,
-	// Block 36 is used for Piston-related stuff
+	BLOCK_PISTON_MOVING = 36, // not a real block, used for piston animation
 	BLOCK_DANDELION = 37,
 	BLOCK_ROSE = 38,
 	BLOCK_MUSHROOM_BROWN = 39,
