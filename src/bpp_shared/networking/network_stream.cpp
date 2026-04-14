@@ -6,41 +6,25 @@
 */
 
 #include "network_stream.h"
+#include <vector>
 
-int NetworkStream::serverSocket = INVALID_SOCKET;
-
-NetworkStream::NetworkStream(uint16_t port) {
-    // Only bind new socket if it doesn't exist already
-    if (serverSocket != INVALID_SOCKET)
-        return;
-
-    #if defined(_WIN32) || defined(_WIN64)
-        WSADATA wsaData;
-        WSAStartup(MAKEWORD(2, 2), &wsaData);
-    #endif
-    
-    sockaddr_in serverAddress;
-    serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(port);
-    serverAddress.sin_addr.s_addr = INADDR_ANY;
-    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-    bind(serverSocket, reinterpret_cast<struct sockaddr*>(&serverAddress), sizeof(serverAddress));
-    listen(serverSocket, 1);
-}
-
-bool NetworkStream::NewClient() {
-    clientSocket = accept(serverSocket, nullptr, nullptr);
-    return clientSocket != INVALID_SOCKET;
+NetworkStream::NetworkStream(int p_client_socket) {
+    client_socket = p_client_socket;
 }
 
 NetworkStream::~NetworkStream() {
-    #if defined(_WIN32) || defined(_WIN64)
-        closesocket(clientSocket);
-        // TODO: Clean-up WSA when the server closes
-        // WSACleanup();
-    #else
-        close(clientSocket);
-    #endif
+    if (client_socket != INVALID_SOCKET) {
+        #if defined(_WIN32) || defined(_WIN64)
+            shutdown(socket, SD_BOTH);
+            closesocket(client_socket);
+            // TODO: Clean-up WSA when the server closes
+            // WSACleanup();
+        #else
+            shutdown(client_socket, SHUT_RDWR);
+            close(client_socket);
+        #endif
+        client_socket = INVALID_SOCKET;
+    }
 }
 
 // Automatically converts to String-16/UCS-2 when sending
@@ -55,9 +39,9 @@ void NetworkStream::Write(const std::string& str)
         data.push_back(static_cast<uint8_t>(c));
     }
     #if defined(_WIN32) || defined(_WIN64)
-        send(clientSocket, reinterpret_cast<const char*>(data.data()), data.size(), 0);
+        send(client_socket, reinterpret_cast<const char*>(data.data()), data.size(), 0);
     #else
-        send(clientSocket, data.data(), data.size(), 0);
+        send(client_socket, data.data(), data.size(), 0);
     #endif
 }
 
