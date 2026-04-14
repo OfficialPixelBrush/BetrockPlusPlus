@@ -1,11 +1,13 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  *
  * SPDX-License-Identifier: GPL-3.0-only
  *
 */
 
 #pragma once
+#include "blocks.h"
 #include <array>
 #include <cstdint>
 #include <numeric_structs.h>
@@ -16,7 +18,7 @@
 
 struct BlockData {
 	Int3 pos{ 0, 0, 0 };
-	uint8_t blockId = 0;
+	BlockType blockId = BLOCK_AIR;
 	uint8_t blockMeta = 0;
 	float blockLight = 0.0f; // Converted value from 0-15 to the range 0.0-1.0 using the specified dimension's brightness curve
 };

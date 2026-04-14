@@ -51,8 +51,8 @@ void NetworkStream::Write(const std::string& str)
     std::vector<uint8_t> data;
     data.reserve(str.size() * 2);
     for (const char c : str) {
-        data.push_back(static_cast<uint8_t>(c));
         data.push_back(0x00);
+        data.push_back(static_cast<uint8_t>(c));
     }
     #if defined(_WIN32) || defined(_WIN64)
         send(clientSocket, reinterpret_cast<const char*>(data.data()), data.size(), 0);
@@ -61,14 +61,17 @@ void NetworkStream::Write(const std::string& str)
     #endif
 }
 
+#include <iostream>
+
 template<>
 std::string NetworkStream::Read<std::string>() {
     uint16_t length = Read<uint16_t>();
+    std::cout << int(length) << std::endl;
     std::string result;
     result.resize(length);
     for (uint16_t i = 0; i < length; i++) {
-        result[i] = static_cast<char>(Read<uint8_t>());
         Read<uint8_t>(); // skip high byte (UCS-2)
+        result[i] = static_cast<char>(Read<uint8_t>());
     }
     return result;
 }
