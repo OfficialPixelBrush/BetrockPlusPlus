@@ -17,7 +17,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     bool nbt_tests = false;
     bool server_tests = false;
     bool client_tests = !server_tests;
-    bool graphical_client_tests = false;
+    bool graphical_client_tests = true;
 
     #if defined(_WIN32) || defined(_WIN64)
         std::cout << "Running on Windows\n";
