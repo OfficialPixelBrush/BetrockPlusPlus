@@ -9,7 +9,6 @@
 #include <string>
 #include <dimensions.h>
 #include <packet_ids.h>
-#include <string16.h>
 
 struct Packet {
     PacketId id;
@@ -24,24 +23,20 @@ struct PacketLogin : Packet {
     union {
         int32_t entityId;
         int32_t protocolVersion;
-    };
-    String16 username;
+    } entityId_protocolVersion;
+    std::string username;
     int64_t worldSeed;
     Dimension dimension;
 };
 
 struct PacketPreLogin : Packet {
     PacketPreLogin() : Packet{ PacketId::PreLogin } {}
-    union {
-        String16 username;
-        String16 connectionHash;
-    };
-    
+    std::string username;
 };
 
 struct PacketChatMessage : Packet {
     PacketChatMessage() : Packet{ PacketId::ChatMessage } {}
-    String16 message;
+    std::string message;
 };
 
 struct PacketPlayerPositionAndRotation : Packet {

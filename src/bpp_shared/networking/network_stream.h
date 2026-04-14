@@ -19,6 +19,9 @@
 
 #include <cstdint>
 #include <string>
+#include <packet_ids.h>
+#include <vector>
+#include "packets.h"
 
 class NetworkStream {
     public:
@@ -29,11 +32,17 @@ class NetworkStream {
 
         template<typename T>
         T Read();
-        
+
         template<typename T>
+        T SwapEndianess(const T& data);
+        
+        template<typename T = int>
         void Write(const T& data);
         void Write(const std::string& str);
-        void Write(const Packet& packet);
+        void Write(const PacketPreLogin& packet);
+        void Write(const PacketLogin& packet);
+        void Write(const PacketPlayerPositionAndRotation& packet);
+
     private:
         // Static so the server-socket is shared across all
         // instances of NetworkStream (if multiple are created)
