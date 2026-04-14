@@ -7,18 +7,16 @@
 
 #pragma once
 #include <glad/glad.h>
-#include "world/Chunk.h"
+#include <numeric_structs.h>
 
 struct SubChunk {
     SubChunk() = default;
     SubChunk(const SubChunk&) = delete;
     SubChunk& operator=(const SubChunk&) = delete;
 
-    int chunkX = 0;
-    int chunkZ = 0;
-    int offset_x = 0;
-    int offset_z = 0;
-    int chunk_slice = 0;
+	Int2 chunkPos = { 0, 0 };
+	Int2 offset = { 0, 0 }; // world offset of this sub chunk (chunkPos * 16) + offset
+    int chunk_slice = 0; // 0-8, y position of this slice
 
     // Opaque geometry
     unsigned int VAO = 0;
@@ -35,7 +33,7 @@ struct SubChunk {
     unsigned int overlayVBO = 0;
     int overlayVertexCount = 0;
 
-    Chunk* parentChunk = nullptr;
+	int64_t parentChunk = 0; // so we can easily find the parent chunk when we need to update this sub chunk, hash of ChunkPos
     bool dirty = true;
 
     // since we handle gpu buffer objects we have to be very careful about copying!
