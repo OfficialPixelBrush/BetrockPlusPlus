@@ -20,7 +20,6 @@
 #include <cstdint>
 #include <string>
 #include <packet_ids.h>
-#include <vector>
 #include <bit>
 #include <type_traits>
 #include <cstring>
@@ -45,7 +44,7 @@ T byteswap_any(T value) {
 
 class NetworkStream {
     public:
-        NetworkStream(uint16_t port = 25565);
+        NetworkStream(int client_socket);
         ~NetworkStream();
 
         bool NewClient();
@@ -55,9 +54,9 @@ class NetworkStream {
             T buffer;
             // TODO: Swap endianess
             #if defined(_WIN32) || defined(_WIN64)
-                recv(clientSocket, reinterpret_cast<char*>(&buffer), sizeof(T), 0);
+                recv(client_socket, reinterpret_cast<char*>(&buffer), sizeof(T), 0);
             #else 
-                recv(clientSocket, &buffer, sizeof(T), 0);
+                recv(client_socket, &buffer, sizeof(T), 0);
             #endif
             return byteswap_any(buffer);
         }
@@ -66,14 +65,14 @@ class NetworkStream {
         void Write(const T& data) {
             #if defined(_WIN32) || defined(_WIN64)
                 T networkData = byteswap_any(data);
-                send(clientSocket, reinterpret_cast<const char*>(&networkData), sizeof(T), 0);
+                send(client_socket, reinterpret_cast<const char*>(&networkData), sizeof(T), 0);
             #else
                 if constexpr (std::is_same_v<T, bool>) {
                     int8_t boolData = static_cast<int8_t>(data);
-                    send(clientSocket, &boolData, sizeof(int8_t), 0);
+                    send(client_socket, &boolData, sizeof(int8_t), 0);
                 } else {
                     T networkData = byteswap_any(data);
-                    send(clientSocket, &networkData, sizeof(T), 0);
+                    send(client_socket, &networkData, sizeof(T), 0);
                 }
             #endif
         }
@@ -86,6 +85,5 @@ class NetworkStream {
         // Static so the server-socket is shared across all
         // instances of NetworkStream (if multiple are created)
         // TODO: Automatically close the server socket on program exit
-        static int serverSocket;
-        int clientSocket = INVALID_SOCKET;
+        int client_socket = INVALID_SOCKET;
 };

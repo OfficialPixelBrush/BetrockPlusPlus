@@ -29,11 +29,14 @@ add_executable(
 
     src/main.cpp
 
+    src/bpp_test/network_test.cpp
+
     src/bpp_shared/shared.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/enums/drops.cpp
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
+    src/bpp_shared/networking/server_manager.cpp
     
     src/bpp_server/server.cpp
 
