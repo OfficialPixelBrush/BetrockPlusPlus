@@ -29,7 +29,7 @@ Client::Client() : window(854, 480, "Betrock++") {
 // Without needing to implement any of the network code first.
 // In the future, the client will use an integrated server to run single player instances
 void Client::tick() {
-
+    this->world.tick(std::vector<ClientPosition>{this->singlePlayerPos});
 }
 
 void Client::render([[maybe_unused]] float partial_tick) {

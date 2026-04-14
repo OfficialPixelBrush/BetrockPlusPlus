@@ -9,6 +9,7 @@
 #include <string>
 #include <dimensions.h>
 #include <packet_ids.h>
+#include <vector>
 #include "animation_ids.h"
 #include "base_structs.h"
 #include "base_types.h"
@@ -159,7 +160,7 @@ class Packet {
         void Deserialize(NetworkStream& stream) override {
             position.x = stream.Read<int32_t>();
             position.y = stream.Read<int32_t>();
-            position.y = stream.Read<int32_t>();
+            position.z = stream.Read<int32_t>();
         }
     };
 
@@ -279,31 +280,32 @@ class Packet {
     // Defines the players position and rotation
     struct PlayerPositionAndRotation : BasePacket {
         PlayerPositionAndRotation() : BasePacket{ PacketId::PlayerPositionAndRotation } {}
-        Vec3 position;
-        double camera_y;
-        Float2 rotation;
-        float& pitch = rotation.x;
-        float& yaw = rotation.y;
-        bool onGround;
+        double x = 0.0;
+        double y = 0.0;
+        double stance = 0.0;   // must be y + 1.62
+        double z = 0.0;
+        float  yaw = 0.0f;
+        float  pitch = 0.0f;
+        bool   onGround = false;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
-            stream.Write(position.x);
-            stream.Write(position.y);
-            stream.Write(camera_y);
-            stream.Write(position.z);
-            stream.Write(pitch);
+            stream.Write(x);
+            stream.Write(y);
+            stream.Write(stance);
+            stream.Write(z);
             stream.Write(yaw);
+            stream.Write(pitch);
             stream.Write(onGround);
         }
 
         void Deserialize(NetworkStream& stream) override {
-            position.x = stream.Read<double>();
-            position.y = stream.Read<double>();
-            camera_y = stream.Read<double>();
-            position.z = stream.Read<double>();
-            pitch = stream.Read<float>();
+            x = stream.Read<double>();
+            y = stream.Read<double>();
+            stance = stream.Read<double>();
+            z = stream.Read<double>();
             yaw = stream.Read<float>();
+            pitch = stream.Read<float>();
             onGround = stream.Read<bool>();
         }
     };
@@ -431,6 +433,63 @@ class Packet {
         void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             animation = stream.Read<NetworkAnimation>();
+        }
+    };
+
+    // Tells the client to allocate or free a chunk slot — must be sent before ChunkData
+    struct SetChunkVisibility : BasePacket {
+        SetChunkVisibility() : BasePacket{ PacketId::SetChunkVisibility } {}
+        int32_t chunkX;
+        int32_t chunkZ;
+        bool visible;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(chunkX);
+            stream.Write(chunkZ);
+            stream.Write(visible);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            chunkX = stream.Read<int32_t>();
+            chunkZ = stream.Read<int32_t>();
+            visible = stream.Read<bool>();
+        }
+    };
+
+    // Sends compressed chunk data; always preceded by SetChunkVisibility
+    struct ChunkData : BasePacket {
+        ChunkData() : BasePacket{ PacketId::Chunk } {}
+        int32_t chunkX;
+        int16_t chunkY = 0;    // always 0 for a full-height chunk
+        int32_t chunkZ;
+        uint8_t sizeX = 15;   // sent as (size - 1), so 15 = 16 wide
+        uint8_t sizeY = 127;  // 127 = 128 tall
+        uint8_t sizeZ = 15;
+        std::vector<uint8_t> compressedData;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(chunkX);
+            stream.Write(chunkY);
+            stream.Write(chunkZ);
+            stream.Write(sizeX);
+            stream.Write(sizeY);
+            stream.Write(sizeZ);
+            stream.Write(static_cast<int32_t>(compressedData.size()));
+            stream.WriteBytes(compressedData.data(), compressedData.size());
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            chunkX = stream.Read<int32_t>();
+            chunkY = stream.Read<int16_t>();
+            chunkZ = stream.Read<int32_t>();
+            sizeX = stream.Read<uint8_t>();
+            sizeY = stream.Read<uint8_t>();
+            sizeZ = stream.Read<uint8_t>();
+            int32_t size = stream.Read<int32_t>();
+            compressedData.resize(static_cast<size_t>(size));
+            stream.ReadBytes(compressedData.data(), static_cast<size_t>(size));
         }
     };
 };
