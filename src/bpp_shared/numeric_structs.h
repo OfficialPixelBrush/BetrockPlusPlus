@@ -116,10 +116,8 @@ struct BiNumber {
         // For accessing directly
         struct {
             T x;
-            union {
-                T y;
-                T z;
-            };
+            T y;
+            T& z = y;
         };
         // For accessing as array
         T data[2];
