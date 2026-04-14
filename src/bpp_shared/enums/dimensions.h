@@ -10,7 +10,7 @@
 // Used as the identifier for the current dimension
 // The End would become Dimenion id 1
 
-enum Dimension {
+enum Dimension : int8_t {
 	// The nether, also known as hell or the slip
 	Nether = -1,
 	// The overworld, default dimension
