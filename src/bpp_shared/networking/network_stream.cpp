@@ -46,32 +46,61 @@ T NetworkStream::Read() {
 }
 
 template<typename T>
+T NetworkStream::SwapEndianess(const T& data) {
+    T result;
+    uint8_t* dataPtr = reinterpret_cast<uint8_t*>(const_cast<T*>(&data));
+    uint8_t* resultPtr = reinterpret_cast<uint8_t*>(&result);
+    for (size_t i = 0; i < sizeof(T); i++) {
+        resultPtr[i] = dataPtr[sizeof(T) - 1 - i];
+    }
+    return result;
+}
+
+template<typename T>
 void NetworkStream::Write(const T& data)
 {
     // TODO: Swap endianess
-    send(clientSocket, &data, sizeof(T), 0);
+    T swappedData = SwapEndianess(data);
+    send(clientSocket, &swappedData, sizeof(T), 0);
 }
 
 // Automatically converts to String-16/UCS-2 when sending
 void NetworkStream::Write(const std::string& str)
 {
-    size_t length = str.size();
-    int16_t lengthValue = static_cast<int16_t>(length);
-    send(clientSocket, &lengthValue, sizeof(lengthValue), 0);
-    send(clientSocket, str.data(), length * sizeof(wchar_t), 0);
+    uint16_t length = static_cast<uint16_t>(str.size());
+    Write(length);
+    std::vector<uint8_t> data;
+    data.reserve(str.size() * 2);
+    for (unsigned char c : str) {
+        data.push_back(0x00);
+        data.push_back(c);
+    }
+    send(clientSocket, data.data(), data.size(), 0);
 }
 
-void NetworkStream::Write(const Packet& packet)
+void NetworkStream::Write(const PacketPreLogin& packet)
 {
-    Write(static_cast<uint8_t>(packet.id));
-    switch (packet.id) {
-        case PacketId::PreLogin: {
-            const PacketPreLogin& preLoginPacket = static_cast<const PacketPreLogin&>(packet);
-            Write(preLoginPacket.username);
-            break;
-        }
-        // Handle other packet types as needed
-        default:
-            break;
-    }
+    Write(packet.id);
+    Write(packet.username);
+}
+
+void NetworkStream::Write(const PacketLogin& packet)
+{
+    Write(packet.id);
+    Write(packet.entityId_protocolVersion);
+    Write(packet.username);
+    Write(packet.worldSeed);
+    Write(packet.dimension);
+}
+
+void NetworkStream::Write(const PacketPlayerPositionAndRotation& packet)
+{
+    Write(packet.id);
+    Write(packet.x);
+    Write(packet.y);
+    Write(packet.camera_y);
+    Write(packet.z);
+    Write(packet.yaw);
+    Write(packet.pitch);
+    Write(packet.onGround);
 }

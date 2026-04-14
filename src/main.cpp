@@ -50,11 +50,30 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     NetworkStream stream;
     if (stream.NewClient()) {
         std::cout << "Client connected!\n";
-        std::wstring greeting = L"Hello from the server!";
-        String16 username = String16(L"TestUser");
-        PacketPreLogin packet(username);
-        stream.Write(packet);
-        stream.Write(greeting);
+
+        //std::string greeting = "Hello from the server!";
+        //stream.Write(greeting);
+
+        PacketPreLogin preLogin;
+        preLogin.username = "TestUser";
+        stream.Write(preLogin);
+        PacketLogin login;
+
+        login.entityId_protocolVersion.entityId = 0;
+        login.username = "-";
+        login.worldSeed = 123456789;
+        login.dimension = Dimension::Overworld;
+        stream.Write(login);
+
+        PacketPlayerPositionAndRotation posRot;
+        posRot.x = 100.5;
+        posRot.y = 64.0;
+        posRot.camera_y = 70.0;
+        posRot.z = -200.25;
+        posRot.yaw = 90.0f;
+        posRot.pitch = 45.0f;
+        posRot.onGround = true;
+        stream.Write(posRot);
     } else {
         std::cout << "Failed to connect client.\n";
     }
