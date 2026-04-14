@@ -6,6 +6,8 @@
 */
 
 #pragma once
+#include <cstdint>
 
-int ServerTest();
-int ClientTest();
+enum BlockInteraction : int8_t {
+    INTERACTION_SLEEPING = 0
+};

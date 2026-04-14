@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ * 
+*/
+
 #include "network_test.h"
 #include "../bpp_shared/networking/network_stream.h"
 #include "../bpp_shared/networking/packets.h"
@@ -70,4 +77,5 @@ int ClientTest() {
     Packet::PreLogin preLogin_server;
     preLogin_server.connection_hash = "Steve";
     preLogin_server.Serialize(stream);
+    return 0;
 }

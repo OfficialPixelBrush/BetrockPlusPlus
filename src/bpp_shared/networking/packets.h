@@ -9,7 +9,12 @@
 #include <string>
 #include <dimensions.h>
 #include <packet_ids.h>
+#include "animation_ids.h"
+#include "base_structs.h"
 #include "base_types.h"
+#include "block_interaction.h"
+#include "face_directions.h"
+#include "mine_status.h"
 #include "network_stream.h"
 #include "numeric_structs.h"
 
@@ -300,6 +305,132 @@ class Packet {
             pitch = stream.Read<float>();
             yaw = stream.Read<float>();
             onGround = stream.Read<bool>();
+        }
+    };
+
+    // Information on how far along the player is with breaking a block
+    struct MineBlock : BasePacket {
+        MineBlock() : BasePacket{ PacketId::MineBlock } {}
+        MineStatus status;
+        // TODO: Possibly use Int3?
+        struct {
+            int32_t x;
+            int8_t y;
+            int32_t z;
+        } position;
+        FaceDirection face;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(status);
+            stream.Write(position.x);
+            stream.Write(position.y);
+            stream.Write(position.z);
+            stream.Write(face);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            status = stream.Read<MineStatus>();
+            position.x = stream.Read<int32_t>();
+            position.y = stream.Read<int8_t>();
+            position.z = stream.Read<int32_t>();
+            face = stream.Read<FaceDirection>();
+        }
+    };
+
+    // Information on where a player is placing a block
+    struct PlaceBlock : BasePacket {
+        PlaceBlock() : BasePacket{ PacketId::PlaceBlock } {}
+        // TODO: Possibly use Int3?
+        struct {
+            int32_t x;
+            int8_t y;
+            int32_t z;
+        } position;
+        FaceDirection face;
+        Item item;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(position.x);
+            stream.Write(position.y);
+            stream.Write(position.z);
+            stream.Write(face);
+            stream.Write(item.id);
+            stream.Write(item.amount);
+            stream.Write(item.damage);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            position.x = stream.Read<int32_t>();
+            position.y = stream.Read<int8_t>();
+            position.z = stream.Read<int32_t>();
+            face = stream.Read<FaceDirection>();
+            item.id = stream.Read<ItemId>();
+            item.amount = stream.Read<ItemAmount>();
+            item.damage = stream.Read<ItemDamage>();
+        }
+    };
+
+    // The clients active hotbar slot
+    struct SetHotbarSlot : BasePacket {
+        SetHotbarSlot() : BasePacket{ PacketId::SetHotbarSlot } {}
+        int16_t slot;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(slot);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            slot = stream.Read<int16_t>();
+        }
+    };
+
+    // Interactions with blocks
+    struct InteractWithBlock : BasePacket {
+        InteractWithBlock() : BasePacket{ PacketId::InteractWithBlock } {}
+        EntityId entity_id;
+        BlockInteraction interaction_id;
+        struct {
+            int32_t x;
+            int8_t y;
+            int32_t z;
+        } position;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(entity_id);
+            stream.Write(interaction_id);
+            stream.Write(position.x);
+            stream.Write(position.y);
+            stream.Write(position.z);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            entity_id = stream.Read<EntityId>();
+            interaction_id = stream.Read<BlockInteraction>();
+            position.x = stream.Read<int32_t>();
+            position.y = stream.Read<int8_t>();
+            position.z = stream.Read<int32_t>();
+        }
+    };
+
+    // Informs of the desired animation
+    struct Animation : BasePacket {
+        Animation() : BasePacket{ PacketId::Animation } {}
+        EntityId entity_id;
+        NetworkAnimation animation;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(entity_id);
+            stream.Write(animation);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            entity_id = stream.Read<EntityId>();
+            animation = stream.Read<NetworkAnimation>();
         }
     };
 };

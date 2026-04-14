@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <memory>
 // #include <pixnbt.h>
+#include "base_types.h"
 #include "blocks.h"
 #include "strings/labels.h"
 
@@ -19,9 +20,9 @@
 
 // Item
 struct Item {
-    int16_t id = ITEM_INVALID;
-    int8_t  amount = 0;
-    int16_t damage = 0; // Also known as metadata
+    ItemId      id = ITEM_INVALID;
+    ItemAmount  amount = 0;
+    ItemDamage  damage = 0; // Also known as metadata
 
     friend std::ostream& operator<<(std::ostream& os, const Item& i) {
         os << "(" << IdToLabel(i.id) << ": " << int32_t(i.damage) << " x" << int32_t(i.amount) << ")";
