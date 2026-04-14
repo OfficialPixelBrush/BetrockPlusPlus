@@ -75,7 +75,7 @@ namespace NBTexample {
         std::cout << "Wrote " << buffer.size() << " bytes\n";
 
         // Reading
-        NBTParser parser(buffer.data(), (int64_t)buffer.size());
+        NBTParser parser(buffer.data(), int64_t(buffer.size()));
 
         const Tag& lvl = parser.root.get("Level");
 
@@ -89,7 +89,7 @@ namespace NBTexample {
         std::cout << "LastUpdate: " << lu << "\n";
 
         const auto& blockData = lvl.get("Blocks").getByteArray();
-        std::cout << "Block at 0,0,0: " << (int)blockData[0] << "\n"; // should be 1
+        std::cout << "Block at 0,0,0: " << int(blockData[0]) << "\n"; // should be 1
 
         const auto& tileList = lvl.get("TileEntities").getList();
         std::cout << "Tile entities: " << tileList.size() << "\n";

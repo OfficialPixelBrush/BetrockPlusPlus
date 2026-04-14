@@ -11,7 +11,7 @@
 // The IDs for all the packets. These names were adopted from and
 // decided by the people running the Technical Beta-Wiki.
 
-enum class Packet : uint8_t {
+enum class PacketId : uint8_t {
 	KeepAlive 					= 0x00,
 	Login 						= 0x01,
 	PreLogin 					= 0x02,

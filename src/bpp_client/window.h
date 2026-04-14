@@ -31,7 +31,7 @@ public:
 
         glfwMakeContextCurrent(handle);
 
-        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        if (!gladLoadGLLoader(GLADloadproc(glfwGetProcAddress))) {
             glfwTerminate();
             throw std::runtime_error("Failed to init GLAD");
         }
@@ -72,7 +72,7 @@ public:
 
     int   getWidth()  const { return width; }
     int   getHeight() const { return height; }
-    float getAspect() const { return (float)width / (float)height; }
+    float getAspect() const { return float(width) / float(height); }
 
     GLFWwindow* getHandle() const { return handle; }
 

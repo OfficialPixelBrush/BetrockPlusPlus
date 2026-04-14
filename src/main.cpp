@@ -10,6 +10,8 @@
 #include <numeric_structs.h>
 #include "bpp_shared/NBT/example.h"
 #include "bpp_client/client.h"
+#include "bpp_shared/networking/network_stream.h"
+#include "bpp_shared/networking/packets.h"
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     #if defined(_WIN32) || defined(_WIN64)
@@ -44,6 +46,18 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     NBTexample::test();
 
     std::cout << "--All tests finished successfully.--\n";
+
+    NetworkStream stream;
+    if (stream.NewClient()) {
+        std::cout << "Client connected!\n";
+        std::wstring greeting = L"Hello from the server!";
+        String16 username = String16(L"TestUser");
+        PacketPreLogin packet(username);
+        stream.Write(packet);
+        stream.Write(greeting);
+    } else {
+        std::cout << "Failed to connect client.\n";
+    }
 
     Client client;
     client.run();
