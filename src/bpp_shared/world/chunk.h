@@ -12,7 +12,6 @@
 struct chunkPos {
 	int x = 0;
 	int z = 0;
-
 	bool operator==(const chunkPos& other) const {
 		return x == other.x && z == other.z;
 	}
