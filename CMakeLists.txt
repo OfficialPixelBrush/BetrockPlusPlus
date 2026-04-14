@@ -42,7 +42,7 @@ add_executable(
     src/bpp_client/renderers/world_renderer.cpp
     src/bpp_client/renderers/sub_chunk_mesher.cpp
     src/bpp_shared/world/World.cpp
-)
+ "src/bpp_shared/blocks/BlockProperties.h" "src/bpp_shared/blocks/BlockProperties.cpp")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(BetrockPlusPlus PRIVATE
