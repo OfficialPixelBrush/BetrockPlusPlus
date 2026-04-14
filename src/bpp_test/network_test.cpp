@@ -20,7 +20,7 @@ int ServerTest() {
     }
     std::cout << "Client connected!\n";
 
-    NetworkStream stream = sm.streams[0];
+    NetworkStream& stream = sm.streams[0];
 
     // C -> S
     std::cout << int(stream.Read<PacketId>()) << std::endl;;
@@ -51,10 +51,10 @@ int ServerTest() {
 
     // S -> C
     Packet::PlayerPositionAndRotation posRot_server;
-    posRot_server.position.x = 0.0;
-    posRot_server.position.y = 1.0;
-    posRot_server.camera_y = 2.0;
-    posRot_server.position.z = 4.0;
+    posRot_server.x = 0.0;
+    posRot_server.y = 120.0;
+    posRot_server.stance = 121.62;
+    posRot_server.z = 0.0;
     posRot_server.pitch = 45.0f;
     posRot_server.yaw = 45.0f;
     posRot_server.onGround = true;
@@ -71,7 +71,7 @@ int ClientTest() {
     }
     std::cout << "Server connected!\n";
 
-    NetworkStream stream = sm.streams[0];
+    NetworkStream& stream = sm.streams[0];
 
     // C -> S
     Packet::PreLogin preLogin_server;

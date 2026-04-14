@@ -9,6 +9,7 @@
 #include "glfw_context.h"
 #include "inputs.h"
 #include "window.h"
+#include "world/World.h"
 
 class Client {
 public:
@@ -24,5 +25,7 @@ private:
     Window      window;
     Input       input;
     GlfwContext ctx;
+    WorldManager world;
+    ClientPosition singlePlayerPos{};
     float       accumulator = 0.0f;
 };

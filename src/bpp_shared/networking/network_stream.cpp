@@ -2,7 +2,7 @@
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  *
  * SPDX-License-Identifier: GPL-3.0-only
- * 
+ *
 */
 
 #include "network_stream.h"
@@ -14,15 +14,15 @@ NetworkStream::NetworkStream(int p_client_socket) {
 
 NetworkStream::~NetworkStream() {
     if (client_socket != INVALID_SOCKET) {
-        #if defined(_WIN32) || defined(_WIN64)
-            shutdown(client_socket, SD_BOTH);
-            closesocket(client_socket);
-            // TODO: Clean-up WSA when the server closes
-            // WSACleanup();
-        #else
-            shutdown(client_socket, SHUT_RDWR);
-            close(client_socket);
-        #endif
+#if defined(_WIN32) || defined(_WIN64)
+        shutdown(client_socket, SD_BOTH);
+        closesocket(client_socket);
+        // TODO: Clean-up WSA when the server closes
+        // WSACleanup();
+#else
+        shutdown(client_socket, SHUT_RDWR);
+        close(client_socket);
+#endif
         client_socket = INVALID_SOCKET;
     }
 }
@@ -38,11 +38,11 @@ void NetworkStream::Write(const std::string& str)
         data.push_back(0x00);
         data.push_back(static_cast<uint8_t>(c));
     }
-    #if defined(_WIN32) || defined(_WIN64)
-        send(client_socket, reinterpret_cast<const char*>(data.data()), data.size(), 0);
-    #else
-        send(client_socket, data.data(), data.size(), 0);
-    #endif
+#if defined(_WIN32) || defined(_WIN64)
+    send(client_socket, reinterpret_cast<const char*>(data.data()), data.size(), 0);
+#else
+    send(client_socket, data.data(), data.size(), 0);
+#endif
 }
 
 #include <iostream>

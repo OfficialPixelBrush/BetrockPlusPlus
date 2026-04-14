@@ -17,6 +17,7 @@ find_package(OpenAL CONFIG REQUIRED)
 
 include_directories(
     "${PROJECT_SOURCE_DIR}/external/glad/include"
+    "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums/network"
@@ -45,7 +46,8 @@ add_executable(
     src/bpp_client/renderers/world_renderer.cpp
     src/bpp_client/renderers/sub_chunk_mesher.cpp
     src/bpp_shared/world/World.cpp
- "src/bpp_shared/blocks/BlockProperties.h" "src/bpp_shared/blocks/BlockProperties.cpp")
+    src/bpp_shared/blocks/BlockProperties.cpp 
+)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(BetrockPlusPlus PRIVATE
