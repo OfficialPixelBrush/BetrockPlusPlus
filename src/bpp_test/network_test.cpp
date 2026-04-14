@@ -54,3 +54,20 @@ int ServerTest() {
     posRot_server.Serialize(stream);
     return 0;
 }
+
+int ClientTest() {
+    std::cout << "Network test, waiting for server...\n";
+    ServerManager sm;
+    if (!sm.InitConnection()) {
+        std::cerr << "Failed to connect server.\n";
+        return 1;
+    }
+    std::cout << "Server connected!\n";
+
+    NetworkStream stream = sm.streams[0];
+
+    // C -> S
+    Packet::PreLogin preLogin_server;
+    preLogin_server.connection_hash = "Steve";
+    preLogin_server.Serialize(stream);
+}
