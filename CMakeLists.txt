@@ -19,6 +19,7 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/external/glad/include"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums/network"
 )
 
 add_executable(
@@ -27,14 +28,20 @@ add_executable(
     external/glad/src/glad.c
 
     src/main.cpp
-    src/bpp_server/server.cpp
-    src/bpp_client/client.cpp
-    src/bpp_client/inputs.cpp
+
     src/bpp_shared/shared.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/enums/drops.cpp
     src/bpp_shared/strings/labels.cpp
- "src/bpp_client/glfw_context.h" "src/bpp_client/renderers/blocks/context.h" "src/bpp_client/renderers/world_renderer.h" "src/bpp_client/renderers/world_renderer.cpp" "src/bpp_client/renderers/sub_chunk.h" "src/bpp_client/renderers/sub_chunk_mesher.h" "src/bpp_client/renderers/sub_chunk_,mesher.cpp" "src/bpp_shared/world/chunk.h")
+    src/bpp_shared/networking/network_stream.cpp
+    
+    src/bpp_server/server.cpp
+
+    src/bpp_client/client.cpp
+    src/bpp_client/inputs.cpp
+    src/bpp_client/renderers/world_renderer.cpp
+    src/bpp_client/renderers/sub_chunk_mesher.cpp
+)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(BetrockPlusPlus PRIVATE

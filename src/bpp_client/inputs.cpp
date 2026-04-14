@@ -25,15 +25,15 @@ void Input::cursorCallback(GLFWwindow* window, double x, double y) {
     auto* ctx = static_cast<GlfwContext*>(glfwGetWindowUserPointer(window));
     Input* input = ctx->input;
     if (input->firstMouse) {
-        input->lastX = (float)x;
-        input->lastY = (float)y;
+        input->lastX = float(x);
+        input->lastY = float(y);
         input->firstMouse = false;
         return;
     }
-    input->deltaX += (float)x - input->lastX;
-    input->deltaY += input->lastY - (float)y; // flipped — screen Y is inverted
-    input->lastX = (float)x;
-    input->lastY = (float)y;
+    input->deltaX += float(x) - input->lastX;
+    input->deltaY += input->lastY - float(y); // flipped — screen Y is inverted
+    input->lastX = float(x);
+    input->lastY = float(y);
 }
 
 void Input::drainEvents() {
