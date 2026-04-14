@@ -11,6 +11,8 @@
 // The End would become Dimenion id 1
 
 enum Dimension {
+	// The nether, also known as hell or the slip
 	Nether = -1,
+	// The overworld, default dimension
 	Overworld = 0
 };
