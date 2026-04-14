@@ -37,33 +37,6 @@ NetworkStream::~NetworkStream() {
     close(clientSocket);
 }
 
-template<typename T>
-T NetworkStream::Read() {
-    T buffer;
-    // TODO: Swap endianess
-    recv(clientSocket, &buffer, sizeof(T), 0);
-    return buffer;
-}
-
-template<typename T>
-T NetworkStream::SwapEndianess(const T& data) {
-    T result;
-    uint8_t* dataPtr = reinterpret_cast<uint8_t*>(const_cast<T*>(&data));
-    uint8_t* resultPtr = reinterpret_cast<uint8_t*>(&result);
-    for (size_t i = 0; i < sizeof(T); i++) {
-        resultPtr[i] = dataPtr[sizeof(T) - 1 - i];
-    }
-    return result;
-}
-
-template<typename T>
-void NetworkStream::Write(const T& data)
-{
-    // TODO: Swap endianess
-    T swappedData = SwapEndianess(data);
-    send(clientSocket, &swappedData, sizeof(T), 0);
-}
-
 // Automatically converts to String-16/UCS-2 when sending
 void NetworkStream::Write(const std::string& str)
 {
@@ -71,36 +44,9 @@ void NetworkStream::Write(const std::string& str)
     Write(length);
     std::vector<uint8_t> data;
     data.reserve(str.size() * 2);
-    for (unsigned char c : str) {
+    for (const char c : str) {
         data.push_back(0x00);
-        data.push_back(c);
+        data.push_back(static_cast<uint8_t>(c));
     }
     send(clientSocket, data.data(), data.size(), 0);
-}
-
-void NetworkStream::Write(const PacketPreLogin& packet)
-{
-    Write(packet.id);
-    Write(packet.username);
-}
-
-void NetworkStream::Write(const PacketLogin& packet)
-{
-    Write(packet.id);
-    Write(packet.entityId_protocolVersion);
-    Write(packet.username);
-    Write(packet.worldSeed);
-    Write(packet.dimension);
-}
-
-void NetworkStream::Write(const PacketPlayerPositionAndRotation& packet)
-{
-    Write(packet.id);
-    Write(packet.x);
-    Write(packet.y);
-    Write(packet.camera_y);
-    Write(packet.z);
-    Write(packet.yaw);
-    Write(packet.pitch);
-    Write(packet.onGround);
 }

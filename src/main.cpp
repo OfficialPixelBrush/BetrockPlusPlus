@@ -47,6 +47,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 
     std::cout << "--All tests finished successfully.--\n";
 
+    /*
     NetworkStream stream;
     if (stream.NewClient()) {
         std::cout << "Client connected!\n";
@@ -56,27 +57,28 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 
         PacketPreLogin preLogin;
         preLogin.username = "TestUser";
-        stream.Write(preLogin);
-        PacketLogin login;
+        preLogin.Serialize(stream);
 
+        PacketLogin login;
         login.entityId_protocolVersion.entityId = 0;
         login.username = "-";
         login.worldSeed = 123456789;
         login.dimension = Dimension::Overworld;
-        stream.Write(login);
+        login.Serialize(stream);
 
         PacketPlayerPositionAndRotation posRot;
-        posRot.x = 100.5;
-        posRot.y = 64.0;
-        posRot.camera_y = 70.0;
-        posRot.z = -200.25;
+        posRot.x = 0.0;
+        posRot.y = 1.0;
+        posRot.camera_y = 2.0;
+        posRot.z = 4.0;
         posRot.yaw = 90.0f;
         posRot.pitch = 45.0f;
         posRot.onGround = true;
-        stream.Write(posRot);
+        posRot.Serialize(stream);
     } else {
         std::cout << "Failed to connect client.\n";
     }
+    */
 
     Client client;
     client.run();

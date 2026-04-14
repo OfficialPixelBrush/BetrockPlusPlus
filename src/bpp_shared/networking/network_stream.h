@@ -21,7 +21,26 @@
 #include <string>
 #include <packet_ids.h>
 #include <vector>
-#include "packets.h"
+#include <bit>
+#include <type_traits>
+#include <cstring>
+
+template<typename T>
+T byteswap_any(T value) {
+    if constexpr (std::is_enum_v<T>) {
+        using U = std::underlying_type_t<T>;
+        return static_cast<T>(std::byteswap(static_cast<U>(value)));
+    } else if constexpr (std::is_integral_v<T>) {
+        return std::byteswap(value);
+    } else {
+        using U = std::conditional_t<sizeof(T) == 4, uint32_t, uint64_t>;
+        U tmp;
+        std::memcpy(&tmp, &value, sizeof(T));
+        tmp = std::byteswap(tmp);
+        std::memcpy(&value, &tmp, sizeof(T));
+        return value;
+    }
+}
 
 class NetworkStream {
     public:
@@ -31,18 +50,25 @@ class NetworkStream {
         bool NewClient();
 
         template<typename T>
-        T Read();
-
-        template<typename T>
-        T SwapEndianess(const T& data);
+        T Read() {
+            T buffer;
+            // TODO: Swap endianess
+            recv(clientSocket, &buffer, sizeof(T), 0);
+            return byteswap_any(buffer);
+        }
         
-        template<typename T = int>
-        void Write(const T& data);
-        void Write(const std::string& str);
-        void Write(const PacketPreLogin& packet);
-        void Write(const PacketLogin& packet);
-        void Write(const PacketPlayerPositionAndRotation& packet);
+        template<typename T>
+        void Write(const T& data) {
+            if constexpr (std::is_same_v<T, bool>) {
+                int8_t boolData = static_cast<int8_t>(data);
+                send(clientSocket, &boolData, sizeof(int8_t), 0);
+            } else {
+                T networkData = byteswap_any(data);
+                send(clientSocket, &networkData, sizeof(T), 0);
+            }
+        }
 
+        void Write(const std::string& str);
     private:
         // Static so the server-socket is shared across all
         // instances of NetworkStream (if multiple are created)
