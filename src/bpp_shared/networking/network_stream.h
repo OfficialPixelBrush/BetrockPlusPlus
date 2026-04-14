@@ -54,7 +54,11 @@ class NetworkStream {
         T Read() {
             T buffer;
             // TODO: Swap endianess
-            recv(clientSocket, &buffer, sizeof(T), 0);
+            #if defined(_WIN32) || defined(_WIN64)
+                recv(clientSocket, reinterpret_cast<char*>(&buffer), sizeof(T), 0);
+            #else 
+                recv(clientSocket, &buffer, sizeof(T), 0);
+            #endif
             return byteswap_any(buffer);
         }
         
