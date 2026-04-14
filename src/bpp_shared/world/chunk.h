@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstring>
 #include <numeric_structs.h>
+#include "blocks/BlockProperties.h"
 
 enum class ChunkState : uint8_t {
 	Unloaded,
@@ -159,20 +160,55 @@ struct Chunk {
 		}
 	}
 
+	inline void generateHeightMapColumn(Int2 pos) {
+		for (int y = 127; y >= 0; y--) {
+			if (Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity > 0) {
+				setHeightValue(pos, y + 1);
+				return;
+			}
+		}
+		setHeightValue(pos, 0);  // fully transparent column
+	}
+
 	inline void generateSkylightMap() {
+		generateHeightMap();
+
 		for (int x = 0; x < 16; x++) {
 			for (int z = 0; z < 16; z++) {
-				lightColumn({ x, z });
+				int height = getHeightValue({ x, z });
+
+				// Above the heightmap: unconditionally full sky
+				for (int y = 127; y >= height; y--)
+					setSkyLight({ x, y, z }, 15);
+
+				// Below the heightmap: bleed light through semi-transparent blocks
+				int skyLight = 15;
+				for (int y = height - 1; y >= 0 && skyLight > 0; y--) {
+					skyLight -= std::max(1, (int)Blocks::blockProperties[getBlock({ x, y, z })].lightOpacity);
+					if (skyLight > 0)
+						setSkyLight({ x, y, z }, (uint8_t)skyLight);
+				}
 			}
 		}
 	}
 
-	inline void generateHeightMapColumn(Int2 pos) {
-		// stub
-	}
+	inline void relightColumn(Int2 pos) {
+		// Rebuild the heightmap for this column
+		generateHeightMapColumn(pos);
 
-	inline void lightColumn(Int2 pos) {
-		// stub
+		int height = getHeightValue(pos);
+
+		// Set full skylight for everything at or above the surface
+		for (int y = 127; y >= height; y--)
+			setSkyLight({ pos.x, y, pos.z }, 15);
+
+		// Attenuate below the surface
+		int skyLight = 15;
+		for (int y = height - 1; y >= 0 && skyLight > 0; y--) {
+			skyLight -= std::max(1, (int)Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity);
+			if (skyLight > 0)
+				setSkyLight({ pos.x, y, pos.z }, (uint8_t)skyLight);
+		}
 	}
 
 	// Make sure we can't access a block out of bounds
