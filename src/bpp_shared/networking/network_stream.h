@@ -33,11 +33,12 @@ T byteswap_any(T value) {
     } else if constexpr (std::is_integral_v<T>) {
         return std::byteswap(value);
     } else {
+        static_assert(sizeof(T) == 4 || sizeof(T) == 8, "byteswap_any: unsupported type size");
         using U = std::conditional_t<sizeof(T) == 4, uint32_t, uint64_t>;
         U tmp;
-        std::memcpy(&tmp, &value, sizeof(T));
+        std::memcpy(&tmp, &value, sizeof(U));
         tmp = std::byteswap(tmp);
-        std::memcpy(&value, &tmp, sizeof(T));
+        std::memcpy(&value, &tmp, sizeof(U));
         return value;
     }
 }
@@ -57,7 +58,7 @@ class NetworkStream {
             return byteswap_any(buffer);
         }
         
-        template<typename T>
+        template<typename T = int>
         void Write(const T& data) {
             if constexpr (std::is_same_v<T, bool>) {
                 int8_t boolData = static_cast<int8_t>(data);
@@ -68,6 +69,9 @@ class NetworkStream {
             }
         }
 
+        // String-16 Read-Write
+        template<>
+        std::string Read<std::string>();
         void Write(const std::string& str);
     private:
         // Static so the server-socket is shared across all
