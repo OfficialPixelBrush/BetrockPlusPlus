@@ -68,7 +68,10 @@ void NetworkStream::ReadBytes(uint8_t* buf, size_t len) {
 #else
         ssize_t result = recv(client_socket, buf + received, len - received, 0);
 #endif
-        if (result <= 0) break;
+        if (result <= 0) {
+            connected = false;
+            break;
+        }
         received += static_cast<size_t>(result);
     }
 }
@@ -81,7 +84,10 @@ void NetworkStream::WriteBytes(const uint8_t* buf, size_t len) {
 #else
         ssize_t result = send(client_socket, buf + sent, len - sent, 0);
 #endif
-        if (result <= 0) break;
+        if (result <= 0) {
+            connected = false;
+            break;
+        }
         sent += static_cast<size_t>(result);
     }
 }
@@ -89,11 +95,17 @@ void NetworkStream::WriteBytes(const uint8_t* buf, size_t len) {
 bool NetworkStream::hasData() {
 #if defined(_WIN32) || defined(_WIN64)
     u_long bytesAvailable = 0;
-    ioctlsocket(client_socket, FIONREAD, &bytesAvailable);
+    if (ioctlsocket(client_socket, FIONREAD, &bytesAvailable) == SOCKET_ERROR) {
+        connected = false;
+        return false;
+    }
     return bytesAvailable > 0;
 #else
     int bytesAvailable = 0;
-    ioctl(client_socket, FIONREAD, &bytesAvailable);
+    if (ioctl(client_socket, FIONREAD, &bytesAvailable) < 0) {
+        connected = false;
+        return false;
+    }
     return bytesAvailable > 0;
 #endif
 }
