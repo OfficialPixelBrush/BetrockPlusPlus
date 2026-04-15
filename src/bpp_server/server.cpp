@@ -225,7 +225,7 @@ void Server::processIncoming(PlayerSession& session) {
         session.last_packet_time = std::chrono::steady_clock::now();
         PacketId packetId = session.stream.Read<PacketId>();
 
-		std::cout << "Recieved packet " << static_cast<int>(packetId) << " from player " << session.username << ".\n";
+		std::cout << "Received packet 0x" << std::hex << static_cast<int>(packetId) << std::dec << " from player " << session.username << ".\n";
 
         switch (packetId) {
         case PacketId::KeepAlive: {
