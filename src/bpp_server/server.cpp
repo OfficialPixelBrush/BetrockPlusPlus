@@ -203,10 +203,29 @@ void Server::processIncoming(PlayerSession& session) {
             ka.Serialize(session.stream);
             break;
         }
-        case PacketId::PlayerPositionAndRotation: {
-            Packet::PlayerPositionAndRotation pkt;
+        case PacketId::ChatMessage: {
+            Packet::ChatMessage pkt;
             pkt.Deserialize(session.stream);
-            session.position.pos = { pkt.x, pkt.y, pkt.z };
+            break;
+        }
+        case PacketId::SetTime: {
+            Packet::SetTime pkt;
+            pkt.Deserialize(session.stream);
+            break;
+        }
+        case PacketId::InteractWithEntity: {
+            Packet::InteractWithEntity pkt;
+            pkt.Deserialize(session.stream);
+            break;
+        }
+        case PacketId::Respawn: {
+            Packet::Respawn pkt;
+            pkt.Deserialize(session.stream);
+            break;
+        }
+        case PacketId::PlayerMovement: {
+            Packet::PlayerMovement pkt;
+            pkt.Deserialize(session.stream);
             break;
         }
         case PacketId::PlayerPosition: {
@@ -220,8 +239,61 @@ void Server::processIncoming(PlayerSession& session) {
             pkt.Deserialize(session.stream);
             break;
         }
-        case PacketId::PlayerMovement: {
-            Packet::PlayerMovement pkt;
+        case PacketId::PlayerPositionAndRotation: {
+            Packet::PlayerPositionAndRotation pkt;
+            pkt.Deserialize(session.stream);
+            session.position.pos = { pkt.x, pkt.y, pkt.z };
+            break;
+        }
+        case PacketId::MineBlock: {
+            Packet::MineBlock pkt;
+            pkt.Deserialize(session.stream);
+            break;
+        }
+        case PacketId::PlaceBlock: {
+            Packet::PlaceBlock pkt;
+            pkt.Deserialize(session.stream);
+            break;
+        }
+        case PacketId::SetHotbarSlot: {
+            Packet::SetHotbarSlot pkt;
+            pkt.Deserialize(session.stream);
+            break;
+        }
+        case PacketId::InteractWithBlock: {
+            Packet::InteractWithBlock pkt;
+            pkt.Deserialize(session.stream);
+            break;
+        }
+        case PacketId::Animation: {
+            Packet::Animation pkt;
+            pkt.Deserialize(session.stream);
+            break;
+        }
+        case PacketId::PlayerAction: {
+            Packet::PlayerAction pkt;
+            pkt.Deserialize(session.stream);
+            break;
+        }
+        case PacketId::PlayerInput: {
+            Packet::PlayerInput pkt;
+            pkt.Deserialize(session.stream);
+            break;
+        }
+        /*
+        case PacketId::ClickSlot: {
+            Packet::ClickSlot pkt;
+            pkt.Deserialize(session.stream);
+            break;
+        }
+        */
+        case PacketId::UpdateSign: {
+            Packet::UpdateSign pkt;
+            pkt.Deserialize(session.stream);
+            break;
+        }
+        case PacketId::Disconnect: {
+            Packet::Disconnect pkt;
             pkt.Deserialize(session.stream);
             break;
         }
