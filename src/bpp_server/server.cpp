@@ -160,6 +160,7 @@ void Server::handleLogin(PlayerSession& session) {
 }
 
 void Server::waitForSpawnChunks(PlayerSession& session) {
+    std::cout << "Sending spawn chunks..." << "\n";
     sendPendingChunks(session, 10);
 
     // Spawn chunk radius; 3 chunks in each direction
@@ -175,6 +176,7 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
         }
     }
 
+    std::cout << "Spawn chunks sent. Setting player position" << "\n";
     Packet::PlayerPositionAndRotation pos;
     pos.x = session.position.pos.x;
     pos.y = session.position.pos.y;
@@ -185,6 +187,7 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
     pos.onGround = false;
     pos.Serialize(session.stream);
 
+    std::cout << "Client connected" << "\n";
     session.connState = ConnectionState::Playing;
 }
 
