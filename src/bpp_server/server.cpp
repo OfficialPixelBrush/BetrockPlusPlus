@@ -78,6 +78,71 @@ void Server::acceptNewPlayers() {
     players.push_back(std::make_unique<PlayerSession>(clientSocket));
 }
 
+void Server::broadcastPlayerMovement(PlayerSession& session) {
+    double dx = session.position.pos.x - session.lastBroadcastPos.x;
+    double dy = session.position.pos.y - session.lastBroadcastPos.y;
+    double dz = session.position.pos.z - session.lastBroadcastPos.z;
+
+    bool moved = (dx != 0.0 || dy != 0.0 || dz != 0.0);
+    bool rotated = (session.rotation.x != session.lastBroadcastRotation.x ||
+        session.rotation.y != session.lastBroadcastRotation.y);
+
+    if (!moved && !rotated) return;
+
+    // If delta is too large, use teleport instead
+    bool needsTeleport = std::abs(dx) > 4.0 || std::abs(dy) > 4.0 || std::abs(dz) > 4.0;
+
+    int8_t qx = static_cast<int8_t>(dx * 32.0);
+    int8_t qy = static_cast<int8_t>(dy * 32.0);
+    int8_t qz = static_cast<int8_t>(dz * 32.0);
+    int8_t qpitch = static_cast<int8_t>(session.rotation.x / 360.0f * 256.0f);
+    int8_t qyaw = static_cast<int8_t>(session.rotation.y / 360.0f * 256.0f);
+
+    for (auto& other : players) {
+        if (other.get() == &session) continue;
+        if (other->connState != ConnectionState::Playing) continue;
+
+        if (needsTeleport) {
+            Packet::TeleportEntity pkt;
+            pkt.entity_id = session.entityId;
+            pkt.position.x = static_cast<int32_t>(session.position.pos.x * 32.0);
+            pkt.position.y = static_cast<int32_t>(session.position.pos.y * 32.0);
+            pkt.position.z = static_cast<int32_t>(session.position.pos.z * 32.0);
+            pkt.pitch = qpitch;
+            pkt.yaw = qyaw;
+            pkt.Serialize(other->stream);
+        }
+        else if (moved && rotated) {
+            Packet::EntityPositionAndRotation pkt;
+            pkt.entity_id = session.entityId;
+            pkt.qr_position.x = qx;
+            pkt.qr_position.y = qy;
+            pkt.qr_position.z = qz;
+            pkt.q_pitch = qpitch;
+            pkt.q_yaw = qyaw;
+            pkt.Serialize(other->stream);
+        }
+        else if (moved) {
+            Packet::EntityPosition pkt;
+            pkt.entity_id = session.entityId;
+            pkt.qr_position.x = qx;
+            pkt.qr_position.y = qy;
+            pkt.qr_position.z = qz;
+            pkt.Serialize(other->stream);
+        }
+        else {
+            Packet::EntityRotation pkt;
+            pkt.entity_id = session.entityId;
+            pkt.q_pitch = qpitch;
+            pkt.q_yaw = qyaw;
+            pkt.Serialize(other->stream);
+        }
+    }
+
+    session.lastBroadcastPos = session.position.pos;
+    session.lastBroadcastRotation = session.rotation;
+}
+
 void Server::tick() {
     std::vector<ClientPosition> positions;
     for (auto& session : players) {
@@ -97,6 +162,7 @@ void Server::tick() {
         case ConnectionState::Playing:
             processIncoming(*session);
             sendPendingChunks(*session, 10);
+            broadcastPlayerMovement(*session);
             if (tickCounter % 20 == 0) {
                 Packet::KeepAlive ka;
                 ka.Serialize(session->stream);
@@ -112,20 +178,23 @@ void Server::tick() {
             auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - session->last_packet_time).count();
             if (elapsed > this->timeout_seconds) {
                 std::cout << "Player " << session->username << " timed out\n";
-                Packet::Disconnect kick;
-                kick.reason = "Connection timed out.";
-                kick.Serialize(session->stream);
-                session->stream.setConnected(false);
+                disconnectPlayer(*session, "Connection timed out.");
             }
         }
     }
 
     // Force disconnect players that quit
     players.erase(
-        std::remove_if(players.begin(), players.end(), [](const auto& s) {
-            bool is_connected = s->stream.isConnected();
-            if (!is_connected) {
+        std::remove_if(players.begin(), players.end(), [&](const auto& s) {
+            if (!s->stream.isConnected()) {
                 std::cout << "Disconnected client " << s->username << " with entity id " << s->entityId << "\n";
+                for (auto& other : players) {
+                    if (other.get() == s.get()) continue;
+                    if (other->connState != ConnectionState::Playing) continue;
+                    Packet::DespawnEntity despawn;
+                    despawn.entity_id = s->entityId;
+                    despawn.Serialize(other->stream);
+                }
                 return true;
             }
             return false;
@@ -187,6 +256,16 @@ void Server::handleLogin(PlayerSession& session) {
     session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
+void Server::disconnectPlayer(PlayerSession& session, const std::string& reason) {
+    // Send disconnect reason to the leaving player
+    Packet::Disconnect kick;
+    kick.reason = reason;
+    kick.Serialize(session.stream);
+    session.stream.setConnected(false);
+
+    std::cout << "Player " << session.username << " disconnected: " << reason << "\n";
+}
+
 void Server::waitForSpawnChunks(PlayerSession& session) {
     sendPendingChunks(session, 10);
 
@@ -226,6 +305,37 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
     pos.onGround = false;
     pos.Serialize(session.stream);
 
+    // Notify all currently playing/waiting players about this new player
+    for (auto& other : players) {
+        if (other.get() == &session) continue;
+        if (other->connState != ConnectionState::Playing &&
+            other->connState != ConnectionState::WaitingForSpawnChunks) continue;
+
+        // Send this player to others
+        Packet::SpawnPlayer splayer;
+        splayer.entity_id = session.entityId;
+        splayer.username = session.username;
+        splayer.q_position.x = static_cast<int32_t>(session.position.pos.x * 32.0);
+        splayer.q_position.y = static_cast<int32_t>(session.position.pos.y * 32.0);
+        splayer.q_position.z = static_cast<int32_t>(session.position.pos.z * 32.0);
+        splayer.q_yaw = static_cast<int8_t>(session.rotation.x / 360.0f * 256.0f);
+        splayer.q_pitch = static_cast<int8_t>(session.rotation.y / 360.0f * 256.0f);
+        splayer.held_item_id = 0;
+        splayer.Serialize(other->stream);
+
+        // Send others to this player
+        Packet::SpawnPlayer oplayer;
+        oplayer.entity_id = other->entityId;
+        oplayer.username = other->username;
+        oplayer.q_position.x = static_cast<int32_t>(other->position.pos.x * 32.0);
+        oplayer.q_position.y = static_cast<int32_t>(other->position.pos.y * 32.0);
+        oplayer.q_position.z = static_cast<int32_t>(other->position.pos.z * 32.0);
+        oplayer.q_yaw = static_cast<int8_t>(other->rotation.x / 360.0f * 256.0f);
+        oplayer.q_pitch = static_cast<int8_t>(other->rotation.y / 360.0f * 256.0f);
+        oplayer.held_item_id = 0;
+        oplayer.Serialize(session.stream);
+    }
+
     std::cout << "Client connected" << "\n";
     session.connState = ConnectionState::Playing;
 }
@@ -233,9 +343,6 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
 void Server::processIncoming(PlayerSession& session) {
     while (session.stream.hasData()) {
         PacketId packetId = session.stream.Read<PacketId>();
-
-		std::cout << "Received packet 0x" << std::hex << static_cast<int>(packetId) << std::dec << " from player " << session.username << ".\n";
-
         switch (packetId) {
         case PacketId::KeepAlive: {
             Packet::KeepAlive ka;
@@ -277,12 +384,16 @@ void Server::processIncoming(PlayerSession& session) {
         case PacketId::PlayerRotation: {
             Packet::PlayerRotation pkt;
             pkt.Deserialize(session.stream);
+            session.rotation.x = pkt.yaw;
+            session.rotation.y = pkt.pitch;
             break;
         }
         case PacketId::PlayerPositionAndRotation: {
             Packet::PlayerPositionAndRotation pkt;
             pkt.Deserialize(session.stream);
             session.position.pos = { pkt.x, pkt.y, pkt.z };
+            session.rotation.x = pkt.pitch;
+            session.rotation.y = pkt.yaw;
             break;
         }
         case PacketId::MineBlock: {
@@ -335,16 +446,12 @@ void Server::processIncoming(PlayerSession& session) {
         case PacketId::Disconnect: {
             Packet::Disconnect pkt;
             pkt.Deserialize(session.stream);
-            std::cout << "Player " << session.username << " disconnected: " << pkt.reason << "\n";
-            session.stream.setConnected(false);
+            disconnectPlayer(session, pkt.reason);
             break;
         }
         default:
             std::cout << "UNHANDLED packet 0x" << std::hex << static_cast<int>(packetId) << "\n";
-            Packet::Disconnect kick;
-            kick.reason = "Unknown packet";
-            kick.Serialize(session.stream);
-            session.stream.setConnected(false);
+            disconnectPlayer(session, "Unknown packet");
             return;
         }
     }

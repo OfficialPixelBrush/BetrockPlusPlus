@@ -262,14 +262,14 @@ class Packet {
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
-            stream.Write(pitch);
             stream.Write(yaw);
+            stream.Write(pitch);
             stream.Write(on_ground);
         }
 
         void Deserialize(NetworkStream& stream) override {
-            pitch = stream.Read<float>();
             yaw = stream.Read<float>();
+            pitch = stream.Read<float>();
             on_ground = stream.Read<bool>();
         }
     };
@@ -291,8 +291,8 @@ class Packet {
             stream.Write(y);
             stream.Write(stance);
             stream.Write(z);
-            stream.Write(yaw);
             stream.Write(pitch);
+            stream.Write(yaw);
             stream.Write(onGround);
         }
 
@@ -301,8 +301,8 @@ class Packet {
             y = stream.Read<double>();
             stance = stream.Read<double>();
             z = stream.Read<double>();
-            yaw = stream.Read<float>();
             pitch = stream.Read<float>();
+            yaw = stream.Read<float>();
             onGround = stream.Read<bool>();
         }
     };
@@ -471,8 +471,8 @@ class Packet {
             stream.Write(q_position.x);
             stream.Write(q_position.y);
             stream.Write(q_position.z);
-            stream.Write(q_pitch);
             stream.Write(q_yaw);
+            stream.Write(q_pitch);
             stream.Write(held_item_id);
         }
 
@@ -482,8 +482,8 @@ class Packet {
             q_position.x = stream.Read<int32_t>();
             q_position.y = stream.Read<int32_t>();
             q_position.z = stream.Read<int32_t>();
-            q_pitch = stream.Read<int8_t>();
             q_yaw = stream.Read<int8_t>();
+            q_pitch = stream.Read<int8_t>();
             held_item_id = stream.Read<ItemId>();
         }
     };
