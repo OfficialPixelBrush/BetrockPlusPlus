@@ -19,7 +19,7 @@
 #include <vector>
 
 struct WorldManager {
-    std::unordered_map<ChunkPos, std::unique_ptr<Chunk>> chunks;
+    std::unordered_map<ChunkPos, std::shared_ptr<Chunk>> chunks;
     std::mutex chunksMutex;
 
     BS::thread_pool<> pool{ std::max(1u, uint32_t(float(std::thread::hardware_concurrency()) * 0.25f)) };
