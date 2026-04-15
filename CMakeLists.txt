@@ -45,8 +45,8 @@ add_executable(
     src/bpp_client/inputs.cpp
     src/bpp_client/renderers/world_renderer.cpp
     src/bpp_client/renderers/sub_chunk_mesher.cpp
-    src/bpp_shared/world/World.cpp
-    src/bpp_shared/blocks/BlockProperties.cpp 
+    src/bpp_shared/world/world.cpp
+    src/bpp_shared/blocks/block_properties.cpp 
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -109,6 +109,40 @@ target_compile_options(BetrockPlusPlus PRIVATE
         # Enable most warnings / treat warnings as errors
         /W4
         # /WX
+        # conversion, possible loss of data
+        /w14242
+        # conversion, possible loss of data (more cases)
+        /w14254
+        # member function does not override base
+        /w14263
+        # unsigned/negative mismatch
+        /w14287
+        # nonstandard extension used (optional strictness)
+        /we4289
+        # expression is always false/true
+        /w14296
+        # expression before comma has no effect
+        /w14545
+        # function call before comma missing argument
+        /w14546
+        # operator before comma has no effect
+        /w14547
+        # operator before comma has no effect
+        /w14549
+        # expression has no effect
+        /w14555
+        # pragma warning misuse
+        /w14619
+        # thread unsafe static init
+        /w14640
+        # conversion sign mismatch (closest to -Wsign-conversion)
+        /w14826
+        # wide string literal cast
+        /w14905
+        # string literal cast
+        /w14906
+        # illegal copy initialization
+        /w14928
         # Strict standards conformance
         /permissive-
         # Suppress "nonstandard extension: nameless struct/union" (no equivalent, extension is intentional)
@@ -132,6 +166,8 @@ target_compile_options(BetrockPlusPlus PRIVATE
         /w14264
         # Uninitialized variables (C4700: uninitialized local variable used)
         /w14700
+        # static analysis (catches null deref, uninitialized, etc.)
+        /analyze
     >
 )
 

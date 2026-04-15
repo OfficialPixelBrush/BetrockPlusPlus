@@ -164,8 +164,8 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
     sendPendingChunks(session, 10);
 
     // Spawn chunk radius; 3 chunks in each direction
-    int spawnChunkX = (int)std::floor(session.position.pos.x) >> 4;
-    int spawnChunkZ = (int)std::floor(session.position.pos.z) >> 4;
+    int spawnChunkX = int(std::floor(session.position.pos.x)) >> 4;
+    int spawnChunkZ = int(std::floor(session.position.pos.z)) >> 4;
 
     int radius = std::min(3, world.getViewRadius());
 
@@ -233,9 +233,9 @@ void Server::processIncoming(PlayerSession& session) {
     }
 }
 
-int Server::sendPendingChunks(PlayerSession& session, int batchSize) {
-    int spawnChunkX = (int)std::floor(session.position.pos.x) >> 4;
-    int spawnChunkZ = (int)std::floor(session.position.pos.z) >> 4;
+size_t Server::sendPendingChunks(PlayerSession& session, int batchSize) {
+    int spawnChunkX = int(std::floor(session.position.pos.x)) >> 4;
+    int spawnChunkZ = int(std::floor(session.position.pos.z)) >> 4;
 
     std::lock_guard lock(world.chunksMutex);
 

@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <cstring>
 #include <numeric_structs.h>
-#include "blocks/BlockProperties.h"
+#include "blocks/block_properties.h"
 
 enum class ChunkState : uint8_t {
 	Unloaded,
@@ -31,7 +31,7 @@ struct ChunkPos {
 	}
 
 	uint64_t getHash() const {
-		return ((uint64_t)(uint32_t)x << 32) | (uint32_t)z;
+		return (uint64_t(x) << 32) | uint64_t(z);
 	}
 };
 
@@ -60,10 +60,10 @@ struct Slice {
 
 	// Nibble helpers
 	inline uint8_t setNibble(uint8_t hi, uint8_t lo) const {
-		return ((hi & 0x0F) << 4) | (lo & 0x0F);
+		return uint8_t(((hi & uint8_t(0x0F)) << 4) | (lo & uint8_t(0x0F)));
 	}
-	inline uint8_t getNibbleLow(uint8_t byte)  const { return  byte & 0x0F; }
-	inline uint8_t getNibbleHigh(uint8_t byte) const { return (byte >> 4) & 0x0F; }
+	inline uint8_t getNibbleLow(uint8_t byte)  const { return  byte & uint8_t(0x0F); }
+	inline uint8_t getNibbleHigh(uint8_t byte) const { return (byte >> 4) & uint8_t(0x0F); }
 
 	// Block helpers
 	inline uint8_t getBlock(Int3 pos) const {
@@ -110,8 +110,8 @@ struct Slice {
 	}
 
 	inline int getBlockLightValue(Int3 pos, int skySubtracted) const {
-		int sky = std::max(0, (int)getSkyLight(pos) - skySubtracted);
-		int block = (int)getBlockLight(pos);
+		int sky = std::max(0, int(getSkyLight(pos) - skySubtracted));
+		int block = int(getBlockLight(pos));
 		return std::min(15, std::max(sky, block));
 	}
 
@@ -125,7 +125,7 @@ struct Slice {
 };
 
 struct Chunk {
-	ChunkPos pos;
+	ChunkPos cpos;
 	Slice slices[8]; // 128 blocks high
 	std::atomic<ChunkState> state{ ChunkState::Unloaded };
 	bool isTerrainPopulated = false;
@@ -159,7 +159,7 @@ struct Chunk {
 	}
 
 	inline void generateHeightMapColumn(Int2 pos) {
-		for (int y = 127; y >= 0; y--) {
+		for (uint8_t y = 127; y >= 0; y--) {
 			if (Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity > 0) {
 				setHeightValue(pos, y + 1);
 				return;
@@ -182,9 +182,9 @@ struct Chunk {
 				// Below the heightmap: bleed light through semi-transparent blocks
 				int skyLight = 15;
 				for (int y = height - 1; y >= 0 && skyLight > 0; y--) {
-					skyLight -= std::max(1, (int)Blocks::blockProperties[getBlock({ x, y, z })].lightOpacity);
+					skyLight -= std::max(1, int(Blocks::blockProperties[getBlock({ x, y, z })].lightOpacity));
 					if (skyLight > 0)
-						setSkyLight({ x, y, z }, (uint8_t)skyLight);
+						setSkyLight({ x, y, z }, uint8_t(skyLight));
 				}
 			}
 		}
@@ -203,9 +203,9 @@ struct Chunk {
 		// Attenuate below the surface
 		int skyLight = 15;
 		for (int y = height - 1; y >= 0 && skyLight > 0; y--) {
-			skyLight -= std::max(1, (int)Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity);
+			skyLight -= std::max(1, int(Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity));
 			if (skyLight > 0)
-				setSkyLight({ pos.x, y, pos.z }, (uint8_t)skyLight);
+				setSkyLight({ pos.x, y, pos.z }, uint8_t(skyLight));
 		}
 	}
 
@@ -276,7 +276,7 @@ struct Chunk {
 
 	// cleanup
 	inline void clear() {
-		pos = {};
+		cpos = {};
 		isTerrainPopulated = false;
 		isModified = false;
 		state.store(ChunkState::Unloaded);
