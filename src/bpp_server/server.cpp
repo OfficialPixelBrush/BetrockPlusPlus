@@ -232,8 +232,6 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
 
 void Server::processIncoming(PlayerSession& session) {
     while (session.stream.hasData()) {
-        // Update our last packet time for the timeout code
-        session.last_packet_time = std::chrono::steady_clock::now();
         PacketId packetId = session.stream.Read<PacketId>();
 
 		std::cout << "Received packet 0x" << std::hex << static_cast<int>(packetId) << std::dec << " from player " << session.username << ".\n";
@@ -342,11 +340,16 @@ void Server::processIncoming(PlayerSession& session) {
             break;
         }
         default:
-            std::cout << "UNHANDLED packet 0x" << std::hex << static_cast<int>(packetId)
-                << std::dec << " — dropping connection\n";
-            break;
+            std::cout << "UNHANDLED packet 0x" << std::hex << static_cast<int>(packetId) << "\n";
+            Packet::Disconnect kick;
+            kick.reason = "Unknown packet";
+            kick.Serialize(session.stream);
+            session.stream.setConnected(false);
+            return;
         }
     }
+    // Update our last packet time for the timeout code
+    session.last_packet_time = std::chrono::steady_clock::now();
 }
 
 size_t Server::sendPendingChunks(PlayerSession& session, int batchSize) {

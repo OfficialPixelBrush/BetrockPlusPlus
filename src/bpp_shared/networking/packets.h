@@ -366,8 +366,10 @@ class Packet {
             position.z = stream.Read<int32_t>();
             face = stream.Read<PacketData::FaceDirection>();
             item.id = stream.Read<ItemId>();
-            item.amount = stream.Read<ItemAmount>();
-            item.damage = stream.Read<ItemDamage>();
+            if (static_cast<int16_t>(item.id) >= 0) {
+                item.amount = stream.Read<ItemAmount>();
+                item.damage = stream.Read<ItemDamage>();
+            }
         }
     };
 
@@ -1085,25 +1087,25 @@ class Packet {
         PacketData::WorldEvent event_id;
         struct {
             int32_t x;
-            int8_t y;
             int32_t z;
+            int8_t  y; 
         } position;
         int32_t data;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
-            stream.Write(event_id);
             stream.Write(position.x);
-            stream.Write(position.y);
             stream.Write(position.z);
+            stream.Write(position.y);
+            stream.Write(event_id);
             stream.Write(data);
         }
 
         void Deserialize(NetworkStream& stream) override {
-            event_id = stream.Read<PacketData::WorldEvent>();
             position.x = stream.Read<int32_t>();
-            position.y = stream.Read<int8_t>();
             position.z = stream.Read<int32_t>();
+            position.y = stream.Read<int8_t>();
+            event_id = stream.Read<PacketData::WorldEvent>();
             data = stream.Read<int32_t>();
         }
     };

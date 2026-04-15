@@ -10,14 +10,14 @@
 
 namespace PacketData {
     // Used by the Mine Block Packet (0x0E)
-    enum MineStatus : int8_t {
+    enum MineStatus : uint8_t {
         DIGGING_STARTED     = 0,
         DIGGING_FINISHED    = 2,
         DROPPED_ITEM        = 4
     };
 
     // Used by Mine and Place Block Packets (0x0E and 0x0F)
-    enum FaceDirection : int8_t {
+    enum FaceDirection : uint8_t {
         Y_MINUS	= 0,
         Y_PLUS	= 1,
         Z_MINUS = 2,
@@ -27,12 +27,12 @@ namespace PacketData {
     };
 
     // Used by the Interact with Block Packet (0x11)
-    enum BlockInteraction : int8_t {
+    enum BlockInteraction : uint8_t {
         SLEEPING = 0
     };
 
     // Used by the Animation Packet (0x12)
-    enum Animation : int32_t {
+    enum Animation : int8_t {
         NONE		= 0,
         // The player swings their arm (e.g. when attacking or using an item)
         PUNCH		= 1,
@@ -88,7 +88,7 @@ namespace PacketData {
     };
 
     // Used by the Spawn Painting Packet (0x19)
-    enum PaintingDirection : int8_t {
+    enum PaintingDirection : int32_t {
         MINUS_Z = 0,
         MINUS_X = 1,
         PLUS_Z  = 2,
@@ -106,7 +106,7 @@ namespace PacketData {
     };
 
     // Used by Block Action Packet (0x36)
-    enum NoteInstrument : int8_t {
+    enum NoteInstrument : uint8_t {
         HARP = 0,
         BASS = 1,
         SNARE_DRUM = 2,
@@ -114,7 +114,7 @@ namespace PacketData {
         BASS_DRUM = 4
     };
 
-    enum NotePitch : int8_t {
+    enum NotePitch : uint8_t {
         LOW_F_SHARP     = 0,
         LOW_G           = 1,
         LOW_G_SHARP     = 2,
