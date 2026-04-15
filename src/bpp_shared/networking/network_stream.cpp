@@ -59,3 +59,41 @@ std::string NetworkStream::Read<std::string>() {
     }
     return result;
 }
+
+void NetworkStream::ReadBytes(uint8_t* buf, size_t len) {
+    size_t received = 0;
+    while (received < len) {
+#if defined(_WIN32) || defined(_WIN64)
+        int result = recv(client_socket, reinterpret_cast<char*>(buf + received), static_cast<int>(len - received), 0);
+#else
+        ssize_t result = recv(client_socket, buf + received, len - received, 0);
+#endif
+        if (result <= 0) break;
+        received += static_cast<size_t>(result);
+    }
+}
+
+void NetworkStream::WriteBytes(const uint8_t* buf, size_t len) {
+    size_t sent = 0;
+    while (sent < len) {
+#if defined(_WIN32) || defined(_WIN64)
+        int result = send(client_socket, reinterpret_cast<const char*>(buf + sent), static_cast<int>(len - sent), 0);
+#else
+        ssize_t result = send(client_socket, buf + sent, len - sent, 0);
+#endif
+        if (result <= 0) break;
+        sent += static_cast<size_t>(result);
+    }
+}
+
+bool NetworkStream::hasData() {
+#if defined(_WIN32) || defined(_WIN64)
+    u_long bytesAvailable = 0;
+    ioctlsocket(client_socket, FIONREAD, &bytesAvailable);
+    return bytesAvailable > 0;
+#else
+    int bytesAvailable = 0;
+    ioctl(client_socket, FIONREAD, &bytesAvailable);
+    return bytesAvailable > 0;
+#endif
+}

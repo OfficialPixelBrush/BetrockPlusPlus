@@ -34,8 +34,16 @@ struct WorldManager {
         return (it != chunks.end()) ? it->second.get() : nullptr;
     }
 
+    int getViewRadius() {
+        return VIEW_RADIUS;
+    }
+
+    int getSimulationDistance() {
+        return SIMULATION_RADIUS;
+    }
+
 private:
-    static constexpr int VIEW_RADIUS = 5;
+    static constexpr int VIEW_RADIUS = 15;
     static constexpr int SIMULATION_RADIUS = 9;
 
     void updateLoadRadius(const std::vector<ClientPosition>& players);
