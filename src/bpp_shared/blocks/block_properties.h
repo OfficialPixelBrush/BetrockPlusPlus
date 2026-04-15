@@ -7,7 +7,7 @@
 #pragma once
 #include <numeric_structs.h>
 #include "enums/blocks.h"
-#include "Material.h"
+#include "materials.h"
 
 struct WorldManager;
 struct Entity;

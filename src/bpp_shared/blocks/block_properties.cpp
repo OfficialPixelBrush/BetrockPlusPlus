@@ -5,7 +5,7 @@
  *
 */
 
-#include "BlockProperties.h"
+#include "block_properties.h"
 
 namespace Blocks {
 
