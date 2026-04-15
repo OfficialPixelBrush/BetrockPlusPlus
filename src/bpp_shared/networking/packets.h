@@ -1079,6 +1079,7 @@ class Packet {
         }
     };
 
+    // Used to trigger world events, such as sound effects
     struct WorldEvent : BasePacket {
         WorldEvent() : BasePacket{ PacketId::WorldEvent } {}
         PacketData::WorldEvent event_id;
@@ -1107,6 +1108,7 @@ class Packet {
         }
     };
 
+    // Used to trigger global game events, such as rain
     struct GameEvent : BasePacket {
         GameEvent() : BasePacket{ PacketId::GameEvent } {}
         PacketData::GameEvent event_id;
@@ -1121,6 +1123,7 @@ class Packet {
         }
     };
 
+    // Used to spawn a lightning bolt
     struct LightningBolt : BasePacket {
         LightningBolt() : BasePacket{ PacketId::LightningBolt } {}
         EntityId entity_id;
@@ -1143,6 +1146,81 @@ class Packet {
             position.x = stream.Read<int32_t>();
             position.y = stream.Read<int32_t>();
             position.z = stream.Read<int32_t>();
+        }
+    };
+
+    // TODO: Open Container (0x65)
+    // TODO: Close Container (0x65)
+    // TODO: Click Slot (0x66)
+    // TODO: Set Slot (0x67)
+    // TODO: Fill Container (0x68)
+    // TODO: Container Data (0x69)
+    // TODO: Container Transaction (0x6A)
+
+    // Use for updating the text on signs
+    struct UpdateSign : BasePacket {
+        UpdateSign() : BasePacket{ PacketId::UpdateSign } {}
+        struct {
+            int32_t x;
+            int16_t y;
+            int32_t z;
+        } position;
+        std::string lines[4];
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(position.x);
+            stream.Write(position.y);
+            stream.Write(position.z);
+            stream.Write(lines[0]);
+            stream.Write(lines[1]);
+            stream.Write(lines[2]);
+            stream.Write(lines[3]);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            position.x = stream.Read<int32_t>();
+            position.y = stream.Read<int16_t>();
+            position.z = stream.Read<int32_t>();
+            lines[0] = stream.Read<std::string>();
+            lines[1] = stream.Read<std::string>();
+            lines[2] = stream.Read<std::string>();
+            lines[3] = stream.Read<std::string>();
+        }
+    };
+
+    // TODO: Item Data (0x83)
+
+    // Used for changing the value of a statistic
+    struct IncrementStatistic : BasePacket {
+        IncrementStatistic() : BasePacket{ PacketId::IncrementStatistic } {}
+        int32_t statistic_id;
+        int8_t amount;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(statistic_id);
+            stream.Write(amount);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            statistic_id = stream.Read<int32_t>();
+            amount = stream.Read<int8_t>();
+        }
+    };
+
+    // Used for disconnecting with a disconnect reason
+    struct Disconnect : BasePacket {
+        Disconnect() : BasePacket{ PacketId::Disconnect } {}
+        std::string reason;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(reason);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            reason = stream.Read<std::string>();
         }
     };
 };
