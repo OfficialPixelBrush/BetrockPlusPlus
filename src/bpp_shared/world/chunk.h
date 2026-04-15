@@ -14,6 +14,11 @@
 #include <numeric_structs.h>
 #include "blocks/block_properties.h"
 
+#define CHUNK_HEIGHT 128
+#define CHUNK_WIDTH  16
+#define SUB_CHUNK_SIZE  16
+#define SUB_CHUNK_VOLUME SUB_CHUNK_SIZE*SUB_CHUNK_SIZE*SUB_CHUNK_SIZE
+
 enum class ChunkState : uint8_t {
 	Unloaded,
 	Generating,
@@ -45,11 +50,11 @@ struct std::hash<ChunkPos> {
 
 // 16x16x16 blocks of a chunk
 struct Slice {
-	uint8_t blocks[4096] = { 0 };
+	uint8_t blocks[SUB_CHUNK_VOLUME] = { 0 };
 	// Block light and Sky light are both stored in the same array. Lo = Block, Hi = Sky
-	uint8_t lightNibble[4096] = { 0 };
+	uint8_t lightNibble[SUB_CHUNK_VOLUME] = { 0 };
 	// Block meta is 4 bits each, so each entry is two block's metadata.
-	uint8_t nibbleBlockMeta[2048] = { 0 };
+	uint8_t nibbleBlockMeta[SUB_CHUNK_VOLUME/2] = { 0 };
 	// So we can skip empty slices when rendering and meshing
 	bool isEmpty = true; 
 
@@ -126,13 +131,13 @@ struct Slice {
 
 struct Chunk {
 	ChunkPos cpos;
-	Slice slices[8]; // 128 blocks high
+	Slice slices[CHUNK_HEIGHT / SUB_CHUNK_SIZE]; // 128 blocks high
 	std::atomic<ChunkState> state{ ChunkState::Unloaded };
 	bool isTerrainPopulated = false;
 	bool isModified = false; // Whether this chunk has been modified since it was loaded/generated
-	uint8_t heightMap[256] = {}; // heightMap[(z << 4) | x]
-	float temperature[256] = {};
-	float humidity[256] = {};
+	uint8_t heightMap[CHUNK_WIDTH * CHUNK_WIDTH] = {}; // heightMap[(z << 4) | x]
+	float temperature[CHUNK_WIDTH * CHUNK_WIDTH] = {};
+	float humidity[CHUNK_WIDTH * CHUNK_WIDTH] = {};
 
 	// Climate helpers
 	inline float getTemperature(Int2 pos) const { return temperature[(pos.y << 4) | pos.x]; }
@@ -151,15 +156,15 @@ struct Chunk {
 
 	// Used for population and lighting calculations
 	inline void generateHeightMap() {
-		for (int x = 0; x < 16; x++) {
-			for (int z = 0; z < 16; z++) {
+		for (int x = 0; x < CHUNK_WIDTH; x++) {
+			for (int z = 0; z < CHUNK_WIDTH; z++) {
 				generateHeightMapColumn({ x, z });
 			}
 		}
 	}
 
 	inline void generateHeightMapColumn(Int2 pos) {
-		for (uint8_t y = 127; y >= 0; y--) {
+		for (uint8_t y = CHUNK_HEIGHT-1; y >= 0; y--) {
 			if (Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity > 0) {
 				setHeightValue(pos, y + 1);
 				return;
@@ -171,12 +176,12 @@ struct Chunk {
 	inline void generateSkylightMap() {
 		generateHeightMap();
 
-		for (int x = 0; x < 16; x++) {
-			for (int z = 0; z < 16; z++) {
+		for (int x = 0; x < CHUNK_WIDTH; x++) {
+			for (int z = 0; z < CHUNK_WIDTH; z++) {
 				int height = getHeightValue({ x, z });
 
 				// Above the heightmap: unconditionally full sky
-				for (int y = 127; y >= height; y--)
+				for (int y = CHUNK_HEIGHT-1; y >= height; y--)
 					setSkyLight({ x, y, z }, 15);
 
 				// Below the heightmap: bleed light through semi-transparent blocks
@@ -197,7 +202,7 @@ struct Chunk {
 		int height = getHeightValue(pos);
 
 		// Set full skylight for everything at or above the surface
-		for (int y = 127; y >= height; y--)
+		for (int y = CHUNK_HEIGHT-1; y >= height; y--)
 			setSkyLight({ pos.x, y, pos.z }, 15);
 
 		// Attenuate below the surface
@@ -211,7 +216,7 @@ struct Chunk {
 
 	// Make sure we can't access a block out of bounds
 	inline bool isValidBlockPos(Int3 pos) const {
-		return pos.x >= 0 && pos.x < 16 && pos.y >= 0 && pos.y < 128 && pos.z >= 0 && pos.z < 16;
+		return pos.x >= 0 && pos.x < CHUNK_WIDTH && pos.y >= 0 && pos.y < CHUNK_HEIGHT && pos.z >= 0 && pos.z < CHUNK_WIDTH;
 	}
 
 	// Slice helpers
