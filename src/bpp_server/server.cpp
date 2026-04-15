@@ -188,7 +188,6 @@ void Server::handleLogin(PlayerSession& session) {
 }
 
 void Server::waitForSpawnChunks(PlayerSession& session) {
-    std::cout << "Sending spawn chunks..." << "\n";
     sendPendingChunks(session, 10);
 
     // Spawn chunk radius; 3 chunks in each direction
@@ -197,11 +196,23 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
 
     int radius = std::min(3, world.getViewRadius());
 
+    int total_spawn_chunks = ((radius * 2) + 1) * ((radius * 2) + 1);
+    int loaded_chunks = 0;
+
     for (int dx = -radius; dx <= radius; dx++) {
         for (int dz = -radius; dz <= radius; dz++) {
             ChunkPos p{ spawnChunkX + dx, spawnChunkZ + dz };
-            if (!session.sentChunks.contains(p)) return;
+
+            if (session.sentChunks.contains(p)) {
+                loaded_chunks++;
+            }
         }
+    }
+
+    std::cout << "Spawn chunks: " << loaded_chunks << " / " << total_spawn_chunks << "\n";
+
+    if (loaded_chunks < total_spawn_chunks) {
+        return;
     }
 
     std::cout << "Spawn chunks sent. Setting player position" << "\n";
