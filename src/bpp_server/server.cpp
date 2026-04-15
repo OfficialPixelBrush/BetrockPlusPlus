@@ -105,6 +105,21 @@ void Server::tick() {
         }
     }
 
+    // Mark clients who have timed out for removal
+    auto now = std::chrono::steady_clock::now();
+    for (auto& session : players) {
+        if (session->connState == ConnectionState::Playing) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - session->last_packet_time).count();
+            if (elapsed > this->timeout_seconds) {
+                std::cout << "Player " << session->username << " timed out\n";
+                Packet::Disconnect kick;
+                kick.reason = "Connection timed out.";
+                kick.Serialize(session->stream);
+                session->stream.setConnected(false);
+            }
+        }
+    }
+
     // Force disconnect players that quit
     players.erase(
         std::remove_if(players.begin(), players.end(), [](const auto& s) {
@@ -206,6 +221,8 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
 
 void Server::processIncoming(PlayerSession& session) {
     while (session.stream.hasData()) {
+        // Update our last packet time for the timeout code
+        session.last_packet_time = std::chrono::steady_clock::now();
         PacketId packetId = session.stream.Read<PacketId>();
 
 		std::cout << "Recieved packet " << static_cast<int>(packetId) << " from player " << session.username << ".\n";

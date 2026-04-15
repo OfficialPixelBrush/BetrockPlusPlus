@@ -40,8 +40,8 @@ struct PlayerSession {
     std::unordered_set<ChunkPos> sentChunks;
     ConnectionState connState = ConnectionState::Handshaking;
     EntityId entityId = 0;
-    std::string username;
-    int64_t last_packet_time = 0;
+    std::string username; 
+    std::chrono::steady_clock::time_point last_packet_time = std::chrono::steady_clock::now();
 
     explicit PlayerSession(int socket) : stream(socket) {}
 };
@@ -66,4 +66,5 @@ private:
     int serverSocket = -1;
     int tickCounter = 0;
     EntityId nextEntityId = 1;
+    int64_t timeout_seconds = 60;
 };
