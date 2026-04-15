@@ -656,7 +656,6 @@ class Packet {
         float& yaw = rotation.y;
         bool jumping;
         bool sneaking;
-        EntityId entity_id;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
@@ -669,7 +668,6 @@ class Packet {
         }
 
         void Deserialize(NetworkStream& stream) override {
-            entity_id = stream.Read<EntityId>();
             strafe_direction = stream.Read<float>();
             forward_direction = stream.Read<float>();
             pitch = stream.Read<float>();
@@ -724,7 +722,7 @@ class Packet {
             stream.Write(id);
         }
 
-        void Deserialize(NetworkStream& stream) override {
+        void Deserialize([[maybe_unused]]NetworkStream& stream) override {
         }
     };
 
@@ -938,6 +936,213 @@ class Packet {
             int32_t size = stream.Read<int32_t>();
             compressedData.resize(static_cast<size_t>(size));
             stream.ReadBytes(compressedData.data(), static_cast<size_t>(size));
+        }
+    };
+
+    // Used to set multiple blocks in a small area
+    struct SetMultipleBlocks : BasePacket {
+        SetMultipleBlocks() : BasePacket{ PacketId::SetMultipleBlocks } {}
+        Int32_2 chunk_position;
+        int16_t number_of_blocks;
+        std::vector<int16_t> block_coordinates;
+        std::vector<BlockType> block_types;
+        std::vector<int8_t> block_metadata; // Nibbles
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(chunk_position.x);
+            stream.Write(chunk_position.z);
+            stream.Write(number_of_blocks);
+            for (int16_t i = 0; i < number_of_blocks; i++)
+                stream.Write(block_coordinates[static_cast<size_t>(i)]);
+            for (int16_t i = 0; i < number_of_blocks; i++)
+                stream.Write(block_types[static_cast<size_t>(i)]);
+            for (int16_t i = 0; i < number_of_blocks; i++)
+                stream.Write(block_metadata[static_cast<size_t>(i)]);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            chunk_position.x = stream.Read<int32_t>();
+            chunk_position.z = stream.Read<int32_t>();
+            number_of_blocks = stream.Read<int16_t>();
+            block_coordinates.resize(static_cast<size_t>(number_of_blocks));
+            block_types.resize(static_cast<size_t>(number_of_blocks));
+            block_metadata.resize(static_cast<size_t>(number_of_blocks));
+            for (int16_t i = 0; i < number_of_blocks; i++)
+                block_coordinates[static_cast<size_t>(i)] = stream.Read<int16_t>();
+            for (int16_t i = 0; i < number_of_blocks; i++)
+                block_types[static_cast<size_t>(i)] = stream.Read<BlockType>();
+            for (int16_t i = 0; i < number_of_blocks; i++)
+                block_metadata[static_cast<size_t>(i)] = stream.Read<int8_t>();
+        }
+    };
+
+    // Used to set a singular block
+    struct SetBlock : BasePacket {
+        SetBlock() : BasePacket{ PacketId::SetBlock } {}
+        struct {
+            int32_t x;
+            int8_t y;
+            int32_t z;
+        } position;
+        Block block;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(position.x);
+            stream.Write(position.y);
+            stream.Write(position.z);
+            stream.Write(block.type);
+            stream.Write(block.data);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            position.x = stream.Read<int32_t>();
+            position.y = stream.Read<int8_t>();
+            position.z = stream.Read<int32_t>();
+            block.type = stream.Read<BlockType>();
+            block.data = stream.Read<int8_t>();
+        }
+    };
+
+    // Used to set a singular block
+    struct BlockEvent : BasePacket {
+        BlockEvent() : BasePacket{ PacketId::BlockEvent } {}
+        struct {
+            int32_t x;
+            int8_t y;
+            int32_t z;
+        } position;
+        int8_t instrument_state;
+        int8_t pitch_direction;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(position.x);
+            stream.Write(position.y);
+            stream.Write(position.z);
+            stream.Write(instrument_state);
+            stream.Write(pitch_direction);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            position.x = stream.Read<int32_t>();
+            position.y = stream.Read<int8_t>();
+            position.z = stream.Read<int32_t>();
+            instrument_state = stream.Read<int8_t>();
+            pitch_direction = stream.Read<int8_t>();
+        }
+
+        PacketData::NoteInstrument instrument() const {
+            return static_cast<PacketData::NoteInstrument>(instrument_state);
+        }
+
+        PacketData::NotePitch pitch() const {
+            return static_cast<PacketData::NotePitch>(pitch_direction);
+        }
+
+        PacketData::PistonState state() const {
+            return static_cast<PacketData::PistonState>(instrument_state);
+        }
+
+        PacketData::PistonDirection direction() const {
+            return static_cast<PacketData::PistonDirection>(pitch_direction);
+        }
+    };
+
+    // Used for explosions
+    struct Explosion : BasePacket {
+        Explosion() : BasePacket{ PacketId::Explosion } {}
+        Vec3 position;
+        float radius;
+        int32_t number_of_destroyed_blocks;
+        std::vector<int8_t> destroyed_blocks;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(position.x);
+            stream.Write(position.y);
+            stream.Write(position.z);
+            stream.Write(radius);
+            stream.Write(static_cast<int32_t>(destroyed_blocks.size()));
+            stream.WriteBytes(reinterpret_cast<const uint8_t*>(destroyed_blocks.data()), destroyed_blocks.size());
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            position.x = stream.Read<double>();
+            position.y = stream.Read<double>();
+            position.z = stream.Read<double>();
+            radius = stream.Read<float>();
+            number_of_destroyed_blocks = stream.Read<int32_t>();
+            destroyed_blocks.resize(static_cast<size_t>(number_of_destroyed_blocks));
+            stream.ReadBytes(reinterpret_cast<uint8_t*>(destroyed_blocks.data()), static_cast<size_t>(number_of_destroyed_blocks));
+        }
+    };
+
+    struct WorldEvent : BasePacket {
+        WorldEvent() : BasePacket{ PacketId::WorldEvent } {}
+        PacketData::WorldEvent event_id;
+        struct {
+            int32_t x;
+            int8_t y;
+            int32_t z;
+        } position;
+        int32_t data;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(event_id);
+            stream.Write(position.x);
+            stream.Write(position.y);
+            stream.Write(position.z);
+            stream.Write(data);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            event_id = stream.Read<PacketData::WorldEvent>();
+            position.x = stream.Read<int32_t>();
+            position.y = stream.Read<int8_t>();
+            position.z = stream.Read<int32_t>();
+            data = stream.Read<int32_t>();
+        }
+    };
+
+    struct GameEvent : BasePacket {
+        GameEvent() : BasePacket{ PacketId::GameEvent } {}
+        PacketData::GameEvent event_id;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(event_id);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            event_id = stream.Read<PacketData::GameEvent>();
+        }
+    };
+
+    struct LightningBolt : BasePacket {
+        LightningBolt() : BasePacket{ PacketId::LightningBolt } {}
+        EntityId entity_id;
+        // This is only ever "1", which means lightning
+        int8_t entity_type = 1;
+        Int32_3 position;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(entity_id);
+            stream.Write(entity_type);
+            stream.Write(position.x);
+            stream.Write(position.y);
+            stream.Write(position.z);
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            entity_id = stream.Read<EntityId>();
+            entity_type = stream.Read<int8_t>();
+            position.x = stream.Read<int32_t>();
+            position.y = stream.Read<int32_t>();
+            position.z = stream.Read<int32_t>();
         }
     };
 };

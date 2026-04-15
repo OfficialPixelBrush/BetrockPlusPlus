@@ -39,12 +39,10 @@ struct Item {
 // Block Struct
 struct Block {
     BlockType type = BLOCK_AIR;
-    int8_t meta = 0;
-    int8_t blocklight = 0;
-    int8_t skylight = 0;
+    int8_t data = 0;
 
     friend std::ostream& operator<<(std::ostream& os, const Block& b) {
-        os << "(" << int32_t(b.type) << ":" << int32_t(b.meta) << ")";
+        os << "(" << int32_t(b.type) << ":" << int32_t(b.data) << ")";
         return os;
     }
     
@@ -53,4 +51,10 @@ struct Block {
         oss << *this; // Use the overloaded << operator
         return oss.str();
     }
+};
+
+// Lighting + Block Struct
+struct LitBlock : Block {
+    int8_t blocklight = 0;
+    int8_t skylight = 0;
 };
