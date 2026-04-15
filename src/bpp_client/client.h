@@ -9,7 +9,7 @@
 #include "glfw_context.h"
 #include "inputs.h"
 #include "window.h"
-#include "world/World.h"
+#include "world/world.h"
 
 class Client {
 public:
