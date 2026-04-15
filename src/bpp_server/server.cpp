@@ -104,6 +104,19 @@ void Server::tick() {
             break;
         }
     }
+
+    // Force disconnect players that quit
+    players.erase(
+        std::remove_if(players.begin(), players.end(), [](const auto& s) {
+            bool is_connected = s->stream.isConnected();
+            if (!is_connected) {
+                std::cout << "Disconnected client " << s->username << " with entity id " << s->entityId << "\n";
+                return true;
+            }
+            return false;
+            }),
+        players.end()
+    );
 }
 
 void Server::handleHandshake(PlayerSession& session) {
@@ -297,10 +310,16 @@ void Server::processIncoming(PlayerSession& session) {
             pkt.Deserialize(session.stream);
             break;
         }
+        case PacketId::Disconnect: {
+            std::string reason = session.stream.Read<std::string>();
+            std::cout << "Player " << session.username << " disconnected: " << reason << "\n";
+            session.stream.setConnected(false);
+            break;
+        }
         default:
             std::cout << "UNHANDLED packet 0x" << std::hex << static_cast<int>(packetId)
                 << std::dec << " — dropping connection\n";
-            return;
+            break;
         }
     }
 }
@@ -322,7 +341,7 @@ size_t Server::sendPendingChunks(PlayerSession& session, int batchSize) {
             if (!world.chunks.contains(this_chunk_pos)) continue;
             if (session.sentChunks.contains(this_chunk_pos)) continue;
 
-            // get our chunk
+            // Get our chunk
             auto& this_chunk = world.chunks[this_chunk_pos];
             if (this_chunk->state.load() != ChunkState::Lit) continue;
             toSend.push_back(this_chunk_pos);

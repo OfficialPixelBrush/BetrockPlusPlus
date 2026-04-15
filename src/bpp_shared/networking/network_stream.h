@@ -54,13 +54,13 @@ public:
 
     template<typename T>
     T Read() {
-        T buffer;
-        // TODO: Swap endianess
+        T buffer{};
 #if defined(_WIN32) || defined(_WIN64)
-        recv(client_socket, reinterpret_cast<char*>(&buffer), sizeof(T), 0);
-#else 
-        recv(client_socket, &buffer, sizeof(T), 0);
+        int result = recv(client_socket, reinterpret_cast<char*>(&buffer), sizeof(T), 0);
+#else
+        ssize_t result = recv(client_socket, &buffer, sizeof(T), 0);
 #endif
+        if (result <= 0) connected = false;
         return byteswap_any(buffer);
     }
 
@@ -68,18 +68,24 @@ public:
     void Write(const T& data) {
 #if defined(_WIN32) || defined(_WIN64)
         T networkData = byteswap_any(data);
-        send(client_socket, reinterpret_cast<const char*>(&networkData), sizeof(T), 0);
+        int result = send(client_socket, reinterpret_cast<const char*>(&networkData), sizeof(T), 0);
+        if (result <= 0) connected = false;
 #else
         if constexpr (std::is_same_v<T, bool>) {
             int8_t boolData = static_cast<int8_t>(data);
-            send(client_socket, &boolData, sizeof(int8_t), 0);
+            ssize_t result = send(client_socket, &boolData, sizeof(int8_t), 0);
+            if (result <= 0) connected = false;
         }
         else {
             T networkData = byteswap_any(data);
-            send(client_socket, &networkData, sizeof(T), 0);
+            ssize_t result = send(client_socket, &networkData, sizeof(T), 0);
+            if (result <= 0) connected = false;
         }
 #endif
     }
+
+    void setConnected(bool val) { connected = val; }
+    bool isConnected() const { return connected; }
 
     // String-16 Read-Write
     template<>
@@ -94,4 +100,5 @@ private:
     // instances of NetworkStream (if multiple are created)
     // TODO: Automatically close the server socket on program exit
     int client_socket = INVALID_SOCKET;
+    bool connected = true;
 };
