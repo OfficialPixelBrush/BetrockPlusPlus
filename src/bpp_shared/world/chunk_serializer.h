@@ -7,7 +7,7 @@
 #pragma once
 #include <vector>
 #include <libdeflate.h>
-#include "Chunk.h"
+#include "chunk.h"
 
 namespace ChunkSerializer {
     inline std::vector<uint8_t> serialize(const Chunk& chunk) {
@@ -34,8 +34,8 @@ namespace ChunkSerializer {
                     blockData[idx] = chunk.getBlock(pos);
 
                     auto packNibble = [](uint8_t& byte, uint8_t val, bool high) {
-                        if (high) byte = (byte & 0x0F) | ((val & 0x0F) << 4);
-                        else      byte = (byte & 0xF0) | (val & 0x0F);
+                        if (high) byte = uint8_t((byte & (uint8_t(0x0F))) | ((val & uint8_t(0x0F)) << 4));
+                        else      byte = uint8_t((byte & uint8_t(0xF0)) | (val & uint8_t(0x0F)));
                         };
 
                     packNibble(metaData[nibbleIdx], chunk.getMeta(pos), highNibble);
