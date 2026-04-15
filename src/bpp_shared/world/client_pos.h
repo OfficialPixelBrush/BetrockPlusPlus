@@ -5,6 +5,7 @@
  *
 */
 #pragma once
+#include <cmath>
 #include <numeric_structs.h>
 
 // This struct stores the client's position as well as some helper functions to get their current chunk and exact block coords. 
