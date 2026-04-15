@@ -9,8 +9,8 @@
 // It handles all world-related operations and provides a simple interface for the rest of the code to interact with the world.
 // WorldManager.h
 #pragma once
-#include "world/Chunk.h"
-#include "world/ClientPos.h"
+#include "world/chunk.h"
+#include "world/client_pos.h"
 #include "BS_thread_pool.hpp"
 #include <unordered_map>
 #include <unordered_set>
@@ -22,7 +22,7 @@ struct WorldManager {
     std::unordered_map<ChunkPos, std::unique_ptr<Chunk>> chunks;
     std::mutex chunksMutex;
 
-    BS::thread_pool<> pool{ std::max(1u, (unsigned int)(std::thread::hardware_concurrency() * 0.25f)) };
+    BS::thread_pool<> pool{ std::max(1u, uint32_t(float(std::thread::hardware_concurrency()) * 0.25f)) };
 
     int64_t seed = 0;
 

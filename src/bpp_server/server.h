@@ -21,11 +21,11 @@
 #include <vector>
 #include <memory>
 #include <unordered_set>
-#include "world/World.h"
-#include "world/ChunkSerializer.h"
+#include "world/world.h"
+#include "world/chunk_serializer.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
-#include "world/ClientPos.h"
+#include "world/client_pos.h"
 
 enum class ConnectionState : uint8_t {
     Handshaking,
@@ -57,7 +57,7 @@ private:
     void handleHandshake(PlayerSession& session);
     void handleLogin(PlayerSession& session);
     void waitForSpawnChunks(PlayerSession& session);
-    int sendPendingChunks(PlayerSession& session, int batchSize);
+    size_t sendPendingChunks(PlayerSession& session, int batchSize);
     void processIncoming(PlayerSession& session);
 
     WorldManager world;
