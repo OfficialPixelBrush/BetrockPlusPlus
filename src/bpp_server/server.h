@@ -41,6 +41,7 @@ struct PlayerSession {
     ConnectionState connState = ConnectionState::Handshaking;
     EntityId entityId = 0;
     std::string username;
+    int64_t last_packet_time = 0;
 
     explicit PlayerSession(int socket) : stream(socket) {}
 };
