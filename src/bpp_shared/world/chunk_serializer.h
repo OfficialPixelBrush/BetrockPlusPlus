@@ -11,7 +11,7 @@
 
 namespace ChunkSerializer {
     inline std::vector<uint8_t> serialize(const Chunk& chunk) {
-        constexpr int BLOCKS = 16 * 128 * 16;
+        constexpr int BLOCKS = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH;
         constexpr int NIBBLES = BLOCKS / 2;
         constexpr int TOTAL = BLOCKS + NIBBLES * 3;
 
@@ -23,9 +23,9 @@ namespace ChunkSerializer {
         uint8_t* blockLight = metaData + NIBBLES;
         uint8_t* skyLight = blockLight + NIBBLES;
 
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                for (int y = 0; y < 128; y++) {
+        for (int x = 0; x < CHUNK_WIDTH; x++) {
+            for (int z = 0; z < CHUNK_WIDTH; z++) {
+                for (int y = 0; y < CHUNK_HEIGHT; y++) {
                     int  idx = (x << 11) | (z << 7) | y;
                     int  nibbleIdx = idx >> 1;
                     bool highNibble = idx & 1;

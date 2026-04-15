@@ -9,9 +9,14 @@
 
 namespace ChunkGenerator {
 	void generate(Chunk& chunk, [[maybe_unused]] int64_t seed) {
-		for (int x = 0; x < 16; x++)
-			for (int z = 0; z < 16; z++) {
-				float normalized = (((std::sin((x + (chunk.cpos.x * 16)) / 16.0) + 1.0f) / 2.0f) + ((std::cos((z + (chunk.cpos.z * 16)) / 16.0) + 1.0f) / 2.0f)) / 2.0f;
+		for (int x = 0; x < CHUNK_WIDTH; x++)
+			for (int z = 0; z < CHUNK_WIDTH; z++) {
+				float normalized = (((
+						std::sin(float(x + (chunk.cpos.x * CHUNK_WIDTH)) / float(CHUNK_WIDTH)) + 1.0f
+					) / 2.0f) + ((
+						std::cos(float(z + (chunk.cpos.z * CHUNK_WIDTH)) / float(CHUNK_WIDTH)) + 1.0f
+					) / 2.0f
+				)) / 2.0f;
 				int top_block = int(normalized * 8);
 
 				for (int y = 0; y < top_block; y++) {
