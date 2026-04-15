@@ -33,14 +33,14 @@ struct Tag {
     int64_t  longValue = 0;
     float    floatValue = 0.0f;
     double   doubleValue = 0.0;
-    std::vector<int8_t> byteArray;
-    std::vector<int32_t> intArray;
-    std::string stringValue;
+    std::vector<int8_t> byteArray = {};
+    std::vector<int32_t> intArray = {};
+    std::string stringValue = "";
 
     // Container values
     TagType listType = TAG_END;  // element type for TAG_LIST
-    std::vector<Tag> list;
-    std::unordered_map<std::string, Tag> compound;
+    std::vector<Tag> list = {};
+    std::unordered_map<std::string, Tag> compound = {};
 
     // Typed getters; throw if wrong type
     int8_t   getByte()   const { expect(TAG_BYTE);      return byteValue; }
