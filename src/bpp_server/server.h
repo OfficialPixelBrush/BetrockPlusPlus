@@ -37,6 +37,9 @@ enum class ConnectionState : uint8_t {
 struct PlayerSession {
     NetworkStream stream;
     ClientPosition position;
+    Float2 rotation = { 0.0f, 0.0f };
+    Vec3 lastBroadcastPos = { 0.0, 0.0, 0.0 };
+    Float2 lastBroadcastRotation = { 0.0f, 0.0f };
     std::unordered_set<ChunkPos> sentChunks;
     ConnectionState connState = ConnectionState::Handshaking;
     EntityId entityId = 0;
@@ -58,6 +61,8 @@ private:
     void handleHandshake(PlayerSession& session);
     void handleLogin(PlayerSession& session);
     void waitForSpawnChunks(PlayerSession& session);
+    void disconnectPlayer(PlayerSession& session, const std::string& reason);
+    void broadcastPlayerMovement(PlayerSession& session);
     size_t sendPendingChunks(PlayerSession& session, int batchSize);
     void processIncoming(PlayerSession& session);
 
@@ -65,6 +70,6 @@ private:
     std::vector<std::unique_ptr<PlayerSession>> players;
     int serverSocket = -1;
     int tickCounter = 0;
-    EntityId nextEntityId = 1;
+    EntityId nextEntityId = 0;
     int64_t timeout_seconds = 60;
 };
