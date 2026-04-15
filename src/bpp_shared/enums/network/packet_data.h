@@ -105,24 +105,81 @@ namespace PacketData {
         START_SHAKING = 8
     };
 
-    // Used by the World Event Packet (0x3D)
+    // Used by Block Action Packet (0x36)
+    enum NoteInstrument : int8_t {
+        HARP = 0,
+        BASS = 1,
+        SNARE_DRUM = 2,
+        HI_HAT = 3,
+        BASS_DRUM = 4
+    };
 
+    enum NotePitch : int8_t {
+        LOW_F_SHARP     = 0,
+        LOW_G           = 1,
+        LOW_G_SHARP     = 2,
+        LOW_A           = 3,
+        LOW_A_SHARP     = 4,
+        LOW_B           = 5,
+        LOW_C           = 6,
+        LOW_C_SHARP     = 7,
+        LOW_D           = 8,
+        LOW_D_SHARP     = 9,
+        LOW_E           = 10,
+        LOW_F           = 11,
+        HIGH_F_SHARP    = 12,
+        HIGH_G          = 13,
+        HIGH_G_SHARP    = 14,
+        HIGH_A          = 15,
+        HIGH_A_SHARP    = 16,
+        HIGH_B          = 17,
+        HIGH_C          = 18,
+        HIGH_C_SHARP    = 19,
+        HIGH_D          = 20,
+        HIGH_D_SHARP    = 21,
+        HIGH_E          = 22,
+        HIGH_F          = 23,
+        LAST_F_SHARP    = 24
+    };
+
+    enum PistonState : int8_t {
+        EXTEND = 0,
+        RETRACT = 1
+    };
+
+    enum PistonDirection : int8_t {
+        DOWN = 0,
+        UP = 1,
+        EAST = 2,
+        WEST = 3,
+        NORTH = 4,
+        SOUTH = 5
+    };
+
+    // Used by the World Event Packet (0x3D)
     enum WorldEvent : int32_t {
         // Button click sound
-        CLICK2			= 1000,
+        CLICK2			    = 1000,
         // Alt. button click sound
-        CLICK1			= 1001,
+        CLICK1			    = 1001,
         // Bow shooting sound
         BOW_FIRE		    = 1002,
         // Door opening/closing sound
-        DOOR_TOGGLE		= 1003,
+        DOOR_TOGGLE		    = 1003,
         // Extinguish fire sound
-        EXTINGUISH		= 1004,
+        EXTINGUISH		    = 1004,
         // Record playing sound, requires music disc item id as parameter
-        RECORD_PLAY		= 1005,
+        RECORD_PLAY		    = 1005,
         // Smoke particle effect, requires index for a position
         SMOKE			    = 2000,
         // Block breaking particle effect, requires block id
         BLOCK_BREAK 	    = 2001
     };
-}
+
+    // Used by Game Event Packet (0x46)
+    enum GameEvent : int8_t {
+        INVALID_BED     = 0,
+        START_RAINING   = 1,
+        STOP_RAINING    = 2
+    };
+};
