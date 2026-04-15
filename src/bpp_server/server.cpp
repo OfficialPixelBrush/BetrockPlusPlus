@@ -96,7 +96,7 @@ void Server::tick() {
         case ConnectionState::WaitingForSpawnChunks: waitForSpawnChunks(*session);  break;
         case ConnectionState::Playing:
             processIncoming(*session);
-            sendPendingChunks(*session);
+            sendPendingChunks(*session, 10);
             if (tickCounter % 20 == 0) {
                 Packet::KeepAlive ka;
                 ka.Serialize(session->stream);
@@ -147,42 +147,45 @@ void Server::handleLogin(PlayerSession& session) {
     spawn.position = { 0, 64, 0 };
     spawn.Serialize(session.stream);
 
-    session.position.pos = { 0.0, 120.0, 0.0 };
+    Packet::SetHealth health;
+    health.health = 20;
+    health.Serialize(session.stream);
+
+    Packet::SetTime time;
+    time.time = 0;
+    time.Serialize(session.stream);
+
+    session.position.pos = { 0.0, 10.0, 0.0 };
     session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
 void Server::waitForSpawnChunks(PlayerSession& session) {
-    std::cout << "STATE: WaitingForSpawnChunks\n";
-    bool allSent = false;
-    try {
-        allSent = sendPendingChunks(session);
-    }
-    catch (const std::exception& e) {
-        std::cout << "EXCEPTION in sendPendingChunks: " << e.what() << "\n";
-        return;
-    }
-    catch (...) {
-        std::cout << "UNKNOWN EXCEPTION in sendPendingChunks\n";
-        return;
-    }
-    std::cout << "sendPendingChunks returned: " << allSent << "\n";
-    if (!allSent) return;
+    sendPendingChunks(session, 10);
 
-    std::cout << "All spawn chunks sent to player " << session.username << ".\n";
+    // Spawn chunk radius; 3 chunks in each direction
+    int spawnChunkX = (int)std::floor(session.position.pos.x) >> 4;
+    int spawnChunkZ = (int)std::floor(session.position.pos.z) >> 4;
+
+    int radius = std::min(3, world.getViewRadius());
+
+    for (int dx = -radius; dx <= radius; dx++) {
+        for (int dz = -radius; dz <= radius; dz++) {
+            ChunkPos p{ spawnChunkX + dx, spawnChunkZ + dz };
+            if (!session.sentChunks.contains(p)) return;
+        }
+    }
 
     Packet::PlayerPositionAndRotation pos;
-    pos.x = 0.0;
-    pos.y = 120.0;
-    pos.stance = 121.62;
-    pos.z = 0.0;
+    pos.x = session.position.pos.x;
+    pos.y = session.position.pos.y;
+    pos.stance = session.position.pos.y + 1.62;
+    pos.z = session.position.pos.z;
     pos.yaw = 0.0f;
     pos.pitch = 0.0f;
     pos.onGround = false;
     pos.Serialize(session.stream);
 
     session.connState = ConnectionState::Playing;
-    std::cout << "connState is now: " << static_cast<int>(session.connState) << "\n"; // should print 3
-    std::cout << "TRANSITIONING TO PLAYING\n";
 }
 
 void Server::processIncoming(PlayerSession& session) {
@@ -220,22 +223,35 @@ void Server::processIncoming(PlayerSession& session) {
             break;
         }
         default:
+            std::cout << "UNHANDLED packet 0x" << std::hex << static_cast<int>(packetId)
+                << std::dec << " — dropping connection\n";
             return;
         }
     }
 }
 
-bool Server::sendPendingChunks(PlayerSession& session) {
+int Server::sendPendingChunks(PlayerSession& session, int batchSize) {
+    int spawnChunkX = (int)std::floor(session.position.pos.x) >> 4;
+    int spawnChunkZ = (int)std::floor(session.position.pos.z) >> 4;
+
     std::lock_guard lock(world.chunksMutex);
+
+    std::vector<ChunkPos> toSend;
     for (auto& [pos, chunk] : world.chunks) {
-        if (chunk->state.load() != ChunkState::Lit) {
-            std::cout << "Chunk at " << pos.x << ", " << pos.z << " is not ready to be sent (state: " << static_cast<int>(chunk->state.load()) << ").\n";
-			std::cout << "Aborting chunk sending for player " << session.username << ".\n";
-            return false;
-        }
-        if (session.sentChunks.contains(pos)) {
-            continue;
-        }
+        if (chunk->state.load() != ChunkState::Lit) continue;
+        if (session.sentChunks.contains(pos)) continue;
+        toSend.push_back(pos);
+    }
+
+    std::sort(toSend.begin(), toSend.end(), [&](const ChunkPos& a, const ChunkPos& b) {
+        int da = std::abs(a.x - spawnChunkX) + std::abs(a.z - spawnChunkZ);
+        int db = std::abs(b.x - spawnChunkX) + std::abs(b.z - spawnChunkZ);
+        return da < db;
+        });
+
+    int sent = 0;
+    for (auto& pos : toSend) {
+        if (batchSize > 0 && sent >= batchSize) break;
 
         Packet::SetChunkVisibility pre;
         pre.chunkX = pos.x;
@@ -244,14 +260,14 @@ bool Server::sendPendingChunks(PlayerSession& session) {
         pre.Serialize(session.stream);
 
         Packet::ChunkData data;
-        data.chunkX = pos.x;
-        data.chunkZ = pos.z;
-        data.compressedData = ChunkSerializer::serialize(*chunk);
+        data.chunkX = pos.x * 16;
+        data.chunkZ = pos.z * 16;
+        data.compressedData = ChunkSerializer::serialize(*world.chunks.at(pos));
         data.Serialize(session.stream);
 
-        std::cout << "Chunk sent at " << pos.x << ", " << pos.z << "\n";
-
         session.sentChunks.insert(pos);
+        sent++;
     }
-    return true;
+
+    return session.sentChunks.size();
 }

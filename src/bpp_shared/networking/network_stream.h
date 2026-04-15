@@ -84,6 +84,10 @@ public:
     template<>
     std::string Read<std::string>();
     void Write(const std::string& str);
+    // Raw byte buffer Read-Write (no endian conversion)
+    void ReadBytes(uint8_t* buf, size_t len);
+    void WriteBytes(const uint8_t* buf, size_t len);
+    bool hasData();
 private:
     // Static so the server-socket is shared across all
     // instances of NetworkStream (if multiple are created)

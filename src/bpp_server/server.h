@@ -57,7 +57,7 @@ private:
     void handleHandshake(PlayerSession& session);
     void handleLogin(PlayerSession& session);
     void waitForSpawnChunks(PlayerSession& session);
-    bool sendPendingChunks(PlayerSession& session);
+    int sendPendingChunks(PlayerSession& session, int batchSize);
     void processIncoming(PlayerSession& session);
 
     WorldManager world;
