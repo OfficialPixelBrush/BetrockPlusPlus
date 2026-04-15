@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  *
 */
-#include "World.h"
-#include "ChunkGenerator.h"
+#include "world.h"
+#include "chunk_generator.h"
 
 void WorldManager::tick(const std::vector<ClientPosition>& players) {
     updateLoadRadius(players);
@@ -27,7 +27,7 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
     for (const auto& pos : wanted) {
         if (!chunks.contains(pos)) {
             auto c = std::make_unique<Chunk>();
-            c->pos = pos;
+            c->cpos = pos;
             chunks.emplace(pos, std::move(c));
         }
     }
