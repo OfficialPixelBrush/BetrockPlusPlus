@@ -30,13 +30,13 @@ namespace Blocks {
 
         uint8_t   lightEmission = 0;      // 0-15
         uint8_t   lightOpacity = 255;    // 0 = transparent, 255 = fully opaque
+        int       tickRate = 10;
 
         float     hardness = 1.0f;   // -1 = unbreakable (bedrock)
         float     resistance = 5.0f;   // blast resistance
         float     slipperiness = 0.6f;   // default friction, ice = 0.98f
         float     particleGravity = 1.0f;   // how fast break particles fall
 
-        bool      isSolid = true;
         bool      isCollidable = true;
         bool      isOpaqueCube = true;
         bool      isNormalCube = true;
@@ -84,7 +84,7 @@ namespace Blocks {
         // Called when an entity collides with the block (cactus damage, etc.)
         void (*onEntityCollidedWithBlock)(WorldManager&, Int3, Entity&) = nullptr;
 
-        // Modify entity velocity — used by soul sand to slow, ice to slide
+        // Modify entity velocity
         void (*velocityToAddToEntity)(WorldManager&, Int3, Entity&, Vec3&) = nullptr;
 
         // What item/block this drops when broken
