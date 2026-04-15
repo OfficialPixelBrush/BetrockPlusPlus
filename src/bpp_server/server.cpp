@@ -219,6 +219,7 @@ void Server::processIncoming(PlayerSession& session) {
         case PacketId::ChatMessage: {
             Packet::ChatMessage pkt;
             pkt.Deserialize(session.stream);
+            std::cout << pkt.message << std::endl;
             break;
         }
         case PacketId::SetTime: {
@@ -308,11 +309,7 @@ void Server::processIncoming(PlayerSession& session) {
         case PacketId::Disconnect: {
             Packet::Disconnect pkt;
             pkt.Deserialize(session.stream);
-            break;
-        }
-        case PacketId::Disconnect: {
-            std::string reason = session.stream.Read<std::string>();
-            std::cout << "Player " << session.username << " disconnected: " << reason << "\n";
+            std::cout << "Player " << session.username << " disconnected: " << pkt.reason << "\n";
             session.stream.setConnected(false);
             break;
         }
