@@ -656,6 +656,7 @@ class Packet {
         float& yaw = rotation.y;
         bool jumping;
         bool sneaking;
+        EntityId entity_id;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
