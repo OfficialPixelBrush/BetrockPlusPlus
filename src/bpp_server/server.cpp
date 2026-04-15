@@ -240,18 +240,37 @@ size_t Server::sendPendingChunks(PlayerSession& session, int batchSize) {
     std::lock_guard lock(world.chunksMutex);
 
     std::vector<ChunkPos> toSend;
-    for (auto& [pos, chunk] : world.chunks) {
-        if (chunk->state.load() != ChunkState::Lit) continue;
-        if (session.sentChunks.contains(pos)) continue;
-        toSend.push_back(pos);
+    std::vector<ChunkPos> toUnload;
+
+    int view_radius = world.getViewRadius();
+    // Find what chunks we need to send to the client
+    for (int cx = -view_radius; cx <= view_radius; cx++)
+        for (int cz = -view_radius; cz <= view_radius; cz++) {
+            ChunkPos this_chunk_pos{ cx + spawnChunkX, cz + spawnChunkZ };
+            if (!world.chunks.contains(this_chunk_pos)) continue;
+            if (session.sentChunks.contains(this_chunk_pos)) continue;
+
+            // get our chunk
+            auto& this_chunk = world.chunks[this_chunk_pos];
+            if (this_chunk->state.load() != ChunkState::Lit) continue;
+            toSend.push_back(this_chunk_pos);
+        }
+
+    // Remove chunks that were unloaded
+    for (auto& chunk_pos : session.sentChunks) {
+        if (std::abs(chunk_pos.x - spawnChunkX) > view_radius ||
+            std::abs(chunk_pos.z - spawnChunkZ) > view_radius)
+            toUnload.push_back(chunk_pos);
     }
 
+    // Sort by distance so closer chunks load first
     std::sort(toSend.begin(), toSend.end(), [&](const ChunkPos& a, const ChunkPos& b) {
         int da = std::abs(a.x - spawnChunkX) + std::abs(a.z - spawnChunkZ);
         int db = std::abs(b.x - spawnChunkX) + std::abs(b.z - spawnChunkZ);
         return da < db;
         });
 
+    // Batch send chunks up until batch size 
     int sent = 0;
     for (auto& pos : toSend) {
         if (batchSize > 0 && sent >= batchSize) break;
@@ -269,6 +288,20 @@ size_t Server::sendPendingChunks(PlayerSession& session, int batchSize) {
         data.Serialize(session.stream);
 
         session.sentChunks.insert(pos);
+        sent++;
+    }
+
+    // Batch remove chunks up until batch size
+    sent = 0;
+    for (auto& pos : toUnload) {
+        if (batchSize > 0 && sent >= batchSize) break;
+
+        Packet::SetChunkVisibility pre;
+        pre.chunkX = pos.x;
+        pre.chunkZ = pos.z;
+        pre.visible = false;
+        pre.Serialize(session.stream);
+        session.sentChunks.erase(pos);
         sent++;
     }
 
