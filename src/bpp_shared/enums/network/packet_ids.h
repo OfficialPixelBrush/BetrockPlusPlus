@@ -45,7 +45,7 @@ enum class PacketId : uint8_t {
 	EntityPosition 				= 0x1F,
 	EntityRotation 				= 0x20,
 	EntityPositionAndRotation	= 0x21,
-	EntityTeleport 				= 0x22,
+	TeleportEntity 				= 0x22,
 	EntityEvent 				= 0x26,
 	AddPassenger 				= 0x27,
 	EntityMetadata 				= 0x28,
