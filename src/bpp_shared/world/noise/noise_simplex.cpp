@@ -35,7 +35,7 @@ void NoiseSimplex::InitPermTable(Java::Random& rand) {
 	}
 }
 
-void NoiseSimplex::GenerateNoise(std::vector<double> &values, Vec2 p_offset, Int32_2 p_size, Vec2 p_scale, double amplitude) override {
+void NoiseSimplex::GenerateNoise(std::vector<double> &values, Vec2 p_offset, Int32_2 p_size, Vec2 p_scale, double amplitude) {
 	size_t index = 0;
 
 	for (int32_t xI = 0; xI < p_size.x; ++xI) {
