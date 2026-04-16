@@ -43,7 +43,6 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
             ++it; // worker still owns this chunk, can't erase yet
             continue;
         }
-        it->second->clear();
         it = chunks.erase(it);
     }
 }
