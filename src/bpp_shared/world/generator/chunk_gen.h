@@ -5,7 +5,7 @@
  * Based on code by Mojang Studios (2011)
 */
 
-//#include "cave_gen.h"
+#include "cave_gen.h"
 //#include "feature_gen.h"
 //#include "tree_gen.h"
 #include "biome_gen.h"
@@ -48,7 +48,7 @@ class Generator {
 	std::vector<double> weirdness;
 
 	// Cave Gen
-	//std::unique_ptr<Beta173Caver> caver;
+	CaveGenerator caver;
 
 	int64_t seed = 0;
 
