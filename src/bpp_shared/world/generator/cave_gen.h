@@ -22,10 +22,9 @@ class CaveGenerator {
 
   public:
 	CaveGenerator();
-	void GenerateCavesForChunk(World *world, Int2 chunkPos, std::shared_ptr<Chunk> &c);
-	void GenerateCaves(Int2 chunkOffset, Int2 chunkPos, std::shared_ptr<Chunk> &c);
-	void CarveCave(Int2 chunkPos, std::shared_ptr<Chunk> &c, Vec3 offset);
-	void CarveCave(Int2 chunkPos, std::shared_ptr<Chunk> &c, Vec3 offset,
-				   float tunnelRadius, float carveYaw, float carvePitch, int32_t tunnelStep, int32_t tunnelLength,
+	void GenerateCavesForChunk(Chunk& chunk, int64_t seed);
+	void GenerateCaves(Chunk& chunk, Int2 chunkOffset);
+	void CarveCave(Chunk& chunk, Vec3 offset);
+	void CarveCave(Chunk& chunk, Vec3 offset, float tunnelRadius, float carveYaw, float carvePitch, int32_t tunnelStep, int32_t tunnelLength,
 				   double verticalScale);
 };
