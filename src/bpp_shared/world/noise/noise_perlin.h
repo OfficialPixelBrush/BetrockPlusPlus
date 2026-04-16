@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Based on code by Mojang Studios (2011)
+*/
+
 // A recreation of the the Infdev 20100227-1433 Perlin noise function
 #pragma once
 #include "noise_generator.h"
@@ -12,9 +19,7 @@
 class NoisePerlin : public NoiseGenerator {
   private:
 	int32_t permutations[512];
-	double xCoord;
-	double yCoord;
-	double zCoord;
+	Vec3 coordinate;
 	double GenerateNoiseBase(Vec3 pos);
 	void InitPermTable(Java::Random& rand);
 
