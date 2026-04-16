@@ -9,6 +9,7 @@
 #include <cmath>
 #include "noise/noise_octaves.h"
 
+/*
 NoiseOctaves<NoisePerlin> perlin(16);
 
 namespace ChunkGenerator {
@@ -23,12 +24,12 @@ namespace ChunkGenerator {
 				normalized *= 10;
 				std::cout << normalized << std::endl;
 				//normalized += 50;
-				/* float normalized = (((
+				float normalized = (((
 						std::sin(float(x + (chunk.cpos.x * CHUNK_WIDTH)) / float(CHUNK_WIDTH)) + 1.0f
 					) / 2.0f) + ((
 						std::cos(float(z + (chunk.cpos.z * CHUNK_WIDTH)) / float(CHUNK_WIDTH)) + 1.0f
 					) / 2.0f
-				)) / 2.0f; */
+				)) / 2.0f;
 				int top_block = int(normalized * 8);
 
 				for (int y = 0; y < top_block; y++) {
@@ -38,3 +39,4 @@ namespace ChunkGenerator {
 			}
 	}
 }
+*/

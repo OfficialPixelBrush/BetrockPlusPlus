@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  *
  * SPDX-License-Identifier: GPL-3.0-only
  * 
@@ -18,6 +19,7 @@
 #define CHUNK_WIDTH  16
 #define SUB_CHUNK_SIZE  16
 #define SUB_CHUNK_VOLUME SUB_CHUNK_SIZE*SUB_CHUNK_SIZE*SUB_CHUNK_SIZE
+#define WATER_LEVEL 64
 
 enum class ChunkState : uint8_t {
 	Unloaded,
@@ -50,7 +52,7 @@ struct std::hash<ChunkPos> {
 
 // 16x16x16 blocks of a chunk
 struct Slice {
-	uint8_t blocks[SUB_CHUNK_VOLUME] = { 0 };
+	BlockType blocks[SUB_CHUNK_VOLUME] = { BLOCK_AIR };
 	// Block light and Sky light are both stored in the same array. Lo = Block, Hi = Sky
 	uint8_t lightNibble[SUB_CHUNK_VOLUME] = { 0 };
 	// Block meta is 4 bits each, so each entry is two block's metadata.
@@ -71,11 +73,11 @@ struct Slice {
 	inline uint8_t getNibbleHigh(uint8_t byte) const { return (byte >> 4) & uint8_t(0x0F); }
 
 	// Block helpers
-	inline uint8_t getBlock(Int3 pos) const {
+	inline BlockType getBlock(Int3 pos) const {
 		return blocks[blockIndex(pos)];
 	}
 
-	inline void setBlock(Int3 pos, uint8_t id) {
+	inline void setBlock(Int3 pos, BlockType id) {
 		blocks[blockIndex(pos)] = id;
 		if (id != 0) isEmpty = false;
 	}
@@ -228,12 +230,12 @@ struct Chunk {
 	}
 
 	// Block helpers
-	inline uint8_t getBlock(Int3 pos) const {
-		if (!isValidBlockPos(pos)) return 0;
+	inline BlockType getBlock(Int3 pos) const {
+		if (!isValidBlockPos(pos)) return BLOCK_AIR;
 		return getSlice(pos.y).getBlock({pos.x, pos.y & 15, pos.z});
 	}
 
-	inline void setBlock(Int3 pos, uint8_t id) {
+	inline void setBlock(Int3 pos, BlockType id) {
 		if (!isValidBlockPos(pos)) return;
 		getSlice(pos.y).setBlock({pos.x, pos.y & 15, pos.z}, id);
 		isModified = true;

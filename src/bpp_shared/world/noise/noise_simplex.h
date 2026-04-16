@@ -27,7 +27,9 @@ class NoiseSimplex : public NoiseGenerator {
   public:
 	NoiseSimplex();
 	NoiseSimplex(Java::Random& rand);
-	void GenerateNoise(std::vector<double> &noiseField, Vec2 offset, Int32_2 size, Vec2 scale, double amplitude);
+	double GenerateNoise([[maybe_unused]] Vec2 p_offset) { return 0; }
+	double GenerateNoise([[maybe_unused]] Vec3 p_offset) { return 0; }
+	void GenerateNoise(std::vector<double> &values, Vec3 p_coordinate, Int32_3 p_size, Vec3 p_scale, double amplitude);
 };
 
 inline int32_t wrap(double grad) { return grad > 0.0 ? Java::DoubleToInt32(grad) : Java::DoubleToInt32(grad) - 1; }

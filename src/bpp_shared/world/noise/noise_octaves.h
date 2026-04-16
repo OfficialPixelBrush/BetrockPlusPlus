@@ -78,7 +78,7 @@ template <typename T> double NoiseOctaves<T>::GenerateOctaves(Vec2 offset) {
 // Used by Beta 1.7.3
 // GenerateNoiseOctaves
 template <typename T>
-void NoiseOctaves<T>::GenerateOctaves(std::vector<double> &noiseField, Vec3 coordinate, Int32_3 size, Vec3 p_scale) {
+void NoiseOctaves<T>::GenerateOctaves(std::vector<double> &noiseField, Vec3 offset, Int32_3 size, Vec3 p_scale) {
 	if (noiseField.empty()) {
 		noiseField.resize(size_t(size.x * size.y * size.z), 0.0);
 	} else {
@@ -89,8 +89,8 @@ void NoiseOctaves<T>::GenerateOctaves(std::vector<double> &noiseField, Vec3 coor
 
 	double scale = 1.0;
 
-	for (int32_t octave = 0; octave < this->octaves; ++octave) {
-		this->generator_collection[octave]->GenerateNoise(noiseField, coordinate, size, p_scale * scale, scale);
+	for (size_t octave = 0; octave < size_t(this->octaves); ++octave) {
+		this->generator_collection[octave].GenerateNoise(noiseField, offset, size, p_scale * scale, scale);
 		scale /= 2.0;
 	}
 }
@@ -98,7 +98,7 @@ void NoiseOctaves<T>::GenerateOctaves(std::vector<double> &noiseField, Vec3 coor
 // func_4103_a
 template <typename T>
 void NoiseOctaves<T>::GenerateOctaves(std::vector<double> &noiseField, Int32_2 offset, Int32_2 size, Vec2 scale, [[maybe_unused]] double unused) {
-	this->GenerateOctaves(noiseField, double(offset.x), 10.0, double(offset.z), size.x, 1, size.z, scale.x, 1.0, scale.z);
+	this->GenerateOctaves(noiseField, Vec3{double(offset.x), 10.0, double(offset.z)}, Int32_3{size.x, 1, size.z}, Vec3{scale.x, 1.0, scale.z});
 }
 
 // Comes from simplex Octaves
