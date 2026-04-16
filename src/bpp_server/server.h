@@ -7,12 +7,12 @@
 #pragma once
 
 #if defined(__linux__) || defined(__APPLE__)
-    #include <unistd.h>
-    #include <netinet/in.h>
-    #include <sys/socket.h>
-    #include <fcntl.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <fcntl.h>
 #elif defined(_WIN32) || defined(_WIN64)
-    #include <winsock2.h>
+#include <winsock2.h>
 #pragma comment(lib, "ws2_32.lib")
 #endif
 
@@ -37,13 +37,21 @@ enum class ConnectionState : uint8_t {
 struct PlayerSession {
     NetworkStream stream;
     ClientPosition position;
+
+    // rotation.x = yaw, rotation.y = pitch
     Float2 rotation = { 0.0f, 0.0f };
-    Vec3 lastBroadcastPos = { 0.0, 0.0, 0.0 };
-    Float2 lastBroadcastRotation = { 0.0f, 0.0f };
+
+    // Stored as integer * 32 — the same unit as the wire format.
+    int32_t lastFpX = 0;
+    int32_t lastFpY = 0;
+    int32_t lastFpZ = 0;
+    int8_t  lastYaw = 0;
+    int8_t  lastPitch = 0;
+
     std::unordered_set<ChunkPos> sentChunks;
     ConnectionState connState = ConnectionState::Handshaking;
     EntityId entityId = 0;
-    std::string username; 
+    std::string username;
     std::chrono::steady_clock::time_point last_packet_time = std::chrono::steady_clock::now();
 
     explicit PlayerSession(int socket) : stream(socket) {}
@@ -70,6 +78,6 @@ private:
     std::vector<std::unique_ptr<PlayerSession>> players;
     int serverSocket = -1;
     int tickCounter = 0;
-    EntityId nextEntityId = 0;
+    EntityId nextEntityId = 2;
     int64_t timeout_seconds = 60;
 };
