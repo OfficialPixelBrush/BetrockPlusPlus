@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Based on code by Oracle/OpenJDK (1995-2024)
+*/
+
 // A reimplementation of the random function that Java provides
 // https://docs.oracle.com/javase/8/docs/api/java/util/Random.html
 

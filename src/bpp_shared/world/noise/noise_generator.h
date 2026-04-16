@@ -1,6 +1,14 @@
+/*
+ * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ * 
+*/
+
 #pragma once
 #include "java_math.h"
 #include "java_random.h"
+#include "numeric_structs.h"
 #include <cmath>
 #include <vector>
 
@@ -11,9 +19,7 @@
 class NoiseGenerator {
   private:
 	int32_t permutations[512];
-	double xCoord;
-	double yCoord;
-	double zCoord;
+	Vec3 coordinate;
 	double GenerateNoiseBase(double x, double y, double z);
 	void InitPermTable(Java::Random& rand);
 

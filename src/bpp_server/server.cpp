@@ -262,7 +262,7 @@ void Server::handleLogin(PlayerSession& session) {
     response.Serialize(session.stream);
 
     Packet::SetSpawnPosition spawn;
-    spawn.position = { 0, 64, 0 };
+    spawn.position = { 0, 150, 0 };
     spawn.Serialize(session.stream);
 
     Packet::SetHealth health;
@@ -273,7 +273,7 @@ void Server::handleLogin(PlayerSession& session) {
     time.time = 0;
     time.Serialize(session.stream);
 
-    session.position.pos = { 0.0, 10.0, 0.0 };
+    session.position.pos = { 0.0, 150.0, 0.0 };
     session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 

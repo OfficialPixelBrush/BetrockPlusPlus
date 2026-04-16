@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Based on code by Mojang Studios (2011)
+*/
+
 #pragma once
 #include <array>
 #include <cmath>
