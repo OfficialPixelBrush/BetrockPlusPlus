@@ -51,7 +51,7 @@ void Generator::GenerateChunk(Chunk& chunk) {
 	// Replace some of the stone with Biome-appropriate blocks
 	ReplaceBlocksForBiome(chunk);
 	// Carve caves
-	//this->caver->GenerateCavesForChunk(this->world, chunk.cpos, c);
+	this->caver.GenerateCavesForChunk(chunk, this->seed);
 	// Generate heightmap
 	chunk.generateHeightMap();
 
