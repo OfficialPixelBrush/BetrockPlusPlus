@@ -48,7 +48,7 @@ add_executable(
     src/bpp_shared/world/noise/noise_simplex.cpp
     src/bpp_shared/world/generator/chunk_gen.cpp
     src/bpp_shared/world/generator/biome_gen.cpp
-    #src/bpp_shared/world/generator/cave_gen.cpp
+    src/bpp_shared/world/generator/cave_gen.cpp
     #src/bpp_shared/world/generator/feature_gen.cpp
     #src/bpp_shared/world/generator/tree_gen.cpp
     

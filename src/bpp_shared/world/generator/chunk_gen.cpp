@@ -61,7 +61,6 @@ void Generator::GenerateChunk(Chunk& chunk) {
 		// c->PrintHeightmap();
 	//}
 
-	chunk.state = ChunkState::Generated;
 	chunk.isModified = true;
 	//return c;
 }

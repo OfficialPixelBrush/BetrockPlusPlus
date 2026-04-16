@@ -8,23 +8,26 @@
 #pragma once
 
 #include "java_random.h"
-#include "world.h"
-#include <memory>
+#include "java_math.h"
+#include "chunk.h"
+#include "numeric_structs.h"
 
 /**
  * @brief Used to carve caves into the world
- * 
+ *
  */
 class CaveGenerator {
-  private:
+private:
 	const int32_t carveExtentLimit = 8;
 	Java::Random rand = Java::Random();
 
-  public:
+public:
 	CaveGenerator();
 	void GenerateCavesForChunk(Chunk& chunk, int64_t seed);
 	void GenerateCaves(Chunk& chunk, Int2 chunkOffset);
 	void CarveCave(Chunk& chunk, Vec3 offset);
-	void CarveCave(Chunk& chunk, Vec3 offset, float tunnelRadius, float carveYaw, float carvePitch, int32_t tunnelStep, int32_t tunnelLength,
-				   double verticalScale);
+	void CarveCave(Chunk& chunk, Vec3 offset,
+		float tunnelRadius, float carveYaw, float carvePitch,
+		int32_t tunnelStep, int32_t tunnelLength,
+		double verticalScale);
 };
