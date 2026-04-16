@@ -40,7 +40,13 @@ inline NoiseOctavesSimplex::NoiseOctavesSimplex(Java::Random& rand, int32_t poct
 }
 
 inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField, Int32_2 offset, Int32_2 size, Vec2 scale, double lacunarity) {
-	this->GenerateOctaves(noiseField, Int32_2{Java::DoubleToInt32(offset.x), Java::DoubleToInt32(offset.y)}, size, scale, lacunarity);
+	this->GenerateOctaves(
+		noiseField, 
+		Vec2{double(offset.x), double(offset.y)},
+		size,
+		scale,
+		lacunarity
+	);
 }
 
 inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField, Vec2 offset, Int32_2 size, Vec2 scale, double lacunarity) {

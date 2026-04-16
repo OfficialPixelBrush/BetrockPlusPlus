@@ -95,12 +95,6 @@ void Generator::ReplaceBlocksForBiome(Chunk& chunk) {
 			size_t bindex = size_t(x * CHUNK_WIDTH + z);
 			// Get values from noise maps
 			Biome biome = biomeMap[bindex];
-			for (size_t ix = 0; ix < CHUNK_WIDTH; ix++) {
-				for (size_t iz = 0; iz < CHUNK_WIDTH; iz++) {
-					std::cout << biomeMap[ix + iz * CHUNK_WIDTH] << ", ";
-				}
-				std::cout << "\n";
-			}
 			bool sandActive = this->sandNoise[bindex] + this->rand.nextDouble() * 0.2 > 0.0;
 			bool gravelActive = this->gravelNoise[bindex] + this->rand.nextDouble() * 0.2 > 3.0;
 			int32_t stoneActive = Java::DoubleToInt32(this->stoneNoise[bindex] / 3.0 + 3.0 + this->rand.nextDouble() * 0.25);

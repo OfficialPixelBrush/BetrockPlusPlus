@@ -24,7 +24,7 @@
 
 Server::Server() {
     Blocks::registerAll();
-    world.seed = 634634;
+    world.seed = 404;
 
 #if defined(_WIN32) || defined(_WIN64)
     WSADATA wsaData;
