@@ -5,7 +5,7 @@
  *
 */
 #include "world.h"
-#include "chunk_generator.h"
+#include "generator/chunk_gen.h"
 
 void WorldManager::tick(const std::vector<ClientPosition>& players) {
     updateLoadRadius(players);
@@ -48,6 +48,9 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
     }
 }
 
+// pack.png
+Generator gen(3257840388504953787);
+
 void WorldManager::pumpPipeline() {
     std::vector<ChunkPos> snapshot;
     {
@@ -67,7 +70,8 @@ void WorldManager::pumpPipeline() {
         if (s == ChunkState::Unloaded) {
             chunk->state.store(ChunkState::Generating, std::memory_order_release);
             pool.detach_task([chunk, this]() {
-                ChunkGenerator::generate(*chunk, seed);
+                //ChunkGenerator::generate(*chunk, seed);
+                gen.GenerateChunk(*chunk);
                 chunk->generateSkylightMap();
                 chunk->state.store(ChunkState::Lit, std::memory_order_release);
                 });

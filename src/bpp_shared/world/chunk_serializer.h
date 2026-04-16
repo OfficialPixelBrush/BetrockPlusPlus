@@ -31,7 +31,7 @@ namespace ChunkSerializer {
                     bool highNibble = idx & 1;
                     Int3 pos{ x, y, z };
 
-                    blockData[idx] = chunk.getBlock(pos);
+                    blockData[idx] = uint8_t(chunk.getBlock(pos));
 
                     auto packNibble = [](uint8_t& byte, uint8_t val, bool high) {
                         if (high) byte = uint8_t((byte & (uint8_t(0x0F))) | ((val & uint8_t(0x0F)) << 4));

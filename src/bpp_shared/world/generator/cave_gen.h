@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Based on code by Mojang Studios (2011)
+*/
+
+#pragma once
+
+#include "java_random.h"
+#include "world.h"
+#include <memory>
+
+/**
+ * @brief Used to carve caves into the world
+ * 
+ */
+class CaveGenerator {
+  private:
+	const int32_t carveExtentLimit = 8;
+	Java::Random rand = Java::Random();
+
+  public:
+	CaveGenerator();
+	void GenerateCavesForChunk(World *world, Int2 chunkPos, std::shared_ptr<Chunk> &c);
+	void GenerateCaves(Int2 chunkOffset, Int2 chunkPos, std::shared_ptr<Chunk> &c);
+	void CarveCave(Int2 chunkPos, std::shared_ptr<Chunk> &c, Vec3 offset);
+	void CarveCave(Int2 chunkPos, std::shared_ptr<Chunk> &c, Vec3 offset,
+				   float tunnelRadius, float carveYaw, float carvePitch, int32_t tunnelStep, int32_t tunnelLength,
+				   double verticalScale);
+};

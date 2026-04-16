@@ -20,14 +20,14 @@ class NoiseGenerator {
   private:
 	int32_t permutations[512];
 	Vec3 coordinate;
-	double GenerateNoiseBase(double x, double y, double z);
+	double GenerateNoiseBase(Vec3 p_offset);
 	void InitPermTable(Java::Random& rand);
 
   public:
 	NoiseGenerator();
 	NoiseGenerator(Java::Random& rand);
-	double GenerateNoise(double x, double y);
-	double GenerateNoise(double x, double y, double z);
-	void GenerateNoise(std::vector<double> &var1, double var2, double var4, double var6, int32_t var8, int32_t var9, int32_t var10,
-					   double var11, double var13, double var15, double var17);
+	virtual ~NoiseGenerator() = default;
+	virtual double GenerateNoise(Vec2 p_offset) = 0;
+	virtual double GenerateNoise(Vec3 p_offset) = 0;
+	virtual void GenerateNoise(std::vector<double> &values, Vec3 p_offset, Int32_3 p_size, Vec3 p_scale, double amplitude) = 0;
 };
