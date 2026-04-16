@@ -15,12 +15,12 @@
  */
 BiomeGenerator::BiomeGenerator(int64_t seed) {
     // Init Biome Noise
-    Java::Random randTemp = Java::Random(seed * 9871L);
-    Java::Random randHum = Java::Random(seed * 39811L);
-    Java::Random randWeird = Java::Random(seed * 543321L);
-    temperatureNoiseGen = NoiseOctaves<NoiseSimplex>(randTemp, 4);
-    humidityNoiseGen = NoiseOctaves<NoiseSimplex>(randHum, 4);
-    weirdnessNoiseGen = NoiseOctaves<NoiseSimplex>(randWeird, 2);
+    Java::Random randTemp 	= Java::Random(seed * 9871L);
+    Java::Random randHum 	= Java::Random(seed * 39811L);
+    Java::Random randWeird 	= Java::Random(seed * 543321L);
+    temperatureNoiseGen 	= NoiseOctavesSimplex(randTemp , 4);
+    humidityNoiseGen 		= NoiseOctavesSimplex(randHum  , 4);
+    weirdnessNoiseGen 		= NoiseOctavesSimplex(randWeird, 2);
 }
 
 /**
@@ -43,13 +43,6 @@ void BiomeGenerator::GenerateBiomeMap(Biome biomeMap[], std::vector<double>& tem
 		Vec2{double(0.025f), double(0.025f)},
 		0.25
 	);
-	std::cout << "-- Temperature --\n";
-	for (size_t x = 0; x < CHUNK_WIDTH; x++) {
-		for (size_t z = 0; z < CHUNK_WIDTH; z++) {
-			std::cout << temperature[x + z * CHUNK_WIDTH] << ", ";
-		}
-		std::cout << "\n";
-	}
 	this->humidityNoiseGen.GenerateOctaves(
 		humidity, 
 		blockPos, 
@@ -57,13 +50,6 @@ void BiomeGenerator::GenerateBiomeMap(Biome biomeMap[], std::vector<double>& tem
 		Vec2{double(0.05f), double(0.05f)}, 
 		1.0 / 3.0
 	);
-	std::cout << "-- Humidity --\n";
-	for (size_t x = 0; x < CHUNK_WIDTH; x++) {
-		for (size_t z = 0; z < CHUNK_WIDTH; z++) {
-			std::cout << humidity[x + z * CHUNK_WIDTH] << ", ";
-		}
-		std::cout << "\n";
-	}
 	this->weirdnessNoiseGen.GenerateOctaves(
 		weirdness,
 		blockPos, 
@@ -71,13 +57,6 @@ void BiomeGenerator::GenerateBiomeMap(Biome biomeMap[], std::vector<double>& tem
 		Vec2{0.25, 0.25},
 		0.5882352941176471
 	);
-	std::cout << "-- Weirdness --\n";
-	for (size_t x = 0; x < CHUNK_WIDTH; x++) {
-		for (size_t z = 0; z < CHUNK_WIDTH; z++) {
-			std::cout << weirdness[x + z * CHUNK_WIDTH] << ", ";
-		}
-		std::cout << "\n";
-	}
 	size_t index = 0;
 
 	// Iterate over each block column

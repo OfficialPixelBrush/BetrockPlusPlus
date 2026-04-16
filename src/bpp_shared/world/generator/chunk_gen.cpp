@@ -18,14 +18,14 @@ Generator::Generator(int64_t p_seed) {
 	this->seed = p_seed;
 	rand = Java::Random(this->seed);
 	// Init Terrain Noise
-	lowNoiseGen 			= NoiseOctaves<NoisePerlin>(rand, 16);
-	highNoiseGen 			= NoiseOctaves<NoisePerlin>(rand, 16);
-	selectorNoiseGen 		= NoiseOctaves<NoisePerlin>(rand,  8);
-	sandGravelNoiseGen 		= NoiseOctaves<NoisePerlin>(rand,  4);
-	stoneNoiseGen 			= NoiseOctaves<NoisePerlin>(rand,  4);
-	continentalnessNoiseGen = NoiseOctaves<NoisePerlin>(rand, 10);
-	depthNoiseGen 			= NoiseOctaves<NoisePerlin>(rand, 16);
-	treeDensityNoiseGen 	= NoiseOctaves<NoisePerlin>(rand,  8);
+	lowNoiseGen 			= NoiseOctavesPerlin(rand, 16);
+	highNoiseGen 			= NoiseOctavesPerlin(rand, 16);
+	selectorNoiseGen 		= NoiseOctavesPerlin(rand,  8);
+	sandGravelNoiseGen 		= NoiseOctavesPerlin(rand,  4);
+	stoneNoiseGen 			= NoiseOctavesPerlin(rand,  4);
+	continentalnessNoiseGen = NoiseOctavesPerlin(rand, 10);
+	depthNoiseGen 			= NoiseOctavesPerlin(rand, 16);
+	treeDensityNoiseGen 	= NoiseOctavesPerlin(rand,  8);
 }
 
 /**
@@ -46,13 +46,6 @@ void Generator::GenerateChunk(Chunk& chunk) {
 		temperature, humidity, weirdness,
 		Int2{chunk.cpos.x * CHUNK_WIDTH, chunk.cpos.z * CHUNK_WIDTH }
 	);
-
-	for (size_t x = 0; x < CHUNK_WIDTH; x++) {
-		for (size_t z = 0; z < CHUNK_WIDTH; z++) {
-			std::cout << biomeMap[x + z * CHUNK_WIDTH] << ", ";
-		}
-		std::cout << "\n";
-	} 
 
 	// Generate the Terrain, minus any caves, as just stone
 	GenerateTerrain(chunk);
@@ -102,6 +95,12 @@ void Generator::ReplaceBlocksForBiome(Chunk& chunk) {
 			size_t bindex = size_t(x * CHUNK_WIDTH + z);
 			// Get values from noise maps
 			Biome biome = biomeMap[bindex];
+			for (size_t ix = 0; ix < CHUNK_WIDTH; ix++) {
+				for (size_t iz = 0; iz < CHUNK_WIDTH; iz++) {
+					std::cout << biomeMap[ix + iz * CHUNK_WIDTH] << ", ";
+				}
+				std::cout << "\n";
+			}
 			bool sandActive = this->sandNoise[bindex] + this->rand.nextDouble() * 0.2 > 0.0;
 			bool gravelActive = this->gravelNoise[bindex] + this->rand.nextDouble() * 0.2 > 3.0;
 			int32_t stoneActive = Java::DoubleToInt32(this->stoneNoise[bindex] / 3.0 + 3.0 + this->rand.nextDouble() * 0.25);
