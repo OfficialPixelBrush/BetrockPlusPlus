@@ -21,26 +21,35 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/src/bpp_shared"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums/network"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared/world/noise"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared/helpers/java"
 )
 
 add_executable(
     BetrockPlusPlus
-
-    external/glad/src/glad.c
-
     src/main.cpp
 
+    # External files
+    external/glad/src/glad.c
+
+    # Testing files
     src/bpp_test/network_test.cpp
 
+    # Shared files
     src/bpp_shared/shared.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/enums/drops.cpp
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
     src/bpp_shared/networking/server_manager.cpp
+    src/bpp_shared/world/noise/noise_generator.cpp
+    src/bpp_shared/world/noise/noise_perlin.cpp
+    src/bpp_shared/world/noise/noise_simplex.cpp
     
+    # Server-specific files
     src/bpp_server/server.cpp
 
+    # Client-specific files
     src/bpp_client/client.cpp
     src/bpp_client/inputs.cpp
     src/bpp_client/renderers/world_renderer.cpp
