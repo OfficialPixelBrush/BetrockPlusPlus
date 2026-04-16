@@ -6,6 +6,7 @@
 */
 
 #include "chunk_gen.h"
+#include "chunk.h"
 
 /**
  * @brief Construct a new Beta 1.7.3 Generator
@@ -15,18 +16,16 @@
  */
 Generator::Generator(int64_t p_seed) {
 	this->seed = p_seed;
-
 	rand = Java::Random(this->seed);
-
 	// Init Terrain Noise
-	lowNoiseGen = NoiseOctaves<NoisePerlin>(rand, 16);
-	highNoiseGen = NoiseOctaves<NoisePerlin>(rand, 16);
-	selectorNoiseGen = NoiseOctaves<NoisePerlin>(rand, 8);
-	sandGravelNoiseGen = NoiseOctaves<NoisePerlin>(rand, 4);
-	stoneNoiseGen = NoiseOctaves<NoisePerlin>(rand, 4);
+	lowNoiseGen 			= NoiseOctaves<NoisePerlin>(rand, 16);
+	highNoiseGen 			= NoiseOctaves<NoisePerlin>(rand, 16);
+	selectorNoiseGen 		= NoiseOctaves<NoisePerlin>(rand,  8);
+	sandGravelNoiseGen 		= NoiseOctaves<NoisePerlin>(rand,  4);
+	stoneNoiseGen 			= NoiseOctaves<NoisePerlin>(rand,  4);
 	continentalnessNoiseGen = NoiseOctaves<NoisePerlin>(rand, 10);
-	depthNoiseGen = NoiseOctaves<NoisePerlin>(rand, 16);
-	treeDensityNoiseGen = NoiseOctaves<NoisePerlin>(rand, 8);
+	depthNoiseGen 			= NoiseOctaves<NoisePerlin>(rand, 16);
+	treeDensityNoiseGen 	= NoiseOctaves<NoisePerlin>(rand,  8);
 }
 
 /**
@@ -43,8 +42,17 @@ void Generator::GenerateChunk(Chunk& chunk) {
 	chunk.clear();
 
 	// Generate Biomes
-	Int2 blockPos = Int2{chunk.cpos.x*CHUNK_WIDTH, chunk.cpos.z * CHUNK_WIDTH };
-	BiomeGenerator(seed).GenerateBiomeMap(biomeMap, temperature, humidity, weirdness, blockPos, Int2{CHUNK_WIDTH, CHUNK_WIDTH});
+	BiomeGenerator(seed).GenerateBiomeMap(biomeMap, 
+		temperature, humidity, weirdness,
+		Int2{chunk.cpos.x * CHUNK_WIDTH, chunk.cpos.z * CHUNK_WIDTH }
+	);
+
+	for (size_t x = 0; x < CHUNK_WIDTH; x++) {
+		for (size_t z = 0; z < CHUNK_WIDTH; z++) {
+			std::cout << biomeMap[x + z * CHUNK_WIDTH] << ", ";
+		}
+		std::cout << "\n";
+	} 
 
 	// Generate the Terrain, minus any caves, as just stone
 	GenerateTerrain(chunk);
@@ -55,14 +63,7 @@ void Generator::GenerateChunk(Chunk& chunk) {
 	// Generate heightmap
 	chunk.generateHeightMap();
 
-	// Testing for pack.png seed
-	// std::cout << std::hex;
-	//if (chunkPos.x == 5 && chunkPos.y == -5) {
-		// c->PrintHeightmap();
-	//}
-
 	chunk.isModified = true;
-	//return c;
 }
 
 /**
@@ -106,7 +107,7 @@ void Generator::ReplaceBlocksForBiome(Chunk& chunk) {
 			int32_t stoneActive = Java::DoubleToInt32(this->stoneNoise[bindex] / 3.0 + 3.0 + this->rand.nextDouble() * 0.25);
 			int32_t stoneDepth = -1;
 			// Get biome-appropriate top and filler blocks
-			BlockType topBlock = GetTopBlock(biome);
+			BlockType topBlock 	  = GetTopBlock(biome);
 			BlockType fillerBlock = GetFillerBlock(biome);
 
 			// Iterate over column top to bottom

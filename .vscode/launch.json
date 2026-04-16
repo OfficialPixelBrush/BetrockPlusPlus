@@ -1,0 +1,12 @@
+{
+  "configurations": [
+    {
+      "type": "cppdbg",
+      "request": "launch",
+      "name": "Debug via CMake",
+      "program": "${command:cmake.launchTargetPath}",
+      "cwd": "${workspaceFolder}/build/",
+      "MIMode": "gdb"
+    }
+  ]
+}

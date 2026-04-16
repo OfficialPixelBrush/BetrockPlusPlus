@@ -14,12 +14,7 @@
 #include <cstring>
 #include <numeric_structs.h>
 #include "blocks/block_properties.h"
-
-#define CHUNK_HEIGHT 128
-#define CHUNK_WIDTH  16
-#define SUB_CHUNK_SIZE  16
-#define SUB_CHUNK_VOLUME SUB_CHUNK_SIZE*SUB_CHUNK_SIZE*SUB_CHUNK_SIZE
-#define WATER_LEVEL 64
+#include "constants.h"
 
 enum class ChunkState : uint8_t {
 	Unloaded,

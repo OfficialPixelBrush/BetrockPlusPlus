@@ -6,6 +6,7 @@
 */
 
 #include "cave_gen.h"
+#include "java_math.h"
 
 CaveGenerator::CaveGenerator() {}
 

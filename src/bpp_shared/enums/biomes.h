@@ -7,6 +7,8 @@
 
 #pragma once
 #include "blocks.h"
+#include <array>
+#include <iostream>
 
 enum Biome {
 	BIOME_NONE				= 0,
@@ -26,8 +28,26 @@ enum Biome {
 };
 
 Biome GetBiome(float temperature, float humidity);
-void GenerateBiomeLookup();
 Biome GetBiomeFromLookup(float temperature, float humidity);
 
 BlockType GetTopBlock(Biome biome);
 BlockType GetFillerBlock(Biome biome);
+
+#define BIOME_LUT_SIZE 64*64
+
+/**
+ * @brief Generates the Biome LUT that is used in b1.7.3
+ * 
+ */
+inline std::array<Biome, BIOME_LUT_SIZE> BiomeLUT = [] {
+	std::array<Biome, BIOME_LUT_SIZE> lut{};
+	for (std::size_t temp = 0; temp < 64; ++temp) {
+		for (std::size_t humi = 0; humi < 64; ++humi) {
+			lut[temp + humi * 64] = GetBiome(
+				float(temp) / 63.0f, 
+				float(humi) / 63.0f
+			);
+		}
+	}
+	return lut;
+}();

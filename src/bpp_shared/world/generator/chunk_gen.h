@@ -5,6 +5,7 @@
  * Based on code by Mojang Studios (2011)
 */
 
+#include "biomes.h"
 #include "cave_gen.h"
 //#include "feature_gen.h"
 //#include "tree_gen.h"
@@ -42,7 +43,7 @@ class Generator {
 	std::vector<double> stoneNoise;
 
 	// Biome Vectors
-	std::vector<Biome> biomeMap;
+	Biome biomeMap[CHUNK_AREA];
 	std::vector<double> temperature;
 	std::vector<double> humidity;
 	std::vector<double> weirdness;

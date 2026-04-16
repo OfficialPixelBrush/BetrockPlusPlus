@@ -34,8 +34,6 @@ BlockType GetFillerBlock(Biome biome) {
 	return BLOCK_DIRT;
 }
 
-Biome BiomeLUT[64 * 64];
-
 /**
  * @brief Get the correct biome based on the passed temperature and humidity values
  * 
@@ -79,18 +77,6 @@ Biome GetBiome(float temperature, float humidity) {
 }
 
 /**
- * @brief Generates the Biome LUT that is used in b1.7.3
- * 
- */
-void GenerateBiomeLookup() {
-	for (int32_t temp = 0; temp < 64; ++temp) {
-		for (int32_t humi = 0; humi < 64; ++humi) {
-			BiomeLUT[temp + humi * 64] = GetBiome(float(temp) / 63.0f, float(humi) / 63.0f);
-		}
-	}
-}
-
-/**
  * @brief Gets the appropriate biome from the Biome LUT
  * 
  * @param temperature Temperature value
@@ -100,5 +86,5 @@ void GenerateBiomeLookup() {
 Biome GetBiomeFromLookup(float temperature, float humidity) {
 	int32_t temp = int32_t(temperature * 63.0f);
 	int32_t humi = int32_t(humidity * 63.0f);
-	return BiomeLUT[temp + humi * 64];
+	return BiomeLUT[size_t(temp + humi * 64)];
 }
