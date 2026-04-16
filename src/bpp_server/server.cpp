@@ -480,13 +480,16 @@ void Server::processIncoming(PlayerSession& session) {
             pkt.Deserialize(session.stream);
             break;
         }
-        /*
+        case PacketId::CloseContainer: {
+            Packet::CloseContainer pkt;
+            pkt.Deserialize(session.stream);
+            break;
+        }
         case PacketId::ClickSlot: {
             Packet::ClickSlot pkt;
             pkt.Deserialize(session.stream);
             break;
         }
-        */
         case PacketId::UpdateSign: {
             Packet::UpdateSign pkt;
             pkt.Deserialize(session.stream);

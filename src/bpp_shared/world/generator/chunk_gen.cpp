@@ -395,13 +395,13 @@ void Generator::GenerateTerrainNoise(std::vector<double> &terrainMap, Int3 cpos,
  * @return The Biome at that column
  */
 Biome Generator::GetBiomeAt(Int2 worldPos) {
-	size_t localX = size_t(worldPos.x % CHUNK_WIDTH);
-	size_t localZ = size_t(worldPos.y % CHUNK_WIDTH);
+	int32_t localX = worldPos.x % CHUNK_WIDTH;
+	int32_t localZ = worldPos.y % CHUNK_WIDTH;
 	if (localX < 0)
 		localX += CHUNK_WIDTH;
 	if (localZ < 0)
 		localZ += CHUNK_WIDTH;
-	return biomeMap[localX + localZ * CHUNK_WIDTH];
+	return biomeMap[size_t(localX + localZ * CHUNK_WIDTH)];
 }
 
 /**

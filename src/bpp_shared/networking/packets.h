@@ -1152,8 +1152,56 @@ public:
     };
 
     // TODO: Open Container (0x65)
-    // TODO: Close Container (0x65)
-    // TODO: Click Slot (0x66)
+    // Used for signaling when a container was closed
+    struct CloseContainer : BasePacket {
+        CloseContainer() : BasePacket{ PacketId::CloseContainer } {}
+        WindowId window_id;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(window_id);
+        }
+        void Deserialize(NetworkStream& stream) override {
+            window_id = stream.Read<WindowId>();
+        }
+    };
+    
+    // Used for signaling when a slot was clicked
+    struct ClickSlot : BasePacket {
+        ClickSlot() : BasePacket{ PacketId::ClickSlot } {}
+        WindowId window_id;
+        SlotId slot_id;
+        bool right_click;
+        ActionId action_id;
+        bool shift;
+        Item item;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(window_id);
+            stream.Write(slot_id);
+            stream.Write(right_click);
+            stream.Write(action_id);
+            stream.Write(shift);
+            stream.Write(item.id);
+            if (item.id > ITEM_NONE) {
+                stream.Write(item.amount);
+                stream.Write(item.damage);
+            }
+        }
+        void Deserialize(NetworkStream& stream) override {
+            window_id = stream.Read<WindowId>();
+            slot_id = stream.Read<SlotId>();
+            right_click = stream.Read<bool>();
+            action_id = stream.Read<ActionId>();
+            shift = stream.Read<bool>();
+            item.id = stream.Read<ItemId>();
+            if (item.id > ITEM_NONE) {
+                item.amount = stream.Read<ItemAmount>();
+                item.damage = stream.Read<ItemDamage>();
+            }
+        }
+    };
     // TODO: Set Slot (0x67)
     // TODO: Fill Container (0x68)
     // TODO: Container Data (0x69)
