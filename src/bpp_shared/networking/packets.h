@@ -1253,7 +1253,6 @@ public:
         }
     };
 
-    // TODO: Fill Container (0x68)
     // Possibly we do this by passing in the whole inventory?
     // Used for filling a container with data
     struct FillContainer : BasePacket {
