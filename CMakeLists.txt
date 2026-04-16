@@ -21,6 +21,7 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/src/bpp_shared"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums/network"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared/world"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/world/noise"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/helpers/java"
 )
@@ -45,6 +46,11 @@ add_executable(
     src/bpp_shared/world/noise/noise_generator.cpp
     src/bpp_shared/world/noise/noise_perlin.cpp
     src/bpp_shared/world/noise/noise_simplex.cpp
+    src/bpp_shared/world/generator/chunk_gen.cpp
+    src/bpp_shared/world/generator/biome_gen.cpp
+    #src/bpp_shared/world/generator/cave_gen.cpp
+    #src/bpp_shared/world/generator/feature_gen.cpp
+    #src/bpp_shared/world/generator/tree_gen.cpp
     
     # Server-specific files
     src/bpp_server/server.cpp

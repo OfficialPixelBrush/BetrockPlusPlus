@@ -32,14 +32,14 @@ void NoiseSimplex::InitPermTable(Java::Random& rand) {
 	}
 }
 
-void NoiseSimplex::GenerateNoise(std::vector<double> &noiseField, Vec2 offset, Int32_2 size, Vec2 scale, double amplitude) {
+void NoiseSimplex::GenerateNoise(std::vector<double> &values, Vec3 p_offset, Int32_3 p_size, Vec3 p_scale, double amplitude) {
 	size_t index = 0;
 
-	for (int32_t xI = 0; xI < size.x; ++xI) {
-		double xPos = (offset.x + double(xI)) * scale.x + coordinate.x;
+	for (int32_t xI = 0; xI < p_size.x; ++xI) {
+		double xPos = (p_offset.x + double(xI)) * p_scale.x + coordinate.x;
 
-		for (int32_t yI = 0; yI < size.y; ++yI) {
-			double yPos = (offset.y + double(yI)) * scale.y + coordinate.y;
+		for (int32_t yI = 0; yI < p_size.y; ++yI) {
+			double yPos = (p_offset.y + double(yI)) * p_scale.y + coordinate.y;
 			double skew = (xPos + yPos) * skewing;
 			int32_t x0 = wrap(xPos + skew);
 			int32_t y0 = wrap(yPos + skew);
@@ -94,7 +94,7 @@ void NoiseSimplex::GenerateNoise(std::vector<double> &noiseField, Vec2 offset, I
 				contrib2 = term2 * term2 * dotProd(gradients[grad2], x1c, y1c);
 			}
 
-			noiseField[index++] += 70.0 * (contrib0 + contrib1 + contrib2) * amplitude;
+			values[index++] += 70.0 * (contrib0 + contrib1 + contrib2) * amplitude;
 		}
 	}
 }

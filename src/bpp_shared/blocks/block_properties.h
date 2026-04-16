@@ -49,7 +49,7 @@ namespace Blocks {
 
     struct BlockBehavior {
         // Called each random tick if ticksOnLoad = true
-        // void (*onTick)(WorldManager&, Int3, uint8_t meta, JavaRandom&);
+        // void (*onTick)(WorldManager&, Int3, uint8_t meta, Java::Random&);
 
         // Called when block is placed by world gen or setBlock
         void (*onBlockAdded)(WorldManager&, Int3) = nullptr;
@@ -88,10 +88,10 @@ namespace Blocks {
         void (*velocityToAddToEntity)(WorldManager&, Int3, Entity&, Vec3&) = nullptr;
 
         // What item/block this drops when broken
-        // uint8_t (*idDropped)(uint8_t meta, JavaRandom&);
+        // uint8_t (*idDropped)(uint8_t meta, Java::Random&);
 
         // How many items drop
-        // int (*quantityDropped)(JavaRandom&);
+        // int (*quantityDropped)(Java::Random&);
     };
 
     // Global tables — indexed by block ID, populated by registerAll()

@@ -11,8 +11,6 @@ NoiseGenerator::NoiseGenerator() {}
 
 NoiseGenerator::NoiseGenerator([[maybe_unused]]Java::Random& rand) { VEC3_ZERO; }
 
-double NoiseGenerator::GenerateNoise([[maybe_unused]] double x, [[maybe_unused]] double y) { return 0; }
+//double NoiseGenerator::GenerateNoise([[maybe_unused]] Vec3 p_coordinate) { return 0; }
 
-double NoiseGenerator::GenerateNoise([[maybe_unused]] double x, [[maybe_unused]] double y, [[maybe_unused]] double z) {
-	return 0;
-}
+//double NoiseGenerator::GenerateNoise([[maybe_unused]] Vec3 p_coordinate) { return 0; }
