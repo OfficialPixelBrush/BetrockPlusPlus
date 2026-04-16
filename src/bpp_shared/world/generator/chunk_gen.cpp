@@ -102,12 +102,12 @@ void Generator::ReplaceBlocksForBiome(Chunk& chunk) {
 	// Iterate through entire chunk
 	for (int32_t x = 0; x < CHUNK_WIDTH; ++x) {
 		for (int32_t z = 0; z < CHUNK_WIDTH; ++z) {
+			size_t bindex = size_t(x + z * CHUNK_WIDTH);
 			// Get values from noise maps
-			Biome biome = biomeMap[size_t(x + z * 16)];
-			bool sandActive = this->sandNoise[size_t(x + z * CHUNK_WIDTH)] + this->rand.nextDouble() * 0.2 > 0.0;
-			bool gravelActive = this->gravelNoise[size_t(x + z * CHUNK_WIDTH)] + this->rand.nextDouble() * 0.2 > 3.0;
-			int32_t stoneActive =
-				Java::DoubleToInt32(this->stoneNoise[size_t(x + z * CHUNK_WIDTH)] / 3.0 + 3.0 + this->rand.nextDouble() * 0.25);
+			Biome biome = biomeMap[bindex];
+			bool sandActive = this->sandNoise[bindex] + this->rand.nextDouble() * 0.2 > 0.0;
+			bool gravelActive = this->gravelNoise[bindex] + this->rand.nextDouble() * 0.2 > 3.0;
+			int32_t stoneActive = Java::DoubleToInt32(this->stoneNoise[bindex] / 3.0 + 3.0 + this->rand.nextDouble() * 0.25);
 			int32_t stoneDepth = -1;
 			// Get biome-appropriate top and filler blocks
 			BlockType topBlock = GetTopBlock(biome);
@@ -396,7 +396,7 @@ void Generator::GenerateTerrainNoise(std::vector<double> &terrainMap, Int3 cpos,
  */
 Biome Generator::GetBiomeAt(Int2 worldPos) {
 	int32_t localX = worldPos.x % CHUNK_WIDTH;
-	int32_t localZ = worldPos.y % CHUNK_WIDTH;
+	int32_t localZ = worldPos.z % CHUNK_WIDTH;
 	if (localX < 0)
 		localX += CHUNK_WIDTH;
 	if (localZ < 0)

@@ -48,8 +48,8 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
     }
 }
 
-// pack.png
-Generator gen(3257840388504953787);
+// 404 challenge seed
+Generator gen(404);
 
 void WorldManager::pumpPipeline() {
     std::vector<ChunkPos> snapshot;

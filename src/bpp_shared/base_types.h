@@ -14,6 +14,8 @@ typedef int16_t ItemId;
 typedef int8_t ItemAmount;
 typedef int16_t ItemDamage;
 
+typedef int16_t MapId;
+
 typedef int8_t WindowId;
 typedef int16_t SlotId;
-typedef int16_t ActionId;
+typedef int16_t TransactionId;
