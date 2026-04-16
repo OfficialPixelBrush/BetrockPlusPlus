@@ -27,9 +27,6 @@ Generator::Generator(int64_t p_seed) {
 	continentalnessNoiseGen = NoiseOctaves<NoisePerlin>(rand, 10);
 	depthNoiseGen = NoiseOctaves<NoisePerlin>(rand, 16);
 	treeDensityNoiseGen = NoiseOctaves<NoisePerlin>(rand, 8);
-
-	// Init Caver
-	//aver = std::make_unique<Beta173Caver>();
 }
 
 /**
