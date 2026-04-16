@@ -70,10 +70,10 @@ void CaveGenerator::CarveCave(Int2 chunkPos, std::shared_ptr<Chunk> &c, Vec3 off
 	double chunkCenterZ = double(chunkPos.y * CHUNK_WIDTH_Z + 8);
 	float var21 = 0.0F;
 	float var22 = 0.0F;
-	std::unique_ptr<Java::Random> rand2 = std::make_unique<Java::Random>(this->rand.nextLong());
+	Java::Random rand2 = Java::Random(this->rand.nextLong());
 	if (tunnelLength <= 0) {
 		int32_t var24 = this->carveExtentLimit * 16 - 16;
-		tunnelLength = var24 - rand2->nextInt(var24 / 4);
+		tunnelLength = var24 - rand2.nextInt(var24 / 4);
 	}
 
 	bool var52 = false;
@@ -82,9 +82,9 @@ void CaveGenerator::CarveCave(Int2 chunkPos, std::shared_ptr<Chunk> &c, Vec3 off
 		var52 = true;
 	}
 
-	int32_t var25 = rand2->nextInt(tunnelLength / 2) + tunnelLength / 4;
+	int32_t var25 = rand2.nextInt(tunnelLength / 2) + tunnelLength / 4;
 
-	for (bool var26 = rand2->nextInt(6) == 0; tunnelStep < tunnelLength; ++tunnelStep) {
+	for (bool var26 = rand2.nextInt(6) == 0; tunnelStep < tunnelLength; ++tunnelStep) {
 		double var27 = 1.5 + double(MathHelper::sin(float(tunnelStep) * float(JavaMath::PI) / float(tunnelLength)) *
 									   tunnelRadius * 1.0F);
 		double var29 = var27 * verticalScale;
@@ -103,17 +103,17 @@ void CaveGenerator::CarveCave(Int2 chunkPos, std::shared_ptr<Chunk> &c, Vec3 off
 		carveYaw += var21 * 0.1F;
 		var22 *= 0.9F;
 		var21 *= 12.0F / 16.0F;
-		var22 += (rand2->nextFloat() - rand2->nextFloat()) * rand2->nextFloat() * 2.0F;
-		var21 += (rand2->nextFloat() - rand2->nextFloat()) * rand2->nextFloat() * 4.0F;
+		var22 += (rand2.nextFloat() - rand2.nextFloat()) * rand2.nextFloat() * 2.0F;
+		var21 += (rand2.nextFloat() - rand2.nextFloat()) * rand2.nextFloat() * 4.0F;
 		if (!var52 && tunnelStep == var25 && tunnelRadius > 1.0F) {
-			this->CarveCave(chunkPos, c, offset, rand2->nextFloat() * 0.5F + 0.5F,
+			this->CarveCave(chunkPos, c, offset, rand2.nextFloat() * 0.5F + 0.5F,
 							carveYaw - (float)JavaMath::PI * 0.5F, carvePitch / 3.0F, tunnelStep, tunnelLength, 1.0);
-			this->CarveCave(chunkPos, c, offset, rand2->nextFloat() * 0.5F + 0.5F,
+			this->CarveCave(chunkPos, c, offset, rand2.nextFloat() * 0.5F + 0.5F,
 							carveYaw + (float)JavaMath::PI * 0.5F, carvePitch / 3.0F, tunnelStep, tunnelLength, 1.0);
 			return;
 		}
 
-		if (var52 || rand2->nextInt(4) != 0) {
+		if (var52 || rand2.nextInt(4) != 0) {
 			double var33 = offset.x - chunkCenterX;
 			double var35 = offset.z - chunkCenterZ;
 			double var37 = double(tunnelLength - tunnelStep);
