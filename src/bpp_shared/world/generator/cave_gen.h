@@ -8,9 +8,9 @@
 #pragma once
 
 #include "java_random.h"
-#include "java_math.h"
-#include "chunk.h"
+#include "constants.h"
 #include "numeric_structs.h"
+#include "chunk.h"
 
 /**
  * @brief Used to carve caves into the world

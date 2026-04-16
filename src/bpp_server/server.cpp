@@ -24,7 +24,7 @@
 
 Server::Server() {
     Blocks::registerAll();
-    world.seed = 3257840388504953787;
+    world.seed = 404;
 
 #if defined(_WIN32) || defined(_WIN64)
     WSADATA wsaData;
@@ -38,7 +38,9 @@ Server::Server() {
     addr.sin_port = htons(25565);
     addr.sin_addr.s_addr = INADDR_ANY;
 
-    bind(serverSocket, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
+    if (bind(serverSocket, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
+        std::cerr << "**** FAILED TO BIND TO PORT!" << std::endl;
+    }
     listen(serverSocket, 8);
 
     #if defined(_WIN32) || defined(_WIN64)

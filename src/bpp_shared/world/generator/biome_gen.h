@@ -22,6 +22,17 @@ class BiomeGenerator {
         NoiseOctaves<NoiseSimplex> weirdnessNoiseGen;
     public:
         BiomeGenerator(int64_t seed);
-        void GenerateBiomeMap(std::vector<Biome>& biomeMap, std::vector<double>& temperature, std::vector<double>& humidity, std::vector<double>& weirdness, Int2 blockPos, Int2 max);
-	    void GenerateTemperature(std::vector<double>& temperature, std::vector<double>& weirdness, Int2 chunkPos, Int2 max);
+        void GenerateBiomeMap(
+            Biome biomeMap[],
+            std::vector<double>& temperature,
+            std::vector<double>& humidity,
+            std::vector<double>& weirdness,
+            Int2 blockPos
+        );
+	    void GenerateTemperature(
+            std::vector<double>& temperature,
+            std::vector<double>& weirdness,
+            Int2 chunkPos,
+            Int2 max
+        );
 };

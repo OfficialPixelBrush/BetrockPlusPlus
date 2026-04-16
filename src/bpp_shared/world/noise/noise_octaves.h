@@ -25,8 +25,8 @@ template <typename T> class NoiseOctaves {
 	void GenerateOctaves(std::vector<double> &noiseField, Vec3 coordinate, Int32_3 size, Vec3 p_scale);
 	void GenerateOctaves(std::vector<double> &noiseField, Int32_2 offset, Int32_2 size, Vec2 scale, [[maybe_unused]] double unused);
 	// Used by Simplex
-	void GenerateOctaves(std::vector<double> &noiseField, Vec2 offset, Int32_2 size, Vec2 scale, double var12);
-	void GenerateOctaves(std::vector<double> &noiseField, double var2, double var4, int32_t var6, int32_t scale, double var8, double var10, double var12, double var14);
+	void GenerateOctaves(std::vector<double> &noiseField, Vec2 offset, Int32_2 size, Vec2 scale, double lacunarity);
+	void GenerateOctaves(std::vector<double> &noiseField, Vec2 offset, Int32_2 size, Vec2 scale, double lacunarity, double persistence);
 
   private:
 	int32_t octaves;
@@ -87,11 +87,11 @@ void NoiseOctaves<T>::GenerateOctaves(std::vector<double> &noiseField, Vec3 offs
 		}
 	}
 
-	double scale = 1.0;
+	double multiplier = 1.0;
 
 	for (size_t octave = 0; octave < size_t(this->octaves); ++octave) {
-		this->generator_collection[octave].GenerateNoise(noiseField, offset, size, p_scale * scale, scale);
-		scale /= 2.0;
+		this->generator_collection[octave].GenerateNoise(noiseField, offset, size, p_scale * multiplier, multiplier);
+		multiplier /= 2.0;
 	}
 }
 
@@ -108,25 +108,23 @@ void NoiseOctaves<T>::GenerateOctaves(std::vector<double> &noiseField, Vec2 offs
 }
 
 template <typename T>
-void NoiseOctaves<T>::GenerateOctaves(std::vector<double> &noiseField, double var2, double var4, int32_t var6, int32_t scale,
-									  double var8, double var10, double var12, double var14) {
-	var8 /= 1.5;
-	var10 /= 1.5;
-	if (!noiseField.empty() && int32_t(noiseField.size()) >= var6 * scale) {
+void NoiseOctaves<T>::GenerateOctaves(std::vector<double> &noiseField, Vec2 offset, Int32_2 size, Vec2 scale, double lacunarity, double persistence) {
+	scale.x /= 1.5;
+	scale.y /= 1.5;
+	if (!noiseField.empty() && int32_t(noiseField.size()) >= size.x * size.y) {
 		for (size_t i = 0; i < noiseField.size(); ++i) {
 			noiseField[i] = 0.0;
 		}
 	} else {
-		noiseField.resize(size_t(var6 * scale), 0.0);
+		noiseField.resize(size_t(size.x * size.y), 0.0);
 	}
 
-	double var21 = 1.0;
-	double var18 = 1.0;
+	double frequency = 1.0;
+	double amplitude = 1.0;
 
 	for (int32_t octave = 0; octave < this->octaves; ++octave) {
-		this->generator_collection[octave]->GenerateNoise(noiseField, var2, var4, var6, scale, var8 * var18,
-														 var10 * var18, 0.55 / var21);
-		var18 *= var12;
-		var21 *= var14;
+		this->generator_collection[octave]->GenerateNoise(noiseField, offset, size, scale * amplitude, 0.55 / frequency);
+		amplitude *= lacunarity;
+		frequency *= persistence;
 	}
 }
