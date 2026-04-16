@@ -60,21 +60,25 @@ void WorldManager::pumpPipeline() {
     }
 
     for (const ChunkPos& pos : snapshot) {
-        // Re-acquire the lock per lookup so we don't hold it across job submission
-        Chunk* chunk = getChunk(pos);
-        if (!chunk) continue; // was unloaded between snapshot and now
-
-        ChunkState s = chunk->state.load(std::memory_order_acquire);
-
-        if (s == ChunkState::Unloaded) {
-            chunk->state.store(ChunkState::Generating, std::memory_order_release);
-            pool.detach_task([chunk, this]() {
-                // Construct a new generator per thread
-                thread_local Generator tl_gen(this->seed); 
-                tl_gen.GenerateChunk(*chunk);
-                chunk->generateSkylightMap();
-                chunk->state.store(ChunkState::Lit, std::memory_order_release);
-                });
+        std::shared_ptr<Chunk> chunkRef;
+        {
+            std::lock_guard lock(chunksMutex);
+            auto it = chunks.find(pos);
+            if (it == chunks.end()) continue;
+            if (it->second->state.load(std::memory_order_acquire) != ChunkState::Unloaded)
+                continue;
+            // Mark Generating while still holding the lock so updateLoadRadius
+            // can't erase it between now and when the lambda runs
+            it->second->state.store(ChunkState::Generating, std::memory_order_release);
+            chunkRef = it->second;  // shared_ptr keeps it alive in the lambda too
         }
+
+        pool.detach_task([chunkRef, this]() {
+            thread_local Generator tl_gen(this->seed);
+            tl_gen.GenerateChunk(*chunkRef);
+            chunkRef->generateSkylightMap();
+            chunkRef->isModified = true;
+            chunkRef->state.store(ChunkState::Lit, std::memory_order_release);
+            });
     }
 }
