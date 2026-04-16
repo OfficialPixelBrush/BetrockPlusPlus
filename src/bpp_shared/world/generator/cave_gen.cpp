@@ -15,24 +15,24 @@ CaveGenerator::CaveGenerator() {}
  * @param chunkPos The (x,z) position of the chunk
  * @param c The pointer to the chunk
  */
-void CaveGenerator::GenerateCavesForChunk(World *world, Int2 chunkPos, std::shared_ptr<Chunk> &c) {
+void CaveGenerator::GenerateCavesForChunk(Chunk& chunk, int64_t seed) {
 	int32_t carveExtent = this->carveExtentLimit;
-	this->rand.setSeed(world->seed);
+	this->rand.setSeed(seed);
 	int64_t xOffset = this->rand.nextLong() / 2L * 2L + 1L;
 	int64_t zOffset = this->rand.nextLong() / 2L * 2L + 1L;
 
 	// Iterate beyond the current chunk by 8 chunks in every direction
 	for (int32_t cXoffset = chunkPos.x - carveExtent; cXoffset <= chunkPos.x + carveExtent; ++cXoffset) {
 		for (int32_t cZoffset = chunkPos.y - carveExtent; cZoffset <= chunkPos.y + carveExtent; ++cZoffset) {
-			this->rand.setSeed(((int64_t(cXoffset) * xOffset) + (int64_t(cZoffset) * zOffset)) ^ world->seed);
-			this->GenerateCaves(Int2{cXoffset, cZoffset}, chunkPos, c);
+			this->rand.setSeed(((int64_t(cXoffset) * xOffset) + (int64_t(cZoffset) * zOffset)) ^ seed);
+			this->GenerateCaves(chunk, chunkPos);
 		}
 	}
 }
 
 // TODO: This is only the cave generator for the overworld.
 // The one for the nether is different!
-void CaveGenerator::GenerateCaves(Int2 chunkOffset, Int2 chunkPos, std::shared_ptr<Chunk> &c) {
+void CaveGenerator::GenerateCaves(Chunk& chunk, Int2 chunkOffset) {
 	int32_t numberOfCaves = this->rand.nextInt(this->rand.nextInt(this->rand.nextInt(40) + 1) + 1);
 	if (this->rand.nextInt(15) != 0) {
 		numberOfCaves = 0;
@@ -40,12 +40,12 @@ void CaveGenerator::GenerateCaves(Int2 chunkOffset, Int2 chunkPos, std::shared_p
 
 	for (int32_t caveIndex = 0; caveIndex < numberOfCaves; ++caveIndex) {
 		Vec3 offset = VEC3_ZERO;
-		offset.x = double(chunkOffset.x * CHUNK_WIDTH_X + this->rand.nextInt(CHUNK_WIDTH_X));
+		offset.x = double(chunkOffset.x * CHUNK_WIDTH + this->rand.nextInt(CHUNK_WIDTH));
 		offset.y = double(this->rand.nextInt(this->rand.nextInt(120) + 8));
-		offset.z = double(chunkOffset.y * CHUNK_WIDTH_Z + this->rand.nextInt(CHUNK_WIDTH_Z));
+		offset.z = double(chunkOffset.y * CHUNK_WIDTH + this->rand.nextInt(CHUNK_WIDTH));
 		int32_t numberOfNodes = 1;
 		if (this->rand.nextInt(4) == 0) {
-			this->CarveCave(chunkPos, c, offset);
+			this->CarveCave(chunk, offset);
 			numberOfNodes += this->rand.nextInt(4);
 		}
 
@@ -53,21 +53,21 @@ void CaveGenerator::GenerateCaves(Int2 chunkOffset, Int2 chunkPos, std::shared_p
 			float carveYaw = this->rand.nextFloat() * float(JavaMath::PI) * 2.0F;
 			float carvePitch = (this->rand.nextFloat() - 0.5F) * 2.0F / 8.0F;
 			float tunnelRadius = this->rand.nextFloat() * 2.0F + this->rand.nextFloat();
-			this->CarveCave(chunkPos, c, offset, tunnelRadius, carveYaw, carvePitch, 0, 0, 1.0);
+			this->CarveCave(chunk, offset, tunnelRadius, carveYaw, carvePitch, 0, 0, 1.0);
 		}
 	}
 }
 
-void CaveGenerator::CarveCave(Int2 chunkPos, std::shared_ptr<Chunk> &c, Vec3 offset) {
-	this->CarveCave(chunkPos, c, offset, 1.0F + this->rand.nextFloat() * 6.0F, 0.0F, 0.0F, -1, -1,
+void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset) {
+	this->CarveCave(chunk, offset, 1.0F + this->rand.nextFloat() * 6.0F, 0.0F, 0.0F, -1, -1,
 					0.5);
 }
 
-void CaveGenerator::CarveCave(Int2 chunkPos, std::shared_ptr<Chunk> &c, Vec3 offset,
+void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset,
 							 float tunnelRadius, float carveYaw, float carvePitch, int32_t tunnelStep, int32_t tunnelLength,
 							 double verticalScale) {
-	double chunkCenterX = double(chunkPos.x * CHUNK_WIDTH_X + 8);
-	double chunkCenterZ = double(chunkPos.y * CHUNK_WIDTH_Z + 8);
+	double chunkCenterX = double(chunk.cpos.x * CHUNK_WIDTH + 8);
+	double chunkCenterZ = double(chunk.cpos.z * CHUNK_WIDTH + 8);
 	float var21 = 0.0F;
 	float var22 = 0.0F;
 	Java::Random rand2 = Java::Random(this->rand.nextLong());
@@ -106,9 +106,9 @@ void CaveGenerator::CarveCave(Int2 chunkPos, std::shared_ptr<Chunk> &c, Vec3 off
 		var22 += (rand2.nextFloat() - rand2.nextFloat()) * rand2.nextFloat() * 2.0F;
 		var21 += (rand2.nextFloat() - rand2.nextFloat()) * rand2.nextFloat() * 4.0F;
 		if (!var52 && tunnelStep == var25 && tunnelRadius > 1.0F) {
-			this->CarveCave(chunkPos, c, offset, rand2.nextFloat() * 0.5F + 0.5F,
+			this->CarveCave(chunk, offset, rand2.nextFloat() * 0.5F + 0.5F,
 							carveYaw - (float)JavaMath::PI * 0.5F, carvePitch / 3.0F, tunnelStep, tunnelLength, 1.0);
-			this->CarveCave(chunkPos, c, offset, rand2.nextFloat() * 0.5F + 0.5F,
+			this->CarveCave(chunk, offset, rand2.nextFloat() * 0.5F + 0.5F,
 							carveYaw + (float)JavaMath::PI * 0.5F, carvePitch / 3.0F, tunnelStep, tunnelLength, 1.0);
 			return;
 		}
@@ -149,11 +149,10 @@ void CaveGenerator::CarveCave(Int2 chunkPos, std::shared_ptr<Chunk> &c, Vec3 off
 				for (int32_t blockX = xMin; !waterIsPresent && blockX < xMax; ++blockX) {
 					for (int32_t blockZ = zMin; !waterIsPresent && blockZ < zMax; ++blockZ) {
 						for (int32_t blockY = yMax + 1; !waterIsPresent && blockY >= yMin - 1; --blockY) {
-							int32_t blockIndex = (blockX * CHUNK_WIDTH_Z + blockZ) * CHUNK_HEIGHT + blockY;
+							Int3 bpos{blockX,blockY,blockZ};
 							if (blockY >= 0 && blockY < CHUNK_HEIGHT) {
-
-								if (c->GetBlockType(BlockIndexToPosition(blockIndex)) == BLOCK_WATER_FLOWING ||
-									c->GetBlockType(BlockIndexToPosition(blockIndex)) == BLOCK_WATER_STILL) {
+								BlockType blockType = chunk.getBlock(bpos);
+								if (blockType == BLOCK_WATER_FLOWING || blockType == BLOCK_WATER_STILL) {
 									waterIsPresent = true;
 								}
 
@@ -172,32 +171,30 @@ void CaveGenerator::CarveCave(Int2 chunkPos, std::shared_ptr<Chunk> &c, Vec3 off
 
 						for (int32_t blockZ = zMin; blockZ < zMax; ++blockZ) {
 							double var44 = (double(blockZ + chunkPos.y * 16) + 0.5 - offset.z) / var27;
-							int32_t blockIndex = (blockX * CHUNK_WIDTH_Z + blockZ) * CHUNK_HEIGHT + yMax;
+							Int3 bpos{blockX,blockY,blockZ};
 							bool var47 = false;
 							if (var57 * var57 + var44 * var44 < 1.0) {
 								for (int32_t var48 = yMax - 1; var48 >= yMin; --var48) {
 									double var49 = (double(var48) + 0.5 - offset.y) / var29;
 									if (var49 > -0.7 && var57 * var57 + var49 * var49 + var44 * var44 < 1.0) {
-										BlockType blockType = c->GetBlockType(BlockIndexToPosition(blockIndex));
+										BlockType blockType = chunk.getBlock(bpos);
 										if (blockType == BLOCK_GRASS) {
 											var47 = true;
 										}
 
-										if (blockType == BLOCK_STONE || blockType == BLOCK_DIRT ||
-											blockType == BLOCK_GRASS) {
+										if (blockType == BLOCK_STONE || blockType == BLOCK_DIRT || blockType == BLOCK_GRASS) {
 											if (var48 < 10) {
-												c->SetBlockType(BLOCK_LAVA_FLOWING, BlockIndexToPosition(blockIndex));
+												chunk.setBlock(bpos, BLOCK_LAVA_FLOWING)
 											} else {
-												c->SetBlockType(BLOCK_AIR, BlockIndexToPosition(blockIndex));
-												if (var47 && c->GetBlockType(BlockIndexToPosition(blockIndex - 1)) ==
-																 BLOCK_DIRT) {
-													c->SetBlockType(BLOCK_GRASS, BlockIndexToPosition(blockIndex - 1));
+												chunk.setBlock(bpos, BLOCK_AIR);
+												if (var47 && chunk.getBlock(bpos + Int32_3{0,-1,0}) == BLOCK_DIRT) {
+													chunk.setBlock(bpos + Int32_3{0,-1,0}, BLOCK_GRASS);
 												}
 											}
 										}
 									}
 
-									--blockIndex;
+									--bpos.y;
 								}
 							}
 						}
