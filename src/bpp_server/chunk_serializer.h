@@ -48,6 +48,7 @@ namespace ChunkSerializer {
         }
 
         libdeflate_compressor* compressor = libdeflate_alloc_compressor(6);
+        if (!compressor) return {};
         size_t maxSize = libdeflate_zlib_compress_bound(compressor, TOTAL);
         std::vector<uint8_t> compressed(maxSize);
         size_t actualSize = libdeflate_zlib_compress(compressor, raw.data(), TOTAL, compressed.data(), maxSize);
