@@ -1151,7 +1151,29 @@ public:
         }
     };
 
-    // TODO: Open Container (0x65)
+    // Used for signaling when a container is opened
+    struct OpenContainer : BasePacket {
+        OpenContainer() : BasePacket{ PacketId::OpenContainer } {}
+        WindowId window_id;
+        PacketData::WindowType window_type;
+        std::string title; // This is String8!!
+        int8_t slot_count;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(window_id);
+            stream.Write(window_type);
+            stream.Write(title); // TODO: Add string8 handling
+            stream.Write(slot_count);
+        }
+        void Deserialize(NetworkStream& stream) override {
+            window_id = stream.Read<WindowId>();
+            window_type = stream.Read<PacketData::WindowType>();
+            title = stream.Read<std::string>(); // TODO: Add string8 handling
+            slot_count = stream.Read<int8_t>();
+        }
+    };
+
     // Used for signaling when a container was closed
     struct CloseContainer : BasePacket {
         CloseContainer() : BasePacket{ PacketId::CloseContainer } {}
@@ -1172,7 +1194,7 @@ public:
         WindowId window_id;
         SlotId slot_id;
         bool right_click;
-        ActionId action_id;
+        TransactionId transaction_id;
         bool shift;
         Item item;
 
@@ -1181,7 +1203,7 @@ public:
             stream.Write(window_id);
             stream.Write(slot_id);
             stream.Write(right_click);
-            stream.Write(action_id);
+            stream.Write(transaction_id);
             stream.Write(shift);
             stream.Write(item.id);
             if (item.id > ITEM_NONE) {
@@ -1193,7 +1215,7 @@ public:
             window_id = stream.Read<WindowId>();
             slot_id = stream.Read<SlotId>();
             right_click = stream.Read<bool>();
-            action_id = stream.Read<ActionId>();
+            transaction_id = stream.Read<TransactionId>();
             shift = stream.Read<bool>();
             item.id = stream.Read<ItemId>();
             if (item.id > ITEM_NONE) {
@@ -1202,10 +1224,110 @@ public:
             }
         }
     };
-    // TODO: Set Slot (0x67)
+
+    // Used for setting the contents of a slot
+    struct SetSlot : BasePacket {
+        SetSlot() : BasePacket{ PacketId::SetSlot } {}
+        WindowId window_id;
+        SlotId slot_id;
+        Item item;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(window_id);
+            stream.Write(slot_id);
+            stream.Write(item.id);
+            if (item.id > ITEM_NONE) {
+                stream.Write(item.amount);
+                stream.Write(item.damage);
+            }
+        }
+        void Deserialize(NetworkStream& stream) override {
+            window_id = stream.Read<WindowId>();
+            slot_id = stream.Read<SlotId>();
+            item.id = stream.Read<ItemId>();
+            if (item.id > ITEM_NONE) {
+                item.amount = stream.Read<ItemAmount>();
+                item.damage = stream.Read<ItemDamage>();
+            }
+        }
+    };
+
     // TODO: Fill Container (0x68)
-    // TODO: Container Data (0x69)
-    // TODO: Container Transaction (0x6A)
+    // Possibly we do this by passing in the whole inventory?
+    // Used for filling a container with data
+    struct FillContainer : BasePacket {
+        FillContainer() : BasePacket{ PacketId::FillContainer } {}
+        WindowId window_id;
+        std::vector<Item> items;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(window_id);
+            stream.Write(int16_t(items.size()));
+            for (Item item : items) {
+                stream.Write(item.id);
+                if (item.id > ITEM_NONE) {
+                    stream.Write(item.amount);
+                    stream.Write(item.damage);
+                }
+            }
+        }
+        void Deserialize(NetworkStream& stream) override {
+            window_id = stream.Read<WindowId>();
+            size_t number_of_slots = size_t(stream.Read<int16_t>());
+            items.resize(number_of_slots, Item{ITEM_NONE});
+            for (size_t i = 0; i < number_of_slots; i++) {
+                items[i].id = stream.Read<ItemId>();
+                if (items[i].id > ITEM_NONE) {
+                    items[i].amount = stream.Read<ItemAmount>();
+                    items[i].damage = stream.Read<ItemDamage>();
+                }
+            }
+        }
+    };
+    
+    // Used for setting data for containers, such as furnace progress
+    struct ContainerData : BasePacket {
+        ContainerData() : BasePacket{ PacketId::ContainerData } {}
+        WindowId window_id;
+        struct {
+            PacketData::ContainerDataType type;
+            int16_t value;
+        } container_data;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(window_id);
+            stream.Write(container_data.type);
+            stream.Write(container_data.value);
+        }
+        void Deserialize(NetworkStream& stream) override {
+            window_id = stream.Read<WindowId>();
+            container_data.type = stream.Read<PacketData::ContainerDataType>();
+            container_data.value = stream.Read<int16_t>();
+        }
+    };
+    
+    // Used for checking if the performed transaction was valid and got through successfully 
+    struct ContainerTransaction : BasePacket {
+        ContainerTransaction() : BasePacket{ PacketId::ContainerTransaction } {}
+        WindowId window_id;
+        TransactionId transaction_id;
+        bool accepted;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(window_id);
+            stream.Write(transaction_id);
+            stream.Write(accepted);
+        }
+        void Deserialize(NetworkStream& stream) override {
+            window_id = stream.Read<WindowId>();
+            transaction_id = stream.Read<TransactionId>();
+            accepted = stream.Read<bool>();
+        }
+    };
 
     // Use for updating the text on signs
     struct UpdateSign : BasePacket {
@@ -1239,7 +1361,30 @@ public:
         }
     };
 
-    // TODO: Item Data (0x83)
+    // Used for updating custom item data, only used by maps
+    struct ItemData : BasePacket {
+        ItemData() : BasePacket{ PacketId::ItemData } {}
+        ItemId item_id;
+        MapId map_id;
+        std::vector<uint8_t> data;
+
+        void Serialize(NetworkStream& stream) const override {
+            stream.Write(id);
+            stream.Write(item_id);
+            stream.Write(map_id);
+            stream.Write(uint8_t(data.size()));
+            stream.WriteBytes(data.data(), data.size());
+        }
+
+        void Deserialize(NetworkStream& stream) override {
+            item_id = stream.Read<ItemId>();
+            map_id = stream.Read<MapId>();
+            uint8_t size = stream.Read<uint8_t>();
+            data.resize(size_t(size));
+            stream.ReadBytes(data.data(), size_t(size));
+        }
+    };
+
 
     // Used for changing the value of a statistic
     struct IncrementStatistic : BasePacket {

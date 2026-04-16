@@ -182,4 +182,19 @@ namespace PacketData {
         START_RAINING   = 1,
         STOP_RAINING    = 2
     };
+
+    // Used by Open Container (0x64)
+    enum WindowType : int8_t {
+        CHEST           = 0,
+        CRAFTING_TABLE  = 1,
+        FURNACE         = 2,
+        DISPENSER       = 3
+    };
+
+    // Used by Container Data (0x69)
+    enum ContainerDataType : int16_t {
+        SMELTING_PROGRESS   = 0,
+        FUEL_REMAINING      = 1,
+        FUEL_DURATION       = 2
+    };
 };
