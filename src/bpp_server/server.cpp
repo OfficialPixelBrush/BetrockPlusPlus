@@ -24,7 +24,7 @@
 
 Server::Server() {
     Blocks::registerAll();
-    world.seed = 404;
+    world.seed = 634634;
 
 #if defined(_WIN32) || defined(_WIN64)
     WSADATA wsaData;
@@ -267,7 +267,7 @@ void Server::handleLogin(PlayerSession& session) {
     response.Serialize(session.stream);
 
     Packet::SetSpawnPosition spawn;
-    spawn.position = { 0, 150, 0 };
+    spawn.position = { 0, 200, 0 };
     spawn.Serialize(session.stream);
 
     Packet::SetHealth health;
@@ -278,7 +278,7 @@ void Server::handleLogin(PlayerSession& session) {
     time.time = 0;
     time.Serialize(session.stream);
 
-    session.position.pos = { 37.0, 67.0, 2.0 };
+    session.position.pos = { 0.0, 200.0, 0.0 };
     session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
