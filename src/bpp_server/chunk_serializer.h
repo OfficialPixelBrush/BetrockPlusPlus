@@ -1,9 +1,11 @@
 /*
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
  *
  * SPDX-License-Identifier: GPL-3.0-only
  *
 */
+
 #pragma once
 #include <vector>
 #include <libdeflate.h>
