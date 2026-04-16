@@ -102,7 +102,7 @@ void Generator::ReplaceBlocksForBiome(Chunk& chunk) {
 	// Iterate through entire chunk
 	for (int32_t x = 0; x < CHUNK_WIDTH; ++x) {
 		for (int32_t z = 0; z < CHUNK_WIDTH; ++z) {
-			size_t bindex = size_t(x + z * CHUNK_WIDTH);
+			size_t bindex = size_t(x * CHUNK_WIDTH + z);
 			// Get values from noise maps
 			Biome biome = biomeMap[bindex];
 			bool sandActive = this->sandNoise[bindex] + this->rand.nextDouble() * 0.2 > 0.0;
@@ -401,7 +401,7 @@ Biome Generator::GetBiomeAt(Int2 worldPos) {
 		localX += CHUNK_WIDTH;
 	if (localZ < 0)
 		localZ += CHUNK_WIDTH;
-	return biomeMap[size_t(localX + localZ * CHUNK_WIDTH)];
+	return biomeMap[size_t(localX * CHUNK_WIDTH + localZ)];
 }
 
 /**

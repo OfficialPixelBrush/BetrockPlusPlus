@@ -49,7 +49,7 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
 }
 
 // 404 challenge seed
-Generator gen(404);
+// Generator gen(404);
 
 void WorldManager::pumpPipeline() {
     std::vector<ChunkPos> snapshot;
@@ -70,8 +70,9 @@ void WorldManager::pumpPipeline() {
         if (s == ChunkState::Unloaded) {
             chunk->state.store(ChunkState::Generating, std::memory_order_release);
             pool.detach_task([chunk, this]() {
-                //ChunkGenerator::generate(*chunk, seed);
-                gen.GenerateChunk(*chunk);
+                // Construct a new generator per thread
+                thread_local Generator tl_gen(this->seed); 
+                tl_gen.GenerateChunk(*chunk);
                 chunk->generateSkylightMap();
                 chunk->state.store(ChunkState::Lit, std::memory_order_release);
                 });

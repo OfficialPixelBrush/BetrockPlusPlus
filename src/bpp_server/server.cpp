@@ -23,7 +23,7 @@
 
 Server::Server() {
     Blocks::registerAll();
-    world.seed = 12345;
+    world.seed = 3257840388504953787;
 
     #if defined(_WIN32) || defined(_WIN64)
         WSADATA wsaData;

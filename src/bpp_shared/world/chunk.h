@@ -283,7 +283,6 @@ struct Chunk {
 
 	// cleanup
 	inline void clear() {
-		cpos = {};
 		isTerrainPopulated = false;
 		isModified = false;
 		state.store(ChunkState::Unloaded);
