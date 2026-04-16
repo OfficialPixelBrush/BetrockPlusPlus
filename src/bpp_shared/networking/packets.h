@@ -2,7 +2,7 @@
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  *
  * SPDX-License-Identifier: GPL-3.0-only
- * 
+ *
 */
 
 #pragma once
@@ -20,7 +20,7 @@
 // around the networking packets
 
 class Packet {
-    private:
+private:
     // NOTE: The base packet should never be used directly!!
     struct BasePacket {
         PacketId id;
@@ -30,7 +30,7 @@ class Packet {
         virtual void Deserialize(NetworkStream& stream) = 0;
     };
 
-    public:
+public:
     // Used to keep the connection alive
     struct KeepAlive : BasePacket {
         KeepAlive() : BasePacket{ PacketId::KeepAlive } {}
@@ -256,8 +256,8 @@ class Packet {
     struct PlayerRotation : BasePacket {
         PlayerRotation() : BasePacket{ PacketId::PlayerRotation } {}
         Float2 rotation;
-        float& pitch = rotation.x;
-        float& yaw = rotation.y;
+        float& yaw = rotation.x;    // wire order: yaw first
+        float& pitch = rotation.y;
         bool on_ground;
 
         void Serialize(NetworkStream& stream) const override {
@@ -291,8 +291,8 @@ class Packet {
             stream.Write(y);
             stream.Write(stance);
             stream.Write(z);
-            stream.Write(pitch);
             stream.Write(yaw);
+            stream.Write(pitch);
             stream.Write(onGround);
         }
 
@@ -301,8 +301,8 @@ class Packet {
             y = stream.Read<double>();
             stance = stream.Read<double>();
             z = stream.Read<double>();
-            pitch = stream.Read<float>();
             yaw = stream.Read<float>();
+            pitch = stream.Read<float>();
             onGround = stream.Read<bool>();
         }
     };
@@ -460,8 +460,8 @@ class Packet {
         std::string username;
         Int32_3 q_position;
         Int8_2 q_rotation;
-        int8_t& q_pitch = q_rotation.x;
-        int8_t& q_yaw = q_rotation.y;
+        int8_t& q_yaw = q_rotation.x;   // wire order: yaw first
+        int8_t& q_pitch = q_rotation.y;
         ItemId held_item_id;
 
         void Serialize(NetworkStream& stream) const override {
@@ -591,8 +591,8 @@ class Packet {
         PacketData::MobType mob_type;
         Int32_3 q_position;
         Int8_2 q_rotation;
-        int8_t& q_pitch = q_rotation.x;
-        int8_t& q_yaw = q_rotation.y;
+        int8_t& q_yaw = q_rotation.x;   // wire order: yaw first
+        int8_t& q_pitch = q_rotation.y;
         //std::vector<uint8_t> metadata;
 
         void Serialize(NetworkStream& stream) const override {
@@ -602,8 +602,8 @@ class Packet {
             stream.Write(q_position.x);
             stream.Write(q_position.y);
             stream.Write(q_position.z);
-            stream.Write(q_pitch);
             stream.Write(q_yaw);
+            stream.Write(q_pitch);
             // TODO: Metadata handling
         }
 
@@ -613,8 +613,8 @@ class Packet {
             q_position.x = stream.Read<int32_t>();
             q_position.y = stream.Read<int32_t>();
             q_position.z = stream.Read<int32_t>();
-            q_pitch = stream.Read<int8_t>();
             q_yaw = stream.Read<int8_t>();
+            q_pitch = stream.Read<int8_t>();
             // TODO: Metadata handling
         }
     };
@@ -724,7 +724,7 @@ class Packet {
             stream.Write(id);
         }
 
-        void Deserialize([[maybe_unused]]NetworkStream& stream) override {
+        void Deserialize([[maybe_unused]] NetworkStream& stream) override {
         }
     };
 
@@ -755,20 +755,20 @@ class Packet {
         EntityRotation() : BasePacket{ PacketId::EntityRotation } {}
         EntityId entity_id;
         Int8_2 q_rotation;
-        int8_t& q_pitch = q_rotation.x;
-        int8_t& q_yaw = q_rotation.y;
+        int8_t& q_yaw = q_rotation.x;   // wire order: yaw first
+        int8_t& q_pitch = q_rotation.y;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
             stream.Write(entity_id);
-            stream.Write(q_pitch);
             stream.Write(q_yaw);
+            stream.Write(q_pitch);
         }
 
         void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
-            q_pitch = stream.Read<int8_t>();
             q_yaw = stream.Read<int8_t>();
+            q_pitch = stream.Read<int8_t>();
         }
     };
 
@@ -778,8 +778,8 @@ class Packet {
         EntityId entity_id;
         Int8_3 qr_position;
         Int8_2 q_rotation;
-        int8_t& q_pitch = q_rotation.x;
-        int8_t& q_yaw = q_rotation.y;
+        int8_t& q_yaw = q_rotation.x;   // wire order: yaw first
+        int8_t& q_pitch = q_rotation.y;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
@@ -787,8 +787,8 @@ class Packet {
             stream.Write(qr_position.x);
             stream.Write(qr_position.y);
             stream.Write(qr_position.z);
-            stream.Write(q_pitch);
             stream.Write(q_yaw);
+            stream.Write(q_pitch);
         }
 
         void Deserialize(NetworkStream& stream) override {
@@ -796,8 +796,8 @@ class Packet {
             qr_position.x = stream.Read<int8_t>();
             qr_position.y = stream.Read<int8_t>();
             qr_position.z = stream.Read<int8_t>();
-            q_pitch = stream.Read<int8_t>();
             q_yaw = stream.Read<int8_t>();
+            q_pitch = stream.Read<int8_t>();
         }
     };
 
@@ -807,8 +807,8 @@ class Packet {
         EntityId entity_id;
         Int32_3 position;
         Int8_2 rotation;
-        int8_t& pitch = rotation.x;
-        int8_t& yaw = rotation.y;
+        int8_t& yaw = rotation.x;   // wire order: yaw first
+        int8_t& pitch = rotation.y;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
@@ -816,8 +816,8 @@ class Packet {
             stream.Write(position.x);
             stream.Write(position.y);
             stream.Write(position.z);
-            stream.Write(pitch);
             stream.Write(yaw);
+            stream.Write(pitch);
         }
 
         void Deserialize(NetworkStream& stream) override {
@@ -825,8 +825,8 @@ class Packet {
             position.x = stream.Read<int32_t>();
             position.y = stream.Read<int32_t>();
             position.z = stream.Read<int32_t>();
-            pitch = stream.Read<int8_t>();
             yaw = stream.Read<int8_t>();
+            pitch = stream.Read<int8_t>();
         }
     };
 
@@ -1088,7 +1088,7 @@ class Packet {
         struct {
             int32_t x;
             int32_t z;
-            int8_t  y; 
+            int8_t  y;
         } position;
         int32_t data;
 
