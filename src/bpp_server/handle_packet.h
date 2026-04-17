@@ -11,6 +11,7 @@
 #include "networking/packets.h"
 #include "networking/network_stream.h"
 #include "world/world.h"
+#include "commands/command_manager.h"
 
 namespace HandlePacket {
 
@@ -19,7 +20,13 @@ namespace HandlePacket {
     }
 
     inline void ChatMessage(Packet::ChatMessage& pkt, PlayerSession& session,
-        std::vector<std::unique_ptr<PlayerSession>>& players) {
+        std::vector<std::unique_ptr<PlayerSession>>& players, CommandManager& cmd_mgr) {
+        // Parse commands
+        if (pkt.message.size() > 0 && pkt.message[0] == '/') {
+            cmd_mgr.Parse(pkt.message, session);
+            return;
+        }
+        // Normal chat-message handling
         std::string broadcast = "<" + session.username + "> " + pkt.message;
         for (auto& other : players) {
             if (other->connState != ConnectionState::Playing) continue;

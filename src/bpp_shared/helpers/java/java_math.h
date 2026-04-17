@@ -75,7 +75,7 @@ namespace Java {
 	/**
 	 * @brief Casts a double to a 64-bit integer
 	 */
-	static int64_t DoubleToInt64(double value) {
+	inline int64_t DoubleToInt64(double value) {
 		if (std::isnan(value))
 			return 0;
 		if (value > double(INT64_MAX))
@@ -91,7 +91,7 @@ namespace Java {
 	/**
 	 * @brief Casts a double to a 32-bit integer
 	 */
-	static int32_t DoubleToInt32(double value) {
+	inline int32_t DoubleToInt32(double value) {
 		if (std::isnan(value))
 			return 0;
 		if (value > double(INT32_MAX))
@@ -107,7 +107,7 @@ namespace Java {
 	/**
 	 * @brief Casts a float to a 64-bit integer
 	 */
-	static int64_t FloatToInt64(float value) {
+	inline int64_t FloatToInt64(float value) {
 		if (std::isnan(value))
 			return 0;
 		if (value > float(INT64_MAX))
@@ -123,7 +123,7 @@ namespace Java {
 	/**
 	 * @brief Casts a float to a 32-bit integer
 	 */
-	static int32_t FloatToInt32(float value) {
+	inline int32_t FloatToInt32(float value) {
 		if (std::isnan(value))
 			return 0;
 		if (value > float(INT32_MAX))
