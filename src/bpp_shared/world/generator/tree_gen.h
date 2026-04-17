@@ -9,7 +9,6 @@
 
 #include "java_random.h"
 #include "world.h"
-#include "blockHelper.h"
 
 /**
  * @brief Used for generating Oak or Birch Trees

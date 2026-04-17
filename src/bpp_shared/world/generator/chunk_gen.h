@@ -6,11 +6,10 @@
 */
 
 #include "biomes.h"
-#include "cave_gen.h"
-//#include "feature_gen.h"
-//#include "tree_gen.h"
 #include "biome_gen.h"
-//#include "blockHelper.h"
+#include "cave_gen.h"
+// #include "feature_gen.h"
+// #include "tree_gen.h"
 #include "world.h"
 
 /**
