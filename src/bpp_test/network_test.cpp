@@ -27,11 +27,11 @@ int ServerTest() {
     Packet::PreLogin preLogin_client;
     preLogin_client.Deserialize(stream);
 
-    std::cout << "Received PreLogin packet from client: " << preLogin_client.username << "\n";
+    std::wcout << L"Received PreLogin packet from client: " << preLogin_client.username << L"\n";
 
     // S -> C
     Packet::PreLogin preLogin_server;
-    preLogin_server.connection_hash = "-";
+    preLogin_server.connection_hash = L"-";
     preLogin_server.Serialize(stream);
 
     // C -> S
@@ -39,12 +39,12 @@ int ServerTest() {
     Packet::Login login_client;
     login_client.Deserialize(stream);
 
-    std::cout << "Received Login packet from client: " << login_client.username << "\n";
+    std::wcout << L"Received Login packet from client: " << login_client.username << L"\n";
 
     // S -> C
     Packet::Login login_server;
     login_server.entity_id = 0;
-    login_server.username = "";
+    login_server.username = L"";
     login_server.worldSeed = 123456789;
     login_server.dimension = Dimension::Overworld;
     login_server.Serialize(stream);
@@ -75,7 +75,7 @@ int ClientTest() {
 
     // C -> S
     Packet::PreLogin preLogin_server;
-    preLogin_server.connection_hash = "Steve";
+    preLogin_server.username = L"Steve";
     preLogin_server.Serialize(stream);
     return 0;
 }

@@ -51,7 +51,7 @@ public:
         EntityId& protocolVersion = entity_id;
         EntityId& entityId_protocolVersion = entity_id;
 
-        std::string username;
+        std::wstring username;
         int64_t worldSeed;
         Dimension dimension;
 
@@ -65,7 +65,7 @@ public:
 
         void Deserialize(NetworkStream& stream) override {
             entityId_protocolVersion = stream.Read<EntityId>();
-            username = stream.Read<std::string>();
+            username = stream.Read<std::wstring>();
             worldSeed = stream.Read<int64_t>();
             dimension = stream.Read<Dimension>();
         }
@@ -74,9 +74,9 @@ public:
     // Used to initialize to connection
     struct PreLogin : BasePacket {
         PreLogin() : BasePacket{ PacketId::PreLogin } {}
-        std::string username;
-        std::string& connection_hash = username;
-        std::string& username_connectionHash = username;
+        std::wstring username;
+        std::wstring& connection_hash = username;
+        std::wstring& username_connectionHash = username;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
@@ -84,14 +84,14 @@ public:
         }
 
         void Deserialize(NetworkStream& stream) override {
-            username_connectionHash = stream.Read<std::string>();
+            username_connectionHash = stream.Read<std::wstring>();
         }
     };
 
     // Holds a chat message
     struct ChatMessage : BasePacket {
         ChatMessage() : BasePacket{ PacketId::ChatMessage } {}
-        std::string message;
+        std::wstring message;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
@@ -99,7 +99,7 @@ public:
         }
 
         void Deserialize(NetworkStream& stream) override {
-            message = stream.Read<std::string>();
+            message = stream.Read<std::wstring>();
         }
     };
 
@@ -443,7 +443,7 @@ public:
     struct SpawnPlayer : BasePacket {
         SpawnPlayer() : BasePacket{ PacketId::SpawnPlayer } {}
         EntityId entity_id;
-        std::string username;
+        std::wstring username;
         Int32_3 q_position;
         Int8_2 q_rotation;
         int8_t& q_yaw = q_rotation.x;   // wire order: yaw first
@@ -464,7 +464,7 @@ public:
 
         void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
-            username = stream.Read<std::string>();
+            username = stream.Read<std::wstring>();
             q_position.x = stream.Read<int32_t>();
             q_position.y = stream.Read<int32_t>();
             q_position.z = stream.Read<int32_t>();
@@ -609,7 +609,7 @@ public:
     struct SpawnPainting : BasePacket {
         SpawnPainting() : BasePacket{ PacketId::SpawnPainting } {}
         EntityId entity_id;
-        std::string title;
+        std::wstring title;
         Int32_3 position; // Block position
         PacketData::PaintingDirection direction;
 
@@ -625,7 +625,7 @@ public:
 
         void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
-            title = stream.Read<std::string>();
+            title = stream.Read<std::wstring>();
             position.x = stream.Read<int32_t>();
             position.y = stream.Read<int32_t>();
             position.z = stream.Read<int32_t>();
@@ -1137,13 +1137,13 @@ public:
             stream.Write(id);
             stream.Write(window_id);
             stream.Write(window_type);
-            stream.Write(title); // TODO: Add string8 handling
+            stream.Write(title);
             stream.Write(slot_count);
         }
         void Deserialize(NetworkStream& stream) override {
             window_id = stream.Read<WindowId>();
             window_type = stream.Read<PacketData::WindowType>();
-            title = stream.Read<std::string>(); // TODO: Add string8 handling
+            title = stream.Read<std::string>();
             slot_count = stream.Read<int8_t>();
         }
     };
@@ -1306,7 +1306,7 @@ public:
     struct UpdateSign : BasePacket {
         UpdateSign() : BasePacket{ PacketId::UpdateSign } {}
         SlimInt3<int16_t> position;
-        std::string lines[4];
+        std::wstring lines[4];
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
@@ -1323,10 +1323,10 @@ public:
             position.x = stream.Read<int32_t>();
             position.y = stream.Read<int16_t>();
             position.z = stream.Read<int32_t>();
-            lines[0] = stream.Read<std::string>();
-            lines[1] = stream.Read<std::string>();
-            lines[2] = stream.Read<std::string>();
-            lines[3] = stream.Read<std::string>();
+            lines[0] = stream.Read<std::wstring>();
+            lines[1] = stream.Read<std::wstring>();
+            lines[2] = stream.Read<std::wstring>();
+            lines[3] = stream.Read<std::wstring>();
         }
     };
 
@@ -1376,7 +1376,7 @@ public:
     // Used for disconnecting with a disconnect reason
     struct Disconnect : BasePacket {
         Disconnect() : BasePacket{ PacketId::Disconnect } {}
-        std::string reason;
+        std::wstring reason;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
@@ -1384,7 +1384,7 @@ public:
         }
 
         void Deserialize(NetworkStream& stream) override {
-            reason = stream.Read<std::string>();
+            reason = stream.Read<std::wstring>();
         }
     };
 };

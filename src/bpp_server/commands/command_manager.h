@@ -15,7 +15,7 @@
 class CommandManager {
   public:
 	static void Init();
-	static void Parse(std::string &cmd_string, PlayerSession& session) noexcept;
+	static void Parse(std::wstring &cmd_string, PlayerSession& session) noexcept;
 	static const std::vector<std::unique_ptr<Command>> &GetRegisteredCommands() noexcept;
 
   private:

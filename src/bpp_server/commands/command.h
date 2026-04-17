@@ -10,12 +10,12 @@
 
 #include "../player_session.h"
 
-#define ERROR_OPERATOR "Only operators can use this command!"
-#define ERROR_CREATIVE "Only creative players can use this command!"
-#define ERROR_WHITELIST "Only whitelisted players can use this command!"
-#define ERROR_REASON_SYNTAX "Invalid Syntax"
-#define ERROR_REASON_PARAMETERS "Invalid Parameters"
-#define ERROR_REASON_ERROR "Error"
+#define ERROR_OPERATOR L"Only operators can use this command!"
+#define ERROR_CREATIVE L"Only creative players can use this command!"
+#define ERROR_WHITELIST L"Only whitelisted players can use this command!"
+#define ERROR_REASON_SYNTAX L"Invalid Syntax"
+#define ERROR_REASON_PARAMETERS L"Invalid Parameters"
+#define ERROR_REASON_ERROR L"Error"
 
 #define MAX_CHAT_LINE_SIZE 60
 
@@ -24,7 +24,7 @@
 	class name : public Command {                                                                                      \
 	  public:                                                                                                          \
 		name() : Command(label, description, syntax, requiresOp, requiresCreative) {}                                  \
-		std::string Execute(std::vector<std::string>& parameters, PlayerSession& session) override;                                                                  \
+		std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session) override;                                                                  \
 	};
 
 /*
@@ -39,28 +39,28 @@ class CommandManager;
 // Base class for how a command is defined
 class Command {
   private:
-	std::string label;
-	std::string description;
-	std::string syntax;
+	std::wstring label;
+	std::wstring description;
+	std::wstring syntax;
 	bool requiresOp;
 	bool requiresCreative;
 
   public:
-	std::string GetLabel() { return label; }
-	std::string GetDescription() { return description; }
-	std::string GetSyntax() { return syntax; }
+	std::wstring GetLabel() { return label; }
+	std::wstring GetDescription() { return description; }
+	std::wstring GetSyntax() { return syntax; }
 	bool GetRequiresOperator() { return requiresOp; }
 	bool GetRequiresCreative() { return requiresCreative; }
 
 	std::string CheckPermissions(PlayerSession& session);
-	Command(std::string label, std::string description, std::string syntax, bool requiresOp = true, bool requiresCreative = false);
-	virtual std::string Execute(std::vector<std::string>& parameters, PlayerSession& session) = 0;
+	Command(std::wstring label, std::wstring description, std::wstring syntax, bool requiresOp = true, bool requiresCreative = false);
+	virtual std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session) = 0;
 	virtual ~Command() = default;
 };
 
 // Commands
 // Anyone can run these
-DEFINE_COMMAND(CommandHelp, "help", "Lists commands or helps with command", "[command]", false, false);
+DEFINE_COMMAND(CommandHelp, L"help", L"Lists commands or helps with command", L"[command]", false, false);
 /*
 DEFINE_COMMAND(CommandVersion, "version", "Shows the current Server version", "", false, false);
 DEFINE_COMMAND(CommandList, "list", "List all currently online players", "", false, false);

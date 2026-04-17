@@ -237,8 +237,8 @@ void Server::tick() {
             auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
                 now - session->last_packet_time).count();
             if (elapsed > timeout_seconds) {
-                std::cout << "Player " << session->username << " timed out\n";
-                disconnectPlayer(*session, "Connection timed out.");
+                std::wcout << L"Player " << session->username << L" timed out\n";
+                disconnectPlayer(*session, L"Connection timed out.");
             }
         }
     }
@@ -247,8 +247,8 @@ void Server::tick() {
     players.erase(
         std::remove_if(players.begin(), players.end(), [&](const auto& s) {
             if (!s->stream.isConnected()) {
-                std::cout << "Disconnected client " << s->username
-                    << " with entity id " << s->entityId << "\n";
+                std::wcout << L"Disconnected client " << s->username
+                    << L" with entity id " << s->entityId << L"\n";
                 chunkSender.remove(*s);
                 for (auto& other : players) {
                     if (other.get() == s.get()) continue;
@@ -274,10 +274,10 @@ void Server::handleHandshake(PlayerSession& session) {
     Packet::PreLogin incoming;
     incoming.Deserialize(session.stream);
     session.username = incoming.username;
-    std::cout << "Player " << session.username << " is logging in.\n";
+    std::wcout << L"Player " << session.username << L" is logging in.\n";
 
     Packet::PreLogin response;
-    response.username = "-";
+    response.username = L"-";
     response.Serialize(session.stream);
 
     session.connState = ConnectionState::LoggingIn;
@@ -293,9 +293,7 @@ void Server::handleLogin(PlayerSession& session) {
     incoming.Deserialize(session.stream);
 
     session.entityId = nextEntityId++;
-    std::cout << "Player " << session.username
-        << " logged in with entity ID " << session.entityId << ".\n";
-
+    std::wcout << L"Player " << session.username << L" logged in with entity ID " << session.entityId << L".\n";
     Packet::Login response;
     response.entity_id = session.entityId;
     response.username = session.username;
@@ -319,14 +317,14 @@ void Server::handleLogin(PlayerSession& session) {
     session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
-void Server::disconnectPlayer(PlayerSession& session, const std::string& reason) {
+void Server::disconnectPlayer(PlayerSession& session, const std::wstring& reason) {
     // Send disconnect reason to the leaving player
     Packet::Disconnect kick;
     kick.reason = reason;
     kick.Serialize(session.stream);
     session.stream.setConnected(false);
 
-    std::cout << "Player " << session.username << " disconnected: " << reason << "\n";
+    std::wcout << L"Player " << session.username << L" disconnected: " << reason << L"\n";
 }
 
 void Server::waitForSpawnChunks(PlayerSession& session) {
@@ -555,7 +553,7 @@ void Server::processIncoming(PlayerSession& session) {
         default:
             std::cout << "UNHANDLED packet 0x" << std::hex
                 << static_cast<int>(packetId) << "\n";
-            disconnectPlayer(session, "Unknown packet");
+            disconnectPlayer(session, L"Unknown packet");
             return;
         }
     }
