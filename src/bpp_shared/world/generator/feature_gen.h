@@ -9,7 +9,7 @@
 
 #include "java_random.h"
 #include "world.h"
-#include "blockHelper.h"
+#include "base_structs.h"
 
 /**
  * @brief Beta 1.7.3 Feature Generators
