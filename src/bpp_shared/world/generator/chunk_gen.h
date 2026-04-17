@@ -61,5 +61,5 @@ class Generator {
 	Generator(int64_t seed);
 	~Generator() = default;
 	void GenerateChunk(Chunk& chunk);
-	bool PopulateChunk(Chunk& chunk);
+	bool PopulateChunk([[maybe_unused]] Chunk& chunk, [[maybe_unused]] WorldManager world);
 };
