@@ -40,7 +40,7 @@ struct PlayerSession {
     std::unordered_set<ChunkPos> flushedChunks; // actually written to stream
     ConnectionState connState = ConnectionState::Handshaking;
     EntityId entityId = 0;
-    std::string username;
+    std::wstring username;
     std::chrono::steady_clock::time_point last_packet_time = std::chrono::steady_clock::now();
 
     explicit PlayerSession(int socket) : stream(socket) {}

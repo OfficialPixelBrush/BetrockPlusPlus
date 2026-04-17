@@ -87,10 +87,14 @@ public:
     void setConnected(bool val) { connected = val; }
     bool isConnected() const { return connected; }
 
-    // String-16 Read-Write
+    // String-8 Read-Write
     template<>
     std::string Read<std::string>();
     void Write(const std::string& str);
+    // String-16 Read-Write
+    template<>
+    std::wstring Read<std::wstring>();
+    void Write(const std::wstring& str);
     // Raw byte buffer Read-Write (no endian conversion)
     void ReadBytes(uint8_t* buf, size_t len);
     void WriteBytes(const uint8_t* buf, size_t len);

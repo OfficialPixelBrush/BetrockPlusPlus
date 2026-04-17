@@ -54,17 +54,17 @@ void CommandManager::Init() {
 const std::vector<std::unique_ptr<Command>> &CommandManager::GetRegisteredCommands() noexcept { return registeredCommands; }
 
 // Parses commands and executes them
-void CommandManager::Parse(std::string &cmd_string, PlayerSession& session) noexcept {
+void CommandManager::Parse(std::wstring &cmd_string, PlayerSession& session) noexcept {
 	// Remove initial /
 	cmd_string = cmd_string.substr(1);
 	// Set these up for command parsing
-	std::string failureReason = "Syntax";
-	std::vector<std::string> command;
+	std::wstring failureReason = L"Syntax";
+	std::vector<std::wstring> command;
 
-	std::string s;
-	std::stringstream ss(cmd_string);
+	std::wstring s;
+	std::wstringstream ss(cmd_string);
 
-	while (getline(ss, s, ' ')) {
+	while (getline(ss, s, L' ')) {
 		// store token string in the vector
 		command.push_back(s);
 	}
@@ -83,10 +83,10 @@ void CommandManager::Parse(std::string &cmd_string, PlayerSession& session) noex
 
 	Packet::ChatMessage failPkt;
 
-	if (failureReason == "Syntax") {
-		failPkt.message = "§cInvalid Syntax \"" + cmd_string + "\"";
+	if (failureReason == L"Syntax") {
+		failPkt.message = L"§cInvalid Syntax \"" + cmd_string + L"\"";
 	} else if (!failureReason.empty()) {
-		failPkt.message = "§c" + failureReason;
+		failPkt.message = L"§c" + failureReason;
 	}
 	failPkt.Serialize(session.stream);
 }

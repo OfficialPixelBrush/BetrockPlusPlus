@@ -7,11 +7,11 @@
 #include "command.h"
 #include "command_manager.h"
 
-std::vector<std::string> command;
-std::string failureReason;
+std::vector<std::wstring> command;
+std::wstring failureReason;
 
 // Base Command
-Command::Command(std::string pLabel, std::string pDescription, std::string pSyntax, bool pRequiresOp, bool pRequiresCreative) {
+Command::Command(std::wstring pLabel, std::wstring pDescription, std::wstring pSyntax, bool pRequiresOp, bool pRequiresCreative) {
 	this->label = pLabel;
 	this->description = pDescription;
 	this->syntax = pSyntax;
@@ -38,7 +38,7 @@ std::string Command::CheckPermissions(Client *client) {
 */
 
 // Lists pCommands or helps with command
-std::string CommandHelp::Execute(std::vector<std::string>& parameters, PlayerSession& session) {
+std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerSession& session) {
 	//DEFINE_PERMSCHECK(pClient)
 	const auto& registered_commands = CommandManager::GetRegisteredCommands();
 	Packet::ChatMessage pkt;
@@ -46,37 +46,37 @@ std::string CommandHelp::Execute(std::vector<std::string>& parameters, PlayerSes
 	if (parameters.size() > 1) {
 		for (size_t i = 0; i < registered_commands.size(); i++) {
 			if (registered_commands[i]->GetLabel() == parameters[1]) {
-					pkt.message = "§7" + registered_commands[i]->GetLabel() + ": " + registered_commands[i]->GetDescription();
+					pkt.message = L"§7" + registered_commands[i]->GetLabel() + L": " + registered_commands[i]->GetDescription();
 					pkt.Serialize(session.stream);
 					// Only print syntax if it has a value
 					if (!registered_commands[i]->GetSyntax().empty()) {
-						pkt.message = "§7/" + registered_commands[i]->GetLabel() + " " + registered_commands[i]->GetSyntax();
+						pkt.message = L"§7/" + registered_commands[i]->GetLabel() + L" " + registered_commands[i]->GetSyntax();
 						pkt.Serialize(session.stream);
 					}
 					if (registered_commands[i]->GetRequiresOperator()) {
-						pkt.message = "§7(Requires operator)";
+						pkt.message = L"§7(Requires operator)";
 						pkt.Serialize(session.stream);
 					}
-				return "";
+				return L"";
 			}
 		}
-		return "Command not found!";
+		return L"Command not found!";
 		// List all commands
 	} else {
-		pkt.message = "§7-- All Commands --";
+		pkt.message = L"§7-- All Commands --";
 		pkt.Serialize(session.stream);
-		pkt.message = "§7";
+		pkt.message = L"§7";
 		for (size_t i = 0; i < registered_commands.size(); i++) {
 			pkt.message = registered_commands[i]->GetLabel();
 			if (i < registered_commands.size() - 1) {
-				pkt.message += ", ";
+				pkt.message += L", ";
 			}
 			if (pkt.message.size() > MAX_CHAT_LINE_SIZE || i == registered_commands.size() - 1) {
 				pkt.Serialize(session.stream);
-				pkt.message = "§7";
+				pkt.message = L"§7";
 			}
 		}
-		return "";
+		return L"";
 	}
 	return ERROR_REASON_SYNTAX;
 }

@@ -27,7 +27,7 @@ namespace HandlePacket {
             return;
         }
         // Normal chat-message handling
-        std::string broadcast = "<" + session.username + "> " + pkt.message;
+        std::wstring broadcast = L"<" + session.username + L"> " + pkt.message;
         for (auto& other : players) {
             if (other->connState != ConnectionState::Playing) continue;
             Packet::ChatMessage reply;

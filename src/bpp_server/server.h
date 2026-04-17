@@ -43,7 +43,7 @@ private:
     void handleHandshake(PlayerSession& session);
     void handleLogin(PlayerSession& session);
     void waitForSpawnChunks(PlayerSession& session);
-    void disconnectPlayer(PlayerSession& session, const std::string& reason);
+    void disconnectPlayer(PlayerSession& session, const std::wstring& reason);
     void broadcastPlayerMovement(PlayerSession& session);
     void processIncoming(PlayerSession& session);
 
