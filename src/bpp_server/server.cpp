@@ -61,10 +61,27 @@ Server::~Server() {
 }
 
 void Server::run() {
+    auto lastTime = std::chrono::steady_clock::now();
+
     while (true) {
+        int ticks_ran = 0;
+
+        auto now = std::chrono::steady_clock::now();
+        float delta = std::chrono::duration<float>(now - lastTime).count();
+        lastTime = now;
+
+        accumulator += delta;
+
+        while (accumulator >= TICK_DELTA && ticks_ran < MAX_TICKS_PER_FRAME) {
+            tick();
+            accumulator -= TICK_DELTA;
+            ticks_ran++;
+        }
+
+        if (ticks_ran == MAX_TICKS_PER_FRAME)
+            accumulator = 0.0f;
+
         acceptNewPlayers();
-        tick();
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
 
@@ -173,7 +190,6 @@ void Server::tick() {
     }
 
     world.tick(positions);
-    tickCounter++;
 
     for (auto& session : players) {
         switch (session->connState) {
@@ -185,9 +201,15 @@ void Server::tick() {
             chunkSender.enqueue(*session, world, 10);
             chunkSender.flush(*session);
             broadcastPlayerMovement(*session);
-            if (tickCounter % 20 == 0) {
+            if (world.elapsed_ticks % 20 == 0) {
+                // Keep alive packet or else beta fusses
                 Packet::KeepAlive ka;
                 ka.Serialize(session->stream);
+
+                // Update the server time so client's don't desync
+                Packet::SetTime time;
+                time.time = world.elapsed_ticks;
+                time.Serialize(session->stream);
             }
             break;
         }
@@ -275,7 +297,7 @@ void Server::handleLogin(PlayerSession& session) {
     health.Serialize(session.stream);
 
     Packet::SetTime time;
-    time.time = 0;
+    time.time = world.elapsed_ticks;
     time.Serialize(session.stream);
 
     session.position.pos = { 0.0, 200.0, 0.0 };

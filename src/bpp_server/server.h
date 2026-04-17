@@ -46,11 +46,14 @@ private:
     void broadcastPlayerMovement(PlayerSession& session);
     void processIncoming(PlayerSession& session);
 
+    static constexpr float TICK_DELTA = 1.0f / 20.0f;
+    static constexpr int   MAX_TICKS_PER_FRAME = 10;
+
     WorldManager world;
     ChunkSender chunkSender;
     std::vector<std::unique_ptr<PlayerSession>> players;
     int serverSocket = -1;
-    int tickCounter = 0;
     EntityId nextEntityId = 2;
     int64_t timeout_seconds = 60;
+    float accumulator = 0.0f;
 };

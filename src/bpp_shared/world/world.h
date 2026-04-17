@@ -25,6 +25,7 @@ struct WorldManager {
     BS::thread_pool<> pool{ std::max(1u, uint32_t(float(std::thread::hardware_concurrency()) * 0.25f)) };
 
     int64_t seed = 0;
+    int64_t elapsed_ticks = 0;
 
     void tick(const std::vector<ClientPosition>& players);
 

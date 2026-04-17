@@ -8,6 +8,7 @@
 #include "generator/chunk_gen.h"
 
 void WorldManager::tick(const std::vector<ClientPosition>& players) {
+    elapsed_ticks++;
     updateLoadRadius(players);
     pumpPipeline();
 }
