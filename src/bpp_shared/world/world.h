@@ -9,9 +9,12 @@
 // It handles all world-related operations and provides a simple interface for the rest of the code to interact with the world.
 // WorldManager.h
 #pragma once
+#include "base_structs.h"
+#include "blocks.h"
 #include "world/chunk.h"
 #include "world/client_pos.h"
 #include "BS_thread_pool.hpp"
+#include <cstdint>
 #include <unordered_map>
 #include <unordered_set>
 #include <mutex>
@@ -19,14 +22,14 @@
 #include <vector>
 
 struct PendingBlock {
-    BlockType block_type = BlockType::BLOCK_AIR;
-    uint8_t metadata = 0;
+    Block block { BLOCK_AIR, 0 };
     Int3 block_pos{ 0, 0, 0 };
 };
 
 struct WorldManager {
     std::unordered_map<ChunkPos, std::shared_ptr<Chunk>> chunks;
     std::unordered_map<ChunkPos, std::vector<PendingBlock>> pending_blocks;
+    std::vector<PendingBlock> block_updates_in_tick;
     std::mutex chunksMutex;
 
     BS::thread_pool<> pool{ std::max(1u, uint32_t(float(std::thread::hardware_concurrency()) * 0.25f)) };
@@ -75,15 +78,27 @@ struct WorldManager {
         auto* chunk = getChunkRaw(cp);
         if (!chunk || chunk->state.load() < ChunkState::Generated) {
             pending_blocks[cp].push_back({
-                .block_type = block_type,
-                .metadata = metadata,
+                .block = Block {
+                    .type = block_type,
+                    .data = metadata
+                },
                 .block_pos = { wpos.x & 15, wpos.y, wpos.z & 15 }
                 });
             return;
         }
         Int3 local{ wpos.x & 15, wpos.y, wpos.z & 15 };
+        block_updates_in_tick.push_back(
+            PendingBlock{
+                Block{block_type,metadata},
+                 wpos
+            }
+        );
         chunk->setBlock(local, block_type);
         chunk->setMeta(local, metadata);
+    }
+
+    std::vector<PendingBlock> &getBlockUpdatesInTick() {
+        return block_updates_in_tick;
     }
 
     // Returns true if the block at wpos is air (or chunk not loaded).
@@ -137,8 +152,8 @@ struct WorldManager {
         auto* chunk = getChunkRaw(pos);
         if (!chunk) return;
         for (auto& pb : pit->second) {
-            chunk->setBlock(pb.block_pos, pb.block_type);
-            chunk->setMeta(pb.block_pos, pb.metadata);
+            chunk->setBlock(pb.block_pos, pb.block.type);
+            chunk->setMeta(pb.block_pos, pb.block.data);
         }
         pending_blocks.erase(pit);
     }

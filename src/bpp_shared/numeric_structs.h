@@ -182,6 +182,102 @@ struct BiNumber {
     }
 };
 
+
+/**
+ * @brief A struct that contains three numbers, two 32-bit integers for x and z, and a variable-sized y (8, 16, 32, 64 bits)
+ * 
+ */
+template<typename T = int>
+struct SlimInt3 {
+    // For accessing directly
+    struct {
+        int32_t x;
+        T y;
+        int32_t z;
+    };
+
+    constexpr SlimInt3(int32_t x, T y, int32_t z) : x(x), y(y), z(z) {}
+    constexpr SlimInt3() : x(0), y(0), z(0) {}
+
+    bool operator==(const SlimInt3& other) const {
+        return x == other.x && y == other.y && z == other.z;
+    }
+
+    SlimInt3 operator+(const SlimInt3& other) const {
+        return SlimInt3{x + other.x, y + other.y, z + other.z};
+    }
+
+    SlimInt3 operator-(const SlimInt3& other) const {
+        return SlimInt3{x - other.x, y - other.y, z - other.z};
+    }
+
+    SlimInt3 operator*(const SlimInt3& other) const {
+        return SlimInt3{x * other.x, y * other.y, z * other.z};
+    }
+
+    SlimInt3 operator/(const SlimInt3& other) const {
+        return SlimInt3{x / other.x, y / other.y, z / other.z};
+    }
+
+    // Allows for tri + 1 = (x+1,y+1,z+1)
+    template<typename U>
+    auto operator-(const U& other) const {
+        using R = std::common_type_t<SlimInt3, U>;
+        return SlimInt3{
+            static_cast<R>(x) - other,
+            static_cast<R>(y) - other,
+            static_cast<R>(z) - other
+        };
+    }
+
+    // Allows for tri - 1 = (x-1,y-1,z-1)
+    template<typename U>
+    auto operator+(const U& other) const {
+        using R = std::common_type_t<SlimInt3, U>;
+        return SlimInt3{
+            static_cast<R>(x) + other,
+            static_cast<R>(y) + other,
+            static_cast<R>(z) + other
+        };
+    }
+
+    // Allows for tri * 2 = (x*2,y*2,z*2)
+    template<typename U>
+    auto operator*(const U& other) const {
+        using R = std::common_type_t<SlimInt3, U>;
+        return SlimInt3{
+            static_cast<R>(x) * other,
+            static_cast<R>(y) * other,
+            static_cast<R>(z) * other
+        };
+    }
+
+    // Allows for tri / 2 = (x/2,y/2,z/2)
+    template<typename U>
+    auto operator/(const U& other) const {
+        using R = std::common_type_t<SlimInt3, U>;
+        return SlimInt3{
+            static_cast<R>(x) / other,
+            static_cast<R>(y) / other,
+            static_cast<R>(z) / other
+        };
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const SlimInt3& val) {
+        os  << "(" 
+            << static_cast<int64_t>(val.x) << ", "
+            << static_cast<int64_t>(val.y) << ", "
+            << static_cast<int64_t>(val.z) << ")";
+        return os;
+    }
+    
+    std::string str() const {
+        std::ostringstream oss;
+        oss << *this; // Use the overloaded << operator
+        return oss.str();
+    }
+};
+
 /* --- Pre-defined Tri and Bi numbers --- */
 
 // Vector/Double (64-Bit float)
@@ -269,3 +365,7 @@ typedef Int64_2 Long2;
 #define LONG3_ONE       INT64_3_ONE
 #define LONG2_ZERO      INT64_2_ZERO
 #define LONG2_ONE       INT64_2_ONE
+
+// Slim Int3 defines
+#define SLIM_INT3_ZERO  SlimInt3{0, 0, 0}
+#define SLIM_INT3_ONE   SlimInt3{1, 1, 1}

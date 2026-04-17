@@ -311,12 +311,7 @@ public:
     struct MineBlock : BasePacket {
         MineBlock() : BasePacket{ PacketId::MineBlock } {}
         PacketData::MineStatus status;
-        // TODO: Possibly use Int3?
-        struct {
-            int32_t x;
-            int8_t y;
-            int32_t z;
-        } position;
+        SlimInt3<int8_t> position;
         PacketData::FaceDirection face;
 
         void Serialize(NetworkStream& stream) const override {
@@ -340,12 +335,7 @@ public:
     // Information on where a player is placing a block
     struct PlaceBlock : BasePacket {
         PlaceBlock() : BasePacket{ PacketId::PlaceBlock } {}
-        // TODO: Possibly use Int3?
-        struct {
-            int32_t x;
-            int8_t y;
-            int32_t z;
-        } position;
+        SlimInt3<int8_t> position;
         PacketData::FaceDirection face;
         Item item;
 
@@ -393,11 +383,7 @@ public:
         InteractWithBlock() : BasePacket{ PacketId::InteractWithBlock } {}
         EntityId entity_id;
         PacketData::BlockInteraction interaction_id;
-        struct {
-            int32_t x;
-            int8_t y;
-            int32_t z;
-        } position;
+        SlimInt3<int8_t> position;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
@@ -982,11 +968,7 @@ public:
     // Used to set a singular block
     struct SetBlock : BasePacket {
         SetBlock() : BasePacket{ PacketId::SetBlock } {}
-        struct {
-            int32_t x;
-            int8_t y;
-            int32_t z;
-        } position;
+        SlimInt3<int8_t> position;
         Block block;
 
         void Serialize(NetworkStream& stream) const override {
@@ -1003,18 +985,14 @@ public:
             position.y = stream.Read<int8_t>();
             position.z = stream.Read<int32_t>();
             block.type = stream.Read<BlockType>();
-            block.data = stream.Read<int8_t>();
+            block.data = stream.Read<uint8_t>();
         }
     };
 
     // Used to set a singular block
     struct BlockEvent : BasePacket {
         BlockEvent() : BasePacket{ PacketId::BlockEvent } {}
-        struct {
-            int32_t x;
-            int8_t y;
-            int32_t z;
-        } position;
+        SlimInt3<int8_t> position;
         int8_t instrument_state;
         int8_t pitch_direction;
 
@@ -1085,11 +1063,7 @@ public:
     struct WorldEvent : BasePacket {
         WorldEvent() : BasePacket{ PacketId::WorldEvent } {}
         PacketData::WorldEvent event_id;
-        struct {
-            int32_t x;
-            int32_t z;
-            int8_t  y;
-        } position;
+        SlimInt3<int8_t> position;
         int32_t data;
 
         void Serialize(NetworkStream& stream) const override {
@@ -1331,11 +1305,7 @@ public:
     // Use for updating the text on signs
     struct UpdateSign : BasePacket {
         UpdateSign() : BasePacket{ PacketId::UpdateSign } {}
-        struct {
-            int32_t x;
-            int16_t y;
-            int32_t z;
-        } position;
+        SlimInt3<int16_t> position;
         std::string lines[4];
 
         void Serialize(NetworkStream& stream) const override {
