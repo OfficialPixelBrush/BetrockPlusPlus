@@ -29,6 +29,7 @@
 #include "world/client_pos.h"
 #include "handle_packet.h"
 #include "chunk_sender.h"
+#include "commands/command_manager.h"
 
 class Server {
 public:
@@ -56,4 +57,5 @@ private:
     EntityId nextEntityId = 2;
     int64_t timeout_seconds = 60;
     float accumulator = 0.0f;
+    CommandManager command_manager;
 };

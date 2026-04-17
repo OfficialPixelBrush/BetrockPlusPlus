@@ -24,6 +24,7 @@
 
 Server::Server() {
     Blocks::registerAll();
+    command_manager.Init();
     world.seed = 404;
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -426,7 +427,7 @@ void Server::processIncoming(PlayerSession& session) {
         case PacketId::ChatMessage: {
             Packet::ChatMessage pkt;
             pkt.Deserialize(session.stream);
-            HandlePacket::ChatMessage(pkt, session, players);
+            HandlePacket::ChatMessage(pkt, session, players, command_manager);
             break;
         }
         case PacketId::SetTime: {
