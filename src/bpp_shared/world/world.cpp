@@ -11,6 +11,7 @@ void WorldManager::tick(const std::vector<ClientPosition>& players) {
     elapsed_ticks++;
     updateLoadRadius(players);
     pumpPipeline();
+    block_updates_in_tick.clear();
 }
 
 void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) {

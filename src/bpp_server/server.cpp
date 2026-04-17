@@ -184,12 +184,26 @@ void Server::broadcastPlayerMovement(PlayerSession& session) {
 
 void Server::tick() {
     std::vector<ClientPosition> positions;
+    // Get already occured block updates
+    auto bu = world.getBlockUpdatesInTick();
+    Packet::SetBlock pkt;
     for (auto& session : players) {
         if (session->connState == ConnectionState::WaitingForSpawnChunks ||
-            session->connState == ConnectionState::Playing)
+            session->connState == ConnectionState::Playing) {
             positions.push_back(session->position);
+            // TODO: This is very bad, don't do this.
+            // Batch with MultiBlockPacket
+            for (auto& pb : bu) {
+                pkt.block = pb.block;
+                pkt.position.x = pb.block_pos.x;
+                pkt.position.y = int8_t(pb.block_pos.y);
+                pkt.position.z = pb.block_pos.z;
+                pkt.Serialize(session->stream);
+            }
+        }
     }
 
+    // Clears blockUpdates
     world.tick(positions);
 
     for (auto& session : players) {
