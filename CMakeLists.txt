@@ -62,7 +62,7 @@ add_executable(
     src/bpp_client/renderers/sub_chunk_mesher.cpp
     src/bpp_shared/world/world.cpp
     src/bpp_shared/blocks/block_properties.cpp 
-)
+ "src/bpp_shared/world/chunk_lighter.h" "src/bpp_shared/world/global_lighter.h" "src/bpp_shared/world/light_packet.h")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(BetrockPlusPlus PRIVATE
