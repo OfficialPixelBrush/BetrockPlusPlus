@@ -400,7 +400,7 @@ Biome Generator::GetBiomeAt(Int2 worldPos) {
  * @param chunkPos The x,z coordinate of the chunk
  * @return True if population succeeded
  */
-bool Generator::PopulateChunk([[maybe_unused]] Chunk& chunk, [[maybe_unused]] WorldManager world) {
+bool Generator::PopulateChunk([[maybe_unused]] Chunk& chunk, [[maybe_unused]] WorldManager& world) {
 	// BlockSand.fallInstantly = true;
 	/*
 	Int2 bpos = Int2{
