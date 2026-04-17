@@ -46,7 +46,7 @@ struct ChunkSender {
                 ChunkPos p{ cx + dx, cz + dz };
                 if (!world.chunks.contains(p)) continue;
                 if (session.sentChunks.contains(p)) continue;
-                if (world.chunks[p]->state.load() != ChunkState::Lit) continue;
+                if (world.chunks[p]->state.load() < ChunkState::Generated) continue;
                 toSend.push_back(p);
             }
         }
