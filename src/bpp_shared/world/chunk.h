@@ -20,6 +20,8 @@ enum class ChunkState : uint8_t {
 	Unloaded,
 	Generating,
 	Generated,
+	Poulating,
+	Populated,
 	Lighting,
 	Lit,
 	Unloading
@@ -130,11 +132,12 @@ struct Chunk {
 	ChunkPos cpos;
 	Slice slices[CHUNK_HEIGHT / SUB_CHUNK_SIZE]; // 128 blocks high
 	std::atomic<ChunkState> state{ ChunkState::Unloaded };
-	bool isTerrainPopulated = false;
-	bool isModified = false; // Whether this chunk has been modified since it was loaded/generated
 	uint8_t heightMap[CHUNK_WIDTH * CHUNK_WIDTH] = {}; // heightMap[(z << 4) | x]
 	float temperature[CHUNK_WIDTH * CHUNK_WIDTH] = {};
 	float humidity[CHUNK_WIDTH * CHUNK_WIDTH] = {};
+
+	bool isTerrainPopulated = false;
+	bool isModified = false; // Whether this chunk has been modified since it was loaded/generated
 
 	// Climate helpers
 	inline float getTemperature(Int2 pos) const { return temperature[(pos.y << 4) | pos.x]; }
