@@ -3,7 +3,7 @@
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  *
  * SPDX-License-Identifier: GPL-3.0-only
- * 
+ *
 */
 
 #pragma once
@@ -53,9 +53,9 @@ struct Slice {
 	// Block light and Sky light are both stored in the same array. Lo = Block, Hi = Sky
 	uint8_t lightNibble[SUB_CHUNK_VOLUME] = { 0 };
 	// Block meta is 4 bits each, so each entry is two block's metadata.
-	uint8_t nibbleBlockMeta[SUB_CHUNK_VOLUME/2] = { 0 };
+	uint8_t nibbleBlockMeta[SUB_CHUNK_VOLUME / 2] = { 0 };
 	// So we can skip empty slices when rendering and meshing
-	bool isEmpty = true; 
+	bool isEmpty = true;
 
 	// Calculate the index in the block array for a given block position within this slice
 	inline int blockIndex(Int3 pos) const {
@@ -137,7 +137,7 @@ struct Chunk {
 	float humidity[CHUNK_WIDTH * CHUNK_WIDTH] = {};
 
 	bool isTerrainPopulated = false;
-	bool isModified = false; // Whether this chunk has been modified since it was loaded/generated
+	bool isModified = false;
 
 	// Climate helpers
 	inline float getTemperature(Int2 pos) const { return temperature[(pos.y << 4) | pos.x]; }
@@ -164,7 +164,7 @@ struct Chunk {
 	}
 
 	inline void generateHeightMapColumn(Int2 pos) {
-		for (uint8_t y = CHUNK_HEIGHT-1; y >= 0; y--) {
+		for (int y = CHUNK_HEIGHT - 1; y >= 0; y--) {
 			if (Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity > 0) {
 				setHeightValue(pos, y + 1);
 				return;
@@ -181,7 +181,7 @@ struct Chunk {
 				int height = getHeightValue({ x, z });
 
 				// Above the heightmap: unconditionally full sky
-				for (int y = CHUNK_HEIGHT-1; y >= height; y--)
+				for (int y = CHUNK_HEIGHT - 1; y >= height; y--)
 					setSkyLight({ x, y, z }, 15);
 
 				// Below the heightmap: bleed light through semi-transparent blocks
@@ -202,7 +202,7 @@ struct Chunk {
 		int height = getHeightValue(pos);
 
 		// Set full skylight for everything at or above the surface
-		for (int y = CHUNK_HEIGHT-1; y >= height; y--)
+		for (int y = CHUNK_HEIGHT - 1; y >= height; y--)
 			setSkyLight({ pos.x, y, pos.z }, 15);
 
 		// Attenuate below the surface
@@ -230,24 +230,24 @@ struct Chunk {
 	// Block helpers
 	inline BlockType getBlock(Int3 pos) const {
 		if (!isValidBlockPos(pos)) return BLOCK_AIR;
-		return getSlice(pos.y).getBlock({pos.x, pos.y & 15, pos.z});
+		return getSlice(pos.y).getBlock({ pos.x, pos.y & 15, pos.z });
 	}
 
 	inline void setBlock(Int3 pos, BlockType id) {
 		if (!isValidBlockPos(pos)) return;
-		getSlice(pos.y).setBlock({pos.x, pos.y & 15, pos.z}, id);
+		getSlice(pos.y).setBlock({ pos.x, pos.y & 15, pos.z }, id);
 		isModified = true;
 	}
 
 	// Meta helpers
 	inline uint8_t getMeta(Int3 pos) const {
 		if (!isValidBlockPos(pos)) return 0;
-		return getSlice(pos.y).getMeta({pos.x, pos.y & 15, pos.z});
+		return getSlice(pos.y).getMeta({ pos.x, pos.y & 15, pos.z });
 	}
 
 	inline void setMeta(Int3 pos, uint8_t meta) {
 		if (!isValidBlockPos(pos)) return;
-		getSlice(pos.y).setMeta({pos.x, pos.y & 15, pos.z}, meta);
+		getSlice(pos.y).setMeta({ pos.x, pos.y & 15, pos.z }, meta);
 		isModified = true;
 	}
 
