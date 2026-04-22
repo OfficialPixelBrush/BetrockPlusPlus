@@ -53,6 +53,7 @@ private:
     WorldManager world;
     ChunkSender chunkSender;
     std::vector<std::unique_ptr<PlayerSession>> players;
+    std::unordered_map<ChunkPos, std::vector<PendingBlock>> chunkBlockChanges;
     int serverSocket = -1;
     EntityId nextEntityId = 2;
     int64_t timeout_seconds = 60;
