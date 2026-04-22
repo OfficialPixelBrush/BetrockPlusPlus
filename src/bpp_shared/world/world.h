@@ -28,12 +28,14 @@
 struct PendingBlock {
     Block block{ BLOCK_AIR, 0 };
     Int3 block_pos{ 0, 0, 0 };
+	Int2 light{ 0, 15 }; // block light, sky light
 };
 
 struct WorldManager {
     std::unordered_map<ChunkPos, std::shared_ptr<Chunk>> chunks;
     std::unordered_map<ChunkPos, std::vector<PendingBlock>> pending_blocks;
     std::mutex chunksMutex;
+    std::function<void(PendingBlock, ChunkPos)> onBlockUpdate; // uses world space coordinates
 
     BS::thread_pool<> pool{ std::max(1u, uint32_t(float(std::thread::hardware_concurrency()) * 0.25f)) };
 
@@ -88,6 +90,12 @@ struct WorldManager {
         Int3 local{ wpos.x & 15, wpos.y, wpos.z & 15 };
         chunk->setBlock(local, block_type);
         chunk->setMeta(local, metadata);
+        if (onBlockUpdate) onBlockUpdate(
+            PendingBlock{
+                .block{block_type, metadata},
+                .block_pos{wpos.x, wpos.y, wpos.z},
+                .light{chunk->getBlockLight(local), chunk->getSkyLight(local)}
+            }, chunk->cpos);
     }
 
     bool isAirBlock(Int3 wpos) {
@@ -135,6 +143,13 @@ struct WorldManager {
         for (auto& pb : pit->second) {
             chunk->setBlock(pb.block_pos, pb.block.type);
             chunk->setMeta(pb.block_pos, pb.block.data);
+            Int3 global{pb.block_pos.x + (pos.x * 16), pb.block_pos.y, pb.block_pos.z + (pos.z * 16)};
+            if (onBlockUpdate) onBlockUpdate(
+                PendingBlock{
+                    .block{pb.block.type, pb.block.data},
+                    .block_pos{global.x, global.y, global.z},
+                    .light{chunk->getBlockLight(pb.block_pos), chunk->getSkyLight(pb.block_pos)}
+                }, pos);
         }
         pending_blocks.erase(pit);
     }

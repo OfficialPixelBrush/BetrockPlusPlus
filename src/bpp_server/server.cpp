@@ -27,6 +27,13 @@ Server::Server() {
     command_manager.Init();
     world.seed = 404;
 
+    // For decided what block updates to send to clients.
+    world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
+        PendingBlock pendingNew = pendingBlock;
+        pendingNew.block_pos = {pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y, pendingBlock.block_pos.z & 15};
+        chunkBlockChanges[chunkPos].push_back(pendingNew);
+    };
+
 #if defined(_WIN32) || defined(_WIN64)
     WSADATA wsaData;
     WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -212,9 +219,54 @@ void Server::tick() {
                 time.time = world.elapsed_ticks;
                 time.Serialize(session->stream);
             }
+
+            // Send block changes
+            for (auto chunk : session->flushedChunks) {
+                auto it = chunkBlockChanges.find(chunk);
+                if (it == chunkBlockChanges.end()) continue;
+                auto& chunkBlockChangeVector = it->second;
+                if (chunkBlockChangeVector.size() <= 1) {
+                    // Single block send in world space
+                    PendingBlock& pb = chunkBlockChangeVector[0];
+                    Packet::SetBlock sb;
+                    sb.block = {pb.block.type, pb.block.data};
+                    sb.position = {
+                        static_cast<int32_t>(pb.block_pos.x + (chunk.x * 16)),
+                        static_cast<int8_t>(pb.block_pos.y),
+                        static_cast<int32_t>(pb.block_pos.z + (chunk.z * 16))
+                    };
+                    sb.Serialize(session->stream);
+                }
+                else {
+                    // Function to convert block positions into one 16 bit int
+                    auto format_multi_block = [](int8_t x, int8_t y, int8_t z) {
+                        return (
+                            ((int16_t(x) & 0x0F) << 12) |
+                            ((int16_t(z) & 0x0F) << 8) |
+                            ((int16_t(y) & 0xFF))
+                            );
+                    };
+
+                    // Multi block send in chunk space
+                    Packet::SetMultipleBlocks smb;
+                    smb.chunk_position = {chunk.x, chunk.z};
+
+                    // Go through each block and add it to the packet
+                    for (auto& pb : chunkBlockChangeVector) {
+                        smb.block_coordinates.push_back(format_multi_block(pb.block_pos.x, pb.block_pos.y, pb.block_pos.z));
+                        smb.block_metadata.push_back(pb.block.data);
+                        smb.block_types.push_back(pb.block.type);
+                    }
+                    smb.number_of_blocks = smb.block_coordinates.size();
+                    smb.Serialize(session->stream);
+                }
+            }
             break;
         }
     }
+
+    // Clear the cached block changes from this tick
+    chunkBlockChanges.clear();
 
     // Mark clients who have timed out for removal
     auto now = std::chrono::steady_clock::now();
