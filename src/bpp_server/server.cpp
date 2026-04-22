@@ -7,14 +7,14 @@
 */
 
 #if defined(__linux__) || defined(__APPLE__)
-    #include <unistd.h>
-    #include <netinet/in.h>
-    #include <sys/socket.h>
-    #include <fcntl.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <fcntl.h>
 #elif defined(_WIN32) || defined(_WIN64)
-    #define NOMINMAX
-    #include <winsock2.h>
-    #pragma comment(lib, "ws2_32.lib")
+#define NOMINMAX
+#include <winsock2.h>
+#pragma comment(lib, "ws2_32.lib")
 #endif
 
 #include <iostream>
@@ -30,9 +30,10 @@ Server::Server() {
     // For decided what block updates to send to clients.
     world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
         PendingBlock pendingNew = pendingBlock;
-        pendingNew.block_pos = {pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y, pendingBlock.block_pos.z & 15};
+        pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y, pendingBlock.block_pos.z & 15 };
+        std::unique_lock lock(chunkBlockChangesMutex);
         chunkBlockChanges[chunkPos].push_back(pendingNew);
-    };
+        };
 
 #if defined(_WIN32) || defined(_WIN64)
     WSADATA wsaData;
@@ -51,21 +52,21 @@ Server::Server() {
     }
     listen(serverSocket, 8);
 
-    #if defined(_WIN32) || defined(_WIN64)
-        u_long mode = 1;
-        ioctlsocket(serverSocket, FIONBIO, &mode);
-    #else
-        fcntl(serverSocket, F_SETFL, O_NONBLOCK);
-    #endif
+#if defined(_WIN32) || defined(_WIN64)
+    u_long mode = 1;
+    ioctlsocket(serverSocket, FIONBIO, &mode);
+#else
+    fcntl(serverSocket, F_SETFL, O_NONBLOCK);
+#endif
 }
 
 Server::~Server() {
-    #if defined(_WIN32) || defined(_WIN64)
-        closesocket(serverSocket);
-        WSACleanup();
-    #else
-        close(serverSocket);
-    #endif
+#if defined(_WIN32) || defined(_WIN64)
+    closesocket(serverSocket);
+    WSACleanup();
+#else
+    close(serverSocket);
+#endif
 }
 
 void Server::run() {
@@ -199,6 +200,14 @@ void Server::tick() {
     }
     world.tick(positions);
 
+    // Swap out the accumulated block changes under exclusive lock so worker
+    // threads can keep writing to chunkBlockChanges while we process locally.
+    std::unordered_map<ChunkPos, std::vector<PendingBlock>> localBlockChanges;
+    {
+        std::unique_lock lock(chunkBlockChangesMutex);
+        localBlockChanges.swap(chunkBlockChanges);
+    }
+
     for (auto& session : players) {
         switch (session->connState) {
         case ConnectionState::Handshaking:           handleHandshake(*session);    break;
@@ -222,14 +231,14 @@ void Server::tick() {
 
             // Send block changes
             for (auto chunk : session->flushedChunks) {
-                auto it = chunkBlockChanges.find(chunk);
-                if (it == chunkBlockChanges.end()) continue;
+                auto it = localBlockChanges.find(chunk);
+                if (it == localBlockChanges.end()) continue;
                 auto& chunkBlockChangeVector = it->second;
                 if (chunkBlockChangeVector.size() <= 1) {
                     // Single block send in world space
                     PendingBlock& pb = chunkBlockChangeVector[0];
                     Packet::SetBlock sb;
-                    sb.block = {pb.block.type, pb.block.data};
+                    sb.block = { pb.block.type, pb.block.data };
                     sb.position = {
                         static_cast<int32_t>(pb.block_pos.x + (chunk.x * 16)),
                         static_cast<int8_t>(pb.block_pos.y),
@@ -245,11 +254,11 @@ void Server::tick() {
                             ((int16_t(z) & 0x0F) << 8) |
                             ((int16_t(y) & 0xFF))
                             );
-                    };
+                        };
 
                     // Multi block send in chunk space
                     Packet::SetMultipleBlocks smb;
-                    smb.chunk_position = {chunk.x, chunk.z};
+                    smb.chunk_position = { chunk.x, chunk.z };
 
                     // Go through each block and add it to the packet
                     for (auto& pb : chunkBlockChangeVector) {
@@ -264,9 +273,7 @@ void Server::tick() {
             break;
         }
     }
-
-    // Clear the cached block changes from this tick
-    chunkBlockChanges.clear();
+    // localBlockChanges is destroyed here, implicitly clearing this tick's changes.
 
     // Mark clients who have timed out for removal
     auto now = std::chrono::steady_clock::now();
