@@ -230,7 +230,7 @@ void Server::tick() {
             }
 
             // Send block changes
-            for (auto chunk : session->flushedChunks) {
+            for (auto chunk : session->sentChunks) {
                 auto it = localBlockChanges.find(chunk);
                 if (it == localBlockChanges.end()) continue;
                 auto& chunkBlockChangeVector = it->second;
