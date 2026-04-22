@@ -21,6 +21,7 @@
 #include <chrono>
 #include <vector>
 #include <memory>
+#include <shared_mutex>
 #include <unordered_set>
 #include "player_session.h"
 #include "world/world.h"
@@ -53,6 +54,7 @@ private:
     WorldManager world;
     ChunkSender chunkSender;
     std::vector<std::unique_ptr<PlayerSession>> players;
+    std::shared_mutex chunkBlockChangesMutex;
     std::unordered_map<ChunkPos, std::vector<PendingBlock>> chunkBlockChanges;
     int serverSocket = -1;
     EntityId nextEntityId = 2;

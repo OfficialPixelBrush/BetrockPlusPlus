@@ -17,7 +17,7 @@
 #include <cstdint>
 #include <unordered_map>
 #include <unordered_set>
-#include <mutex>
+#include <shared_mutex>
 #include <condition_variable>
 #include <memory>
 #include <vector>
@@ -34,7 +34,7 @@ struct PendingBlock {
 struct WorldManager {
     std::unordered_map<ChunkPos, std::shared_ptr<Chunk>> chunks;
     std::unordered_map<ChunkPos, std::vector<PendingBlock>> pending_blocks;
-    std::mutex chunksMutex;
+    std::shared_mutex chunksMutex;
     std::function<void(PendingBlock, ChunkPos)> onBlockUpdate; // uses world space coordinates
 
     BS::thread_pool<> pool{ std::max(1u, uint32_t(float(std::thread::hardware_concurrency()) * 0.25f)) };
