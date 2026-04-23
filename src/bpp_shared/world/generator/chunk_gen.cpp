@@ -413,126 +413,127 @@ bool Generator::PopulateChunk([[maybe_unused]] Chunk& chunk, [[maybe_unused]] Wo
 			bpos.z + CHUNK_WIDTH
 		}
 	);
-	this->rand.setSeed(this->world->seed);
+	this->rand.setSeed(world.seed);
 	int64_t xOffset = this->rand.nextLong() / 2L * 2L + 1L;
 	int64_t zOffset = this->rand.nextLong() / 2L * 2L + 1L;
-	this->rand.setSeed(((int64_t(chunkPos.x) * xOffset) + (int64_t(chunkPos.y) * zOffset)) ^ this->world->seed);
+	this->rand.setSeed(((int64_t(chunk.cpos.x) * xOffset) + (int64_t(chunk.cpos.z) * zOffset)) ^ world.seed);
 	[[maybe_unused]] Int3 coord;
-
 	// Generate lakes
 	if (this->rand.nextInt(4) == 0) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_WATER_STILL)
-			.GenerateLake(this->world, this->rand, coord);
+			.GenerateLake(world, this->rand, coord);
 	}
 
 	// Generate lava lakes
 	if (this->rand.nextInt(8) == 0) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = this->rand.nextInt(this->rand.nextInt(120) + 8);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		if (coord.y < WATER_LEVEL || this->rand.nextInt(10) == 0) {
 			FeatureGenerator(BLOCK_LAVA_STILL)
-				.GenerateLake(this->world, this->rand, coord);
+				.GenerateLake(world, this->rand, coord);
 		}
 	}
 
 	// Generate Dungeons
 	for (int32_t i = 0; i < 8; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
-		FeatureGenerator().GenerateDungeon(this->world, this->rand, coord);
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
+		FeatureGenerator().GenerateDungeon(world, this->rand, coord);
 	}
 
 	// Generate Clay patches
 	for (int32_t i = 0; i < 10; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X);
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH);
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z);
-		FeatureGenerator().GenerateClay(this->world, this->rand, coord, 32);
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH);
+		FeatureGenerator().GenerateClay(world, this->rand, coord, 32);
 	}
 
 	// Generate Dirt blobs
 	for (int32_t i = 0; i < 20; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X);
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH);
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z);
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_DIRT)
-			.GenerateMinable(this->world, this->rand, coord, 32);
+			.GenerateMinable(world, this->rand, coord, 32);
 	}
 
 	// Generate Gravel blobs
 	for (int32_t i = 0; i < 10; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X);
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH);
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z);
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_GRAVEL)
-			.GenerateMinable(this->world, this->rand, coord, 32);
+			.GenerateMinable(world, this->rand, coord, 32);
 	}
 
 	// Generate Coal Ore Veins
 	for (int32_t i = 0; i < 20; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X);
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH);
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z);
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_ORE_COAL)
-			.GenerateMinable(this->world, this->rand, coord, 16);
+			.GenerateMinable(world, this->rand, coord, 16);
 	}
 
 	// Generate Iron Ore Veins
 	for (int32_t i = 0; i < 20; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X);
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH);
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT / 2);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z);
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_ORE_IRON)
-			.GenerateMinable(this->world, this->rand, coord, 8);
+			.GenerateMinable(world, this->rand, coord, 8);
 	}
 
 	// Generate Gold Ore Veins
 	for (int32_t i = 0; i < 2; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X);
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH);
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT / 4);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z);
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_ORE_GOLD)
-			.GenerateMinable(this->world, this->rand, coord, 8);
+			.GenerateMinable(world, this->rand, coord, 8);
 	}
 
 	// Generate Redstone Ore Veins
 	for (int32_t i = 0; i < 8; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X);
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH);
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT / 8);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z);
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_ORE_REDSTONE_OFF)
-			.GenerateMinable(this->world, this->rand, coord, 7);
+			.GenerateMinable(world, this->rand, coord, 7);
 	}
 
 	// Generate Diamond Ore Veins
 	for (int32_t i = 0; i < 1; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X);
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH);
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT / 8);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z);
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_ORE_DIAMOND)
-			.GenerateMinable(this->world, this->rand, coord, 7);
+			.GenerateMinable(world, this->rand, coord, 7);
 	}
 
 	// Generate Lapis Lazuli Ore Veins
 	for (int32_t i = 0; i < 1; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X);
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH);
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT / 8) + this->rand.nextInt(16);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z);
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_ORE_LAPIS_LAZULI)
-			.GenerateMinable(this->world, this->rand, coord, 6);
+			.GenerateMinable(world, this->rand, coord, 6);
 	}
 
 	// Determine the number of trees that should be generated
 	double fraction = 0.5;
-	int32_t treeDensitySample =
-		Java::DoubleToInt32((this->treeDensityNoiseGen.GenerateOctaves(double(blockPos.x) * fraction, double(blockPos.y) * fraction) / 8.0 +
-			 this->rand.nextDouble() * 4.0 + 4.0) /
-			3.0);
+	int32_t treeDensitySample = Java::DoubleToInt32(
+		(
+			this->treeDensityNoiseGen.GenerateOctaves(
+				Vec2(double(bpos.x) * fraction, double(bpos.y) * fraction)
+			) / 8.0 + this->rand.nextDouble() * 4.0 + 4.0
+		) / 3.0);
 
 	int32_t numberOfTrees = 0;
 	if (this->rand.nextInt(10) == 0) {
@@ -559,9 +560,9 @@ bool Generator::PopulateChunk([[maybe_unused]] Chunk& chunk, [[maybe_unused]] Wo
 
 	// Attempt to generate the specified number of trees
 	for (int32_t i = 0; i < numberOfTrees; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
-		coord.y = world->GetHeightValue(Int2{coord.x, coord.z});
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.y = world.GetHeightValue(Int2{coord.x, coord.z});
 
 		enum TreeState {
 			TREE_NONE,
@@ -596,22 +597,22 @@ bool Generator::PopulateChunk([[maybe_unused]] Chunk& chunk, [[maybe_unused]] Wo
 		// Generate the appropriate tree
 		switch (ts) {
 		case TREE_SMALL:
-			Beta173Tree().Generate(this->world, this->rand, coord);
+			Beta173Tree().Generate(world, this->rand, coord);
 			break;
 		case TREE_BIRCH:
-			Beta173Tree().Generate(this->world, this->rand, coord, true);
+			Beta173Tree().Generate(world, this->rand, coord, true);
 			break;
 		case TREE_BIG: {
 			Beta173BigTree bt;
 			bt.Configure(1.0, 1.0, 1.0);
-			bt.Generate(this->world, this->rand, coord);
+			bt.Generate(world, this->rand, coord);
 			break;
 		}
 		case TREE_TAIGA:
-			Beta173TaigaTree().Generate(this->world, this->rand, coord);
+			Beta173TaigaTree().Generate(world, this->rand, coord);
 			break;
 		case TREE_TAIGA_ALT:
-			Beta173TaigaAltTree().Generate(this->world, this->rand, coord);
+			Beta173TaigaAltTree().Generate(world, this->rand, coord);
 			break;
 		default:
 			break;
@@ -637,11 +638,11 @@ bool Generator::PopulateChunk([[maybe_unused]] Chunk& chunk, [[maybe_unused]] Wo
 
 	// Generate Dandelions
 	for (int8_t i = 0; i < numberOfFlowers; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_DANDELION)
-			.GenerateFlowers(this->world, this->rand, coord);
+			.GenerateFlowers(world, this->rand, coord);
 	}
 
 	// Choose amount of tallgrass based on Biome
@@ -671,11 +672,11 @@ bool Generator::PopulateChunk([[maybe_unused]] Chunk& chunk, [[maybe_unused]] Wo
 			grassMeta = 2;
 		}
 
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_TALLGRASS, grassMeta)
-			.GenerateTallgrass(this->world, this->rand, coord);
+			.GenerateTallgrass(world, this->rand, coord);
 	}
 
 	// Generate Deadbushes
@@ -684,56 +685,56 @@ bool Generator::PopulateChunk([[maybe_unused]] Chunk& chunk, [[maybe_unused]] Wo
 		numberOfDeadbushes = 2;
 
 	for (int32_t i = 0; i < numberOfDeadbushes; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_DEADBUSH)
-			.GenerateDeadbush(this->world, this->rand, coord);
+			.GenerateDeadbush(world, this->rand, coord);
 	}
 
 	// Generate Roses
 	if (this->rand.nextInt(2) == 0) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_ROSE)
-			.GenerateFlowers(this->world, this->rand, coord);
+			.GenerateFlowers(world, this->rand, coord);
 	}
 
 	// Generate Brown Mushrooms
 	if (this->rand.nextInt(4) == 0) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_MUSHROOM_BROWN)
-			.GenerateFlowers(this->world, this->rand, coord);
+			.GenerateFlowers(world, this->rand, coord);
 	}
 
 	// Generate Red Mushrooms
 	if (this->rand.nextInt(8) == 0) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_MUSHROOM_RED)
-			.GenerateFlowers(this->world, this->rand, coord);
+			.GenerateFlowers(world, this->rand, coord);
 	}
 
 	// Generate Sugarcane
 	for (int32_t i = 0; i < 10; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_SUGARCANE)
-			.GenerateSugarcane(this->world, this->rand, coord);
+			.GenerateSugarcane(world, this->rand, coord);
 	}
 
 	// Generate Pumpkin Patches
 	if (this->rand.nextInt(32) == 0) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_PUMPKIN)
-			.GeneratePumpkins(this->world, this->rand, coord);
+			.GeneratePumpkins(world, this->rand, coord);
 	}
 
 	int8_t numberOfCacti = 0;
@@ -743,48 +744,49 @@ bool Generator::PopulateChunk([[maybe_unused]] Chunk& chunk, [[maybe_unused]] Wo
 
 	// Generate Cacti
 	for (int32_t i = 0; i < numberOfCacti; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = this->rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_CACTUS)
-			.GenerateCacti(this->world, this->rand, coord);
+			.GenerateCacti(world, this->rand, coord);
 	}
 
 	// Generate one-block water sources
 	for (int32_t i = 0; i < 50; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = this->rand.nextInt(this->rand.nextInt(120) + 8);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_WATER_FLOWING)
-			.GenerateLiquid(this->world, this->rand, coord);
+			.GenerateLiquid(world, this->rand, coord);
 	}
 
 	// Generate one-block lava sources
 	for (int32_t i = 0; i < 20; ++i) {
-		coord.x = blockPos.x + this->rand.nextInt(CHUNK_WIDTH_X) + 8;
+		coord.x = bpos.x + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = this->rand.nextInt(this->rand.nextInt(this->rand.nextInt(112) + 8) + 8);
-		coord.z = blockPos.y + this->rand.nextInt(CHUNK_WIDTH_Z) + 8;
+		coord.z = bpos.y + this->rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_LAVA_FLOWING)
-			.GenerateLiquid(this->world, this->rand, coord);
+			.GenerateLiquid(world, this->rand, coord);
 	}
 
 	// Place Snow in cold regions
-	Beta173Biome(seed).GenerateTemperature(temperature,weirdness,Int2{blockPos.x + 8, blockPos.y + 8}, Int2{CHUNK_WIDTH_X, CHUNK_WIDTH_Z});
-	for (int32_t x = blockPos.x + 8; x < blockPos.x + 8 + CHUNK_WIDTH_X; ++x) {
-		for (int32_t z = blockPos.y + 8; z < blockPos.y + 8 + CHUNK_WIDTH_Z; ++z) {
-			int32_t offsetX = x - (blockPos.x + 8);
-			int32_t offsetZ = z - (blockPos.y + 8);
-			int32_t highestBlock = world->GetHighestSolidOrLiquidBlock(Int2{x, z});
-			double temp = this->temperature[offsetX * CHUNK_WIDTH_X + offsetZ] - double(highestBlock - 64) / 64.0 * 0.3;
+	BiomeGenerator(seed).GenerateTemperature(temperature,weirdness,Int2{bpos.x + 8, bpos.y + 8}, Int2{CHUNK_WIDTH, CHUNK_WIDTH});
+	for (int32_t x = bpos.x + 8; x < bpos.x + 8 + CHUNK_WIDTH; ++x) {
+		for (int32_t z = bpos.y + 8; z < bpos.y + 8 + CHUNK_WIDTH; ++z) {
+			int32_t offsetX = x - (bpos.x + 8);
+			int32_t offsetZ = z - (bpos.y + 8);
+			int32_t highestBlock = world.GetHighestSolidOrLiquidBlock(Int2{x, z});
+			double temp = this->temperature[offsetX * CHUNK_WIDTH + offsetZ] - double(highestBlock - 64) / 64.0 * 0.3;
 			if (temp < 0.5 && highestBlock > 0 && highestBlock < CHUNK_HEIGHT &&
-				world->GetBlockType(Int3{x, highestBlock, z}) == BLOCK_AIR &&
-				IsSolid(world->GetBlockType(Int3{x, highestBlock - 1, z})) &&
-				world->GetBlockType(Int3{x, highestBlock - 1, z}) != BLOCK_ICE) {
-				world->SetBlockType(BLOCK_SNOW_LAYER, Int3{x, highestBlock, z});
+				world.GetBlockType(Int3{x, highestBlock, z}) == BLOCK_AIR &&
+				IsSolid(world.GetBlockType(Int3{x, highestBlock - 1, z})) &&
+				world.GetBlockType(Int3{x, highestBlock - 1, z}) != BLOCK_ICE) {
+				world.SetBlockType(BLOCK_SNOW_LAYER, Int3{x, highestBlock, z});
 			}
 		}
 	}
+	*/
 
-	// BlockSand.fallInstantly = false;*/
+	// BlockSand.fallInstantly = false;
 	return true;
 }

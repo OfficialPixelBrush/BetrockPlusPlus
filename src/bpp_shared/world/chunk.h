@@ -166,7 +166,7 @@ struct Chunk {
 	inline void generateHeightMapColumn(Int2 pos) {
 		for (int y = CHUNK_HEIGHT - 1; y >= 0; y--) {
 			if (Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity > 0) {
-				setHeightValue(pos, y + 1);
+				setHeightValue(pos, uint8_t(y + 1));
 				return;
 			}
 		}

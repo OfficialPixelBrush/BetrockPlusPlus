@@ -119,16 +119,16 @@ namespace DebugGenerator {
         const int maxXSlots = 16 / 2;  // 8
         int slotBase = chunk.cpos.z * slotsPerChunk;
 
-        if (slotBase >= (int)blocks.size()) return;
+        if (slotBase >= int(blocks.size())) return;
 
         for (int localSlot = 0; localSlot < slotsPerChunk; localSlot++) {
             int slot = slotBase + localSlot;
-            if (slot >= (int)blocks.size()) break;
+            if (slot >= int(blocks.size())) break;
 
-            const auto& entry = blocks[slot];
+            const auto& entry = blocks[size_t(slot)];
             int localZ = localSlot * 2;
 
-            for (int m = 0; m < (int)entry.metaValues.size(); m++) {
+            for (int m = 0; m < int(entry.metaValues.size()); m++) {
                 int row = m / maxXSlots;
                 int col = m % maxXSlots;
                 int localX = col * 2;
@@ -136,8 +136,8 @@ namespace DebugGenerator {
 
                 if (localX >= 16) break;
 
-                chunk.setBlock({ localX, localY, localZ }, (BlockType) entry.id);
-                chunk.setMeta({ localX, localY, localZ }, entry.metaValues[m]);
+                chunk.setBlock({ localX, localY, localZ }, BlockType(entry.id));
+                chunk.setMeta({ localX, localY, localZ }, entry.metaValues[size_t(m)]);
             }
         }
     }

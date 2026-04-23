@@ -64,7 +64,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 
     // Build a sorted candidate list for each player
     std::vector<std::vector<ChunkPos>> perPlayerQueues;
-    perPlayerQueues.reserve(playerCount);
+    perPlayerQueues.reserve(size_t(playerCount));
 
     for (const auto& player : players) {
         Int2 centre = player.getChunkPos();
@@ -142,23 +142,23 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
         }
     }
     else {
-        std::vector<int> cursors(playerCount, 0);
+        std::vector<int> cursors(size_t(playerCount), 0);
         int totalStarted = 0;
         const int totalBudget = slicePerPlayer * playerCount;
         bool anyProgress = true;
         while (totalStarted < totalBudget && anyProgress) {
             anyProgress = false;
             for (int i = 0; i < playerCount && totalStarted < totalBudget; ++i) {
-                int playerStarted = static_cast<int>(
+                int playerStarted [[maybe_unused]] = static_cast<int>(
                     std::count_if(startedThisTick.begin(), startedThisTick.end(),
                         [&](const ChunkPos&) { return true; }) // placeholder; tracked below
                     );
                 // Count how many this player has consumed via their own cursor progress.
                 // Simpler: just give each player up to slicePerPlayer from their sorted list.
-                int& cur = cursors[i];
+                int& cur = cursors[size_t(i)];
                 int playerConsumed = 0;
-                while (playerConsumed < slicePerPlayer && cur < static_cast<int>(perPlayerQueues[i].size())) {
-                    if (startGeneration(perPlayerQueues[i][cur])) {
+                while (playerConsumed < slicePerPlayer && cur < static_cast<int>(perPlayerQueues[size_t(i)].size())) {
+                    if (startGeneration(perPlayerQueues[size_t(i)][size_t(cur)])) {
                         ++playerConsumed;
                         ++totalStarted;
                         anyProgress = true;
