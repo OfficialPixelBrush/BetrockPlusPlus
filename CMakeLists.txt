@@ -64,7 +64,8 @@ add_executable(
     src/bpp_shared/blocks/block_properties.cpp 
     src/bpp_server/commands/command.cpp
     src/bpp_server/commands/command_manager.cpp
-    "src/bpp_shared/world/debug_generator/debug_generator.h")
+    src/bpp_shared/world/lighter.cpp
+)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(BetrockPlusPlus PRIVATE

@@ -8,7 +8,6 @@
 #pragma once
 #include <vector>
 #include <unordered_map>
-#include <mutex>
 #include <future>
 #include <algorithm>
 #include <thread>
@@ -20,6 +19,7 @@
 
 // ChunkSender offloads zlib chunk serialization onto a thread-pool so the
 // main server tick is never blocked waiting for compression.
+// enqueue() and flush() must only be called from the main thread.
 struct ChunkSender {
     // One result slot per in-flight chunk.
     struct PendingChunk {
@@ -36,8 +36,6 @@ struct ChunkSender {
         if (batchSize < 0) batchSize = static_cast<int>(pool.get_thread_count()) * 2;
         int cx = int(std::floor(session.position.pos.x)) >> 4;
         int cz = int(std::floor(session.position.pos.z)) >> 4;
-
-        std::shared_lock lock(world.chunksMutex);
 
         int radius = world.getViewRadius();
 
