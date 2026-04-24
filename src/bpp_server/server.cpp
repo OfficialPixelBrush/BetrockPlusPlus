@@ -27,11 +27,11 @@ Server::Server() {
     command_manager.Init();
     world.seed = 404;
 
-    // For decided what block updates to send to clients.
+    // onBlockUpdate is only ever called from setBlock(), which runs on the
+    // main thread, so no lock is needed here.
     world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
         PendingBlock pendingNew = pendingBlock;
         pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y, pendingBlock.block_pos.z & 15 };
-        std::unique_lock lock(chunkBlockChangesMutex);
         chunkBlockChanges[chunkPos].push_back(pendingNew);
         };
 
@@ -82,7 +82,12 @@ void Server::run() {
         accumulator += delta;
 
         while (accumulator >= TICK_DELTA && ticks_ran <= MAX_TICKS_PER_FRAME) {
+            auto now = std::chrono::steady_clock::now();
             tick();
+            float delta = std::chrono::duration<float>(now - lastTime).count();
+            if (delta * 1000 > 50) {
+                printf("Can't keep up! Tick took %i ms\n", int(delta * 1000));
+            }
             accumulator -= TICK_DELTA;
             ticks_ran++;
         }
@@ -202,13 +207,10 @@ void Server::tick() {
     world.tick(positions);
     world.update(positions);
 
-    // Swap out the accumulated block changes under exclusive lock so worker
-    // threads can keep writing to chunkBlockChanges while we process locally.
+    // Block changes accumulate in chunkBlockChanges during setBlock() calls
+    // (all on main thread). Swap out here so the loop below sees a stable snapshot.
     std::unordered_map<ChunkPos, std::vector<PendingBlock>> localBlockChanges;
-    {
-        std::unique_lock lock(chunkBlockChangesMutex);
-        localBlockChanges.swap(chunkBlockChanges);
-    }
+    localBlockChanges.swap(chunkBlockChanges);
 
     for (auto& session : players) {
         switch (session->connState) {
