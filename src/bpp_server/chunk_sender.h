@@ -19,11 +19,10 @@
 
 // ChunkSender offloads zlib chunk serialization onto a thread-pool so the
 // main server tick is never blocked waiting for compression.
-
 struct ChunkSender {
     // One result slot per in-flight chunk.
     struct PendingChunk {
-        ChunkPos                        pos;
+        ChunkPos                          pos;
         std::future<std::vector<uint8_t>> data; // async compression result
     };
 
@@ -58,29 +57,52 @@ struct ChunkSender {
             return da < db;
             });
 
+        // Unload all out-of-range chunks immediately — no batch cap.
+        // Unloads are cheap (tiny packet + set erase) and must not lag behind
+        // sends, otherwise stale sentChunks entries prevent world.chunks from
+        // being freed and memory never comes back down.
         std::vector<ChunkPos> toUnload;
         for (auto& p : session.sentChunks) {
             if (std::abs(p.x - cx) > radius || std::abs(p.z - cz) > radius)
                 toUnload.push_back(p);
         }
-
-        int unloaded = 0;
         for (auto& p : toUnload) {
-            if (batchSize > 0 && unloaded >= batchSize) break;
             Packet::SetChunkVisibility vis;
             vis.chunkX = p.x;
             vis.chunkZ = p.z;
             vis.visible = false;
             vis.Serialize(session.stream);
             session.sentChunks.erase(p);
-            ++unloaded;
         }
 
+        // Also cancel any in-flight jobs for chunks that are now out of range
+        // so their shared_ptr refs are dropped and the chunks can be freed.
         auto& queue = inFlight[&session];
+        queue.erase(
+            std::remove_if(queue.begin(), queue.end(), [&](const PendingChunk& pc) {
+                return std::abs(pc.pos.x - cx) > radius || std::abs(pc.pos.z - cz) > radius;
+                }),
+            queue.end()
+        );
+
+        // Rebuild toSend, excluding chunks that already have an in-flight job.
+        // (sentChunks now only contains chunks confirmed written to the stream.)
+        std::unordered_set<ChunkPos> inFlightSet;
+        for (auto& pc : queue)
+            inFlightSet.insert(pc.pos);
+
+        toSend.erase(
+            std::remove_if(toSend.begin(), toSend.end(), [&](const ChunkPos& p) {
+                return inFlightSet.contains(p);
+                }),
+            toSend.end()
+        );
+
         int submitted = 0;
         for (auto& p : toSend) {
             if (batchSize > 0 && submitted >= batchSize) break;
-            session.sentChunks.insert(p);
+            // Don't add to sentChunks here — defer that to flush() so sentChunks
+            // only contains chunks that have actually been written to the stream.
             PendingChunk pc;
             std::shared_ptr<Chunk> chunkRef = world.chunks.at(p);
             pc.pos = p;
@@ -123,6 +145,8 @@ struct ChunkSender {
             data.chunkZ = pc.pos.z * 16;
             data.compressedData = std::move(compressed);
             data.Serialize(session.stream);
+            // Mark as sent only once the data is actually on the wire.
+            session.sentChunks.insert(pc.pos);
             session.flushedChunks.insert(pc.pos);
         }
 
