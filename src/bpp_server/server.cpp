@@ -199,6 +199,7 @@ void Server::tick() {
         }
     }
     world.tick(positions);
+    world.update(positions);
 
     // Swap out the accumulated block changes under exclusive lock so worker
     // threads can keep writing to chunkBlockChanges while we process locally.

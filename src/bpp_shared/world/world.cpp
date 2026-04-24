@@ -12,6 +12,10 @@
 void WorldManager::tick(const std::vector<ClientPosition>& players) {
     elapsed_ticks++;
     updateLoadRadius(players);
+}
+
+// Update
+void WorldManager::update(const std::vector<ClientPosition>& players) {
     pumpPipeline(players);
 }
 
@@ -41,7 +45,9 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
             ++it;
             continue;
         }
+        ChunkPos evicted = it->first;
         it = chunks.erase(it);
+        pending_blocks.erase(evicted);
     }
 }
 
@@ -122,12 +128,12 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
             thread_local Generator tl_gen(this->seed);
             tl_gen.GenerateChunk(*chunkRef);
             //DebugGenerator::generateChunk(*chunkRef);
-            chunkRef->generateSkylightMap();
             chunkRef->isModified = true;
             {
                 std::lock_guard lock(chunksMutex);
                 flushPendingBlocks(chunkRef->cpos);
             }
+            chunkRef->generateSkylightMap();
             chunkRef->state.store(ChunkState::Generated, std::memory_order_release);
             });
         startedThisTick.insert(pos);
@@ -169,35 +175,39 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
         }
     }
 
+    // Population pass — one job per eligible chunk per tick.
+    // We track dispatched positions so the snapshot loop cannot queue the same
+    // chunk more than once even if multiple neighbours trigger it.
+    std::unordered_set<ChunkPos> populatedThisTick;
+
     for (const ChunkPos& pos : snapshot) {
-        // Population
+        std::lock_guard lock(chunksMutex);
+        auto it = chunks.find(pos);
+        if (it == chunks.end()) continue;
+        if (it->second->state.load(std::memory_order_acquire) != ChunkState::Generated) continue;
+
+        for (ChunkPos candidate : {
+            pos,
+                ChunkPos{ pos.x - 1, pos.z },
+                ChunkPos{ pos.x,     pos.z - 1 },
+                ChunkPos{ pos.x - 1, pos.z - 1 }
+        })
         {
-            std::lock_guard lock(chunksMutex);
-            auto it = chunks.find(pos);
-            if (it != chunks.end() &&
-                (it->second->state.load(std::memory_order_acquire) == ChunkState::Generated)) {
-                for (ChunkPos candidate : {
-                    pos,
-                        ChunkPos{ pos.x - 1, pos.z },
-                        ChunkPos{ pos.x,     pos.z - 1 },
-                        ChunkPos{ pos.x - 1, pos.z - 1 }
-                })
-                {
-                    if (!canPopulateLocked(candidate)) continue;
-                    auto cit = chunks.find(candidate);
-                    if (cit == chunks.end()) continue;
-                    cit->second->state.store(ChunkState::Poulating, std::memory_order_release);
-                    std::shared_ptr<Chunk> chunkRef = cit->second;
-                    pool.detach_task([chunkRef, this]() {
-                        thread_local Generator tl_gen(this->seed);
-                        tl_gen.PopulateChunk(*chunkRef, *this);
-                        chunkRef->isTerrainPopulated = true;
-                        chunkRef->isModified = true;
-                        chunkRef->state.store(ChunkState::Populated, std::memory_order_release);
-                        });
-                    break;
-                }
-            }
+            if (populatedThisTick.contains(candidate)) continue;
+            if (!canPopulateLocked(candidate)) continue;
+            auto cit = chunks.find(candidate);
+            if (cit == chunks.end()) continue;
+            cit->second->state.store(ChunkState::Poulating, std::memory_order_release);
+            std::shared_ptr<Chunk> chunkRef = cit->second;
+            pool.detach_task([chunkRef, this]() {
+                thread_local Generator tl_gen(this->seed);
+                tl_gen.PopulateChunk(*chunkRef, *this);
+                chunkRef->isTerrainPopulated = true;
+                chunkRef->isModified = true;
+                chunkRef->state.store(ChunkState::Populated, std::memory_order_release);
+                });
+            populatedThisTick.insert(candidate);
+            break; // only one candidate per triggering chunk
         }
     }
 }
