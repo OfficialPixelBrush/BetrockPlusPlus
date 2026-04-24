@@ -28,7 +28,7 @@
 struct PendingBlock {
     Block block{ BLOCK_AIR, 0 };
     Int3 block_pos{ 0, 0, 0 };
-	Int2 light{ 0, 15 }; // block light, sky light
+    Int2 light{ 0, 15 }; // block light, sky light
 };
 
 struct WorldManager {
@@ -37,7 +37,8 @@ struct WorldManager {
     std::shared_mutex chunksMutex;
     std::function<void(PendingBlock, ChunkPos)> onBlockUpdate; // uses world space coordinates
 
-    BS::thread_pool<> pool{ std::max(1u, uint32_t(float(std::thread::hardware_concurrency()) * 0.25f)) };
+    // Fixed at 2 threads.
+    BS::thread_pool<> pool{ 2 };
 
     int64_t seed = 0;
     int64_t elapsed_ticks = 0;
@@ -47,6 +48,7 @@ struct WorldManager {
     ~WorldManager() {}
 
     void tick(const std::vector<ClientPosition>& players);
+    void update(const std::vector<ClientPosition>& players);
     int getViewRadius() { return VIEW_RADIUS; }
     int getSimulationDistance() { return SIMULATION_RADIUS; }
 
@@ -143,7 +145,7 @@ struct WorldManager {
         for (auto& pb : pit->second) {
             chunk->setBlock(pb.block_pos, pb.block.type);
             chunk->setMeta(pb.block_pos, pb.block.data);
-            Int3 global{pb.block_pos.x + (pos.x * 16), pb.block_pos.y, pb.block_pos.z + (pos.z * 16)};
+            Int3 global{ pb.block_pos.x + (pos.x * 16), pb.block_pos.y, pb.block_pos.z + (pos.z * 16) };
             if (onBlockUpdate) onBlockUpdate(
                 PendingBlock{
                     .block{pb.block.type, pb.block.data},

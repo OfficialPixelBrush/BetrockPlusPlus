@@ -283,7 +283,6 @@ struct Chunk {
 	inline void clear() {
 		isTerrainPopulated = false;
 		isModified = false;
-		state.store(ChunkState::Unloaded);
 		memset(heightMap, 0, sizeof(heightMap));
 		memset(temperature, 0, sizeof(temperature));
 		memset(humidity, 0, sizeof(humidity));

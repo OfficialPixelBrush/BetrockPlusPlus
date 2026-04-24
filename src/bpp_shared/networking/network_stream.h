@@ -66,22 +66,14 @@ public:
 
     template<typename T = int>
     void Write(const T& data) {
-#if defined(_WIN32) || defined(_WIN64)
-        T networkData = byteswap_any(data);
-        int result = send(client_socket, reinterpret_cast<const char*>(&networkData), sizeof(T), 0);
-        if (result <= 0) connected = false;
-#else
         if constexpr (std::is_same_v<T, bool>) {
             int8_t boolData = static_cast<int8_t>(data);
-            ssize_t result = send(client_socket, &boolData, sizeof(int8_t), 0);
-            if (result <= 0) connected = false;
+            WriteBytes(reinterpret_cast<const uint8_t*>(&boolData), sizeof(int8_t));
         }
         else {
             T networkData = byteswap_any(data);
-            ssize_t result = send(client_socket, &networkData, sizeof(T), 0);
-            if (result <= 0) connected = false;
+            WriteBytes(reinterpret_cast<const uint8_t*>(&networkData), sizeof(T));
         }
-#endif
     }
 
     void setConnected(bool val) { connected = val; }
