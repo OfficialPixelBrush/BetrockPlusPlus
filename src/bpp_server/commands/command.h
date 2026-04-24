@@ -38,14 +38,14 @@ class CommandManager;
 
 // Base class for how a command is defined
 class Command {
-  private:
+private:
 	std::wstring label;
 	std::wstring description;
 	std::wstring syntax;
 	bool requiresOp;
 	bool requiresCreative;
 
-  public:
+public:
 	std::wstring GetLabel() { return label; }
 	std::wstring GetDescription() { return description; }
 	std::wstring GetSyntax() { return syntax; }
@@ -61,6 +61,8 @@ class Command {
 // Commands
 // Anyone can run these
 DEFINE_COMMAND(CommandHelp, L"help", L"Lists commands or helps with command", L"[command]", false, false);
+DEFINE_COMMAND(CommandTeleport, L"tp", L"Teleports player to coordinates or another player",
+	L"<player> <x> <y> <z> / <player> <player>", false, false);
 /*
 DEFINE_COMMAND(CommandVersion, "version", "Shows the current Server version", "", false, false);
 DEFINE_COMMAND(CommandList, "list", "List all currently online players", "", false, false);
