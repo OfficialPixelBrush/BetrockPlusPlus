@@ -55,14 +55,14 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
     // Snapshot all chunk positions while holding the lock.
     std::vector<ChunkPos> snapshot;
     {
-        std::lock_guard lock(chunksMutex);
+        std::shared_lock lock(chunksMutex);
         snapshot.reserve(chunks.size());
         for (auto& [pos, chunk] : chunks)
             snapshot.push_back(pos);
     }
 
     // Total budget is fixed at MAX_GENERATIONS_PER_TICK.
-    constexpr int MAX_GENERATIONS_PER_TICK = 8;
+    const int MAX_GENERATIONS_PER_TICK = maxGenerationsPerTick();
     const int playerCount = static_cast<int>(players.size());
     const int slicePerPlayer = (playerCount > 0)
         ? std::max(1, MAX_GENERATIONS_PER_TICK / playerCount)
@@ -78,7 +78,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
         candidates.reserve(snapshot.size());
 
         {
-            std::lock_guard lock(chunksMutex);
+            std::shared_lock lock(chunksMutex);
             for (const ChunkPos& p : snapshot) {
                 auto it = chunks.find(p);
                 if (it == chunks.end()) continue;
@@ -100,7 +100,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
     std::vector<ChunkPos> noPlayerCandidates;
     if (playerCount == 0) {
         {
-            std::lock_guard lock(chunksMutex);
+            std::shared_lock lock(chunksMutex);
             for (const ChunkPos& p : snapshot) {
                 auto it = chunks.find(p);
                 if (it == chunks.end()) continue;
