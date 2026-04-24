@@ -62,7 +62,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
     }
 
     // Total budget is fixed at MAX_GENERATIONS_PER_TICK.
-    const int MAX_GENERATIONS_PER_TICK = maxGenerationsPerTick();
+    const int MAX_GENERATIONS_PER_TICK = 8;
     const int playerCount = static_cast<int>(players.size());
     const int slicePerPlayer = (playerCount > 0)
         ? std::max(1, MAX_GENERATIONS_PER_TICK / playerCount)
