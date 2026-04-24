@@ -38,21 +38,7 @@ struct WorldManager {
     std::shared_mutex chunksMutex;
     std::function<void(PendingBlock, ChunkPos)> onBlockUpdate; // uses world space coordinates
 
-    // Scaled to hardware: leave 1 core for the main thread, give 2/3 of the
-    // remainder to generation (noise buffers are ~several MB per thread so we
-    // stay conservative), and expose the count so ChunkSender can size itself.
-    static int genThreadCount() {
-        int hw = static_cast<int>(std::thread::hardware_concurrency());
-        int budget = std::max(1, hw - 1);
-        return std::max(1, budget * 2 / 3);
-    }
-    BS::thread_pool<> pool{ static_cast<BS::concurrency_t>(genThreadCount()) };
-
-    // How many generation jobs to submit per tick - keep the pool fed but cap
-    // backlog at ~2 ticks worth so we don't queue faster than we drain.
-    int maxGenerationsPerTick() const {
-        return static_cast<int>(pool.get_thread_count()) * 2;
-    }
+    BS::thread_pool<> pool{ 2 };
 
     int64_t seed = 0;
     int64_t elapsed_ticks = 0;
