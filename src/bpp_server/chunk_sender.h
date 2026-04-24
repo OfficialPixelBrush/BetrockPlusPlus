@@ -11,6 +11,7 @@
 #include <mutex>
 #include <future>
 #include <algorithm>
+#include <thread>
 #include "player_session.h"
 #include "chunk_serializer.h"
 #include "world/world.h"
@@ -29,13 +30,21 @@ struct ChunkSender {
     // Per-session queue of in-flight serialization jobs.
     std::unordered_map<PlayerSession*, std::vector<PendingChunk>> inFlight;
 
-    BS::thread_pool<> pool{ 2 }; // Only two thread
+    // Takes the cores left over after the gen pool claims its share.
+    static int senderThreadCount() {
+        int hw = static_cast<int>(std::thread::hardware_concurrency());
+        int budget = std::max(1, hw - 1);
+        int genThreads = WorldManager::genThreadCount();
+        return std::max(1, budget - genThreads);
+    }
+    BS::thread_pool<> pool{ static_cast<BS::concurrency_t>(senderThreadCount()) };
 
-    size_t enqueue(PlayerSession& session, WorldManager& world, int batchSize = 10) {
+    size_t enqueue(PlayerSession& session, WorldManager& world, int batchSize = -1) {
+        if (batchSize < 0) batchSize = static_cast<int>(pool.get_thread_count()) * 2;
         int cx = int(std::floor(session.position.pos.x)) >> 4;
         int cz = int(std::floor(session.position.pos.z)) >> 4;
 
-        std::lock_guard lock(world.chunksMutex);
+        std::shared_lock lock(world.chunksMutex);
 
         int radius = world.getViewRadius();
 

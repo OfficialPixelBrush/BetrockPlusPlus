@@ -23,6 +23,7 @@
 #include <vector>
 #include <deque>
 #include <thread>
+#include <thread>
 #include <atomic>
 
 struct PendingBlock {
@@ -37,8 +38,21 @@ struct WorldManager {
     std::shared_mutex chunksMutex;
     std::function<void(PendingBlock, ChunkPos)> onBlockUpdate; // uses world space coordinates
 
-    // Fixed at 2 threads.
-    BS::thread_pool<> pool{ 2 };
+    // Scaled to hardware: leave 1 core for the main thread, give 2/3 of the
+    // remainder to generation (noise buffers are ~several MB per thread so we
+    // stay conservative), and expose the count so ChunkSender can size itself.
+    static int genThreadCount() {
+        int hw = static_cast<int>(std::thread::hardware_concurrency());
+        int budget = std::max(1, hw - 1);
+        return std::max(1, budget * 2 / 3);
+    }
+    BS::thread_pool<> pool{ static_cast<BS::concurrency_t>(genThreadCount()) };
+
+    // How many generation jobs to submit per tick - keep the pool fed but cap
+    // backlog at ~2 ticks worth so we don't queue faster than we drain.
+    int maxGenerationsPerTick() const {
+        return static_cast<int>(pool.get_thread_count()) * 2;
+    }
 
     int64_t seed = 0;
     int64_t elapsed_ticks = 0;
@@ -54,17 +68,17 @@ struct WorldManager {
 
     // Public chunk accessor (acquires lock)
     std::shared_ptr<Chunk> getChunk(ChunkPos pos) {
-        std::lock_guard lock(chunksMutex);
+        std::shared_lock lock(chunksMutex);
         return getChunkLocked(pos);
     }
 
     bool canPopulate(ChunkPos pos) {
-        std::lock_guard lock(chunksMutex);
+        std::shared_lock lock(chunksMutex);
         return canPopulateLocked(pos);
     }
 
     BlockType getBlockId(Int3 wpos) {
-        std::lock_guard lock(chunksMutex);
+        std::shared_lock lock(chunksMutex);
         auto* chunk = getChunkRaw({ wpos.x >> 4, wpos.z >> 4 });
         if (!chunk || chunk->state.load() < ChunkState::Generated)
             return BlockType::BLOCK_AIR;
@@ -72,7 +86,7 @@ struct WorldManager {
     }
 
     uint8_t getMetadata(Int3 wpos) {
-        std::lock_guard lock(chunksMutex);
+        std::shared_lock lock(chunksMutex);
         auto* chunk = getChunkRaw({ wpos.x >> 4, wpos.z >> 4 });
         if (!chunk || chunk->state.load() < ChunkState::Generated) return 0;
         return chunk->getMeta({ wpos.x & 15, wpos.y, wpos.z & 15 });
@@ -116,7 +130,7 @@ struct WorldManager {
     }
 
     int findTopSolidBlock(int wx, int wz) {
-        std::lock_guard lock(chunksMutex);
+        std::shared_lock lock(chunksMutex);
         auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
         if (!chunk || chunk->state.load() < ChunkState::Generated) return -1;
         int lx = wx & 15, lz = wz & 15;
@@ -130,7 +144,7 @@ struct WorldManager {
     }
 
     int getHeightValue(int wx, int wz) {
-        std::lock_guard lock(chunksMutex);
+        std::shared_lock lock(chunksMutex);
         auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
         if (!chunk || chunk->state.load() < ChunkState::Generated) return 0;
         return chunk->getHeightValue({ wx & 15, wz & 15 });
