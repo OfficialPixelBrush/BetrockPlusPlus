@@ -105,6 +105,7 @@ void Server::acceptNewPlayers() {
 
     std::cout << "New player connected. Total players: " << players.size() + 1 << "\n";
     players.push_back(std::make_unique<PlayerSession>(clientSocket));
+    players.back()->players = &players;
 }
 
 // Position deltas are computed as fixed-point integers (coord * 32) to avoid

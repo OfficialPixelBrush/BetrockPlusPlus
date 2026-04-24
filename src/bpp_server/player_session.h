@@ -26,6 +26,10 @@ struct PlayerSession {
     NetworkStream stream;
     ClientPosition position;
 
+    // Non-owning pointer to the server's player list; set by Server after push_back.
+    // Commands use this to look up other sessions by username.
+    std::vector<std::unique_ptr<PlayerSession>>* players = nullptr;
+
     // rotation.x = yaw, rotation.y = pitch
     Float2 rotation = { 0.0f, 0.0f };
 

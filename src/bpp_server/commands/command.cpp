@@ -46,23 +46,24 @@ std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerS
 	if (parameters.size() > 1) {
 		for (size_t i = 0; i < registered_commands.size(); i++) {
 			if (registered_commands[i]->GetLabel() == parameters[1]) {
-					pkt.message = L"§7" + registered_commands[i]->GetLabel() + L": " + registered_commands[i]->GetDescription();
+				pkt.message = L"§7" + registered_commands[i]->GetLabel() + L": " + registered_commands[i]->GetDescription();
+				pkt.Serialize(session.stream);
+				// Only print syntax if it has a value
+				if (!registered_commands[i]->GetSyntax().empty()) {
+					pkt.message = L"§7/" + registered_commands[i]->GetLabel() + L" " + registered_commands[i]->GetSyntax();
 					pkt.Serialize(session.stream);
-					// Only print syntax if it has a value
-					if (!registered_commands[i]->GetSyntax().empty()) {
-						pkt.message = L"§7/" + registered_commands[i]->GetLabel() + L" " + registered_commands[i]->GetSyntax();
-						pkt.Serialize(session.stream);
-					}
-					if (registered_commands[i]->GetRequiresOperator()) {
-						pkt.message = L"§7(Requires operator)";
-						pkt.Serialize(session.stream);
-					}
+				}
+				if (registered_commands[i]->GetRequiresOperator()) {
+					pkt.message = L"§7(Requires operator)";
+					pkt.Serialize(session.stream);
+				}
 				return L"";
 			}
 		}
 		return L"Command not found!";
 		// List all commands
-	} else {
+	}
+	else {
 		pkt.message = L"§7-- All Commands --";
 		pkt.Serialize(session.stream);
 		pkt.message = L"§7";
@@ -80,6 +81,93 @@ std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerS
 	}
 	return ERROR_REASON_SYNTAX;
 }
+
+// Helper: send a PlayerPositionAndRotation packet to move a session to new coords.
+static void SendTeleport(PlayerSession& target, double x, double y, double z, float yaw = 0.0f, float pitch = 0.0f) {
+	Packet::PlayerPositionAndRotation pkt;
+	pkt.x = x;
+	pkt.y = y;
+	pkt.stance = y + 1.62;
+	pkt.z = z;
+	pkt.yaw = yaw;
+	pkt.pitch = pitch;
+	pkt.onGround = false;
+	pkt.Serialize(target.stream);
+	// Keep server-side position in sync so movement broadcasts are correct.
+	target.position.pos = { x, y, z };
+	target.lastFpX = static_cast<int32_t>(x * 32.0);
+	target.lastFpY = static_cast<int32_t>(y * 32.0);
+	target.lastFpZ = static_cast<int32_t>(z * 32.0);
+	target.lastYaw = static_cast<int8_t>(yaw / 360.0f * 256.0f);
+	target.lastPitch = static_cast<int8_t>(pitch / 360.0f * 256.0f);
+}
+
+// Helper: find a playing session by username.
+static PlayerSession* FindSession(PlayerSession& caller, const std::wstring& name) {
+	if (!caller.players) return nullptr;
+	for (auto& s : *caller.players) {
+		if (s->username == name && s->connState == ConnectionState::Playing)
+			return s.get();
+	}
+	return nullptr;
+}
+
+// Teleports a player to coordinates or to another player.
+// Usage:
+//   /tp <player> <x> <y> <z> [yaw [pitch]]
+//   /tp <player> <target_player>
+std::wstring CommandTeleport::Execute(std::vector<std::wstring>& parameters, PlayerSession& session) {
+	if (parameters.size() < 2)
+		return ERROR_REASON_SYNTAX;
+
+	PlayerSession* source = FindSession(session, parameters[1]);
+	if (!source)
+		return parameters[1] + L" does not exist!";
+
+	// /tp <player> <x> <y> <z> [yaw [pitch]]
+	if (parameters.size() >= 5) {
+		try {
+			double x = std::stod(parameters[2]);
+			double y = std::stod(parameters[3]);
+			double z = std::stod(parameters[4]);
+			float  yaw = (parameters.size() > 5) ? std::stof(parameters[5]) : source->rotation.x;
+			float  pitch = (parameters.size() > 6) ? std::stof(parameters[6]) : source->rotation.y;
+
+			SendTeleport(*source, x, y, z, yaw, pitch);
+
+			Packet::ChatMessage reply;
+			reply.message = L"\u00a77Teleported " + parameters[1] +
+				L" to (" + parameters[2] + L", " + parameters[3] + L", " + parameters[4] + L")";
+			reply.Serialize(session.stream);
+			return L"";
+		}
+		catch (...) {
+			return ERROR_REASON_PARAMETERS;
+		}
+	}
+
+	// /tp <player> <target_player>
+	if (parameters.size() == 3) {
+		PlayerSession* dest = FindSession(session, parameters[2]);
+		if (!dest)
+			return parameters[2] + L" does not exist!";
+
+		SendTeleport(*source,
+			dest->position.pos.x,
+			dest->position.pos.y,
+			dest->position.pos.z,
+			dest->rotation.x,
+			dest->rotation.y);
+
+		Packet::ChatMessage reply;
+		reply.message = L"\u00a77Teleported " + parameters[1] + L" to " + parameters[2];
+		reply.Serialize(session.stream);
+		return L"";
+	}
+
+	return ERROR_REASON_SYNTAX;
+}
+
 
 /*
 // Shows how long the server has been alive in ticks

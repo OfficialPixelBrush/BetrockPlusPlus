@@ -13,6 +13,7 @@ std::vector<std::unique_ptr<Command>> CommandManager::registeredCommands;
 void CommandManager::Init() {
 	// Anyone can run these
 	registeredCommands.push_back(std::make_unique<CommandHelp>());
+	registeredCommands.push_back(std::make_unique<CommandTeleport>());
 	/*
 	registeredCommands.push_back(CommandVersion());
 	registeredCommands.push_back(CommandList());
@@ -51,10 +52,10 @@ void CommandManager::Init() {
 }
 
 // Get all registered commands
-const std::vector<std::unique_ptr<Command>> &CommandManager::GetRegisteredCommands() noexcept { return registeredCommands; }
+const std::vector<std::unique_ptr<Command>>& CommandManager::GetRegisteredCommands() noexcept { return registeredCommands; }
 
 // Parses commands and executes them
-void CommandManager::Parse(std::wstring &cmd_string, PlayerSession& session) noexcept {
+void CommandManager::Parse(std::wstring& cmd_string, PlayerSession& session) noexcept {
 	// Remove initial /
 	cmd_string = cmd_string.substr(1);
 	// Set these up for command parsing
@@ -77,7 +78,8 @@ void CommandManager::Parse(std::wstring &cmd_string, PlayerSession& session) noe
 				break;
 			}
 		}
-	} catch (const std::exception &e) {
+	}
+	catch (const std::exception& e) {
 		//Betrock::Logger::Instance().Info(std::string(e.what()) + std::string(" on /") + cmd_string);
 	}
 
@@ -85,7 +87,8 @@ void CommandManager::Parse(std::wstring &cmd_string, PlayerSession& session) noe
 
 	if (failureReason == L"Syntax") {
 		failPkt.message = L"§cInvalid Syntax \"" + cmd_string + L"\"";
-	} else if (!failureReason.empty()) {
+	}
+	else if (!failureReason.empty()) {
 		failPkt.message = L"§c" + failureReason;
 	}
 	failPkt.Serialize(session.stream);
