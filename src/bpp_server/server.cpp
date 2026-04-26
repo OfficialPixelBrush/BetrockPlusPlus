@@ -104,6 +104,8 @@ void Server::startup() {
         world.pool.wait();
         world.drainGenQueue();
         world.populateReady();
+        // Make sure all lighting is done
+        world.lightManager.processLightQueue(world);
 
         // Beta uses -13 to 13 with only -13 being inclusive.. for some reason.
         for (int dx = -13; dx < 13; dx++) {
@@ -128,9 +130,6 @@ void Server::startup() {
             spawnDone = true;
     }
     std::cout << "Loading spawn.. 100%\n";
-
-    // Make sure all lighting is done
-    world.lightManager.processLightQueue(world);
     printf("Startup Complete.\n");
 }
 
