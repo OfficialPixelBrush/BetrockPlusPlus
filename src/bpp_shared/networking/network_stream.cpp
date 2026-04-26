@@ -37,11 +37,7 @@ void NetworkStream::Write(const std::string& str)
     for (const char c : str) {
         data.push_back(static_cast<uint8_t>(c));
     }
-#if defined(_WIN32) || defined(_WIN64)
-    send(client_socket, reinterpret_cast<const char*>(data.data()), data.size(), 0);
-#else
-    send(client_socket, data.data(), data.size(), 0);
-#endif
+    WriteBytes(data.data(), data.size());
 }
 
 #include <iostream>
@@ -68,11 +64,7 @@ void NetworkStream::Write(const std::wstring& str)
         data.push_back(static_cast<uint8_t>((c >> 8) & 0xFF));
         data.push_back(static_cast<uint8_t>(c & 0xFF));
     }
-#if defined(_WIN32) || defined(_WIN64)
-    send(client_socket, reinterpret_cast<const char*>(data.data()), data.size(), 0);
-#else
-    send(client_socket, data.data(), data.size(), 0);
-#endif
+    WriteBytes(data.data(), data.size());
 }
 
 #include <iostream>
@@ -105,12 +97,23 @@ void NetworkStream::ReadBytes(uint8_t* buf, size_t len) {
 }
 
 void NetworkStream::WriteBytes(const uint8_t* buf, size_t len) {
+    // Append to the write buffer -- no syscall here.
+    // The actual send() happens once per tick in flushWriteBuffer().
+    writeBuffer.insert(writeBuffer.end(), buf, buf + len);
+}
+
+bool NetworkStream::flushWriteBuffer() {
+    if (writeBuffer.empty()) return connected;
     size_t sent = 0;
-    while (sent < len) {
+    while (sent < writeBuffer.size()) {
 #if defined(_WIN32) || defined(_WIN64)
-        int result = send(client_socket, reinterpret_cast<const char*>(buf + sent), static_cast<int>(len - sent), 0);
+        int result = send(client_socket,
+            reinterpret_cast<const char*>(writeBuffer.data() + sent),
+            static_cast<int>(writeBuffer.size() - sent), 0);
 #else
-        ssize_t result = send(client_socket, buf + sent, len - sent, 0);
+        ssize_t result = send(client_socket,
+            reinterpret_cast<const char*>(writeBuffer.data() + sent),
+            writeBuffer.size() - sent, 0);
 #endif
         if (result <= 0) {
             connected = false;
@@ -118,6 +121,8 @@ void NetworkStream::WriteBytes(const uint8_t* buf, size_t len) {
         }
         sent += static_cast<size_t>(result);
     }
+    writeBuffer.clear();
+    return connected;
 }
 
 bool NetworkStream::hasData() {

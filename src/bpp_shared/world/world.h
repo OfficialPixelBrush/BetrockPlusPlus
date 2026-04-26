@@ -76,6 +76,19 @@ struct WorldManager {
             if (it != chunks.end()) {
                 it->second = std::move(c);
                 seedChunkLighting(pos);
+
+                // Also re-seed the borders of already-loaded neighbors
+                // so they propagate light into the newly arrived chunk.
+                const int ndx[] = { -1, 1,  0, 0 };
+                const int ndz[] = { 0, 0, -1, 1 };
+                for (int i = 0; i < 4; ++i) {
+                    ChunkPos npos{ pos.x + ndx[i], pos.z + ndz[i] };
+                    Chunk* neighbor = getChunkRaw(npos);
+                    if (!neighbor || neighbor->state.load(std::memory_order_acquire) < ChunkState::Generated)
+                        continue;
+                    propagateChunkSkylightBorders(npos);
+                    propagateChunkBlockLightBorders(npos);
+                }
             }
         }
     }
@@ -138,7 +151,7 @@ struct WorldManager {
             }
         }
 
-        // schedule sky relaxation for this position and its 4 horizontal neighbors
+        // Schedule sky relaxation for this position and its 4 horizontal neighbors.
         lightManager.scheduleLightUpdate({ x, y, z }, LightType::Sky);
         const int ndx[] = { -1, 1,  0, 0 };
         const int ndz[] = { 0, 0, -1, 1 };
@@ -149,8 +162,7 @@ struct WorldManager {
             if (neighborHeight == thisHeight2) continue;
             int minY = std::min(thisHeight2, neighborHeight);
             int maxY = std::max(thisHeight2, neighborHeight);
-            for (int sy = minY; sy <= maxY; ++sy)
-                lightManager.scheduleLightUpdate({ nx, sy, nz }, LightType::Sky);
+            lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
         }
 
         lightManager.scheduleLightUpdate({ x, y, z }, LightType::Block);
@@ -211,26 +223,22 @@ struct WorldManager {
 
     void propagateChunkSkylightBorders(ChunkPos cpos) {
         Chunk* chunk = getChunkRaw(cpos);
+        if (!chunk) return;
+        int bx = cpos.x * 16, bz = cpos.z * 16;
+
         for (int x = 0; x < 16; ++x) {
             for (int z = 0; z < 16; ++z) {
-                int wx = cpos.x * 16 + x;
-                int wz = cpos.z * 16 + z;
-                int thisHeight = chunk->getHeightValue({ x, z });
-
-                // check all 4 cardinal neighbors in world space
-                const int ndx[] = { -1, 1, 0, 0 };
-                const int ndz[] = { 0, 0,-1, 1 };
+                int wx = bx + x, wz = bz + z;
+                int thisH = chunk->getHeightValue({ x, z });
+                const int ndx[] = { -1, 1,  0, 0 };
+                const int ndz[] = { 0, 0, -1, 1 };
                 for (int i = 0; i < 4; ++i) {
-                    int nx = wx + ndx[i];
-                    int nz = wz + ndz[i];
-                    Chunk* nc = getChunkRaw({ nx >> 4, nz >> 4 });
-                    if (!nc) continue;
-                    int neighborHeight = nc->getHeightValue({ nx & 15, nz & 15 });
-                    // schedule update for the Y range between the two heights
-                    int minY = std::min(thisHeight, neighborHeight);
-                    int maxY = std::max(thisHeight, neighborHeight);
-                    for (int y = minY; y <= maxY; ++y)
-                        lightManager.scheduleLightUpdate({ nx, y, nz }, LightType::Sky);
+                    int nx = wx + ndx[i], nz = wz + ndz[i];
+                    int neighborH = getHeightValue(nx, nz);
+                    if (neighborH == thisH) continue;
+                    int minY = std::min(thisH, neighborH);
+                    int maxY = std::max(thisH, neighborH);
+                    lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
                 }
             }
         }
@@ -264,6 +272,13 @@ struct WorldManager {
         }
     }
 
+    // Raw pointer accessor — public so Lighter can cache chunk pointers
+    // directly without going through the shared_ptr wrapper.
+    Chunk* getChunkRaw(ChunkPos pos) {
+        auto it = chunks.find(pos);
+        return (it != chunks.end()) ? it->second.get() : nullptr;
+    }
+
 private:
     static constexpr int VIEW_RADIUS = 15;
     static constexpr int SIMULATION_RADIUS = 9;
@@ -272,11 +287,6 @@ private:
     void pumpPipeline(const std::vector<ClientPosition>& players);
     void populateReady();
     void seedChunkLighting(ChunkPos pos);
-
-    Chunk* getChunkRaw(ChunkPos pos) {
-        auto it = chunks.find(pos);
-        return (it != chunks.end()) ? it->second.get() : nullptr;
-    }
 
     std::shared_ptr<Chunk> getChunkShared(ChunkPos pos) {
         auto it = chunks.find(pos);

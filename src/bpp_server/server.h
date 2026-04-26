@@ -58,5 +58,7 @@ private:
     EntityId nextEntityId = 2;
     int64_t timeout_seconds = 60;
     float accumulator = 0.0f;
+    float tickTimeAccum = 0.0f;
+    int   tickCount = 0;
     CommandManager command_manager;
 };

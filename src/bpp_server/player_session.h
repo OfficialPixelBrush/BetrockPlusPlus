@@ -10,7 +10,10 @@
 #include <cstdint>
 #include <chrono>
 #include <unordered_set>
+#include <unordered_map>
+#include <vector>
 #include "world/chunk.h"
+#include "world/world.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
 #include "world/client_pos.h"
@@ -42,6 +45,11 @@ struct PlayerSession {
 
     std::unordered_set<ChunkPos> sentChunks;
     std::unordered_set<ChunkPos> flushedChunks; // actually written to stream
+
+    // Block updates that arrived while the chunk was enqueued but not yet
+    // flushed. Drained by ChunkSender::flush() the moment the chunk data
+    // is written, so the client never sees updates before its chunk.
+    std::unordered_map<ChunkPos, std::vector<PendingBlock>> pendingBlockChanges;
     ConnectionState connState = ConnectionState::Handshaking;
     EntityId entityId = 0;
     std::wstring username;
