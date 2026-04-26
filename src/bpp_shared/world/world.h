@@ -215,23 +215,26 @@ struct WorldManager {
     }
 
     void propagateChunkSkylightBorders(ChunkPos cpos) {
-        Chunk* chunk = getChunkRaw(cpos);
-        if (!chunk) return;
         int bx = cpos.x * 16, bz = cpos.z * 16;
 
-        for (int x = 0; x < 16; ++x) {
-            for (int z = 0; z < 16; ++z) {
-                int wx = bx + x, wz = bz + z;
-                int thisH = chunk->getHeightValue({ x, z });
-                const int ndx[] = { -1, 1,  0, 0 };
-                const int ndz[] = { 0, 0, -1, 1 };
-                for (int i = 0; i < 4; ++i) {
-                    int nx = wx + ndx[i], nz = wz + ndz[i];
-                    int neighborH = getHeightValue(nx, nz);
-                    if (neighborH == thisH) continue;
-                    int minY = std::min(thisH, neighborH);
-                    int maxY = std::max(thisH, neighborH);
-                    lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
+        const int ndx[] = { -1, 1,  0, 0 };
+        const int ndz[] = { 0, 0, -1, 1 };
+
+        for (int i = 0; i < 4; ++i) {
+            Chunk* neighbor = getChunkRaw({ cpos.x + ndx[i], cpos.z + ndz[i] });
+            if (!neighbor) continue;
+
+            for (int t = 0; t < 16; ++t) {
+                int lx, lz, nx, nz;
+                if (ndx[i] == -1) { lx = 0; lz = t; nx = 15; nz = t; }
+                else if (ndx[i] == 1) { lx = 15; lz = t; nx = 0;  nz = t; }
+                else if (ndz[i] == -1) { lx = t; lz = 0; nx = t;  nz = 15; }
+                else { lx = t; lz = 15; nx = t; nz = 0; }
+
+                for (int y = 0; y < CHUNK_HEIGHT; ++y) {
+                    // If the neighbor border block has skylight, seed into our border block
+                    if (neighbor->getSkyLight({ nx, y, nz }) > 0)
+                        lightManager.scheduleLightUpdate({ bx + lx, y, bz + lz }, LightType::Sky);
                 }
             }
         }
@@ -252,10 +255,10 @@ struct WorldManager {
             for (int t = 0; t < 16; ++t) {
                 // Pick the border column of this chunk facing direction i
                 int lx, lz, nx, nz;
-                if (ndx[i] == -1) { lx = 0; lz = t; nx = 16 - 1; nz = t; }
-                else if (ndx[i] == 1) { lx = 16 - 1; lz = t; nx = 0; nz = t; }
-                else if (ndz[i] == -1) { lx = t; lz = 0; nx = 0; nz = 16 - 1; }
-                else { lx = t; lz = 16 - 1; nx = t; nz = 0; }
+                if (ndx[i] == -1) { lx = 0; lz = t; nx = 15; nz = t; }
+                else if (ndx[i] == 1) { lx = 15; lz = t; nx = 0; nz = t; }
+                else if (ndz[i] == -1) { lx = t; lz = 0; nx = 0; nz = 15; }
+                else { lx = t; lz = 15; nx = t; nz = 0; }
 
                 for (int y = 0; y < CHUNK_HEIGHT; ++y)
                     // Does our neighbor block have a block light > 0?
