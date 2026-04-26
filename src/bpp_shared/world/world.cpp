@@ -30,11 +30,6 @@ void WorldManager::seedChunkLighting(ChunkPos pos) {
     int bx = pos.x * 16;
     int bz = pos.z * 16;
 
-    // Exact equivalent of beta's func_353_b post-heightmap loop:
-    // for every column call func_333_c -> func_355_f on all 4 neighbors.
-    // func_355_f: if neighbor height differs, schedule a sky region on the
-    // NEIGHBOR column spanning [min(thisH, neighborH), max(thisH, neighborH)].
-    // getHeightValue returns 0 for unloaded chunks — skip those (matches beta).
     for (int x = 0; x < 16; ++x) {
         for (int z = 0; z < 16; ++z) {
             int wx = bx + x, wz = bz + z;
@@ -85,6 +80,7 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
 
     for (auto it = chunks.begin(); it != chunks.end(); ) {
         if (wanted.contains(it->first)) { ++it; continue; }
+        if (it->second->spawnChunk) { ++it; continue; }
         ChunkState s = it->second->state.load();
         if (s == ChunkState::Generating) {
             // Leave the slot so drainGenQueue can still find it; the gen

@@ -138,6 +138,7 @@ struct Chunk {
 
 	bool isTerrainPopulated = false;
 	bool isModified = false;
+	bool spawnChunk = false;
 
 	// Climate helpers
 	inline float getTemperature(Int2 pos) const { return temperature[(pos.y << 4) | pos.x]; }
@@ -214,13 +215,6 @@ struct Chunk {
 		}
 	}
 
-	// Make sure we can't access a block out of bounds
-	inline bool isValidBlockPos(Int3 pos) const {
-		bool valid = pos.x >= 0 && pos.x < CHUNK_WIDTH && pos.y >= 0 && pos.y < CHUNK_HEIGHT && pos.z >= 0 && pos.z < CHUNK_WIDTH;
-		if (!valid) printf("Invalid block access on chunk x: %i y: %i at block coords x: %i y: %i z: %i\n", cpos.x, cpos.z, pos.x, pos.y, pos.z);
-		return valid;
-	}
-
 	// Slice helpers
 	inline Slice& getSlice(int y) {
 		return slices[y >> 4];
@@ -231,53 +225,44 @@ struct Chunk {
 
 	// Block helpers
 	inline BlockType getBlock(Int3 pos) const {
-		if (!isValidBlockPos(pos)) return BLOCK_AIR;
 		return getSlice(pos.y).getBlock({ pos.x, pos.y & 15, pos.z });
 	}
 
 	inline void setBlock(Int3 pos, BlockType id) {
-		if (!isValidBlockPos(pos)) return;
 		getSlice(pos.y).setBlock({ pos.x, pos.y & 15, pos.z }, id);
 		isModified = true;
 	}
 
 	// Meta helpers
 	inline uint8_t getMeta(Int3 pos) const {
-		if (!isValidBlockPos(pos)) return 0;
 		return getSlice(pos.y).getMeta({ pos.x, pos.y & 15, pos.z });
 	}
 
 	inline void setMeta(Int3 pos, uint8_t meta) {
-		if (!isValidBlockPos(pos)) return;
 		getSlice(pos.y).setMeta({ pos.x, pos.y & 15, pos.z }, meta);
 		isModified = true;
 	}
 
 	// Light helpers
 	inline uint8_t getBlockLight(Int3 pos) const {
-		if (!isValidBlockPos(pos)) return 0;
 		return getSlice(pos.y).getBlockLight({ pos.x, pos.y & 15, pos.z });
 	}
 
 	inline uint8_t getSkyLight(Int3 pos) const {
-		if (!isValidBlockPos(pos)) return 0;
 		return getSlice(pos.y).getSkyLight({ pos.x, pos.y & 15, pos.z });
 	}
 
 	inline void setBlockLight(Int3 pos, uint8_t val) {
-		if (!isValidBlockPos(pos)) return;
 		getSlice(pos.y).setBlockLight({ pos.x, pos.y & 15, pos.z }, val);
 		isModified = true;
 	}
 
 	inline void setSkyLight(Int3 pos, uint8_t val) {
-		if (!isValidBlockPos(pos)) return;
 		getSlice(pos.y).setSkyLight({ pos.x, pos.y & 15, pos.z }, val);
 		isModified = true;
 	}
 
 	inline int getBlockLightValue(Int3 pos, int skySubtracted) const {
-		if (!isValidBlockPos(pos)) return 15 - skySubtracted;
 		return getSlice(pos.y).getBlockLightValue({ pos.x, pos.y & 15, pos.z }, skySubtracted);
 	}
 

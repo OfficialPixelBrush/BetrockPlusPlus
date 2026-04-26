@@ -70,7 +70,72 @@ Server::~Server() {
 #endif
 }
 
+void Server::startup() {
+    printf("Initializing server startup.. \n");
+    printf("Thread count: %i\n", int(world.pool.get_thread_count()));
+    printf("Server spawn is (%i, %i)\n", int(spawnPoint.x), int(spawnPoint.y));
+    printf("Loading 676 spawn chunks..\n");
+
+    // Push every single spawn chunk to get ready for generation
+    std::unordered_set<ChunkPos> wanted;
+    for (int dx = -13; dx < 13; dx++)
+        for (int dz = -13; dz < 13; dz++) {
+            wanted.insert({ (spawnPoint.x >> 4) + dx, (spawnPoint.z >> 4) + dz });
+
+            for (const auto& pos : wanted) {
+                if (!world.chunks.contains(pos)) {
+                    auto c = std::make_shared<Chunk>();
+                    c->spawnChunk = true;
+                    c->cpos = pos;
+                    world.chunks.emplace(pos, std::move(c));
+                }
+            }
+        }
+
+    int total_spawn_chunks = 676;
+    int loaded_chunks = 0;
+    bool spawnDone = false;
+    auto start = std::chrono::steady_clock::now();
+    std::cout << "Loading spawn.. 0%\n";
+    while (!spawnDone) {
+        loaded_chunks = 0;
+        // Force gen these chunks AS FAST AS POSSIBLE
+        world.pumpPipeline(std::vector<ClientPosition>{});
+        world.pool.wait();
+        world.drainGenQueue();
+        world.populateReady();
+
+        // Beta uses -13 to 13 with only -13 being inclusive.. for some reason.
+        for (int dx = -13; dx < 13; dx++) {
+            for (int dz = -13; dz < 13; dz++) {
+                ChunkPos p{ (spawnPoint.x >> 4) + dx, (spawnPoint.z >> 4) + dz };
+                auto it = world.chunks.find(p);
+                if (it != world.chunks.end() && it->second->state.load() >= ChunkState::Generated)
+                    loaded_chunks++;
+            }
+        }
+
+        // Update load percentage every second
+        if (std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count() >= 1.0f)
+        {
+            int percentLoaded = int(((float)loaded_chunks / total_spawn_chunks) * 100);
+            std::cout << "Loading spawn.. " << percentLoaded << "%\n";
+            start = std::chrono::steady_clock::now();
+        }
+
+        // Have we loaded all the spawn chunks?
+        if (loaded_chunks >= total_spawn_chunks)
+            spawnDone = true;
+    }
+    std::cout << "Loading spawn.. 100%\n";
+
+    // Make sure all lighting is done
+    world.lightManager.processLightQueue(world);
+    printf("Startup Complete.\n");
+}
+
 void Server::run() {
+    startup();
     auto lastTime = std::chrono::steady_clock::now();
 
     while (true) {
