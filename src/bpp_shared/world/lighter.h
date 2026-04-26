@@ -84,9 +84,9 @@ public:
         mx.y = std::min(mx.y, CHUNK_HEIGHT - 1);
         if (mn.y > mx.y) return;
 
-        int checkCount = std::min((int)lightQueue.size(), 5);
-        for (int i = 0; i < checkCount; ++i) {
-            LightRegion& r = lightQueue[lightQueue.size() - 1 - i];
+        size_t checkCount = std::min(lightQueue.size(), size_t(5));
+        for (size_t i = 0; i < checkCount; ++i) {
+            LightRegion& r = lightQueue[size_t(lightQueue.size() - 1 - i)];
             if (r.type != type) continue;
             if (r.tryMerge(mn.x, mn.y, mn.z, mx.x, mx.y, mx.z))
                 return;

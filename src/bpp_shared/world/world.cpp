@@ -5,6 +5,7 @@
  *
 */
 #include "world.h"
+#include "blocks.h"
 #include "generator/chunk_gen.h"
 #include "debug_generator/debug_generator.h"
 
@@ -51,7 +52,7 @@ void WorldManager::seedChunkLighting(ChunkPos pos) {
     for (int x = 0; x < 16; ++x)
         for (int z = 0; z < 16; ++z)
             for (int y = 0; y < CHUNK_HEIGHT; ++y) {
-                uint8_t id = chunk->getBlock({ x, y, z });
+                BlockType id = chunk->getBlock({ x, y, z });
                 if (Blocks::blockProperties[id].lightEmission > 0)
                     lightManager.scheduleLightUpdate({ bx + x, y, bz + z }, LightType::Block);
             }
