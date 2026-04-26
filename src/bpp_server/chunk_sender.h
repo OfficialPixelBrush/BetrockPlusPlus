@@ -11,7 +11,7 @@
 #include <future>
 #include <algorithm>
 #include <thread>
-#include <minmax.h>
+//#include <minmax.h>
 #include "player_session.h"
 #include "chunk_serializer.h"
 #include "world/world.h"
@@ -143,11 +143,18 @@ struct ChunkSender {
             smb.chunk_position = { chunk.x, chunk.z };
             for (const auto& pb : changes) {
                 smb.block_coordinates.push_back(
-                    format_multi_block(pb.block_pos.x, pb.block_pos.y, pb.block_pos.z));
-                smb.block_metadata.push_back(pb.block.data);
+                    static_cast<int16_t>(
+                        format_multi_block(
+                            int8_t(pb.block_pos.x),
+                            int8_t(pb.block_pos.y),
+                            int8_t(pb.block_pos.z)
+                        )
+                    )
+                );
+                smb.block_metadata.push_back(int8_t(pb.block.data));
                 smb.block_types.push_back(pb.block.type);
             }
-            smb.number_of_blocks = static_cast<int>(smb.block_coordinates.size());
+            smb.number_of_blocks = static_cast<int16_t>(smb.block_coordinates.size());
             smb.Serialize(session.stream);
         }
         else {
@@ -165,8 +172,8 @@ struct ChunkSender {
             // Force even ySize so the client's nibble copy doesn't desync
             ymin = (ymin / 2) * 2;
             ymax = (ymax / 2 + 1) * 2 - 1;
-            ymin = static_cast<int>(max(ymin, 0));
-            ymax = static_cast<int>(min(ymax, CHUNK_HEIGHT - 1));
+            ymin = static_cast<int>(std::max(ymin, 0));
+            ymax = static_cast<int>(std::min(ymax, CHUNK_HEIGHT - 1));
 
             PendingSubRegion psr;
             psr.chunkPos = chunk;
