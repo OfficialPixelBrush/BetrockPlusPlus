@@ -601,7 +601,7 @@ public:
             q_position.z = stream.Read<int32_t>();
             q_yaw = stream.Read<int8_t>();
             q_pitch = stream.Read<int8_t>();
-            // TODO: Metadata handling
+            stream.ReadEntityMetadata();
         }
     };
 
@@ -858,6 +858,10 @@ public:
         EntityId entity_id;
         std::vector<uint8_t> metadata;
 
+        // TODO: Ideally this'd immediately read/write
+        // the relevant data for the entity behind the ID,
+        // but for now we'll just read it into the metadata vector
+
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
             stream.Write(entity_id);
@@ -866,7 +870,7 @@ public:
 
         void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
-            // TODO: Metadata handling
+            stream.ReadEntityMetadata();
         }
     };
 
