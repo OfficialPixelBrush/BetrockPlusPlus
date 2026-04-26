@@ -24,6 +24,7 @@
 #include <bit>
 #include <type_traits>
 #include <cstring>
+#include <vector>
 
 template<typename T>
 T byteswap_any(T value) {
@@ -89,7 +90,11 @@ public:
     void Write(const std::wstring& str);
     // Raw byte buffer Read-Write (no endian conversion)
     void ReadBytes(uint8_t* buf, size_t len);
+    // Append bytes to the per-session write buffer (no syscall).
     void WriteBytes(const uint8_t* buf, size_t len);
+    // Flush the write buffer to the socket once per tick.
+    // Returns false if the connection was lost.
+    bool flushWriteBuffer();
     bool hasData();
 private:
     // Static so the server-socket is shared across all
@@ -97,4 +102,7 @@ private:
     // TODO: Automatically close the server socket on program exit
     int client_socket = INVALID_SOCKET;
     bool connected = true;
+    // Outgoing data is accumulated here and sent in one syscall per tick,
+    // so the main thread is never blocked waiting for the kernel send buffer.
+    std::vector<uint8_t> writeBuffer;
 };
