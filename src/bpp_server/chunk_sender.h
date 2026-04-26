@@ -11,7 +11,6 @@
 #include <future>
 #include <algorithm>
 #include <thread>
-//#include <minmax.h>
 #include "player_session.h"
 #include "chunk_serializer.h"
 #include "world/world.h"
@@ -181,8 +180,8 @@ struct ChunkSender {
             // Force even ySize so the client's nibble copy doesn't desync
             ymin = (ymin / 2) * 2;
             ymax = (ymax / 2 + 1) * 2 - 1;
-            ymin = static_cast<int>(std::max(ymin, 0));
-            ymax = static_cast<int>(std::min(ymax, CHUNK_HEIGHT - 1));
+            ymin = std::max<int>(ymin, 0);
+            ymax = std::min<int>(ymax, CHUNK_HEIGHT - 1);
 
             PendingSubRegion psr;
             psr.chunkPos = chunk;
