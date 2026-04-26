@@ -25,7 +25,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     #elif defined(__linux__)
         std::cout << "Running on Linux\n";
     #else
-        std::cout << "Running on an unknown/unsupported platform\n";
+        std::cout << "Running on an unknown/unsupported platform\nUnexpected bugs may occur!\n";
     #endif
 
     if (nbt_tests)
