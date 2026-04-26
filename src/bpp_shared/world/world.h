@@ -199,7 +199,7 @@ struct WorldManager {
 
     int getSkyLight(Int3 pos) {
         auto* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });
-        if (!chunk || chunk->state.load() < ChunkState::Generated) return 15;
+        if (!chunk || chunk->state.load() < ChunkState::Generated) return 0;
         return chunk->getSkyLight({ pos.x & 15, pos.y, pos.z & 15 });
     }
 

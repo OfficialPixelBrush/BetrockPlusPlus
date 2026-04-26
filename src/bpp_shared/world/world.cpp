@@ -33,12 +33,12 @@ void WorldManager::seedChunkLighting(ChunkPos pos) {
         for (int z = 0; z < 16; ++z) {
             int wx = bx + x, wz = bz + z;
             int thisHeight = chunk->getHeightValue({ x, z });
-
             const int ndx[] = { -1, 1,  0, 0 };
             const int ndz[] = { 0, 0, -1, 1 };
             for (int i = 0; i < 4; ++i) {
                 int nx = wx + ndx[i], nz = wz + ndz[i];
                 int neighborHeight = getHeightValue(nx, nz);  // returns 0 if chunk missing
+                if (neighborHeight == 0) continue;
                 if (neighborHeight == thisHeight) continue;
                 int minY = std::min(thisHeight, neighborHeight);
                 int maxY = std::max(thisHeight, neighborHeight);
