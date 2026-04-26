@@ -92,6 +92,10 @@ public:
     void ReadBytes(uint8_t* buf, size_t len);
     // Append bytes to the per-session write buffer (no syscall).
     void WriteBytes(const uint8_t* buf, size_t len);
+    // Handles Entity Metadata Interpreting
+    void ReadEntityMetadata();
+    // Handles Entity Metadata Conversion
+    void WriteEntityMetadata();
     // Flush the write buffer to the socket once per tick.
     // Returns false if the connection was lost.
     bool flushWriteBuffer();
