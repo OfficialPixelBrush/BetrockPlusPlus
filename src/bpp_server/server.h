@@ -36,9 +36,11 @@ public:
     Server();
     ~Server();
     void run();
+    Int2 spawnPoint{ 0, 0 };
 
 private:
     void tick();
+    void startup();
     void acceptNewPlayers();
     void handleHandshake(PlayerSession& session);
     void handleLogin(PlayerSession& session);

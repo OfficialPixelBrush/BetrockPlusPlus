@@ -56,6 +56,9 @@ struct WorldManager {
     void update(const std::vector<ClientPosition>& players);
     int getViewRadius() { return VIEW_RADIUS; }
     int getSimulationDistance() { return SIMULATION_RADIUS; }
+    void updateLoadRadius(const std::vector<ClientPosition>& players);
+    void pumpPipeline(const std::vector<ClientPosition>& players);
+    void populateReady();
 
     // Called from pool gen threads
     void postGenResult(std::shared_ptr<Chunk> chunk) {
@@ -74,21 +77,10 @@ struct WorldManager {
             ChunkPos pos = c->cpos;
             auto it = chunks.find(pos);
             if (it != chunks.end()) {
+                bool wasSpawnChunk = it->second->spawnChunk;
                 it->second = std::move(c);
+                it->second->spawnChunk = wasSpawnChunk;
                 seedChunkLighting(pos);
-
-                // Also re-seed the borders of already-loaded neighbors
-                // so they propagate light into the newly arrived chunk.
-                const int ndx[] = { -1, 1,  0, 0 };
-                const int ndz[] = { 0, 0, -1, 1 };
-                for (int i = 0; i < 4; ++i) {
-                    ChunkPos npos{ pos.x + ndx[i], pos.z + ndz[i] };
-                    Chunk* neighbor = getChunkRaw(npos);
-                    if (!neighbor || neighbor->state.load(std::memory_order_acquire) < ChunkState::Generated)
-                        continue;
-                    propagateChunkSkylightBorders(npos);
-                    propagateChunkBlockLightBorders(npos);
-                }
             }
         }
     }
@@ -283,9 +275,6 @@ private:
     static constexpr int VIEW_RADIUS = 15;
     static constexpr int SIMULATION_RADIUS = 9;
 
-    void updateLoadRadius(const std::vector<ClientPosition>& players);
-    void pumpPipeline(const std::vector<ClientPosition>& players);
-    void populateReady();
     void seedChunkLighting(ChunkPos pos);
 
     std::shared_ptr<Chunk> getChunkShared(ChunkPos pos) {
