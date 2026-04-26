@@ -120,7 +120,16 @@ struct ChunkSender {
         std::shared_ptr<const Chunk> chunkRef = nullptr) {
         if (changes.empty()) return;
 
-        if (changes.size() == 1) {
+        // Force an entire region send if any block updates are light updates
+        bool forceRegionSend = false;
+        for (auto& pb : changes) {
+            if (pb.lightUpdate) {
+                forceRegionSend = true;
+                break;
+            }
+        }
+
+        if (changes.size() == 1 && !forceRegionSend) {
             const PendingBlock& pb = changes[0];
             Packet::SetBlock sb;
             sb.block = { pb.block.type, pb.block.data };
@@ -131,7 +140,7 @@ struct ChunkSender {
             };
             sb.Serialize(session.stream);
         }
-        else if (changes.size() < 10) {
+        else if (changes.size() < 10 && !forceRegionSend) {
             auto format_multi_block = [](int8_t x, int8_t y, int8_t z) {
                 return (
                     ((int16_t(x) & 0x0F) << 12) |

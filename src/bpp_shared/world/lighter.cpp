@@ -101,7 +101,8 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
             PendingBlock{
                 .block{ (BlockType)blockId, chunk->getMeta({ lx, y, lz }) },
                 .block_pos{ x, y, z },
-                .light{ chunk->getBlockLight({ lx, y, lz }), chunk->getSkyLight({ lx, y, lz }) }
+                .light{ chunk->getBlockLight({ lx, y, lz }), chunk->getSkyLight({ lx, y, lz }) },
+                .lightUpdate = true
             }, chunk->cpos);
     }
 
@@ -137,6 +138,13 @@ void Lighter::unlightAt(int x, int y, int z, LightType type, WorldManager& world
 
     if (type == LightType::Sky) chunk->setSkyLight({ lx, y, lz }, 0);
     else                        chunk->setBlockLight({ lx, y, lz }, 0);
+    if (world.onBlockUpdate) world.onBlockUpdate(
+        PendingBlock{
+            .block{ (BlockType)chunk->getBlock({lx, y, lz}), chunk->getMeta({lx, y, lz})},
+            .block_pos{ x, y, z },
+            .light{ chunk->getBlockLight({ lx, y, lz }), chunk->getSkyLight({ lx, y, lz }) },
+            .lightUpdate = true
+        }, chunk->cpos);
 
     unlightQueue.push_back({ {x, y, z}, type, oldVal });
 
@@ -171,6 +179,13 @@ void Lighter::unlightAt(int x, int y, int z, LightType type, WorldManager& world
             if (nVal < val) {
                 if (t == LightType::Sky) nc->setSkyLight({ nlx, ny, nlz }, 0);
                 else                     nc->setBlockLight({ nlx, ny, nlz }, 0);
+                if (world.onBlockUpdate) world.onBlockUpdate(
+                    PendingBlock{
+                        .block{ (BlockType)chunk->getBlock({lx, y, lz}), chunk->getMeta({lx, y, lz})},
+                        .block_pos{ x, y, z },
+                        .light{ chunk->getBlockLight({ lx, y, lz }), chunk->getSkyLight({ lx, y, lz }) },
+                        .lightUpdate = true
+                    }, chunk->cpos);
                 unlightQueue.push_back({ {nx, ny, nz}, t, nVal });
             }
             else {
