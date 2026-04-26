@@ -216,7 +216,9 @@ struct Chunk {
 
 	// Make sure we can't access a block out of bounds
 	inline bool isValidBlockPos(Int3 pos) const {
-		return pos.x >= 0 && pos.x < CHUNK_WIDTH && pos.y >= 0 && pos.y < CHUNK_HEIGHT && pos.z >= 0 && pos.z < CHUNK_WIDTH;
+		bool valid = pos.x >= 0 && pos.x < CHUNK_WIDTH && pos.y >= 0 && pos.y < CHUNK_HEIGHT && pos.z >= 0 && pos.z < CHUNK_WIDTH;
+		if (!valid) printf("Invalid block access on chunk x: %i y: %i at block coords x: %i y: %i z: %i\n", cpos.x, cpos.z, pos.x, pos.y, pos.z);
+		return valid;
 	}
 
 	// Slice helpers
@@ -258,7 +260,7 @@ struct Chunk {
 	}
 
 	inline uint8_t getSkyLight(Int3 pos) const {
-		if (!isValidBlockPos(pos)) return 15;
+		if (!isValidBlockPos(pos)) return 0;
 		return getSlice(pos.y).getSkyLight({ pos.x, pos.y & 15, pos.z });
 	}
 

@@ -27,12 +27,13 @@ Server::Server() {
     command_manager.Init();
     world.seed = 404;
 
-    // onBlockUpdate is only ever called from setBlock(), which runs on the
-    // main thread, so no lock is needed here.
     world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
-        PendingBlock pendingNew = pendingBlock;
-        pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y, pendingBlock.block_pos.z & 15 };
-        chunkBlockChanges[chunkPos].push_back(pendingNew);
+        for (auto& session : players) {
+            if (!session->sentChunks.contains(chunkPos)) continue;
+            PendingBlock pendingNew = pendingBlock;
+            pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y, pendingBlock.block_pos.z & 15 };
+            chunkBlockChanges[chunkPos].push_back(pendingNew);
+        }
         };
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -82,11 +83,18 @@ void Server::run() {
         accumulator += delta;
 
         while (accumulator >= TICK_DELTA && ticks_ran <= MAX_TICKS_PER_FRAME) {
-            auto now = std::chrono::steady_clock::now();
+            auto tickStart = std::chrono::steady_clock::now();
             tick();
-            float delta = std::chrono::duration<float>(now - lastTime).count();
-            if (delta * 1000 > 50) {
-                printf("Can't keep up! Tick took %i ms\n", int(delta * 1000));
+            float tickMs = std::chrono::duration<float>(std::chrono::steady_clock::now() - tickStart).count() * 1000.0f;
+            if (tickMs > 50.0f) {
+                printf("Can't keep up! Tick took %i ms\n", int(tickMs));
+            }
+            tickTimeAccum += tickMs;
+            tickCount++;
+            if (tickCount >= 40) {
+                printf("Avg tick: %.2f ms\n", tickTimeAccum / tickCount);
+                tickTimeAccum = 0.0f;
+                tickCount = 0;
             }
             accumulator -= TICK_DELTA;
             ticks_ran++;
@@ -233,51 +241,38 @@ void Server::tick() {
                 time.Serialize(session->stream);
             }
 
-            // Send block changes
-            for (auto chunk : session->sentChunks) {
-                auto it = localBlockChanges.find(chunk);
-                if (it == localBlockChanges.end()) continue;
-                auto& chunkBlockChangeVector = it->second;
-                if (chunkBlockChangeVector.size() <= 1) {
-                    // Single block send in world space
-                    PendingBlock& pb = chunkBlockChangeVector[0];
-                    Packet::SetBlock sb;
-                    sb.block = { pb.block.type, pb.block.data };
-                    sb.position = {
-                        static_cast<int32_t>(pb.block_pos.x + (chunk.x * 16)),
-                        static_cast<int8_t>(pb.block_pos.y),
-                        static_cast<int32_t>(pb.block_pos.z + (chunk.z * 16))
-                    };
-                    sb.Serialize(session->stream);
-                }
-                else {
-                    // Function to convert block positions into one 16 bit int
-                    auto format_multi_block = [](int8_t x, int8_t y, int8_t z) {
-                        return (
-                            ((int16_t(x) & 0x0F) << 12) |
-                            ((int16_t(z) & 0x0F) << 8) |
-                            ((int16_t(y) & 0xFF))
-                            );
-                        };
-
-                    // Multi block send in chunk space
-                    Packet::SetMultipleBlocks smb;
-                    smb.chunk_position = { chunk.x, chunk.z };
-
-                    // Go through each block and add it to the packet
-                    for (auto& pb : chunkBlockChangeVector) {
-                        smb.block_coordinates.push_back(format_multi_block(pb.block_pos.x, pb.block_pos.y, pb.block_pos.z));
-                        smb.block_metadata.push_back(pb.block.data);
-                        smb.block_types.push_back(pb.block.type);
-                    }
-                    smb.number_of_blocks = smb.block_coordinates.size();
-                    smb.Serialize(session->stream);
-                }
-            }
             break;
         }
     }
-    // localBlockChanges is destroyed here, implicitly clearing this tick's changes.
+
+    // Dispatch block changes to all sessions that know about each chunk.
+    for (auto it = localBlockChanges.begin(); it != localBlockChanges.end(); ++it) {
+        const ChunkPos& chunk = it->first;
+        const std::vector<PendingBlock>& changes = it->second;
+        // Capture as shared_ptr so the async compression job keeps the chunk
+        // alive until the pool thread finishes.
+        std::shared_ptr chunkRef = world.getChunk(chunk);
+
+        for (auto& session : players) {
+            // Include WaitingForSpawnChunks: their chunks are in-flight so
+            // updates queue in pendingBlockChanges and drain via flush().
+            if (session->connState != ConnectionState::Playing &&
+                session->connState != ConnectionState::WaitingForSpawnChunks) continue;
+
+            if (session->flushedChunks.contains(chunk)) {
+                chunkSender.sendBlockUpdates(*session, chunk, changes, chunkRef);
+            }
+            else if (session->sentChunks.contains(chunk)) {
+                auto& q = session->pendingBlockChanges[chunk];
+                q.insert(q.end(), changes.begin(), changes.end());
+            }
+        }
+    }
+
+    // Flush all pending outgoing data to the socket once per tick.
+    for (auto& session : players) {
+        session->stream.flushWriteBuffer();
+    }
 
     // Mark clients who have timed out for removal
     auto now = std::chrono::steady_clock::now();
@@ -384,7 +379,7 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
     int spawnChunkX = int(std::floor(session.position.pos.x)) >> 4;
     int spawnChunkZ = int(std::floor(session.position.pos.z)) >> 4;
 
-    int radius = std::min(3, world.getViewRadius());
+    int radius = min(3, world.getViewRadius());
 
     int total_spawn_chunks = ((radius * 2) + 1) * ((radius * 2) + 1);
     int loaded_chunks = 0;

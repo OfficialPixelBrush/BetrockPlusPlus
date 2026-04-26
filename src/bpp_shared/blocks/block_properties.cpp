@@ -951,7 +951,7 @@ namespace Blocks {
         blockProperties[BlockType::BLOCK_FENCE] = {
             .material = Material::Wood(),
             .stepSound = StepSound::Wood,
-            .lightOpacity = 255,
+            .lightOpacity = 0,
             .hardness = 2.0f,
             .resistance = 5.0f,
             .isOpaqueCube = false,

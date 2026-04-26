@@ -14,6 +14,7 @@ void WorldManager::tick(const std::vector<ClientPosition>& players) {
     drainGenQueue();       // integrate finished gen results first
     updateLoadRadius(players);
     populateReady();       // population runs on main thread — direct world access
+
     lightManager.processLightQueue(*this);
 }
 
@@ -29,21 +30,24 @@ void WorldManager::seedChunkLighting(ChunkPos pos) {
     int bx = pos.x * 16;
     int bz = pos.z * 16;
 
+    // Exact equivalent of beta's func_353_b post-heightmap loop:
+    // for every column call func_333_c -> func_355_f on all 4 neighbors.
+    // func_355_f: if neighbor height differs, schedule a sky region on the
+    // NEIGHBOR column spanning [min(thisH, neighborH), max(thisH, neighborH)].
+    // getHeightValue returns 0 for unloaded chunks — skip those (matches beta).
     for (int x = 0; x < 16; ++x) {
         for (int z = 0; z < 16; ++z) {
             int wx = bx + x, wz = bz + z;
-            int thisHeight = chunk->getHeightValue({ x, z });
+            int thisH = chunk->getHeightValue({ x, z });
             const int ndx[] = { -1, 1,  0, 0 };
             const int ndz[] = { 0, 0, -1, 1 };
             for (int i = 0; i < 4; ++i) {
                 int nx = wx + ndx[i], nz = wz + ndz[i];
-                int neighborHeight = getHeightValue(nx, nz);  // returns 0 if chunk missing
-                if (neighborHeight == 0) continue;
-                if (neighborHeight == thisHeight) continue;
-                int minY = std::min(thisHeight, neighborHeight);
-                int maxY = std::max(thisHeight, neighborHeight);
-                for (int y = minY; y <= maxY; ++y)
-                    lightManager.scheduleLightUpdate({ nx, y, nz }, LightType::Sky);
+                int neighborH = getHeightValue(nx, nz);
+                if (neighborH == thisH) continue;
+                int minY = std::min(thisH, neighborH);
+                int maxY = std::max(thisH, neighborH);
+                lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
             }
         }
     }
@@ -56,6 +60,8 @@ void WorldManager::seedChunkLighting(ChunkPos pos) {
                 if (Blocks::blockProperties[id].lightEmission > 0)
                     lightManager.scheduleLightUpdate({ bx + x, y, bz + z }, LightType::Block);
             }
+
+    // Pull block light in from already-loaded neighbors
     propagateChunkSkylightBorders(pos);
     propagateChunkBlockLightBorders(pos);
 }
