@@ -105,6 +105,26 @@ namespace PacketData {
         START_SHAKING = 8
     };
 
+    // Only used for the Entity Metadata pseudo-VM
+    class EntityMetadata {
+        public:
+        enum Type {
+            BYTE        = 0,
+            SHORT       = 1,
+            INTEGER     = 2,
+            FLOAT       = 3,
+            STRING      = 4,
+            ITEM        = 5,
+            COORINDATES = 6
+        };
+
+        enum Flags {
+            BURNING     = 0,
+            SNEAKING    = 1,
+            RIDING      = 2
+        };
+    };
+
     // Used by Block Action Packet (0x36)
     enum NoteInstrument : uint8_t {
         HARP = 0,

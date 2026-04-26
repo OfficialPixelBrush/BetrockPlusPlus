@@ -21,7 +21,7 @@ namespace ChunkSerializer {
         int nibbles = (blocks + 1) / 2;
         int total = blocks + nibbles * 3;
 
-        std::vector<uint8_t> raw(total, 0);
+        std::vector<uint8_t> raw(size_t(total), 0);
         uint8_t* blockData = raw.data();
         uint8_t* metaData = blockData + blocks;
         uint8_t* blockLight = metaData + nibbles;

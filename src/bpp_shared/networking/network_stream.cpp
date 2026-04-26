@@ -6,6 +6,8 @@
 */
 
 #include "network_stream.h"
+#include "numeric_structs.h"
+#include "packet_data.h"
 #include <vector>
 
 NetworkStream::NetworkStream(int p_client_socket) {
@@ -100,6 +102,70 @@ void NetworkStream::WriteBytes(const uint8_t* buf, size_t len) {
     // Append to the write buffer -- no syscall here.
     // The actual send() happens once per tick in flushWriteBuffer().
     writeBuffer.insert(writeBuffer.end(), buf, buf + len);
+}
+
+// TODO: Due to how this system works, a concrete length is never supplied.
+// Data is read until 0x7F is hit. Ideally we should exit out if we're past
+// a certain number of bytes
+void NetworkStream::ReadEntityMetadata() {
+    uint8_t val = Read<uint8_t>();
+    while(val != 0x7F) {
+        // What type the data has
+        PacketData::EntityMetadata::Type type = PacketData::EntityMetadata::Type(val >> 5   );
+        // Where the data goes for the relevant entity
+        uint8_t id = uint8_t(val &  0x1F);
+        switch(type) {
+            case PacketData::EntityMetadata::Type::BYTE: {
+                int8_t num = Read<int8_t>();
+                break;
+            }
+            case PacketData::EntityMetadata::Type::SHORT: {
+                int16_t num = Read<int16_t>();
+                break;
+            }
+            case PacketData::EntityMetadata::Type::INTEGER: {
+                int32_t num = Read<int32_t>();
+                break;
+            }
+            case PacketData::EntityMetadata::Type::FLOAT: {
+                float num = Read<float>();
+                break;
+            }
+            case PacketData::EntityMetadata::Type::STRING: {
+                std::string str = Read<std::string>();
+                break;
+            }
+            case PacketData::EntityMetadata::Type::ITEM: {
+                int16_t itemId = Read<int16_t>();
+                // TODO: Check if B1.7.3 actually does
+                // this for Entity Metadata too
+                if (itemId != -1) {
+                    Read<int8_t>();
+                    Read<int16_t>();
+                }
+                break;
+            }
+            case PacketData::EntityMetadata::Type::COORINDATES: {
+                Int3 coordinate(
+                    Read<int32_t>(),
+                    Read<int32_t>(),
+                    Read<int32_t>()
+                );
+                break;
+            }
+            default:
+                // TODO: Log that something went horribly wrong!
+                break;
+        }
+        // Read in the next value
+        val = Read<uint8_t>();
+    }
+}
+
+// TODO: Implement this! Ideally we could just pass an entity into here
+// and it'd take care of things automatically
+void NetworkStream::WriteEntityMetadata() {
+    
 }
 
 bool NetworkStream::flushWriteBuffer() {
