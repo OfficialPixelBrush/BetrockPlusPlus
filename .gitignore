@@ -44,3 +44,4 @@
 /out
 CMakeSettings.json
 /.cache
+/enc_temp_folder
