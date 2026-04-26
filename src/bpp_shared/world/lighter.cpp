@@ -5,6 +5,7 @@
  *
 */
 #include "lighter.h"
+#include "blocks.h"
 #include "world.h"
 
 // ChunkCache
@@ -38,7 +39,7 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
     if (!chunk) return;
 
     int lx = x & 15, lz = z & 15;
-    uint8_t blockId = chunk->getBlock({ lx, y, lz });
+    BlockType blockId = chunk->getBlock({ lx, y, lz });
     int opacity = Blocks::blockProperties[blockId].lightOpacity;
     if (opacity == 0) opacity = 1;
 
@@ -71,10 +72,10 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
         }
         int oldVal = chunk->getSkyLight({ lx, y, lz });
         if (oldVal == newVal) return;
-        chunk->setSkyLight({ lx, y, lz }, (uint8_t)newVal);
+        chunk->setSkyLight({ lx, y, lz }, uint8_t(newVal));
         if (world.onBlockUpdate) world.onBlockUpdate(
             PendingBlock{
-                .block{ (BlockType)blockId, chunk->getMeta({ lx, y, lz }) },
+                .block{ BlockType(blockId), chunk->getMeta({ lx, y, lz }) },
                 .block_pos{ x, y, z },
                 .light{ chunk->getBlockLight({ lx, y, lz }), chunk->getSkyLight({ lx, y, lz }) }
             }, chunk->cpos);
@@ -96,10 +97,10 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
         }
         int oldVal = chunk->getBlockLight({ lx, y, lz });
         if (oldVal == newVal) return;
-        chunk->setBlockLight({ lx, y, lz }, (uint8_t)newVal);
+        chunk->setBlockLight({ lx, y, lz }, uint8_t(newVal));
         if (world.onBlockUpdate) world.onBlockUpdate(
             PendingBlock{
-                .block{ (BlockType)blockId, chunk->getMeta({ lx, y, lz }) },
+                .block{ BlockType(blockId), chunk->getMeta({ lx, y, lz }) },
                 .block_pos{ x, y, z },
                 .light{ chunk->getBlockLight({ lx, y, lz }), chunk->getSkyLight({ lx, y, lz }) }
             }, chunk->cpos);

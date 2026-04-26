@@ -120,7 +120,7 @@ void Server::startup() {
         // Update load percentage every second
         if (std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count() >= 1.0f)
         {
-            int percentLoaded = int(((float)loaded_chunks / total_spawn_chunks) * 100);
+            int percentLoaded = int((float(loaded_chunks) / float(total_spawn_chunks)) * 100.0f);
             std::cout << "Loading spawn.. " << percentLoaded << "%\n";
             start = std::chrono::steady_clock::now();
         }
@@ -156,7 +156,7 @@ void Server::run() {
             tickTimeAccum += tickMs;
             tickCount++;
             if (tickCount >= 40) {
-                printf("Avg tick: %.2f ms\n", tickTimeAccum / tickCount);
+                printf("Avg tick: %.2f ms\n", double(tickTimeAccum) / double(tickCount));
                 tickTimeAccum = 0.0f;
                 tickCount = 0;
             }
@@ -443,7 +443,7 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
     int spawnChunkX = int(std::floor(session.position.pos.x)) >> 4;
     int spawnChunkZ = int(std::floor(session.position.pos.z)) >> 4;
 
-    int radius = min(3, world.getViewRadius());
+    int radius = std::min(3, world.getViewRadius());
 
     int total_spawn_chunks = ((radius * 2) + 1) * ((radius * 2) + 1);
     int loaded_chunks = 0;
