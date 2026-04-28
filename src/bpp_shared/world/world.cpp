@@ -57,9 +57,8 @@ void WorldManager::seedChunkLighting(ChunkPos pos) {
                     lightManager.scheduleLightUpdate({ bx + x, y, bz + z }, LightType::Block);
             }
 
-    // Pull block light in from already-loaded neighbors
-    propagateChunkSkylightBorders(pos);
-    propagateChunkBlockLightBorders(pos);
+    // Pull light in from existing neighbors
+    propagateChunkLightBorders(pos);
 }
 
 void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) {
