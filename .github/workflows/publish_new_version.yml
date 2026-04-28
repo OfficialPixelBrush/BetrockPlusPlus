@@ -1,0 +1,115 @@
+# This starter workflow is for a CMake project running on multiple platforms.
+# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-multi-platform.yml
+name: Publish new Version
+on:
+  workflow_dispatch:
+    #nothing, idk
+permissions:
+  contents: write
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            cpack_generator: TGZ
+            pkg_ext: "*.tar.gz"
+          - os: ubuntu-24.04-arm
+            cpack_generator: TGZ
+            pkg_ext: "*.tar.gz"
+          - os: windows-latest
+            cpack_generator: ZIP
+            pkg_ext: "*.zip"
+          - os: windows-latest-arm
+            cpack_generator: ZIP
+            pkg_ext: "*.zip"
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    # - Version extraction -
+    - name: Extract Version from CMakeLists.txt (Unix)
+      if: runner.os != 'Windows'
+      id: extract_version_unix
+      run: |
+        VERSION=$(grep -oP 'project\([^\)]*VERSION\s+\K[^\)]+' CMakeLists.txt)
+        echo "VERSION=$VERSION"
+        echo "version=$VERSION" >> $GITHUB_ENV
+
+    - name: Extract Version from CMakeLists.txt (Windows)
+      if: runner.os == 'Windows'
+      id: extract_version_windows
+      shell: pwsh
+      run: |
+        $content = Get-Content CMakeLists.txt -Raw
+        $match = [regex]::Match($content, 'project\([^\)]*VERSION\s+([\d\.]+)')
+        $VERSION = $match.Groups[1].Value
+        Write-Output "VERSION=$VERSION"
+        echo "version=$VERSION" >> $env:GITHUB_ENV
+
+    # - Dependencies -
+    - name: Install dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: sudo apt-get install -y libdeflate-dev libglfw3-dev libglm-dev libopenal-dev
+
+    - name: Install dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: vcpkg install libdeflate glfw3 glm openal-soft
+
+    # - Configure & Build -
+    - name: Configure CMake (Unix)
+      if: runner.os != 'Windows'
+      run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+    - name: Configure CMake (Windows)
+      if: runner.os == 'Windows'
+      run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+    - name: Build
+      run: cmake --build ${{ github.workspace }}/build --config ${{ env.BUILD_TYPE }}
+
+    # - Package -
+    - name: Package (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        cpack --config ${{ github.workspace }}/build/CPackConfig.cmake -G ${{ matrix.cpack_generator }}
+        PACKAGE=$(ls ${{ github.workspace }}/${{ matrix.pkg_ext }})
+        echo "PACKAGE=$PACKAGE"
+        echo "package=$PACKAGE" >> $GITHUB_ENV
+
+    - name: Package (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        cpack --config ${{ github.workspace }}/build/CPackConfig.cmake -G ${{ matrix.cpack_generator }}
+        $PACKAGE = (Get-ChildItem -Path ${{ github.workspace }} -Filter ${{ matrix.pkg_ext }} | Select-Object -First 1).FullName
+        Write-Output "PACKAGE=$PACKAGE"
+        echo "package=$PACKAGE" >> $env:GITHUB_ENV
+
+    # - Release -
+    - name: Create GitHub Release (Only Once)
+      if: matrix.os == 'ubuntu-latest'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ env.version }}
+        name: v${{ env.version }}
+        body: "REPLACE"
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Release Asset
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ env.version }}
+        files: ${{ env.package }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
