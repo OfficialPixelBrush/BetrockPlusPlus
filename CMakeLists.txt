@@ -200,3 +200,22 @@ target_link_libraries(
     #${LUA_LIBRARIES}
     #Threads::Threads
 )
+
+# Detect CPU architecture
+if(CMAKE_SYSTEM_PROCESSOR)
+    set(ARCH_SUFFIX "${CMAKE_SYSTEM_PROCESSOR}")
+else()
+    set(ARCH_SUFFIX "unknown")
+endif()
+
+# Set up CPack for AppImage
+set(CPACK_PACKAGE_NAME "BetrockPlusPlus")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Betrock++ - Minecraft Beta 1.7.3-compatible Server and Client")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+
+# Override the default package file name
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}-${ARCH_SUFFIX}")
+
+include(CPack)
