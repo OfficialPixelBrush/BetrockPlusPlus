@@ -8,6 +8,8 @@
 #include <numeric_structs.h>
 #include "enums/blocks.h"
 #include "materials.h"
+#include "helpers/java/java_random.h"
+#include "helpers/AABB.h"
 
 struct WorldManager;
 struct Entity;
@@ -48,8 +50,17 @@ namespace Blocks {
     };
 
     struct BlockBehavior {
+        // Called when we need to get the AABB for the selection box
+        AABB (*getSelectionBox)(uint8_t metadata) = nullptr;
+
+        // Called when we need to check for ray intersections for selection
+        AABB (*getRayBounds)(uint8_t metadata) = nullptr;
+
+        // Called when we need to check the collision of this block
+        CollisionShape (*getCollider)(uint8_t metadata) = nullptr;
+
         // Called each random tick if ticksOnLoad = true
-        // void (*onTick)(WorldManager&, Int3, uint8_t meta, Java::Random&);
+        void (*onTick)(WorldManager&, Int3, uint8_t meta, Java::Random&);
 
         // Called when block is placed by world gen or setBlock
         void (*onBlockAdded)(WorldManager&, Int3) = nullptr;
@@ -88,10 +99,10 @@ namespace Blocks {
         void (*velocityToAddToEntity)(WorldManager&, Int3, Entity&, Vec3&) = nullptr;
 
         // What item/block this drops when broken
-        // uint8_t (*idDropped)(uint8_t meta, Java::Random&);
+        uint8_t (*idDropped)(uint8_t meta, Java::Random&);
 
         // How many items drop
-        // int (*quantityDropped)(Java::Random&);
+        int (*quantityDropped)(Java::Random&);
     };
 
     // Global tables — indexed by block ID, populated by registerAll()
