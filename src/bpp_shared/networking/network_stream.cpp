@@ -42,16 +42,10 @@ void NetworkStream::Write(const std::string& str)
     WriteBytes(data.data(), data.size());
 }
 
-#include <iostream>
-
-template<>
-std::string NetworkStream::Read<std::string>() {
-    uint16_t length = Read<uint16_t>();
-    std::string result;
-    result.resize(length);
-    for (uint16_t i = 0; i < length; i++) {
-        result[i] = static_cast<char>(Read<uint8_t>());
-    }
+std::string NetworkStream::ReadString() {
+    uint16_t len = Read<uint16_t>();   // adjust to uint32_t if your protocol uses 4-byte lengths
+    std::string result(len, '\0');
+    ReadBytes(reinterpret_cast<uint8_t*>(result.data()), len);
     return result;
 }
 
@@ -69,15 +63,17 @@ void NetworkStream::Write(const std::wstring& str)
     WriteBytes(data.data(), data.size());
 }
 
-#include <iostream>
-
-template<>
-std::wstring NetworkStream::Read<std::wstring>() {
-    uint16_t length = Read<uint16_t>();
-    std::wstring result;
-    result.resize(length);
-    for (uint16_t i = 0; i < length; i++) {
-        result[i] = static_cast<wchar_t>(Read<uint16_t>());
+std::wstring NetworkStream::ReadWString() {
+    uint16_t len = Read<uint16_t>();
+    
+    // Read as UTF-16 (2 bytes per char) regardless of platform wchar_t size
+    std::vector<uint16_t> buf(len);
+    ReadBytes(reinterpret_cast<uint8_t*>(buf.data()), len * sizeof(uint16_t));
+    
+    std::wstring result(len, L'\0');
+    for (uint16_t i = 0; i < len; i++) {
+        // byteswap each UTF-16 unit, then widen to wchar_t
+        result[i] = static_cast<wchar_t>(__builtin_bswap16(buf[i]));
     }
     return result;
 }

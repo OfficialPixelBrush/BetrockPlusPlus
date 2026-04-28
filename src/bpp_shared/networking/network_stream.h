@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  *
 */
-
 #pragma once
 #define INVALID_SOCKET -1
-
 #if defined(__linux__)
 #include <unistd.h>
 #include <netinet/in.h>
@@ -17,7 +15,6 @@
 #include <winsock2.h>
 #pragma comment(lib, "ws2_32.lib")
 #endif
-
 #include <cstdint>
 #include <string>
 #include <packet_ids.h>
@@ -30,9 +27,7 @@ template<typename T>
 inline T byteswap_any(T value) {
     static_assert(std::is_trivially_copyable_v<T>,
                   "byteswap_any: only trivially copyable types allowed");
-
     if constexpr (sizeof(T) == 1) {
-        // no swap needed
         return value;
     }
     else if constexpr (sizeof(T) == 2) {
@@ -56,7 +51,6 @@ inline T byteswap_any(T value) {
     else {
         static_assert(sizeof(T) <= 8, "byteswap_any: unsupported type size");
     }
-
     return value;
 }
 
@@ -64,11 +58,12 @@ class NetworkStream {
 public:
     NetworkStream(int client_socket);
     ~NetworkStream();
-
     bool NewClient();
 
     template<typename T>
     T Read() {
+        static_assert(std::is_trivially_copyable_v<T>,
+            "NetworkStream::Read<T>: use Read<std::string>() or Read<std::wstring>() for string types");
         T buffer{};
 #if defined(_WIN32) || defined(_WIN64)
         int result = recv(client_socket, reinterpret_cast<char*>(&buffer), sizeof(T), 0);
@@ -95,32 +90,43 @@ public:
     bool isConnected() const { return connected; }
 
     // String-8 Read-Write
-    template<>
-    std::string Read<std::string>();
-    void Write(const std::string& str);
+    std::string  ReadString();
+    void         Write(const std::string& str);
+
     // String-16 Read-Write
-    template<>
-    std::wstring Read<std::wstring>();
-    void Write(const std::wstring& str);
+    std::wstring ReadWString();
+    void         Write(const std::wstring& str);
+
     // Raw byte buffer Read-Write (no endian conversion)
     void ReadBytes(uint8_t* buf, size_t len);
+
     // Append bytes to the per-session write buffer (no syscall).
     void WriteBytes(const uint8_t* buf, size_t len);
+
     // Handles Entity Metadata Interpreting
     void ReadEntityMetadata();
+
     // Handles Entity Metadata Conversion
     void WriteEntityMetadata();
+
     // Flush the write buffer to the socket once per tick.
     // Returns false if the connection was lost.
     bool flushWriteBuffer();
     bool hasData();
+
 private:
-    // Static so the server-socket is shared across all
-    // instances of NetworkStream (if multiple are created)
-    // TODO: Automatically close the server socket on program exit
     int client_socket = INVALID_SOCKET;
     bool connected = true;
-    // Outgoing data is accumulated here and sent in one syscall per tick,
-    // so the main thread is never blocked waiting for the kernel send buffer.
     std::vector<uint8_t> writeBuffer;
 };
+
+// Out-of-class explicit specializations (GCC/Clang require these outside the class body)
+template<>
+inline std::string NetworkStream::Read<std::string>() {
+    return ReadString();
+}
+
+template<>
+inline std::wstring NetworkStream::Read<std::wstring>() {
+    return ReadWString();
+}
