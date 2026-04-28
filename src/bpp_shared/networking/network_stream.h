@@ -22,6 +22,7 @@
 #include <type_traits>
 #include <cstring>
 #include <vector>
+#include "helpers/byteswap_compat.h"
 
 template<typename T>
 inline T byteswap_any(T value) {
