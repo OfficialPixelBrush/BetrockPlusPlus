@@ -200,10 +200,12 @@ struct MathHelper {
 	}
 };
 
+inline std::array<float, MathHelper::TABLE_SIZE> MathHelper::SIN_TABLE;
+
 // initialize lookup table
-inline std::array<float, MathHelper::TABLE_SIZE> MathHelper::SIN_TABLE = [] {
-	std::array<float, MathHelper::TABLE_SIZE> table{};
-	for (size_t i = 0; i < MathHelper::TABLE_SIZE; ++i)
-		table[i] = std::sin(float(i) * float(JavaMath::PI) * 2.0f / MathHelper::TABLE_SIZE);
-	return table;
-}();
+inline struct SinTableInitializer {
+    SinTableInitializer() {
+		for (size_t i = 0; i < MathHelper::TABLE_SIZE; ++i)
+			MathHelper::SIN_TABLE[i] = std::sin(float(i) * float(JavaMath::PI) * 2.0f / MathHelper::TABLE_SIZE);
+    }
+} _sinTableInitializer;
