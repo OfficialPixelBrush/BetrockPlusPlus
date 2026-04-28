@@ -17,262 +17,191 @@
 #include "constants.h"
 
 enum class ChunkState : uint8_t {
-	Unloaded,
-	Generating,
-	Generated,
-	Poulating,
-	Populated,
-	Lighting,
-	Lit,
-	Unloading
+    Unloaded,
+    Generating,
+    Generated,
+    Poulating,
+    Populated,
+    Lighting,
+    Lit,
+    Unloading
 };
 
 struct ChunkPos {
-	int x = 0;
-	int z = 0;
-	bool operator==(const ChunkPos& other) const {
-		return x == other.x && z == other.z;
-	}
+    int x = 0;
+    int z = 0;
+    bool operator==(const ChunkPos& other) const {
+        return x == other.x && z == other.z;
+    }
 
-	uint64_t getHash() const {
-		return (uint64_t(x) << 32) | uint64_t(z);
-	}
+    uint64_t getHash() const {
+        return (uint64_t(x) << 32) | uint64_t(z);
+    }
 };
 
-// Hash so we can use chunk pos in unordered maps and sets
 template<>
 struct std::hash<ChunkPos> {
-	std::size_t operator()(const ChunkPos& p) const noexcept {
-		return std::hash<uint64_t>{}(p.getHash());
-	}
-};
-
-// 16x16x16 blocks of a chunk
-struct Slice {
-	BlockType blocks[SUB_CHUNK_VOLUME] = { BLOCK_AIR };
-	// Block light and Sky light are both stored in the same array. Lo = Block, Hi = Sky
-	uint8_t lightNibble[SUB_CHUNK_VOLUME] = { 0 };
-	// Block meta is 4 bits each, so each entry is two block's metadata.
-	uint8_t nibbleBlockMeta[SUB_CHUNK_VOLUME / 2] = { 0 };
-	// So we can skip empty slices when rendering and meshing
-	bool isEmpty = true;
-
-	// Calculate the index in the block array for a given block position within this slice
-	inline int blockIndex(Int3 pos) const {
-		return (pos.y << 8) | (pos.z << 4) | pos.x;
-	}
-
-	// Nibble helpers
-	inline uint8_t setNibble(uint8_t hi, uint8_t lo) const {
-		return uint8_t(((hi & uint8_t(0x0F)) << 4) | (lo & uint8_t(0x0F)));
-	}
-	inline uint8_t getNibbleLow(uint8_t byte)  const { return  byte & uint8_t(0x0F); }
-	inline uint8_t getNibbleHigh(uint8_t byte) const { return (byte >> 4) & uint8_t(0x0F); }
-
-	// Block helpers
-	inline BlockType getBlock(Int3 pos) const {
-		return blocks[blockIndex(pos)];
-	}
-
-	inline void setBlock(Int3 pos, BlockType id) {
-		blocks[blockIndex(pos)] = id;
-		if (id != 0) isEmpty = false;
-	}
-
-	// Meta helpers
-	inline uint8_t getMeta(Int3 pos) const {
-		int idx = blockIndex(pos);
-		uint8_t byte = nibbleBlockMeta[idx >> 1];
-		return (idx & 1) ? getNibbleHigh(byte) : getNibbleLow(byte);
-	}
-
-	inline void setMeta(Int3 pos, uint8_t meta) {
-		int idx = blockIndex(pos);
-		uint8_t& byte = nibbleBlockMeta[idx >> 1];
-		byte = (idx & 1)
-			? setNibble(meta, getNibbleLow(byte))
-			: setNibble(getNibbleHigh(byte), meta);
-	}
-
-	// Light helpers
-	inline uint8_t getBlockLight(Int3 pos) const {
-		return getNibbleLow(lightNibble[blockIndex(pos)]);
-	}
-
-	inline uint8_t getSkyLight(Int3 pos) const {
-		return getNibbleHigh(lightNibble[blockIndex(pos)]);
-	}
-
-	inline void setBlockLight(Int3 pos, uint8_t val) {
-		uint8_t& byte = lightNibble[blockIndex(pos)];
-		byte = setNibble(getNibbleHigh(byte), val);
-	}
-
-	inline void setSkyLight(Int3 pos, uint8_t val) {
-		uint8_t& byte = lightNibble[blockIndex(pos)];
-		byte = setNibble(val, getNibbleLow(byte));
-	}
-
-	inline int getBlockLightValue(Int3 pos, int skySubtracted) const {
-		int sky = std::max(0, int(getSkyLight(pos) - skySubtracted));
-		int block = int(getBlockLight(pos));
-		return std::min(15, std::max(sky, block));
-	}
-
-	// Cleanup
-	inline void clear() {
-		isEmpty = true;
-		std::memset(blocks, 0, sizeof(blocks));
-		std::memset(lightNibble, 0, sizeof(lightNibble));
-		std::memset(nibbleBlockMeta, 0, sizeof(nibbleBlockMeta));
-	}
+    std::size_t operator()(const ChunkPos& p) const noexcept {
+        return std::hash<uint64_t>{}(p.getHash());
+    }
 };
 
 struct Chunk {
-	ChunkPos cpos;
-	Slice slices[CHUNK_HEIGHT / SUB_CHUNK_SIZE]; // 128 blocks high
-	std::atomic<ChunkState> state{ ChunkState::Unloaded };
-	uint8_t heightMap[CHUNK_WIDTH * CHUNK_WIDTH] = {}; // heightMap[(z << 4) | x]
-	float temperature[CHUNK_WIDTH * CHUNK_WIDTH] = {};
-	float humidity[CHUNK_WIDTH * CHUNK_WIDTH] = {};
+    static constexpr int VOLUME = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH;
+    static constexpr int META_VOLUME = VOLUME / 2;
 
-	bool isTerrainPopulated = false;
-	bool isModified = false;
-	bool spawnChunk = false;
+    ChunkPos cpos;
 
-	// Climate helpers
-	inline float getTemperature(Int2 pos) const { return temperature[(pos.y << 4) | pos.x]; }
-	inline float getHumidity(Int2 pos)    const { return humidity[(pos.y << 4) | pos.x]; }
+    // Flat arrays — indexed by (y * CHUNK_WIDTH * CHUNK_WIDTH) + (z * CHUNK_WIDTH) + x
+    // Equivalent to the old slice[y>>4].array[(y&15)<<8 | z<<4 | x], but with zero indirection.
+    BlockType blocks[VOLUME] = { BLOCK_AIR };
+    uint8_t   lightNibble[VOLUME] = { 0 };
+    uint8_t   nibbleBlockMeta[META_VOLUME] = { 0 };
 
-	// Height map helpers
-	inline uint8_t getHeightValue(Int2 pos) const {
-		return heightMap[(pos.y << 4) | pos.x];
-	}
-	inline void setHeightValue(Int2 pos, uint8_t val) {
-		heightMap[(pos.y << 4) | pos.x] = val;
-	}
-	inline bool canBlockSeeSky(Int3 pos) const {
-		return pos.y >= getHeightValue({ pos.x, pos.z });
-	}
+    std::atomic<ChunkState> state{ ChunkState::Unloaded };
+    uint8_t heightMap[CHUNK_WIDTH * CHUNK_WIDTH] = {};
+    float   temperature[CHUNK_WIDTH * CHUNK_WIDTH] = {};
+    float   humidity[CHUNK_WIDTH * CHUNK_WIDTH] = {};
 
-	// Used for population and lighting calculations
-	inline void generateHeightMap() {
-		for (int x = 0; x < CHUNK_WIDTH; x++) {
-			for (int z = 0; z < CHUNK_WIDTH; z++) {
-				generateHeightMapColumn({ x, z });
-			}
-		}
-	}
+    bool isTerrainPopulated = false;
+    bool isModified = false;
+    bool spawnChunk = false;
 
-	inline void generateHeightMapColumn(Int2 pos) {
-		for (int y = CHUNK_HEIGHT - 1; y >= 0; y--) {
-			if (Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity > 0) {
-				setHeightValue(pos, uint8_t(y + 1));
-				return;
-			}
-		}
-		setHeightValue(pos, 0);  // fully transparent column
-	}
+    //  Index
+    inline int blockIndex(Int3 pos) const {
+        return (pos.y * CHUNK_WIDTH * CHUNK_WIDTH) + (pos.z * CHUNK_WIDTH) + pos.x;
+    }
 
-	inline void generateSkylightMap() {
-		generateHeightMap();
+    //  Nibble helpers (unchanged from Slice)
+    inline uint8_t setNibble(uint8_t hi, uint8_t lo) const {
+        return uint8_t(((hi & 0x0Fu) << 4) | (lo & 0x0Fu));
+    }
+    inline uint8_t getNibbleLow(uint8_t byte) const { return  byte & 0x0Fu; }
+    inline uint8_t getNibbleHigh(uint8_t byte) const { return (byte >> 4) & 0x0Fu; }
 
-		for (int x = 0; x < CHUNK_WIDTH; x++) {
-			for (int z = 0; z < CHUNK_WIDTH; z++) {
-				int height = getHeightValue({ x, z });
+    //  Climate helpers
+    inline float getTemperature(Int2 pos) const { return temperature[(pos.y << 4) | pos.x]; }
+    inline float getHumidity(Int2 pos) const { return humidity[(pos.y << 4) | pos.x]; }
 
-				// Above the heightmap: unconditionally full sky
-				for (int y = CHUNK_HEIGHT - 1; y >= height; y--)
-					setSkyLight({ x, y, z }, 15);
+    //  Height map helpers
+    inline uint8_t getHeightValue(Int2 pos) const {
+        return heightMap[(pos.y << 4) | pos.x];
+    }
+    inline void setHeightValue(Int2 pos, uint8_t val) {
+        heightMap[(pos.y << 4) | pos.x] = val;
+    }
+    inline bool canBlockSeeSky(Int3 pos) const {
+        return pos.y >= getHeightValue({ pos.x, pos.z });
+    }
 
-				// Below the heightmap: bleed light through semi-transparent blocks
-				int skyLight = 15;
-				for (int y = height - 1; y >= 0 && skyLight > 0; y--) {
-					skyLight -= std::max(1, int(Blocks::blockProperties[getBlock({ x, y, z })].lightOpacity));
-					if (skyLight > 0)
-						setSkyLight({ x, y, z }, uint8_t(skyLight));
-				}
-			}
-		}
-	}
+    inline void generateHeightMap() {
+        for (int x = 0; x < CHUNK_WIDTH; x++)
+            for (int z = 0; z < CHUNK_WIDTH; z++)
+                generateHeightMapColumn({ x, z });
+    }
 
-	inline void relightColumn(Int2 pos) {
-		// Rebuild the heightmap for this column
-		generateHeightMapColumn(pos);
+    inline void generateHeightMapColumn(Int2 pos) {
+        for (int y = CHUNK_HEIGHT - 1; y >= 0; y--) {
+            if (Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity > 0) {
+                setHeightValue(pos, uint8_t(y + 1));
+                return;
+            }
+        }
+        setHeightValue(pos, 0);
+    }
 
-		int height = getHeightValue(pos);
+    inline void generateSkylightMap() {
+        generateHeightMap();
+        for (int x = 0; x < CHUNK_WIDTH; x++) {
+            for (int z = 0; z < CHUNK_WIDTH; z++) {
+                int height = getHeightValue({ x, z });
+                for (int y = CHUNK_HEIGHT - 1; y >= height; y--)
+                    setSkyLight({ x, y, z }, 15);
+                int skyLight = 15;
+                for (int y = height - 1; y >= 0 && skyLight > 0; y--) {
+                    skyLight -= std::max(1, int(Blocks::blockProperties[getBlock({ x, y, z })].lightOpacity));
+                    if (skyLight > 0)
+                        setSkyLight({ x, y, z }, uint8_t(skyLight));
+                }
+            }
+        }
+    }
 
-		// Set full skylight for everything at or above the surface
-		for (int y = CHUNK_HEIGHT - 1; y >= height; y--)
-			setSkyLight({ pos.x, y, pos.z }, 15);
+    inline void relightColumn(Int2 pos) {
+        generateHeightMapColumn(pos);
+        int height = getHeightValue(pos);
+        for (int y = CHUNK_HEIGHT - 1; y >= height; y--)
+            setSkyLight({ pos.x, y, pos.z }, 15);
+        int skyLight = 15;
+        for (int y = height - 1; y >= 0 && skyLight > 0; y--) {
+            skyLight -= std::max(1, int(Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity));
+            if (skyLight > 0)
+                setSkyLight({ pos.x, y, pos.z }, uint8_t(skyLight));
+        }
+    }
 
-		// Attenuate below the surface
-		int skyLight = 15;
-		for (int y = height - 1; y >= 0 && skyLight > 0; y--) {
-			skyLight -= std::max(1, int(Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity));
-			if (skyLight > 0)
-				setSkyLight({ pos.x, y, pos.z }, uint8_t(skyLight));
-		}
-	}
+    //  Block helpers
+    inline BlockType getBlock(Int3 pos) const {
+        return blocks[blockIndex(pos)];
+    }
 
-	// Slice helpers
-	inline Slice& getSlice(int y) {
-		return slices[y >> 4];
-	}
-	inline const Slice& getSlice(int y) const {
-		return slices[y >> 4];
-	}
+    inline void setBlock(Int3 pos, BlockType id) {
+        blocks[blockIndex(pos)] = id;
+        isModified = true;
+    }
 
-	// Block helpers
-	inline BlockType getBlock(Int3 pos) const {
-		return getSlice(pos.y).getBlock({ pos.x, pos.y & 15, pos.z });
-	}
+    //  Meta helpers
+    inline uint8_t getMeta(Int3 pos) const {
+        int idx = blockIndex(pos);
+        uint8_t byte = nibbleBlockMeta[idx >> 1];
+        return (idx & 1) ? getNibbleHigh(byte) : getNibbleLow(byte);
+    }
 
-	inline void setBlock(Int3 pos, BlockType id) {
-		getSlice(pos.y).setBlock({ pos.x, pos.y & 15, pos.z }, id);
-		isModified = true;
-	}
+    inline void setMeta(Int3 pos, uint8_t meta) {
+        int idx = blockIndex(pos);
+        uint8_t& byte = nibbleBlockMeta[idx >> 1];
+        byte = (idx & 1)
+            ? setNibble(meta, getNibbleLow(byte))
+            : setNibble(getNibbleHigh(byte), meta);
+        isModified = true;
+    }
 
-	// Meta helpers
-	inline uint8_t getMeta(Int3 pos) const {
-		return getSlice(pos.y).getMeta({ pos.x, pos.y & 15, pos.z });
-	}
+    //  Light helpers
+    inline uint8_t getBlockLight(Int3 pos) const {
+        return getNibbleLow(lightNibble[blockIndex(pos)]);
+    }
 
-	inline void setMeta(Int3 pos, uint8_t meta) {
-		getSlice(pos.y).setMeta({ pos.x, pos.y & 15, pos.z }, meta);
-		isModified = true;
-	}
+    inline uint8_t getSkyLight(Int3 pos) const {
+        return getNibbleHigh(lightNibble[blockIndex(pos)]);
+    }
 
-	// Light helpers
-	inline uint8_t getBlockLight(Int3 pos) const {
-		return getSlice(pos.y).getBlockLight({ pos.x, pos.y & 15, pos.z });
-	}
+    inline void setBlockLight(Int3 pos, uint8_t val) {
+        uint8_t& byte = lightNibble[blockIndex(pos)];
+        byte = setNibble(getNibbleHigh(byte), val);
+        isModified = true;
+    }
 
-	inline uint8_t getSkyLight(Int3 pos) const {
-		return getSlice(pos.y).getSkyLight({ pos.x, pos.y & 15, pos.z });
-	}
+    inline void setSkyLight(Int3 pos, uint8_t val) {
+        uint8_t& byte = lightNibble[blockIndex(pos)];
+        byte = setNibble(val, getNibbleLow(byte));
+        isModified = true;
+    }
 
-	inline void setBlockLight(Int3 pos, uint8_t val) {
-		getSlice(pos.y).setBlockLight({ pos.x, pos.y & 15, pos.z }, val);
-		isModified = true;
-	}
+    inline int getBlockLightValue(Int3 pos, int skySubtracted) const {
+        int sky = std::max(0, int(getSkyLight(pos)) - skySubtracted);
+        int block = int(getBlockLight(pos));
+        return std::min(15, std::max(sky, block));
+    }
 
-	inline void setSkyLight(Int3 pos, uint8_t val) {
-		getSlice(pos.y).setSkyLight({ pos.x, pos.y & 15, pos.z }, val);
-		isModified = true;
-	}
-
-	inline int getBlockLightValue(Int3 pos, int skySubtracted) const {
-		return getSlice(pos.y).getBlockLightValue({ pos.x, pos.y & 15, pos.z }, skySubtracted);
-	}
-
-	// cleanup
-	inline void clear() {
-		isTerrainPopulated = false;
-		isModified = false;
-		memset(heightMap, 0, sizeof(heightMap));
-		memset(temperature, 0, sizeof(temperature));
-		memset(humidity, 0, sizeof(humidity));
-		for (auto& s : slices) s.clear();
-	}
+    //  Cleanup
+    inline void clear() {
+        isTerrainPopulated = false;
+        isModified = false;
+        std::memset(blocks, 0, sizeof(blocks));
+        std::memset(lightNibble, 0, sizeof(lightNibble));
+        std::memset(nibbleBlockMeta, 0, sizeof(nibbleBlockMeta));
+        std::memset(heightMap, 0, sizeof(heightMap));
+        std::memset(temperature, 0, sizeof(temperature));
+        std::memset(humidity, 0, sizeof(humidity));
+    }
 };
