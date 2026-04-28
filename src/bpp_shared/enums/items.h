@@ -130,7 +130,6 @@ enum Items : int16_t {
 
 bool IsHoe(int16_t id);
 bool CanPlace(int16_t id);
-bool IsHoe(int16_t id);
 bool IsSword(int16_t id);
 bool IsPickaxe(int16_t id);
 bool IsAxe(int16_t id);
