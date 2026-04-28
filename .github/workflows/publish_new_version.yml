@@ -24,9 +24,9 @@ jobs:
           - os: windows-latest
             cpack_generator: ZIP
             pkg_ext: "*.zip"
-          - os: windows-latest-arm
-            cpack_generator: ZIP
-            pkg_ext: "*.zip"
+          #- os: windows-11-arm
+          #  cpack_generator: ZIP
+          #  pkg_ext: "*.zip"
 
     steps:
     - uses: actions/checkout@v4
