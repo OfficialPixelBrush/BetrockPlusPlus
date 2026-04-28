@@ -11,6 +11,7 @@
 #pragma once
 #include "base_structs.h"
 #include "blocks.h"
+#include "helpers/AABB.h"
 #include "world/chunk.h"
 #include "world/client_pos.h"
 #include "BS_thread_pool.hpp"
@@ -55,6 +56,7 @@ struct WorldManager {
 
     void tick(const std::vector<ClientPosition>& players);
     void update(const std::vector<ClientPosition>& players);
+    std::vector<AABB> getCollidingBoundingBoxes(const AABB& area);
     int getViewRadius() { return VIEW_RADIUS; }
     int getSimulationDistance() { return SIMULATION_RADIUS; }
     void updateLoadRadius(const std::vector<ClientPosition>& players);

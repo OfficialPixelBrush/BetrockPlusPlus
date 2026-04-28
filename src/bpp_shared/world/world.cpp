@@ -9,6 +9,51 @@
 #include "generator/chunk_gen.h"
 #include "debug_generator/debug_generator.h"
 
+// Get colliders for an area
+std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {
+    std::vector<AABB> collidingBoxes;
+
+    int minX = Java::DoubleToInt32(std::floor(area.minX));
+    int maxX = Java::DoubleToInt32(std::floor(area.maxX + 1.0));
+    int minY = Java::DoubleToInt32(std::floor(area.minY));
+    int maxY = Java::DoubleToInt32(std::floor(area.maxY + 1.0));
+    int minZ = Java::DoubleToInt32(std::floor(area.minZ));
+    int maxZ = Java::DoubleToInt32(std::floor(area.maxZ + 1.0));
+
+    // Java iterates Y from var5-1 to var6 (exclusive), clamped to world
+    int startY = std::max(0, minY - 1);
+    int endY = std::min(127, maxY);
+
+    // Iterate for our potential grid
+    for (int x = minX; x < maxX; x++) {
+        for (int z = minZ; z < maxZ; z++) {
+            // Get the chunk once for this X/Z column
+            Chunk* chunk = getChunkRaw({ x >> 4, z >> 4 });
+
+            // If chunk isn't loaded, Beta 1.7.3 usually treats it as air 
+            if (!chunk) continue;
+
+            // local coords inside the chunk
+            int localX = x & 15;
+            int localZ = z & 15;
+
+            for (int y = startY; y <= endY; ++y) {
+                uint8_t block_id = chunk->getBlock({ localX, y, localZ });
+                // Air isn't collidable
+                if (block_id == BlockType::BLOCK_AIR) continue;
+                if (!Blocks::blockProperties[block_id].isCollidable) continue;
+                uint8_t block_meta = chunk->getMeta({ localX, y, localZ });
+                // Offset local collider to world coordinates
+                CollisionShape worldCollider = Blocks::blockBehaviors[block_id].getCollider(block_meta).offset(x, y, z);
+                for (auto& box : worldCollider.boxes)
+                    if (box.intersects(area))
+                        collidingBoxes.push_back(box);
+            }
+        }
+    }
+    return collidingBoxes;
+}
+
 // Tick
 void WorldManager::tick(const std::vector<ClientPosition>& players) {
     elapsed_ticks++;
