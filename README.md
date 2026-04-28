@@ -49,17 +49,32 @@ Betrock++ also works on Linux! Theoretically, any Distro should be supported, so
 
 ##### Debian / Ubuntu / Linux Mint
 ```bash
-sudo apt install git cmake build-essential libdeflate-dev libglfw3-dev libglm-dev libopenal-dev
+sudo apt install git cmake clang build-essential libdeflate-dev libglfw3-dev libglm-dev libopenal-dev
 ```
 
 ##### RHEL / Fedora
 ```bash
-sudo dnf install git cmake gcc gcc-c++ make libdeflate-devel glfw-devel glm-devel openal-soft-devel
+sudo dnf install git cmake clang gcc gcc-c++ make libdeflate-devel glfw-devel glm-devel openal-soft-devel
 ```
 
 ##### Arch Linux / SteamOS / CachyOS
 ```bash
-sudo pacman -S git cmake base-devel libdeflate glfw glm openal
+sudo pacman -S git cmake clang base-devel libdeflate glfw glm openal
+```
+
+##### openSUSE (Leap / Tumbleweed)
+```bash
+sudo zypper install git cmake clang gcc gcc-c++ make libdeflate-devel glfw-devel glm-devel openal-soft-devel
+```
+
+##### Alpine Linux
+```bash
+sudo apk add git cmake clang gcc g++ make libdeflate-dev glfw-dev glm-dev openal-soft-dev
+```
+
+##### Gentoo
+```bash
+sudo emerge dev-vcs/git dev-util/cmake sys-devel/clang sys-devel/gcc sys-devel/make dev-libs/libdeflate media-libs/glfw media-libs glm media-libs/openal
 ```
 
 ### Building
