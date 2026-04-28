@@ -39,15 +39,17 @@ BlockType GetFillerBlock(Biome biome);
  * @brief Generates the Biome LUT that is used in b1.7.3
  * 
  */
-inline std::array<Biome, BIOME_LUT_SIZE> BiomeLUT = [] {
-	std::array<Biome, BIOME_LUT_SIZE> lut{};
-	for (std::size_t temp = 0; temp < 64; ++temp) {
-		for (std::size_t humi = 0; humi < 64; ++humi) {
-			lut[temp + humi * 64] = GetBiome(
-				float(temp) / 63.0f, 
-				float(humi) / 63.0f
-			);
-		}
-	}
-	return lut;
-}();
+inline std::array<Biome, BIOME_LUT_SIZE> BiomeLUT;
+
+inline struct BiomeLUTInitializer {
+    BiomeLUTInitializer() {
+        for (std::size_t temp = 0; temp < 64; ++temp) {
+            for (std::size_t humi = 0; humi < 64; ++humi) {
+                BiomeLUT[temp + humi * 64] = GetBiome(
+                    float(temp) / 63.0f,
+                    float(humi) / 63.0f
+                );
+            }
+        }
+    }
+} _biomeLUTInitializer;
