@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <vector>
 #include <algorithm>
+#include <climits>
 #include <numeric_structs.h>
 #include "blocks/block_properties.h"
 #include "chunk.h"
