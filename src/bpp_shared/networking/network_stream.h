@@ -27,23 +27,37 @@
 #include <vector>
 
 template<typename T>
-T byteswap_any(T value) {
-    if constexpr (std::is_enum_v<T>) {
-        using U = std::underlying_type_t<T>;
-        return static_cast<T>(std::byteswap(static_cast<U>(value)));
-    }
-    else if constexpr (std::is_integral_v<T>) {
-        return std::byteswap(value);
-    }
-    else {
-        static_assert(sizeof(T) == 4 || sizeof(T) == 8, "byteswap_any: unsupported type size");
-        using U = std::conditional_t<sizeof(T) == 4, uint32_t, uint64_t>;
-        U tmp;
-        std::memcpy(&tmp, &value, sizeof(U));
-        tmp = std::byteswap(tmp);
-        std::memcpy(&value, &tmp, sizeof(U));
+inline T byteswap_any(T value) {
+    static_assert(std::is_trivially_copyable_v<T>,
+                  "byteswap_any: only trivially copyable types allowed");
+
+    if constexpr (sizeof(T) == 1) {
+        // no swap needed
         return value;
     }
+    else if constexpr (sizeof(T) == 2) {
+        uint16_t tmp;
+        std::memcpy(&tmp, &value, 2);
+        tmp = __builtin_bswap16(tmp);
+        std::memcpy(&value, &tmp, 2);
+    }
+    else if constexpr (sizeof(T) == 4) {
+        uint32_t tmp;
+        std::memcpy(&tmp, &value, 4);
+        tmp = __builtin_bswap32(tmp);
+        std::memcpy(&value, &tmp, 4);
+    }
+    else if constexpr (sizeof(T) == 8) {
+        uint64_t tmp;
+        std::memcpy(&tmp, &value, 8);
+        tmp = __builtin_bswap64(tmp);
+        std::memcpy(&value, &tmp, 8);
+    }
+    else {
+        static_assert(sizeof(T) <= 8, "byteswap_any: unsupported type size");
+    }
+
+    return value;
 }
 
 class NetworkStream {

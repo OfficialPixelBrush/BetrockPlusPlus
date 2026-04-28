@@ -141,7 +141,7 @@ void Lighter::unlightAt(int x, int y, int z, LightType type, WorldManager& world
     else                        chunk->setBlockLight({ lx, y, lz }, 0);
     if (world.onBlockUpdate) world.onBlockUpdate(
         PendingBlock{
-            .block{ (BlockType)chunk->getBlock({lx, y, lz}), chunk->getMeta({lx, y, lz})},
+            .block{ BlockType(chunk->getBlock({lx, y, lz})), chunk->getMeta({lx, y, lz})},
             .block_pos{ x, y, z },
             .light{ chunk->getBlockLight({ lx, y, lz }), chunk->getSkyLight({ lx, y, lz }) },
             .lightUpdate = true
@@ -182,7 +182,7 @@ void Lighter::unlightAt(int x, int y, int z, LightType type, WorldManager& world
                 else                     nc->setBlockLight({ nlx, ny, nlz }, 0);
                 if (world.onBlockUpdate) world.onBlockUpdate(
                     PendingBlock{
-                        .block{ (BlockType)chunk->getBlock({lx, y, lz}), chunk->getMeta({lx, y, lz})},
+                        .block{ BlockType(chunk->getBlock({lx, y, lz})), chunk->getMeta({lx, y, lz})},
                         .block_pos{ x, y, z },
                         .light{ chunk->getBlockLight({ lx, y, lz }), chunk->getSkyLight({ lx, y, lz }) },
                         .lightUpdate = true
