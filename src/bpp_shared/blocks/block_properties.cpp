@@ -13,13 +13,10 @@ namespace Blocks {
     BlockProperties blockProperties[256] = {};
     BlockBehavior   blockBehaviors[256] = {};
 
-    // ================================================================
     //  Behavior helper functions
     //  Must live at namespace scope — cannot be defined inside a function
-    // ================================================================
 
-    // --- defaults ---------------------------------------------------
-
+    // defaults
     static AABB defaultAABB(uint8_t) {
         return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
     }
@@ -29,8 +26,7 @@ namespace Blocks {
         return s;
     }
 
-    // --- slab -------------------------------------------------------
-
+    // slab
     static AABB slabAABB(uint8_t) {
         return { 0.0, 0.0, 0.0, 1.0, 0.5, 1.0 };
     }
@@ -40,8 +36,7 @@ namespace Blocks {
         return s;
     }
 
-    // --- stairs -----------------------------------------------------
-
+    // stairs
     static CollisionShape stairCollider(uint8_t meta) {
         CollisionShape s;
         switch (meta & 3) {
@@ -52,10 +47,8 @@ namespace Blocks {
         }
         return s;
     }
-    // Stairs use a full-cube ray/selection box — Beta 1.7.3 behaviour
 
-    // --- cactus -----------------------------------------------------
-
+    // cactus
     static AABB cactusAABB(uint8_t) {
         constexpr double I = 0.0625;
         return { I, 0.0, I, 1.0 - I, 1.0, 1.0 - I };
@@ -67,8 +60,7 @@ namespace Blocks {
         return s;
     }
 
-    // --- snow layer -------------------------------------------------
-
+    // snow layer
     static AABB snowLayerAABB(uint8_t meta) {
         float h = (2.0f * (1 + (meta & 7))) / 16.0f;
         return { 0.0, 0.0, 0.0, 1.0, h, 1.0 };
@@ -80,8 +72,7 @@ namespace Blocks {
         return s;
     }
 
-    // --- ladder -----------------------------------------------------
-
+    // ladder 
     static AABB ladderAABB(uint8_t meta) {
         constexpr double T = 0.125;
         switch (meta) {
@@ -104,9 +95,8 @@ namespace Blocks {
         return s;
     }
 
-    // --- door -------------------------------------------------------
+    // door 
     // bits 0-1 = facing when closed, bit 2 = open, bit 3 = top half
-
     static int doorState(uint8_t meta) {
         return ((meta & 4) == 0) ? ((meta - 1) & 3) : (meta & 3);
     }
@@ -132,8 +122,7 @@ namespace Blocks {
         return s;
     }
 
-    // --- trapdoor ---------------------------------------------------
-
+    // trapdoor
     static AABB trapdoorAABB(uint8_t meta) {
         constexpr double T = 0.1875;
         if (!(meta & 4)) return { 0.0, 0.0, 0.0, 1.0, T, 1.0 };
@@ -158,8 +147,7 @@ namespace Blocks {
         return s;
     }
 
-    // --- bed --------------------------------------------------------
-
+    // bed
     static AABB bedAABB(uint8_t) {
         return { 0.0, 0.0, 0.0, 1.0, 0.5625, 1.0 };
     }
@@ -169,16 +157,14 @@ namespace Blocks {
         return s;
     }
 
-    // --- fence ------------------------------------------------------
-
+    // fence
     static CollisionShape fenceCollider(uint8_t) {
         CollisionShape s;
         s.add({ 0.0, 0.0, 0.0, 1.0, 1.5, 1.0 });
         return s;
     }
 
-    // --- cake -------------------------------------------------------
-
+    // cake
     static AABB cakeAABB(uint8_t meta) {
         double x0 = (1 + meta * 2) / 16.0;
         return { x0, 0.0, 0.0625, 1.0 - 0.0625, 0.5 - 0.0625, 1.0 - 0.0625 };
@@ -190,8 +176,7 @@ namespace Blocks {
         return s;
     }
 
-    // --- repeater ---------------------------------------------------
-
+    // repeater
     static AABB repeaterAABB(uint8_t) {
         return { 0.0, 0.0, 0.0, 1.0, 0.125, 1.0 };
     }
@@ -199,8 +184,7 @@ namespace Blocks {
         return {};
     }
 
-    // --- button -----------------------------------------------------
-
+    // button
     static AABB buttonAABB(uint8_t meta) {
         const int    face = meta & 7;
         const bool   pressed = (meta & 8) != 0;
@@ -215,8 +199,7 @@ namespace Blocks {
         }
     }
 
-    // --- lever ------------------------------------------------------
-
+    // lever
     static AABB leverAABB(uint8_t meta) {
         constexpr double f = 0.1875;
         switch (meta & 7) {
@@ -231,15 +214,13 @@ namespace Blocks {
         }
     }
 
-    // --- pressure plate ---------------------------------------------
-
+    // pressure plate
     static AABB pressurePlateAABB(uint8_t meta) {
         constexpr double f = 0.0625;
         return { f, 0.0, f, 1.0 - f, (meta == 1) ? 0.03125 : 0.0625, 1.0 - f };
     }
 
-    // --- torch (normal + redstone, same box) ------------------------
-
+    // torch (normal + redstone, same box)
     static AABB torchAABB(uint8_t meta) {
         constexpr float f = 0.15f;
         switch (meta & 7) {
@@ -254,74 +235,63 @@ namespace Blocks {
         }
     }
 
-    // --- rail -------------------------------------------------------
-
+    // rail 
     static AABB railAABB(uint8_t) {
         return { 0.0, 0.0, 0.0, 1.0, 0.125, 1.0 };
     }
 
-    // --- redstone dust ----------------------------------------------
-
+    // redstone dust 
     static AABB redstoneDustAABB(uint8_t) {
         return { 0.0, 0.0, 0.0, 1.0, 0.0625, 1.0 };
     }
 
-    // --- farmland ---------------------------------------------------
-    // Collider is full cube; ray/selection use visual height 0.9375
-
+    // farmland 
+    // Collider is full cube; ray/selection use visual height 0.937
     static AABB farmlandAABB(uint8_t) {
         return { 0.0, 0.0, 0.0, 1.0, 0.9375, 1.0 };
     }
 
-    // --- crop -------------------------------------------------------
-
+    // crop 
     static AABB cropAABB(uint8_t) {
         return { 0.0, 0.0, 0.0, 1.0, 0.25, 1.0 };  // 4/16
     }
 
-    // --- sapling / deadbush (f=0.4) ---------------------------------
-
+    // sapling / deadbush (f=0.4) 
     static AABB saplingAABB(uint8_t) {
         constexpr float f = 0.4f;
         return { 0.5f - f, 0.0f, 0.5f - f, 0.5f + f, f * 2.0f, 0.5f + f };
     }
 
-    // --- tall grass -------------------------------------------------
-
+    // tall grass 
     static AABB tallGrassAABB(uint8_t) {
         constexpr float f = 0.4f;
         return { 0.5f - f, 0.0f, 0.5f - f, 0.5f + f, 0.8f, 0.5f + f };
     }
 
-    // --- mushroom (f=0.2) -------------------------------------------
-
+    // mushroom (f=0.2)
     static AABB mushroomAABB(uint8_t) {
         constexpr float f = 0.2f;
         return { 0.5f - f, 0.0f, 0.5f - f, 0.5f + f, f * 2.0f, 0.5f + f };
     }
 
-    // --- plant / flower (rose, dandelion) (f=0.2, h=f*3) -----------
-
+    // plant / flower (rose, dandelion) (f=0.2, h=f*3)
     static AABB plantAABB(uint8_t) {
         constexpr float f = 0.2f;
         return { 0.5f - f, 0.0f, 0.5f - f, 0.5f + f, f * 3.0f, 0.5f + f };
     }
 
-    // --- sugarcane --------------------------------------------------
-
+    // sugarcane
     static AABB sugarcaneAABB(uint8_t) {
         constexpr float f = 0.375f;
         return { 0.5f - f, 0.0f, 0.5f - f, 0.5f + f, 1.0f, 0.5f + f };
     }
 
-    // --- liquid (zero-size — not selectable) ------------------------
-
+    // liquid (zero-size — not selectable)
     static AABB liquidAABB(uint8_t) {
         return { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     }
 
-    // --- piston head ------------------------------------------------
-
+    // piston head
     static AABB pistonHeadAABB(uint8_t meta) {
         switch (meta & 7) {
         case 0: return { 0.0,  0.0,  0.0,  1.0,  0.25, 1.0 };
@@ -352,10 +322,6 @@ namespace Blocks {
         return s;
     }
 
-    // ================================================================
-    //  registerAll
-    // ================================================================
-
     void registerAll() {
 
         // Default all behavior slots to full-cube before per-block overrides
@@ -365,7 +331,7 @@ namespace Blocks {
             blockBehaviors[i].getCollider = defaultCollider;
         }
 
-        // ---- block properties ----------------------------------------
+        // block properties 
 
         // Air
         blockProperties[BlockType::BLOCK_AIR] = {
@@ -1420,7 +1386,7 @@ namespace Blocks {
             .enableStats = false,
         };
 
-        // ---- block behaviors (non-default shapes) --------------------
+        // block behaviors (non-default shapes)
 
         // Liquids — zero-size AABB (not selectable/collidable)
         blockBehaviors[BlockType::BLOCK_WATER_FLOWING] = {
