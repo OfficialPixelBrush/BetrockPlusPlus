@@ -214,33 +214,7 @@ struct WorldManager {
         return chunk->getBlockLight({ pos.x & 15, pos.y, pos.z & 15 });
     }
 
-    void propagateChunkSkylightBorders(ChunkPos cpos) {
-        int bx = cpos.x * 16, bz = cpos.z * 16;
-
-        const int ndx[] = { -1, 1,  0, 0 };
-        const int ndz[] = { 0, 0, -1, 1 };
-
-        for (int i = 0; i < 4; ++i) {
-            Chunk* neighbor = getChunkRaw({ cpos.x + ndx[i], cpos.z + ndz[i] });
-            if (!neighbor) continue;
-
-            for (int t = 0; t < 16; ++t) {
-                int lx, lz, nx, nz;
-                if (ndx[i] == -1) { lx = 0; lz = t; nx = 15; nz = t; }
-                else if (ndx[i] == 1) { lx = 15; lz = t; nx = 0;  nz = t; }
-                else if (ndz[i] == -1) { lx = t; lz = 0; nx = t;  nz = 15; }
-                else { lx = t; lz = 15; nx = t; nz = 0; }
-
-                for (int y = 0; y < CHUNK_HEIGHT; ++y) {
-                    // If the neighbor border block has skylight, seed into our border block
-                    if (neighbor->getSkyLight({ nx, y, nz }) > 0)
-                        lightManager.scheduleLightUpdate({ bx + lx, y, bz + lz }, LightType::Sky);
-                }
-            }
-        }
-    }
-
-    void propagateChunkBlockLightBorders(ChunkPos cpos) {
+    void propagateChunkLightBorders(ChunkPos cpos) {
         const int ndx[] = { -1, 1,  0, 0 };
         const int ndz[] = { 0, 0, -1, 1 };
 
@@ -260,10 +234,15 @@ struct WorldManager {
                 else if (ndz[i] == -1) { lx = t; lz = 0; nx = 0; nz = 15; }
                 else { lx = t; lz = 15; nx = t; nz = 0; }
 
-                for (int y = 0; y < CHUNK_HEIGHT; ++y)
+                for (int y = 0; y < CHUNK_HEIGHT; ++y) {
                     // Does our neighbor block have a block light > 0?
-                    if (neighborChunk->getBlockLight({ nx, y, nz }))
+                    if (neighborChunk->getBlockLight({ nx, y, nz })) {
                         lightManager.scheduleLightUpdate({ bx + lx, y, bz + lz }, LightType::Block);
+                    }
+                    if (neighborChunk->getSkyLight({ nx, y, nz }) > 0) {
+                        lightManager.scheduleLightUpdate({ bx + lx, y, bz + lz }, LightType::Sky);
+                    }
+                }
             }
         }
     }
@@ -276,7 +255,7 @@ struct WorldManager {
     }
 
 private:
-    static constexpr int VIEW_RADIUS = 15;
+    static constexpr int VIEW_RADIUS = 10;
     static constexpr int SIMULATION_RADIUS = 9;
 
     void seedChunkLighting(ChunkPos pos);
