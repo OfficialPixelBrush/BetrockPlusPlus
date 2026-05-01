@@ -29,7 +29,6 @@ struct PendingBlock {
     Block block{ BLOCK_AIR, 0 };
     Int3 block_pos{ 0, 0, 0 };
     Int2 light{ 0, 15 }; // block light, sky light
-    bool lightUpdate = false;
 };
 
 struct WorldManager {
