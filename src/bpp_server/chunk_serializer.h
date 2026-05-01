@@ -12,7 +12,7 @@
 #include "chunk.h"
 
 namespace ChunkSerializer {
-    inline std::vector<uint8_t> serialize(const Chunk& chunk, int xmin = 0, int xmax = 16, int ymin = 0, int ymax = 128, int zmin = 0, int zmax = 16) {
+    inline std::vector<uint8_t> serialize(const Chunk& chunk, int xmin = 0, int xmax = 16, int ymin = 0, int ymax = CHUNK_HEIGHT, int zmin = 0, int zmax = 16) {
         int sizeX = xmax - xmin;
         int sizeY = ymax - ymin;
         int sizeZ = zmax - zmin;

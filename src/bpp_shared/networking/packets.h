@@ -15,6 +15,7 @@
 #include "base_types.h"
 #include "network_stream.h"
 #include "numeric_structs.h"
+#include "constants.h"
 
 // This class serves as a nice, convenient wrapper
 // around the networking packets
@@ -901,9 +902,9 @@ public:
         int32_t chunkX;
         int16_t chunkY = 0;    // always 0 for a full-height chunk
         int32_t chunkZ;
-        uint8_t sizeX = 15;   // sent as (size - 1), so 15 = 16 wide
-        uint8_t sizeY = 127;  // 127 = 128 tall
-        uint8_t sizeZ = 15;
+        uint8_t sizeX = CHUNK_WIDTH  - 1; // sent as (size - 1), so 15 = 16 wide
+        uint8_t sizeY = CHUNK_HEIGHT - 1; // 127 = 128 tall
+        uint8_t sizeZ = CHUNK_WIDTH  - 1;
         std::vector<uint8_t> compressedData;
 
         void Serialize(NetworkStream& stream) const override {
