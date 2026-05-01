@@ -104,7 +104,6 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
                 .block{ BlockType(blockId), chunk->getMeta({ lx, y, lz }) },
                 .block_pos{ x, y, z },
                 .light{ chunk->getBlockLight({ lx, y, lz }), chunk->getSkyLight({ lx, y, lz }) },
-                .lightUpdate = true
             }, chunk->cpos);
     }
 
@@ -145,7 +144,6 @@ void Lighter::unlightAt(int x, int y, int z, LightType type, WorldManager& world
             .block{ BlockType(chunk->getBlock({lx, y, lz})), chunk->getMeta({lx, y, lz})},
             .block_pos{ x, y, z },
             .light{ chunk->getBlockLight({ lx, y, lz }), chunk->getSkyLight({ lx, y, lz }) },
-            .lightUpdate = true
         }, chunk->cpos);
 
     unlightQueue.push_back({ {x, y, z}, type, oldVal });
@@ -186,7 +184,6 @@ void Lighter::unlightAt(int x, int y, int z, LightType type, WorldManager& world
                         .block{ BlockType(chunk->getBlock({lx, y, lz})), chunk->getMeta({lx, y, lz})},
                         .block_pos{ x, y, z },
                         .light{ chunk->getBlockLight({ lx, y, lz }), chunk->getSkyLight({ lx, y, lz }) },
-                        .lightUpdate = true
                     }, chunk->cpos);
                 unlightQueue.push_back({ {nx, ny, nz}, t, nVal });
             }
