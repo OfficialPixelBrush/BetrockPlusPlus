@@ -194,15 +194,17 @@ void Lighter::unlightAt(int x, int y, int z, LightType type, WorldManager& world
     }
 }
 
-bool Lighter::processLightQueue(WorldManager& world) {
+bool Lighter::processLightQueue(WorldManager& world, int maxIterations) {
     if (processingDepth >= 50) return !lightQueue.empty();
     ++processingDepth;
 
     ChunkCache cache;
+    int iters = 0;
 
-    while (!lightQueue.empty()) {
+    while (!lightQueue.empty() && iters < maxIterations) {
         LightRegion region = lightQueue.back();
         lightQueue.pop_back();
+        ++iters;
 
         int dx = region.max.x - region.min.x + 1;
         int dy = region.max.y - region.min.y + 1;
@@ -219,5 +221,5 @@ bool Lighter::processLightQueue(WorldManager& world) {
     }
 
     --processingDepth;
-    return false;
+    return !lightQueue.empty();
 }

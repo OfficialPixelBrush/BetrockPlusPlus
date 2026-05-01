@@ -97,6 +97,7 @@ struct WorldManager {
     }
 
     BlockType getBlockId(Int3 wpos) {
+        if (!inBounds(wpos.y)) return BlockType::BLOCK_AIR;
         auto* chunk = getChunkRaw({ wpos.x >> 4, wpos.z >> 4 });
         if (!chunk || chunk->state.load() < ChunkState::Generated)
             return BlockType::BLOCK_AIR;
@@ -104,12 +105,14 @@ struct WorldManager {
     }
 
     uint8_t getMetadata(Int3 wpos) {
+        if (!inBounds(wpos.y)) return 0;
         auto* chunk = getChunkRaw({ wpos.x >> 4, wpos.z >> 4 });
         if (!chunk || chunk->state.load() < ChunkState::Generated) return 0;
         return chunk->getMeta({ wpos.x & 15, wpos.y, wpos.z & 15 });
     }
 
     void setBlock(Int3 wpos, BlockType block_type, uint8_t metadata = 0) {
+        if (!inBounds(wpos.y)) return;
         ChunkPos cp{ wpos.x >> 4, wpos.z >> 4 };
         auto* chunk = getChunkRaw(cp);
         if (!chunk || chunk->state.load() < ChunkState::Generated) return;
@@ -203,13 +206,30 @@ struct WorldManager {
         return chunk->getHeightValue({ wx & 15, wz & 15 });
     }
 
+    // Returns the baked temperature/humidity for a world column.
+    // These are written during GenerateChunk and read back by PopulateChunk
+    // for biome sampling and snow placement without re-running noise.
+    double getTemperatureAt(int wx, int wz) {
+        auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
+        if (!chunk || chunk->state.load() < ChunkState::Generated) return 0.5;
+        return double(chunk->getTemperature({ wx & 15, wz & 15 }));
+    }
+
+    double getHumidityAt(int wx, int wz) {
+        auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
+        if (!chunk || chunk->state.load() < ChunkState::Generated) return 0.5;
+        return double(chunk->getHumidity({ wx & 15, wz & 15 }));
+    }
+
     int getSkyLight(Int3 pos) {
+        if (!inBounds(pos.y)) return 0;
         auto* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });
         if (!chunk || chunk->state.load() < ChunkState::Generated) return 0;
         return chunk->getSkyLight({ pos.x & 15, pos.y, pos.z & 15 });
     }
 
     int getBlockLight(Int3 pos) {
+        if (!inBounds(pos.y)) return 0;
         auto* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });
         if (!chunk || chunk->state.load() < ChunkState::Generated) return 0;
         return chunk->getBlockLight({ pos.x & 15, pos.y, pos.z & 15 });
@@ -254,6 +274,9 @@ struct WorldManager {
         auto it = chunks.find(pos);
         return (it != chunks.end()) ? it->second.get() : nullptr;
     }
+
+    // Returns true when the world-space Y is within valid chunk bounds.
+    static constexpr bool inBounds(int y) { return y >= 0 && y < CHUNK_HEIGHT; }
 
 private:
     static constexpr int VIEW_RADIUS = 10;

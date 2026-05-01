@@ -70,7 +70,12 @@ struct Lighter {
 public:
     void propagateLightAt(int x, int y, int z, LightType type, WorldManager& world, ChunkCache& cache);
     void unlightAt(int x, int y, int z, LightType type, WorldManager& world);
-    bool processLightQueue(WorldManager& world);
+
+    // Process up to `maxIterations` light-queue entries this call.
+    // Pass INT_MAX (or omit) to drain everything — used during startup
+    // where the old "finish in one go" behaviour is still wanted.
+    // Returns true if work remains after the budget is exhausted.
+    bool processLightQueue(WorldManager& world, int maxIterations = INT_MAX);
 
     // Schedule a single-block update — bypasses merge (used for BFS fan-out).
     void scheduleLightUpdate(Int3 pos, LightType type) {

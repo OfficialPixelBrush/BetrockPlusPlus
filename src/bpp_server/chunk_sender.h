@@ -84,6 +84,7 @@ struct ChunkSender {
             session.sentChunks.erase(p);
             session.flushedChunks.erase(p);
             session.pendingBlockChanges.erase(p); // drop queued updates for unloaded chunk
+            session.newlyUnloaded.push_back(p);
         }
 
         // Also cancel any in-flight jobs for chunks that are now out of range
@@ -226,6 +227,7 @@ struct ChunkSender {
             data.Serialize(session.stream);
 
             session.flushedChunks.insert(pc.pos);
+            session.newlyFlushed.push_back(pc.pos);
 
             // Drain any block updates that queued up while this chunk
             // was in-flight. They go out immediately after the chunk

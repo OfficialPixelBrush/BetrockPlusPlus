@@ -50,6 +50,14 @@ struct PlayerSession {
     // flushed. Drained by ChunkSender::flush() the moment the chunk data
     // is written, so the client never sees updates before its chunk.
     std::unordered_map<ChunkPos, std::vector<PendingBlock>> pendingBlockChanges;
+
+    // Chunks that were written to the stream during the last flush() call.
+    // Drained by Server::tick() to update the chunk-session reverse index.
+    std::vector<ChunkPos> newlyFlushed;
+
+    // Chunks that were unloaded during the last enqueue() call.
+    // Drained by Server::tick() to update the chunk-session reverse index.
+    std::vector<ChunkPos> newlyUnloaded;
     ConnectionState connState = ConnectionState::Handshaking;
     EntityId entityId = 0;
     std::wstring username;

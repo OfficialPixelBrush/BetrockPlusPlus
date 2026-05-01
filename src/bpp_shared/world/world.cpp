@@ -61,7 +61,7 @@ void WorldManager::tick(const std::vector<ClientPosition>& players) {
     updateLoadRadius(players);
     populateReady();       // population runs on main thread — direct world access
 
-    lightManager.processLightQueue(*this);
+    lightManager.processLightQueue(*this, INT_MAX);
 }
 
 // Update

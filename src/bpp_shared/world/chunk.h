@@ -80,8 +80,13 @@ struct Chunk {
     inline uint8_t getNibbleHigh(uint8_t byte) const { return (byte >> 4) & 0x0Fu; }
 
     //  Climate helpers
-    inline float getTemperature(Int2 pos) const { return temperature[(pos.y << 4) | pos.x]; }
-    inline float getHumidity(Int2 pos) const { return humidity[(pos.y << 4) | pos.x]; }
+    //  NOTE: temperature/humidity use [(x << 4) | z] indexing — matching Java's
+    //  WorldChunkManager.loadBlockGeneratorData fill order (outer X, inner Z) and
+    //  the way these arrays are filled by BiomeGenerator. This deliberately differs
+    //  from the heightMap convention below; Java uses different conventions for
+    //  these two array types as well.
+    inline float getTemperature(Int2 pos) const { return temperature[(pos.x << 4) | pos.y]; }
+    inline float getHumidity(Int2 pos) const { return humidity[(pos.x << 4) | pos.y]; }
 
     //  Height map helpers
     inline uint8_t getHeightValue(Int2 pos) const {

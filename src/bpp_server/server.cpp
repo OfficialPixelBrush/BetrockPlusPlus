@@ -28,12 +28,23 @@ Server::Server() {
     world.seed = 404;
 
     world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
-        for (auto& session : players) {
-            if (!session->sentChunks.contains(chunkPos)) continue;
-            PendingBlock pendingNew = pendingBlock;
-            pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y, pendingBlock.block_pos.z & 15 };
-            chunkBlockChanges[chunkPos].push_back(pendingNew);
+        // Only enqueue if at least one session knows about this chunk.
+        // The actual per-session dispatch happens in tick() using chunkSessions.
+        // We check the index (populated in tick) and fall back to a sentChunks
+        // scan for chunks that haven't been indexed yet (in-flight chunks).
+        auto idxIt = chunkSessions.find(chunkPos);
+        bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
+        if (!anyInterested) {
+            // Fallback: any session with this chunk in-flight?
+            for (auto& session : players) {
+                if (session->sentChunks.contains(chunkPos)) { anyInterested = true; break; }
+            }
         }
+        if (!anyInterested) return;
+
+        PendingBlock pendingNew = pendingBlock;
+        pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y, pendingBlock.block_pos.z & 15 };
+        chunkBlockChanges[chunkPos].push_back(pendingNew);
         };
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -68,6 +79,32 @@ Server::~Server() {
 #else
     close(serverSocket);
 #endif
+}
+
+// ---------------------------------------------------------------------------
+// Chunk-session reverse index helpers
+// ---------------------------------------------------------------------------
+
+void Server::indexAddChunk(PlayerSession& session, const ChunkPos& pos) {
+    auto& vec = chunkSessions[pos];
+    // Avoid duplicates (should never happen, but be safe)
+    for (auto* p : vec)
+        if (p == &session) return;
+    vec.push_back(&session);
+}
+
+void Server::indexRemoveChunk(PlayerSession& session, const ChunkPos& pos) {
+    auto it = chunkSessions.find(pos);
+    if (it == chunkSessions.end()) return;
+    auto& vec = it->second;
+    vec.erase(std::remove(vec.begin(), vec.end(), &session), vec.end());
+    if (vec.empty()) chunkSessions.erase(it);
+}
+
+void Server::indexRemoveSession(PlayerSession& session) {
+    // Walk every chunk this session had flushed and remove it from the index.
+    for (const auto& pos : session.flushedChunks)
+        indexRemoveChunk(session, pos);
 }
 
 void Server::startup() {
@@ -309,27 +346,107 @@ void Server::tick() {
         }
     }
 
-    // Dispatch block changes to all sessions that know about each chunk.
-    for (auto it = localBlockChanges.begin(); it != localBlockChanges.end(); ++it) {
-        const ChunkPos& chunk = it->first;
-        const std::vector<PendingBlock>& changes = it->second;
-        // Capture as shared_ptr so the async compression job keeps the chunk
-        // alive until the pool thread finishes.
-        std::shared_ptr chunkRef = world.getChunk(chunk);
+    // Drain chunk-session index updates that ChunkSender recorded.
+    for (auto& session : players) {
+        for (const auto& pos : session->newlyFlushed)
+            indexAddChunk(*session, pos);
+        session->newlyFlushed.clear();
 
+        for (const auto& pos : session->newlyUnloaded)
+            indexRemoveChunk(*session, pos);
+        session->newlyUnloaded.clear();
+    }
+
+    // Dispatch block changes. For each chunk we build the packet bytes ONCE
+    // (per packet type), then copy them into every interested session's stream
+    // rather than re-serialising for each player.
+    for (auto& [chunk, changes] : localBlockChanges) {
+        // Find which sessions care about this chunk via the reverse index.
+        // Split into flushed (send immediately) and sentOnly (queue).
+        auto indexIt = chunkSessions.find(chunk);
+        std::vector<PlayerSession*> flushedSessions;
+        std::vector<PlayerSession*> sentOnlySessions;
+
+        // Sessions in the index are always flushed for this chunk.
+        if (indexIt != chunkSessions.end()) {
+            flushedSessions = indexIt->second; // copy — safe, index stays stable
+        }
+
+        // Sessions that have the chunk in-flight (sentChunks but not flushedChunks)
+        // still need to queue the updates.
         for (auto& session : players) {
-            // Include WaitingForSpawnChunks: their chunks are in-flight so
-            // updates queue in pendingBlockChanges and drain via flush().
             if (session->connState != ConnectionState::Playing &&
                 session->connState != ConnectionState::WaitingForSpawnChunks) continue;
+            if (session->flushedChunks.contains(chunk)) continue; // already in flushedSessions
+            if (session->sentChunks.contains(chunk)) {
+                sentOnlySessions.push_back(session.get());
+            }
+        }
 
-            if (session->flushedChunks.contains(chunk)) {
+        // Queue updates for sessions still waiting on the chunk to flush.
+        for (auto* session : sentOnlySessions) {
+            auto& q = session->pendingBlockChanges[chunk];
+            q.insert(q.end(), changes.begin(), changes.end());
+        }
+
+        if (flushedSessions.empty()) continue;
+
+        // Capture chunk ref once for sub-region jobs.
+        std::shared_ptr<Chunk> chunkRef = world.getChunk(chunk);
+
+        if (changes.size() == 1) {
+            // Single block change: serialise once, raw-copy to every session.
+            const PendingBlock& pb = changes[0];
+            Packet::SetBlock sb;
+            sb.block = { pb.block.type, pb.block.data };
+            sb.position = {
+                static_cast<int32_t>(pb.block_pos.x + (chunk.x * 16)),
+                static_cast<int8_t>(pb.block_pos.y),
+                static_cast<int32_t>(pb.block_pos.z + (chunk.z * 16))
+            };
+            // Serialise into a temporary buffer, then blast to all sessions.
+            NetworkStream tmpStream(-1);
+            sb.Serialize(tmpStream);
+            const auto& buf = tmpStream.getRawWriteBuffer();
+            for (auto* session : flushedSessions)
+                session->stream.writeRaw(buf.data(), buf.size());
+        }
+        else if (changes.size() < 10) {
+            auto format_multi_block = [](int8_t x, int8_t y, int8_t z) {
+                return (
+                    ((int16_t(x) & 0x0F) << 12) |
+                    ((int16_t(z) & 0x0F) << 8) |
+                    ((int16_t(y) & 0xFF))
+                    );
+                };
+            Packet::SetMultipleBlocks smb;
+            smb.chunk_position = { chunk.x, chunk.z };
+            for (const auto& pb : changes) {
+                smb.block_coordinates.push_back(
+                    static_cast<int16_t>(
+                        format_multi_block(
+                            int8_t(pb.block_pos.x),
+                            int8_t(pb.block_pos.y),
+                            int8_t(pb.block_pos.z)
+                        )
+                    )
+                );
+                smb.block_metadata.push_back(int8_t(pb.block.data));
+                smb.block_types.push_back(pb.block.type);
+            }
+            smb.number_of_blocks = static_cast<int16_t>(smb.block_coordinates.size());
+            NetworkStream tmpStream(-1);
+            smb.Serialize(tmpStream);
+            const auto& buf = tmpStream.getRawWriteBuffer();
+            for (auto* session : flushedSessions)
+                session->stream.writeRaw(buf.data(), buf.size());
+        }
+        else {
+            // Sub-region: compression is async per-session via ChunkSender.
+            // We can't share the future, but we CAN avoid recomputing the
+            // bounding box for each session — do it once here.
+            for (auto* session : flushedSessions)
                 chunkSender.sendBlockUpdates(*session, chunk, changes, chunkRef);
-            }
-            else if (session->sentChunks.contains(chunk)) {
-                auto& q = session->pendingBlockChanges[chunk];
-                q.insert(q.end(), changes.begin(), changes.end());
-            }
         }
     }
 
@@ -357,6 +474,7 @@ void Server::tick() {
             if (!s->stream.isConnected()) {
                 std::wcout << L"Disconnected client " << s->username
                     << L" with entity id " << s->entityId << L"\n";
+                indexRemoveSession(*s);
                 chunkSender.remove(*s);
                 for (auto& other : players) {
                     if (other.get() == s.get()) continue;

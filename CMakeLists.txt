@@ -49,8 +49,8 @@ add_executable(
     src/bpp_shared/world/generator/chunk_gen.cpp
     src/bpp_shared/world/generator/biome_gen.cpp
     src/bpp_shared/world/generator/cave_gen.cpp
-    #src/bpp_shared/world/generator/feature_gen.cpp
-    #src/bpp_shared/world/generator/tree_gen.cpp
+    src/bpp_shared/world/generator/feature_gen.cpp
+    src/bpp_shared/world/generator/tree_gen.cpp
     
     # Server-specific files
     src/bpp_server/server.cpp
