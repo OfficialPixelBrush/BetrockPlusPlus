@@ -17,7 +17,7 @@
  * @param birch If the tree should be birch or oak
  * @return If tree successfully generated
  */
-bool TreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos, bool birch) {
+bool TreeGenerator::Generate(WorldManager& world, Java::Random& rand, Int3 pos, bool birch) {
 	// Decide on the tree height (birches are one block taller)
 	int32_t treeHeight = rand.nextInt(3) + 4;
 	if (birch)
@@ -40,7 +40,7 @@ bool TreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos, bool bi
 				for (check.z = pos.z - width; check.z <= pos.z + width; ++check.z) {
 					// Only test blocks that're within chunk boundaries
 					if (check.y >= 0 && check.y < CHUNK_HEIGHT) {
-						BlockType blockTest = world->GetBlockType(check);
+						BlockType blockTest = world.getBlockId(check);
 						if (blockTest != BLOCK_AIR && blockTest != BLOCK_LEAVES) {
 							return false;
 						}
@@ -52,10 +52,10 @@ bool TreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos, bool bi
 		}
 
 		// Check if the bock under the source block is grass or dirt
-		BlockType soilType = world->GetBlockType(Int3{pos.x, pos.y - 1, pos.z});
+		BlockType soilType = world.getBlockId(Int3{pos.x, pos.y - 1, pos.z});
 		if ((soilType == BLOCK_GRASS || soilType == BLOCK_DIRT) && pos.y < CHUNK_HEIGHT - treeHeight - 1) {
 			// Replace the underlying block with dir
-			world->SetBlockType(BLOCK_DIRT, Int3{pos.x, pos.y - 1, pos.z});
+			world.setBlock(Int3{pos.x, pos.y - 1, pos.z}, BLOCK_DIRT);
 
 			// Place leaves
 			Int3 offset;
@@ -76,8 +76,8 @@ bool TreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos, bool bi
 								JavaMath::abs(zLeaf) != treeWidth ||
 								(rand.nextInt(2) != 0 && widthBase != 0)
 							)) && !IsOpaque(
-								world->GetBlockType(offset))) {
-							world->PlaceBlock(offset, BLOCK_LEAVES, birch ? 2 : 0);
+								world.getBlockId(offset))) {
+							world.setBlock(offset, BLOCK_LEAVES, uint8_t(birch ? 2 : 0));
 						}
 					}
 				}
@@ -85,9 +85,9 @@ bool TreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos, bool bi
 
 			// Replace air and leaves with trunk
 			for (int32_t h = 0; h < treeHeight; ++h) {
-				BlockType futureLog = world->GetBlockType(Int3{pos.x, pos.y + h, pos.z});
+				BlockType futureLog = world.getBlockId(Int3{pos.x, pos.y + h, pos.z});
 				if (futureLog == BLOCK_AIR || futureLog == BLOCK_LEAVES) {
-					world->PlaceBlock(Int3{pos.x, pos.y + h, pos.z}, BLOCK_LOG, birch ? 2 : 0);
+					world.setBlock(Int3{pos.x, pos.y + h, pos.z}, BLOCK_LOG, uint8_t(birch ? 2 : 0));
 				}
 			}
 
@@ -125,8 +125,8 @@ void BigTreeGenerator::Configure(double pTreeHeight, double pBranchLength, doubl
  * @param pBirch If the tree should be birch or oak (not used for big trees)
  * @return If tree successfully generated
  */
-bool BigTreeGenerator::Generate([[maybe_unused]] World *pWorld, Java::Random& pRand, [[maybe_unused]] Int3 pPos, [[maybe_unused]] bool pBirch) {
-	this->world = pWorld;
+bool BigTreeGenerator::Generate(WorldManager& pWorld, Java::Random& pRand, [[maybe_unused]] Int3 pPos, [[maybe_unused]] bool pBirch) {
+	this->wm = &pWorld;
 	int64_t seed = pRand.nextLong();
 	this->rand.setSeed(seed);
 	this->basePos = pPos;
@@ -256,11 +256,11 @@ void BigTreeGenerator::PlaceCircularLayer(Int3 centerPos, float radius, BranchAx
 				continue;
 
 			currentPos[axisV] = centerPos[axisV] + dv;
-			BlockType otherType = this->world->GetBlockType(currentPos);
+			BlockType otherType = this->wm->getBlockId(currentPos);
 
 			// Only place if block can be overwritten
 			if (otherType == BLOCK_AIR || otherType == BLOCK_LEAVES) {
-				this->world->PlaceBlock(currentPos, blockType);
+				this->wm->setBlock(currentPos, blockType);
 			}
 		}
 	}
@@ -374,7 +374,7 @@ void BigTreeGenerator::DrawBlockLine(Int3 startPos, Int3 endPos, BlockType block
 		blockPos[secondaryB] = MathHelper::floor_double(
 			double(startPos[secondaryB]) + double(distanceAlongAxis) * secondaryRatioB + 0.5
 		);
-		this->world->PlaceBlock(blockPos, blockType);
+		this->wm->setBlock(blockPos, blockType);
 	}
 }
 
@@ -465,7 +465,7 @@ int32_t BigTreeGenerator::CheckIfPathClear(Int3 startPos, Int3 endPos) {
 		currentPos[secondaryB] = MathHelper::floor_double(
 			double(startPos[secondaryB]) + double(distanceAlongAxis) * secondaryRatioB
 		);
-		BlockType blockType = this->world->GetBlockType(currentPos);
+		BlockType blockType = this->wm->getBlockId(currentPos);
 		if (blockType != BLOCK_AIR && blockType != BLOCK_LEAVES) {
 			break;
 		}
@@ -484,7 +484,7 @@ int32_t BigTreeGenerator::CheckIfPathClear(Int3 startPos, Int3 endPos) {
 bool BigTreeGenerator::ValidPlacement() {
 	Int3 endPos = Int3{this->basePos.x, this->basePos.y + this->totalHeight - 1, this->basePos.z};
 	// Check if ground block is valid
-	BlockType soilType = this->world->GetBlockType(Int3{this->basePos.x, this->basePos.y - 1, this->basePos.z});
+	BlockType soilType = this->wm->getBlockId(Int3{this->basePos.x, this->basePos.y - 1, this->basePos.z});
 	if (soilType != BLOCK_GRASS && soilType != BLOCK_DIRT)
 		return false;
 	int32_t clearLength = this->CheckIfPathClear(this->basePos, endPos);
@@ -508,7 +508,7 @@ bool BigTreeGenerator::ValidPlacement() {
  * @param pBirch If the tree should be birch or oak (not used for taiga trees)
  * @return If tree successfully generated
  */
-bool TaigaTreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos, [[maybe_unused]] bool birch) {
+bool TaigaTreeGenerator::Generate(WorldManager& world, Java::Random& rand, Int3 pos, [[maybe_unused]] bool birch) {
 	int32_t height = rand.nextInt(5) + 7;
 	int32_t trunkHeight  = height - rand.nextInt(2) - 3;
 	int32_t leavesHeight = height - trunkHeight ;
@@ -526,7 +526,7 @@ bool TaigaTreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos, [[
 			for (int32_t x = pos.x - currentLeafRadius; x <= pos.x + currentLeafRadius; ++x) {
 				for (int32_t z = pos.z - currentLeafRadius; z <= pos.z + currentLeafRadius; ++z) {
 					if (y >= 0 && y < CHUNK_HEIGHT) {
-						BlockType blockType = world->GetBlockType(Int3{x, y, z});
+						BlockType blockType = world.getBlockId(Int3{x, y, z});
 						if (blockType != BLOCK_AIR && blockType != BLOCK_LEAVES) {
 							return false;
 						}
@@ -538,9 +538,9 @@ bool TaigaTreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos, [[
 		}
 
 		// Check if we're attempting to place it on a valid soil block
-		BlockType soilType = world->GetBlockType(Int3{pos.x, pos.y - 1, pos.z});
+		BlockType soilType = world.getBlockId(Int3{pos.x, pos.y - 1, pos.z});
 		if ((soilType == BLOCK_GRASS || soilType == BLOCK_DIRT) && pos.y < CHUNK_HEIGHT - height - 1) {
-			world->SetBlockType(BLOCK_DIRT, Int3{pos.x, pos.y - 1, pos.z});
+			world.setBlock(Int3{pos.x, pos.y - 1, pos.z}, BLOCK_DIRT);
 			currentLeafRadius = 0;
 			// Generate the leaves
 			for (int32_t y = pos.y + height; y >= pos.y + trunkHeight ; --y) {
@@ -550,9 +550,9 @@ bool TaigaTreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos, [[
 					for (int32_t z = pos.z - currentLeafRadius; z <= pos.z + currentLeafRadius; ++z) {
 						int32_t zOffset = z - pos.z;
 						if ((JavaMath::abs(xOffset) != currentLeafRadius || JavaMath::abs(zOffset) != currentLeafRadius || currentLeafRadius <= 0) &&
-							!IsOpaque(world->GetBlockType(Int3{x, y, z}))) {
+							!IsOpaque(world.getBlockId(Int3{x, y, z}))) {
 							// Spruce leaves
-							world->SetBlockTypeAndMeta(BLOCK_LEAVES, 1, Int3{x, y, z});
+							world.setBlock(Int3{x, y, z}, BLOCK_LEAVES, uint8_t(1));
 						}
 					}
 				}
@@ -565,9 +565,9 @@ bool TaigaTreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos, [[
 			}
 			// Place the trunk
 			for (int32_t logY = 0; logY < height - 1; ++logY) {
-				BlockType type = world->GetBlockType(Int3{pos.x, pos.y + logY, pos.z});
+				BlockType type = world.getBlockId(Int3{pos.x, pos.y + logY, pos.z});
 				if (type == BLOCK_AIR || type == BLOCK_LEAVES) {
-					world->SetBlockTypeAndMeta(BLOCK_LOG, 1, Int3{pos.x, pos.y + logY, pos.z});
+					world.setBlock(Int3{pos.x, pos.y + logY, pos.z}, BLOCK_LOG, uint8_t(1));
 				}
 			}
 
@@ -588,7 +588,7 @@ bool TaigaTreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos, [[
  * @param pBirch If the tree should be birch or oak (not used for alt taiga trees)
  * @return If tree successfully generated
  */
-bool AltTaigaTreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos, [[maybe_unused]] bool birch) {
+bool AltTaigaTreeGenerator::Generate(WorldManager& world, Java::Random& rand, Int3 pos, [[maybe_unused]] bool birch) {
 	int32_t height = rand.nextInt(4) + 6;
 	int32_t trunkHeight = 1 + rand.nextInt(2);
 	int32_t leavesHeight = height - trunkHeight;
@@ -604,7 +604,7 @@ bool AltTaigaTreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos,
 			for (int32_t xOffset = pos.x - currentLeafRadius; xOffset <= pos.x + currentLeafRadius; ++xOffset) {
 				for (int32_t zOffset = pos.z - currentLeafRadius; zOffset <= pos.z + currentLeafRadius; ++zOffset) {
 					if (y >= 0 && y < CHUNK_HEIGHT) {
-						BlockType type = world->GetBlockType(Int3{xOffset, y, zOffset});
+						BlockType type = world.getBlockId(Int3{xOffset, y, zOffset});
 						if (type != 0 && type != BLOCK_LEAVES) {
 							return false;
 						}
@@ -616,9 +616,9 @@ bool AltTaigaTreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos,
 		}
 	
 		// Check if we're attempting to place it on a valid soil block
-		BlockType soilType = world->GetBlockType(Int3{pos.x, pos.y - 1, pos.z});
+		BlockType soilType = world.getBlockId(Int3{pos.x, pos.y - 1, pos.z});
 		if ((soilType == BLOCK_GRASS || soilType == BLOCK_DIRT) && pos.y < CHUNK_HEIGHT - height - 1) {
-			world->SetBlockType(BLOCK_DIRT, Int3{pos.x, pos.y - 1, pos.z});
+			world.setBlock(Int3{pos.x, pos.y - 1, pos.z}, BLOCK_DIRT);
 			int32_t currentLeafRadius = rand.nextInt(2);
 			int32_t leafRadiusIncrementThreshold = 1;
 			int32_t leafRadiusSwitch = 0;
@@ -632,8 +632,8 @@ bool AltTaigaTreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos,
 					for (int32_t z = pos.z - currentLeafRadius; z <= pos.z + currentLeafRadius; ++z) {
 						int32_t zOffset = z - pos.z;
 						if ((JavaMath::abs(xOffset) != currentLeafRadius || JavaMath::abs(zOffset) != currentLeafRadius || currentLeafRadius <= 0) &&
-							!IsOpaque(world->GetBlockType(Int3{x, yLevel, z}))) {
-							world->SetBlockTypeAndMeta(BLOCK_LEAVES, 1, Int3{x, yLevel, z});
+							!IsOpaque(world.getBlockId(Int3{x, yLevel, z}))) {
+							world.setBlock(Int3{x, yLevel, z}, BLOCK_LEAVES, uint8_t(1));
 						}
 					}
 				}
@@ -652,9 +652,9 @@ bool AltTaigaTreeGenerator::Generate(World *world, Java::Random& rand, Int3 pos,
 
 			int32_t logOffset = rand.nextInt(3);
 			for (int32_t logY = 0; logY < height - logOffset; ++logY) {
-				BlockType type = world->GetBlockType(Int3{pos.x, pos.y + logY, pos.z});
+				BlockType type = world.getBlockId(Int3{pos.x, pos.y + logY, pos.z});
 				if (type == BLOCK_AIR || type == BLOCK_LEAVES) {
-					world->SetBlockTypeAndMeta(BLOCK_LOG, 1, Int3{pos.x, pos.y + logY, pos.z});
+					world.setBlock(Int3{pos.x, pos.y + logY, pos.z}, BLOCK_LOG, uint8_t(1));
 				}
 			}
 

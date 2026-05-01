@@ -115,6 +115,14 @@ public:
     bool flushWriteBuffer();
     bool hasData();
 
+    // Append pre-serialised bytes directly to the write buffer.
+    // Used for shared-packet broadcast: serialise once, copy to N sessions.
+    void writeRaw(const uint8_t* data, size_t len) { WriteBytes(data, len); }
+
+    // Read-only view of the pending write buffer.
+    // Valid only until the next Write*/writeRaw/flushWriteBuffer call.
+    const std::vector<uint8_t>& getRawWriteBuffer() const { return writeBuffer; }
+
 private:
     int client_socket = INVALID_SOCKET;
     bool connected = true;

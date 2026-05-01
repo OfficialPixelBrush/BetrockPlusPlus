@@ -49,6 +49,11 @@ private:
     void broadcastPlayerMovement(PlayerSession& session);
     void processIncoming(PlayerSession& session);
 
+    // Chunk-session index helpers
+    void indexAddChunk(PlayerSession& session, const ChunkPos& pos);
+    void indexRemoveChunk(PlayerSession& session, const ChunkPos& pos);
+    void indexRemoveSession(PlayerSession& session);
+
     static constexpr float TICK_DELTA = 1.0f / 20.0f;
     static constexpr int   MAX_TICKS_PER_FRAME = 10;
 
@@ -56,6 +61,11 @@ private:
     ChunkSender chunkSender;
     std::vector<std::unique_ptr<PlayerSession>> players;
     std::unordered_map<ChunkPos, std::vector<PendingBlock>> chunkBlockChanges;
+
+    // Reverse index: which sessions currently have a given chunk loaded.
+    // Maintained in sync with session.flushedChunks so block-change dispatch
+    // can skip chunks that no player has received, avoiding a full player scan.
+    std::unordered_map<ChunkPos, std::vector<PlayerSession*>> chunkSessions;
     int serverSocket = -1;
     EntityId nextEntityId = 2;
     int64_t timeout_seconds = 60;

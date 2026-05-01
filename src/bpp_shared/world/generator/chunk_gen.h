@@ -8,8 +8,8 @@
 #include "biomes.h"
 #include "biome_gen.h"
 #include "cave_gen.h"
-// #include "feature_gen.h"
-// #include "tree_gen.h"
+#include "feature_gen.h"
+#include "tree_gen.h"
 #include "world.h"
 
 /**
@@ -56,10 +56,11 @@ class Generator {
 	void GenerateTerrainNoise(std::vector<double> &terrainMap, Int3 cpos, Int3 max);
 	void ReplaceBlocksForBiome(Chunk& chunk);
 	Biome GetBiomeAt(Int2 worldPos);
+	void GenerateTreeForBiome(WorldManager& world, Java::Random& rand, Int3 pos, Biome biome);
 
   public:
 	Generator(int64_t seed);
 	~Generator() = default;
 	void GenerateChunk(Chunk& chunk);
-	bool PopulateChunk([[maybe_unused]] Chunk& chunk, [[maybe_unused]] WorldManager& world);
+	bool PopulateChunk(Chunk& chunk, WorldManager& world);
 };

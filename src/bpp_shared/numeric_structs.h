@@ -99,6 +99,10 @@ struct TriNumber {
         return os;
     }
     
+    // Axis-indexed access — used by BigTreeGenerator for axis-agnostic line drawing.
+    T& operator[](int axis) { return data[axis]; }
+    const T& operator[](int axis) const { return data[axis]; }
+
     std::string str() const {
         std::ostringstream oss;
         oss << *this; // Use the overloaded << operator
