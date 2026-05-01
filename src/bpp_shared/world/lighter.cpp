@@ -7,6 +7,7 @@
 #include "lighter.h"
 #include "blocks.h"
 #include "world.h"
+#include "constants.h"
 
 // ChunkCache
 void ChunkCache::refresh(int ncx, int ncz, WorldManager& world) {
@@ -21,7 +22,7 @@ void ChunkCache::refresh(int ncx, int ncz, WorldManager& world) {
 
 // Helpers
 static inline int getLightDirect(Chunk* chunk, int lx, int y, int lz, LightType type) {
-    if (!chunk || y < 0 || y >= 128) return 0;
+    if (!chunk || y < 0 || y >= CHUNK_HEIGHT) return 0;
     return (type == LightType::Sky)
         ? chunk->getSkyLight({ lx, y, lz })
         : chunk->getBlockLight({ lx, y, lz });
