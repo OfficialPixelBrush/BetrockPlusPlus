@@ -426,7 +426,7 @@ void Server::tick() {
                             int8_t(pb.block_pos.y),
                             int8_t(pb.block_pos.z)
                         )
-                    )
+                        )
                 );
                 smb.block_metadata.push_back(int8_t(pb.block.data));
                 smb.block_types.push_back(pb.block.type);
@@ -532,6 +532,36 @@ void Server::handleLogin(PlayerSession& session) {
     health.health = 20;
     health.Serialize(session.stream);
 
+    // Send the player's inventory
+    HandlePacket::sendInventory(session);
+
+    // Test inventory
+    // Test inventory
+    auto& inv = session.inventory;
+    inv.slots[0] = ItemStack{ ITEM_PICKAXE_DIAMOND,  1, 0 };
+    inv.slots[1] = ItemStack{ ITEM_SWORD_IRON,       1, 0 };
+    inv.slots[2] = ItemStack{ ITEM_AXE_STONE,        1, 0 };
+    inv.slots[3] = ItemStack{ ITEM_SHOVEL_GOLD,      1, 0 };
+    inv.slots[4] = ItemStack{ ITEM_BOW,              1, 0 };
+    inv.slots[5] = ItemStack{ ITEM_ARROW,           64, 0 };
+    inv.slots[6] = ItemStack{ ITEM_SNOWBALL,        16, 0 };
+    inv.slots[7] = ItemStack{ ITEM_EGG,             16, 0 };
+    inv.slots[8] = ItemStack{ ITEM_COAL,            64, 0 };
+    inv.slots[9] = ItemStack{ BLOCK_DIRT,           64, 0 };  // block stackable
+    inv.slots[10] = ItemStack{ ITEM_IRON,           32, 0 };  // partial stack
+    inv.slots[11] = ItemStack{ ITEM_DYE,             1, 4 };  // item with data/subtype
+    inv.slots[12] = ItemStack{ ITEM_DYE,             1, 14 }; // different subtype, shouldn't merge
+    inv.slots[13] = ItemStack{ ITEM_MUSHROOM_STEW,   1, 0 };  // stack limit 1
+    inv.slots[14] = ItemStack{ ITEM_CAKE,            1, 0 };  // stack limit 1
+    inv.slots[15] = ItemStack{ ITEM_BUCKET_WATER,    1, 0 };  // stack limit 1
+    inv.slots[16] = ItemStack{ BLOCK_TORCH,         64, 0 };
+    // Armor slots (36-39)
+    inv.slots[36] = ItemStack{ ITEM_HELMET_DIAMOND,    1, 0 };
+    inv.slots[37] = ItemStack{ ITEM_CHESTPLATE_IRON,   1, 0 };
+    inv.slots[38] = ItemStack{ ITEM_LEGGINGS_LEATHER,  1, 0 };
+    inv.slots[39] = ItemStack{ ITEM_BOOTS_GOLD,        1, 0 };
+    HandlePacket::sendInventory(session);
+
     Packet::SetTime time;
     time.time = world.elapsed_ticks;
     time.Serialize(session.stream);
@@ -558,7 +588,7 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
     int spawnChunkX = int(std::floor(session.position.pos.x)) >> 4;
     int spawnChunkZ = int(std::floor(session.position.pos.z)) >> 4;
 
-    int radius = std::min(3, world.getViewRadius());
+    int radius = min(3, world.getViewRadius());
 
     int total_spawn_chunks = ((radius * 2) + 1) * ((radius * 2) + 1);
     int loaded_chunks = 0;
@@ -759,6 +789,12 @@ void Server::processIncoming(PlayerSession& session) {
             Packet::ClickSlot pkt;
             pkt.Deserialize(session.stream);
             HandlePacket::ClickSlot(pkt, session);
+            break;
+        }
+        case PacketId::ContainerTransaction: {
+            Packet::ContainerTransaction pkt;
+            pkt.Deserialize(session.stream);
+            HandlePacket::ContainerTransaction(pkt, session);
             break;
         }
         case PacketId::UpdateSign: {
