@@ -33,13 +33,11 @@ add_executable(
     # External files
     external/glad/src/glad.c
 
-    # Testing files
-    src/bpp_test/network_test.cpp
-
     # Shared files
     src/bpp_shared/shared.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/enums/drops.cpp
+    src/bpp_shared/enums/items.cpp
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
     src/bpp_shared/networking/server_manager.cpp
@@ -65,7 +63,7 @@ add_executable(
     src/bpp_server/commands/command.cpp
     src/bpp_server/commands/command_manager.cpp
     src/bpp_shared/world/lighter.cpp
-)
+    src/bpp_shared/inventory/inventories.cpp)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(BetrockPlusPlus PRIVATE

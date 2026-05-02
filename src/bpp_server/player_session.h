@@ -17,6 +17,7 @@
 #include "networking/network_stream.h"
 #include "networking/packets.h"
 #include "world/client_pos.h"
+#include "inventory/inventories.h"
 
 enum class ConnectionState : uint8_t {
     Handshaking,
@@ -62,6 +63,16 @@ struct PlayerSession {
     EntityId entityId = 0;
     std::wstring username;
     std::chrono::steady_clock::time_point last_packet_time = std::chrono::steady_clock::now();
+
+    // Inventory
+    InventoryPlayer inventory;
+    // windowId=0 is always the player inventory. Non-zero means a container is open.
+    int8_t openWindowId = 0;
+
+    // Transaction system: locked after a rejected click until client acks the resync.
+    // While locked, all incoming clicks are rejected to prevent state corruption.
+    bool          inventoryLocked = false;
+    TransactionId pendingRejectAction = 0;
 
     explicit PlayerSession(int socket) : stream(socket) {}
 };

@@ -11,7 +11,6 @@
 #include "bpp_shared/NBT/example.h"
 #include "bpp_client/client.h"
 #include "bpp_server/server.h"
-#include "bpp_test/network_test.h"
 #include "networking/network_stream.h"
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
