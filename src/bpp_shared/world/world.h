@@ -37,6 +37,10 @@ struct WorldManager {
 
     std::function<void(PendingBlock, ChunkPos)> onBlockUpdate; // always called on main thread
 
+    // Bleed-writes from PopulateChunk that targeted a chunk which wasn't loaded
+    // (or wasn't Generated yet). Replayed into the chunk as soon as it generates.
+    std::unordered_map<ChunkPos, std::vector<std::pair<Int3, Block>>> pendingBleedWrites;
+
     // Tiny queue: pool gen threads post finished chunks here; main thread drains
     // each tick. Only this deque needs a mutex — the chunks map itself does not.
     std::mutex genDoneMutex;
@@ -82,6 +86,15 @@ struct WorldManager {
                 bool wasSpawnChunk = it->second->spawnChunk;
                 it->second = std::move(c);
                 it->second->spawnChunk = wasSpawnChunk;
+
+                // Replay any bleed-writes that arrived while this chunk was unloaded.
+                auto pit = pendingBleedWrites.find(pos);
+                if (pit != pendingBleedWrites.end()) {
+                    for (auto& [wpos, block] : pit->second)
+                        setBlock(wpos, block.type, block.data);
+                    pendingBleedWrites.erase(pit);
+                }
+
                 seedChunkLighting(pos);
             }
         }
@@ -115,7 +128,11 @@ struct WorldManager {
         if (!inBounds(wpos.y)) return;
         ChunkPos cp{ wpos.x >> 4, wpos.z >> 4 };
         auto* chunk = getChunkRaw(cp);
-        if (!chunk || chunk->state.load() < ChunkState::Generated) return;
+        if (!chunk || chunk->state.load() < ChunkState::Generated) {
+            // Target chunk isn't ready — stash the write for replay on drain.
+            pendingBleedWrites[cp].push_back({ wpos, Block{ block_type, metadata } });
+            return;
+        }
 
         // Unlight before changing the block
         lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Block, *this);
@@ -279,7 +296,7 @@ struct WorldManager {
     static constexpr bool inBounds(int y) { return y >= 0 && y < CHUNK_HEIGHT; }
 
 private:
-    static constexpr int VIEW_RADIUS = 10;
+    static constexpr int VIEW_RADIUS = 13;
     static constexpr int SIMULATION_RADIUS = 9;
 
     void seedChunkLighting(ChunkPos pos);
