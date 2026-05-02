@@ -902,9 +902,9 @@ public:
         int32_t chunkX;
         int16_t chunkY = 0;    // always 0 for a full-height chunk
         int32_t chunkZ;
-        uint8_t sizeX = CHUNK_WIDTH  - 1; // sent as (size - 1), so 15 = 16 wide
+        uint8_t sizeX = CHUNK_WIDTH - 1; // sent as (size - 1), so 15 = 16 wide
         uint8_t sizeY = CHUNK_HEIGHT - 1; // 127 = 128 tall
-        uint8_t sizeZ = CHUNK_WIDTH  - 1;
+        uint8_t sizeZ = CHUNK_WIDTH - 1;
         std::vector<uint8_t> compressedData;
 
         void Serialize(NetworkStream& stream) const override {
@@ -1166,7 +1166,7 @@ public:
             window_id = stream.Read<WindowId>();
         }
     };
-    
+
     // Used for signaling when a slot was clicked
     struct ClickSlot : BasePacket {
         ClickSlot() : BasePacket{ PacketId::ClickSlot } {}
@@ -1185,7 +1185,7 @@ public:
             stream.Write(transaction_id);
             stream.Write(shift);
             stream.Write(item.id);
-            if (item.id > ITEM_NONE) {
+            if (item.id != ITEM_INVALID) {
                 stream.Write(item.amount);
                 stream.Write(item.damage);
             }
@@ -1197,7 +1197,7 @@ public:
             transaction_id = stream.Read<TransactionId>();
             shift = stream.Read<bool>();
             item.id = stream.Read<ItemId>();
-            if (item.id > ITEM_NONE) {
+            if (item.id != ITEM_INVALID) {
                 item.amount = stream.Read<ItemAmount>();
                 item.damage = stream.Read<ItemDamage>();
             }
@@ -1216,7 +1216,7 @@ public:
             stream.Write(window_id);
             stream.Write(slot_id);
             stream.Write(item.id);
-            if (item.id > ITEM_NONE) {
+            if (item.id != ITEM_INVALID) {
                 stream.Write(item.amount);
                 stream.Write(item.damage);
             }
@@ -1225,7 +1225,7 @@ public:
             window_id = stream.Read<WindowId>();
             slot_id = stream.Read<SlotId>();
             item.id = stream.Read<ItemId>();
-            if (item.id > ITEM_NONE) {
+            if (item.id != ITEM_INVALID) {
                 item.amount = stream.Read<ItemAmount>();
                 item.damage = stream.Read<ItemDamage>();
             }
@@ -1245,7 +1245,7 @@ public:
             stream.Write(int16_t(items.size()));
             for (Item item : items) {
                 stream.Write(item.id);
-                if (item.id > ITEM_NONE) {
+                if (item.id != ITEM_INVALID) {
                     stream.Write(item.amount);
                     stream.Write(item.damage);
                 }
@@ -1254,17 +1254,17 @@ public:
         void Deserialize(NetworkStream& stream) override {
             window_id = stream.Read<WindowId>();
             size_t number_of_slots = size_t(stream.Read<int16_t>());
-            items.resize(number_of_slots, Item{ITEM_NONE});
+            items.resize(number_of_slots, Item{ ITEM_INVALID });
             for (size_t i = 0; i < number_of_slots; i++) {
                 items[i].id = stream.Read<ItemId>();
-                if (items[i].id > ITEM_NONE) {
+                if (items[i].id != ITEM_INVALID) {
                     items[i].amount = stream.Read<ItemAmount>();
                     items[i].damage = stream.Read<ItemDamage>();
                 }
             }
         }
     };
-    
+
     // Used for setting data for containers, such as furnace progress
     struct ContainerData : BasePacket {
         ContainerData() : BasePacket{ PacketId::ContainerData } {}
@@ -1286,7 +1286,7 @@ public:
             container_data.value = stream.Read<int16_t>();
         }
     };
-    
+
     // Used for checking if the performed transaction was valid and got through successfully 
     struct ContainerTransaction : BasePacket {
         ContainerTransaction() : BasePacket{ PacketId::ContainerTransaction } {}
