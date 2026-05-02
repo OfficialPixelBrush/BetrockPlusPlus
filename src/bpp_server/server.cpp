@@ -25,7 +25,7 @@
 Server::Server() {
     Blocks::registerAll();
     command_manager.Init();
-    world.seed = 404;
+    world.seed = -2517126801912471655;
 
     world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
         // Only enqueue if at least one session knows about this chunk.
@@ -81,10 +81,7 @@ Server::~Server() {
 #endif
 }
 
-// ---------------------------------------------------------------------------
 // Chunk-session reverse index helpers
-// ---------------------------------------------------------------------------
-
 void Server::indexAddChunk(PlayerSession& session, const ChunkPos& pos) {
     auto& vec = chunkSessions[pos];
     // Avoid duplicates (should never happen, but be safe)
