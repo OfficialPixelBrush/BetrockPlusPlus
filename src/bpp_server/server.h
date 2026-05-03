@@ -37,6 +37,7 @@ public:
     ~Server();
     void run();
     Int2 spawnPoint{ 0, 0 };
+    void stop();
 
 private:
     void tick();

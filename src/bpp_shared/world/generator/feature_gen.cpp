@@ -435,16 +435,15 @@ bool FeatureGenerator::GenerateCacti(WorldManager& world, Java::Random& rand, In
 		if (world.getBlockId({ x, y, z }) != BLOCK_AIR) continue;
 
 		int32_t height = 1 + rand.nextInt(rand.nextInt(3) + 1);
-		for (int32_t h = 0; h < height; ++h) {
-			BlockType below = world.getBlockId({ x, y + h - 1, z });
-			if (below != BLOCK_SAND && below != BLOCK_CACTUS)           break;
-			if (world.getBlockId({ x,   y + h, z }) != BLOCK_AIR)      break;
-			if (world.getBlockId({ x - 1, y + h, z }) != BLOCK_AIR)      break;
-			if (world.getBlockId({ x + 1, y + h, z }) != BLOCK_AIR)      break;
-			if (world.getBlockId({ x,   y + h, z - 1 }) != BLOCK_AIR)      break;
-			if (world.getBlockId({ x,   y + h, z + 1 }) != BLOCK_AIR)      break;
-			world.setBlock({ x, y + h, z }, BLOCK_CACTUS);
-		}
+			for (int32_t h = 0; h < height; ++h) {
+				if (Blocks::blockProperties[world.getBlockId({ x-1, y+h, z })].material.isSolid)   continue;
+				if (Blocks::blockProperties[world.getBlockId({ x+1, y+h, z })].material.isSolid)   continue;
+				if (Blocks::blockProperties[world.getBlockId({ x,   y+h, z-1 })].material.isSolid) continue;
+				if (Blocks::blockProperties[world.getBlockId({ x,   y+h, z+1 })].material.isSolid) continue;
+				BlockType below = world.getBlockId({ x, y+h-1, z });
+				if (below == BLOCK_SAND || below == BLOCK_CACTUS)
+					world.setBlock({ x, y+h, z }, BLOCK_CACTUS);
+			}
 	}
 	return true;
 }

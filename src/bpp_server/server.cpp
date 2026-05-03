@@ -297,6 +297,11 @@ void Server::run() {
     }
 }
 
+void Server::stop() {
+    std::cout << "Server shutting down...\n";
+    close(serverSocket);
+}
+
 void Server::acceptNewPlayers() {
     int clientSocket = static_cast<int>(accept(serverSocket, nullptr, nullptr));
 

@@ -13,6 +13,16 @@
 #include "bpp_server/server.h"
 #include "networking/network_stream.h"
 
+Server server;
+
+void signalHandler(int sig) {
+    std::cout << "Interrupt handle " << sig << std::endl;
+    server.stop();
+    
+    // Optionally exit the program after handling
+    exit(sig);
+}
+
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     bool nbt_tests = false;
     bool server_tests = true;
@@ -31,7 +41,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
         NBTexample::test();
 
     if (server_tests) {
-        Server server;
         server.run();
     }
 

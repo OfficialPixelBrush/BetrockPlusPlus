@@ -99,7 +99,8 @@ void Generator::ReplaceBlocksForBiome(Chunk& chunk) {
 	// Iterate through entire chunk
 	for (int32_t x = 0; x < CHUNK_WIDTH; ++x) {
 		for (int32_t z = 0; z < CHUNK_WIDTH; ++z) {
-			size_t bindex = size_t(x * CHUNK_WIDTH + z);
+			// This is intentional, to match b1.7.3 behavior!
+			size_t bindex = size_t(x + z * CHUNK_WIDTH);
 			// Get values from noise maps
 			Biome biome = biomeMap[bindex];
 			bool sandActive = this->sandNoise[bindex] + this->rand.nextDouble() * 0.2 > 0.0;
@@ -112,7 +113,8 @@ void Generator::ReplaceBlocksForBiome(Chunk& chunk) {
 
 			// Iterate over column top to bottom
 			for (int32_t y = CHUNK_HEIGHT - 1; y >= 0; --y) {
-				Int3 bpos{ x,y,z };
+				// This is intentional, to match b1.7.3 behavior!
+				Int3 bpos{ z,y,x };
 				// Place Bedrock at bottom with some randomness
 				if (y <= 0 + this->rand.nextInt(5)) {
 					chunk.setBlock(bpos, BLOCK_BEDROCK);

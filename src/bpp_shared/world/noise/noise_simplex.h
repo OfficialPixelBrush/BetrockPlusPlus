@@ -14,15 +14,17 @@
  * 
  */
 class NoiseSimplex : public NoiseGenerator {
-  private:
+  protected:
 	int32_t permutations[512];
 	Vec3 coordinate;
 	double GenerateNoiseBase(Vec3 position);
+	void InitPermTable(Java::Random& rand);
+
+  private:
 	int32_t gradients[12][3] = {{1, 1, 0},	{-1, 1, 0},	 {1, -1, 0}, {-1, -1, 0}, {1, 0, 1},  {-1, 0, 1},
 							{1, 0, -1}, {-1, 0, -1}, {0, 1, 1},	 {0, -1, 1},  {0, 1, -1}, {0, -1, -1}};
 	double skewing = 0.5 * (sqrt(3.0) - 1.0);
 	double unskewing = (3.0 - sqrt(3.0)) / 6.0;
-	void InitPermTable(Java::Random& rand);
 
   public:
 	NoiseSimplex();
