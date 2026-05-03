@@ -373,3 +373,16 @@ typedef Int64_2 Long2;
 // Slim Int3 defines
 #define SLIM_INT3_ZERO  SlimInt3{0, 0, 0}
 #define SLIM_INT3_ONE   SlimInt3{1, 1, 1}
+
+// For hashing
+namespace std {
+    template<typename T>
+    struct hash<TriNumber<T>> {
+        size_t operator()(const TriNumber<T>& p) const noexcept {
+            size_t h = hash<T>{}(p.x);
+            h ^= hash<T>{}(p.y) * 0x9e3779b9u + 0x6b3a9a4fu;
+            h ^= hash<T>{}(p.z) * 0x517cc1b7u + 0x2c62a8d3u;
+            return h;
+        }
+    };
+}

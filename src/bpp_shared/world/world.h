@@ -16,6 +16,7 @@
 #include "world/client_pos.h"
 #include "BS_thread_pool.hpp"
 #include "lighter.h"
+#include "tile_entities/tile_entity_manager.h"
 #include <cstdint>
 #include <unordered_map>
 #include <unordered_set>
@@ -24,6 +25,7 @@
 #include <vector>
 #include <deque>
 #include <atomic>
+#include <algorithm>
 
 struct PendingBlock {
     Block block{ BLOCK_AIR, 0 };
@@ -47,6 +49,7 @@ struct WorldManager {
     std::deque<std::shared_ptr<Chunk>> genDoneQueue;
 
     Lighter lightManager;
+    TileEntityManager tileEntityManager;
 
     BS::thread_pool<> pool{ 2 };
 
@@ -65,6 +68,45 @@ struct WorldManager {
     void updateLoadRadius(const std::vector<ClientPosition>& players);
     void pumpPipeline(const std::vector<ClientPosition>& players);
     void populateReady();
+
+    void createTileEntity(std::shared_ptr<TileEntity> tileEntity) {
+        ChunkPos chunkPos = { tileEntity->position.x >> 4, tileEntity->position.z >> 4 };
+        Chunk* chunk = getChunkRaw(chunkPos);
+        if (!chunk) return;
+        tileEntityManager.initializeTileEntity(tileEntity); // weak_ptr added if canTick
+        chunk->tileEntities.push_back(std::move(tileEntity)); // chunk takes ownership
+    }
+
+    // Returns the tile entity at world position `pos`, or nullptr if none.
+    TileEntity* getTileEntity(Int3 pos) {
+        Chunk* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });
+        if (!chunk) return nullptr;
+        for (auto& te : chunk->tileEntities) {
+            if (te && te->position.x == pos.x &&
+                te->position.y == pos.y &&
+                te->position.z == pos.z)
+                return te.get();
+        }
+        return nullptr;
+    }
+
+    // Typed lookup — returns nullptr if not found or wrong type.
+    template<typename T>
+    T* getTileEntityAs(Int3 pos) {
+        return dynamic_cast<T*>(getTileEntity(pos));
+    }
+
+    // Remove the tile entity at world position `pos`.
+    void removeTileEntity(Int3 pos) {
+        Chunk* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });
+        if (!chunk) return;
+        auto& tes = chunk->tileEntities;
+        tes.erase(std::remove_if(tes.begin(), tes.end(), [&](const std::shared_ptr<TileEntity>& te) {
+            return te && te->position.x == pos.x &&
+                te->position.y == pos.y &&
+                te->position.z == pos.z;
+            }), tes.end());
+    }
 
     // Called from pool gen threads
     void postGenResult(std::shared_ptr<Chunk> chunk) {

@@ -14,8 +14,7 @@
 
 struct EntityPlayer;
 struct Container;
-
-struct InventoryCrafting; // forward decl
+struct InventoryCrafting;
 
 struct Container {
     int windowId = 0;
@@ -24,26 +23,28 @@ struct Container {
     virtual ~Container() = default;
 };
 
-// Player inventory -- 36 main + 4 armor = 40 slots
-// Armor slots are at indices 36-39. Hotbar is slots 0-8.
+// InventoryPlayer
+// 36 main + 4 armor = 40 slots. Hotbar is slots 0-8, armor is 36-39.
+//
+// Container slot layout (windowId=0, 45 slots total):
+//   0        = craft output
+//   1-4      = 2x2 craft grid
+//   5-8      = armor (head, chest, legs, feet) -> inv slots 36-39
+//   9-35     = main inventory rows 1-3          -> inv slots 9-35
+//   36-44    = hotbar                           -> inv slots 0-8
+
 struct InventoryPlayer : Inventory {
-    int  currentItem = 0;     // hotbar index (0-8)
+    int  currentItem = 0;
     bool inventoryChanged = false;
-    std::optional<ItemStack> carried; // cursor stack during GUI interaction
     EntityPlayer* player = nullptr;
 
     InventoryPlayer() : Inventory(40) { name = "Inventory"; }
 
-    // Returns the currently held item (hotbar slot currentItem), or nullptr.
     ItemStack* getCurrentItem() {
         if (currentItem < 0 || currentItem >= 9) return nullptr;
         return getStackInSlot(currentItem);
     }
 
-    // Tries to add a stack to the inventory.
-    // Non-stackable/damageable items go to the first empty slot.
-    // Stackable items merge into existing partial stacks first, then empty slots.
-    // Returns true if at least one item was picked up.
     bool addItemStackToInventory(ItemStack stack) {
         if (GetMaxDurability(stack.id) > 0 || GetMaxStack(stack.id) == 1) {
             for (int i = 0; i < 36; i++) {
@@ -67,24 +68,22 @@ struct InventoryPlayer : Inventory {
                 slot = ItemStack{ stack.id, 0, stack.data };
 
             int space = GetMaxStack(stack.id) - (int)slot->count;
-            int take = (std::min)(space, (int)stack.count);
+            int take  = (std::min)(space, (int)stack.count);
             if (take <= 0) break;
-            slot->count = (int8_t)(slot->count + take);
-            stack.count = (int8_t)(stack.count - take);
-            pickedUpAny = true;
+            slot->count  = (int8_t)(slot->count + take);
+            stack.count  = (int8_t)(stack.count - take);
+            pickedUpAny  = true;
         }
 
         if (pickedUpAny) onInventoryChanged();
         return pickedUpAny;
     }
 
-    // Consume one item of the given id from anywhere in the main inventory.
     bool consumeItem(int16_t id) {
         for (int i = 0; i < 36; i++) {
             if (slots[i].has_value() && slots[i]->id == id) {
                 slots[i]->count = (int8_t)(slots[i]->count - 1);
-                if (slots[i]->count <= 0)
-                    slots[i] = std::nullopt;
+                if (slots[i]->count <= 0) slots[i] = std::nullopt;
                 onInventoryChanged();
                 return true;
             }
@@ -94,6 +93,43 @@ struct InventoryPlayer : Inventory {
 
     void onInventoryChanged() override { inventoryChanged = true; }
     bool canInteractWith(EntityPlayer* /*player*/) override { return true; }
+
+    // Shift-click within the player inventory (no external inventory open).
+    ClickResult shiftClick(int16_t containerSlot) override {
+        int invSlot = slotToInvSlot(containerSlot);
+        if (invSlot < 0) return { ClickResultType::Rejected };
+
+        ItemStack* src = getStackInSlot(invSlot);
+        if (!src) return { ClickResultType::Noop };
+
+        ItemStack working = *src;
+
+        if (invSlot >= 9 && invSlot <= 35) {
+            // Main -> hotbar
+            shiftTransferInto(working, 0, 9, false);
+        } else if (invSlot >= 0 && invSlot <= 8) {
+            // Hotbar -> main
+            shiftTransferInto(working, 9, 36, false);
+        } else {
+            // Armor -> main, then hotbar
+            shiftTransferInto(working, 9, 36, false);
+            if (working.count > 0) shiftTransferInto(working, 0, 9, false);
+        }
+
+        if (working.count <= 0) setInventorySlotContents(invSlot, nullptr);
+        else src->count = working.count;
+
+        return { ClickResultType::Accepted, {}, true }; // full resync
+    }
+
+protected:
+    int slotToInvSlot(int16_t containerSlot) const override {
+        if (containerSlot >= 0  && containerSlot <= 4)  return -1;              // craft output + grid
+        if (containerSlot >= 5  && containerSlot <= 8)  return 36 + (containerSlot - 5); // armor
+        if (containerSlot >= 9  && containerSlot <= 35) return containerSlot;             // main
+        if (containerSlot >= 36 && containerSlot <= 44) return containerSlot - 36;        // hotbar
+        return -1;
+    }
 
 private:
     int findPartialStack(const ItemStack& stack) {
@@ -113,13 +149,15 @@ private:
     }
 };
 
-// Chest -- 27 slots
+// InventoryChes
+// 27 slots, container slots 0-26 map directly to inventory slots 0-26.
+// Cross-inventory shift-clicks (chest<->player) are handled by the packet
+// handler since they span two Inventory instances.
 struct InventoryChest : Inventory {
     InventoryChest() : Inventory(27) { name = "Chest"; }
 };
 
-// Large chest -- two chests merged into one 54-slot view.
-// Does not own slots; delegates to two Inventory instances.
+// InventoryLargeChest
 struct InventoryLargeChest : Inventory {
     Inventory* upper = nullptr;
     Inventory* lower = nullptr;
@@ -157,16 +195,14 @@ struct InventoryLargeChest : Inventory {
     }
 };
 
-// Dispenser -- 9 slots.
-// getRandomStack() removes and returns one item from a random non-empty slot.
+// InventoryDispenser
 struct InventoryDispenser : Inventory {
     std::mt19937 rng{ std::random_device{}() };
 
     InventoryDispenser() : Inventory(9) { name = "Trap"; }
 
     std::optional<ItemStack> getRandomStack() {
-        int chosen = -1;
-        int weight = 1;
+        int chosen = -1, weight = 1;
         for (int i = 0; i < 9; i++) {
             if (!slots[i].has_value()) continue;
             if (std::uniform_int_distribution<int>(0, weight++ - 1)(rng) == 0)
@@ -177,27 +213,25 @@ struct InventoryDispenser : Inventory {
     }
 };
 
-// Furnace -- 3 slots: [0] input, [1] fuel, [2] output.
-// Ticking logic lives in TileEntityFurnace; this is just the data.
+// InventoryFurnace
+// Slots: [0] input, [1] fuel, [2] output.
 struct InventoryFurnace : Inventory {
-    int burnTime = 0; // ticks of fuel remaining
-    int maxBurnTime = 0; // total burn time of current fuel item
-    int cookTime = 0; // ticks cooking so far (max 200)
+    int burnTime    = 0;
+    int maxBurnTime = 0;
+    int cookTime    = 0;
 
     InventoryFurnace() : Inventory(3) { name = "Furnace"; }
-
     bool isBurning() const { return burnTime > 0; }
 };
 
-// Crafting grid -- NxM slots, notifies a Container on any change.
-// Container pointer is non-owning; container outlives the grid.
+// InventoryCrafting
 struct InventoryCrafting : Inventory {
-    int        width = 0;
-    int        height = 0;
+    int        width   = 0;
+    int        height  = 0;
     Container* handler = nullptr;
 
     InventoryCrafting(Container* handler, int width, int height)
-        : Inventory(width* height), width(width), height(height), handler(handler) {
+        : Inventory(width * height), width(width), height(height), handler(handler) {
         name = "Crafting";
     }
 
@@ -211,7 +245,7 @@ struct InventoryCrafting : Inventory {
     void onInventoryChanged() override {}
 };
 
-// Craft result -- single output slot, always taken whole.
+// InventoryCraftResult
 struct InventoryCraftResult : Inventory {
     InventoryCraftResult() : Inventory(1) { name = "Result"; }
 

@@ -12,6 +12,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
+#include "tile_entities/tile_entity.h"
 #include "world/chunk.h"
 #include "world/world.h"
 #include "networking/network_stream.h"
@@ -68,6 +69,7 @@ struct PlayerSession {
     InventoryPlayer inventory;
     // windowId=0 is always the player inventory. Non-zero means a container is open.
     int8_t openWindowId = 0;
+    TileEntityChest* openChest = nullptr;
 
     // Transaction system: locked after a rejected click until client acks the resync.
     // While locked, all incoming clicks are rejected to prevent state corruption.
