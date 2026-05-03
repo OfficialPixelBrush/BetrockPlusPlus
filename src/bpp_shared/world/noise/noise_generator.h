@@ -17,7 +17,7 @@
  * 
  */
 class NoiseGenerator {
-  private:
+  protected:
 	int32_t permutations[512];
 	Vec3 coordinate;
 	double GenerateNoiseBase(Vec3 p_offset);
