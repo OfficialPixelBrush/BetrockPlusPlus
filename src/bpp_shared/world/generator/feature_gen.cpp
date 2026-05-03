@@ -214,7 +214,7 @@ bool FeatureGenerator::GenerateClay(WorldManager& world, Java::Random& rand, Int
 	BlockType at = world.getBlockId(pos);
 	if (at != BLOCK_WATER_STILL && at != BLOCK_WATER_FLOWING) return false;
 
-	float  angle = rand.nextFloat() * float(JavaMath::PI);
+	float  angle = rand.nextFloat() * JavaMath::PI_FLOAT;
 	double xStart = double(float(pos.x + 8) + MathHelper::sin(angle) * float(blobSize) / 8.0F);
 	double xEnd = double(float(pos.x + 8) - MathHelper::sin(angle) * float(blobSize) / 8.0F);
 	double zStart = double(float(pos.z + 8) + MathHelper::cos(angle) * float(blobSize) / 8.0F);
@@ -227,8 +227,8 @@ bool FeatureGenerator::GenerateClay(WorldManager& world, Java::Random& rand, Int
 		double yC = yStart + (yEnd - yStart) * double(i) / double(blobSize);
 		double zC = zStart + (zEnd - zStart) * double(i) / double(blobSize);
 		double blobScale = rand.nextDouble() * double(blobSize) / 16.0;
-		double radXZ = double(MathHelper::sin(float(i) * float(JavaMath::PI) / float(blobSize)) + 1.0F) * blobScale + 1.0;
-		double radY = double(MathHelper::sin(float(i) * float(JavaMath::PI) / float(blobSize)) + 1.0F) * blobScale + 1.0;
+		double radXZ = double(MathHelper::sin(float(i) * JavaMath::PI_FLOAT / float(blobSize)) + 1.0F) * blobScale + 1.0;
+		double radY = double(MathHelper::sin(float(i) * JavaMath::PI_FLOAT / float(blobSize)) + 1.0F) * blobScale + 1.0;
 		int32_t minX = MathHelper::floor_double(xC - radXZ / 2.0);
 		int32_t maxX = MathHelper::floor_double(xC + radXZ / 2.0);
 		int32_t minY = MathHelper::floor_double(yC - radY / 2.0);
@@ -252,7 +252,7 @@ bool FeatureGenerator::GenerateClay(WorldManager& world, Java::Random& rand, Int
 //  GenerateMinable
 // =============================================================================
 bool FeatureGenerator::GenerateMinable(WorldManager& world, Java::Random& rand, Int3 pos, int32_t blobSize) {
-	float  angle = rand.nextFloat() * float(JavaMath::PI);
+	float  angle = rand.nextFloat() * JavaMath::PI_FLOAT;
 	double xStart = double(float(pos.x + 8) + MathHelper::sin(angle) * float(blobSize) / 8.0F);
 	double xEnd = double(float(pos.x + 8) - MathHelper::sin(angle) * float(blobSize) / 8.0F);
 	double zStart = double(float(pos.z + 8) + MathHelper::cos(angle) * float(blobSize) / 8.0F);
@@ -265,8 +265,8 @@ bool FeatureGenerator::GenerateMinable(WorldManager& world, Java::Random& rand, 
 		double yC = yStart + (yEnd - yStart) * double(i) / double(blobSize);
 		double zC = zStart + (zEnd - zStart) * double(i) / double(blobSize);
 		double blobScale = rand.nextDouble() * double(blobSize) / 16.0;
-		double radXZ = double(MathHelper::sin(float(i) * float(JavaMath::PI) / float(blobSize)) + 1.0F) * blobScale + 1.0;
-		double radY = double(MathHelper::sin(float(i) * float(JavaMath::PI) / float(blobSize)) + 1.0F) * blobScale + 1.0;
+		double radXZ = double(MathHelper::sin(float(i) * JavaMath::PI_FLOAT / float(blobSize)) + 1.0F) * blobScale + 1.0;
+		double radY = double(MathHelper::sin(float(i) * JavaMath::PI_FLOAT / float(blobSize)) + 1.0F) * blobScale + 1.0;
 		int32_t minX = MathHelper::floor_double(xC - radXZ / 2.0);
 		int32_t maxX = MathHelper::floor_double(xC + radXZ / 2.0);
 		int32_t minY = MathHelper::floor_double(yC - radY / 2.0);

@@ -38,7 +38,7 @@ std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {
             int localZ = z & 15;
 
             for (int y = startY; y <= endY; ++y) {
-                uint8_t block_id = chunk->getBlock({ localX, y, localZ });
+                BlockType block_id = chunk->getBlock({ localX, y, localZ });
                 // Air isn't collidable
                 if (block_id == BlockType::BLOCK_AIR) continue;
                 if (!Blocks::blockProperties[block_id].isCollidable) continue;

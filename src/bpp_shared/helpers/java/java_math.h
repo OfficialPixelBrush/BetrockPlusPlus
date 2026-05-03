@@ -160,6 +160,7 @@ inline int32_t hashCode(std::string value) {
  */
 struct JavaMath {
 	static constexpr double PI = 3.141592653589793;
+	static constexpr float PI_FLOAT = float(PI);
 	static int32_t abs(int32_t a) { return (a < 0) ? -a : a; }
 };
 
@@ -206,6 +207,6 @@ inline std::array<float, MathHelper::TABLE_SIZE> MathHelper::SIN_TABLE;
 inline struct SinTableInitializer {
     SinTableInitializer() {
 		for (size_t i = 0; i < MathHelper::TABLE_SIZE; ++i)
-			MathHelper::SIN_TABLE[i] = std::sin(float(i) * float(JavaMath::PI) * 2.0f / MathHelper::TABLE_SIZE);
+			MathHelper::SIN_TABLE[i] = std::sin(float(i) * JavaMath::PI_FLOAT * 2.0f / MathHelper::TABLE_SIZE);
     }
 } _sinTableInitializer;
