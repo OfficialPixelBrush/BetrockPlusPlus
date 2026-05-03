@@ -7,7 +7,6 @@
 */
 #pragma once
 
-#include <minmax.h>
 #include "player_session.h"
 #include "networking/packets.h"
 #include "networking/network_stream.h"
@@ -104,17 +103,17 @@ namespace HandlePacket {
         pkt.items.resize(45, Item{ ITEM_INVALID });
 
         // armor: container slots 5-8 -> inventory slots 36-39
-        for (int i = 0; i < 4; i++) {
+        for (size_t i = 0; i < 4; i++) {
             auto* s = session.inventory.getStackInSlot(36 + i);
             if (s) pkt.items[5 + i] = { s->id, s->count, s->data };
         }
         // main: container slots 9-35 -> inventory slots 9-35
-        for (int i = 9; i < 36; i++) {
+        for (size_t i = 9; i < 36; i++) {
             auto* s = session.inventory.getStackInSlot(i);
             if (s) pkt.items[i] = { s->id, s->count, s->data };
         }
         // hotbar: container slots 36-44 -> inventory slots 0-8
-        for (int i = 0; i < 9; i++) {
+        for (size_t i = 0; i < 9; i++) {
             auto* s = session.inventory.getStackInSlot(i);
             if (s) pkt.items[36 + i] = { s->id, s->count, s->data };
         }
@@ -137,15 +136,15 @@ namespace HandlePacket {
         Packet::FillContainer fill;
         fill.window_id = windowId;
         fill.items.resize(63, Item{ ITEM_INVALID });
-        for (int i = 0; i < 27; i++) {
+        for (size_t i = 0; i < 27; i++) {
             auto* s = chest.inventory.getStackInSlot(i);
             if (s) fill.items[i] = { s->id, s->count, s->data };
         }
-        for (int i = 0; i < 27; i++) {
+        for (size_t i = 0; i < 27; i++) {
             auto* s = session.inventory.getStackInSlot(9 + i);
             if (s) fill.items[27 + i] = { s->id, s->count, s->data };
         }
-        for (int i = 0; i < 9; i++) {
+        for (size_t i = 0; i < 9; i++) {
             auto* s = session.inventory.getStackInSlot(i);
             if (s) fill.items[54 + i] = { s->id, s->count, s->data };
         }
@@ -191,7 +190,7 @@ namespace HandlePacket {
             auto* slot = inv.getStackInSlot(i);
             if (slot) continue; // occupied
             ItemStack place = working;
-            place.count = (std::min)((int)working.count, maxStack);
+            place.count = int8_t(std::min(int(working.count), int(maxStack)));
             inv.setInventorySlotContents(i, &place);
             working.count = (int8_t)(working.count - place.count);
             if (working.count <= 0) return;
