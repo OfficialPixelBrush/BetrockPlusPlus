@@ -224,15 +224,15 @@ namespace Blocks {
 
     // torch (normal + redstone, same box)
     static AABB torchAABB(uint8_t meta) {
-        constexpr float f = 0.15f;
+        constexpr double f = 0.15;
         switch (meta & 7) {
-        case 1: return { 0.0f,         0.2f, 0.5f - f,      f * 2.0f,     0.8f, 0.5f + f };
-        case 2: return { 1.0f - f * 2.0f,0.2f, 0.5f - f,      1.0f,         0.8f, 0.5f + f };
-        case 3: return { 0.5f - f,     0.2f, 0.0f,           0.5f + f,     0.8f, f * 2.0f };
-        case 4: return { 0.5f - f,     0.2f, 1.0f - f * 2.0f, 0.5f + f,     0.8f, 1.0f };
+        case 1: return { 0.0,         0.2, 0.5 - f,      f * 2.0,     0.8, 0.5 + f };
+        case 2: return { 1.0 - f * 2.0,0.2, 0.5 - f,      1.0,         0.8, 0.5 + f };
+        case 3: return { 0.5 - f,     0.2, 0.0,           0.5 + f,     0.8, f * 2.0 };
+        case 4: return { 0.5 - f,     0.2, 1.0 - f * 2.0, 0.5 + f,     0.8, 1.0 };
         default: {
-            constexpr float g = 0.1f;
-            return { 0.5f - g, 0.0f, 0.5f - g, 0.5f + g, 0.6f, 0.5f + g };
+            constexpr double g = 0.1;
+            return { 0.5 - g, 0.0, 0.5 - g, 0.5 + g, 0.6, 0.5 + g };
         }
         }
     }

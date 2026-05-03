@@ -103,7 +103,7 @@ target_compile_options(BetrockPlusPlus PRIVATE
         # Common OOP pitfall
         -Wnon-virtual-dtor
         # C-style casts
-        -Wold-style-cast
+        #-Wold-style-cast
         # Hides virtual functions
         -Woverloaded-virtual
         # Dereferencing null pointers
