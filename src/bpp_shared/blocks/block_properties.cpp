@@ -6,6 +6,8 @@
 */
 
 #include "block_properties.h"
+#include "tile_entities/tile_entity.h"
+#include "world/world.h"
 
 namespace Blocks {
 

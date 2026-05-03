@@ -24,8 +24,56 @@
 
 Server::Server() {
     Blocks::registerAll();
+
+    // ── Server-side block behaviors ───────────────────────────────────────────
+    // These are registered here rather than in block_properties.cpp because they
+    // need PlayerSession, which is a server-only type that bpp_shared can't include.
+
+    // Chest: opening the chest GUI
+    Blocks::blockBehaviors[BlockType::BLOCK_CHEST].onBlockActivated =
+        [](WorldManager& world, Int3 pos, uint8_t /*meta*/, PlayerSession& session) -> bool {
+
+        // Beta: BlockChest.blockActivated
+        // Solid block directly above this chest blocks the lid.
+        if (world.isBlockNormalCube({ pos.x, pos.y + 1, pos.z }))
+            return true;
+
+        // Solid block above any horizontally adjacent chest also blocks.
+        auto adjBlocked = [&](Int3 adj) {
+            return world.getBlockId(adj) == BlockType::BLOCK_CHEST &&
+                world.isBlockNormalCube({ adj.x, adj.y + 1, adj.z });
+            };
+        if (adjBlocked({ pos.x - 1, pos.y, pos.z })) return true;
+        if (adjBlocked({ pos.x + 1, pos.y, pos.z })) return true;
+        if (adjBlocked({ pos.x,     pos.y, pos.z - 1 })) return true;
+        if (adjBlocked({ pos.x,     pos.y, pos.z + 1 })) return true;
+
+        TileEntityChest* chest = world.getTileEntityAs<TileEntityChest>(pos);
+        if (!chest) return false;
+
+        // Reach check — squared distance <= 64 (8 blocks), matching canInteractWith.
+        double dx = session.position.pos.x - (pos.x + 0.5);
+        double dy = session.position.pos.y - (pos.y + 0.5);
+        double dz = session.position.pos.z - (pos.z + 0.5);
+        if (dx * dx + dy * dy + dz * dz > 64.0) return false;
+
+        // Assign window ID and send OpenContainer + WindowItems.
+        session.openWindowId = (session.openWindowId % 127) + 1;
+        session.openChest = chest;
+
+        Packet::OpenContainer open;
+        open.window_id = session.openWindowId;
+        open.window_type = PacketData::WindowType::CHEST;
+        open.title = "Chest";
+        open.slot_count = static_cast<int8_t>(chest->inventory.getSizeInventory());
+        open.Serialize(session.stream);
+
+        HandlePacket::sendChestWindow(session, session.openWindowId, *chest);
+        return true;
+        };
+
     command_manager.Init();
-    world.seed = -2517126801912471655;
+    world.seed = 404;
 
     world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
         // Only enqueue if at least one session knows about this chunk.
@@ -163,6 +211,50 @@ void Server::startup() {
         if (loaded_chunks >= total_spawn_chunks)
             spawnDone = true;
     }
+
+    // Fill a line of chests along the Z axis with every obtainable item and block
+    // in Beta 1.7.3. Each chest holds 27 stacks; chests are spaced 2 apart (chest + gap).
+    {
+        // Build the complete list of valid IDs up front so the chest-filling loop
+        // is simple and we never send an ID the client doesn't know about.
+        //
+        // Block IDs 1-96, skipping 36 (pistonMoving — internal, never in inventory).
+        // Item  IDs 256-357 — contiguous, all valid in B1.7.3.
+        // 2256-2257 are music disc IDs stored differently; skip them.
+        std::vector<int16_t> validIds;
+        validIds.reserve(200);
+
+        for (int16_t id = 1; id <= 96; id++) {
+            if (id == 36) continue; // pistonMoving — internal block, not obtainable
+            validIds.push_back(id);
+        }
+        for (int16_t id = 256; id <= 357; id++) {
+            validIds.push_back(id);
+        }
+
+        // Place one chest per 27 IDs along the Z axis, starting at X=-10, Z=15.
+        int chestX = -10;
+        int chestZ = 15;
+        size_t idIndex = 0;
+
+        while (idIndex < validIds.size()) {
+            int chestY = world.getHeightValue(chestX, chestZ);
+            Int3 pos{ chestX, chestY, chestZ };
+            world.setBlock(pos, BlockType::BLOCK_CHEST);
+
+            auto chest = std::make_shared<TileEntityChest>(pos);
+            for (int slot = 0; slot < 27 && idIndex < validIds.size(); slot++, idIndex++) {
+                int16_t id = validIds[idIndex];
+                int8_t  count = static_cast<int8_t>(GetMaxStack(id) > 0 ? GetMaxStack(id) : 1);
+                ItemStack stack{ id, count, 0 };
+                chest->inventory.setInventorySlotContents(slot, &stack);
+            }
+
+            world.createTileEntity(chest);
+            chestZ -= 2; // one block gap between chests
+        }
+    }
+
     std::cout << "Loading spawn.. 100%\n";
     printf("Startup Complete.\n");
 }
@@ -535,7 +627,6 @@ void Server::handleLogin(PlayerSession& session) {
     // Send the player's inventory
     HandlePacket::sendInventory(session);
 
-    // Test inventory
     // Test inventory
     auto& inv = session.inventory;
     inv.slots[0] = ItemStack{ ITEM_PICKAXE_DIAMOND,  1, 0 };

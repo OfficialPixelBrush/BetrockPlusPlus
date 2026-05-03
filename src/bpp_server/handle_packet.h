@@ -13,6 +13,7 @@
 #include "networking/network_stream.h"
 #include "world/world.h"
 #include "commands/command_manager.h"
+#include "blocks/block_properties.h"
 
 namespace HandlePacket {
 
@@ -60,9 +61,27 @@ namespace HandlePacket {
         std::vector<std::unique_ptr<PlayerSession>>& /*players*/) {
     }
 
-    inline void PlaceBlock(Packet::PlaceBlock& /*pkt*/, PlayerSession& /*session*/,
-        WorldManager& /*world*/,
+    inline void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session,
+        WorldManager& world,
         std::vector<std::unique_ptr<PlayerSession>>& /*players*/) {
+
+        // face == 255 (0xFF) means "use item in hand" with no target block.
+        if (static_cast<uint8_t>(pkt.face) == 255) return;
+
+        Int3 blockPos{ pkt.position.x, pkt.position.y, pkt.position.z };
+        BlockType blockId = world.getBlockId(blockPos);
+        uint8_t   meta    = world.getMetadata(blockPos);
+
+        // Route right-click through the block behavior table.
+        // If onBlockActivated is registered and returns true, the interaction
+        // was consumed (e.g. chest opened) — don't proceed to block placement.
+        auto& behavior = Blocks::blockBehaviors[blockId];
+        if (behavior.onBlockActivated) {
+            if (behavior.onBlockActivated(world, blockPos, meta, session))
+                return;
+        }
+
+        // TODO: block placement
     }
 
     inline void SetHotbarSlot(Packet::SetHotbarSlot& pkt, PlayerSession& session) {
@@ -111,7 +130,27 @@ namespace HandlePacket {
         pkt.Serialize(session.stream);
     }
 
-    // Maps a container slot index (windowId=0) to an inventory slot index.
+    // Sends Packet104 WindowItems for an open chest window.
+    // Slot layout: 0-26 = chest, 27-53 = player main (inv 9-35), 54-62 = hotbar (inv 0-8).
+    // Called on open (from server.cpp) and after shift-clicks that touch multiple slots.
+    inline void sendChestWindow(PlayerSession& session, int8_t windowId, TileEntityChest& chest) {
+        Packet::FillContainer fill;
+        fill.window_id = windowId;
+        fill.items.resize(63, Item{ ITEM_INVALID });
+        for (int i = 0; i < 27; i++) {
+            auto* s = chest.inventory.getStackInSlot(i);
+            if (s) fill.items[i] = { s->id, s->count, s->data };
+        }
+        for (int i = 0; i < 27; i++) {
+            auto* s = session.inventory.getStackInSlot(9 + i);
+            if (s) fill.items[27 + i] = { s->id, s->count, s->data };
+        }
+        for (int i = 0; i < 9; i++) {
+            auto* s = session.inventory.getStackInSlot(i);
+            if (s) fill.items[54 + i] = { s->id, s->count, s->data };
+        }
+        fill.Serialize(session.stream);
+    }
     // Returns -1 for craft output/grid slots (not yet implemented).
     inline int containerToInvSlot(int16_t slot) {
         if (slot >= 0 && slot <= 4)  return -1;              // craft output + grid
@@ -161,7 +200,133 @@ namespace HandlePacket {
 
     // Click handler
     inline void ClickSlot(Packet::ClickSlot& pkt, PlayerSession& session) {
-        // Only handle the player inventory for now
+        // Chest window
+        if (pkt.window_id != 0 && pkt.window_id == session.openWindowId && session.openChest) {
+            TileEntityChest& chest = *session.openChest;
+            auto& playerInv = session.inventory;
+
+            // Click outside window — drop carried.
+            if (pkt.slot_id == -1) {
+                ClickResult result = chest.inventory.clickOutside(pkt.right_click);
+                Packet::ContainerTransaction tx;
+                tx.window_id = pkt.window_id; tx.transaction_id = pkt.transaction_id; tx.accepted = true;
+                tx.Serialize(session.stream);
+                sendSlot(session, -1, -1, chest.inventory.carried.has_value()
+                    ? &chest.inventory.carried.value() : nullptr);
+                return;
+            }
+
+            // Map container slot to (inventory*, inv slot index).
+            // Slots 0-26  = chest inventory (identity)
+            // Slots 27-53 = player main (inv 9-35)
+            // Slots 54-62 = player hotbar (inv 0-8)
+            Inventory* targetInv  = nullptr;
+            int        targetSlot = -1;
+            if (pkt.slot_id >= 0 && pkt.slot_id <= 26) {
+                targetInv  = &chest.inventory;
+                targetSlot = pkt.slot_id;
+            } else if (pkt.slot_id >= 27 && pkt.slot_id <= 53) {
+                targetInv  = &playerInv;
+                targetSlot = (pkt.slot_id - 27) + 9;
+            } else if (pkt.slot_id >= 54 && pkt.slot_id <= 62) {
+                targetInv  = &playerInv;
+                targetSlot = pkt.slot_id - 54;
+            }
+
+            if (!targetInv) {
+                Packet::ContainerTransaction tx;
+                tx.window_id = pkt.window_id; tx.transaction_id = pkt.transaction_id; tx.accepted = false;
+                tx.Serialize(session.stream);
+                return;
+            }
+
+            // Shift-click: move whole stack between chest and player.
+            if (pkt.shift) {
+                ItemStack* src = targetInv->getStackInSlot(targetSlot);
+                if (src) {
+                    ItemStack working = *src;
+                    if (pkt.slot_id <= 26) {
+                        // Hotbar then main
+                        playerInv.shiftTransferInto(working, 0, 9, true);
+                        if (working.count > 0)
+                            playerInv.shiftTransferInto(working, 9,  36, true);
+                    } else {
+                        // Player → chest
+                        chest.inventory.shiftTransferInto(working, 0, 27, false);
+                    }
+                    if (working.count <= 0) targetInv->setInventorySlotContents(targetSlot, nullptr);
+                    else src->count = working.count;
+                }
+                Packet::ContainerTransaction tx;
+                tx.window_id = pkt.window_id; tx.transaction_id = pkt.transaction_id; tx.accepted = true;
+                tx.Serialize(session.stream);
+                sendChestWindow(session, pkt.window_id, chest);
+                return;
+            }
+
+            // Normal left/right click — swap/merge between cursor and target slot.
+            // The cursor lives on chest.inventory.carried so both sides share it.
+            auto& carried = chest.inventory.carried;
+            ItemStack* slotStack = targetInv->getStackInSlot(targetSlot);
+
+            if (!pkt.right_click) {
+                if (!carried && slotStack) {
+                    carried = *slotStack;
+                    targetInv->setInventorySlotContents(targetSlot, nullptr);
+                } else if (carried && !slotStack) {
+                    ItemStack copy = *carried;
+                    targetInv->setInventorySlotContents(targetSlot, &copy);
+                    carried = std::nullopt;
+                } else if (carried && slotStack) {
+                    if (carried->id == slotStack->id && carried->data == slotStack->data) {
+                        int space = GetMaxStack(slotStack->id) - slotStack->count;
+                        int move  = (std::min)(space, (int)carried->count);
+                        slotStack->count  = (int8_t)(slotStack->count + move);
+                        carried->count    = (int8_t)(carried->count - move);
+                        if (carried->count <= 0) carried = std::nullopt;
+                    } else {
+                        ItemStack tmp = *slotStack;
+                        ItemStack c   = *carried;
+                        targetInv->setInventorySlotContents(targetSlot, &c);
+                        carried = tmp;
+                    }
+                }
+            } else {
+                if (!carried && slotStack) {
+                    int half = (slotStack->count + 1) / 2;
+                    carried = ItemStack{ slotStack->id, (int8_t)half, slotStack->data };
+                    slotStack->count = (int8_t)(slotStack->count - half);
+                    if (slotStack->count <= 0) targetInv->setInventorySlotContents(targetSlot, nullptr);
+                } else if (carried && !slotStack) {
+                    ItemStack one{ carried->id, 1, carried->data };
+                    targetInv->setInventorySlotContents(targetSlot, &one);
+                    carried->count = (int8_t)(carried->count - 1);
+                    if (carried->count <= 0) carried = std::nullopt;
+                } else if (carried && slotStack) {
+                    if (carried->id == slotStack->id && carried->data == slotStack->data
+                        && slotStack->count < GetMaxStack(slotStack->id)) {
+                        slotStack->count  = (int8_t)(slotStack->count + 1);
+                        carried->count    = (int8_t)(carried->count - 1);
+                        if (carried->count <= 0) carried = std::nullopt;
+                    } else if (carried->id != slotStack->id || carried->data != slotStack->data) {
+                        ItemStack tmp = *slotStack;
+                        ItemStack c   = *carried;
+                        targetInv->setInventorySlotContents(targetSlot, &c);
+                        carried = tmp;
+                    }
+                }
+            }
+
+            Packet::ContainerTransaction tx;
+            tx.window_id = pkt.window_id; tx.transaction_id = pkt.transaction_id; tx.accepted = true;
+            tx.Serialize(session.stream);
+            slotStack = targetInv->getStackInSlot(targetSlot);
+            sendSlot(session, pkt.window_id, pkt.slot_id, slotStack);
+            sendSlot(session, -1, -1, carried.has_value() ? &carried.value() : nullptr);
+            return;
+        }
+
+        // Player inventory (window 0)
         if (pkt.window_id != 0) {
             Packet::ContainerTransaction tx;
             tx.window_id = pkt.window_id;
@@ -373,10 +538,11 @@ namespace HandlePacket {
     }
 
     inline void CloseContainer(Packet::CloseContainer& /*pkt*/, PlayerSession& session) {
-        // Craft grid not yet implemented — nothing to drop back
-        // Clear carried item (entity drop TODO)
+        // Drop carried item back into inventory (entity drop TODO).
+        // Beta drops it as an item entity; for now just clear it.
         session.inventory.carried = std::nullopt;
         session.openWindowId = 0;
+        session.openChest    = nullptr;
     }
 
     // Client acks a rejected transaction — unlock so further clicks are processed

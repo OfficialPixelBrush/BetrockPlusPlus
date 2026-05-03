@@ -13,6 +13,7 @@
 
 struct WorldManager;
 struct Entity;
+struct PlayerSession;
 
 namespace Blocks {
 
@@ -74,8 +75,10 @@ namespace Blocks {
         // Called when a player left-clicks the block (not breaks, just clicks)
         void (*onBlockClicked)(WorldManager&, Int3, uint8_t) = nullptr;
 
-        // Called when a player right-clicks the block — returns true if consumed
-        bool (*onBlockActivated)(WorldManager&, Int3, uint8_t) = nullptr;
+        // Called when a player right-clicks the block — returns true if consumed.
+        // PlayerSession is passed so GUI-opening blocks (chests, furnaces, etc.)
+        // can send packets directly to the interacting player.
+        bool (*onBlockActivated)(WorldManager&, Int3, uint8_t, PlayerSession&) = nullptr;
 
         // Called when the block is placed by a player or dispenser
         void (*onBlockPlacedBy)(WorldManager&, Int3, uint8_t) = nullptr;

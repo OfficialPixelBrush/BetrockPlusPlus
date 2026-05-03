@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cstring>
 #include <numeric_structs.h>
+#include "tile_entities/tile_entity.h"
 #include "blocks/block_properties.h"
 #include "constants.h"
 
@@ -67,6 +68,9 @@ struct Chunk {
     bool isModified = false;
     bool spawnChunk = false;
 
+    // Tile entities
+    std::vector<std::shared_ptr<TileEntity>> tileEntities;
+
     //  Index
     inline int blockIndex(Int3 pos) const {
         return (pos.y * CHUNK_WIDTH * CHUNK_WIDTH) + (pos.z * CHUNK_WIDTH) + pos.x;
@@ -80,11 +84,6 @@ struct Chunk {
     inline uint8_t getNibbleHigh(uint8_t byte) const { return (byte >> 4) & 0x0Fu; }
 
     //  Climate helpers
-    //  NOTE: temperature/humidity use [(x << 4) | z] indexing — matching Java's
-    //  WorldChunkManager.loadBlockGeneratorData fill order (outer X, inner Z) and
-    //  the way these arrays are filled by BiomeGenerator. This deliberately differs
-    //  from the heightMap convention below; Java uses different conventions for
-    //  these two array types as well.
     inline float getTemperature(Int2 pos) const { return temperature[(pos.x << 4) | pos.y]; }
     inline float getHumidity(Int2 pos) const { return humidity[(pos.x << 4) | pos.y]; }
 
