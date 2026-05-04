@@ -13,7 +13,6 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 #elif defined(_WIN32) || defined(_WIN64)
-#define NOMINMAX
 #include <winsock2.h>
 #pragma comment(lib, "ws2_32.lib")
 #endif
@@ -252,6 +251,12 @@ void Server::stop() {
 
 void Server::acceptNewPlayers() {
     int clientSocket = static_cast<int>(accept(serverSocket, nullptr, nullptr));
+#if defined(_WIN32) || defined(_WIN64)
+    u_long clientMode = 1;
+    ioctlsocket(clientSocket, FIONBIO, &clientMode);
+#else
+    fcntl(clientSocket, F_SETFL, O_NONBLOCK);
+#endif
 
 #if defined(_WIN32) || defined(_WIN64)
     if (clientSocket == INVALID_SOCKET) return;
@@ -378,17 +383,14 @@ void Server::tick() {
         switch (session->connState) {
         case ConnectionState::Handshaking:           handleHandshake(*session);    break;
         case ConnectionState::LoggingIn:             handleLogin(*session);        break;
-        case ConnectionState::WaitingForSpawnChunks: waitForSpawnChunks(*session); break;
+        case ConnectionState::WaitingForSpawnChunks: 
+            waitForSpawnChunks(*session); break;
         case ConnectionState::Playing:
-            processIncoming(*session);
-            chunkSender.enqueue(*session, world, 10);
+            chunkSender.enqueue(*session, world, flushChunkCount);
             chunkSender.flush(*session);
+            processIncoming(*session);
             broadcastPlayerMovement(*session);
             if (world.elapsed_ticks % 20 == 0) {
-                // Keep alive packet or else beta fusses
-                Packet::KeepAlive ka;
-                ka.Serialize(session->stream);
-
                 // Update the server time so client's don't desync
                 Packet::SetTime time;
                 time.time = world.elapsed_ticks;
@@ -630,22 +632,6 @@ void Server::handleLogin(PlayerSession& session) {
 
     session.position.pos = { 0.0, 200.0, 0.0 };
 
-    Packet::PlayerPositionAndRotation pos;
-    pos.x = session.position.pos.x;
-    pos.y = session.position.pos.y;
-    pos.stance = session.position.pos.y + 1.62;
-    pos.z = session.position.pos.z;
-    pos.yaw = 0.0f;
-    pos.pitch = 0.0f;
-    pos.onGround = false;
-    pos.Serialize(session.stream);
-
-    session.lastFpX = static_cast<int32_t>(session.position.pos.x * 32.0);
-    session.lastFpY = static_cast<int32_t>(session.position.pos.y * 32.0);
-    session.lastFpZ = static_cast<int32_t>(session.position.pos.z * 32.0);
-    session.lastYaw = 0;
-    session.lastPitch = 0;
-
     session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
@@ -660,14 +646,18 @@ void Server::disconnectPlayer(PlayerSession& session, const std::wstring& reason
 }
 
 void Server::waitForSpawnChunks(PlayerSession& session) {
-    chunkSender.enqueue(session, world, 10);
+    chunkSender.enqueue(session, world, flushChunkCount);
     chunkSender.flush(session);
 
     // Spawn chunk radius; 3 chunks in each direction
     int spawnChunkX = int(std::floor(session.position.pos.x)) >> 4;
     int spawnChunkZ = int(std::floor(session.position.pos.z)) >> 4;
+<<<<<<< Updated upstream
 
     int radius = CrossPlatform::Math::min(3, world.getViewRadius());
+=======
+    int radius = std::min(3, world.getViewRadius());
+>>>>>>> Stashed changes
 
     int total_spawn_chunks = ((radius * 2) + 1) * ((radius * 2) + 1);
     int loaded_chunks = 0;
@@ -686,6 +676,22 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
         return;
 
     std::cout << "Spawn chunks sent. Setting player position\n";
+
+    Packet::PlayerPositionAndRotation pos;
+    pos.x = session.position.pos.x;
+    pos.y = session.position.pos.y;
+    pos.stance = session.position.pos.y + 1.62;
+    pos.z = session.position.pos.z;
+    pos.yaw = 0.0f;
+    pos.pitch = 0.0f;
+    pos.onGround = false;
+    pos.Serialize(session.stream);
+
+    session.lastFpX = static_cast<int32_t>(session.position.pos.x * 32.0);
+    session.lastFpY = static_cast<int32_t>(session.position.pos.y * 32.0);
+    session.lastFpZ = static_cast<int32_t>(session.position.pos.z * 32.0);
+    session.lastYaw = 0;
+    session.lastPitch = 0;
 
     std::cout << "Client connected\n";
     session.connState = ConnectionState::Playing;
