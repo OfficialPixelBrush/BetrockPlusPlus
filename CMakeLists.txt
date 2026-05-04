@@ -24,6 +24,7 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/world"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/world/noise"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/helpers/java"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared/helpers"
 )
 
 add_executable(

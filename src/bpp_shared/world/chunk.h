@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <functional>
 #include <atomic>
-#include <algorithm>
+#include "cross_platform.h"
 #include <cstring>
 #include <numeric_structs.h>
 #include "tile_entities/tile_entity.h"
@@ -121,7 +121,7 @@ struct Chunk {
                     setSkyLight({ x, y, z }, 15);
                 int skyLight = 15;
                 for (int y = height - 1; y >= 0 && skyLight > 0; y--) {
-                    skyLight -= std::max(1, int(Blocks::blockProperties[getBlock({ x, y, z })].lightOpacity));
+                    skyLight -= CrossPlatform::Math::max(1, int(Blocks::blockProperties[getBlock({ x, y, z })].lightOpacity));
                     if (skyLight > 0)
                         setSkyLight({ x, y, z }, uint8_t(skyLight));
                 }
@@ -136,7 +136,7 @@ struct Chunk {
             setSkyLight({ pos.x, y, pos.z }, 15);
         int skyLight = 15;
         for (int y = height - 1; y >= 0 && skyLight > 0; y--) {
-            skyLight -= std::max(1, int(Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity));
+            skyLight -= CrossPlatform::Math::max(1, int(Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity));
             if (skyLight > 0)
                 setSkyLight({ pos.x, y, pos.z }, uint8_t(skyLight));
         }
@@ -190,9 +190,9 @@ struct Chunk {
     }
 
     inline int getBlockLightValue(Int3 pos, int skySubtracted) const {
-        int sky = std::max(0, int(getSkyLight(pos)) - skySubtracted);
+        int sky = CrossPlatform::Math::max(0, int(getSkyLight(pos)) - skySubtracted);
         int block = int(getBlockLight(pos));
-        return std::min(15, std::max(sky, block));
+        return CrossPlatform::Math::min(15, CrossPlatform::Math::max(sky, block));
     }
 
     //  Cleanup

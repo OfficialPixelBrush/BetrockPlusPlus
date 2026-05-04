@@ -23,7 +23,6 @@
 #include "world/world.h"
 #include "commands/command_manager.h"
 #include "blocks/block_properties.h"
-#include <minmax.h>
 
 namespace PacketUtilities {
     inline void SendInventory(PlayerSession& session, int8_t windowId, Inventory inventory) {

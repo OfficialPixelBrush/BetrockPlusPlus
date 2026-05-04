@@ -21,8 +21,8 @@ std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {
     int maxZ = Java::DoubleToInt32(std::floor(area.maxZ + 1.0));
 
     // Java iterates Y from var5-1 to var6 (exclusive), clamped to world
-    int startY = std::max(0, minY - 1);
-    int endY = std::min(127, maxY);
+    int startY = CrossPlatform::Math::max(0, minY - 1);
+    int endY = CrossPlatform::Math::min(127, maxY);
 
     // Iterate for our potential grid
     for (int x = minX; x < maxX; x++) {
@@ -86,8 +86,8 @@ void WorldManager::seedChunkLighting(ChunkPos pos) {
                 int nx = wx + ndx[i], nz = wz + ndz[i];
                 int neighborH = getHeightValue(nx, nz);
                 if (neighborH == thisH) continue;
-                int minY = std::min(thisH, neighborH);
-                int maxY = std::max(thisH, neighborH);
+                int minY = CrossPlatform::Math::min(thisH, neighborH);
+                int maxY = CrossPlatform::Math::max(thisH, neighborH);
                 lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
             }
         }
@@ -147,7 +147,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
     const int MAX_GENERATIONS_PER_TICK = 8;
     const int playerCount = static_cast<int>(players.size());
     const int slicePerPlayer = (playerCount > 0)
-        ? std::max(1, MAX_GENERATIONS_PER_TICK / playerCount)
+        ? CrossPlatform::Math::max(1, MAX_GENERATIONS_PER_TICK / playerCount)
         : MAX_GENERATIONS_PER_TICK;
 
     // Build per-player sorted candidate lists.
@@ -165,8 +165,8 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
             candidates.push_back(p);
         }
         std::sort(candidates.begin(), candidates.end(), [&](const ChunkPos& a, const ChunkPos& b) {
-            int da = std::max(std::abs(a.x - centre.x), std::abs(a.z - centre.z));
-            int db = std::max(std::abs(b.x - centre.x), std::abs(b.z - centre.z));
+            int da = CrossPlatform::Math::max(std::abs(a.x - centre.x), std::abs(a.z - centre.z));
+            int db = CrossPlatform::Math::max(std::abs(b.x - centre.x), std::abs(b.z - centre.z));
             return da < db;
             });
         perPlayerQueues.push_back(std::move(candidates));
