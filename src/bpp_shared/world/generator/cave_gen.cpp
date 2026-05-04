@@ -177,24 +177,28 @@ void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset,
 
 							if (var57 * var57 + var44 * var44 < 1.0) {
 								bool isGrass = false;
-								// Step down through the y column
-								Int3 bpos{ blockX, yMax - 1, blockZ };
-								for (; bpos.y >= yMin; --bpos.y) {
-									double var49 = (double(bpos.y) + 0.5 - offset.y) / var29;
+								// Faithful port of Java's var48/var46 split:
+								//   var48 = loop counter (yMax-1 .. yMin) — used for the ellipsoid test
+								//   var46 Y = var48 + 1 — the actual block coordinate for read/write
+								// var49 and the lava threshold must use var48 (test Y), not block Y.
+								for (int32_t var48 = yMax - 1; var48 >= yMin; --var48) {
+									const int32_t blockY = var48 + 1;
+									Int3 bpos{ blockX, blockY, blockZ };
+									double var49 = (double(var48) + 0.5 - offset.y) / var29;
 									if (var49 > -0.7 && var57 * var57 + var49 * var49 + var44 * var44 < 1.0) {
 										BlockType blockType = chunk.getBlock(bpos);
 										if (blockType == BLOCK_GRASS) {
 											isGrass = true;
 										}
 										if (blockType == BLOCK_STONE || blockType == BLOCK_DIRT || blockType == BLOCK_GRASS) {
-											if (bpos.y < 10) {
-												// Generate Lava lakes near bedrock
+											if (var48 < 10) { // Java: if (var48 < 10) — lava threshold uses test Y
 												chunk.setBlock(bpos, BLOCK_LAVA_FLOWING);
 												continue;
 											}
 											chunk.setBlock(bpos, BLOCK_AIR);
 											if (isGrass) {
-												Int3 below{ bpos.x, bpos.y - 1, bpos.z };
+												// Java: var3[var46 - 1] = grass — one below carved block = var48
+												Int3 below{ bpos.x, var48, bpos.z };
 												if (chunk.getBlock(below) == BLOCK_DIRT) {
 													chunk.setBlock(below, BLOCK_GRASS);
 												}

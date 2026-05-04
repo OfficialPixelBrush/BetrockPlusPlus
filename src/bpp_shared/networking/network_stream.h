@@ -66,12 +66,7 @@ public:
         static_assert(std::is_trivially_copyable_v<T>,
             "NetworkStream::Read<T>: use Read<std::string>() or Read<std::wstring>() for string types");
         T buffer{};
-#if defined(_WIN32) || defined(_WIN64)
-        int result = recv(client_socket, reinterpret_cast<char*>(&buffer), sizeof(T), 0);
-#else
-        ssize_t result = recv(client_socket, &buffer, sizeof(T), 0);
-#endif
-        if (result <= 0) connected = false;
+        ReadBytes(reinterpret_cast<uint8_t*>(&buffer), sizeof(T));
         return byteswap_any(buffer);
     }
 
@@ -123,9 +118,27 @@ public:
     // Valid only until the next Write*/writeRaw/flushWriteBuffer call.
     const std::vector<uint8_t>& getRawWriteBuffer() const { return writeBuffer; }
 
+    // Returns true if the last ReadBytes call hit a receive timeout (packet split
+    // across ticks). The caller should put the packet ID back and retry next tick.
+    bool checkAndClearShortRead() {
+        bool val = shortRead;
+        shortRead = false;
+        return val;
+    }
+
+    // Push one byte back so a partial packet can be retried next tick.
+    void unreadByte(uint8_t byte) {
+        // We use a small single-byte stash rather than touching the socket.
+        unreadStash = byte;
+        hasUnread = true;
+    }
+
 private:
     int client_socket = INVALID_SOCKET;
     bool connected = true;
+    bool shortRead = false;
+    bool hasUnread = false;
+    uint8_t unreadStash = 0;
     std::vector<uint8_t> writeBuffer;
 };
 
