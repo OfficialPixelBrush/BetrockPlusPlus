@@ -5,14 +5,26 @@
  * SPDX-License-Identifier: GPL-3.0-only
  *
 */
-#pragma once
+#if defined(__linux__)
+#  define INVALID_SOCKET -1
+#  include <unistd.h>
+#  include <netinet/in.h>
+#  include <sys/socket.h>
+#  include <sys/ioctl.h>
+#elif defined(_WIN32) || defined(_WIN64)
+#  include <winsock2.h>
+#  pragma comment(lib, "ws2_32.lib")
+   // INVALID_SOCKET already defined by winsock2.h
+#endif
 
+#pragma once
 #include "player_session.h"
 #include "networking/packets.h"
 #include "networking/network_stream.h"
 #include "world/world.h"
 #include "commands/command_manager.h"
 #include "blocks/block_properties.h"
+#include <minmax.h>
 
 namespace HandlePacket {
 
@@ -187,10 +199,10 @@ namespace HandlePacket {
         for (int i = reverse ? rangeEnd - 1 : rangeStart;
             reverse ? i >= rangeStart : i < rangeEnd;
             reverse ? --i : ++i) {
-            auto* slot = inv.getStackInSlot(i);
+            auto slot = inv.getStackInSlot(i);
             if (slot) continue; // occupied
             ItemStack place = working;
-            place.count = int8_t(std::min(int(working.count), int(maxStack)));
+            place.count = min(static_cast<int>(working.count), static_cast<int>(maxStack));
             inv.setInventorySlotContents(i, &place);
             working.count = (int8_t)(working.count - place.count);
             if (working.count <= 0) return;

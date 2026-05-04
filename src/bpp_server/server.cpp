@@ -299,7 +299,7 @@ void Server::run() {
 
 void Server::stop() {
     std::cout << "Server shutting down...\n";
-    close(serverSocket);
+    //close(serverSocket);
 }
 
 void Server::acceptNewPlayers() {
@@ -684,7 +684,7 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
     int spawnChunkX = int(std::floor(session.position.pos.x)) >> 4;
     int spawnChunkZ = int(std::floor(session.position.pos.z)) >> 4;
 
-    int radius = std::min(3, world.getViewRadius());
+    int radius = min(3, world.getViewRadius());
 
     int total_spawn_chunks = ((radius * 2) + 1) * ((radius * 2) + 1);
     int loaded_chunks = 0;
