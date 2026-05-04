@@ -6,6 +6,7 @@
 */
 
 #pragma once
+#define NOMINMAX
 
 struct CrossPlatform {
     struct Math {
