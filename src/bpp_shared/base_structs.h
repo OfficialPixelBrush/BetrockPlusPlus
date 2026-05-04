@@ -15,8 +15,7 @@
 #include "base_types.h"
 #include "blocks.h"
 #include "strings/labels.h"
-
-#define ITEM_INVALID -1
+#include "enums/items.h"
 
 // Item
 struct Item {
