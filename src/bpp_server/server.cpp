@@ -628,6 +628,23 @@ void Server::handleLogin(PlayerSession& session) {
     time.Serialize(session.stream);
 
     session.position.pos = { 0.0, 200.0, 0.0 };
+
+    Packet::PlayerPositionAndRotation pos;
+    pos.x = session.position.pos.x;
+    pos.y = session.position.pos.y;
+    pos.stance = session.position.pos.y + 1.62;
+    pos.z = session.position.pos.z;
+    pos.yaw = 0.0f;
+    pos.pitch = 0.0f;
+    pos.onGround = false;
+    pos.Serialize(session.stream);
+
+    session.lastFpX = static_cast<int32_t>(session.position.pos.x * 32.0);
+    session.lastFpY = static_cast<int32_t>(session.position.pos.y * 32.0);
+    session.lastFpZ = static_cast<int32_t>(session.position.pos.z * 32.0);
+    session.lastYaw = 0;
+    session.lastPitch = 0;
+
     session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
@@ -668,22 +685,6 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
         return;
 
     std::cout << "Spawn chunks sent. Setting player position\n";
-
-    Packet::PlayerPositionAndRotation pos;
-    pos.x = session.position.pos.x;
-    pos.y = session.position.pos.y;
-    pos.stance = session.position.pos.y + 1.62;
-    pos.z = session.position.pos.z;
-    pos.yaw = 0.0f;
-    pos.pitch = 0.0f;
-    pos.onGround = false;
-    pos.Serialize(session.stream);
-
-    session.lastFpX = static_cast<int32_t>(session.position.pos.x * 32.0);
-    session.lastFpY = static_cast<int32_t>(session.position.pos.y * 32.0);
-    session.lastFpZ = static_cast<int32_t>(session.position.pos.z * 32.0);
-    session.lastYaw = 0;
-    session.lastPitch = 0;
 
     std::cout << "Client connected\n";
     session.connState = ConnectionState::Playing;
