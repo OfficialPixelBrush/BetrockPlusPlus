@@ -15,6 +15,7 @@
 #include "base_types.h"
 #include "network_stream.h"
 #include "numeric_structs.h"
+#include "inventory/item_stack.h"
 #include "constants.h"
 
 // This class serves as a nice, convenient wrapper
@@ -338,7 +339,7 @@ public:
         PlaceBlock() : BasePacket{ PacketId::PlaceBlock } {}
         SlimInt3<int8_t> position;
         PacketData::FaceDirection face;
-        Item item;
+        ItemStack item;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
@@ -347,8 +348,8 @@ public:
             stream.Write(position.z);
             stream.Write(face);
             stream.Write(item.id);
-            stream.Write(item.amount);
-            stream.Write(item.damage);
+            stream.Write(item.count);
+            stream.Write(item.data);
         }
 
         void Deserialize(NetworkStream& stream) override {
@@ -358,8 +359,8 @@ public:
             face = stream.Read<PacketData::FaceDirection>();
             item.id = stream.Read<ItemId>();
             if (static_cast<int16_t>(item.id) >= 0) {
-                item.amount = stream.Read<ItemAmount>();
-                item.damage = stream.Read<ItemDamage>();
+                item.count = stream.Read<ItemAmount>();
+                item.data = stream.Read<ItemDamage>();
             }
         }
     };
@@ -479,7 +480,7 @@ public:
     struct SpawnItem : BasePacket {
         SpawnItem() : BasePacket{ PacketId::SpawnItem } {}
         EntityId entity_id;
-        Item item;
+        ItemStack item;
         Int32_3 q_position;
         Int8_3 q_rotation;
         int8_t& q_pitch = q_rotation.x;
@@ -490,8 +491,8 @@ public:
             stream.Write(id);
             stream.Write(entity_id);
             stream.Write(item.id);
-            stream.Write(item.amount);
-            stream.Write(item.damage);
+            stream.Write(item.count);
+            stream.Write(item.data);
             stream.Write(q_position.x);
             stream.Write(q_position.y);
             stream.Write(q_position.z);
@@ -503,8 +504,8 @@ public:
         void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             item.id = stream.Read<ItemId>();
-            item.amount = stream.Read<ItemAmount>();
-            item.damage = stream.Read<ItemDamage>();
+            item.count = stream.Read<ItemAmount>();
+            item.data = stream.Read<ItemDamage>();
             q_position.x = stream.Read<int32_t>();
             q_position.y = stream.Read<int32_t>();
             q_position.z = stream.Read<int32_t>();
@@ -1175,7 +1176,7 @@ public:
         bool right_click;
         TransactionId transaction_id;
         bool shift;
-        Item item;
+        ItemStack item;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
@@ -1186,8 +1187,8 @@ public:
             stream.Write(shift);
             stream.Write(item.id);
             if (item.id != ITEM_INVALID) {
-                stream.Write(item.amount);
-                stream.Write(item.damage);
+                stream.Write(item.count);
+                stream.Write(item.data);
             }
         }
         void Deserialize(NetworkStream& stream) override {
@@ -1198,8 +1199,8 @@ public:
             shift = stream.Read<bool>();
             item.id = stream.Read<ItemId>();
             if (item.id != ITEM_INVALID) {
-                item.amount = stream.Read<ItemAmount>();
-                item.damage = stream.Read<ItemDamage>();
+                item.count = stream.Read<ItemAmount>();
+                item.data = stream.Read<ItemDamage>();
             }
         }
     };
@@ -1209,7 +1210,7 @@ public:
         SetSlot() : BasePacket{ PacketId::SetSlot } {}
         WindowId window_id;
         SlotId slot_id;
-        Item item;
+        ItemStack item;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
@@ -1217,8 +1218,8 @@ public:
             stream.Write(slot_id);
             stream.Write(item.id);
             if (item.id != ITEM_INVALID) {
-                stream.Write(item.amount);
-                stream.Write(item.damage);
+                stream.Write(item.count);
+                stream.Write(item.data);
             }
         }
         void Deserialize(NetworkStream& stream) override {
@@ -1226,8 +1227,8 @@ public:
             slot_id = stream.Read<SlotId>();
             item.id = stream.Read<ItemId>();
             if (item.id != ITEM_INVALID) {
-                item.amount = stream.Read<ItemAmount>();
-                item.damage = stream.Read<ItemDamage>();
+                item.count = stream.Read<ItemAmount>();
+                item.data = stream.Read<ItemDamage>();
             }
         }
     };
@@ -1237,29 +1238,29 @@ public:
     struct FillContainer : BasePacket {
         FillContainer() : BasePacket{ PacketId::FillContainer } {}
         WindowId window_id;
-        std::vector<Item> items;
+        std::vector<ItemStack> items;
 
         void Serialize(NetworkStream& stream) const override {
             stream.Write(id);
             stream.Write(window_id);
             stream.Write(int16_t(items.size()));
-            for (Item item : items) {
+            for (ItemStack item : items) {
                 stream.Write(item.id);
                 if (item.id != ITEM_INVALID) {
-                    stream.Write(item.amount);
-                    stream.Write(item.damage);
+                    stream.Write(item.count);
+                    stream.Write(item.data);
                 }
             }
         }
         void Deserialize(NetworkStream& stream) override {
             window_id = stream.Read<WindowId>();
             size_t number_of_slots = size_t(stream.Read<int16_t>());
-            items.resize(number_of_slots, Item{ ITEM_INVALID });
+            items.resize(number_of_slots, ItemStack{ ITEM_INVALID });
             for (size_t i = 0; i < number_of_slots; i++) {
                 items[i].id = stream.Read<ItemId>();
                 if (items[i].id != ITEM_INVALID) {
-                    items[i].amount = stream.Read<ItemAmount>();
-                    items[i].damage = stream.Read<ItemDamage>();
+                    items[i].count = stream.Read<ItemAmount>();
+                    items[i].data = stream.Read<ItemDamage>();
                 }
             }
         }

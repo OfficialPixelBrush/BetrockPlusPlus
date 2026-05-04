@@ -36,7 +36,7 @@ add_executable(
     # Shared files
     src/bpp_shared/shared.cpp
     src/bpp_shared/enums/biomes.cpp
-    src/bpp_shared/enums/drops.cpp
+    
     src/bpp_shared/enums/items.cpp
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp

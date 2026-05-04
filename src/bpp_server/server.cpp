@@ -24,66 +24,15 @@
 
 Server::Server() {
     Blocks::registerAll();
-
-    // ── Server-side block behaviors ───────────────────────────────────────────
-    // These are registered here rather than in block_properties.cpp because they
-    // need PlayerSession, which is a server-only type that bpp_shared can't include.
-
-    // Chest: opening the chest GUI
-    Blocks::blockBehaviors[BlockType::BLOCK_CHEST].onBlockActivated =
-        [](WorldManager& world, Int3 pos, uint8_t /*meta*/, PlayerSession& session) -> bool {
-
-        // Beta: BlockChest.blockActivated
-        // Solid block directly above this chest blocks the lid.
-        if (world.isBlockNormalCube({ pos.x, pos.y + 1, pos.z }))
-            return true;
-
-        // Solid block above any horizontally adjacent chest also blocks.
-        auto adjBlocked = [&](Int3 adj) {
-            return world.getBlockId(adj) == BlockType::BLOCK_CHEST &&
-                world.isBlockNormalCube({ adj.x, adj.y + 1, adj.z });
-            };
-        if (adjBlocked({ pos.x - 1, pos.y, pos.z })) return true;
-        if (adjBlocked({ pos.x + 1, pos.y, pos.z })) return true;
-        if (adjBlocked({ pos.x,     pos.y, pos.z - 1 })) return true;
-        if (adjBlocked({ pos.x,     pos.y, pos.z + 1 })) return true;
-
-        TileEntityChest* chest = world.getTileEntityAs<TileEntityChest>(pos);
-        if (!chest) return false;
-
-        // Reach check — squared distance <= 64 (8 blocks), matching canInteractWith.
-        double dx = session.position.pos.x - (pos.x + 0.5);
-        double dy = session.position.pos.y - (pos.y + 0.5);
-        double dz = session.position.pos.z - (pos.z + 0.5);
-        if (dx * dx + dy * dy + dz * dz > 64.0) return false;
-
-        // Assign window ID and send OpenContainer + WindowItems.
-        session.openWindowId = (session.openWindowId % 127) + 1;
-        session.openChest = chest;
-
-        Packet::OpenContainer open;
-        open.window_id = session.openWindowId;
-        open.window_type = PacketData::WindowType::CHEST;
-        open.title = "Chest";
-        open.slot_count = static_cast<int8_t>(chest->inventory.getSizeInventory());
-        open.Serialize(session.stream);
-
-        HandlePacket::sendChestWindow(session, session.openWindowId, *chest);
-        return true;
-        };
-
     command_manager.Init();
-    world.seed = 404;
+    world.seed = 67;
 
     world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
         // Only enqueue if at least one session knows about this chunk.
-        // The actual per-session dispatch happens in tick() using chunkSessions.
-        // We check the index (populated in tick) and fall back to a sentChunks
-        // scan for chunks that haven't been indexed yet (in-flight chunks).
         auto idxIt = chunkSessions.find(chunkPos);
         bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
         if (!anyInterested) {
-            // Fallback: any session with this chunk in-flight?
+            // Any session with this chunk in-flight?
             for (auto& session : players) {
                 if (session->sentChunks.contains(chunkPos)) { anyInterested = true; break; }
             }
@@ -129,7 +78,6 @@ Server::~Server() {
 #endif
 }
 
-// Chunk-session reverse index helpers
 void Server::indexAddChunk(PlayerSession& session, const ChunkPos& pos) {
     auto& vec = chunkSessions[pos];
     // Avoid duplicates (should never happen, but be safe)
@@ -147,7 +95,6 @@ void Server::indexRemoveChunk(PlayerSession& session, const ChunkPos& pos) {
 }
 
 void Server::indexRemoveSession(PlayerSession& session) {
-    // Walk every chunk this session had flushed and remove it from the index.
     for (const auto& pos : session.flushedChunks)
         indexRemoveChunk(session, pos);
 }
@@ -650,21 +597,18 @@ void Server::handleLogin(PlayerSession& session) {
     health.health = 20;
     health.Serialize(session.stream);
 
-    // Send the player's inventory
-    HandlePacket::sendInventory(session);
-
     // Test inventory
     auto& inv = session.inventory;
-    inv.slots[0] = ItemStack{ ITEM_PICKAXE_DIAMOND,  1, 0 };
-    inv.slots[1] = ItemStack{ ITEM_SWORD_IRON,       1, 0 };
-    inv.slots[2] = ItemStack{ ITEM_AXE_STONE,        1, 0 };
-    inv.slots[3] = ItemStack{ ITEM_SHOVEL_GOLD,      1, 0 };
-    inv.slots[4] = ItemStack{ ITEM_BOW,              1, 0 };
-    inv.slots[5] = ItemStack{ ITEM_ARROW,           64, 0 };
-    inv.slots[6] = ItemStack{ ITEM_SNOWBALL,        16, 0 };
-    inv.slots[7] = ItemStack{ ITEM_EGG,             16, 0 };
-    inv.slots[8] = ItemStack{ ITEM_COAL,            64, 0 };
-    inv.slots[9] = ItemStack{ BLOCK_DIRT,           64, 0 };  // block stackable
+    inv.slots[36] = ItemStack{ ITEM_PICKAXE_DIAMOND,  1, 0 };
+    inv.slots[37] = ItemStack{ ITEM_SWORD_IRON,       1, 0 };
+    inv.slots[38] = ItemStack{ ITEM_AXE_STONE,        1, 0 };
+    inv.slots[39] = ItemStack{ ITEM_SHOVEL_GOLD,      1, 0 };
+    inv.slots[40] = ItemStack{ ITEM_BOW,              1, 0 };
+    inv.slots[17] = ItemStack{ ITEM_ARROW,           64, 0 };
+    inv.slots[18] = ItemStack{ ITEM_SNOWBALL,        16, 0 };
+    inv.slots[19] = ItemStack{ ITEM_EGG,             16, 0 };
+    inv.slots[20] = ItemStack{ ITEM_COAL,            64, 0 };
+    inv.slots[21] = ItemStack{ BLOCK_DIRT,           64, 0 };  // block stackable
     inv.slots[10] = ItemStack{ ITEM_IRON,           32, 0 };  // partial stack
     inv.slots[11] = ItemStack{ ITEM_DYE,             1, 4 };  // item with data/subtype
     inv.slots[12] = ItemStack{ ITEM_DYE,             1, 14 }; // different subtype, shouldn't merge
@@ -672,12 +616,12 @@ void Server::handleLogin(PlayerSession& session) {
     inv.slots[14] = ItemStack{ ITEM_CAKE,            1, 0 };  // stack limit 1
     inv.slots[15] = ItemStack{ ITEM_BUCKET_WATER,    1, 0 };  // stack limit 1
     inv.slots[16] = ItemStack{ BLOCK_TORCH,         64, 0 };
-    // Armor slots (36-39)
-    inv.slots[36] = ItemStack{ ITEM_HELMET_DIAMOND,    1, 0 };
-    inv.slots[37] = ItemStack{ ITEM_CHESTPLATE_IRON,   1, 0 };
-    inv.slots[38] = ItemStack{ ITEM_LEGGINGS_LEATHER,  1, 0 };
-    inv.slots[39] = ItemStack{ ITEM_BOOTS_GOLD,        1, 0 };
-    HandlePacket::sendInventory(session);
+    // Armor slots
+    inv.slots[5] = ItemStack{ ITEM_HELMET_DIAMOND,    1, 0 };
+    inv.slots[6] = ItemStack{ ITEM_CHESTPLATE_IRON,   1, 0 };
+    inv.slots[7] = ItemStack{ ITEM_LEGGINGS_LEATHER,  1, 0 };
+    inv.slots[8] = ItemStack{ ITEM_BOOTS_GOLD,        1, 0 };
+    PacketUtilities::SendInventory(session, 0, inv);
 
     Packet::SetTime time;
     time.time = world.elapsed_ticks;
@@ -735,62 +679,11 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
     pos.onGround = false;
     pos.Serialize(session.stream);
 
-    // Initialise fixed-point tracking from actual spawn position.
-    // Use the same Y encoding as relative moves (no 1/64 offset).
     session.lastFpX = static_cast<int32_t>(session.position.pos.x * 32.0);
     session.lastFpY = static_cast<int32_t>(session.position.pos.y * 32.0);
     session.lastFpZ = static_cast<int32_t>(session.position.pos.z * 32.0);
     session.lastYaw = 0;
     session.lastPitch = 0;
-
-    // Notify all currently playing/waiting players about this new player
-    for (auto& other : players) {
-        if (other.get() == &session) continue;
-        if (other->connState != ConnectionState::Playing &&
-            other->connState != ConnectionState::WaitingForSpawnChunks) continue;
-
-        // Send this player to others using fixed-point last-broadcast values
-        {
-            Packet::SpawnPlayer pkt;
-            pkt.entity_id = session.entityId;
-            pkt.username = session.username;
-            pkt.q_position.x = session.lastFpX;
-            // SpawnPlayer Y decoded as serverPosY/32 (no 1/64 offset on client)
-            pkt.q_position.y = session.lastFpY;
-            pkt.q_position.z = session.lastFpZ;
-            pkt.q_yaw = session.lastYaw;
-            pkt.q_pitch = session.lastPitch;
-            pkt.held_item_id = 0;
-            pkt.Serialize(other->stream);
-        }
-
-        // Send others to this player using their fixed-point last-broadcast values.
-        // Follow up with TeleportEntity so position is exact — the 1/64 offset
-        // in handleEntityTeleport will correctly place the entity at feet level.
-        {
-            Packet::SpawnPlayer pkt;
-            pkt.entity_id = other->entityId;
-            pkt.username = other->username;
-            pkt.q_position.x = other->lastFpX;
-            pkt.q_position.y = other->lastFpY;
-            pkt.q_position.z = other->lastFpZ;
-            pkt.q_yaw = other->lastYaw;
-            pkt.q_pitch = other->lastPitch;
-            pkt.held_item_id = 0;
-            pkt.Serialize(session.stream);
-
-            // TeleportEntity Y = (feet_y - 1/64) * 32 so client decodes correctly
-            Packet::TeleportEntity tel;
-            tel.entity_id = other->entityId;
-            tel.position.x = other->lastFpX;
-            tel.position.y = static_cast<int32_t>(
-                (other->position.pos.y - (1.0 / 64.0)) * 32.0);
-            tel.position.z = other->lastFpZ;
-            tel.yaw = other->lastYaw;
-            tel.pitch = other->lastPitch;
-            tel.Serialize(session.stream);
-        }
-    }
 
     std::cout << "Client connected\n";
     session.connState = ConnectionState::Playing;
@@ -869,7 +762,6 @@ void Server::processIncoming(PlayerSession& session) {
         case PacketId::SetHotbarSlot: {
             Packet::SetHotbarSlot pkt;
             pkt.Deserialize(session.stream);
-            HandlePacket::SetHotbarSlot(pkt, session);
             break;
         }
         case PacketId::InteractWithBlock: {
