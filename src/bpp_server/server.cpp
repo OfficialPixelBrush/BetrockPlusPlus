@@ -624,7 +624,7 @@ void Server::handleLogin(PlayerSession& session) {
     inv.slots[6] = ItemStack{ ITEM_CHESTPLATE_IRON,   1, 0 };
     inv.slots[7] = ItemStack{ ITEM_LEGGINGS_LEATHER,  1, 0 };
     inv.slots[8] = ItemStack{ ITEM_BOOTS_GOLD,        1, 0 };
-    //PacketUtilities::SendInventory(session, 0, inv);
+    PacketUtilities::SendInventory(session, 0, inv);
 
     Packet::SetTime time;
     time.time = world.elapsed_ticks;

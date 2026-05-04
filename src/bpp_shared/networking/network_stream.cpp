@@ -188,22 +188,24 @@ bool NetworkStream::flushWriteBuffer() {
     if (writeBuffer.empty()) return connected;
     size_t sent = 0;
     while (sent < writeBuffer.size()) {
-#if defined(_WIN32) || defined(_WIN64)
         int result = send(client_socket,
             reinterpret_cast<const char*>(writeBuffer.data() + sent),
-            static_cast<int>(writeBuffer.size() - sent), 0);
-#else
-        ssize_t result = send(client_socket,
-            reinterpret_cast<const char*>(writeBuffer.data() + sent),
             writeBuffer.size() - sent, 0);
+        if (result < 0) {
+#if defined(_WIN32) || defined(_WIN64)
+            int err = WSAGetLastError();
+            if (err == WSAEWOULDBLOCK) break;
+#else
+            if (errno == EAGAIN || errno == EWOULDBLOCK) break;
 #endif
-        if (result <= 0) {
             connected = false;
             break;
         }
-        sent += static_cast<size_t>(result);
+        if (result == 0) { connected = false; break; }
+        sent += static_cast<size_t>(result); // only added when result > 0
     }
-    writeBuffer.clear();
+    if (sent > 0)
+        writeBuffer.erase(writeBuffer.begin(), writeBuffer.begin() + sent);
     return connected;
 }
 
