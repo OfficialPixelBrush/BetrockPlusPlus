@@ -88,7 +88,6 @@ struct ChunkSender {
         }
 
         // Also cancel any in-flight jobs for chunks that are now out of range
-        // so their shared_ptr refs are dropped and the chunks can be freed.
         auto& queue = inFlight[&session];
         queue.erase(
             std::remove_if(queue.begin(), queue.end(), [&](const PendingChunk& pc) {

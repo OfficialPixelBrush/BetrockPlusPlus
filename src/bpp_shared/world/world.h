@@ -327,8 +327,6 @@ struct WorldManager {
         }
     }
 
-    // Raw pointer accessor — public so Lighter can cache chunk pointers
-    // directly without going through the shared_ptr wrapper.
     Chunk* getChunkRaw(ChunkPos pos) {
         auto it = chunks.find(pos);
         return (it != chunks.end()) ? it->second.get() : nullptr;
@@ -338,7 +336,7 @@ struct WorldManager {
     static constexpr bool inBounds(int y) { return y >= 0 && y < CHUNK_HEIGHT; }
 
 private:
-    static constexpr int VIEW_RADIUS = 13;
+    static constexpr int VIEW_RADIUS = 10;
     static constexpr int SIMULATION_RADIUS = 9;
 
     void seedChunkLighting(ChunkPos pos);

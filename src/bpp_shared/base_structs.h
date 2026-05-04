@@ -17,24 +17,6 @@
 #include "strings/labels.h"
 #include "enums/items.h"
 
-// Item
-struct Item {
-    ItemId      id = ITEM_INVALID;
-    ItemAmount  amount = 0;
-    ItemDamage  damage = 0; // Also known as metadata
-
-    friend std::ostream& operator<<(std::ostream& os, const Item& i) {
-        os << "(" << IdToLabel(i.id) << ": " << int32_t(i.damage) << " x" << int32_t(i.amount) << ")";
-        return os;
-    }
-    
-    std::string str() const {
-        std::ostringstream oss;
-        oss << *this; // Use the overloaded << operator
-        return oss.str();
-    }
-};
-
 // Block Struct
 struct Block {
     BlockType type = BLOCK_AIR;

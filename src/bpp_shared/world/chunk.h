@@ -21,10 +21,8 @@ enum class ChunkState : uint8_t {
     Unloaded,
     Generating,
     Generated,
-    Poulating,
+    Populating,
     Populated,
-    Lighting,
-    Lit,
     Unloading
 };
 

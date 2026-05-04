@@ -270,8 +270,7 @@ void WorldManager::populateReady() {
             if (!canPopulateDirect(candidate)) continue;
             auto cit = chunks.find(candidate);
             if (cit == chunks.end()) continue;
-            // Populate directly on main thread.
-            cit->second->state.store(ChunkState::Poulating, std::memory_order_release);
+            cit->second->state.store(ChunkState::Populating, std::memory_order_release);
             thread_local Generator tl_gen(this->seed);
             tl_gen.PopulateChunk(*cit->second, *this);
             cit->second->isTerrainPopulated = true;
