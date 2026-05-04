@@ -43,8 +43,9 @@ namespace PacketUtilities {
 };
 
 namespace HandlePacket {
-    inline void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& /*session*/) {
-        // No-op: receipt is enough; timeout is reset by the caller.
+    inline void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& session) {
+        Packet::KeepAlive ka;
+        ka.Serialize(session.stream);
     }
 
     inline void ChatMessage(Packet::ChatMessage& pkt, PlayerSession& session,
@@ -82,9 +83,18 @@ namespace HandlePacket {
         session.rotation.y = pkt.pitch;
     }
 
-    inline void MineBlock(Packet::MineBlock& /*pkt*/, PlayerSession& /*session*/,
-        WorldManager& /*world*/,
+    inline void MineBlock(Packet::MineBlock& pkt, PlayerSession& session,
+        WorldManager& world,
         std::vector<std::unique_ptr<PlayerSession>>& /*players*/) {
+        if (pkt.status != 2) return;
+        auto pos = pkt.position;
+        if (pkt.face == 0) pos.y - 1;
+        if (pkt.face == 1) pos.y + 1;
+        if (pkt.face == 2) pos.z - 1;
+        if (pkt.face == 3) pos.z + 1;
+        if (pkt.face == 4) pos.x - 1;
+        if (pkt.face == 5) pos.x + 1;
+        world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
     }
 
     inline void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session,
@@ -119,6 +129,7 @@ namespace HandlePacket {
 
     // Click handler
     inline void ClickSlot(Packet::ClickSlot& pkt, PlayerSession& session) {
+        
     }
 
     inline void CloseContainer(Packet::CloseContainer& /*pkt*/, PlayerSession& session) {

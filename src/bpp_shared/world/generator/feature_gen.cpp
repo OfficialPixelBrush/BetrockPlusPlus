@@ -469,41 +469,6 @@ bool FeatureGenerator::GenerateLiquid(WorldManager& world, Java::Random& rand, I
 
 	if (stone == 3 && air == 1) {
 		world.setBlock(pos, this->type);
-
-		// Simulate BlockStationary.updateTick RNG consumption after spring placement.
-		// Water (BlockStationary, material=water): updateTick checks material==lava
-		// -> false -> does nothing. 0 rand calls consumed.
-		//
-		// Lava (BlockStationary, material=lava): exact port of the fire-spread path.
-		//   var6 = rand.nextInt(3)  — number of fire-spread attempts (0, 1, or 2)
-		//   for each attempt:
-		//     x += rand.nextInt(3) - 1
-		//     y += 1
-		//     z += rand.nextInt(3) - 1
-		//     if block at (x,y,z) == AIR: check neighbours for flammable -> place fire; return
-		//     else if block is solid: return early
-		//     else (non-solid non-air): continue to next attempt
-		if (this->type == BLOCK_LAVA_STILL || this->type == BLOCK_LAVA_FLOWING) {
-			int32_t attempts = rand.nextInt(3);
-			int32_t fx = pos.x, fy = pos.y, fz = pos.z;
-			for (int32_t attempt = 0; attempt < attempts; ++attempt) {
-				fx += rand.nextInt(3) - 1;
-				fy += 1;
-				fz += rand.nextInt(3) - 1;
-				BlockType fb = world.getBlockId({ fx, fy, fz });
-				if (fb == BLOCK_AIR) {
-					// Java checks neighbours for flammability then places fire.
-					// No extra rand consumed — flammability is a pure table lookup.
-					// Java then returns from updateTick.
-					break;
-				}
-				else if (IsSolid(fb)) {
-					// Java returns early — loop terminates, no more rand calls.
-					break;
-				}
-				// Non-solid non-air: loop continues to next attempt.
-			}
-		}
 	}
 	return true;
 }

@@ -50,6 +50,7 @@ struct InventoryPlayer : Inventory {
         if (slot >= 36 && slot <= 44) return invMap::hotbar;
         if (slot >= 9 && slot <= 35) return invMap::inventory;
     }
+
     void onInventoryChanged() override { inventoryChanged = true; }
     bool canInteractWith(EntityPlayer* /*player*/) override { return true; }
 

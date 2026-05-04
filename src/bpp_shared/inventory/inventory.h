@@ -19,9 +19,6 @@ struct EntityPlayer;
 struct Inventory {
     std::string name = "Inventory";
     std::vector<std::optional<ItemStack>> slots;
-
-    // Cursor stack — the item held on the mouse during GUI interaction.
-    // Lives here so click() can manipulate it alongside slot contents.
     std::optional<ItemStack> carried;
 
     Inventory(int size) : slots(size) {}
