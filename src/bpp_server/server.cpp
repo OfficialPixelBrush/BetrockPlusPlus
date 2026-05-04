@@ -652,12 +652,8 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
     // Spawn chunk radius; 3 chunks in each direction
     int spawnChunkX = int(std::floor(session.position.pos.x)) >> 4;
     int spawnChunkZ = int(std::floor(session.position.pos.z)) >> 4;
-<<<<<<< Updated upstream
 
     int radius = CrossPlatform::Math::min(3, world.getViewRadius());
-=======
-    int radius = std::min(3, world.getViewRadius());
->>>>>>> Stashed changes
 
     int total_spawn_chunks = ((radius * 2) + 1) * ((radius * 2) + 1);
     int loaded_chunks = 0;
