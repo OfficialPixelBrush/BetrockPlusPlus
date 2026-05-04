@@ -63,13 +63,13 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
         }
         else if (opacity < 15) {
             int best = 0;
-            best = std::max(best, getLightDirect(cxn, lxn, y, lz, type));
-            best = std::max(best, getLightDirect(cxp, lxp, y, lz, type));
-            best = std::max(best, getLightDirect(chunk, lx, y - 1, lz, type));
-            best = std::max(best, getLightDirect(chunk, lx, y + 1, lz, type));
-            best = std::max(best, getLightDirect(czn, lx, y, lzn, type));
-            best = std::max(best, getLightDirect(czp, lx, y, lzp, type));
-            newVal = std::max(0, best - opacity);
+            best = CrossPlatform::Math::max(best, getLightDirect(cxn, lxn, y, lz, type));
+            best = CrossPlatform::Math::max(best, getLightDirect(cxp, lxp, y, lz, type));
+            best = CrossPlatform::Math::max(best, getLightDirect(chunk, lx, y - 1, lz, type));
+            best = CrossPlatform::Math::max(best, getLightDirect(chunk, lx, y + 1, lz, type));
+            best = CrossPlatform::Math::max(best, getLightDirect(czn, lx, y, lzn, type));
+            best = CrossPlatform::Math::max(best, getLightDirect(czp, lx, y, lzp, type));
+            newVal = CrossPlatform::Math::max(0, best - opacity);
         }
         int oldVal = chunk->getSkyLight({ lx, y, lz });
         if (oldVal == newVal) return;
@@ -85,13 +85,13 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
         int emitted = Blocks::blockProperties[blockId].lightEmission;
         if (opacity < 15) {
             int best = 0;
-            best = std::max(best, getLightDirect(cxn, lxn, y, lz, type));
-            best = std::max(best, getLightDirect(cxp, lxp, y, lz, type));
-            best = std::max(best, getLightDirect(chunk, lx, y - 1, lz, type));
-            best = std::max(best, getLightDirect(chunk, lx, y + 1, lz, type));
-            best = std::max(best, getLightDirect(czn, lx, y, lzn, type));
-            best = std::max(best, getLightDirect(czp, lx, y, lzp, type));
-            newVal = std::max(emitted, best - opacity);
+            best = CrossPlatform::Math::max(best, getLightDirect(cxn, lxn, y, lz, type));
+            best = CrossPlatform::Math::max(best, getLightDirect(cxp, lxp, y, lz, type));
+            best = CrossPlatform::Math::max(best, getLightDirect(chunk, lx, y - 1, lz, type));
+            best = CrossPlatform::Math::max(best, getLightDirect(chunk, lx, y + 1, lz, type));
+            best = CrossPlatform::Math::max(best, getLightDirect(czn, lx, y, lzn, type));
+            best = CrossPlatform::Math::max(best, getLightDirect(czp, lx, y, lzp, type));
+            newVal = CrossPlatform::Math::max(emitted, best - opacity);
         }
         else {
             newVal = emitted;
@@ -110,7 +110,7 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
     // Fan out — push directly, bypass merge (BFS fan-out must not be merged).
     auto maybeQueue = [&](int nx, int ny, int nz, Chunk* nc, int nlx, int nlz) {
         if (ny < 0 || ny >= CHUNK_HEIGHT || !nc) return;
-        int expected = std::max(0, newVal - 1);
+        int expected = CrossPlatform::Math::max(0, newVal - 1);
         if (getLightDirect(nc, nlx, ny, nlz, type) < expected && lightQueue.size() < 1000000)
             lightQueue.push_back({ {nx, ny, nz}, {nx, ny, nz}, type });
         };
@@ -211,8 +211,8 @@ bool Lighter::processLightQueue(WorldManager& world, int maxIterations) {
         int dz = region.max.z - region.min.z + 1;
         if (dx * dy * dz > 32768) continue;
 
-        region.min.y = std::max(region.min.y, 0);
-        region.max.y = std::min(region.max.y, CHUNK_HEIGHT - 1);
+        region.min.y = CrossPlatform::Math::max(region.min.y, 0);
+        region.max.y = CrossPlatform::Math::min(region.max.y, CHUNK_HEIGHT - 1);
 
         for (int x = region.min.x; x <= region.max.x; ++x)
             for (int z = region.min.z; z <= region.max.z; ++z)

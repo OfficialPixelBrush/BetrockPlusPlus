@@ -216,8 +216,8 @@ struct WorldManager {
             int neighborHeight = getHeightValue(nx, nz);
             int thisHeight2 = chunk->getHeightValue({ lx, lz });
             if (neighborHeight == thisHeight2) continue;
-            int minY = std::min(thisHeight2, neighborHeight);
-            int maxY = std::max(thisHeight2, neighborHeight);
+            int minY = CrossPlatform::Math::min(thisHeight2, neighborHeight);
+            int maxY = CrossPlatform::Math::max(thisHeight2, neighborHeight);
             lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
         }
 
