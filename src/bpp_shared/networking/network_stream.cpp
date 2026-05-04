@@ -80,16 +80,36 @@ std::wstring NetworkStream::ReadWString() {
 
 void NetworkStream::ReadBytes(uint8_t* buf, size_t len) {
     size_t received = 0;
+    // Drain any byte that was put back by unreadByte() first.
+    if (hasUnread && received < len) {
+        buf[received++] = unreadStash;
+        hasUnread = false;
+    }
     while (received < len) {
 #if defined(_WIN32) || defined(_WIN64)
         int result = recv(client_socket, reinterpret_cast<char*>(buf + received), static_cast<int>(len - received), 0);
-#else
-        ssize_t result = recv(client_socket, buf + received, len - received, 0);
-#endif
         if (result <= 0) {
-            connected = false;
+            int err = WSAGetLastError();
+            if (err == WSAETIMEDOUT || err == WSAEWOULDBLOCK) {
+                // SO_RCVTIMEO fired — packet split across ticks, retry next tick.
+                shortRead = true;
+            } else {
+                connected = false;
+            }
             break;
         }
+#else
+        ssize_t result = recv(client_socket, buf + received, len - received, 0);
+        if (result <= 0) {
+            if (result < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == ETIMEDOUT)) {
+                // Timeout — packet split across ticks, retry next tick.
+                shortRead = true;
+            } else {
+                connected = false;
+            }
+            break;
+        }
+#endif
         received += static_cast<size_t>(result);
     }
 }
