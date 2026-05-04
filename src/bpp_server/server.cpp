@@ -311,6 +311,17 @@ void Server::acceptNewPlayers() {
     if (clientSocket < 0) return;
 #endif
 
+    // Set a receive timeout so blocking recv() never stalls the tick loop.
+    // On timeout, ReadBytes sets shortRead=true and the caller retries next tick.
+#if defined(_WIN32) || defined(_WIN64)
+    DWORD recvTimeout = 45; // milliseconds
+    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,
+        reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
+#else
+    struct timeval recvTimeout{ 0, 45000 }; // 45ms
+    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,
+        reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
+#endif
     std::cout << "New player connected. Total players: " << players.size() + 1 << "\n";
     players.push_back(std::make_unique<PlayerSession>(clientSocket));
     players.back()->players = &players;
@@ -589,10 +600,15 @@ void Server::handleHandshake(PlayerSession& session) {
     if (!session.stream.hasData()) return;
 
     PacketId packetId = session.stream.Read<PacketId>();
+    if (session.stream.checkAndClearShortRead()) return;
     if (packetId != PacketId::PreLogin) return;
 
     Packet::PreLogin incoming;
     incoming.Deserialize(session.stream);
+    if (session.stream.checkAndClearShortRead()) {
+        session.stream.unreadByte(static_cast<uint8_t>(packetId));
+        return;
+    }
     session.username = incoming.username;
     std::wcout << L"Player " << session.username << L" is logging in.\n";
 
@@ -607,10 +623,15 @@ void Server::handleLogin(PlayerSession& session) {
     if (!session.stream.hasData()) return;
 
     PacketId packetId = session.stream.Read<PacketId>();
+    if (session.stream.checkAndClearShortRead()) return;
     if (packetId != PacketId::Login) return;
 
     Packet::Login incoming;
     incoming.Deserialize(session.stream);
+    if (session.stream.checkAndClearShortRead()) {
+        session.stream.unreadByte(static_cast<uint8_t>(packetId));
+        return;
+    }
 
     session.entityId = nextEntityId++;
     std::wcout << L"Player " << session.username << L" logged in with entity ID " << session.entityId << L".\n";
@@ -910,6 +931,12 @@ void Server::processIncoming(PlayerSession& session) {
                 << static_cast<int>(packetId) << "\n";
             disconnectPlayer(session, L"Unknown packet");
             return;
+        }
+        // If any Deserialize hit a recv timeout, put the packet ID back
+        // and retry next tick instead of disconnecting.
+        if (session.stream.checkAndClearShortRead()) {
+            session.stream.unreadByte(static_cast<uint8_t>(packetId));
+            break;
         }
     }
     // Update our last packet time for the timeout code
