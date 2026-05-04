@@ -70,6 +70,7 @@ private:
     int serverSocket = -1;
     EntityId nextEntityId = 2;
     int64_t timeout_seconds = 60;
+    int flushChunkCount = 10;
     float accumulator = 0.0f;
     float tickTimeAccum = 0.0f;
     int   tickCount = 0;
