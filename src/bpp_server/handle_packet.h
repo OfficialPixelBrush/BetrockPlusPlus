@@ -99,22 +99,6 @@ namespace HandlePacket {
     inline void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session,
         WorldManager& world,
         std::vector<std::unique_ptr<PlayerSession>>& /*players*/) {
-
-        // face == 255 means "use item in hand" with no target block.
-        if (static_cast<uint8_t>(pkt.face) == 255) return;
-
-        Int3 blockPos{ pkt.position.x, pkt.position.y, pkt.position.z };
-        BlockType blockId = world.getBlockId(blockPos);
-        uint8_t   meta    = world.getMetadata(blockPos);
-
-        // If onBlockActivated is registered and returns true, the interaction was a success
-        auto& behavior = Blocks::blockBehaviors[blockId];
-        if (behavior.onBlockActivated) {
-            if (behavior.onBlockActivated(world, blockPos, meta, session))
-                return;
-        }
-
-        // TODO: block placement
     }
 
     // Sends a single slot update. windowId=-1 / slotId=-1 updates the cursor.
