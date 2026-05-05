@@ -25,7 +25,7 @@
 #include "blocks/block_properties.h"
 
 namespace PacketUtilities {
-    inline void SendInventory(PlayerSession& session, int8_t windowId, Inventory inventory) {
+    inline void sendInventory(PlayerSession& session, int8_t windowId, Inventory inventory) {
         std::vector<ItemStack> items;
         for (auto& item : inventory.slots) {
             if (!item.has_value()) {
@@ -38,6 +38,15 @@ namespace PacketUtilities {
         fc.window_id = windowId;
         fc.items = std::move(items);
         fc.Serialize(session.stream);
+    }
+
+    // Sends a single slot update. windowId=-1 / slotId=-1 updates the cursor.
+    inline void sendSlot(PlayerSession& session, int8_t windowId, int16_t slotId, ItemStack* stack) {
+        Packet::SetSlot pkt;
+        pkt.window_id = windowId;
+        pkt.slot_id = slotId;
+        pkt.item = stack ? ItemStack{ stack->id, stack->count, stack->data } : ItemStack{ ITEM_INVALID };
+        pkt.Serialize(session.stream);
     }
 };
 
@@ -87,27 +96,29 @@ namespace HandlePacket {
         std::vector<std::unique_ptr<PlayerSession>>& /*players*/) {
         if (pkt.status != 2) return;
         auto pos = pkt.position;
-        if (pkt.face == 0) pos.y - 1;
-        if (pkt.face == 1) pos.y + 1;
-        if (pkt.face == 2) pos.z - 1;
-        if (pkt.face == 3) pos.z + 1;
-        if (pkt.face == 4) pos.x - 1;
-        if (pkt.face == 5) pos.x + 1;
+        // Use last known good position
+        double dx = session.lastFpX / 32.0 - (pos.x + 0.5);
+        double dy = session.lastFpY / 32.0 - (pos.y + 0.5);
+        double dz = session.lastFpZ / 32.0 - (pos.z + 0.5);
+        double distance = dx * dx + dy * dy + dz * dz;
+        if (distance > 36.0) {
+            return; // more than 6 blocks away so we drop it
+        }
         world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
     }
 
     inline void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session,
         WorldManager& world,
         std::vector<std::unique_ptr<PlayerSession>>& /*players*/) {
-    }
-
-    // Sends a single slot update. windowId=-1 / slotId=-1 updates the cursor.
-    inline void sendSlot(PlayerSession& session, int8_t windowId, int16_t slotId, ItemStack* stack) {
-        Packet::SetSlot pkt;
-        pkt.window_id = windowId;
-        pkt.slot_id = slotId;
-        pkt.item = stack ? ItemStack{ stack->id, stack->count, stack->data } : ItemStack{ ITEM_INVALID };
-        pkt.Serialize(session.stream);
+        auto pos = pkt.position;
+        if (pkt.face == 0) pos.y -= 1;
+        if (pkt.face == 1) pos.y += 1;
+        if (pkt.face == 2) pos.z -= 1;
+        if (pkt.face == 3) pos.z += 1;
+        if (pkt.face == 4) pos.x -= 1;
+        if (pkt.face == 5) pos.x += 1;
+        // Make sure the block id is valid for placement otherwise we will crash
+        if (pkt.item.id <= BLOCK_CHEST_LOCKED && (pkt.item.id >= 0)) world.setBlock({ pos.x, pos.y, pos.z }, BlockType(pkt.item.id));
     }
 
     // Click handler
