@@ -624,14 +624,13 @@ void Server::handleLogin(PlayerSession& session) {
     inv.slots[6] = ItemStack{ ITEM_CHESTPLATE_IRON,   1, 0 };
     inv.slots[7] = ItemStack{ ITEM_LEGGINGS_LEATHER,  1, 0 };
     inv.slots[8] = ItemStack{ ITEM_BOOTS_GOLD,        1, 0 };
-    PacketUtilities::SendInventory(session, 0, inv);
 
     Packet::SetTime time;
     time.time = world.elapsed_ticks;
     time.Serialize(session.stream);
 
+    PacketUtilities::sendInventory(session, 0, inv);
     session.position.pos = { 0.0, 200.0, 0.0 };
-
     session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
