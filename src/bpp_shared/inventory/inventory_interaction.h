@@ -6,12 +6,41 @@
 #pragma once
 #include "inventories.h"
 
+struct difference {
+    std::optional<ItemStack>& stack;
+    int slot = 0;
+};
+
 // Used for actually interacting with inventories, will typically wrap 1 or more inventory objects for things like chests, etc
 struct InventoryInteraction {
+    std::vector<std::optional<ItemStack>> snapshot;
     std::optional<ItemStack> carried;
     Inventory& inventory;
 
-    InventoryInteraction(Inventory& inv) : inventory(inv) {}
+    InventoryInteraction(Inventory& inv) : inventory(inv) {
+    }
+
+    // Take a snapshot of this inventory
+    virtual void initSnapshot() {
+        snapshot = inventory.slots;
+    }
+
+    // Analyze the snapshot vs the current inventory
+    // Returns a list of slots that are different
+    virtual std::vector<difference> tickDiff() {
+        std::vector<difference> differences;
+        for (int i = 0; i < (int)snapshot.size(); i++) {
+            auto* current = inventory.getStackInSlot(i);
+            auto& snap = snapshot[i];
+
+            bool changed = snap != inventory.slots[i];
+            if (!changed) continue;
+
+            snap = inventory.slots[i];
+            differences.push_back({ snap, i });
+        }
+        return differences;
+    }
 
     virtual void onLeftClick(int slot) {
         auto targetSlot = inventory.getStackInSlot(slot);
@@ -134,6 +163,31 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
         mergeInventories();
     }
 
+    // Only snapshot the chest portion we don't need the attached inventory
+    void initSnapshot() override {
+        snapshot.resize(chestInventory.getSizeInventory());
+        for (int i = 0; i < chestInventory.getSizeInventory(); i++) {
+            auto* stack = chestInventory.getStackInSlot(i);
+            snapshot[i] = stack ? std::optional<ItemStack>(*stack) : std::nullopt;
+        }
+    }
+
+    // Analyze the snapshot vs the current chest inventory
+    std::vector<difference> tickDiff() override {
+        std::vector<difference> differences;
+        for (int i = 0; i < (int)snapshot.size(); i++) {
+            auto* current = chestInventory.getStackInSlot(i);
+            auto currentOpt = current ? std::optional<ItemStack>(*current) : std::nullopt;
+
+            if (snapshot[i] == currentOpt) continue;
+
+            snapshot[i] = currentOpt;
+            differences.push_back({ snapshot[i], i });
+        }
+        mergeInventories();
+        return differences;
+    }
+
     void mergeInventories() {
         int slotCount = 0;
         for (int i = 0; i < chestInventory.getSizeInventory(); i++) {
@@ -200,6 +254,30 @@ struct ChestInventoryInteraction : InventoryInteraction {
         : InventoryInteraction(sharedInventory), playerInventory(pinv), chestInventory(cinv) {
         sharedInventory.owner = this;
         mergeInventories();
+    }
+
+    // Only snapshot the chest portion we don't need the attached inventory
+    void initSnapshot() override {
+        snapshot.resize(chestInventory.getSizeInventory());
+        for (int i = 0; i < chestInventory.getSizeInventory(); i++)
+            snapshot[i] = chestInventory.slots[i];
+    }
+
+    // Analyze the snapshot vs the current chest inventory
+    std::vector<difference> tickDiff() {
+        std::vector<difference> differences;
+        for (int i = 0; i < (int)snapshot.size(); i++) {
+            auto* current = chestInventory.getStackInSlot(i);
+            auto& snap = snapshot[i];
+
+            bool changed = snap != chestInventory.slots[i];
+            if (!changed) continue;
+
+            snap = chestInventory.slots[i];
+            differences.push_back({ snap, i });
+        }
+        mergeInventories();
+        return differences;
     }
 
     void mergeInventories() {
