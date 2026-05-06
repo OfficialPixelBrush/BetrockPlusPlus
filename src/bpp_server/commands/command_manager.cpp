@@ -73,6 +73,7 @@ void CommandManager::Parse(std::wstring& cmd_string, PlayerSession& session) noe
 	try {
 		// TODO: Make this efficient
 		for (size_t i = 0; i < registeredCommands.size(); i++) {
+			if (command.size() <= 0); break;
 			if (registeredCommands[i]->GetLabel() == command[0]) {
 				failureReason = registeredCommands[i]->Execute(command, session);
 				break;
