@@ -110,7 +110,6 @@ void Server::startup() {
     for (int dx = -13; dx < 13; dx++)
         for (int dz = -13; dz < 13; dz++) {
             wanted.insert({ (spawnPoint.x >> 4) + dx, (spawnPoint.z >> 4) + dz });
-
             for (const auto& pos : wanted) {
                 if (!world.chunks.contains(pos)) {
                     auto c = std::make_shared<Chunk>();
@@ -160,19 +159,12 @@ void Server::startup() {
     }
 
     // Fill a line of chests along the Z axis with every obtainable item and block
-    // in Beta 1.7.3. Each chest holds 27 stacks; chests are spaced 2 apart (chest + gap).
     {
-        // Build the complete list of valid IDs up front so the chest-filling loop
-        // is simple and we never send an ID the client doesn't know about.
-        //
-        // Block IDs 1-96, skipping 36 (pistonMoving — internal, never in inventory).
-        // Item  IDs 256-357 — contiguous, all valid in B1.7.3.
-        // 2256-2257 are music disc IDs stored differently; skip them.
         std::vector<int16_t> validIds;
         validIds.reserve(200);
 
         for (int16_t id = 1; id <= 96; id++) {
-            if (id == 36) continue; // pistonMoving — internal block, not obtainable
+            if (id == 36) continue;
             validIds.push_back(id);
         }
         for (int16_t id = 256; id <= 357; id++) {
@@ -195,6 +187,13 @@ void Server::startup() {
                 int8_t  count = static_cast<int8_t>(GetMaxStack(id) > 0 ? GetMaxStack(id) : 1);
                 ItemStack stack{ id, count, 0 };
                 chest->inventory.setInventorySlotContents(slot, &stack);
+            }
+
+            if (idIndex % 2) {
+                Int3 neighbourPos = { pos.x - 1, pos.y, pos.z };
+                auto partnerChest = std::make_shared<TileEntityChest>(neighbourPos);
+                world.setBlock(neighbourPos, BlockType::BLOCK_CHEST);
+                world.createTileEntity(partnerChest);
             }
 
             world.createTileEntity(chest);

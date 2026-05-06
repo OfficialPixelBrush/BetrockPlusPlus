@@ -18,7 +18,6 @@
 #include "networking/network_stream.h"
 #include "networking/packets.h"
 #include "world/client_pos.h"
-#include "inventory/inventories.h"
 #include "inventory/inventory_interaction.h"
 
 enum class ConnectionState : uint8_t {
@@ -63,8 +62,9 @@ struct PlayerSession {
     std::chrono::steady_clock::time_point last_packet_time = std::chrono::steady_clock::now();
 
     // Inventory
-    InventoryPlayer inventory;
+    InventoryPlayer            inventory;
     PlayerInventoryInteraction inventoryInteraction;
+    std::unique_ptr<InventoryInteraction> activeInteraction = nullptr;
 
     // windowId = 0 is always the player inventory. Non-zero means a container is open.
     // ranges from 0-127 and wraps
@@ -78,7 +78,7 @@ struct PlayerSession {
     // While locked, all incoming clicks are rejected to prevent state corruption.
     bool          inventoryLocked = false;
     TransactionId pendingTransactionId = 0;
-    WindowId pendingWindowId = 0;
+    WindowId      pendingWindowId = 0;
 
     explicit PlayerSession(int socket) : stream(socket), inventoryInteraction(inventory) {}
 };
