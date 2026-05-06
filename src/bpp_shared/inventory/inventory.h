@@ -71,7 +71,7 @@ struct Inventory {
 
     // Take in the original item stack, try and merge it with our inventory. Returns if it was successful
     // Start slot and end slot are inclusive
-    bool mergeItemStackInInventory(ItemStack& stack, bool reverse = false, int startSlot = 0, int endSlot = -1) {
+    virtual bool mergeItemStackInInventory(ItemStack& stack, bool reverse = false, int startSlot = 0, int endSlot = -1) {
         auto start = startSlot;
         auto end = endSlot == -1 ? getSizeInventory() - 1 : endSlot;
 
