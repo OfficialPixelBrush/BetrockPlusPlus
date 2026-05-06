@@ -110,6 +110,63 @@ namespace HandlePacket {
     inline void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session,
         WorldManager& world,
         std::vector<std::unique_ptr<PlayerSession>>& /*players*/) {
+        // Block interactions
+        auto block = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z });
+        if (block == BLOCK_CHEST) {
+            // Are we a double chest?
+            auto l = world.getBlockId({ pkt.position.x - 1, pkt.position.y, pkt.position.z });
+            auto r = world.getBlockId({ pkt.position.x + 1, pkt.position.y, pkt.position.z });
+            auto f = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z - 1});
+            auto b = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z + 1});
+            bool doubleChest = (l == BLOCK_CHEST || r == BLOCK_CHEST || f == BLOCK_CHEST || b == BLOCK_CHEST);
+
+            if (doubleChest) {
+                TileEntityChest* chest = world.getTileEntityAs<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z });
+                if (!chest) return;
+
+                TileEntityChest* partnerChest = nullptr;
+                if (l == BLOCK_CHEST) partnerChest = world.getTileEntityAs<TileEntityChest>({ pkt.position.x - 1, pkt.position.y, pkt.position.z });
+                else if (r == BLOCK_CHEST) partnerChest = world.getTileEntityAs<TileEntityChest>({ pkt.position.x + 1, pkt.position.y, pkt.position.z });
+                else if (f == BLOCK_CHEST) partnerChest = world.getTileEntityAs<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z - 1 });
+                else                       partnerChest = world.getTileEntityAs<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z + 1 });
+                if (!partnerChest) return;
+
+                bool isLeftSide = (r == BLOCK_CHEST || b == BLOCK_CHEST);
+                if (!isLeftSide) std::swap(chest, partnerChest);
+
+                Packet::OpenContainer ow;
+                ow.window_id = session.getNextWindowId();
+                ow.slot_count = 54;
+                ow.title = "Large Chest";
+                ow.window_type = PacketData::WindowType::CHEST;
+                ow.Serialize(session.stream);
+
+                session.activeInteraction = std::make_unique<LargeChestInventoryInteraction>(
+                    session.inventory, chest->inventory, partnerChest->inventory);
+
+                PacketUtilities::sendInventory(session, session.openWindowId, session.activeInteraction->inventory);
+                return;
+            }
+
+            // Single chest
+            // Open the chest window
+            Packet::OpenContainer ow;
+            ow.window_id = session.getNextWindowId();
+            ow.slot_count = 27;
+            ow.title = "Chest";
+            ow.window_type = PacketData::WindowType::CHEST;
+            ow.Serialize(session.stream);
+            
+            // Setup interaction
+            auto* chest = world.getTileEntityAs<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z });
+            if (!chest) return; // not a chest tile entity
+            session.activeInteraction = std::make_unique<ChestInventoryInteraction>(session.inventory, chest->inventory);
+
+            // Send inventory
+            PacketUtilities::sendInventory(session, session.openWindowId, session.activeInteraction->inventory);
+            return;
+        }
+
         auto pos = pkt.position;
         if (pkt.face == 0) pos.y -= 1;
         if (pkt.face == 1) pos.y += 1;
@@ -126,6 +183,8 @@ namespace HandlePacket {
         if (session.inventoryLocked) return;
         session.pendingWindowId = pkt.window_id;
         session.pendingTransactionId = pkt.transaction_id;
+
+        // The player's inventory is handled seperate
         if (pkt.window_id == 0) {
             // Make sure what the client thinks and what we have line up
             ItemStack empty{ ITEM_INVALID };
@@ -156,7 +215,36 @@ namespace HandlePacket {
                 return;
             }
             session.inventoryInteraction.onLeftClick(pkt.slot_id);
+            return;
         }
+        ItemStack empty{ ITEM_INVALID };
+        auto expected = session.activeInteraction->inventory.getStackInSlot(pkt.slot_id);
+        ItemStack& slotItem = expected ? *expected : empty;
+        if (slotItem.id != pkt.item.id || slotItem.data != pkt.item.data || slotItem.count != pkt.item.count) {
+            Packet::ContainerTransaction ct;
+            ct.accepted = false;
+            ct.transaction_id = session.pendingTransactionId;
+            ct.window_id = pkt.window_id;
+            ct.Serialize(session.stream);
+            session.inventoryLocked = true;
+
+            // Reset the held cursor
+            PacketUtilities::sendSlot(session, -1, -1, &empty);
+            PacketUtilities::sendInventory(session, pkt.window_id, session.activeInteraction->inventory);
+            return;
+        }
+
+        // Everything lined up so go as normal
+        if (pkt.right_click) {
+            session.activeInteraction->onRightClick(pkt.slot_id);
+            return;
+        }
+        if (pkt.shift) {
+            session.activeInteraction->onShiftClick(pkt.slot_id);
+            return;
+        }
+        session.activeInteraction->onLeftClick(pkt.slot_id);
+        return;
     }
 
     inline void CloseContainer(Packet::CloseContainer& /*pkt*/, PlayerSession& session) {
@@ -175,9 +263,8 @@ namespace HandlePacket {
         // TODO: attack / interact logic
     }
 
-    inline void InteractWithBlock(Packet::InteractWithBlock& /*pkt*/,
-        PlayerSession& /*session*/, WorldManager& /*world*/) {
-        // TODO: right-click block logic (doors, chests, etc.)
+    inline void InteractWithBlock(Packet::InteractWithBlock& pkt,
+        PlayerSession& session, WorldManager& world) {
     }
 
     inline void Animation(Packet::Animation& pkt, PlayerSession& session,

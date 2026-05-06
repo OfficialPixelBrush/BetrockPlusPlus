@@ -114,6 +114,138 @@ struct InventoryInteraction {
     }
 };
 
+struct LargeChestInventoryInteraction : InventoryInteraction {
+    InventoryPlayer& playerInventory;
+    InventoryChest& upperChest;
+    InventoryChest& lowerChest;
+    InventoryLargeChest chestInventory;
+
+    struct SharedInventory : Inventory {
+        LargeChestInventoryInteraction* owner = nullptr;
+        SharedInventory() : Inventory(90) {}
+        void onInventoryChanged() override {
+            if (owner) owner->writeBack();
+        }
+    } sharedInventory;
+
+    LargeChestInventoryInteraction(InventoryPlayer& pinv, InventoryChest& upper, InventoryChest& lower)
+        : InventoryInteraction(sharedInventory), playerInventory(pinv), upperChest(upper), lowerChest(lower), chestInventory(&upper, &lower) {
+        sharedInventory.owner = this;
+        mergeInventories();
+    }
+
+    void mergeInventories() {
+        int slotCount = 0;
+        for (int i = 0; i < chestInventory.getSizeInventory(); i++) {
+            auto* stack = chestInventory.getStackInSlot(i);
+            sharedInventory.slots[slotCount++] = stack ? std::optional<ItemStack>(*stack) : std::nullopt;
+        }
+        for (int i = 9; i <= 44; i++)
+            sharedInventory.slots[slotCount++] = playerInventory.slots[i];
+    }
+
+    void writeBack() {
+        for (int i = 0; i < 54; i++) {
+            auto& slot = sharedInventory.slots[i];
+            ItemStack* ptr = slot.has_value() ? &slot.value() : nullptr;
+            chestInventory.setInventorySlotContents(i, ptr);
+        }
+        for (int i = 54; i < 90; i++)
+            playerInventory.slots[i - 54 + 9] = sharedInventory.slots[i];
+    }
+
+    void onShiftClick(int slot) override {
+        auto stack = sharedInventory.getStackInSlot(slot);
+        if (!stack) return;
+
+        ItemStack copy = *stack;
+
+        if (slot <= 53) {
+            // Chest -> inventory
+            bool success = playerInventory.mergeItemStackInInventory(copy, true, 9, 44);
+        }
+        else {
+            // Inventory -> Chest
+            bool success = chestInventory.mergeItemStackInInventory(copy);
+        }
+
+        // Update the source in the real inventory before re-merging
+        if (slot <= 53) {
+            ItemStack* ptr = copy.count == 0 ? nullptr : &copy;
+            chestInventory.setInventorySlotContents(slot, ptr);
+        }
+        else {
+            int playerSlot = slot - 54 + 9;
+            playerInventory.slots[playerSlot] = copy.count == 0 ? std::nullopt : std::optional<ItemStack>(copy);
+        }
+
+        // Re-sync sharedInventory from the real inventories
+        mergeInventories();
+    }
+};
+
+struct ChestInventoryInteraction : InventoryInteraction {
+    InventoryPlayer& playerInventory;
+    InventoryChest& chestInventory;
+
+    struct SharedInventory : Inventory {
+        ChestInventoryInteraction* owner = nullptr;
+        SharedInventory() : Inventory(63) {}
+        void onInventoryChanged() override {
+            if (owner) owner->writeBack();
+        }
+    } sharedInventory;
+
+    ChestInventoryInteraction(InventoryPlayer& pinv, InventoryChest& cinv)
+        : InventoryInteraction(sharedInventory), playerInventory(pinv), chestInventory(cinv) {
+        sharedInventory.owner = this;
+        mergeInventories();
+    }
+
+    void mergeInventories() {
+        int slotCount = 0;
+        for (auto& slot : chestInventory.slots)
+            sharedInventory.slots[slotCount++] = slot;
+        for (int i = 9; i <= 44; i++)
+            sharedInventory.slots[slotCount++] = playerInventory.slots[i];
+    }
+
+    void writeBack() {
+        for (int i = 0; i < 27; i++)
+            chestInventory.slots[i] = sharedInventory.slots[i];
+        for (int i = 27; i < 63; i++)
+            playerInventory.slots[i - 27 + 9] = sharedInventory.slots[i];
+    }
+
+    void onShiftClick(int slot) override {
+        auto stack = sharedInventory.getStackInSlot(slot);
+        if (!stack) return;
+
+        ItemStack copy = *stack;
+
+        if (slot <= 26) {
+            // Chest -> inventory
+            bool success = playerInventory.mergeItemStackInInventory(copy, true, 9, 44);
+        }
+        else {
+            // Inventory -> Chest
+            bool success = chestInventory.mergeItemStackInInventory(copy);
+        }
+
+        // Update the source in the real inventory before re-merging
+        if (slot <= 26) {
+            chestInventory.slots[slot] = copy.count == 0 ? std::nullopt : std::optional<ItemStack>(copy);
+        }
+        else {
+            int playerSlot = slot - 27 + 9;
+            playerInventory.slots[playerSlot] = copy.count == 0 ? std::nullopt : std::optional<ItemStack>(copy);
+        }
+
+        // Re-sync sharedInventory from the real inventories
+        mergeInventories();
+    }
+};
+
 struct PlayerInventoryInteraction : InventoryInteraction {
     InventoryPlayer& playerInventory;
 
@@ -130,9 +262,7 @@ struct PlayerInventoryInteraction : InventoryInteraction {
 
         if (from == invMap::armor || from == invMap::crafting || from == invMap::craftingResult || from == invMap::hotbar) {
             bool success = playerInventory.mergeItemStackInInventory(copy, false, 9, 35);
-            if (!success) {
-                playerInventory.mergeItemStackInInventory(copy, false, 36, 44);
-            }
+            if (!success) playerInventory.mergeItemStackInInventory(copy, false, 36, 44);
         }
         else {
             playerInventory.mergeItemStackInInventory(copy, false, 36, 44);
