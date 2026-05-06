@@ -36,7 +36,6 @@ struct PendingBlock {
 struct WorldManager {
     // Owned exclusively by the main thread — no locks needed for any read/write.
     std::unordered_map<ChunkPos, std::shared_ptr<Chunk>> chunks;
-
     std::function<void(PendingBlock, ChunkPos)> onBlockUpdate; // always called on main thread
 
     // Bleed-writes from PopulateChunk that targeted a chunk which wasn't loaded
@@ -175,6 +174,12 @@ struct WorldManager {
             pendingBleedWrites[cp].push_back({ wpos, Block{ block_type, metadata } });
             return;
         }
+
+        // Remove any tile entities that exist at this spot
+        auto& tes = chunk->tileEntities;
+        tes.erase(std::remove_if(tes.begin(), tes.end(), [&](const std::shared_ptr<TileEntity>& te) {
+            return te && te->position == wpos;
+            }), tes.end());
 
         // Unlight before changing the block
         lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Block, *this);
