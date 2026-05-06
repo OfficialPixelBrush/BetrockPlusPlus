@@ -123,20 +123,48 @@ namespace HandlePacket {
 
     // Click handler
     inline void ClickSlot(Packet::ClickSlot& pkt, PlayerSession& session) {
-        
+        if (session.inventoryLocked) return;
+        session.pendingWindowId = pkt.window_id;
+        session.pendingTransactionId = pkt.transaction_id;
+        if (pkt.window_id == 0) {
+            // Make sure what the client thinks and what we have line up
+            ItemStack empty{ ITEM_INVALID };
+            auto expected = session.inventory.getStackInSlot(pkt.slot_id);
+            ItemStack& slotItem = expected ? *expected : empty;
+            if (slotItem.id != pkt.item.id || slotItem.data != pkt.item.data || slotItem.count != pkt.item.count) {
+                Packet::ContainerTransaction ct;
+                ct.accepted = false;
+                ct.transaction_id = session.pendingTransactionId;
+                ct.window_id = pkt.window_id;
+                ct.Serialize(session.stream);
+                session.inventoryLocked = true;
+
+                // Reset the held cursor
+                PacketUtilities::sendSlot(session, -1, -1, &empty);
+
+                PacketUtilities::sendInventory(session, pkt.window_id, session.inventory);
+                return;
+            }
+
+            // Everything lined up so go as normal
+            if (pkt.right_click) {
+                session.inventoryInteraction.onRightClick(pkt.slot_id);
+                return;
+            }
+            if (pkt.shift) {
+                session.inventoryInteraction.onShiftClick(pkt.slot_id);
+                return;
+            }
+            session.inventoryInteraction.onLeftClick(pkt.slot_id);
+        }
     }
 
     inline void CloseContainer(Packet::CloseContainer& /*pkt*/, PlayerSession& session) {
-        // Just clear everything for now
-        session.inventory.carried = std::nullopt;
-        session.openWindowId = 0;
     }
 
     // Client acknowledges a rejected transaction
     inline void ContainerTransaction(Packet::ContainerTransaction& pkt, PlayerSession& session) {
-        if (session.inventoryLocked
-            && pkt.window_id == session.pendingWindowId
-            && pkt.transaction_id == session.pendingTransactionId) {
+        if (session.inventoryLocked && pkt.window_id == session.pendingWindowId && pkt.transaction_id == session.pendingTransactionId) {
             session.inventoryLocked = false;
         }
     }

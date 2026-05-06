@@ -64,7 +64,7 @@ add_executable(
     src/bpp_server/commands/command.cpp
     src/bpp_server/commands/command_manager.cpp
     src/bpp_shared/world/lighter.cpp
-      "src/bpp_shared/tile_entities/tile_entity_manager.h" "src/bpp_shared/inventory/inventoryInteraction.h")
+)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(BetrockPlusPlus PRIVATE
