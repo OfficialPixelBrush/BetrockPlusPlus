@@ -280,21 +280,13 @@ void Server::acceptNewPlayers() {
 }
 
 // Position deltas are computed as fixed-point integers (coord * 32) to avoid
-// floating-point drift. Threshold of 128 fp units (= 4 blocks) triggers an
-// absolute TeleportEntity instead of a relative move packet.
-
-// The client's handleEntityTeleport adds 1/64 to the decoded Y
-// (serverPosY/32 + 1/64), so we subtract that offset when building the
-// teleport Y so the entity lands on feet position, not 1/64 above it.
-// Relative move packets do NOT have this offset (handleEntity uses /32 only).
+// floating-point drift. 
 void Server::broadcastPlayerMovement(PlayerSession& session) {
-    // Convert current position to fixed-point integers — wire scale
+    // Convert current position to fixed-point integers
     int32_t newFpX = static_cast<int32_t>(session.position.pos.x * 32.0);
     // Subtract 1/64 offset: client adds (serverPosY/32 + 1/64) on teleport,
-    // so encode as (feet_y - 1/64) * 32 = feet_y*32 - 0.5, truncated
     int32_t newFpY = static_cast<int32_t>((session.position.pos.y - (1.0 / 64.0)) * 32.0);
     int32_t newFpZ = static_cast<int32_t>(session.position.pos.z * 32.0);
-    // rotation.x = yaw, rotation.y = pitch
     int8_t newYaw = static_cast<int8_t>(session.rotation.x / 360.0f * 256.0f);
     int8_t newPitch = static_cast<int8_t>(session.rotation.y / 360.0f * 256.0f);
 
@@ -400,8 +392,8 @@ void Server::tick() {
         }
     }
 
-    // Drain chunk-session index updates that ChunkSender recorded.
     for (auto& session : players) {
+        // Drain chunk-session index updates that ChunkSender recorded.
         for (const auto& pos : session->newlyFlushed)
             indexAddChunk(*session, pos);
         session->newlyFlushed.clear();
@@ -409,11 +401,24 @@ void Server::tick() {
         for (const auto& pos : session->newlyUnloaded)
             indexRemoveChunk(*session, pos);
         session->newlyUnloaded.clear();
+
+        // Check inventory diffs
+        if (!session->activeInteraction) continue;
+        auto diffs = session->activeInteraction->tickDiff();
+        // Send each differing slot
+        if (diffs.size() <= 5) {
+            for (auto difference : diffs) {
+                ItemStack invalid{ ITEM_INVALID };
+                ItemStack* item = difference.stack.has_value() ? &difference.stack.value() : &invalid;
+                PacketUtilities::sendSlot(*session, session->openWindowId, difference.slot, item);
+            }
+        }
+        else {
+            PacketUtilities::sendInventory(*session, session->openWindowId, session->activeInteraction->inventory);
+        }
     }
 
-    // Dispatch block changes. For each chunk we build the packet bytes ONCE
-    // (per packet type), then copy them into every interested session's stream
-    // rather than re-serialising for each player.
+    // Dispatch block changes. 
     for (auto& [chunk, changes] : localBlockChanges) {
         // Find which sessions care about this chunk via the reverse index.
         // Split into flushed (send immediately) and sentOnly (queue).
@@ -423,7 +428,7 @@ void Server::tick() {
 
         // Sessions in the index are always flushed for this chunk.
         if (indexIt != chunkSessions.end()) {
-            flushedSessions = indexIt->second; // copy — safe, index stays stable
+            flushedSessions = indexIt->second;
         }
 
         // Sessions that have the chunk in-flight (sentChunks but not flushedChunks)
@@ -497,8 +502,6 @@ void Server::tick() {
         }
         else {
             // Sub-region: compression is async per-session via ChunkSender.
-            // We can't share the future, but we CAN avoid recomputing the
-            // bounding box for each session — do it once here.
             for (auto* session : flushedSessions)
                 chunkSender.sendBlockUpdates(*session, chunk, changes, chunkRef);
         }

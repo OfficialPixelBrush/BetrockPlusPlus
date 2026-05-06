@@ -143,6 +143,7 @@ namespace HandlePacket {
 
                 session.activeInteraction = std::make_unique<LargeChestInventoryInteraction>(
                     session.inventory, chest->inventory, partnerChest->inventory);
+                session.activeInteraction->initSnapshot();
 
                 PacketUtilities::sendInventory(session, session.openWindowId, session.activeInteraction->inventory);
                 return;
@@ -161,6 +162,7 @@ namespace HandlePacket {
             auto* chest = world.getTileEntityAs<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z });
             if (!chest) return; // not a chest tile entity
             session.activeInteraction = std::make_unique<ChestInventoryInteraction>(session.inventory, chest->inventory);
+            session.activeInteraction->initSnapshot();
 
             // Send inventory
             PacketUtilities::sendInventory(session, session.openWindowId, session.activeInteraction->inventory);
