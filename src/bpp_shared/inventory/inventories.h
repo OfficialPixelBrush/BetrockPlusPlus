@@ -25,7 +25,7 @@ enum invMap {
     outOfBounds
 };
 
-// Network format:
+// Network format (The rest of the inventories are self explanatory this is the only one that is semi-convoluted):
 // Slots 5 -> 8 are for armor
 // Slots 36 -> 44 are the hotbar
 // Slots 9 -> 35 are the main inventory
@@ -57,11 +57,11 @@ struct InventoryPlayer : Inventory {
 private:
 };
 
-
 struct InventoryChest : Inventory {
     InventoryChest() : Inventory(27) { name = "Chest"; }
 };
 
+// Just a wrapper for two chest inventories
 struct InventoryLargeChest : Inventory {
     Inventory* upper = nullptr;
     Inventory* lower = nullptr;
@@ -124,35 +124,4 @@ struct InventoryFurnace : Inventory {
 
     InventoryFurnace() : Inventory(3) { name = "Furnace"; }
     bool isBurning() const { return burnTime > 0; }
-};
-
-struct InventoryCrafting : Inventory {
-    int        width   = 0;
-    int        height  = 0;
-    Container* handler = nullptr;
-
-    InventoryCrafting(Container* handler, int width, int height)
-        : Inventory(width * height), width(width), height(height), handler(handler) {
-        name = "Crafting";
-    }
-
-    ItemStack* getStackAt(int x, int y) {
-        if (x < 0 || x >= width || y < 0 || y >= height) return nullptr;
-        return getStackInSlot(x + y * width);
-    }
-
-    void setInventorySlotContents(int slot, ItemStack* stack) override;
-    ItemStack decreaseStackSize(int slot, int count) override;
-    void onInventoryChanged() override {}
-};
-
-struct InventoryCraftResult : Inventory {
-    InventoryCraftResult() : Inventory(1) { name = "Result"; }
-
-    ItemStack decreaseStackSize(int slot, int /*count*/) override {
-        if (slot != 0 || !slots[0].has_value()) return ItemStack{};
-        ItemStack taken = slots[0].value();
-        slots[0] = std::nullopt;
-        return taken;
-    }
 };

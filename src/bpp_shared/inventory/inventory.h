@@ -19,7 +19,6 @@ struct EntityPlayer;
 struct Inventory {
     std::string name = "Inventory";
     std::vector<std::optional<ItemStack>> slots;
-    std::optional<ItemStack> carried;
 
     Inventory(int size) : slots(size) {}
 
@@ -28,7 +27,7 @@ struct Inventory {
     }
 
     virtual int getNetworkSlotId(int slot) const {
-        if (slot < 0 || slot > slots.size()) return -1;
+        if (slot < 0 || slot >= slots.size()) return -1;
         return slot;
     }
 
@@ -62,6 +61,54 @@ struct Inventory {
 
     virtual const std::string& getInventoryName() const { return name; }
     virtual void onInventoryChanged() {}
-    virtual bool canInteractWith(EntityPlayer* /*player*/) { return true; }
     virtual ~Inventory() = default;
+
+    void clearSlot(int slot) {
+        if (slot < 0 || slot >= (int)slots.size()) return;
+        slots[slot] = std::nullopt;
+        onInventoryChanged();
+    }
+
+    // Take in the original item stack, try and merge it with our inventory. Returns if it was successful
+    // Start slot and end slot are inclusive
+    bool mergeItemStackInInventory(ItemStack& stack, bool reverse = false, int startSlot = 0, int endSlot = -1) {
+        auto start = startSlot;
+        auto end = endSlot == -1 ? getSizeInventory() - 1 : endSlot;
+
+        // Try and merge into an already existing stack of the same type if this item is stackable
+        if (IsStackable(stack.id)) {
+            for (int i = reverse ? end : start; reverse ? i >= start : i <= end; reverse ? i-- : i++) {
+                auto slot = getStackInSlot(i);
+                if (!slot) continue;
+                if (slot->id == stack.id && slot->data == stack.data) {
+                    auto maxStack = GetMaxStack(slot->id);
+                    // Don't try and merge into an already maxed out stack
+                    if (slot->count >= maxStack) continue;
+
+                    // Add the stacks together and do some checks to make sure we don't overflow
+                    int space = maxStack - slot->count;
+                    int toMove = std::min(space, (int)stack.count);
+
+                    slot->count += toMove;
+                    stack.count -= toMove;
+
+                    onInventoryChanged();
+                    if (stack.count == 0) return true;
+                }
+            }
+        }
+
+        // We couldn't merge into existing items so just try and find an empty slot
+        for (int i = reverse ? end : start; reverse ? i >= start : i <= end; reverse ? i-- : i++) {
+            if (!slots[i].has_value()) {
+                slots[i] = ItemStack{ stack.id, stack.count, stack.data };
+                stack.id = ITEM_INVALID;
+                stack.data = 0;
+                stack.count = 0;
+                onInventoryChanged();
+                return true;
+            }
+        }
+        return false; // Give up
+    }
 };
