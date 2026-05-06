@@ -248,6 +248,9 @@ namespace HandlePacket {
     }
 
     inline void CloseContainer(Packet::CloseContainer& /*pkt*/, PlayerSession& session) {
+        // Get rid of our active interaction and reset the window id
+        session.activeInteraction = nullptr;
+        session.openWindowId = 0;
     }
 
     // Client acknowledges a rejected transaction
