@@ -19,6 +19,7 @@
 #include "networking/packets.h"
 #include "world/client_pos.h"
 #include "inventory/inventories.h"
+#include "inventory/inventory_interaction.h"
 
 enum class ConnectionState : uint8_t {
     Handshaking,
@@ -63,6 +64,7 @@ struct PlayerSession {
 
     // Inventory
     InventoryPlayer inventory;
+    PlayerInventoryInteraction inventoryInteraction;
 
     // windowId = 0 is always the player inventory. Non-zero means a container is open.
     // ranges from 0-127 and wraps
@@ -78,5 +80,5 @@ struct PlayerSession {
     TransactionId pendingTransactionId = 0;
     WindowId pendingWindowId = 0;
 
-    explicit PlayerSession(int socket) : stream(socket) {}
+    explicit PlayerSession(int socket) : stream(socket), inventoryInteraction(inventory) {}
 };

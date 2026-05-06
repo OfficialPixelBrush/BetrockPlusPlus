@@ -32,6 +32,7 @@ enum invMap {
 // Slots 1 -> 4 are the crafting grid
 // Slot 0 is the crafting result
 struct InventoryPlayer : Inventory {
+public:
     int  currentItem = 0;
     bool inventoryChanged = false;
     EntityPlayer* player = nullptr;
@@ -52,7 +53,6 @@ struct InventoryPlayer : Inventory {
     }
 
     void onInventoryChanged() override { inventoryChanged = true; }
-    bool canInteractWith(EntityPlayer* /*player*/) override { return true; }
 
 private:
 };
