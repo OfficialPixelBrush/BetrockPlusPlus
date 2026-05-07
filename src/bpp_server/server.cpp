@@ -729,7 +729,6 @@ void Server::processIncoming(PlayerSession& session) {
             break;
         }
         case PacketId::SetTime: {
-            // Server-authoritative; client should not send this — consume and ignore.
             Packet::SetTime pkt;
             pkt.Deserialize(session.stream);
             break;
@@ -806,7 +805,6 @@ void Server::processIncoming(PlayerSession& session) {
             break;
         }
         case PacketId::PlayerInput: {
-            // Client-only packet; consume and ignore.
             Packet::PlayerInput pkt;
             pkt.Deserialize(session.stream);
             break;
