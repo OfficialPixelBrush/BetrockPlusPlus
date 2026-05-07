@@ -63,10 +63,10 @@ struct InventoryChest : Inventory {
 
 // Just a wrapper for two chest inventories
 struct InventoryLargeChest : Inventory {
-    Inventory* upper = nullptr;
-    Inventory* lower = nullptr;
+    InventoryChest* upper;
+    InventoryChest* lower;
 
-    InventoryLargeChest(Inventory* upper, Inventory* lower)
+    InventoryLargeChest(InventoryChest* upper, InventoryChest* lower)
         : Inventory(0), upper(upper), lower(lower) {
         name = "Large Chest";
     }

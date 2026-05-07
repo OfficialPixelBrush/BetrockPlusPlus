@@ -95,6 +95,19 @@ struct WorldManager {
         return dynamic_cast<T*>(getTileEntity(pos));
     }
 
+    template<typename T>
+    std::shared_ptr<T> getTileEntityShared(Int3 pos) {
+        Chunk* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });
+        if (!chunk) return nullptr;
+        for (auto& te : chunk->tileEntities) {
+            if (te && te->position.x == pos.x &&
+                te->position.y == pos.y &&
+                te->position.z == pos.z)
+                return std::dynamic_pointer_cast<T>(te);
+        }
+        return nullptr;
+    }
+
     // Remove the tile entity at world position `pos`.
     void removeTileEntity(Int3 pos) {
         Chunk* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });

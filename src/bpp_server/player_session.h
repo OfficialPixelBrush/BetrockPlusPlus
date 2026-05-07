@@ -80,5 +80,5 @@ struct PlayerSession {
     TransactionId pendingTransactionId = 0;
     WindowId      pendingWindowId = 0;
 
-    explicit PlayerSession(int socket) : stream(socket), inventoryInteraction(inventory) {}
+    explicit PlayerSession(int socket) : stream(socket), inventoryInteraction(&inventory) {}
 };
