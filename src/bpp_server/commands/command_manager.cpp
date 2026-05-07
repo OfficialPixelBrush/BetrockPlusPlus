@@ -69,18 +69,23 @@ void CommandManager::Parse(std::wstring& cmd_string, PlayerSession& session) noe
 		// store token string in the vector
 		command.push_back(s);
 	}
-
-	try {
-		// TODO: Make this efficient
-		for (size_t i = 0; i < registeredCommands.size(); i++) {
-			if (registeredCommands[i]->GetLabel() == command[0]) {
-				failureReason = registeredCommands[i]->Execute(command, session);
-				break;
+	// No arguments passed, exit early
+	if (command.empty() || cmd_string.empty()) {
+		failureReason = ERROR_REASON_NO_CMD;
+	} else {
+		try {
+			// TODO: Make this efficient
+			for (size_t i = 0; i < registeredCommands.size(); i++) {
+				// This'll throw an out of bounds error
+				if (registeredCommands[i]->GetLabel() == command.at(0)) {
+					failureReason = registeredCommands[i]->Execute(command, session);
+					break;
+				}
 			}
 		}
-	}
-	catch (const std::exception& e) {
-		//Betrock::Logger::Instance().Info(std::string(e.what()) + std::string(" on /") + cmd_string);
+		catch (const std::exception& e) {
+			//Betrock::Logger::Instance().Info(std::string(e.what()) + std::string(" on /") + cmd_string);
+		}
 	}
 
 	Packet::ChatMessage failPkt;

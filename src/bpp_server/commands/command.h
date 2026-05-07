@@ -16,6 +16,7 @@
 #define ERROR_REASON_SYNTAX L"Invalid Syntax"
 #define ERROR_REASON_PARAMETERS L"Invalid Parameters"
 #define ERROR_REASON_ERROR L"Error"
+#define ERROR_REASON_NO_CMD L"No command passed"
 
 #define MAX_CHAT_LINE_SIZE 60
 
