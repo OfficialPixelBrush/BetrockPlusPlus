@@ -527,12 +527,12 @@ void Server::tick() {
                 disconnectPlayer(*session, L"Connection timed out.");
             }
         } else {
-            // Kill stuck handshakers after a few seconds
+            // Kill stuck handshakers
             auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
                 now - session->last_packet_time).count();
-            if (elapsed > 5) {
+            if (elapsed > timeout_seconds) {
                 session->stream.setConnected(false);
-                std::wcout << L"Disconnected dataless stream. \n";
+                std::wcout << L"Disconnected dataless stream. (Most likely a prober!)\n";
             }
         }
     }
