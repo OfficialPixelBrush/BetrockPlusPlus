@@ -179,14 +179,18 @@ namespace HandlePacket {
         }
 
         auto pos = pkt.position;
-        if (pkt.face == 0) pos.y -= 1;
-        if (pkt.face == 1) pos.y += 1;
-        if (pkt.face == 2) pos.z -= 1;
-        if (pkt.face == 3) pos.z += 1;
-        if (pkt.face == 4) pos.x -= 1;
-        if (pkt.face == 5) pos.x += 1;
+        if (pkt.face == PacketData::FaceDirection::USE_ITEM) {
+            std::cout << "Tried to use item \n";
+            std::cout << pkt.position << "\n";
+        }
+        if (pkt.face == PacketData::FaceDirection::Y_MINUS) pos.y -= 1;
+        if (pkt.face == PacketData::FaceDirection::Y_PLUS) pos.y += 1;
+        if (pkt.face == PacketData::FaceDirection::Z_MINUS) pos.z -= 1;
+        if (pkt.face == PacketData::FaceDirection::Z_PLUS) pos.z += 1;
+        if (pkt.face == PacketData::FaceDirection::X_MINUS) pos.x -= 1;
+        if (pkt.face == PacketData::FaceDirection::X_PLUS) pos.x += 1;
         // Make sure the block id is valid for placement otherwise we will crash
-        if (pkt.item.id <= BLOCK_CHEST_LOCKED && (pkt.item.id >= 0)) world.setBlock({ pos.x, pos.y, pos.z }, BlockType(pkt.item.id));
+        if (pkt.item.id <= BLOCK_CHEST_LOCKED && (pkt.item.id >= 0)) world.setBlock({ pos.x, pos.y, pos.z }, BlockType(pkt.item.id), pkt.item.data);
     }
 
     // Click handler

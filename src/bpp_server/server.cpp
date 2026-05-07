@@ -274,7 +274,6 @@ void Server::acceptNewPlayers() {
     setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,
         reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
 #endif
-    std::cout << "New player connected. Total players: " << players.size() + 1 << "\n";
     players.push_back(std::make_unique<PlayerSession>(clientSocket));
     players.back()->players = &players;
 }
@@ -529,6 +528,14 @@ void Server::tick() {
                 std::wcout << L"Player " << session->username << L" timed out\n";
                 disconnectPlayer(*session, L"Connection timed out.");
             }
+        } else {
+            // Kill stuck handshakers after a few seconds
+            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+                now - session->last_packet_time).count();
+            if (elapsed > 5) {
+                session->stream.setConnected(false);
+                std::wcout << L"Disconnected dataless stream. \n";
+            }
         }
     }
 
@@ -569,11 +576,18 @@ void Server::handleHandshake(PlayerSession& session) {
         return;
     }
     session.username = incoming.username;
-    std::wcout << L"Player " << session.username << L" is logging in.\n";
 
     Packet::PreLogin response;
     response.username = L"-";
     response.Serialize(session.stream);
+
+    int realPlayers = 0;
+    for (auto& s : players)
+        if (s->connState == ConnectionState::Playing ||
+            s->connState == ConnectionState::WaitingForSpawnChunks)
+            realPlayers++;
+
+    std::wcout << L"Player " << session.username << L" is logging in. Total players: " << realPlayers + 1 << L"\n";
 
     session.connState = ConnectionState::LoggingIn;
 }
@@ -649,7 +663,6 @@ void Server::disconnectPlayer(PlayerSession& session, const std::wstring& reason
     kick.reason = reason;
     kick.Serialize(session.stream);
     session.stream.setConnected(false);
-
     std::wcout << L"Player " << session.username << L" disconnected: " << reason << L"\n";
 }
 
