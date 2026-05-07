@@ -249,31 +249,29 @@ void Server::stop() {
 }
 
 void Server::acceptNewPlayers() {
-    int clientSocket = static_cast<int>(accept(serverSocket, nullptr, nullptr));
 #if defined(_WIN32) || defined(_WIN64)
+    SOCKET rawSocket = accept(serverSocket, nullptr, nullptr);
+    if (rawSocket == INVALID_SOCKET) return;
+
     u_long clientMode = 1;
-    ioctlsocket(clientSocket, FIONBIO, &clientMode);
-#else
-    fcntl(clientSocket, F_SETFL, O_NONBLOCK);
-#endif
+    ioctlsocket(rawSocket, FIONBIO, &clientMode);
 
-#if defined(_WIN32) || defined(_WIN64)
-    if (clientSocket == INVALID_SOCKET) return;
+    DWORD recvTimeout = 45;
+    setsockopt(rawSocket, SOL_SOCKET, SO_RCVTIMEO,
+        reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
+
+    int clientSocket = static_cast<int>(rawSocket);
 #else
+    int clientSocket = accept(serverSocket, nullptr, nullptr);
     if (clientSocket < 0) return;
+
+    fcntl(clientSocket, F_SETFL, O_NONBLOCK);
+
+    struct timeval recvTimeout { 0, 45000 };
+    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,
+        reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
 #endif
 
-    // Set a receive timeout so blocking recv() never stalls the tick loop.
-    // On timeout, ReadBytes sets shortRead=true and the caller retries next tick.
-#if defined(_WIN32) || defined(_WIN64)
-    DWORD recvTimeout = 45; // milliseconds
-    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,
-        reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
-#else
-    struct timeval recvTimeout{ 0, 45000 }; // 45ms
-    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,
-        reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
-#endif
     players.push_back(std::make_unique<PlayerSession>(clientSocket));
     players.back()->players = &players;
 }
