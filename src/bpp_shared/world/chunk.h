@@ -120,10 +120,10 @@ struct Chunk {
                 for (int y = CHUNK_HEIGHT - 1; y >= height; y--)
                     setSkyLight({ x, y, z }, 15);
                 int skyLight = 15;
-                for (int y = height - 1; y >= 0 && skyLight > 0; y--) {
+                for (int y = height - 1; y >= 0; y--) {
                     skyLight -= CrossPlatform::Math::max(1, int(Blocks::blockProperties[getBlock({ x, y, z })].lightOpacity));
-                    if (skyLight > 0)
-                        setSkyLight({ x, y, z }, uint8_t(skyLight));
+                    skyLight = CrossPlatform::Math::max(0, skyLight);
+                    setSkyLight({ x, y, z }, uint8_t(skyLight));
                 }
             }
         }
@@ -135,10 +135,10 @@ struct Chunk {
         for (int y = CHUNK_HEIGHT - 1; y >= height; y--)
             setSkyLight({ pos.x, y, pos.z }, 15);
         int skyLight = 15;
-        for (int y = height - 1; y >= 0 && skyLight > 0; y--) {
+        for (int y = height - 1; y >= 0; y--) {
             skyLight -= CrossPlatform::Math::max(1, int(Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity));
-            if (skyLight > 0)
-                setSkyLight({ pos.x, y, pos.z }, uint8_t(skyLight));
+            skyLight = CrossPlatform::Math::max(0, skyLight); // clamp
+            setSkyLight({ pos.x, y, pos.z }, uint8_t(skyLight));
         }
     }
 

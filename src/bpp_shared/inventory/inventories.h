@@ -53,8 +53,6 @@ public:
     }
 
     void onInventoryChanged() override { inventoryChanged = true; }
-
-private:
 };
 
 struct InventoryChest : Inventory {
