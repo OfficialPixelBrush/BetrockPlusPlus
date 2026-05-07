@@ -404,6 +404,13 @@ void Server::tick() {
 
         // Check inventory diffs
         if (!session->activeInteraction) continue;
+
+        // Force close windows that reference tile entities that have been deleted
+        if (!session->activeInteraction->canExist()) {
+            PacketUtilities::CloseContainer(*session);
+            continue;
+        }
+
         auto diffs = session->activeInteraction->tickDiff();
         // Send each differing slot
         if (diffs.size() <= 5) {
@@ -414,7 +421,7 @@ void Server::tick() {
             }
         }
         else {
-            PacketUtilities::sendInventory(*session, session->openWindowId, session->activeInteraction->inventory);
+            PacketUtilities::sendInventory(*session, session->openWindowId, *session->activeInteraction->inventory);
         }
     }
 

@@ -48,6 +48,15 @@ namespace PacketUtilities {
         pkt.item = stack ? ItemStack{ stack->id, stack->count, stack->data } : ItemStack{ ITEM_INVALID };
         pkt.Serialize(session.stream);
     }
+
+    inline void CloseContainer(PlayerSession& session) {
+        // Get rid of our active interaction and reset the window id
+        Packet::CloseContainer cc;
+        cc.window_id = session.openWindowId;
+        cc.Serialize(session.stream);
+        session.activeInteraction = nullptr;
+        session.openWindowId = 0;
+    }
 };
 
 namespace HandlePacket {
@@ -116,19 +125,19 @@ namespace HandlePacket {
             // Are we a double chest?
             auto l = world.getBlockId({ pkt.position.x - 1, pkt.position.y, pkt.position.z });
             auto r = world.getBlockId({ pkt.position.x + 1, pkt.position.y, pkt.position.z });
-            auto f = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z - 1});
-            auto b = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z + 1});
+            auto f = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z - 1 });
+            auto b = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z + 1 });
             bool doubleChest = (l == BLOCK_CHEST || r == BLOCK_CHEST || f == BLOCK_CHEST || b == BLOCK_CHEST);
 
             if (doubleChest) {
-                TileEntityChest* chest = world.getTileEntityAs<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z });
+                auto chest = world.getTileEntityShared<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z });
                 if (!chest) return;
 
-                TileEntityChest* partnerChest = nullptr;
-                if (l == BLOCK_CHEST) partnerChest = world.getTileEntityAs<TileEntityChest>({ pkt.position.x - 1, pkt.position.y, pkt.position.z });
-                else if (r == BLOCK_CHEST) partnerChest = world.getTileEntityAs<TileEntityChest>({ pkt.position.x + 1, pkt.position.y, pkt.position.z });
-                else if (f == BLOCK_CHEST) partnerChest = world.getTileEntityAs<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z - 1 });
-                else                       partnerChest = world.getTileEntityAs<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z + 1 });
+                std::shared_ptr<TileEntityChest> partnerChest = nullptr;
+                if (l == BLOCK_CHEST) partnerChest = world.getTileEntityShared<TileEntityChest>({ pkt.position.x - 1, pkt.position.y, pkt.position.z });
+                else if (r == BLOCK_CHEST) partnerChest = world.getTileEntityShared<TileEntityChest>({ pkt.position.x + 1, pkt.position.y, pkt.position.z });
+                else if (f == BLOCK_CHEST) partnerChest = world.getTileEntityShared<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z - 1 });
+                else                       partnerChest = world.getTileEntityShared<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z + 1 });
                 if (!partnerChest) return;
 
                 bool isLeftSide = (r == BLOCK_CHEST || b == BLOCK_CHEST);
@@ -142,10 +151,10 @@ namespace HandlePacket {
                 ow.Serialize(session.stream);
 
                 session.activeInteraction = std::make_unique<LargeChestInventoryInteraction>(
-                    session.inventory, chest->inventory, partnerChest->inventory);
+                    &session.inventory, chest, partnerChest);
                 session.activeInteraction->initSnapshot();
 
-                PacketUtilities::sendInventory(session, session.openWindowId, session.activeInteraction->inventory);
+                PacketUtilities::sendInventory(session, session.openWindowId, *session.activeInteraction->inventory);
                 return;
             }
 
@@ -157,15 +166,15 @@ namespace HandlePacket {
             ow.title = "Chest";
             ow.window_type = PacketData::WindowType::CHEST;
             ow.Serialize(session.stream);
-            
+
             // Setup interaction
-            auto* chest = world.getTileEntityAs<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z });
+            auto chest = world.getTileEntityShared<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z });
             if (!chest) return; // not a chest tile entity
-            session.activeInteraction = std::make_unique<ChestInventoryInteraction>(session.inventory, chest->inventory);
+            session.activeInteraction = std::make_unique<ChestInventoryInteraction>(&session.inventory, chest);
             session.activeInteraction->initSnapshot();
 
             // Send inventory
-            PacketUtilities::sendInventory(session, session.openWindowId, session.activeInteraction->inventory);
+            PacketUtilities::sendInventory(session, session.openWindowId, *session.activeInteraction->inventory);
             return;
         }
 
@@ -220,7 +229,7 @@ namespace HandlePacket {
             return;
         }
         ItemStack empty{ ITEM_INVALID };
-        auto expected = session.activeInteraction->inventory.getStackInSlot(pkt.slot_id);
+        auto expected = session.activeInteraction->inventory->getStackInSlot(pkt.slot_id);
         ItemStack& slotItem = expected ? *expected : empty;
         if (slotItem.id != pkt.item.id || slotItem.data != pkt.item.data || slotItem.count != pkt.item.count) {
             Packet::ContainerTransaction ct;
@@ -232,7 +241,7 @@ namespace HandlePacket {
 
             // Reset the held cursor
             PacketUtilities::sendSlot(session, -1, -1, &empty);
-            PacketUtilities::sendInventory(session, pkt.window_id, session.activeInteraction->inventory);
+            PacketUtilities::sendInventory(session, pkt.window_id, *session.activeInteraction->inventory);
             return;
         }
 
