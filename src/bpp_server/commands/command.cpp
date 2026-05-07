@@ -67,12 +67,16 @@ std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerS
 		pkt.message = L"§7-- All Commands --";
 		pkt.Serialize(session.stream);
 		pkt.message = L"§7";
+
 		for (size_t i = 0; i < registered_commands.size(); i++) {
-			pkt.message = registered_commands[i]->GetLabel();
+			pkt.message += registered_commands[i]->GetLabel();
+
 			if (i < registered_commands.size() - 1) {
 				pkt.message += L", ";
 			}
-			if (pkt.message.size() > MAX_CHAT_LINE_SIZE || i == registered_commands.size() - 1) {
+
+			if (pkt.message.size() > MAX_CHAT_LINE_SIZE ||
+				i == registered_commands.size() - 1) {
 				pkt.Serialize(session.stream);
 				pkt.message = L"§7";
 			}
