@@ -254,7 +254,6 @@ void WorldManager::populateReady() {
         });
 
     std::unordered_set<ChunkPos> populatedThisTick;
-
     for (const ChunkPos& pos : ordered) {
         if (!canPopulateDirect(pos)) break;
         if (populatedThisTick.contains(pos)) continue;
