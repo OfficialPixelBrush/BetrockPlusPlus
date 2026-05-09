@@ -499,8 +499,9 @@ bool Generator::PopulateChunk(Chunk& chunk, WorldManager& world) {
 		if (humi < 0.9)                              return BIOME_SEASONALFOREST;
 		return BIOME_RAINFOREST;
 		};
-	Biome biome = getBiomeAt(blockX + CHUNK_WIDTH, blockZ + CHUNK_WIDTH);
-
+	Biome biome = BiomeGenerator(this->seed).GetBiomeAtPoint(
+		Int2{ blockX + CHUNK_WIDTH, blockZ + CHUNK_WIDTH }
+	);
 	// Java RNG seeding sequence
 	this->rand.setSeed(world.seed);
 	int64_t xSalt = this->rand.nextLong() / 2L * 2L + 1L;

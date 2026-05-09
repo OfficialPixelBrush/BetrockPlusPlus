@@ -138,7 +138,6 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
 }
 
 void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
-    // Snapshot chunk positions (main thread owns map, no lock needed).
     std::vector<ChunkPos> snapshot;
     snapshot.reserve(chunks.size());
     for (auto& [pos, chunk] : chunks)
@@ -150,12 +149,10 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
         ? CrossPlatform::Math::max(1, MAX_GENERATIONS_PER_TICK / playerCount)
         : MAX_GENERATIONS_PER_TICK;
 
-    // Build per-player sorted candidate lists.
     std::vector<std::vector<ChunkPos>> perPlayerQueues;
     perPlayerQueues.reserve(size_t(playerCount));
 
     for (const auto& player : players) {
-        Int2 centre = player.getChunkPos();
         std::vector<ChunkPos> candidates;
         candidates.reserve(snapshot.size());
         for (const ChunkPos& p : snapshot) {
@@ -164,15 +161,13 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
             if (it->second->state.load(std::memory_order_acquire) != ChunkState::Unloaded) continue;
             candidates.push_back(p);
         }
-        std::sort(candidates.begin(), candidates.end(), [&](const ChunkPos& a, const ChunkPos& b) {
-            int da = CrossPlatform::Math::max(std::abs(a.x - centre.x), std::abs(a.z - centre.z));
-            int db = CrossPlatform::Math::max(std::abs(b.x - centre.x), std::abs(b.z - centre.z));
-            return da < db;
+        std::sort(candidates.begin(), candidates.end(), [](const ChunkPos& a, const ChunkPos& b) {
+            if (a.x != b.x) return a.x < b.x;
+            return a.z < b.z;
             });
         perPlayerQueues.push_back(std::move(candidates));
     }
 
-    // Fallback: zero-player case sorts by distance from origin.
     std::vector<ChunkPos> noPlayerCandidates;
     if (playerCount == 0) {
         for (const ChunkPos& p : snapshot) {
@@ -182,15 +177,13 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
             noPlayerCandidates.push_back(p);
         }
         std::sort(noPlayerCandidates.begin(), noPlayerCandidates.end(), [](const ChunkPos& a, const ChunkPos& b) {
-            return (a.x * a.x + a.z * a.z) < (b.x * b.x + b.z * b.z);
+            if (a.x != b.x) return a.x < b.x;
+            return a.z < b.z;
             });
     }
 
     std::unordered_set<ChunkPos> startedThisTick;
 
-    // Kick off a generation job for a chunk slot.
-    // The pool worker owns a fresh Chunk privately; it never touches world.chunks.
-    // When done it posts via postGenResult(); main thread integrates in drainGenQueue().
     auto startGeneration = [&](const ChunkPos& pos) -> bool {
         if (startedThisTick.contains(pos)) return false;
         auto it = chunks.find(pos);
@@ -241,43 +234,38 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
     }
 }
 
-// Population runs synchronously on the main thread each tick.
-// This is safe because main thread owns the chunk map, so neighbour reads
-// are direct with no locking needed.
 void WorldManager::populateReady() {
-    // Snapshot positions to avoid iterator invalidation if populate ever
-    // modifies the map (it shouldn't, but be defensive).
-    std::vector<ChunkPos> snapshot;
-    snapshot.reserve(chunks.size());
-    for (auto& [pos, _] : chunks)
-        snapshot.push_back(pos);
+    // Try and match beta's population order its finicky lol
+    std::vector<ChunkPos> ordered;
+    ordered.reserve(chunks.size());
+    for (auto& [pos, chunk] : chunks) {
+        if (chunk->isTerrainPopulated) continue;
+        // Only consider chunks that are inset by one from the border,
+        if (!chunks.contains({ pos.x + 1, pos.z }) ||
+            !chunks.contains({ pos.x, pos.z + 1 }) ||
+            !chunks.contains({ pos.x + 1, pos.z + 1 }))
+            continue;
+        ordered.push_back(pos);
+    }
+
+    std::sort(ordered.begin(), ordered.end(), [](const ChunkPos& a, const ChunkPos& b) {
+        if (a.x != b.x) return a.x < b.x;
+        return a.z < b.z;
+        });
 
     std::unordered_set<ChunkPos> populatedThisTick;
 
-    for (const ChunkPos& pos : snapshot) {
-        auto it = chunks.find(pos);
-        if (it == chunks.end()) continue;
-        if (it->second->state.load(std::memory_order_acquire) != ChunkState::Generated) continue;
-
-        for (ChunkPos candidate : {
-            pos,
-                ChunkPos{ pos.x - 1, pos.z },
-                ChunkPos{ pos.x,     pos.z - 1 },
-                ChunkPos{ pos.x - 1, pos.z - 1 }
-        })
-        {
-            if (populatedThisTick.contains(candidate)) continue;
-            if (!canPopulateDirect(candidate)) continue;
-            auto cit = chunks.find(candidate);
-            if (cit == chunks.end()) continue;
-            cit->second->state.store(ChunkState::Populating, std::memory_order_release);
-            thread_local Generator tl_gen(this->seed);
-            tl_gen.PopulateChunk(*cit->second, *this);
-            cit->second->isTerrainPopulated = true;
-            cit->second->isModified = true;
-            cit->second->state.store(ChunkState::Populated, std::memory_order_release);
-            populatedThisTick.insert(candidate);
-            break;
-        }
+    for (const ChunkPos& pos : ordered) {
+        if (!canPopulateDirect(pos)) break;
+        if (populatedThisTick.contains(pos)) continue;
+        auto cit = chunks.find(pos);
+        if (cit == chunks.end()) break;
+        cit->second->state.store(ChunkState::Populating, std::memory_order_release);
+        thread_local Generator tl_gen(this->seed);
+        tl_gen.PopulateChunk(*cit->second, *this);
+        cit->second->isTerrainPopulated = true;
+        cit->second->isModified = true;
+        cit->second->state.store(ChunkState::Populated, std::memory_order_release);
+        populatedThisTick.insert(pos);
     }
 }
