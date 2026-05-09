@@ -22,6 +22,7 @@ class BiomeGenerator {
         NoiseOctavesSimplex weirdnessNoiseGen;
     public:
         BiomeGenerator(int64_t seed);
+        Biome GetBiomeAtPoint(Int2 worldPos);
         void GenerateBiomeMap(
             Biome biomeMap[],
             std::vector<double>& temperature,
