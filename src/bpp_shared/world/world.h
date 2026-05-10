@@ -354,7 +354,8 @@ struct WorldManager {
     static constexpr bool inBounds(int y) { return y >= 0 && y < CHUNK_HEIGHT; }
 
 private:
-    static constexpr int VIEW_RADIUS = 10;
+    // I believe the vanilla default is 
+    static constexpr int VIEW_RADIUS = 16;
     static constexpr int SIMULATION_RADIUS = 9;
 
     void seedChunkLighting(ChunkPos pos);

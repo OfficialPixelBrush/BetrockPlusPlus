@@ -198,7 +198,7 @@ void BigTreeGenerator::GenerateBranchPositions() {
 								std::pow(double(JavaMath::abs(this->basePos.x - branchBase.x)), 2.0) +
 								std::pow(double(JavaMath::abs(this->basePos.z - branchBase.z)), 2.0)
 							);
-						double verticalDrop = horizontalDistance * this->field_752_i;
+						double verticalDrop = horizontalDistance * this->trunkSlopeFactor;
 						if ((double)branchBase.y - verticalDrop > (double)targetY) {
 							trunkConnection.y = targetY;
 						} else {
@@ -239,9 +239,8 @@ void BigTreeGenerator::PlaceCircularLayer(Int3 centerPos, float radius, BranchAx
 	BranchAxis axisU = branchOrientation[axis];
 	BranchAxis axisV = branchOrientation[axis + AXIS_OFFSET];
 	Int3 currentPos{0, 0, 0};
-
+	currentPos[axis] = centerPos[axis];
 	for (int32_t du = -intRadius; du <= intRadius; ++du) {
-		currentPos[axis] = centerPos[axis];
 		currentPos[axisU] = centerPos[axisU] + du;
 
 		for (int32_t dv = -intRadius; dv <= intRadius; ++dv) {
