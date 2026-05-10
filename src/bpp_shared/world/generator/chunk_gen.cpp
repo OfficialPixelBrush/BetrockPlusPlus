@@ -157,14 +157,11 @@ void Generator::ReplaceBlocksForBiome(Chunk& chunk) {
 
 						stoneDepth = stoneActive;
 						// Place filler block if we're underwater
-						if (y >= WATER_LEVEL - 1) {
-							chunk.setBlock(bpos, topBlock);
-						}
-						else {
-							chunk.setBlock(bpos, fillerBlock);
-						}
-					}
-					else if (stoneDepth > 0) {
+						chunk.setBlock(
+							bpos,
+							(y >= WATER_LEVEL - 1) ? topBlock : fillerBlock
+						);
+					} else if (stoneDepth > 0) {
 						--stoneDepth;
 						chunk.setBlock(bpos, fillerBlock);
 						if (stoneDepth == 0 && fillerBlock == BLOCK_SAND) {
