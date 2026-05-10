@@ -175,7 +175,6 @@ void BigTreeGenerator::GenerateBranchPositions() {
 		for (; canpoyLayer >= 0; --canpoyLayer) {
 			float canopyRadius = this->GetCanopyRadius(canpoyLayer);
 			if (canopyRadius >= 0.0F) {
-				// Attempt to generate Branch
 				for (int32_t attempts = 0; attempts < branchesPerLayer; ++attempts) {
 					double radialDistance =
 						this->branchLength *
@@ -281,12 +280,12 @@ float BigTreeGenerator::GetCanopyRadius(int32_t y) {
 		float radius;
 		if (distanceFromCenter == 0.0F) {
 			radius = halfHeight;
-		} else if (JavaMath::abs(distanceFromCenter) >= halfHeight) {
+		} else if (MathHelper::abs(distanceFromCenter) >= halfHeight) {
 			radius = 0.0F;
 		} else {
 			radius = (float)std::sqrt(
-				std::pow((double)JavaMath::abs(halfHeight), 2.0) -
-				std::pow((double)JavaMath::abs(distanceFromCenter), 2.0));
+				std::pow((double)MathHelper::abs(halfHeight), 2.0) -
+				std::pow((double)MathHelper::abs(distanceFromCenter), 2.0));
 		}
 
 		radius *= 0.5F;

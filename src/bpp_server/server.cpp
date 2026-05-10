@@ -25,7 +25,7 @@
 Server::Server() {
     Blocks::registerAll();
     command_manager.Init();
-    world.seed = 3257840388504953787;
+    world.seed = 1772835215;
 
     world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
         // Only enqueue if at least one session knows about this chunk.
