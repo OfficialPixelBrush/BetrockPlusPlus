@@ -24,7 +24,6 @@ class TreeGenerator {
 						   [[maybe_unused]] double trunkShape) {};
 };
 
-#define AXIS_OFFSET 3
 
 /**
  * @brief Used for generating Big Oak Trees
@@ -40,9 +39,10 @@ class BigTreeGenerator : public TreeGenerator {
 		AXIS_X = 0,
 		AXIS_Y = 1,
 		AXIS_Z = 2,
-		TRUNK_Y = 3
+		//TRUNK_Y = 3
 	};
-	BranchAxis branchOrientation[6] = {
+	static constexpr int8_t AXIS_OFFSET = 3;
+	static constexpr BranchAxis branchOrientation[6] = {
 		AXIS_Z, // X to Z
 		AXIS_X, // Y to X
 		AXIS_X, // Z to X
@@ -57,7 +57,7 @@ class BigTreeGenerator : public TreeGenerator {
 	int32_t height;
 	double heightFactor = 0.618;
 	double field_753_h = 1.0;
-	double field_752_i = 0.381;
+	double trunkSlopeFactor = 0.381;
 	double branchLength = 1.0;
 	double trunkShape = 1.0;
 	int32_t branchDensity = 1;
