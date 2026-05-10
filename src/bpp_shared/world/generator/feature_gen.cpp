@@ -368,7 +368,7 @@ bool FeatureGenerator::GenerateSugarcane(WorldManager& world, Java::Random& rand
 		for (int32_t h = 0; h < height; ++h) {
 			BlockType below = world.getBlockId({ x, y + h - 1, z });
 			if (below != BLOCK_GRASS && below != BLOCK_DIRT
-				&& below != BLOCK_SAND && below != BLOCK_SUGARCANE) break;
+				&& below != BLOCK_SUGARCANE) break;
 			if (world.getBlockId({ x, y + h, z }) != BLOCK_AIR) break;
 			world.setBlock({ x, y + h, z }, BLOCK_SUGARCANE);
 		}
