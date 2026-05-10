@@ -49,17 +49,17 @@ void CaveGenerator::GenerateCaves(Chunk& chunk, Int2 chunkOffset) {
 		}
 
 		for (int32_t nodeIndex = 0; nodeIndex < numberOfNodes; ++nodeIndex) {
-			float carveYaw = this->rand.nextFloat() * JavaMath::PI_FLOAT * 2.0F;
-			float carvePitch = (this->rand.nextFloat() - 0.5F) * 2.0F / 8.0F;
-			float tunnelRadius = this->rand.nextFloat() * 2.0F + this->rand.nextFloat();
+			float carveYaw = this->rand.nextFloat() * JavaMath::PI_FLOAT * 2.0f;
+			float carvePitch = (this->rand.nextFloat() - 0.5f) * 2.0f / 8.0f;
+			float tunnelRadius = this->rand.nextFloat() * 2.0f + this->rand.nextFloat();
 			this->CarveCave(chunk, offset, tunnelRadius, carveYaw, carvePitch, 0, 0, 1.0);
 		}
 	}
 }
 
 void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset) {
-	this->CarveCave(chunk, offset, 1.0F + this->rand.nextFloat() * 6.0F,
-		0.0F, 0.0F, -1, -1, 0.5);
+	this->CarveCave(chunk, offset, 1.0f + this->rand.nextFloat() * 6.0f,
+		0.0f, 0.0f, -1, -1, 0.5);
 }
 
 void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset,
@@ -68,78 +68,72 @@ void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset,
 	double verticalScale) {
 	double chunkCenterX = double(chunk.cpos.x * CHUNK_WIDTH + (CHUNK_WIDTH*0.5));
 	double chunkCenterZ = double(chunk.cpos.z * CHUNK_WIDTH + (CHUNK_WIDTH*0.5));
-	float var21 = 0.0F;
-	float var22 = 0.0F;
+	float pitchVel = 0.0f;
+	float yawVel = 0.0f;
 	Java::Random rand2(this->rand.nextLong());
 
 	if (tunnelLength <= 0) {
-		int32_t var24 = this->carveExtentLimit * CHUNK_WIDTH - CHUNK_WIDTH;
-		tunnelLength = var24 - rand2.nextInt(var24 / 4);
+		int32_t max_tunnel_length = this->carveExtentLimit * CHUNK_WIDTH - CHUNK_WIDTH;
+		tunnelLength = max_tunnel_length - rand2.nextInt(max_tunnel_length / 4);
 	}
 
-	bool var52 = false;
+	bool branch_tunnel = false;
 	if (tunnelStep == -1) {
 		tunnelStep = tunnelLength / 2;
-		var52 = true;
+		branch_tunnel = true;
 	}
 
-	int32_t var25 = rand2.nextInt(tunnelLength / 2) + tunnelLength / 4;
+	int32_t branchPoint = rand2.nextInt(tunnelLength / 2) + tunnelLength / 4;
 	
-	bool var26 = rand2.nextInt(6) == 0;
+	bool tunnel_steepness = rand2.nextInt(6) == 0;
 	for (; tunnelStep < tunnelLength; ++tunnelStep) {
-		double var27 = 1.5 + double(MathHelper::sin(float(tunnelStep) * JavaMath::PI_FLOAT / float(tunnelLength)) *
-			tunnelRadius * 1.0F);
-		double var29 = var27 * verticalScale;
-		float var31 = MathHelper::cos(carvePitch);
-		float var32 = MathHelper::sin(carvePitch);
-		offset.x += double(MathHelper::cos(carveYaw) * var31);
-		offset.y += double(var32);
-		offset.z += double(MathHelper::sin(carveYaw) * var31);
+		double radius_xz = 1.5 + double(MathHelper::sin(float(tunnelStep) * JavaMath::PI_FLOAT / float(tunnelLength)) *
+			tunnelRadius * 1.0f);
+		double radius_y = radius_xz * verticalScale;
+		float pCos = MathHelper::cos(carvePitch);
+		float pSin = MathHelper::sin(carvePitch);
+		offset.x += double(MathHelper::cos(carveYaw) * pCos);
+		offset.y += double(pSin);
+		offset.z += double(MathHelper::sin(carveYaw) * pCos);
 
-		if (var26) {
-			carvePitch *= 0.92F;
-		}
-		else {
-			carvePitch *= 0.7F;
-		}
+		carvePitch *= tunnel_steepness ? 0.92f : 0.7f;
 
-		carvePitch += var22 * 0.1F;
-		carveYaw += var21 * 0.1F;
-		var22 *= 0.9F;
-		var21 *= 12.0F / 16.0F;
-		var22 += (rand2.nextFloat() - rand2.nextFloat()) * rand2.nextFloat() * 2.0F;
-		var21 += (rand2.nextFloat() - rand2.nextFloat()) * rand2.nextFloat() * 4.0F;
+		carvePitch += yawVel   * 0.1f;
+		carveYaw   += pitchVel * 0.1f;
+		yawVel   *= 0.9f;
+		pitchVel *= 12.0f / 16.0f;
+		yawVel 	 += (rand2.nextFloat() - rand2.nextFloat()) * rand2.nextFloat() * 2.0f;
+		pitchVel += (rand2.nextFloat() - rand2.nextFloat()) * rand2.nextFloat() * 4.0f;
 
-		if (!var52 && tunnelStep == var25 && tunnelRadius > 1.0F) {
-			this->CarveCave(chunk, offset, rand2.nextFloat() * 0.5F + 0.5F,
-				carveYaw - JavaMath::PI_FLOAT * 0.5F, carvePitch / 3.0F,
+		if (!branch_tunnel && tunnelStep == branchPoint && tunnelRadius > 1.0f) {
+			this->CarveCave(chunk, offset, rand2.nextFloat() * 0.5f + 0.5f,
+				carveYaw - JavaMath::PI_FLOAT * 0.5f, carvePitch / 3.0f,
 				tunnelStep, tunnelLength, 1.0);
-			this->CarveCave(chunk, offset, rand2.nextFloat() * 0.5F + 0.5F,
-				carveYaw + JavaMath::PI_FLOAT * 0.5F, carvePitch / 3.0F,
+			this->CarveCave(chunk, offset, rand2.nextFloat() * 0.5f + 0.5f,
+				carveYaw + JavaMath::PI_FLOAT * 0.5f, carvePitch / 3.0f,
 				tunnelStep, tunnelLength, 1.0);
 			return;
 		}
 
-		if (var52 || rand2.nextInt(4) != 0) {
-			double var33 = offset.x - chunkCenterX;
-			double var35 = offset.z - chunkCenterZ;
-			double var37 = double(tunnelLength - tunnelStep);
-			double var39 = double(tunnelRadius + 2.0F + 16.0F);
-			if (var33 * var33 + var35 * var35 - var37 * var37 > var39 * var39) {
+		if (branch_tunnel || rand2.nextInt(4) != 0) {
+			double dx = offset.x - chunkCenterX;
+			double dz = offset.z - chunkCenterZ;
+			double dist = double(tunnelLength - tunnelStep);
+			double limit = double(tunnelRadius + 2.0f + 16.0f);
+			if ((dx * dx + dz * dz - dist * dist) > (limit * limit))
 				return;
-			}
 
-			if (offset.x >= chunkCenterX - 16.0 - var27 * 2.0 &&
-				offset.z >= chunkCenterZ - 16.0 - var27 * 2.0 &&
-				offset.x <= chunkCenterX + 16.0 + var27 * 2.0 &&
-				offset.z <= chunkCenterZ + 16.0 + var27 * 2.0) {
+			if (offset.x >= chunkCenterX - 16.0 - radius_xz * 2.0 &&
+				offset.z >= chunkCenterZ - 16.0 - radius_xz * 2.0 &&
+				offset.x <= chunkCenterX + 16.0 + radius_xz * 2.0 &&
+				offset.z <= chunkCenterZ + 16.0 + radius_xz * 2.0) {
 
-				int32_t xMin = MathHelper::floor_double(offset.x - var27) - chunk.cpos.x * 16 - 1;
-				int32_t xMax = MathHelper::floor_double(offset.x + var27) - chunk.cpos.x * 16 + 1;
-				int32_t yMin = MathHelper::floor_double(offset.y - var29) - 1;
-				int32_t yMax = MathHelper::floor_double(offset.y + var29) + 1;
-				int32_t zMin = MathHelper::floor_double(offset.z - var27) - chunk.cpos.z * 16 - 1;
-				int32_t zMax = MathHelper::floor_double(offset.z + var27) - chunk.cpos.z * 16 + 1;
+				int32_t xMin = MathHelper::floor_double(offset.x - radius_xz) - chunk.cpos.x * 16 - 1;
+				int32_t xMax = MathHelper::floor_double(offset.x + radius_xz) - chunk.cpos.x * 16 + 1;
+				int32_t yMin = MathHelper::floor_double(offset.y - radius_y) - 1;
+				int32_t yMax = MathHelper::floor_double(offset.y + radius_y) + 1;
+				int32_t zMin = MathHelper::floor_double(offset.z - radius_xz) - chunk.cpos.z * 16 - 1;
+				int32_t zMax = MathHelper::floor_double(offset.z + radius_xz) - chunk.cpos.z * 16 + 1;
 
 				if (xMin < 0)   xMin = 0;
 				if (xMax > 16)  xMax = 16;
@@ -155,9 +149,8 @@ void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset,
 						for (int32_t blockY = yMax + 1; !waterIsPresent && blockY >= yMin - 1; --blockY) {
 							if (blockY >= 0 && blockY < CHUNK_HEIGHT) {
 								BlockType blockType = chunk.getBlock({ blockX, blockY, blockZ });
-								if (blockType == BLOCK_WATER_FLOWING || blockType == BLOCK_WATER_STILL) {
+								if (blockType == BLOCK_WATER_FLOWING || blockType == BLOCK_WATER_STILL)
 									waterIsPresent = true;
-								}
 								// Skip interior — only check the shell
 								if (blockY != yMin - 1 && blockX != xMin && blockX != xMax - 1 &&
 									blockZ != zMin && blockZ != zMax - 1) {
@@ -170,39 +163,35 @@ void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset,
 
 				if (!waterIsPresent) {
 					for (int32_t blockX = xMin; blockX < xMax; ++blockX) {
-						double var57 = (double(blockX + chunk.cpos.x * 16) + 0.5 - offset.x) / var27;
+						double center_dx = (double(blockX + chunk.cpos.x * 16) + 0.5 - offset.x) / radius_xz;
 
 						for (int32_t blockZ = zMin; blockZ < zMax; ++blockZ) {
-							double var44 = (double(blockZ + chunk.cpos.z * 16) + 0.5 - offset.z) / var27;
+							double center_dz = (double(blockZ + chunk.cpos.z * 16) + 0.5 - offset.z) / radius_xz;
 
-							if (var57 * var57 + var44 * var44 < 1.0) {
+							if (center_dx * center_dx + center_dz * center_dz < 1.0) {
 								bool isGrass = false;
-								// Faithful port of Java's var48/var46 split:
-								//   var48 = loop counter (yMax-1 .. yMin) — used for the ellipsoid test
-								//   var46 Y = var48 + 1 — the actual block coordinate for read/write
-								// var49 and the lava threshold must use var48 (test Y), not block Y.
-								for (int32_t var48 = yMax - 1; var48 >= yMin; --var48) {
-									const int32_t blockY = var48 + 1;
-									Int3 bpos{ blockX, blockY, blockZ };
-									double var49 = (double(var48) + 0.5 - offset.y) / var29;
-									if (var49 > -0.7 && var57 * var57 + var49 * var49 + var44 * var44 < 1.0) {
+								for (int32_t blockY = yMax - 1; blockY >= yMin; --blockY) {
+									Int3 bpos{ blockX, blockY + 1, blockZ };
+									double center_dy = (double(blockY) + 0.5 - offset.y) / radius_y;
+									if (center_dy > -0.7 && center_dx * center_dx + center_dy * center_dy + center_dz * center_dz < 1.0) {
 										BlockType blockType = chunk.getBlock(bpos);
-										if (blockType == BLOCK_GRASS) {
-											isGrass = true;
+										if (blockType == BLOCK_GRASS) isGrass = true;
+										if (
+											blockType != BLOCK_STONE &&
+											blockType != BLOCK_DIRT  &&
+											blockType != BLOCK_GRASS
+										) {
+											continue;
 										}
-										if (blockType == BLOCK_STONE || blockType == BLOCK_DIRT || blockType == BLOCK_GRASS) {
-											if (var48 < 10) { // Java: if (var48 < 10) — lava threshold uses test Y
-												chunk.setBlock(bpos, BLOCK_LAVA_FLOWING);
-												continue;
-											}
-											chunk.setBlock(bpos, BLOCK_AIR);
-											if (isGrass) {
-												// Java: var3[var46 - 1] = grass — one below carved block = var48
-												Int3 below{ bpos.x, var48, bpos.z };
-												if (chunk.getBlock(below) == BLOCK_DIRT) {
-													chunk.setBlock(below, BLOCK_GRASS);
-												}
-											}
+										if (blockY < 10) {
+											chunk.setBlock(bpos, BLOCK_LAVA_FLOWING);
+											continue;
+										}
+										chunk.setBlock(bpos, BLOCK_AIR);
+										if (!isGrass) continue;
+										Int3 below{ bpos.x, blockY, bpos.z };
+										if (chunk.getBlock(below) == BLOCK_DIRT) {
+											chunk.setBlock(below, BLOCK_GRASS);
 										}
 									}
 								}
@@ -210,9 +199,8 @@ void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset,
 						}
 					}
 
-					if (var52) {
+					if (branch_tunnel)
 						break;
-					}
 				}
 			}
 		}
