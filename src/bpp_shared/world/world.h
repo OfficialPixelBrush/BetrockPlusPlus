@@ -355,7 +355,7 @@ struct WorldManager {
 
 private:
     // I believe the vanilla default is 
-    static constexpr int VIEW_RADIUS = 16;
+    static constexpr int VIEW_RADIUS = 10; // no pixel THIS is the vanilla default :anger:
     static constexpr int SIMULATION_RADIUS = 9;
 
     void seedChunkLighting(ChunkPos pos);
