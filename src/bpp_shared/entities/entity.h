@@ -37,7 +37,7 @@ struct entity {
 	float prevRotationPitch;
 
 	// Collider
-	AABB boundingBox{ 0, 0, 0, 0, 0, 0 };
+	AABB boundingBox;
 
 	bool onGround = false;
 	bool collidedHorizontally = false;
