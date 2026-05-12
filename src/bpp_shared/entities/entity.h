@@ -5,6 +5,7 @@
  *
 */
 #pragma once
+#include "helpers/AABB.h"
 
 // Base entity struct
 struct entity {
@@ -37,7 +38,7 @@ struct entity {
 	float prevRotationPitch;
 
 	// Collider
-	AABB boundingBox;
+	AABB collider;
 
 	bool onGround = false;
 	bool collidedHorizontally = false;
