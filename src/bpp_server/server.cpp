@@ -7,6 +7,7 @@
 */
 
 #include "cross_platform.h"
+#include "logger.h"
 #if defined(__linux__) || defined(__APPLE__)
 #include <unistd.h>
 #include <netinet/in.h>
@@ -25,10 +26,10 @@
 Server::Server() {
     createServerSocket(serverPort);
 	if (serverSocket < 0) {
-		std::cerr << "**** FAILED TO CREATE SERVER SOCKET!" << "\n";
+		GlobalLogger().error << "**** FAILED TO CREATE SERVER SOCKET!" << "\n";
         exit(1);
 	}
-	std::cout << "Server initialized on port " << serverPort << "\n";
+	GlobalLogger().info << "Server initialized on port " << serverPort << "\n";
 }
 
 Server::~Server() {
@@ -58,8 +59,8 @@ void Server::indexRemoveSession(PlayerSession& session) {
 
 void Server::startup() {
     auto startupStart = std::chrono::steady_clock::now();
-    printf("Initializing server startup.. \n");
-    printf("Thread count: %i\n", int(world.pool.get_thread_count()));
+    GlobalLogger().info << "Initializing server startup.. \n";
+    GlobalLogger().info << "Thread count: " << int(world.pool.get_thread_count()) << "\n";
 
     // Register blocks, setup the world, setup commands, etc.
     Blocks::registerAll();
@@ -89,8 +90,8 @@ void Server::startup() {
     bool spawnDone = false;
     auto start = std::chrono::steady_clock::now();
     world.initSpawn();
-    printf("Server spawn is (%i, %i)\n", int(world.spawnPoint.x), int(world.spawnPoint.y));
-    printf("Loading 676 spawn chunks:\n");
+    GlobalLogger().info << "Server spawn is " << Int2(int(world.spawnPoint.x), int(world.spawnPoint.y)) << "\n";
+    GlobalLogger().info << "Loading 676 spawn chunks:\n";
     // Push every single spawn chunk to get ready for generation
     std::unordered_set<ChunkPos> wanted;
     for (int dx = -13; dx < 13; dx++) {
@@ -130,7 +131,7 @@ void Server::startup() {
         if (std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count() >= 1.0f)
         {
             int percentLoaded = int((float(loaded_chunks) / float(total_spawn_chunks)) * 100.0f);
-            std::cout << "Loading spawn.. " << percentLoaded << "%\n";
+            GlobalLogger().info << "Loading spawn.. " << percentLoaded << "%\n";
             start = std::chrono::steady_clock::now();
         }
 
@@ -181,10 +182,10 @@ void Server::startup() {
             chestZ -= 2; // one block gap between chests
         }
     }
-    std::cout << "Loading spawn.. 100%\n";
+    GlobalLogger().info << "Loading spawn.. 100%\n";
     
     float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
-    printf("Startup Complete. (%.4fs)\n", startupSeconds);
+    GlobalLogger().info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";
 }
 
 void Server::run() {
@@ -205,12 +206,12 @@ void Server::run() {
             tick();
             float tickMs = std::chrono::duration<float>(std::chrono::steady_clock::now() - tickStart).count() * 1000.0f;
             if (tickMs > 50.0f) {
-                printf("Can't keep up! Tick took %i ms\n", int(tickMs));
+                GlobalLogger().warn << "Can't keep up! Tick took " << int(tickMs) << " ms\n";
             }
             tickTimeAccum += tickMs;
             tickCount++;
             if (tickCount >= 40) {
-                printf("Avg tick: %.2f ms\n", double(tickTimeAccum) / double(tickCount));
+                GlobalLogger().info << std::setprecision(2) << "Avg tick: " << (double(tickTimeAccum) / double(tickCount)) << " ms\n";
                 tickTimeAccum = 0.0f;
                 tickCount = 0;
             }
@@ -226,7 +227,7 @@ void Server::run() {
 void Server::stop() {
 	if (stopped) return;
     stopped = true;
-    std::cout << "Server shutting down...\n";
+    GlobalLogger().info << "Server shutting down...\n";
 	for (auto& session : players) {
 		disconnectPlayer(*session, L"Server Closed");
         session->stream.flushWriteBufferBlocking();
@@ -441,7 +442,7 @@ void Server::tick() {
             auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
                 now - session->last_packet_time).count();
             if (elapsed > timeout_seconds) {
-                std::wcout << L"Player " << session->username << L" timed out\n";
+                GlobalLogger().info << L"Player " << session->username << L" timed out\n";
                 disconnectPlayer(*session, L"Connection timed out.");
             }
         } else {
@@ -450,7 +451,7 @@ void Server::tick() {
                 now - session->last_packet_time).count();
             if (elapsed > timeout_seconds) {
                 session->stream.setConnected(false);
-                std::wcout << L"Disconnected dataless stream. (Most likely a prober!)\n";
+                GlobalLogger().info << L"Disconnected dataless stream. (Most likely a prober!)\n";
             }
         }
     }
@@ -459,7 +460,7 @@ void Server::tick() {
     players.erase(
         std::remove_if(players.begin(), players.end(), [&](const auto& s) {
             if (!s->stream.isConnected()) {
-                std::wcout << L"Disconnected client " << s->username
+                GlobalLogger().info << L"Disconnected client " << s->username
                     << L" with entity id " << s->entityId << L"\n";
                 indexRemoveSession(*s);
                 chunkSender.remove(*s);
@@ -503,7 +504,7 @@ void Server::handleHandshake(PlayerSession& session) {
             s->connState == ConnectionState::WaitingForSpawnChunks)
             realPlayers++;
 
-    std::wcout << L"Player " << session.username << L" is logging in. Total players: " << realPlayers + 1 << L"\n";
+    GlobalLogger().info << L"Player " << session.username << L" is logging in. Total players: " << realPlayers + 1 << L"\n";
 
     session.connState = ConnectionState::LoggingIn;
 }
@@ -523,7 +524,7 @@ void Server::handleLogin(PlayerSession& session) {
     }
 
     session.entityId = nextEntityId++;
-    std::wcout << L"Player " << session.username << L" logged in with entity ID " << session.entityId << L".\n";
+    GlobalLogger().info << L"Player " << session.username << L" logged in with entity ID " << session.entityId << L".\n";
     Packet::Login response;
     response.entity_id = session.entityId;
     response.username = session.username;
@@ -581,7 +582,7 @@ void Server::disconnectPlayer(PlayerSession& session, const std::wstring& reason
     kick.reason = reason;
     kick.Serialize(session.stream);
     session.stream.setConnected(false);
-    std::wcout << L"Player " << session.username << L" disconnected: " << reason << L"\n";
+    GlobalLogger().info << L"Player " << session.username << L" disconnected: " << reason << L"\n";
 }
 
 void Server::waitForSpawnChunks(PlayerSession& session) {
@@ -605,12 +606,12 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
         }
     }
 
-    std::cout << "Spawn chunks: " << loaded_chunks << " / " << total_spawn_chunks << "\n";
+    GlobalLogger().info << "Spawn chunks: " << loaded_chunks << " / " << total_spawn_chunks << "\n";
 
     if (loaded_chunks < total_spawn_chunks)
         return;
 
-    std::cout << "Spawn chunks sent. Setting player position\n";
+    GlobalLogger().info << "Spawn chunks sent. Setting player position\n";
 
     Packet::PlayerPositionAndRotation pos;
     pos.x = session.position.pos.x;
@@ -628,7 +629,7 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
     session.lastYaw = 0;
     session.lastPitch = 0;
 
-    std::cout << "Client connected\n";
+    GlobalLogger().info << "Client connected\n";
     session.connState = ConnectionState::Playing;
 }
 
@@ -760,7 +761,7 @@ void Server::processIncoming(PlayerSession& session) {
             return; // session is dead; stop processing
         }
         default:
-            std::cout << "UNHANDLED packet 0x" << std::hex
+            GlobalLogger().warn << "UNHANDLED packet 0x" << std::hex
                 << static_cast<int>(packetId) << "\n";
             disconnectPlayer(session, L"Unknown packet");
             return;

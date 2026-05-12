@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  *
 */
+#include "logger/logger.h"
+#include <string>
 #if defined(__linux__)
 #  define INVALID_SOCKET -1
 #  include <unistd.h>
@@ -180,8 +182,8 @@ namespace HandlePacket {
 
         auto pos = pkt.position;
         if (pkt.face == PacketData::FaceDirection::USE_ITEM) {
-            std::cout << "Tried to use item \n";
-            std::cout << pkt.position << "\n";
+            GlobalLogger().info << "Tried to use item\n";
+            GlobalLogger().info << pkt.position << "\n";
         }
         if (pkt.face == PacketData::FaceDirection::Y_MINUS) pos.y -= 1;
         if (pkt.face == PacketData::FaceDirection::Y_PLUS) pos.y += 1;

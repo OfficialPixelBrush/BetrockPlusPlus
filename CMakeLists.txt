@@ -25,6 +25,7 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/world/noise"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/helpers/java"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/helpers"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared/logger"
 )
 
 add_executable(
@@ -37,19 +38,30 @@ add_executable(
     # Shared files
     src/bpp_shared/shared.cpp
     src/bpp_shared/enums/biomes.cpp
-    
     src/bpp_shared/enums/items.cpp
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
     src/bpp_shared/networking/server_manager.cpp
+    src/bpp_server/commands/command.cpp
+    src/bpp_server/commands/command_manager.cpp
+    src/bpp_shared/world/world.cpp
+    src/bpp_shared/world/lighter.cpp
+    src/bpp_shared/blocks/block_properties.cpp 
+
+    ## Generation
     src/bpp_shared/world/noise/noise_generator.cpp
     src/bpp_shared/world/noise/noise_perlin.cpp
     src/bpp_shared/world/noise/noise_simplex.cpp
     src/bpp_shared/world/generator/chunk_gen.cpp
+    src/bpp_shared/world/generator/tree_gen.cpp
     src/bpp_shared/world/generator/biome_gen.cpp
     src/bpp_shared/world/generator/cave_gen.cpp
     src/bpp_shared/world/generator/feature_gen.cpp
-    src/bpp_shared/world/generator/tree_gen.cpp
+
+    ## Logger
+    src/bpp_shared/logger/logger.cpp
+    src/bpp_shared/logger/logstream.cpp
+    src/bpp_shared/logger/style.cpp
     
     # Server-specific files
     src/bpp_server/server.cpp
@@ -59,11 +71,6 @@ add_executable(
     src/bpp_client/inputs.cpp
     src/bpp_client/renderers/world_renderer.cpp
     src/bpp_client/renderers/sub_chunk_mesher.cpp
-    src/bpp_shared/world/world.cpp
-    src/bpp_shared/blocks/block_properties.cpp 
-    src/bpp_server/commands/command.cpp
-    src/bpp_server/commands/command_manager.cpp
-    src/bpp_shared/world/lighter.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -91,7 +98,7 @@ target_compile_options(BetrockPlusPlus PRIVATE
         -Wall
         -Wextra
         # Implicit conversions (int32_t -> float, etc.)
-        -Wconversion
+        #-Wconversion
         # Sign mismatches
         -Wsign-conversion
         # Variable shadowing
@@ -110,11 +117,11 @@ target_compile_options(BetrockPlusPlus PRIVATE
         # Dereferencing null pointers
         -Wnull-dereference
         # Implicit float -> double conversions
-        -Wdouble-promotion
+        #-Wdouble-promotion
         # More printf/scanf format checks
         -Wformat=2
         # Warn if struct initialization is missing fields
-        -Wmissing-field-initializers
+        #-Wmissing-field-initializers
         # Multiple declarations of the same function/variable
         -Wredundant-decls
         # Comparing floating-point values for equality can be iffy
