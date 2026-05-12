@@ -15,18 +15,17 @@ void CommandManager::Init() {
 	// Anyone can run these
 	registeredCommands.push_back(std::make_unique<CommandHelp>());
 	registeredCommands.push_back(std::make_unique<CommandTeleport>());
+	registeredCommands.push_back(std::make_unique<CommandTime>());
 	/*
 	registeredCommands.push_back(CommandVersion());
 	registeredCommands.push_back(CommandList());
 	registeredCommands.push_back(CommandPose());
 	registeredCommands.push_back(CommandSpawn());
 	// Needs at least creative mode to run
-	registeredCommands.push_back(CommandTeleport());
 	registeredCommands.push_back(CommandGive());
 	registeredCommands.push_back(CommandHealth());
 	// Must be operator
 	registeredCommands.push_back(CommandUptime());
-	registeredCommands.push_back(CommandTime());
 	registeredCommands.push_back(CommandOp());
 	registeredCommands.push_back(CommandDeop());
 	registeredCommands.push_back(CommandWhitelist());
@@ -56,7 +55,7 @@ void CommandManager::Init() {
 const std::vector<std::unique_ptr<Command>>& CommandManager::GetRegisteredCommands() noexcept { return registeredCommands; }
 
 // Parses commands and executes them
-void CommandManager::Parse(std::wstring& cmd_string, PlayerSession& session) noexcept {
+void CommandManager::Parse(std::wstring& cmd_string, PlayerSession& session, WorldManager& world) noexcept {
 	// Remove initial /
 	cmd_string = cmd_string.substr(1);
 	// Set these up for command parsing
@@ -79,23 +78,22 @@ void CommandManager::Parse(std::wstring& cmd_string, PlayerSession& session) noe
 			for (size_t i = 0; i < registeredCommands.size(); i++) {
 				// This'll throw an out of bounds error
 				if (registeredCommands[i]->GetLabel() == command.at(0)) {
-					failureReason = registeredCommands[i]->Execute(command, session);
+					failureReason = registeredCommands[i]->Execute(command, session, world);
 					break;
 				}
 			}
 		}
 		catch (const std::exception& e) {
-			//Betrock::Logger::Instance().Info(std::string(e.what()) + std::string(" on /") + cmd_string);
+			GlobalLogger().info << e.what() << " on /" << cmd_string << "\n";
 		}
 	}
 
 	Packet::ChatMessage failPkt;
-
-	if (failureReason == L"Syntax") {
-		failPkt.message = L"§cInvalid Syntax \"" + cmd_string + L"\"";
+	if (!failureReason.empty()) {
+		if (failureReason == L"Syntax")
+			failPkt.message = L"§cInvalid Syntax \"" + cmd_string + L"\"";
+		else
+			failPkt.message = L"§c" + failureReason;
+		failPkt.Serialize(session.stream);
 	}
-	else if (!failureReason.empty()) {
-		failPkt.message = L"§c" + failureReason;
-	}
-	failPkt.Serialize(session.stream);
 }

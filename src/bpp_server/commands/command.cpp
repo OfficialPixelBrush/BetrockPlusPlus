@@ -6,6 +6,11 @@
 
 #include "command.h"
 #include "command_manager.h"
+#include "numeric_structs.h"
+#include "world.h"
+#include <cctype>
+#include <exception>
+#include <string>
 
 std::vector<std::wstring> command;
 std::wstring failureReason;
@@ -38,7 +43,7 @@ std::string Command::CheckPermissions(Client *client) {
 */
 
 // Lists pCommands or helps with command
-std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerSession& session) {
+std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world) {
 	//DEFINE_PERMSCHECK(pClient)
 	const auto& registered_commands = CommandManager::GetRegisteredCommands();
 	Packet::ChatMessage pkt;
@@ -87,21 +92,21 @@ std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerS
 }
 
 // Helper: send a PlayerPositionAndRotation packet to move a session to new coords.
-static void SendTeleport(PlayerSession& target, double x, double y, double z, float yaw = 0.0f, float pitch = 0.0f) {
+static void SendTeleport(PlayerSession& target, Double3 position, float yaw = 0.0f, float pitch = 0.0f) {
 	Packet::PlayerPositionAndRotation pkt;
-	pkt.x = x;
-	pkt.y = y;
-	pkt.stance = y + 1.62;
-	pkt.z = z;
+	pkt.x = position.x;
+	pkt.y = position.y;
+	pkt.stance = position.y + 1.62;
+	pkt.z = position.z;
 	pkt.yaw = yaw;
 	pkt.pitch = pitch;
 	pkt.onGround = false;
 	pkt.Serialize(target.stream);
 	// Keep server-side position in sync so movement broadcasts are correct.
-	target.position.pos = { x, y, z };
-	target.lastFpX = static_cast<int32_t>(x * 32.0);
-	target.lastFpY = static_cast<int32_t>(y * 32.0);
-	target.lastFpZ = static_cast<int32_t>(z * 32.0);
+	target.position.pos = position;
+	target.lastFpX = static_cast<int32_t>(position.x * 32.0);
+	target.lastFpY = static_cast<int32_t>(position.y * 32.0);
+	target.lastFpZ = static_cast<int32_t>(position.z * 32.0);
 	target.lastYaw = static_cast<int8_t>(yaw / 360.0f * 256.0f);
 	target.lastPitch = static_cast<int8_t>(pitch / 360.0f * 256.0f);
 }
@@ -116,32 +121,81 @@ static PlayerSession* FindSession(PlayerSession& caller, const std::wstring& nam
 	return nullptr;
 }
 
+inline Int3 ParseInt3(size_t& offset, std::vector<std::wstring>& parameters) {
+	return Int3{
+		std::stoi(parameters[offset++]),
+		std::stoi(parameters[offset++]),
+		std::stoi(parameters[offset++]),
+	};
+}
+
+inline Float2 ParseFloat2(size_t& offset, std::vector<std::wstring>& parameters) {
+	return Float2{
+		std::stof(parameters[offset++]),
+		std::stof(parameters[offset++]),
+	};
+}
+
+inline Float3 ParseFloat3(size_t& offset, std::vector<std::wstring>& parameters) {
+	return Float3{
+		std::stof(parameters[offset++]),
+		std::stof(parameters[offset++]),
+		std::stof(parameters[offset++]),
+	};
+}
+
+inline Double2 ParseDouble2(size_t& offset, std::vector<std::wstring>& parameters) {
+	return Double2{
+		std::stod(parameters[offset++]),
+		std::stod(parameters[offset++]),
+	};
+}
+
+inline Double3 ParseDouble3(size_t& offset, std::vector<std::wstring>& parameters) {
+	return Double3{
+		std::stod(parameters[offset++]),
+		std::stod(parameters[offset++]),
+		std::stod(parameters[offset++]),
+	};
+}
+
 // Teleports a player to coordinates or to another player.
 // Usage:
 //   /tp <player> <x> <y> <z> [yaw [pitch]]
 //   /tp <player> <target_player>
-std::wstring CommandTeleport::Execute(std::vector<std::wstring>& parameters, PlayerSession& session) {
+std::wstring CommandTeleport::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world) {
 	if (parameters.size() < 2)
 		return ERROR_REASON_SYNTAX;
 
-	PlayerSession* source = FindSession(session, parameters[1]);
+	PlayerSession* source = nullptr;
+	size_t offset = 1;
+
+	// Check if player is even passed
+	// Inspired by https://stackoverflow.com/a/16575564
+	{
+		std::wstringstream ss;
+		ss << parameters[offset];
+		double num = 0.0;
+		ss >> num;
+		if (!ss.fail() && ss.eof())
+			source = &session;
+		else
+			source = FindSession(session, parameters[offset++]);
+	}
+
+	// TODO Should prolly report if a non-existent player runs this
 	if (!source)
-		return parameters[1] + L" does not exist!";
+    	return parameters[offset - 1] + L" does not exist!";
 
-	// /tp <player> <x> <y> <z> [yaw [pitch]]
-	if (parameters.size() >= 5) {
+	// /tp <player> <x> <y> <z>
+	if (parameters.size() - offset >= 3) {
 		try {
-			double x = std::stod(parameters[2]);
-			double y = std::stod(parameters[3]);
-			double z = std::stod(parameters[4]);
-			float  yaw = (parameters.size() > 5) ? std::stof(parameters[5]) : source->rotation.x;
-			float  pitch = (parameters.size() > 6) ? std::stof(parameters[6]) : source->rotation.y;
-
-			SendTeleport(*source, x, y, z, yaw, pitch);
+			Double3 pos = ParseDouble3(offset, parameters);
+			SendTeleport(*source, pos);
 
 			Packet::ChatMessage reply;
-			reply.message = L"\u00a77Teleported " + parameters[1] +
-				L" to (" + parameters[2] + L", " + parameters[3] + L", " + parameters[4] + L")";
+			reply.message = L"\u00a77Teleported " + source->username +
+				L" to " + pos.wstr();
 			reply.Serialize(session.stream);
 			return L"";
 		}
@@ -151,24 +205,41 @@ std::wstring CommandTeleport::Execute(std::vector<std::wstring>& parameters, Pla
 	}
 
 	// /tp <player> <target_player>
-	if (parameters.size() == 3) {
-		PlayerSession* dest = FindSession(session, parameters[2]);
+	if (parameters.size() - offset == 1) {          // offset=1→params[1], offset=2→params[2]
+		PlayerSession* dest = FindSession(session, parameters[offset]);
 		if (!dest)
-			return parameters[2] + L" does not exist!";
-
+			return parameters[offset] + L" does not exist!";
 		SendTeleport(*source,
-			dest->position.pos.x,
-			dest->position.pos.y,
-			dest->position.pos.z,
+			dest->position.pos,
 			dest->rotation.x,
 			dest->rotation.y);
-
 		Packet::ChatMessage reply;
-		reply.message = L"\u00a77Teleported " + parameters[1] + L" to " + parameters[2];
+		reply.message = L"\u00a77Teleported " + source->username + L" to " + session.username;
 		reply.Serialize(session.stream);
 		return L"";
 	}
 
+	return ERROR_REASON_SYNTAX;
+}
+
+// Gets or sets the current world time
+std::wstring CommandTime::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world) {
+	// Set the time
+	if (parameters.size() > 1) {
+		world.elapsed_ticks = std::stol(parameters[1]);
+
+		Packet::ChatMessage reply;
+		reply.message = L"\u00a77Set time to " + parameters[1];
+		reply.Serialize(session.stream);
+		return L"";
+	}
+	// Get the time
+	if (parameters.size() == 1) {
+		Packet::ChatMessage reply;
+		reply.message = L"\u00a77Current Time is " + std::to_wstring(world.elapsed_ticks);
+		reply.Serialize(session.stream);
+		return L"";
+	}
 	return ERROR_REASON_SYNTAX;
 }
 
@@ -237,27 +308,6 @@ std::string CommandTeleport::Execute(std::vector<std::string> pCommand, std::vec
 		}
 	}
 	return ERROR_REASON_PARAMETERS;
-}
-
-// Gets or sets the current world time
-std::string CommandTime::Execute(std::vector<std::string> pCommand, std::vector<uint8_t> &pResponse, Client *client) {
-	DEFINE_PERMSCHECK(client)
-	auto &server = Betrock::Server::Instance();
-
-	// Set the time
-	if (pCommand.size() > 1) {
-		server.SetServerTime(std::stol(pCommand[1]));
-
-		Respond::Time(pResponse, server.GetServerTime());
-		Respond::ChatMessage(pResponse, "§7Set time to " + std::to_string(server.GetServerTime()));
-		return "";
-	}
-	// Get the time
-	if (pCommand.size() == 1) {
-		Respond::ChatMessage(pResponse, "§7Current Time is " + std::to_string(server.GetServerTime()));
-		return "";
-	}
-	return ERROR_REASON_SYNTAX;
 }
 
 // Shows the current Server version

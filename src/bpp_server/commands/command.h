@@ -2,13 +2,13 @@
  * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
  *
  * SPDX-License-Identifier: GPL-3.0-only
- * Based on code by Mojang Studios (2011)
 */
 
 #pragma once
 #include <sstream>
 
 #include "../player_session.h"
+#include "world.h"
 
 #define ERROR_OPERATOR L"Only operators can use this command!"
 #define ERROR_CREATIVE L"Only creative players can use this command!"
@@ -25,7 +25,7 @@
 	class name : public Command {                                                                                      \
 	  public:                                                                                                          \
 		name() : Command(label, description, syntax, requiresOp, requiresCreative) {}                                  \
-		std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session) override;                                                                  \
+		std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world) override;                                                                  \
 	};
 
 /*
@@ -55,7 +55,7 @@ public:
 
 	std::string CheckPermissions(PlayerSession& session);
 	Command(std::wstring label, std::wstring description, std::wstring syntax, bool requiresOp = true, bool requiresCreative = false);
-	virtual std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session) = 0;
+	virtual std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world) = 0;
 	virtual ~Command() = default;
 };
 
@@ -64,6 +64,7 @@ public:
 DEFINE_COMMAND(CommandHelp, L"help", L"Lists commands or helps with command", L"[command]", false, false);
 DEFINE_COMMAND(CommandTeleport, L"tp", L"Teleports player to coordinates or another player",
 	L"<player> <x> <y> <z> / <player> <player>", false, false);
+DEFINE_COMMAND(CommandTime, L"time", L"Gets or sets the current world time", L"<new_time>", false, false);
 /*
 DEFINE_COMMAND(CommandVersion, "version", "Shows the current Server version", "", false, false);
 DEFINE_COMMAND(CommandList, "list", "List all currently online players", "", false, false);
@@ -77,7 +78,6 @@ DEFINE_COMMAND(CommandGive, "give", "Give yourself a block or item", "<id> [meta
 DEFINE_COMMAND(CommandHealth, "health", "Get or Set Player Health", "[health]", false, true);
 // Must be operator
 DEFINE_COMMAND(CommandUptime, "uptime", "Shows how long the server has been alive for in ticks", "", true, false);
-DEFINE_COMMAND(CommandTime, "time", "Gets or sets the current world time", "[newtime]", true, false);
 DEFINE_COMMAND(CommandOp, "op", "Grant a player operator privlidges", "[player]", true, false);
 DEFINE_COMMAND(CommandDeop, "deop", "Revoke a players' operator privlidges", "[player]", true, false);
 DEFINE_COMMAND(CommandWhitelist, "whitelist", "Modify the whitelist", "<reload/list> / <add/remove> <player>", true,
