@@ -66,12 +66,10 @@ struct WorldManager {
 
     void initWorldSeed(std::string pSeed){
 		this->seed = hashCode(pSeed);
-		rand.setSeed(this->seed);
     }
 
     void initWorldSeed(int64_t pSeed){
 		this->seed = pSeed;
-		rand.setSeed(this->seed);
     }
     void tick(const std::vector<ClientPosition>& players);
     void update(const std::vector<ClientPosition>& players);
