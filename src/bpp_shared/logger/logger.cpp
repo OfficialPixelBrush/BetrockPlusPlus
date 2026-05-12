@@ -107,7 +107,7 @@ void Logger::Info(std::string message) {
     std::string header = "[INFO]";
     if (logLevelTerminal & LOG_INFO) 
     {
-        std::cout << time << " \x1b[1;107m" << header << "\x1b[0m " << message << "\n";
+        std::cout << time << " \x1b[1;30;107m" << header << "\x1b[0m " << message << "\n";
     }
     if (logLevelText & LOG_INFO) {
         logFile << time << " " << header << " " << message << "\n";
@@ -120,7 +120,7 @@ void Logger::Warning(std::string message) {
     std::string header = "[WARNING]";
     if (logLevelTerminal & LOG_WARNING) 
     {
-        std::cerr << time << " \x1b[1;43m" << header << "\e[0;33m " << message << "\x1b[0m " << "\n";
+        std::cerr << time << " \x1b[1;30;43m" << header << "\e[0;33m " << message << "\x1b[0m " << "\n";
     }
     if (logLevelText & LOG_WARNING) {
         logFile << time << " " << header << " " << message << "\n";
@@ -133,7 +133,7 @@ void Logger::Error(std::string message) {
     std::string header = "[ERROR]";
     if (logLevelTerminal & LOG_ERROR) 
     {
-        std::cerr << time << " \x1b[1;101m" << header << " " << message << "\x1b[0m" << "\n";
+        std::cerr << time << " \x1b[1;30;101m" << header << " " << message << "\x1b[0m" << "\n";
     }
     if (logLevelText & LOG_ERROR) {
         logFile << time << " " << header << " " << message << "\n";
@@ -146,7 +146,7 @@ void Logger::Debug(std::string message) {
     std::string header = "[DEBUG]";
     if (logLevelTerminal & LOG_DEBUG) 
     {
-        std::cerr << time << " \x1b[1;46m" << header << "\x1b[0m " << message << "\n";
+        std::cerr << time << " \x1b[1;30;46m" << header << "\x1b[0m " << message << "\n";
     }
     if (logLevelText & LOG_DEBUG) {
         logFile << time << " " << header << " " << message << "\n";
