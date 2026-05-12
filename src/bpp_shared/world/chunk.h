@@ -10,9 +10,10 @@
 #include <cstdint>
 #include <functional>
 #include <atomic>
-#include "helpers/cross_platform.h"
 #include <cstring>
 #include <numeric_structs.h>
+#include <array>
+#include "helpers/cross_platform.h"
 #include "tile_entities/tile_entity.h"
 #include "entities/entity.h"
 #include "blocks/block_properties.h"
