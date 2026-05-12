@@ -49,7 +49,7 @@ void Generator::GenerateChunk(Chunk& chunk) {
 	// Store the final temperature and humidity in the chunk so PopulateChunk
 	// (which runs on a different thread_local Generator) can reconstruct the
 	// biome map via GetBiomeFromLookup without re-running the noise generators.
-	for (int i = 0; i < CHUNK_AREA; ++i) {
+	for (size_t i = 0; i < CHUNK_AREA; ++i) {
 		chunk.temperature[i] = float(temperature[i]);
 		chunk.humidity[i] = float(humidity[i]);
 	}
@@ -407,7 +407,7 @@ Biome Generator::GetBiomeAt(Int2 worldPos) {
 
 
 // Exact port of BiomeGenBase.getRandomWorldGenForTrees() and per-biome overrides.
-void Generator::GenerateTreeForBiome(WorldManager& world, Java::Random& rand, Int3 pos, Biome biome) {
+void Generator::GenerateTreeForBiome(WorldManager& world, Java::Random& pRand, Int3 pos, Biome biome) {
 	switch (biome) {
 	case BIOME_TAIGA:
 		// Java: nextInt(3)==0 ? new WorldGenTaiga1() : new WorldGenTaiga2()
@@ -416,49 +416,49 @@ void Generator::GenerateTreeForBiome(WorldManager& world, Java::Random& rand, In
 		//                                                              3 RNG, narrow spruce)
 		//   AltTaigaTreeGenerator has the WorldGenTaiga2 RNG sequence (nextInt(4)+6 height,
 		//                                                              5 RNG, bushy pine)
-		if (rand.nextInt(3) == 0)
-			TaigaTreeGenerator().Generate(world, rand, pos);     // = WorldGenTaiga1
+		if (pRand.nextInt(3) == 0)
+			TaigaTreeGenerator().Generate(world, pRand, pos);     // = WorldGenTaiga1
 		else
-			AltTaigaTreeGenerator().Generate(world, rand, pos);  // = WorldGenTaiga2
+			AltTaigaTreeGenerator().Generate(world, pRand, pos);  // = WorldGenTaiga2
 		break;
 
 	case BIOME_FOREST:
 		// nextInt(5)==0 -> birch, else nextInt(3)==0 -> BigTree, else oak
-		if (rand.nextInt(5) == 0) {
+		if (pRand.nextInt(5) == 0) {
 			// WorldGenForest (birch): same as oak but birch=true adds 1 to height base
-			TreeGenerator().Generate(world, rand, pos, true);
+			TreeGenerator().Generate(world, pRand, pos, true);
 		}
-		else if (rand.nextInt(3) == 0) {
+		else if (pRand.nextInt(3) == 0) {
 			BigTreeGenerator big;
 			big.Configure(1.0, 1.0, 1.0);
-			big.Generate(world, rand, pos);
+			big.Generate(world, pRand, pos);
 		}
 		else {
-			TreeGenerator().Generate(world, rand, pos);
+			TreeGenerator().Generate(world, pRand, pos);
 		}
 		break;
 
 	case BIOME_RAINFOREST:
 		// nextInt(3)==0 -> BigTree, else oak
-		if (rand.nextInt(3) == 0) {
+		if (pRand.nextInt(3) == 0) {
 			BigTreeGenerator big;
 			big.Configure(1.0, 1.0, 1.0);
-			big.Generate(world, rand, pos);
+			big.Generate(world, pRand, pos);
 		}
 		else {
-			TreeGenerator().Generate(world, rand, pos);
+			TreeGenerator().Generate(world, pRand, pos);
 		}
 		break;
 
 	default:
 		// nextInt(10)==0 -> BigTree, else oak
-		if (rand.nextInt(10) == 0) {
+		if (pRand.nextInt(10) == 0) {
 			BigTreeGenerator big;
 			big.Configure(1.0, 1.0, 1.0);
-			big.Generate(world, rand, pos);
+			big.Generate(world, pRand, pos);
 		}
 		else {
-			TreeGenerator().Generate(world, rand, pos);
+			TreeGenerator().Generate(world, pRand, pos);
 		}
 		break;
 	}
