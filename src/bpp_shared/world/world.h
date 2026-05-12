@@ -389,7 +389,7 @@ struct WorldManager {
                 int lx, lz, nx, nz;
                 if (ndx[i] == -1) { lx = 0; lz = t; nx = 15; nz = t; }
                 else if (ndx[i] == 1) { lx = 15; lz = t; nx = 0; nz = t; }
-                else if (ndz[i] == -1) { lx = t; lz = 0; nx = 0; nz = 15; }
+                else if (ndz[i] == -1) { lx = t; lz = 0; nx = t; nz = 15; }
                 else { lx = t; lz = 15; nx = t; nz = 0; }
 
                 for (int y = 0; y < CHUNK_HEIGHT; ++y) {
