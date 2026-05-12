@@ -55,12 +55,18 @@ struct WorldManager {
     int64_t seed = 0;
     int64_t elapsed_ticks = 0;
 
-    Int2 spawnPoint{ 0, 0 };
+    Int3 spawnPoint{ 0, 0, 0 };
+
+    Java::Random rand;
 
     WorldManager() {}
 
     ~WorldManager() {}
 
+    void initWorldSeed(int64_t seed){
+		this->seed = seed;
+		rand.setSeed(seed);
+    }
     void tick(const std::vector<ClientPosition>& players);
     void update(const std::vector<ClientPosition>& players);
     std::vector<AABB> getCollidingBoundingBoxes(const AABB& area);
@@ -278,6 +284,38 @@ struct WorldManager {
             if (mat.isSolid || mat.isLiquid) return y + 1;
         }
         return -1;
+    }
+
+    void initSpawn() {
+        int sx = 0;
+        int sz = 0;
+        auto canCoordinateBeSpawn = [&](int x, int z) -> bool {
+            return getFirstUncoveredBlock(x, z) == BlockType::BLOCK_SAND;
+            };
+        for (; !canCoordinateBeSpawn(sx, sz); sz += this->rand.nextInt(64) - this->rand.nextInt(64)) {
+            sx += this->rand.nextInt(64) - this->rand.nextInt(64);
+        }
+        this->spawnPoint = { sx, 64, sz };
+    }
+
+    Int3 getSpawnPoint() {
+        int sx = this->spawnPoint.x;
+        int sz = this->spawnPoint.z;
+        for (; getFirstUncoveredBlock(sx, sz) == BlockType::BLOCK_AIR; sz += this->rand.nextInt(8) - this->rand.nextInt(8)) {
+            sx += this->rand.nextInt(8) - this->rand.nextInt(8);
+        }
+        return { sx, this->getHeightValue(sx, sz), sz };
+    }
+
+    BlockType getFirstUncoveredBlock(int wx, int wz) {
+        auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
+        if (!chunk || chunk->state.load() < ChunkState::Generated) return BlockType(-1);
+        int lx = wx & 15, lz = wz & 15;
+        int y = 63;
+        while (y < 127 && chunk->getBlock({ lx, y + 1, lz }) != BlockType::BLOCK_AIR) {
+            ++y;
+        }
+        return chunk->getBlock({ lx, y, lz });
     }
 
     int getHeightValue(int wx, int wz) {

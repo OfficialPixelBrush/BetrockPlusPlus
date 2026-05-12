@@ -64,7 +64,7 @@ void Server::startup() {
     // Register blocks, setup the world, setup commands, etc.
     Blocks::registerAll();
     command_manager.Init();
-    world.seed = 1634977745;
+	world.initWorldSeed(1634977745);
 
     // Setup the block callback so we can send it to clients
     world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
@@ -182,8 +182,9 @@ void Server::startup() {
             chestZ -= 2; // one block gap between chests
         }
     }
-
+    world.initSpawn();
     std::cout << "Loading spawn.. 100%\n";
+    
     float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
     printf("Startup Complete. (%.4fs)\n", startupSeconds);
 }
@@ -534,7 +535,7 @@ void Server::handleLogin(PlayerSession& session) {
     response.Serialize(session.stream);
 
     Packet::SetSpawnPosition spawn;
-    spawn.position = { 0, 200, 0 };
+    spawn.position = world.spawnPoint;
     spawn.Serialize(session.stream);
 
     Packet::SetHealth health;
@@ -571,7 +572,10 @@ void Server::handleLogin(PlayerSession& session) {
     time.Serialize(session.stream);
 
     PacketUtilities::sendInventory(session, 0, inv);
-    session.position.pos = { 0.0, 200.0, 0.0 };
+	auto respawnPoint = world.getSpawnPoint();
+    std::cout << respawnPoint.y << "\n";
+    // I love magic numbers (player stance height)
+    session.position.pos = { float(respawnPoint.x), float(respawnPoint.y) + 1.63 + 0.01, float(respawnPoint.z) };
     session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
