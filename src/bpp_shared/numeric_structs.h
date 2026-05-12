@@ -91,6 +91,14 @@ struct TriNumber {
         };
     }
 
+    friend std::wostream& operator<<(std::wostream& wos, const TriNumber& val) {
+        wos << "(" 
+            << static_cast<int64_t>(val.x) << ", "
+            << static_cast<int64_t>(val.y) << ", "
+            << static_cast<int64_t>(val.z) << ")";
+        return wos;
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const TriNumber& val) {
         os  << "(" 
             << static_cast<int64_t>(val.x) << ", "
@@ -102,6 +110,12 @@ struct TriNumber {
     // Axis-indexed access — used by BigTreeGenerator for axis-agnostic line drawing.
     T& operator[](int axis) { return data[axis]; }
     const T& operator[](int axis) const { return data[axis]; }
+
+    std::wstring wstr() const {
+        std::wostringstream woss;
+        woss << *this; // Use the overloaded << operator
+        return woss.str();
+    }
 
     std::string str() const {
         std::ostringstream oss;
@@ -171,6 +185,13 @@ struct BiNumber {
             static_cast<R>(y) / other,
         };
     }
+
+    friend std::wostream& operator<<(std::wostream& wos, const BiNumber& val) {
+        wos << "(" 
+            << static_cast<int64_t>(val.x) << ", "
+            << static_cast<int64_t>(val.y) << ")";
+        return wos;
+    }
     
     friend std::ostream& operator<<(std::ostream& os, const BiNumber& val) {
         os  << "(" 
@@ -183,6 +204,12 @@ struct BiNumber {
         std::ostringstream oss;
         oss << *this; // Use the overloaded << operator
         return oss.str();
+    }
+
+    std::wstring wstr() const {
+        std::wostringstream woss;
+        woss << *this; // Use the overloaded << operator
+        return woss.str();
     }
 };
 
@@ -267,12 +294,26 @@ struct SlimInt3 {
         };
     }
 
+    friend std::wostream& operator<<(std::wostream& wos, const SlimInt3& val) {
+        wos << "(" 
+            << static_cast<int64_t>(val.x) << ", "
+            << static_cast<int64_t>(val.y) << ", "
+            << static_cast<int64_t>(val.z) << ")";
+        return wos;
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const SlimInt3& val) {
         os  << "(" 
             << static_cast<int64_t>(val.x) << ", "
             << static_cast<int64_t>(val.y) << ", "
             << static_cast<int64_t>(val.z) << ")";
         return os;
+    }
+    
+    std::wstring wstr() const {
+        std::wostringstream woss;
+        woss << *this; // Use the overloaded << operator
+        return woss.str();
     }
     
     std::string str() const {
@@ -301,6 +342,15 @@ typedef BiNumber<float> Float2;
 #define FLOAT3_ONE      Float3{1.0f, 1.0f, 1.0f}
 #define FLOAT2_ZERO     Float2{0.0f, 0.0f}
 #define FLOAT2_ONE      Float2{1.0f, 1.0f}
+
+// Double (64-Bit float)
+typedef TriNumber<double> Double3;
+typedef BiNumber<double> Double2;
+
+#define DOUBLE3_ZERO    Double3{0.0, 0.0, 0.0}
+#define DOUBLE3_ONE     Double3{1.0, 1.0, 1.0}
+#define DOUBLE2_ZERO    Double2{0.0, 0.0}
+#define DOUBLE2_ONE     Double2{1.0, 1.0}
 
 // 8-Bit Integer
 typedef TriNumber<int8_t> Int8_3;

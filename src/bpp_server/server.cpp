@@ -646,7 +646,7 @@ void Server::processIncoming(PlayerSession& session) {
         case PacketId::ChatMessage: {
             Packet::ChatMessage pkt;
             pkt.Deserialize(session.stream);
-            HandlePacket::ChatMessage(pkt, session, players, command_manager);
+            HandlePacket::ChatMessage(pkt, session, players, world, command_manager);
             break;
         }
         case PacketId::SetTime: {

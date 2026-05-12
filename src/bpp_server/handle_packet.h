@@ -68,9 +68,9 @@ namespace HandlePacket {
     }
 
     inline void ChatMessage(Packet::ChatMessage& pkt, PlayerSession& session,
-        std::vector<std::unique_ptr<PlayerSession>>& players, CommandManager& cmd_mgr) {
+        std::vector<std::unique_ptr<PlayerSession>>& players, WorldManager& world, CommandManager& cmd_mgr) {
         if (pkt.message.size() > 0 && pkt.message[0] == '/') {
-            cmd_mgr.Parse(pkt.message, session);
+            cmd_mgr.Parse(pkt.message, session, world);
             return;
         }
         std::wstring broadcast = L"<" + session.username + L"> " + pkt.message;
