@@ -14,6 +14,7 @@
 #include <cstring>
 #include <numeric_structs.h>
 #include "tile_entities/tile_entity.h"
+#include "entities/entity.h"
 #include "blocks/block_properties.h"
 #include "constants.h"
 
@@ -45,6 +46,10 @@ struct std::hash<ChunkPos> {
     }
 };
 
+struct entityBucket {
+	std::vector<std::shared_ptr<Entity>> entities;
+};
+
 struct Chunk {
     static constexpr int VOLUME = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH;
     static constexpr int META_VOLUME = VOLUME / 2;
@@ -67,6 +72,7 @@ struct Chunk {
 
     // Tile entities
     std::vector<std::shared_ptr<TileEntity>> tileEntities;
+    std::array<entityBucket, 8> entityBuckets; // 16 block tall slices so we can grab entities easier
 
     inline int blockIndex(Int3 pos) const {
         return (pos.y * CHUNK_WIDTH * CHUNK_WIDTH) + (pos.z * CHUNK_WIDTH) + pos.x;

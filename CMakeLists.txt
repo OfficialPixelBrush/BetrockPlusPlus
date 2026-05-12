@@ -71,7 +71,7 @@ add_executable(
     src/bpp_client/inputs.cpp
     src/bpp_client/renderers/world_renderer.cpp
     src/bpp_client/renderers/sub_chunk_mesher.cpp
-)
+ "src/bpp_shared/entities/entity.h")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(BetrockPlusPlus PRIVATE
