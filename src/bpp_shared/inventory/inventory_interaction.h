@@ -36,10 +36,10 @@ struct InventoryInteraction {
             auto* current = inventory->getStackInSlot(i);
             auto& snap = snapshot[i];
 
-            bool changed = snap != inventory->slots[i];
+            bool changed = snap != inventory->slots[size_t(i)];
             if (!changed) continue;
 
-            snap = inventory->slots[i];
+            snap = inventory->slots[size_t(i)];
             differences.push_back({ snap, i });
         }
         return differences;
@@ -208,17 +208,17 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
             sharedInventory.slots[slotCount++] = stack ? std::optional<ItemStack>(*stack) : std::nullopt;
         }
         for (int i = 9; i <= 44; i++)
-            sharedInventory.slots[slotCount++] = playerInventory->slots[i];
+            sharedInventory.slots[slotCount++] = playerInventory->slots[size_t(i)];
     }
 
     void writeBack() {
         for (int i = 0; i < 54; i++) {
-            auto& slot = sharedInventory.slots[i];
+            auto& slot = sharedInventory.slots[size_t(i)];
             ItemStack* ptr = slot.has_value() ? &slot.value() : nullptr;
             chestInventory.setInventorySlotContents(i, ptr);
         }
         for (int i = 54; i < 90; i++)
-            playerInventory->slots[i - 54 + 9] = sharedInventory.slots[i];
+            playerInventory->slots[i - 54 + 9] = sharedInventory.slots[size_t(i)];
     }
 
     void onShiftClick(int slot) override {
@@ -283,7 +283,7 @@ struct ChestInventoryInteraction : InventoryInteraction {
     void initSnapshot() override {
         snapshot.resize(chestInventory->getSizeInventory());
         for (int i = 0; i < chestInventory->getSizeInventory(); i++)
-            snapshot[i] = chestInventory->slots[i];
+            snapshot[i] = chestInventory->slots[size_t(i)];
     }
 
     // Analyze the snapshot vs the current chest inventory
@@ -293,10 +293,10 @@ struct ChestInventoryInteraction : InventoryInteraction {
             auto* current = chestInventory->getStackInSlot(i);
             auto& snap = snapshot[i];
 
-            bool changed = snap != chestInventory->slots[i];
+            bool changed = snap != chestInventory->slots[size_t(i)];
             if (!changed) continue;
 
-            snap = chestInventory->slots[i];
+            snap = chestInventory->slots[size_t(i)];
             differences.push_back({ snap, i });
         }
         mergeInventories();
@@ -308,14 +308,14 @@ struct ChestInventoryInteraction : InventoryInteraction {
         for (auto& slot : chestInventory->slots)
             sharedInventory.slots[slotCount++] = slot;
         for (int i = 9; i <= 44; i++)
-            sharedInventory.slots[slotCount++] = playerInventory->slots[i];
+            sharedInventory.slots[slotCount++] = playerInventory->slots[size_t(i)];
     }
 
     void writeBack() {
         for (int i = 0; i < 27; i++)
-            chestInventory->slots[i] = sharedInventory.slots[i];
+            chestInventory->slots[size_t(i)] = sharedInventory.slots[size_t(i)];
         for (int i = 27; i < 63; i++)
-            playerInventory->slots[i - 27 + 9] = sharedInventory.slots[i];
+            playerInventory->slots[i - 27 + 9] = sharedInventory.slots[size_t(i)];
     }
 
     void onShiftClick(int slot) override {
@@ -335,7 +335,7 @@ struct ChestInventoryInteraction : InventoryInteraction {
 
         // Update the source in the real inventory before re-merging
         if (slot <= 26) {
-            chestInventory->slots[slot] = copy.count == 0 ? std::nullopt : std::optional<ItemStack>(copy);
+            chestInventory->slots[size_t(slot)] = copy.count == 0 ? std::nullopt : std::optional<ItemStack>(copy);
         }
         else {
             int playerSlot = slot - 27 + 9;
