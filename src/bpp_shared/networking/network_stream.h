@@ -108,6 +108,8 @@ public:
     // Flush the write buffer to the socket once per tick.
     // Returns false if the connection was lost.
     bool flushWriteBuffer();
+    // Blocking flush for use SHUTDOWN ONLY
+    void flushWriteBufferBlocking();
     bool hasData();
 
     // Append pre-serialised bytes directly to the write buffer.
