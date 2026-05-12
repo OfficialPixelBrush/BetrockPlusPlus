@@ -65,7 +65,7 @@ void Server::startup() {
     // Register blocks, setup the world, setup commands, etc.
     Blocks::registerAll();
     command_manager.Init();
-	world.initWorldSeed("Glacier");
+    world.initWorldSeed("Glacier");
 
     // Setup the block callback so we can send it to clients
     world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
@@ -90,7 +90,7 @@ void Server::startup() {
     bool spawnDone = false;
     auto start = std::chrono::steady_clock::now();
     world.initSpawn();
-    GlobalLogger().info << "Server spawn is " << Int2(int(world.spawnPoint.x), int(world.spawnPoint.y)) << "\n";
+    GlobalLogger().info << "Server spawn is " << Int2(int(world.spawnPoint.x), int(world.spawnPoint.z)) << "\n";
     GlobalLogger().info << "Loading 676 spawn chunks:\n";
     // Push every single spawn chunk to get ready for generation
     std::unordered_set<ChunkPos> wanted;
