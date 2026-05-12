@@ -53,14 +53,14 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     bool graphical_client = false;
 
     #if defined(_WIN32) || defined(_WIN64)
-        std::cout << "Running on Windows\n";
+        GlobalLogger().info << "Running on Windows\n";
         SetConsoleCtrlHandler(consoleCtrlHandler, TRUE);
     #elif defined(__linux__)
-        std::cout << "Running on Linux\n";
+        GlobalLogger().info << "Running on Linux\n";
     #elif defined(__APPLE__)
-        std::cout << "Running on macOS\n";
+        GlobalLogger().info << "Running on macOS\n";
     #else
-        std::cout << "Running on an unknown/unsupported platform\nUnexpected bugs may occur!\n";
+        GlobalLogger().warn << "Running on an unknown/unsupported platform\nUnexpected bugs may occur!\n";
     #endif
 
     std::signal(SIGINT, signalHandler);

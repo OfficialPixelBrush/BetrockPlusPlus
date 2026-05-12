@@ -6,6 +6,7 @@
 
 #include "command_manager.h"
 #include "command.h"
+#include "logger.h"
 
 std::vector<std::unique_ptr<Command>> CommandManager::registeredCommands;
 
@@ -48,7 +49,7 @@ void CommandManager::Init() {
 	registeredCommands.push_back(CommandModified());
 	registeredCommands.push_back(CommandPacket());
 	*/
-	std::cout << "Registered " << registeredCommands.size() << " command(s)!" << "\n";
+	GlobalLogger().info << "Registered " << registeredCommands.size() << " command(s)!" << "\n";
 }
 
 // Get all registered commands

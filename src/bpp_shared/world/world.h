@@ -63,9 +63,9 @@ struct WorldManager {
 
     ~WorldManager() {}
 
-    void initWorldSeed(int64_t seed){
-		this->seed = seed;
-		rand.setSeed(seed);
+    void initWorldSeed(int64_t pSeed){
+		this->seed = pSeed;
+		rand.setSeed(pSeed);
     }
     void tick(const std::vector<ClientPosition>& players);
     void update(const std::vector<ClientPosition>& players);

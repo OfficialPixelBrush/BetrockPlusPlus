@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <fcntl.h>
 #elif defined(_WIN32) || defined(_WIN64)
 #include <winsock2.h>
 #pragma comment(lib, "ws2_32.lib")
