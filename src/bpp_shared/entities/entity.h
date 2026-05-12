@@ -9,7 +9,7 @@
 // Base entity struct
 struct entity {
 	int id = -1; // Entity ID, -1 is an invalid entity
-	boolean preventEntitySpawning = false;
+	bool preventEntitySpawning = false;
 	entity* riddenByEntity;
 	entity* ridingEntity;
 
