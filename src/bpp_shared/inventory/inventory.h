@@ -20,30 +20,30 @@ struct Inventory {
     std::string name = "Inventory";
     std::vector<std::optional<ItemStack>> slots;
 
-    Inventory(int size) : slots(size) {}
+    Inventory(size_t size) : slots(size) {}
 
     virtual int getSizeInventory() const {
         return (int)slots.size();
     }
 
     virtual int getNetworkSlotId(int slot) const {
-        if (slot < 0 || slot >= slots.size()) return -1;
+        if (slot < 0 || slot >= int(slots.size())) return -1;
         return slot;
     }
 
     virtual ItemStack* getStackInSlot(int slot) {
         if (slot < 0 || slot >= (int)slots.size()) return nullptr;
-        if (!slots[slot].has_value()) return nullptr;
-        return &slots[slot].value();
+        if (!slots[size_t(slot)].has_value()) return nullptr;
+        return &slots[size_t(slot)].value();
     }
 
     virtual ItemStack decreaseStackSize(int slot, int count) {
-        if (slot < 0 || slot >= (int)slots.size() || !slots[slot].has_value())
+        if (slot < 0 || slot >= (int)slots.size() || !slots[size_t(slot)].has_value())
             return ItemStack{};
-        auto& stack = slots[slot].value();
+        auto& stack = slots[size_t(slot)].value();
         if (stack.count <= count) {
             ItemStack taken = stack;
-            slots[slot] = std::nullopt;
+            slots[size_t(slot)] = std::nullopt;
             onInventoryChanged();
             return taken;
         }
@@ -55,7 +55,7 @@ struct Inventory {
 
     virtual void setInventorySlotContents(int slot, ItemStack* stack) {
         if (slot < 0 || slot >= (int)slots.size()) return;
-        slots[slot] = stack ? std::optional<ItemStack>(*stack) : std::nullopt;
+        slots[size_t(slot)] = stack ? std::optional<ItemStack>(*stack) : std::nullopt;
         onInventoryChanged();
     }
 
@@ -65,7 +65,7 @@ struct Inventory {
 
     void clearSlot(int slot) {
         if (slot < 0 || slot >= (int)slots.size()) return;
-        slots[slot] = std::nullopt;
+        slots[size_t(slot)] = std::nullopt;
         onInventoryChanged();
     }
 
@@ -100,8 +100,8 @@ struct Inventory {
 
         // We couldn't merge into existing items so just try and find an empty slot
         for (int i = reverse ? end : start; reverse ? i >= start : i <= end; reverse ? i-- : i++) {
-            if (!slots[i].has_value()) {
-                slots[i] = ItemStack{ stack.id, stack.count, stack.data };
+            if (!slots[size_t(i)].has_value()) {
+                slots[size_t(i)] = ItemStack{ stack.id, stack.count, stack.data };
                 stack.id = ITEM_INVALID;
                 stack.data = 0;
                 stack.count = 0;

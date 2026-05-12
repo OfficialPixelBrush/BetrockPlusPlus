@@ -8,6 +8,7 @@
 #include "inventory.h"
 #include "item_stack.h"
 #include "enums/items.h"
+#include "logger.h"
 #include <algorithm>
 #include <optional>
 #include <random>
@@ -50,6 +51,8 @@ public:
         if (slot >= 5 && slot <= 8) return invMap::armor;
         if (slot >= 36 && slot <= 44) return invMap::hotbar;
         if (slot >= 9 && slot <= 35) return invMap::inventory;
+        GlobalLogger().error << "Invalid Inventory area slot! (" << slot << ")\n";
+        return invMap::inventory; // Fallback,
     }
 
     void onInventoryChanged() override { inventoryChanged = true; }
@@ -122,7 +125,7 @@ struct InventoryDispenser : Inventory {
     std::optional<ItemStack> getRandomStack() {
         int chosen = -1, weight = 1;
         for (int i = 0; i < 9; i++) {
-            if (!slots[i].has_value()) continue;
+            if (!slots[size_t(i)].has_value()) continue;
             if (std::uniform_int_distribution<int>(0, weight++ - 1)(rng) == 0)
                 chosen = i;
         }
