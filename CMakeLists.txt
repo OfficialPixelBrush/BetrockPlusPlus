@@ -92,7 +92,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     )
 endif()
 
-# If we're being extra pedantic
+# Add some extra warnings
 target_compile_options(BetrockPlusPlus PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang>:
         -Wall
@@ -195,6 +195,7 @@ target_compile_options(BetrockPlusPlus PRIVATE
     >
 )
 
+# Link libraries
 target_link_libraries(
     BetrockPlusPlus
     PRIVATE
@@ -203,9 +204,33 @@ target_link_libraries(
     glfw
     glm::glm
     OpenAL::OpenAL
-    #${LUA_LIBRARIES}
     #Threads::Threads
 )
+
+# Ensure all files have copyright notice
+file(GLOB_RECURSE SOURCE_FILES
+    "${CMAKE_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_SOURCE_DIR}/src/*.h"
+)
+
+set(REQUIRED_STRINGS
+    "Copyright \\(c\\)"
+    "SPDX-License-Identifier: GPL-3.0-only"
+)
+
+foreach(FILE ${SOURCE_FILES})
+    file(READ "${FILE}" CONTENTS)
+
+    foreach(PATTERN ${REQUIRED_STRINGS})
+        string(REGEX MATCH "${PATTERN}" MATCH_RESULT "${CONTENTS}")
+
+        if(NOT MATCH_RESULT)
+            message(FATAL_ERROR
+                "Missing required copyright/SPDX notice in: ${FILE}"
+            )
+        endif()
+    endforeach()
+endforeach()
 
 # Detect CPU architecture
 if(CMAKE_SYSTEM_PROCESSOR)
