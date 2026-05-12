@@ -23,59 +23,16 @@
 #include "server.h"
 
 Server::Server() {
-    Blocks::registerAll();
-    command_manager.Init();
-    world.seed = 1634977745;
-
-    world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
-        // Only enqueue if at least one session knows about this chunk.
-        auto idxIt = chunkSessions.find(chunkPos);
-        bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
-        if (!anyInterested) {
-            // Any session with this chunk in-flight?
-            for (auto& session : players) {
-                if (session->sentChunks.contains(chunkPos)) { anyInterested = true; break; }
-            }
-        }
-        if (!anyInterested) return;
-
-        PendingBlock pendingNew = pendingBlock;
-        pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y, pendingBlock.block_pos.z & 15 };
-        chunkBlockChanges[chunkPos].push_back(pendingNew);
-        };
-
-#if defined(_WIN32) || defined(_WIN64)
-    WSADATA wsaData;
-    WSAStartup(MAKEWORD(2, 2), &wsaData);
-#endif
-
-    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-
-    sockaddr_in addr{};
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(25565);
-    addr.sin_addr.s_addr = INADDR_ANY;
-
-    if (bind(serverSocket, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
-        std::cerr << "**** FAILED TO BIND TO PORT!" << std::endl;
-    }
-    listen(serverSocket, 8);
-
-#if defined(_WIN32) || defined(_WIN64)
-    u_long mode = 1;
-    ioctlsocket(serverSocket, FIONBIO, &mode);
-#else
-    fcntl(serverSocket, F_SETFL, O_NONBLOCK);
-#endif
+    createServerSocket(serverPort);
+	if (serverSocket < 0) {
+		std::cerr << "**** FAILED TO CREATE SERVER SOCKET!" << "\n";
+        exit(1);
+	}
+	std::cout << "Server initialized on port " << serverPort << "\n";
 }
 
 Server::~Server() {
-#if defined(_WIN32) || defined(_WIN64)
-    closesocket(serverSocket);
-    WSACleanup();
-#else
-    close(serverSocket);
-#endif
+    this->stop();
 }
 
 void Server::indexAddChunk(PlayerSession& session, const ChunkPos& pos) {
@@ -100,16 +57,41 @@ void Server::indexRemoveSession(PlayerSession& session) {
 }
 
 void Server::startup() {
+    auto startupStart = std::chrono::steady_clock::now();
     printf("Initializing server startup.. \n");
     printf("Thread count: %i\n", int(world.pool.get_thread_count()));
-    printf("Server spawn is (%i, %i)\n", int(spawnPoint.x), int(spawnPoint.y));
+
+    // Register blocks, setup the world, setup commands, etc.
+    Blocks::registerAll();
+    command_manager.Init();
+    world.seed = 1634977745;
+
+    // Setup the block callback so we can send it to clients
+    world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
+        // Only enqueue if at least one session knows about this chunk.
+        auto idxIt = chunkSessions.find(chunkPos);
+        bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
+        if (!anyInterested) {
+            // Any session with this chunk in-flight?
+            for (auto& session : players) {
+                if (session->sentChunks.contains(chunkPos)) { anyInterested = true; break; }
+            }
+        }
+        if (!anyInterested) return;
+
+        PendingBlock pendingNew = pendingBlock;
+        pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y, pendingBlock.block_pos.z & 15 };
+        chunkBlockChanges[chunkPos].push_back(pendingNew);
+        };
+
+    printf("Server spawn is (%i, %i)\n", int(world.spawnPoint.x), int(world.spawnPoint.y));
     printf("Loading 676 spawn chunks..\n");
 
     // Push every single spawn chunk to get ready for generation
     std::unordered_set<ChunkPos> wanted;
     for (int dx = -13; dx < 13; dx++)
         for (int dz = -13; dz < 13; dz++) {
-            wanted.insert({ (spawnPoint.x >> 4) + dx, (spawnPoint.z >> 4) + dz });
+            wanted.insert({ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz });
             for (const auto& pos : wanted) {
                 if (!world.chunks.contains(pos)) {
                     auto c = std::make_shared<Chunk>();
@@ -138,7 +120,7 @@ void Server::startup() {
         // Beta uses -13 to 13 with only -13 being inclusive.. for some reason.
         for (int dx = -13; dx < 13; dx++) {
             for (int dz = -13; dz < 13; dz++) {
-                ChunkPos p{ (spawnPoint.x >> 4) + dx, (spawnPoint.z >> 4) + dz };
+                ChunkPos p{ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz };
                 auto it = world.chunks.find(p);
                 if (it != world.chunks.end() && it->second->state.load() >= ChunkState::Generated)
                     loaded_chunks++;
@@ -202,7 +184,8 @@ void Server::startup() {
     }
 
     std::cout << "Loading spawn.. 100%\n";
-    printf("Startup Complete.\n");
+    float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
+    printf("Startup Complete. (%.4fs)\n", startupSeconds);
 }
 
 void Server::run() {
@@ -244,43 +227,27 @@ void Server::run() {
 }
 
 void Server::stop() {
+	if (stopped) return;
+    stopped = true;
     std::cout << "Server shutting down...\n";
-    //close(serverSocket);
+	for (auto& session : players) {
+		disconnectPlayer(*session, L"Server Closed");
+        session->stream.flushWriteBufferBlocking();
+	}
+    closeSocket();
 }
 
 void Server::acceptNewPlayers() {
-#if defined(_WIN32) || defined(_WIN64)
-    SOCKET rawSocket = accept(serverSocket, nullptr, nullptr);
-    if (rawSocket == INVALID_SOCKET) return;
-
-    u_long clientMode = 1;
-    ioctlsocket(rawSocket, FIONBIO, &clientMode);
-
-    DWORD recvTimeout = 45;
-    setsockopt(rawSocket, SOL_SOCKET, SO_RCVTIMEO,
-        reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
-
-    int clientSocket = static_cast<int>(rawSocket);
-#else
-    int clientSocket = accept(serverSocket, nullptr, nullptr);
-    if (clientSocket < 0) return;
-
-    fcntl(clientSocket, F_SETFL, O_NONBLOCK);
-
-    struct timeval recvTimeout { 0, 45000 };
-    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,
-        reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
-#endif
-
+	auto clientSocket = createClientSocket();
+	if (clientSocket < 0) return;
     players.push_back(std::make_unique<PlayerSession>(clientSocket));
     players.back()->players = &players;
 }
 
-// Position deltas are computed as fixed-point integers (coord * 32) to avoid
-// floating-point drift. 
+// Positions in entity space are quantized!!
 void Server::broadcastPlayerMovement(PlayerSession& session) {
-    // Convert current position to fixed-point integers
     int32_t newFpX = static_cast<int32_t>(session.position.pos.x * 32.0);
+
     // Subtract 1/64 offset: client adds (serverPosY/32 + 1/64) on teleport,
     int32_t newFpY = static_cast<int32_t>((session.position.pos.y - (1.0 / 64.0)) * 32.0);
     int32_t newFpZ = static_cast<int32_t>(session.position.pos.z * 32.0);
@@ -289,61 +256,18 @@ void Server::broadcastPlayerMovement(PlayerSession& session) {
 
     // Relative-move Y does not have the 1/64 offset
     int32_t relFpY = static_cast<int32_t>(session.position.pos.y * 32.0);
-
     int32_t dx = newFpX - session.lastFpX;
     int32_t dy = relFpY - session.lastFpY;
     int32_t dz = newFpZ - session.lastFpZ;
 
     bool moved = (dx != 0 || dy != 0 || dz != 0);
     bool rotated = (newYaw != session.lastYaw || newPitch != session.lastPitch);
-
     if (!moved && !rotated) return;
 
     // If delta is too large, use teleport instead (128 fp units = 4 blocks)
     bool needsTeleport = (std::abs(dx) > 128 || std::abs(dy) > 128 || std::abs(dz) > 128);
 
-    for (auto& other : players) {
-        if (other.get() == &session) continue;
-        if (other->connState != ConnectionState::Playing) continue;
-
-        if (needsTeleport) {
-            Packet::TeleportEntity pkt;
-            pkt.entity_id = session.entityId;
-            pkt.position.x = newFpX;
-            pkt.position.y = newFpY;
-            pkt.position.z = newFpZ;
-            pkt.yaw = newYaw;
-            pkt.pitch = newPitch;
-            pkt.Serialize(other->stream);
-        }
-        else if (moved && rotated) {
-            Packet::EntityPositionAndRotation pkt;
-            pkt.entity_id = session.entityId;
-            pkt.qr_position.x = static_cast<int8_t>(dx);
-            pkt.qr_position.y = static_cast<int8_t>(dy);
-            pkt.qr_position.z = static_cast<int8_t>(dz);
-            pkt.q_yaw = newYaw;
-            pkt.q_pitch = newPitch;
-            pkt.Serialize(other->stream);
-        }
-        else if (moved) {
-            Packet::EntityPosition pkt;
-            pkt.entity_id = session.entityId;
-            pkt.qr_position.x = static_cast<int8_t>(dx);
-            pkt.qr_position.y = static_cast<int8_t>(dy);
-            pkt.qr_position.z = static_cast<int8_t>(dz);
-            pkt.Serialize(other->stream);
-        }
-        else {
-            Packet::EntityRotation pkt;
-            pkt.entity_id = session.entityId;
-            pkt.q_yaw = newYaw;
-            pkt.q_pitch = newPitch;
-            pkt.Serialize(other->stream);
-        }
-    }
-
-    // Update last-broadcast state using the same Y as relative moves
+    // Update last-broadcast state
     session.lastFpX = newFpX;
     session.lastFpY = relFpY;
     session.lastFpZ = newFpZ;
@@ -362,11 +286,9 @@ void Server::tick() {
     world.tick(positions);
     world.update(positions);
 
-    // Block changes accumulate in chunkBlockChanges during setBlock() calls
-    // (all on main thread). Swap out here so the loop below sees a stable snapshot.
+	// Send all of the block changes that have accumulated since the last tick, then clear the list.
     std::unordered_map<ChunkPos, std::vector<PendingBlock>> localBlockChanges;
     localBlockChanges.swap(chunkBlockChanges);
-
     for (auto& session : players) {
         switch (session->connState) {
         case ConnectionState::Handshaking:           handleHandshake(*session);    break;
@@ -384,7 +306,6 @@ void Server::tick() {
                 time.time = world.elapsed_ticks;
                 time.Serialize(session->stream);
             }
-
             break;
         }
     }
@@ -394,7 +315,6 @@ void Server::tick() {
         for (const auto& pos : session->newlyFlushed)
             indexAddChunk(*session, pos);
         session->newlyFlushed.clear();
-
         for (const auto& pos : session->newlyUnloaded)
             indexRemoveChunk(*session, pos);
         session->newlyUnloaded.clear();
@@ -408,8 +328,8 @@ void Server::tick() {
             continue;
         }
 
-        auto diffs = session->activeInteraction->tickDiff();
         // Send each differing slot
+        auto diffs = session->activeInteraction->tickDiff();
         if (diffs.size() <= 5) {
             for (auto difference : diffs) {
                 ItemStack invalid{ ITEM_INVALID };
@@ -418,13 +338,14 @@ void Server::tick() {
             }
         }
         else {
+			// Too many changes, just resend the whole inventory
             PacketUtilities::sendInventory(*session, session->openWindowId, *session->activeInteraction->inventory);
         }
     }
 
     // Dispatch block changes. 
     for (auto& [chunk, changes] : localBlockChanges) {
-        // Find which sessions care about this chunk via the reverse index.
+        // Find which sessions care about this chunk
         // Split into flushed (send immediately) and sentOnly (queue).
         auto indexIt = chunkSessions.find(chunk);
         std::vector<PlayerSession*> flushedSessions;
@@ -435,8 +356,7 @@ void Server::tick() {
             flushedSessions = indexIt->second;
         }
 
-        // Sessions that have the chunk in-flight (sentChunks but not flushedChunks)
-        // still need to queue the updates.
+        // Sessions that have the chunk in-flight (sentChunks but not flushedChunks) still need to queue the updates.
         for (auto& session : players) {
             if (session->connState != ConnectionState::Playing &&
                 session->connState != ConnectionState::WaitingForSpawnChunks) continue;
@@ -451,7 +371,6 @@ void Server::tick() {
             auto& q = session->pendingBlockChanges[chunk];
             q.insert(q.end(), changes.begin(), changes.end());
         }
-
         if (flushedSessions.empty()) continue;
 
         // Capture chunk ref once for sub-region jobs.
@@ -467,7 +386,7 @@ void Server::tick() {
                 static_cast<int8_t>(pb.block_pos.y),
                 static_cast<int32_t>(pb.block_pos.z + (chunk.z * 16))
             };
-            // Serialise into a temporary buffer, then blast to all sessions.
+            // Serialise into a temporary buffer, then send to all sessions.
             NetworkStream tmpStream(-1);
             sb.Serialize(tmpStream);
             const auto& buf = tmpStream.getRawWriteBuffer();
@@ -475,6 +394,7 @@ void Server::tick() {
                 session->stream.writeRaw(buf.data(), buf.size());
         }
         else if (changes.size() < 10) {
+            // Multi-block packet
             auto format_multi_block = [](int8_t x, int8_t y, int8_t z) {
                 return (
                     ((int16_t(x) & 0x0F) << 12) |

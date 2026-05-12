@@ -16,17 +16,50 @@ NetworkStream::NetworkStream(int p_client_socket) {
 
 NetworkStream::~NetworkStream() {
     if (client_socket != INVALID_SOCKET) {
-#if defined(_WIN32) || defined(_WIN64)
+    #if defined(_WIN32) || defined(_WIN64)
         shutdown(client_socket, SD_BOTH);
         closesocket(client_socket);
         // TODO: Clean-up WSA when the server closes
         // WSACleanup();
-#else
+    #else
         shutdown(client_socket, SHUT_RDWR);
         close(client_socket);
-#endif
+    #endif
         client_socket = INVALID_SOCKET;
     }
+}
+
+void NetworkStream::flushWriteBufferBlocking() {
+    if (writeBuffer.empty() || client_socket == INVALID_SOCKET) return;
+
+    // Switch to blocking mode
+    #if defined(_WIN32) || defined(_WIN64)
+        u_long mode = 0;
+        ioctlsocket(client_socket, FIONBIO, &mode);
+    #else
+        int flags = fcntl(client_socket, F_GETFL, 0);
+        fcntl(client_socket, F_SETFL, flags & ~O_NONBLOCK);
+    #endif
+
+    size_t sent = 0;
+    while (sent < writeBuffer.size()) {
+        int result = send(client_socket,
+            reinterpret_cast<const char*>(writeBuffer.data() + sent),
+            static_cast<int>(writeBuffer.size() - sent), 0);
+        if (result <= 0) break;
+        sent += static_cast<size_t>(result);
+    }
+    writeBuffer.clear();
+
+	// We close here so the client can get the packet data we just sent out before we disconnect
+    #if defined(_WIN32) || defined(_WIN64)
+        shutdown(client_socket, SD_SEND);
+        closesocket(client_socket);
+    #else
+        shutdown(client_socket, SHUT_WR);
+        close(client_socket);
+    #endif
+        client_socket = INVALID_SOCKET;
 }
 
 // String-8 Handling
