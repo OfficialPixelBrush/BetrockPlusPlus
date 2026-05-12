@@ -160,7 +160,7 @@ void BigTreeGenerator::GenerateBranchPositions() {
 		branchesPerLayer = 1;
 	}
 
-	std::vector<BranchPos> candidateBranches(branchesPerLayer * this->totalHeight);
+	std::vector<BranchPos> candidateBranches(size_t(branchesPerLayer * this->totalHeight));
 	int32_t currentY = this->basePos.y + this->totalHeight - this->trunkThickness;
 	int32_t branchCount = 1;
 	int32_t targetY = this->basePos.y + this->height;
