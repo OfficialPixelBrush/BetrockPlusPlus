@@ -96,7 +96,7 @@ static void SendTeleport(PlayerSession& target, Double3 position, float yaw = 0.
 	Packet::PlayerPositionAndRotation pkt;
 	pkt.x = position.x;
 	pkt.y = position.y;
-	pkt.stance = position.y + 1.62;
+	pkt.stance = position.y + PLAYER_EYE_HEIGHT;
 	pkt.z = position.z;
 	pkt.yaw = yaw;
 	pkt.pitch = pitch;

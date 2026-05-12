@@ -281,7 +281,7 @@ public:
         PlayerPositionAndRotation() : BasePacket{ PacketId::PlayerPositionAndRotation } {}
         double x = 0.0;
         double y = 0.0;
-        double stance = 0.0;   // must be y + 1.62
+        double stance = 0.0;   // must be between (y + 1.6) and (y + 1.7)(?)
         double z = 0.0;
         float  yaw = 0.0f;
         float  pitch = 0.0f;

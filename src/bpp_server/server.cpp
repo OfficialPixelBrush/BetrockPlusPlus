@@ -616,7 +616,7 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
     Packet::PlayerPositionAndRotation pos;
     pos.x = session.position.pos.x;
     pos.y = session.position.pos.y;
-    pos.stance = session.position.pos.y + 1.62;
+    pos.stance = session.position.pos.y + PLAYER_EYE_HEIGHT;
     pos.z = session.position.pos.z;
     pos.yaw = 0.0f;
     pos.pitch = 0.0f;
