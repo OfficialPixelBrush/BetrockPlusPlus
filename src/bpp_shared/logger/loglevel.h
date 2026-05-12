@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
  *
  * SPDX-License-Identifier: GPL-3.0-only
  *
