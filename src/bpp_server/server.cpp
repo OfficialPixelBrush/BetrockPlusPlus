@@ -64,7 +64,7 @@ void Server::startup() {
     // Register blocks, setup the world, setup commands, etc.
     Blocks::registerAll();
     command_manager.Init();
-	world.initWorldSeed(1634977745);
+	world.initWorldSeed(404);
 
     // Setup the block callback so we can send it to clients
     world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
@@ -84,12 +84,16 @@ void Server::startup() {
         chunkBlockChanges[chunkPos].push_back(pendingNew);
         };
 
+    int total_spawn_chunks = 676;
+    int loaded_chunks = 0;
+    bool spawnDone = false;
+    auto start = std::chrono::steady_clock::now();
+    world.initSpawn();
     printf("Server spawn is (%i, %i)\n", int(world.spawnPoint.x), int(world.spawnPoint.y));
-    printf("Loading 676 spawn chunks..\n");
-
+    printf("Loading 676 spawn chunks:\n");
     // Push every single spawn chunk to get ready for generation
     std::unordered_set<ChunkPos> wanted;
-    for (int dx = -13; dx < 13; dx++)
+    for (int dx = -13; dx < 13; dx++) {
         for (int dz = -13; dz < 13; dz++) {
             wanted.insert({ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz });
             for (const auto& pos : wanted) {
@@ -101,16 +105,11 @@ void Server::startup() {
                 }
             }
         }
-
-    int total_spawn_chunks = 676;
-    int loaded_chunks = 0;
-    bool spawnDone = false;
-    auto start = std::chrono::steady_clock::now();
-    std::cout << "Loading spawn.. 0%\n";
+    }
     while (!spawnDone) {
         loaded_chunks = 0;
         // Force gen these chunks AS FAST AS POSSIBLE
-        world.pumpPipeline(std::vector<ClientPosition>{});
+        world.pumpPipeline({});
         world.pool.wait();
         world.drainGenQueue();
         world.populateReady();
@@ -182,7 +181,6 @@ void Server::startup() {
             chestZ -= 2; // one block gap between chests
         }
     }
-    world.initSpawn();
     std::cout << "Loading spawn.. 100%\n";
     
     float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
@@ -222,8 +220,6 @@ void Server::run() {
 
         if (ticks_ran == MAX_TICKS_PER_FRAME)
             accumulator = 0.0f;
-
-        acceptNewPlayers();
     }
 }
 
@@ -277,6 +273,7 @@ void Server::broadcastPlayerMovement(PlayerSession& session) {
 }
 
 void Server::tick() {
+    acceptNewPlayers();
     std::vector<ClientPosition> positions;
     for (auto& session : players) {
         if (session->connState == ConnectionState::WaitingForSpawnChunks ||
@@ -572,10 +569,9 @@ void Server::handleLogin(PlayerSession& session) {
     time.Serialize(session.stream);
 
     PacketUtilities::sendInventory(session, 0, inv);
-	auto respawnPoint = world.getSpawnPoint();
-    std::cout << respawnPoint.y << "\n";
-    // I love magic numbers (player stance height)
-    session.position.pos = { float(respawnPoint.x), float(respawnPoint.y) + 1.63 + 0.01, float(respawnPoint.z) };
+	auto respawnPoint = world.getSpawnPoint(true);
+    // I love magic numbers (player stance height + delta) 
+    session.position.pos = { float(respawnPoint.x), float(respawnPoint.y) + 1.63 + 0.1, float(respawnPoint.z) };
     session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 

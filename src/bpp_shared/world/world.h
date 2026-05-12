@@ -290,21 +290,39 @@ struct WorldManager {
         int sx = 0;
         int sz = 0;
         auto canCoordinateBeSpawn = [&](int x, int z) -> bool {
+            auto b = getFirstUncoveredBlock(x, z);
+            if (b == BlockType::BLOCK_INVALID) {
+                // Force generate this chunk so we can check the block type.
+                auto cpos = ChunkPos{ x >> 4, z >> 4 };
+				auto chunk = std::make_shared<Chunk>();
+				chunk->cpos = cpos;
+                chunk->spawnChunk = true;
+                chunks[cpos] = std::move(chunk);
+				// Wait until this chunk is done generating. We don't care about populating or lighting
+				while (chunks[cpos]->state.load() < ChunkState::Generated) {
+					this->pumpPipeline({});
+                    this->pool.wait();
+                    this->drainGenQueue();
+                };
+                b = getFirstUncoveredBlock(x, z);
+            }
             return getFirstUncoveredBlock(x, z) == BlockType::BLOCK_SAND;
             };
         for (; !canCoordinateBeSpawn(sx, sz); sz += this->rand.nextInt(64) - this->rand.nextInt(64)) {
             sx += this->rand.nextInt(64) - this->rand.nextInt(64);
         }
         this->spawnPoint = { sx, 64, sz };
+		chunks.clear(); // Clear all chunks so we can start fresh from the spawn area
     }
 
-    Int3 getSpawnPoint() {
+    Int3 getSpawnPoint(bool adjust) {
+        if (!adjust) return spawnPoint;
         int sx = this->spawnPoint.x;
         int sz = this->spawnPoint.z;
-        for (; getFirstUncoveredBlock(sx, sz) == BlockType::BLOCK_AIR; sz += this->rand.nextInt(8) - this->rand.nextInt(8)) {
-            sx += this->rand.nextInt(8) - this->rand.nextInt(8);
-        }
-        return { sx, this->getHeightValue(sx, sz), sz };
+		sx += rand.nextInt(20) - 10;
+		sz += rand.nextInt(20) - 10;
+		int sy = findTopSolidBlock(sx, sz);
+		return { sx, sy, sz };
     }
 
     BlockType getFirstUncoveredBlock(int wx, int wz) {
