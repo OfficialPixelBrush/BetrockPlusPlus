@@ -572,7 +572,7 @@ void Server::handleLogin(PlayerSession& session) {
     PacketUtilities::sendInventory(session, 0, inv);
 	auto respawnPoint = world.getSpawnPoint(true);
     // I love magic numbers (player stance height + delta) 
-    session.position.pos = { float(respawnPoint.x), float(respawnPoint.y) + 1.63 + 0.1, float(respawnPoint.z) };
+    session.position.pos = { float(respawnPoint.x) + 0.5, float(respawnPoint.y) + 1.63 + 0.1, float(respawnPoint.z) + 0.5 };
     session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
