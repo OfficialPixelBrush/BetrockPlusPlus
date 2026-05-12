@@ -32,15 +32,15 @@ struct InventoryInteraction {
     // Returns a list of slots that are different
     virtual std::vector<difference> tickDiff() {
         std::vector<difference> differences;
-        for (int i = 0; i < (int)snapshot.size(); i++) {
+        for (size_t i = 0; i < snapshot.size(); i++) {
             auto* current = inventory->getStackInSlot(i);
             auto& snap = snapshot[i];
 
-            bool changed = snap != inventory->slots[size_t(i)];
+            bool changed = snap != inventory->slots[i];
             if (!changed) continue;
 
-            snap = inventory->slots[size_t(i)];
-            differences.push_back({ snap, i });
+            snap = inventory->slots[i];
+            differences.push_back({ snap, int(i) });
         }
         return differences;
     }
@@ -178,8 +178,8 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
 
     // Only snapshot the chest portion we don't need the attached inventory
     void initSnapshot() override {
-        snapshot.resize(chestInventory.getSizeInventory());
-        for (int i = 0; i < chestInventory.getSizeInventory(); i++) {
+        snapshot.resize(size_t(chestInventory.getSizeInventory()));
+        for (size_t i = 0; i < size_t(chestInventory.getSizeInventory()); i++) {
             auto* stack = chestInventory.getStackInSlot(i);
             snapshot[i] = stack ? std::optional<ItemStack>(*stack) : std::nullopt;
         }
@@ -188,37 +188,37 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
     // Analyze the snapshot vs the current chest inventory
     std::vector<difference> tickDiff() override {
         std::vector<difference> differences;
-        for (int i = 0; i < (int)snapshot.size(); i++) {
-            auto* current = chestInventory.getStackInSlot(i);
+        for (size_t i = 0; i < snapshot.size(); i++) {
+            auto* current = chestInventory.getStackInSlot(int(i));
             auto currentOpt = current ? std::optional<ItemStack>(*current) : std::nullopt;
 
             if (snapshot[i] == currentOpt) continue;
 
             snapshot[i] = currentOpt;
-            differences.push_back({ snapshot[i], i });
+            differences.push_back({ snapshot[i], int(i) });
         }
         mergeInventories();
         return differences;
     }
 
     void mergeInventories() {
-        int slotCount = 0;
-        for (int i = 0; i < chestInventory.getSizeInventory(); i++) {
+        size_t slotCount = 0;
+        for (size_t i = 0; i < size_t(chestInventory.getSizeInventory()); i++) {
             auto* stack = chestInventory.getStackInSlot(i);
             sharedInventory.slots[slotCount++] = stack ? std::optional<ItemStack>(*stack) : std::nullopt;
         }
-        for (int i = 9; i <= 44; i++)
-            sharedInventory.slots[slotCount++] = playerInventory->slots[size_t(i)];
+        for (size_t i = 9; i <= 44; i++)
+            sharedInventory.slots[slotCount++] = playerInventory->slots[i];
     }
 
     void writeBack() {
-        for (int i = 0; i < 54; i++) {
-            auto& slot = sharedInventory.slots[size_t(i)];
+        for (size_t i = 0; i < 54; i++) {
+            auto& slot = sharedInventory.slots[i];
             ItemStack* ptr = slot.has_value() ? &slot.value() : nullptr;
             chestInventory.setInventorySlotContents(i, ptr);
         }
-        for (int i = 54; i < 90; i++)
-            playerInventory->slots[i - 54 + 9] = sharedInventory.slots[size_t(i)];
+        for (size_t i = 54; i < 90; i++)
+            playerInventory->slots[i - 54 + 9] = sharedInventory.slots[i];
     }
 
     void onShiftClick(int slot) override {
@@ -243,7 +243,7 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
         }
         else {
             int playerSlot = slot - 54 + 9;
-            playerInventory->slots[playerSlot] = copy.count == 0 ? std::nullopt : std::optional<ItemStack>(copy);
+            playerInventory->slots[size_t(playerSlot)] = copy.count == 0 ? std::nullopt : std::optional<ItemStack>(copy);
         }
 
         // Re-sync sharedInventory from the real inventories
@@ -281,41 +281,41 @@ struct ChestInventoryInteraction : InventoryInteraction {
 
     // Only snapshot the chest portion we don't need the attached inventory
     void initSnapshot() override {
-        snapshot.resize(chestInventory->getSizeInventory());
-        for (int i = 0; i < chestInventory->getSizeInventory(); i++)
-            snapshot[i] = chestInventory->slots[size_t(i)];
+        snapshot.resize(size_t(chestInventory->getSizeInventory()));
+        for (size_t i = 0; i < chestInventory->getSizeInventory(); i++)
+            snapshot[i] = chestInventory->slots[i];
     }
 
     // Analyze the snapshot vs the current chest inventory
     std::vector<difference> tickDiff() {
         std::vector<difference> differences;
-        for (int i = 0; i < (int)snapshot.size(); i++) {
+        for (size_t i = 0; i < snapshot.size(); i++) {
             auto* current = chestInventory->getStackInSlot(i);
             auto& snap = snapshot[i];
 
-            bool changed = snap != chestInventory->slots[size_t(i)];
+            bool changed = snap != chestInventory->slots[i];
             if (!changed) continue;
 
-            snap = chestInventory->slots[size_t(i)];
-            differences.push_back({ snap, i });
+            snap = chestInventory->slots[i];
+            differences.push_back({ snap, int(i) });
         }
         mergeInventories();
         return differences;
     }
 
     void mergeInventories() {
-        int slotCount = 0;
+        size_t slotCount = 0;
         for (auto& slot : chestInventory->slots)
             sharedInventory.slots[slotCount++] = slot;
-        for (int i = 9; i <= 44; i++)
-            sharedInventory.slots[slotCount++] = playerInventory->slots[size_t(i)];
+        for (size_t i = 9; i <= 44; i++)
+            sharedInventory.slots[slotCount++] = playerInventory->slots[i];
     }
 
     void writeBack() {
-        for (int i = 0; i < 27; i++)
-            chestInventory->slots[size_t(i)] = sharedInventory.slots[size_t(i)];
-        for (int i = 27; i < 63; i++)
-            playerInventory->slots[i - 27 + 9] = sharedInventory.slots[size_t(i)];
+        for (size_t i = 0; i < 27; i++)
+            chestInventory->slots[i] = sharedInventory.slots[i];
+        for (size_t i = 27; i < 63; i++)
+            playerInventory->slots[i - 27 + 9] = sharedInventory.slots[i];
     }
 
     void onShiftClick(int slot) override {
@@ -339,7 +339,7 @@ struct ChestInventoryInteraction : InventoryInteraction {
         }
         else {
             int playerSlot = slot - 27 + 9;
-            playerInventory->slots[playerSlot] = copy.count == 0 ? std::nullopt : std::optional<ItemStack>(copy);
+            playerInventory->slots[size_t(playerSlot)] = copy.count == 0 ? std::nullopt : std::optional<ItemStack>(copy);
         }
 
         // Re-sync sharedInventory from the real inventories

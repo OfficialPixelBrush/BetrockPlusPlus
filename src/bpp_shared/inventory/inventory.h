@@ -23,7 +23,7 @@ struct Inventory {
     Inventory(size_t size) : slots(size) {}
 
     virtual int getSizeInventory() const {
-        return (int)slots.size();
+        return int(slots.size());
     }
 
     virtual int getNetworkSlotId(int slot) const {
