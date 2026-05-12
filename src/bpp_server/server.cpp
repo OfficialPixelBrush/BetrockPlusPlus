@@ -65,7 +65,7 @@ void Server::startup() {
     // Register blocks, setup the world, setup commands, etc.
     Blocks::registerAll();
     command_manager.Init();
-	world.initWorldSeed(404);
+	world.initWorldSeed("Glacier");
 
     // Setup the block callback so we can send it to clients
     world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {

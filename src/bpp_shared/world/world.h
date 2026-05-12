@@ -12,6 +12,7 @@
 #include "base_structs.h"
 #include "blocks.h"
 #include "helpers/AABB.h"
+#include "java_math.h"
 #include "world/chunk.h"
 #include "world/client_pos.h"
 #include "BS_thread_pool.hpp"
@@ -63,9 +64,14 @@ struct WorldManager {
 
     ~WorldManager() {}
 
+    void initWorldSeed(std::string pSeed){
+		this->seed = hashCode(pSeed);
+		rand.setSeed(this->seed);
+    }
+
     void initWorldSeed(int64_t pSeed){
 		this->seed = pSeed;
-		rand.setSeed(pSeed);
+		rand.setSeed(this->seed);
     }
     void tick(const std::vector<ClientPosition>& players);
     void update(const std::vector<ClientPosition>& players);
