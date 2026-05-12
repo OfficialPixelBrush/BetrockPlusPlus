@@ -9,7 +9,7 @@
 #include "world.h"
 #include "constants.h"
 
-// ChunkCache
+// ChunkCache so we don't have to do map lookups for every neighbor access during light propagation.
 void ChunkCache::refresh(int ncx, int ncz, WorldManager& world) {
     if (ncx == cx && ncz == cz) return;
     cx = ncx; cz = ncz;
@@ -20,7 +20,6 @@ void ChunkCache::refresh(int ncx, int ncz, WorldManager& world) {
         }
 }
 
-// Helpers
 static inline int getLightDirect(Chunk* chunk, int lx, int y, int lz, LightType type) {
     if (!chunk || y < 0 || y >= CHUNK_HEIGHT) return 0;
     return (type == LightType::Sky)
@@ -36,7 +35,7 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
     // Refresh the 3x3 cache only when we cross a chunk boundary.
     cache.refresh(cx, cz, world);
 
-    Chunk* chunk = cache.grid[1][1]; // center
+    Chunk* chunk = cache.grid[1][1]; // Center
     if (!chunk) return;
 
     int lx = x & 15, lz = z & 15;
@@ -44,7 +43,7 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
     int opacity = Blocks::blockProperties[blockId].lightOpacity;
     if (opacity == 0) opacity = 1;
 
-    // Pick neighbor chunk pointers directly from the cache (avoids map lookups)
+    // Pick neighbor chunk pointers
     Chunk* cxn = (lx == 0) ? cache.grid[0][1] : chunk;
     Chunk* cxp = (lx == 15) ? cache.grid[2][1] : chunk;
     Chunk* czn = (lz == 0) ? cache.grid[1][0] : chunk;
@@ -74,6 +73,10 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
         int oldVal = chunk->getSkyLight({ lx, y, lz });
         if (oldVal == newVal) return;
         chunk->setSkyLight({ lx, y, lz }, uint8_t(newVal));
+        // Call a block update on the block that had its lighting updated
+        // Beta doesn't have a direct on lighting change packet for server -> client
+        // So this is what we have to resort to
+        // Technically, this doesn't work for any light update that doesn't change more than 9 blocks but its good enough
         if (world.onBlockUpdate) world.onBlockUpdate(
             PendingBlock{
                 .block{ BlockType(blockId), chunk->getMeta({ lx, y, lz }) },
@@ -107,7 +110,7 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
             }, chunk->cpos);
     }
 
-    // Fan out — push directly, bypass merge (BFS fan-out must not be merged).
+    // Propagate to neighbors
     auto maybeQueue = [&](int nx, int ny, int nz, Chunk* nc, int nlx, int nlz) {
         if (ny < 0 || ny >= CHUNK_HEIGHT || !nc) return;
         int expected = CrossPlatform::Math::max(0, newVal - 1);
@@ -124,6 +127,7 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
 }
 
 void Lighter::unlightAt(int x, int y, int z, LightType type, WorldManager& world) {
+    // Separate function for this since beta's lighting engine can't decrease light values in place
     if (y < 0 || y >= CHUNK_HEIGHT) return;
 
     ChunkCache cache;
@@ -148,6 +152,7 @@ void Lighter::unlightAt(int x, int y, int z, LightType type, WorldManager& world
 
     unlightQueue.push_back({ {x, y, z}, type, oldVal });
 
+    // Drain everything at once since there isn't a lot of unlighting events
     while (!unlightQueue.empty()) {
         auto [pos, t, val] = unlightQueue.back();
         unlightQueue.pop_back();

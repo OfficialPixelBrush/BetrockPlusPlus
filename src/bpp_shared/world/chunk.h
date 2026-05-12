@@ -51,8 +51,7 @@ struct Chunk {
 
     ChunkPos cpos;
 
-    // Flat arrays — indexed by (y * CHUNK_WIDTH * CHUNK_WIDTH) + (z * CHUNK_WIDTH) + x
-    // Equivalent to the old slice[y>>4].array[(y&15)<<8 | z<<4 | x], but with zero indirection.
+    // Flat arrays indexed by (y * CHUNK_WIDTH * CHUNK_WIDTH) + (z * CHUNK_WIDTH) + x
     BlockType blocks[VOLUME] = { BLOCK_AIR };
     uint8_t   lightNibble[VOLUME] = { 0 };
     uint8_t   nibbleBlockMeta[META_VOLUME] = { 0 };
@@ -69,23 +68,19 @@ struct Chunk {
     // Tile entities
     std::vector<std::shared_ptr<TileEntity>> tileEntities;
 
-    //  Index
     inline int blockIndex(Int3 pos) const {
         return (pos.y * CHUNK_WIDTH * CHUNK_WIDTH) + (pos.z * CHUNK_WIDTH) + pos.x;
     }
 
-    //  Nibble helpers (unchanged from Slice)
     inline uint8_t setNibble(uint8_t hi, uint8_t lo) const {
         return uint8_t(((hi & 0x0Fu) << 4) | (lo & 0x0Fu));
     }
     inline uint8_t getNibbleLow(uint8_t byte) const { return  byte & 0x0Fu; }
     inline uint8_t getNibbleHigh(uint8_t byte) const { return (byte >> 4) & 0x0Fu; }
 
-    //  Climate helpers
     inline float getTemperature(Int2 pos) const { return temperature[(pos.x << 4) | pos.y]; }
     inline float getHumidity(Int2 pos) const { return humidity[(pos.x << 4) | pos.y]; }
 
-    //  Height map helpers
     inline uint8_t getHeightValue(Int2 pos) const {
         return heightMap[(pos.y << 4) | pos.x];
     }
@@ -142,7 +137,6 @@ struct Chunk {
         }
     }
 
-    //  Block helpers
     inline BlockType getBlock(Int3 pos) const {
         return blocks[blockIndex(pos)];
     }
@@ -152,7 +146,6 @@ struct Chunk {
         isModified = true;
     }
 
-    //  Meta helpers
     inline uint8_t getMeta(Int3 pos) const {
         int idx = blockIndex(pos);
         uint8_t byte = nibbleBlockMeta[idx >> 1];
@@ -168,7 +161,6 @@ struct Chunk {
         isModified = true;
     }
 
-    //  Light helpers
     inline uint8_t getBlockLight(Int3 pos) const {
         return getNibbleLow(lightNibble[blockIndex(pos)]);
     }
@@ -195,7 +187,6 @@ struct Chunk {
         return CrossPlatform::Math::min(15, CrossPlatform::Math::max(sky, block));
     }
 
-    //  Cleanup
     inline void clear() {
         isTerrainPopulated = false;
         isModified = false;

@@ -476,26 +476,6 @@ void Generator::GenerateTreeForBiome(WorldManager& world, Java::Random& rand, In
 bool Generator::PopulateChunk(Chunk& chunk, WorldManager& world) {
 	const int32_t blockX = chunk.cpos.x * CHUNK_WIDTH;
 	const int32_t blockZ = chunk.cpos.z * CHUNK_WIDTH;
-
-	// Java: getBiomeGenAt(blockX+16, blockZ+16) — samples the +X+Z corner chunk.
-	// Read temperature/humidity from the stored chunk data and derive biome directly.
-	auto getBiomeAt = [&](int wx, int wz) -> Biome {
-		double temp = world.getTemperatureAt(wx, wz);
-		double humi = world.getHumidityAt(wx, wz) * temp; // humidity *= temp as in Java
-		if (temp < 0.1)                              return BIOME_TUNDRA;
-		if (humi < 0.2) {
-			if (temp < 0.5)                          return BIOME_TUNDRA;
-			if (temp < 0.95)                         return BIOME_SAVANNA;
-			return BIOME_DESERT;
-		}
-		if (humi > 0.5 && temp < 0.7)               return BIOME_SWAMPLAND;
-		if (temp < 0.5)                              return BIOME_TAIGA;
-		if (temp < 0.97)
-			return (humi < 0.35) ? BIOME_SHRUBLAND : BIOME_FOREST;
-		if (humi < 0.45)                             return BIOME_PLAINS;
-		if (humi < 0.9)                              return BIOME_SEASONALFOREST;
-		return BIOME_RAINFOREST;
-		};
 	Biome biome = BiomeGenerator(this->seed).GetBiomeAtPoint(
 		Int2{ blockX + CHUNK_WIDTH, blockZ + CHUNK_WIDTH }
 	);

@@ -126,8 +126,8 @@ struct WorldManager {
         genDoneQueue.push_back(std::move(chunk));
     }
 
-    // Called from main thread at the top of tick() — integrates finished chunks.
     void drainGenQueue() {
+        // Integrate chunks that finished generating
         std::deque<std::shared_ptr<Chunk>> ready;
         {
             std::lock_guard lk(genDoneMutex);
@@ -141,7 +141,7 @@ struct WorldManager {
                 it->second = std::move(c);
                 it->second->spawnChunk = wasSpawnChunk;
 
-                // Replay any bleed-writes that arrived while this chunk was unloaded.
+                // Replay any writes that arrived while this chunk was unloaded.
                 auto pit = pendingBleedWrites.find(pos);
                 if (pit != pendingBleedWrites.end()) {
                     for (auto& [wpos, block] : pit->second)
@@ -154,7 +154,6 @@ struct WorldManager {
         }
     }
 
-    // All accessors below are main-thread only
     std::shared_ptr<Chunk> getChunk(ChunkPos pos) {
         return getChunkShared(pos);
     }
@@ -183,7 +182,7 @@ struct WorldManager {
         ChunkPos cp{ wpos.x >> 4, wpos.z >> 4 };
         auto* chunk = getChunkRaw(cp);
         if (!chunk || chunk->state.load() < ChunkState::Generated) {
-            // Target chunk isn't ready — stash the write for replay on drain.
+            // Target chunk isn't ready; cache the write for replay
             pendingBleedWrites[cp].push_back({ wpos, Block{ block_type, metadata } });
             return;
         }
@@ -198,27 +197,28 @@ struct WorldManager {
         lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Block, *this);
         lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Sky, *this);
 
-        Int3 local{ wpos.x & 15, wpos.y, wpos.z & 15 };
+        // Get the local coordinates of this block within the chunk and set it
+        int lx = wpos.x & 15;
+        int lz = wpos.z & 15;
+        Int3 local{ lx, wpos.y, lz };
         chunk->setBlock(local, block_type);
         chunk->setMeta(local, metadata);
 
-        int lx = wpos.x & 15;
-        int lz = wpos.z & 15;
+        // Update the heightmap and sky light for the edited column
         int y = wpos.y; int x = wpos.x; int z = wpos.z;
-
         int oldHeight = chunk->getHeightValue({ lx, lz });
         if (Blocks::blockProperties[block_type].lightOpacity != 0) {
-            // placing opaque block; heightmap may rise
+            // Placing opaque block; heightmap may rise
             if (y >= oldHeight)
                 chunk->relightColumn({ lx, lz });
         }
         else if (y == oldHeight - 1) {
-            // removing top opaque block; heightmap may fall
+            // Removing top opaque block; heightmap may fall
             chunk->relightColumn({ lx, lz });
         }
         int newHeight = chunk->getHeightValue({ lx, lz });
 
-        // directly set sky light for newly exposed column (height fell)
+        // Directly set sky light for newly exposed column (height fell)
         if (newHeight < oldHeight) {
             for (int sy = newHeight; sy < oldHeight; ++sy) {
                 chunk->setSkyLight({ lx, sy, lz }, 15);
@@ -238,9 +238,10 @@ struct WorldManager {
             int maxY = CrossPlatform::Math::max(thisHeight2, neighborHeight);
             lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
         }
-
+        // Schedule a block light update for the position itself
         lightManager.scheduleLightUpdate({ x, y, z }, LightType::Block);
 
+        // Callback for the client and server to know about this block update
         if (onBlockUpdate) onBlockUpdate(
             PendingBlock{
                 .block{block_type, metadata},
@@ -284,8 +285,6 @@ struct WorldManager {
     }
 
     // Returns the baked temperature/humidity for a world column.
-    // These are written during GenerateChunk and read back by PopulateChunk
-    // for biome sampling and snow placement without re-running noise.
     double getTemperatureAt(int wx, int wz) {
         auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
         if (!chunk || chunk->state.load() < ChunkState::Generated) return 0.5;
@@ -313,12 +312,11 @@ struct WorldManager {
     }
 
     void propagateChunkLightBorders(ChunkPos cpos) {
+        // Iterate through our chunk borders
         const int ndx[] = { -1, 1,  0, 0 };
         const int ndz[] = { 0, 0, -1, 1 };
-
         int bx = cpos.x * 16;
         int bz = cpos.z * 16;
-
         for (int i = 0; i < 4; ++i) {
             Chunk* neighborChunk = getChunkRaw({ cpos.x + ndx[i], cpos.z + ndz[i] });
             if (!neighborChunk) continue;
@@ -333,7 +331,7 @@ struct WorldManager {
                 else { lx = t; lz = 15; nx = t; nz = 0; }
 
                 for (int y = 0; y < CHUNK_HEIGHT; ++y) {
-                    // Does our neighbor block have a block light > 0?
+					// Does our neighbor block have a block light > 0 or sky light > 0? If so, schedule a light update for the block on our side of the border.
                     if (neighborChunk->getBlockLight({ nx, y, nz })) {
                         lightManager.scheduleLightUpdate({ bx + lx, y, bz + lz }, LightType::Block);
                     }
@@ -365,6 +363,7 @@ private:
         return (it != chunks.end()) ? it->second : nullptr;
     }
 
+    // Check if a chunk can be populated
     bool canPopulateDirect(ChunkPos pos) {
         auto* chunk = getChunkRaw(pos);
         if (!chunk) return false;
