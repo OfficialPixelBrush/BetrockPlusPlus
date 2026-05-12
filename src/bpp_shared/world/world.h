@@ -55,6 +55,8 @@ struct WorldManager {
     int64_t seed = 0;
     int64_t elapsed_ticks = 0;
 
+    Int2 spawnPoint{ 0, 0 };
+
     WorldManager() {}
 
     ~WorldManager() {}

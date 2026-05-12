@@ -36,7 +36,6 @@ public:
     Server();
     ~Server();
     void run();
-    Int2 spawnPoint{ 0, 0 };
     void stop();
 
 private:
@@ -55,6 +54,59 @@ private:
     void indexRemoveChunk(PlayerSession& session, const ChunkPos& pos);
     void indexRemoveSession(PlayerSession& session);
 
+    void closeSocket() const {
+        #if defined(_WIN32) || defined(_WIN64)
+        closesocket(serverSocket);
+        WSACleanup();
+        #else
+        close(serverSocket);
+        #endif
+    }
+
+    void createServerSocket(int port) {
+        // This is horrific to look at but it works
+        #if defined(_WIN32) || defined(_WIN64)
+        WSADATA wsaData;
+        WSAStartup(MAKEWORD(2, 2), &wsaData);
+        #endif
+        serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+        sockaddr_in addr{};
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(port);
+        addr.sin_addr.s_addr = INADDR_ANY;
+        if (bind(serverSocket, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
+            std::cerr << "**** FAILED TO BIND TO PORT!" << std::endl;
+        }
+        listen(serverSocket, 8);
+        #if defined(_WIN32) || defined(_WIN64)
+        u_long mode = 1;
+        ioctlsocket(serverSocket, FIONBIO, &mode);
+        #else
+        fcntl(serverSocket, F_SETFL, O_NONBLOCK);
+        #endif
+    }
+
+    int createClientSocket() const {
+        #if defined(_WIN32) || defined(_WIN64)
+        SOCKET rawSocket = accept(serverSocket, nullptr, nullptr);
+        if (rawSocket == INVALID_SOCKET) return -1;
+        u_long clientMode = 1;
+        ioctlsocket(rawSocket, FIONBIO, &clientMode);
+        DWORD recvTimeout = 45;
+        setsockopt(rawSocket, SOL_SOCKET, SO_RCVTIMEO,
+            reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
+        int clientSocket = static_cast<int>(rawSocket);
+        #else
+        int clientSocket = accept(serverSocket, nullptr, nullptr);
+        if (clientSocket < 0) return -1;
+        fcntl(clientSocket, F_SETFL, O_NONBLOCK);
+        struct timeval recvTimeout { 0, 45000 };
+        setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,
+            reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
+        #endif
+        return clientSocket;
+    }
+
     static constexpr float TICK_DELTA = 1.0f / 20.0f;
     static constexpr int   MAX_TICKS_PER_FRAME = 10;
 
@@ -68,6 +120,7 @@ private:
     // can skip chunks that no player has received, avoiding a full player scan.
     std::unordered_map<ChunkPos, std::vector<PlayerSession*>> chunkSessions;
     int serverSocket = -1;
+	int serverPort = 25565;
     EntityId nextEntityId = 2;
     int64_t timeout_seconds = 60;
     int flushChunkCount = 10;
@@ -75,4 +128,5 @@ private:
     float tickTimeAccum = 0.0f;
     int   tickCount = 0;
     CommandManager command_manager;
+    bool stopped = false;
 };
