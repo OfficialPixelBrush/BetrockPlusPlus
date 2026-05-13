@@ -12,6 +12,7 @@
 // This is used by the world manager to determine which chunks to load and unload around a player
 struct ClientPosition {
 	Vec3 pos{ 0.0, 0.0, 0.0 };
+	int viewDistanceOverride = 0;
 
 	inline Int2 getChunkPos() const {
 		return Int2{
