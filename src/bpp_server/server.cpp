@@ -336,7 +336,6 @@ void Server::broadcastPlayerMovement(PlayerSession& session) {
 void Server::tick() {
     acceptNewPlayers();
     const int playerCount = int(players.size());
-    flushChunkCount = playerCount * 4;
     std::vector<ClientPosition> positions;
     for (auto& session : players) {
         if (session->connState == ConnectionState::WaitingForSpawnChunks ||
@@ -357,7 +356,7 @@ void Server::tick() {
         case ConnectionState::WaitingForSpawnChunks: 
             waitForSpawnChunks(*session); break;
         case ConnectionState::Playing:
-            chunkSender.enqueue(*session, world, flushChunkCount);
+            chunkSender.enqueue(*session, world, 50);
             chunkSender.flush(*session);
             processIncoming(*session);
             broadcastPlayerMovement(*session);
