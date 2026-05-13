@@ -27,6 +27,7 @@
 #include <deque>
 #include <atomic>
 #include <algorithm>
+#include "storage/region.h"
 
 struct PendingBlock {
     Block block{ BLOCK_AIR, 0 };
@@ -62,7 +63,17 @@ struct WorldManager {
 
     WorldManager() {}
 
-    ~WorldManager() {}
+    ~WorldManager() {
+        Region region({0,0});
+        for (int x = 0; x < REGION_WIDTH; x++) {
+            for (int z = 0; z < REGION_WIDTH; z++) {
+                if (!chunks.contains({x,z}))
+                    continue;
+                region.AddChunk(chunks[{x,z}]);
+            }
+        }
+        region.Serialize();
+    }
 
     void initWorldSeed(std::string pSeed){
 		this->seed = hashCode(pSeed);

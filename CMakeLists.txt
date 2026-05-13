@@ -46,6 +46,7 @@ add_executable(
     src/bpp_server/commands/command_manager.cpp
     src/bpp_shared/world/world.cpp
     src/bpp_shared/world/lighter.cpp
+    src/bpp_shared/world/storage/region.cpp
     src/bpp_shared/blocks/block_properties.cpp 
 
     ## Generation
