@@ -7,6 +7,7 @@
 */
 #pragma once
 
+#include "config/config.h"
 #if defined(__linux__) || defined(__APPLE__)
 #include <unistd.h>
 #include <netinet/in.h>
@@ -48,6 +49,9 @@ private:
     void disconnectPlayer(PlayerSession& session, const std::wstring& reason);
     void broadcastPlayerMovement(PlayerSession& session);
     void processIncoming(PlayerSession& session);
+
+    // Config file stuff
+    void loadConfig();
 
     // Chunk-session index helpers
     void indexAddChunk(PlayerSession& session, const ChunkPos& pos);
@@ -129,4 +133,5 @@ private:
     int   tickCount = 0;
     CommandManager command_manager;
     bool stopped = false;
+    Config config;
 };
