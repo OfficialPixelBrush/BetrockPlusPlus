@@ -11,6 +11,7 @@
 #include "logger.h"
 #include "helpers/byteswap_compat.h"
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <libdeflate.h>
 #include <string>
@@ -36,7 +37,7 @@ void Region::AddChunk(std::shared_ptr<Chunk>& chunk) {
     chunks[GetChunkHeaderOffset(chunk->cpos)] = chunk;
 }
 
-std::vector<uint8_t> GetNbtData(const std::shared_ptr<Chunk> chunk) {
+std::vector<uint8_t> Region::GetNbtData(const std::shared_ptr<Chunk> chunk) {
     // Build a compound tag representing a chunk level entry
     Tag root;
     root.type = TAG_COMPOUND;
@@ -142,14 +143,20 @@ std::vector<uint8_t> GetNbtData(const std::shared_ptr<Chunk> chunk) {
     return compressed;
 }
 
-bool Region::Serialize() {
-    std::ofstream file(
-        "r." +
+inline std::string Region::GetPath() {
+    return
+        "region/r." +
         std::to_string(rpos.x) +
         "." +
         std::to_string(rpos.z) +
-        ".mcr"
-    , std::ios::binary);
+        ".mcr";
+}
+
+// Turn region into mcr file
+bool Region::Serialize() {
+    if (!std::filesystem::exists("region"))
+        std::filesystem::create_directory("region");
+    std::ofstream file(GetPath(), std::ios::binary);
     if (!file.is_open()) {
         GlobalLogger().warn << "Failed to save region! " << this->rpos << "\n";
         return false;
@@ -226,7 +233,40 @@ bool Region::Serialize() {
     return true;
 }
 
+// Turn mcr into Region
 bool Region::Deserialize() {
-    // TODO
-    return false;
+    // Region doesn't exist, fail
+    if (!std::filesystem::exists(GetPath()))
+        return false;
+    // TODO: Deserialize Region
+    std::ifstream file(GetPath());
+    if (!file.is_open()) {
+        GlobalLogger().warn << "Failed to open region " << rpos << "!\n";
+        return false;
+    }
+
+    std::vector<HeaderEntry> chunkSector;
+    
+    for (int i = 0; i < REGION_AREA; i++) {
+        // Read sector offset
+        uint32_t be = 0;
+        file.read(reinterpret_cast<char*>(&be), sizeof(be));
+        // No data, skip
+        if (be == 0)
+            continue;
+        HeaderEntry he {
+            __builtin_bswap32(be >> 8),
+            static_cast<uint8_t>(be & 0xFF)
+        };
+        chunkSector.push_back(he);
+    }
+
+    // Read the found sectors in
+    for (const HeaderEntry& off : chunkSector) {
+        file.seekg(off.offset * SECTOR_SIZE);
+        
+    }
+
+    file.close();
+    return true;
 }
