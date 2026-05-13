@@ -634,7 +634,7 @@ void Server::handleLogin(PlayerSession& session) {
     PacketUtilities::sendInventory(session, 0, inv);
 	auto respawnPoint = world.getSpawnPoint(true);
     // I love magic numbers (player stance height + delta) 
-    session.position.pos = { float(respawnPoint.x) + 0.5, float(respawnPoint.y) + 1.63 + 0.1, float(respawnPoint.z) + 0.5 };
+    session.position.pos = { float(respawnPoint.x) + 0.5 + 10000, float(respawnPoint.y) + 1.63 + 0.1 + 87, float(respawnPoint.z) + 0.5 + 10000};
     session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
@@ -650,6 +650,9 @@ void Server::disconnectPlayer(PlayerSession& session, const std::wstring& reason
 void Server::waitForSpawnChunks(PlayerSession& session) {
     chunkSender.enqueue(session, world, flushChunkCount);
     chunkSender.flush(session);
+
+    // Force a tiny view distance for players trying to spawn in
+    session.position.viewDistanceOverride = 3; 
 
     // Spawn chunk radius; 3 chunks in each direction
     int spawnChunkX = int(std::floor(session.position.pos.x)) >> 4;
@@ -690,6 +693,9 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
     session.lastFpZ = static_cast<int32_t>(session.position.pos.z * 32.0);
     session.lastYaw = 0;
     session.lastPitch = 0;
+
+    // Set view distance to server default
+    session.position.viewDistanceOverride = 0;
 
     GlobalLogger().info << "Client connected\n";
     session.connState = ConnectionState::Playing;

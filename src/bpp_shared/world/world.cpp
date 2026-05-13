@@ -108,8 +108,9 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
     std::unordered_set<Int32_2> wanted;
     for (const auto& player : players) {
         Int2 center = player.getChunkPos();
-        for (int dx = -VIEW_RADIUS; dx <= VIEW_RADIUS; dx++)
-            for (int dz = -VIEW_RADIUS; dz <= VIEW_RADIUS; dz++)
+        int viewDist = (player.viewDistanceOverride) ? player.viewDistanceOverride : VIEW_RADIUS;
+        for (int dx = -viewDist; dx <= viewDist; dx++)
+            for (int dz = -viewDist; dz <= viewDist; dz++)
                 wanted.insert({ center.x + dx, center.z + dz });
     }
 
