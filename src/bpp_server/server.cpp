@@ -9,6 +9,7 @@
 #include "cross_platform.h"
 #include "logger.h"
 #if defined(__linux__) || defined(__APPLE__)
+#include <iomanip>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
