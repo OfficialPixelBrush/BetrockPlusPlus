@@ -7,6 +7,7 @@
 
 #include "region.h"
 #include "logger.h"
+#include "helpers/byteswap_compat.h"
 #include <fstream>
 #include <string>
 #include "../../../bpp_server/chunk_serializer.h"
@@ -71,4 +72,5 @@ bool Region::Serialize() {
 
 bool Region::Deserialize() {
     // TODO
+    return false;
 }
