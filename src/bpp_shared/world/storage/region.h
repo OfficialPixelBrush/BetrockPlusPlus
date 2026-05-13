@@ -13,6 +13,11 @@
 #define REGION_AREA REGION_WIDTH*REGION_WIDTH
 #define SECTOR_SIZE 4096
 
+struct HeaderEntry {
+    uint32_t offset;
+    uint8_t numberOfSectors;
+};
+
 class Region {
     public:
         Region(Int32_2 rpos);
@@ -23,4 +28,6 @@ class Region {
     private:
         std::array<std::shared_ptr<Chunk>, REGION_AREA> chunks;
         Int32_2 rpos;
+        std::vector<uint8_t> GetNbtData(const std::shared_ptr<Chunk> chunk);
+        std::string GetPath();
 };
