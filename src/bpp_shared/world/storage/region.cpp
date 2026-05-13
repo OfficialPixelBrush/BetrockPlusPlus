@@ -73,7 +73,7 @@ std::vector<uint8_t> GetNbtData(const std::shared_ptr<Chunk> chunk) {
     skyLight.type = TAG_BYTEARRAY;
     skyLight.name = "SkyLight";
     // Default sky light to fully lit (0xFF = two fully-lit nibbles)
-    skyLight.byteArray.resize((CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT) / 2, 0xFF);
+    skyLight.byteArray.resize((CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT) / 2, 0);
 
     // HeightMap — one byte per (x,z) column
     Tag heightMap;
@@ -86,7 +86,17 @@ std::vector<uint8_t> GetNbtData(const std::shared_ptr<Chunk> chunk) {
     for (int x = 0; x < CHUNK_WIDTH; x++) {
         for (int z = 0; z < CHUNK_WIDTH; z++) {
             for (int y = 0; y < CHUNK_HEIGHT; y++) {
-                blocks.byteArray[size_t(y + (z * CHUNK_HEIGHT) + (x * CHUNK_HEIGHT * CHUNK_WIDTH))] = chunk->getBlock({x,y,z});
+                size_t idx = size_t(y + (z * CHUNK_HEIGHT) + (x * CHUNK_HEIGHT * CHUNK_WIDTH));
+                blocks.byteArray[idx] = chunk->getBlock({x,y,z});
+                if (y % 2 == 0) {
+                    data.byteArray[idx/2] |= (chunk->getMeta({x,y,z}));
+                    skyLight.byteArray[idx/2] |= chunk->getSkyLight({x,y,z});
+                    blockLight.byteArray[idx/2] |= chunk->getBlockLight({x,y,z});
+                } else {
+                    data.byteArray[idx/2] |= (chunk->getMeta({x,y,z}) << 4);
+                    skyLight.byteArray[idx/2] |= (chunk->getSkyLight({x,y,z}) << 4);
+                    blockLight.byteArray[idx/2] |= (chunk->getBlockLight({x,y,z}) << 4);
+                }
             }
         }
     }
