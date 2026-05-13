@@ -9,15 +9,6 @@
 // It handles all world-related operations and provides a simple interface for the rest of the code to interact with the world.
 // WorldManager.h
 #pragma once
-#include "base_structs.h"
-#include "blocks.h"
-#include "helpers/AABB.h"
-#include "java_math.h"
-#include "world/chunk.h"
-#include "world/client_pos.h"
-#include "BS_thread_pool.hpp"
-#include "lighter.h"
-#include "tile_entities/tile_entity_manager.h"
 #include <cstdint>
 #include <unordered_map>
 #include <unordered_set>
@@ -27,6 +18,15 @@
 #include <deque>
 #include <atomic>
 #include <algorithm>
+#include "base_structs.h"
+#include "blocks.h"
+#include "helpers/AABB.h"
+#include "java_math.h"
+#include "world/chunk.h"
+#include "world/client_pos.h"
+#include "BS_thread_pool.hpp"
+#include "lighter.h"
+#include "tile_entities/tile_entity_manager.h"
 #include "storage/region.h"
 
 struct PendingBlock {

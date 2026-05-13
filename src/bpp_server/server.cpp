@@ -128,7 +128,7 @@ void Server::startup() {
     auto start = std::chrono::steady_clock::now();
     world.initSpawn();
     GlobalLogger().info << "Server spawn is " << Int2(int(world.spawnPoint.x), int(world.spawnPoint.z)) << "\n";
-    GlobalLogger().info << "Loading 676 spawn chunks:\n";
+    GlobalLogger().info << "Loading spawn chunks:\n";
     // Push every single spawn chunk to get ready for generation
     std::unordered_set<Int32_2> wanted;
     for (int dx = -13; dx < 13; dx++) {
