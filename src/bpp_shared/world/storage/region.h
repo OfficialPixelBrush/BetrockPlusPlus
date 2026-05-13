@@ -10,16 +10,17 @@
 #include <memory>
 
 #define REGION_WIDTH 32
+#define REGION_AREA REGION_WIDTH*REGION_WIDTH
 #define SECTOR_SIZE 4096
 
 class Region {
     public:
-        Region(Int2 rpos);
+        Region(Int32_2 rpos);
+        void AddChunk(std::shared_ptr<Chunk>& chunk);
         bool Serialize();
         bool Deserialize();
 
-    private:    
-        // TODO: Could probably be an array, since it has a fixed max size?
-        std::unordered_map<ChunkPos, std::shared_ptr<Chunk>> chunks;
-        Int2 rpos;
+    private:
+        std::array<std::shared_ptr<Chunk>, REGION_AREA> chunks;
+        Int32_2 rpos;
 };
