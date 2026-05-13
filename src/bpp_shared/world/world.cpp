@@ -67,7 +67,7 @@ void WorldManager::update(const std::vector<ClientPosition>& players) {
     pumpPipeline(players);
 }
 
-void WorldManager::seedChunkLighting(ChunkPos pos) {
+void WorldManager::seedChunkLighting(Int32_2 pos) {
     auto* chunk = getChunkRaw(pos);
     if (!chunk) return;
 
@@ -105,7 +105,7 @@ void WorldManager::seedChunkLighting(ChunkPos pos) {
 
 void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) {
 	// Get all the chunk positions we want to be loaded based on player positions
-    std::unordered_set<ChunkPos> wanted;
+    std::unordered_set<Int32_2> wanted;
     for (const auto& player : players) {
         Int2 center = player.getChunkPos();
         for (int dx = -VIEW_RADIUS; dx <= VIEW_RADIUS; dx++)
@@ -141,7 +141,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
     // Take a snapshot of all the current chunk positions so we don't have to worry about threads
     // This is technically a relic from when we had chunks put themselves into the world's chunk map but now the world does it all at the end of the tick
     // Still good practice, though
-    std::vector<ChunkPos> snapshot;
+    std::vector<Int32_2> snapshot;
     snapshot.reserve(chunks.size());
     for (auto& [pos, chunk] : chunks)
         snapshot.push_back(pos);
@@ -152,17 +152,17 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
         ? CrossPlatform::Math::max(1, MAX_GENERATIONS_PER_TICK / playerCount)
         : MAX_GENERATIONS_PER_TICK;
 
-    std::vector<ChunkPos> noPlayerCandidates;
-    std::vector<std::vector<ChunkPos>> perPlayerQueues;
+    std::vector<Int32_2> noPlayerCandidates;
+    std::vector<std::vector<Int32_2>> perPlayerQueues;
     if (playerCount == 0) {
         // No players so try and get every chunk within load distance if its not already generating
-        for (const ChunkPos& p : snapshot) {
+        for (const Int32_2& p : snapshot) {
             auto it = chunks.find(p);
             if (it == chunks.end()) continue;
             if (it->second->state.load(std::memory_order_acquire) != ChunkState::Unloaded) continue;
             noPlayerCandidates.push_back(p);
         }
-        std::sort(noPlayerCandidates.begin(), noPlayerCandidates.end(), [](const ChunkPos& a, const ChunkPos& b) {
+        std::sort(noPlayerCandidates.begin(), noPlayerCandidates.end(), [](const Int32_2& a, const Int32_2& b) {
             if (a.x != b.x) return a.x < b.x;
             return a.z < b.z;
             });
@@ -170,16 +170,16 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
     else {
         perPlayerQueues.reserve(size_t(playerCount));
         for (const auto& player : players) {
-            std::vector<ChunkPos> candidates;
+            std::vector<Int32_2> candidates;
             candidates.reserve(snapshot.size());
-            for (const ChunkPos& p : snapshot) {
+            for (const Int32_2& p : snapshot) {
                 auto it = chunks.find(p);
                 if (it == chunks.end()) continue;
                 if (it->second->state.load(std::memory_order_acquire) != ChunkState::Unloaded) continue;
                 candidates.push_back(p);
             }
             // Sort by load order that beta 1.7.3 seems to use
-            std::sort(candidates.begin(), candidates.end(), [](const ChunkPos& a, const ChunkPos& b) {
+            std::sort(candidates.begin(), candidates.end(), [](const Int32_2& a, const Int32_2& b) {
                 if (a.x != b.x) return a.x < b.x;
                 return a.z < b.z;
                 });
@@ -187,8 +187,8 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
         }
     }
 
-    std::unordered_set<ChunkPos> startedThisTick;
-    auto startGeneration = [&](const ChunkPos& pos) -> bool {
+    std::unordered_set<Int32_2> startedThisTick;
+    auto startGeneration = [&](const Int32_2& pos) -> bool {
 		// Check if already started this tick (can happen with multiple players), and if chunk is still Unloaded (can be changed by another thread).
         if (startedThisTick.contains(pos)) return false;
         auto it = chunks.find(pos);
@@ -218,7 +218,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
     if (playerCount == 0) {
         // No players so no budget slicing!
         int started = 0;
-        for (const ChunkPos& pos : noPlayerCandidates) {
+        for (const Int32_2& pos : noPlayerCandidates) {
             if (started >= MAX_GENERATIONS_PER_TICK) break;
             if (startGeneration(pos)) ++started;
         }
@@ -250,7 +250,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 
 void WorldManager::populateReady() {
     // Try and match beta's population order its finicky lol
-    std::vector<ChunkPos> ordered;
+    std::vector<Int32_2> ordered;
     ordered.reserve(chunks.size());
     for (auto& [pos, chunk] : chunks) {
         if (chunk->isTerrainPopulated) continue;
@@ -264,7 +264,7 @@ void WorldManager::populateReady() {
     }
 
 	// Sort by population order that beta 1.7.3 seems to use
-    std::sort(ordered.begin(), ordered.end(), [](const ChunkPos& a, const ChunkPos& b) {
+    std::sort(ordered.begin(), ordered.end(), [](const Int32_2& a, const Int32_2& b) {
         if (a.x != b.x) return a.x < b.x;
         return a.z < b.z;
         });
@@ -272,8 +272,8 @@ void WorldManager::populateReady() {
 	// Make sure we don't try to populate the same chunk multiple times in one tick (can happen with the weird population order and multiple players)
     // Also make sure we populate in the right order!
     // We break if the target chunk isn't ready yet so population order is guaranteed
-    std::unordered_set<ChunkPos> populatedThisTick;
-    for (const ChunkPos& pos : ordered) {
+    std::unordered_set<Int32_2> populatedThisTick;
+    for (const Int32_2& pos : ordered) {
         if (!canPopulateDirect(pos)) break;
         if (populatedThisTick.contains(pos)) continue;
         auto cit = chunks.find(pos);

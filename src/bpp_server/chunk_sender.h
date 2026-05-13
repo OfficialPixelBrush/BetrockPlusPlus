@@ -23,14 +23,14 @@
 struct ChunkSender {
     // One result slot per in-flight chunk.
     struct PendingChunk {
-        ChunkPos                          pos;
+        Int32_2                           pos;
         std::future<std::vector<uint8_t>> data;     // async compression result
         std::shared_ptr<Chunk>            chunkRef; // kept alive until flush drains pending updates
     };
 
     // One result slot per in-flight sub-region block update (>= 10 changes).
     struct PendingSubRegion {
-        ChunkPos                          chunkPos;
+        Int32_2                           chunkPos;
         Packet::ChunkData                 header;  // pre-filled, compressedData empty until ready
         std::future<std::vector<uint8_t>> data;
     };
@@ -51,10 +51,10 @@ struct ChunkSender {
 
         int radius = world.getViewRadius();
 
-        std::vector<ChunkPos> toSend;
+        std::vector<Int32_2> toSend;
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
-                ChunkPos p{ cx + dx, cz + dz };
+                Int32_2 p{ cx + dx, cz + dz };
                 if (!world.chunks.contains(p)) continue;
                 if (session.sentChunks.contains(p)) continue;
                 if (world.chunks[p]->state.load() < ChunkState::Generated) continue;
@@ -63,14 +63,14 @@ struct ChunkSender {
         }
 
         // Sort closer chunks first
-        std::sort(toSend.begin(), toSend.end(), [&](const ChunkPos& a, const ChunkPos& b) {
+        std::sort(toSend.begin(), toSend.end(), [&](const Int32_2& a, const Int32_2& b) {
             int da = std::abs(a.x - cx) + std::abs(a.z - cz);
             int db = std::abs(b.x - cx) + std::abs(b.z - cz);
             return da < db;
             });
 
         // Unload all out-of-range chunks immediately
-        std::vector<ChunkPos> toUnload;
+        std::vector<Int32_2> toUnload;
         for (auto& p : session.sentChunks) {
             if (std::abs(p.x - cx) > radius || std::abs(p.z - cz) > radius)
                 toUnload.push_back(p);
@@ -114,7 +114,7 @@ struct ChunkSender {
         return static_cast<size_t>(submitted);
     }
 
-    void sendBlockUpdates(PlayerSession& session, const ChunkPos& chunk,
+    void sendBlockUpdates(PlayerSession& session, const Int32_2& chunk,
         const std::vector<PendingBlock>& changes,
         std::shared_ptr<const Chunk> chunkRef = nullptr) {
         if (changes.empty()) return;
