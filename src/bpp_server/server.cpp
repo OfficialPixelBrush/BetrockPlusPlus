@@ -61,21 +61,21 @@ void Server::indexRemoveSession(PlayerSession& session) {
 void Server::loadConfig() {
 	if (!config.LoadFromDisk()) {
 		config.Overwrite({{"level-name", "world"},
-											//{"view-distance", "10"},
-											//{"white-list", "false"},
-											//{"server-ip", ""},
-											//{"motd", "A Minecraft Server"},
-											//{"pvp","true"},
-											// use a random device to seed another prng that gives us our seed
-											{"level-seed", std::to_string(std::mt19937(std::random_device()())())},
-											//{"spawn-animals",true}
-											{"server-port", "25565"},
-											//{"allow-nether",true},
-											//{"spawn-monsters","true"},
-											//{"max-players", "-1"},
-											//{"online-mode","false"},
-											//{"allow-flight","false"}
-                                            });
+		//{"view-distance", "10"},
+		//{"white-list", "false"},
+		//{"server-ip", ""},
+		//{"motd", "A Minecraft Server"},
+		//{"pvp","true"},
+		// use a random device to seed another prng that gives us our seed
+		{"level-seed", std::to_string(std::mt19937(std::random_device()())())},
+		//{"spawn-animals",true}
+		{"server-port", "25565"},
+		//{"allow-nether",true},
+		//{"spawn-monsters","true"},
+		//{"max-players", "-1"},
+		//{"online-mode","false"},
+		//{"allow-flight","false"}
+        });
 		config.SaveToDisk();
 	}
     //chunkDistance = config.GetAsNumber<int32_t>("view-distance");
