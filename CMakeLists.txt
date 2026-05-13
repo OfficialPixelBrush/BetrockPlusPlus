@@ -62,6 +62,7 @@ add_executable(
     src/bpp_shared/logger/logger.cpp
     src/bpp_shared/logger/logstream.cpp
     src/bpp_shared/logger/style.cpp
+    src/bpp_shared/config/config.cpp
     
     # Server-specific files
     src/bpp_server/server.cpp
