@@ -19,11 +19,12 @@
 #endif
 
 #include <iostream>
-#include <thread>
 #include <chrono>
+#include <filesystem>
 #include "server.h"
 
-Server::Server() {
+Server::Server() : config("server.properties") {
+    loadConfig();
     createServerSocket(serverPort);
 	if (serverSocket < 0) {
 		GlobalLogger().error << "**** FAILED TO CREATE SERVER SOCKET!" << "\n";
@@ -57,6 +58,41 @@ void Server::indexRemoveSession(PlayerSession& session) {
         indexRemoveChunk(session, pos);
 }
 
+void Server::loadConfig() {
+	if (!config.LoadFromDisk()) {
+		config.Overwrite({{"level-name", "world"},
+											//{"view-distance", "10"},
+											//{"white-list", "false"},
+											//{"server-ip", ""},
+											//{"motd", "A Minecraft Server"},
+											//{"pvp","true"},
+											// use a random device to seed another prng that gives us our seed
+											{"level-seed", std::to_string(std::mt19937(std::random_device()())())},
+											//{"spawn-animals",true}
+											{"server-port", "25565"},
+											//{"allow-nether",true},
+											//{"spawn-monsters","true"},
+											//{"max-players", "-1"},
+											//{"online-mode","false"},
+											//{"allow-flight","false"}
+                                            });
+		config.SaveToDisk();
+	}
+    //chunkDistance = config.GetAsNumber<int32_t>("view-distance");
+    if (world.seed == 0) {
+        try {
+            world.initWorldSeed(config.GetAsNumber<int64_t>("level-seed"));
+        } catch (const std::invalid_argument &e) {
+            world.initWorldSeed(int64_t(hashCode(config.GetAsString("level-seed"))));
+        }
+    }
+    serverPort = config.GetAsNumber<int32_t>("server-port");
+    //motd = config.GetAsString("motd");
+    //maximumPlayers = config.GetAsNumber<int32_t>("max-players");
+    //maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
+    //whitelistEnabled = config.GetAsBoolean("white-list");
+}
+
 void Server::startup() {
     auto startupStart = std::chrono::steady_clock::now();
     GlobalLogger().info << "Initializing server startup.. \n";
@@ -65,7 +101,7 @@ void Server::startup() {
     // Register blocks, setup the world, setup commands, etc.
     Blocks::registerAll();
     command_manager.Init();
-    world.initWorldSeed("Glacier");
+    //world.initWorldSeed("Glacier");
 
     // Setup the block callback so we can send it to clients
     world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
