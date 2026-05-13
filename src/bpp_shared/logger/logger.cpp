@@ -120,7 +120,7 @@ void Logger::Warning(std::string message) {
     std::string header = "[WARNING]";
     if (logLevelTerminal & LOG_WARNING) 
     {
-        std::cerr << time << " \x1b[1;30;43m" << header << "\e[0;33m " << message << "\x1b[0m " << "\n";
+        std::cerr << time << " \x1b[1;30;43m" << header << "\x1b[0;33m " << message << "\x1b[0m" << "\n";
     }
     if (logLevelText & LOG_WARNING) {
         logFile << time << " " << header << " " << message << "\n";

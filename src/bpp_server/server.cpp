@@ -32,6 +32,35 @@ Server::Server() : config("server.properties") {
         exit(1);
 	}
 	GlobalLogger().info << "Server initialized on port " << serverPort << "\n";
+    
+    // Basic save loading
+    bool newSave = false;
+    if (!saveManager.initialize(config.GetAsString("level-name"))) {
+		GlobalLogger().warn << "**** FAILED TO LOAD WORLD DATA! Attempting to create new world... \n";
+        newSave = true;
+        if (!saveManager.createNewWorld({.RandomSeed = saveManager.seedFromString(config.GetAsString("level-seed"))})) {
+			GlobalLogger().error << "**** FAILED TO CREATE NEW WORLD! \n";
+            exit(1);
+        }
+		GlobalLogger().info << "New world created successfully. \n";
+    }
+
+    // Initialize our world seed
+    saveManager.loadLevelData();
+	world.initWorldSeed(saveManager.getLevelData().RandomSeed);
+
+    // If we created a new save then make a new spawn point
+	if (newSave) { 
+        world.initSpawn();
+        levelData& levelData = saveManager.getLevelData();
+        levelData.spawnPoint = world.spawnPoint;
+    }
+    else {
+		world.spawnPoint = saveManager.getLevelData().spawnPoint;
+    }
+
+    // Save our level file immediately
+    saveManager.saveLevelFile(saveManager.getLevelData());
 }
 
 Server::~Server() {
@@ -80,13 +109,6 @@ void Server::loadConfig() {
 		config.SaveToDisk();
 	}
     //chunkDistance = config.GetAsNumber<int32_t>("view-distance");
-    if (world.seed == 0) {
-        try {
-            world.initWorldSeed(config.GetAsNumber<int64_t>("level-seed"));
-        } catch (const std::invalid_argument &e) {
-            world.initWorldSeed(int64_t(hashCode(config.GetAsString("level-seed"))));
-        }
-    }
     serverPort = config.GetAsNumber<int32_t>("server-port");
     //motd = config.GetAsString("motd");
     //maximumPlayers = config.GetAsNumber<int32_t>("max-players");
@@ -122,13 +144,14 @@ void Server::startup() {
         chunkBlockChanges[chunkPos].push_back(pendingNew);
         };
 
+    // Get spawn ready
     int total_spawn_chunks = 676;
     int loaded_chunks = 0;
     bool spawnDone = false;
     auto start = std::chrono::steady_clock::now();
-    world.initSpawn();
     GlobalLogger().info << "Server spawn is " << Int2(int(world.spawnPoint.x), int(world.spawnPoint.z)) << "\n";
     GlobalLogger().info << "Loading spawn chunks:\n";
+
     // Push every single spawn chunk to get ready for generation
     std::unordered_set<Int32_2> wanted;
     for (int dx = -13; dx < 13; dx++) {
