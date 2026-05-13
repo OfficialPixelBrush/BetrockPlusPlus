@@ -45,17 +45,17 @@ struct PlayerSession {
     int8_t  lastYaw = 0;
     int8_t  lastPitch = 0;
 
-    std::unordered_set<ChunkPos> sentChunks;
-    std::unordered_set<ChunkPos> flushedChunks; // actually written to stream
+    std::unordered_set<Int32_2> sentChunks;
+    std::unordered_set<Int32_2> flushedChunks; // actually written to stream
 
     // Block updates that arrived while the chunk was enqueued but not yet flushed.
-    std::unordered_map<ChunkPos, std::vector<PendingBlock>> pendingBlockChanges;
+    std::unordered_map<Int32_2, std::vector<PendingBlock>> pendingBlockChanges;
 
     // Chunks that were written to the stream during the last flush() call.
-    std::vector<ChunkPos> newlyFlushed;
+    std::vector<Int32_2> newlyFlushed;
 
     // Chunks that were unloaded during the last enqueue() call.
-    std::vector<ChunkPos> newlyUnloaded;
+    std::vector<Int32_2> newlyUnloaded;
     ConnectionState connState = ConnectionState::Handshaking;
     EntityId entityId = 0;
     std::wstring username;

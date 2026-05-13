@@ -54,8 +54,8 @@ private:
     void loadConfig();
 
     // Chunk-session index helpers
-    void indexAddChunk(PlayerSession& session, const ChunkPos& pos);
-    void indexRemoveChunk(PlayerSession& session, const ChunkPos& pos);
+    void indexAddChunk(PlayerSession& session, const Int32_2& pos);
+    void indexRemoveChunk(PlayerSession& session, const Int32_2& pos);
     void indexRemoveSession(PlayerSession& session);
 
     void closeSocket() const {
@@ -117,12 +117,12 @@ private:
     WorldManager world;
     ChunkSender chunkSender;
     std::vector<std::unique_ptr<PlayerSession>> players;
-    std::unordered_map<ChunkPos, std::vector<PendingBlock>> chunkBlockChanges;
+    std::unordered_map<Int32_2, std::vector<PendingBlock>> chunkBlockChanges;
 
     // Reverse index: which sessions currently have a given chunk loaded.
     // Maintained in sync with session.flushedChunks so block-change dispatch
     // can skip chunks that no player has received, avoiding a full player scan.
-    std::unordered_map<ChunkPos, std::vector<PlayerSession*>> chunkSessions;
+    std::unordered_map<Int32_2, std::vector<PlayerSession*>> chunkSessions;
     int serverSocket = -1;
 	int serverPort = 25565;
     EntityId nextEntityId = 2;

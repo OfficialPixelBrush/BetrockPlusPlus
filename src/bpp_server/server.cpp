@@ -37,7 +37,7 @@ Server::~Server() {
     this->stop();
 }
 
-void Server::indexAddChunk(PlayerSession& session, const ChunkPos& pos) {
+void Server::indexAddChunk(PlayerSession& session, const Int32_2& pos) {
     auto& vec = chunkSessions[pos];
     // Avoid duplicates (should never happen, but be safe)
     for (auto* p : vec)
@@ -45,7 +45,7 @@ void Server::indexAddChunk(PlayerSession& session, const ChunkPos& pos) {
     vec.push_back(&session);
 }
 
-void Server::indexRemoveChunk(PlayerSession& session, const ChunkPos& pos) {
+void Server::indexRemoveChunk(PlayerSession& session, const Int32_2& pos) {
     auto it = chunkSessions.find(pos);
     if (it == chunkSessions.end()) return;
     auto& vec = it->second;
@@ -104,7 +104,7 @@ void Server::startup() {
     //world.initWorldSeed("Glacier");
 
     // Setup the block callback so we can send it to clients
-    world.onBlockUpdate = [this](PendingBlock pendingBlock, ChunkPos chunkPos) {
+    world.onBlockUpdate = [this](PendingBlock pendingBlock, Int32_2 chunkPos) {
         // Only enqueue if at least one session knows about this chunk.
         auto idxIt = chunkSessions.find(chunkPos);
         bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
@@ -129,7 +129,7 @@ void Server::startup() {
     GlobalLogger().info << "Server spawn is " << Int2(int(world.spawnPoint.x), int(world.spawnPoint.z)) << "\n";
     GlobalLogger().info << "Loading 676 spawn chunks:\n";
     // Push every single spawn chunk to get ready for generation
-    std::unordered_set<ChunkPos> wanted;
+    std::unordered_set<Int32_2> wanted;
     for (int dx = -13; dx < 13; dx++) {
         for (int dz = -13; dz < 13; dz++) {
             wanted.insert({ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz });
@@ -156,7 +156,7 @@ void Server::startup() {
         // Beta uses -13 to 13 with only -13 being inclusive.. for some reason.
         for (int dx = -13; dx < 13; dx++) {
             for (int dz = -13; dz < 13; dz++) {
-                ChunkPos p{ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz };
+                Int32_2 p{ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz };
                 auto it = world.chunks.find(p);
                 if (it != world.chunks.end() && it->second->state.load() >= ChunkState::Generated)
                     loaded_chunks++;
@@ -324,7 +324,7 @@ void Server::tick() {
     world.update(positions);
 
 	// Send all of the block changes that have accumulated since the last tick, then clear the list.
-    std::unordered_map<ChunkPos, std::vector<PendingBlock>> localBlockChanges;
+    std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChanges;
     localBlockChanges.swap(chunkBlockChanges);
     for (auto& session : players) {
         switch (session->connState) {
@@ -638,7 +638,7 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
 
     for (int dx = -radius; dx <= radius; dx++) {
         for (int dz = -radius; dz <= radius; dz++) {
-            ChunkPos p{ spawnChunkX + dx, spawnChunkZ + dz };
+            Int32_2 p{ spawnChunkX + dx, spawnChunkZ + dz };
             if (session.flushedChunks.contains(p))
                 loaded_chunks++;
         }

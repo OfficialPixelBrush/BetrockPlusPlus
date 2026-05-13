@@ -28,22 +28,14 @@ enum class ChunkState : uint8_t {
     Unloading
 };
 
-struct ChunkPos {
-    int x = 0;
-    int z = 0;
-    bool operator==(const ChunkPos& other) const {
-        return x == other.x && z == other.z;
-    }
-
-    uint64_t getHash() const {
-        return (uint64_t(x) << 32) | uint64_t(z);
-    }
-};
+inline uint64_t getCPosHash(const Int32_2& pcpos) {
+    return (uint64_t(pcpos.x) << 32) | uint64_t(pcpos.z);
+}
 
 template<>
-struct std::hash<ChunkPos> {
-    std::size_t operator()(const ChunkPos& p) const noexcept {
-        return std::hash<uint64_t>{}(p.getHash());
+struct std::hash<Int32_2> {
+    std::size_t operator()(const Int32_2& p) const noexcept {
+        return std::hash<uint64_t>{}(getCPosHash(p));
     }
 };
 
@@ -55,7 +47,7 @@ struct Chunk {
     static constexpr int VOLUME = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH;
     static constexpr int META_VOLUME = VOLUME / 2;
 
-    ChunkPos cpos;
+    Int32_2 cpos;
 
     // Flat arrays indexed by (y * CHUNK_WIDTH * CHUNK_WIDTH) + (z * CHUNK_WIDTH) + x
     BlockType blocks[VOLUME] = { BLOCK_AIR };

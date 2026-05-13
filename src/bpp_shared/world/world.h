@@ -36,12 +36,12 @@ struct PendingBlock {
 
 struct WorldManager {
     // Owned exclusively by the main thread — no locks needed for any read/write.
-    std::unordered_map<ChunkPos, std::shared_ptr<Chunk>> chunks;
-    std::function<void(PendingBlock, ChunkPos)> onBlockUpdate; // always called on main thread
+    std::unordered_map<Int32_2, std::shared_ptr<Chunk>> chunks;
+    std::function<void(PendingBlock, Int32_2)> onBlockUpdate; // always called on main thread
 
     // Bleed-writes from PopulateChunk that targeted a chunk which wasn't loaded
     // (or wasn't Generated yet). Replayed into the chunk as soon as it generates.
-    std::unordered_map<ChunkPos, std::vector<std::pair<Int3, Block>>> pendingBleedWrites;
+    std::unordered_map<Int32_2, std::vector<std::pair<Int3, Block>>> pendingBleedWrites;
 
     // Tiny queue: pool gen threads post finished chunks here; main thread drains
     // each tick. Only this deque needs a mutex — the chunks map itself does not.
@@ -81,8 +81,8 @@ struct WorldManager {
     void populateReady();
 
     void createTileEntity(std::shared_ptr<TileEntity> tileEntity) {
-        ChunkPos chunkPos = { tileEntity->position.x >> 4, tileEntity->position.z >> 4 };
-        Chunk* chunk = getChunkRaw(chunkPos);
+        Int32_2 Int32_2 = { tileEntity->position.x >> 4, tileEntity->position.z >> 4 };
+        Chunk* chunk = getChunkRaw(Int32_2);
         if (!chunk) return;
         tileEntityManager.initializeTileEntity(tileEntity); // weak_ptr added if canTick
         chunk->tileEntities.push_back(std::move(tileEntity)); // chunk takes ownership
@@ -146,7 +146,7 @@ struct WorldManager {
             ready.swap(genDoneQueue);
         }
         for (auto& c : ready) {
-            ChunkPos pos = c->cpos;
+            Int32_2 pos = c->cpos;
             auto it = chunks.find(pos);
             if (it != chunks.end()) {
                 bool wasSpawnChunk = it->second->spawnChunk;
@@ -166,11 +166,11 @@ struct WorldManager {
         }
     }
 
-    std::shared_ptr<Chunk> getChunk(ChunkPos pos) {
+    std::shared_ptr<Chunk> getChunk(Int32_2 pos) {
         return getChunkShared(pos);
     }
 
-    bool canPopulate(ChunkPos pos) {
+    bool canPopulate(Int32_2 pos) {
         return canPopulateDirect(pos);
     }
 
@@ -191,7 +191,7 @@ struct WorldManager {
 
     void setBlock(Int3 wpos, BlockType block_type, uint8_t metadata = 0) {
         if (!inBounds(wpos.y)) return;
-        ChunkPos cp{ wpos.x >> 4, wpos.z >> 4 };
+        Int32_2 cp{ wpos.x >> 4, wpos.z >> 4 };
         auto* chunk = getChunkRaw(cp);
         if (!chunk || chunk->state.load() < ChunkState::Generated) {
             // Target chunk isn't ready; cache the write for replay
@@ -297,7 +297,7 @@ struct WorldManager {
             auto b = getFirstUncoveredBlock(x, z);
             if (b == BlockType::BLOCK_INVALID) {
                 // Force generate this chunk so we can check the block type.
-                auto cpos = ChunkPos{ x >> 4, z >> 4 };
+                auto cpos = Int32_2{ x >> 4, z >> 4 };
 				auto chunk = std::make_shared<Chunk>();
 				chunk->cpos = cpos;
                 chunk->spawnChunk = true;
@@ -373,7 +373,7 @@ struct WorldManager {
         return chunk->getBlockLight({ pos.x & 15, pos.y, pos.z & 15 });
     }
 
-    void propagateChunkLightBorders(ChunkPos cpos) {
+    void propagateChunkLightBorders(Int32_2 cpos) {
         // Iterate through our chunk borders
         const int ndx[] = { -1, 1,  0, 0 };
         const int ndz[] = { 0, 0, -1, 1 };
@@ -405,7 +405,7 @@ struct WorldManager {
         }
     }
 
-    Chunk* getChunkRaw(ChunkPos pos) {
+    Chunk* getChunkRaw(Int32_2 pos) {
         auto it = chunks.find(pos);
         return (it != chunks.end()) ? it->second.get() : nullptr;
     }
@@ -418,15 +418,15 @@ private:
     static constexpr int VIEW_RADIUS = 13; // no pixel THIS is the vanilla default :anger:
     static constexpr int SIMULATION_RADIUS = 9;
 
-    void seedChunkLighting(ChunkPos pos);
+    void seedChunkLighting(Int32_2 pos);
 
-    std::shared_ptr<Chunk> getChunkShared(ChunkPos pos) {
+    std::shared_ptr<Chunk> getChunkShared(Int32_2 pos) {
         auto it = chunks.find(pos);
         return (it != chunks.end()) ? it->second : nullptr;
     }
 
     // Check if a chunk can be populated
-    bool canPopulateDirect(ChunkPos pos) {
+    bool canPopulateDirect(Int32_2 pos) {
         auto* chunk = getChunkRaw(pos);
         if (!chunk) return false;
         if (chunk->isTerrainPopulated) return false;
