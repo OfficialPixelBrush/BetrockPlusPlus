@@ -83,12 +83,12 @@ public:
     }
 
     // Called by Client after setting the user pointer
+    #if defined(SDL_GPU)
+    #elif defined(GLFW_OPENGL33)
     void initCallbacks(GLFWwindow* win) {
-        #if defined(SDL_GPU)
-        #elif defined(GLFW_OPENGL33)
         glfwSetFramebufferSizeCallback(win, framebufferSizeCallback);
-        #endif
     }
+    #endif
 
     ~Window() {
         #if defined(SDL_GPU)
@@ -102,32 +102,67 @@ public:
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
 
-    bool shouldClose() const { return glfwWindowShouldClose(handle); }
-    void swapBuffers() { glfwSwapBuffers(handle); }
-    void pollEvents() { glfwPollEvents(); }
+    bool shouldClose() const {
+        #if defined(SDL_GPU)
+        return false;
+        #elif defined(GLFW_OPENGL33)
+        return glfwWindowShouldClose(handle);
+        #endif
+    }
+    void swapBuffers() {
+        #if defined(SDL_GPU)
+        #elif defined(GLFW_OPENGL33)
+        glfwSwapBuffers(handle);
+        #endif
+    }
+    void pollEvents() {
+        #if defined(SDL_GPU)
+        #elif defined(GLFW_OPENGL33)
+        glfwPollEvents();
+        #endif
+    }
 
-    void setVsync(bool enabled) { glfwSwapInterval(enabled ? 1 : 0); }
-    void setTitle(const std::string& title) { glfwSetWindowTitle(handle, title.c_str()); }
+    void setVsync(bool enabled) {
+        #if defined(SDL_GPU)
+        #elif defined(GLFW_OPENGL33)
+        glfwSwapInterval(enabled ? 1 : 0);
+        #endif
+    }
+    void setTitle(const std::string& title) {
+        #if defined(SDL_GPU)
+        #elif defined(GLFW_OPENGL33)
+        glfwSetWindowTitle(handle, title.c_str());
+        #endif
+    }
     void setCursorLocked(bool locked) {
+        #if defined(SDL_GPU)
+        #elif defined(GLFW_OPENGL33)
         glfwSetInputMode(handle, GLFW_CURSOR,
             locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+        #endif
     }
 
     int   getWidth()  const { return width; }
     int   getHeight() const { return height; }
     float getAspect() const { return float(width) / float(height); }
 
+    #if defined(SDL_GPU)
+    #elif defined(GLFW_OPENGL33)
     GLFWwindow* getHandle() const { return handle; }
+    #endif
 
 private:
+    #if defined(SDL_GPU)
+    #elif defined(GLFW_OPENGL33)
     static void framebufferSizeCallback(GLFWwindow* win, int w, int h) {
         auto* ctx = static_cast<GlfwContext*>(glfwGetWindowUserPointer(win));
         ctx->window->width = w;
         ctx->window->height = h;
         glViewport(0, 0, w, h);
     }
-
     GLFWwindow* handle = nullptr;
+    #endif
+
     int width = 0;
     int height = 0;
 };

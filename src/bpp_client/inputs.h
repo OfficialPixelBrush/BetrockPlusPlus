@@ -10,6 +10,7 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <cstring>
+#include "renderer.h"
 
 #include "glfw_context.h"
 
@@ -21,11 +22,14 @@ struct InputEvent {
 
 class Input {
 public:
+    #if defined(SDL_GPU)
+    #elif defined(GLFW_OPENGL33)
     void init(GLFWwindow* window) {
         glfwSetKeyCallback(window, keyCallback);
         glfwSetMouseButtonCallback(window, mouseButtonCallback);
         glfwSetCursorPosCallback(window, cursorCallback);
     }
+    #endif
 
     // Called at the start of a tick — drains queue into stable state
     void drainEvents();
@@ -46,9 +50,12 @@ public:
     }
 
 private:
+    #if defined(SDL_GPU)
+    #elif defined(GLFW_OPENGL33)
     static void keyCallback(GLFWwindow* window, int key, int, int action, int);
     static void mouseButtonCallback(GLFWwindow* window, int btn, int action, int);
     static void cursorCallback(GLFWwindow* window, double x, double y);
+    #endif
 
     // Raw event queue — filled by callbacks, drained each tick
     std::vector<InputEvent> eventQueue;
