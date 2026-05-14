@@ -127,13 +127,18 @@ struct Chunk {
     inline void relightColumn(Int2 pos) {
         generateHeightMapColumn(pos);
         int height = getHeightValue(pos);
+
         for (int y = CHUNK_HEIGHT - 1; y >= height; y--)
             setSkyLight({ pos.x, y, pos.z }, 15);
+
+        // only pull values up
         int skyLight = 15;
         for (int y = height - 1; y >= 0; y--) {
             skyLight -= CrossPlatform::Math::max(1, int(Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity));
-            skyLight = CrossPlatform::Math::max(0, skyLight); // clamp
-            setSkyLight({ pos.x, y, pos.z }, uint8_t(skyLight));
+            skyLight = CrossPlatform::Math::max(0, skyLight);
+            uint8_t current = getSkyLight({ pos.x, y, pos.z });
+            if (current < skyLight)
+                setSkyLight({ pos.x, y, pos.z }, uint8_t(skyLight));
         }
     }
 

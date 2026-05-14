@@ -226,38 +226,43 @@ struct WorldManager {
         chunk->setBlock(local, block_type);
         chunk->setMeta(local, metadata);
 
-        // Update the heightmap and sky light for the edited column
         int y = wpos.y; int x = wpos.x; int z = wpos.z;
         int oldHeight = chunk->getHeightValue({ lx, lz });
+
         if (Blocks::blockProperties[block_type].lightOpacity != 0) {
             // Placing opaque block; heightmap may rise
-            if (y >= oldHeight)
+            if (y >= oldHeight) {
                 chunk->relightColumn({ lx, lz });
+
+                // The column below the new top was zeroed out by relightColumn.
+                // Notify the BFS that all blocks from y down to oldHeight need updating
+                for (int sy = oldHeight; sy <= y; ++sy)
+                    lightManager.unlightAt(x, sy, z, LightType::Sky, *this);
+            }
         }
         else if (y == oldHeight - 1) {
             // Removing top opaque block; heightmap may fall
             chunk->relightColumn({ lx, lz });
         }
-        int newHeight = chunk->getHeightValue({ lx, lz });
 
-        // Directly set sky light for newly exposed column (height fell)
+        int newHeight = chunk->getHeightValue({ lx, lz });
         if (newHeight < oldHeight) {
-            for (int sy = newHeight; sy < oldHeight; ++sy) {
-                chunk->setSkyLight({ lx, sy, lz }, 15);
-            }
+            for (int sy = newHeight; sy < oldHeight; ++sy)
+                lightManager.scheduleLightUpdate({ x, sy, z }, LightType::Sky);
         }
 
-        // Schedule sky relaxation for this position and its 4 horizontal neighbors.
+        // Always re-evaluate the edited block and its 4 horizontal neighbours
+        // across the height transition band.
         lightManager.scheduleLightUpdate({ x, y, z }, LightType::Sky);
         const int ndx[] = { -1, 1,  0, 0 };
         const int ndz[] = { 0, 0, -1, 1 };
         for (int i = 0; i < 4; ++i) {
             int nx = x + ndx[i], nz = z + ndz[i];
             int neighborHeight = getHeightValue(nx, nz);
-            int thisHeight2 = chunk->getHeightValue({ lx, lz });
-            if (neighborHeight == thisHeight2) continue;
-            int minY = CrossPlatform::Math::min(thisHeight2, neighborHeight);
-            int maxY = CrossPlatform::Math::max(thisHeight2, neighborHeight);
+            int thisHeight = chunk->getHeightValue({ lx, lz });
+            if (neighborHeight == thisHeight) continue;
+            int minY = CrossPlatform::Math::min(thisHeight, neighborHeight);
+            int maxY = CrossPlatform::Math::max(thisHeight, neighborHeight);
             lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
         }
         // Schedule a block light update for the position itself
