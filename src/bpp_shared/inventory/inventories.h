@@ -17,13 +17,13 @@ struct EntityPlayer;
 struct Container;
 struct InventoryCrafting;
 
-enum invMap {
-    armor,
-    inventory,
-    hotbar,
-    crafting,
-    craftingResult,
-    outOfBounds
+enum InvMap {
+    ARMOR,
+    INVENTORY,
+    HOTBAR,
+    CRAFTING_AREA,
+    CRAFTING_RESULT,
+    INVALID
 };
 
 // Network format (The rest of the inventories are self explanatory this is the only one that is semi-convoluted):
@@ -45,14 +45,14 @@ public:
         return getStackInSlot(currentItem);
     }
 
-    invMap getInventoryAreaFromSlot(int slot) {
-        if (slot == 0) return invMap::craftingResult;
-        if (slot >= 1 && slot <= 4) return invMap::crafting;
-        if (slot >= 5 && slot <= 8) return invMap::armor;
-        if (slot >= 36 && slot <= 44) return invMap::hotbar;
-        if (slot >= 9 && slot <= 35) return invMap::inventory;
+    InvMap getInventoryAreaFromSlot(int slot) {
+        if (slot == 0) return InvMap::CRAFTING_RESULT;
+        if (slot >= 1 && slot <= 4) return InvMap::CRAFTING_AREA;
+        if (slot >= 5 && slot <= 8) return InvMap::ARMOR;
+        if (slot >= 36 && slot <= 44) return InvMap::HOTBAR;
+        if (slot >= 9 && slot <= 35) return InvMap::INVENTORY;
         GlobalLogger().error << "Invalid Inventory area slot! (" << slot << ")\n";
-        return invMap::inventory; // Fallback,
+        return InvMap::INVALID; // Fallback,
     }
 
     void onInventoryChanged() override { inventoryChanged = true; }
@@ -118,6 +118,7 @@ struct InventoryLargeChest : Inventory {
 };
 
 struct InventoryDispenser : Inventory {
+    // TODO: Maybe use JavaRandom? (does that matter???)
     std::mt19937 rng{ std::random_device{}() };
 
     InventoryDispenser() : Inventory(9) { name = "Trap"; }
@@ -134,6 +135,7 @@ struct InventoryDispenser : Inventory {
     }
 };
 
+// TODO: Maybe make an enum for this?
 // Slots: 0 = input, 1 = fuel, 2 = output.
 struct InventoryFurnace : Inventory {
     int burnTime    = 0;

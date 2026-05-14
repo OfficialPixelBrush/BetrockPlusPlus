@@ -10,6 +10,8 @@
 
 // Items above this ID are pure items (not placeable blocks)
 static constexpr int16_t ITEM_THRESHOLD = 255;
+// Maximum number of items in a stack
+static constexpr int8_t ITEM_STACK_MAX = 64;
 
 enum Items : int16_t {
     ITEM_INVALID = -1,
@@ -166,12 +168,12 @@ enum Items : int16_t {
     ITEM_COOKIE = 357,
     ITEM_MAP = 358,
     ITEM_SHEARS = 359,
+    ITEM_MAX,
 
     // Records
     ITEM_RECORD_13 = 2256,
     ITEM_RECORD_CAT = 2257,
-
-    ITEM_MAX,
+    ITEM_RECORD_MAX,
 };
 
 // Tool material durability

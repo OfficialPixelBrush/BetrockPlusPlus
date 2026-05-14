@@ -7,9 +7,10 @@
 
 #include "labels.h"
 #include <cstddef>
+#include <string>
 
 // Get the appropriate Label for the passed id
-std::string IdToLabel(int16_t id) {
+std::string IdToLabel(const int16_t id) {
 	if (id > SLOT_EMPTY) {
 		if (id < BLOCK_MAX) {
 			return blockLabels[size_t(id)];
@@ -19,6 +20,12 @@ std::string IdToLabel(int16_t id) {
 		}
 	}
 	return "Invalid";
+}
+
+std::wstring wIdToLabel(const int16_t id) {
+	std::string label = IdToLabel(id);
+	std::wstring wlabel(label.begin(), label.end());
+	return wlabel;
 }
 
 // Used to get blocks labels
