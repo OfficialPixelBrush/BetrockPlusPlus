@@ -18,11 +18,13 @@
 #include <windows.h>
 #endif
 
-Server server;
+Server* server;
 
 static void shutdown() {
-    server.stop();
+    if (server)
+        server->stop();
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    //free(server)
 }
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -52,12 +54,9 @@ static void signalHandler(int sig) {
 #define BUILD_MODE "Debug"
 #endif
 
-int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
-    bool nbt_tests = false;
-    bool server_tests = true;
-    bool client_tests = false;
-    bool graphical_client = false;
+//#define SERVER
 
+int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     #if defined(_WIN32) || defined(_WIN64)
         GlobalLogger().info << "Running on Windows (" << BUILD_MODE << ")\n";
         SetConsoleCtrlHandler(consoleCtrlHandler, TRUE);
@@ -66,22 +65,20 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     #elif defined(__APPLE__)
         GlobalLogger().info << "Running on macOS (" << BUILD_MODE << ")\n";
     #else
-        GlobalLogger().warn << "Running on an unknown/unsupported platform (" << BUILD_MODE << ")\n" <<Unexpected bugs may occur!\n";
+        GlobalLogger().warn << "Running on an unknown/unsupported platform (" << BUILD_MODE << ")\n" << "Unexpected bugs may occur!\n";
     #endif
 
     std::signal(SIGINT, signalHandler);
     std::signal(SIGTERM, signalHandler);
 
-    if (nbt_tests)
-        NBTexample::test();
-
-    if (server_tests)
-        server.run();
-
-    if (client_tests && graphical_client) {
+    #if defined(SERVER)
+        Server serv;
+        server = &serv;
+        server->run();
+    #else
         Client client;
         client.run();
-    }
+    #endif
 
     return 0;
 }

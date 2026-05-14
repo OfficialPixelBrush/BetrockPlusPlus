@@ -6,16 +6,46 @@
 */
 
 #pragma once
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_gpu.h>
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_oldnames.h>
+#include <SDL3/SDL_video.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stdexcept>
 #include <string>
 
 #include "glfw_context.h"
+#include "logger.h"
 
 class Window {
 public:
     Window(int width, int height, const std::string& title) {
+        #if defined(SDL_GPU)
+        // Inits Video backend
+        if (!SDL_Init(SDL_INIT_VIDEO))
+            GlobalLogger().error << "(SDL) Failed to initialize SDL!\n";
+        SDL_Window *window{SDL_CreateWindow(
+            title.c_str(),
+            width,
+            height,
+            SDL_WINDOW_VULKAN
+        )};
+        if (!window)
+            GlobalLogger().error << "(SDL) Failed to create window!\n";
+
+        SDL_GPUDevice *device{SDL_CreateGPUDevice(
+            // SPIRV for Vulkan, MSL for Metal, DXIL for DirectX 12
+            SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_MSL | SDL_GPU_SHADERFORMAT_DXIL,
+            true,
+            nullptr
+        )};
+        if (!device)
+            GlobalLogger().error << "(SDL) Failed to create device!\n";
+
+        SDL_ClaimWindowForGPUDevice(device, window);
+        #elif defined(GLFW_OPENGL33)
         if (!glfwInit())
             throw std::runtime_error("Failed to init GLFW");
 
@@ -39,20 +69,28 @@ public:
         glViewport(0, 0, width, height);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
+        #endif
 
         this->width = width;
         this->height = height;
+        GlobalLogger().info << "Window initialized!\n";
         // Note: user pointer is set by Client, not here
     }
 
     // Called by Client after setting the user pointer
     void initCallbacks(GLFWwindow* win) {
+        #if defined(SDL_GPU)
+        #elif defined(GLFW_OPENGL33)
         glfwSetFramebufferSizeCallback(win, framebufferSizeCallback);
+        #endif
     }
 
     ~Window() {
+        #if defined(SDL_GPU)
+        #elif defined(GLFW_OPENGL33)
         if (handle) glfwDestroyWindow(handle);
         glfwTerminate();
+        #endif
     }
 
     // Non-copyable
