@@ -48,6 +48,7 @@ struct Chunk {
     static constexpr int META_VOLUME = VOLUME / 2;
 
     Int32_2 cpos;
+	std::atomic_bool inUse{ false };
 
     // Flat arrays indexed by (y * CHUNK_WIDTH * CHUNK_WIDTH) + (z * CHUNK_WIDTH) + x
     BlockType blocks[VOLUME] = { BLOCK_AIR };
