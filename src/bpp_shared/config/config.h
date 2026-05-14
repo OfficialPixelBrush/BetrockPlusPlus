@@ -7,6 +7,7 @@
 */
 
 #pragma once
+#include "logger.h"
 
 #include <iostream>
 #include <shared_mutex>
