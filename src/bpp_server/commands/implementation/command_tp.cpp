@@ -8,8 +8,9 @@
 
 // Teleports a player to coordinates or to another player.
 // Usage:
-//   /tp <player> <x> <y> <z> [yaw [pitch]]
-//   /tp <player> <target_player>
+//   /tp <x> <y> <z>
+//   /tp <player> <x> <y> <z>
+//   /tp <source_player> <target_player>
 std::wstring CommandTeleport::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world) {
 	if (parameters.size() < 2)
 		return ERROR_REASON_SYNTAX;

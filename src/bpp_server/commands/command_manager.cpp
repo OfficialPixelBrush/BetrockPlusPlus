@@ -16,8 +16,8 @@ void CommandManager::Init() {
 	registeredCommands.push_back(std::make_unique<CommandHelp>());
 	registeredCommands.push_back(std::make_unique<CommandTeleport>());
 	registeredCommands.push_back(std::make_unique<CommandTime>());
-	//registeredCommands.push_back(std::make_unique<CommandSpawn>());
-	//registeredCommands.push_back(std::make_unique<CommandSeed>());
+	registeredCommands.push_back(std::make_unique<CommandSeed>());
+	registeredCommands.push_back(std::make_unique<CommandSpawn>());
 	//registeredCommands.push_back(std::make_unique<CommandGive>());
 	//registeredCommands.push_back(std::make_unique<CommandList>());
 	//registeredCommands.push_back(std::make_unique<CommandLoaded>());
