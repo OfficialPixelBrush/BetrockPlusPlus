@@ -82,6 +82,15 @@ add_executable(
     src/bpp_client/renderers/sub_chunk_mesher.cpp
 )
 
+# Build as server
+option(BUILD_SERVER "Build as server" OFF)
+
+if(BUILD_SERVER)
+    target_compile_definitions(BetrockPlusPlus PRIVATE BUILD_SERVER)
+else()
+    target_compile_definitions(BetrockPlusPlus PRIVATE BUILD_CLIENT)
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(BetrockPlusPlus PRIVATE
         $<$<CXX_COMPILER_ID:GNU,Clang>:
