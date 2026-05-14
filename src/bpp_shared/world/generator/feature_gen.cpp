@@ -9,7 +9,7 @@
 #include <algorithm>
 
 //  GenerateLake
-bool FeatureGenerator::GenerateLake(WorldManager& world, Java::Random& rand, Int3 pos) {
+bool FeatureGenerator::GenerateLake(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	pos.x -= 8;
 	pos.z -= 8;
 
@@ -96,7 +96,7 @@ bool FeatureGenerator::GenerateLake(WorldManager& world, Java::Random& rand, Int
 }
 
 //  GenerateDungeon
-bool FeatureGenerator::GenerateDungeon(WorldManager& world, Java::Random& rand, Int3 pos) {
+bool FeatureGenerator::GenerateDungeon(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	const int8_t dungeonHeight = 3;
 	int32_t dungeonWidthX = rand.nextInt(2) + 2;
 	int32_t dungeonWidthZ = rand.nextInt(2) + 2;
@@ -202,7 +202,7 @@ std::string FeatureGenerator::PickMobToSpawn(Java::Random& rand) {
 }
 
 //  GenerateClay
-bool FeatureGenerator::GenerateClay(WorldManager& world, Java::Random& rand, Int3 pos, int32_t blobSize) {
+bool FeatureGenerator::GenerateClay(WorldWrapper& world, Java::Random& rand, Int3 pos, int32_t blobSize) {
 	BlockType at = world.getBlockId(pos);
 	if (at != BLOCK_WATER_STILL && at != BLOCK_WATER_FLOWING) return false;
 
@@ -241,7 +241,7 @@ bool FeatureGenerator::GenerateClay(WorldManager& world, Java::Random& rand, Int
 }
 
 //  GenerateMinable
-bool FeatureGenerator::GenerateMinable(WorldManager& world, Java::Random& rand, Int3 pos, int32_t blobSize) {
+bool FeatureGenerator::GenerateMinable(WorldWrapper& world, Java::Random& rand, Int3 pos, int32_t blobSize) {
 	float  angle = rand.nextFloat() * JavaMath::PI_FLOAT;
 	double xStart = double(float(pos.x + 8) + MathHelper::sin(angle) * float(blobSize) / 8.0F);
 	double xEnd = double(float(pos.x + 8) - MathHelper::sin(angle) * float(blobSize) / 8.0F);
@@ -283,7 +283,7 @@ bool FeatureGenerator::GenerateMinable(WorldManager& world, Java::Random& rand, 
 //  GenerateFlowers — 64 attempts
 //  Flowers (dandelion/rose): needs GRASS below.
 //  Mushrooms: needs solid below AND skylight == 0.
-bool FeatureGenerator::GenerateFlowers(WorldManager& world, Java::Random& rand, Int3 pos) {
+bool FeatureGenerator::GenerateFlowers(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	bool isMushroom = (this->type == BLOCK_MUSHROOM_BROWN || this->type == BLOCK_MUSHROOM_RED);
 
 	for (int32_t i = 0; i < 64; ++i) {
@@ -309,7 +309,7 @@ bool FeatureGenerator::GenerateFlowers(WorldManager& world, Java::Random& rand, 
 
 //  GenerateTallgrass — descend then 128 attempts
 //  canBlockStay: grass or dirt below.
-bool FeatureGenerator::GenerateTallgrass(WorldManager& world, Java::Random& rand, Int3 pos) {
+bool FeatureGenerator::GenerateTallgrass(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	while (pos.y > 0) {
 		BlockType b = world.getBlockId({ pos.x, pos.y, pos.z });
 		if (b != BLOCK_AIR && b != BLOCK_LEAVES) break;
@@ -330,7 +330,7 @@ bool FeatureGenerator::GenerateTallgrass(WorldManager& world, Java::Random& rand
 }
 
 //  GenerateDeadbush — descend then 4 attempts, sand below
-bool FeatureGenerator::GenerateDeadbush(WorldManager& world, Java::Random& rand, Int3 pos) {
+bool FeatureGenerator::GenerateDeadbush(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	while (pos.y > 0) {
 		BlockType b = world.getBlockId({ pos.x, pos.y, pos.z });
 		if (b != BLOCK_AIR && b != BLOCK_LEAVES) break;
@@ -350,7 +350,7 @@ bool FeatureGenerator::GenerateDeadbush(WorldManager& world, Java::Random& rand,
 }
 
 //  GenerateSugarcane — 20 attempts, Y stays fixed, breaks on invalid placement
-bool FeatureGenerator::GenerateSugarcane(WorldManager& world, Java::Random& rand, Int3 pos) {
+bool FeatureGenerator::GenerateSugarcane(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	for (int32_t i = 0; i < 20; ++i) {
 		int32_t x = pos.x + rand.nextInt(4) - rand.nextInt(4);
 		int32_t y = pos.y; // Y is fixed across all attempts
@@ -379,7 +379,7 @@ bool FeatureGenerator::GenerateSugarcane(WorldManager& world, Java::Random& rand
 //  GeneratePumpkins — 64 attempts, grass below, no adjacent pumpkins
 //  Java: isAirBlock + grass below + canPlaceBlockAt. canPlaceBlockAt for pumpkin
 //  checks no adjacent pumpkin on all 4 cardinal sides.
-bool FeatureGenerator::GeneratePumpkins(WorldManager& world, Java::Random& rand, Int3 pos) {
+bool FeatureGenerator::GeneratePumpkins(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	for (int32_t i = 0; i < 64; ++i) {
 		int32_t x = pos.x + rand.nextInt(8) - rand.nextInt(8);
 		int32_t y = pos.y + rand.nextInt(4) - rand.nextInt(4);
@@ -398,7 +398,7 @@ bool FeatureGenerator::GeneratePumpkins(WorldManager& world, Java::Random& rand,
 }
 
 //  GenerateCacti — 10 attempts, break per-height if placement invalid
-bool FeatureGenerator::GenerateCacti(WorldManager& world, Java::Random& rand, Int3 pos) {
+bool FeatureGenerator::GenerateCacti(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	for (int32_t i = 0; i < 10; ++i) {
 		int32_t x = pos.x + rand.nextInt(8) - rand.nextInt(8);
 		int32_t y = pos.y + rand.nextInt(4) - rand.nextInt(4);
@@ -420,7 +420,7 @@ bool FeatureGenerator::GenerateCacti(WorldManager& world, Java::Random& rand, In
 }
 
 //  GenerateLiquid — spring placement + lava updateTick RNG simulation
-bool FeatureGenerator::GenerateLiquid(WorldManager& world, Java::Random& rand, Int3 pos) {
+bool FeatureGenerator::GenerateLiquid(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	if (world.getBlockId({ pos.x, pos.y + 1, pos.z }) != BLOCK_STONE) return false;
 	if (world.getBlockId({ pos.x, pos.y - 1, pos.z }) != BLOCK_STONE) return false;
 	BlockType cur = world.getBlockId(pos);

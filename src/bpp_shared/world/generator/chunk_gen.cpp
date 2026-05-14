@@ -407,7 +407,7 @@ Biome Generator::GetBiomeAt(Int2 worldPos) {
 
 
 // Exact port of BiomeGenBase.getRandomWorldGenForTrees() and per-biome overrides.
-void Generator::GenerateTreeForBiome(WorldManager& world, Java::Random& pRand, Int3 pos, Biome biome) {
+void Generator::GenerateTreeForBiome(WorldWrapper& world, Java::Random& pRand, Int3 pos, Biome biome) {
 	switch (biome) {
 	case BIOME_TAIGA:
 		// Java: nextInt(3)==0 ? new WorldGenTaiga1() : new WorldGenTaiga2()
@@ -473,17 +473,17 @@ void Generator::GenerateTreeForBiome(WorldManager& world, Java::Random& pRand, I
  * RNG seeding, section order, rand call counts, and coordinate offsets all
  * match the Java source exactly.
  */
-bool Generator::PopulateChunk(Chunk& chunk, WorldManager& world) {
+bool Generator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	const int32_t blockX = chunk.cpos.x * CHUNK_WIDTH;
 	const int32_t blockZ = chunk.cpos.z * CHUNK_WIDTH;
 	Biome biome = BiomeGenerator(this->seed).GetBiomeAtPoint(
 		Int2{ blockX + CHUNK_WIDTH, blockZ + CHUNK_WIDTH }
 	);
 	// Java RNG seeding sequence
-	this->rand.setSeed(world.seed);
+	this->rand.setSeed(world.getSeed());
 	int64_t xSalt = this->rand.nextLong() / 2L * 2L + 1L;
 	int64_t zSalt = this->rand.nextLong() / 2L * 2L + 1L;
-	this->rand.setSeed((int64_t(chunk.cpos.x) * xSalt + int64_t(chunk.cpos.z) * zSalt) ^ world.seed);
+	this->rand.setSeed((int64_t(chunk.cpos.x) * xSalt + int64_t(chunk.cpos.z) * zSalt) ^ world.getSeed());
 
 	Int3 coord;
 
@@ -735,6 +735,5 @@ bool Generator::PopulateChunk(Chunk& chunk, WorldManager& world) {
 			}
 		}
 	}
-
 	return true;
 }

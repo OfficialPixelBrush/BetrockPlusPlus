@@ -356,7 +356,7 @@ void Server::tick() {
         case ConnectionState::WaitingForSpawnChunks: 
             waitForSpawnChunks(*session); break;
         case ConnectionState::Playing:
-            chunkSender.enqueue(*session, world, 50);
+            chunkSender.enqueue(*session, world, 16);
             chunkSender.flush(*session);
             processIncoming(*session);
             broadcastPlayerMovement(*session);
