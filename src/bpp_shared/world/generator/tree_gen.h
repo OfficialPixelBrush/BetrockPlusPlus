@@ -19,7 +19,7 @@ class TreeGenerator {
   public:
 	TreeGenerator() {};
 	virtual ~TreeGenerator() = default;
-	virtual bool Generate(WorldManager& world, Java::Random& rand, Int3 pos, bool birch = false);
+	virtual bool Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, bool birch = false);
 	virtual void Configure([[maybe_unused]] double treeHeight, [[maybe_unused]] double branchLength,
 						   [[maybe_unused]] double trunkShape) {};
 };
@@ -51,7 +51,7 @@ class BigTreeGenerator : public TreeGenerator {
 		AXIS_Y  // Z to Y
 	};
 	Java::Random rand = Java::Random();
-	WorldManager* wm = nullptr;
+	WorldWrapper* wm = nullptr;
 	Int3 basePos = INT3_ZERO;
 	int32_t totalHeight = 0;
 	int32_t height;
@@ -81,7 +81,7 @@ class BigTreeGenerator : public TreeGenerator {
   public:
 	BigTreeGenerator() {}
 	~BigTreeGenerator() = default;
-	bool Generate(WorldManager& world, Java::Random& rand, Int3 pos, bool birch = false);
+	bool Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, bool birch = false);
 	void Configure(double treeHeight, double branchLength, double trunkShape);
 };
 
@@ -93,7 +93,7 @@ class TaigaTreeGenerator : public TreeGenerator {
   public:
 	TaigaTreeGenerator() {};
 	~TaigaTreeGenerator() = default;
-	bool Generate(WorldManager& world, Java::Random& rand, Int3 pos, bool birch = false);
+	bool Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, bool birch = false);
 };
 
 /**
@@ -104,5 +104,5 @@ class AltTaigaTreeGenerator : public TreeGenerator {
   public:
 	AltTaigaTreeGenerator() {};
 	~AltTaigaTreeGenerator() = default;
-	bool Generate(WorldManager& world, Java::Random& rand, Int3 pos, bool birch = false);
+	bool Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, bool birch = false);
 };

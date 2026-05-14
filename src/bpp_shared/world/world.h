@@ -53,6 +53,7 @@ struct WorldManager {
     TileEntityManager tileEntityManager;
 
     BS::thread_pool<> pool{ 2 };
+    BS::thread_pool<> populationPool{ 1 };
 
     int64_t seed = 0;
     int64_t elapsed_ticks = 0;
@@ -171,8 +172,6 @@ struct WorldManager {
                         setBlock(wpos, block.type, block.data);
                     pendingBleedWrites.erase(pit);
                 }
-
-                seedChunkLighting(pos);
             }
         }
     }
@@ -204,7 +203,7 @@ struct WorldManager {
         if (!inBounds(wpos.y)) return;
         Int32_2 cp{ wpos.x >> 4, wpos.z >> 4 };
         auto* chunk = getChunkRaw(cp);
-        if (!chunk || chunk->state.load() < ChunkState::Generated) {
+        if (!chunk || chunk->state.load() < ChunkState::Generated || chunk->inUse.load()) {
             // Target chunk isn't ready; cache the write for replay
             pendingBleedWrites[cp].push_back({ wpos, Block{ block_type, metadata } });
             return;
@@ -419,6 +418,20 @@ struct WorldManager {
     Chunk* getChunkRaw(Int32_2 pos) {
         auto it = chunks.find(pos);
         return (it != chunks.end()) ? it->second.get() : nullptr;
+    }
+
+    void flushBleedWrites() {
+        for (auto it = pendingBleedWrites.begin(); it != pendingBleedWrites.end(); ) {
+            auto* target = getChunkRaw(it->first);
+            if (target && target->state.load() >= ChunkState::Generated && !target->inUse.load()) {
+                for (auto& [wpos, block] : it->second)
+                    setBlock(wpos, block.type, block.data);
+                it = pendingBleedWrites.erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
     }
 
     // Returns true when the world-space Y is within valid chunk bounds.

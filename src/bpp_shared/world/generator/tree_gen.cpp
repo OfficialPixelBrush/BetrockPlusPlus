@@ -17,7 +17,7 @@
  * @param birch If the tree should be birch or oak
  * @return If tree successfully generated
  */
-bool TreeGenerator::Generate(WorldManager& world, Java::Random& rand, Int3 pos, bool birch) {
+bool TreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, bool birch) {
 	// Decide on the tree height (birches are one block taller)
 	int32_t treeHeight = rand.nextInt(3) + 4;
 	if (birch)
@@ -125,7 +125,7 @@ void BigTreeGenerator::Configure(double pTreeHeight, double pBranchLength, doubl
  * @param pBirch If the tree should be birch or oak (not used for big trees)
  * @return If tree successfully generated
  */
-bool BigTreeGenerator::Generate(WorldManager& pWorld, Java::Random& pRand, [[maybe_unused]] Int3 pPos, [[maybe_unused]] bool pBirch) {
+bool BigTreeGenerator::Generate(WorldWrapper& pWorld, Java::Random& pRand, [[maybe_unused]] Int3 pPos, [[maybe_unused]] bool pBirch) {
 	this->wm = &pWorld;
 	int64_t seed = pRand.nextLong();
 	this->rand.setSeed(seed);
@@ -506,7 +506,7 @@ bool BigTreeGenerator::ValidPlacement() {
  * @param pBirch If the tree should be birch or oak (not used for taiga trees)
  * @return If tree successfully generated
  */
-bool TaigaTreeGenerator::Generate(WorldManager& world, Java::Random& rand, Int3 pos, [[maybe_unused]] bool birch) {
+bool TaigaTreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, [[maybe_unused]] bool birch) {
 	int32_t height = rand.nextInt(5) + 7;
 	int32_t trunkHeight  = height - rand.nextInt(2) - 3;
 	int32_t leavesHeight = height - trunkHeight ;
@@ -586,7 +586,7 @@ bool TaigaTreeGenerator::Generate(WorldManager& world, Java::Random& rand, Int3 
  * @param pBirch If the tree should be birch or oak (not used for alt taiga trees)
  * @return If tree successfully generated
  */
-bool AltTaigaTreeGenerator::Generate(WorldManager& world, Java::Random& rand, Int3 pos, [[maybe_unused]] bool birch) {
+bool AltTaigaTreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, [[maybe_unused]] bool birch) {
 	int32_t height = rand.nextInt(4) + 6;
 	int32_t trunkHeight = 1 + rand.nextInt(2);
 	int32_t leavesHeight = height - trunkHeight;

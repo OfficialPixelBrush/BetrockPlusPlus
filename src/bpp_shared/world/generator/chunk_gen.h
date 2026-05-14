@@ -56,11 +56,11 @@ class Generator {
 	void GenerateTerrainNoise(std::vector<double> &terrainMap, Int3 cpos, Int3 max);
 	void ReplaceBlocksForBiome(Chunk& chunk);
 	Biome GetBiomeAt(Int2 worldPos);
-	void GenerateTreeForBiome(WorldManager& world, Java::Random& rand, Int3 pos, Biome biome);
+	void GenerateTreeForBiome(WorldWrapper& world, Java::Random& rand, Int3 pos, Biome biome);
 
   public:
 	Generator(int64_t seed);
 	~Generator() = default;
 	void GenerateChunk(Chunk& chunk);
-	bool PopulateChunk(Chunk& chunk, WorldManager& world);
+	bool PopulateChunk(Chunk& chunk, WorldWrapper& world);
 };

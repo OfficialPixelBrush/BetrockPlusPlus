@@ -148,10 +148,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
         snapshot.push_back(pos);
 
     const int playerCount = int(players.size());
-    const int MAX_GENERATIONS_PER_TICK = 4; // per player
-    const int slicePerPlayer = (playerCount > 0)
-        ? CrossPlatform::Math::max(1, MAX_GENERATIONS_PER_TICK / playerCount)
-        : MAX_GENERATIONS_PER_TICK;
+    const int slicePerPlayer = 16;
 
     std::vector<Int32_2> noPlayerCandidates;
     std::vector<std::vector<Int32_2>> perPlayerQueues;
@@ -220,13 +217,12 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
         // No players so no budget slicing!
         int started = 0;
         for (const Int32_2& pos : noPlayerCandidates) {
-            if (started >= MAX_GENERATIONS_PER_TICK) break;
+            if (started >= slicePerPlayer) break;
             if (startGeneration(pos)) ++started;
         }
     }
     else {
-        // We have players so we try and make sure everyone gets an equal number of chunks each tick
-        // We don't want a player to 
+        // Make sure everyone gets their share of the budget
         std::vector<int> cursors(size_t(playerCount), 0);
         int totalStarted = 0;
         const int totalBudget = slicePerPlayer * playerCount;
@@ -281,10 +277,16 @@ void WorldManager::populateReady() {
         if (cit == chunks.end()) break;
         cit->second->state.store(ChunkState::Populating, std::memory_order_release);
         thread_local Generator tl_gen(this->seed);
-        tl_gen.PopulateChunk(*cit->second, *this);
+		thread_local WorldWrapper wrapper{ .manager = *this, .centerChunkPos = pos };
+        wrapper.centerChunkPos = pos;
+        wrapper.getChunkRegion();
+        tl_gen.PopulateChunk(*cit->second, wrapper);
         cit->second->isTerrainPopulated = true;
         cit->second->isModified = true;
         cit->second->state.store(ChunkState::Populated, std::memory_order_release);
         populatedThisTick.insert(pos);
+        wrapper.freeChunkRegion();
+        flushBleedWrites();
+        seedChunkLighting(pos);
     }
 }
