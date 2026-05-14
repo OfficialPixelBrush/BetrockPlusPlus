@@ -172,6 +172,7 @@ struct WorldManager {
                         setBlock(wpos, block.type, block.data);
                     pendingBleedWrites.erase(pit);
                 }
+                seedChunkLighting(pos);
             }
         }
     }

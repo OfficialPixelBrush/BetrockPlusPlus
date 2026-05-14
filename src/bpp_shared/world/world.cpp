@@ -287,6 +287,5 @@ void WorldManager::populateReady() {
         populatedThisTick.insert(pos);
         wrapper.freeChunkRegion();
         flushBleedWrites();
-        seedChunkLighting(pos);
     }
 }
