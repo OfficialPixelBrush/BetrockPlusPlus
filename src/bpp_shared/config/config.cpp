@@ -37,7 +37,7 @@ bool Config::LoadFromDisk() noexcept {
 	std::ifstream file(this->path);
 
 	if (!file.is_open()) {
-		std::cerr << "Error opening properties file (load).\n";
+		GlobalLogger().warn << "**** Error opening properties file (load). Attempting to create new file...\n";
 		return false;
 	}
 
@@ -53,7 +53,7 @@ bool Config::LoadFromDisk() noexcept {
 
 		auto delimiterPos = line.find('=');
 		if (delimiterPos == std::string::npos) {
-			std::cerr << "Invalid line: " << line << "\n";
+			GlobalLogger().error << "**** Invalid line in properties file: " << line << "\n";
 			continue;
 		}
 
@@ -73,7 +73,7 @@ bool Config::LoadFromDisk() noexcept {
 bool Config::SaveToDisk() const noexcept {
 	std::ofstream file(this->path);
 	if (!file.is_open()) {
-		std::cerr << "Error opening properties file (save).\n";
+		GlobalLogger().error << "**** Error opening properties file (save). \n";
 		return false;
 	}
 
@@ -82,11 +82,11 @@ bool Config::SaveToDisk() const noexcept {
 			file << key << "=" << value << "\n";
 		}
 	} catch (const std::exception &e) {
-		std::cerr << "Error while writing: " << e.what() << "\n";
+		GlobalLogger().error << "**** Error while writing properties file: " << e.what() << "\n";
 		return false;
 	}
 
-	std::cerr << "wrote to properties file\n";
+	GlobalLogger().info << "Properties file saved successfully.\n";
 	file.close();
 	return true;
 }
