@@ -214,8 +214,8 @@ void Server::startup() {
         }
 
         // Place one chest per 27 IDs along the Z axis, starting at X=-10, Z=15.
-        int chestX = -10;
-        int chestZ = 15;
+        int chestX = world.spawnPoint.x;
+        int chestZ = world.spawnPoint.z;
         size_t idIndex = 0;
 
         while (idIndex < validIds.size()) {
