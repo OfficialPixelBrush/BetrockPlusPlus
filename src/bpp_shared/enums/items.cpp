@@ -111,7 +111,7 @@ int32_t GetMaxStack(int16_t id) {
     // Item, ItemCoal, ItemSeeds, ItemRedstone, ItemDye, ItemPainting,
     // ItemReed (sugarcane & repeater item), ItemRecord (never reached above),
     // all blocks, and any resource item not listed above.
-    return 64;
+    return ITEM_STACK_MAX;
 }
 
 int16_t GetMaxDurability(int16_t id) {
