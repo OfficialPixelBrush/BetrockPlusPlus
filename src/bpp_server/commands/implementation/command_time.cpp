@@ -7,6 +7,9 @@
 #include "../command.h"
 
 // Gets or sets the current world time
+// Usage:
+//   /time
+//   /time <new_time>
 std::wstring CommandTime::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world) {
 	// Set the time
 	if (parameters.size() > 1) {

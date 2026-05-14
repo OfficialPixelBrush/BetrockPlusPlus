@@ -65,9 +65,9 @@ DEFINE_COMMAND(CommandHelp, L"help", L"Lists commands or helps with command", L"
 DEFINE_COMMAND(CommandTeleport, L"tp", L"Teleports player to coordinates or another player",
 	L"<player> <x> <y> <z> / <player> <player>", false, false);
 DEFINE_COMMAND(CommandTime, L"time", L"Gets or sets the current world time", L"<new_time>", false, false);
-//DEFINE_COMMAND(CommandSpawn, L"spawn", L"Teleport to Spawn", L"", false, false);
+DEFINE_COMMAND(CommandSpawn, L"spawn", L"Teleport to spawn", L"", false, false);
+DEFINE_COMMAND(CommandSeed, L"seed", L"Get the world seed", L"", false, false);
 //DEFINE_COMMAND(CommandGive, L"give", L"Give yourself a block or item", L"<id>:[meta] [amount]", false, false);
-//DEFINE_COMMAND(CommandSeed, L"seed", L"Get the world seed", L"", false, false);
 //DEFINE_COMMAND(CommandList, L"list", L"List all currently online players", L"", false, false);
 //DEFINE_COMMAND(CommandLoaded, L"loaded", L"Shows the number of loaded chunks", L"", false, false);
 /*
@@ -100,9 +100,6 @@ DEFINE_COMMAND(CommandEntity, "entity", "Get the latest entity id", "", true, fa
 DEFINE_COMMAND(CommandModified, "modified", "Get the number of modified chunks", "", true, false);
 DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <data>", true, false);
 */
-
-
-
 
 // Helper: send a PlayerPositionAndRotation packet to move a session to new coords.
 static void SendTeleport(PlayerSession& target, Double3 position, float yaw = 0.0f, float pitch = 0.0f) {
