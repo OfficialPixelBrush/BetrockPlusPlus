@@ -365,7 +365,7 @@ struct PlayerInventoryInteraction : InventoryInteraction {
 
         ItemStack copy = *stack;  // work on a copy so we can detect what moved
 
-        if (from == invMap::armor || from == invMap::crafting || from == invMap::craftingResult || from == invMap::hotbar) {
+        if (from == InvMap::ARMOR || from == InvMap::CRAFTING_AREA || from == InvMap::CRAFTING_RESULT || from == InvMap::HOTBAR) {
             bool success = playerInventory->mergeItemStackInInventory(copy, false, 9, 35);
             if (!success) playerInventory->mergeItemStackInInventory(copy, false, 36, 44);
         }
