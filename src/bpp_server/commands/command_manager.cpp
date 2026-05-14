@@ -16,13 +16,15 @@ void CommandManager::Init() {
 	registeredCommands.push_back(std::make_unique<CommandHelp>());
 	registeredCommands.push_back(std::make_unique<CommandTeleport>());
 	registeredCommands.push_back(std::make_unique<CommandTime>());
+	//registeredCommands.push_back(std::make_unique<CommandSpawn>());
+	//registeredCommands.push_back(std::make_unique<CommandSeed>());
+	//registeredCommands.push_back(std::make_unique<CommandGive>());
+	//registeredCommands.push_back(std::make_unique<CommandList>());
+	//registeredCommands.push_back(std::make_unique<CommandLoaded>());
 	/*
 	registeredCommands.push_back(CommandVersion());
-	registeredCommands.push_back(CommandList());
 	registeredCommands.push_back(CommandPose());
-	registeredCommands.push_back(CommandSpawn());
 	// Needs at least creative mode to run
-	registeredCommands.push_back(CommandGive());
 	registeredCommands.push_back(CommandHealth());
 	// Must be operator
 	registeredCommands.push_back(CommandUptime());
@@ -37,13 +39,11 @@ void CommandManager::Init() {
 	registeredCommands.push_back(CommandSave());
 	registeredCommands.push_back(CommandStop());
 	registeredCommands.push_back(CommandFree());
-	registeredCommands.push_back(CommandLoaded());
 	registeredCommands.push_back(CommandUsage());
 	registeredCommands.push_back(CommandSummon());
 	registeredCommands.push_back(CommandPopulated());
 	registeredCommands.push_back(CommandInterface());
 	registeredCommands.push_back(CommandRegion());
-	registeredCommands.push_back(CommandSeed());
 	registeredCommands.push_back(CommandEntity());
 	registeredCommands.push_back(CommandModified());
 	registeredCommands.push_back(CommandPacket());

@@ -65,15 +65,16 @@ DEFINE_COMMAND(CommandHelp, L"help", L"Lists commands or helps with command", L"
 DEFINE_COMMAND(CommandTeleport, L"tp", L"Teleports player to coordinates or another player",
 	L"<player> <x> <y> <z> / <player> <player>", false, false);
 DEFINE_COMMAND(CommandTime, L"time", L"Gets or sets the current world time", L"<new_time>", false, false);
+//DEFINE_COMMAND(CommandSpawn, L"spawn", L"Teleport to Spawn", L"", false, false);
+//DEFINE_COMMAND(CommandGive, L"give", L"Give yourself a block or item", L"<id>:[meta] [amount]", false, false);
+//DEFINE_COMMAND(CommandSeed, L"seed", L"Get the world seed", L"", false, false);
+//DEFINE_COMMAND(CommandList, L"list", L"List all currently online players", L"", false, false);
+//DEFINE_COMMAND(CommandLoaded, L"loaded", L"Shows the number of loaded chunks", L"", false, false);
 /*
 DEFINE_COMMAND(CommandVersion, "version", "Shows the current Server version", "", false, false);
-DEFINE_COMMAND(CommandList, "list", "List all currently online players", "", false, false);
 DEFINE_COMMAND(CommandPose, "pose", "Set the current players' pose", "<crouch/fire/sit>", false, false);
-DEFINE_COMMAND(CommandSpawn, "spawn", "Teleport to Spawn", "", false, false);
 DEFINE_COMMAND(CommandInterface, "interface", "Open the desired interface", "<id>", false, false);
 // Needs at least creative mode to run
-DEFINE_COMMAND(CommandTeleport, "tp", "Teleports player to coordinates or another player",
-			   "<player> <x> <y> <z> <pitch> <yaw>/<player> <player>", false, true);
 DEFINE_COMMAND(CommandGive, "give", "Give yourself a block or item", "<id> [meta] [amount]", false, true);
 DEFINE_COMMAND(CommandHealth, "health", "Get or Set Player Health", "[health]", false, true);
 // Must be operator
@@ -95,8 +96,78 @@ DEFINE_COMMAND(CommandUsage, "usage", "Shows the current memory usage in megabyt
 DEFINE_COMMAND(CommandSummon, "summon", "Summon a player entity", "<player>", true, false);
 DEFINE_COMMAND(CommandPopulated, "populated", "Check the population status of the current chunk", "", true, false);
 DEFINE_COMMAND(CommandRegion, "region", "Test the region infrastructure", "<action>", true, false);
-DEFINE_COMMAND(CommandSeed, "seed", "Get the world seed", "", true, false);
 DEFINE_COMMAND(CommandEntity, "entity", "Get the latest entity id", "", true, false);
 DEFINE_COMMAND(CommandModified, "modified", "Get the number of modified chunks", "", true, false);
 DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <data>", true, false);
 */
+
+
+
+
+// Helper: send a PlayerPositionAndRotation packet to move a session to new coords.
+static void SendTeleport(PlayerSession& target, Double3 position, float yaw = 0.0f, float pitch = 0.0f) {
+	Packet::PlayerPositionAndRotation pkt;
+	pkt.x = position.x;
+	pkt.y = position.y;
+	pkt.stance = position.y + PLAYER_EYE_HEIGHT;
+	pkt.z = position.z;
+	pkt.yaw = yaw;
+	pkt.pitch = pitch;
+	pkt.onGround = false;
+	pkt.Serialize(target.stream);
+	// Keep server-side position in sync so movement broadcasts are correct.
+	target.position.pos = position;
+	target.lastFpX = static_cast<int32_t>(position.x * 32.0);
+	target.lastFpY = static_cast<int32_t>(position.y * 32.0);
+	target.lastFpZ = static_cast<int32_t>(position.z * 32.0);
+	target.lastYaw = static_cast<int8_t>(yaw / 360.0f * 256.0f);
+	target.lastPitch = static_cast<int8_t>(pitch / 360.0f * 256.0f);
+}
+
+// Helper: find a playing session by username.
+static PlayerSession* FindSession(PlayerSession& caller, const std::wstring& name) {
+	if (!caller.players) return nullptr;
+	for (auto& s : *caller.players) {
+		if (s->username == name && s->connState == ConnectionState::Playing)
+			return s.get();
+	}
+	return nullptr;
+}
+
+inline Int3 ParseInt3(size_t& offset, std::vector<std::wstring>& parameters) {
+	return Int3{
+		std::stoi(parameters[offset++]),
+		std::stoi(parameters[offset++]),
+		std::stoi(parameters[offset++]),
+	};
+}
+
+inline Float2 ParseFloat2(size_t& offset, std::vector<std::wstring>& parameters) {
+	return Float2{
+		std::stof(parameters[offset++]),
+		std::stof(parameters[offset++]),
+	};
+}
+
+inline Float3 ParseFloat3(size_t& offset, std::vector<std::wstring>& parameters) {
+	return Float3{
+		std::stof(parameters[offset++]),
+		std::stof(parameters[offset++]),
+		std::stof(parameters[offset++]),
+	};
+}
+
+inline Double2 ParseDouble2(size_t& offset, std::vector<std::wstring>& parameters) {
+	return Double2{
+		std::stod(parameters[offset++]),
+		std::stod(parameters[offset++]),
+	};
+}
+
+inline Double3 ParseDouble3(size_t& offset, std::vector<std::wstring>& parameters) {
+	return Double3{
+		std::stod(parameters[offset++]),
+		std::stod(parameters[offset++]),
+		std::stod(parameters[offset++]),
+	};
+}
