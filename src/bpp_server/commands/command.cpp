@@ -482,14 +482,6 @@ std::string CommandPopulated::Execute([[maybe_unused]] std::vector<std::string> 
 	return ERROR_REASON_ERROR;
 }
 
-// Teleport to Spawn
-std::string CommandSpawn::Execute([[maybe_unused]] std::vector<std::string> pCommand, std::vector<uint8_t> &pResponse,
-								  Client *client) {
-	DEFINE_PERMSCHECK(client);
-	client->Teleport(pResponse, Int3ToVec3(Betrock::Server::Instance().GetSpawnPoint()));
-	return "";
-}
-
 // Open the desired interface
 std::string CommandInterface::Execute(std::vector<std::string> pCommand,
 									  [[maybe_unused]] std::vector<uint8_t> &pResponse, Client *client) {
@@ -519,14 +511,6 @@ std::string CommandRegion::Execute(std::vector<std::string> pCommand, [[maybe_un
 		return std::to_string(rf->freeSectors.size());
 	}
 	return ERROR_REASON_PARAMETERS;
-}
-
-// Get the world seed
-std::string CommandSeed::Execute([[maybe_unused]] std::vector<std::string> pCommand,
-								 [[maybe_unused]] std::vector<uint8_t> &pResponse, Client *client) {
-	DEFINE_PERMSCHECK(client);
-
-	return std::to_string(Betrock::Server::Instance().GetWorld(0)->seed);
 }
 
 // Get the latest entity id
