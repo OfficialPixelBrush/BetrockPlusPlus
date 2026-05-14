@@ -12,11 +12,14 @@
 #include "strings/labels.h"
 #include <string>
 
-// Lists pCommands or helps with command
+// Give yourself a block or item
+// Usage:
+//   /give <id>[:meta] [amount]
 std::wstring CommandGive::Execute(std::vector<std::wstring>& parameters,
                                   PlayerSession& session,
                                   WorldManager& world)
 {
+	// TODO: Let player specify another player to give to
     if (parameters.size() <= 1)
         return L"Missing item id!";
 
