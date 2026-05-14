@@ -28,6 +28,11 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/logger"
 )
 
+# Command-file wildcard
+file(GLOB COMMAND_SOURCES
+    "src/bpp_server/commands/implementation/command_*.cpp"
+)
+
 add_executable(
     BetrockPlusPlus
     src/main.cpp
@@ -44,6 +49,7 @@ add_executable(
     src/bpp_shared/networking/server_manager.cpp
     src/bpp_server/commands/command.cpp
     src/bpp_server/commands/command_manager.cpp
+    ${COMMAND_SOURCES}
     src/bpp_shared/world/world.cpp
     src/bpp_shared/world/lighter.cpp
     src/bpp_shared/world/storage/region.cpp
