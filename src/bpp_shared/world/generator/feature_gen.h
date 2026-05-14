@@ -119,9 +119,65 @@ struct WorldWrapper {
             manager.setBlock(wpos, type, meta);
             return;
         }
-        chunk->setBlock({ wpos.x & 15, wpos.y, wpos.z & 15 }, type);
-        chunk->setMeta({ wpos.x & 15, wpos.y, wpos.z & 15 }, meta);
-        chunk->relightColumn({ wpos.x & 15, wpos.z & 15 });
+
+        // Remove any tile entities that exist at this spot
+        auto& tes = chunk->tileEntities;
+        tes.erase(std::remove_if(tes.begin(), tes.end(), [&](const std::shared_ptr<TileEntity>& te) {
+            return te && te->position == wpos;
+            }), tes.end());
+
+        // Unlight before changing the block
+        manager.lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Block, manager);
+        manager.lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Sky, manager);
+
+        // Get the local coordinates of this block within the chunk and set it
+        int lx = wpos.x & 15;
+        int lz = wpos.z & 15;
+        Int3 local{ lx, wpos.y, lz };
+        chunk->setBlock(local, type);
+        chunk->setMeta(local, meta);
+
+        int y = wpos.y; int x = wpos.x; int z = wpos.z;
+        int oldHeight = chunk->getHeightValue({ lx, lz });
+
+        if (Blocks::blockProperties[type].lightOpacity != 0) {
+            // Placing opaque block; heightmap may rise
+            if (y >= oldHeight) {
+                chunk->relightColumn({ lx, lz });
+
+                // The column below the new top was zeroed out by relightColumn.
+                // Notify the BFS that all blocks from y down to oldHeight need updating
+                for (int sy = oldHeight; sy <= y; ++sy)
+                    manager.lightManager.unlightAt(x, sy, z, LightType::Sky, manager);
+            }
+        }
+        else if (y == oldHeight - 1) {
+            // Removing top opaque block; heightmap may fall
+            chunk->relightColumn({ lx, lz });
+        }
+
+        int newHeight = chunk->getHeightValue({ lx, lz });
+        if (newHeight < oldHeight) {
+            for (int sy = newHeight; sy < oldHeight; ++sy)
+                manager.lightManager.scheduleLightUpdate({ x, sy, z }, LightType::Sky);
+        }
+
+        // Always re-evaluate the edited block and its 4 horizontal neighbours
+        // across the height transition band.
+        manager.lightManager.scheduleLightUpdate({ x, y, z }, LightType::Sky);
+        const int ndx[] = { -1, 1,  0, 0 };
+        const int ndz[] = { 0, 0, -1, 1 };
+        for (int i = 0; i < 4; ++i) {
+            int nx = x + ndx[i], nz = z + ndz[i];
+            int neighborHeight = getHeightValue(nx, nz);
+            int thisHeight = chunk->getHeightValue({ lx, lz });
+            if (neighborHeight == thisHeight) continue;
+            int minY = CrossPlatform::Math::min(thisHeight, neighborHeight);
+            int maxY = CrossPlatform::Math::max(thisHeight, neighborHeight);
+            manager.lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
+        }
+        // Schedule a block light update for the position itself
+        manager.lightManager.scheduleLightUpdate({ x, y, z }, LightType::Block);
 
         // Callback for the client and server to know about this block update
         if (manager.onBlockUpdate) manager.onBlockUpdate(
