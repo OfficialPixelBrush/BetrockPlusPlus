@@ -54,7 +54,7 @@ static void signalHandler(int sig) {
 #define BUILD_MODE "Debug"
 #endif
 
-//#define SERVER
+#define SERVER
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     #if defined(_WIN32) || defined(_WIN64)
