@@ -1,0 +1,49 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "base",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "23"
+      }
+    },
+
+    {
+      "name": "client-debug",
+      "inherits": "base",
+      "cacheVariables": {
+        "BUILD_SERVER": "OFF",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+
+    {
+      "name": "client-release",
+      "inherits": "base",
+      "cacheVariables": {
+        "BUILD_SERVER": "OFF",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+
+    {
+      "name": "server-debug",
+      "inherits": "base",
+      "cacheVariables": {
+        "BUILD_SERVER": "ON",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+
+    {
+      "name": "server-release",
+      "inherits": "base",
+      "cacheVariables": {
+        "BUILD_SERVER": "ON",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ]
+}

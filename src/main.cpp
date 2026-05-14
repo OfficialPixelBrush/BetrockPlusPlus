@@ -54,7 +54,10 @@ static void signalHandler(int sig) {
 #define BUILD_MODE "Debug"
 #endif
 
-#define SERVER
+// Fall back to being a server if neither are defined
+#if !defined(BUILD_SERVER) && !defined(BUILD_CLIENT)
+    #define BUILD_SERVER
+#endif
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     #if defined(_WIN32) || defined(_WIN64)
@@ -71,11 +74,12 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     std::signal(SIGINT, signalHandler);
     std::signal(SIGTERM, signalHandler);
 
-    #if defined(SERVER)
+    #ifdef BUILD_SERVER
         Server serv;
         server = &serv;
         server->run();
-    #else
+    #endif
+    #ifdef BUILD_CLIENT
         Client client;
         client.run();
     #endif

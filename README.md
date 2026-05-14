@@ -82,9 +82,14 @@ sudo emerge dev-vcs/git dev-util/cmake sys-devel/clang sys-devel/gcc sys-devel/m
 #### Option #1: Command-line
 First you prepare and enter the build directory.
 ```bash
-cmake -S . -B build
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cd build
 ```
+This will make a Release Client build. If you'd like to build a server instead, use
+```bash
+cmake -S . -B build -DBUILD_SERVER=ON -DCMAKE_BUILD_TYPE=Release
+cd build
+``
 Then you build the project.
 ```bash
 cmake --build .
