@@ -12,6 +12,7 @@
 
 // This window size seems really random but its the size beta uses
 Client::Client() : window(854, 480, "Betrock++") {
+    /*
     // Set up shared context before registering any callbacks
     ctx = { &window, &input };
     glfwSetWindowUserPointer(window.getHandle(), &ctx);
@@ -21,6 +22,7 @@ Client::Client() : window(854, 480, "Betrock++") {
 
     window.setCursorLocked(true);
     window.setVsync(true);
+    */
     GlobalLogger().info << "Client initialized\n";
 }
 
@@ -48,7 +50,7 @@ int Client::run() {
         lastTime = now;
         accumulator += delta;
 
-        window.pollEvents();
+        //window.pollEvents();
 
         // Run ticks until caught up, but cap to avoid spiraling on slow frames
         while (accumulator >= TICK_DELTA && ticks_ran < MAX_TICKS_PER_FRAME) {
@@ -64,7 +66,7 @@ int Client::run() {
             accumulator = 0.0f;
 
         render(accumulator / TICK_DELTA);
-        window.swapBuffers();
+        //window.swapBuffers();
     }
     return 0;
 }
