@@ -10,8 +10,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(BetrockPlusPlus VERSION 0.1.0)
 
 find_package(libdeflate CONFIG REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
-find_package(SDL3 CONFIG REQUIRED)
+find_package(OpenAL CONFIG REQUIRED)
+#find_package(SDL3 CONFIG REQUIRED)
 
 include_directories(
     "${PROJECT_SOURCE_DIR}/external/glad/include"
@@ -206,9 +209,11 @@ target_link_libraries(
     BetrockPlusPlus
     PRIVATE
     $<IF:$<TARGET_EXISTS:libdeflate::libdeflate_shared>,libdeflate::libdeflate_shared,libdeflate::libdeflate_static>
+    OpenGL::GL
     glfw
     glm::glm
-    SDL3::SDL3
+    OpenAL::OpenAL
+    #SDL3::SDL3
     #Threads::Threads
 )
 

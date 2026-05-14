@@ -50,7 +50,7 @@ int Client::run() {
         lastTime = now;
         accumulator += delta;
 
-        //window.pollEvents();
+        window.pollEvents();
 
         // Run ticks until caught up, but cap to avoid spiraling on slow frames
         while (accumulator >= TICK_DELTA && ticks_ran < MAX_TICKS_PER_FRAME) {
@@ -66,7 +66,7 @@ int Client::run() {
             accumulator = 0.0f;
 
         render(accumulator / TICK_DELTA);
-        //window.swapBuffers();
+        window.swapBuffers();
     }
     return 0;
 }
