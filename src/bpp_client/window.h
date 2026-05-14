@@ -18,6 +18,7 @@
 
 #include "glfw_context.h"
 #include "logger.h"
+#include "renderer.h"
 
 class Window {
 public:
@@ -44,7 +45,11 @@ public:
         if (!device)
             GlobalLogger().error << "(SDL) Failed to create device!\n";
 
-        SDL_ClaimWindowForGPUDevice(device, window);
+        if (!SDL_ClaimWindowForGPUDevice(device, window))
+            GlobalLogger().error << "(SDL) Failed to claim window for GPU device!\n";
+
+        SDL_ShowWindow(window);
+
         #elif defined(GLFW_OPENGL33)
         if (!glfwInit())
             throw std::runtime_error("Failed to init GLFW");
