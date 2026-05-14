@@ -7,12 +7,9 @@
 #include "../command.h"
 #include "../command_manager.h"
 
-// Lists commands or helps with command
-// Usage:
-//   /help
-//   /help [command]
-std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world) {
-	//DEFINE_PERMSCHECK(pClient)
+// Lists pCommands or helps with command
+std::wstring CommandGive::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world) {
+	/*
 	const auto& registered_commands = CommandManager::GetRegisteredCommands();
 	Packet::ChatMessage pkt;
 	// Get help with specific command
@@ -37,7 +34,7 @@ std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerS
 		// List all commands
 	}
 	else {
-		pkt.message = L"§7-- All commands --";
+		pkt.message = L"§7-- All Commands --";
 		pkt.Serialize(session.stream);
 		pkt.message = L"§7";
 
@@ -55,6 +52,6 @@ std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerS
 			}
 		}
 		return L"";
-	}
+	}*/
 	return ERROR_REASON_SYNTAX;
 }

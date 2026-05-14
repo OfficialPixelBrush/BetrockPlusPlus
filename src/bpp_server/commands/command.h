@@ -20,7 +20,7 @@
 
 #define MAX_CHAT_LINE_SIZE 60
 
-// Small defins for a bit less copy-paste
+// Small define for a bit less copy-paste
 #define DEFINE_COMMAND(name, label, description, syntax, requiresOp, requiresCreative)                                 \
 	class name : public Command {                                                                                      \
 	  public:                                                                                                          \
@@ -67,9 +67,9 @@ DEFINE_COMMAND(CommandTeleport, L"tp", L"Teleports player to coordinates or anot
 DEFINE_COMMAND(CommandTime, L"time", L"Gets or sets the current world time", L"<new_time>", false, false);
 DEFINE_COMMAND(CommandSpawn, L"spawn", L"Teleport to spawn", L"", false, false);
 DEFINE_COMMAND(CommandSeed, L"seed", L"Get the world seed", L"", false, false);
-//DEFINE_COMMAND(CommandGive, L"give", L"Give yourself a block or item", L"<id>:[meta] [amount]", false, false);
-//DEFINE_COMMAND(CommandList, L"list", L"List all currently online players", L"", false, false);
-//DEFINE_COMMAND(CommandLoaded, L"loaded", L"Shows the number of loaded chunks", L"", false, false);
+DEFINE_COMMAND(CommandGive, L"give", L"Give yourself a block or item", L"<id>:[meta] [amount]", false, false);
+DEFINE_COMMAND(CommandList, L"list", L"List all currently online players", L"", false, false);
+DEFINE_COMMAND(CommandLoaded, L"loaded", L"Shows the number of loaded chunks", L"", false, false);
 /*
 DEFINE_COMMAND(CommandVersion, "version", "Shows the current Server version", "", false, false);
 DEFINE_COMMAND(CommandPose, "pose", "Set the current players' pose", "<crouch/fire/sit>", false, false);
