@@ -8,7 +8,8 @@
 
 #include "cross_platform.h"
 #include "logger.h"
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__SWITCH__)
+#include <switch.h>
 #include <iomanip>
 #include <unistd.h>
 #include <netinet/in.h>
