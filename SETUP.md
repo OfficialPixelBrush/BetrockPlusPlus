@@ -31,5 +31,6 @@ cmake --build .
 ```
 Then make it into a `.nro` file.
 ```bash
-elf2nro BetrockPlusPlus.elf BetrockPlusPlus.nro
+nacptool --create "BetrockPlusPlus" "Pixel Brush + Aidan" "0.1.0" app.nacp
+elf2nro BetrockPlusPlus.elf BetrockPlusPlus.nro --nacp=app.nacp
 ```

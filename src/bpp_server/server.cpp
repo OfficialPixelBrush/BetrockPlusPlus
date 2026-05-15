@@ -35,6 +35,7 @@ Server::Server() : config("server.properties") {
 	GlobalLogger().info << "Server initialized on port " << serverPort << "\n";
     
     // Basic save loading
+    /*
     bool newSave = false;
     if (!saveManager.initialize(config.GetAsString("level-name"))) {
 		GlobalLogger().warn << "**** FAILED TO LOAD WORLD DATA! Attempting to create new world... \n";
@@ -62,6 +63,7 @@ Server::Server() : config("server.properties") {
 
     // Save our level file immediately
     saveManager.saveLevelFile(saveManager.getLevelData());
+    */
 }
 
 Server::~Server() {
@@ -253,7 +255,7 @@ void Server::run() {
     startup();
     auto lastTime = std::chrono::steady_clock::now();
 
-    while (true) {
+    while (appletMainLoop()) {
         int ticks_ran = 0;
 
         auto now = std::chrono::steady_clock::now();
@@ -278,6 +280,7 @@ void Server::run() {
             }
             accumulator -= TICK_DELTA;
             ticks_ran++;
+            consoleUpdate(NULL);
         }
 
         if (ticks_ran == MAX_TICKS_PER_FRAME)
