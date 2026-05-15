@@ -148,7 +148,9 @@ void Server::startup() {
         };
 
     // Get spawn ready
-    int total_spawn_chunks = 169;
+    #define SPAWN_CHUNK_WIDTH 3
+    #define SPAWN_CHUNK_FULL_WIDTH (SPAWN_CHUNK_WIDTH+1+SPAWN_CHUNK_WIDTH)
+    int total_spawn_chunks = (SPAWN_CHUNK_FULL_WIDTH*SPAWN_CHUNK_FULL_WIDTH)
     int loaded_chunks = 0;
     bool spawnDone = false;
     auto start = std::chrono::steady_clock::now();
@@ -157,8 +159,8 @@ void Server::startup() {
 
     // Push every single spawn chunk to get ready for generation
     std::unordered_set<Int32_2> wanted;
-    for (int dx = -6; dx < 7; dx++) {
-        for (int dz = -6; dz < 7; dz++) {
+    for (int dx = -SPAWN_CHUNK_WIDTH; dx < (SPAWN_CHUNK_WIDTH+1); dx++) {
+        for (int dz = -SPAWN_CHUNK_WIDTH; dz < (SPAWN_CHUNK_WIDTH+1); dz++) {
             wanted.insert({ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz });
             for (const auto& pos : wanted) {
                 if (!world.chunks.contains(pos)) {
