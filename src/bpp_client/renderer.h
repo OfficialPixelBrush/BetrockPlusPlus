@@ -6,5 +6,7 @@
 */
 
 #pragma once
+#ifdef BUILD_CLIENT
 //#define SDL_GPU
 #define GLFW_OPENGL33
+#endif
