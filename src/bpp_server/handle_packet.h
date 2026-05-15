@@ -7,7 +7,8 @@
 */
 #include "logger/logger.h"
 #include <string>
-#if defined(__linux__)
+#if defined(__linux__) || defined(__SWITCH__)
+#include <switch.h>
 #  define INVALID_SOCKET -1
 #  include <unistd.h>
 #  include <netinet/in.h>

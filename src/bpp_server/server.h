@@ -8,7 +8,8 @@
 #pragma once
 
 #include "config/config.h"
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__SWITCH__)
+#include <switch.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <sys/socket.h>

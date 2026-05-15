@@ -6,13 +6,17 @@
 */
 
 #pragma once
+#include "renderer.h"
+#if defined(SDL_GPU)
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_oldnames.h>
 #include <SDL3/SDL_video.h>
+#elif defined(GLFW_OPENGL33)
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#endif
 #include <stdexcept>
 #include <string>
 
