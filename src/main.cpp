@@ -71,17 +71,34 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
         GlobalLogger().warn << "Running on an unknown/unsupported platform (" << BUILD_MODE << ")\n" << "Unexpected bugs may occur!\n";
     #endif
 
+    #ifdef __SWITCH__
+    consoleInit(NULL);
+    socketInitializeDefault();
+    #endif
+
     std::signal(SIGINT, signalHandler);
     std::signal(SIGTERM, signalHandler);
 
     #ifdef BUILD_SERVER
-        Server serv;
-        server = &serv;
-        server->run();
+        try {
+            Server serv;
+            server = &serv;
+            server->run();
+        }
+        catch (const std::exception& e) {
+            printf("EXCEPTION: %s\n", e.what());
+            while (appletMainLoop()) {
+                consoleUpdate(NULL);
+            }
+        }
     #endif
     #ifdef BUILD_CLIENT
         Client client;
         client.run();
+    #endif
+
+    #ifdef __SWITCH__
+        socketExit();
     #endif
 
     return 0;
