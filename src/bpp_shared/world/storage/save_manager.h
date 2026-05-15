@@ -42,20 +42,25 @@ struct SessionLock {
     #else
     int fd = -1;
     #endif
-
+    
     bool acquire(const std::string& path) {
         #ifdef _WIN32
         handle = CreateFileA(
             path.c_str(),
             GENERIC_READ | GENERIC_WRITE,
-            0,
-            nullptr,
+            0, nullptr,
             CREATE_ALWAYS,
             FILE_ATTRIBUTE_NORMAL,
             nullptr
         );
         if (handle == INVALID_HANDLE_VALUE)
             return false;
+        #elif defined(__SWITCH__)
+        // Switch (libnx) has no flock() — just open/create the file
+        fd = open(path.c_str(), O_RDWR | O_CREAT, 0644);
+        if (fd < 0)
+            return false;
+        // No advisory lock available; single-process environment so this is fine
         #else
         fd = open(path.c_str(), O_RDWR | O_CREAT, 0644);
         if (fd < 0)
@@ -78,7 +83,9 @@ struct SessionLock {
         }
         #else
         if (fd >= 0) {
+            #if !defined(__SWITCH__)
             flock(fd, LOCK_UN);
+            #endif
             close(fd);
             fd = -1;
         }
