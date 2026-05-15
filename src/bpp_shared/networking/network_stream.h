@@ -6,8 +6,12 @@
 */
 #pragma once
 #define INVALID_SOCKET -1
-#if defined(__linux__) || defined(__SWITCH__)
+#if defined(__3DS__)
+#include <3ds.h>
+#elif defined(__SWITCH__)
 #include <switch.h>
+#endif
+#if(__linux__) || defined(__SWITCH__) || defined(__3DS__)
 #include <unistd.h>
 #include <netinet/in.h>
 #include <sys/socket.h>

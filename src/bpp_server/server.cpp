@@ -148,7 +148,7 @@ void Server::startup() {
         };
 
     // Get spawn ready
-    int total_spawn_chunks = 676;
+    int total_spawn_chunks = 169;
     int loaded_chunks = 0;
     bool spawnDone = false;
     auto start = std::chrono::steady_clock::now();
@@ -157,8 +157,8 @@ void Server::startup() {
 
     // Push every single spawn chunk to get ready for generation
     std::unordered_set<Int32_2> wanted;
-    for (int dx = -13; dx < 13; dx++) {
-        for (int dz = -13; dz < 13; dz++) {
+    for (int dx = -6; dx < 7; dx++) {
+        for (int dz = -6; dz < 7; dz++) {
             wanted.insert({ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz });
             for (const auto& pos : wanted) {
                 if (!world.chunks.contains(pos)) {
@@ -255,7 +255,7 @@ void Server::run() {
     startup();
     auto lastTime = std::chrono::steady_clock::now();
 
-    while (appletMainLoop()) {
+    while (aptMainLoop()) {
         int ticks_ran = 0;
 
         auto now = std::chrono::steady_clock::now();
@@ -280,7 +280,9 @@ void Server::run() {
             }
             accumulator -= TICK_DELTA;
             ticks_ran++;
-            consoleUpdate(NULL);
+            gfxFlushBuffers();
+            gfxSwapBuffers();
+            gspWaitForVBlank();
         }
 
         if (ticks_ran == MAX_TICKS_PER_FRAME)
