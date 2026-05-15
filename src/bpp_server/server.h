@@ -8,15 +8,13 @@
 #pragma once
 
 #include "config/config.h"
-#if defined(__SWITCH__)
+#if defined(__3DS__)
+#include <3ds.h>
+#elif defined(__SWITCH__)
 #include <switch.h>
-#include <arpa/inet.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <fcntl.h>
-#elif defined(__linux__) || defined(__APPLE__)
+#endif
+
+#if defined(__linux__) || defined(__APPLE__) || defined(__SWITCH__) || defined(__3DS__)
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -41,7 +39,7 @@
 #include "handle_packet.h"
 #include "chunk_sender.h"
 #include "commands/command_manager.h"
-#include "world/storage/save_manager.h"
+//#include "world/storage/save_manager.h"
 
 class Server {
 public:
@@ -105,19 +103,21 @@ private:
         #if defined(_WIN32) || defined(_WIN64)
         SOCKET rawSocket = accept(serverSocket, nullptr, nullptr);
         if (rawSocket == INVALID_SOCKET) return -1;
-        u_long clientMode = 1;
-        ioctlsocket(rawSocket, FIONBIO, &clientMode);
-        DWORD recvTimeout = 45;
-        setsockopt(rawSocket, SOL_SOCKET, SO_RCVTIMEO,
-            reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
-        int clientSocket = static_cast<int>(rawSocket);
+            u_long clientMode = 1;
+            ioctlsocket(rawSocket, FIONBIO, &clientMode);
+            DWORD recvTimeout = 45;
+            setsockopt(rawSocket, SOL_SOCKET, SO_RCVTIMEO,
+                reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
+            int clientSocket = static_cast<int>(rawSocket);
         #else
-        int clientSocket = accept(serverSocket, nullptr, nullptr);
-        if (clientSocket < 0) return -1;
-        fcntl(clientSocket, F_SETFL, O_NONBLOCK);
-        struct timeval recvTimeout { 0, 45000 };
-        setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,
-            reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
+            int clientSocket = accept(serverSocket, nullptr, nullptr);
+            if (clientSocket < 0) return -1;
+            fcntl(clientSocket, F_SETFL, O_NONBLOCK);
+            struct timeval recvTimeout { 0, 45000 };
+            #ifndef __3DS__
+                setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,
+                        (const char*)&recvTimeout, sizeof(recvTimeout));
+            #endif
         #endif
         return clientSocket;
     }
@@ -145,5 +145,5 @@ private:
     CommandManager command_manager;
     bool stopped = false;
     Config config;
-    SaveManager saveManager;
+    //SaveManager saveManager;
 };

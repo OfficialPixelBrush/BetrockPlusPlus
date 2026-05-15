@@ -250,6 +250,10 @@ bool NetworkStream::hasData() {
         return false;
     }
     return bytesAvailable > 0;
+#elif defined(__3DS__)
+    char tmp;
+    int ret = recv(client_socket, &tmp, 1, MSG_PEEK | MSG_DONTWAIT);
+    return ret > 0;
 #else
     int bytesAvailable = 0;
     if (ioctl(client_socket, FIONREAD, &bytesAvailable) < 0) {

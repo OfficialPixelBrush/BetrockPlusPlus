@@ -44,6 +44,7 @@ void Client::render([[maybe_unused]] float partial_tick) {
 }
 
 int Client::run() {
+    /*
     float lastTime = float(glfwGetTime());
 
     while (!window.shouldClose()) {
@@ -71,5 +72,6 @@ int Client::run() {
         render(accumulator / TICK_DELTA);
         window.swapBuffers();
     }
+    */
     return 0;
 }
