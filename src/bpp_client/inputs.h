@@ -6,11 +6,14 @@
 */
 
 #pragma once
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "renderer.h"
+#if defined(SDL_GPU)
+#elif defined(GLFW_OPENGL33)
+//#include <glad/glad.h>
+//#include <GLFW/glfw3.h>
+#endif
 #include <vector>
 #include <cstring>
-#include "renderer.h"
 
 #include "glfw_context.h"
 

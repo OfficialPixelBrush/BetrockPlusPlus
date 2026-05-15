@@ -10,14 +10,14 @@
 
 struct CrossPlatform {
     struct Math {
-        template<typename T = int>
-        static inline T min(T a, T b) {
-            return a < b ? a : b;
+        template<typename A, typename B>
+        static constexpr auto max(A a, B b) {
+            return (a > b) ? a : b;
         }
 
-        template<typename T = int>
-        static inline T max(T a, T b) {
-            return a > b ? a : b;
+        template<typename A, typename B>
+        static constexpr auto min(A a, B b) {
+            return (a < b) ? a : b;
         }
     };
 };
