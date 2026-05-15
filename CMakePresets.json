@@ -29,6 +29,15 @@
     },
 
     {
+      "name": "client-minsize",
+      "inherits": "base",
+      "cacheVariables": {
+        "BUILD_SERVER": "OFF",
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+
+    {
       "name": "server-debug",
       "inherits": "base",
       "cacheVariables": {
@@ -43,6 +52,15 @@
       "cacheVariables": {
         "BUILD_SERVER": "ON",
         "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    
+    {
+      "name": "server-minsize",
+      "inherits": "base",
+      "cacheVariables": {
+        "BUILD_SERVER": "ON",
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
       }
     }
   ]
