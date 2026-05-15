@@ -45,3 +45,4 @@
 CMakeSettings.json
 /.cache
 /enc_temp_folder
+CMakePresets.json
