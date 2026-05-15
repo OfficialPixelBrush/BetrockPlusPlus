@@ -14,7 +14,7 @@ find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(OpenAL CONFIG REQUIRED)
-#find_package(SDL3 CONFIG REQUIRED)
+find_package(SDL3 CONFIG REQUIRED)
 
 include_directories(
     "${PROJECT_SOURCE_DIR}/external/glad/include"
@@ -42,7 +42,6 @@ add_executable(
     external/glad/src/glad.c
 
     # Shared files
-    
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/enums/items.cpp
     src/bpp_shared/strings/labels.cpp
@@ -56,7 +55,7 @@ add_executable(
     src/bpp_shared/world/storage/region.cpp
     src/bpp_shared/blocks/block_properties.cpp 
 
-    ## Generation
+    # Generation
     src/bpp_shared/world/noise/noise_generator.cpp
     src/bpp_shared/world/noise/noise_perlin.cpp
     src/bpp_shared/world/noise/noise_simplex.cpp
@@ -66,7 +65,7 @@ add_executable(
     src/bpp_shared/world/generator/cave_gen.cpp
     src/bpp_shared/world/generator/feature_gen.cpp
 
-    ## Logger
+    # Logger
     src/bpp_shared/logger/logger.cpp
     src/bpp_shared/logger/logstream.cpp
     src/bpp_shared/logger/style.cpp
@@ -83,7 +82,7 @@ add_executable(
 )
 
 # Build as server
-option(BUILD_SERVER "Build as server" OFF)
+option(BUILD_SERVER "Build as server" ON)
 
 if(BUILD_SERVER)
     target_compile_definitions(BetrockPlusPlus PRIVATE BUILD_SERVER)
