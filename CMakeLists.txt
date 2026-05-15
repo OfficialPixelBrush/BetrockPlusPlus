@@ -45,7 +45,7 @@ add_executable(
     src/main.cpp
 
     # External files
-    external/glad/src/glad.c
+    #external/glad/src/glad.c
 
     # Shared files
     
