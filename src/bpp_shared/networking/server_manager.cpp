@@ -22,7 +22,7 @@ ServerManager::ServerManager(uint16_t port) {
     
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(port);
+    serverAddress.sin_port = __builtin_bswap16(port);
     serverAddress.sin_addr.s_addr = INADDR_ANY;
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (bind(server_socket, reinterpret_cast<struct sockaddr*>(&serverAddress), sizeof(serverAddress)) != 0) {

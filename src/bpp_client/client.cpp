@@ -5,10 +5,13 @@
  *
 */
 
+#if defined(SDL_GPU)
+#include <SDL3/SDL.h>
+#elif defined(GLFW_OPENGL33)
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#endif
 #include "client.h"
-#include <SDL3/SDL.h>
 
 // This window size seems really random but its the size beta uses
 Client::Client() : window(854, 480, "Betrock++") {
