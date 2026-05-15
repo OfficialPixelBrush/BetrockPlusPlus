@@ -145,7 +145,7 @@ void Server::startup() {
         };
 
     // Get spawn ready
-    constexpr int spawn_chunk_distance = 13
+    constexpr int spawn_chunk_distance = 13;
     int total_spawn_chunks =
         (spawn_chunk_distance+spawn_chunk_distance) *
         (spawn_chunk_distance+spawn_chunk_distance);
