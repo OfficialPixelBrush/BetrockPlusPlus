@@ -9,14 +9,14 @@
 #include "chunk.h"
 
 /**
- * @brief Construct a new Beta 1.7.3 Generator
+ * @brief Construct a new Beta 1.7.3 Overworld Generator
  *
  * @param pSeed The seed of the generated world
- * @param pWorld The world that the generator belongs to
+ * @param pWorld The world that the OverworldGenerator belongs to
  */
-Generator::Generator(int64_t p_seed) {
+OverworldGenerator::OverworldGenerator(int64_t p_seed) : Generator(p_seed) {
 	this->seed = p_seed;
-	rand = Java::Random(this->seed);
+	this->rand = Java::Random(this->seed);
 	// Init Terrain Noise
 	lowNoiseGen = NoiseOctavesPerlin(rand, 16);
 	highNoiseGen = NoiseOctavesPerlin(rand, 16);
@@ -34,7 +34,7 @@ Generator::Generator(int64_t p_seed) {
  * @param chunkPos The x,z coordinate of the chunk
  * @return std::shared_ptr<Chunk>
  */
-void Generator::GenerateChunk(Chunk& chunk) {
+void OverworldGenerator::GenerateChunk(Chunk& chunk) {
 	this->rand.setSeed(int64_t(chunk.cpos.x) * 341873128712L + int64_t(chunk.cpos.z) * 132897987541L);
 
 	// Allocate empty chunk
@@ -47,7 +47,7 @@ void Generator::GenerateChunk(Chunk& chunk) {
 	);
 
 	// Store the final temperature and humidity in the chunk so PopulateChunk
-	// (which runs on a different thread_local Generator) can reconstruct the
+	// (which runs on a different thread_local OverworldGenerator) can reconstruct the
 	// biome map via GetBiomeFromLookup without re-running the noise generators.
 	for (size_t i = 0; i < CHUNK_AREA; ++i) {
 		chunk.temperature[i] = float(temperature[i]);
@@ -72,7 +72,7 @@ void Generator::GenerateChunk(Chunk& chunk) {
  * @param chunkPos The x,z coordinate of the chunk
  * @param c The chunk that should gets its blocks replaced
  */
-void Generator::ReplaceBlocksForBiome(Chunk& chunk) {
+void OverworldGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 	const double oneThirtySecond = 1.0 / 32.0;
 	// Init noise maps
 	this->sandNoise.resize(256, 0.0);
@@ -181,7 +181,7 @@ void Generator::ReplaceBlocksForBiome(Chunk& chunk) {
  * @param chunkPos The x,z coordinate of the chunk
  * @param c The chunk that should get its terrain generated
  */
-void Generator::GenerateTerrain(Chunk& chunk) {
+void OverworldGenerator::GenerateTerrain(Chunk& chunk) {
 	const Int3 max{
 		CHUNK_WIDTH / 4 + 1,
 		CHUNK_HEIGHT / 8 + 1,
@@ -270,7 +270,7 @@ void Generator::GenerateTerrain(Chunk& chunk) {
  * @param chunkPos The x,y,z coordinate of the sub-chunk
  * @param max Defines the area of the terrainMap
  */
-void Generator::GenerateTerrainNoise(std::vector<double>& terrainMap, Int3 cpos, Int3 max) {
+void OverworldGenerator::GenerateTerrainNoise(std::vector<double>& terrainMap, Int3 cpos, Int3 max) {
 	terrainMap.resize(size_t(max.x * max.y * max.z), 0.0);
 
 	double horiScale = 684.412;
@@ -397,7 +397,7 @@ void Generator::GenerateTerrainNoise(std::vector<double>& terrainMap, Int3 cpos,
  * @param worldPos The x,z coordinate of the desired block column
  * @return The Biome at that column
  */
-Biome Generator::GetBiomeAt(Int2 worldPos) {
+Biome OverworldGenerator::GetBiomeAt(Int2 worldPos) {
 	// biomeMap is always for the chunk whose origin is (cpos.x*16, cpos.z*16).
 	// Convert world coords to chunk-local [0,15] and index directly.
 	int32_t localX = ((worldPos.x % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH;
@@ -407,7 +407,7 @@ Biome Generator::GetBiomeAt(Int2 worldPos) {
 
 
 // Exact port of BiomeGenBase.getRandomWorldGenForTrees() and per-biome overrides.
-void Generator::GenerateTreeForBiome(WorldWrapper& world, Java::Random& pRand, Int3 pos, Biome biome) {
+void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& world, Java::Random& pRand, Int3 pos, Biome biome) {
 	switch (biome) {
 	case BIOME_TAIGA:
 		// Java: nextInt(3)==0 ? new WorldGenTaiga1() : new WorldGenTaiga2()
@@ -473,7 +473,7 @@ void Generator::GenerateTreeForBiome(WorldWrapper& world, Java::Random& pRand, I
  * RNG seeding, section order, rand call counts, and coordinate offsets all
  * match the Java source exactly.
  */
-bool Generator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
+bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	const int32_t blockX = chunk.cpos.x * CHUNK_WIDTH;
 	const int32_t blockZ = chunk.cpos.z * CHUNK_WIDTH;
 	Biome biome = BiomeGenerator(this->seed).GetBiomeAtPoint(

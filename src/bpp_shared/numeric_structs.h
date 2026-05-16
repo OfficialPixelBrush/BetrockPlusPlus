@@ -24,7 +24,7 @@ struct TriNumber {
         T data[3];
     };
 
-    constexpr TriNumber(T x, T y, T z) : x(x), y(y), z(z) {}
+    constexpr TriNumber(T _x, T _y, T _z) : x(_x), y(_y), z(_z) {}
     constexpr TriNumber() : x(0), y(0), z(0) {}
 
     bool operator==(const TriNumber& other) const {
@@ -143,7 +143,7 @@ struct BiNumber {
         T data[2];
     };
 
-    constexpr BiNumber(T x, T y) : x(x), y(y) {}
+    constexpr BiNumber(T _x, T _y) : x(_x), y(_y) {}
     constexpr BiNumber() : x(0), y(0) {}
     
     bool operator==(const BiNumber& other) const {
@@ -227,7 +227,7 @@ struct SlimInt3 {
         int32_t z;
     };
 
-    constexpr SlimInt3(int32_t x, T y, int32_t z) : x(x), y(y), z(z) {}
+    constexpr SlimInt3(int32_t _x, T _y, int32_t _z) : x(_x), y(_y), z(_z) {}
     constexpr SlimInt3() : x(0), y(0), z(0) {}
 
     bool operator==(const SlimInt3& other) const {
