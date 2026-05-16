@@ -6,7 +6,7 @@
 */
 #include "world.h"
 #include "blocks.h"
-#include "generator/chunk_gen.h"
+#include "generator/overworld/chunk_gen.h"
 #include "debug_generator/debug_generator.h"
 
 // Get colliders for an area
@@ -276,7 +276,7 @@ void WorldManager::populateReady() {
         auto cit = chunks.find(pos);
         if (cit == chunks.end()) break;
         cit->second->state.store(ChunkState::Populating, std::memory_order_release);
-        thread_local Generator tl_gen(this->seed);
+        thread_local OverworldGenerator tl_gen(this->seed);
 		thread_local WorldWrapper wrapper{ .manager = *this, .centerChunkPos = pos };
         wrapper.centerChunkPos = pos;
         wrapper.getChunkRegion();

@@ -43,9 +43,9 @@ void NetworkStream::flushWriteBufferBlocking() {
 
     size_t sent = 0;
     while (sent < writeBuffer.size()) {
-        int result = send(client_socket,
+        ssize_t result = send(client_socket,
             reinterpret_cast<const char*>(writeBuffer.data() + sent),
-            static_cast<int>(writeBuffer.size() - sent), 0);
+            (writeBuffer.size() - sent), 0);
         if (result <= 0) break;
         sent += static_cast<size_t>(result);
     }
@@ -162,30 +162,30 @@ void NetworkStream::ReadEntityMetadata() {
         // What type the data has
         PacketData::EntityMetadata::Type type = PacketData::EntityMetadata::Type(val >> 5   );
         // Where the data goes for the relevant entity
-        uint8_t id = uint8_t(val &  0x1F);
+        [[maybe_unused]] uint8_t id = uint8_t(val &  0x1F);
         switch(type) {
             case PacketData::EntityMetadata::Type::BYTE: {
-                int8_t num = Read<int8_t>();
+                [[maybe_unused]] int8_t num = Read<int8_t>();
                 break;
             }
             case PacketData::EntityMetadata::Type::SHORT: {
-                int16_t num = Read<int16_t>();
+                [[maybe_unused]] int16_t num = Read<int16_t>();
                 break;
             }
             case PacketData::EntityMetadata::Type::INTEGER: {
-                int32_t num = Read<int32_t>();
+                [[maybe_unused]] int32_t num = Read<int32_t>();
                 break;
             }
             case PacketData::EntityMetadata::Type::FLOAT: {
-                float num = Read<float>();
+                [[maybe_unused]] float num = Read<float>();
                 break;
             }
             case PacketData::EntityMetadata::Type::STRING: {
-                std::string str = Read<std::string>();
+                [[maybe_unused]] std::string str = Read<std::string>();
                 break;
             }
             case PacketData::EntityMetadata::Type::ITEM: {
-                int16_t itemId = Read<int16_t>();
+                [[maybe_unused]] int16_t itemId = Read<int16_t>();
                 // TODO: Check if B1.7.3 actually does
                 // this for Entity Metadata too
                 if (itemId != -1) {
@@ -195,7 +195,7 @@ void NetworkStream::ReadEntityMetadata() {
                 break;
             }
             case PacketData::EntityMetadata::Type::COORINDATES: {
-                Int3 coordinate(
+                [[maybe_unused]] Int3 coordinate(
                     Read<int32_t>(),
                     Read<int32_t>(),
                     Read<int32_t>()
@@ -221,9 +221,12 @@ bool NetworkStream::flushWriteBuffer() {
     if (writeBuffer.empty()) return connected;
     size_t sent = 0;
     while (sent < writeBuffer.size()) {
-        int result = send(client_socket,
+        ssize_t result = send(
+            client_socket,
             reinterpret_cast<const char*>(writeBuffer.data() + sent),
-            writeBuffer.size() - sent, 0);
+            writeBuffer.size() - sent,
+            0
+        );
         if (result < 0) {
 #if defined(_WIN32) || defined(_WIN64)
             int err = WSAGetLastError();
@@ -234,11 +237,18 @@ bool NetworkStream::flushWriteBuffer() {
             connected = false;
             break;
         }
-        if (result == 0) { connected = false; break; }
-        sent += static_cast<size_t>(result); // only added when result > 0
+        if (result == 0) {
+            connected = false;
+            break;
+        }
+        sent += static_cast<size_t>(result);
     }
-    if (sent > 0)
-        writeBuffer.erase(writeBuffer.begin(), writeBuffer.begin() + sent);
+    if (sent > 0) {
+        writeBuffer.erase(
+            writeBuffer.begin(),
+            writeBuffer.begin() + static_cast<std::vector<unsigned char>::difference_type>(sent)
+        );
+    }
     return connected;
 }
 
