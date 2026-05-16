@@ -5,6 +5,7 @@
  * Based on code by Mojang Studios (2011)
 */
 
+#include "../generator.h"
 #include "biomes.h"
 #include "biome_gen.h"
 #include "cave_gen.h"
@@ -13,12 +14,11 @@
 #include "world.h"
 
 /**
- * @brief A faithful reimplementation of the Beta 1.7.3 world generator
+ * @brief A faithful reimplementation of the Beta 1.7.3 Overworld Generator
  * 
  */
-class Generator {
+class OverworldGenerator : Generator {
   private:
-	Java::Random rand;
 	// Perlin Noise Generators
 	NoiseOctavesPerlin lowNoiseGen;
 	NoiseOctavesPerlin highNoiseGen;
@@ -50,8 +50,6 @@ class Generator {
 	// Cave Gen
 	CaveGenerator caver;
 
-	int64_t seed = 0;
-
 	void GenerateTerrain(Chunk& chunk);
 	void GenerateTerrainNoise(std::vector<double> &terrainMap, Int3 cpos, Int3 max);
 	void ReplaceBlocksForBiome(Chunk& chunk);
@@ -59,8 +57,8 @@ class Generator {
 	void GenerateTreeForBiome(WorldWrapper& world, Java::Random& rand, Int3 pos, Biome biome);
 
   public:
-	Generator(int64_t seed);
-	~Generator() = default;
-	void GenerateChunk(Chunk& chunk);
-	bool PopulateChunk(Chunk& chunk, WorldWrapper& world);
+	OverworldGenerator(int64_t seed);
+	~OverworldGenerator() = default;
+	void GenerateChunk(Chunk& chunk) override;
+	bool PopulateChunk(Chunk& chunk, WorldWrapper& world) override;
 };

@@ -59,11 +59,13 @@ add_executable(
     src/bpp_shared/world/noise/noise_generator.cpp
     src/bpp_shared/world/noise/noise_perlin.cpp
     src/bpp_shared/world/noise/noise_simplex.cpp
-    src/bpp_shared/world/generator/chunk_gen.cpp
-    src/bpp_shared/world/generator/tree_gen.cpp
-    src/bpp_shared/world/generator/biome_gen.cpp
-    src/bpp_shared/world/generator/cave_gen.cpp
-    src/bpp_shared/world/generator/feature_gen.cpp
+    src/bpp_shared/world/generator/generator.cpp
+    ## Overworld generator
+    src/bpp_shared/world/generator/overworld/chunk_gen.cpp
+    src/bpp_shared/world/generator/overworld/tree_gen.cpp
+    src/bpp_shared/world/generator/overworld/biome_gen.cpp
+    src/bpp_shared/world/generator/overworld/cave_gen.cpp
+    src/bpp_shared/world/generator/overworld/feature_gen.cpp
 
     # Logger
     src/bpp_shared/logger/logger.cpp
