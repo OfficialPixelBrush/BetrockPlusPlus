@@ -15,7 +15,6 @@
  * @param pWorld The world that the OverworldGenerator belongs to
  */
 OverworldGenerator::OverworldGenerator(int64_t p_seed) : Generator(p_seed) {
-	this->seed = p_seed;
 	this->rand = Java::Random(this->seed);
 	// Init Terrain Noise
 	lowNoiseGen = NoiseOctavesPerlin(rand, 16);

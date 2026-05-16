@@ -17,7 +17,7 @@
  * @brief A faithful reimplementation of the Beta 1.7.3 Overworld Generator
  * 
  */
-class OverworldGenerator : Generator {
+class OverworldGenerator : public Generator {
   private:
 	// Perlin Noise Generators
 	NoiseOctavesPerlin lowNoiseGen;
