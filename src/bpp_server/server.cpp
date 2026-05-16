@@ -162,7 +162,7 @@ void Server::startup() {
         };
 
     // Get spawn ready
-    constexpr int spawn_chunk_distance = 12;
+    constexpr int spawn_chunk_distance = 4;
     int total_spawn_chunks =
         (spawn_chunk_distance + spawn_chunk_distance + 1) *
         (spawn_chunk_distance + spawn_chunk_distance + 1);
@@ -361,15 +361,21 @@ void Server::broadcastPlayerMovement(PlayerSession& session) {
 void Server::tick() {
     acceptNewPlayers();
     const int playerCount = int(players.size());
-    std::vector<ClientPosition> positions;
+    std::vector<ClientPosition> overworldPositions;
+    std::vector<ClientPosition> netherPositions;
     for (auto& session : players) {
         if (session->connState == ConnectionState::WaitingForSpawnChunks ||
             session->connState == ConnectionState::Playing) {
-            positions.push_back(session->position);
+            if (session->dimension == -1)
+                netherPositions.push_back(session->position);
+            else
+                overworldPositions.push_back(session->position);
         }
     }
-    world.tick(positions);
-    world.update(positions);
+    world.tick(overworldPositions);
+    world.update(overworldPositions);
+    worldHell.tick(netherPositions);
+    worldHell.update(netherPositions);
 
     // Send all of the block changes that have accumulated since the last tick, then clear the list.
     std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChanges;
