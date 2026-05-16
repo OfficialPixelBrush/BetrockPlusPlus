@@ -43,7 +43,7 @@ void NetworkStream::flushWriteBufferBlocking() {
 
     size_t sent = 0;
     while (sent < writeBuffer.size()) {
-        ssize_t result = send(client_socket,
+        size_t result = send(client_socket,
             reinterpret_cast<const char*>(writeBuffer.data() + sent),
             (writeBuffer.size() - sent), 0);
         if (result <= 0) break;
@@ -221,7 +221,7 @@ bool NetworkStream::flushWriteBuffer() {
     if (writeBuffer.empty()) return connected;
     size_t sent = 0;
     while (sent < writeBuffer.size()) {
-        ssize_t result = send(
+        size_t result = send(
             client_socket,
             reinterpret_cast<const char*>(writeBuffer.data() + sent),
             writeBuffer.size() - sent,

@@ -55,6 +55,20 @@ public:
         return InvMap::INVALID; // Fallback,
     }
 
+    int8_t getNbtSlotID(int slot) {
+		if (slot >= 9 && slot <= 35) return slot;
+        if (slot >= 5 && slot <= 8) return (5 + (8 - slot)) + 95;
+        if (slot >= 36 && slot <= 44) return slot - 36;
+        return -1;
+    }
+
+    int8_t getNetworkSlotId(int slot) {
+        if (slot >= 100 && slot <= 103) return 5 + (8 - (slot - 95));
+        if (slot >= 9 && slot <= 35) return slot;
+        if (slot >= 0 && slot <= 8) return slot + 36;
+        return -1;
+    }
+
     void onInventoryChanged() override { inventoryChanged = true; }
 };
 

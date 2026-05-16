@@ -201,7 +201,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
             // The placeholder chunk in the map will be replaced by this one when we push to genDoneQueue
             auto chunk = std::make_shared<Chunk>();
             chunk->cpos = pos;
-            thread_local NetherGenerator tl_gen(this->seed);
+            thread_local OverworldGenerator tl_gen(this->seed);
             tl_gen.GenerateChunk(*chunk);
             chunk->isModified = true;
             chunk->generateSkylightMap();
@@ -277,7 +277,7 @@ void WorldManager::populateReady() {
         auto cit = chunks.find(pos);
         if (cit == chunks.end()) break;
         cit->second->state.store(ChunkState::Populating, std::memory_order_release);
-        thread_local NetherGenerator tl_gen(this->seed);
+        thread_local OverworldGenerator tl_gen(this->seed);
 		thread_local WorldWrapper wrapper{ .manager = *this, .centerChunkPos = pos };
         wrapper.centerChunkPos = pos;
         wrapper.getChunkRegion();

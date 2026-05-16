@@ -147,18 +147,18 @@ void Server::startup() {
     // Get spawn ready
     constexpr int spawn_chunk_distance = 13;
     int total_spawn_chunks =
-        (spawn_chunk_distance+spawn_chunk_distance) *
-        (spawn_chunk_distance+spawn_chunk_distance);
+        (spawn_chunk_distance+spawn_chunk_distance+1) *
+        (spawn_chunk_distance+spawn_chunk_distance+1);
     int loaded_chunks = 0;
     bool spawnDone = false;
     auto start = std::chrono::steady_clock::now();
     GlobalLogger().info << "Server spawn is " << Int2(int(world.spawnPoint.x), int(world.spawnPoint.z)) << "\n";
-    GlobalLogger().info << "Loading spawn chunks:\n";
+    GlobalLogger().info << "Loading spawn chunks: (" << total_spawn_chunks << ")\n";
 
     // Push every single spawn chunk to get ready for generation
     std::unordered_set<Int32_2> wanted;
-    for (int dx = -spawn_chunk_distance; dx < spawn_chunk_distance; dx++) {
-        for (int dz = -spawn_chunk_distance; dz < spawn_chunk_distance; dz++) {
+    for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
+        for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
             wanted.insert({ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz });
             for (const auto& pos : wanted) {
                 if (!world.chunks.contains(pos)) {
@@ -180,9 +180,8 @@ void Server::startup() {
         // Make sure all lighting is done
         world.lightManager.processLightQueue(world);
 
-        // Beta uses -13 to 13 with only -13 being inclusive.. for some reason.
-        for (int dx = -13; dx < 13; dx++) {
-            for (int dz = -13; dz < 13; dz++) {
+        for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
+            for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
                 Int32_2 p{ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz };
                 auto it = world.chunks.find(p);
                 if (it != world.chunks.end() && it->second->state.load() >= ChunkState::Generated)
@@ -199,51 +198,7 @@ void Server::startup() {
         }
 
         // Have we loaded all the spawn chunks?
-        if (loaded_chunks >= total_spawn_chunks)
-            spawnDone = true;
-    }
-
-    // Fill a line of chests along the Z axis with every obtainable item and block
-    {
-        std::vector<int16_t> validIds;
-        validIds.reserve(200);
-
-        for (int16_t id = 1; id <= 96; id++) {
-            if (id == 36) continue;
-            validIds.push_back(id);
-        }
-        for (int16_t id = 256; id <= 357; id++) {
-            validIds.push_back(id);
-        }
-
-        // Place one chest per 27 IDs along the Z axis
-        int chestX = world.spawnPoint.x;
-        int chestZ = world.spawnPoint.z;
-        size_t idIndex = 0;
-
-        while (idIndex < validIds.size()) {
-            int chestY = world.getHeightValue(chestX, chestZ);
-            Int3 pos{ chestX, chestY, chestZ };
-            world.setBlock(pos, BlockType::BLOCK_CHEST);
-
-            auto chest = std::make_shared<TileEntityChest>(pos);
-            for (int slot = 0; slot < 27 && idIndex < validIds.size(); slot++, idIndex++) {
-                int16_t id = validIds[idIndex];
-                int8_t  count = static_cast<int8_t>(GetMaxStack(id) > 0 ? GetMaxStack(id) : 1);
-                ItemStack stack{ id, count, 0 };
-                chest->inventory.setInventorySlotContents(slot, &stack);
-            }
-
-            if (idIndex % 2) {
-                Int3 neighbourPos = { pos.x - 1, pos.y, pos.z };
-                auto partnerChest = std::make_shared<TileEntityChest>(neighbourPos);
-                world.setBlock(neighbourPos, BlockType::BLOCK_CHEST);
-                world.createTileEntity(partnerChest);
-            }
-
-            world.createTileEntity(chest);
-            chestZ -= 2; // one block gap between chests
-        }
+        spawnDone = loaded_chunks >= total_spawn_chunks;
     }
     GlobalLogger().info << "Loading spawn.. 100%\n";
     
@@ -526,6 +481,16 @@ void Server::tick() {
             if (!s->stream.isConnected()) {
                 GlobalLogger().info << L"Disconnected client " << s->username
                     << L" with entity id " << s->entityId << L"\n";
+
+                if (s->connState == ConnectionState::Playing ||
+                    s->connState == ConnectionState::WaitingForSpawnChunks) {
+                    auto savedNbt = s->serializeToNBT();
+                    saveManager.savePlayerNBT(
+                        std::string(s->username.begin(), s->username.end()),
+                        savedNbt
+                    );
+                }
+
                 indexRemoveSession(*s);
                 chunkSender.remove(*s);
                 for (auto& other : players) {
@@ -604,39 +569,30 @@ void Server::handleLogin(PlayerSession& session) {
     health.health = 20;
     health.Serialize(session.stream);
 
-    // Test inventory
-    auto& inv = session.inventory;
-    inv.slots[36] = ItemStack{ ITEM_PICKAXE_DIAMOND,  1, 0 };
-    inv.slots[37] = ItemStack{ ITEM_SWORD_IRON,       1, 0 };
-    inv.slots[38] = ItemStack{ ITEM_AXE_STONE,        1, 0 };
-    inv.slots[39] = ItemStack{ ITEM_SHOVEL_GOLD,      1, 0 };
-    inv.slots[40] = ItemStack{ ITEM_BOW,              1, 0 };
-    inv.slots[17] = ItemStack{ ITEM_ARROW,           64, 0 };
-    inv.slots[18] = ItemStack{ ITEM_SNOWBALL,        16, 0 };
-    inv.slots[19] = ItemStack{ ITEM_EGG,             16, 0 };
-    inv.slots[20] = ItemStack{ ITEM_COAL,            64, 0 };
-    inv.slots[21] = ItemStack{ BLOCK_DIRT,           64, 0 };  // block stackable
-    inv.slots[10] = ItemStack{ ITEM_IRON,           32, 0 };  // partial stack
-    inv.slots[11] = ItemStack{ ITEM_DYE,             1, 4 };  // item with data/subtype
-    inv.slots[12] = ItemStack{ ITEM_DYE,             1, 14 }; // different subtype, shouldn't merge
-    inv.slots[13] = ItemStack{ ITEM_MUSHROOM_STEW,   1, 0 };  // stack limit 1
-    inv.slots[14] = ItemStack{ ITEM_CAKE,            1, 0 };  // stack limit 1
-    inv.slots[15] = ItemStack{ ITEM_BUCKET_WATER,    1, 0 };  // stack limit 1
-    inv.slots[16] = ItemStack{ BLOCK_TORCH,         64, 0 };
-    // Armor slots
-    inv.slots[5] = ItemStack{ ITEM_HELMET_DIAMOND,    1, 0 };
-    inv.slots[6] = ItemStack{ ITEM_CHESTPLATE_IRON,   1, 0 };
-    inv.slots[7] = ItemStack{ ITEM_LEGGINGS_LEATHER,  1, 0 };
-    inv.slots[8] = ItemStack{ ITEM_BOOTS_GOLD,        1, 0 };
-
     Packet::SetTime time;
     time.time = world.elapsed_ticks;
     time.Serialize(session.stream);
 
-    PacketUtilities::sendInventory(session, 0, inv);
-	auto respawnPoint = world.getSpawnPoint(true);
-    // I love magic numbers (player stance height + delta) 
-    session.position.pos = { float(respawnPoint.x) + 0.5, float(respawnPoint.y) + 1.63 + 0.1, float(respawnPoint.z) + 0.5 };
+    // Get a fresh respawn point
+    auto respawnPoint = world.getSpawnPoint(true);
+
+    // Load player data
+	auto playerNbt = saveManager.getPlayerNBT(std::string(session.username.begin(), session.username.end()));
+	session.loadPlayerNBT(playerNbt);
+
+    // If our session position is the default then overwrite it
+    if (session.position.pos == Vec3{-1, -1000000, -1}) session.position.pos = {float(respawnPoint.x) + 0.5, float(respawnPoint.y), float(respawnPoint.z) + 0.5};
+
+	// Offset so we don't spawn in the ground
+    session.position.pos.y += (1.62 + 0.00001);
+
+    // Immediately save
+    auto savedNbt = session.serializeToNBT();
+    saveManager.savePlayerNBT(std::string(session.username.begin(), session.username.end()), savedNbt);
+
+    // Send our inventory
+    PacketUtilities::sendInventory(session, 0, session.inventory);
+
     session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
@@ -645,7 +601,7 @@ void Server::disconnectPlayer(PlayerSession& session, const std::wstring& reason
     Packet::Disconnect kick;
     kick.reason = reason;
     kick.Serialize(session.stream);
-    session.stream.setConnected(false);
+    session.stream.setConnected(false); // This should force an NBT save
     GlobalLogger().info << L"Player " << session.username << L" disconnected: " << reason << L"\n";
 }
 
@@ -685,16 +641,16 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
     pos.y = session.position.pos.y;
     pos.stance = session.position.pos.y + PLAYER_EYE_HEIGHT;
     pos.z = session.position.pos.z;
-    pos.yaw = 0.0f;
-    pos.pitch = 0.0f;
+    pos.yaw = session.rotation.x;
+    pos.pitch = session.rotation.z;
     pos.onGround = false;
     pos.Serialize(session.stream);
 
-    session.lastFpX = static_cast<int32_t>(session.position.pos.x * 32.0);
-    session.lastFpY = static_cast<int32_t>(session.position.pos.y * 32.0);
-    session.lastFpZ = static_cast<int32_t>(session.position.pos.z * 32.0);
-    session.lastYaw = 0;
-    session.lastPitch = 0;
+    session.lastFpX =   int32_t(session.position.pos.x * 32.0);
+    session.lastFpY =   int32_t(session.position.pos.y * 32.0);
+    session.lastFpZ =   int32_t(session.position.pos.z * 32.0);
+    session.lastYaw =   int8_t(session.rotation.x / 360.0f * 256.0f);
+    session.lastPitch = int8_t(session.rotation.y / 360.0f * 256.0f);
 
     // Set view distance to server default
     session.position.viewDistanceOverride = 0;
