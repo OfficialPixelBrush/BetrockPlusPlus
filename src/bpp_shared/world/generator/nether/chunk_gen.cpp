@@ -98,7 +98,7 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 				// This is intentional, to match b1.7.3 behavior!
 				Int3 bpos{ z,y,x };
 				// Place Bedrock at bottom and top with some randomness
-				if (y >= (CHUNK_HEIGHT-1) + this->rand.nextInt(5)) {
+				if (y >= (CHUNK_HEIGHT-1) - this->rand.nextInt(5)) {
 					chunk.setBlock(bpos, BLOCK_BEDROCK);
 					continue;
 				} else if (y <= 0 + this->rand.nextInt(5)) {
