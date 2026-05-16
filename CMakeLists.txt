@@ -66,6 +66,8 @@ add_executable(
     src/bpp_shared/world/generator/overworld/biome_gen.cpp
     src/bpp_shared/world/generator/overworld/cave_gen.cpp
     src/bpp_shared/world/generator/overworld/feature_gen.cpp
+    ## Nether generator
+    src/bpp_shared/world/generator/nether/chunk_gen.cpp
 
     # Logger
     src/bpp_shared/logger/logger.cpp

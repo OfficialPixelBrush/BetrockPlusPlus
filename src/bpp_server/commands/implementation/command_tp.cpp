@@ -38,7 +38,7 @@ std::wstring CommandTeleport::Execute(std::vector<std::wstring>& parameters, Pla
 	// /tp <player> <x> <y> <z>
 	if (parameters.size() - offset >= 3) {
 		try {
-			Double3 pos = ParseDouble3(offset, parameters);
+			Vec3 pos = ParseDouble3(offset, parameters);
 			SendTeleport(*source, pos);
 
 			Packet::ChatMessage reply;
