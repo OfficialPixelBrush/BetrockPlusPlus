@@ -200,7 +200,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
             // The placeholder chunk in the map will be replaced by this one when we push to genDoneQueue
             auto chunk = std::make_shared<Chunk>();
             chunk->cpos = pos;
-            thread_local Generator tl_gen(this->seed);
+            thread_local OverworldGenerator tl_gen(this->seed);
             tl_gen.GenerateChunk(*chunk);
             chunk->isModified = true;
             chunk->generateSkylightMap();
