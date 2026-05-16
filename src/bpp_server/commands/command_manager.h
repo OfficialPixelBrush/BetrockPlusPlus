@@ -5,6 +5,7 @@
 */
 
 #pragma once
+#include <functional>
 #include "../player_session.h"
 #include "command.h"
 
@@ -15,7 +16,7 @@
 class CommandManager {
   public:
 	static void Init();
-	static void Parse(std::wstring &cmd_string, PlayerSession& session, WorldManager& world) noexcept;
+	static void Parse(std::wstring &cmd_string, PlayerSession& session, WorldManager& world, std::function<void(PlayerSession&)> transferDimension) noexcept;
 	static const std::vector<std::unique_ptr<Command>> &GetRegisteredCommands() noexcept;
 
   private:

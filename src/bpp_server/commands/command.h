@@ -5,6 +5,7 @@
 */
 
 #pragma once
+#include <functional>
 #include <sstream>
 
 #include "../player_session.h"
@@ -25,7 +26,7 @@
 	class name : public Command {                                                                                      \
 	  public:                                                                                                          \
 		name() : Command(label, description, syntax, requiresOp, requiresCreative) {}                                  \
-		std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world) override;                                                                  \
+		std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world, std::function<void(PlayerSession&)> transferDimension) override;                                                                  \
 	};
 
 /*
@@ -55,7 +56,7 @@ public:
 
 	std::string CheckPermissions(PlayerSession& session);
 	Command(std::wstring label, std::wstring description, std::wstring syntax, bool requiresOp = true, bool requiresCreative = false);
-	virtual std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world) = 0;
+	virtual std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world, std::function<void(PlayerSession&)> transferDimension) = 0;
 	virtual ~Command() = default;
 };
 
@@ -70,6 +71,7 @@ DEFINE_COMMAND(CommandSeed, L"seed", L"Get the world seed", L"", false, false);
 DEFINE_COMMAND(CommandGive, L"give", L"Give yourself a block or item", L"<id>:[meta] [amount]", false, false);
 DEFINE_COMMAND(CommandList, L"list", L"List all currently online players", L"", false, false);
 DEFINE_COMMAND(CommandLoaded, L"loaded", L"Shows the number of loaded chunks", L"", false, false);
+DEFINE_COMMAND(CommandDimension, L"dim", L"Swap to the other dimension", L"", false, false);
 /*
 DEFINE_COMMAND(CommandVersion, "version", "Shows the current Server version", "", false, false);
 DEFINE_COMMAND(CommandPose, "pose", "Set the current players' pose", "<crouch/fire/sit>", false, false);

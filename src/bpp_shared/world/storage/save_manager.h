@@ -351,7 +351,7 @@ struct SaveManager {
 		return root;
     }
 
-	bool savePlayerNBT(const std::string& playerName, Tag& playerData) const {
+    bool savePlayerNBT(const std::string& playerName, Tag& playerData) const {
         std::vector<uint8_t> raw;
         NBTwriter writer(raw, playerData);
 
@@ -364,12 +364,19 @@ struct SaveManager {
         if (actualSize == 0) return false;
         compressed.resize(actualSize);
 
-        std::ofstream file(SaveDirectory + "/players/" + playerName + ".dat", std::ios::binary);
+        std::string finalPath = SaveDirectory + "/players/" + playerName + ".dat";
+        std::string tmpPath = finalPath + ".tmp";
+
+        std::ofstream file(tmpPath, std::ios::binary);
         if (!file.is_open()) return false;
         file.write(reinterpret_cast<const char*>(compressed.data()), compressed.size());
+        file.flush();
         if (!file.good()) return false;
+        file.close();
+
+        std::filesystem::rename(tmpPath, finalPath);
         return true;
-	}
+    }
 
     void release() {
         sessionLock.release();

@@ -81,6 +81,13 @@ struct PlayerSession {
     TransactionId pendingTransactionId = 0;
     WindowId      pendingWindowId = 0;
 
+    int8_t dimension = 0; // 0 = overworld, -1 = nether
+
+    // Portal transfer state; timer increments each tick while standing in a portal block,
+    // transfer fires when it reaches 1.0. Cooldown prevents immediately re-entering.
+    float portalTimer    = 0.0f;
+    int   portalCooldown = 0;
+
     explicit PlayerSession(int socket) : stream(socket), inventoryInteraction(&inventory) {}
 
 	// Load our player data from file
@@ -95,9 +102,14 @@ struct PlayerSession {
 		rotation.x = it2[0].getFloat();
 		rotation.y = it2[1].getFloat();
 
+        dimension = static_cast<int8_t>(nbt.get("Dimension").getInt());
+
         auto& it3 = nbt.get("Inventory").getList();
         for (auto& item : it3) {
-            inventory.slots[inventory.getNetworkSlotId(item.get("Slot").getByte())] = ItemStack{
+            int8_t nbtSlot = item.get("Slot").getByte();
+            int networkSlot = inventory.getNetworkSlotId(nbtSlot);
+            if (networkSlot < 0 || networkSlot >= int(inventory.slots.size())) continue;
+            inventory.slots[size_t(networkSlot)] = ItemStack{
                 item.get("id").getShort(),
                 item.get("Count").getByte(),
                 item.get("Damage").getShort()
@@ -113,7 +125,7 @@ struct PlayerSession {
         Tag Health;       Health.type = TAG_SHORT;       Health.name = "Health";             Health.shortValue = 20;
         Tag Air;          Air.type = TAG_SHORT;          Air.name = "Air";                   Air.shortValue = 300;
         Tag OnGround;     OnGround.type = TAG_BYTE;      OnGround.name = "OnGround";         OnGround.byteValue = 0;
-        Tag Dimension;    Dimension.type = TAG_INT;      Dimension.name = "Dimension";       Dimension.intValue = 0;
+        Tag Dimension;    Dimension.type = TAG_INT;      Dimension.name = "Dimension";       Dimension.intValue = dimension;
         Tag Rotation;     Rotation.type = TAG_LIST;      Rotation.name = "Rotation";         Rotation.listType = TAG_FLOAT;
         Tag FallDistance; FallDistance.type = TAG_FLOAT; FallDistance.name = "FallDistance"; FallDistance.floatValue = 0.0f;
         Tag Sleeping;     Sleeping.type = TAG_BYTE;      Sleeping.name = "Sleeping";         Sleeping.byteValue = 0;
@@ -126,7 +138,7 @@ struct PlayerSession {
 
         // Save position and rotation
         Tag posX; posX.type = TAG_DOUBLE; posX.doubleValue = position.pos.x;
-        Tag posY; posY.type = TAG_DOUBLE; posY.doubleValue = position.pos.y; // offset here gets added back on spawn
+        Tag posY; posY.type = TAG_DOUBLE; posY.doubleValue = position.pos.y;
         Tag posZ; posZ.type = TAG_DOUBLE; posZ.doubleValue = position.pos.z;
         Pos.list.push_back(posX);
         Pos.list.push_back(posY);
@@ -142,10 +154,15 @@ struct PlayerSession {
         for (auto& item : inventory.slots) {
             if (item.has_value()) {
 				Tag itemTag; itemTag.type = TAG_COMPOUND; itemTag.name = "";
-				itemTag.compound["Slot"] = Tag{ .type = TAG_BYTE, .byteValue = inventory.getNbtSlotID(slotId)};
-				itemTag.compound["id"] = Tag{ .type = TAG_SHORT, .shortValue = item->id };
-				itemTag.compound["Count"] = Tag{ .type = TAG_BYTE, .byteValue = item->count };
-				itemTag.compound["Damage"] = Tag{ .type = TAG_SHORT, .shortValue = item->data };
+                Tag slotTag;   slotTag.type = TAG_BYTE;  slotTag.name = "Slot";   slotTag.byteValue = inventory.getNbtSlotID(slotId);
+                Tag idTag;     idTag.type = TAG_SHORT; idTag.name = "id";     idTag.shortValue = item->id;
+                Tag countTag;  countTag.type = TAG_BYTE;  countTag.name = "Count";  countTag.byteValue = item->count;
+                Tag damageTag; damageTag.type = TAG_SHORT; damageTag.name = "Damage"; damageTag.shortValue = item->data;
+
+                itemTag.compound["Slot"] = slotTag;
+                itemTag.compound["id"] = idTag;
+                itemTag.compound["Count"] = countTag;
+                itemTag.compound["Damage"] = damageTag;
 				Inventory.list.push_back(itemTag);
             }
             slotId++;
