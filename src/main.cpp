@@ -6,6 +6,7 @@
  *
 */
 #include <iostream>
+#include <atomic>
 #include <thread>
 #include <csignal>
 #include <numeric_structs.h>
@@ -19,13 +20,7 @@
 #endif
 
 Server* server;
-
-static void shutdown() {
-    if (server)
-        server->stop();
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    //free(server)
-}
+std::atomic<bool> shutdownRequested{ false };
 
 #if defined(_WIN32) || defined(_WIN64)
 BOOL WINAPI consoleCtrlHandler(DWORD dwCtrlType) {
@@ -35,7 +30,10 @@ BOOL WINAPI consoleCtrlHandler(DWORD dwCtrlType) {
     case CTRL_CLOSE_EVENT:
     case CTRL_SHUTDOWN_EVENT:
     case CTRL_LOGOFF_EVENT:
-        shutdown();
+        shutdownRequested.store(true);
+        // Block so the OS doesn't kill us before the main thread finishes saving
+        while (shutdownRequested.load())
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
         return TRUE;
     default:
         return FALSE;
@@ -43,9 +41,8 @@ BOOL WINAPI consoleCtrlHandler(DWORD dwCtrlType) {
 }
 #endif
 
-static void signalHandler(int sig) {
-    shutdown();
-    exit(sig);
+static void signalHandler(int /*sig*/) {
+    shutdownRequested.store(true);
 }
 
 #ifdef NDEBUG
@@ -56,33 +53,33 @@ static void signalHandler(int sig) {
 
 // Fall back to being a server if neither are defined
 #if !defined(BUILD_SERVER) && !defined(BUILD_CLIENT)
-    #define BUILD_SERVER
+#define BUILD_SERVER
 #endif
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
-    #if defined(_WIN32) || defined(_WIN64)
-        GlobalLogger().info << "Running on Windows (" << BUILD_MODE << ")\n";
-        SetConsoleCtrlHandler(consoleCtrlHandler, TRUE);
-    #elif defined(__linux__)
-        GlobalLogger().info << "Running on Linux (" << BUILD_MODE << ")\n";
-    #elif defined(__APPLE__)
-        GlobalLogger().info << "Running on macOS (" << BUILD_MODE << ")\n";
-    #else
-        GlobalLogger().warn << "Running on an unknown/unsupported platform (" << BUILD_MODE << ")\n" << "Unexpected bugs may occur!\n";
-    #endif
+#if defined(_WIN32) || defined(_WIN64)
+    GlobalLogger().info << "Running on Windows (" << BUILD_MODE << ")\n";
+    SetConsoleCtrlHandler(consoleCtrlHandler, TRUE);
+#elif defined(__linux__)
+    GlobalLogger().info << "Running on Linux (" << BUILD_MODE << ")\n";
+#elif defined(__APPLE__)
+    GlobalLogger().info << "Running on macOS (" << BUILD_MODE << ")\n";
+#else
+    GlobalLogger().warn << "Running on an unknown/unsupported platform (" << BUILD_MODE << ")\n" << "Unexpected bugs may occur!\n";
+#endif
 
     std::signal(SIGINT, signalHandler);
     std::signal(SIGTERM, signalHandler);
 
-    #ifdef BUILD_SERVER
-        Server serv;
-        server = &serv;
-        server->run();
-    #endif
-    #ifdef BUILD_CLIENT
-        Client client;
-        client.run();
-    #endif
+#ifdef BUILD_SERVER
+    Server serv;
+    server = &serv;
+    server->run();
+#endif
+#ifdef BUILD_CLIENT
+    Client client;
+    client.run();
+#endif
 
     return 0;
 }
