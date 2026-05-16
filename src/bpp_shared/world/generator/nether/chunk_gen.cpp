@@ -287,17 +287,16 @@ void NetherGenerator::GenerateTerrainNoise(std::vector<double>& terrainMap, Int3
 	// Used to iterate 2D Noise maps (depth, continentalness)
 	size_t xzIndex = 0;
 	// Reserve stuff
-	std::vector<double> var14;
-	var14.resize(size_t(max.y));
+	std::vector<double> netherDensityOffset(size_t(max.y));
 
 	for (int iY = 0; iY < max.y; ++iY) {
-		var14[size_t(iY)] = std::cos(double(iY) * JavaMath::PI * 6.0 / double(max.y)) * 2.0;
+		netherDensityOffset[size_t(iY)] = std::cos(double(iY) * JavaMath::PI * 6.0 / double(max.y)) * 2.0;
 		double diY = double(iY);
 		if (diY > max.y / 2)
 			diY = double(max.y - 1 - iY);
 		if (diY < 4.0) {
 			diY = 4.0 - diY;
-			var14[size_t(iY)] -= diY * diY * diY * 10.0;
+			netherDensityOffset[size_t(iY)] -= diY * diY * diY * 10.0;
 		}
 	}
 
@@ -331,7 +330,7 @@ void NetherGenerator::GenerateTerrainNoise(std::vector<double>& terrainMap, Int3
 			for (int32_t iY = 0; iY < max.y; ++iY) {
 				// Sample 3D noises
 				double terrainDensity = 0.0;
-				double densityOffset = var14[iY];
+				double densityOffset = netherDensityOffset[iY];
 				// Sample low noise
 				double lowNoise = this->lowNoiseField[xyzIndex] / 512.0;
 				// Sample high noise
