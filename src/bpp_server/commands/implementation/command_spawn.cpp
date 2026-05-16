@@ -14,7 +14,7 @@ std::wstring CommandSpawn::Execute(std::vector<std::wstring>& parameters, Player
     Int32_3 ipos = world.getSpawnPoint(false);
     SendTeleport(
         session, 
-        Double3{
+        Vec3{
             double(ipos.x) + 0.5,
             double(ipos.y) + PLAYER_EYE_HEIGHT + 0.5,
             double(ipos.z) + 0.5

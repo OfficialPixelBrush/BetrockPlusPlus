@@ -102,7 +102,7 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 */
 
 // Helper: send a PlayerPositionAndRotation packet to move a session to new coords.
-static void SendTeleport(PlayerSession& target, Double3 position, float yaw = 0.0f, float pitch = 0.0f) {
+static void SendTeleport(PlayerSession& target, Vec3 position, float yaw = 0.0f, float pitch = 0.0f) {
 	Packet::PlayerPositionAndRotation pkt;
 	pkt.x = position.x;
 	pkt.y = position.y;
@@ -161,8 +161,8 @@ inline Double2 ParseDouble2(size_t& offset, std::vector<std::wstring>& parameter
 	};
 }
 
-inline Double3 ParseDouble3(size_t& offset, std::vector<std::wstring>& parameters) {
-	return Double3{
+inline Vec3 ParseDouble3(size_t& offset, std::vector<std::wstring>& parameters) {
+	return Vec3{
 		std::stod(parameters[offset++]),
 		std::stod(parameters[offset++]),
 		std::stod(parameters[offset++]),

@@ -327,12 +327,19 @@ struct SlimInt3 {
 
 // Vector/Double (64-Bit float)
 typedef TriNumber<double> Vec3;
+typedef Vec3 Double3;
 typedef BiNumber<double> Vec2;
+typedef Vec2 Double2;
 
 #define VEC3_ZERO       Vec3{0.0, 0.0, 0.0}
 #define VEC3_ONE        Vec3{1.0, 1.0, 1.0}
 #define VEC2_ZERO       Vec2{0.0, 0.0}
 #define VEC2_ONE        Vec2{1.0, 1.0}
+
+#define DOUBLE3_ZERO    Double3{0.0, 0.0, 0.0}
+#define DOUBLE3_ONE     Double3{1.0, 1.0, 1.0}
+#define DOUBLE2_ZERO    Double2{0.0, 0.0}
+#define DOUBLE2_ONE     Double2{1.0, 1.0}
 
 // Float (32-Bit float)
 typedef TriNumber<float> Float3;
@@ -342,15 +349,6 @@ typedef BiNumber<float> Float2;
 #define FLOAT3_ONE      Float3{1.0f, 1.0f, 1.0f}
 #define FLOAT2_ZERO     Float2{0.0f, 0.0f}
 #define FLOAT2_ONE      Float2{1.0f, 1.0f}
-
-// Double (64-Bit float)
-typedef TriNumber<double> Double3;
-typedef BiNumber<double> Double2;
-
-#define DOUBLE3_ZERO    Double3{0.0, 0.0, 0.0}
-#define DOUBLE3_ONE     Double3{1.0, 1.0, 1.0}
-#define DOUBLE2_ZERO    Double2{0.0, 0.0}
-#define DOUBLE2_ONE     Double2{1.0, 1.0}
 
 // 8-Bit Integer
 typedef TriNumber<int8_t> Int8_3;
