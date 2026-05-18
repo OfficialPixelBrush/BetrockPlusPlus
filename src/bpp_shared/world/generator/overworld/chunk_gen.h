@@ -20,35 +20,35 @@
 class OverworldGenerator : public Generator {
   private:
 	// Perlin Noise Generators
-	NoiseOctavesPerlin lowNoiseGen;
-	NoiseOctavesPerlin highNoiseGen;
-	NoiseOctavesPerlin selectorNoiseGen;
-	NoiseOctavesPerlin sandGravelNoiseGen;
-	NoiseOctavesPerlin stoneNoiseGen;
-	NoiseOctavesPerlin continentalnessNoiseGen;
-	NoiseOctavesPerlin depthNoiseGen;
-	NoiseOctavesPerlin treeDensityNoiseGen;
+	NoiseOctavesPerlin m_lowNoiseGen;
+	NoiseOctavesPerlin m_highNoiseGen;
+	NoiseOctavesPerlin m_selectorNoiseGen;
+	NoiseOctavesPerlin m_sandGravelNoiseGen;
+	NoiseOctavesPerlin m_stoneNoiseGen;
+	NoiseOctavesPerlin m_continentalnessNoiseGen;
+	NoiseOctavesPerlin m_depthNoiseGen;
+	NoiseOctavesPerlin m_treeDensityNoiseGen;
 
 	// Stored noise Fields
-	std::vector<double> terrainNoiseField;
-	std::vector<double> lowNoiseField;
-	std::vector<double> highNoiseField;
-	std::vector<double> selectorNoiseField;
-	std::vector<double> continentalnessNoiseField;
-	std::vector<double> depthNoiseField;
+	std::vector<double> m_terrainNoiseField;
+	std::vector<double> m_lowNoiseField;
+	std::vector<double> m_highNoiseField;
+	std::vector<double> m_selectorNoiseField;
+	std::vector<double> m_continentalnessNoiseField;
+	std::vector<double> m_depthNoiseField;
 
-	std::vector<double> sandNoise;
-	std::vector<double> gravelNoise;
-	std::vector<double> stoneNoise;
+	std::vector<double> m_sandNoise;
+	std::vector<double> m_gravelNoise;
+	std::vector<double> m_stoneNoise;
 
 	// Biome Vectors
-	Biome biomeMap[CHUNK_AREA];
-	std::vector<double> temperature;
-	std::vector<double> humidity;
-	std::vector<double> weirdness;
+	Biome m_biomeMap[CHUNK_AREA];
+	std::vector<double> m_temperature;
+	std::vector<double> m_humidity;
+	std::vector<double> m_weirdness;
 
 	// Cave Gen
-	CaveGenerator caver;
+	CaveGenerator m_caver;
 
 	void GenerateTerrain(Chunk& chunk);
 	void GenerateTerrainNoise(std::vector<double> &terrainMap, Int3 cpos, Int3 max);

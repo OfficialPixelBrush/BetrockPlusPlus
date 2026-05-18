@@ -18,8 +18,8 @@
  */
 class CaveGenerator {
 private:
-	const int32_t carveExtentLimit = 8;
-	Java::Random rand = Java::Random();
+	static constexpr int32_t m_carveExtentLimit = 8;
+	Java::Random m_rand = Java::Random();
 
 public:
 	CaveGenerator();

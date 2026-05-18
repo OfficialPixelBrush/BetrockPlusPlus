@@ -16,12 +16,12 @@
 
 // 3x3 region of chunk pointers, centered on the chunk being populated
 struct ChunkPtrRegion {
-    std::shared_ptr<Chunk> chunks[3][3];
+    std::shared_ptr<Chunk> m_chunks[3][3];
 
     std::shared_ptr<Chunk> getChunk(Int2 pos) const {
         if (pos.x < -1 || pos.x > 1 || pos.z < -1 || pos.z > 1)
             return nullptr;
-        return chunks[pos.x + 1][pos.z + 1];
+        return m_chunks[pos.x + 1][pos.z + 1];
     }
 };
 
@@ -29,34 +29,34 @@ struct ChunkPtrRegion {
 // Holds a 3x3 region of chunk pointers centered on the chunk being populated.
 // Chunks are marked inUse on acquire and released on free.
 struct WorldWrapper {
-    WorldManager& manager;
-    ChunkPtrRegion chunkRegion;
-    Int2 centerChunkPos;
+    WorldManager& m_manager;
+    ChunkPtrRegion m_chunkRegion;
+    Int2 m_centerChunkPos;
 
     // Grab the 3x3 region. Any chunk that is already inUse is left as nullptr
-    // (writes to it will fall through to the deferred path via the manager).
+    // (writes to it will fall through to the deferred path via the m_manager).
     void getChunkRegion() {
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
-                int ax = centerChunkPos.x + dx;
-                int az = centerChunkPos.z + dz;
-                auto c = manager.getChunk({ ax, az });
+                int ax = m_centerChunkPos.x + dx;
+                int az = m_centerChunkPos.z + dz;
+                auto c = m_manager.getChunk({ ax, az });
                 if (!c || c->inUse.load()) {
-                    chunkRegion.chunks[dx + 1][dz + 1] = nullptr;
+                    m_chunkRegion.m_chunks[dx + 1][dz + 1] = nullptr;
                 }
                 else {
-                    chunkRegion.chunks[dx + 1][dz + 1] = c;
+                    m_chunkRegion.m_chunks[dx + 1][dz + 1] = c;
                 }
             }
         }
         // Mark all successfully acquired chunks as inUse
-        for (auto& row : chunkRegion.chunks)
+        for (auto& row : m_chunkRegion.m_chunks)
             for (auto& c : row)
                 if (c) c->inUse.store(true);
     }
 
     void freeChunkRegion() {
-        for (auto& row : chunkRegion.chunks)
+        for (auto& row : m_chunkRegion.m_chunks)
             for (auto& c : row)
                 if (c) c->inUse.store(false);
     }
@@ -64,13 +64,13 @@ struct WorldWrapper {
     // Convert a world-space position to a region-local chunk offset (-1..1, -1..1)
     Int2 getRegionChunkPos(Int3 wPos) const {
         return {
-            (wPos.x >> 4) - centerChunkPos.x,
-            (wPos.z >> 4) - centerChunkPos.z
+            (wPos.x >> 4) - m_centerChunkPos.x,
+            (wPos.z >> 4) - m_centerChunkPos.z
         };
     }
 
     int findTopSolidBlock(int wx, int wz) {
-        auto chunk = chunkRegion.getChunk(getRegionChunkPos({ wx, 0, wz }));
+        auto chunk = m_chunkRegion.getChunk(getRegionChunkPos({ wx, 0, wz }));
         if (!chunk || chunk->state.load() < ChunkState::Generated) return -1;
         int lx = wx & 15, lz = wz & 15;
         for (int y = 127; y > 0; --y) {
@@ -83,29 +83,29 @@ struct WorldWrapper {
     }
 
     int getHeightValue(int wx, int wz) {
-        auto chunk = chunkRegion.getChunk(getRegionChunkPos({ wx, 0, wz }));
+        auto chunk = m_chunkRegion.getChunk(getRegionChunkPos({ wx, 0, wz }));
         if (!chunk || chunk->state.load() < ChunkState::Generated) return 0;
         return chunk->getHeightValue({ wx & 15, wz & 15 });
     }
 
     double getTemperatureAt(int wx, int wz) {
-        auto chunk = chunkRegion.getChunk(getRegionChunkPos({ wx, 0, wz }));
+        auto chunk = m_chunkRegion.getChunk(getRegionChunkPos({ wx, 0, wz }));
         if (!chunk || chunk->state.load() < ChunkState::Generated) return 0.5;
         return double(chunk->getTemperature({ wx & 15, wz & 15 }));
     }
 
     double getHumidityAt(int wx, int wz) {
-        auto chunk = chunkRegion.getChunk(getRegionChunkPos({ wx, 0, wz }));
+        auto chunk = m_chunkRegion.getChunk(getRegionChunkPos({ wx, 0, wz }));
         if (!chunk || chunk->state.load() < ChunkState::Generated) return 0.5;
         return double(chunk->getHumidity({ wx & 15, wz & 15 }));
     }
 
     BlockType getBlockId(Int3 wpos) const {
         if (!inBounds(wpos.y)) return BlockType::BLOCK_AIR;
-        auto chunk = chunkRegion.getChunk(getRegionChunkPos(wpos));
-        // Falls outside our grabbed region — ask the manager directly (read-only, safe)
+        auto chunk = m_chunkRegion.getChunk(getRegionChunkPos(wpos));
+        // Falls outside our grabbed region — ask the m_manager directly (read-only, safe)
         if (!chunk)
-            return manager.getBlockId(wpos);
+            return m_manager.getBlockId(wpos);
         if (chunk->state.load() < ChunkState::Generated)
             return BlockType::BLOCK_AIR;
         return chunk->getBlock({ wpos.x & 15, wpos.y, wpos.z & 15 });
@@ -113,10 +113,10 @@ struct WorldWrapper {
 
     void setBlock(Int3 wpos, BlockType type, uint8_t meta = 0) {
         if (!inBounds(wpos.y)) return;
-        auto chunk = chunkRegion.getChunk(getRegionChunkPos(wpos));
+        auto chunk = m_chunkRegion.getChunk(getRegionChunkPos(wpos));
         if (!chunk || chunk->state.load() < ChunkState::Generated) {
             // Outside our locked region
-            manager.setBlock(wpos, type, meta);
+            m_manager.setBlock(wpos, type, meta);
             return;
         }
 
@@ -127,8 +127,8 @@ struct WorldWrapper {
             }), tes.end());
 
         // Unlight before changing the block
-        manager.lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Block, manager);
-        manager.lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Sky, manager);
+        m_manager.lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Block, m_manager);
+        m_manager.lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Sky, m_manager);
 
         // Get the local coordinates of this block within the chunk and set it
         int lx = wpos.x & 15;
@@ -148,7 +148,7 @@ struct WorldWrapper {
                 // The column below the new top was zeroed out by relightColumn.
                 // Notify the BFS that all blocks from y down to oldHeight need updating
                 for (int sy = oldHeight; sy <= y; ++sy)
-                    manager.lightManager.unlightAt(x, sy, z, LightType::Sky, manager);
+                    m_manager.lightManager.unlightAt(x, sy, z, LightType::Sky, m_manager);
             }
         }
         else if (y == oldHeight - 1) {
@@ -159,12 +159,12 @@ struct WorldWrapper {
         int newHeight = chunk->getHeightValue({ lx, lz });
         if (newHeight < oldHeight) {
             for (int sy = newHeight; sy < oldHeight; ++sy)
-                manager.lightManager.scheduleLightUpdate({ x, sy, z }, LightType::Sky);
+                m_manager.lightManager.scheduleLightUpdate({ x, sy, z }, LightType::Sky);
         }
 
         // Always re-evaluate the edited block and its 4 horizontal neighbours
         // across the height transition band.
-        manager.lightManager.scheduleLightUpdate({ x, y, z }, LightType::Sky);
+        m_manager.lightManager.scheduleLightUpdate({ x, y, z }, LightType::Sky);
         const int ndx[] = { -1, 1,  0, 0 };
         const int ndz[] = { 0, 0, -1, 1 };
         for (int i = 0; i < 4; ++i) {
@@ -174,13 +174,13 @@ struct WorldWrapper {
             if (neighborHeight == thisHeight) continue;
             int minY = CrossPlatform::Math::min(thisHeight, neighborHeight);
             int maxY = CrossPlatform::Math::max(thisHeight, neighborHeight);
-            manager.lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
+            m_manager.lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
         }
         // Schedule a block light update for the position itself
-        manager.lightManager.scheduleLightUpdate({ x, y, z }, LightType::Block);
+        m_manager.lightManager.scheduleLightUpdate({ x, y, z }, LightType::Block);
 
         // Callback for the client and server to know about this block update
-        if (manager.onBlockUpdate) manager.onBlockUpdate(
+        if (m_manager.onBlockUpdate) m_manager.onBlockUpdate(
             PendingBlock{
                 .block{type, meta},
                 .block_pos{wpos.x, wpos.y, wpos.z},
@@ -190,12 +190,12 @@ struct WorldWrapper {
 
     uint8_t getSkyLight(Int3 wpos) const {
         if (!inBounds(wpos.y)) return 0;
-        auto chunk = chunkRegion.getChunk(getRegionChunkPos(wpos));
+        auto chunk = m_chunkRegion.getChunk(getRegionChunkPos(wpos));
         if (!chunk || chunk->state.load() < ChunkState::Generated) return 0;
         return chunk->getSkyLight({ wpos.x & 15, wpos.y, wpos.z & 15 });
     }
 
-    int64_t getSeed() const { return manager.seed; }
+    int64_t getSeed() const { return m_manager.seed; }
 
     // Returns true when the world-space Y is within valid chunk bounds.
     static constexpr bool inBounds(int y) { return y >= 0 && y < CHUNK_HEIGHT; }

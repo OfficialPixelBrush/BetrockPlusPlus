@@ -50,20 +50,20 @@ class BigTreeGenerator : public TreeGenerator {
 		AXIS_Z, // Y to Z
 		AXIS_Y  // Z to Y
 	};
-	Java::Random rand = Java::Random();
-	WorldWrapper* wm = nullptr;
-	Int3 basePos = INT3_ZERO;
-	int32_t totalHeight = 0;
-	int32_t height;
-	double heightFactor = 0.618;
-	double field_753_h = 1.0;
-	double trunkSlopeFactor = 0.381;
-	double branchLength = 1.0;
-	double trunkShape = 1.0;
-	int32_t branchDensity = 1;
-	int32_t maximumTreeHeight = 12;
-	int32_t trunkThickness = 4;
-	std::vector<BranchPos> branchStartEnd;
+	Java::Random m_rand = Java::Random();
+	WorldWrapper* m_wm = nullptr;
+	Int3 m_basePos = INT3_ZERO;
+	int32_t m_totalHeight = 0;
+	int32_t m_height;
+	double m_heightFactor = 0.618;
+	double m_field_753_h = 1.0;
+	double m_trunkSlopeFactor = 0.381;
+	double m_branchLength = 1.0;
+	double m_trunkShape = 1.0;
+	int32_t m_branchDensity = 1;
+	int32_t m_maximumTreeHeight = 12;
+	int32_t m_trunkThickness = 4;
+	std::vector<BranchPos> m_branchStartEnd;
 
 	bool ValidPlacement();
 	void GenerateBranchPositions();

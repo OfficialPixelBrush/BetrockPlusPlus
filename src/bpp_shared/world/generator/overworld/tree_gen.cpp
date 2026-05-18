@@ -106,13 +106,13 @@ bool TreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, 
  * @param pTrunkShape Determines the trunk shape
  */
 void BigTreeGenerator::Configure(double pTreeHeight, double pBranchLength, double pTrunkShape) {
-	this->maximumTreeHeight = Java::DoubleToInt32(pTreeHeight * 12.0);
+	m_maximumTreeHeight = Java::DoubleToInt32(pTreeHeight * 12.0);
 	if (pTreeHeight > 0.5) {
-		this->trunkThickness = 5;
+		m_trunkThickness = 5;
 	}
 
-	this->branchLength = pBranchLength;
-	this->trunkShape = pTrunkShape;
+	m_branchLength = pBranchLength;
+	m_trunkShape = pTrunkShape;
 }
 
 
@@ -126,22 +126,22 @@ void BigTreeGenerator::Configure(double pTreeHeight, double pBranchLength, doubl
  * @return If tree successfully generated
  */
 bool BigTreeGenerator::Generate(WorldWrapper& pWorld, Java::Random& pRand, [[maybe_unused]] Int3 pPos, [[maybe_unused]] bool pBirch) {
-	this->wm = &pWorld;
+	m_wm = &pWorld;
 	int64_t seed = pRand.nextLong();
-	this->rand.setSeed(seed);
-	this->basePos = pPos;
+	m_rand.setSeed(seed);
+	m_basePos = pPos;
 	// If the height wasn't set, generate a new random height
-	if (this->totalHeight == 0) {
-		this->totalHeight = 5 + this->rand.nextInt(this->maximumTreeHeight);
+	if (m_totalHeight == 0) {
+		m_totalHeight = 5 + m_rand.nextInt(m_maximumTreeHeight);
 	}
 
 	// Check if tree can be placed
-	if (!this->ValidPlacement())
+	if (!ValidPlacement())
 		return false;
-	this->GenerateBranchPositions();
-	this->GenerateLeafClusters();
-	this->GenerateTrunk();
-	this->GenerateBranches();
+	GenerateBranchPositions();
+	GenerateLeafClusters();
+	GenerateTrunk();
+	GenerateBranches();
 	return true;
 }
 
@@ -150,62 +150,62 @@ bool BigTreeGenerator::Generate(WorldWrapper& pWorld, Java::Random& pRand, [[may
  * 
  */
 void BigTreeGenerator::GenerateBranchPositions() {
-	this->height = Java::DoubleToInt32(double(this->totalHeight) * this->heightFactor);
-	if (this->height >= this->totalHeight) {
-		this->height = this->totalHeight - 1;
+	m_height = Java::DoubleToInt32(double(m_totalHeight) * m_heightFactor);
+	if (m_height >= m_totalHeight) {
+		m_height = m_totalHeight - 1;
 	}
 
-	int32_t branchesPerLayer = Java::DoubleToInt32(1.382 + std::pow(this->trunkShape * double(this->totalHeight) / 13.0, 2.0));
+	int32_t branchesPerLayer = Java::DoubleToInt32(1.382 + std::pow(m_trunkShape * double(m_totalHeight) / 13.0, 2.0));
 	if (branchesPerLayer < 1) {
 		branchesPerLayer = 1;
 	}
 
-	std::vector<BranchPos> candidateBranches(size_t(branchesPerLayer * this->totalHeight));
-	int32_t currentY = this->basePos.y + this->totalHeight - this->trunkThickness;
+	std::vector<BranchPos> candidateBranches(size_t(branchesPerLayer * m_totalHeight));
+	int32_t currentY = m_basePos.y + m_totalHeight - m_trunkThickness;
 	int32_t branchCount = 1;
-	int32_t targetY = this->basePos.y + this->height;
-	int32_t canpoyLayer = currentY - this->basePos.y;
-	candidateBranches[0].pos.x = this->basePos.x;
+	int32_t targetY = m_basePos.y + m_height;
+	int32_t canpoyLayer = currentY - m_basePos.y;
+	candidateBranches[0].pos.x = m_basePos.x;
 	candidateBranches[0].pos.y = currentY;
-	candidateBranches[0].pos.z = this->basePos.z;
+	candidateBranches[0].pos.z = m_basePos.z;
 	candidateBranches[0].trunkY = targetY;
 	--currentY;
 
 	while (true) {
 		for (; canpoyLayer >= 0; --canpoyLayer) {
-			float canopyRadius = this->GetCanopyRadius(canpoyLayer);
+			float canopyRadius = GetCanopyRadius(canpoyLayer);
 			if (canopyRadius >= 0.0F) {
 				for (int32_t attempts = 0; attempts < branchesPerLayer; ++attempts) {
 					double radialDistance =
-						this->branchLength *
+						m_branchLength *
 						double(canopyRadius) *
-						(double(this->rand.nextFloat()) + 0.328);
+						(double(m_rand.nextFloat()) + 0.328);
 					// Oh hey, look! An approximation of pi!
-					double angle = double(this->rand.nextFloat()) * 2.0 * 3.14159;
+					double angle = double(m_rand.nextFloat()) * 2.0 * 3.14159;
 					int32_t branchX = MathHelper::floor_double(
 						radialDistance * double(std::sin(angle)) +
-						double(this->basePos.x) + 0.5
+						double(m_basePos.x) + 0.5
 					);
 					int32_t branchZ = MathHelper::floor_double(
 						radialDistance * double(std::cos(angle)) +
-						double(this->basePos.z) + 0.5
+						double(m_basePos.z) + 0.5
 					);
 					Int3 branchBase = Int3{branchX, currentY, branchZ};
-					Int3 branchTop = Int3{branchX, currentY + this->trunkThickness, branchZ};
-					if (this->CheckIfPathClear(branchBase, branchTop) == -1) {
-						Int3 trunkConnection = this->basePos;
+					Int3 branchTop = Int3{branchX, currentY + m_trunkThickness, branchZ};
+					if (CheckIfPathClear(branchBase, branchTop) == -1) {
+						Int3 trunkConnection = m_basePos;
 						double horizontalDistance = std::sqrt(
-								std::pow(double(JavaMath::abs(this->basePos.x - branchBase.x)), 2.0) +
-								std::pow(double(JavaMath::abs(this->basePos.z - branchBase.z)), 2.0)
+								std::pow(double(JavaMath::abs(m_basePos.x - branchBase.x)), 2.0) +
+								std::pow(double(JavaMath::abs(m_basePos.z - branchBase.z)), 2.0)
 							);
-						double verticalDrop = horizontalDistance * this->trunkSlopeFactor;
+						double verticalDrop = horizontalDistance * m_trunkSlopeFactor;
 						if ((double)branchBase.y - verticalDrop > (double)targetY) {
 							trunkConnection.y = targetY;
 						} else {
 							trunkConnection.y = Java::DoubleToInt32(double(branchBase.y) - verticalDrop);
 						}
 
-						if (this->CheckIfPathClear(trunkConnection, branchBase) == -1) {
+						if (CheckIfPathClear(trunkConnection, branchBase) == -1) {
 							candidateBranches[branchCount].pos.x = branchX;
 							candidateBranches[branchCount].pos.y = currentY;
 							candidateBranches[branchCount].pos.z = branchZ;
@@ -218,10 +218,10 @@ void BigTreeGenerator::GenerateBranchPositions() {
 			--currentY;
 		}
 
-		this->branchStartEnd = std::vector<BranchPos>(branchCount);
-		std::copy(candidateBranches.begin(), candidateBranches.begin() + branchCount, this->branchStartEnd.begin());
+		m_branchStartEnd = std::vector<BranchPos>(branchCount);
+		std::copy(candidateBranches.begin(), candidateBranches.begin() + branchCount, m_branchStartEnd.begin());
 		// Not present in OG Code, but probably good to do
-		this->branchStartEnd.shrink_to_fit();
+		m_branchStartEnd.shrink_to_fit();
 		return;
 	}
 }
@@ -254,11 +254,11 @@ void BigTreeGenerator::PlaceCircularLayer(Int3 centerPos, float radius, BranchAx
 				continue;
 
 			currentPos[axisV] = centerPos[axisV] + dv;
-			BlockType otherType = this->wm->getBlockId(currentPos);
+			BlockType otherType = m_wm->getBlockId(currentPos);
 
 			// Only place if block can be overwritten
 			if (otherType == BLOCK_AIR || otherType == BLOCK_LEAVES) {
-				this->wm->setBlock(currentPos, blockType);
+				m_wm->setBlock(currentPos, blockType);
 			}
 		}
 	}
@@ -271,11 +271,11 @@ void BigTreeGenerator::PlaceCircularLayer(Int3 centerPos, float radius, BranchAx
  * @return Radius in blocks
  */
 float BigTreeGenerator::GetCanopyRadius(int32_t y) {
-	if ((double)y < double((float)this->totalHeight) * 0.3) {
+	if ((double)y < double((float)m_totalHeight) * 0.3) {
 		return -1.618F;
 	} else {
-		float halfHeight = (float)this->totalHeight / 2.0F;
-		float distanceFromCenter = (float)this->totalHeight / 2.0F - (float)y;
+		float halfHeight = (float)m_totalHeight / 2.0F;
+		float distanceFromCenter = (float)m_totalHeight / 2.0F - (float)y;
 		float radius;
 		if (distanceFromCenter == 0.0F) {
 			radius = halfHeight;
@@ -299,10 +299,10 @@ float BigTreeGenerator::GetCanopyRadius(int32_t y) {
  * @return float Trunk layer radius
  */
 float BigTreeGenerator::GetTrunkLayerRadius(int32_t layerIndex) {
-    if (layerIndex < 0 || layerIndex >= this->trunkThickness)
+    if (layerIndex < 0 || layerIndex >= m_trunkThickness)
         return -1.0f;
     // Top and bottom of trunk are thinner
-    if (layerIndex == 0 || layerIndex == this->trunkThickness - 1)
+    if (layerIndex == 0 || layerIndex == m_trunkThickness - 1)
         return 2.0f;
     // Middle of trunk is thicker
     return 3.0f;
@@ -314,11 +314,11 @@ float BigTreeGenerator::GetTrunkLayerRadius(int32_t layerIndex) {
  * @param base 
  */
 void BigTreeGenerator::PlaceLeavesAroundPoint(Int3 base) {
-	int32_t baseHeight = base.y + this->trunkThickness;
+	int32_t baseHeight = base.y + m_trunkThickness;
 	
 	for (int32_t y = base.y; y < baseHeight; ++y) {
-		float trunkRadius = this->GetTrunkLayerRadius(y - base.y);
-		this->PlaceCircularLayer(
+		float trunkRadius = GetTrunkLayerRadius(y - base.y);
+		PlaceCircularLayer(
 			Int3{base.x, y, base.z},
 			trunkRadius,
 			AXIS_Y, 
@@ -372,7 +372,7 @@ void BigTreeGenerator::DrawBlockLine(Int3 startPos, Int3 endPos, BlockType block
 		blockPos[secondaryB] = MathHelper::floor_double(
 			double(startPos[secondaryB]) + double(distanceAlongAxis) * secondaryRatioB + 0.5
 		);
-		this->wm->setBlock(blockPos, blockType);
+		m_wm->setBlock(blockPos, blockType);
 	}
 }
 
@@ -381,43 +381,43 @@ void BigTreeGenerator::DrawBlockLine(Int3 startPos, Int3 endPos, BlockType block
  * 
  */
 void BigTreeGenerator::GenerateLeafClusters() {
-	size_t maxBranchNodes = this->branchStartEnd.size();
+	size_t maxBranchNodes = m_branchStartEnd.size();
 	for (size_t i = 0; i < maxBranchNodes; ++i) {
-		Int3 pos = this->branchStartEnd[i].pos;
-		this->PlaceLeavesAroundPoint(pos);
+		Int3 pos = m_branchStartEnd[i].pos;
+		PlaceLeavesAroundPoint(pos);
 	}
 }
 
 bool BigTreeGenerator::CanGenerateBranchAtHeight(int32_t y) {
-	return double(y) >= (double(this->totalHeight) * 0.2);
+	return double(y) >= (double(m_totalHeight) * 0.2);
 }
 
 void BigTreeGenerator::GenerateTrunk() {
-	Int3 startPos = this->basePos;
-	Int3 endPos = this->basePos + Int3{0,this->height,0};
-	this->DrawBlockLine(startPos, endPos, BLOCK_LOG);
-	if (this->branchDensity == 2) {
+	Int3 startPos = m_basePos;
+	Int3 endPos = m_basePos + Int3{0,m_height,0};
+	DrawBlockLine(startPos, endPos, BLOCK_LOG);
+	if (m_branchDensity == 2) {
 		startPos.x++;
 		endPos.x++;
-		this->DrawBlockLine(startPos, endPos, BLOCK_LOG);
+		DrawBlockLine(startPos, endPos, BLOCK_LOG);
 		startPos.z++;
 		endPos.z++;
-		this->DrawBlockLine(startPos, endPos, BLOCK_LOG);
+		DrawBlockLine(startPos, endPos, BLOCK_LOG);
 		startPos.x--;
 		endPos.x--;
-		this->DrawBlockLine(startPos, endPos, BLOCK_LOG);
+		DrawBlockLine(startPos, endPos, BLOCK_LOG);
 	}
 }
 
 void BigTreeGenerator::GenerateBranches() {
-	Int3 base = this->basePos;
-	for (size_t branchIndex = 0; branchIndex < this->branchStartEnd.size(); ++branchIndex) {
-		Int3 branchPos = this->branchStartEnd[branchIndex].pos;
-		int32_t trunkY = this->branchStartEnd[branchIndex].trunkY;
+	Int3 base = m_basePos;
+	for (size_t branchIndex = 0; branchIndex < m_branchStartEnd.size(); ++branchIndex) {
+		Int3 branchPos = m_branchStartEnd[branchIndex].pos;
+		int32_t trunkY = m_branchStartEnd[branchIndex].trunkY;
 		base.y = trunkY;
-		int32_t yHeight = base.y - this->basePos.y;
-		if (this->CanGenerateBranchAtHeight(yHeight)) {
-			this->DrawBlockLine(base, branchPos, BLOCK_LOG);
+		int32_t yHeight = base.y - m_basePos.y;
+		if (CanGenerateBranchAtHeight(yHeight)) {
+			DrawBlockLine(base, branchPos, BLOCK_LOG);
 		}
 	}
 }
@@ -463,7 +463,7 @@ int32_t BigTreeGenerator::CheckIfPathClear(Int3 startPos, Int3 endPos) {
 		currentPos[secondaryB] = MathHelper::floor_double(
 			double(startPos[secondaryB]) + double(distanceAlongAxis) * secondaryRatioB
 		);
-		BlockType blockType = this->wm->getBlockId(currentPos);
+		BlockType blockType = m_wm->getBlockId(currentPos);
 		if (blockType != BLOCK_AIR && blockType != BLOCK_LEAVES) {
 			break;
 		}
@@ -480,12 +480,12 @@ int32_t BigTreeGenerator::CheckIfPathClear(Int3 startPos, Int3 endPos) {
  * @return If the placement is valid
  */
 bool BigTreeGenerator::ValidPlacement() {
-	Int3 endPos = Int3{this->basePos.x, this->basePos.y + this->totalHeight - 1, this->basePos.z};
+	Int3 endPos = Int3{m_basePos.x, m_basePos.y + m_totalHeight - 1, m_basePos.z};
 	// Check if ground block is valid
-	BlockType soilType = this->wm->getBlockId(Int3{this->basePos.x, this->basePos.y - 1, this->basePos.z});
+	BlockType soilType = m_wm->getBlockId(Int3{m_basePos.x, m_basePos.y - 1, m_basePos.z});
 	if (soilType != BLOCK_GRASS && soilType != BLOCK_DIRT)
 		return false;
-	int32_t clearLength = this->CheckIfPathClear(this->basePos, endPos);
+	int32_t clearLength = CheckIfPathClear(m_basePos, endPos);
 	// Path isn't clear
 	if (clearLength == -1)
 		return true;
@@ -493,7 +493,7 @@ bool BigTreeGenerator::ValidPlacement() {
 	if (clearLength < 6)
 		return false;
 	// Path is valid
-	this->totalHeight = clearLength;
+	m_totalHeight = clearLength;
 	return true;
 }
 

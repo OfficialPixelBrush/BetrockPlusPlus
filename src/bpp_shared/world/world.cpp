@@ -283,8 +283,8 @@ void WorldManager::populateReady() {
         auto cit = chunks.find(pos);
         if (cit == chunks.end()) break;
         cit->second->state.store(ChunkState::Populating, std::memory_order_release);
-		thread_local WorldWrapper wrapper{ .manager = *this, .centerChunkPos = pos };
-        wrapper.centerChunkPos = pos;
+		thread_local WorldWrapper wrapper{ .m_manager = *this, .m_centerChunkPos = pos };
+        wrapper.m_centerChunkPos = pos;
         wrapper.getChunkRegion();
         if (isHell) {
             thread_local NetherGenerator tl_gen(this->seed);
