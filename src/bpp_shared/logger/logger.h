@@ -10,6 +10,11 @@
 #include "loglevel.h"
 #include <fstream>
 
+// For targets with small terminals
+#if defined (__3DS__)
+#define LOGGER_SHORT_TIME
+#endif
+
 class Logger {
 private:
     std::ofstream logFile;
