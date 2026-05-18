@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <string>
 #include <packet_ids.h>
+#include <packet_data.h>
 #include <bit>
 #include <type_traits>
 #include <cstring>
@@ -55,132 +56,6 @@ inline T byteswap_any(T value) {
     }
     return value;
 }
-
-// ---------------------------------------------------------------------------
-// BufferStream — deserialises a packet from a complete in-memory buffer.
-//
-// The buffer is guaranteed to hold the entire packet before Deserialize() is
-// ever called, so Read() can never short-read.  This replaces the old pattern
-// of deserialising directly from the non-blocking socket, which required the
-// fragile shortRead/rollback mechanism.
-// ---------------------------------------------------------------------------
-class BufferStream {
-public:
-    explicit BufferStream(std::vector<uint8_t> data)
-        : buf_(std::move(data)), pos_(0) {}
-
-    template<typename T>
-    T Read() {
-        static_assert(std::is_trivially_copyable_v<T>,
-            "BufferStream::Read<T>: use Read<std::string>() or Read<std::wstring>() for strings");
-        T value{};
-        ReadBytes(reinterpret_cast<uint8_t*>(&value), sizeof(T));
-        return byteswap_any(value);
-    }
-
-    void ReadBytes(uint8_t* out, size_t len) {
-        // In a well-formed session the staging layer guarantees the buffer is
-        // complete, so running off the end should not happen.  Assert in debug;
-        // in release just clamp so we never crash.
-        if (pos_ + len > buf_.size()) {
-            len = buf_.size() - pos_;
-        }
-        std::memcpy(out, buf_.data() + pos_, len);
-        pos_ += len;
-    }
-
-    // String-8: uint16_t length prefix, then raw bytes.
-    std::string ReadString() {
-        uint16_t len = Read<uint16_t>();
-        std::string result(len, '\0');
-        ReadBytes(reinterpret_cast<uint8_t*>(result.data()), len);
-        return result;
-    }
-
-    // String-16: uint16_t char-count prefix, then big-endian UTF-16 units.
-    std::wstring ReadWString() {
-        uint16_t len = Read<uint16_t>();
-        std::vector<uint16_t> tmp(len);
-        ReadBytes(reinterpret_cast<uint8_t*>(tmp.data()), len * sizeof(uint16_t));
-        std::wstring result(len, L'\0');
-        for (uint16_t i = 0; i < len; i++)
-            result[i] = static_cast<wchar_t>(__builtin_bswap16(tmp[i]));
-        return result;
-    }
-
-    // Entity metadata: reads until sentinel 0x7F (same logic as NetworkStream).
-    void ReadEntityMetadata();
-
-    size_t pos() const { return pos_; }
-    size_t size() const { return buf_.size(); }
-
-private:
-    std::vector<uint8_t> buf_;
-    size_t               pos_;
-};
-
-// Explicit specialisations so callers can write Read<std::string>() etc.
-template<> inline std::string  BufferStream::Read<std::string>()  { return ReadString();  }
-template<> inline std::wstring BufferStream::Read<std::wstring>() { return ReadWString(); }
-
-
-// ---------------------------------------------------------------------------
-// PacketStagingBuffer — accumulates raw bytes from the non-blocking socket
-// into a per-session buffer until a complete packet is available.
-//
-// Because the protocol has no length prefix, the staging layer uses a two-
-// phase approach:
-//
-//   Phase 1 (WAITING_FOR_SIZE):
-//     Read exactly the bytes needed to determine the full packet length.
-//     For most packets this is just the 1-byte packet ID.  For variable-
-//     length packets (those containing strings, arrays, or metadata) the
-//     sizer also needs to peek at length fields that appear early in the
-//     packet body.  The sizer advances an internal cursor through the size-
-//     header bytes until it has enough information to call computeBodySize().
-//
-//   Phase 2 (ACCUMULATING_BODY):
-//     Read the remaining packet bytes (body) into the same buffer until
-//     buf.size() == totalSize.
-//
-// Once totalSize bytes are in buf, ready() returns true.  The caller calls
-// take() to move the buffer into a BufferStream for deserialisation, which
-// resets the staging buffer for the next packet.
-// ---------------------------------------------------------------------------
-class PacketStagingBuffer {
-public:
-    // Feed available socket bytes into the staging buffer.
-    // Returns false if the socket was lost (errno / WSA error was fatal).
-    bool feed(int socket);
-
-    // True when a complete packet has been accumulated.
-    bool ready() const { return totalSize > 0 && buf.size() >= totalSize; }
-
-    // Move the accumulated bytes out as a BufferStream and reset for the
-    // next packet.  Must only be called when ready() == true.
-    BufferStream take();
-
-    bool connectionLost() const { return lost; }
-
-private:
-    std::vector<uint8_t> buf;       // bytes accumulated so far
-    size_t totalSize = 0;           // 0 = not yet known
-    bool   lost      = false;
-
-    // Read as many bytes as available from the socket (non-blocking) into buf,
-    // up to `needed` bytes total.  Returns false on fatal error.
-    bool drainSocket(int socket, size_t needed);
-
-    // Given that buf already contains at least the size-header bytes, compute
-    // and store totalSize.  Returns false if there are not yet enough bytes in
-    // buf to make the determination (caller should drainSocket more first).
-    bool computeTotalSize();
-
-    // Scan the 0x7F-terminated entity metadata block starting at buf[startOffset].
-    // Returns the total packet size on success, or SIZE_MAX if more bytes are needed.
-    size_t scanMetadata(size_t startOffset);
-};
-
 
 // ---------------------------------------------------------------------------
 // NetworkStream — send-side write buffer + raw socket read (used only during
