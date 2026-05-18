@@ -387,6 +387,7 @@ void Server::tick() {
         case ConnectionState::Handshaking:           handleHandshake(*session);    break;
         case ConnectionState::LoggingIn:             handleLogin(*session);        break;
         case ConnectionState::WaitingForSpawnChunks:
+            processIncoming(*session);
             waitForSpawnChunks(*session); break;
         case ConnectionState::Playing: {
             WorldManager& sessionWorld = session->dimension == -1 ? worldHell : world;
@@ -621,7 +622,6 @@ void Server::handleHandshake(PlayerSession& session) {
     Packet::PreLogin incoming;
     incoming.Deserialize(session.stream);
     if (session.stream.checkAndClearShortRead()) {
-        session.stream.unreadByte(static_cast<uint8_t>(packetId));
         return;
     }
     session.username = incoming.username;
@@ -651,7 +651,6 @@ void Server::handleLogin(PlayerSession& session) {
     Packet::Login incoming;
     incoming.Deserialize(session.stream);
     if (session.stream.checkAndClearShortRead()) {
-        session.stream.unreadByte(static_cast<uint8_t>(packetId));
         return;
     }
 
@@ -943,10 +942,9 @@ void Server::processIncoming(PlayerSession& session) {
             disconnectPlayer(session, L"Unknown packet");
             return;
         }
-        // If any Deserialize hit a recv timeout, put the packet ID back
-        // and retry next tick instead of disconnecting.
+        // If any Deserialize hit a recv timeout, ReadBytes has already rolled back
+        // all consumed bytes into readBackBuffer. Just break and retry next tick.
         if (session.stream.checkAndClearShortRead()) {
-            session.stream.unreadByte(static_cast<uint8_t>(packetId));
             break;
         }
     }

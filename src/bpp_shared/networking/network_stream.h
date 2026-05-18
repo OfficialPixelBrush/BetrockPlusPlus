@@ -28,7 +28,7 @@
 template<typename T>
 inline T byteswap_any(T value) {
     static_assert(std::is_trivially_copyable_v<T>,
-                  "byteswap_any: only trivially copyable types allowed");
+        "byteswap_any: only trivially copyable types allowed");
     if constexpr (sizeof(T) == 1) {
         return value;
     }
@@ -94,7 +94,10 @@ public:
     std::wstring ReadWString();
     void         Write(const std::wstring& str);
 
-    // Raw byte buffer Read-Write (no endian conversion)
+    // Raw byte buffer Read-Write (no endian conversion).
+    // On a short read (EAGAIN/EWOULDBLOCK mid-packet), all bytes fetched so far
+    // are pushed back into readBackBuffer so they are re-read next tick.
+    // shortRead is set; the caller does NOT need to unread anything manually.
     void ReadBytes(uint8_t* buf, size_t len);
 
     // Append bytes to the per-session write buffer (no syscall).
@@ -122,26 +125,20 @@ public:
     const std::vector<uint8_t>& getRawWriteBuffer() const { return writeBuffer; }
 
     // Returns true if the last ReadBytes call hit a receive timeout (packet split
-    // across ticks). The caller should put the packet ID back and retry next tick.
+    // across ticks). All bytes that had already been read are held in readBackBuffer
+    // and will be replayed automatically on the next ReadBytes call.
     bool checkAndClearShortRead() {
         bool val = shortRead;
         shortRead = false;
         return val;
     }
-
-    // Push one byte back so a partial packet can be retried next tick.
-    void unreadByte(uint8_t byte) {
-        // We use a small single-byte stash rather than touching the socket.
-        unreadStash = byte;
-        hasUnread = true;
-    }
-
 private:
     int client_socket = INVALID_SOCKET;
     bool connected = true;
     bool shortRead = false;
-    bool hasUnread = false;
-    uint8_t unreadStash = 0;
+    // Bytes that were fetched from the socket but belong to a packet that could
+    // not be fully read this tick. Drained before touching the socket again.
+    std::vector<uint8_t> readBackBuffer;
     std::vector<uint8_t> writeBuffer;
 };
 
