@@ -129,7 +129,7 @@ public:
     // and will be replayed automatically on the next ReadBytes call.
     bool checkAndClearShortRead() {
         bool val = shortRead;
-        shortRead = false;
+        shortRead = false;   
         return val;
     }
 private:

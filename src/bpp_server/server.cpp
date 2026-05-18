@@ -387,7 +387,6 @@ void Server::tick() {
         case ConnectionState::Handshaking:           handleHandshake(*session);    break;
         case ConnectionState::LoggingIn:             handleLogin(*session);        break;
         case ConnectionState::WaitingForSpawnChunks:
-            processIncoming(*session);
             waitForSpawnChunks(*session); break;
         case ConnectionState::Playing: {
             WorldManager& sessionWorld = session->dimension == -1 ? worldHell : world;
@@ -655,7 +654,6 @@ void Server::handleLogin(PlayerSession& session) {
     }
 
     session.entityId = nextEntityId++;
-    GlobalLogger().info << L"Player " << session.username << L" logged in with entity ID " << session.entityId << L".\n";
     Packet::Login response;
     response.entity_id = session.entityId;
     response.username = session.username;
@@ -686,10 +684,15 @@ void Server::handleLogin(PlayerSession& session) {
     auto respawnPoint = sessionWorld.getSpawnPoint(true);
 
     // If our session position is the default then overwrite it
-    if (session.position.pos == Vec3{ -1, -1000000, -1 }) session.position.pos = { float(respawnPoint.x) + 0.5, float(respawnPoint.y), float(respawnPoint.z) + 0.5 };
+    if (session.position.pos == Vec3{ -1, -1000000, -1 }) { 
+        session.position.pos = { float(respawnPoint.x) + 0.5, float(respawnPoint.y), float(respawnPoint.z) + 0.5 };
+    }
 
     // Offset so we don't spawn in the ground
     session.position.pos.y += (1.62 + 0.00001);
+
+    // Log that we logged in!
+    GlobalLogger().info << L"Player " << session.username << L" logged in with entity ID " << session.entityId << L" at (" << session.position.pos.x << ", " << session.position.pos.y << ", " << session.position.pos.z << ")\n";
 
     // Immediately save
     auto savedNbt = session.serializeToNBT();
