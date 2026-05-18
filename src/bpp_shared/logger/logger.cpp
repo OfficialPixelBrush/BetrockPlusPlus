@@ -24,7 +24,11 @@ std::string Logger::GetCurrentTimeString(bool file_format) {
     if (file_format)
 	    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d-%H-%M-%S");
     else
+        #if LOGGER_SHORT_TIME
+	    ss << std::put_time(std::localtime(&in_time_t), "%H:%M:%S");
+        #else
 	    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %H:%M:%S");
+        #endif
 	return ss.str();
 }
 
