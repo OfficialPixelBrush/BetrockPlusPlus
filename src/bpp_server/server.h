@@ -62,6 +62,7 @@ private:
     void broadcastPlayerMovement(PlayerSession& session);
     void processIncoming(PlayerSession& session);
     void transferPlayerDimension(PlayerSession& session);
+    void systemLoop();
 
     // Config file stuff
     void loadConfig();
