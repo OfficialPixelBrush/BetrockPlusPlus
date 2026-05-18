@@ -55,9 +55,9 @@ struct SessionLock {
         );
         if (handle == INVALID_HANDLE_VALUE)
             return false;
-        #elif defined(__SWITCH__)
+        #elif defined(__SWITCH__) || defined(__3DS__)
         // Switch (libnx) has no flock() — just open/create the file
-        fd = open(path.c_str(), O_RDWR | O_CREAT, 0644);
+        fd = open(path.c_str(), O_RDWR | O_CREAT | O_EXCL, 0644);
         if (fd < 0)
             return false;
         // No advisory lock available; single-process environment so this is fine
@@ -83,7 +83,7 @@ struct SessionLock {
         }
         #else
         if (fd >= 0) {
-            #if !defined(__SWITCH__)
+            #if !defined(__SWITCH__) && !defined(__3DS__)
             flock(fd, LOCK_UN);
             #endif
             close(fd);
@@ -380,7 +380,8 @@ struct SaveManager {
         file.flush();
         if (!file.good()) return false;
         file.close();
-
+        
+        std::filesystem::remove(finalPath);
         std::filesystem::rename(tmpPath, finalPath);
         return true;
     }

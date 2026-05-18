@@ -42,7 +42,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "handle_packet.h"
 #include "chunk_sender.h"
 #include "commands/command_manager.h"
-//#include "world/storage/save_manager.h"
+#include "world/storage/save_manager.h"
 
 class Server {
 public:
@@ -158,5 +158,5 @@ private:
     CommandManager command_manager;
     bool stopped = false;
     Config config;
-    //SaveManager saveManager;
+    SaveManager saveManager;
 };
