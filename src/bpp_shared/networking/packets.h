@@ -14,6 +14,7 @@
 #include "base_structs.h"
 #include "base_types.h"
 #include "network_stream.h"
+#include "buffer_stream.h"
 #include "numeric_structs.h"
 #include "inventory/item_stack.h"
 #include "constants.h"

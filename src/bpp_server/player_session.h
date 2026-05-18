@@ -17,6 +17,8 @@
 #include "world/chunk.h"
 #include "world/world.h"
 #include "networking/network_stream.h"
+#include "networking/buffer_stream.h"
+#include "networking/packet_staging_buffer.h"
 #include "networking/packets.h"
 #include "world/client_pos.h"
 #include "inventory/inventory_interaction.h"
