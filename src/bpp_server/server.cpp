@@ -267,8 +267,28 @@ void Server::startup() {
     GlobalLogger().info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";
 }
 
+#include <thread>
+#include <atomic>
+
+std::thread systemThread;
+std::atomic<bool> systemThreadRunning = false;
+
+void Server::systemLoop() {
+    while (aptMainLoop()) {
+        gfxFlushBuffers();
+        gfxSwapBuffers();
+        gspWaitForVBlank();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+}
+
 void Server::run() {
     startup();
+
+    systemThreadRunning.store(true);
+    systemThread = std::thread(&Server::systemLoop, this);
+
     auto lastTime = std::chrono::steady_clock::now();
 
     while (!shutdownRequested.load()) {
@@ -297,20 +317,16 @@ void Server::run() {
             }
             accumulator -= TICK_DELTA;
             ticks_ran++;
-            // TODO: Maybe put these updates on a separate thread to now slow down the main server!
-            if (ticks_ran % MAX_TICKS_PER_FRAME == 0) {
-                aptMainLoop();
-                gfxFlushBuffers();
-                gfxSwapBuffers();
-                gspWaitForVBlank();
-            }
+            #ifdef __3DS__
+            std::this_thread::yield(); 
+            #endif
         }
 
         if (ticks_ran == MAX_TICKS_PER_FRAME)
             accumulator = 0.0f;
     }
 
-    // Shutdown was requested � save and clean up on the main thread
+    // Shutdown was requested. Save and clean up on the main thread
     stop();
     shutdownRequested.store(false); // unblock the ctrl handler thread
 }
@@ -318,6 +334,11 @@ void Server::run() {
 void Server::stop() {
     if (stopped) return;
     stopped = true;
+
+    systemThreadRunning.store(false);
+    if (systemThread.joinable())
+        systemThread.join();
+
     GlobalLogger().info << "Server shutting down...\n";
     for (auto& session : players) {
         disconnectPlayer(*session, L"Server Closed");
@@ -412,7 +433,7 @@ void Server::tick() {
             else {
                 Int3 feetPos = {
                     int(std::floor(session->position.pos.x)),
-                    int(std::floor(session->position.pos.y - 1.62f)),
+                    int(std::floor(session->position.pos.y - float(PLAYER_EYE_HEIGHT))),
                     int(std::floor(session->position.pos.z))
                 };
                 bool inPortal = sessionWorld.getBlockId(feetPos) == BLOCK_NETHER_PORTAL ||
@@ -710,7 +731,7 @@ void Server::handleLogin(PlayerSession& session) {
     }
 
     // Offset so we don't spawn in the ground
-    session.position.pos.y += (1.62 + 0.00001);
+    session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
 
     // Log that we logged in!
     GlobalLogger().info << L"Player " << session.username << L" logged in with entity ID " << session.entityId << L" at (" << session.position.pos.x << ", " << session.position.pos.y << ", " << session.position.pos.z << ")\n";
@@ -739,6 +760,7 @@ void Server::disconnectPlayer(PlayerSession& session, const std::wstring& reason
 void Server::waitForSpawnChunks(PlayerSession& session) {
     WorldManager& sessionWorld = session.dimension == -1 ? worldHell : world;
     chunkSender.enqueue(session, sessionWorld, flushChunkCount);
+    chunkSender.pool.wait();
     chunkSender.flush(session);
 
     // Force a tiny view distance for players trying to spawn in
@@ -748,7 +770,7 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
     int spawnChunkX = int(std::floor(session.position.pos.x)) >> 4;
     int spawnChunkZ = int(std::floor(session.position.pos.z)) >> 4;
 
-    int radius = CrossPlatform::Math::min(3, sessionWorld.getViewRadius());
+    int radius = CrossPlatform::Math::min(1, sessionWorld.getViewRadius());
 
     int total_spawn_chunks = ((radius * 2) + 1) * ((radius * 2) + 1);
     int loaded_chunks = 0;
