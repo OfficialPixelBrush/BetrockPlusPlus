@@ -271,7 +271,7 @@ void Server::run() {
     startup();
     auto lastTime = std::chrono::steady_clock::now();
 
-    while (aptMainLoop()) {
+    while (!shutdownRequested.load()) {
         // Run this to keep the 3DS happy
         int ticks_ran = 0;
 
@@ -298,7 +298,8 @@ void Server::run() {
             accumulator -= TICK_DELTA;
             ticks_ran++;
             // TODO: Maybe put these updates on a separate thread to now slow down the main server!
-            if (ticks_ran % 10 == 0) {
+            if (ticks_ran % MAX_TICKS_PER_FRAME == 0) {
+                aptMainLoop();
                 gfxFlushBuffers();
                 gfxSwapBuffers();
                 gspWaitForVBlank();
