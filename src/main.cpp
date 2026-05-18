@@ -45,12 +45,6 @@ static void signalHandler(int /*sig*/) {
     shutdownRequested.store(true);
 }
 
-#ifdef NDEBUG
-#define BUILD_MODE "Release"
-#else
-#define BUILD_MODE "Debug"
-#endif
-
 // Fall back to being a server if neither are defined
 #if !defined(BUILD_SERVER) && !defined(BUILD_CLIENT)
 #define BUILD_SERVER
