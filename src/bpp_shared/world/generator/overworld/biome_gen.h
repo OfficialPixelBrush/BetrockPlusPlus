@@ -17,9 +17,9 @@
 class BiomeGenerator {
     private:
         // Simplex Noise Generators
-        NoiseOctavesSimplex temperatureNoiseGen;
-        NoiseOctavesSimplex humidityNoiseGen;
-        NoiseOctavesSimplex weirdnessNoiseGen;
+        NoiseOctavesSimplex m_temperatureNoiseGen;
+        NoiseOctavesSimplex m_humidityNoiseGen;
+        NoiseOctavesSimplex m_weirdnessNoiseGen;
     public:
         BiomeGenerator(int64_t seed);
         Biome GetBiomeAtPoint(Int2 worldPos);

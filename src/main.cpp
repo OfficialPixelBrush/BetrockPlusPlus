@@ -5,27 +5,21 @@
  * SPDX-License-Identifier: GPL-3.0-only
  *
 */
-#include <iostream>
-#include <thread>
+#include <atomic>
 #include <csignal>
 #include <numeric_structs.h>
-#include "bpp_shared/NBT/example.h"
+#include "platforms.h"
+#ifndef BUILD_SERVER
 #include "bpp_client/client.h"
+#endif
 #include "bpp_server/server.h"
-#include "networking/network_stream.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #endif
 
 Server* server;
-
-static void shutdown() {
-    if (server)
-        server->stop();
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    //free(server)
-}
+std::atomic<bool> shutdownRequested{ false };
 
 #if defined(_WIN32) || defined(_WIN64)
 BOOL WINAPI consoleCtrlHandler(DWORD dwCtrlType) {
@@ -35,7 +29,10 @@ BOOL WINAPI consoleCtrlHandler(DWORD dwCtrlType) {
     case CTRL_CLOSE_EVENT:
     case CTRL_SHUTDOWN_EVENT:
     case CTRL_LOGOFF_EVENT:
-        shutdown();
+        shutdownRequested.store(true);
+        // Block so the OS doesn't kill us before the main thread finishes saving
+        while (shutdownRequested.load())
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
         return TRUE;
     default:
         return FALSE;
@@ -43,20 +40,13 @@ BOOL WINAPI consoleCtrlHandler(DWORD dwCtrlType) {
 }
 #endif
 
-static void signalHandler(int sig) {
-    shutdown();
-    exit(sig);
+static void signalHandler(int /*sig*/) {
+    shutdownRequested.store(true);
 }
-
-#ifdef NDEBUG
-#define BUILD_MODE "Release"
-#else
-#define BUILD_MODE "Debug"
-#endif
 
 // Fall back to being a server if neither are defined
 #if !defined(BUILD_SERVER) && !defined(BUILD_CLIENT)
-    #define BUILD_SERVER
+#define BUILD_SERVER
 #endif
 
 #ifdef __3DS__
@@ -65,6 +55,14 @@ static u32* soc_buffer = nullptr;
 #endif
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
+    GlobalLogger().info
+        << "Running on "
+        << PLATFORM_NAME
+        << " ("
+        << BUILD_MODE
+        << ", "
+        << ARCH_NAME
+        << ")\n";
     #if defined(_WIN32) || defined(_WIN64)
         GlobalLogger().info << "Running on Windows (" << BUILD_MODE << ")\n";
         SetConsoleCtrlHandler(consoleCtrlHandler, TRUE);
@@ -72,10 +70,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
         GlobalLogger().info << "Running on Linux (" << BUILD_MODE << ")\n";
     #elif defined(__APPLE__)
         GlobalLogger().info << "Running on macOS (" << BUILD_MODE << ")\n";
-    #elif defined(__SWITCH__)
-        GlobalLogger().info << "Running on Nintendo Switch (" << BUILD_MODE << ")\n";
-    #elif defined(__3DS__)
-        GlobalLogger().info << "Running on Nintendo 3DS (" << BUILD_MODE << ")\n";
     #else
         GlobalLogger().warn << "Running on an unknown/unsupported platform (" << BUILD_MODE << ")\n" << "Unexpected bugs may occur!\n";
     #endif
@@ -108,11 +102,11 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     std::signal(SIGINT, signalHandler);
     std::signal(SIGTERM, signalHandler);
 
-    #ifdef BUILD_SERVER
+#ifdef BUILD_SERVER
         try {
-            Server serv;
-            server = &serv;
-            server->run();
+        Server serv;
+        server = &serv;
+        server->run();
         }
         catch (const std::exception& e) {
             printf("EXCEPTION: %s\n", e.what());
@@ -122,11 +116,11 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
                 gspWaitForVBlank();
             }
         }
-    #endif
-    #ifdef BUILD_CLIENT
-        Client client;
-        client.run();
-    #endif
+#endif
+#ifdef BUILD_CLIENT
+    Client client;
+    client.run();
+#endif
 
     #ifdef __SWITCH__
         socketExit();
