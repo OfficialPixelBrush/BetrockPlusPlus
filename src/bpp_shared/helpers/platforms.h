@@ -1,4 +1,10 @@
-#include <string_view>
+/*
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ *
+*/
+#pragma once
 
 // Platform
 #if defined(_WIN32) || defined(_WIN64)
@@ -39,4 +45,11 @@
     #define ARCH_NAME "PowerPC"
 #else
     #define ARCH_NAME "Unknown Arch"
+#endif
+
+// Build type
+#ifdef NDEBUG
+#define BUILD_MODE "Release"
+#else
+#define BUILD_MODE "Debug"
 #endif
