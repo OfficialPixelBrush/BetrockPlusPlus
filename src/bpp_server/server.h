@@ -158,5 +158,5 @@ private:
     CommandManager command_manager;
     bool stopped = false;
     Config config;
-    SaveManager saveManager;
+    //SaveManager saveManager;
 };

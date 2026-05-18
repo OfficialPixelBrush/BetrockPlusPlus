@@ -35,6 +35,7 @@ Server::Server() : config("server.properties"), worldHell(true) {
     GlobalLogger().info << "Server initialized on port " << serverPort << "\n";
 
     // Basic save loading
+    /*
     bool newSave = false;
     if (!saveManager.initialize(config.GetAsString("level-name"))) {
         GlobalLogger().warn << "**** FAILED TO LOAD WORLD DATA! Attempting to create new world... \n";
@@ -64,6 +65,7 @@ Server::Server() : config("server.properties"), worldHell(true) {
 
     // Save our level file immediately
     saveManager.saveLevelFile(saveManager.getLevelData());
+    */
 }
 
 Server::~Server() {
@@ -319,11 +321,13 @@ void Server::stop() {
     for (auto& session : players) {
         disconnectPlayer(*session, L"Server Closed");
         session->stream.flushWriteBufferBlocking();
+        /*
         auto savedNbt = session->serializeToNBT();
         saveManager.savePlayerNBT(
             std::string(session->username.begin(), session->username.end()),
             savedNbt
         );
+        */
     }
     closeSocket();
 }
@@ -593,6 +597,7 @@ void Server::tick() {
                 GlobalLogger().info << L"Disconnected client " << s->username
                     << L" with entity id " << s->entityId << L"\n";
 
+                /*
                 if (s->connState == ConnectionState::Playing ||
                     s->connState == ConnectionState::WaitingForSpawnChunks) {
                     auto savedNbt = s->serializeToNBT();
@@ -601,6 +606,7 @@ void Server::tick() {
                         savedNbt
                     );
                 }
+                */
 
                 indexRemoveSession(*s);
                 chunkSender.remove(*s);
@@ -672,8 +678,10 @@ void Server::handleLogin(PlayerSession& session) {
     response.worldSeed = world.seed;
 
     // Load player data before building the Login response so we know which dimension they're in
+    /*
     auto playerNbt = saveManager.getPlayerNBT(std::string(session.username.begin(), session.username.end()));
     session.loadPlayerNBT(playerNbt);
+    */
 
     response.dimension = static_cast<Dimension>(session.dimension);
     response.Serialize(session.stream);
@@ -707,8 +715,10 @@ void Server::handleLogin(PlayerSession& session) {
     GlobalLogger().info << L"Player " << session.username << L" logged in with entity ID " << session.entityId << L" at (" << session.position.pos.x << ", " << session.position.pos.y << ", " << session.position.pos.z << ")\n";
 
     // Immediately save
+    /*
     auto savedNbt = session.serializeToNBT();
     saveManager.savePlayerNBT(std::string(session.username.begin(), session.username.end()), savedNbt);
+    */
 
     // Send our inventory
     PacketUtilities::sendInventory(session, 0, session.inventory);
