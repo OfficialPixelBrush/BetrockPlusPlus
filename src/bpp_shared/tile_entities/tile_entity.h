@@ -14,7 +14,7 @@ struct TileEntity {
 	Int3 position{ 0, 0, 0 }; // Global coordinates
 	bool canTick = false;
 
-	TileEntity(std::string id, Int3 position) : id(id), position(position) {};
+	TileEntity(std::string pId, Int3 pPosition) : id(pId), position(pPosition) {};
 
 	virtual void tick() {};
 	virtual ~TileEntity() = default;
@@ -23,5 +23,5 @@ struct TileEntity {
 // Chest
 struct TileEntityChest : TileEntity {
 	InventoryChest inventory;
-	TileEntityChest(Int3 position) : TileEntity("Chest", position) {};
+	TileEntityChest(Int3 pPosition) : TileEntity("Chest", pPosition) {};
 };

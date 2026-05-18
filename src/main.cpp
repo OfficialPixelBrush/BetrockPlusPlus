@@ -8,7 +8,6 @@
 #include <atomic>
 #include <csignal>
 #include <numeric_structs.h>
-#include "bpp_shared/NBT/example.h"
 #include "platforms.h"
 #ifndef BUILD_SERVER
 #include "bpp_client/client.h"

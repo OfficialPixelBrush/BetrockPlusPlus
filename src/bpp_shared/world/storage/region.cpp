@@ -6,7 +6,7 @@
 */
 
 #include "region.h"
-#include "NBT/NBT.h"
+#include "nbt/nbt.h"
 #include "chunk.h"
 #include "logger.h"
 #include "helpers/byteswap_compat.h"
