@@ -10,16 +10,17 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(BetrockPlusPlus VERSION 0.1.0)
 
 # Build as server
-option(BUILD_SERVER "Build as server" OFF)
+option(BUILD_SERVER "Build as server" ON)
 
 find_package(libdeflate CONFIG REQUIRED)
 
+# Building as a client, we need this extra stuff
 if(NOT BUILD_SERVER)
-    find_package(OpenGL REQUIRED)
-    find_package(glfw3 CONFIG REQUIRED)
-    find_package(glm CONFIG REQUIRED)
-    find_package(OpenAL CONFIG REQUIRED)
-    #find_package(SDL3 CONFIG REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
+find_package(OpenAL CONFIG REQUIRED)
+find_package(SDL3 CONFIG REQUIRED)
 endif()
 
 include_directories(
@@ -48,11 +49,12 @@ add_executable(
     #external/glad/src/glad.c
 
     # Shared files
-    
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/enums/items.cpp
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
+    src/bpp_shared/networking/buffer_stream.cpp
+    src/bpp_shared/networking/packet_staging_buffer.cpp
     src/bpp_shared/networking/server_manager.cpp
     src/bpp_server/commands/command.cpp
     src/bpp_server/commands/command_manager.cpp
@@ -62,17 +64,21 @@ add_executable(
     src/bpp_shared/world/storage/region.cpp
     src/bpp_shared/blocks/block_properties.cpp 
 
-    ## Generation
+    # Generation
     src/bpp_shared/world/noise/noise_generator.cpp
     src/bpp_shared/world/noise/noise_perlin.cpp
     src/bpp_shared/world/noise/noise_simplex.cpp
-    src/bpp_shared/world/generator/chunk_gen.cpp
-    src/bpp_shared/world/generator/tree_gen.cpp
-    src/bpp_shared/world/generator/biome_gen.cpp
-    src/bpp_shared/world/generator/cave_gen.cpp
-    src/bpp_shared/world/generator/feature_gen.cpp
+    src/bpp_shared/world/generator/generator.cpp
+    ## Overworld generator
+    src/bpp_shared/world/generator/overworld/chunk_gen.cpp
+    src/bpp_shared/world/generator/overworld/tree_gen.cpp
+    src/bpp_shared/world/generator/overworld/biome_gen.cpp
+    src/bpp_shared/world/generator/overworld/cave_gen.cpp
+    src/bpp_shared/world/generator/overworld/feature_gen.cpp
+    ## Nether generator
+    src/bpp_shared/world/generator/nether/chunk_gen.cpp
 
-    ## Logger
+    # Logger
     src/bpp_shared/logger/logger.cpp
     src/bpp_shared/logger/logstream.cpp
     src/bpp_shared/logger/style.cpp
@@ -82,16 +88,18 @@ add_executable(
     src/bpp_server/server.cpp
 
     # Client-specific files
-    src/bpp_client/client.cpp
-    src/bpp_client/inputs.cpp
-    src/bpp_client/renderers/world_renderer.cpp
-    src/bpp_client/renderers/sub_chunk_mesher.cpp
-)
+ )
 
 if(BUILD_SERVER)
     target_compile_definitions(BetrockPlusPlus PRIVATE BUILD_SERVER)
 else()
     target_compile_definitions(BetrockPlusPlus PRIVATE BUILD_CLIENT)
+    add_executable(
+        src/bpp_client/client.cpp
+        src/bpp_client/inputs.cpp
+        src/bpp_client/renderers/world_renderer.cpp
+        src/bpp_client/renderers/sub_chunk_mesher.cpp
+    )
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -221,13 +229,18 @@ target_link_libraries(
     BetrockPlusPlus
     PRIVATE
     $<IF:$<TARGET_EXISTS:libdeflate::libdeflate_shared>,libdeflate::libdeflate_shared,libdeflate::libdeflate_static>
-    #OpenGL::GL
-    #glfw
-    #glm::glm
-    #OpenAL::OpenAL
+)
+
+if (NOT BUILD_SERVER)
+target_link_libraries(
+    OpenGL::GL
+    glfw
+    glm::glm
+    OpenAL::OpenAL
     #SDL3::SDL3
     #Threads::Threads
 )
+endif()
 
 # Ensure all files have copyright notice
 file(GLOB_RECURSE SOURCE_FILES

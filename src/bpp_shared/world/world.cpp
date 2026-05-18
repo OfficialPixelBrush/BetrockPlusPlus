@@ -6,7 +6,8 @@
 */
 #include "world.h"
 #include "blocks.h"
-#include "generator/chunk_gen.h"
+#include "generator/overworld/chunk_gen.h"
+#include "generator/nether/chunk_gen.h"
 #include "debug_generator/debug_generator.h"
 
 // Get colliders for an area
@@ -200,8 +201,14 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
             // The placeholder chunk in the map will be replaced by this one when we push to genDoneQueue
             auto chunk = std::make_shared<Chunk>();
             chunk->cpos = pos;
-            thread_local Generator tl_gen(this->seed);
-            tl_gen.GenerateChunk(*chunk);
+            if (isHell) {
+                thread_local NetherGenerator tl_gen(this->seed);
+                tl_gen.GenerateChunk(*chunk);
+            }
+            else {
+                thread_local OverworldGenerator tl_gen(this->seed);
+                tl_gen.GenerateChunk(*chunk);
+            }
             chunk->isModified = true;
             chunk->generateSkylightMap();
             chunk->state.store(ChunkState::Generated, std::memory_order_release);
@@ -276,11 +283,17 @@ void WorldManager::populateReady() {
         auto cit = chunks.find(pos);
         if (cit == chunks.end()) break;
         cit->second->state.store(ChunkState::Populating, std::memory_order_release);
-        thread_local Generator tl_gen(this->seed);
-		thread_local WorldWrapper wrapper{ .manager = *this, .centerChunkPos = pos };
-        wrapper.centerChunkPos = pos;
+		thread_local WorldWrapper wrapper{ .m_manager = *this, .m_centerChunkPos = pos };
+        wrapper.m_centerChunkPos = pos;
         wrapper.getChunkRegion();
-        tl_gen.PopulateChunk(*cit->second, wrapper);
+        if (isHell) {
+            thread_local NetherGenerator tl_gen(this->seed);
+            tl_gen.PopulateChunk(*cit->second, wrapper);
+        }
+        else {
+            thread_local OverworldGenerator tl_gen(this->seed);
+            tl_gen.PopulateChunk(*cit->second, wrapper);
+        }
         cit->second->isTerrainPopulated = true;
         cit->second->isModified = true;
         cit->second->state.store(ChunkState::Populated, std::memory_order_release);

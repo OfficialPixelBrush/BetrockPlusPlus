@@ -18,9 +18,9 @@ BiomeGenerator::BiomeGenerator(int64_t seed) {
     Java::Random randTemp 	= Java::Random(seed * 9871L);
     Java::Random randHum 	= Java::Random(seed * 39811L);
     Java::Random randWeird 	= Java::Random(seed * 543321L);
-    temperatureNoiseGen 	= NoiseOctavesSimplex(randTemp , 4);
-    humidityNoiseGen 		= NoiseOctavesSimplex(randHum  , 4);
-    weirdnessNoiseGen 		= NoiseOctavesSimplex(randWeird, 2);
+    m_temperatureNoiseGen 	= NoiseOctavesSimplex(randTemp , 4);
+    m_humidityNoiseGen 		= NoiseOctavesSimplex(randHum  , 4);
+    m_weirdnessNoiseGen 	= NoiseOctavesSimplex(randWeird, 2);
 }
 
 /**
@@ -35,22 +35,22 @@ BiomeGenerator::BiomeGenerator(int64_t seed) {
  */
 void BiomeGenerator::GenerateBiomeMap(Biome biomeMap[], std::vector<double>& temperature, std::vector<double>& humidity, std::vector<double>& weirdness, Int2 blockPos) {
 	// Get noise values
-	Int32_2 max_area = Int32_2{CHUNK_WIDTH,CHUNK_WIDTH};
-	this->temperatureNoiseGen.GenerateOctaves(
+	Int32_2 max_area{CHUNK_WIDTH,CHUNK_WIDTH};
+	this->m_temperatureNoiseGen.GenerateOctaves(
 		temperature, 
 		blockPos, 
 		max_area, 
 		Vec2{double(0.025f), double(0.025f)},
 		0.25
 	);
-	this->humidityNoiseGen.GenerateOctaves(
+	this->m_humidityNoiseGen.GenerateOctaves(
 		humidity, 
 		blockPos, 
 		max_area, 
 		Vec2{double(0.05f), double(0.05f)}, 
 		1.0 / 3.0
 	);
-	this->weirdnessNoiseGen.GenerateOctaves(
+	this->m_weirdnessNoiseGen.GenerateOctaves(
 		weirdness,
 		blockPos, 
 		max_area, 
@@ -92,15 +92,15 @@ void BiomeGenerator::GenerateBiomeMap(Biome biomeMap[], std::vector<double>& tem
 Biome BiomeGenerator::GetBiomeAtPoint(Int2 worldPos) {
 	std::vector<double> temp(1), humi(1), weird(1);
 
-	this->temperatureNoiseGen.GenerateOctaves(
+	this->m_temperatureNoiseGen.GenerateOctaves(
 		temp, Int2{ worldPos.x, worldPos.y }, Int32_2{ 1, 1 },
 		Vec2{ double(0.025f), double(0.025f) }, 0.25
 	);
-	this->humidityNoiseGen.GenerateOctaves(
+	this->m_humidityNoiseGen.GenerateOctaves(
 		humi, Int2{ worldPos.x, worldPos.y }, Int32_2{ 1, 1 },
 		Vec2{ double(0.05f), double(0.05f) }, 1.0 / 3.0
 	);
-	this->weirdnessNoiseGen.GenerateOctaves(
+	this->m_weirdnessNoiseGen.GenerateOctaves(
 		weird, Int2{ worldPos.x, worldPos.y }, Int32_2{ 1, 1 },
 		Vec2{ 0.25, 0.25 }, 0.5882352941176471
 	);
@@ -130,8 +130,8 @@ void BiomeGenerator::GenerateTemperature(std::vector<double>& temperature, std::
 		temperature.resize(size_t(max.x * max.y), 0.0);
 	}
 
-	this->temperatureNoiseGen.GenerateOctaves(temperature, blockPos, max, Vec2{double(0.025f), double(0.025f)}, 0.25);
-	this->weirdnessNoiseGen.GenerateOctaves(weirdness, blockPos, max, Vec2{0.25, 0.25}, 0.5882352941176471);
+	this->m_temperatureNoiseGen.GenerateOctaves(temperature, blockPos, max, Vec2{double(0.025f), double(0.025f)}, 0.25);
+	this->m_weirdnessNoiseGen.GenerateOctaves(weirdness, blockPos, max, Vec2{0.25, 0.25}, 0.5882352941176471);
 	size_t index = 0;
 
 	// Iterate over each block column

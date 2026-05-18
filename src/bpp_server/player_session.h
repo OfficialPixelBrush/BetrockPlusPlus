@@ -12,10 +12,13 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
+#include "nbt/nbt.h"
 #include "tile_entities/tile_entity.h"
 #include "world/chunk.h"
 #include "world/world.h"
 #include "networking/network_stream.h"
+#include "networking/buffer_stream.h"
+#include "networking/packet_staging_buffer.h"
 #include "networking/packets.h"
 #include "world/client_pos.h"
 #include "inventory/inventory_interaction.h"
@@ -29,6 +32,10 @@ enum class ConnectionState : uint8_t {
 
 struct PlayerSession {
     NetworkStream stream;
+    // Per-session staging buffer: accumulates raw socket bytes until a full
+    // packet is available, then hands a BufferStream to the dispatch loop.
+    // This eliminates the need for any shortRead/rollback logic.
+    PacketStagingBuffer stagingBuffer;
     ClientPosition position;
 
     // Commands use this to look up other sessions by username.
@@ -80,5 +87,109 @@ struct PlayerSession {
     TransactionId pendingTransactionId = 0;
     WindowId      pendingWindowId = 0;
 
+    int8_t dimension = 0; // 0 = overworld, -1 = nether
+
+    // Portal transfer state; timer increments each tick while standing in a portal block,
+    // transfer fires when it reaches 1.0. Cooldown prevents immediately re-entering.
+    float portalTimer    = 0.0f;
+    int   portalCooldown = 0;
+
     explicit PlayerSession(int socket) : stream(socket), inventoryInteraction(&inventory) {}
+
+	// Load our player data from file
+    void loadPlayerNBT(Tag& nbt) {
+        // Very basic but just stuff we care about for now
+        auto& it = nbt.get("Pos").getList();
+        position.pos.x = it[0].getDouble();
+        position.pos.y = it[1].getDouble();
+        position.pos.z = it[2].getDouble();
+
+        auto& it2 = nbt.get("Rotation").getList();
+		rotation.x = it2[0].getFloat();
+		rotation.y = it2[1].getFloat();
+
+        dimension = static_cast<int8_t>(nbt.get("Dimension").getInt());
+
+        auto& it3 = nbt.get("Inventory").getList();
+        for (auto& item : it3) {
+            int8_t nbtSlot = item.get("Slot").getByte();
+            int networkSlot = inventory.getNetworkSlotId(nbtSlot);
+            if (networkSlot < 0 || networkSlot >= int(inventory.slots.size())) continue;
+            inventory.slots[size_t(networkSlot)] = ItemStack{
+                item.get("id").getShort(),
+                item.get("Count").getByte(),
+                item.get("Damage").getShort()
+            };
+        }
+    }
+
+    Tag serializeToNBT() {
+        Tag root; root.type = TAG_COMPOUND; root.name = "";
+
+        Tag Motion;       Motion.type = TAG_LIST;        Motion.name = "Motion";             Motion.listType = TAG_DOUBLE;
+        Tag SleepTimer;   SleepTimer.type = TAG_SHORT;   SleepTimer.name = "SleepTimer";     SleepTimer.shortValue = 0;
+        Tag Health;       Health.type = TAG_SHORT;       Health.name = "Health";             Health.shortValue = 20;
+        Tag Air;          Air.type = TAG_SHORT;          Air.name = "Air";                   Air.shortValue = 300;
+        Tag OnGround;     OnGround.type = TAG_BYTE;      OnGround.name = "OnGround";         OnGround.byteValue = 0;
+        Tag Dimension;    Dimension.type = TAG_INT;      Dimension.name = "Dimension";       Dimension.intValue = dimension;
+        Tag Rotation;     Rotation.type = TAG_LIST;      Rotation.name = "Rotation";         Rotation.listType = TAG_FLOAT;
+        Tag FallDistance; FallDistance.type = TAG_FLOAT; FallDistance.name = "FallDistance"; FallDistance.floatValue = 0.0f;
+        Tag Sleeping;     Sleeping.type = TAG_BYTE;      Sleeping.name = "Sleeping";         Sleeping.byteValue = 0;
+        Tag Pos;          Pos.type = TAG_LIST;           Pos.name = "Pos";                   Pos.listType = TAG_DOUBLE;
+        Tag DeathTime;    DeathTime.type = TAG_SHORT;    DeathTime.name = "DeathTime";       DeathTime.shortValue = 0;
+        Tag Fire;         Fire.type = TAG_SHORT;         Fire.name = "Fire";                 Fire.shortValue = -20;
+        Tag HurtTime;     HurtTime.type = TAG_SHORT;     HurtTime.name = "HurtTime";         HurtTime.shortValue = 0;
+        Tag AttackTime;   AttackTime.type = TAG_SHORT;   AttackTime.name = "AttackTime";     AttackTime.shortValue = 0;
+        Tag Inventory;    Inventory.type = TAG_LIST;     Inventory.name = "Inventory";       Inventory.listType = TAG_COMPOUND;
+
+        // Save position and rotation
+        Tag posX; posX.type = TAG_DOUBLE; posX.doubleValue = position.pos.x;
+        Tag posY; posY.type = TAG_DOUBLE; posY.doubleValue = position.pos.y;
+        Tag posZ; posZ.type = TAG_DOUBLE; posZ.doubleValue = position.pos.z;
+        Pos.list.push_back(posX);
+        Pos.list.push_back(posY);
+        Pos.list.push_back(posZ);
+
+		Tag rotX; rotX.type = TAG_FLOAT; rotX.floatValue = rotation.x;
+		Tag rotY; rotY.type = TAG_FLOAT; rotY.floatValue = rotation.y;
+		Rotation.list.push_back(rotX);
+		Rotation.list.push_back(rotY);
+
+        // Save our current inventory
+        int8_t slotId = 0;
+        for (auto& item : inventory.slots) {
+            if (item.has_value()) {
+				Tag itemTag; itemTag.type = TAG_COMPOUND; itemTag.name = "";
+                Tag slotTag;   slotTag.type = TAG_BYTE;  slotTag.name = "Slot";   slotTag.byteValue = inventory.getNbtSlotID(slotId);
+                Tag idTag;     idTag.type = TAG_SHORT; idTag.name = "id";     idTag.shortValue = item->id;
+                Tag countTag;  countTag.type = TAG_BYTE;  countTag.name = "Count";  countTag.byteValue = item->count;
+                Tag damageTag; damageTag.type = TAG_SHORT; damageTag.name = "Damage"; damageTag.shortValue = item->data;
+
+                itemTag.compound["Slot"] = slotTag;
+                itemTag.compound["id"] = idTag;
+                itemTag.compound["Count"] = countTag;
+                itemTag.compound["Damage"] = damageTag;
+				Inventory.list.push_back(itemTag);
+            }
+            slotId++;
+        }
+
+        root.compound["Motion"] = Motion;
+        root.compound["SleepTimer"] = SleepTimer;
+        root.compound["Health"] = Health;
+        root.compound["Air"] = Air;
+        root.compound["OnGround"] = OnGround;
+        root.compound["Dimension"] = Dimension;
+        root.compound["Rotation"] = Rotation;
+        root.compound["FallDistance"] = FallDistance;
+        root.compound["Sleeping"] = Sleeping;
+        root.compound["Pos"] = Pos;
+        root.compound["DeathTime"] = DeathTime;
+        root.compound["Fire"] = Fire;
+        root.compound["HurtTime"] = HurtTime;
+        root.compound["AttackTime"] = AttackTime;
+        root.compound["Inventory"] = Inventory;
+
+        return root;
+    }
 };

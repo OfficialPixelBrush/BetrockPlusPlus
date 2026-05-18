@@ -17,48 +17,48 @@ CaveGenerator::CaveGenerator() {}
  * @param seed  The world seed
  */
 void CaveGenerator::GenerateCavesForChunk(Chunk& chunk, int64_t seed) {
-	int32_t carveExtent = this->carveExtentLimit;
-	this->rand.setSeed(seed);
+	int32_t carveExtent = this->m_carveExtentLimit;
+	m_rand.setSeed(seed);
 	// Ensure odd offset
-	int64_t xOffset = this->rand.nextLong() / 2L * 2L + 1L;
-	int64_t zOffset = this->rand.nextLong() / 2L * 2L + 1L;
+	int64_t xOffset = m_rand.nextLong() / 2L * 2L + 1L;
+	int64_t zOffset = m_rand.nextLong() / 2L * 2L + 1L;
 
 	for (int32_t cXoffset = chunk.cpos.x - carveExtent; cXoffset <= chunk.cpos.x + carveExtent; ++cXoffset) {
 		for (int32_t cZoffset = chunk.cpos.z - carveExtent; cZoffset <= chunk.cpos.z + carveExtent; ++cZoffset) {
-			this->rand.setSeed(((int64_t(cXoffset) * xOffset) + (int64_t(cZoffset) * zOffset)) ^ seed);
+			m_rand.setSeed(((int64_t(cXoffset) * xOffset) + (int64_t(cZoffset) * zOffset)) ^ seed);
 			this->GenerateCaves(chunk, { cXoffset, cZoffset });
 		}
 	}
 }
 
 void CaveGenerator::GenerateCaves(Chunk& chunk, Int2 chunkOffset) {
-	int32_t numberOfCaves = this->rand.nextInt(this->rand.nextInt(this->rand.nextInt(40) + 1) + 1);
-	if (this->rand.nextInt(15) != 0) {
+	int32_t numberOfCaves = m_rand.nextInt(m_rand.nextInt(m_rand.nextInt(40) + 1) + 1);
+	if (m_rand.nextInt(15) != 0) {
 		numberOfCaves = 0;
 	}
 
 	for (int32_t caveIndex = 0; caveIndex < numberOfCaves; ++caveIndex) {
 		Vec3 offset = VEC3_ZERO;
-		offset.x = double(chunkOffset.x * CHUNK_WIDTH + this->rand.nextInt(CHUNK_WIDTH));
-		offset.y = double(this->rand.nextInt(this->rand.nextInt(120) + 8));
-		offset.z = double(chunkOffset.y * CHUNK_WIDTH + this->rand.nextInt(CHUNK_WIDTH));
+		offset.x = double(chunkOffset.x * CHUNK_WIDTH + m_rand.nextInt(CHUNK_WIDTH));
+		offset.y = double(m_rand.nextInt(m_rand.nextInt(120) + 8));
+		offset.z = double(chunkOffset.y * CHUNK_WIDTH + m_rand.nextInt(CHUNK_WIDTH));
 		int32_t numberOfNodes = 1;
-		if (this->rand.nextInt(4) == 0) {
+		if (m_rand.nextInt(4) == 0) {
 			this->CarveCave(chunk, offset);
-			numberOfNodes += this->rand.nextInt(4);
+			numberOfNodes += m_rand.nextInt(4);
 		}
 
 		for (int32_t nodeIndex = 0; nodeIndex < numberOfNodes; ++nodeIndex) {
-			float carveYaw = this->rand.nextFloat() * JavaMath::PI_FLOAT * 2.0f;
-			float carvePitch = (this->rand.nextFloat() - 0.5f) * 2.0f / 8.0f;
-			float tunnelRadius = this->rand.nextFloat() * 2.0f + this->rand.nextFloat();
+			float carveYaw = m_rand.nextFloat() * JavaMath::PI_FLOAT * 2.0f;
+			float carvePitch = (m_rand.nextFloat() - 0.5f) * 2.0f / 8.0f;
+			float tunnelRadius = m_rand.nextFloat() * 2.0f + m_rand.nextFloat();
 			this->CarveCave(chunk, offset, tunnelRadius, carveYaw, carvePitch, 0, 0, 1.0);
 		}
 	}
 }
 
 void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset) {
-	this->CarveCave(chunk, offset, 1.0f + this->rand.nextFloat() * 6.0f,
+	this->CarveCave(chunk, offset, 1.0f + m_rand.nextFloat() * 6.0f,
 		0.0f, 0.0f, -1, -1, 0.5);
 }
 
@@ -70,10 +70,10 @@ void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset,
 	double chunkCenterZ = double(chunk.cpos.z * CHUNK_WIDTH + (CHUNK_WIDTH*0.5));
 	float pitchVel = 0.0f;
 	float yawVel = 0.0f;
-	Java::Random rand2(this->rand.nextLong());
+	Java::Random rand2(m_rand.nextLong());
 
 	if (tunnelLength <= 0) {
-		int32_t max_tunnel_length = this->carveExtentLimit * CHUNK_WIDTH - CHUNK_WIDTH;
+		int32_t max_tunnel_length = this->m_carveExtentLimit * CHUNK_WIDTH - CHUNK_WIDTH;
 		tunnelLength = max_tunnel_length - rand2.nextInt(max_tunnel_length / 4);
 	}
 

@@ -21,6 +21,7 @@ void CommandManager::Init() {
 	registeredCommands.push_back(std::make_unique<CommandGive>());
 	registeredCommands.push_back(std::make_unique<CommandList>());
 	registeredCommands.push_back(std::make_unique<CommandLoaded>());
+	registeredCommands.push_back(std::make_unique<CommandDimension>());
 	/*
 	registeredCommands.push_back(CommandVersion());
 	registeredCommands.push_back(CommandPose());
@@ -55,7 +56,7 @@ void CommandManager::Init() {
 const std::vector<std::unique_ptr<Command>>& CommandManager::GetRegisteredCommands() noexcept { return registeredCommands; }
 
 // Parses commands and executes them
-void CommandManager::Parse(std::wstring& cmd_string, PlayerSession& session, WorldManager& world) noexcept {
+void CommandManager::Parse(std::wstring& cmd_string, PlayerSession& session, WorldManager& world, std::function<void(PlayerSession&)> transferDimension) noexcept {
 	// Remove initial /
 	cmd_string = cmd_string.substr(1);
 	// Set these up for command parsing
@@ -78,7 +79,7 @@ void CommandManager::Parse(std::wstring& cmd_string, PlayerSession& session, Wor
 			for (size_t i = 0; i < registeredCommands.size(); i++) {
 				// This'll throw an out of bounds error
 				if (registeredCommands[i]->GetLabel() == command.at(0)) {
-					failureReason = registeredCommands[i]->Execute(command, session, world);
+					failureReason = registeredCommands[i]->Execute(command, session, world, transferDimension);
 					break;
 				}
 			}

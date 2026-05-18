@@ -36,16 +36,11 @@ struct PendingBlock {
 };
 
 struct WorldManager {
-    // Owned exclusively by the main thread — no locks needed for any read/write.
     std::unordered_map<Int32_2, std::shared_ptr<Chunk>> chunks;
-    std::function<void(PendingBlock, Int32_2)> onBlockUpdate; // always called on main thread
+    std::function<void(PendingBlock, Int32_2)> onBlockUpdate;
 
-    // Bleed-writes from PopulateChunk that targeted a chunk which wasn't loaded
-    // (or wasn't Generated yet). Replayed into the chunk as soon as it generates.
     std::unordered_map<Int32_2, std::vector<std::pair<Int3, Block>>> pendingBleedWrites;
 
-    // Tiny queue: pool gen threads post finished chunks here; main thread drains
-    // each tick. Only this deque needs a mutex — the chunks map itself does not.
     std::mutex genDoneMutex;
     std::deque<std::shared_ptr<Chunk>> genDoneQueue;
 
@@ -62,19 +57,9 @@ struct WorldManager {
 
     Java::Random rand;
 
-    WorldManager() {}
+    WorldManager(bool pIsHell = false): isHell(pIsHell) {}
 
-    ~WorldManager() {
-        Region region({0,0});
-        for (int x = 0; x < REGION_WIDTH; x++) {
-            for (int z = 0; z < REGION_WIDTH; z++) {
-                if (!chunks.contains({x,z}))
-                    continue;
-                region.AddChunk(chunks[{x,z}]);
-            }
-        }
-        region.Serialize();
-    }
+    ~WorldManager() {}
 
     void initWorldSeed(std::string pSeed){
 		this->seed = hashCode(pSeed);
@@ -93,8 +78,8 @@ struct WorldManager {
     void populateReady();
 
     void createTileEntity(std::shared_ptr<TileEntity> tileEntity) {
-        Int32_2 Int32_2 = { tileEntity->position.x >> 4, tileEntity->position.z >> 4 };
-        Chunk* chunk = getChunkRaw(Int32_2);
+        Int32_2 cpos{ tileEntity->position.x >> 4, tileEntity->position.z >> 4 };
+        Chunk* chunk = getChunkRaw(cpos);
         if (!chunk) return;
         tileEntityManager.initializeTileEntity(tileEntity); // weak_ptr added if canTick
         chunk->tileEntities.push_back(std::move(tileEntity)); // chunk takes ownership
@@ -445,8 +430,10 @@ struct WorldManager {
 
 private:
     // I believe the vanilla default is 
-    static constexpr int VIEW_RADIUS = 5; // no pixel THIS is the vanilla default :anger:
-    static constexpr int SIMULATION_RADIUS = 3;
+    static constexpr int VIEW_RADIUS = 8;
+    static constexpr int SIMULATION_RADIUS = 9;
+
+    bool isHell = false; // for the nether
 
     void seedChunkLighting(Int32_2 pos);
 

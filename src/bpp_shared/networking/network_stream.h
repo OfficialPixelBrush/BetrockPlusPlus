@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <string>
 #include <packet_ids.h>
+#include <packet_data.h>
 #include <bit>
 #include <type_traits>
 #include <cstring>
@@ -33,7 +34,7 @@
 template<typename T>
 inline T byteswap_any(T value) {
     static_assert(std::is_trivially_copyable_v<T>,
-                  "byteswap_any: only trivially copyable types allowed");
+        "byteswap_any: only trivially copyable types allowed");
     if constexpr (sizeof(T) == 1) {
         return value;
     }
@@ -61,21 +62,17 @@ inline T byteswap_any(T value) {
     return value;
 }
 
+// ---------------------------------------------------------------------------
+// NetworkStream — send-side write buffer + raw socket read (used only during
+// the staging fill, not during packet deserialisation).
+// ---------------------------------------------------------------------------
 class NetworkStream {
 public:
     NetworkStream(int client_socket);
     ~NetworkStream();
     bool NewClient();
 
-    template<typename T>
-    T Read() {
-        static_assert(std::is_trivially_copyable_v<T>,
-            "NetworkStream::Read<T>: use Read<std::string>() or Read<std::wstring>() for string types");
-        T buffer{};
-        ReadBytes(reinterpret_cast<uint8_t*>(&buffer), sizeof(T));
-        return byteswap_any(buffer);
-    }
-
+    // Write helpers — all append to writeBuffer; no syscall.
     template<typename T = int>
     void Write(const T& data) {
         if constexpr (std::is_same_v<T, bool>) {
@@ -91,72 +88,37 @@ public:
     void setConnected(bool val) { connected = val; }
     bool isConnected() const { return connected; }
 
-    // String-8 Read-Write
-    std::string  ReadString();
-    void         Write(const std::string& str);
+    // String-8 Write
+    void Write(const std::string& str);
+    // String-16 Write
+    void Write(const std::wstring& str);
 
-    // String-16 Read-Write
-    std::wstring ReadWString();
-    void         Write(const std::wstring& str);
-
-    // Raw byte buffer Read-Write (no endian conversion)
-    void ReadBytes(uint8_t* buf, size_t len);
-
-    // Append bytes to the per-session write buffer (no syscall).
+    // Raw byte buffer append (no endian conversion).
     void WriteBytes(const uint8_t* buf, size_t len);
 
-    // Handles Entity Metadata Interpreting
-    void ReadEntityMetadata();
-
-    // Handles Entity Metadata Conversion
+    // Entity Metadata serialisation (TODO: implement).
     void WriteEntityMetadata();
 
     // Flush the write buffer to the socket once per tick.
     // Returns false if the connection was lost.
     bool flushWriteBuffer();
-    // Blocking flush for use SHUTDOWN ONLY
+    // Blocking flush for use during SHUTDOWN ONLY.
     void flushWriteBufferBlocking();
+
+    // Check whether there are bytes waiting on the socket.
     bool hasData();
 
-    // Append pre-serialised bytes directly to the write buffer.
-    // Used for shared-packet broadcast: serialise once, copy to N sessions.
+    // Append pre-serialised bytes directly (used for shared-packet broadcast).
     void writeRaw(const uint8_t* data, size_t len) { WriteBytes(data, len); }
 
     // Read-only view of the pending write buffer.
-    // Valid only until the next Write*/writeRaw/flushWriteBuffer call.
     const std::vector<uint8_t>& getRawWriteBuffer() const { return writeBuffer; }
 
-    // Returns true if the last ReadBytes call hit a receive timeout (packet split
-    // across ticks). The caller should put the packet ID back and retry next tick.
-    bool checkAndClearShortRead() {
-        bool val = shortRead;
-        shortRead = false;
-        return val;
-    }
-
-    // Push one byte back so a partial packet can be retried next tick.
-    void unreadByte(uint8_t byte) {
-        // We use a small single-byte stash rather than touching the socket.
-        unreadStash = byte;
-        hasUnread = true;
-    }
+    // Expose the raw socket so PacketStagingBuffer::feed() can call recv().
+    int rawSocket() const { return client_socket; }
 
 private:
     int client_socket = INVALID_SOCKET;
     bool connected = true;
-    bool shortRead = false;
-    bool hasUnread = false;
-    uint8_t unreadStash = 0;
     std::vector<uint8_t> writeBuffer;
 };
-
-// Out-of-class explicit specializations (GCC/Clang require these outside the class body)
-template<>
-inline std::string NetworkStream::Read<std::string>() {
-    return ReadString();
-}
-
-template<>
-inline std::wstring NetworkStream::Read<std::wstring>() {
-    return ReadWString();
-}

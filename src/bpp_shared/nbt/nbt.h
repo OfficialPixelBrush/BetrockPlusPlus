@@ -6,7 +6,7 @@
 */
 
 #pragma once
-#include "NBT.h"
+#include "nbt.h"
 #include <bit>
 #include <cstring>
 #include <stdexcept>
@@ -27,12 +27,17 @@ struct Tag {
     std::string name;
 
     // Leaf values
-    int8_t   byteValue = 0;
-    int16_t  shortValue = 0;
-    int32_t  intValue = 0;
-    int64_t  longValue = 0;
-    float    floatValue = 0.0f;
-    double   doubleValue = 0.0;
+    // do this as an anonymous union, since they can share memory
+    union {
+        int8_t   byteValue;
+        int16_t  shortValue;
+        int32_t  intValue;
+        // this is enough to init all of these
+        int64_t  longValue = 0;
+        float    floatValue;
+        // all bits as 0 is also 0 in double!
+        double   doubleValue;
+    };
     std::vector<int8_t> byteArray = {};
     std::vector<int32_t> intArray = {};
     std::string stringValue = "";
@@ -182,17 +187,17 @@ struct NBTParser {
     Tag root;
 
     NBTParser() = default;
-    NBTParser(uint8_t* data, int64_t length) : data(data), length(length), pos(0) {
+    NBTParser(uint8_t* pdata, int64_t plength) : data(pdata), length(plength), pos(0) {
         root = parseTag();
         if (root.type != TAG_COMPOUND)
             throw std::runtime_error("NBT root tag is not a compound!");
     }
 
     // Parse a tag, either with type and name bytes (parseTag) or just a payload (parsePayload)
-    Tag parsePayload(TagType type, const std::string& name = "") {
-        Tag tag{ type, name };
+    Tag parsePayload(TagType ptype, const std::string& pname = "") {
+        Tag tag{ ptype, pname };
 
-        switch (type) {
+        switch (ptype) {
         case TAG_BYTE:   tag.byteValue = readI8(); break;
         case TAG_SHORT:  tag.shortValue = readI16(); break;
         case TAG_INT:    tag.intValue = readI32(); break;

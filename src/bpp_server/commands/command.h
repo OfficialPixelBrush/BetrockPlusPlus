@@ -5,6 +5,7 @@
 */
 
 #pragma once
+#include <functional>
 #include <sstream>
 
 #include "../player_session.h"
@@ -25,7 +26,7 @@
 	class name : public Command {                                                                                      \
 	  public:                                                                                                          \
 		name() : Command(label, description, syntax, requiresOp, requiresCreative) {}                                  \
-		std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world) override;                                                                  \
+		std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world, std::function<void(PlayerSession&)> transferDimension) override;                                                                  \
 	};
 
 /*
@@ -55,7 +56,7 @@ public:
 
 	std::string CheckPermissions(PlayerSession& session);
 	Command(std::wstring label, std::wstring description, std::wstring syntax, bool requiresOp = true, bool requiresCreative = false);
-	virtual std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world) = 0;
+	virtual std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world, std::function<void(PlayerSession&)> transferDimension) = 0;
 	virtual ~Command() = default;
 };
 
@@ -70,6 +71,7 @@ DEFINE_COMMAND(CommandSeed, L"seed", L"Get the world seed", L"", false, false);
 DEFINE_COMMAND(CommandGive, L"give", L"Give yourself a block or item", L"<id>:[meta] [amount]", false, false);
 DEFINE_COMMAND(CommandList, L"list", L"List all currently online players", L"", false, false);
 DEFINE_COMMAND(CommandLoaded, L"loaded", L"Shows the number of loaded chunks", L"", false, false);
+DEFINE_COMMAND(CommandDimension, L"dim", L"Swap to the other dimension", L"", false, false);
 /*
 DEFINE_COMMAND(CommandVersion, "version", "Shows the current Server version", "", false, false);
 DEFINE_COMMAND(CommandPose, "pose", "Set the current players' pose", "<crouch/fire/sit>", false, false);
@@ -102,7 +104,7 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 */
 
 // Helper: send a PlayerPositionAndRotation packet to move a session to new coords.
-static void SendTeleport(PlayerSession& target, Double3 position, float yaw = 0.0f, float pitch = 0.0f) {
+static void SendTeleport(PlayerSession& target, Vec3 position, float yaw = 0.0f, float pitch = 0.0f) {
 	Packet::PlayerPositionAndRotation pkt;
 	pkt.x = position.x;
 	pkt.y = position.y;
@@ -161,8 +163,8 @@ inline Double2 ParseDouble2(size_t& offset, std::vector<std::wstring>& parameter
 	};
 }
 
-inline Double3 ParseDouble3(size_t& offset, std::vector<std::wstring>& parameters) {
-	return Double3{
+inline Vec3 ParseDouble3(size_t& offset, std::vector<std::wstring>& parameters) {
+	return Vec3{
 		std::stod(parameters[offset++]),
 		std::stod(parameters[offset++]),
 		std::stod(parameters[offset++]),
