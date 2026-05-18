@@ -6,7 +6,7 @@
 */
 #pragma once
 #include "helpers/file_handle.h"
-#include "NBT/NBT.h"
+#include "nbt/nbt.h"
 #include "java_math.h"
 #include <chrono>
 #include <fstream>

@@ -57,7 +57,7 @@ struct WorldManager {
 
     Java::Random rand;
 
-    WorldManager(bool isHell = false): isHell(isHell) {}
+    WorldManager(bool pIsHell = false): isHell(pIsHell) {}
 
     ~WorldManager() {}
 
@@ -78,8 +78,8 @@ struct WorldManager {
     void populateReady();
 
     void createTileEntity(std::shared_ptr<TileEntity> tileEntity) {
-        Int32_2 Int32_2 = { tileEntity->position.x >> 4, tileEntity->position.z >> 4 };
-        Chunk* chunk = getChunkRaw(Int32_2);
+        Int32_2 cpos{ tileEntity->position.x >> 4, tileEntity->position.z >> 4 };
+        Chunk* chunk = getChunkRaw(cpos);
         if (!chunk) return;
         tileEntityManager.initializeTileEntity(tileEntity); // weak_ptr added if canTick
         chunk->tileEntities.push_back(std::move(tileEntity)); // chunk takes ownership

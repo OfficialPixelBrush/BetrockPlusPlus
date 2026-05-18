@@ -12,7 +12,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
-#include "NBT/NBT.h"
+#include "nbt/nbt.h"
 #include "tile_entities/tile_entity.h"
 #include "world/chunk.h"
 #include "world/world.h"
