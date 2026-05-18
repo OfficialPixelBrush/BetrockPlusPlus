@@ -9,12 +9,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(BetrockPlusPlus VERSION 0.1.0)
 
+# Build as server
+option(BUILD_SERVER "Build as server" ON)
+
 find_package(libdeflate CONFIG REQUIRED)
+
+# Building as a client, we need this extra stuff
+if(NOT BUILD_SERVER)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(OpenAL CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
+endif()
 
 include_directories(
     "${PROJECT_SOURCE_DIR}/external/glad/include"
@@ -79,19 +86,18 @@ add_executable(
     src/bpp_server/server.cpp
 
     # Client-specific files
-    src/bpp_client/client.cpp
-    src/bpp_client/inputs.cpp
-    src/bpp_client/renderers/world_renderer.cpp
-    src/bpp_client/renderers/sub_chunk_mesher.cpp
  )
-
-# Build as server
-option(BUILD_SERVER "Build as server" ON)
 
 if(BUILD_SERVER)
     target_compile_definitions(BetrockPlusPlus PRIVATE BUILD_SERVER)
 else()
     target_compile_definitions(BetrockPlusPlus PRIVATE BUILD_CLIENT)
+    add_executable(
+        src/bpp_client/client.cpp
+        src/bpp_client/inputs.cpp
+        src/bpp_client/renderers/world_renderer.cpp
+        src/bpp_client/renderers/sub_chunk_mesher.cpp
+    )
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -221,6 +227,10 @@ target_link_libraries(
     BetrockPlusPlus
     PRIVATE
     $<IF:$<TARGET_EXISTS:libdeflate::libdeflate_shared>,libdeflate::libdeflate_shared,libdeflate::libdeflate_static>
+)
+
+if (NOT BUILD_SERVER)
+target_link_libraries(
     OpenGL::GL
     glfw
     glm::glm
@@ -228,6 +238,7 @@ target_link_libraries(
     #SDL3::SDL3
     #Threads::Threads
 )
+endif()
 
 # Ensure all files have copyright notice
 file(GLOB_RECURSE SOURCE_FILES

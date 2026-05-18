@@ -5,15 +5,14 @@
  * SPDX-License-Identifier: GPL-3.0-only
  *
 */
-#include <iostream>
 #include <atomic>
-#include <thread>
 #include <csignal>
 #include <numeric_structs.h>
 #include "bpp_shared/NBT/example.h"
+#ifndef BUILD_SERVER
 #include "bpp_client/client.h"
+#endif
 #include "bpp_server/server.h"
-#include "networking/network_stream.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
