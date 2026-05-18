@@ -299,7 +299,7 @@ void Server::run() {
             accumulator = 0.0f;
     }
 
-    // Shutdown was requested — save and clean up on the main thread
+    // Shutdown was requested. Save and clean up on the main thread
     stop();
     shutdownRequested.store(false); // unblock the ctrl handler thread
 }
@@ -399,7 +399,7 @@ void Server::tick() {
             else {
                 Int3 feetPos = {
                     int(std::floor(session->position.pos.x)),
-                    int(std::floor(session->position.pos.y - 1.62f)),
+                    int(std::floor(session->position.pos.y - float(PLAYER_EYE_HEIGHT))),
                     int(std::floor(session->position.pos.z))
                 };
                 bool inPortal = sessionWorld.getBlockId(feetPos) == BLOCK_NETHER_PORTAL ||
@@ -693,7 +693,7 @@ void Server::handleLogin(PlayerSession& session) {
     }
 
     // Offset so we don't spawn in the ground
-    session.position.pos.y += (1.62 + 0.00001);
+    session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
 
     // Log that we logged in!
     GlobalLogger().info << L"Player " << session.username << L" logged in with entity ID " << session.entityId << L" at (" << session.position.pos.x << ", " << session.position.pos.y << ", " << session.position.pos.z << ")\n";
