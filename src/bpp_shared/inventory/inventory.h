@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-only
 */
 #pragma once
+#include "cross_platform.h"
 #include "item_stack.h"
 #include "enums/items.h"
 #include <string>
@@ -87,7 +88,7 @@ struct Inventory {
 
                     // Add the stacks together and do some checks to make sure we don't overflow
                     int space = maxStack - slot->count;
-                    int toMove = std::min(space, (int)stack.count);
+                    int toMove = CrossPlatform::Math::min(space, (int)stack.count);
 
                     slot->count += toMove;
                     stack.count -= toMove;
