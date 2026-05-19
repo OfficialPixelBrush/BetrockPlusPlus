@@ -13,9 +13,21 @@
 #define REGION_AREA REGION_WIDTH*REGION_WIDTH
 #define SECTOR_SIZE 4096
 
-struct HeaderEntry {
+enum CompressorFormat {
+    REGION_INVALID = 0,
+    REGION_GZIP = 1,
+    REGION_ZLIB = 2
+};
+
+struct FileHeaderEntry {
     uint32_t offset;
     uint8_t numberOfSectors;
+    // TODO: Maybe store last-updated here?
+};
+
+struct ChunkHeaderEntry {
+    uint32_t length;
+    uint8_t format;
 };
 
 class Region {
@@ -28,6 +40,7 @@ class Region {
     private:
         std::array<std::shared_ptr<Chunk>, REGION_AREA> chunks;
         Int32_2 rpos;
-        std::vector<uint8_t> GetNbtData(const std::shared_ptr<Chunk> chunk);
+        std::vector<uint8_t> EncodeNbtData(const std::shared_ptr<Chunk>& chunk);
+        std::shared_ptr<Chunk> DecodeNbtData(const std::vector<uint8_t>& data);
         std::string GetPath();
 };

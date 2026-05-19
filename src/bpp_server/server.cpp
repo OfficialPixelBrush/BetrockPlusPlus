@@ -262,6 +262,15 @@ void Server::startup() {
 
     float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
     GlobalLogger().info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";
+    /*
+    Region region(Int2{0,0});
+    for (int x = 0; x < REGION_WIDTH; x++) {
+        for (int z = 0; z < REGION_WIDTH; z++) {
+            region.AddChunk(world.getChunkShared({x,z}));
+        }
+    }
+    region.Serialize();
+    */
 }
 
 void Server::run() {
