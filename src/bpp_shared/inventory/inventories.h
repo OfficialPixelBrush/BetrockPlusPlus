@@ -119,13 +119,13 @@ struct InventoryLargeChest : Inventory {
         auto end = endSlot == -1 ? totalSize - 1 : endSlot;
 
         bool success = upper->mergeItemStackInInventory(stack, reverse,
-            std::max(0, startSlot),
-            std::min(upperSize - 1, end));
+            CrossPlatform::Math::max(0, startSlot),
+            CrossPlatform::Math::min(upperSize - 1, end));
 
         if (!success || stack.count > 0) {
             success = lower->mergeItemStackInInventory(stack, reverse,
-                std::max(0, startSlot - upperSize),
-                std::min(lower->getSizeInventory() - 1, end - upperSize));
+                CrossPlatform::Math::max(0, startSlot - upperSize),
+                CrossPlatform::Math::min(lower->getSizeInventory() - 1, end - upperSize));
         }
         return success || stack.count == 0;
     }

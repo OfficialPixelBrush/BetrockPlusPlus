@@ -91,9 +91,9 @@ add_executable(
  )
 
 if(BUILD_SERVER)
-    target_compile_definitions(BetrockPlusPlus PRIVATE BUILD_SERVER)
+    target_compile_definitions(BetrockPlusPlus PRIVATE BUILD_SERVER NOMINMAX)
 else()
-    target_compile_definitions(BetrockPlusPlus PRIVATE BUILD_CLIENT)
+    target_compile_definitions(BetrockPlusPlus PRIVATE BUILD_CLIENT NOMINMAX)
     add_executable(
         src/bpp_client/client.cpp
         src/bpp_client/inputs.cpp
