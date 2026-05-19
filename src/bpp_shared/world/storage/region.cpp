@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <fstream>
 #include <libdeflate.h>
+#include <memory>
 #include <string>
 #include "../../../bpp_server/chunk_serializer.h"
 
@@ -37,7 +38,7 @@ void Region::AddChunk(std::shared_ptr<Chunk>& chunk) {
     chunks[GetChunkHeaderOffset(chunk->cpos)] = chunk;
 }
 
-std::vector<uint8_t> Region::GetNbtData(const std::shared_ptr<Chunk> chunk) {
+std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk) {
     // Build a compound tag representing a chunk level entry
     Tag root;
     root.type = TAG_COMPOUND;
@@ -73,7 +74,6 @@ std::vector<uint8_t> Region::GetNbtData(const std::shared_ptr<Chunk> chunk) {
     Tag skyLight;
     skyLight.type = TAG_BYTEARRAY;
     skyLight.name = "SkyLight";
-    // Default sky light to fully lit (0xFF = two fully-lit nibbles)
     skyLight.byteArray.resize((CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT) / 2, 0);
 
     // HeightMap — one byte per (x,z) column
@@ -81,7 +81,11 @@ std::vector<uint8_t> Region::GetNbtData(const std::shared_ptr<Chunk> chunk) {
     heightMap.type = TAG_BYTEARRAY;
     heightMap.name = "HeightMap";
     heightMap.byteArray.resize(CHUNK_WIDTH * CHUNK_WIDTH, 0);
-    memcpy(&heightMap.byteArray[heightMap.byteArray.size() - (CHUNK_WIDTH * CHUNK_WIDTH)], &heightMap.byteArray[0], CHUNK_WIDTH * CHUNK_WIDTH);
+    std::copy(
+        std::begin(chunk->heightMap),
+        std::end(chunk->heightMap),
+        heightMap.byteArray.data()
+    );
 
     // Put blocks in there
     for (int x = 0; x < CHUNK_WIDTH; x++) {
@@ -143,6 +147,81 @@ std::vector<uint8_t> Region::GetNbtData(const std::shared_ptr<Chunk> chunk) {
     return compressed;
 }
 
+// TODO
+std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& raw_data) {
+    libdeflate_decompressor* decompressor = libdeflate_alloc_decompressor();
+    if (!decompressor) return std::make_shared<Chunk>();
+    size_t decompressedSize = (16*128*16) * 2.5;
+    std::vector<uint8_t> decompressed(decompressedSize);
+    while (true) {
+        decompressed.resize(decompressedSize);
+        size_t actualOutSize = 0;
+        libdeflate_result result =
+            libdeflate_zlib_decompress(
+                decompressor,
+                raw_data.data(),
+                raw_data.size(),
+                decompressed.data(),
+                decompressed.size(),
+                &actualOutSize
+            );
+
+        if (result == LIBDEFLATE_SUCCESS) {
+            decompressed.resize(actualOutSize);
+            break;
+        }
+
+        if (result != LIBDEFLATE_INSUFFICIENT_SPACE) {
+            GlobalLogger().warn << "Decompression failed!\n";
+            break;
+        }
+
+        decompressedSize *= 1.5;
+    }
+    libdeflate_free_decompressor(decompressor);
+    NBTParser parser(decompressed.data(), int64_t(decompressed.size()));
+    const Tag& lvl = parser.root.get("Level");
+
+    int32_t cx = lvl.get("xPos").getInt();
+    int32_t cz = lvl.get("zPos").getInt();
+    bool    tp = lvl.get("TerrainPopulated").getByte() != 0;
+    int64_t lu = lvl.get("LastUpdate").getLong();
+
+    const auto& blocks = lvl.get("Blocks").getByteArray();
+    const auto& data = lvl.get("Data").getByteArray();
+    const auto& blockLight = lvl.get("BlockLight").getByteArray();
+    const auto& skyLight = lvl.get("SkyLight").getByteArray();
+    const auto& heightMap = lvl.get("HeightMap").getByteArray();
+    auto chunk = std::make_shared<Chunk>();
+
+    chunk->cpos = Int32_2{cx,cz};
+    chunk->state = tp ? ChunkState::Populated : ChunkState::Generated;
+    std::copy(
+        heightMap.begin(),
+        heightMap.end(),
+        chunk->heightMap
+    );
+
+    for (int y = 0; y < CHUNK_HEIGHT; y++) {
+        for (int x = 0; x < CHUNK_WIDTH; x++) {
+            for (int z = 0; z < CHUNK_WIDTH; z++) {
+                size_t idx = size_t(y + (z * CHUNK_HEIGHT) + (x * CHUNK_HEIGHT * CHUNK_WIDTH));
+                chunk->setBlock({x,y,z}, BlockType(blocks[idx]));
+                if (y % 2 == 0) {
+                    chunk->setMeta({x,y,z}, data[idx/2] & 0xF);
+                    chunk->setBlockLight({x,y,z}, blockLight[idx/2] & 0xF);
+                    chunk->setSkyLight({x,y,z}, skyLight[idx/2] & 0xF);
+                } else {
+                    chunk->setMeta({x,y,z}, (data[idx/2] >> 4) & 0xF);
+                    chunk->setBlockLight({x,y,z}, (blockLight[idx/2] >> 4) & 0xF);
+                    chunk->setSkyLight({x,y,z}, (skyLight[idx/2] >> 4) & 0xF);
+                }
+            }
+        }
+    }
+    return chunk;
+}
+
 inline std::string Region::GetPath() {
     return
         "region/r." +
@@ -175,7 +254,7 @@ bool Region::Serialize() {
     for (const auto& cnk : chunks) {
         if (!cnk) continue;
 
-        auto data = GetNbtData(cnk);
+        auto data = EncodeNbtData(cnk);
         if (data.empty()) {
             GlobalLogger().warn << "Failed to compress " << cnk->cpos << "!\n";
             continue;
@@ -238,15 +317,15 @@ bool Region::Deserialize() {
     // Region doesn't exist, fail
     if (!std::filesystem::exists(GetPath()))
         return false;
-    // TODO: Deserialize Region
-    std::ifstream file(GetPath());
+    // Deserialize Region
+    std::ifstream file(GetPath(), std::ios::binary);
     if (!file.is_open()) {
         GlobalLogger().warn << "Failed to open region " << rpos << "!\n";
         return false;
     }
 
-    std::vector<HeaderEntry> chunkSector;
-    
+    // Read the header
+    std::vector<FileHeaderEntry> chunkSector;
     for (int i = 0; i < REGION_AREA; i++) {
         // Read sector offset
         uint32_t be = 0;
@@ -254,17 +333,38 @@ bool Region::Deserialize() {
         // No data, skip
         if (be == 0)
             continue;
-        HeaderEntry he {
-            __builtin_bswap32(be >> 8),
+        be = __builtin_bswap32(be);
+        FileHeaderEntry fhe {
+            be >> 8,
             static_cast<uint8_t>(be & 0xFF)
         };
-        chunkSector.push_back(he);
+        chunkSector.push_back(fhe);
     }
 
     // Read the found sectors in
-    for (const HeaderEntry& off : chunkSector) {
-        file.seekg(off.offset * SECTOR_SIZE);
-        
+    for (const FileHeaderEntry& fhe : chunkSector) {
+        file.seekg(fhe.offset * SECTOR_SIZE);
+        // Read Chunk Header
+        ChunkHeaderEntry che;
+        file.read(
+            reinterpret_cast<char*>(&che.length),
+            sizeof(che.length)
+        );
+        che.length = __builtin_bswap32(che.length);
+        file.read(
+            reinterpret_cast<char*>(&che.format),
+            sizeof(che.format)
+        );
+
+        // Read raw data
+        std::vector<uint8_t> raw_data;
+        raw_data.resize(fhe.numberOfSectors * SECTOR_SIZE);
+        file.read(
+            reinterpret_cast<char*>(raw_data.data()),
+            static_cast<std::streamsize>(che.length - 1)
+        );
+        auto chunk = DecodeNbtData(raw_data);
+        AddChunk(chunk);
     }
 
     file.close();
