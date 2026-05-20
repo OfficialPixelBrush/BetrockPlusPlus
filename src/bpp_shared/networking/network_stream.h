@@ -57,10 +57,6 @@ inline T byteswap_any(T value) {
     return value;
 }
 
-// ---------------------------------------------------------------------------
-// NetworkStream — send-side write buffer + raw socket read (used only during
-// the staging fill, not during packet deserialisation).
-// ---------------------------------------------------------------------------
 class NetworkStream {
 public:
     NetworkStream(int client_socket);
@@ -97,23 +93,38 @@ public:
     // Flush the write buffer to the socket once per tick.
     // Returns false if the connection was lost.
     bool flushWriteBuffer();
-    // Blocking flush for use during SHUTDOWN ONLY.
+    // Handles Entity Metadata Interpreting
+    void ReadEntityMetadata();
+
+    // Blocking flush for use SHUTDOWN ONLY
     void flushWriteBufferBlocking();
 
     // Check whether there are bytes waiting on the socket.
     bool hasData();
 
-    // Append pre-serialised bytes directly (used for shared-packet broadcast).
+    // Append pre-serialised bytes directly to the write buffer.
+    // Used for shared-packet broadcast: serialise once, copy to N sessions.
     void writeRaw(const uint8_t* data, size_t len) { WriteBytes(data, len); }
 
     // Read-only view of the pending write buffer.
+    // Valid only until the next Write*/writeRaw/flushWriteBuffer call.
     const std::vector<uint8_t>& getRawWriteBuffer() const { return writeBuffer; }
 
-    // Expose the raw socket so PacketStagingBuffer::feed() can call recv().
-    int rawSocket() const { return client_socket; }
+    // Returns true if the last ReadBytes call hit a receive timeout (packet split
+    // across ticks). All bytes that had already been read are held in readBackBuffer
+    // and will be replayed automatically on the next ReadBytes call.
+    bool checkAndClearShortRead() {
+        bool val = shortRead;
+        shortRead = false;   
+        return val;
+    }
 
 private:
     int client_socket = INVALID_SOCKET;
     bool connected = true;
+    bool shortRead = false;
+    // Bytes that were fetched from the socket but belong to a packet that could
+    // not be fully read this tick. Drained before touching the socket again.
+    std::vector<uint8_t> readBackBuffer;
     std::vector<uint8_t> writeBuffer;
 };

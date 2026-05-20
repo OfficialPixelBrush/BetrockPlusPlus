@@ -17,8 +17,6 @@
 #include "world/chunk.h"
 #include "world/world.h"
 #include "networking/network_stream.h"
-#include "networking/buffer_stream.h"
-#include "networking/packet_staging_buffer.h"
 #include "networking/packets.h"
 #include "world/client_pos.h"
 #include "inventory/inventory_interaction.h"
@@ -32,10 +30,6 @@ enum class ConnectionState : uint8_t {
 
 struct PlayerSession {
     NetworkStream stream;
-    // Per-session staging buffer: accumulates raw socket bytes until a full
-    // packet is available, then hands a BufferStream to the dispatch loop.
-    // This eliminates the need for any shortRead/rollback logic.
-    PacketStagingBuffer stagingBuffer;
     ClientPosition position;
 
     // Commands use this to look up other sessions by username.

@@ -14,7 +14,6 @@
 #include "base_structs.h"
 #include "base_types.h"
 #include "network_stream.h"
-#include "buffer_stream.h"
 #include "numeric_structs.h"
 #include "inventory/item_stack.h"
 #include "constants.h"
@@ -30,7 +29,7 @@ private:
         BasePacket(PacketId id) : id(id) {}
         virtual ~BasePacket() = default;
         virtual void Serialize(NetworkStream& stream) const = 0;
-        virtual void Deserialize(BufferStream& stream) = 0;
+        virtual void Deserialize(NetworkStream& stream) = 0;
     };
 
 public:
@@ -43,7 +42,7 @@ public:
         }
 
         // NOTE: Reading the packet id is enough to deserialize it
-        void Deserialize([[maybe_unused]] BufferStream& stream) override {}
+        void Deserialize([[maybe_unused]] NetworkStream& stream) override {}
     };
 
     // Used to finalize the connection
@@ -66,7 +65,7 @@ public:
             stream.Write(dimension);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entityId_protocolVersion = stream.Read<EntityId>();
             username = stream.Read<std::wstring>();
             worldSeed = stream.Read<int64_t>();
@@ -86,7 +85,7 @@ public:
             stream.Write(username_connectionHash);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             username_connectionHash = stream.Read<std::wstring>();
         }
     };
@@ -101,7 +100,7 @@ public:
             stream.Write(message);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             message = stream.Read<std::wstring>();
         }
     };
@@ -116,7 +115,7 @@ public:
             stream.Write(time);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             time = stream.Read<int64_t>();
         }
     };
@@ -137,7 +136,7 @@ public:
             stream.Write(item_metadata);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             inventory_slot = stream.Read<int16_t>();
             item_id = stream.Read<int16_t>();
@@ -157,7 +156,7 @@ public:
             stream.Write(position.z);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             position.x = stream.Read<int32_t>();
             position.y = stream.Read<int32_t>();
             position.z = stream.Read<int32_t>();
@@ -178,7 +177,7 @@ public:
             stream.Write(left_click);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             source_entity_id = stream.Read<EntityId>();
             target_entity_id = stream.Read<EntityId>();
             left_click = stream.Read<bool>();
@@ -195,7 +194,7 @@ public:
             stream.Write(health);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             health = stream.Read<int16_t>();
         }
     };
@@ -210,7 +209,7 @@ public:
             stream.Write(dimension);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             dimension = stream.Read<Dimension>();
         }
     };
@@ -225,7 +224,7 @@ public:
             stream.Write(on_ground);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             on_ground = stream.Read<bool>();
         }
     };
@@ -246,7 +245,7 @@ public:
             stream.Write(on_ground);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             position.x = stream.Read<double>();
             position.y = stream.Read<double>();
             camera_y = stream.Read<double>();
@@ -270,7 +269,7 @@ public:
             stream.Write(on_ground);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             yaw = stream.Read<float>();
             pitch = stream.Read<float>();
             on_ground = stream.Read<bool>();
@@ -299,7 +298,7 @@ public:
             stream.Write(onGround);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             x = stream.Read<double>();
             y = stream.Read<double>();
             stance = stream.Read<double>();
@@ -326,7 +325,7 @@ public:
             stream.Write(face);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             status = stream.Read<PacketData::MineStatus>();
             position.x = stream.Read<int32_t>();
             position.y = stream.Read<int8_t>();
@@ -353,7 +352,7 @@ public:
             stream.Write(item.data);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             position.x = stream.Read<int32_t>();
             position.y = stream.Read<int8_t>();
             position.z = stream.Read<int32_t>();
@@ -376,7 +375,7 @@ public:
             stream.Write(slot);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             slot = stream.Read<int16_t>();
         }
     };
@@ -397,7 +396,7 @@ public:
             stream.Write(position.z);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             interaction_id = stream.Read<PacketData::BlockInteraction>();
             position.x = stream.Read<int32_t>();
@@ -418,7 +417,7 @@ public:
             stream.Write(animation);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             animation = stream.Read<PacketData::Animation>();
         }
@@ -436,7 +435,7 @@ public:
             stream.Write(action);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             action = stream.Read<PacketData::PlayerAction>();
         }
@@ -465,7 +464,7 @@ public:
             stream.Write(held_item_id);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             username = stream.Read<std::wstring>();
             q_position.x = stream.Read<int32_t>();
@@ -502,7 +501,7 @@ public:
             stream.Write(q_roll);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             item.id = stream.Read<ItemId>();
             item.count = stream.Read<ItemAmount>();
@@ -528,7 +527,7 @@ public:
             stream.Write(collector_entity_id);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             item_entity_id = stream.Read<EntityId>();
             collector_entity_id = stream.Read<EntityId>();
         }
@@ -558,7 +557,7 @@ public:
             }
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             object_type = stream.Read<PacketData::ObjectType>();
             q_position.x = stream.Read<int32_t>();
@@ -596,7 +595,7 @@ public:
             // TODO: Metadata handling
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             mob_type = stream.Read<PacketData::MobType>();
             q_position.x = stream.Read<int32_t>();
@@ -626,7 +625,7 @@ public:
             stream.Write(direction);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             title = stream.Read<std::wstring>();
             position.x = stream.Read<int32_t>();
@@ -658,7 +657,7 @@ public:
             stream.Write(sneaking);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             strafe_direction = stream.Read<float>();
             forward_direction = stream.Read<float>();
             pitch = stream.Read<float>();
@@ -682,7 +681,7 @@ public:
             stream.Write(velocity.z);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             velocity.x = stream.Read<int16_t>();
             velocity.y = stream.Read<int16_t>();
@@ -700,7 +699,7 @@ public:
             stream.Write(entity_id);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
         }
     };
@@ -713,7 +712,7 @@ public:
             stream.Write(id);
         }
 
-        void Deserialize([[maybe_unused]] BufferStream& stream) override {
+        void Deserialize([[maybe_unused]] NetworkStream& stream) override {
         }
     };
 
@@ -731,7 +730,7 @@ public:
             stream.Write(qr_position.z);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             qr_position.x = stream.Read<int8_t>();
             qr_position.y = stream.Read<int8_t>();
@@ -754,7 +753,7 @@ public:
             stream.Write(q_pitch);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             q_yaw = stream.Read<int8_t>();
             q_pitch = stream.Read<int8_t>();
@@ -780,7 +779,7 @@ public:
             stream.Write(q_pitch);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             qr_position.x = stream.Read<int8_t>();
             qr_position.y = stream.Read<int8_t>();
@@ -809,7 +808,7 @@ public:
             stream.Write(pitch);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             position.x = stream.Read<int32_t>();
             position.y = stream.Read<int32_t>();
@@ -831,7 +830,7 @@ public:
             stream.Write(action);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             action = stream.Read<PacketData::EntityEvent>();
         }
@@ -849,7 +848,7 @@ public:
             stream.Write(vehicle_entity_id);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             passenger_entity_id = stream.Read<EntityId>();
             vehicle_entity_id = stream.Read<EntityId>();
         }
@@ -871,7 +870,7 @@ public:
             // TODO: Metadata handling
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             stream.ReadEntityMetadata();
         }
@@ -891,7 +890,7 @@ public:
             stream.Write(visible);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             chunkX = stream.Read<int32_t>();
             chunkZ = stream.Read<int32_t>();
             visible = stream.Read<bool>();
@@ -921,7 +920,7 @@ public:
             stream.WriteBytes(compressedData.data(), compressedData.size());
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             chunkX = stream.Read<int32_t>();
             chunkY = stream.Read<int16_t>();
             chunkZ = stream.Read<int32_t>();
@@ -956,7 +955,7 @@ public:
                 stream.Write(block_metadata[static_cast<size_t>(i)]);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             chunk_position.x = stream.Read<int32_t>();
             chunk_position.z = stream.Read<int32_t>();
             number_of_blocks = stream.Read<int16_t>();
@@ -987,7 +986,7 @@ public:
             stream.Write(block.data);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             position.x = stream.Read<int32_t>();
             position.y = stream.Read<int8_t>();
             position.z = stream.Read<int32_t>();
@@ -1012,7 +1011,7 @@ public:
             stream.Write(pitch_direction);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             position.x = stream.Read<int32_t>();
             position.y = stream.Read<int8_t>();
             position.z = stream.Read<int32_t>();
@@ -1055,7 +1054,7 @@ public:
             stream.WriteBytes(reinterpret_cast<const uint8_t*>(destroyed_blocks.data()), destroyed_blocks.size());
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             position.x = stream.Read<double>();
             position.y = stream.Read<double>();
             position.z = stream.Read<double>();
@@ -1082,7 +1081,7 @@ public:
             stream.Write(data);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             position.x = stream.Read<int32_t>();
             position.z = stream.Read<int32_t>();
             position.y = stream.Read<int8_t>();
@@ -1101,7 +1100,7 @@ public:
             stream.Write(event_id);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             event_id = stream.Read<PacketData::GameEvent>();
         }
     };
@@ -1123,7 +1122,7 @@ public:
             stream.Write(position.z);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             entity_id = stream.Read<EntityId>();
             entity_type = stream.Read<int8_t>();
             position.x = stream.Read<int32_t>();
@@ -1147,7 +1146,7 @@ public:
             stream.Write(title);
             stream.Write(slot_count);
         }
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             window_id = stream.Read<WindowId>();
             window_type = stream.Read<PacketData::WindowType>();
             title = stream.Read<std::string>();
@@ -1164,7 +1163,7 @@ public:
             stream.Write(id);
             stream.Write(window_id);
         }
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             window_id = stream.Read<WindowId>();
         }
     };
@@ -1192,7 +1191,7 @@ public:
                 stream.Write(item.data);
             }
         }
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             window_id = stream.Read<WindowId>();
             slot_id = stream.Read<SlotId>();
             right_click = stream.Read<bool>();
@@ -1223,7 +1222,7 @@ public:
                 stream.Write(item.data);
             }
         }
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             window_id = stream.Read<WindowId>();
             slot_id = stream.Read<SlotId>();
             item.id = stream.Read<ItemId>();
@@ -1253,7 +1252,7 @@ public:
                 }
             }
         }
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             window_id = stream.Read<WindowId>();
             size_t number_of_slots = size_t(stream.Read<int16_t>());
             items.resize(number_of_slots, ItemStack{ ITEM_INVALID });
@@ -1282,7 +1281,7 @@ public:
             stream.Write(container_data.type);
             stream.Write(container_data.value);
         }
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             window_id = stream.Read<WindowId>();
             container_data.type = stream.Read<PacketData::ContainerDataType>();
             container_data.value = stream.Read<int16_t>();
@@ -1302,7 +1301,7 @@ public:
             stream.Write(transaction_id);
             stream.Write(accepted);
         }
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             window_id = stream.Read<WindowId>();
             transaction_id = stream.Read<TransactionId>();
             accepted = stream.Read<bool>();
@@ -1326,7 +1325,7 @@ public:
             stream.Write(lines[3]);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             position.x = stream.Read<int32_t>();
             position.y = stream.Read<int16_t>();
             position.z = stream.Read<int32_t>();
@@ -1352,7 +1351,7 @@ public:
             stream.WriteBytes(data.data(), data.size());
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             item_id = stream.Read<ItemId>();
             map_id = stream.Read<MapId>();
             uint8_t size = stream.Read<uint8_t>();
@@ -1374,7 +1373,7 @@ public:
             stream.Write(amount);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             statistic_id = stream.Read<int32_t>();
             amount = stream.Read<int8_t>();
         }
@@ -1390,7 +1389,7 @@ public:
             stream.Write(reason);
         }
 
-        void Deserialize(BufferStream& stream) override {
+        void Deserialize(NetworkStream& stream) override {
             reason = stream.Read<std::wstring>();
         }
     };

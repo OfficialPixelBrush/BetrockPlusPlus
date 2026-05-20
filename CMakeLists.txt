@@ -53,8 +53,6 @@ add_executable(
     src/bpp_shared/enums/items.cpp
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
-    src/bpp_shared/networking/buffer_stream.cpp
-    src/bpp_shared/networking/packet_staging_buffer.cpp
     src/bpp_shared/networking/server_manager.cpp
     src/bpp_server/commands/command.cpp
     src/bpp_server/commands/command_manager.cpp

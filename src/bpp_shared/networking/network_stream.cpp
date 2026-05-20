@@ -6,6 +6,7 @@
 */
 
 #include "network_stream.h"
+#include "numeric_structs.h"
 #include "packet_data.h"
 #include <vector>
 
@@ -23,6 +24,8 @@ NetworkStream::~NetworkStream() {
 #if defined(_WIN32) || defined(_WIN64)
         shutdown(client_socket, SD_BOTH);
         closesocket(client_socket);
+        // TODO: Clean-up WSA when the server closes
+        // WSACleanup();
 #else
         shutdown(client_socket, SHUT_RDWR);
         close(client_socket);

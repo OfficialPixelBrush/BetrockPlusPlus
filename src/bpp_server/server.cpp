@@ -634,19 +634,17 @@ void Server::tick() {
 }
 
 void Server::handleHandshake(PlayerSession& session) {
-    session.stagingBuffer.feed(session.stream.rawSocket());
-    if (session.stagingBuffer.connectionLost()) {
-        session.stream.setConnected(false);
-        return;
-    }
-    if (!session.stagingBuffer.ready()) return;
+    if (!session.stream.hasData()) return;
+    PacketId packetId = session.stream.Read<PacketId>();
 
-    BufferStream bs = session.stagingBuffer.take();
-    PacketId packetId = bs.Read<PacketId>();
+    if (session.stream.checkAndClearShortRead()) return;
     if (packetId != PacketId::PreLogin) return;
 
     Packet::PreLogin incoming;
-    incoming.Deserialize(bs);
+    incoming.Deserialize(session.stream);
+    if (session.stream.checkAndClearShortRead()) {
+        return;
+    }
     session.username = incoming.username;
 
     Packet::PreLogin response;
@@ -665,19 +663,17 @@ void Server::handleHandshake(PlayerSession& session) {
 }
 
 void Server::handleLogin(PlayerSession& session) {
-    session.stagingBuffer.feed(session.stream.rawSocket());
-    if (session.stagingBuffer.connectionLost()) {
-        session.stream.setConnected(false);
-        return;
-    }
-    if (!session.stagingBuffer.ready()) return;
+    if (!session.stream.hasData()) return;
 
-    BufferStream bs = session.stagingBuffer.take();
-    PacketId packetId = bs.Read<PacketId>();
+    PacketId packetId = session.stream.Read<PacketId>();
+    if (session.stream.checkAndClearShortRead()) return;
     if (packetId != PacketId::Login) return;
 
     Packet::Login incoming;
-    incoming.Deserialize(bs);
+    incoming.Deserialize(session.stream);
+    if (session.stream.checkAndClearShortRead()) {
+        return;
+    }
 
     session.entityId = nextEntityId++;
     Packet::Login response;
@@ -842,138 +838,130 @@ void Server::processIncoming(PlayerSession& session) {
 
     // Feed available socket bytes into the staging buffer, then process as
     // many complete packets as are available this tick.
-    while (true) {
-        session.stagingBuffer.feed(session.stream.rawSocket());
-        if (session.stagingBuffer.connectionLost()) {
-            session.stream.setConnected(false);
-            return;
-        }
-        if (!session.stagingBuffer.ready()) break; // wait for more bytes next tick
-
-        BufferStream bs = session.stagingBuffer.take();
-        PacketId packetId = bs.Read<PacketId>();
+    while (session.stream.hasData()) {
+        PacketId packetId = session.stream.Read<PacketId>();
 
         switch (packetId) {
         case PacketId::KeepAlive: {
             Packet::KeepAlive pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::KeepAlive(pkt, session);
             break;
         }
         case PacketId::ChatMessage: {
             Packet::ChatMessage pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::ChatMessage(pkt, session, players, sessionWorld, command_manager, [this](PlayerSession& s) { transferPlayerDimension(s); });
             break;
         }
         case PacketId::SetTime: {
             Packet::SetTime pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             break;
         }
         case PacketId::InteractWithEntity: {
             Packet::InteractWithEntity pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::InteractWithEntity(pkt, session);
             break;
         }
         case PacketId::Respawn: {
             Packet::Respawn pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::Respawn(pkt, session);
             break;
         }
         case PacketId::PlayerMovement: {
             Packet::PlayerMovement pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::PlayerMovement(pkt, session);
             break;
         }
         case PacketId::PlayerPosition: {
             Packet::PlayerPosition pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::PlayerPosition(pkt, session);
             break;
         }
         case PacketId::PlayerRotation: {
             Packet::PlayerRotation pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::PlayerRotation(pkt, session);
             break;
         }
         case PacketId::PlayerPositionAndRotation: {
             Packet::PlayerPositionAndRotation pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::PlayerPositionAndRotation(pkt, session);
             break;
         }
         case PacketId::MineBlock: {
             Packet::MineBlock pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::MineBlock(pkt, session, sessionWorld, players);
             break;
         }
         case PacketId::PlaceBlock: {
             Packet::PlaceBlock pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::PlaceBlock(pkt, session, sessionWorld, players);
             break;
         }
         case PacketId::SetHotbarSlot: {
             Packet::SetHotbarSlot pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             break;
         }
         case PacketId::InteractWithBlock: {
             Packet::InteractWithBlock pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::InteractWithBlock(pkt, session, sessionWorld);
             break;
         }
         case PacketId::Animation: {
             Packet::Animation pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::Animation(pkt, session, players);
             break;
         }
         case PacketId::PlayerAction: {
             Packet::PlayerAction pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::PlayerAction(pkt, session);
             break;
         }
         case PacketId::PlayerInput: {
             Packet::PlayerInput pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             break;
         }
         case PacketId::CloseContainer: {
             Packet::CloseContainer pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::CloseContainer(pkt, session);
             break;
         }
         case PacketId::ClickSlot: {
             Packet::ClickSlot pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::ClickSlot(pkt, session);
             break;
         }
         case PacketId::ContainerTransaction: {
             Packet::ContainerTransaction pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::ContainerTransaction(pkt, session);
             break;
         }
         case PacketId::UpdateSign: {
             Packet::UpdateSign pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::UpdateSign(pkt, session, sessionWorld);
             break;
         }
         case PacketId::Disconnect: {
             Packet::Disconnect pkt;
-            pkt.Deserialize(bs);
+            pkt.Deserialize(session.stream);
             HandlePacket::Disconnect(pkt, session);
             return; // session is dead; stop processing
         }
@@ -982,6 +970,11 @@ void Server::processIncoming(PlayerSession& session) {
                 << static_cast<int>(packetId) << "\n";
             disconnectPlayer(session, L"Unknown packet");
             return;
+        }
+        // If any Deserialize hit a recv timeout, ReadBytes has already rolled back
+        // all consumed bytes into readBackBuffer. Just break and retry next tick.
+        if (session.stream.checkAndClearShortRead()) {
+            break;
         }
     }
     // Update our last packet time for the timeout code
