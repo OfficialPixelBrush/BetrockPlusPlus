@@ -53,16 +53,9 @@ ServerManager::~ServerManager() {
 // Init network stream
 bool ServerManager::InitConnection() {
     int client_socket = accept(server_socket, nullptr, nullptr);
-    if (client_socket == INVALID_SOCKET) return false;
-
-    #if defined(_WIN32) || defined(_WIN64)
-        u_long mode = 1;
-        ioctlsocket(client_socket, FIONBIO, &mode);
-    #else
-        int flags = fcntl(client_socket, F_GETFL, 0);
-        fcntl(client_socket, F_SETFL, flags | O_NONBLOCK);
-    #endif
-
-    streams.push_back(NetworkStream(client_socket));
-    return true;
+    if (client_socket != INVALID_SOCKET) {
+        streams.push_back(NetworkStream(client_socket));
+        return true;
+    }
+    return false;
 }
