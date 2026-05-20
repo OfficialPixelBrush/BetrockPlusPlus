@@ -435,35 +435,20 @@ bool PacketStagingBuffer::drainSocket(int socket, size_t needed) {
 bool PacketStagingBuffer::feed(int socket) {
     if (lost) return false;
 
-    // Phase 1: read enough bytes to determine total packet size
-    if (totalSize == 0) {
-        // Always need at least 1 byte (the packet ID)
-        if (!drainSocket(socket, 1)) return !lost;
-        if (buf.empty()) return true;
+    // Opportunistically drain everything the OS has buffered
+    u_long available = 0;
+    #if defined(_WIN32) || defined(_WIN64)
+        ioctlsocket(socket, FIONREAD, &available);
+    #else
+        ioctl(socket, FIONREAD, &available);
+    #endif
+    if (available > 0)
+        drainSocket(socket, buf.size() + available);
 
-        PacketId id = static_cast<PacketId>(buf[0]);
-        size_t hdr  = sizeHeaderLength(id);
-
-        if (hdr != SIZE_NEEDS_BODY && hdr > 1) {
-            if (!drainSocket(socket, hdr)) return !lost;
-        }
-
-        if (!computeTotalSize()) {
-            // For SIZE_NEEDS_BODY packets: keep reading until computeTotalSize succeeds
-            // Drain socket opportunistically — try to fill up to what we have + chunk
-            while (!computeTotalSize()) {
-                size_t before = buf.size();
-                drainSocket(socket, buf.size() + 64);
-                if (lost) return false;
-                if (buf.size() == before) break; // no new bytes — try next tick
-            }
-        }
-    }
-
-    // Phase 2: accumulate remaining body bytes
-    if (totalSize > 0 && buf.size() < totalSize) {
-        drainSocket(socket, totalSize);
-    }
+    // Now try to determine size / check completeness
+    if (totalSize == 0) computeTotalSize();
+    if (totalSize > 0 && buf.size() < totalSize)
+        drainSocket(socket, totalSize);  // one more attempt for the remainder
 
     return !lost;
 }
