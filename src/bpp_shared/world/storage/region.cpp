@@ -34,8 +34,12 @@ Int32_2 GetChunkHeaderPosition(size_t cidx) {
     };
 }
 
-void Region::AddChunk(std::shared_ptr<Chunk>& chunk) {
+void Region::AddChunk(std::shared_ptr<Chunk> chunk) {
     chunks[GetChunkHeaderOffset(chunk->cpos)] = chunk;
+}
+
+std::shared_ptr<Chunk> Region::GetChunk(Int32_2 cpos) {
+    return chunks[GetChunkHeaderOffset(cpos)];
 }
 
 std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk) {

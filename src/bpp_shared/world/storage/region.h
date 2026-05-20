@@ -33,7 +33,8 @@ struct ChunkHeaderEntry {
 class Region {
     public:
         Region(Int32_2 rpos);
-        void AddChunk(std::shared_ptr<Chunk>& chunk);
+        void AddChunk(std::shared_ptr<Chunk> chunk);
+        std::shared_ptr<Chunk> GetChunk(Int32_2 cpos);
         bool Serialize();
         bool Deserialize();
 
