@@ -111,48 +111,36 @@ std::wstring NetworkStream::ReadWString() {
     return result;
 }
 
-void NetworkStream::ReadBytes(uint8_t* buf, size_t len) {
+size_t NetworkStream::ReadBytes(uint8_t* buf, size_t len) {
     size_t received = 0;
 
-    // Drain any bytes saved from a previous short read first.
+    // 1. consume existing buffered data
     while (!readBackBuffer.empty() && received < len) {
         buf[received++] = readBackBuffer.front();
-        readBackBuffer.erase(readBackBuffer.begin());
+        readBackBuffer.pop_front();
     }
 
+    // 2. try recv until we either fill or would block
     while (received < len) {
-#if defined(_WIN32) || defined(_WIN64)
-        int result = recv(client_socket, reinterpret_cast<char*>(buf + received), static_cast<int>(len - received), 0);
-        if (result <= 0) {
-            int err = WSAGetLastError();
-            if (err == WSAETIMEDOUT || err == WSAEWOULDBLOCK) {
-                // Packet split across ticks: push all bytes received so far back
-                // into the rollback buffer so the entire read is retried next tick.
-                readBackBuffer.insert(readBackBuffer.begin(), buf, buf + received);
-                shortRead = true;
-            }
-            else {
-                connected = false;
-            }
-            return;
-        }
-#else
         ssize_t result = recv(client_socket, buf + received, len - received, 0);
-        if (result <= 0) {
-            if (result < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == ETIMEDOUT)) {
-                // Packet split across ticks: push all bytes received so far back
-                // into the rollback buffer so the entire read is retried next tick.
-                readBackBuffer.insert(readBackBuffer.begin(), buf, buf + received);
-                shortRead = true;
-            }
-            else {
-                connected = false;
-            }
-            return;
+
+        if (result > 0) {
+            received += result;
         }
-#endif
-        received += static_cast<size_t>(result);
+        else if (result == 0) {
+            connected = false;
+            return received;
+        }
+        else {
+            if (errno == EWOULDBLOCK || errno == EAGAIN) {
+                break; // not an error, just no data now
+            }
+            connected = false;
+            return received;
+        }
     }
+
+    return received;
 }
 
 void NetworkStream::WriteBytes(const uint8_t* buf, size_t len) {

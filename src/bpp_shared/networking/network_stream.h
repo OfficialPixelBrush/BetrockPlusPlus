@@ -23,6 +23,7 @@
 #include <type_traits>
 #include <cstring>
 #include <vector>
+#include <deque>
 #include "helpers/byteswap_compat.h"
 
 template<typename T>
@@ -98,7 +99,7 @@ public:
     // On a short read (EAGAIN/EWOULDBLOCK mid-packet), all bytes fetched so far
     // are pushed back into readBackBuffer so they are re-read next tick.
     // shortRead is set; the caller does NOT need to unread anything manually.
-    void ReadBytes(uint8_t* buf, size_t len);
+    size_t ReadBytes(uint8_t* buf, size_t len);
 
     // Append bytes to the per-session write buffer (no syscall).
     void WriteBytes(const uint8_t* buf, size_t len);
@@ -138,7 +139,7 @@ private:
     bool shortRead = false;
     // Bytes that were fetched from the socket but belong to a packet that could
     // not be fully read this tick. Drained before touching the socket again.
-    std::vector<uint8_t> readBackBuffer;
+    std::deque<uint8_t> readBackBuffer;
     std::vector<uint8_t> writeBuffer;
 };
 
