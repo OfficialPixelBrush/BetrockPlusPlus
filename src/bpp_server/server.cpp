@@ -262,15 +262,19 @@ void Server::startup() {
 
     float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
     GlobalLogger().info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";
-    /*
     Region region(Int2{0,0});
+    region.Deserialize();
     for (int x = 0; x < REGION_WIDTH; x++) {
         for (int z = 0; z < REGION_WIDTH; z++) {
-            region.AddChunk(world.getChunkShared({x,z}));
+            auto cnk = region.GetChunk({x,z});
+            if (!cnk) continue;
+            cnk->cpos = {x,z};
+            cnk->isModified = true;
+            cnk->generateSkylightMap();
+            cnk->state.store(ChunkState::Generated, std::memory_order_release);
+            world.postGenResult(std::move(cnk));
         }
     }
-    region.Serialize();
-    */
 }
 
 void Server::run() {
@@ -327,6 +331,15 @@ void Server::stop() {
         );
     }
     closeSocket();
+    Region region(Int2{0,0});
+    for (int x = 0; x < REGION_WIDTH; x++) {
+        for (int z = 0; z < REGION_WIDTH; z++) {
+            auto cnk = world.getChunk({x,z});
+            if (!cnk) continue;
+            region.AddChunk(cnk);
+        }
+    }
+    region.Serialize();
 }
 
 void Server::acceptNewPlayers() {
