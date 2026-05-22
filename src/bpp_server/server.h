@@ -35,6 +35,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "chunk_sender.h"
 #include "commands/command_manager.h"
 #include "world/storage/save_manager.h"
+#include "world/storage/region_manager.h"
 
 class Server {
 public:
@@ -148,5 +149,9 @@ private:
     CommandManager command_manager;
     bool stopped = false;
     Config config;
+
+    // Storage
     SaveManager saveManager;
+    RegionManager overworldRegionManager;
+    RegionManager hellRegionManager; // hehe i call it hell instead of nether cause im quirky
 };
