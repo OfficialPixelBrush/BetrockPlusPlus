@@ -28,6 +28,7 @@
 #include "lighter.h"
 #include "tile_entities/tile_entity_manager.h"
 #include "storage/region.h"
+#include "world/storage/region_manager.h"
 
 struct PendingBlock {
     Block block{ BLOCK_AIR, 0 };
@@ -36,6 +37,7 @@ struct PendingBlock {
 };
 
 struct WorldManager {
+    RegionManager* regionManager = nullptr;
     std::unordered_map<Int32_2, std::shared_ptr<Chunk>> chunks;
     std::function<void(PendingBlock, Int32_2)> onBlockUpdate;
 

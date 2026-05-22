@@ -122,7 +122,7 @@ size_t NetworkStream::ReadBytes(uint8_t* buf, size_t len) {
 
     // 2. try recv until we either fill or would block
     while (received < len) {
-        ssize_t result = recv(client_socket, buf + received, len - received, 0);
+        int result = recv(client_socket, reinterpret_cast<char*>(buf + received), static_cast<int>(len - received), 0);
 
         if (result > 0) {
             received += result;
@@ -132,9 +132,16 @@ size_t NetworkStream::ReadBytes(uint8_t* buf, size_t len) {
             return received;
         }
         else {
-            if (errno == EWOULDBLOCK || errno == EAGAIN) {
-                break; // not an error, just no data now
+#ifdef _WIN32
+            int err = WSAGetLastError();
+            if (err == WSAEWOULDBLOCK) {
+                break;
             }
+#else
+            if (errno == EWOULDBLOCK || errno == EAGAIN) {
+                break;
+            }
+#endif
             connected = false;
             return received;
         }

@@ -44,11 +44,18 @@ Server::Server() : config("server.properties"), worldHell(true) {
         }
         GlobalLogger().info << "New world created successfully. \n";
     }
+    // Initialize our region managers
+    overworldRegionManager.initialize(config.GetAsString("level-name") + "/region");
+    hellRegionManager.initialize(config.GetAsString("level-name") + "/DIM-1/region");
 
     // Initialize our world seed
     saveManager.loadLevelData();
     world.initWorldSeed(saveManager.getLevelData().RandomSeed);
     worldHell.initWorldSeed(saveManager.getLevelData().RandomSeed);
+
+    // Bind our region managers
+    world.regionManager = &overworldRegionManager;
+    worldHell.regionManager = &hellRegionManager;
 
     // If we created a new save then make a new spawn point
     if (newSave) {
