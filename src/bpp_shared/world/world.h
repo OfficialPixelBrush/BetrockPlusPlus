@@ -59,25 +59,27 @@ struct WorldManager {
 
     Java::Random rand;
 
-    WorldManager(bool pIsHell = false): isHell(pIsHell) {}
+    WorldManager(bool pIsHell = false) : isHell(pIsHell) {}
 
     ~WorldManager() {}
 
-    void initWorldSeed(std::string pSeed){
-		this->seed = hashCode(pSeed);
+    void initWorldSeed(std::string pSeed) {
+        this->seed = hashCode(pSeed);
     }
 
-    void initWorldSeed(int64_t pSeed){
-		this->seed = pSeed;
+    void initWorldSeed(int64_t pSeed) {
+        this->seed = pSeed;
     }
     void tick(const std::vector<ClientPosition>& players);
     void update(const std::vector<ClientPosition>& players);
+    void shutdown();
     std::vector<AABB> getCollidingBoundingBoxes(const AABB& area);
     int getViewRadius() { return VIEW_RADIUS; }
     int getSimulationDistance() { return SIMULATION_RADIUS; }
     void updateLoadRadius(const std::vector<ClientPosition>& players);
     void pumpPipeline(const std::vector<ClientPosition>& players);
     void populateReady();
+    void drainLoadQueue();
 
     void createTileEntity(std::shared_ptr<TileEntity> tileEntity) {
         Int32_2 cpos{ tileEntity->position.x >> 4, tileEntity->position.z >> 4 };
@@ -301,13 +303,13 @@ struct WorldManager {
             if (b == BlockType::BLOCK_INVALID) {
                 // Force generate this chunk so we can check the block type.
                 auto cpos = Int32_2{ x >> 4, z >> 4 };
-				auto chunk = std::make_shared<Chunk>();
-				chunk->cpos = cpos;
+                auto chunk = std::make_shared<Chunk>();
+                chunk->cpos = cpos;
                 chunk->spawnChunk = true;
                 chunks[cpos] = std::move(chunk);
-				// Wait until this chunk is done generating. We don't care about populating or lighting
-				while (chunks[cpos]->state.load() < ChunkState::Generated) {
-					this->pumpPipeline({});
+                // Wait until this chunk is done generating. We don't care about populating or lighting
+                while (chunks[cpos]->state.load() < ChunkState::Generated) {
+                    this->pumpPipeline({});
                     this->pool.wait();
                     this->drainGenQueue();
                 };
@@ -319,17 +321,17 @@ struct WorldManager {
             sx += this->rand.nextInt(64) - this->rand.nextInt(64);
         }
         this->spawnPoint = { sx, 64, sz };
-		chunks.clear(); // Clear all chunks so we can start fresh from the spawn area
+        chunks.clear(); // Clear all chunks so we can start fresh from the spawn area
     }
 
     Int3 getSpawnPoint(bool adjust) {
         if (!adjust) return spawnPoint;
         int sx = this->spawnPoint.x;
         int sz = this->spawnPoint.z;
-		sx += rand.nextInt(20) - 10;
-		sz += rand.nextInt(20) - 10;
-		int sy = findTopSolidBlock(sx, sz);
-		return { sx, sy, sz };
+        sx += rand.nextInt(20) - 10;
+        sz += rand.nextInt(20) - 10;
+        int sy = findTopSolidBlock(sx, sz);
+        return { sx, sy, sz };
     }
 
     BlockType getFirstUncoveredBlock(int wx, int wz) {
@@ -396,7 +398,7 @@ struct WorldManager {
                 else { lx = t; lz = 15; nx = t; nz = 0; }
 
                 for (int y = 0; y < CHUNK_HEIGHT; ++y) {
-					// Does our neighbor block have a block light > 0 or sky light > 0? If so, schedule a light update for the block on our side of the border.
+                    // Does our neighbor block have a block light > 0 or sky light > 0? If so, schedule a light update for the block on our side of the border.
                     if (neighborChunk->getBlockLight({ nx, y, nz })) {
                         lightManager.scheduleLightUpdate({ bx + lx, y, bz + lz }, LightType::Block);
                     }

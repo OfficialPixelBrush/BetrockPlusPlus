@@ -5,7 +5,6 @@
  *
 */
 #pragma once
-#include "helpers/file_handle.h"
 #include "nbt/nbt.h"
 #include "java_math.h"
 #include <chrono>
@@ -32,42 +31,178 @@
 
 struct RegionManager {
 	BS::thread_pool<> iopool{ 2 };
-	std::mutex saveMutex;
-	std::mutex cacheMutex;
-	std::shared_mutex outMutex;
+
+	std::mutex saveQueueMutex;
 	std::vector<std::shared_ptr<Chunk>> saveQueue;
+
+	std::mutex outChunksMutex;
 	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> outChunks;
 
 	bool initialize(const std::string& folderPath) {
-		if (!std::filesystem::is_directory(folderPath))
+		if (!std::filesystem::is_directory(folderPath)) {
+			GlobalLogger().error << "Tried to initialize region manager with an invalid directory!\n";
 			return false; // No region folder
+		}
+		this->folderPath = folderPath;
 		return true;
 	}
 
-	// This is just a cache of file handles that is lazily swapped out when it runs out
-	std::unordered_map<Int32_2, std::shared_ptr<Region>> regionCache;
-
 	// Does this region file exist on the disk?
-	bool regionExists(Int32_2 rpos);
+	bool regionExists(Int32_2 rpos) {
+		return std::filesystem::exists(folderPath + "/" + regionPositionToFileName(rpos));
+	}
 
 	// Has this chunk been saved to a region file yet?
-	bool chunkExists(Int32_2 cpos);
+	bool chunkExists(Int32_2 cpos) {
+		if (!regionExists({ cpos.x >> 5, cpos.z >> 5 })) return false;
+		auto region = loadRegion({ cpos.x >> 5, cpos.z >> 5 });
+		if (!region) return false;
+		return region->chunkExists({ cpos.x & 31, cpos.z & 31 });
+	}
 
 	// Creates a new region file
-	bool createRegion(Int32_2 rpos);
+	bool createRegion(Int32_2 rpos) {
+		std::string path = folderPath + "/" + regionPositionToFileName(rpos);
+		std::filesystem::create_directories(folderPath);
+		std::ofstream file(path, std::ios::binary);
+		if (!file) return false;
+		std::vector<char> zeros(8192, 0); // 2 sectors for the header
+		file.write(zeros.data(), zeros.size());
+		return true;
+	}
 
 	// Serialize and save a chunk to a region
-	void saveChunk(std::shared_ptr<Chunk> chunk);
+	void saveChunk(std::shared_ptr<Chunk> chunk) {
+		{
+			std::lock_guard lk(outChunksMutex);
+			outChunks.erase(chunk->cpos);
+		}
+		// Make a snapshot because I kept crashing..
+		auto snapshot = std::make_shared<Chunk>();
+		snapshot->cpos               = chunk->cpos;
+		snapshot->isTerrainPopulated = chunk->isTerrainPopulated;
+		snapshot->isModified         = chunk->isModified;
+		snapshot->spawnChunk         = chunk->spawnChunk;
+		snapshot->state.store(chunk->state.load(std::memory_order_acquire));
+		snapshot->inUse.store(false);
+		std::memcpy(snapshot->blocks,          chunk->blocks,          sizeof(chunk->blocks));
+		std::memcpy(snapshot->lightNibble,     chunk->lightNibble,     sizeof(chunk->lightNibble));
+		std::memcpy(snapshot->nibbleBlockMeta, chunk->nibbleBlockMeta, sizeof(chunk->nibbleBlockMeta));
+		std::memcpy(snapshot->heightMap,       chunk->heightMap,       sizeof(chunk->heightMap));
+		std::memcpy(snapshot->temperature,     chunk->temperature,     sizeof(chunk->temperature));
+		std::memcpy(snapshot->humidity,        chunk->humidity,        sizeof(chunk->humidity));
+		std::lock_guard lk(saveQueueMutex);
+		saveQueue.push_back(std::move(snapshot));
+	}
 
-	void pumpPipeline();
-
-	// Creates a region if it doesn't already exist, then returns it.
-	std::shared_ptr<Region> loadRegion(Int32_2 rpos);
+	// Queue a chunk to be loaded from disk
+	void loadChunk(Int32_2 cpos) {
+		Int32_2 rpos{ cpos.x >> 5, cpos.z >> 5 };
+		if (!regionExists(rpos)) return;
+		auto region = loadRegion(rpos); // shared_ptr keeps Region alive for the task
+		if (!region) return;
+		iopool.detach_task([cpos, region, this]() {
+			auto chunk = region->GetChunk(cpos);  // blocks until region is free
+			if (!chunk) return;
+			std::lock_guard lk(outChunksMutex);
+			outChunks[cpos] = std::move(chunk);
+			});
+	}
 
 	// Returns nullptr until chunk is done loading
-	std::shared_ptr<Chunk> getChunk(Int32_2 cpos);
+	std::shared_ptr<Chunk> getChunk(Int32_2 cpos) {
+		std::lock_guard lk(outChunksMutex);
+		auto it = outChunks.find(cpos);
+		if (it == outChunks.end()) return nullptr;
+		auto chunk = std::move(it->second);
+		outChunks.erase(it);
+		return chunk;
+	}
+
+	void pumpPipeline() {
+		std::vector<std::shared_ptr<Chunk>> toSave;
+		{
+			std::lock_guard lk(saveQueueMutex);
+			toSave.swap(saveQueue);
+		}
+
+		std::vector<std::shared_ptr<Chunk>> requeue;
+		for (auto& chunk : toSave) {
+			Int32_2 rpos{ chunk->cpos.x >> 5, chunk->cpos.z >> 5 };
+			if (!regionExists(rpos)) createRegion(rpos);
+			auto region = loadRegion(rpos); // shared_ptr keeps Region alive for the task
+			if (!region) {
+				requeue.push_back(chunk);
+				continue;
+			}
+			iopool.detach_task([chunk, region]() {
+				region->AddChunk(chunk);  // Region stays alive via shared_ptr capture
+				});
+		}
+
+		if (!requeue.empty()) {
+			std::lock_guard lk(saveQueueMutex);
+			saveQueue.insert(saveQueue.end(), requeue.begin(), requeue.end());
+		}
+
+		// Try to merge any pending regions that couldn't fit before
+		for (auto it = pendingRegions.begin(); it != pendingRegions.end(); ) {
+			if (tryMergePendingRegion(*it))
+				it = pendingRegions.erase(it);
+			else
+				++it;
+		}
+	}
+
+	// Flush all pending saves synchronously — call on shutdown
+	void flushAll() {
+		pumpPipeline();
+		iopool.wait();
+	}
+
+	// Creates a region if it doesn't already exist, then returns it.
+	std::shared_ptr<Region> loadRegion(Int32_2 rpos) {
+		if (!regionExists(rpos)) createRegion(rpos);
+		for (int i = 0; i < 8; i++) {
+			if (regionCache[i] && regionCache[i]->rpos == rpos)
+				return regionCache[i];
+		}
+		createRegionOnCache(rpos);
+		for (int i = 0; i < 8; i++) {
+			if (regionCache[i] && regionCache[i]->rpos == rpos)
+				return regionCache[i];
+		}
+		return nullptr; // all slots busy, ended up in pending
+	}
 
 private:
-	int cacheSize = 8; // 8 Region files at a time
+	bool tryMergePendingRegion(std::shared_ptr<Region>& region) {
+		for (int i = 0; i < 8; i++) {
+			if (regionCache[i] && regionCache[i]->rpos == region->rpos)
+				return true; // already cached
+		}
+		for (int i = 0; i < 8; i++) {
+			if (!regionCache[i]) {
+				regionCache[i] = region;
+				return true;
+			}
+			// Evict slot if no IO task currently holds a reference to it.
+			if (regionCache[i].use_count() == 1) {
+				regionCache[i] = region;
+				return true;
+			}
+		}
+		return false; // all 8 slots actively in use
+	}
+
+	void createRegionOnCache(Int2 rpos) {
+		auto region = std::make_shared<Region>(rpos, folderPath);
+		if (!tryMergePendingRegion(region))
+			pendingRegions.push_back(std::move(region));
+	}
+
+	std::vector<std::shared_ptr<Region>> pendingRegions;
+	std::shared_ptr<Region> regionCache[8];
+	int cacheIndex = 0;
 	std::string folderPath; // Path to where all the regions get dumped
 };

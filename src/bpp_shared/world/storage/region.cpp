@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
  *
  * SPDX-License-Identifier: GPL-3.0-only
  *
@@ -18,28 +19,114 @@
 #include <string>
 #include "../../../bpp_server/chunk_serializer.h"
 
-Region::Region(Int2 prpos) {
-    this->rpos = prpos;
-}
-
-size_t GetChunkHeaderOffset(Int32_2 cpos) {
-    return size_t((cpos.x % REGION_WIDTH) +
-                 ((cpos.z % REGION_WIDTH) * REGION_WIDTH));
-}
-
-Int32_2 GetChunkHeaderPosition(size_t cidx) {
-    return Int32_2 {
-        int32_t(cidx % REGION_WIDTH),
-        int32_t(cidx / REGION_WIDTH),
-    };
-}
-
 void Region::AddChunk(std::shared_ptr<Chunk> chunk) {
-    chunks[GetChunkHeaderOffset(chunk->cpos)] = chunk;
+    std::lock_guard<std::mutex> lock(mutex);
+    auto compressed = EncodeNbtData(chunk);
+    if (compressed.empty()) return;
+
+    // Chunk header: 4 bytes length + 1 byte compression type
+    uint32_t payloadLength = uint32_t(compressed.size()) + 1; // +1 for the format byte
+    uint32_t sectorsNeeded = (payloadLength + 4 + SECTOR_SIZE - 1) / SECTOR_SIZE;
+
+    // Find a free run of sectors in the file
+    // Build an occupancy set from the header
+    std::vector<bool> occupied;
+    for (int i = 0; i < 1024; i++) {
+        if (regionHeader[i].offset == 0) continue;
+        uint32_t end = regionHeader[i].offset + regionHeader[i].numberOfSectors;
+        if (end > occupied.size()) occupied.resize(end, false);
+        for (uint32_t s = regionHeader[i].offset; s < end; s++)
+            occupied[s] = true;
+    }
+
+    // Find first free run of `sectorsNeeded` sectors starting at 2 (after header)
+    uint32_t chosenOffset = 0;
+    for (uint32_t s = 2; ; s++) {
+        bool fits = true;
+        for (uint32_t j = 0; j < sectorsNeeded; j++) {
+            if (s + j < occupied.size() && occupied[s + j]) { fits = false; break; }
+        }
+        if (fits) { chosenOffset = s; break; }
+    }
+
+    // Write chunk data at the chosen sector
+    auto& file = regionFile.get();
+    file.seekp(chosenOffset * SECTOR_SIZE);
+
+    // 4-byte big-endian length
+    uint32_t lengthBE = __builtin_bswap32(payloadLength);
+    file.write(reinterpret_cast<char*>(&lengthBE), 4);
+
+    // 1-byte compression type
+    uint8_t format = REGION_ZLIB;
+    file.write(reinterpret_cast<char*>(&format), 1);
+
+    // Compressed data
+    file.write(reinterpret_cast<char*>(compressed.data()), compressed.size());
+
+    // Pad to sector boundary
+    size_t written = 5 + compressed.size();
+    size_t padded = sectorsNeeded * SECTOR_SIZE;
+    if (written < padded) {
+        std::vector<char> pad(padded - written, 0);
+        file.write(pad.data(), pad.size());
+    }
+
+    // Update header entry
+    Int2 local{ chunk->cpos.x & 31, chunk->cpos.z & 31 };
+    int index = local.x + local.z * 32;
+    regionHeader[index].offset = chosenOffset;
+    regionHeader[index].numberOfSectors = uint8_t(sectorsNeeded);
+
+    // Write updated header entry to file
+    file.seekp(index * 4);
+    uint32_t entry = (chosenOffset << 8) | uint8_t(sectorsNeeded);
+    entry = __builtin_bswap32(entry);
+    file.write(reinterpret_cast<char*>(&entry), 4);
+    file.flush();
 }
 
 std::shared_ptr<Chunk> Region::GetChunk(Int32_2 cpos) {
-    return chunks[GetChunkHeaderOffset(cpos)];
+    std::lock_guard<std::mutex> lock(mutex);
+    Int2 local{ cpos.x & 31, cpos.z & 31 };
+    int index = local.x + local.z * 32;
+
+    if (!chunkExists(local)) return nullptr;
+
+    uint32_t offset = regionHeader[index].offset;
+    if (offset == 0) return nullptr;
+
+    auto& file = regionFile.get();
+    file.seekg(static_cast<std::streamoff>(offset) * SECTOR_SIZE);
+
+    // Read 4-byte length
+    uint32_t length = 0;
+    file.read(reinterpret_cast<char*>(&length), 4);
+    if (file.fail()) return nullptr;
+    length = __builtin_bswap32(length);
+
+    // Guard against corrupt/zero length before subtracting
+    if (length < 1) {
+        GlobalLogger().warn << "Invalid chunk length: " << length << "\n";
+        return nullptr;
+    }
+
+    // Read compression type
+    uint8_t format = 0;
+    file.read(reinterpret_cast<char*>(&format), 1);
+    if (file.fail()) return nullptr;
+
+    if (format != REGION_ZLIB) {
+        GlobalLogger().warn << "Unsupported compression format: " << int(format) << "\n";
+        return nullptr;
+    }
+
+    // Read compressed data (length includes the format byte, so actual data is length-1)
+    std::vector<uint8_t> compressed(length - 1);
+    file.read(reinterpret_cast<char*>(compressed.data()), length - 1);
+    if (file.fail()) return nullptr;
+
+    return DecodeNbtData(compressed);
 }
 
 std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk) {
@@ -200,6 +287,7 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& raw_dat
 
     chunk->cpos = Int32_2{cx,cz};
     chunk->state = tp ? ChunkState::Populated : ChunkState::Generated;
+    chunk->isTerrainPopulated = tp;
     std::copy(
         heightMap.begin(),
         heightMap.end(),
@@ -224,153 +312,4 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& raw_dat
         }
     }
     return chunk;
-}
-
-inline std::string Region::GetPath() {
-    return
-        "region/r." +
-        std::to_string(rpos.x) +
-        "." +
-        std::to_string(rpos.z) +
-        ".mcr";
-}
-
-// Turn region into mcr file
-bool Region::Serialize() {
-    if (!std::filesystem::exists("region"))
-        std::filesystem::create_directory("region");
-    std::ofstream file(GetPath(), std::ios::binary);
-    if (!file.is_open()) {
-        GlobalLogger().warn << "Failed to save region! " << this->rpos << "\n";
-        return false;
-    }
-
-    // Sector 0: chunk location table  (4096 bytes)
-    // Sector 1: chunk timestamp table (4096 bytes)
-    // Both are written at the end / zeroed now so the file has correct structure
-    // from the start even if we seek around.
-    constexpr size_t HEADER_SECTORS = 2;
-    size_t sectorIndex = HEADER_SECTORS;
-
-    std::array<uint32_t, REGION_AREA> chunkSector{};   // location table entries
-    std::array<uint32_t, REGION_AREA> chunkTimestamp{}; // timestamp table (zeroed)
-
-    for (const auto& cnk : chunks) {
-        if (!cnk) continue;
-
-        auto data = EncodeNbtData(cnk);
-        if (data.empty()) {
-            GlobalLogger().warn << "Failed to compress " << cnk->cpos << "!\n";
-            continue;
-        }
-
-        // Move to sector position
-        file.seekp(static_cast<std::streamoff>(sectorIndex * SECTOR_SIZE));
-
-        // Total bytes on disk: 4-byte length + 1-byte compression type + payload
-        size_t totalBytes    = sizeof(uint32_t) + sizeof(uint8_t) + data.size();
-        size_t writtenSectors = (totalBytes + SECTOR_SIZE - 1) / SECTOR_SIZE;
-
-        // Record location using region-local chunk coordinates
-        chunkSector[GetChunkHeaderOffset(cnk->cpos)] =
-            (static_cast<uint32_t>(sectorIndex) << 8) | static_cast<uint32_t>(writtenSectors);
-
-        // Write length (big-endian): counts compression-type byte + payload
-        uint32_t payloadLength = __builtin_bswap32(static_cast<uint32_t>(data.size() + sizeof(uint8_t)));
-        file.write(reinterpret_cast<const char*>(&payloadLength), sizeof(payloadLength));
-
-        // Compression type: 2 = zlib
-        uint8_t compressionType = 2;
-        file.write(reinterpret_cast<const char*>(&compressionType), sizeof(compressionType));
-
-        // Compressed chunk data
-        file.write(reinterpret_cast<const char*>(data.data()), static_cast<std::streamsize>(data.size()));
-
-        // Pad to the next sector boundary
-        size_t padding = writtenSectors * SECTOR_SIZE - totalBytes;
-        if (padding > 0) {
-            std::vector<char> zeros(padding, 0);
-            file.write(zeros.data(), static_cast<std::streamsize>(zeros.size()));
-        }
-
-        sectorIndex += writtenSectors;
-    }
-
-    // Write sector 0: location table
-    file.seekp(0);
-    for (auto entry : chunkSector) {
-        uint32_t be = __builtin_bswap32(entry);
-        file.write(reinterpret_cast<const char*>(&be), sizeof(be));
-    }
-
-    // Write sector 1: timestamp table (all zeros)
-    // seekp should already be at byte 4096 after writing 1024 × 4-byte entries,
-    // but seek explicitly to be safe.
-    file.seekp(static_cast<std::streamoff>(SECTOR_SIZE));
-    for (auto ts : chunkTimestamp) {
-        uint32_t be = __builtin_bswap32(ts);
-        file.write(reinterpret_cast<const char*>(&be), sizeof(be));
-    }
-
-    file.close();
-    return true;
-}
-
-// Turn mcr into Region
-bool Region::Deserialize() {
-    // Region doesn't exist, fail
-    if (!std::filesystem::exists(GetPath()))
-        return false;
-    // Deserialize Region
-    std::ifstream file(GetPath(), std::ios::binary);
-    if (!file.is_open()) {
-        GlobalLogger().warn << "Failed to open region " << rpos << "!\n";
-        return false;
-    }
-
-    // Read the header
-    std::vector<FileHeaderEntry> chunkSector;
-    for (int i = 0; i < REGION_AREA; i++) {
-        // Read sector offset
-        uint32_t be = 0;
-        file.read(reinterpret_cast<char*>(&be), sizeof(be));
-        // No data, skip
-        if (be == 0)
-            continue;
-        be = __builtin_bswap32(be);
-        FileHeaderEntry fhe {
-            be >> 8,
-            static_cast<uint8_t>(be & 0xFF)
-        };
-        chunkSector.push_back(fhe);
-    }
-
-    // Read the found sectors in
-    for (const FileHeaderEntry& fhe : chunkSector) {
-        file.seekg(fhe.offset * SECTOR_SIZE);
-        // Read Chunk Header
-        ChunkHeaderEntry che;
-        file.read(
-            reinterpret_cast<char*>(&che.length),
-            sizeof(che.length)
-        );
-        che.length = __builtin_bswap32(che.length);
-        file.read(
-            reinterpret_cast<char*>(&che.format),
-            sizeof(che.format)
-        );
-
-        // Read raw data
-        std::vector<uint8_t> raw_data;
-        raw_data.resize(fhe.numberOfSectors * SECTOR_SIZE);
-        file.read(
-            reinterpret_cast<char*>(raw_data.data()),
-            static_cast<std::streamsize>(che.length - 1)
-        );
-        auto chunk = DecodeNbtData(raw_data);
-        AddChunk(chunk);
-    }
-
-    file.close();
-    return true;
 }

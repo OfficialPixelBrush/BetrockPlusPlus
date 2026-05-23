@@ -207,7 +207,10 @@ void Server::startup() {
         world.pumpPipeline({});
         world.pool.wait();
         world.drainGenQueue();
+        world.regionManager->iopool.wait();
+        world.drainLoadQueue();            
         world.populateReady();
+        world.lightManager.processLightQueue(world);
         // Make sure all lighting is done
         world.lightManager.processLightQueue(world);
 
@@ -241,10 +244,12 @@ void Server::startup() {
         worldHell.pumpPipeline({});
         worldHell.pool.wait();
         worldHell.drainGenQueue();
+        worldHell.regionManager->iopool.wait();
+        worldHell.drainLoadQueue();
         worldHell.populateReady();
+        worldHell.lightManager.processLightQueue(worldHell);
         // Make sure all lighting is done
         worldHell.lightManager.processLightQueue(worldHell);
-
         for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
             for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
                 Int32_2 p{ (worldHell.spawnPoint.x >> 4) + dx, (worldHell.spawnPoint.z >> 4) + dz };
@@ -269,19 +274,6 @@ void Server::startup() {
 
     float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
     GlobalLogger().info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";
-    Region region(Int2{0,0});
-    region.Deserialize();
-    for (int x = 0; x < REGION_WIDTH; x++) {
-        for (int z = 0; z < REGION_WIDTH; z++) {
-            auto cnk = region.GetChunk({x,z});
-            if (!cnk) continue;
-            cnk->cpos = {x,z};
-            cnk->isModified = true;
-            cnk->generateSkylightMap();
-            cnk->state.store(ChunkState::Generated, std::memory_order_release);
-            world.postGenResult(std::move(cnk));
-        }
-    }
 }
 
 void Server::run() {
@@ -338,15 +330,8 @@ void Server::stop() {
         );
     }
     closeSocket();
-    Region region(Int2{0,0});
-    for (int x = 0; x < REGION_WIDTH; x++) {
-        for (int z = 0; z < REGION_WIDTH; z++) {
-            auto cnk = world.getChunk({x,z});
-            if (!cnk) continue;
-            region.AddChunk(cnk);
-        }
-    }
-    region.Serialize();
+    world.shutdown();
+    worldHell.shutdown();
 }
 
 void Server::acceptNewPlayers() {
@@ -713,7 +698,7 @@ void Server::handleLogin(PlayerSession& session) {
     auto respawnPoint = sessionWorld.getSpawnPoint(true);
 
     // If our session position is the default then overwrite it
-    if (session.position.pos == Vec3{ -1, -1000000, -1 }) { 
+    if (session.position.pos == Vec3{ -1, -1000000, -1 }) {
         session.position.pos = { float(respawnPoint.x) + 0.5, float(respawnPoint.y), float(respawnPoint.z) + 0.5 };
     }
 
