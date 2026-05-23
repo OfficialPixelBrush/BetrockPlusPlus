@@ -226,5 +226,8 @@ bool Lighter::processLightQueue(WorldManager& world, int maxIterations) {
     }
 
     --processingDepth;
+    if (lightQueue.empty())
+        lightQueue.shrink_to_fit();
+
     return !lightQueue.empty();
 }
