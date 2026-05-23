@@ -139,6 +139,33 @@ void WorldManager::shutdown() {
     regionManager->flushAll();
 }
 
+void WorldManager::drainGenQueue() {
+    // Integrate chunks that finished generating
+    std::deque<std::shared_ptr<Chunk>> ready;
+    {
+        std::lock_guard lk(genDoneMutex);
+        ready.swap(genDoneQueue);
+    }
+    for (auto& c : ready) {
+        Int32_2 pos = c->cpos;
+        auto it = chunks.find(pos);
+        if (it != chunks.end()) {
+            bool wasSpawnChunk = it->second->spawnChunk;
+            it->second = std::move(c);
+            it->second->spawnChunk = wasSpawnChunk;
+
+            // Replay any writes that arrived while this chunk was unloaded.
+            auto pit = pendingBleedWrites.find(pos);
+            if (pit != pendingBleedWrites.end()) {
+                for (auto& [wpos, block] : pit->second)
+                    setBlock(wpos, block.type, block.data);
+                pendingBleedWrites.erase(pit);
+            }
+            seedChunkLighting(pos);
+        }
+    }
+}
+
 void WorldManager::drainLoadQueue() {
     for (auto& [pos, chunk] : chunks) {
         if (chunk->state.load(std::memory_order_acquire) != ChunkState::Loading) continue;
@@ -150,6 +177,24 @@ void WorldManager::drainLoadQueue() {
         bool wasSpawnChunk = it->second->spawnChunk;
         it->second = std::move(loaded);
         it->second->spawnChunk = wasSpawnChunk;
+
+        // Regenerate temp and humidity data
+        thread_local BiomeGenerator tl_biomeGen(0);
+        thread_local bool tl_biomeGenInit = false;
+        if (!tl_biomeGenInit) {
+            tl_biomeGen = BiomeGenerator(this->seed);
+            tl_biomeGenInit = true;
+        }
+        std::vector<double> temp, humi, weird;
+        Biome ignored[CHUNK_AREA];
+        tl_biomeGen.GenerateBiomeMap(
+            ignored, temp, humi, weird,
+            Int2{ pos.x * CHUNK_WIDTH, pos.z * CHUNK_WIDTH }
+        );
+        for (int i = 0; i < CHUNK_AREA; ++i) {
+            it->second->temperature[i] = float(temp[i]);
+            it->second->humidity[i] = float(humi[i]);
+        }
 
         // Replay any writes that arrived while this chunk was loading.
         auto pit = pendingBleedWrites.find(pos);

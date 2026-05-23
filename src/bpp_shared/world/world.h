@@ -139,32 +139,7 @@ struct WorldManager {
         genDoneQueue.push_back(std::move(chunk));
     }
 
-    void drainGenQueue() {
-        // Integrate chunks that finished generating
-        std::deque<std::shared_ptr<Chunk>> ready;
-        {
-            std::lock_guard lk(genDoneMutex);
-            ready.swap(genDoneQueue);
-        }
-        for (auto& c : ready) {
-            Int32_2 pos = c->cpos;
-            auto it = chunks.find(pos);
-            if (it != chunks.end()) {
-                bool wasSpawnChunk = it->second->spawnChunk;
-                it->second = std::move(c);
-                it->second->spawnChunk = wasSpawnChunk;
-
-                // Replay any writes that arrived while this chunk was unloaded.
-                auto pit = pendingBleedWrites.find(pos);
-                if (pit != pendingBleedWrites.end()) {
-                    for (auto& [wpos, block] : pit->second)
-                        setBlock(wpos, block.type, block.data);
-                    pendingBleedWrites.erase(pit);
-                }
-                seedChunkLighting(pos);
-            }
-        }
-    }
+    void drainGenQueue();
 
     std::shared_ptr<Chunk> getChunk(Int32_2 pos) {
         return getChunkShared(pos);
