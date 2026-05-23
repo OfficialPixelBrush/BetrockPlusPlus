@@ -203,7 +203,7 @@ void WorldManager::drainLoadQueue() {
                 setBlock(wpos, block.type, block.data);
             pendingBleedWrites.erase(pit);
         }
-        seedChunkLighting(pos);
+        //seedChunkLighting(pos);
     }
 }
 
