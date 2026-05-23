@@ -22,6 +22,7 @@
 enum class ChunkState : uint8_t {
     Unloaded,
     Generating,
+    Loading,
     Generated,
     Populating,
     Populated,
@@ -40,7 +41,7 @@ struct std::hash<Int32_2> {
 };
 
 struct entityBucket {
-	std::vector<std::shared_ptr<Entity>> entities;
+    std::vector<std::shared_ptr<Entity>> entities;
 };
 
 struct Chunk {
@@ -48,7 +49,7 @@ struct Chunk {
     static constexpr int META_VOLUME = VOLUME / 2;
 
     Int32_2 cpos;
-	std::atomic_bool inUse{ false };
+    std::atomic_bool inUse{ false };
 
     // Flat arrays indexed by (y * CHUNK_WIDTH * CHUNK_WIDTH) + (z * CHUNK_WIDTH) + x
     BlockType blocks[VOLUME] = { BLOCK_AIR };

@@ -11,7 +11,8 @@
 
 class FileHandle {
 public:
-    explicit FileHandle(const std::string& path)
+    FileHandle() = default;
+    FileHandle(const std::string& path)
         : stream(path, std::ios::in | std::ios::out | std::ios::binary)
     {
         if (!stream.is_open()) {

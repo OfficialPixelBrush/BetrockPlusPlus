@@ -59,6 +59,21 @@ std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {
 void WorldManager::tick(const std::vector<ClientPosition>& players) {
     elapsed_ticks++;
     drainGenQueue();       // process generation results first
+    drainLoadQueue();      // integrate finished loads
+
+    // Queue any modified chunks for saving
+    if (regionManager) {
+        for (auto& [pos, chunk] : chunks) {
+            if (!chunk->isModified) continue;
+            ChunkState s = chunk->state.load();
+            if (s < ChunkState::Generated) continue;
+            if (s == ChunkState::Generating || s == ChunkState::Loading) continue;
+            regionManager->saveChunk(chunk);
+            chunk->isModified = false;
+        }
+    }
+
+    regionManager->pumpPipeline();
     updateLoadRadius(players);
     populateReady();       // population runs on main thread
     lightManager.processLightQueue(*this, INT_MAX);
@@ -66,6 +81,85 @@ void WorldManager::tick(const std::vector<ClientPosition>& players) {
 
 void WorldManager::update(const std::vector<ClientPosition>& players) {
     pumpPipeline(players);
+}
+
+void WorldManager::shutdown() {
+    if (!regionManager) return;
+    if (isHell) {
+        GlobalLogger().info << "Saving chunks for level -1\n";
+    }
+    else {
+        GlobalLogger().info << "Saving chunks for level 0\n";
+    }
+
+    // Save all currently loaded modified chunks
+    for (auto& [pos, chunk] : chunks) {
+        if (!chunk->isModified) continue;
+        ChunkState s = chunk->state.load();
+        if (s < ChunkState::Generated) continue;
+        if (s == ChunkState::Generating || s == ChunkState::Loading) continue;
+        regionManager->saveChunk(chunk);
+        chunk->isModified = false;
+    }
+
+    // For every position that still has pending bleed writes, force-load or
+    // force-generate the chunk, apply the writes, then save it.
+    while (!pendingBleedWrites.empty()) {
+        auto it = pendingBleedWrites.begin();
+        Int32_2 cpos = it->first;
+
+        // Insert a placeholder if not already in the map
+        if (!chunks.contains(cpos)) {
+            auto c = std::make_shared<Chunk>();
+            c->cpos = cpos;
+            chunks.emplace(cpos, std::move(c));
+        }
+
+        // Spin until this chunk is ready — load from disk or generate fresh
+        while (chunks[cpos]->state.load() < ChunkState::Generated) {
+            pumpPipeline({});
+            pool.wait();
+            drainGenQueue();
+            regionManager->iopool.wait();
+            drainLoadQueue();
+        }
+
+        // Apply the pending writes
+        flushBleedWrites();
+
+        // Save it
+        auto& chunk = chunks[cpos];
+        if (chunk->isModified) {
+            regionManager->saveChunk(chunk);
+            chunk->isModified = false;
+        }
+    }
+
+    // Flush everything to disk and wait for IO to finish
+    regionManager->flushAll();
+}
+
+void WorldManager::drainLoadQueue() {
+    for (auto& [pos, chunk] : chunks) {
+        if (chunk->state.load(std::memory_order_acquire) != ChunkState::Loading) continue;
+        auto loaded = regionManager->getChunk(pos);
+        if (!loaded) continue;
+
+        auto it = chunks.find(pos);
+        if (it == chunks.end()) continue;
+        bool wasSpawnChunk = it->second->spawnChunk;
+        it->second = std::move(loaded);
+        it->second->spawnChunk = wasSpawnChunk;
+
+        // Replay any writes that arrived while this chunk was loading.
+        auto pit = pendingBleedWrites.find(pos);
+        if (pit != pendingBleedWrites.end()) {
+            for (auto& [wpos, block] : pit->second)
+                setBlock(wpos, block.type, block.data);
+            pendingBleedWrites.erase(pit);
+        }
+        seedChunkLighting(pos);
+    }
 }
 
 void WorldManager::seedChunkLighting(Int32_2 pos) {
@@ -101,11 +195,11 @@ void WorldManager::seedChunkLighting(Int32_2 pos) {
                 if (Blocks::blockProperties[id].lightEmission > 0)
                     lightManager.scheduleLightUpdate({ bx + x, y, bz + z }, LightType::Block);
             }
-	propagateChunkLightBorders(pos);
+    propagateChunkLightBorders(pos);
 }
 
 void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) {
-	// Get all the chunk positions we want to be loaded based on player positions
+    // Get all the chunk positions we want to be loaded based on player positions
     std::unordered_set<Int32_2> wanted;
     for (const auto& player : players) {
         Int2 center = player.getChunkPos();
@@ -116,7 +210,7 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
     }
 
     // Make dummy chunks for any new positions we want 
-	// The generater picks up that this chunk is not generated yet and fills it in, then replaces the chunk in the map with the real one when done
+    // The generater picks up that this chunk is not generated yet and fills it in, then replaces the chunk in the map with the real one when done
     for (const auto& pos : wanted) {
         if (!chunks.contains(pos)) {
             auto c = std::make_shared<Chunk>();
@@ -130,8 +224,8 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
         if (wanted.contains(it->first)) { ++it; continue; }
         if (it->second->spawnChunk) { ++it; continue; }
         ChunkState s = it->second->state.load();
-        if (s == ChunkState::Generating) {
-            // Leave the slot so drainGenQueue can still find it
+        if (s == ChunkState::Generating || s == ChunkState::Loading) {
+            // Leave the slot so drainGenQueue/drainLoadQueue can still find it
             ++it;
             continue;
         }
@@ -187,8 +281,20 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
     }
 
     std::unordered_set<Int32_2> startedThisTick;
+
+    auto startLoading = [&](const Int32_2& pos) -> bool {
+        if (startedThisTick.contains(pos)) return false;
+        auto it = chunks.find(pos);
+        if (it == chunks.end()) return false;
+        if (it->second->state.load(std::memory_order_acquire) != ChunkState::Unloaded) return false;
+        it->second->state.store(ChunkState::Loading, std::memory_order_release);
+        regionManager->loadChunk(pos);
+        startedThisTick.insert(pos);
+        return true;
+        };
+
     auto startGeneration = [&](const Int32_2& pos) -> bool {
-		// Check if already started this tick (can happen with multiple players), and if chunk is still Unloaded (can be changed by another thread).
+        // Check if already started this tick (can happen with multiple players), and if chunk is still Unloaded (can be changed by another thread).
         if (startedThisTick.contains(pos)) return false;
         auto it = chunks.find(pos);
         if (it == chunks.end()) return false;
@@ -221,10 +327,13 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
         };
 
     if (playerCount == 0) {
-        // No players so no budget slicing!
         int started = 0;
         for (const Int32_2& pos : noPlayerCandidates) {
             if (started >= slicePerPlayer) break;
+            if (regionManager->chunkExists(pos)) {
+                if (startLoading(pos)) ++started;
+                continue;
+            }
             if (startGeneration(pos)) ++started;
         }
     }
@@ -240,12 +349,21 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
                 int& cur = cursors[size_t(i)];
                 int playerConsumed = 0;
                 while (playerConsumed < slicePerPlayer && cur < static_cast<int>(perPlayerQueues[size_t(i)].size())) {
-                    if (startGeneration(perPlayerQueues[size_t(i)][size_t(cur)])) {
+                    Int32_2 cpos = perPlayerQueues[size_t(i)][size_t(cur)];
+                    ++cur;
+                    if (regionManager->chunkExists(cpos)) {
+                        if (startLoading(cpos)) {
+                            ++playerConsumed;
+                            ++totalStarted;
+                            anyProgress = true;
+                        }
+                        continue;
+                    }
+                    if (startGeneration(cpos)) {
                         ++playerConsumed;
                         ++totalStarted;
                         anyProgress = true;
                     }
-                    ++cur;
                 }
             }
         }
@@ -267,13 +385,13 @@ void WorldManager::populateReady() {
         ordered.push_back(pos);
     }
 
-	// Sort by population order that beta 1.7.3 seems to use
+    // Sort by population order that beta 1.7.3 seems to use
     std::sort(ordered.begin(), ordered.end(), [](const Int32_2& a, const Int32_2& b) {
         if (a.x != b.x) return a.x < b.x;
         return a.z < b.z;
         });
 
-	// Make sure we don't try to populate the same chunk multiple times in one tick (can happen with the weird population order and multiple players)
+    // Make sure we don't try to populate the same chunk multiple times in one tick (can happen with the weird population order and multiple players)
     // Also make sure we populate in the right order!
     // We break if the target chunk isn't ready yet so population order is guaranteed
     std::unordered_set<Int32_2> populatedThisTick;
@@ -283,7 +401,7 @@ void WorldManager::populateReady() {
         auto cit = chunks.find(pos);
         if (cit == chunks.end()) break;
         cit->second->state.store(ChunkState::Populating, std::memory_order_release);
-		thread_local WorldWrapper wrapper{ .m_manager = *this, .m_centerChunkPos = pos };
+        thread_local WorldWrapper wrapper{ .m_manager = *this, .m_centerChunkPos = pos };
         wrapper.m_centerChunkPos = pos;
         wrapper.getChunkRegion();
         if (isHell) {
