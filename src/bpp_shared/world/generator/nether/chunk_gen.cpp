@@ -406,7 +406,7 @@ bool NetherGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator().GenerateNetherFire(world, m_rand, coord);
 	}
 
-	// Generate Glowstone blooms
+	// Generate Glowstone Blob
 	int max_glowstone_attempts = m_rand.nextInt(m_rand.nextInt(10) + 1);
 	for (int attempt = 0; attempt < max_glowstone_attempts; ++attempt) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
@@ -415,7 +415,7 @@ bool NetherGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator().GenerateNetherGlowstone(world, m_rand, coord);
 	}
 
-	// Generate secondary Glowstone blooms
+	// Generate secondary Glowstone Blob
 	for (int attempt = 0; attempt < 10; ++attempt) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
