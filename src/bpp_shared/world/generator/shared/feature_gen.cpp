@@ -420,7 +420,7 @@ bool FeatureGenerator::GenerateCacti(WorldWrapper& world, Java::Random& rand, In
 }
 
 //  GenerateLiquid — spring placement + lava updateTick RNG simulation
-bool FeatureGenerator::GenerateLiquid(WorldWrapper& world, Java::Random& rand, Int3 pos) {
+bool FeatureGenerator::GenerateLiquid(WorldWrapper& world, [[maybe_unused]] Java::Random& rand, Int3 pos) {
 	if (world.getBlockId({ pos.x, pos.y + 1, pos.z }) != BLOCK_STONE) return false;
 	if (world.getBlockId({ pos.x, pos.y - 1, pos.z }) != BLOCK_STONE) return false;
 	BlockType cur = world.getBlockId(pos);
@@ -438,6 +438,88 @@ bool FeatureGenerator::GenerateLiquid(WorldWrapper& world, Java::Random& rand, I
 
 	if (stone == 3 && air == 1) {
 		world.setBlock(pos, this->type);
+	}
+	return true;
+}
+
+// TODO: Merge with GenerateLiquid?
+//  GenerateNetherLiquid
+bool FeatureGenerator::GenerateNetherLiquid(WorldWrapper& world, [[maybe_unused]] Java::Random& rand, Int3 pos) {
+	if (world.getBlockId({ pos.x, pos.y + 1, pos.z }) != BLOCK_NETHERRACK) return false;
+	if (world.getBlockId({ pos.x, pos.y - 1, pos.z }) != BLOCK_NETHERRACK) return false;
+	BlockType cur = world.getBlockId(pos);
+	if (cur != BLOCK_AIR && cur != BLOCK_NETHERRACK) return false;
+
+	int32_t netherrack = 0, air = 0;
+	if (world.getBlockId({ pos.x - 1, pos.y, pos.z }) == BLOCK_NETHERRACK)	++netherrack;
+	if (world.getBlockId({ pos.x + 1, pos.y, pos.z }) == BLOCK_NETHERRACK)	++netherrack;
+	if (world.getBlockId({ pos.x, pos.y, pos.z - 1 }) == BLOCK_NETHERRACK)	++netherrack;
+	if (world.getBlockId({ pos.x, pos.y, pos.z + 1 }) == BLOCK_NETHERRACK)	++netherrack;
+	if (world.getBlockId({ pos.x - 1, pos.y, pos.z }) == BLOCK_AIR)   		++air;
+	if (world.getBlockId({ pos.x + 1, pos.y, pos.z }) == BLOCK_AIR)   		++air;
+	if (world.getBlockId({ pos.x, pos.y, pos.z - 1 }) == BLOCK_AIR)   		++air;
+	if (world.getBlockId({ pos.x, pos.y, pos.z + 1 }) == BLOCK_AIR)   		++air;
+
+	if (netherrack == 3 && air == 1) {
+		world.setBlock(pos, this->type);
+	}
+	return true;
+}
+
+//  GenerateNetherFire
+bool FeatureGenerator::GenerateNetherFire(WorldWrapper& world, Java::Random& rand, Int3 pos) {
+	for (int i = 0; i < 64; ++i) {
+		Int3 test_pos{
+			pos.x + rand.nextInt(8) - rand.nextInt(8),
+			pos.y + rand.nextInt(4) - rand.nextInt(4),
+			pos.z + rand.nextInt(8) - rand.nextInt(8),
+		};
+		// If air with netherrack underneath, generate
+		if (
+			world.getBlockId(test_pos) == BLOCK_AIR &&
+			world.getBlockId(test_pos + Int3{0,-1,0}) == BLOCK_NETHERRACK
+		)
+			world.setBlock(test_pos, BLOCK_FIRE);
+	}
+	return true;
+}
+
+//  GenerateNetherGlowstone
+bool FeatureGenerator::GenerateNetherGlowstone(WorldWrapper& world, Java::Random& rand, Int3 pos) {
+	// Exit if tested block isn't air
+	if (!world.getBlockId(pos) == BLOCK_AIR)
+		return false;
+	// Exit if block above tested block isn't netherrack
+	if (world.getBlockId(pos + Int3{0,1,0}) != BLOCK_NETHERRACK)
+		return false;
+	world.setBlock(pos, BLOCK_GLOWSTONE);
+	for (int i = 0; i < 1500; ++i) {
+		Int3 test_pos{
+			pos.x + rand.nextInt(8) - rand.nextInt(8),
+			pos.y + rand.nextInt(12),
+			pos.z + rand.nextInt(8) - rand.nextInt(8),
+		};
+		// Skip non-air blocks
+		if (world.getBlockId(test_pos) != BLOCK_AIR)
+			continue;
+		int adjacent_glowstone_count = 0;
+		// Check for adjacent glowstone blocks
+		for (int direction = 0; direction < 6; ++direction) {
+			BlockType adjacent_block = BLOCK_AIR;
+			switch (direction) {
+				case 0: adjacent_block = world.getBlockId(pos + Int3{-1,0,0}); break;
+				case 1: adjacent_block = world.getBlockId(pos + Int3{+1,0,0}); break;
+				case 2: adjacent_block = world.getBlockId(pos + Int3{0,-1,0}); break;
+				case 3: adjacent_block = world.getBlockId(pos + Int3{0,+1,0}); break;
+				case 4: adjacent_block = world.getBlockId(pos + Int3{0,0,-1}); break;
+				case 5: adjacent_block = world.getBlockId(pos + Int3{0,0,+1}); break;
+			}
+			if (adjacent_block == BLOCK_GLOWSTONE)
+				adjacent_glowstone_count++;
+		}
+		// If onle one adjacent glowstone exists, place another
+		if (adjacent_glowstone_count == 1)
+			world.setBlock(test_pos, BLOCK_GLOWSTONE);
 	}
 	return true;
 }
