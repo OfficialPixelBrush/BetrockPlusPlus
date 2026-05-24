@@ -498,7 +498,7 @@ bool FeatureGenerator::GenerateNetherGlowstone(WorldWrapper& world, Java::Random
 	for (int i = 0; i < 1500; ++i) {
 		Int3 test_pos{
 			pos.x + rand.nextInt(8) - rand.nextInt(8),
-			pos.y + rand.nextInt(12),
+			pos.y - rand.nextInt(12),
 			pos.z + rand.nextInt(8) - rand.nextInt(8),
 		};
 		// Skip non-air blocks
