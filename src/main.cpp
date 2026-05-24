@@ -8,6 +8,7 @@
 #include <atomic>
 #include <csignal>
 #include <numeric_structs.h>
+#include "bpp_shared/config/cli_args.h"
 #include "platforms.h"
 #ifndef BUILD_SERVER
 #include "bpp_client/client.h"
@@ -66,6 +67,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 
     std::signal(SIGINT, signalHandler);
     std::signal(SIGTERM, signalHandler);
+
+    CommandLineArguments cliargs = ParseArgs(argc, argv);
 
 #ifdef BUILD_SERVER
     Server serv;
