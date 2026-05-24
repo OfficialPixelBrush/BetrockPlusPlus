@@ -379,269 +379,65 @@ void NetherGenerator::GenerateTerrainNoise(std::vector<double>& terrainMap, Int3
  * match the Java source exactly.
  */
 bool NetherGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
-	return true;
-	/*
 	const int32_t blockX = chunk.cpos.x * CHUNK_WIDTH;
 	const int32_t blockZ = chunk.cpos.z * CHUNK_WIDTH;
-	Biome biome = BiomeGenerator(this->seed).GetBiomeAtPoint(
-		Int2{ blockX + CHUNK_WIDTH, blockZ + CHUNK_WIDTH }
-	);
 	// Java RNG seeding sequence
+	// Not in Nether Generator???
 	m_rand.setSeed(world.getSeed());
 	int64_t xSalt = m_rand.nextLong() / 2L * 2L + 1L;
 	int64_t zSalt = m_rand.nextLong() / 2L * 2L + 1L;
 	m_rand.setSeed((int64_t(chunk.cpos.x) * xSalt + int64_t(chunk.cpos.z) * zSalt) ^ world.getSeed());
 
 	Int3 coord;
+	// Generate single-block lava streams
+	for (int attempt = 0; attempt < 8; ++attempt) {
+		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		coord.y = m_rand.nextInt(CHUNK_HEIGHT-8) + 4; // 120
+		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		FeatureGenerator(BLOCK_LAVA_FLOWING).GenerateNetherLiquid(world, m_rand, coord);
+	}
 
-	// Water lakes
-	if (m_rand.nextInt(4) == 0) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+	// Generate fire patch
+	int max_fire_attempts = m_rand.nextInt(m_rand.nextInt(10) + 1) + 1;
+	for (int attempt = 0; attempt < max_fire_attempts; ++attempt) {
+		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		coord.y = m_rand.nextInt(CHUNK_HEIGHT-8) + 4; // 120
+		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		FeatureGenerator().GenerateNetherFire(world, m_rand, coord);
+	}
+
+	// Generate Glowstone blooms
+	int max_glowstone_attempts = m_rand.nextInt(m_rand.nextInt(10) + 1);
+	for (int attempt = 0; attempt < max_glowstone_attempts; ++attempt) {
+		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		coord.y = m_rand.nextInt(CHUNK_HEIGHT-8) + 4; // 120
+		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		FeatureGenerator().GenerateNetherGlowstone(world, m_rand, coord);
+	}
+
+	// Generate secondary Glowstone blooms
+	for (int attempt = 0; attempt < 10; ++attempt) {
+		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator(BLOCK_WATER_STILL).GenerateLake(world, this->rand, coord);
+		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		FeatureGenerator().GenerateNetherGlowstone(world, m_rand, coord);
 	}
-
-	// Lava lakes — nextInt(10) is always consumed when y >= NETHER_LAVA_LEVEL
-	if (m_rand.nextInt(8) == 0) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(m_rand.nextInt(120) + 8);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		if (coord.y < NETHER_LAVA_LEVEL || m_rand.nextInt(10) == 0)
-			FeatureGenerator(BLOCK_LAVA_STILL).GenerateLake(world, this->rand, coord);
-	}
-
-	// Dungeons
-	for (int32_t i = 0; i < 8; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+	
+	// Generate Brown Mushrooms
+	if (m_rand.nextInt(1) == 0) {
+		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator().GenerateDungeon(world, this->rand, coord);
+		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		FeatureGenerator(BLOCK_MUSHROOM_BROWN).GenerateFlowers(world, m_rand, coord);
 	}
-
-	// Clay (no +8)
-	for (int32_t i = 0; i < 10; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
+	
+	// Generate Red Mushrooms
+	if (m_rand.nextInt(1) == 0) {
+		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
-		FeatureGenerator().GenerateClay(world, this->rand, coord, 32);
+		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		FeatureGenerator(BLOCK_MUSHROOM_RED).GenerateFlowers(world, m_rand, coord);
 	}
 
-	// Dirt blobs (no +8)
-	for (int32_t i = 0; i < 20; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_DIRT).GenerateMinable(world, this->rand, coord, 32);
-	}
-
-	// Gravel blobs (no +8)
-	for (int32_t i = 0; i < 10; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_GRAVEL).GenerateMinable(world, this->rand, coord, 32);
-	}
-
-	// Coal
-	for (int32_t i = 0; i < 20; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_ORE_COAL).GenerateMinable(world, this->rand, coord, 16);
-	}
-
-	// Iron (below y=64)
-	for (int32_t i = 0; i < 20; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 2);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_ORE_IRON).GenerateMinable(world, this->rand, coord, 8);
-	}
-
-	// Gold (below y=32)
-	for (int32_t i = 0; i < 2; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 4);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_ORE_GOLD).GenerateMinable(world, this->rand, coord, 8);
-	}
-
-	// Redstone (below y=16)
-	for (int32_t i = 0; i < 8; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 8);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_ORE_REDSTONE_OFF).GenerateMinable(world, this->rand, coord, 7);
-	}
-
-	// Diamond (below y=16)
-	{
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 8);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_ORE_DIAMOND).GenerateMinable(world, this->rand, coord, 7);
-	}
-
-	// Lapis lazuli — two independent nextInt(16) rolls (triangular distribution ~y=16)
-	{
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 8) + m_rand.nextInt(CHUNK_HEIGHT / 8);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_ORE_LAPIS_LAZULI).GenerateMinable(world, this->rand, coord, 6);
-	}
-
-	// Tree count — noise at blockX*0.5, blockZ*0.5 (matches Java's var11=0.5 scale)
-	double noiseVal = treeDensityNoiseGen.GenerateOctaves({ double(blockX) * 0.5, double(blockZ) * 0.5 });
-	int32_t baseTreeCount = Java::DoubleToInt32((noiseVal / 8.0 + m_rand.nextDouble() * 4.0 + 4.0) / 3.0);
-	int32_t treeCount = 0;
-	if (m_rand.nextInt(10) == 0) ++treeCount;
-
-	// Biome tree adjustments — additive (not else-if), matching Java exactly
-	if (biome == BIOME_FOREST)        treeCount += baseTreeCount + 5;
-	if (biome == BIOME_RAINFOREST)    treeCount += baseTreeCount + 5;
-	if (biome == BIOME_SEASONALFOREST)treeCount += baseTreeCount + 2;
-	if (biome == BIOME_TAIGA)         treeCount += baseTreeCount + 5;
-	if (biome == BIOME_DESERT)        treeCount -= 20;
-	if (biome == BIOME_TUNDRA)        treeCount -= 20;
-	if (biome == BIOME_PLAINS)        treeCount -= 20;
-
-	for (int32_t i = 0; i < treeCount; ++i) {
-		int32_t tx = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		int32_t tz = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		int32_t ty = world.getHeightValue(tx, tz);
-		coord = { tx, ty, tz };
-		GenerateTreeForBiome(world, this->rand, coord, biome);
-	}
-
-	// Dandelions
-	{
-		int32_t count = 0;
-		if (biome == BIOME_FOREST)         count = 2;
-		if (biome == BIOME_SEASONALFOREST) count = 4;
-		if (biome == BIOME_TAIGA)          count = 2;
-		if (biome == BIOME_PLAINS)         count = 3;
-		for (int32_t i = 0; i < count; ++i) {
-			coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-			coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-			coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-			FeatureGenerator(BLOCK_DANDELION).GenerateFlowers(world, this->rand, coord);
-		}
-	}
-
-	// Tall grass / ferns — rainforest nextInt(3) consumed inside loop
-	{
-		int32_t count = 0;
-		if (biome == BIOME_FOREST)         count = 2;
-		if (biome == BIOME_RAINFOREST)     count = 10;
-		if (biome == BIOME_SEASONALFOREST) count = 2;
-		if (biome == BIOME_TAIGA)          count = 1;
-		if (biome == BIOME_PLAINS)         count = 10;
-		for (int32_t i = 0; i < count; ++i) {
-			int8_t grassMeta = 1;
-			if (biome == BIOME_RAINFOREST && m_rand.nextInt(3) != 0)
-				grassMeta = 2; // fern
-			coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-			coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-			coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-			FeatureGenerator(BLOCK_TALLGRASS, grassMeta).GenerateTallgrass(world, this->rand, coord);
-		}
-	}
-
-	// Dead bush (desert only)
-	{
-		int32_t count = (biome == BIOME_DESERT) ? 2 : 0;
-		for (int32_t i = 0; i < count; ++i) {
-			coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-			coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-			coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-			FeatureGenerator(BLOCK_DEADBUSH).GenerateDeadbush(world, this->rand, coord);
-		}
-	}
-
-	// Rose (1-in-2)
-	if (m_rand.nextInt(2) == 0) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator(BLOCK_ROSE).GenerateFlowers(world, this->rand, coord);
-	}
-
-	// Brown mushroom (1-in-4)
-	if (m_rand.nextInt(4) == 0) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator(BLOCK_MUSHROOM_BROWN).GenerateFlowers(world, this->rand, coord);
-	}
-
-	// Red mushroom (1-in-8)
-	if (m_rand.nextInt(8) == 0) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator(BLOCK_MUSHROOM_RED).GenerateFlowers(world, this->rand, coord);
-	}
-
-	// Sugar cane (10 attempts)
-	for (int32_t i = 0; i < 10; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator().GenerateSugarcane(world, this->rand, coord);
-	}
-
-	// Pumpkins (1-in-32)
-	if (m_rand.nextInt(32) == 0) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator().GeneratePumpkins(world, this->rand, coord);
-	}
-
-	// Cacti (desert only)
-	{
-		int32_t count = (biome == BIOME_DESERT) ? 10 : 0;
-		for (int32_t i = 0; i < count; ++i) {
-			coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-			coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-			coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-			FeatureGenerator().GenerateCacti(world, this->rand, coord);
-		}
-	}
-
-	// Water springs (50 attempts)
-	for (int32_t i = 0; i < 50; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(m_rand.nextInt(120) + 8);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator(BLOCK_WATER_FLOWING).GenerateLiquid(world, this->rand, coord);
-	}
-
-	// Lava springs (20 attempts)
-	for (int32_t i = 0; i < 20; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(m_rand.nextInt(m_rand.nextInt(112) + 8) + 8);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator(BLOCK_LAVA_FLOWING).GenerateLiquid(world, this->rand, coord);
-	}
-
-	// Snow/ice — iterate blockX+8 to blockX+8+16 matching Java's region offset.
-	// Java uses getTopSolidOrLiquidBlock here (skips non-solid like leaves) — NOT
-	// the heightmap (which would stop at leaves). Use findTopSolidBlock to match.
-	for (int32_t x = blockX + 8; x < blockX + 8 + CHUNK_WIDTH; ++x) {
-		for (int32_t z = blockZ + 8; z < blockZ + 8 + CHUNK_WIDTH; ++z) {
-			int32_t topY = world.findTopSolidBlock(x, z);
-			double  temp = world.getTemperatureAt(x, z)
-				- double(topY - 64) / 64.0 * 0.3;
-			if (temp < 0.5 && topY > 0 && topY < CHUNK_HEIGHT
-				&& world.getBlockId({ x, topY,   z }) == BLOCK_AIR
-				&& world.getBlockId({ x, topY - 1, z }) != BLOCK_ICE
-				&& IsSolid(world.getBlockId({ x, topY - 1, z }))) {
-				world.setBlock({ x, topY, z }, BLOCK_SNOW_LAYER);
-			}
-		}
-	}
 	return true;
-	*/
 }

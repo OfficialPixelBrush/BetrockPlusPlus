@@ -216,6 +216,7 @@ public:
     explicit FeatureGenerator(BlockType pType) : type(pType) {}
     FeatureGenerator(BlockType pType, int8_t pMeta) : type(pType), meta(pMeta) {}
 
+    // Overworld features
     bool GenerateLake(WorldWrapper& world, Java::Random& rand, Int3 pos);
     bool GenerateDungeon(WorldWrapper& world, Java::Random& rand, Int3 pos);
     bool GenerateClay(WorldWrapper& world, Java::Random& rand, Int3 pos, int32_t blobSize = 0);
@@ -227,6 +228,10 @@ public:
     bool GeneratePumpkins(WorldWrapper& world, Java::Random& rand, Int3 pos);
     bool GenerateCacti(WorldWrapper& world, Java::Random& rand, Int3 pos);
     bool GenerateLiquid(WorldWrapper& world, Java::Random& rand, Int3 pos);
+    // Nether Features
+    bool GenerateNetherLiquid(WorldWrapper& world, Java::Random& rand, Int3 pos);
+    bool GenerateNetherFire(WorldWrapper& world, Java::Random& rand, Int3 pos);
+    bool GenerateNetherGlowstone(WorldWrapper& world, Java::Random& rand, Int3 pos);
 
     static int         GenerateDungeonChestLoot(Java::Random& rand);
     static std::string PickMobToSpawn(Java::Random& rand);
