@@ -7,6 +7,7 @@
 
 #include "../generator.h"
 #include "world.h"
+#include "../shared/cave_gen.h"
 #include "../../noise/noise_octaves_perlin.h"
 
 /**
@@ -37,7 +38,7 @@ class NetherGenerator : public Generator {
 	std::vector<double> m_stoneNoise;
 
 	// Cave Gen
-	//CaveGenerator caver;
+	CaveGenerator m_caver;
 
 	void GenerateTerrain(Chunk& chunk);
 	void GenerateTerrainNoise(std::vector<double> &terrainMap, Int3 cpos, Int3 max);

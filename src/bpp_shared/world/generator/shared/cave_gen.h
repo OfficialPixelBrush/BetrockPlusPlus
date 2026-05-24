@@ -22,7 +22,7 @@ private:
 	Java::Random m_rand = Java::Random();
 
 public:
-	CaveGenerator();
+	CaveGenerator(bool isNetherCave = false) : m_isNetherCave(isNetherCave) {}
 	void GenerateCavesForChunk(Chunk& chunk, int64_t seed);
 	void GenerateCaves(Chunk& chunk, Int2 chunkOffset);
 	void CarveCave(Chunk& chunk, Vec3 offset);
@@ -30,4 +30,5 @@ public:
 		float tunnelRadius, float carveYaw, float carvePitch,
 		int32_t tunnelStep, int32_t tunnelLength,
 		double verticalScale);
+	bool m_isNetherCave = false;
 };

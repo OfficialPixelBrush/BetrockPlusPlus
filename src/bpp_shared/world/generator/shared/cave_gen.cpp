@@ -8,8 +8,6 @@
 #include "cave_gen.h"
 #include "java_math.h"
 
-CaveGenerator::CaveGenerator() {}
-
 /**
  * @brief Attempts to generate a cave in the current chunk
  *
@@ -143,14 +141,18 @@ void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset,
 				if (zMax > 16)  zMax = 16;
 
 				// Check for water before carving
-				bool waterIsPresent = false;
-				for (int32_t blockX = xMin; !waterIsPresent && blockX < xMax; ++blockX) {
-					for (int32_t blockZ = zMin; !waterIsPresent && blockZ < zMax; ++blockZ) {
-						for (int32_t blockY = yMax + 1; !waterIsPresent && blockY >= yMin - 1; --blockY) {
+				bool fluidIsPresent = false;
+				for (int32_t blockX = xMin; !fluidIsPresent && blockX < xMax; ++blockX) {
+					for (int32_t blockZ = zMin; !fluidIsPresent && blockZ < zMax; ++blockZ) {
+						for (int32_t blockY = yMax + 1; !fluidIsPresent && blockY >= yMin - 1; --blockY) {
 							if (blockY >= 0 && blockY < CHUNK_HEIGHT) {
 								BlockType blockType = chunk.getBlock({ blockX, blockY, blockZ });
-								if (blockType == BLOCK_WATER_FLOWING || blockType == BLOCK_WATER_STILL)
-									waterIsPresent = true;
+								// Overworld caver check
+								if (!m_isNetherCave && (blockType == BLOCK_WATER_FLOWING || blockType == BLOCK_WATER_STILL))
+									fluidIsPresent = true;
+								// Nether caver check
+								if (m_isNetherCave && (blockType == BLOCK_LAVA_FLOWING || blockType == BLOCK_LAVA_STILL))
+									fluidIsPresent = true;
 								// Skip interior — only check the shell
 								if (blockY != yMin - 1 && blockX != xMin && blockX != xMax - 1 &&
 									blockZ != zMin && blockZ != zMax - 1) {
@@ -161,7 +163,7 @@ void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset,
 					}
 				}
 
-				if (!waterIsPresent) {
+				if (!fluidIsPresent) {
 					for (int32_t blockX = xMin; blockX < xMax; ++blockX) {
 						double center_dx = (double(blockX + chunk.cpos.x * 16) + 0.5 - offset.x) / radius_xz;
 
@@ -169,12 +171,25 @@ void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset,
 							double center_dz = (double(blockZ + chunk.cpos.z * 16) + 0.5 - offset.z) / radius_xz;
 
 							if (center_dx * center_dx + center_dz * center_dz < 1.0) {
+								// Doesn't exist in nether caver
 								bool isGrass = false;
 								for (int32_t blockY = yMax - 1; blockY >= yMin; --blockY) {
 									Int3 bpos{ blockX, blockY + 1, blockZ };
 									double center_dy = (double(blockY) + 0.5 - offset.y) / radius_y;
 									if (center_dy > -0.7 && center_dx * center_dx + center_dy * center_dy + center_dz * center_dz < 1.0) {
 										BlockType blockType = chunk.getBlock(bpos);
+										// Nether caver behavior
+										// Dirt and grass check is most likely irrelevant,
+										// but it still exists in the Vanilla Nether caver
+										if (m_isNetherCave && (
+											blockType == BLOCK_NETHERRACK ||
+											blockType == BLOCK_DIRT ||
+											blockType == BLOCK_GRASS
+										)) {
+											chunk.setBlock(bpos, BLOCK_AIR);
+											continue;
+										}
+										// Overworld caver behavior
 										if (blockType == BLOCK_GRASS) isGrass = true;
 										if (
 											blockType != BLOCK_STONE &&

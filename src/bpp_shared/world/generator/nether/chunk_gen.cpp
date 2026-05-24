@@ -14,7 +14,8 @@
  * @param pSeed The seed of the generated world
  * @param pWorld The world that the NetherGenerator belongs to
  */
-NetherGenerator::NetherGenerator(int64_t p_seed) : Generator(p_seed) {
+NetherGenerator::NetherGenerator(int64_t p_seed) : Generator(p_seed), m_caver(true) {
+	// Tell caver it's a nether caver
 	m_rand = Java::Random(m_seed);
 	// Init Terrain Noise
 	m_lowNoiseGen				= NoiseOctavesPerlin(m_rand, 16);
@@ -42,7 +43,7 @@ void NetherGenerator::GenerateChunk(Chunk& chunk) {
 	// Replace some of the stone with Biome-appropriate blocks
 	ReplaceBlocksForBiome(chunk);
 	// Carve caves
-	//this->caver.GenerateCavesForChunk(chunk, this->seed);
+	m_caver.GenerateCavesForChunk(chunk, m_seed);
 	// Generate heightmap
 	chunk.generateHeightMap();
 

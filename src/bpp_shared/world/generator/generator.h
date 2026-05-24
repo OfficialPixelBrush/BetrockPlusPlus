@@ -8,7 +8,7 @@
 #pragma once
 #include "generator.h"
 #include <cstdint>
-#include "./overworld/feature_gen.h"
+#include "./shared/feature_gen.h"
 
 /**
  * @brief The base generator class
