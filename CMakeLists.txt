@@ -71,8 +71,8 @@ add_executable(
     src/bpp_shared/world/generator/overworld/chunk_gen.cpp
     src/bpp_shared/world/generator/overworld/tree_gen.cpp
     src/bpp_shared/world/generator/overworld/biome_gen.cpp
-    src/bpp_shared/world/generator/overworld/cave_gen.cpp
-    src/bpp_shared/world/generator/overworld/feature_gen.cpp
+    src/bpp_shared/world/generator/shared/cave_gen.cpp
+    src/bpp_shared/world/generator/shared/feature_gen.cpp
     ## Nether generator
     src/bpp_shared/world/generator/nether/chunk_gen.cpp
 

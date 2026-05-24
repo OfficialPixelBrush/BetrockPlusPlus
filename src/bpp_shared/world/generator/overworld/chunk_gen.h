@@ -8,8 +8,8 @@
 #include "../generator.h"
 #include "biomes.h"
 #include "biome_gen.h"
-#include "cave_gen.h"
-#include "feature_gen.h"
+#include "../shared/cave_gen.h"
+#include "../shared/feature_gen.h"
 #include "tree_gen.h"
 #include "world.h"
 
