@@ -489,7 +489,7 @@ bool FeatureGenerator::GenerateNetherFire(WorldWrapper& world, Java::Random& ran
 //  GenerateNetherGlowstone
 bool FeatureGenerator::GenerateNetherGlowstone(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	// Exit if tested block isn't air
-	if (!world.getBlockId(pos) == BLOCK_AIR)
+	if (!world.getBlockId(pos) != BLOCK_AIR)
 		return false;
 	// Exit if block above tested block isn't netherrack
 	if (world.getBlockId(pos + Int3{0,1,0}) != BLOCK_NETHERRACK)
@@ -509,12 +509,12 @@ bool FeatureGenerator::GenerateNetherGlowstone(WorldWrapper& world, Java::Random
 		for (int direction = 0; direction < 6; ++direction) {
 			BlockType adjacent_block = BLOCK_AIR;
 			switch (direction) {
-				case 0: adjacent_block = world.getBlockId(pos + Int3{-1,0,0}); break;
-				case 1: adjacent_block = world.getBlockId(pos + Int3{+1,0,0}); break;
-				case 2: adjacent_block = world.getBlockId(pos + Int3{0,-1,0}); break;
-				case 3: adjacent_block = world.getBlockId(pos + Int3{0,+1,0}); break;
-				case 4: adjacent_block = world.getBlockId(pos + Int3{0,0,-1}); break;
-				case 5: adjacent_block = world.getBlockId(pos + Int3{0,0,+1}); break;
+				case 0: adjacent_block = world.getBlockId(test_pos + Int3{-1,0,0}); break;
+				case 1: adjacent_block = world.getBlockId(test_pos + Int3{+1,0,0}); break;
+				case 2: adjacent_block = world.getBlockId(test_pos + Int3{0,-1,0}); break;
+				case 3: adjacent_block = world.getBlockId(test_pos + Int3{0,+1,0}); break;
+				case 4: adjacent_block = world.getBlockId(test_pos + Int3{0,0,-1}); break;
+				case 5: adjacent_block = world.getBlockId(test_pos + Int3{0,0,+1}); break;
 				default: break;
 			}
 			if (adjacent_block == BLOCK_GLOWSTONE)
