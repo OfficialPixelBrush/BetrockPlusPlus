@@ -489,7 +489,7 @@ bool FeatureGenerator::GenerateNetherFire(WorldWrapper& world, Java::Random& ran
 //  GenerateNetherGlowstone
 bool FeatureGenerator::GenerateNetherGlowstone(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	// Exit if tested block isn't air
-	if (!world.getBlockId(pos) != BLOCK_AIR)
+	if (world.getBlockId(pos) != BLOCK_AIR)
 		return false;
 	// Exit if block above tested block isn't netherrack
 	if (world.getBlockId(pos + Int3{0,1,0}) != BLOCK_NETHERRACK)
