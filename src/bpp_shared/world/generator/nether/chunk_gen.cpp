@@ -373,20 +373,23 @@ void NetherGenerator::GenerateTerrainNoise(std::vector<double>& terrainMap, Int3
 /**
  * @brief Populates the specified chunk with biome-specific features.
  *
- * Direct port of ChunkProviderGenerate.populate() from Beta 1.7.3.
- * Biome is sampled at blockX+16, blockZ+16 from stored chunk climate data.
- * RNG seeding, section order, rand call counts, and coordinate offsets all
+ * Direct port of ChunkProviderHell.populate() from Beta 1.7.3.
+ * Section order, rand call counts, and coordinate offsets all
  * match the Java source exactly.
  */
 bool NetherGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	const int32_t blockX = chunk.cpos.x * CHUNK_WIDTH;
 	const int32_t blockZ = chunk.cpos.z * CHUNK_WIDTH;
+	// NOTE: Apparently the nether is non-deterministic. Fun!
+	// As stupid as this is, doing this "matches" Vanilla behavior
+	/*
 	// Java RNG seeding sequence
 	// Not in Nether Generator???
 	m_rand.setSeed(world.getSeed());
 	int64_t xSalt = m_rand.nextLong() / 2L * 2L + 1L;
 	int64_t zSalt = m_rand.nextLong() / 2L * 2L + 1L;
 	m_rand.setSeed((int64_t(chunk.cpos.x) * xSalt + int64_t(chunk.cpos.z) * zSalt) ^ world.getSeed());
+	*/
 
 	Int3 coord;
 	// Generate single-block lava streams

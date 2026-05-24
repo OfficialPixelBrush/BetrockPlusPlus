@@ -442,6 +442,8 @@ bool FeatureGenerator::GenerateLiquid(WorldWrapper& world, [[maybe_unused]] Java
 	return true;
 }
 
+// Nether Features
+
 // TODO: Merge with GenerateLiquid?
 //  GenerateNetherLiquid
 bool FeatureGenerator::GenerateNetherLiquid(WorldWrapper& world, [[maybe_unused]] Java::Random& rand, Int3 pos) {
@@ -513,6 +515,7 @@ bool FeatureGenerator::GenerateNetherGlowstone(WorldWrapper& world, Java::Random
 				case 3: adjacent_block = world.getBlockId(pos + Int3{0,+1,0}); break;
 				case 4: adjacent_block = world.getBlockId(pos + Int3{0,0,-1}); break;
 				case 5: adjacent_block = world.getBlockId(pos + Int3{0,0,+1}); break;
+				default: break;
 			}
 			if (adjacent_block == BLOCK_GLOWSTONE)
 				adjacent_glowstone_count++;
