@@ -121,7 +121,7 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 							topBlock = BLOCK_AIR;
 							fillerBlock = BLOCK_NETHERRACK;
 						}
-						else if (y >= NETHER_LAVA_LEVEL - 4 && y <= NETHER_LAVA_LEVEL + 1) {
+						else if (y >= NETHER_BIOME_LAVA_LEVEL - 4 && y <= NETHER_BIOME_LAVA_LEVEL + 1) {
 							// If we're close to the water level, apply gravel and sand
 							topBlock = BLOCK_NETHERRACK;
 							fillerBlock = BLOCK_NETHERRACK;
@@ -136,24 +136,20 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 							}
 						}
 
-						// Add water if we're below water level
-						if (y < NETHER_LAVA_LEVEL && topBlock == BLOCK_AIR) {
+						// Add water if we're below lava level
+						if (y < NETHER_BIOME_LAVA_LEVEL && topBlock == BLOCK_AIR) {
 							topBlock = BLOCK_LAVA_STILL;
 						}
 
 						stoneDepth = stoneActive;
-						// Place filler block if we're underwater
+						// Place filler block if we're under lava
 						chunk.setBlock(
 							bpos,
-							(y >= NETHER_LAVA_LEVEL - 1) ? topBlock : fillerBlock
+							(y >= NETHER_BIOME_LAVA_LEVEL - 1) ? topBlock : fillerBlock
 						);
 					} else if (stoneDepth > 0) {
 						--stoneDepth;
 						chunk.setBlock(bpos, fillerBlock);
-						if (stoneDepth == 0 && fillerBlock == BLOCK_SAND) {
-							stoneDepth = m_rand.nextInt(4);
-							fillerBlock = BLOCK_SANDSTONE;
-						}
 					}
 				}
 			}
@@ -380,16 +376,14 @@ void NetherGenerator::GenerateTerrainNoise(std::vector<double>& terrainMap, Int3
 bool NetherGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	const int32_t blockX = chunk.cpos.x * CHUNK_WIDTH;
 	const int32_t blockZ = chunk.cpos.z * CHUNK_WIDTH;
-	// NOTE: Apparently the nether is non-deterministic. Fun!
-	// As stupid as this is, doing this "matches" Vanilla behavior
-	/*
-	// Java RNG seeding sequence
-	// Not in Nether Generator???
+	// TODO: The nether does not initialize its prng values,
+	// meaning that *technically* they're fully up to random chance.
+	// It just happens that this random chance is somewhat consistent, apparently.
+	// So... figure that out, if possible. Probably just some chunk ordering tomfuckery.
 	m_rand.setSeed(world.getSeed());
 	int64_t xSalt = m_rand.nextLong() / 2L * 2L + 1L;
 	int64_t zSalt = m_rand.nextLong() / 2L * 2L + 1L;
 	m_rand.setSeed((int64_t(chunk.cpos.x) * xSalt + int64_t(chunk.cpos.z) * zSalt) ^ world.getSeed());
-	*/
 
 	Int3 coord;
 	// Generate single-block lava streams
