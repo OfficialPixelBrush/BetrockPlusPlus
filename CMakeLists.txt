@@ -23,40 +23,19 @@ find_package(OpenAL CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 endif()
 
-include_directories(
-    "${PROJECT_SOURCE_DIR}/external/glad/include"
-    "${PROJECT_SOURCE_DIR}/include"
-    "${PROJECT_SOURCE_DIR}/src/bpp_shared"
-    "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums"
-    "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums/network"
-    "${PROJECT_SOURCE_DIR}/src/bpp_shared/world"
-    "${PROJECT_SOURCE_DIR}/src/bpp_shared/world/noise"
-    "${PROJECT_SOURCE_DIR}/src/bpp_shared/helpers/java"
-    "${PROJECT_SOURCE_DIR}/src/bpp_shared/helpers"
-    "${PROJECT_SOURCE_DIR}/src/bpp_shared/logger"
-)
-
 # Command-file wildcard
 file(GLOB COMMAND_SOURCES
     "src/bpp_server/commands/implementation/command_*.cpp"
 )
 
-add_executable(
-    BetrockPlusPlus
-    src/main.cpp
-
-    # External files
-    external/glad/src/glad.c
-
+# Shared source-code
+set(SHARED_SOURCES
     # Shared files
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/enums/items.cpp
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
     src/bpp_shared/networking/server_manager.cpp
-    src/bpp_server/commands/command.cpp
-    src/bpp_server/commands/command_manager.cpp
-    ${COMMAND_SOURCES}
     src/bpp_shared/world/world.cpp
     src/bpp_shared/world/lighter.cpp
     src/bpp_shared/world/storage/region.cpp
@@ -82,25 +61,84 @@ add_executable(
     src/bpp_shared/logger/style.cpp
     src/bpp_shared/config/config.cpp
     src/bpp_shared/config/cli_args.cpp
-    
-    # Server-specific files
+)
+
+# Server-specific source code
+set(SERVER_SOURCES
     src/bpp_server/server.cpp
 
-    # Client-specific files
- )
+    src/bpp_server/commands/command.cpp
+    src/bpp_server/commands/command_manager.cpp
+
+    ${COMMAND_SOURCES}
+)
+
+# Client-specific source code
+set(CLIENT_SOURCES
+    src/bpp_client/client.cpp
+    src/bpp_client/inputs.cpp
+    src/bpp_client/assets.cpp
+
+    src/bpp_client/renderers/world_renderer.cpp
+    src/bpp_client/renderers/sub_chunk_mesher.cpp
+
+    external/glad/src/glad.c
+)
+
+# Shared code
+add_executable(BetrockPlusPlus
+    src/main.cpp
+    ${SHARED_SOURCES}
+)
+
+# Includes
+include_directories(
+    "${PROJECT_SOURCE_DIR}/external/glad/include"
+    "${PROJECT_SOURCE_DIR}/include"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums/network"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared/world"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared/world/noise"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared/helpers/java"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared/helpers"
+    "${PROJECT_SOURCE_DIR}/src/bpp_shared/logger"
+)
 
 if(BUILD_SERVER)
-    target_compile_definitions(BetrockPlusPlus PRIVATE BUILD_SERVER NOMINMAX)
+# Server mode
+    target_compile_definitions(BetrockPlusPlus PRIVATE
+        BUILD_SERVER
+        NOMINMAX
+    )
+    target_sources(BetrockPlusPlus PRIVATE
+        ${SERVER_SOURCES}
+    )
 else()
-    target_compile_definitions(BetrockPlusPlus PRIVATE BUILD_CLIENT NOMINMAX)
-    add_executable(
-        src/bpp_client/client.cpp
-        src/bpp_client/inputs.cpp
-        src/bpp_client/renderers/world_renderer.cpp
-        src/bpp_client/renderers/sub_chunk_mesher.cpp
+#Client mode
+    target_compile_definitions(BetrockPlusPlus PRIVATE
+        BUILD_CLIENT
+        NOMINMAX
+    )
+    target_sources(BetrockPlusPlus PRIVATE
+        ${CLIENT_SOURCES}
+    )
+    target_link_libraries(BetrockPlusPlus PRIVATE
+        OpenGL::GL
+        glfw
+        glm::glm-header-only
+        OpenAL::OpenAL
+        Threads::Threads
     )
 endif()
 
+# Shared libraries
+target_link_libraries(BetrockPlusPlus
+    PRIVATE
+    $<IF:$<TARGET_EXISTS:libdeflate::libdeflate_shared>,libdeflate::libdeflate_shared,libdeflate::libdeflate_static>
+)
+
+# Debug-specific stuff
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(BetrockPlusPlus PRIVATE
         $<$<CXX_COMPILER_ID:GNU,Clang>:
@@ -128,12 +166,12 @@ target_compile_options(BetrockPlusPlus PRIVATE
         # Implicit conversions (int32_t -> float, etc.)
         #-Wconversion
         # Sign mismatches
-        -Wsign-conversion
+        #-Wsign-conversion
         # Variable shadowing
         -Wshadow
         # Unused variables, params, etc.
         -Wunused
-        -Wuninitialized
+        #-Wuninitialized
         # Treat warnings as errors
         #-Werror
         # Common OOP pitfall
@@ -222,24 +260,6 @@ target_compile_options(BetrockPlusPlus PRIVATE
         /analyze
     >
 )
-
-# Link libraries
-target_link_libraries(
-    BetrockPlusPlus
-    PRIVATE
-    $<IF:$<TARGET_EXISTS:libdeflate::libdeflate_shared>,libdeflate::libdeflate_shared,libdeflate::libdeflate_static>
-)
-
-if (NOT BUILD_SERVER)
-target_link_libraries(
-    OpenGL::GL
-    glfw
-    glm::glm
-    OpenAL::OpenAL
-    #SDL3::SDL3
-    #Threads::Threads
-)
-endif()
 
 # Ensure all files have copyright notice
 file(GLOB_RECURSE SOURCE_FILES
