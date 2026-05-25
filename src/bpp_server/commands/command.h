@@ -104,7 +104,7 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 */
 
 // Helper: send a PlayerPositionAndRotation packet to move a session to new coords.
-static void SendTeleport(PlayerSession& target, Vec3 position, float yaw = 0.0f, float pitch = 0.0f) {
+[[maybe_unused]] static void SendTeleport(PlayerSession& target, Vec3 position, float yaw = 0.0f, float pitch = 0.0f) {
 	Packet::PlayerPositionAndRotation pkt;
 	pkt.x = position.x;
 	pkt.y = position.y;
@@ -124,7 +124,7 @@ static void SendTeleport(PlayerSession& target, Vec3 position, float yaw = 0.0f,
 }
 
 // Helper: find a playing session by username.
-static PlayerSession* FindSession(PlayerSession& caller, const std::wstring& name) {
+[[maybe_unused]] static PlayerSession* FindSession(PlayerSession& caller, const std::wstring& name) {
 	if (!caller.players) return nullptr;
 	for (auto& s : *caller.players) {
 		if (s->username == name && s->connState == ConnectionState::Playing)
@@ -134,39 +134,49 @@ static PlayerSession* FindSession(PlayerSession& caller, const std::wstring& nam
 }
 
 inline Int3 ParseInt3(size_t& offset, std::vector<std::wstring>& parameters) {
-	return Int3{
-		std::stoi(parameters[offset++]),
-		std::stoi(parameters[offset++]),
-		std::stoi(parameters[offset++]),
-	};
+    Int3 out{
+        std::stoi(parameters[offset]),
+        std::stoi(parameters[offset + 1]),
+        std::stoi(parameters[offset + 2]),
+    };
+    offset += 3;
+	return out;
 }
 
 inline Float2 ParseFloat2(size_t& offset, std::vector<std::wstring>& parameters) {
-	return Float2{
-		std::stof(parameters[offset++]),
-		std::stof(parameters[offset++]),
-	};
+    Float2 out{
+        std::stof(parameters[offset]),
+        std::stof(parameters[offset + 1]),
+    };
+    offset += 2;
+    return out;
 }
 
 inline Float3 ParseFloat3(size_t& offset, std::vector<std::wstring>& parameters) {
-	return Float3{
-		std::stof(parameters[offset++]),
-		std::stof(parameters[offset++]),
-		std::stof(parameters[offset++]),
-	};
+    Float3 out{
+        std::stof(parameters[offset]),
+        std::stof(parameters[offset + 1]),
+        std::stof(parameters[offset + 2]),
+    };
+    offset += 3;
+    return out;
 }
 
 inline Double2 ParseDouble2(size_t& offset, std::vector<std::wstring>& parameters) {
-	return Double2{
-		std::stod(parameters[offset++]),
-		std::stod(parameters[offset++]),
-	};
+    Double2 out{
+        std::stod(parameters[offset]),
+        std::stod(parameters[offset + 1]),
+    };
+    offset += 2;
+    return out;
 }
 
-inline Vec3 ParseDouble3(size_t& offset, std::vector<std::wstring>& parameters) {
-	return Vec3{
-		std::stod(parameters[offset++]),
-		std::stod(parameters[offset++]),
-		std::stod(parameters[offset++]),
-	};
+inline Double3 ParseDouble3(size_t& offset, std::vector<std::wstring>& parameters) {
+    Double3 out{
+        std::stod(parameters[offset]),
+        std::stod(parameters[offset + 1]),
+        std::stod(parameters[offset + 2]),
+    };
+    offset += 3;
+    return out;
 }

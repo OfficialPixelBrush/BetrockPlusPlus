@@ -27,7 +27,7 @@ struct Inventory {
         return int(slots.size());
     }
 
-    virtual int getNetworkSlotId(int slot) const {
+    virtual int8_t getNetworkSlotId(int slot) const {
         if (slot < 0 || slot >= int(slots.size())) return -1;
         return slot;
     }

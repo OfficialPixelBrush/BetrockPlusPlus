@@ -20,7 +20,7 @@
 #include "../../../bpp_server/chunk_serializer.h"
 
 void Region::AddChunk(std::shared_ptr<Chunk> chunk) {
-    std::lock_guard<std::mutex> lock(mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     auto compressed = EncodeNbtData(chunk);
     if (compressed.empty()) return;
 
@@ -87,7 +87,7 @@ void Region::AddChunk(std::shared_ptr<Chunk> chunk) {
 }
 
 std::shared_ptr<Chunk> Region::GetChunk(Int32_2 cpos) {
-    std::lock_guard<std::mutex> lock(mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     Int2 local{ cpos.x & 31, cpos.z & 31 };
     int index = local.x + local.z * 32;
 

@@ -25,8 +25,8 @@ class Packet {
 private:
     // NOTE: The base packet should never be used directly!!
     struct BasePacket {
-        PacketId id;
-        BasePacket(PacketId id) : id(id) {}
+        PacketId m_id;
+        BasePacket(PacketId id) : m_id(id) {}
         virtual ~BasePacket() = default;
         virtual void Serialize(NetworkStream& stream) const = 0;
         virtual void Deserialize(NetworkStream& stream) = 0;
@@ -38,7 +38,7 @@ public:
         KeepAlive() : BasePacket{ PacketId::KeepAlive } {}
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
         }
 
         // NOTE: Reading the packet id is enough to deserialize it
@@ -58,7 +58,7 @@ public:
         Dimension dimension;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entityId_protocolVersion);
             stream.Write(username);
             stream.Write(worldSeed);
@@ -81,7 +81,7 @@ public:
         std::wstring& username_connectionHash = username;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(username_connectionHash);
         }
 
@@ -96,7 +96,7 @@ public:
         std::wstring message;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(message);
         }
 
@@ -111,7 +111,7 @@ public:
         int64_t time;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(time);
         }
 
@@ -129,7 +129,7 @@ public:
         int16_t item_metadata;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(inventory_slot);
             stream.Write(item_id);
@@ -150,7 +150,7 @@ public:
         Int32_3 position;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(position.x);
             stream.Write(position.y);
             stream.Write(position.z);
@@ -171,7 +171,7 @@ public:
         bool left_click;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(source_entity_id);
             stream.Write(target_entity_id);
             stream.Write(left_click);
@@ -190,7 +190,7 @@ public:
         int16_t health;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(health);
         }
 
@@ -205,7 +205,7 @@ public:
         Dimension dimension;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(dimension);
         }
 
@@ -220,7 +220,7 @@ public:
         bool on_ground;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(on_ground);
         }
 
@@ -237,7 +237,7 @@ public:
         bool on_ground;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(position.x);
             stream.Write(position.y);
             stream.Write(camera_y);
@@ -263,7 +263,7 @@ public:
         bool on_ground;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(yaw);
             stream.Write(pitch);
             stream.Write(on_ground);
@@ -288,7 +288,7 @@ public:
         bool   onGround = false;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(x);
             stream.Write(y);
             stream.Write(stance);
@@ -317,7 +317,7 @@ public:
         PacketData::FaceDirection face;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(status);
             stream.Write(position.x);
             stream.Write(position.y);
@@ -342,7 +342,7 @@ public:
         ItemStack item;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(position.x);
             stream.Write(position.y);
             stream.Write(position.z);
@@ -371,7 +371,7 @@ public:
         int16_t slot;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(slot);
         }
 
@@ -388,7 +388,7 @@ public:
         SlimInt3<int8_t> position;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(interaction_id);
             stream.Write(position.x);
@@ -412,7 +412,7 @@ public:
         PacketData::Animation animation;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(animation);
         }
@@ -430,7 +430,7 @@ public:
         PacketData::PlayerAction action;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(action);
         }
@@ -453,7 +453,7 @@ public:
         ItemId held_item_id;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(username);
             stream.Write(q_position.x);
@@ -488,7 +488,7 @@ public:
         int8_t& q_roll = q_rotation.z;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(item.id);
             stream.Write(item.count);
@@ -522,7 +522,7 @@ public:
         EntityId collector_entity_id;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(item_entity_id);
             stream.Write(collector_entity_id);
         }
@@ -543,7 +543,7 @@ public:
         Int16_3 q_velocity;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(object_type);
             stream.Write(q_position.x);
@@ -584,7 +584,7 @@ public:
         //std::vector<uint8_t> metadata;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(mob_type);
             stream.Write(q_position.x);
@@ -616,7 +616,7 @@ public:
         PacketData::PaintingDirection direction;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(title);
             stream.Write(position.x);
@@ -648,7 +648,7 @@ public:
         bool sneaking;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(strafe_direction);
             stream.Write(forward_direction);
             stream.Write(pitch);
@@ -674,7 +674,7 @@ public:
         Int16_3 velocity;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(velocity.x);
             stream.Write(velocity.y);
@@ -695,7 +695,7 @@ public:
         EntityId entity_id;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
         }
 
@@ -709,7 +709,7 @@ public:
         EntityMovement() : BasePacket{ PacketId::EntityMovement } {}
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
         }
 
         void Deserialize([[maybe_unused]] NetworkStream& stream) override {
@@ -723,7 +723,7 @@ public:
         Int8_3 qr_position;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(qr_position.x);
             stream.Write(qr_position.y);
@@ -747,7 +747,7 @@ public:
         int8_t& q_pitch = q_rotation.y;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(q_yaw);
             stream.Write(q_pitch);
@@ -770,7 +770,7 @@ public:
         int8_t& q_pitch = q_rotation.y;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(qr_position.x);
             stream.Write(qr_position.y);
@@ -799,7 +799,7 @@ public:
         int8_t& pitch = rotation.y;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(position.x);
             stream.Write(position.y);
@@ -825,7 +825,7 @@ public:
         PacketData::EntityEvent action;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(action);
         }
@@ -843,7 +843,7 @@ public:
         EntityId vehicle_entity_id;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(passenger_entity_id);
             stream.Write(vehicle_entity_id);
         }
@@ -865,7 +865,7 @@ public:
         // but for now we'll just read it into the metadata vector
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             // TODO: Metadata handling
         }
@@ -884,7 +884,7 @@ public:
         bool visible;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(chunkX);
             stream.Write(chunkZ);
             stream.Write(visible);
@@ -909,7 +909,7 @@ public:
         std::vector<uint8_t> compressedData;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(chunkX);
             stream.Write(chunkY);
             stream.Write(chunkZ);
@@ -943,7 +943,7 @@ public:
         std::vector<int8_t> block_metadata; // Nibbles
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(chunk_position.x);
             stream.Write(chunk_position.z);
             stream.Write(number_of_blocks);
@@ -978,7 +978,7 @@ public:
         Block block;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(position.x);
             stream.Write(position.y);
             stream.Write(position.z);
@@ -1003,7 +1003,7 @@ public:
         int8_t pitch_direction;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(position.x);
             stream.Write(position.y);
             stream.Write(position.z);
@@ -1045,7 +1045,7 @@ public:
         std::vector<int8_t> destroyed_blocks;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(position.x);
             stream.Write(position.y);
             stream.Write(position.z);
@@ -1073,7 +1073,7 @@ public:
         int32_t data;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(position.x);
             stream.Write(position.z);
             stream.Write(position.y);
@@ -1096,7 +1096,7 @@ public:
         PacketData::GameEvent event_id;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(event_id);
         }
 
@@ -1114,7 +1114,7 @@ public:
         Int32_3 position;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(entity_id);
             stream.Write(entity_type);
             stream.Write(position.x);
@@ -1140,7 +1140,7 @@ public:
         int8_t slot_count;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(window_id);
             stream.Write(window_type);
             stream.Write(title);
@@ -1160,7 +1160,7 @@ public:
         WindowId window_id;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(window_id);
         }
         void Deserialize(NetworkStream& stream) override {
@@ -1179,7 +1179,7 @@ public:
         ItemStack item;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(window_id);
             stream.Write(slot_id);
             stream.Write(right_click);
@@ -1213,7 +1213,7 @@ public:
         ItemStack item;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(window_id);
             stream.Write(slot_id);
             stream.Write(item.id);
@@ -1241,7 +1241,7 @@ public:
         std::vector<ItemStack> items;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(window_id);
             stream.Write(int16_t(items.size()));
             for (ItemStack item : items) {
@@ -1276,7 +1276,7 @@ public:
         } container_data;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(window_id);
             stream.Write(container_data.type);
             stream.Write(container_data.value);
@@ -1296,7 +1296,7 @@ public:
         bool accepted;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(window_id);
             stream.Write(transaction_id);
             stream.Write(accepted);
@@ -1315,7 +1315,7 @@ public:
         std::wstring lines[4];
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(position.x);
             stream.Write(position.y);
             stream.Write(position.z);
@@ -1344,7 +1344,7 @@ public:
         std::vector<uint8_t> data;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(item_id);
             stream.Write(map_id);
             stream.Write(uint8_t(data.size()));
@@ -1368,7 +1368,7 @@ public:
         int8_t amount;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(statistic_id);
             stream.Write(amount);
         }
@@ -1385,7 +1385,7 @@ public:
         std::wstring reason;
 
         void Serialize(NetworkStream& stream) const override {
-            stream.Write(id);
+            stream.Write(m_id);
             stream.Write(reason);
         }
 
