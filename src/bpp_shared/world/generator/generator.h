@@ -20,6 +20,7 @@ class Generator {
 	int64_t m_seed = 0;
   public:
 	Generator(int64_t seed);
+	Generator() = default;
 	virtual ~Generator() = default;
 	virtual void GenerateChunk(Chunk& chunk);
 	virtual bool PopulateChunk(Chunk& chunk, WorldWrapper& world);

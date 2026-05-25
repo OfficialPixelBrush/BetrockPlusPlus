@@ -446,15 +446,15 @@ void WorldManager::populateReady() {
         auto cit = chunks.find(pos);
         if (cit == chunks.end()) break;
         cit->second->state.store(ChunkState::Populating, std::memory_order_release);
-        thread_local WorldWrapper wrapper{ .m_manager = *this, .m_centerChunkPos = pos };
+        WorldWrapper wrapper{ .m_manager = *this, .m_centerChunkPos = pos };
         wrapper.m_centerChunkPos = pos;
         wrapper.getChunkRegion();
         if (isHell) {
-            thread_local NetherGenerator tl_gen(this->seed);
+            NetherGenerator tl_gen(this->seed);
             tl_gen.PopulateChunk(*cit->second, wrapper);
         }
         else {
-            thread_local OverworldGenerator tl_gen(this->seed);
+            OverworldGenerator tl_gen(this->seed);
             tl_gen.PopulateChunk(*cit->second, wrapper);
         }
         cit->second->isTerrainPopulated = true;
