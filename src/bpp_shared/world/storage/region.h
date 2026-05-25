@@ -41,10 +41,10 @@ struct ChunkHeaderEntry {
 
 class Region {
     public:
-        Int32_2 rpos;
-        std::mutex mutex;
+        Int32_2 m_rpos;
+        std::mutex m_mutex;
         Region(Int32_2 rpos, std::string folderPath)
-            : rpos(rpos)
+            : m_rpos(rpos)
             , regionFile(folderPath + "/" + regionPositionToFileName(rpos))
         {
             // Cache our header

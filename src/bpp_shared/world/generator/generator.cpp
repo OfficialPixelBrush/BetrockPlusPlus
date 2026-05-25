@@ -11,6 +11,6 @@ Generator::Generator(int64_t seed) : m_seed(seed) {}
 
 void Generator::GenerateChunk([[maybe_unused]] Chunk& chunk) {}
 
-bool Generator::PopulateChunk([[maybe_unused]] Chunk& chunk, WorldWrapper& world) {
+bool Generator::PopulateChunk([[maybe_unused]] Chunk& chunk, [[maybe_unused]] WorldWrapper& world) {
     return true;
 }

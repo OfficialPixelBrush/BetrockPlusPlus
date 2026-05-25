@@ -43,13 +43,13 @@ struct RegionManager {
 			GlobalLogger().error << "Tried to initialize region manager with an invalid directory!\n";
 			return false; // No region folder
 		}
-		this->folderPath = folderPath;
+		m_folderPath = folderPath;
 		return true;
 	}
 
 	// Does this region file exist on the disk?
 	bool regionExists(Int32_2 rpos) {
-		return std::filesystem::exists(folderPath + "/" + regionPositionToFileName(rpos));
+		return std::filesystem::exists(m_folderPath + "/" + regionPositionToFileName(rpos));
 	}
 
 	// Has this chunk been saved to a region file yet?
@@ -62,8 +62,8 @@ struct RegionManager {
 
 	// Creates a new region file
 	bool createRegion(Int32_2 rpos) {
-		std::string path = folderPath + "/" + regionPositionToFileName(rpos);
-		std::filesystem::create_directories(folderPath);
+		std::string path = m_folderPath + "/" + regionPositionToFileName(rpos);
+		std::filesystem::create_directories(m_folderPath);
 		std::ofstream file(path, std::ios::binary);
 		if (!file) return false;
 		std::vector<char> zeros(8192, 0); // 2 sectors for the header
@@ -146,15 +146,15 @@ struct RegionManager {
 		}
 
 		// Try to merge any pending regions that couldn't fit before
-		for (auto it = pendingRegions.begin(); it != pendingRegions.end(); ) {
+		for (auto it = m_pendingRegions.begin(); it != m_pendingRegions.end(); ) {
 			if (tryMergePendingRegion(*it))
-				it = pendingRegions.erase(it);
+				it = m_pendingRegions.erase(it);
 			else
 				++it;
 		}
 	}
 
-	// Flush all pending saves synchronously — call on shutdown
+	// Flush all pending saves synchronously ï¿½ call on shutdown
 	void flushAll() {
 		pumpPipeline();
 		iopool.wait();
@@ -164,13 +164,13 @@ struct RegionManager {
 	std::shared_ptr<Region> loadRegion(Int32_2 rpos) {
 		if (!regionExists(rpos)) createRegion(rpos);
 		for (int i = 0; i < 8; i++) {
-			if (regionCache[i] && regionCache[i]->rpos == rpos)
-				return regionCache[i];
+			if (m_regionCache[i] && m_regionCache[i]->m_rpos == rpos)
+				return m_regionCache[i];
 		}
 		createRegionOnCache(rpos);
 		for (int i = 0; i < 8; i++) {
-			if (regionCache[i] && regionCache[i]->rpos == rpos)
-				return regionCache[i];
+			if (m_regionCache[i] && m_regionCache[i]->m_rpos == rpos)
+				return m_regionCache[i];
 		}
 		return nullptr; // all slots busy, ended up in pending
 	}
@@ -178,17 +178,17 @@ struct RegionManager {
 private:
 	bool tryMergePendingRegion(std::shared_ptr<Region>& region) {
 		for (int i = 0; i < 8; i++) {
-			if (regionCache[i] && regionCache[i]->rpos == region->rpos)
+			if (m_regionCache[i] && m_regionCache[i]->m_rpos == region->m_rpos)
 				return true; // already cached
 		}
 		for (int i = 0; i < 8; i++) {
-			if (!regionCache[i]) {
-				regionCache[i] = region;
+			if (!m_regionCache[i]) {
+				m_regionCache[i] = region;
 				return true;
 			}
 			// Evict slot if no IO task currently holds a reference to it.
-			if (regionCache[i].use_count() == 1) {
-				regionCache[i] = region;
+			if (m_regionCache[i].use_count() == 1) {
+				m_regionCache[i] = region;
 				return true;
 			}
 		}
@@ -196,13 +196,13 @@ private:
 	}
 
 	void createRegionOnCache(Int2 rpos) {
-		auto region = std::make_shared<Region>(rpos, folderPath);
+		auto region = std::make_shared<Region>(rpos, m_folderPath);
 		if (!tryMergePendingRegion(region))
-			pendingRegions.push_back(std::move(region));
+			m_pendingRegions.push_back(std::move(region));
 	}
 
-	std::vector<std::shared_ptr<Region>> pendingRegions;
-	std::shared_ptr<Region> regionCache[8];
-	int cacheIndex = 0;
-	std::string folderPath; // Path to where all the regions get dumped
+	std::vector<std::shared_ptr<Region>> m_pendingRegions;
+	std::shared_ptr<Region> m_regionCache[8];
+	int m_cacheIndex = 0;
+	std::string m_folderPath; // Path to where all the regions get dumped
 };

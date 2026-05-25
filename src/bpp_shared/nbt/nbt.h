@@ -195,7 +195,7 @@ struct NBTParser {
 
     // Parse a tag, either with type and name bytes (parseTag) or just a payload (parsePayload)
     Tag parsePayload(TagType ptype, const std::string& pname = "") {
-        Tag tag{ ptype, pname };
+        Tag tag{ ptype, pname, {} };
 
         switch (ptype) {
         case TAG_BYTE:   tag.byteValue = readI8(); break;
@@ -257,7 +257,7 @@ struct NBTParser {
 
         TagType type = TagType(data[pos++]);
         if (type == TAG_END)
-            return Tag{ TAG_END, "" };   // no name for TAG_End
+            return Tag{ TAG_END, "", {} };   // no name for TAG_End
 
         std::string name = readString();
         return parsePayload(type, name);

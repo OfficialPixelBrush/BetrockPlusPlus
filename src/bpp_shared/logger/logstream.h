@@ -14,16 +14,16 @@ class Logger;
 
 class LogStream {
 private:
-    Logger& logger;
-    LogLevel level;
-    std::stringstream buffer;
+    Logger& m_logger;
+    LogLevel m_level;
+    std::stringstream m_buffer;
 
 public:
     LogStream(Logger& logger, LogLevel level);
 
     template<typename T>
     LogStream& operator<<(const T& value) {
-        buffer << value;
+        m_buffer << value;
         return *this;
     }
 
@@ -32,10 +32,10 @@ public:
         std::string narrow(ws.begin(), ws.end());
         std::string_view sv(narrow);
         if (!sv.empty() && sv.back() == '\n') {
-            buffer << sv.substr(0, sv.size() - 1);
+            m_buffer << sv.substr(0, sv.size() - 1);
             Flush();
         } else {
-            buffer << narrow;
+            m_buffer << narrow;
         }
         return *this;
     }
@@ -47,10 +47,10 @@ public:
     LogStream& operator<<(const char* value) {
         std::string_view sv(value);
         if (!sv.empty() && sv.back() == '\n') {
-            buffer << sv.substr(0, sv.size() - 1);
+            m_buffer << sv.substr(0, sv.size() - 1);
             Flush();
         } else {
-            buffer << value;
+            m_buffer << value;
         }
         return *this;
     }

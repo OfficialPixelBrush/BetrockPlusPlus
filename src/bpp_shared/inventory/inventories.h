@@ -62,7 +62,7 @@ public:
         return -1;
     }
 
-    int8_t getNetworkSlotId(int slot) {
+    int8_t getNetworkSlotId(int slot) const {
         if (slot >= 100 && slot <= 103) return 5 + (8 - (slot - 95));
         if (slot >= 9 && slot <= 35) return slot;
         if (slot >= 0 && slot <= 8) return slot + 36;
@@ -78,54 +78,54 @@ struct InventoryChest : Inventory {
 
 // Just a wrapper for two chest inventories
 struct InventoryLargeChest : Inventory {
-    InventoryChest* upper;
-    InventoryChest* lower;
+    InventoryChest* m_upper;
+    InventoryChest* m_lower;
 
     InventoryLargeChest(InventoryChest* upper, InventoryChest* lower)
-        : Inventory(0), upper(upper), lower(lower) {
+        : Inventory(0), m_upper(upper), m_lower(lower) {
         name = "Large Chest";
     }
 
     int getSizeInventory() const override {
-        return upper->getSizeInventory() + lower->getSizeInventory();
+        return m_upper->getSizeInventory() + m_lower->getSizeInventory();
     }
 
     ItemStack* getStackInSlot(int slot) override {
-        int upperSize = upper->getSizeInventory();
-        if (slot < upperSize) return upper->getStackInSlot(slot);
-        return lower->getStackInSlot(slot - upperSize);
+        int upperSize = m_upper->getSizeInventory();
+        if (slot < upperSize) return m_upper->getStackInSlot(slot);
+        return m_lower->getStackInSlot(slot - upperSize);
     }
 
     ItemStack decreaseStackSize(int slot, int count) override {
-        int upperSize = upper->getSizeInventory();
-        if (slot < upperSize) return upper->decreaseStackSize(slot, count);
-        return lower->decreaseStackSize(slot - upperSize, count);
+        int upperSize = m_upper->getSizeInventory();
+        if (slot < upperSize) return m_upper->decreaseStackSize(slot, count);
+        return m_lower->decreaseStackSize(slot - upperSize, count);
     }
 
     void setInventorySlotContents(int slot, ItemStack* stack) override {
-        int upperSize = upper->getSizeInventory();
-        if (slot < upperSize) upper->setInventorySlotContents(slot, stack);
-        else lower->setInventorySlotContents(slot - upperSize, stack);
+        int upperSize = m_upper->getSizeInventory();
+        if (slot < upperSize) m_upper->setInventorySlotContents(slot, stack);
+        else m_lower->setInventorySlotContents(slot - upperSize, stack);
     }
 
     void onInventoryChanged() override {
-        upper->onInventoryChanged();
-        lower->onInventoryChanged();
+        m_upper->onInventoryChanged();
+        m_lower->onInventoryChanged();
     }
 
     bool mergeItemStackInInventory(ItemStack& stack, bool reverse = false, int startSlot = 0, int endSlot = -1) override {
-        int upperSize = upper->getSizeInventory();
-        int totalSize = upperSize + lower->getSizeInventory();
+        int upperSize = m_upper->getSizeInventory();
+        int totalSize = upperSize + m_lower->getSizeInventory();
         auto end = endSlot == -1 ? totalSize - 1 : endSlot;
 
-        bool success = upper->mergeItemStackInInventory(stack, reverse,
+        bool success = m_upper->mergeItemStackInInventory(stack, reverse,
             CrossPlatform::Math::max(0, startSlot),
             CrossPlatform::Math::min(upperSize - 1, end));
 
         if (!success || stack.count > 0) {
-            success = lower->mergeItemStackInInventory(stack, reverse,
+            success = m_lower->mergeItemStackInInventory(stack, reverse,
                 CrossPlatform::Math::max(0, startSlot - upperSize),
-                CrossPlatform::Math::min(lower->getSizeInventory() - 1, end - upperSize));
+                CrossPlatform::Math::min(m_lower->getSizeInventory() - 1, end - upperSize));
         }
         return success || stack.count == 0;
     }
