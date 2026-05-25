@@ -45,3 +45,9 @@
 CMakeSettings.json
 /.cache
 /enc_temp_folder
+*.zip
+*.log
+*.properties
+*.dat
+*.mcr
+*.lock
