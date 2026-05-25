@@ -409,7 +409,7 @@ struct WorldManager {
 
 private:
     // I believe the vanilla default is 
-    static constexpr int VIEW_RADIUS = 8;
+    static constexpr int VIEW_RADIUS = 13;
     static constexpr int SIMULATION_RADIUS = 9;
 
     bool isHell = false; // for the nether

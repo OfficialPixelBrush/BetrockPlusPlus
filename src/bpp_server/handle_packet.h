@@ -161,6 +161,12 @@ namespace HandlePacket {
                 return;
             }
 
+            // Setup interaction
+            auto chest = world.getTileEntityShared<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z });
+            if (!chest) return; // not a chest tile entity
+            session.activeInteraction = std::make_unique<ChestInventoryInteraction>(&session.inventory, chest);
+            session.activeInteraction->initSnapshot();
+
             // Single chest
             // Open the chest window
             Packet::OpenContainer ow;
@@ -169,12 +175,6 @@ namespace HandlePacket {
             ow.title = "Chest";
             ow.window_type = PacketData::WindowType::CHEST;
             ow.Serialize(session.stream);
-
-            // Setup interaction
-            auto chest = world.getTileEntityShared<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z });
-            if (!chest) return; // not a chest tile entity
-            session.activeInteraction = std::make_unique<ChestInventoryInteraction>(&session.inventory, chest);
-            session.activeInteraction->initSnapshot();
 
             // Send inventory
             PacketUtilities::sendInventory(session, session.openWindowId, *session.activeInteraction->inventory);
