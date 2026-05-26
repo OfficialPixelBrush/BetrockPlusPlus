@@ -8,6 +8,7 @@
 
 #include "cross_platform.h"
 #include "logger.h"
+#include <string>
 #if defined(__linux__) || defined(__APPLE__)
 #include <iomanip>
 #include <unistd.h>
@@ -23,6 +24,7 @@
 #include <chrono>
 #include <filesystem>
 #include "server.h"
+#include "version.h"
 
 Server::Server() : config("server.properties"), worldHell(true) {
     loadConfig();
@@ -784,6 +786,11 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
 
     GlobalLogger().info << "Client connected\n";
     session.connState = ConnectionState::Playing;
+    Packet::ChatMessage welcomeMsg;
+    welcomeMsg.message =
+        std::wstring(L"§eThis Server runs on ") + 
+        std::wstring(PROJECT_FULL_VERSION_LABEL);
+    welcomeMsg.Serialize(session.stream);
 }
 
 void Server::transferPlayerDimension(PlayerSession& session) {

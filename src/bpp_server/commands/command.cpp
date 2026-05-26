@@ -105,15 +105,6 @@ std::string CommandTeleport::Execute(std::vector<std::string> pCommand, std::vec
 	return ERROR_REASON_PARAMETERS;
 }
 
-// Shows the current Server version
-std::string CommandVersion::Execute([[maybe_unused]] std::vector<std::string> pCommand, std::vector<uint8_t> &pResponse,
-									Client *client) {
-	DEFINE_PERMSCHECK(client)
-	Respond::ChatMessage(pResponse, "§7Current " + std::string(PROJECT_NAME) + " version is " +
-										std::string(PROJECT_VERSION_FULL_STRING));
-	return "";
-}
-
 // Grant a player operator privlidges
 std::string CommandOp::Execute(std::vector<std::string> pCommand, std::vector<uint8_t> &pResponse, Client *client) {
 	DEFINE_PERMSCHECK(client)

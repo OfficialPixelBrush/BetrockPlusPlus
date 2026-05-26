@@ -7,7 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-project(BetrockPlusPlus VERSION 0.1.0)
+project(Betrock++ VERSION 0.0.1)
 
 # Build as server
 option(BUILD_SERVER "Build as server" ON)
@@ -22,6 +22,41 @@ find_package(glm CONFIG REQUIRED)
 find_package(OpenAL CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 endif()
+
+# Try to find Git, but don't fail if it's missing
+find_package(Git QUIET)
+
+# TODO: 
+if(GIT_FOUND)
+    # Get the latest Git commit hash
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE PROJECT_GIT_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+
+    # Get the current Git branch name
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE PROJECT_GIT_BRANCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+else()
+    message(WARNING "Git was not found. Version information will not include commit or branch data.")
+
+    set(PROJECT_GIT_COMMIT "unknown")
+    set(PROJECT_GIT_BRANCH "unknown")
+endif()
+
+# Configure the version header file
+configure_file(
+    ${CMAKE_SOURCE_DIR}/src/bpp_shared/version.h.in
+    ${CMAKE_SOURCE_DIR}/src/bpp_shared/version.h
+)
 
 # Command-file wildcard
 file(GLOB COMMAND_SOURCES

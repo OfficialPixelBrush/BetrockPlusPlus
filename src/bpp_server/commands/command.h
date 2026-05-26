@@ -72,8 +72,8 @@ DEFINE_COMMAND(CommandGive, L"give", L"Give yourself a block or item", L"<id>:[m
 DEFINE_COMMAND(CommandList, L"list", L"List all currently online players", L"", false, false);
 DEFINE_COMMAND(CommandLoaded, L"loaded", L"Shows the number of loaded chunks", L"", false, false);
 DEFINE_COMMAND(CommandDimension, L"dim", L"Swap to the other dimension", L"", false, false);
+DEFINE_COMMAND(CommandVersion, L"version", L"Shows the current Server version", L"", false, false);
 /*
-DEFINE_COMMAND(CommandVersion, "version", "Shows the current Server version", "", false, false);
 DEFINE_COMMAND(CommandPose, "pose", "Set the current players' pose", "<crouch/fire/sit>", false, false);
 DEFINE_COMMAND(CommandInterface, "interface", "Open the desired interface", "<id>", false, false);
 // Needs at least creative mode to run

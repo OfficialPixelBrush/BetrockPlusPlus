@@ -10,7 +10,6 @@
 // List all currently online players
 // Usage:
 //   /list
-
 std::wstring CommandList::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world, std::function<void(PlayerSession&)> transferDimension) {
 	Packet::ChatMessage pkt;
 	pkt.message = L"§7-- All players --";

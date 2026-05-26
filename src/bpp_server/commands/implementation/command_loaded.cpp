@@ -9,7 +9,6 @@
 // Shows the number of loaded chunks
 // Usage:
 //   /loaded
-
 std::wstring CommandLoaded::Execute(
 	[[maybe_unused]] std::vector<std::wstring>& parameters,
 	PlayerSession& session,

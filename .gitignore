@@ -51,3 +51,5 @@ CMakeSettings.json
 *.dat
 *.mcr
 *.lock
+src/bpp_shared/version.h
+*.dat_old
