@@ -9,6 +9,7 @@
 #include <csignal>
 #include <numeric_structs.h>
 #include "bpp_shared/config/cli_args.h"
+#include "bpp_shared/helpers/java/java_math.h"
 #include "platforms.h"
 #ifndef BUILD_SERVER
 #include "bpp_client/client.h"
@@ -70,6 +71,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 
     CommandLineArguments cliargs = ParseArgs(argc, argv);
 
+    MathHelper::InitSinTable();
 #ifdef BUILD_SERVER
     Server serv;
     server = &serv;

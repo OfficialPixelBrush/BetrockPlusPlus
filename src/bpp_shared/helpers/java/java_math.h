@@ -170,7 +170,8 @@ struct JavaMath {
  */
 struct MathHelper {
 	static constexpr size_t TABLE_SIZE = 65536;
-	static std::array<float, TABLE_SIZE> SIN_TABLE;
+	// Requires C++17
+	inline static std::array<float, TABLE_SIZE> SIN_TABLE {};
 
 	static float sin(float x) { return SIN_TABLE[Java::FloatToInt32(x * 10430.378f) & 0xFFFF]; }
 
@@ -199,14 +200,9 @@ struct MathHelper {
 			b = -b;
 		return a > b ? a : b;
 	}
-};
 
-inline std::array<float, MathHelper::TABLE_SIZE> MathHelper::SIN_TABLE;
-
-// initialize lookup table
-inline struct SinTableInitializer {
-    SinTableInitializer() {
+	static inline void InitSinTable() {
 		for (size_t i = 0; i < MathHelper::TABLE_SIZE; ++i)
 			MathHelper::SIN_TABLE[i] = std::sin(float(i) * JavaMath::PI_FLOAT * 2.0f / MathHelper::TABLE_SIZE);
-    }
-} _sinTableInitializer;
+	}
+};

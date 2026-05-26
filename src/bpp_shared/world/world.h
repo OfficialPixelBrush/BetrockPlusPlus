@@ -64,11 +64,11 @@ struct WorldManager {
     ~WorldManager() {}
 
     void initWorldSeed(std::string pSeed) {
-        this->seed = hashCode(pSeed);
+        this->seed = 404; //hashCode(pSeed);
     }
 
     void initWorldSeed(int64_t pSeed) {
-        this->seed = pSeed;
+        this->seed = 404; //pSeed;
     }
     void tick(const std::vector<ClientPosition>& players);
     void update(const std::vector<ClientPosition>& players);
