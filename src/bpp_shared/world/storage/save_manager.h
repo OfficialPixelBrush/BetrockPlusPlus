@@ -116,6 +116,14 @@ struct SaveManager {
         worldFile = std::make_unique<FileHandle>(SaveDirectory + "/level.dat");
         if (!worldFile->get().is_open())
             return false;
+
+        // Make sure we have the necessary folders
+        int necessaryFolders = 0;
+        necessaryFolders += std::filesystem::create_directories(SaveDirectory + "/players");
+        necessaryFolders += std::filesystem::create_directories(SaveDirectory + "/region");
+        necessaryFolders += std::filesystem::create_directories(SaveDirectory + "/DIM-1/region");
+        necessaryFolders += std::filesystem::create_directories(SaveDirectory + "/data");
+        if (necessaryFolders) GlobalLogger().warn << "Failed to load " << necessaryFolders << " necessary folder(s) for level " + pSaveName + ".\n";
         return true;
     }
 
@@ -176,10 +184,6 @@ struct SaveManager {
             return false;
         if (!sessionLock.acquire(SaveDirectory + "/session.lock"))
             return false;
-        std::filesystem::create_directories(SaveDirectory + "/region");
-        std::filesystem::create_directories(SaveDirectory + "/DIM-1/region");
-        std::filesystem::create_directories(SaveDirectory + "/players");
-        std::filesystem::create_directories(SaveDirectory + "/data");
         return saveLevelFile(data);
     }
 
