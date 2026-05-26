@@ -50,7 +50,7 @@ struct WorldManager {
     TileEntityManager tileEntityManager;
 
     BS::thread_pool<> pool{ 2 };
-    BS::thread_pool<> populationPool{ 1 };
+    BS::thread_pool<> populationPool{ 1 }; // unused
 
     int64_t seed = 0;
     int64_t elapsed_ticks = 0;
@@ -70,6 +70,7 @@ struct WorldManager {
     void initWorldSeed(int64_t pSeed) {
         this->seed = pSeed;
     }
+
     void tick(const std::vector<ClientPosition>& players);
     void update(const std::vector<ClientPosition>& players);
     void shutdown();
