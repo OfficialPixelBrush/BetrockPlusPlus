@@ -22,8 +22,8 @@ void CommandManager::Init() {
 	registeredCommands.push_back(std::make_unique<CommandList>());
 	registeredCommands.push_back(std::make_unique<CommandLoaded>());
 	registeredCommands.push_back(std::make_unique<CommandDimension>());
+	registeredCommands.push_back(std::make_unique<CommandVersion>());
 	/*
-	registeredCommands.push_back(CommandVersion());
 	registeredCommands.push_back(CommandPose());
 	// Needs at least creative mode to run
 	registeredCommands.push_back(CommandHealth());

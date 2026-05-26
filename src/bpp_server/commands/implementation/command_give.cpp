@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: GPL-3.0-only
 */
 
-
-
 #include "../command.h"
 #include "../command_manager.h"
 #include "inventory/item_stack.h"
@@ -13,8 +11,6 @@
 #include "items.h"
 #include "strings/labels.h"
 #include <string>
-
-
 
 // Give yourself a block or item
 // Usage:
