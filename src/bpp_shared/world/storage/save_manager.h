@@ -111,11 +111,6 @@ private:
 struct SaveManager {
     bool initialize(const std::string& pSaveName, bool isMultiplayerSave = false) {
         SaveDirectory = pSaveName;
-        if (!sessionLock.acquire(SaveDirectory + "/session.lock"))
-            return false;
-        worldFile = std::make_unique<FileHandle>(SaveDirectory + "/level.dat");
-        if (!worldFile->get().is_open())
-            return false;
 
         // Make sure we have the necessary folders
         int necessaryFolders = 0;
@@ -124,6 +119,13 @@ struct SaveManager {
         necessaryFolders += std::filesystem::create_directories(SaveDirectory + "/DIM-1/region");
         necessaryFolders += std::filesystem::create_directories(SaveDirectory + "/data");
         if (necessaryFolders) GlobalLogger().warn << "Failed to load " << necessaryFolders << " necessary folder(s) for level " + pSaveName + ".\n";
+
+        if (!sessionLock.acquire(SaveDirectory + "/session.lock"))
+            return false;
+        if (!std::filesystem::exists(SaveDirectory + "/level.dat")) return false;
+        worldFile = std::make_unique<FileHandle>(SaveDirectory + "/level.dat");
+        if (!worldFile->get().is_open())
+            return false;
         return true;
     }
 
@@ -179,11 +181,11 @@ struct SaveManager {
 	levelData& getLevelData() { return currentLevelData; }
 
     bool createNewWorld(const levelData& data) {
-        // Set SaveDirectory before acquiring lock
-        if (!std::filesystem::create_directory(SaveDirectory))
-            return false;
-        if (!sessionLock.acquire(SaveDirectory + "/session.lock"))
-            return false;
+        std::error_code ec;
+        std::filesystem::create_directories(SaveDirectory + "/players", ec);
+        std::filesystem::create_directories(SaveDirectory + "/region", ec);
+        std::filesystem::create_directories(SaveDirectory + "/DIM-1/region", ec);
+        std::filesystem::create_directories(SaveDirectory + "/data", ec);
         return saveLevelFile(data);
     }
 
@@ -192,7 +194,7 @@ struct SaveManager {
         if (std::filesystem::exists(SaveDirectory + "/level.dat")) {
             std::filesystem::copy_file(
                 SaveDirectory + "/level.dat",
-                SaveDirectory + "/level_old.dat",
+                SaveDirectory + "/level.dat_old",
                 std::filesystem::copy_options::overwrite_existing
             );
         }
