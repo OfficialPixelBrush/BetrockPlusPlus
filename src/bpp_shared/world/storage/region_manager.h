@@ -68,7 +68,8 @@ struct RegionManager {
 		if (!file) return false;
 		std::vector<char> zeros(8192, 0); // 2 sectors for the header
 		file.write(zeros.data(), zeros.size());
-		return true;
+		file.close();                          // explicit close before FileHandle opens it
+		return file.good();                    // catch write failures too
 	}
 
 	// Serialize and save a chunk to a region
@@ -124,6 +125,7 @@ struct RegionManager {
 		{
 			std::lock_guard lk(saveQueueMutex);
 			toSave.swap(saveQueue);
+			if (saveQueue.empty()) saveQueue.shrink_to_fit();
 		}
 
 		std::vector<std::shared_ptr<Chunk>> requeue;
@@ -162,17 +164,37 @@ struct RegionManager {
 
 	// Creates a region if it doesn't already exist, then returns it.
 	std::shared_ptr<Region> loadRegion(Int32_2 rpos) {
-		if (!regionExists(rpos)) createRegion(rpos);
+		// Check cache first
 		for (int i = 0; i < 8; i++) {
 			if (m_regionCache[i] && m_regionCache[i]->m_rpos == rpos)
 				return m_regionCache[i];
 		}
+
+		// Cache miss, so we wait for all in-flight IO to finish before we potentially evict a slot, preventing two Region objects opening the same file (BAD!)
+		iopool.wait();
+
+		// Check cache again after wait
+		for (int i = 0; i < 8; i++) {
+			if (m_regionCache[i] && m_regionCache[i]->m_rpos == rpos)
+				return m_regionCache[i];
+		}
+
+		if (!regionExists(rpos)) {
+			if (!createRegion(rpos)) {
+				GlobalLogger().error << "Failed to create region file for "
+					<< rpos.x << "," << rpos.z << "\n";
+				return nullptr;
+			}
+		}
+
 		createRegionOnCache(rpos);
+
 		for (int i = 0; i < 8; i++) {
 			if (m_regionCache[i] && m_regionCache[i]->m_rpos == rpos)
 				return m_regionCache[i];
 		}
-		return nullptr; // all slots busy, ended up in pending
+
+		return nullptr; // all 8 slots still busy (shouldn't happen after wait)
 	}
 
 private:

@@ -183,23 +183,27 @@ void Server::startup() {
     std::unordered_set<Int32_2> wanted;
     for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
         for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
-            wanted.insert({ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz });
-            for (const auto& pos : wanted) {
-                if (!world.chunks.contains(pos)) {
-                    auto c = std::make_shared<Chunk>();
-                    c->spawnChunk = true;
-                    c->cpos = pos;
-                    world.chunks.emplace(pos, std::move(c));
-                }
-                if (!worldHell.chunks.contains(pos)) {
-                    auto c = std::make_shared<Chunk>();
-                    c->spawnChunk = true;
-                    c->cpos = pos;
-                    worldHell.chunks.emplace(pos, std::move(c));
-                }
-            }
+            Int32_2 pos = { (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz };
+            wanted.insert(pos);
         }
     }
+
+    // Actually request chunks
+    for (auto pos : wanted) {
+        if (!world.chunks.contains(pos)) {
+            auto c = std::make_shared<Chunk>();
+            c->spawnChunk = true;
+            c->cpos = pos;
+            world.chunks.emplace(pos, std::move(c));
+        }
+        if (!worldHell.chunks.contains(pos)) {
+            auto c = std::make_shared<Chunk>();
+            c->spawnChunk = true;
+            c->cpos = pos;
+            worldHell.chunks.emplace(pos, std::move(c));
+        }
+    }
+
     // Load the overworld
     while (!spawnDone) {
         loaded_chunks = 0;
