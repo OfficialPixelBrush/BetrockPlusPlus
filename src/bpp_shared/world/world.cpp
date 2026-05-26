@@ -94,7 +94,7 @@ void WorldManager::shutdown() {
 
     // Save all currently loaded modified chunks
     for (auto& [pos, chunk] : chunks) {
-        if (!chunk->isModified) continue;
+        if (!chunk->isModified && !chunk->tileEntities.size()) continue; // unconditionally save chunks with tile entities for now this is a bandaid fix!!
         ChunkState s = chunk->state.load();
         if (s < ChunkState::Generated) continue;
         if (s == ChunkState::Generating || s == ChunkState::Loading) continue;

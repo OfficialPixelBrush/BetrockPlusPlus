@@ -78,20 +78,22 @@ struct RegionManager {
 			std::lock_guard lk(outChunksMutex);
 			outChunks.erase(chunk->cpos);
 		}
+
 		// Make a snapshot because I kept crashing..
 		auto snapshot = std::make_shared<Chunk>();
-		snapshot->cpos               = chunk->cpos;
+		snapshot->cpos = chunk->cpos;
 		snapshot->isTerrainPopulated = chunk->isTerrainPopulated;
-		snapshot->isModified         = chunk->isModified;
-		snapshot->spawnChunk         = chunk->spawnChunk;
+		snapshot->isModified = chunk->isModified;
+		snapshot->spawnChunk = chunk->spawnChunk;
 		snapshot->state.store(chunk->state.load(std::memory_order_acquire));
 		snapshot->inUse.store(false);
-		std::memcpy(snapshot->blocks,          chunk->blocks,          sizeof(chunk->blocks));
-		std::memcpy(snapshot->lightNibble,     chunk->lightNibble,     sizeof(chunk->lightNibble));
+		std::memcpy(snapshot->blocks, chunk->blocks, sizeof(chunk->blocks));
+		std::memcpy(snapshot->lightNibble, chunk->lightNibble, sizeof(chunk->lightNibble));
 		std::memcpy(snapshot->nibbleBlockMeta, chunk->nibbleBlockMeta, sizeof(chunk->nibbleBlockMeta));
-		std::memcpy(snapshot->heightMap,       chunk->heightMap,       sizeof(chunk->heightMap));
-		std::memcpy(snapshot->temperature,     chunk->temperature,     sizeof(chunk->temperature));
-		std::memcpy(snapshot->humidity,        chunk->humidity,        sizeof(chunk->humidity));
+		std::memcpy(snapshot->heightMap, chunk->heightMap, sizeof(chunk->heightMap));
+		std::memcpy(snapshot->temperature, chunk->temperature, sizeof(chunk->temperature));
+		std::memcpy(snapshot->humidity, chunk->humidity, sizeof(chunk->humidity));
+		snapshot->tileEntities = chunk->tileEntities;
 		std::lock_guard lk(saveQueueMutex);
 		saveQueue.push_back(std::move(snapshot));
 	}

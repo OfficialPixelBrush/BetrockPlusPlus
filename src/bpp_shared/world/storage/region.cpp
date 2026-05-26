@@ -8,9 +8,11 @@
 
 #include "region.h"
 #include "nbt/nbt.h"
+#include "tile_entities/tile_entity.h"
 #include "chunk.h"
 #include "logger.h"
 #include "helpers/byteswap_compat.h"
+#include "world.h"
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -183,15 +185,16 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk) 
         for (int z = 0; z < CHUNK_WIDTH; z++) {
             for (int y = 0; y < CHUNK_HEIGHT; y++) {
                 size_t idx = size_t(y + (z * CHUNK_HEIGHT) + (x * CHUNK_HEIGHT * CHUNK_WIDTH));
-                blocks.byteArray[idx] = chunk->getBlock({x,y,z});
+                blocks.byteArray[idx] = chunk->getBlock({ x,y,z });
                 if (y % 2 == 0) {
-                    data.byteArray[idx/2] |= (chunk->getMeta({x,y,z}));
-                    skyLight.byteArray[idx/2] |= chunk->getSkyLight({x,y,z});
-                    blockLight.byteArray[idx/2] |= chunk->getBlockLight({x,y,z});
-                } else {
-                    data.byteArray[idx/2] |= (chunk->getMeta({x,y,z}) << 4);
-                    skyLight.byteArray[idx/2] |= (chunk->getSkyLight({x,y,z}) << 4);
-                    blockLight.byteArray[idx/2] |= (chunk->getBlockLight({x,y,z}) << 4);
+                    data.byteArray[idx / 2] |= (chunk->getMeta({ x,y,z }));
+                    skyLight.byteArray[idx / 2] |= chunk->getSkyLight({ x,y,z });
+                    blockLight.byteArray[idx / 2] |= chunk->getBlockLight({ x,y,z });
+                }
+                else {
+                    data.byteArray[idx / 2] |= (chunk->getMeta({ x,y,z }) << 4);
+                    skyLight.byteArray[idx / 2] |= (chunk->getSkyLight({ x,y,z }) << 4);
+                    blockLight.byteArray[idx / 2] |= (chunk->getBlockLight({ x,y,z }) << 4);
                 }
             }
         }
@@ -208,19 +211,22 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk) 
     tileEntities.type = TAG_LIST;
     tileEntities.name = "TileEntities";
     tileEntities.listType = TAG_COMPOUND;
+    for (auto& te : chunk->tileEntities) {
+        if (te) tileEntities.list.push_back(te->serialize());
+    }
 
     // Assemble level compound
-    level.compound["xPos"]             = xPos;
-    level.compound["zPos"]             = zPos;
+    level.compound["xPos"] = xPos;
+    level.compound["zPos"] = zPos;
     level.compound["TerrainPopulated"] = populated;
-    level.compound["LastUpdate"]       = lastUpdate;
-    level.compound["Blocks"]           = blocks;
-    level.compound["Data"]             = data;
-    level.compound["BlockLight"]       = blockLight;
-    level.compound["SkyLight"]         = skyLight;
-    level.compound["HeightMap"]        = heightMap;
-    level.compound["Entities"]         = entities;
-    level.compound["TileEntities"]     = tileEntities;
+    level.compound["LastUpdate"] = lastUpdate;
+    level.compound["Blocks"] = blocks;
+    level.compound["Data"] = data;
+    level.compound["BlockLight"] = blockLight;
+    level.compound["SkyLight"] = skyLight;
+    level.compound["HeightMap"] = heightMap;
+    level.compound["Entities"] = entities;
+    level.compound["TileEntities"] = tileEntities;
 
     root.compound["Level"] = level;
 
@@ -238,11 +244,10 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk) 
     return compressed;
 }
 
-// TODO
 std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& raw_data) {
     libdeflate_decompressor* decompressor = libdeflate_alloc_decompressor();
     if (!decompressor) return std::make_shared<Chunk>();
-    size_t decompressedSize = (16*128*16) * 2.5;
+    size_t decompressedSize = (16 * 128 * 16) * 2.5;
     std::vector<uint8_t> decompressed(decompressedSize);
     while (true) {
         decompressed.resize(decompressedSize);
@@ -283,9 +288,11 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& raw_dat
     const auto& blockLight = lvl.get("BlockLight").getByteArray();
     const auto& skyLight = lvl.get("SkyLight").getByteArray();
     const auto& heightMap = lvl.get("HeightMap").getByteArray();
-    auto chunk = std::make_shared<Chunk>();
+    const auto& tileEntities = lvl.get("TileEntities").getList();
 
-    chunk->cpos = Int32_2{cx,cz};
+    // Setup our chunk
+    auto chunk = std::make_shared<Chunk>();
+    chunk->cpos = Int32_2{ cx,cz };
     chunk->state = tp ? ChunkState::Populated : ChunkState::Generated;
     chunk->isTerrainPopulated = tp;
     std::copy(
@@ -294,22 +301,78 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& raw_dat
         chunk->heightMap
     );
 
+    // Load all of our block data
     for (int y = 0; y < CHUNK_HEIGHT; y++) {
         for (int x = 0; x < CHUNK_WIDTH; x++) {
             for (int z = 0; z < CHUNK_WIDTH; z++) {
                 size_t idx = size_t(y + (z * CHUNK_HEIGHT) + (x * CHUNK_HEIGHT * CHUNK_WIDTH));
-                chunk->setBlock({x,y,z}, BlockType(blocks[idx]));
+                chunk->setBlock({ x,y,z }, BlockType(blocks[idx]));
                 if (y % 2 == 0) {
-                    chunk->setMeta({x,y,z}, data[idx/2] & 0xF);
-                    chunk->setBlockLight({x,y,z}, blockLight[idx/2] & 0xF);
-                    chunk->setSkyLight({x,y,z}, skyLight[idx/2] & 0xF);
-                } else {
-                    chunk->setMeta({x,y,z}, (data[idx/2] >> 4) & 0xF);
-                    chunk->setBlockLight({x,y,z}, (blockLight[idx/2] >> 4) & 0xF);
-                    chunk->setSkyLight({x,y,z}, (skyLight[idx/2] >> 4) & 0xF);
+                    chunk->setMeta({ x,y,z }, data[idx / 2] & 0xF);
+                    chunk->setBlockLight({ x,y,z }, blockLight[idx / 2] & 0xF);
+                    chunk->setSkyLight({ x,y,z }, skyLight[idx / 2] & 0xF);
+                }
+                else {
+                    chunk->setMeta({ x,y,z }, (data[idx / 2] >> 4) & 0xF);
+                    chunk->setBlockLight({ x,y,z }, (blockLight[idx / 2] >> 4) & 0xF);
+                    chunk->setSkyLight({ x,y,z }, (skyLight[idx / 2] >> 4) & 0xF);
                 }
             }
         }
     }
+
+    // Load our tile entities
+    for (auto& te : tileEntities) {
+        const auto& id = te.get("id").getString();
+        int32_t tx = te.get("x").getInt();
+        int32_t ty = te.get("y").getInt();
+        int32_t tz = te.get("z").getInt();
+        Int3 pos{ tx, ty, tz };
+
+        // load a standard slot-based inventory from an Items list tag
+        auto loadSlots = [&](auto& slots) {
+            if (!te.has("Items")) return;
+            for (auto& item : te.get("Items").getList()) {
+                int8_t  slot = item.get("Slot").getByte();
+                int16_t itemId = item.get("id").getShort();
+                int8_t  count = item.get("Count").getByte();
+                int16_t damage = item.get("Damage").getShort();
+                if (slot >= 0 && slot < (int8_t)slots.size()) {
+                    slots[size_t(slot)] = ItemStack{ itemId, count, damage };
+                }
+            }
+            };
+
+        if (id == "Chest") {
+            auto ent = std::make_shared<TileEntityChest>(pos);
+            loadSlots(ent->inventory.slots);
+            chunk->tileEntities.push_back(std::move(ent));
+        }
+        else if (id == "Furnace") {
+            auto ent = std::make_shared<TileEntityFurnace>(pos);
+            loadSlots(ent->inventory.slots);
+            chunk->tileEntities.push_back(std::move(ent));
+        }
+        else if (id == "Trap") {
+            auto ent = std::make_shared<TileEntityDispenser>(pos);
+            loadSlots(ent->inventory.slots);
+            chunk->tileEntities.push_back(std::move(ent));
+        }
+        else if (id == "Sign") {
+            auto ent = std::make_shared<TileEntitySign>(pos);
+            if (te.has("Text1")) ent->Text1 = te.get("Text1").getString();
+            if (te.has("Text2")) ent->Text2 = te.get("Text2").getString();
+            if (te.has("Text3")) ent->Text3 = te.get("Text3").getString();
+            if (te.has("Text4")) ent->Text4 = te.get("Text4").getString();
+            chunk->tileEntities.push_back(std::move(ent));
+        }
+        else if (id == "MobSpawner") {
+            auto ent = std::make_shared<TileEntityMobSpawner>(pos);
+            if (te.has("EntityId")) ent->EntityId = te.get("EntityId").getString();
+            if (te.has("Delay"))    ent->delay = te.get("Delay").getShort();
+            chunk->tileEntities.push_back(std::move(ent));
+        }
+    }
+
     return chunk;
 }
