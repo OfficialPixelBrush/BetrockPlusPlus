@@ -7,6 +7,7 @@
 
 #include "chunk_gen.h"
 #include "chunk.h"
+#include "../../../helpers/tests/world_test.h"
 
 /**
  * @brief Construct a new Beta 1.7.3 Overworld Generator
@@ -61,6 +62,13 @@ void OverworldGenerator::GenerateChunk(Chunk& chunk) {
 	m_caver.GenerateCavesForChunk(chunk, m_seed);
 	// Generate heightmap
 	chunk.generateHeightMap();
+
+	GlobalLogger().info << std::fixed << std::setprecision(1);
+    int cIndex = (chunk.cpos.x+2) * 5 + (chunk.cpos.z+2);
+    if (chunk.cpos.x < 3 && chunk.cpos.z < 3 && chunk.cpos.x > -3 && chunk.cpos.z > -3) {
+        uint8_t* blocks = finished_base_terrain[cIndex];
+        GlobalLogger().info << "Similarity (" << chunk.cpos.x << ", " << chunk.cpos.z << "): " << ut.CompareBlocks(chunk, blocks, true) << "%" << std::endl;
+    }
 
 	chunk.isModified = true;
 }
