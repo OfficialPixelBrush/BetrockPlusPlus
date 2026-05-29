@@ -6,6 +6,7 @@
 */
 
 #include "feature_gen.h"
+#include "tile_entities/tile_entity.h"
 #include <algorithm>
 
 //  GenerateLake
@@ -150,46 +151,74 @@ bool FeatureGenerator::GenerateDungeon(WorldWrapper& world, Java::Random& rand, 
 			if (IsSolid(world.getBlockId({ cx, pos.y, cz + 1 }))) ++adj;
 			if (adj == 1) {
 				world.setBlock({ cx, pos.y, cz }, BLOCK_CHEST);
-				// Consume loot RNG to stay seed-accurate even without tile entity support.
-				// Java: for each of 8 attempts, pickCheckLootItem() consumes RNG, and
-				// if non-null, an extra nextInt(getSizeInventory()) [27 for dungeon chest]
-				// is consumed to pick the slot. Replicate exactly.
+				auto chest = std::make_shared<TileEntityChest>(Int3{ cx, pos.y, cz });
 				for (int32_t slot = 0; slot < 8; ++slot) {
-					if (GenerateDungeonChestLoot(rand) != 0)
-						rand.nextInt(27);
+					auto stack = GenerateDungeonChestLoot(rand);
+					if (stack.id != ITEM_INVALID) {
+						int32_t slotIndex = rand.nextInt(27);
+						chest->inventory.setInventorySlotContents(slotIndex, &stack);
+					}
 				}
+				world.m_manager.createTileEntity(std::move(chest));
 				break;
 			}
 		}
 	}
 
 	world.setBlock(pos, BLOCK_MOB_SPAWNER);
-	PickMobToSpawn(rand); // consume RNG for mob type
+	auto spawner = std::make_shared<TileEntityMobSpawner>(pos);
+	spawner->EntityId = PickMobToSpawn(rand);
+	world.m_manager.createTileEntity(std::move(spawner));
 	return true;
 }
 
 //  GenerateDungeonChestLoot — exact RNG port (all rand calls must fire)
-int FeatureGenerator::GenerateDungeonChestLoot(Java::Random& rand) {
+ItemStack FeatureGenerator::GenerateDungeonChestLoot(Java::Random& rand) {
 	int32_t roll = rand.nextInt(11);
 	switch (roll) {
-	case 0:  return 1;                                         // saddle
-	case 1:  rand.nextInt(4); return 1;                        // iron ingot
-	case 2:  return 1;                                         // bread
-	case 3:  rand.nextInt(4); return 1;                        // wheat
-	case 4:  rand.nextInt(4); return 1;                        // gunpowder
-	case 5:  rand.nextInt(4); return 1;                        // string
-	case 6:  return 1;                                         // bucket
-	case 7:  if (rand.nextInt(100) == 0) return 1; break;      // golden apple 1%
-	case 8:
-		if (rand.nextInt(2) == 0) { rand.nextInt(4); return 1; }
-		break;                                                 // redstone 50%
-	case 9:
-		if (rand.nextInt(10) == 0) { rand.nextInt(2); return 1; }
-		break;                                                 // music disc 10%
-	case 10: return 1;                                         // bone meal
-	default: break;
+	case 0:
+		return { .id = ITEM_SADDLE, .count = 1 };
+	case 1: {
+		int8_t qty = rand.nextInt(4) + 1;
+		return { .id = ITEM_IRON, .count = qty };
 	}
-	return 0;
+	case 2:
+		return { .id = ITEM_BREAD, .count = 1 };
+	case 3: {
+		int8_t qty = rand.nextInt(4) + 1;
+		return { .id = ITEM_WHEAT, .count = qty };
+	}
+	case 4: {
+		int8_t qty = rand.nextInt(4) + 1;
+		return { .id = ITEM_GUNPOWDER, .count = qty };
+	}
+	case 5: {
+		int8_t qty = rand.nextInt(4) + 1;
+		return { .id = ITEM_STRING, .count = qty };
+	}
+	case 6:
+		return { .id = ITEM_BUCKET, .count = 1 };
+	case 7:
+		if (rand.nextInt(100) == 0)
+			return { .id = ITEM_APPLE_GOLDEN, .count = 1 };
+		return { .id = ITEM_INVALID };
+	case 8:
+		if (rand.nextInt(2) == 0) {
+			int8_t qty = rand.nextInt(4) + 1;
+			return { .id = ITEM_REDSTONE, .count = qty };
+		}
+		return { .id = ITEM_INVALID };
+	case 9:
+		if (rand.nextInt(10) == 0) {
+			int16_t discId = (rand.nextInt(2) == 0) ? ITEM_RECORD_13 : ITEM_RECORD_CAT;
+			return { .id = discId, .count = 1 };
+		}
+		return { .id = ITEM_INVALID };
+	case 10:
+		return { .id = ITEM_DYE, .count = 1, .data = 3 };
+	default:
+		return { .id = ITEM_INVALID };
+	}
 }
 
 std::string FeatureGenerator::PickMobToSpawn(Java::Random& rand) {

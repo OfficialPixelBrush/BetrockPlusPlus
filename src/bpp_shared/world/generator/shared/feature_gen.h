@@ -233,6 +233,6 @@ public:
     bool GenerateNetherFire(WorldWrapper& world, Java::Random& rand, Int3 pos);
     bool GenerateNetherGlowstone(WorldWrapper& world, Java::Random& rand, Int3 pos);
 
-    static int         GenerateDungeonChestLoot(Java::Random& rand);
+    static ItemStack   GenerateDungeonChestLoot(Java::Random& rand);
     static std::string PickMobToSpawn(Java::Random& rand);
 };
