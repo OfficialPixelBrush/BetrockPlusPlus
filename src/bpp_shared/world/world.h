@@ -218,7 +218,6 @@ struct WorldManager {
         }
 
         // Always re-evaluate the edited block and its 4 horizontal neighbours
-        // across the height transition band.
         lightManager.scheduleLightUpdate({ x, y, z }, LightType::Sky);
         const int ndx[] = { -1, 1,  0, 0 };
         const int ndz[] = { 0, 0, -1, 1 };

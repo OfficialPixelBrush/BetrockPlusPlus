@@ -885,7 +885,7 @@ namespace Blocks {
         blockProperties[BlockType::BLOCK_MOB_SPAWNER] = {
             .material = Material::Iron(),
             .stepSound = StepSound::Stone,
-            .lightOpacity = 255,
+            .lightOpacity = 0,
             .hardness = 5.0f,
             .enableStats = false,
         };
