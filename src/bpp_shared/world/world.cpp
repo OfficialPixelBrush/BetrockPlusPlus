@@ -64,7 +64,7 @@ void WorldManager::tick(const std::vector<ClientPosition>& players) {
     // Queue any modified chunks for saving
     if (regionManager) {
         for (auto& [pos, chunk] : chunks) {
-            if (!chunk->isModified && !chunk->tileEntities.size()) continue; // unconditionally save chunks with tile entities for now this is a bandaid fix!!
+            if (!chunk->isModified) continue;
             ChunkState s = chunk->state.load();
             if (s < ChunkState::Generated) continue;
             if (s == ChunkState::Generating || s == ChunkState::Loading) continue;
