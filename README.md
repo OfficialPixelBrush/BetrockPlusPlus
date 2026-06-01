@@ -94,7 +94,7 @@ This will make a Release Client build. If you'd like to build a server instead, 
 ```bash
 cmake -S . -B build -DBUILD_SERVER=ON -DCMAKE_BUILD_TYPE=Release
 cd build
-``
+```
 Then you build the project.
 ```bash
 cmake --build .
