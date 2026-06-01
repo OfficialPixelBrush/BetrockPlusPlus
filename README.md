@@ -72,6 +72,11 @@ sudo zypper install git cmake clang gcc gcc-c++ make libdeflate-devel glfw-devel
 sudo apk add git cmake clang gcc g++ make libdeflate-dev glfw-dev glm-dev openal-soft-dev
 ```
 
+##### Void Linux
+```bash
+sudo xbps-install -S base-devel git cmake clang libdeflate-devel glfw-devel glm libopenal-devel
+```
+
 ##### Gentoo
 ```bash
 sudo emerge dev-vcs/git dev-util/cmake sys-devel/clang sys-devel/gcc sys-devel/make dev-libs/libdeflate media-libs/glfw media-libs glm media-libs/openal
@@ -89,7 +94,7 @@ This will make a Release Client build. If you'd like to build a server instead, 
 ```bash
 cmake -S . -B build -DBUILD_SERVER=ON -DCMAKE_BUILD_TYPE=Release
 cd build
-``
+```
 Then you build the project.
 ```bash
 cmake --build .
