@@ -55,23 +55,20 @@ Server::Server() : config("server.properties"), worldHell(true) {
     world.initWorldSeed(saveManager.getLevelData().RandomSeed);
     worldHell.initWorldSeed(saveManager.getLevelData().RandomSeed);
 
+	world.elapsed_ticks = saveManager.getLevelData().time;
+	worldHell.elapsed_ticks = saveManager.getLevelData().time;
+
     // Bind our region managers
     world.regionManager = &overworldRegionManager;
     worldHell.regionManager = &hellRegionManager;
 
     // If we created a new save then make a new spawn point
-    if (newSave) {
+	if (newSave) {
         world.initSpawn();
-        levelData& levelData = saveManager.getLevelData();
-        levelData.spawnPoint = world.spawnPoint;
-    }
-    else {
+    } else {
         world.spawnPoint = saveManager.getLevelData().spawnPoint;
     }
     worldHell.spawnPoint = world.spawnPoint; // Interestingly the world spawn doesn't have the /= or *= 8 stuff
-
-    // Save our level file immediately
-    saveManager.saveLevelFile(saveManager.getLevelData());
 }
 
 Server::~Server() {
@@ -135,7 +132,6 @@ void Server::startup() {
     // Register blocks, setup the world, setup commands, etc.
     Blocks::registerAll();
     command_manager.Init();
-    //world.initWorldSeed("Glacier");
 
     // Setup the block callback so we can send it to clients
     world.onBlockUpdate = [this](PendingBlock pendingBlock, Int32_2 chunkPos) {
@@ -338,6 +334,13 @@ void Server::stop() {
     closeSocket();
     world.shutdown();
     worldHell.shutdown();
+
+    // Save our level file
+    levelData& curLevelData = saveManager.getLevelData();
+    curLevelData.RandomSeed = world.seed;
+    curLevelData.spawnPoint = world.spawnPoint;
+    curLevelData.time = world.elapsed_ticks;
+    saveManager.saveLevelFile(curLevelData);
 }
 
 void Server::acceptNewPlayers() {
