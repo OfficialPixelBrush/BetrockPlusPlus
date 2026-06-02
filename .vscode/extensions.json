@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "ms-vscode.cmake-tools",
+    "llvm-vscode-extensions.vscode-clangd",
+    "cschlosser.doxdocgen",
+    "vadimcn.vscode-lldb"
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode.cpptools"
+  ]
+}
