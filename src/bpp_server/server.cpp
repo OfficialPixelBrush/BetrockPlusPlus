@@ -714,10 +714,6 @@ void Server::handleLogin(PlayerSession& session) {
     // Log that we logged in!
     GlobalLogger().info << L"Player " << session.username << L" logged in with entity ID " << session.entityId << L" at (" << session.position.pos.x << ", " << session.position.pos.y << ", " << session.position.pos.z << ")\n";
 
-    // Immediately save
-    auto savedNbt = session.serializeToNBT();
-    saveManager.savePlayerNBT(std::string(session.username.begin(), session.username.end()), savedNbt);
-
     // Send our inventory
     PacketUtilities::sendInventory(session, 0, session.inventory);
 
