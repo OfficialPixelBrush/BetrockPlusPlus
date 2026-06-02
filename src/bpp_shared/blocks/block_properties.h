@@ -5,9 +5,11 @@
  *
 */
 #pragma once
+#include <vector>
 #include <numeric_structs.h>
 #include "enums/blocks.h"
 #include "materials.h"
+#include "inventory/item_stack.h"
 #include "helpers/java/java_random.h"
 #include "helpers/AABB.h"
 
@@ -102,7 +104,10 @@ namespace Blocks {
         void (*velocityToAddToEntity)(WorldManager&, Int3, Entity&, Vec3&) = nullptr;
 
         // What item/block this drops when broken
-        uint8_t (*idDropped)(uint8_t meta, Java::Random&) = nullptr;
+        int16_t (*idDropped)(uint8_t meta, Java::Random&) = nullptr;
+
+        // The data value of the dropped item
+        int16_t (*damageDropped)(uint8_t meta) = nullptr;
 
         // How many items drop
         int (*quantityDropped)(Java::Random&) = nullptr;
@@ -115,4 +120,5 @@ namespace Blocks {
     // Call once at startup before anything reads from the tables
     void registerAll();
 
+    std::vector<ItemStack> getBlockDrops(BlockType blockId, uint8_t meta, Java::Random& rng);
 } // namespace Blocks
