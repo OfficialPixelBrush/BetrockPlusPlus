@@ -186,13 +186,16 @@ void Lighter::unlightAt(int x, int y, int z, LightType type, WorldManager& world
                 else                     nc->setBlockLight({ nlx, ny, nlz }, 0);
                 if (world.onBlockUpdate) world.onBlockUpdate(
                     PendingBlock{
-                        .block{ BlockType(chunk->getBlock({lx, y, lz})), chunk->getMeta({lx, y, lz})},
-                        .block_pos{ x, y, z },
-                        .light{ chunk->getBlockLight({ lx, y, lz }), chunk->getSkyLight({ lx, y, lz }) },
-                    }, chunk->cpos);
+                        .block{ BlockType(nc->getBlock({nlx, ny, nlz})), nc->getMeta({nlx, ny, nlz})},
+                        .block_pos{ nx, ny, nz },
+                        .light{ nc->getBlockLight({ nlx, ny, nlz }), nc->getSkyLight({ nlx, ny, nlz }) },
+                    }, nc->cpos);
                 unlightQueue.push_back({ {nx, ny, nz}, t, nVal });
+                // Always re-queue for re-light
+                scheduleLightUpdate({ nx, ny, nz }, t);
             }
             else {
+                // Neighbor is at least as bright
                 scheduleLightUpdate({ nx, ny, nz }, t);
             }
         }
