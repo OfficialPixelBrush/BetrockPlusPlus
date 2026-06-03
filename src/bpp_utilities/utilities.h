@@ -102,8 +102,11 @@ namespace Utilities {
 			GlobalLogger().info << "Cleaned " << chunksCleaned << " chunks across " << regionCoords.size() << " regions.\n";
 
 			// Delete original, copy from temp, delete temp
+			regionManager.release();
+			outRegionManager.release();
 			fs::remove_all(relPath + "/region");
 			fs::copy(relPath + "/tempRegion", relPath + "/region");
+			fs::remove_all(relPath + "/tempRegion");
 		}
 
 		// Nether
@@ -167,6 +170,8 @@ namespace Utilities {
 			GlobalLogger().info << "Cleaned " << chunksCleaned << " chunks across " << regionCoords.size() << " regions.\n";
 
 			// Delete original, copy from temp, delete temp
+			regionManager.release();
+			outRegionManager.release();
 			fs::remove_all(relPath + "/DIM-1/region");
 			fs::copy(relPath + "/tempRegionNether", relPath + "/DIM-1/region");
 			fs::remove_all(relPath + "/tempRegionNether");
