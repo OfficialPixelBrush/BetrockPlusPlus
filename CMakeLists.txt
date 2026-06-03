@@ -81,13 +81,15 @@ set(SHARED_SOURCES
     src/bpp_shared/world/noise/noise_perlin.cpp
     src/bpp_shared/world/noise/noise_simplex.cpp
     src/bpp_shared/world/generator/generator.cpp
-    ## Overworld generator
+
+    # Overworld generator
     src/bpp_shared/world/generator/overworld/chunk_gen.cpp
     src/bpp_shared/world/generator/overworld/tree_gen.cpp
     src/bpp_shared/world/generator/overworld/biome_gen.cpp
     src/bpp_shared/world/generator/shared/cave_gen.cpp
     src/bpp_shared/world/generator/shared/feature_gen.cpp
-    ## Nether generator
+
+    # Nether generator
     src/bpp_shared/world/generator/nether/chunk_gen.cpp
 
     # Logger
@@ -131,6 +133,7 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/external/glad/include"
     "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared"
+    "${PROJECT_SOURCE_DIR}/src/bpp_utilities"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums/network"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/world"

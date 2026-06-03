@@ -22,6 +22,9 @@
 #include <windows.h>
 #endif
 
+// For testing
+#include "bpp_utilities/utilities.h"
+
 Server* server;
 std::atomic<bool> shutdownRequested{ false };
 
@@ -72,6 +75,10 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     CommandLineArguments cliargs = ParseArgs(argc, argv);
 
     MathHelper::InitSinTable();
+
+    // For testing
+    // Utilities::cleanLevel("world");
+
 #ifdef BUILD_SERVER
     Server serv;
     server = &serv;
