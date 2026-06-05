@@ -77,6 +77,9 @@ void WorldManager::tick(const std::vector<ClientPosition>& players) {
     updateLoadRadius(players);
     populateReady();       // population runs on main thread
     lightManager.processLightQueue(*this, INT_MAX);
+
+    // Update our entities
+    entityManager.tick();
 }
 
 void WorldManager::update(const std::vector<ClientPosition>& players) {
