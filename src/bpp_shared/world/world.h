@@ -27,6 +27,7 @@
 #include "BS_thread_pool.hpp"
 #include "lighter.h"
 #include "tile_entities/tile_entity_manager.h"
+#include "entities/entity_manager.h"
 #include "storage/region.h"
 #include "world/storage/region_manager.h"
 
@@ -48,6 +49,7 @@ struct WorldManager {
 
     Lighter lightManager;
     TileEntityManager tileEntityManager;
+    EntityManager entityManager;
 
     BS::thread_pool<> pool{ 2 };
     BS::thread_pool<> populationPool{ 1 }; // unused
