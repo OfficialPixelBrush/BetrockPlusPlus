@@ -20,7 +20,6 @@ find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(OpenAL CONFIG REQUIRED)
-find_package(SDL3 CONFIG REQUIRED)
 endif()
 
 # Try to find Git, but don't fail if it's missing
@@ -164,7 +163,7 @@ else()
     target_link_libraries(BetrockPlusPlus PRIVATE
         OpenGL::GL
         glfw
-        glm::glm-header-only
+        glm::glm
         OpenAL::OpenAL
         Threads::Threads
     )

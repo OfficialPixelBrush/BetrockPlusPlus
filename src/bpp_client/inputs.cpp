@@ -8,8 +8,6 @@
 #include "inputs.h"
 #include "glfw_context.h"
 
-#if defined(SDL_GPU)
-#elif defined(GLFW_OPENGL33)
 void Input::keyCallback(GLFWwindow* window, int key, int, int action, int) {
     if (key < 0 || key >= 1024) return;
     if (action == GLFW_REPEAT) return; // ignore repeats — held state handles continuous input
@@ -63,4 +61,3 @@ void Input::drainEvents() {
         }
     }
 }
-#endif

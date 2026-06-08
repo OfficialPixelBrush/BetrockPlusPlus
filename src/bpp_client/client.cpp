@@ -8,11 +8,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "client.h"
-#include <SDL3/SDL.h>
 
 // This window size seems really random but its the size beta uses
 Client::Client() : window(854, 480, "Betrock++") {
-    /*
     // Set up shared context before registering any callbacks
     ctx = { &window, &input };
     glfwSetWindowUserPointer(window.getHandle(), &ctx);
@@ -22,7 +20,6 @@ Client::Client() : window(854, 480, "Betrock++") {
 
     window.setCursorLocked(true);
     window.setVsync(true);
-    */
     GlobalLogger().info << "Client initialized\n";
 }
 
