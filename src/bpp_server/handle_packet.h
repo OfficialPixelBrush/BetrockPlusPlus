@@ -182,6 +182,7 @@ namespace HandlePacket {
         }
 
         auto pos = pkt.position;
+        // NOTE: Also sent for when a block placement is invalid
         if (pkt.face == PacketData::FaceDirection::USE_ITEM) {
             GlobalLogger().info << "Tried to use item\n";
             GlobalLogger().info << pkt.position << "\n";
@@ -193,7 +194,7 @@ namespace HandlePacket {
         if (pkt.face == PacketData::FaceDirection::X_MINUS) pos.x -= 1;
         if (pkt.face == PacketData::FaceDirection::X_PLUS) pos.x += 1;
         // Make sure the block id is valid for placement otherwise we will crash
-        if (pkt.item.id <= BLOCK_CHEST_LOCKED && (pkt.item.id >= 0)) world.setBlock({ pos.x, pos.y, pos.z }, BlockType(pkt.item.id), pkt.item.data);
+        if (pkt.item.id < BLOCK_MAX && (pkt.item.id >= 0)) world.setBlock({ pos.x, pos.y, pos.z }, BlockType(pkt.item.id), pkt.item.data);
     }
 
     // Click handler
