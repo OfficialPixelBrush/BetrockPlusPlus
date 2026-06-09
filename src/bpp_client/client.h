@@ -10,6 +10,8 @@
 #include "inputs.h"
 #include "window.h"
 #include "world/world.h"
+#include "world/storage/save_manager.h"
+#include "world/storage/region_manager.h"
 
 class Client {
 public:
@@ -25,8 +27,6 @@ private:
     Window      m_window;
     Input       m_input;
     GlfwContext m_ctx;
-    WorldManager m_world;
     ClientPosition m_singlePlayerPos{};
     float       m_accumulator = 0.0f;
-    RegionManager m_regionManager;
 };
