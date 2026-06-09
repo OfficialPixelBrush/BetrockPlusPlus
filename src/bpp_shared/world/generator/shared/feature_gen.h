@@ -123,7 +123,7 @@ struct WorldWrapper {
         // Remove any tile entities that exist at this spot
         auto& tes = chunk->tileEntities;
         tes.erase(std::remove_if(tes.begin(), tes.end(), [&](const std::shared_ptr<TileEntity>& te) {
-            return te && te->position == wpos;
+            return te && te->m_position == wpos;
             }), tes.end());
 
         // Unlight before changing the block
