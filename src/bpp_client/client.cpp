@@ -21,12 +21,10 @@ Client::Client() : m_window(854, 480, "Betrock++") {
     m_window.setCursorLocked(true);
     m_window.setVsync(true);
 
-    m_world.regionManager = &m_regionManager;
     GlobalLogger().info << "Client initialized\n";
 }
 
 void Client::tick() {
-    m_world.tick(std::vector<ClientPosition>{m_singlePlayerPos});
 }
 
 void Client::render([[maybe_unused]] float partial_tick) {
