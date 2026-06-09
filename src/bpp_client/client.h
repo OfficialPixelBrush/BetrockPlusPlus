@@ -22,10 +22,11 @@ private:
     void tick();
     void render([[maybe_unused]] float partial_tick);
 
-    Window      window;
-    Input       input;
-    GlfwContext ctx;
-    WorldManager world;
-    ClientPosition singlePlayerPos{};
-    float       accumulator = 0.0f;
+    Window      m_window;
+    Input       m_input;
+    GlfwContext m_ctx;
+    WorldManager m_world;
+    ClientPosition m_singlePlayerPos{};
+    float       m_accumulator = 0.0f;
+    RegionManager m_regionManager;
 };
