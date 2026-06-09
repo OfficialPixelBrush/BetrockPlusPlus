@@ -41,8 +41,8 @@ public:
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
 
-        this->m_width = width;
-        this->m_height = height;
+        m_width = width;
+        m_height = height;
         GlobalLogger().info << "Window initialized!\n";
         // Note: user pointer is set by Client, not here
     }
@@ -91,8 +91,8 @@ public:
 private:
     static void framebufferSizeCallback(GLFWwindow* win, int w, int h) {
         auto* ctx = static_cast<GlfwContext*>(glfwGetWindowUserPointer(win));
-        ctx->window->m_width = w;
-        ctx->window->m_height = h;
+        ctx->m_window->m_width = w;
+        ctx->m_window->m_height = h;
         glViewport(0, 0, w, h);
     }
     GLFWwindow* m_handle = nullptr;

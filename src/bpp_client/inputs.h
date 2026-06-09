@@ -30,19 +30,19 @@ public:
     // Called at the start of a tick — drains queue into stable state
     void drainEvents();
 
-    bool isKeyHeld(int key)      const { return key >= 0 && key < 1024 && keys[key]; }
-    bool isKeyPressed(int key)   const { return key >= 0 && key < 1024 && pressed[key]; }
-    bool isMouseHeld(int btn)    const { return btn >= 0 && btn < 8 && mouse[btn]; }
-    bool isMousePressed(int btn) const { return btn >= 0 && btn < 8 && mousePressed[btn]; }
+    bool isKeyHeld(int key)      const { return key >= 0 && key < 1024 && m_keys[key]; }
+    bool isKeyPressed(int key)   const { return key >= 0 && key < 1024 && m_pressed[key]; }
+    bool isMouseHeld(int btn)    const { return btn >= 0 && btn < 8 && m_mouse[btn]; }
+    bool isMousePressed(int btn) const { return btn >= 0 && btn < 8 && m_mousePressed[btn]; }
 
-    float mouseDeltaX() const { return deltaX; }
-    float mouseDeltaY() const { return deltaY; }
+    float mouseDeltaX() const { return m_deltaX; }
+    float mouseDeltaY() const { return m_deltaY; }
 
     // Called at the end of a tick — clears one-shot flags
     void flush() {
-        memset(pressed, 0, sizeof(pressed));
-        memset(mousePressed, 0, sizeof(mousePressed));
-        deltaX = deltaY = 0.0f;
+        memset(m_pressed, 0, sizeof(m_pressed));
+        memset(m_mousePressed, 0, sizeof(m_mousePressed));
+        m_deltaX = m_deltaY = 0.0f;
     }
 
 private:
@@ -51,14 +51,14 @@ private:
     static void cursorCallback(GLFWwindow* window, double x, double y);
 
     // Raw event queue — filled by callbacks, drained each tick
-    std::vector<InputEvent> eventQueue;
+    std::vector<InputEvent> m_eventQueue;
 
-    bool  keys[1024] = {};
-    bool  pressed[1024] = {};
-    bool  mouse[8] = {};
-    bool  mousePressed[8] = {};
+    bool  m_keys[1024] = {};
+    bool  m_pressed[1024] = {};
+    bool  m_mouse[8] = {};
+    bool  m_mousePressed[8] = {};
 
-    float deltaX = 0.0f, deltaY = 0.0f;
-    float lastX = 0.0f, lastY = 0.0f;
-    bool  firstMouse = true;
+    float m_deltaX = 0.0f, m_deltaY = 0.0f;
+    float m_lastX = 0.0f, m_lastY = 0.0f;
+    bool  m_firstMouse = true;
 };
