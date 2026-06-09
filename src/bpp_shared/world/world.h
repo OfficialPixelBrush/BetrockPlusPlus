@@ -85,21 +85,21 @@ struct WorldManager {
     void drainLoadQueue();
 
     void createTileEntity(std::shared_ptr<TileEntity> tileEntity) {
-        Int32_2 cpos{ tileEntity->position.x >> 4, tileEntity->position.z >> 4 };
+        Int32_2 cpos{ tileEntity->m_position.x >> 4, tileEntity->m_position.z >> 4 };
         Chunk* chunk = getChunkRaw(cpos);
         if (!chunk) return;
         tileEntityManager.initializeTileEntity(tileEntity); // weak_ptr added if canTick
         chunk->tileEntities.push_back(std::move(tileEntity)); // chunk takes ownership
     }
 
-    // Returns the tile entity at world position `pos`, or nullptr if none.
+    // Returns the tile entity at world m_position `pos`, or nullptr if none.
     TileEntity* getTileEntity(Int3 pos) {
         Chunk* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });
         if (!chunk) return nullptr;
         for (auto& te : chunk->tileEntities) {
-            if (te && te->position.x == pos.x &&
-                te->position.y == pos.y &&
-                te->position.z == pos.z)
+            if (te && te->m_position.x == pos.x &&
+                te->m_position.y == pos.y &&
+                te->m_position.z == pos.z)
                 return te.get();
         }
         return nullptr;
@@ -116,23 +116,23 @@ struct WorldManager {
         Chunk* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });
         if (!chunk) return nullptr;
         for (auto& te : chunk->tileEntities) {
-            if (te && te->position.x == pos.x &&
-                te->position.y == pos.y &&
-                te->position.z == pos.z)
+            if (te && te->m_position.x == pos.x &&
+                te->m_position.y == pos.y &&
+                te->m_position.z == pos.z)
                 return std::dynamic_pointer_cast<T>(te);
         }
         return nullptr;
     }
 
-    // Remove the tile entity at world position `pos`.
+    // Remove the tile entity at world m_position `pos`.
     void removeTileEntity(Int3 pos) {
         Chunk* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });
         if (!chunk) return;
         auto& tes = chunk->tileEntities;
         tes.erase(std::remove_if(tes.begin(), tes.end(), [&](const std::shared_ptr<TileEntity>& te) {
-            return te && te->position.x == pos.x &&
-                te->position.y == pos.y &&
-                te->position.z == pos.z;
+            return te && te->m_position.x == pos.x &&
+                te->m_position.y == pos.y &&
+                te->m_position.z == pos.z;
             }), tes.end());
     }
 
@@ -180,7 +180,7 @@ struct WorldManager {
         // Remove any tile entities that exist at this spot
         auto& tes = chunk->tileEntities;
         tes.erase(std::remove_if(tes.begin(), tes.end(), [&](const std::shared_ptr<TileEntity>& te) {
-            return te && te->position == wpos;
+            return te && te->m_position == wpos;
             }), tes.end());
 
         // Unlight before changing the block
@@ -232,7 +232,7 @@ struct WorldManager {
             int maxY = CrossPlatform::Math::max(thisHeight, neighborHeight);
             lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
         }
-        // Schedule a block light update for the position itself
+        // Schedule a block light update for the m_position itself
         lightManager.scheduleLightUpdate({ x, y, z }, LightType::Block);
 
         // Callback for the client and server to know about this block update

@@ -360,16 +360,16 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& raw_dat
         }
         else if (id == "Sign") {
             auto ent = std::make_shared<TileEntitySign>(pos);
-            if (te.has("Text1")) ent->Text1 = te.get("Text1").getString();
-            if (te.has("Text2")) ent->Text2 = te.get("Text2").getString();
-            if (te.has("Text3")) ent->Text3 = te.get("Text3").getString();
-            if (te.has("Text4")) ent->Text4 = te.get("Text4").getString();
+            if (te.has("Text1")) ent->m_text1 = te.get("Text1").getString();
+            if (te.has("Text2")) ent->m_text2 = te.get("Text2").getString();
+            if (te.has("Text3")) ent->m_text3 = te.get("Text3").getString();
+            if (te.has("Text4")) ent->m_text4 = te.get("Text4").getString();
             chunk->tileEntities.push_back(std::move(ent));
         }
         else if (id == "MobSpawner") {
             auto ent = std::make_shared<TileEntityMobSpawner>(pos);
-            if (te.has("EntityId")) ent->EntityId = te.get("EntityId").getString();
-            if (te.has("Delay"))    ent->delay = te.get("Delay").getShort();
+            if (te.has("EntityId")) ent->m_entityId = te.get("EntityId").getString();
+            if (te.has("Delay"))    ent->m_delay = te.get("Delay").getShort();
             chunk->tileEntities.push_back(std::move(ent));
         }
     }
