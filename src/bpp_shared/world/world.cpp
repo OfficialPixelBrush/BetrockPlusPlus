@@ -73,7 +73,7 @@ void WorldManager::tick(const std::vector<ClientPosition>& players) {
         }
     }
 
-    regionManager->pumpPipeline();
+    if (regionManager) regionManager->pumpPipeline();
     updateLoadRadius(players);
     populateReady();       // population runs on main thread
     lightManager.processLightQueue(*this, INT_MAX);
