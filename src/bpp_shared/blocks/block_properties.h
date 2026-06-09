@@ -16,7 +16,6 @@ struct Entity;
 struct PlayerSession;
 
 namespace Blocks {
-
     enum class StepSound : uint8_t {
         Stone,   // default, also metal (different pitch)
         Wood,
@@ -61,51 +60,49 @@ namespace Blocks {
         CollisionShape (*getCollider)(uint8_t metadata) = nullptr;
 
         // Called each random tick if ticksOnLoad = true
-        void (*onTick)(WorldManager&, Int3, uint8_t meta, Java::Random&) = nullptr;
+        void (*onTick)(WorldManager&, Int3 pos, uint8_t meta, Java::Random&) = nullptr;
 
         // Called when block is placed by world gen or setBlock
-        void (*onBlockAdded)(WorldManager&, Int3) = nullptr;
+        void (*onBlockAdded)(WorldManager&, Int3 pos) = nullptr;
 
         // Called when block is removed
-        void (*onBlockRemoval)(WorldManager&, Int3) = nullptr;
+        void (*onBlockRemoval)(WorldManager&, Int3 pos) = nullptr;
 
         // Called when a neighboring block changes
-        void (*onNeighborBlockChange)(WorldManager&, Int3, BlockType) = nullptr;
+        void (*onNeighborBlockChange)(WorldManager&, Int3 pos, BlockType) = nullptr;
 
         // Called when a player left-clicks the block (not breaks, just clicks)
-        void (*onBlockClicked)(WorldManager&, Int3, uint8_t) = nullptr;
+        void (*onBlockClicked)(WorldManager&, Int3 pos, uint8_t meta) = nullptr;
 
-        // Called when a player right-clicks the block — returns true if consumed.
-        // PlayerSession is passed so GUI-opening blocks (chests, furnaces, etc.)
-        // can send packets directly to the interacting player.
-        bool (*onBlockActivated)(WorldManager&, Int3, uint8_t, PlayerSession&) = nullptr;
+        // Called when a player right-clicks the block; returns true if consumed.
+        bool (*onBlockActivated)(WorldManager&, Int3 pos, uint8_t meta, PlayerSession&) = nullptr;
 
         // Called when the block is placed by a player or dispenser
-        void (*onBlockPlacedBy)(WorldManager&, Int3, uint8_t) = nullptr;
+        void (*onBlockPlacedBy)(WorldManager&, Int3 pos, uint8_t meta) = nullptr;
 
         // Called when block is placed, receives the face it was placed against
-        void (*onBlockPlaced)(WorldManager&, Int3, int) = nullptr;
+        void (*onBlockPlaced)(WorldManager&, Int3 pos, int face) = nullptr;
 
         // Called when player breaks the block
-        void (*onBlockDestroyedByPlayer)(WorldManager&, Int3, uint8_t) = nullptr;
+        void (*onBlockDestroyedByPlayer)(WorldManager&, Int3 pos, uint8_t meta) = nullptr;
 
         // Called when an explosion destroys the block
-        void (*onBlockDestroyedByExplosion)(WorldManager&, Int3) = nullptr;
+        void (*onBlockDestroyedByExplosion)(WorldManager&, Int3 pos) = nullptr;
 
         // Called when an entity walks on top of the block
-        void (*onEntityWalking)(WorldManager&, Int3, Entity&) = nullptr;
+        void (*onEntityWalking)(WorldManager&, Int3 pos, Entity&) = nullptr;
 
         // Called when an entity collides with the block (cactus damage, etc.)
-        void (*onEntityCollidedWithBlock)(WorldManager&, Int3, Entity&) = nullptr;
+        void (*onEntityCollidedWithBlock)(WorldManager&, Int3 pos, Entity&) = nullptr;
 
         // Modify entity velocity
-        void (*velocityToAddToEntity)(WorldManager&, Int3, Entity&, Vec3&) = nullptr;
+        void (*velocityToAddToEntity)(WorldManager&, Int3 pos, Entity&, Vec3&) = nullptr;
 
         // What item/block this drops when broken
-        uint8_t (*idDropped)(uint8_t meta, Java::Random&) = nullptr;
+        uint8_t (*idDropped)(uint8_t meta, Java::Random& random) = nullptr;
 
         // How many items drop
-        int (*quantityDropped)(Java::Random&) = nullptr;
+        int (*quantityDropped)(Java::Random& random) = nullptr;
     };
 
     // Global tables — indexed by block ID, populated by registerAll()

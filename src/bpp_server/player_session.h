@@ -83,11 +83,6 @@ struct PlayerSession {
 
     int8_t dimension = 0; // 0 = overworld, -1 = nether
 
-    // Portal transfer state; timer increments each tick while standing in a portal block,
-    // transfer fires when it reaches 1.0. Cooldown prevents immediately re-entering.
-    float portalTimer    = 0.0f;
-    int   portalCooldown = 0;
-
     explicit PlayerSession(int socket) : stream(socket), inventoryInteraction(&inventory) {}
 
 	// Load our player data from file

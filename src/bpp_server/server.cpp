@@ -415,28 +415,6 @@ void Server::tick() {
             WorldManager& sessionWorld = session->dimension == -1 ? worldHell : world;
             chunkSender.enqueue(*session, sessionWorld, 16);
             chunkSender.flush(*session);
-
-            if (session->portalCooldown > 0) {
-                session->portalCooldown--;
-            }
-            else {
-                Int3 feetPos = {
-                    int(std::floor(session->position.pos.x)),
-                    int(std::floor(session->position.pos.y - float(PLAYER_EYE_HEIGHT))),
-                    int(std::floor(session->position.pos.z))
-                };
-                bool inPortal = sessionWorld.getBlockId(feetPos) == BLOCK_NETHER_PORTAL ||
-                    sessionWorld.getBlockId({ feetPos.x, feetPos.y + 1, feetPos.z }) == BLOCK_NETHER_PORTAL;
-                if (inPortal) {
-                    session->portalTimer += 0.0125f;
-                    if (session->portalTimer >= 1.0f)
-                        transferPlayerDimension(*session);
-                }
-                else {
-                    session->portalTimer = std::max(0.0f, session->portalTimer - 0.05f);
-                }
-            }
-
             processIncoming(*session);
             broadcastPlayerMovement(*session);
             if (sessionWorld.elapsed_ticks % 20 == 0) {
@@ -821,9 +799,6 @@ void Server::transferPlayerDimension(PlayerSession& session) {
 
     session.position.pos.x = float(newX);
     session.position.pos.z = float(newZ);
-
-    session.portalTimer = 0.0f;
-    session.portalCooldown = 200;
 
     // Send our inventory again and close any containers we are in
     if (session.activeInteraction) {
