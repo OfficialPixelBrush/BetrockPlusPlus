@@ -90,9 +90,9 @@ First you prepare and enter the build directory.
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cd build
 ```
-This will make a Release Client build. If you'd like to build a server instead, use
+This will make a Release Server build. If you'd like to build a client instead, use
 ```bash
-cmake -S . -B build -DBUILD_SERVER=ON -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build -DBUILD_SERVER=OFF -DCMAKE_BUILD_TYPE=Release
 cd build
 ```
 Then you build the project.
