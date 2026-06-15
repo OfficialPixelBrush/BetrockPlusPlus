@@ -18,7 +18,7 @@ A full, from-scratch reimplementation of Minecraft Beta 1.7.3.
 This is another project that's part of/worked on by the OpenBeta Community. We have a [Discord Server](https://discord.gg/JHTz2HSKrf)!
 
 ## Contributing
-Please read the [CONTRIBUTING](https://github.com/OfficialPixelBrush/BetrockServer/blob/main/CONTRIBUTING.md) page.
+Please read the [CONTRIBUTING](./CONTRIBUTING.md) page.
 
 ## How to use
 ### Clone the Repository
