@@ -97,7 +97,7 @@ int32_t GetMaxStack(int16_t id) {
         break;
     }
 
-    // Tools, weapons, armor — all set maxStackSize=1 in their constructors
+    // Tools, weapons, armor all set maxStackSize=1 in their constructors
     if (IsTool(id) || IsWeapon(id) || IsArmor(id))
         return 1;
 

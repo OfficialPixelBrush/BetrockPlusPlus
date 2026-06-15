@@ -147,7 +147,7 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk) 
     Tag populated; populated.type = TAG_BYTE; populated.name = "TerrainPopulated"; populated.byteValue = chunk->isTerrainPopulated;
     Tag lastUpdate; lastUpdate.type = TAG_LONG; lastUpdate.name = "LastUpdate"; lastUpdate.longValue = 123456789LL;
 
-    // Byte array — blocks
+    // Byte array, blocks
     Tag blocks;
     blocks.type = TAG_BYTEARRAY;
     blocks.name = "Blocks";
@@ -169,7 +169,7 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk) 
     skyLight.name = "SkyLight";
     skyLight.byteArray.resize((CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT) / 2, 0);
 
-    // HeightMap — one byte per (x,z) column
+    // HeightMap, one byte per (x,z) column
     Tag heightMap;
     heightMap.type = TAG_BYTEARRAY;
     heightMap.name = "HeightMap";
@@ -200,13 +200,13 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk) 
         }
     }
 
-    // List tag — entities (empty)
+    // List tag for entities (empty for now)
     Tag entities;
     entities.type = TAG_LIST;
     entities.name = "Entities";
     entities.listType = TAG_COMPOUND;
 
-    // Nested compound inside a list — tile entities
+    // Nested compound inside a list for tile entities
     Tag tileEntities;
     tileEntities.type = TAG_LIST;
     tileEntities.name = "TileEntities";
