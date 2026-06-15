@@ -161,7 +161,7 @@ void CaveGenerator::CarveCave(Chunk& chunk, Vec3 offset,
 								// Nether caver check
 								if (m_isNetherCave && (blockType == BLOCK_LAVA_FLOWING || blockType == BLOCK_LAVA_STILL))
 									fluidIsPresent = true;
-								// Skip interior — only check the shell
+								// Skip interior, only check the shell
 								if (blockY != yMin - 1 && blockX != xMin && blockX != xMax - 1 &&
 									blockZ != zMin && blockZ != zMax - 1) {
 									blockY = yMin;

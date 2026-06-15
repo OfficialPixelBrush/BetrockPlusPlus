@@ -84,7 +84,7 @@ namespace HandlePacket {
     }
 
     inline void PlayerMovement(Packet::PlayerMovement& /*pkt*/, PlayerSession& /*session*/) {
-        // onGround flag only — no position update needed.
+        // onGround flag only, so no position update needed.
     }
 
     inline void PlayerPosition(Packet::PlayerPosition& pkt, PlayerSession& session) {
