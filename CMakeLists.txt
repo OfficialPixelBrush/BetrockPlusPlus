@@ -20,7 +20,6 @@ find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(OpenAL CONFIG REQUIRED)
-find_package(SDL3 CONFIG REQUIRED)
 endif()
 
 # Try to find Git, but don't fail if it's missing
@@ -81,13 +80,15 @@ set(SHARED_SOURCES
     src/bpp_shared/world/noise/noise_perlin.cpp
     src/bpp_shared/world/noise/noise_simplex.cpp
     src/bpp_shared/world/generator/generator.cpp
-    ## Overworld generator
+
+    # Overworld generator
     src/bpp_shared/world/generator/overworld/chunk_gen.cpp
     src/bpp_shared/world/generator/overworld/tree_gen.cpp
     src/bpp_shared/world/generator/overworld/biome_gen.cpp
     src/bpp_shared/world/generator/shared/cave_gen.cpp
     src/bpp_shared/world/generator/shared/feature_gen.cpp
-    ## Nether generator
+
+    # Nether generator
     src/bpp_shared/world/generator/nether/chunk_gen.cpp
 
     # Logger
@@ -131,6 +132,7 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/external/glad/include"
     "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared"
+    "${PROJECT_SOURCE_DIR}/src/bpp_utilities"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/enums/network"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/world"
@@ -161,7 +163,7 @@ else()
     target_link_libraries(BetrockPlusPlus PRIVATE
         OpenGL::GL
         glfw
-        glm::glm-header-only
+        glm::glm
         OpenAL::OpenAL
         Threads::Threads
     )

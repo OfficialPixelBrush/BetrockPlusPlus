@@ -38,12 +38,32 @@ struct RegionManager {
 	std::mutex outChunksMutex;
 	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> outChunks;
 
+	~RegionManager() {
+		release();
+	}
+
 	bool initialize(const std::string& folderPath) {
 		if (!std::filesystem::is_directory(folderPath)) {
 			GlobalLogger().error << "Tried to initialize region manager with an invalid directory!\n";
 			return false; // No region folder
 		}
 		m_folderPath = folderPath;
+		return true;
+	}
+
+	bool release() {
+		flushAll();
+
+		// Clear reigons in cache
+		for (int i = 0; i < 8; i++)
+			m_regionCache[i].reset();
+
+		// Drop any regions that couldn't fit in cache
+		m_pendingRegions.clear();
+
+		// Clear the folder path so the manager can't be accidentally reused
+		m_folderPath.clear();
+
 		return true;
 	}
 

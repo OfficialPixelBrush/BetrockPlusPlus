@@ -8,6 +8,10 @@
 #include "entity.h"
 
 // For ticking all entities and keeping track of them in the world
-struct entityManager {
+struct EntityManager {
+	int64_t nextEntityId = 2; // Minecraft seems to reserve 0 and 1
 
+	void tick() {
+
+	}
 };

@@ -18,7 +18,7 @@ A full, from-scratch reimplementation of Minecraft Beta 1.7.3.
 This is another project that's part of/worked on by the OpenBeta Community. We have a [Discord Server](https://discord.gg/JHTz2HSKrf)!
 
 ## Contributing
-Please read the [CONTRIBUTING](https://github.com/OfficialPixelBrush/BetrockServer/blob/main/CONTRIBUTING.md) page.
+Please read the [CONTRIBUTING](./CONTRIBUTING.md) page.
 
 ## How to use
 ### Clone the Repository
@@ -90,9 +90,9 @@ First you prepare and enter the build directory.
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cd build
 ```
-This will make a Release Client build. If you'd like to build a server instead, use
+This will make a Release Server build. If you'd like to build a client instead, use
 ```bash
-cmake -S . -B build -DBUILD_SERVER=ON -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build -DBUILD_SERVER=OFF -DCMAKE_BUILD_TYPE=Release
 cd build
 ```
 Then you build the project.

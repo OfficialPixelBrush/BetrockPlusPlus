@@ -3,69 +3,89 @@
  *
  * SPDX-License-Identifier: GPL-3.0-only
  *
-*/
+ */
 #pragma once
+
 #include "helpers/AABB.h"
 
-// Base entity struct
-struct entity {
-	int id = -1; // Entity ID, -1 is an invalid entity
-	bool preventEntitySpawning = false;
-	entity* riddenByEntity;
-	entity* ridingEntity;
+struct Entity {
+    // Identity
+    int  id = -1; // -1 = not yet spawned
+    bool isDead = false;
+    int  ticksExisted = 0;
 
-	// Position last tick
-	double prevPosX;
-	double prevPosY;
-	double prevPosZ;
+    // Riding
+    Entity* ridingEntity = nullptr;
+    Entity* riddenByEntity = nullptr;
 
-	// Position this tick
-	double posX;
-	double posY;
-	double posZ;
+    // Position
+    double posX = 0.0;
+    double posY = 0.0;
+    double posZ = 0.0;
 
-	// Velocity
-	double motionX;
-	double motionY;
-	double motionZ;
+    // Position at the start of the current tick
+    double prevPosX = 0.0;
+    double prevPosY = 0.0;
+    double prevPosZ = 0.0;
 
-	// Look direction
-	float rotationYaw;
-	float rotationPitch;
+    // Velocity
+    double motionX = 0.0;
+    double motionY = 0.0;
+    double motionZ = 0.0;
 
-	// Look direction last tick
-	float prevRotationYaw;
-	float prevRotationPitch;
+    // Look direction
+    float rotationYaw = 0.0f;
+    float rotationPitch = 0.0f;
 
-	// Collider
-	AABB collider;
+    float prevRotationYaw = 0.0f;
+    float prevRotationPitch = 0.0f;
 
-	bool onGround = false;
-	bool collidedHorizontally = false;
-	bool collidedVertically = false;
-	bool collided = false;
-	bool beenAttacked = false;
-	bool inWeb = false;
-	bool hasPhysics = true;
-	bool isDead = false;
+    // Collision
+    AABB collider;
 
-	// Vertical offset from posY to the bottom of the bounding box (feet position)
-	float yOffset = 0.0F;
+    // Width/height of the collision box in blocks.
+    float width = 0.6f;
+    float height = 1.8f;
 
-	// Collision box dimensions in blocks
-	float width = 0.6F;
-	float height = 1.8F;
+    // Vertical offset from posY down to the bottom of the bounding box
+    float yOffset = 0.0f;
 
-	// Distance walked last tick
-	float prevDistanceWalked = 0.0f;
-	
-	// Distance walked this tick
-	float distanceWalked = 0.0f;
+    // How high a block face this entity can step onto without jumping.
+    float stepHeight = 0.5f;
 
-	float fallDistance = 0.0f;
+    // Collision state
+    bool onGround = false;
+    bool collided = false;
+    bool collidedHorizontally = false;
+    bool collidedVertically = false;
 
-	// Position the tick before last
-	double prevPrevPosX;
-	double prevPrevPosY;
-	double prevPrevPosZ;
- };
+    // Movement / environment state
+    bool hasPhysics = true;
+    bool inWeb = false;     // Inside a cobweb
+    bool inWater = false;
+    bool inLava = false;
+    bool onLadder = false;
+    bool isJumping = false;
+
+    float fallDistance = 0.0f;
+
+    int nextStepDistance = 0;
+
+    // Accumulated walk distance this tick (unused rn its mostly for the client)
+    float distanceWalkedModified = 0.0f;
+    float prevDistanceWalkedModified = 0.0f;
+
+    // Fire
+    int  fire = 0;           // Ticks remaining on fire; 0 = not on fire
+    bool inFire = false;     // Currently touching a fire/lava block
+    int  fireResistance = 1; // Ticks of immunity after catching fire
+
+    // Combat
+    bool beenAttacked = false;
+    int  hurtResistantTime = 0; // Invincibility frames after being hit
+    float attackedAtYaw = 0.0f; // Yaw from which the last attack came
+
+    // Spawning
+    bool preventEntitySpawning = false;
+    bool isFirstUpdate = true; // True only on the very first tick
+};

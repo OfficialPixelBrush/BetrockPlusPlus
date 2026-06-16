@@ -62,21 +62,26 @@ void WorldManager::tick(const std::vector<ClientPosition>& players) {
     drainLoadQueue();      // integrate finished loads
 
     // Queue any modified chunks for saving
-    if (regionManager) {
-        for (auto& [pos, chunk] : chunks) {
-            if (!chunk->isModified) continue;
-            ChunkState s = chunk->state.load();
-            if (s < ChunkState::Generated) continue;
-            if (s == ChunkState::Generating || s == ChunkState::Loading) continue;
-            regionManager->saveChunk(chunk);
-            chunk->isModified = false;
-        }
+    if (!regionManager) {
+        GlobalLogger().error << "No region manager while trying to tick!\n";
+        return;
     }
-
+    for (auto& [pos, chunk] : chunks) {
+        if (!chunk->isModified) continue;
+        ChunkState s = chunk->state.load();
+        if (s < ChunkState::Generated) continue;
+        if (s == ChunkState::Generating || s == ChunkState::Loading) continue;
+        regionManager->saveChunk(chunk);
+        chunk->isModified = false;
+    }
     regionManager->pumpPipeline();
+
     updateLoadRadius(players);
     populateReady();       // population runs on main thread
     lightManager.processLightQueue(*this, INT_MAX);
+
+    // Update our entities
+    entityManager.tick();
 }
 
 void WorldManager::update(const std::vector<ClientPosition>& players) {

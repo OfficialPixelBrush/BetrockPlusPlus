@@ -11,21 +11,21 @@
 
 // I hate doing inheritance but its simple to do for this
 struct TileEntity {
-	std::string id = "";
-	Int3 position{ 0, 0, 0 }; // Global coordinates
-	bool canTick = false;
+	std::string m_id = "";
+	Int3 m_position{ 0, 0, 0 }; // Global coordinates
+	bool m_canTick = false;
 
-	TileEntity(std::string pId, Int3 pPosition) : id(pId), position(pPosition) {};
+	TileEntity(std::string pId, Int3 pPosition) : m_id(pId), m_position(pPosition) {};
 
 	virtual void tick() {};
 	virtual Tag serialize() {
 		auto root = Tag{};
 		root.type = TAG_COMPOUND;
 
-		auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = this->id };
-		auto x = Tag{ .type = TAG_INT,    .name = "x",  .intValue = this->position.x };
-		auto y = Tag{ .type = TAG_INT,    .name = "y",  .intValue = this->position.y };
-		auto z = Tag{ .type = TAG_INT,    .name = "z",  .intValue = this->position.z };
+		auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
+		auto x 	= Tag{ .type = TAG_INT,    .name = "x",  .intValue = m_position.x };
+		auto y 	= Tag{ .type = TAG_INT,    .name = "y",  .intValue = m_position.y };
+		auto z 	= Tag{ .type = TAG_INT,    .name = "z",  .intValue = m_position.z };
 
 		root.compound["id"] = id;
 		root.compound["x"] = x;
@@ -46,10 +46,10 @@ struct TileEntityChest : TileEntity {
 		auto root = Tag{};
 		root.type = TAG_COMPOUND;
 
-		auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = this->id };
-		auto x = Tag{ .type = TAG_INT,    .name = "x",  .intValue = this->position.x };
-		auto y = Tag{ .type = TAG_INT,    .name = "y",  .intValue = this->position.y };
-		auto z = Tag{ .type = TAG_INT,    .name = "z",  .intValue = this->position.z };
+		auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
+		auto x 	= Tag{ .type = TAG_INT,    .name = "x",  .intValue = m_position.x };
+		auto y 	= Tag{ .type = TAG_INT,    .name = "y",  .intValue = m_position.y };
+		auto z 	= Tag{ .type = TAG_INT,    .name = "z",  .intValue = m_position.z };
 
 		// Construct our inventory
 		auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
@@ -85,16 +85,16 @@ struct TileEntityChest : TileEntity {
 // Furnace
 struct TileEntityFurnace : TileEntity {
 	InventoryFurnace inventory;
-	TileEntityFurnace(Int3 pPosition) : TileEntity("Furnace", pPosition) { canTick = true; };
+	TileEntityFurnace(Int3 pPosition) : TileEntity("Furnace", pPosition) { m_canTick = true; };
 
 	Tag serialize() override {
 		auto root = Tag{};
 		root.type = TAG_COMPOUND;
 
-		auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = this->id };
-		auto x = Tag{ .type = TAG_INT,    .name = "x",  .intValue = this->position.x };
-		auto y = Tag{ .type = TAG_INT,    .name = "y",  .intValue = this->position.y };
-		auto z = Tag{ .type = TAG_INT,    .name = "z",  .intValue = this->position.z };
+		auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
+		auto x 	= Tag{ .type = TAG_INT,    .name = "x",  .intValue = m_position.x };
+		auto y 	= Tag{ .type = TAG_INT,    .name = "y",  .intValue = m_position.y };
+		auto z 	= Tag{ .type = TAG_INT,    .name = "z",  .intValue = m_position.z };
 
 		// Construct our inventory
 		auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
@@ -136,10 +136,10 @@ struct TileEntityDispenser : TileEntity {
 		auto root = Tag{};
 		root.type = TAG_COMPOUND;
 
-		auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = this->id };
-		auto x = Tag{ .type = TAG_INT,    .name = "x",  .intValue = this->position.x };
-		auto y = Tag{ .type = TAG_INT,    .name = "y",  .intValue = this->position.y };
-		auto z = Tag{ .type = TAG_INT,    .name = "z",  .intValue = this->position.z };
+		auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
+		auto x 	= Tag{ .type = TAG_INT,    .name = "x",  .intValue = m_position.x };
+		auto y 	= Tag{ .type = TAG_INT,    .name = "y",  .intValue = m_position.y };
+		auto z 	= Tag{ .type = TAG_INT,    .name = "z",  .intValue = m_position.z };
 
 		// Construct our inventory
 		auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
@@ -174,29 +174,29 @@ struct TileEntityDispenser : TileEntity {
 
 // Sign
 struct TileEntitySign : TileEntity {
-	std::string Text1 = "";
-	std::string Text2 = "";
-	std::string Text3 = "";
-	std::string Text4 = "";
+	std::string m_text1 = "";
+	std::string m_text2 = "";
+	std::string m_text3 = "";
+	std::string m_text4 = "";
 	TileEntitySign(Int3 pPosition) : TileEntity("Sign", pPosition) {};
 
 	Tag serialize() override {
 		auto root = Tag{};
 		root.type = TAG_COMPOUND;
 
-		auto id = Tag{ .type = TAG_STRING, .name = "id",    .stringValue = this->id };
-		auto x = Tag{ .type = TAG_INT,    .name = "x",     .intValue = this->position.x };
-		auto y = Tag{ .type = TAG_INT,    .name = "y",     .intValue = this->position.y };
-		auto z = Tag{ .type = TAG_INT,    .name = "z",     .intValue = this->position.z };
-		auto Text1 = Tag{ .type = TAG_STRING, .name = "Text1", .stringValue = this->Text1 };
-		auto Text2 = Tag{ .type = TAG_STRING, .name = "Text2", .stringValue = this->Text2 };
-		auto Text3 = Tag{ .type = TAG_STRING, .name = "Text3", .stringValue = this->Text3 };
-		auto Text4 = Tag{ .type = TAG_STRING, .name = "Text4", .stringValue = this->Text4 };
+		auto id = Tag{ .type = TAG_STRING, .name = "id",    .stringValue = m_id };
+		auto x 	= Tag{ .type = TAG_INT,    .name = "x",     .intValue = m_position.x };
+		auto y 	= Tag{ .type = TAG_INT,    .name = "y",     .intValue = m_position.y };
+		auto z 	= Tag{ .type = TAG_INT,    .name = "z",     .intValue = m_position.z };
+		auto text1 = Tag{ .type = TAG_STRING, .name = "Text1", .stringValue = m_text1 };
+		auto text2 = Tag{ .type = TAG_STRING, .name = "Text2", .stringValue = m_text2 };
+		auto text3 = Tag{ .type = TAG_STRING, .name = "Text3", .stringValue = m_text3 };
+		auto text4 = Tag{ .type = TAG_STRING, .name = "Text4", .stringValue = m_text4 };
 
-		root.compound["Text1"] = Text1;
-		root.compound["Text2"] = Text2;
-		root.compound["Text3"] = Text3;
-		root.compound["Text4"] = Text4;
+		root.compound["Text1"] = text1;
+		root.compound["Text2"] = text2;
+		root.compound["Text3"] = text3;
+		root.compound["Text4"] = text4;
 		root.compound["id"] = id;
 		root.compound["x"] = x;
 		root.compound["y"] = y;
@@ -208,23 +208,23 @@ struct TileEntitySign : TileEntity {
 
 // MobSpawner
 struct TileEntityMobSpawner : TileEntity {
-	std::string EntityId = "";
-	int16_t delay = 0;
-	TileEntityMobSpawner(Int3 pPosition) : TileEntity("MobSpawner", pPosition) { canTick = true; };
+	std::string m_entityId = "";
+	int16_t m_delay = 0;
+	TileEntityMobSpawner(Int3 pPosition) : TileEntity("MobSpawner", pPosition) { m_canTick = true; };
 
 	Tag serialize() override {
 		auto root = Tag{};
 		root.type = TAG_COMPOUND;
 
-		auto id = Tag{ .type = TAG_STRING, .name = "id",       .stringValue = this->id };
-		auto x = Tag{ .type = TAG_INT,    .name = "x",        .intValue = this->position.x };
-		auto y = Tag{ .type = TAG_INT,    .name = "y",        .intValue = this->position.y };
-		auto z = Tag{ .type = TAG_INT,    .name = "z",        .intValue = this->position.z };
-		auto EntityId = Tag{ .type = TAG_STRING, .name = "EntityId", .stringValue = this->EntityId };
-		auto Delay = Tag{ .type = TAG_SHORT,  .name = "Delay",    .shortValue = this->delay };
+		auto id = Tag{ .type = TAG_STRING, .name = "id",       .stringValue = m_id };
+		auto x = Tag{ .type = TAG_INT,    .name = "x",        .intValue = m_position.x };
+		auto y = Tag{ .type = TAG_INT,    .name = "y",        .intValue = m_position.y };
+		auto z = Tag{ .type = TAG_INT,    .name = "z",        .intValue = m_position.z };
+		auto entityId = Tag{ .type = TAG_STRING, .name = "EntityId", .stringValue = m_entityId };
+		auto delay = Tag{ .type = TAG_SHORT,  .name = "Delay",    .shortValue = m_delay };
 
-		root.compound["EntityId"] = EntityId;
-		root.compound["Delay"] = Delay;
+		root.compound["EntityId"] = entityId;
+		root.compound["Delay"] = delay;
 		root.compound["id"] = id;
 		root.compound["x"] = x;
 		root.compound["y"] = y;

@@ -10,6 +10,8 @@
 #include "inputs.h"
 #include "window.h"
 #include "world/world.h"
+#include "world/storage/save_manager.h"
+#include "world/storage/region_manager.h"
 
 class Client {
 public:
@@ -22,10 +24,9 @@ private:
     void tick();
     void render([[maybe_unused]] float partial_tick);
 
-    Window      window;
-    Input       input;
-    GlfwContext ctx;
-    WorldManager world;
-    ClientPosition singlePlayerPos{};
-    float       accumulator = 0.0f;
+    Window      m_window;
+    Input       m_input;
+    GlfwContext m_ctx;
+    ClientPosition m_singlePlayerPos{};
+    float       m_accumulator = 0.0f;
 };

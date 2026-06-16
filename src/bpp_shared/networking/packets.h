@@ -876,7 +876,7 @@ public:
         }
     };
 
-    // Tells the client to allocate or free a chunk slot — must be sent before ChunkData
+    // Tells the client to allocate or free a chunk slot. Must be sent before ChunkData
     struct SetChunkVisibility : BasePacket {
         SetChunkVisibility() : BasePacket{ PacketId::SetChunkVisibility } {}
         int32_t chunkX;
