@@ -116,7 +116,21 @@ namespace HandlePacket {
         if (distance > 36.0) {
             return; // more than 6 blocks away so we drop it
         }
+
+        // TODO: make it so when you break stone with your fist it doesn't drop (based on tool you are holding)
+        BlockType blockId = world.getBlockId({ pos.x, pos.y, pos.z });
+        uint8_t meta = world.getMetadata({ pos.x, pos.y, pos.z });
         world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
+
+        std::vector<ItemStack> drops = Blocks::getBlockDrops(blockId, meta, world.rand);
+
+        // TODO: spawn an item instead of adding it to your inventory
+        for (ItemStack drop : drops) {
+            // hotbar makes up slots 36-44 so try that first
+            if (session.inventory.mergeItemStackInInventory(drop, false, 36, 44) || session.inventory.mergeItemStackInInventory(drop, false, 9, 35)) {
+                PacketUtilities::sendInventory(session, session.openWindowId, session.inventory);
+            }
+        }
     }
 
     inline void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session,
