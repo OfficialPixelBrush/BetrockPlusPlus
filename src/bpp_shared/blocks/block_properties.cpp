@@ -1660,92 +1660,92 @@ namespace Blocks {
         };
 
         // --------------- block drops, only exceptions are included (something that doesn't drop itself) ---------------
-        blockBehaviors[BLOCK_STONE].idDropped    = [](uint8_t, Java::Random&) -> int16_t { return BLOCK_COBBLESTONE; };
-        blockBehaviors[BLOCK_GRASS].idDropped     = [](uint8_t, Java::Random&) -> int16_t { return BLOCK_DIRT; };
-        blockBehaviors[BLOCK_FARMLAND].idDropped  = [](uint8_t, Java::Random&) -> int16_t { return BLOCK_DIRT; };
-        blockBehaviors[BLOCK_ORE_COAL].idDropped  = [](uint8_t, Java::Random&) -> int16_t { return ITEM_COAL; };
-        blockBehaviors[BLOCK_ORE_DIAMOND].idDropped = [](uint8_t, Java::Random&) -> int16_t { return ITEM_DIAMOND; };
-        blockBehaviors[BLOCK_REDSTONE].idDropped  = [](uint8_t, Java::Random&) -> int16_t { return ITEM_REDSTONE; };
-        blockBehaviors[BLOCK_SUGARCANE].idDropped = [](uint8_t, Java::Random&) -> int16_t { return ITEM_SUGARCANE; };
-        blockBehaviors[BLOCK_COBWEB].idDropped    = [](uint8_t, Java::Random&) -> int16_t { return ITEM_STRING; };
-        blockBehaviors[BLOCK_DEADBUSH].idDropped  = [](uint8_t, Java::Random&) -> int16_t { return -1; };
-        blockBehaviors[BLOCK_STAIRS_WOOD].idDropped        = [](uint8_t, Java::Random&) -> int16_t { return BLOCK_PLANKS; };
-        blockBehaviors[BLOCK_STAIRS_COBBLESTONE].idDropped = [](uint8_t, Java::Random&) -> int16_t { return BLOCK_COBBLESTONE; };
+        blockBehaviors[BLOCK_STONE].idDropped    = [](uint8_t, Java::Random&) -> ItemId { return BLOCK_COBBLESTONE; };
+        blockBehaviors[BLOCK_GRASS].idDropped     = [](uint8_t, Java::Random&) -> ItemId { return BLOCK_DIRT; };
+        blockBehaviors[BLOCK_FARMLAND].idDropped  = [](uint8_t, Java::Random&) -> ItemId { return BLOCK_DIRT; };
+        blockBehaviors[BLOCK_ORE_COAL].idDropped  = [](uint8_t, Java::Random&) -> ItemId { return ITEM_COAL; };
+        blockBehaviors[BLOCK_ORE_DIAMOND].idDropped = [](uint8_t, Java::Random&) -> ItemId { return ITEM_DIAMOND; };
+        blockBehaviors[BLOCK_REDSTONE].idDropped  = [](uint8_t, Java::Random&) -> ItemId { return ITEM_REDSTONE; };
+        blockBehaviors[BLOCK_SUGARCANE].idDropped = [](uint8_t, Java::Random&) -> ItemId { return ITEM_SUGARCANE; };
+        blockBehaviors[BLOCK_COBWEB].idDropped    = [](uint8_t, Java::Random&) -> ItemId { return ITEM_STRING; };
+        blockBehaviors[BLOCK_DEADBUSH].idDropped  = [](uint8_t, Java::Random&) -> ItemId { return ITEM_INVALID; };
+        blockBehaviors[BLOCK_STAIRS_WOOD].idDropped        = [](uint8_t, Java::Random&) -> ItemId { return BLOCK_PLANKS; };
+        blockBehaviors[BLOCK_STAIRS_COBBLESTONE].idDropped = [](uint8_t, Java::Random&) -> ItemId { return BLOCK_COBBLESTONE; };
 
-        blockBehaviors[BLOCK_SIGN].idDropped      = [](uint8_t, Java::Random&) -> int16_t { return ITEM_SIGN; };
-        blockBehaviors[BLOCK_SIGN_WALL].idDropped = [](uint8_t, Java::Random&) -> int16_t { return ITEM_SIGN; };
-        blockBehaviors[BLOCK_FURNACE_LIT].idDropped = [](uint8_t, Java::Random&) -> int16_t { return BLOCK_FURNACE; };
-        blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].idDropped = [](uint8_t, Java::Random&) -> int16_t { return ITEM_REDSTONE_REPEATER; };
-        blockBehaviors[BLOCK_REDSTONE_REPEATER_ON].idDropped  = [](uint8_t, Java::Random&) -> int16_t { return ITEM_REDSTONE_REPEATER; };
-        blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].idDropped = [](uint8_t, Java::Random&) -> int16_t { return BLOCK_REDSTONE_TORCH_ON; };
+        blockBehaviors[BLOCK_SIGN].idDropped      = [](uint8_t, Java::Random&) -> ItemId { return ITEM_SIGN; };
+        blockBehaviors[BLOCK_SIGN_WALL].idDropped = [](uint8_t, Java::Random&) -> ItemId { return ITEM_SIGN; };
+        blockBehaviors[BLOCK_FURNACE_LIT].idDropped = [](uint8_t, Java::Random&) -> ItemId { return BLOCK_FURNACE; };
+        blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].idDropped = [](uint8_t, Java::Random&) -> ItemId { return ITEM_REDSTONE_REPEATER; };
+        blockBehaviors[BLOCK_REDSTONE_REPEATER_ON].idDropped  = [](uint8_t, Java::Random&) -> ItemId { return ITEM_REDSTONE_REPEATER; };
+        blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].idDropped = [](uint8_t, Java::Random&) -> ItemId { return BLOCK_REDSTONE_TORCH_ON; };
 
         // --------------- drop themselves but pass their metadata onto the item ---------------
-        blockBehaviors[BLOCK_WOOL].damageDropped    = [](uint8_t meta) -> int16_t { return meta; };
-        blockBehaviors[BLOCK_LOG].damageDropped     = [](uint8_t meta) -> int16_t { return meta; };
-        blockBehaviors[BLOCK_SAPLING].damageDropped = [](uint8_t meta) -> int16_t { return meta & 3; };
+        blockBehaviors[BLOCK_WOOL].damageDropped    = [](uint8_t meta) -> ItemId { return meta; };
+        blockBehaviors[BLOCK_LOG].damageDropped     = [](uint8_t meta) -> ItemId { return meta; };
+        blockBehaviors[BLOCK_SAPLING].damageDropped = [](uint8_t meta) -> ItemId { return meta & 3; };
 
         // --------------- don't drop anything ---------------
-        blockBehaviors[BLOCK_ICE].quantityDropped         = [](Java::Random&) { return 0; };
-        blockBehaviors[BLOCK_GLASS].quantityDropped       = [](Java::Random&) { return 0; };
-        blockBehaviors[BLOCK_BOOKSHELF].quantityDropped   = [](Java::Random&) { return 0; };
-        blockBehaviors[BLOCK_CAKE].quantityDropped        = [](Java::Random&) { return 0; };
-        blockBehaviors[BLOCK_MOB_SPAWNER].quantityDropped   = [](Java::Random&) { return 0; };
-        blockBehaviors[BLOCK_FIRE].quantityDropped          = [](Java::Random&) { return 0; };
-        blockBehaviors[BLOCK_PISTON_HEAD].quantityDropped   = [](Java::Random&) { return 0; };
-        blockBehaviors[BLOCK_PISTON_MOVING].quantityDropped = [](Java::Random&) { return 0; };
-        blockBehaviors[BLOCK_NETHER_PORTAL].quantityDropped = [](Java::Random&) { return 0; };
-        blockBehaviors[BLOCK_SNOW_LAYER].quantityDropped    = [](Java::Random&) { return 0; }; // TODO: when mined with a shovel this should drop snowballs
+        blockBehaviors[BLOCK_ICE].quantityDropped         = [](Java::Random&) -> ItemAmount { return 0; };
+        blockBehaviors[BLOCK_GLASS].quantityDropped       = [](Java::Random&) -> ItemAmount  { return 0; };
+        blockBehaviors[BLOCK_BOOKSHELF].quantityDropped   = [](Java::Random&) -> ItemAmount  { return 0; };
+        blockBehaviors[BLOCK_CAKE].quantityDropped        = [](Java::Random&) -> ItemAmount  { return 0; };
+        blockBehaviors[BLOCK_MOB_SPAWNER].quantityDropped   = [](Java::Random&) -> ItemAmount  { return 0; };
+        blockBehaviors[BLOCK_FIRE].quantityDropped          = [](Java::Random&) -> ItemAmount  { return 0; };
+        blockBehaviors[BLOCK_PISTON_HEAD].quantityDropped   = [](Java::Random&) -> ItemAmount  { return 0; };
+        blockBehaviors[BLOCK_PISTON_MOVING].quantityDropped = [](Java::Random&) -> ItemAmount  { return 0; };
+        blockBehaviors[BLOCK_NETHER_PORTAL].quantityDropped = [](Java::Random&) -> ItemAmount  { return 0; };
+        blockBehaviors[BLOCK_SNOW_LAYER].quantityDropped    = [](Java::Random&) -> ItemAmount  { return 0; };
 
         // --------------- drops influenced by RNG ---------------
-        blockBehaviors[BLOCK_GRAVEL].idDropped = [](uint8_t, Java::Random& rng) -> int16_t {
-            return rng.nextInt(10) == 0 ? (int16_t)ITEM_FLINT : (int16_t)BLOCK_GRAVEL;
+        blockBehaviors[BLOCK_GRAVEL].idDropped = [](uint8_t, Java::Random& rng) -> ItemId {
+            return rng.nextInt(10) == 0 ? static_cast<ItemId>(ITEM_FLINT) : static_cast<ItemId>(BLOCK_GRAVEL);
         };
 
-        blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].idDropped       = [](uint8_t, Java::Random&) -> int16_t { return ITEM_DYE; };
-        blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].damageDropped   = [](uint8_t) -> int16_t { return 4; };
-        blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].quantityDropped = [](Java::Random& rng) { return 4 + rng.nextInt(5); };
+        blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].idDropped       = [](uint8_t, Java::Random&) -> ItemId { return ITEM_DYE; };
+        blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].damageDropped   = [](uint8_t) -> ItemDamage { return 4; };
+        blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].quantityDropped = [](Java::Random& rng) -> ItemAmount { return 4 + rng.nextInt(5); };
 
-        blockBehaviors[BLOCK_ORE_REDSTONE_OFF].idDropped       = [](uint8_t, Java::Random&) -> int16_t { return ITEM_REDSTONE; };
-        blockBehaviors[BLOCK_ORE_REDSTONE_OFF].quantityDropped = [](Java::Random& rng) { return 4 + rng.nextInt(2); };
-        blockBehaviors[BLOCK_ORE_REDSTONE_ON].idDropped        = [](uint8_t, Java::Random&) -> int16_t { return ITEM_REDSTONE; };
-        blockBehaviors[BLOCK_ORE_REDSTONE_ON].quantityDropped  = [](Java::Random& rng) { return 4 + rng.nextInt(2); };
+        blockBehaviors[BLOCK_ORE_REDSTONE_OFF].idDropped       = [](uint8_t, Java::Random&) -> ItemId { return ITEM_REDSTONE; };
+        blockBehaviors[BLOCK_ORE_REDSTONE_OFF].quantityDropped = [](Java::Random& rng) -> ItemAmount { return 4 + rng.nextInt(2); };
+        blockBehaviors[BLOCK_ORE_REDSTONE_ON].idDropped        = [](uint8_t, Java::Random&) -> ItemId { return ITEM_REDSTONE; };
+        blockBehaviors[BLOCK_ORE_REDSTONE_ON].quantityDropped  = [](Java::Random& rng) -> ItemAmount { return 4 + rng.nextInt(2); };
 
-        blockBehaviors[BLOCK_GLOWSTONE].idDropped       = [](uint8_t, Java::Random&) -> int16_t { return ITEM_GLOWSTONE_DUST; };
-        blockBehaviors[BLOCK_GLOWSTONE].quantityDropped = [](Java::Random& rng) { return 2 + rng.nextInt(3); };
+        blockBehaviors[BLOCK_GLOWSTONE].idDropped       = [](uint8_t, Java::Random&) -> ItemId { return ITEM_GLOWSTONE_DUST; };
+        blockBehaviors[BLOCK_GLOWSTONE].quantityDropped = [](Java::Random& rng) -> ItemAmount { return 2 + rng.nextInt(3); };
 
-        blockBehaviors[BLOCK_LEAVES].idDropped       = [](uint8_t, Java::Random&) -> int16_t { return BLOCK_SAPLING; };
-        blockBehaviors[BLOCK_LEAVES].damageDropped   = [](uint8_t meta) -> int16_t { return meta & 3; };
-        blockBehaviors[BLOCK_LEAVES].quantityDropped = [](Java::Random& rng) { return rng.nextInt(20) == 0 ? 1 : 0; };
+        blockBehaviors[BLOCK_LEAVES].idDropped       = [](uint8_t, Java::Random&) -> ItemId { return BLOCK_SAPLING; };
+        blockBehaviors[BLOCK_LEAVES].damageDropped   = [](uint8_t meta) -> ItemDamage { return meta & 3; };
+        blockBehaviors[BLOCK_LEAVES].quantityDropped = [](Java::Random& rng) -> ItemAmount { return rng.nextInt(20) == 0 ? 1 : 0; };
 
-        blockBehaviors[BLOCK_TALLGRASS].idDropped = [](uint8_t, Java::Random& rng) -> int16_t {
-            return rng.nextInt(8) == 0 ? (int16_t)ITEM_SEEDS_WHEAT : -1;
+        blockBehaviors[BLOCK_TALLGRASS].idDropped = [](uint8_t, Java::Random& rng) -> ItemId {
+            return rng.nextInt(8) == 0 ? ITEM_SEEDS_WHEAT : ITEM_INVALID;
         };
 
         // --------------- only drop if it's the correct half of the block being broken ---------------
         // TODO: other half of the block should be removed automatically
-        blockBehaviors[BLOCK_DOOR_WOOD].idDropped = [](uint8_t meta, Java::Random&) -> int16_t {
-            return (meta & 8) != 0 ? -1 : (int16_t)ITEM_DOOR_WOOD;
+        blockBehaviors[BLOCK_DOOR_WOOD].idDropped = [](uint8_t meta, Java::Random&) -> ItemId {
+            return (meta & 8) != 0 ? ITEM_INVALID : ITEM_DOOR_WOOD;
         };
 
-        blockBehaviors[BLOCK_DOOR_IRON].idDropped = [](uint8_t meta, Java::Random&) -> int16_t {
-            return (meta & 8) != 0 ? -1 : (int16_t)ITEM_DOOR_IRON;
+        blockBehaviors[BLOCK_DOOR_IRON].idDropped = [](uint8_t meta, Java::Random&) -> ItemId {
+            return (meta & 8) != 0 ? ITEM_INVALID : ITEM_DOOR_IRON;
         };
 
-        blockBehaviors[BLOCK_BED].idDropped = [](uint8_t meta, Java::Random&) -> int16_t {
-            return (meta & 8) != 0 ? -1 : (int16_t)ITEM_BED;
+        blockBehaviors[BLOCK_BED].idDropped = [](uint8_t meta, Java::Random&) -> ItemId {
+            return (meta & 8) != 0 ? ITEM_INVALID : ITEM_BED;
         };
 
-        blockBehaviors[BLOCK_CLAY].idDropped       = [](uint8_t, Java::Random&) -> int16_t { return ITEM_CLAY; };
-        blockBehaviors[BLOCK_CLAY].quantityDropped = [](Java::Random&) { return 4; };
+        blockBehaviors[BLOCK_CLAY].idDropped       = [](uint8_t, Java::Random&) -> ItemId { return ITEM_CLAY; };
+        blockBehaviors[BLOCK_CLAY].quantityDropped = [](Java::Random&) -> ItemAmount { return 4; };
 
-        blockBehaviors[BLOCK_SLAB].damageDropped     = [](uint8_t meta) -> int16_t { return meta; };
+        blockBehaviors[BLOCK_SLAB].damageDropped     = [](uint8_t meta) -> ItemId { return meta; };
 
-        blockBehaviors[BLOCK_DOUBLE_SLAB].idDropped       = [](uint8_t, Java::Random&) -> int16_t { return BLOCK_SLAB; };
-        blockBehaviors[BLOCK_DOUBLE_SLAB].damageDropped   = [](uint8_t meta) -> int16_t { return meta; };
-        blockBehaviors[BLOCK_DOUBLE_SLAB].quantityDropped = [](Java::Random&) { return 2; };
+        blockBehaviors[BLOCK_DOUBLE_SLAB].idDropped       = [](uint8_t, Java::Random&) -> ItemId { return BLOCK_SLAB; };
+        blockBehaviors[BLOCK_DOUBLE_SLAB].damageDropped   = [](uint8_t meta) -> ItemId { return meta; };
+        blockBehaviors[BLOCK_DOUBLE_SLAB].quantityDropped = [](Java::Random&) -> ItemAmount { return 2; };
 
-        blockBehaviors[BLOCK_SNOW].idDropped       = [](uint8_t, Java::Random&) -> int16_t { return ITEM_SNOWBALL; };
-        blockBehaviors[BLOCK_SNOW].quantityDropped = [](Java::Random&) { return 4; };
+        blockBehaviors[BLOCK_SNOW].idDropped       = [](uint8_t, Java::Random&) -> ItemId { return ITEM_SNOWBALL; };
+        blockBehaviors[BLOCK_SNOW].quantityDropped = [](Java::Random&) -> ItemAmount { return 4; };
     }
 
 } // namespace Blocks

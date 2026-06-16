@@ -7,60 +7,60 @@
 
 #include "items.h"
 
-bool IsArmor(int16_t id) {
+bool IsArmor(ItemId id) {
     return (id >= ITEM_HELMET_LEATHER && id <= ITEM_BOOTS_GOLD);
 }
 
-bool IsHoe(int16_t id) {
+bool IsHoe(ItemId id) {
     return (id >= ITEM_HOE_WOOD && id <= ITEM_HOE_GOLD);
 }
 
-bool IsSword(int16_t id) {
+bool IsSword(ItemId id) {
     return (id == ITEM_SWORD_IRON || id == ITEM_SWORD_WOOD ||
         id == ITEM_SWORD_STONE || id == ITEM_SWORD_DIAMOND ||
         id == ITEM_SWORD_GOLD);
 }
 
-bool IsPickaxe(int16_t id) {
+bool IsPickaxe(ItemId id) {
     return (id == ITEM_PICKAXE_IRON || id == ITEM_PICKAXE_WOOD ||
         id == ITEM_PICKAXE_STONE || id == ITEM_PICKAXE_DIAMOND ||
         id == ITEM_PICKAXE_GOLD);
 }
 
-bool IsAxe(int16_t id) {
+bool IsAxe(ItemId id) {
     return (id == ITEM_AXE_IRON || id == ITEM_AXE_WOOD ||
         id == ITEM_AXE_STONE || id == ITEM_AXE_DIAMOND ||
         id == ITEM_AXE_GOLD);
 }
 
-bool IsShovel(int16_t id) {
+bool IsShovel(ItemId id) {
     return (id == ITEM_SHOVEL_IRON || id == ITEM_SHOVEL_WOOD ||
         id == ITEM_SHOVEL_STONE || id == ITEM_SHOVEL_DIAMOND ||
         id == ITEM_SHOVEL_GOLD);
 }
 
-bool IsWeapon(int16_t id) {
+bool IsWeapon(ItemId id) {
     return IsSword(id) || id == ITEM_BOW;
 }
 
-bool IsTool(int16_t id) {
+bool IsTool(ItemId id) {
     return IsShovel(id) || IsAxe(id) || IsPickaxe(id) || IsHoe(id) ||
         id == ITEM_FLINT_AND_STEEL || id == ITEM_FISHING_ROD || id == ITEM_SHEARS;
 }
 
-bool IsThrowable(int16_t id) {
+bool IsThrowable(ItemId id) {
     return (id == ITEM_SNOWBALL || id == ITEM_EGG);
 }
 
-bool IsBlock(int16_t id) {
+bool IsBlock(ItemId id) {
     return (id > 0 && id <= ITEM_THRESHOLD);
 }
 
-bool IsStackable(int16_t id) {
+bool IsStackable(ItemId id) {
     return GetMaxStack(id) > 1;
 }
 
-int32_t GetMaxStack(int16_t id) {
+int32_t GetMaxStack(ItemId id) {
     // Stack size 1
     switch (id) {
         // Food (ItemFood sets maxStackSize=1 in constructor)
@@ -114,7 +114,7 @@ int32_t GetMaxStack(int16_t id) {
     return ITEM_STACK_MAX;
 }
 
-int16_t GetMaxDurability(int16_t id) {
+ItemDamage GetMaxDurability(ItemId id) {
     switch (id) {
         // Swords
     case ITEM_SWORD_WOOD:       return DURABILITY_WOOD;

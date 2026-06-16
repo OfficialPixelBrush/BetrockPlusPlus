@@ -6,6 +6,7 @@
 */
 
 #pragma once
+#include "base_types.h"
 #include <cstdint>
 
 // Items above this ID are pure items (not placeable blocks)
@@ -13,7 +14,7 @@ static constexpr int16_t ITEM_THRESHOLD = 255;
 // Maximum number of items in a stack
 static constexpr int8_t ITEM_STACK_MAX = 64;
 
-enum Items : int16_t {
+enum Items : ItemId {
     ITEM_INVALID = -1,
     ITEM_NONE = 0,
 
@@ -177,59 +178,59 @@ enum Items : int16_t {
 };
 
 // Tool material durability
-static constexpr int16_t DURABILITY_WOOD = 59;
-static constexpr int16_t DURABILITY_STONE = 131;
-static constexpr int16_t DURABILITY_IRON = 250;
-static constexpr int16_t DURABILITY_DIAMOND = 1561;
-static constexpr int16_t DURABILITY_GOLD = 32;
+static constexpr ItemDamage DURABILITY_WOOD = 59;
+static constexpr ItemDamage DURABILITY_STONE = 131;
+static constexpr ItemDamage DURABILITY_IRON = 250;
+static constexpr ItemDamage DURABILITY_DIAMOND = 1561;
+static constexpr ItemDamage DURABILITY_GOLD = 32;
 
 // Armor max damage = maxDamageArray[slot] * 3 << material
 // material: leather=0, chain/gold=1, iron=2, diamond=3
 // slot: helmet=0(x11), chest=1(x16), legs=2(x15), boots=3(x13)
-static constexpr int16_t DURABILITY_HELMET_LEATHER = 11 * 3 * 1;  // 33
-static constexpr int16_t DURABILITY_CHEST_LEATHER = 16 * 3 * 1;  // 48
-static constexpr int16_t DURABILITY_LEGS_LEATHER = 15 * 3 * 1;  // 45
-static constexpr int16_t DURABILITY_BOOTS_LEATHER = 13 * 3 * 1;  // 39
+static constexpr ItemDamage DURABILITY_HELMET_LEATHER = 11 * 3 * 1;  // 33
+static constexpr ItemDamage DURABILITY_CHEST_LEATHER = 16 * 3 * 1;  // 48
+static constexpr ItemDamage DURABILITY_LEGS_LEATHER = 15 * 3 * 1;  // 45
+static constexpr ItemDamage DURABILITY_BOOTS_LEATHER = 13 * 3 * 1;  // 39
 
-static constexpr int16_t DURABILITY_HELMET_CHAINMAIL = 11 * 3 * 2;  // 66
-static constexpr int16_t DURABILITY_CHEST_CHAINMAIL = 16 * 3 * 2;  // 96
-static constexpr int16_t DURABILITY_LEGS_CHAINMAIL = 15 * 3 * 2;  // 90
-static constexpr int16_t DURABILITY_BOOTS_CHAINMAIL = 13 * 3 * 2;  // 78
+static constexpr ItemDamage DURABILITY_HELMET_CHAINMAIL = 11 * 3 * 2;  // 66
+static constexpr ItemDamage DURABILITY_CHEST_CHAINMAIL = 16 * 3 * 2;  // 96
+static constexpr ItemDamage DURABILITY_LEGS_CHAINMAIL = 15 * 3 * 2;  // 90
+static constexpr ItemDamage DURABILITY_BOOTS_CHAINMAIL = 13 * 3 * 2;  // 78
 
-static constexpr int16_t DURABILITY_HELMET_IRON = 11 * 3 * 4;  // 132
-static constexpr int16_t DURABILITY_CHEST_IRON = 16 * 3 * 4;  // 192
-static constexpr int16_t DURABILITY_LEGS_IRON = 15 * 3 * 4;  // 180
-static constexpr int16_t DURABILITY_BOOTS_IRON = 13 * 3 * 4;  // 156
+static constexpr ItemDamage DURABILITY_HELMET_IRON = 11 * 3 * 4;  // 132
+static constexpr ItemDamage DURABILITY_CHEST_IRON = 16 * 3 * 4;  // 192
+static constexpr ItemDamage DURABILITY_LEGS_IRON = 15 * 3 * 4;  // 180
+static constexpr ItemDamage DURABILITY_BOOTS_IRON = 13 * 3 * 4;  // 156
 
-static constexpr int16_t DURABILITY_HELMET_DIAMOND = 11 * 3 * 8;  // 264
-static constexpr int16_t DURABILITY_CHEST_DIAMOND = 16 * 3 * 8;  // 384
-static constexpr int16_t DURABILITY_LEGS_DIAMOND = 15 * 3 * 8;  // 360
-static constexpr int16_t DURABILITY_BOOTS_DIAMOND = 13 * 3 * 8;  // 312
+static constexpr ItemDamage DURABILITY_HELMET_DIAMOND = 11 * 3 * 8;  // 264
+static constexpr ItemDamage DURABILITY_CHEST_DIAMOND = 16 * 3 * 8;  // 384
+static constexpr ItemDamage DURABILITY_LEGS_DIAMOND = 15 * 3 * 8;  // 360
+static constexpr ItemDamage DURABILITY_BOOTS_DIAMOND = 13 * 3 * 8;  // 312
 
-static constexpr int16_t DURABILITY_HELMET_GOLD = 11 * 3 * 2;  // 66
-static constexpr int16_t DURABILITY_CHEST_GOLD = 16 * 3 * 2;  // 96
-static constexpr int16_t DURABILITY_LEGS_GOLD = 15 * 3 * 2;  // 90
-static constexpr int16_t DURABILITY_BOOTS_GOLD = 13 * 3 * 2;  // 78
+static constexpr ItemDamage DURABILITY_HELMET_GOLD = 11 * 3 * 2;  // 66
+static constexpr ItemDamage DURABILITY_CHEST_GOLD = 16 * 3 * 2;  // 96
+static constexpr ItemDamage DURABILITY_LEGS_GOLD = 15 * 3 * 2;  // 90
+static constexpr ItemDamage DURABILITY_BOOTS_GOLD = 13 * 3 * 2;  // 78
 
-static constexpr int16_t DURABILITY_FISHING_ROD = 64;
-static constexpr int16_t DURABILITY_FLINT_AND_STEEL = 64;
-static constexpr int16_t DURABILITY_SHEARS = 238;
-static constexpr int16_t DURABILITY_BOW = 384;
+static constexpr ItemDamage DURABILITY_FISHING_ROD = 64;
+static constexpr ItemDamage DURABILITY_FLINT_AND_STEEL = 64;
+static constexpr ItemDamage DURABILITY_SHEARS = 238;
+static constexpr ItemDamage DURABILITY_BOW = 384;
 
-bool IsArmor(int16_t id);
-bool IsHoe(int16_t id);
-bool IsSword(int16_t id);
-bool IsPickaxe(int16_t id);
-bool IsAxe(int16_t id);
-bool IsShovel(int16_t id);
-bool IsWeapon(int16_t id);
-bool IsTool(int16_t id);
-bool IsThrowable(int16_t id);
-bool IsStackable(int16_t id);  // max stack > 1
-bool IsBlock(int16_t id);
+bool IsArmor(ItemId id);
+bool IsHoe(ItemId id);
+bool IsSword(ItemId id);
+bool IsPickaxe(ItemId id);
+bool IsAxe(ItemId id);
+bool IsShovel(ItemId id);
+bool IsWeapon(ItemId id);
+bool IsTool(ItemId id);
+bool IsThrowable(ItemId id);
+bool IsStackable(ItemId id);  // max stack > 1
+bool IsBlock(ItemId id);
 
 // Returns max stack size for this item/block id
-int32_t GetMaxStack(int16_t id);
+int32_t GetMaxStack(ItemId id);
 
 // Returns max durability (0 = not damageable)
-int16_t GetMaxDurability(int16_t id);
+ItemDamage GetMaxDurability(ItemId id);
