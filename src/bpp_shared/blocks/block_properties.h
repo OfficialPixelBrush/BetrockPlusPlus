@@ -101,13 +101,13 @@ namespace Blocks {
         void (*velocityToAddToEntity)(WorldManager&, Int3 pos, Entity&, Vec3&) = nullptr;
 
         // What item/block this drops when broken
-        uint8_t (*idDropped)(uint8_t meta, Java::Random& random) = nullptr;
+        ItemId (*idDropped)(uint8_t meta, Java::Random& random) = nullptr;
 
         // The data value of the dropped item
-        int16_t (*damageDropped)(uint8_t meta) = nullptr;
+        ItemDamage (*damageDropped)(uint8_t meta) = nullptr;
 
         // How many items drop
-        int (*quantityDropped)(Java::Random& random) = nullptr;
+        ItemAmount (*quantityDropped)(Java::Random& random) = nullptr;
     };
 
     // Global tables — indexed by block ID, populated by registerAll()
