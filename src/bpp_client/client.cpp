@@ -8,26 +8,23 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "client.h"
-#include <SDL3/SDL.h>
 
-// This window size seems really random but its the size beta uses
-Client::Client() : window(854, 480, "Betrock++") {
-    /*
+// This m_window size seems really random but its the size beta uses
+Client::Client() : m_window(854, 480, "Betrock++") {
     // Set up shared context before registering any callbacks
-    ctx = { &window, &input };
-    glfwSetWindowUserPointer(window.getHandle(), &ctx);
+    m_ctx = { &m_window, &m_input };
+    glfwSetWindowUserPointer(m_window.getHandle(), &m_ctx);
 
-    input.init(window.getHandle());
-    window.initCallbacks(window.getHandle());
+    m_input.init(m_window.getHandle());
+    m_window.initCallbacks(m_window.getHandle());
 
-    window.setCursorLocked(true);
-    window.setVsync(true);
-    */
+    m_window.setCursorLocked(true);
+    m_window.setVsync(true);
+
     GlobalLogger().info << "Client initialized\n";
 }
 
 void Client::tick() {
-    this->world.tick(std::vector<ClientPosition>{this->singlePlayerPos});
 }
 
 void Client::render([[maybe_unused]] float partial_tick) {
@@ -37,30 +34,30 @@ void Client::render([[maybe_unused]] float partial_tick) {
 int Client::run() {
     float lastTime = float(glfwGetTime());
 
-    while (!window.shouldClose()) {
+    while (!m_window.shouldClose()) {
         int   ticks_ran = 0;
         float now = float(glfwGetTime());
         float delta = now - lastTime;
         lastTime = now;
-        accumulator += delta;
+        m_accumulator += delta;
 
-        window.pollEvents();
+        m_window.pollEvents();
 
         // Run ticks until caught up, but cap to avoid spiraling on slow frames
-        while (accumulator >= TICK_DELTA && ticks_ran < MAX_TICKS_PER_FRAME) {
-            input.drainEvents();
+        while (m_accumulator >= TICK_DELTA && ticks_ran < MAX_TICKS_PER_FRAME) {
+            m_input.drainEvents();
             tick();
-            input.flush();
-            accumulator -= TICK_DELTA;
+            m_input.flush();
+            m_accumulator -= TICK_DELTA;
             ticks_ran++;
         }
 
         // Discard leftover time if we hit the cap
         if (ticks_ran == MAX_TICKS_PER_FRAME)
-            accumulator = 0.0f;
+            m_accumulator = 0.0f;
 
-        render(accumulator / TICK_DELTA);
-        window.swapBuffers();
+        render(m_accumulator / TICK_DELTA);
+        m_window.swapBuffers();
     }
     return 0;
 }

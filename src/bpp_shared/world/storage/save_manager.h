@@ -341,6 +341,14 @@ struct SaveManager {
         Rotation.list.push_back(rotX);
         Rotation.list.push_back(rotY);
 
+        // Initialize our position with a default
+        Tag movX; movX.type = TAG_DOUBLE; movX.doubleValue = 0.0;
+        Tag movY; movY.type = TAG_DOUBLE; movY.doubleValue = 0.0;
+        Tag movZ; movZ.type = TAG_DOUBLE; movZ.doubleValue = 0.0;
+        Motion.list.push_back(movX);
+        Motion.list.push_back(movY);
+        Motion.list.push_back(movZ);
+
 		root.compound["Motion"] = Motion;
 		root.compound["SleepTimer"] = SleepTimer;
 		root.compound["Health"] = Health;

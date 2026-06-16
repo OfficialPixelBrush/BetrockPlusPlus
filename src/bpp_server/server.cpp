@@ -55,23 +55,20 @@ Server::Server() : config("server.properties"), worldHell(true) {
     world.initWorldSeed(saveManager.getLevelData().RandomSeed);
     worldHell.initWorldSeed(saveManager.getLevelData().RandomSeed);
 
+	world.elapsed_ticks = saveManager.getLevelData().time;
+	worldHell.elapsed_ticks = saveManager.getLevelData().time;
+
     // Bind our region managers
     world.regionManager = &overworldRegionManager;
     worldHell.regionManager = &hellRegionManager;
 
     // If we created a new save then make a new spawn point
-    if (newSave) {
+	if (newSave) {
         world.initSpawn();
-        levelData& levelData = saveManager.getLevelData();
-        levelData.spawnPoint = world.spawnPoint;
-    }
-    else {
+    } else {
         world.spawnPoint = saveManager.getLevelData().spawnPoint;
     }
     worldHell.spawnPoint = world.spawnPoint; // Interestingly the world spawn doesn't have the /= or *= 8 stuff
-
-    // Save our level file immediately
-    saveManager.saveLevelFile(saveManager.getLevelData());
 }
 
 Server::~Server() {
@@ -135,7 +132,6 @@ void Server::startup() {
     // Register blocks, setup the world, setup commands, etc.
     Blocks::registerAll();
     command_manager.Init();
-    //world.initWorldSeed("Glacier");
 
     // Setup the block callback so we can send it to clients
     world.onBlockUpdate = [this](PendingBlock pendingBlock, Int32_2 chunkPos) {
@@ -338,6 +334,13 @@ void Server::stop() {
     closeSocket();
     world.shutdown();
     worldHell.shutdown();
+
+    // Save our level file
+    levelData& curLevelData = saveManager.getLevelData();
+    curLevelData.RandomSeed = world.seed;
+    curLevelData.spawnPoint = world.spawnPoint;
+    curLevelData.time = world.elapsed_ticks;
+    saveManager.saveLevelFile(curLevelData);
 }
 
 void Server::acceptNewPlayers() {
@@ -412,28 +415,6 @@ void Server::tick() {
             WorldManager& sessionWorld = session->dimension == -1 ? worldHell : world;
             chunkSender.enqueue(*session, sessionWorld, 16);
             chunkSender.flush(*session);
-
-            if (session->portalCooldown > 0) {
-                session->portalCooldown--;
-            }
-            else {
-                Int3 feetPos = {
-                    int(std::floor(session->position.pos.x)),
-                    int(std::floor(session->position.pos.y - float(PLAYER_EYE_HEIGHT))),
-                    int(std::floor(session->position.pos.z))
-                };
-                bool inPortal = sessionWorld.getBlockId(feetPos) == BLOCK_NETHER_PORTAL ||
-                    sessionWorld.getBlockId({ feetPos.x, feetPos.y + 1, feetPos.z }) == BLOCK_NETHER_PORTAL;
-                if (inPortal) {
-                    session->portalTimer += 0.0125f;
-                    if (session->portalTimer >= 1.0f)
-                        transferPlayerDimension(*session);
-                }
-                else {
-                    session->portalTimer = std::max(0.0f, session->portalTimer - 0.05f);
-                }
-            }
-
             processIncoming(*session);
             broadcastPlayerMovement(*session);
             if (sessionWorld.elapsed_ticks % 20 == 0) {
@@ -714,10 +695,6 @@ void Server::handleLogin(PlayerSession& session) {
     // Log that we logged in!
     GlobalLogger().info << L"Player " << session.username << L" logged in with entity ID " << session.entityId << L" at (" << session.position.pos.x << ", " << session.position.pos.y << ", " << session.position.pos.z << ")\n";
 
-    // Immediately save
-    auto savedNbt = session.serializeToNBT();
-    saveManager.savePlayerNBT(std::string(session.username.begin(), session.username.end()), savedNbt);
-
     // Send our inventory
     PacketUtilities::sendInventory(session, 0, session.inventory);
 
@@ -822,9 +799,6 @@ void Server::transferPlayerDimension(PlayerSession& session) {
 
     session.position.pos.x = float(newX);
     session.position.pos.z = float(newZ);
-
-    session.portalTimer = 0.0f;
-    session.portalCooldown = 200;
 
     // Send our inventory again and close any containers we are in
     if (session.activeInteraction) {

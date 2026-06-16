@@ -16,7 +16,7 @@ struct TileEntityManager {
 
     // Initialize a tile entity into the world
     void initializeTileEntity(const std::shared_ptr<TileEntity>& tileEntity) {
-        if (tileEntity->canTick) {
+        if (tileEntity->m_canTick) {
             tickableTileEntities.push_back(tileEntity);
         }
     }

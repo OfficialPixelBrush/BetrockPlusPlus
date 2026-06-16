@@ -167,7 +167,7 @@ bool FeatureGenerator::GenerateDungeon(WorldWrapper& world, Java::Random& rand, 
 
 	world.setBlock(pos, BLOCK_MOB_SPAWNER);
 	auto spawner = std::make_shared<TileEntityMobSpawner>(pos);
-	spawner->EntityId = PickMobToSpawn(rand);
+	spawner->m_entityId = PickMobToSpawn(rand);
 	world.m_manager.createTileEntity(std::move(spawner));
 	return true;
 }
