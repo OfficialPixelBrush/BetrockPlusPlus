@@ -7,8 +7,12 @@
 #pragma once
 
 #include "helpers/AABB.h"
+#include "world/world.h"
 
 struct Entity {
+    // World pointer
+    WorldManager* world = nullptr;
+
     // Identity
     int  id = -1; // -1 = not yet spawned
     bool isDead = false;
@@ -42,6 +46,7 @@ struct Entity {
 
     // Collision
     AABB collider;
+	Int3 bucketPos = { 0, 0, 0 }; // The bucket this entity is currently in (for spatial partitioning)
 
     // Width/height of the collision box in blocks.
     float width = 0.6f;
@@ -88,4 +93,8 @@ struct Entity {
     // Spawning
     bool preventEntitySpawning = false;
     bool isFirstUpdate = true; // True only on the very first tick
+
+    virtual void tick() {
+        ticksExisted++;
+    }
 };

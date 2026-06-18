@@ -61,7 +61,9 @@ struct WorldManager {
 
     Java::Random rand;
 
-    WorldManager(bool pIsHell = false) : isHell(pIsHell) {}
+    WorldManager(bool pIsHell = false) : isHell(pIsHell) {
+		entityManager.world = this; // Bind the world pointer in EntityManager
+    }
 
     ~WorldManager() {}
 
