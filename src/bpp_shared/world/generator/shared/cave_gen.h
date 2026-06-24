@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include "java_random.h"
-#include "constants.h"
-#include "numeric_structs.h"
 #include "chunk.h"
+#include "constants.h"
+#include "java_random.h"
+#include "numeric_structs.h"
 
 /**
  * @brief Used to carve caves into the world
@@ -26,9 +26,7 @@ public:
 	void GenerateCavesForChunk(Chunk& chunk, int64_t seed);
 	void GenerateCaves(Chunk& chunk, Int2 chunkOffset);
 	void CarveCave(Chunk& chunk, Vec3 offset);
-	void CarveCave(Chunk& chunk, Vec3 offset,
-		float tunnelRadius, float carveYaw, float carvePitch,
-		int32_t tunnelStep, int32_t tunnelLength,
-		double verticalScale);
+	void CarveCave(Chunk& chunk, Vec3 offset, float tunnelRadius, float carveYaw, float carvePitch, int32_t tunnelStep,
+	               int32_t tunnelLength, double verticalScale);
 	bool m_isNetherCave = false;
 };

@@ -10,23 +10,22 @@
 // Usage:
 //   /time
 //   /time <new_time>
-std::wstring CommandTime::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world, std::function<void(PlayerSession&)> transferDimension) {
+std::wstring CommandTime::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world,
+                                  std::function<void(PlayerSession&)> transferDimension) {
 	// Set the time
-    if (parameters.size() > 2) {
-        if (parameters[1] == L"set") {
-            world.elapsed_ticks = std::stol(parameters[2]);
-        }
-        else if (parameters[1] == L"add") {
-            world.elapsed_ticks += std::stol(parameters[2]);
-        }
-        else {
-            return L"Invalid argument " + parameters[1];
-        }
-        Packet::ChatMessage reply;
-        reply.message = L"\u00a77Set time to " + std::to_wstring(world.elapsed_ticks);
-        reply.Serialize(session.stream);
-        return L"";
-    }
+	if (parameters.size() > 2) {
+		if (parameters[1] == L"set") {
+			world.elapsed_ticks = std::stol(parameters[2]);
+		} else if (parameters[1] == L"add") {
+			world.elapsed_ticks += std::stol(parameters[2]);
+		} else {
+			return L"Invalid argument " + parameters[1];
+		}
+		Packet::ChatMessage reply;
+		reply.message = L"\u00a77Set time to " + std::to_wstring(world.elapsed_ticks);
+		reply.Serialize(session.stream);
+		return L"";
+	}
 
 	// Get the time
 	if (parameters.size() == 1) {

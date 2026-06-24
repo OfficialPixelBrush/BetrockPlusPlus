@@ -9,4 +9,4 @@
 
 NoiseGenerator::NoiseGenerator() {}
 
-NoiseGenerator::NoiseGenerator([[maybe_unused]]Java::Random& rand) {}
+NoiseGenerator::NoiseGenerator([[maybe_unused]] Java::Random& rand) {}

@@ -8,6 +8,4 @@
 #pragma once
 #include "bpp_shared/blocks/block_properties.h"
 
-namespace blockBehaviorOverrides {
-
-}
+namespace blockBehaviorOverrides {}

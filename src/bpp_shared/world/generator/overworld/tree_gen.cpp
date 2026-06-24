@@ -22,7 +22,7 @@ bool TreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, 
 	int32_t treeHeight = rand.nextInt(3) + 4;
 	if (birch)
 		treeHeight++;
-	
+
 	// Check if there's space to generate the tree
 	// If any block in the desired area is neither air or
 	// leaves, we fail the placement check
@@ -52,10 +52,10 @@ bool TreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, 
 		}
 
 		// Check if the bock under the source block is grass or dirt
-		BlockType soilType = world.getBlockId(Int3{pos.x, pos.y - 1, pos.z});
+		BlockType soilType = world.getBlockId(Int3{ pos.x, pos.y - 1, pos.z });
 		if ((soilType == BLOCK_GRASS || soilType == BLOCK_DIRT) && pos.y < CHUNK_HEIGHT - treeHeight - 1) {
 			// Replace the underlying block with dir
-			world.setBlock(Int3{pos.x, pos.y - 1, pos.z}, BLOCK_DIRT);
+			world.setBlock(Int3{ pos.x, pos.y - 1, pos.z }, BLOCK_DIRT);
 
 			// Place leaves
 			Int3 offset;
@@ -70,13 +70,9 @@ bool TreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, 
 						int32_t zLeaf = offset.z - pos.z;
 						// Leaves are placed within the tree width
 						// and replace any non-opaque block
-						if ((
-								(
-								JavaMath::abs(xLeaf) != treeWidth ||
-								JavaMath::abs(zLeaf) != treeWidth ||
-								(rand.nextInt(2) != 0 && widthBase != 0)
-							)) && !IsOpaque(
-								world.getBlockId(offset))) {
+						if (((JavaMath::abs(xLeaf) != treeWidth || JavaMath::abs(zLeaf) != treeWidth ||
+						      (rand.nextInt(2) != 0 && widthBase != 0))) &&
+						    !IsOpaque(world.getBlockId(offset))) {
 							world.setBlock(offset, BLOCK_LEAVES, uint8_t(birch ? 2 : 0));
 						}
 					}
@@ -85,9 +81,9 @@ bool TreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, 
 
 			// Replace air and leaves with trunk
 			for (int32_t h = 0; h < treeHeight; ++h) {
-				BlockType futureLog = world.getBlockId(Int3{pos.x, pos.y + h, pos.z});
+				BlockType futureLog = world.getBlockId(Int3{ pos.x, pos.y + h, pos.z });
 				if (futureLog == BLOCK_AIR || futureLog == BLOCK_LEAVES) {
-					world.setBlock(Int3{pos.x, pos.y + h, pos.z}, BLOCK_LOG, uint8_t(birch ? 2 : 0));
+					world.setBlock(Int3{ pos.x, pos.y + h, pos.z }, BLOCK_LOG, uint8_t(birch ? 2 : 0));
 				}
 			}
 
@@ -115,7 +111,6 @@ void BigTreeGenerator::Configure(double pTreeHeight, double pBranchLength, doubl
 	m_trunkShape = pTrunkShape;
 }
 
-
 /**
  * @brief Attempts to generate a big oak tree
  * 
@@ -125,7 +120,8 @@ void BigTreeGenerator::Configure(double pTreeHeight, double pBranchLength, doubl
  * @param pBirch If the tree should be birch or oak (not used for big trees)
  * @return If tree successfully generated
  */
-bool BigTreeGenerator::Generate(WorldWrapper& pWorld, Java::Random& pRand, [[maybe_unused]] Int3 pPos, [[maybe_unused]] bool pBirch) {
+bool BigTreeGenerator::Generate(WorldWrapper& pWorld, Java::Random& pRand, [[maybe_unused]] Int3 pPos,
+                                [[maybe_unused]] bool pBirch) {
 	m_wm = &pWorld;
 	int64_t seed = pRand.nextLong();
 	m_rand.setSeed(seed);
@@ -176,28 +172,20 @@ void BigTreeGenerator::GenerateBranchPositions() {
 			float canopyRadius = GetCanopyRadius(canpoyLayer);
 			if (canopyRadius >= 0.0F) {
 				for (int32_t attempts = 0; attempts < branchesPerLayer; ++attempts) {
-					double radialDistance =
-						m_branchLength *
-						double(canopyRadius) *
-						(double(m_rand.nextFloat()) + 0.328);
+					double radialDistance = m_branchLength * double(canopyRadius) * (double(m_rand.nextFloat()) + 0.328);
 					// Oh hey, look! An approximation of pi!
 					double angle = double(m_rand.nextFloat()) * 2.0 * 3.14159;
-					int32_t branchX = MathHelper::floor_double(
-						radialDistance * double(std::sin(angle)) +
-						double(m_basePos.x) + 0.5
-					);
-					int32_t branchZ = MathHelper::floor_double(
-						radialDistance * double(std::cos(angle)) +
-						double(m_basePos.z) + 0.5
-					);
-					Int3 branchBase = Int3{branchX, currentY, branchZ};
-					Int3 branchTop = Int3{branchX, currentY + m_trunkThickness, branchZ};
+					int32_t branchX = MathHelper::floor_double(radialDistance * double(std::sin(angle)) +
+					                                           double(m_basePos.x) + 0.5);
+					int32_t branchZ = MathHelper::floor_double(radialDistance * double(std::cos(angle)) +
+					                                           double(m_basePos.z) + 0.5);
+					Int3 branchBase = Int3{ branchX, currentY, branchZ };
+					Int3 branchTop = Int3{ branchX, currentY + m_trunkThickness, branchZ };
 					if (CheckIfPathClear(branchBase, branchTop) == -1) {
 						Int3 trunkConnection = m_basePos;
 						double horizontalDistance = std::sqrt(
-								std::pow(double(JavaMath::abs(m_basePos.x - branchBase.x)), 2.0) +
-								std::pow(double(JavaMath::abs(m_basePos.z - branchBase.z)), 2.0)
-							);
+						    std::pow(double(JavaMath::abs(m_basePos.x - branchBase.x)), 2.0) +
+						    std::pow(double(JavaMath::abs(m_basePos.z - branchBase.z)), 2.0));
 						double verticalDrop = horizontalDistance * m_trunkSlopeFactor;
 						if ((double)branchBase.y - verticalDrop > (double)targetY) {
 							trunkConnection.y = targetY;
@@ -238,17 +226,14 @@ void BigTreeGenerator::PlaceCircularLayer(Int3 centerPos, float radius, BranchAx
 	int32_t intRadius = Java::DoubleToInt32(double(radius) + 0.618);
 	BranchAxis axisU = branchOrientation[axis];
 	BranchAxis axisV = branchOrientation[axis + AXIS_OFFSET];
-	Int3 currentPos{0, 0, 0};
+	Int3 currentPos{ 0, 0, 0 };
 	currentPos[axis] = centerPos[axis];
 	for (int32_t du = -intRadius; du <= intRadius; ++du) {
 		currentPos[axisU] = centerPos[axisU] + du;
 
 		for (int32_t dv = -intRadius; dv <= intRadius; ++dv) {
 			// Pythagorean Theorem
-			double distance = std::sqrt(
-				std::pow(JavaMath::abs(du) + 0.5, 2.0) +
-				std::pow(JavaMath::abs(dv) + 0.5, 2.0)
-			);
+			double distance = std::sqrt(std::pow(JavaMath::abs(du) + 0.5, 2.0) + std::pow(JavaMath::abs(dv) + 0.5, 2.0));
 
 			if (distance > double(radius))
 				continue;
@@ -282,9 +267,8 @@ float BigTreeGenerator::GetCanopyRadius(int32_t y) {
 		} else if (MathHelper::abs(distanceFromCenter) >= halfHeight) {
 			radius = 0.0F;
 		} else {
-			radius = (float)std::sqrt(
-				std::pow((double)MathHelper::abs(halfHeight), 2.0) -
-				std::pow((double)MathHelper::abs(distanceFromCenter), 2.0));
+			radius = (float)std::sqrt(std::pow((double)MathHelper::abs(halfHeight), 2.0) -
+			                          std::pow((double)MathHelper::abs(distanceFromCenter), 2.0));
 		}
 
 		radius *= 0.5F;
@@ -299,13 +283,13 @@ float BigTreeGenerator::GetCanopyRadius(int32_t y) {
  * @return float Trunk layer radius
  */
 float BigTreeGenerator::GetTrunkLayerRadius(int32_t layerIndex) {
-    if (layerIndex < 0 || layerIndex >= m_trunkThickness)
-        return -1.0f;
-    // Top and bottom of trunk are thinner
-    if (layerIndex == 0 || layerIndex == m_trunkThickness - 1)
-        return 2.0f;
-    // Middle of trunk is thicker
-    return 3.0f;
+	if (layerIndex < 0 || layerIndex >= m_trunkThickness)
+		return -1.0f;
+	// Top and bottom of trunk are thinner
+	if (layerIndex == 0 || layerIndex == m_trunkThickness - 1)
+		return 2.0f;
+	// Middle of trunk is thicker
+	return 3.0f;
 }
 
 /**
@@ -315,15 +299,10 @@ float BigTreeGenerator::GetTrunkLayerRadius(int32_t layerIndex) {
  */
 void BigTreeGenerator::PlaceLeavesAroundPoint(Int3 base) {
 	int32_t baseHeight = base.y + m_trunkThickness;
-	
+
 	for (int32_t y = base.y; y < baseHeight; ++y) {
 		float trunkRadius = GetTrunkLayerRadius(y - base.y);
-		PlaceCircularLayer(
-			Int3{base.x, y, base.z},
-			trunkRadius,
-			AXIS_Y, 
-			BLOCK_LEAVES
-		);
+		PlaceCircularLayer(Int3{ base.x, y, base.z }, trunkRadius, AXIS_Y, BLOCK_LEAVES);
 	}
 }
 
@@ -363,15 +342,11 @@ void BigTreeGenerator::DrawBlockLine(Int3 startPos, Int3 endPos, BlockType block
 	int32_t distanceAlongAxis = 0;
 
 	for (int32_t totalSteps = delta[dominantAxis] + step; distanceAlongAxis != totalSteps; distanceAlongAxis += step) {
-		blockPos[dominantAxis] = MathHelper::floor_double(
-			double(startPos[dominantAxis] + distanceAlongAxis) + 0.5
-		);
-		blockPos[secondaryA] = MathHelper::floor_double(
-			double(startPos[secondaryA]) + double(distanceAlongAxis) * secondaryRatioA + 0.5
-		);
-		blockPos[secondaryB] = MathHelper::floor_double(
-			double(startPos[secondaryB]) + double(distanceAlongAxis) * secondaryRatioB + 0.5
-		);
+		blockPos[dominantAxis] = MathHelper::floor_double(double(startPos[dominantAxis] + distanceAlongAxis) + 0.5);
+		blockPos[secondaryA] = MathHelper::floor_double(double(startPos[secondaryA]) +
+		                                                double(distanceAlongAxis) * secondaryRatioA + 0.5);
+		blockPos[secondaryB] = MathHelper::floor_double(double(startPos[secondaryB]) +
+		                                                double(distanceAlongAxis) * secondaryRatioB + 0.5);
 		m_wm->setBlock(blockPos, blockType);
 	}
 }
@@ -394,7 +369,7 @@ bool BigTreeGenerator::CanGenerateBranchAtHeight(int32_t y) {
 
 void BigTreeGenerator::GenerateTrunk() {
 	Int3 startPos = m_basePos;
-	Int3 endPos = m_basePos + Int3{0,m_height,0};
+	Int3 endPos = m_basePos + Int3{ 0, m_height, 0 };
 	DrawBlockLine(startPos, endPos, BLOCK_LOG);
 	if (m_branchDensity == 2) {
 		startPos.x++;
@@ -457,12 +432,10 @@ int32_t BigTreeGenerator::CheckIfPathClear(Int3 startPos, Int3 endPos) {
 	int32_t totalSteps = delta[dominantAxis] + step;
 	for (; distanceAlongAxis != totalSteps; distanceAlongAxis += step) {
 		currentPos[dominantAxis] = startPos[dominantAxis] + distanceAlongAxis;
-		currentPos[secondaryA] = MathHelper::floor_double(
-			double(startPos[secondaryA]) + double(distanceAlongAxis) * secondaryRatioA
-		);
-		currentPos[secondaryB] = MathHelper::floor_double(
-			double(startPos[secondaryB]) + double(distanceAlongAxis) * secondaryRatioB
-		);
+		currentPos[secondaryA] = MathHelper::floor_double(double(startPos[secondaryA]) +
+		                                                  double(distanceAlongAxis) * secondaryRatioA);
+		currentPos[secondaryB] = MathHelper::floor_double(double(startPos[secondaryB]) +
+		                                                  double(distanceAlongAxis) * secondaryRatioB);
 		BlockType blockType = m_wm->getBlockId(currentPos);
 		if (blockType != BLOCK_AIR && blockType != BLOCK_LEAVES) {
 			break;
@@ -480,9 +453,9 @@ int32_t BigTreeGenerator::CheckIfPathClear(Int3 startPos, Int3 endPos) {
  * @return If the placement is valid
  */
 bool BigTreeGenerator::ValidPlacement() {
-	Int3 endPos = Int3{m_basePos.x, m_basePos.y + m_totalHeight - 1, m_basePos.z};
+	Int3 endPos = Int3{ m_basePos.x, m_basePos.y + m_totalHeight - 1, m_basePos.z };
 	// Check if ground block is valid
-	BlockType soilType = m_wm->getBlockId(Int3{m_basePos.x, m_basePos.y - 1, m_basePos.z});
+	BlockType soilType = m_wm->getBlockId(Int3{ m_basePos.x, m_basePos.y - 1, m_basePos.z });
 	if (soilType != BLOCK_GRASS && soilType != BLOCK_DIRT)
 		return false;
 	int32_t clearLength = CheckIfPathClear(m_basePos, endPos);
@@ -508,14 +481,14 @@ bool BigTreeGenerator::ValidPlacement() {
  */
 bool TaigaTreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, [[maybe_unused]] bool birch) {
 	int32_t height = rand.nextInt(5) + 7;
-	int32_t trunkHeight  = height - rand.nextInt(2) - 3;
-	int32_t leavesHeight = height - trunkHeight ;
+	int32_t trunkHeight = height - rand.nextInt(2) - 3;
+	int32_t leavesHeight = height - trunkHeight;
 	int32_t maxLeafRadius = 1 + rand.nextInt(leavesHeight + 1);
 	// Check if tree can be placed
 	if (pos.y >= 1 && pos.y + height + 1 <= CHUNK_HEIGHT) {
 		int32_t currentLeafRadius;
 		for (int32_t y = pos.y; y <= pos.y + 1 + height; ++y) {
-			if (y - pos.y < trunkHeight ) {
+			if (y - pos.y < trunkHeight) {
 				currentLeafRadius = 0;
 			} else {
 				currentLeafRadius = maxLeafRadius;
@@ -524,7 +497,7 @@ bool TaigaTreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, Int3 
 			for (int32_t x = pos.x - currentLeafRadius; x <= pos.x + currentLeafRadius; ++x) {
 				for (int32_t z = pos.z - currentLeafRadius; z <= pos.z + currentLeafRadius; ++z) {
 					if (y >= 0 && y < CHUNK_HEIGHT) {
-						BlockType blockType = world.getBlockId(Int3{x, y, z});
+						BlockType blockType = world.getBlockId(Int3{ x, y, z });
 						if (blockType != BLOCK_AIR && blockType != BLOCK_LEAVES) {
 							return false;
 						}
@@ -536,26 +509,27 @@ bool TaigaTreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, Int3 
 		}
 
 		// Check if we're attempting to place it on a valid soil block
-		BlockType soilType = world.getBlockId(Int3{pos.x, pos.y - 1, pos.z});
+		BlockType soilType = world.getBlockId(Int3{ pos.x, pos.y - 1, pos.z });
 		if ((soilType == BLOCK_GRASS || soilType == BLOCK_DIRT) && pos.y < CHUNK_HEIGHT - height - 1) {
-			world.setBlock(Int3{pos.x, pos.y - 1, pos.z}, BLOCK_DIRT);
+			world.setBlock(Int3{ pos.x, pos.y - 1, pos.z }, BLOCK_DIRT);
 			currentLeafRadius = 0;
 			// Generate the leaves
-			for (int32_t y = pos.y + height; y >= pos.y + trunkHeight ; --y) {
+			for (int32_t y = pos.y + height; y >= pos.y + trunkHeight; --y) {
 				for (int32_t x = pos.x - currentLeafRadius; x <= pos.x + currentLeafRadius; ++x) {
 					int32_t xOffset = x - pos.x;
 
 					for (int32_t z = pos.z - currentLeafRadius; z <= pos.z + currentLeafRadius; ++z) {
 						int32_t zOffset = z - pos.z;
-						if ((JavaMath::abs(xOffset) != currentLeafRadius || JavaMath::abs(zOffset) != currentLeafRadius || currentLeafRadius <= 0) &&
-							!IsOpaque(world.getBlockId(Int3{x, y, z}))) {
+						if ((JavaMath::abs(xOffset) != currentLeafRadius ||
+						     JavaMath::abs(zOffset) != currentLeafRadius || currentLeafRadius <= 0) &&
+						    !IsOpaque(world.getBlockId(Int3{ x, y, z }))) {
 							// Spruce leaves
-							world.setBlock(Int3{x, y, z}, BLOCK_LEAVES, uint8_t(1));
+							world.setBlock(Int3{ x, y, z }, BLOCK_LEAVES, uint8_t(1));
 						}
 					}
 				}
 
-				if (currentLeafRadius >= 1 && y == pos.y + trunkHeight  + 1) {
+				if (currentLeafRadius >= 1 && y == pos.y + trunkHeight + 1) {
 					--currentLeafRadius;
 				} else if (currentLeafRadius < maxLeafRadius) {
 					++currentLeafRadius;
@@ -563,9 +537,9 @@ bool TaigaTreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, Int3 
 			}
 			// Place the trunk
 			for (int32_t logY = 0; logY < height - 1; ++logY) {
-				BlockType type = world.getBlockId(Int3{pos.x, pos.y + logY, pos.z});
+				BlockType type = world.getBlockId(Int3{ pos.x, pos.y + logY, pos.z });
 				if (type == BLOCK_AIR || type == BLOCK_LEAVES) {
-					world.setBlock(Int3{pos.x, pos.y + logY, pos.z}, BLOCK_LOG, uint8_t(1));
+					world.setBlock(Int3{ pos.x, pos.y + logY, pos.z }, BLOCK_LOG, uint8_t(1));
 				}
 			}
 
@@ -575,7 +549,6 @@ bool TaigaTreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, Int3 
 	}
 	return false;
 }
-
 
 /**
  * @brief Attempts to generate an alt taiga tree
@@ -602,7 +575,7 @@ bool AltTaigaTreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, In
 			for (int32_t xOffset = pos.x - currentLeafRadius; xOffset <= pos.x + currentLeafRadius; ++xOffset) {
 				for (int32_t zOffset = pos.z - currentLeafRadius; zOffset <= pos.z + currentLeafRadius; ++zOffset) {
 					if (y >= 0 && y < CHUNK_HEIGHT) {
-						BlockType type = world.getBlockId(Int3{xOffset, y, zOffset});
+						BlockType type = world.getBlockId(Int3{ xOffset, y, zOffset });
 						if (type != 0 && type != BLOCK_LEAVES) {
 							return false;
 						}
@@ -612,26 +585,27 @@ bool AltTaigaTreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, In
 				}
 			}
 		}
-	
+
 		// Check if we're attempting to place it on a valid soil block
-		BlockType soilType = world.getBlockId(Int3{pos.x, pos.y - 1, pos.z});
+		BlockType soilType = world.getBlockId(Int3{ pos.x, pos.y - 1, pos.z });
 		if ((soilType == BLOCK_GRASS || soilType == BLOCK_DIRT) && pos.y < CHUNK_HEIGHT - height - 1) {
-			world.setBlock(Int3{pos.x, pos.y - 1, pos.z}, BLOCK_DIRT);
+			world.setBlock(Int3{ pos.x, pos.y - 1, pos.z }, BLOCK_DIRT);
 			int32_t currentLeafRadius = rand.nextInt(2);
 			int32_t leafRadiusIncrementThreshold = 1;
 			int32_t leafRadiusSwitch = 0;
 
-			for (int32_t leafLayer  = 0; leafLayer  <= leavesHeight; ++leafLayer ) {
-				int32_t yLevel = pos.y + height - leafLayer ;
+			for (int32_t leafLayer = 0; leafLayer <= leavesHeight; ++leafLayer) {
+				int32_t yLevel = pos.y + height - leafLayer;
 
 				for (int32_t x = pos.x - currentLeafRadius; x <= pos.x + currentLeafRadius; ++x) {
 					int32_t xOffset = x - pos.x;
 
 					for (int32_t z = pos.z - currentLeafRadius; z <= pos.z + currentLeafRadius; ++z) {
 						int32_t zOffset = z - pos.z;
-						if ((JavaMath::abs(xOffset) != currentLeafRadius || JavaMath::abs(zOffset) != currentLeafRadius || currentLeafRadius <= 0) &&
-							!IsOpaque(world.getBlockId(Int3{x, yLevel, z}))) {
-							world.setBlock(Int3{x, yLevel, z}, BLOCK_LEAVES, uint8_t(1));
+						if ((JavaMath::abs(xOffset) != currentLeafRadius ||
+						     JavaMath::abs(zOffset) != currentLeafRadius || currentLeafRadius <= 0) &&
+						    !IsOpaque(world.getBlockId(Int3{ x, yLevel, z }))) {
+							world.setBlock(Int3{ x, yLevel, z }, BLOCK_LEAVES, uint8_t(1));
 						}
 					}
 				}
@@ -650,9 +624,9 @@ bool AltTaigaTreeGenerator::Generate(WorldWrapper& world, Java::Random& rand, In
 
 			int32_t logOffset = rand.nextInt(3);
 			for (int32_t logY = 0; logY < height - logOffset; ++logY) {
-				BlockType type = world.getBlockId(Int3{pos.x, pos.y + logY, pos.z});
+				BlockType type = world.getBlockId(Int3{ pos.x, pos.y + logY, pos.z });
 				if (type == BLOCK_AIR || type == BLOCK_LEAVES) {
-					world.setBlock(Int3{pos.x, pos.y + logY, pos.z}, BLOCK_LOG, uint8_t(1));
+					world.setBlock(Int3{ pos.x, pos.y + logY, pos.z }, BLOCK_LOG, uint8_t(1));
 				}
 			}
 

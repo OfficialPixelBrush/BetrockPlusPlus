@@ -6,19 +6,20 @@
 */
 
 #pragma once
+#include "./shared/feature_gen.h"
 #include "generator.h"
 #include <cstdint>
-#include "./shared/feature_gen.h"
 
 /**
  * @brief The base generator class
  * 
  */
 class Generator {
-  protected:
+protected:
 	Java::Random m_rand;
 	int64_t m_seed = 0;
-  public:
+
+public:
 	Generator(int64_t seed);
 	Generator() = default;
 	virtual ~Generator() = default;

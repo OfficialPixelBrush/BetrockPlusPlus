@@ -8,5 +8,4 @@
 
 #include "entity.h"
 
-struct ItemEntity : public Entity {
-};
+struct ItemEntity : public Entity {};

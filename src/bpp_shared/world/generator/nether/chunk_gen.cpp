@@ -18,13 +18,13 @@ NetherGenerator::NetherGenerator(int64_t p_seed) : Generator(p_seed), m_caver(tr
 	// Tell caver it's a nether caver
 	m_rand = Java::Random(m_seed);
 	// Init Terrain Noise
-	m_lowNoiseGen				= NoiseOctavesPerlin(m_rand, 16);
-	m_highNoiseGen				= NoiseOctavesPerlin(m_rand, 16);
-	m_selectorNoiseGen			= NoiseOctavesPerlin(m_rand,  8);
-	m_sandGravelNoiseGen		= NoiseOctavesPerlin(m_rand,  4);
-	m_stoneNoiseGen				= NoiseOctavesPerlin(m_rand,  4);
-	m_continentalnessNoiseGen	= NoiseOctavesPerlin(m_rand, 10);
-	m_depthNoiseGen				= NoiseOctavesPerlin(m_rand, 16);
+	m_lowNoiseGen = NoiseOctavesPerlin(m_rand, 16);
+	m_highNoiseGen = NoiseOctavesPerlin(m_rand, 16);
+	m_selectorNoiseGen = NoiseOctavesPerlin(m_rand, 8);
+	m_sandGravelNoiseGen = NoiseOctavesPerlin(m_rand, 4);
+	m_stoneNoiseGen = NoiseOctavesPerlin(m_rand, 4);
+	m_continentalnessNoiseGen = NoiseOctavesPerlin(m_rand, 10);
+	m_depthNoiseGen = NoiseOctavesPerlin(m_rand, 16);
 }
 
 /**
@@ -64,21 +64,16 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 	m_stoneNoise.resize(256, 0.0);
 
 	// Populate noise maps
-	m_sandGravelNoiseGen.GenerateOctaves(m_sandNoise,
-		Vec3{double(chunk.cpos.x* CHUNK_WIDTH), double(chunk.cpos.z* CHUNK_WIDTH), 0.0},
-		Int32_3{ 16, 16, 1 },
-		Vec3{ oneThirtySecond, oneThirtySecond, 1.0 }
-	);
-	m_sandGravelNoiseGen.GenerateOctaves(m_gravelNoise,
-		Vec3{double(chunk.cpos.x* CHUNK_WIDTH), 109.0134, double(chunk.cpos.z* CHUNK_WIDTH)},
-		Int32_3{ 16, 1, 16 },
-		Vec3{ oneThirtySecond, 1.0, oneThirtySecond }
-	);
+	m_sandGravelNoiseGen.GenerateOctaves(
+	    m_sandNoise, Vec3{ double(chunk.cpos.x * CHUNK_WIDTH), double(chunk.cpos.z * CHUNK_WIDTH), 0.0 },
+	    Int32_3{ 16, 16, 1 }, Vec3{ oneThirtySecond, oneThirtySecond, 1.0 });
+	m_sandGravelNoiseGen.GenerateOctaves(
+	    m_gravelNoise, Vec3{ double(chunk.cpos.x * CHUNK_WIDTH), 109.0134, double(chunk.cpos.z * CHUNK_WIDTH) },
+	    Int32_3{ 16, 1, 16 }, Vec3{ oneThirtySecond, 1.0, oneThirtySecond });
 	m_stoneNoiseGen.GenerateOctaves(m_stoneNoise,
-		Vec3{double(chunk.cpos.x* CHUNK_WIDTH), double(chunk.cpos.z* CHUNK_WIDTH), 0.0},
-		Int32_3{ 16, 16, 1 },
-		Vec3{ oneThirtySecond * 2.0, oneThirtySecond * 2.0, oneThirtySecond * 2.0 }
-	);
+	                                Vec3{ double(chunk.cpos.x * CHUNK_WIDTH), double(chunk.cpos.z * CHUNK_WIDTH), 0.0 },
+	                                Int32_3{ 16, 16, 1 },
+	                                Vec3{ oneThirtySecond * 2.0, oneThirtySecond * 2.0, oneThirtySecond * 2.0 });
 
 	// Iterate through entire chunk
 	for (int32_t x = 0; x < CHUNK_WIDTH; ++x) {
@@ -97,9 +92,9 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 			// Iterate over column top to bottom
 			for (int32_t y = CHUNK_HEIGHT - 1; y >= 0; --y) {
 				// This is intentional, to match b1.7.3 behavior!
-				Int3 bpos{ z,y,x };
+				Int3 bpos{ z, y, x };
 				// Place Bedrock at bottom and top with some randomness
-				if (y >= (CHUNK_HEIGHT-1) - m_rand.nextInt(5)) {
+				if (y >= (CHUNK_HEIGHT - 1) - m_rand.nextInt(5)) {
 					chunk.setBlock(bpos, BLOCK_BEDROCK);
 					continue;
 				} else if (y <= 0 + m_rand.nextInt(5)) {
@@ -120,18 +115,17 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 						if (stoneActive <= 0) {
 							topBlock = BLOCK_AIR;
 							fillerBlock = BLOCK_NETHERRACK;
-						}
-						else if (y >= NETHER_BIOME_LAVA_LEVEL - 4 && y <= NETHER_BIOME_LAVA_LEVEL + 1) {
+						} else if (y >= NETHER_BIOME_LAVA_LEVEL - 4 && y <= NETHER_BIOME_LAVA_LEVEL + 1) {
 							// If we're close to the water level, apply gravel and sand
 							topBlock = BLOCK_NETHERRACK;
 							fillerBlock = BLOCK_NETHERRACK;
 
 							if (gravelActive) {
-								topBlock = BLOCK_GRAVEL; 
+								topBlock = BLOCK_GRAVEL;
 								fillerBlock = BLOCK_NETHERRACK;
 							}
 							if (sandActive) {
-								topBlock = BLOCK_SOULSAND; 
+								topBlock = BLOCK_SOULSAND;
 								fillerBlock = BLOCK_SOULSAND;
 							}
 						}
@@ -143,10 +137,7 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 
 						stoneDepth = stoneActive;
 						// Place filler block if we're under lava
-						chunk.setBlock(
-							bpos,
-							(y >= NETHER_BIOME_LAVA_LEVEL - 1) ? topBlock : fillerBlock
-						);
+						chunk.setBlock(bpos, (y >= NETHER_BIOME_LAVA_LEVEL - 1) ? topBlock : fillerBlock);
 					} else if (stoneDepth > 0) {
 						--stoneDepth;
 						chunk.setBlock(bpos, fillerBlock);
@@ -164,14 +155,10 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
  * @param c The chunk that should get its terrain generated
  */
 void NetherGenerator::GenerateTerrain(Chunk& chunk) {
-	const Int3 max{
-		CHUNK_WIDTH / 4 + 1,
-		CHUNK_HEIGHT / 8 + 1,
-		CHUNK_WIDTH / 4 + 1
-	};
+	const Int3 max{ CHUNK_WIDTH / 4 + 1, CHUNK_HEIGHT / 8 + 1, CHUNK_WIDTH / 4 + 1 };
 
 	// Generate 4x16x4 low resolution noise map
-	GenerateTerrainNoise(m_terrainNoiseField, Int3{chunk.cpos.x * 4, 0, chunk.cpos.z * 4}, max);
+	GenerateTerrainNoise(m_terrainNoiseField, Int3{ chunk.cpos.x * 4, 0, chunk.cpos.z * 4 }, max);
 
 	// Terrain noise is interpolated and only sampled every 4 blocks
 	for (int32_t sampleX = 0; sampleX < 4; ++sampleX) {
@@ -180,14 +167,30 @@ void NetherGenerator::GenerateTerrain(Chunk& chunk) {
 				double verticalLerpStep = 0.125;
 
 				// Get noise cube corners
-				double corner000 = m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 0) * max.y + sampleY + 0)];
-				double corner010 = m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 1) * max.y + sampleY + 0)];
-				double corner100 = m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 0) * max.y + sampleY + 0)];
-				double corner110 = m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 1) * max.y + sampleY + 0)];
-				double corner001 = (m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 0) * max.y + sampleY + 1)] - corner000) * verticalLerpStep;
-				double corner011 = (m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 1) * max.y + sampleY + 1)] - corner010) * verticalLerpStep;
-				double corner101 = (m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 0) * max.y + sampleY + 1)] - corner100) * verticalLerpStep;
-				double corner111 = (m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 1) * max.y + sampleY + 1)] - corner110) * verticalLerpStep;
+				double corner000 =
+				    m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 0) * max.y + sampleY + 0)];
+				double corner010 =
+				    m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 1) * max.y + sampleY + 0)];
+				double corner100 =
+				    m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 0) * max.y + sampleY + 0)];
+				double corner110 =
+				    m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 1) * max.y + sampleY + 0)];
+				double corner001 =
+				    (m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 0) * max.y + sampleY + 1)] -
+				     corner000) *
+				    verticalLerpStep;
+				double corner011 =
+				    (m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 1) * max.y + sampleY + 1)] -
+				     corner010) *
+				    verticalLerpStep;
+				double corner101 =
+				    (m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 0) * max.y + sampleY + 1)] -
+				     corner100) *
+				    verticalLerpStep;
+				double corner111 =
+				    (m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 1) * max.y + sampleY + 1)] -
+				     corner110) *
+				    verticalLerpStep;
 
 				// Interpolate the 1/4th scale noise
 				for (int32_t subY = 0; subY < 8; ++subY) {
@@ -251,33 +254,16 @@ void NetherGenerator::GenerateTerrainNoise(std::vector<double>& terrainMap, Int3
 	double vertScale = 2053.236;
 
 	{
-		Vec3 vecCpos = Vec3{ double(cpos.x), double(cpos.y), double(cpos.z)};
+		Vec3 vecCpos = Vec3{ double(cpos.x), double(cpos.y), double(cpos.z) };
 		// We do this to need to generate noise as often
-		m_continentalnessNoiseGen.GenerateOctaves(m_continentalnessNoiseField,
-			vecCpos,
-			Int32_3{ max.x, 1, max.z },
-			Vec3{ 1.0, 0.0, 1.0 }
-		);
-		m_depthNoiseGen.GenerateOctaves(m_depthNoiseField,
-			vecCpos,
-			Int32_3{ max.x, 1, max.z },
-			Vec3{ 100.0, 0.0, 100.0 }
-		);
-		m_selectorNoiseGen.GenerateOctaves(m_selectorNoiseField,
-			vecCpos,
-			max,
-			Vec3{ horiScale / 80.0, vertScale / 60.0, horiScale / 80.0 }
-		);
-		m_lowNoiseGen.GenerateOctaves(m_lowNoiseField,
-			vecCpos,
-			max,
-			Vec3{ horiScale, vertScale, horiScale }
-		);
-		m_highNoiseGen.GenerateOctaves(m_highNoiseField,
-			vecCpos,
-			max,
-			Vec3{ horiScale, vertScale, horiScale }
-		);
+		m_continentalnessNoiseGen.GenerateOctaves(m_continentalnessNoiseField, vecCpos, Int32_3{ max.x, 1, max.z },
+		                                          Vec3{ 1.0, 0.0, 1.0 });
+		m_depthNoiseGen.GenerateOctaves(m_depthNoiseField, vecCpos, Int32_3{ max.x, 1, max.z },
+		                                Vec3{ 100.0, 0.0, 100.0 });
+		m_selectorNoiseGen.GenerateOctaves(m_selectorNoiseField, vecCpos, max,
+		                                   Vec3{ horiScale / 80.0, vertScale / 60.0, horiScale / 80.0 });
+		m_lowNoiseGen.GenerateOctaves(m_lowNoiseField, vecCpos, max, Vec3{ horiScale, vertScale, horiScale });
+		m_highNoiseGen.GenerateOctaves(m_highNoiseField, vecCpos, max, Vec3{ horiScale, vertScale, horiScale });
 	}
 	// Used to iterate 3D noise maps (low, high, selector)
 	size_t xyzIndex = 0;
@@ -336,11 +322,9 @@ void NetherGenerator::GenerateTerrainNoise(std::vector<double>& terrainMap, Int3
 				double selectorNoise = (m_selectorNoiseField[xyzIndex] / 10.0 + 1.0) / 2.0;
 				if (selectorNoise < 0.0) {
 					terrainDensity = lowNoise;
-				}
-				else if (selectorNoise > 1.0) {
+				} else if (selectorNoise > 1.0) {
 					terrainDensity = highNoise;
-				}
-				else {
+				} else {
 					terrainDensity = lowNoise + (highNoise - lowNoise) * selectorNoise;
 				}
 
@@ -388,51 +372,51 @@ bool NetherGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	Int3 coord;
 	// Generate single-block lava streams
 	for (int attempt = 0; attempt < 8; ++attempt) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT-8) + 4; // 120
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = m_rand.nextInt(CHUNK_HEIGHT - 8) + 4; // 120
+		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		FeatureGenerator(BLOCK_LAVA_FLOWING).GenerateNetherLiquid(world, m_rand, coord);
 	}
 
 	// Generate fire patch
 	int max_fire_attempts = m_rand.nextInt(m_rand.nextInt(10) + 1) + 1;
 	for (int attempt = 0; attempt < max_fire_attempts; ++attempt) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT-8) + 4; // 120
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = m_rand.nextInt(CHUNK_HEIGHT - 8) + 4; // 120
+		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		FeatureGenerator().GenerateNetherFire(world, m_rand, coord);
 	}
 
 	// Generate Glowstone Blob
 	int max_glowstone_attempts = m_rand.nextInt(m_rand.nextInt(10) + 1);
 	for (int attempt = 0; attempt < max_glowstone_attempts; ++attempt) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT-8) + 4; // 120
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = m_rand.nextInt(CHUNK_HEIGHT - 8) + 4; // 120
+		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		FeatureGenerator().GenerateNetherGlowstone(world, m_rand, coord);
 	}
 
 	// Generate secondary Glowstone Blob
 	for (int attempt = 0; attempt < 10; ++attempt) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		FeatureGenerator().GenerateNetherGlowstone(world, m_rand, coord);
 	}
-	
+
 	// Generate Brown Mushrooms
 	if (m_rand.nextInt(1) == 0) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		FeatureGenerator(BLOCK_MUSHROOM_BROWN).GenerateFlowers(world, m_rand, coord);
 	}
-	
+
 	// Generate Red Mushrooms
 	if (m_rand.nextInt(1) == 0) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH*0.5);
+		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		FeatureGenerator(BLOCK_MUSHROOM_RED).GenerateFlowers(world, m_rand, coord);
 	}
 

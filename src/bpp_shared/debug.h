@@ -9,7 +9,7 @@
 
 // Acts a breakpoint to aid in debugging
 #if defined(_MSC_VER)
-    #define DEBUG_BREAK() __debugbreak()
+#define DEBUG_BREAK() __debugbreak()
 #else
-    #define DEBUG_BREAK() __builtin_trap()
+#define DEBUG_BREAK() __builtin_trap()
 #endif

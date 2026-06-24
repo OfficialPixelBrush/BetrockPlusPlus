@@ -5,21 +5,21 @@
  *
 */
 #pragma once
-#include "nbt/nbt.h"
 #include "java_math.h"
+#include "nbt/nbt.h"
 #include <chrono>
-#include <fstream>
-#include <stdexcept>
 #include <filesystem>
+#include <fstream>
 #include <libdeflate.h>
+#include <stdexcept>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
-#include <winsock2.h>
 #include <windows.h>
+#include <winsock2.h>
 #else
-#include <sys/file.h>
 #include <fcntl.h>
+#include <sys/file.h>
 #include <unistd.h>
 #endif
 
@@ -74,9 +74,11 @@ struct RegionManager {
 
 	// Has this chunk been saved to a region file yet?
 	bool chunkExists(Int32_2 cpos) {
-		if (!regionExists({ cpos.x >> 5, cpos.z >> 5 })) return false;
+		if (!regionExists({ cpos.x >> 5, cpos.z >> 5 }))
+			return false;
 		auto region = loadRegion({ cpos.x >> 5, cpos.z >> 5 });
-		if (!region) return false;
+		if (!region)
+			return false;
 		return region->chunkExists({ cpos.x & 31, cpos.z & 31 });
 	}
 
@@ -85,11 +87,12 @@ struct RegionManager {
 		std::string path = m_folderPath + "/" + regionPositionToFileName(rpos);
 		std::filesystem::create_directories(m_folderPath);
 		std::ofstream file(path, std::ios::binary);
-		if (!file) return false;
+		if (!file)
+			return false;
 		std::vector<char> zeros(8192, 0); // 2 sectors for the header
 		file.write(zeros.data(), zeros.size());
-		file.close();                          // explicit close before FileHandle opens it
-		return file.good();                    // catch write failures too
+		file.close();       // explicit close before FileHandle opens it
+		return file.good(); // catch write failures too
 	}
 
 	// Serialize and save a chunk to a region
@@ -121,22 +124,26 @@ struct RegionManager {
 	// Queue a chunk to be loaded from disk
 	void loadChunk(Int32_2 cpos) {
 		Int32_2 rpos{ cpos.x >> 5, cpos.z >> 5 };
-		if (!regionExists(rpos)) return;
+		if (!regionExists(rpos))
+			return;
 		auto region = loadRegion(rpos); // shared_ptr keeps Region alive for the task
-		if (!region) return;
+		if (!region)
+			return;
 		iopool.detach_task([cpos, region, this]() {
-			auto chunk = region->GetChunk(cpos);  // blocks until region is free
-			if (!chunk) return;
+			auto chunk = region->GetChunk(cpos); // blocks until region is free
+			if (!chunk)
+				return;
 			std::lock_guard lk(outChunksMutex);
 			outChunks[cpos] = std::move(chunk);
-			});
+		});
 	}
 
 	// Returns nullptr until chunk is done loading
 	std::shared_ptr<Chunk> getChunk(Int32_2 cpos) {
 		std::lock_guard lk(outChunksMutex);
 		auto it = outChunks.find(cpos);
-		if (it == outChunks.end()) return nullptr;
+		if (it == outChunks.end())
+			return nullptr;
 		auto chunk = std::move(it->second);
 		outChunks.erase(it);
 		return chunk;
@@ -147,21 +154,23 @@ struct RegionManager {
 		{
 			std::lock_guard lk(saveQueueMutex);
 			toSave.swap(saveQueue);
-			if (saveQueue.empty()) saveQueue.shrink_to_fit();
+			if (saveQueue.empty())
+				saveQueue.shrink_to_fit();
 		}
 
 		std::vector<std::shared_ptr<Chunk>> requeue;
 		for (auto& chunk : toSave) {
 			Int32_2 rpos{ chunk->cpos.x >> 5, chunk->cpos.z >> 5 };
-			if (!regionExists(rpos)) createRegion(rpos);
+			if (!regionExists(rpos))
+				createRegion(rpos);
 			auto region = loadRegion(rpos); // shared_ptr keeps Region alive for the task
 			if (!region) {
 				requeue.push_back(chunk);
 				continue;
 			}
 			iopool.detach_task([chunk, region]() {
-				region->AddChunk(chunk);  // Region stays alive via shared_ptr capture
-				});
+				region->AddChunk(chunk); // Region stays alive via shared_ptr capture
+			});
 		}
 
 		if (!requeue.empty()) {
@@ -170,7 +179,7 @@ struct RegionManager {
 		}
 
 		// Try to merge any pending regions that couldn't fit before
-		for (auto it = m_pendingRegions.begin(); it != m_pendingRegions.end(); ) {
+		for (auto it = m_pendingRegions.begin(); it != m_pendingRegions.end();) {
 			if (tryMergePendingRegion(*it))
 				it = m_pendingRegions.erase(it);
 			else
@@ -203,8 +212,7 @@ struct RegionManager {
 
 		if (!regionExists(rpos)) {
 			if (!createRegion(rpos)) {
-				GlobalLogger().error << "Failed to create region file for "
-					<< rpos.x << "," << rpos.z << "\n";
+				GlobalLogger().error << "Failed to create region file for " << rpos.x << "," << rpos.z << "\n";
 				return nullptr;
 			}
 		}

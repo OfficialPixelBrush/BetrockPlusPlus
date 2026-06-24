@@ -6,8 +6,8 @@
 */
 
 #pragma once
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glad/glad.h>
 #include <stdexcept>
 #include <string>
 
@@ -16,87 +16,95 @@
 
 class Window {
 public:
-    Window(int width, int height, const std::string& title) {
-        if (!glfwInit())
-            throw std::runtime_error("Failed to init GLFW");
+	Window(int width, int height, const std::string& title) {
+		if (!glfwInit())
+			throw std::runtime_error("Failed to init GLFW");
 
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-        m_handle = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
-        if (!m_handle) {
-            glfwTerminate();
-            throw std::runtime_error("Failed to create window");
-        }
+		m_handle = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
+		if (!m_handle) {
+			glfwTerminate();
+			throw std::runtime_error("Failed to create window");
+		}
 
-        glfwMakeContextCurrent(m_handle);
+		glfwMakeContextCurrent(m_handle);
 
-        if (!gladLoadGLLoader(GLADloadproc(glfwGetProcAddress))) {
-            glfwTerminate();
-            throw std::runtime_error("Failed to init GLAD");
-        }
+		if (!gladLoadGLLoader(GLADloadproc(glfwGetProcAddress))) {
+			glfwTerminate();
+			throw std::runtime_error("Failed to init GLAD");
+		}
 
-        glViewport(0, 0, width, height);
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
+		glViewport(0, 0, width, height);
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_CULL_FACE);
 
-        m_width = width;
-        m_height = height;
-        GlobalLogger().info << "Window initialized!\n";
-        // Note: user pointer is set by Client, not here
-    }
+		m_width = width;
+		m_height = height;
+		GlobalLogger().info << "Window initialized!\n";
+		// Note: user pointer is set by Client, not here
+	}
 
-    // Called by Client after setting the user pointer
-    void initCallbacks(GLFWwindow* win) {
-        glfwSetFramebufferSizeCallback(win, framebufferSizeCallback);
-    }
+	// Called by Client after setting the user pointer
+	void initCallbacks(GLFWwindow* win) {
+		glfwSetFramebufferSizeCallback(win, framebufferSizeCallback);
+	}
 
-    ~Window() {
-        if (m_handle) glfwDestroyWindow(m_handle);
-        glfwTerminate();
-    }
+	~Window() {
+		if (m_handle)
+			glfwDestroyWindow(m_handle);
+		glfwTerminate();
+	}
 
-    // Non-copyable
-    Window(const Window&) = delete;
-    Window& operator=(const Window&) = delete;
+	// Non-copyable
+	Window(const Window&) = delete;
+	Window& operator=(const Window&) = delete;
 
-    bool shouldClose() const {
-        return glfwWindowShouldClose(m_handle);
-    }
-    void swapBuffers() {
-        glfwSwapBuffers(m_handle);
-    }
-    void pollEvents() {
-        glfwPollEvents();
-    }
+	bool shouldClose() const {
+		return glfwWindowShouldClose(m_handle);
+	}
+	void swapBuffers() {
+		glfwSwapBuffers(m_handle);
+	}
+	void pollEvents() {
+		glfwPollEvents();
+	}
 
-    void setVsync(bool enabled) {
-        glfwSwapInterval(enabled ? 1 : 0);
-    }
-    void setTitle(const std::string& title) {
-        glfwSetWindowTitle(m_handle, title.c_str());
-    }
-    void setCursorLocked(bool locked) {
-        glfwSetInputMode(m_handle, GLFW_CURSOR,
-            locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
-    }
+	void setVsync(bool enabled) {
+		glfwSwapInterval(enabled ? 1 : 0);
+	}
+	void setTitle(const std::string& title) {
+		glfwSetWindowTitle(m_handle, title.c_str());
+	}
+	void setCursorLocked(bool locked) {
+		glfwSetInputMode(m_handle, GLFW_CURSOR, locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+	}
 
-    int   getWidth()  const { return m_width; }
-    int   getHeight() const { return m_height; }
-    float getAspect() const { return float(m_width) / float(m_height); }
+	int getWidth() const {
+		return m_width;
+	}
+	int getHeight() const {
+		return m_height;
+	}
+	float getAspect() const {
+		return float(m_width) / float(m_height);
+	}
 
-    GLFWwindow* getHandle() const { return m_handle; }
+	GLFWwindow* getHandle() const {
+		return m_handle;
+	}
 
 private:
-    static void framebufferSizeCallback(GLFWwindow* win, int w, int h) {
-        auto* ctx = static_cast<GlfwContext*>(glfwGetWindowUserPointer(win));
-        ctx->m_window->m_width = w;
-        ctx->m_window->m_height = h;
-        glViewport(0, 0, w, h);
-    }
-    GLFWwindow* m_handle = nullptr;
+	static void framebufferSizeCallback(GLFWwindow* win, int w, int h) {
+		auto* ctx = static_cast<GlfwContext*>(glfwGetWindowUserPointer(win));
+		ctx->m_window->m_width = w;
+		ctx->m_window->m_height = h;
+		glViewport(0, 0, w, h);
+	}
+	GLFWwindow* m_handle = nullptr;
 
-    int m_width = 0;
-    int m_height = 0;
+	int m_width = 0;
+	int m_height = 0;
 };

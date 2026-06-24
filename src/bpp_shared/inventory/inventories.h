@@ -5,9 +5,9 @@
 */
 
 #pragma once
+#include "enums/items.h"
 #include "inventory.h"
 #include "item_stack.h"
-#include "enums/items.h"
 #include "logger.h"
 #include <algorithm>
 #include <optional>
@@ -18,12 +18,12 @@ struct Container;
 struct InventoryCrafting;
 
 enum InvMap {
-    ARMOR,
-    INVENTORY,
-    HOTBAR,
-    CRAFTING_AREA,
-    CRAFTING_RESULT,
-    INVALID
+	ARMOR,
+	INVENTORY,
+	HOTBAR,
+	CRAFTING_AREA,
+	CRAFTING_RESULT,
+	INVALID
 };
 
 // Network format (The rest of the inventories are self explanatory this is the only one that is semi-convoluted):
@@ -34,128 +34,157 @@ enum InvMap {
 // Slot 0 is the crafting result
 struct InventoryPlayer : Inventory {
 public:
-    int  currentItem = 0;
-    bool inventoryChanged = false;
-    EntityPlayer* player = nullptr;
+	int currentItem = 0;
+	bool inventoryChanged = false;
+	EntityPlayer* player = nullptr;
 
-    InventoryPlayer() : Inventory(45) { name = "Inventory"; }
+	InventoryPlayer() : Inventory(45) {
+		name = "Inventory";
+	}
 
-    ItemStack* getCurrentItem() {
-        if (currentItem < 0 || currentItem >= 9) return nullptr;
-        return getStackInSlot(currentItem);
-    }
+	ItemStack* getCurrentItem() {
+		if (currentItem < 0 || currentItem >= 9)
+			return nullptr;
+		return getStackInSlot(currentItem);
+	}
 
-    InvMap getInventoryAreaFromSlot(int slot) {
-        if (slot == 0) return InvMap::CRAFTING_RESULT;
-        if (slot >= 1 && slot <= 4) return InvMap::CRAFTING_AREA;
-        if (slot >= 5 && slot <= 8) return InvMap::ARMOR;
-        if (slot >= 36 && slot <= 44) return InvMap::HOTBAR;
-        if (slot >= 9 && slot <= 35) return InvMap::INVENTORY;
-        GlobalLogger().error << "Invalid Inventory area slot! (" << slot << ")\n";
-        return InvMap::INVALID; // Fallback,
-    }
+	InvMap getInventoryAreaFromSlot(int slot) {
+		if (slot == 0)
+			return InvMap::CRAFTING_RESULT;
+		if (slot >= 1 && slot <= 4)
+			return InvMap::CRAFTING_AREA;
+		if (slot >= 5 && slot <= 8)
+			return InvMap::ARMOR;
+		if (slot >= 36 && slot <= 44)
+			return InvMap::HOTBAR;
+		if (slot >= 9 && slot <= 35)
+			return InvMap::INVENTORY;
+		GlobalLogger().error << "Invalid Inventory area slot! (" << slot << ")\n";
+		return InvMap::INVALID; // Fallback,
+	}
 
-    int8_t getNbtSlotID(int slot) {
-		if (slot >= 9 && slot <= 35) return slot;
-        if (slot >= 5 && slot <= 8) return (5 + (8 - slot)) + 95;
-        if (slot >= 36 && slot <= 44) return slot - 36;
-        return -1;
-    }
+	int8_t getNbtSlotID(int slot) {
+		if (slot >= 9 && slot <= 35)
+			return slot;
+		if (slot >= 5 && slot <= 8)
+			return (5 + (8 - slot)) + 95;
+		if (slot >= 36 && slot <= 44)
+			return slot - 36;
+		return -1;
+	}
 
-    int8_t getNetworkSlotId(int slot) const {
-        if (slot >= 100 && slot <= 103) return 5 + (8 - (slot - 95));
-        if (slot >= 9 && slot <= 35) return slot;
-        if (slot >= 0 && slot <= 8) return slot + 36;
-        return -1;
-    }
+	int8_t getNetworkSlotId(int slot) const {
+		if (slot >= 100 && slot <= 103)
+			return 5 + (8 - (slot - 95));
+		if (slot >= 9 && slot <= 35)
+			return slot;
+		if (slot >= 0 && slot <= 8)
+			return slot + 36;
+		return -1;
+	}
 
-    void onInventoryChanged() override { inventoryChanged = true; }
+	void onInventoryChanged() override {
+		inventoryChanged = true;
+	}
 };
 
 struct InventoryChest : Inventory {
-    InventoryChest() : Inventory(27) { name = "Chest"; }
+	InventoryChest() : Inventory(27) {
+		name = "Chest";
+	}
 };
 
 // Just a wrapper for two chest inventories
 struct InventoryLargeChest : Inventory {
-    InventoryChest* m_upper;
-    InventoryChest* m_lower;
+	InventoryChest* m_upper;
+	InventoryChest* m_lower;
 
-    InventoryLargeChest(InventoryChest* upper, InventoryChest* lower)
-        : Inventory(0), m_upper(upper), m_lower(lower) {
-        name = "Large Chest";
-    }
+	InventoryLargeChest(InventoryChest* upper, InventoryChest* lower) : Inventory(0), m_upper(upper), m_lower(lower) {
+		name = "Large Chest";
+	}
 
-    int getSizeInventory() const override {
-        return m_upper->getSizeInventory() + m_lower->getSizeInventory();
-    }
+	int getSizeInventory() const override {
+		return m_upper->getSizeInventory() + m_lower->getSizeInventory();
+	}
 
-    ItemStack* getStackInSlot(int slot) override {
-        int upperSize = m_upper->getSizeInventory();
-        if (slot < upperSize) return m_upper->getStackInSlot(slot);
-        return m_lower->getStackInSlot(slot - upperSize);
-    }
+	ItemStack* getStackInSlot(int slot) override {
+		int upperSize = m_upper->getSizeInventory();
+		if (slot < upperSize)
+			return m_upper->getStackInSlot(slot);
+		return m_lower->getStackInSlot(slot - upperSize);
+	}
 
-    ItemStack decreaseStackSize(int slot, int count) override {
-        int upperSize = m_upper->getSizeInventory();
-        if (slot < upperSize) return m_upper->decreaseStackSize(slot, count);
-        return m_lower->decreaseStackSize(slot - upperSize, count);
-    }
+	ItemStack decreaseStackSize(int slot, int count) override {
+		int upperSize = m_upper->getSizeInventory();
+		if (slot < upperSize)
+			return m_upper->decreaseStackSize(slot, count);
+		return m_lower->decreaseStackSize(slot - upperSize, count);
+	}
 
-    void setInventorySlotContents(int slot, ItemStack* stack) override {
-        int upperSize = m_upper->getSizeInventory();
-        if (slot < upperSize) m_upper->setInventorySlotContents(slot, stack);
-        else m_lower->setInventorySlotContents(slot - upperSize, stack);
-    }
+	void setInventorySlotContents(int slot, ItemStack* stack) override {
+		int upperSize = m_upper->getSizeInventory();
+		if (slot < upperSize)
+			m_upper->setInventorySlotContents(slot, stack);
+		else
+			m_lower->setInventorySlotContents(slot - upperSize, stack);
+	}
 
-    void onInventoryChanged() override {
-        m_upper->onInventoryChanged();
-        m_lower->onInventoryChanged();
-    }
+	void onInventoryChanged() override {
+		m_upper->onInventoryChanged();
+		m_lower->onInventoryChanged();
+	}
 
-    bool mergeItemStackInInventory(ItemStack& stack, bool reverse = false, int startSlot = 0, int endSlot = -1) override {
-        int upperSize = m_upper->getSizeInventory();
-        int totalSize = upperSize + m_lower->getSizeInventory();
-        auto end = endSlot == -1 ? totalSize - 1 : endSlot;
+	bool mergeItemStackInInventory(ItemStack& stack, bool reverse = false, int startSlot = 0,
+	                               int endSlot = -1) override {
+		int upperSize = m_upper->getSizeInventory();
+		int totalSize = upperSize + m_lower->getSizeInventory();
+		auto end = endSlot == -1 ? totalSize - 1 : endSlot;
 
-        bool success = m_upper->mergeItemStackInInventory(stack, reverse,
-            CrossPlatform::Math::max(0, startSlot),
-            CrossPlatform::Math::min(upperSize - 1, end));
+		bool success = m_upper->mergeItemStackInInventory(stack, reverse, CrossPlatform::Math::max(0, startSlot),
+		                                                  CrossPlatform::Math::min(upperSize - 1, end));
 
-        if (!success || stack.count > 0) {
-            success = m_lower->mergeItemStackInInventory(stack, reverse,
-                CrossPlatform::Math::max(0, startSlot - upperSize),
-                CrossPlatform::Math::min(m_lower->getSizeInventory() - 1, end - upperSize));
-        }
-        return success || stack.count == 0;
-    }
+		if (!success || stack.count > 0) {
+			success = m_lower->mergeItemStackInInventory(
+			    stack, reverse, CrossPlatform::Math::max(0, startSlot - upperSize),
+			    CrossPlatform::Math::min(m_lower->getSizeInventory() - 1, end - upperSize));
+		}
+		return success || stack.count == 0;
+	}
 };
 
 struct InventoryDispenser : Inventory {
-    // TODO: Maybe use JavaRandom? (does that matter???)
-    std::mt19937 rng{ std::random_device{}() };
+	// TODO: Maybe use JavaRandom? (does that matter???)
+	std::mt19937 rng{ std::random_device{}() };
 
-    InventoryDispenser() : Inventory(9) { name = "Trap"; }
+	InventoryDispenser() : Inventory(9) {
+		name = "Trap";
+	}
 
-    std::optional<ItemStack> getRandomStack() {
-        int chosen = -1, weight = 1;
-        for (int i = 0; i < 9; i++) {
-            if (!slots[size_t(i)].has_value()) continue;
-            if (std::uniform_int_distribution<int>(0, weight++ - 1)(rng) == 0)
-                chosen = i;
-        }
-        if (chosen < 0) return std::nullopt;
-        return decreaseStackSize(chosen, 1);
-    }
+	std::optional<ItemStack> getRandomStack() {
+		int chosen = -1, weight = 1;
+		for (int i = 0; i < 9; i++) {
+			if (!slots[size_t(i)].has_value())
+				continue;
+			if (std::uniform_int_distribution<int>(0, weight++ - 1)(rng) == 0)
+				chosen = i;
+		}
+		if (chosen < 0)
+			return std::nullopt;
+		return decreaseStackSize(chosen, 1);
+	}
 };
 
 // TODO: Maybe make an enum for this?
 // Slots: 0 = input, 1 = fuel, 2 = output.
 struct InventoryFurnace : Inventory {
-    int burnTime    = 0;
-    int maxBurnTime = 0;
-    int cookTime    = 0;
+	int burnTime = 0;
+	int maxBurnTime = 0;
+	int cookTime = 0;
 
-    InventoryFurnace() : Inventory(3) { name = "Furnace"; }
-    bool isBurning() const { return burnTime > 0; }
+	InventoryFurnace() : Inventory(3) {
+		name = "Furnace";
+	}
+	bool isBurning() const {
+		return burnTime > 0;
+	}
 };

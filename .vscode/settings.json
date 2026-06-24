@@ -1,4 +1,8 @@
 {
     "cmake.ignoreCMakeListsMissing": true,
-    "cmake.useCMakePresets": "always"
+    "cmake.useCMakePresets": "always",
+    "editor.formatOnSave": true,
+    "[cpp]": {
+        "editor.defaultFormatter": "xaver.clang-format"
+    }
 }
