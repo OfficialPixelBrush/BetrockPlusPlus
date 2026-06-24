@@ -8,15 +8,15 @@
 #pragma once
 
 struct CrossPlatform {
-    struct Math {
-        template<typename T = int>
-        static inline T min(T a, T b) {
-            return a < b ? a : b;
-        }
+	struct Math {
+		template <typename T = int>
+		static inline T min(T a, T b) {
+			return a < b ? a : b;
+		}
 
-        template<typename T = int>
-        static inline T max(T a, T b) {
-            return a > b ? a : b;
-        }
-    };
+		template <typename T = int>
+		static inline T max(T a, T b) {
+			return a > b ? a : b;
+		}
+	};
 };

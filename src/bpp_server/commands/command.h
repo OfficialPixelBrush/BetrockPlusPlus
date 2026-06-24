@@ -24,9 +24,10 @@
 // Small define for a bit less copy-paste
 #define DEFINE_COMMAND(name, label, description, syntax, requiresOp, requiresCreative)                                 \
 	class name : public Command {                                                                                      \
-	  public:                                                                                                          \
+	public:                                                                                                            \
 		name() : Command(label, description, syntax, requiresOp, requiresCreative) {}                                  \
-		std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world, std::function<void(PlayerSession&)> transferDimension) override;                                                                  \
+		std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world,       \
+		                     std::function<void(PlayerSession&)> transferDimension) override;                          \
 	};
 
 /*
@@ -48,15 +49,27 @@ private:
 	bool requiresCreative;
 
 public:
-	std::wstring GetLabel() { return label; }
-	std::wstring GetDescription() { return description; }
-	std::wstring GetSyntax() { return syntax; }
-	bool GetRequiresOperator() { return requiresOp; }
-	bool GetRequiresCreative() { return requiresCreative; }
+	std::wstring GetLabel() {
+		return label;
+	}
+	std::wstring GetDescription() {
+		return description;
+	}
+	std::wstring GetSyntax() {
+		return syntax;
+	}
+	bool GetRequiresOperator() {
+		return requiresOp;
+	}
+	bool GetRequiresCreative() {
+		return requiresCreative;
+	}
 
 	std::string CheckPermissions(PlayerSession& session);
-	Command(std::wstring label, std::wstring description, std::wstring syntax, bool requiresOp = true, bool requiresCreative = false);
-	virtual std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world, std::function<void(PlayerSession&)> transferDimension) = 0;
+	Command(std::wstring label, std::wstring description, std::wstring syntax, bool requiresOp = true,
+	        bool requiresCreative = false);
+	virtual std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world,
+	                             std::function<void(PlayerSession&)> transferDimension) = 0;
 	virtual ~Command() = default;
 };
 
@@ -64,7 +77,7 @@ public:
 // Anyone can run these
 DEFINE_COMMAND(CommandHelp, L"help", L"Lists commands or helps with command", L"[command]", false, false);
 DEFINE_COMMAND(CommandTeleport, L"tp", L"Teleports player to coordinates or another player",
-	L"<player> <x> <y> <z> / <player> <player>", false, false);
+               L"<player> <x> <y> <z> / <player> <player>", false, false);
 DEFINE_COMMAND(CommandTime, L"time", L"Gets or sets the current world time", L"<new_time>", false, false);
 DEFINE_COMMAND(CommandSpawn, L"spawn", L"Teleport to spawn", L"", false, false);
 DEFINE_COMMAND(CommandSeed, L"seed", L"Get the world seed", L"", false, false);
@@ -125,7 +138,8 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 
 // Helper: find a playing session by username.
 [[maybe_unused]] static PlayerSession* FindSession(PlayerSession& caller, const std::wstring& name) {
-	if (!caller.players) return nullptr;
+	if (!caller.players)
+		return nullptr;
 	for (auto& s : *caller.players) {
 		if (s->username == name && s->connState == ConnectionState::Playing)
 			return s.get();
@@ -134,49 +148,49 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 }
 
 inline Int3 ParseInt3(size_t& offset, std::vector<std::wstring>& parameters) {
-    Int3 out{
-        std::stoi(parameters[offset]),
-        std::stoi(parameters[offset + 1]),
-        std::stoi(parameters[offset + 2]),
-    };
-    offset += 3;
+	Int3 out{
+		std::stoi(parameters[offset]),
+		std::stoi(parameters[offset + 1]),
+		std::stoi(parameters[offset + 2]),
+	};
+	offset += 3;
 	return out;
 }
 
 inline Float2 ParseFloat2(size_t& offset, std::vector<std::wstring>& parameters) {
-    Float2 out{
-        std::stof(parameters[offset]),
-        std::stof(parameters[offset + 1]),
-    };
-    offset += 2;
-    return out;
+	Float2 out{
+		std::stof(parameters[offset]),
+		std::stof(parameters[offset + 1]),
+	};
+	offset += 2;
+	return out;
 }
 
 inline Float3 ParseFloat3(size_t& offset, std::vector<std::wstring>& parameters) {
-    Float3 out{
-        std::stof(parameters[offset]),
-        std::stof(parameters[offset + 1]),
-        std::stof(parameters[offset + 2]),
-    };
-    offset += 3;
-    return out;
+	Float3 out{
+		std::stof(parameters[offset]),
+		std::stof(parameters[offset + 1]),
+		std::stof(parameters[offset + 2]),
+	};
+	offset += 3;
+	return out;
 }
 
 inline Double2 ParseDouble2(size_t& offset, std::vector<std::wstring>& parameters) {
-    Double2 out{
-        std::stod(parameters[offset]),
-        std::stod(parameters[offset + 1]),
-    };
-    offset += 2;
-    return out;
+	Double2 out{
+		std::stod(parameters[offset]),
+		std::stod(parameters[offset + 1]),
+	};
+	offset += 2;
+	return out;
 }
 
 inline Double3 ParseDouble3(size_t& offset, std::vector<std::wstring>& parameters) {
-    Double3 out{
-        std::stod(parameters[offset]),
-        std::stod(parameters[offset + 1]),
-        std::stod(parameters[offset + 2]),
-    };
-    offset += 3;
-    return out;
+	Double3 out{
+		std::stod(parameters[offset]),
+		std::stod(parameters[offset + 1]),
+		std::stod(parameters[offset + 2]),
+	};
+	offset += 3;
+	return out;
 }

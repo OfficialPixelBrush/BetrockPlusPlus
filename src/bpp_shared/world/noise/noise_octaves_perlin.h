@@ -12,7 +12,7 @@
 #include <vector>
 
 class NoiseOctavesPerlin {
-  public:
+public:
 	NoiseOctavesPerlin() {}
 	NoiseOctavesPerlin(int32_t octaves);
 	NoiseOctavesPerlin(Java::Random& rand, int32_t octaves);
@@ -22,9 +22,10 @@ class NoiseOctavesPerlin {
 	// generateNoiseOctaves
 	void GenerateOctaves(std::vector<double>& noiseField, Vec3 coordinate, Int32_3 size, Vec3 p_scale);
 	// func_4103_a
-	void GenerateOctaves(std::vector<double>& noiseField, Int32_2 offset, Int32_2 size, Vec2 scale, [[maybe_unused]] double unused);
+	void GenerateOctaves(std::vector<double>& noiseField, Int32_2 offset, Int32_2 size, Vec2 scale,
+	                     [[maybe_unused]] double unused);
 
-  private:
+private:
 	int32_t octaves;
 	std::vector<NoisePerlin> generator_collection;
 };
@@ -49,7 +50,8 @@ inline double NoiseOctavesPerlin::GenerateOctaves(Vec2 offset) {
 	return value;
 }
 
-inline void NoiseOctavesPerlin::GenerateOctaves(std::vector<double>& noiseField, Vec3 coordinate, Int32_3 size, Vec3 p_scale) {
+inline void NoiseOctavesPerlin::GenerateOctaves(std::vector<double>& noiseField, Vec3 coordinate, Int32_3 size,
+                                                Vec3 p_scale) {
 	if (noiseField.empty()) {
 		noiseField.resize(size_t(size.x * size.y * size.z), 0.0);
 	} else {
@@ -64,6 +66,8 @@ inline void NoiseOctavesPerlin::GenerateOctaves(std::vector<double>& noiseField,
 	}
 }
 
-inline void NoiseOctavesPerlin::GenerateOctaves(std::vector<double>& noiseField, Int32_2 offset, Int32_2 size, Vec2 scale, [[maybe_unused]] double unused) {
-	this->GenerateOctaves(noiseField, Vec3{double(offset.x), 10.0, double(offset.z)}, Int32_3{size.x, 1, size.z}, Vec3{scale.x, 1.0, scale.z});
+inline void NoiseOctavesPerlin::GenerateOctaves(std::vector<double>& noiseField, Int32_2 offset, Int32_2 size,
+                                                Vec2 scale, [[maybe_unused]] double unused) {
+	this->GenerateOctaves(noiseField, Vec3{ double(offset.x), 10.0, double(offset.z) }, Int32_3{ size.x, 1, size.z },
+	                      Vec3{ scale.x, 1.0, scale.z });
 }

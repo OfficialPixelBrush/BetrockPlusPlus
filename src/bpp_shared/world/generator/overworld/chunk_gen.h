@@ -6,10 +6,10 @@
 */
 
 #include "../generator.h"
-#include "biomes.h"
-#include "biome_gen.h"
 #include "../shared/cave_gen.h"
 #include "../shared/feature_gen.h"
+#include "biome_gen.h"
+#include "biomes.h"
 #include "tree_gen.h"
 #include "world.h"
 
@@ -18,7 +18,7 @@
  * 
  */
 class OverworldGenerator : public Generator {
-  private:
+private:
 	// Perlin Noise Generators
 	NoiseOctavesPerlin m_lowNoiseGen;
 	NoiseOctavesPerlin m_highNoiseGen;
@@ -51,12 +51,12 @@ class OverworldGenerator : public Generator {
 	CaveGenerator m_caver;
 
 	void GenerateTerrain(Chunk& chunk);
-	void GenerateTerrainNoise(std::vector<double> &terrainMap, Int3 cpos, Int3 max);
+	void GenerateTerrainNoise(std::vector<double>& terrainMap, Int3 cpos, Int3 max);
 	void ReplaceBlocksForBiome(Chunk& chunk);
 	Biome GetBiomeAt(Int2 worldPos);
 	void GenerateTreeForBiome(WorldWrapper& world, Java::Random& rand, Int3 pos, Biome biome);
 
-  public:
+public:
 	OverworldGenerator(int64_t seed);
 	~OverworldGenerator() = default;
 	void GenerateChunk(Chunk& chunk) override;

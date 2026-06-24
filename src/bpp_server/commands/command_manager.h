@@ -5,20 +5,21 @@
 */
 
 #pragma once
-#include <functional>
 #include "../player_session.h"
 #include "command.h"
+#include <functional>
 
 /**
  * @brief Responsible for all command handling and execution
  * 
  */
 class CommandManager {
-  public:
+public:
 	static void Init();
-	static void Parse(std::wstring &cmd_string, PlayerSession& session, WorldManager& world, std::function<void(PlayerSession&)> transferDimension) noexcept;
-	static const std::vector<std::unique_ptr<Command>> &GetRegisteredCommands() noexcept;
+	static void Parse(std::wstring& cmd_string, PlayerSession& session, WorldManager& world,
+	                  std::function<void(PlayerSession&)> transferDimension) noexcept;
+	static const std::vector<std::unique_ptr<Command>>& GetRegisteredCommands() noexcept;
 
-  private:
+private:
 	static std::vector<std::unique_ptr<Command>> registeredCommands;
 };

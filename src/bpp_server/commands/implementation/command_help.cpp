@@ -11,7 +11,8 @@
 // Usage:
 //   /help
 //   /help [command]
-std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world, std::function<void(PlayerSession&)> transferDimension) {
+std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world,
+                                  std::function<void(PlayerSession&)> transferDimension) {
 	//DEFINE_PERMSCHECK(pClient)
 	const auto& registered_commands = CommandManager::GetRegisteredCommands();
 	Packet::ChatMessage pkt;
@@ -19,11 +20,13 @@ std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerS
 	if (parameters.size() > 1) {
 		for (size_t i = 0; i < registered_commands.size(); i++) {
 			if (registered_commands[i]->GetLabel() == parameters[1]) {
-				pkt.message = L"§7" + registered_commands[i]->GetLabel() + L": " + registered_commands[i]->GetDescription();
+				pkt.message = L"§7" + registered_commands[i]->GetLabel() + L": " +
+				              registered_commands[i]->GetDescription();
 				pkt.Serialize(session.stream);
 				// Only print syntax if it has a value
 				if (!registered_commands[i]->GetSyntax().empty()) {
-					pkt.message = L"§7/" + registered_commands[i]->GetLabel() + L" " + registered_commands[i]->GetSyntax();
+					pkt.message = L"§7/" + registered_commands[i]->GetLabel() + L" " +
+					              registered_commands[i]->GetSyntax();
 					pkt.Serialize(session.stream);
 				}
 				if (registered_commands[i]->GetRequiresOperator()) {
@@ -34,8 +37,7 @@ std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerS
 			}
 		}
 		return L"Command not found!";
-	}
-	else {
+	} else {
 		// List all commands
 		pkt.message = L"§7-- All commands --";
 		pkt.Serialize(session.stream);
@@ -45,8 +47,7 @@ std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerS
 			if (i < registered_commands.size() - 1) {
 				pkt.message += L", ";
 			}
-			if (pkt.message.size() > MAX_CHAT_LINE_SIZE ||
-				i == registered_commands.size() - 1) {
+			if (pkt.message.size() > MAX_CHAT_LINE_SIZE || i == registered_commands.size() - 1) {
 				pkt.Serialize(session.stream);
 				pkt.message = L"§7";
 			}

@@ -15,25 +15,16 @@
  * 
  */
 class BiomeGenerator {
-    private:
-        // Simplex Noise Generators
-        NoiseOctavesSimplex m_temperatureNoiseGen;
-        NoiseOctavesSimplex m_humidityNoiseGen;
-        NoiseOctavesSimplex m_weirdnessNoiseGen;
-    public:
-        BiomeGenerator(int64_t seed);
-        Biome GetBiomeAtPoint(Int2 worldPos);
-        void GenerateBiomeMap(
-            Biome biomeMap[],
-            std::vector<double>& temperature,
-            std::vector<double>& humidity,
-            std::vector<double>& weirdness,
-            Int2 blockPos
-        );
-	    void GenerateTemperature(
-            std::vector<double>& temperature,
-            std::vector<double>& weirdness,
-            Int2 chunkPos,
-            Int2 max
-        );
+private:
+	// Simplex Noise Generators
+	NoiseOctavesSimplex m_temperatureNoiseGen;
+	NoiseOctavesSimplex m_humidityNoiseGen;
+	NoiseOctavesSimplex m_weirdnessNoiseGen;
+
+public:
+	BiomeGenerator(int64_t seed);
+	Biome GetBiomeAtPoint(Int2 worldPos);
+	void GenerateBiomeMap(Biome biomeMap[], std::vector<double>& temperature, std::vector<double>& humidity,
+	                      std::vector<double>& weirdness, Int2 blockPos);
+	void GenerateTemperature(std::vector<double>& temperature, std::vector<double>& weirdness, Int2 chunkPos, Int2 max);
 };

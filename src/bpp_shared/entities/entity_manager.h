@@ -13,8 +13,9 @@ struct EntityBucket {
 };
 
 struct EntityContainer {
-	Int2 bucketPos = {0, 0};
-	std::array<EntityBucket, 10> buckets; // 0 = lowest bucket (below the world), 1 = Y lvl 0; 8 = y lvl 127, 9 = above the world
+	Int2 bucketPos = { 0, 0 };
+	std::array<EntityBucket, 10>
+	    buckets; // 0 = lowest bucket (below the world), 1 = Y lvl 0; 8 = y lvl 127, 9 = above the world
 };
 
 // For ticking all entities and keeping track of them in the world
@@ -30,31 +31,28 @@ struct EntityManager {
 			entity->tick();
 
 			// Check to see if this entity went into another container or bucket
-			Int3 newBucketPos = {
-				int(entity->posX / 16.0),
-				int(entity->posZ / 16.0),
-				int(entity->posY / 16.0)
-			};
+			Int3 newBucketPos = { int(entity->posX / 16.0), int(entity->posZ / 16.0), int(entity->posY / 16.0) };
 
 			// Entity collisions below and above the world are just gonna be inefficient
-			if (newBucketPos.z < 0) newBucketPos.z = 0;
-			else if (newBucketPos.z > 10) newBucketPos.z = 10;
+			if (newBucketPos.z < 0)
+				newBucketPos.z = 0;
+			else if (newBucketPos.z > 10)
+				newBucketPos.z = 10;
 
 			if (newBucketPos != entity->bucketPos) {
 				// Remove from the old bucket
-				auto& oldContainer = entityContainers[{entity->bucketPos.x, entity->bucketPos.y}];
+				auto& oldContainer = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
 				auto& b = oldContainer.buckets[entity->bucketPos.z];
-				b.entities.erase(
-					std::remove_if(b.entities.begin(), b.entities.end(),
-						[&entity](const std::weak_ptr<Entity>& weak) {
-							auto locked = weak.lock();
-							return !locked || locked == entity; // Remove if expired or matches our entity
-						}),
-					b.entities.end()
-				);
+				b.entities.erase(std::remove_if(b.entities.begin(), b.entities.end(),
+				                                [&entity](const std::weak_ptr<Entity>& weak) {
+					                                auto locked = weak.lock();
+					                                return !locked ||
+					                                       locked == entity; // Remove if expired or matches our entity
+				                                }),
+				                 b.entities.end());
 
 				// Put in the new bucket
-				auto& newContainer = entityContainers[{newBucketPos.x, newBucketPos.y}];
+				auto& newContainer = entityContainers[{ newBucketPos.x, newBucketPos.y }];
 				auto& newB = newContainer.buckets[newBucketPos.z];
 				newB.entities.push_back(entity);
 				entity->bucketPos = newBucketPos;
@@ -67,7 +65,8 @@ struct EntityManager {
 			GlobalLogger().error << "Attempted to add an entity before EntityManager was bound to a world!\n";
 			return;
 		}
-		entity->id = forceEntityId == -1 ? nextEntityId++ : forceEntityId; // Assign an ID if we weren't forced to use one
+		entity->id = forceEntityId == -1 ? nextEntityId++
+		                                 : forceEntityId; // Assign an ID if we weren't forced to use one
 		entity->world = world; // Bind the world pointer so the entity can interact with the world
 		entities.push_back(std::move(entity));
 	}

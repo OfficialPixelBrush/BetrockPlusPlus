@@ -17,14 +17,14 @@
 OverworldGenerator::OverworldGenerator(int64_t p_seed) : Generator(p_seed) {
 	m_rand = Java::Random(m_seed);
 	// Init Terrain Noise
-	m_lowNoiseGen 				= NoiseOctavesPerlin(m_rand, 16);
-	m_highNoiseGen 				= NoiseOctavesPerlin(m_rand, 16);
-	m_selectorNoiseGen			= NoiseOctavesPerlin(m_rand,  8);
-	m_sandGravelNoiseGen		= NoiseOctavesPerlin(m_rand,  4);
-	m_stoneNoiseGen				= NoiseOctavesPerlin(m_rand,  4);
-	m_continentalnessNoiseGen	= NoiseOctavesPerlin(m_rand, 10);
-	m_depthNoiseGen				= NoiseOctavesPerlin(m_rand, 16);
-	m_treeDensityNoiseGen		= NoiseOctavesPerlin(m_rand,  8);
+	m_lowNoiseGen = NoiseOctavesPerlin(m_rand, 16);
+	m_highNoiseGen = NoiseOctavesPerlin(m_rand, 16);
+	m_selectorNoiseGen = NoiseOctavesPerlin(m_rand, 8);
+	m_sandGravelNoiseGen = NoiseOctavesPerlin(m_rand, 4);
+	m_stoneNoiseGen = NoiseOctavesPerlin(m_rand, 4);
+	m_continentalnessNoiseGen = NoiseOctavesPerlin(m_rand, 10);
+	m_depthNoiseGen = NoiseOctavesPerlin(m_rand, 16);
+	m_treeDensityNoiseGen = NoiseOctavesPerlin(m_rand, 8);
 }
 
 /**
@@ -40,10 +40,8 @@ void OverworldGenerator::GenerateChunk(Chunk& chunk) {
 	chunk.clear();
 
 	// Generate Biomes
-	BiomeGenerator(m_seed).GenerateBiomeMap(m_biomeMap,
-		m_temperature, m_humidity, m_weirdness,
-		Int2{ chunk.cpos.x * CHUNK_WIDTH, chunk.cpos.z * CHUNK_WIDTH }
-	);
+	BiomeGenerator(m_seed).GenerateBiomeMap(m_biomeMap, m_temperature, m_humidity, m_weirdness,
+	                                        Int2{ chunk.cpos.x * CHUNK_WIDTH, chunk.cpos.z * CHUNK_WIDTH });
 
 	// Store the final temperature and humidity in the chunk so PopulateChunk
 	// (which runs on a different thread_local OverworldGenerator) can reconstruct the
@@ -79,21 +77,16 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 	m_stoneNoise.resize(256, 0.0);
 
 	// Populate noise maps
-	m_sandGravelNoiseGen.GenerateOctaves(m_sandNoise,
-		Vec3{double(chunk.cpos.x* CHUNK_WIDTH), double(chunk.cpos.z* CHUNK_WIDTH), 0.0},
-		Int32_3{ 16, 16, 1 },
-		Vec3{ oneThirtySecond, oneThirtySecond, 1.0 }
-	);
-	m_sandGravelNoiseGen.GenerateOctaves(m_gravelNoise,
-		Vec3{double(chunk.cpos.x* CHUNK_WIDTH), 109.0134, double(chunk.cpos.z* CHUNK_WIDTH)},
-		Int32_3{ 16, 1, 16 },
-		Vec3{ oneThirtySecond, 1.0, oneThirtySecond }
-	);
+	m_sandGravelNoiseGen.GenerateOctaves(
+	    m_sandNoise, Vec3{ double(chunk.cpos.x * CHUNK_WIDTH), double(chunk.cpos.z * CHUNK_WIDTH), 0.0 },
+	    Int32_3{ 16, 16, 1 }, Vec3{ oneThirtySecond, oneThirtySecond, 1.0 });
+	m_sandGravelNoiseGen.GenerateOctaves(
+	    m_gravelNoise, Vec3{ double(chunk.cpos.x * CHUNK_WIDTH), 109.0134, double(chunk.cpos.z * CHUNK_WIDTH) },
+	    Int32_3{ 16, 1, 16 }, Vec3{ oneThirtySecond, 1.0, oneThirtySecond });
 	m_stoneNoiseGen.GenerateOctaves(m_stoneNoise,
-		Vec3{double(chunk.cpos.x* CHUNK_WIDTH), double(chunk.cpos.z* CHUNK_WIDTH), 0.0},
-		Int32_3{ 16, 16, 1 },
-		Vec3{ oneThirtySecond * 2.0, oneThirtySecond * 2.0, oneThirtySecond * 2.0 }
-	);
+	                                Vec3{ double(chunk.cpos.x * CHUNK_WIDTH), double(chunk.cpos.z * CHUNK_WIDTH), 0.0 },
+	                                Int32_3{ 16, 16, 1 },
+	                                Vec3{ oneThirtySecond * 2.0, oneThirtySecond * 2.0, oneThirtySecond * 2.0 });
 
 	// Iterate through entire chunk
 	for (int32_t x = 0; x < CHUNK_WIDTH; ++x) {
@@ -113,7 +106,7 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 			// Iterate over column top to bottom
 			for (int32_t y = CHUNK_HEIGHT - 1; y >= 0; --y) {
 				// This is intentional, to match b1.7.3 behavior!
-				Int3 bpos{ z,y,x };
+				Int3 bpos{ z, y, x };
 				// Place Bedrock at bottom with some randomness
 				if (y <= 0 + m_rand.nextInt(5)) {
 					chunk.setBlock(bpos, BLOCK_BEDROCK);
@@ -133,8 +126,7 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 						if (stoneActive <= 0) {
 							topBlock = BLOCK_AIR;
 							fillerBlock = BLOCK_STONE;
-						}
-						else if (y >= WATER_LEVEL - 4 && y <= WATER_LEVEL + 1) {
+						} else if (y >= WATER_LEVEL - 4 && y <= WATER_LEVEL + 1) {
 							// If we're close to the water level, apply gravel and sand
 							topBlock = GetTopBlock(biome);
 							fillerBlock = GetFillerBlock(biome);
@@ -156,10 +148,7 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 
 						stoneDepth = stoneActive;
 						// Place filler block if we're underwater
-						chunk.setBlock(
-							bpos,
-							(y >= WATER_LEVEL - 1) ? topBlock : fillerBlock
-						);
+						chunk.setBlock(bpos, (y >= WATER_LEVEL - 1) ? topBlock : fillerBlock);
 					} else if (stoneDepth > 0) {
 						--stoneDepth;
 						chunk.setBlock(bpos, fillerBlock);
@@ -181,14 +170,10 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
  * @param c The chunk that should get its terrain generated
  */
 void OverworldGenerator::GenerateTerrain(Chunk& chunk) {
-	const Int3 max{
-		CHUNK_WIDTH / 4 + 1,
-		CHUNK_HEIGHT / 8 + 1,
-		CHUNK_WIDTH / 4 + 1
-	};
+	const Int3 max{ CHUNK_WIDTH / 4 + 1, CHUNK_HEIGHT / 8 + 1, CHUNK_WIDTH / 4 + 1 };
 
 	// Generate 4x16x4 low resolution noise map
-	GenerateTerrainNoise(m_terrainNoiseField, Int3{chunk.cpos.x * 4, 0, chunk.cpos.z * 4}, max);
+	GenerateTerrainNoise(m_terrainNoiseField, Int3{ chunk.cpos.x * 4, 0, chunk.cpos.z * 4 }, max);
 
 	// Terrain noise is interpolated and only sampled every 4 blocks
 	for (int32_t sampleX = 0; sampleX < 4; ++sampleX) {
@@ -197,14 +182,30 @@ void OverworldGenerator::GenerateTerrain(Chunk& chunk) {
 				double verticalLerpStep = 0.125;
 
 				// Get noise cube corners
-				double corner000 = m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 0) * max.y + sampleY + 0)];
-				double corner010 = m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 1) * max.y + sampleY + 0)];
-				double corner100 = m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 0) * max.y + sampleY + 0)];
-				double corner110 = m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 1) * max.y + sampleY + 0)];
-				double corner001 = (m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 0) * max.y + sampleY + 1)] - corner000) * verticalLerpStep;
-				double corner011 = (m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 1) * max.y + sampleY + 1)] - corner010) * verticalLerpStep;
-				double corner101 = (m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 0) * max.y + sampleY + 1)] - corner100) * verticalLerpStep;
-				double corner111 = (m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 1) * max.y + sampleY + 1)] - corner110) * verticalLerpStep;
+				double corner000 =
+				    m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 0) * max.y + sampleY + 0)];
+				double corner010 =
+				    m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 1) * max.y + sampleY + 0)];
+				double corner100 =
+				    m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 0) * max.y + sampleY + 0)];
+				double corner110 =
+				    m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 1) * max.y + sampleY + 0)];
+				double corner001 =
+				    (m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 0) * max.y + sampleY + 1)] -
+				     corner000) *
+				    verticalLerpStep;
+				double corner011 =
+				    (m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 1) * max.y + sampleY + 1)] -
+				     corner010) *
+				    verticalLerpStep;
+				double corner101 =
+				    (m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 0) * max.y + sampleY + 1)] -
+				     corner100) *
+				    verticalLerpStep;
+				double corner111 =
+				    (m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 1) * max.y + sampleY + 1)] -
+				     corner110) *
+				    verticalLerpStep;
 
 				// Interpolate the 1/4th scale noise
 				for (int32_t subY = 0; subY < 8; ++subY) {
@@ -230,8 +231,7 @@ void OverworldGenerator::GenerateTerrain(Chunk& chunk) {
 							if (yLevel < WATER_LEVEL) {
 								if (temp < 0.5 && yLevel >= WATER_LEVEL - 1) {
 									blockType = BLOCK_ICE;
-								}
-								else {
+								} else {
 									blockType = BLOCK_WATER_STILL;
 								}
 							}
@@ -276,33 +276,16 @@ void OverworldGenerator::GenerateTerrainNoise(std::vector<double>& terrainMap, I
 	double vertScale = 684.412;
 
 	// We do this to need to generate noise as often
-	m_continentalnessNoiseGen.GenerateOctaves(m_continentalnessNoiseField,
-		Int32_2{cpos.x, cpos.z},
-		Int32_2{ max.x, max.z },
-		Vec2{ 1.121, 1.121 },
-		0.5
-	);
-	m_depthNoiseGen.GenerateOctaves(m_depthNoiseField,
-		Int32_2{cpos.x, cpos.z},
-		Int32_2{ max.x, max.z },
-		Vec2{ 200.0, 200.0 },
-		0.5
-	);
-	m_selectorNoiseGen.GenerateOctaves(m_selectorNoiseField,
-		Vec3{double(cpos.x), double(cpos.y), double(cpos.z)},
-		max,
-		Vec3{ horiScale / 80.0, vertScale / 160.0, horiScale / 80.0 }
-	);
-	m_lowNoiseGen.GenerateOctaves(m_lowNoiseField,
-		Vec3{double(cpos.x), double(cpos.y), double(cpos.z)},
-		max,
-		Vec3{ horiScale, vertScale, horiScale }
-	);
-	m_highNoiseGen.GenerateOctaves(m_highNoiseField,
-		Vec3{double(cpos.x), double(cpos.y), double(cpos.z)},
-		max,
-		Vec3{ horiScale, vertScale, horiScale }
-	);
+	m_continentalnessNoiseGen.GenerateOctaves(m_continentalnessNoiseField, Int32_2{ cpos.x, cpos.z },
+	                                          Int32_2{ max.x, max.z }, Vec2{ 1.121, 1.121 }, 0.5);
+	m_depthNoiseGen.GenerateOctaves(m_depthNoiseField, Int32_2{ cpos.x, cpos.z }, Int32_2{ max.x, max.z },
+	                                Vec2{ 200.0, 200.0 }, 0.5);
+	m_selectorNoiseGen.GenerateOctaves(m_selectorNoiseField, Vec3{ double(cpos.x), double(cpos.y), double(cpos.z) },
+	                                   max, Vec3{ horiScale / 80.0, vertScale / 160.0, horiScale / 80.0 });
+	m_lowNoiseGen.GenerateOctaves(m_lowNoiseField, Vec3{ double(cpos.x), double(cpos.y), double(cpos.z) }, max,
+	                              Vec3{ horiScale, vertScale, horiScale });
+	m_highNoiseGen.GenerateOctaves(m_highNoiseField, Vec3{ double(cpos.x), double(cpos.y), double(cpos.z) }, max,
+	                               Vec3{ horiScale, vertScale, horiScale });
 	// Used to iterate 3D noise maps (low, high, selector)
 	size_t xyzIndex = 0;
 	// Used to iterate 2D Noise maps (depth, continentalness)
@@ -340,8 +323,7 @@ void OverworldGenerator::GenerateTerrainNoise(std::vector<double>& terrainMap, I
 				depthNoise /= 1.4;
 				depthNoise /= 2.0;
 				continentalness = 0.0;
-			}
-			else {
+			} else {
 				if (depthNoise > 1.0)
 					depthNoise = 1.0;
 				depthNoise /= 8.0;
@@ -368,11 +350,9 @@ void OverworldGenerator::GenerateTerrainNoise(std::vector<double>& terrainMap, I
 				double selectorNoise = (m_selectorNoiseField[xyzIndex] / 10.0 + 1.0) / 2.0;
 				if (selectorNoise < 0.0) {
 					terrainDensity = lowNoise;
-				}
-				else if (selectorNoise > 1.0) {
+				} else if (selectorNoise > 1.0) {
 					terrainDensity = highNoise;
-				}
-				else {
+				} else {
 					terrainDensity = lowNoise + (highNoise - lowNoise) * selectorNoise;
 				}
 
@@ -404,7 +384,6 @@ Biome OverworldGenerator::GetBiomeAt(Int2 worldPos) {
 	return m_biomeMap[size_t(localX * CHUNK_WIDTH + localZ)];
 }
 
-
 // Exact port of BiomeGenBase.getRandomWorldGenForTrees() and per-biome overrides.
 void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& world, Java::Random& pRand, Int3 pos, Biome biome) {
 	switch (biome) {
@@ -416,9 +395,9 @@ void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& world, Java::Random&
 		//   AltTaigaTreeGenerator has the WorldGenTaiga2 RNG sequence (nextInt(4)+6 height,
 		//                                                              5 RNG, bushy pine)
 		if (pRand.nextInt(3) == 0)
-			TaigaTreeGenerator().Generate(world, pRand, pos);     // = WorldGenTaiga1
+			TaigaTreeGenerator().Generate(world, pRand, pos); // = WorldGenTaiga1
 		else
-			AltTaigaTreeGenerator().Generate(world, pRand, pos);  // = WorldGenTaiga2
+			AltTaigaTreeGenerator().Generate(world, pRand, pos); // = WorldGenTaiga2
 		break;
 
 	case BIOME_FOREST:
@@ -426,13 +405,11 @@ void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& world, Java::Random&
 		if (pRand.nextInt(5) == 0) {
 			// WorldGenForest (birch): same as oak but birch=true adds 1 to height base
 			TreeGenerator().Generate(world, pRand, pos, true);
-		}
-		else if (pRand.nextInt(3) == 0) {
+		} else if (pRand.nextInt(3) == 0) {
 			BigTreeGenerator big;
 			big.Configure(1.0, 1.0, 1.0);
 			big.Generate(world, pRand, pos);
-		}
-		else {
+		} else {
 			TreeGenerator().Generate(world, pRand, pos);
 		}
 		break;
@@ -443,8 +420,7 @@ void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& world, Java::Random&
 			BigTreeGenerator big;
 			big.Configure(1.0, 1.0, 1.0);
 			big.Generate(world, pRand, pos);
-		}
-		else {
+		} else {
 			TreeGenerator().Generate(world, pRand, pos);
 		}
 		break;
@@ -455,14 +431,12 @@ void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& world, Java::Random&
 			BigTreeGenerator big;
 			big.Configure(1.0, 1.0, 1.0);
 			big.Generate(world, pRand, pos);
-		}
-		else {
+		} else {
 			TreeGenerator().Generate(world, pRand, pos);
 		}
 		break;
 	}
 }
-
 
 /**
  * @brief Populates the specified chunk with biome-specific features.
@@ -475,9 +449,7 @@ void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& world, Java::Random&
 bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	const int32_t blockX = chunk.cpos.x * CHUNK_WIDTH;
 	const int32_t blockZ = chunk.cpos.z * CHUNK_WIDTH;
-	Biome biome = BiomeGenerator(m_seed).GetBiomeAtPoint(
-		Int2{ blockX + CHUNK_WIDTH, blockZ + CHUNK_WIDTH }
-	);
+	Biome biome = BiomeGenerator(m_seed).GetBiomeAtPoint(Int2{ blockX + CHUNK_WIDTH, blockZ + CHUNK_WIDTH });
 	// Java RNG seeding sequence
 	m_rand.setSeed(world.getSeed());
 	int64_t xSalt = m_rand.nextLong() / 2L * 2L + 1L;
@@ -587,16 +559,24 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	double noiseVal = m_treeDensityNoiseGen.GenerateOctaves({ double(blockX) * 0.5, double(blockZ) * 0.5 });
 	int32_t baseTreeCount = Java::DoubleToInt32((noiseVal / 8.0 + m_rand.nextDouble() * 4.0 + 4.0) / 3.0);
 	int32_t treeCount = 0;
-	if (m_rand.nextInt(10) == 0) ++treeCount;
+	if (m_rand.nextInt(10) == 0)
+		++treeCount;
 
 	// Biome tree adjustments — additive (not else-if), matching Java exactly
-	if (biome == BIOME_FOREST)        treeCount += baseTreeCount + 5;
-	if (biome == BIOME_RAINFOREST)    treeCount += baseTreeCount + 5;
-	if (biome == BIOME_SEASONALFOREST)treeCount += baseTreeCount + 2;
-	if (biome == BIOME_TAIGA)         treeCount += baseTreeCount + 5;
-	if (biome == BIOME_DESERT)        treeCount -= 20;
-	if (biome == BIOME_TUNDRA)        treeCount -= 20;
-	if (biome == BIOME_PLAINS)        treeCount -= 20;
+	if (biome == BIOME_FOREST)
+		treeCount += baseTreeCount + 5;
+	if (biome == BIOME_RAINFOREST)
+		treeCount += baseTreeCount + 5;
+	if (biome == BIOME_SEASONALFOREST)
+		treeCount += baseTreeCount + 2;
+	if (biome == BIOME_TAIGA)
+		treeCount += baseTreeCount + 5;
+	if (biome == BIOME_DESERT)
+		treeCount -= 20;
+	if (biome == BIOME_TUNDRA)
+		treeCount -= 20;
+	if (biome == BIOME_PLAINS)
+		treeCount -= 20;
 
 	for (int32_t i = 0; i < treeCount; ++i) {
 		int32_t tx = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
@@ -609,10 +589,14 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	// Dandelions
 	{
 		int32_t count = 0;
-		if (biome == BIOME_FOREST)         count = 2;
-		if (biome == BIOME_SEASONALFOREST) count = 4;
-		if (biome == BIOME_TAIGA)          count = 2;
-		if (biome == BIOME_PLAINS)         count = 3;
+		if (biome == BIOME_FOREST)
+			count = 2;
+		if (biome == BIOME_SEASONALFOREST)
+			count = 4;
+		if (biome == BIOME_TAIGA)
+			count = 2;
+		if (biome == BIOME_PLAINS)
+			count = 3;
 		for (int32_t i = 0; i < count; ++i) {
 			coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
 			coord.y = m_rand.nextInt(CHUNK_HEIGHT);
@@ -624,11 +608,16 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	// Tall grass / ferns — rainforest nextInt(3) consumed inside loop
 	{
 		int32_t count = 0;
-		if (biome == BIOME_FOREST)         count = 2;
-		if (biome == BIOME_RAINFOREST)     count = 10;
-		if (biome == BIOME_SEASONALFOREST) count = 2;
-		if (biome == BIOME_TAIGA)          count = 1;
-		if (biome == BIOME_PLAINS)         count = 10;
+		if (biome == BIOME_FOREST)
+			count = 2;
+		if (biome == BIOME_RAINFOREST)
+			count = 10;
+		if (biome == BIOME_SEASONALFOREST)
+			count = 2;
+		if (biome == BIOME_TAIGA)
+			count = 1;
+		if (biome == BIOME_PLAINS)
+			count = 10;
 		for (int32_t i = 0; i < count; ++i) {
 			int8_t grassMeta = 1;
 			if (biome == BIOME_RAINFOREST && m_rand.nextInt(3) != 0)
@@ -724,12 +713,9 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	for (int32_t x = blockX + 8; x < blockX + 8 + CHUNK_WIDTH; ++x) {
 		for (int32_t z = blockZ + 8; z < blockZ + 8 + CHUNK_WIDTH; ++z) {
 			int32_t topY = world.findTopSolidBlock(x, z);
-			double  temp = world.getTemperatureAt(x, z)
-				- double(topY - 64) / 64.0 * 0.3;
-			if (temp < 0.5 && topY > 0 && topY < CHUNK_HEIGHT
-				&& world.getBlockId({ x, topY,   z }) == BLOCK_AIR
-				&& world.getBlockId({ x, topY - 1, z }) != BLOCK_ICE
-				&& IsSolid(world.getBlockId({ x, topY - 1, z }))) {
+			double temp = world.getTemperatureAt(x, z) - double(topY - 64) / 64.0 * 0.3;
+			if (temp < 0.5 && topY > 0 && topY < CHUNK_HEIGHT && world.getBlockId({ x, topY, z }) == BLOCK_AIR &&
+			    world.getBlockId({ x, topY - 1, z }) != BLOCK_ICE && IsSolid(world.getBlockId({ x, topY - 1, z }))) {
 				world.setBlock({ x, topY, z }, BLOCK_SNOW_LAYER);
 			}
 		}

@@ -17,19 +17,19 @@ Config::Config(const std::string& pPath) {
 	this->path = pPath;
 }
 
-std::string_view Config::Get(const std::string &key) noexcept {
-	std::shared_lock read_lock{this->properties_mutex};
+std::string_view Config::Get(const std::string& key) noexcept {
+	std::shared_lock read_lock{ this->properties_mutex };
 	return this->properties.contains(key) ? this->properties.at(key) : std::string_view();
 }
 
-void Config::Set(const std::string &key, std::string_view value) noexcept {
-	std::unique_lock write_lock{this->properties_mutex};
+void Config::Set(const std::string& key, std::string_view value) noexcept {
+	std::unique_lock write_lock{ this->properties_mutex };
 	this->properties[key] = value;
 }
 
 // overwrite the properties in memory
-void Config::Overwrite(const ConfType &config) noexcept {
-	std::unique_lock write_lock{this->properties_mutex};
+void Config::Overwrite(const ConfType& config) noexcept {
+	std::unique_lock write_lock{ this->properties_mutex };
 	this->properties = config;
 }
 
@@ -41,7 +41,7 @@ bool Config::LoadFromDisk() noexcept {
 		return false;
 	}
 
-	std::unique_lock lock{this->properties_mutex};
+	std::unique_lock lock{ this->properties_mutex };
 
 	this->properties.clear();
 
@@ -78,10 +78,10 @@ bool Config::SaveToDisk() const noexcept {
 	}
 
 	try {
-		for (const auto &[key, value] : this->properties) {
+		for (const auto& [key, value] : this->properties) {
 			file << key << "=" << value << "\n";
 		}
-	} catch (const std::exception &e) {
+	} catch (const std::exception& e) {
 		GlobalLogger().error << "**** Error while writing properties file: " << e.what() << "\n";
 		return false;
 	}
@@ -91,6 +91,10 @@ bool Config::SaveToDisk() const noexcept {
 	return true;
 }
 
-void Config::SetPath(std::string_view pPath) noexcept { this->path = pPath; }
+void Config::SetPath(std::string_view pPath) noexcept {
+	this->path = pPath;
+}
 
-std::string_view Config::GetPath() const noexcept { return this->path; }
+std::string_view Config::GetPath() const noexcept {
+	return this->path;
+}

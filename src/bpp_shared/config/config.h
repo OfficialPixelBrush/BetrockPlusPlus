@@ -16,7 +16,7 @@
 #include <unordered_map>
 
 class Config {
-  private:
+private:
 	struct TransparentHasher {
 		using is_transparent = void;
 		size_t operator()(std::string_view sv) const {
@@ -27,19 +27,22 @@ class Config {
 
 	using ConfType = std::unordered_map<std::string, std::string, TransparentHasher, std::equal_to<>>;
 
-  public:
+public:
 	// get the value at key or a the default mapped_type if key doesn't exist
-	std::string_view Get(const std::string &key) noexcept;
+	std::string_view Get(const std::string& key) noexcept;
 
-	std::string GetAsString(const std::string &key) { return std::string(this->Get(key)); }
+	std::string GetAsString(const std::string& key) {
+		return std::string(this->Get(key));
+	}
 
 	// get the value at key as number
-	template <std::integral num_type> num_type GetAsNumber(const std::string &key) {
+	template <std::integral num_type>
+	num_type GetAsNumber(const std::string& key) {
 		return std::stoll(std::string(this->Get(key)));
 	}
 
 	// get the value at key as boolean
-	bool GetAsBoolean(const std::string &key) {
+	bool GetAsBoolean(const std::string& key) {
 		std::string val = std::string(this->Get(key));
 		try {
 			if (val == "true" || val == "1")
@@ -49,7 +52,7 @@ class Config {
 			if (val == "false" || val == "0")
 				return false;
 			*/
-		} catch (const std::exception &e) {
+		} catch (const std::exception& e) {
 			std::cerr << "Error while writing: " << e.what() << "\n";
 		}
 		return false;
@@ -57,10 +60,10 @@ class Config {
 
 	// set value at key.
 	// will create key if it doesn't exist.
-	void Set(const std::string &key, std::string_view value) noexcept;
+	void Set(const std::string& key, std::string_view value) noexcept;
 
 	// overwrite the properties in memory
-	void Overwrite(const ConfType &config) noexcept;
+	void Overwrite(const ConfType& config) noexcept;
 
 	// read a properties file from disk into memory.
 	// returns false on error.
@@ -79,12 +82,12 @@ class Config {
 	Config(const std::string& path);
 	~Config() = default;
 
-  private:
-	Config(const Config &) = delete;
-	Config(const Config &&) = delete;
+private:
+	Config(const Config&) = delete;
+	Config(const Config&&) = delete;
 
-	Config &operator=(const Config &) = delete;
-	Config &operator=(const Config &&) = delete;
+	Config& operator=(const Config&) = delete;
+	Config& operator=(const Config&&) = delete;
 
 	std::shared_mutex properties_mutex;
 

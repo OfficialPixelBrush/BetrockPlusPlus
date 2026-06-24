@@ -11,9 +11,10 @@
  * Responsible for acquiring, extracting and caching assets
  */
 class AssetManager {
-    public:
-        AssetManager();
-    private:
-        bool DownloadAssets();
-        bool ExtractAssets();
+public:
+	AssetManager();
+
+private:
+	bool DownloadAssets();
+	bool ExtractAssets();
 };

@@ -53,10 +53,13 @@ void CommandManager::Init() {
 }
 
 // Get all registered commands
-const std::vector<std::unique_ptr<Command>>& CommandManager::GetRegisteredCommands() noexcept { return registeredCommands; }
+const std::vector<std::unique_ptr<Command>>& CommandManager::GetRegisteredCommands() noexcept {
+	return registeredCommands;
+}
 
 // Parses commands and executes them
-void CommandManager::Parse(std::wstring& cmd_string, PlayerSession& session, WorldManager& world, std::function<void(PlayerSession&)> transferDimension) noexcept {
+void CommandManager::Parse(std::wstring& cmd_string, PlayerSession& session, WorldManager& world,
+                           std::function<void(PlayerSession&)> transferDimension) noexcept {
 	// Remove initial /
 	cmd_string = cmd_string.substr(1);
 	// Set these up for command parsing
@@ -83,8 +86,7 @@ void CommandManager::Parse(std::wstring& cmd_string, PlayerSession& session, Wor
 					break;
 				}
 			}
-		}
-		catch (const std::exception& e) {
+		} catch (const std::exception& e) {
 			GlobalLogger().info << e.what() << " on /" << cmd_string << "\n";
 		}
 	}

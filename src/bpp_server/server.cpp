@@ -10,950 +10,959 @@
 #include "logger.h"
 #include <string>
 #if defined(__linux__) || defined(__APPLE__)
+#include <fcntl.h>
 #include <iomanip>
-#include <unistd.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include <fcntl.h>
+#include <unistd.h>
 #elif defined(_WIN32) || defined(_WIN64)
 #include <winsock2.h>
 #pragma comment(lib, "ws2_32.lib")
 #endif
 
-#include <iostream>
-#include <chrono>
-#include <filesystem>
 #include "server.h"
 #include "version.h"
+#include <chrono>
+#include <filesystem>
+#include <iostream>
 
 Server::Server() : config("server.properties"), worldHell(true) {
-    loadConfig();
-    createServerSocket(serverPort);
-    if (serverSocket < 0) {
-        GlobalLogger().error << "**** FAILED TO CREATE SERVER SOCKET!" << "\n";
-        exit(1);
-    }
-    GlobalLogger().info << "Server initialized on port " << serverPort << "\n";
+	loadConfig();
+	createServerSocket(serverPort);
+	if (serverSocket < 0) {
+		GlobalLogger().error << "**** FAILED TO CREATE SERVER SOCKET!" << "\n";
+		exit(1);
+	}
+	GlobalLogger().info << "Server initialized on port " << serverPort << "\n";
 
-    // Basic save loading
-    bool newSave = false;
-    if (!saveManager.initialize(config.GetAsString("level-name"))) {
-        GlobalLogger().warn << "**** FAILED TO LOAD WORLD DATA! Attempting to create new world... \n";
-        newSave = true;
-        if (!saveManager.createNewWorld({ .RandomSeed = saveManager.seedFromString(config.GetAsString("level-seed")) })) {
-            GlobalLogger().error << "**** FAILED TO CREATE NEW WORLD! \n";
-            exit(1);
-        }
-        GlobalLogger().info << "New world created successfully. \n";
-    }
-    // Initialize our region managers
-    overworldRegionManager.initialize(config.GetAsString("level-name") + "/region");
-    hellRegionManager.initialize(config.GetAsString("level-name") + "/DIM-1/region");
+	// Basic save loading
+	bool newSave = false;
+	if (!saveManager.initialize(config.GetAsString("level-name"))) {
+		GlobalLogger().warn << "**** FAILED TO LOAD WORLD DATA! Attempting to create new world... \n";
+		newSave = true;
+		if (!saveManager.createNewWorld({ .RandomSeed = saveManager.seedFromString(config.GetAsString("level-seed")) })) {
+			GlobalLogger().error << "**** FAILED TO CREATE NEW WORLD! \n";
+			exit(1);
+		}
+		GlobalLogger().info << "New world created successfully. \n";
+	}
+	// Initialize our region managers
+	overworldRegionManager.initialize(config.GetAsString("level-name") + "/region");
+	hellRegionManager.initialize(config.GetAsString("level-name") + "/DIM-1/region");
 
-    // Initialize our world seed
-    saveManager.loadLevelData();
-    world.initWorldSeed(saveManager.getLevelData().RandomSeed);
-    worldHell.initWorldSeed(saveManager.getLevelData().RandomSeed);
+	// Initialize our world seed
+	saveManager.loadLevelData();
+	world.initWorldSeed(saveManager.getLevelData().RandomSeed);
+	worldHell.initWorldSeed(saveManager.getLevelData().RandomSeed);
 
 	world.elapsed_ticks = saveManager.getLevelData().time;
 	worldHell.elapsed_ticks = saveManager.getLevelData().time;
 
-    // Bind our region managers
-    world.regionManager = &overworldRegionManager;
-    worldHell.regionManager = &hellRegionManager;
+	// Bind our region managers
+	world.regionManager = &overworldRegionManager;
+	worldHell.regionManager = &hellRegionManager;
 
-    // If we created a new save then make a new spawn point
+	// If we created a new save then make a new spawn point
 	if (newSave) {
-        world.initSpawn();
-    } else {
-        world.spawnPoint = saveManager.getLevelData().spawnPoint;
-    }
-    worldHell.spawnPoint = world.spawnPoint; // Interestingly the world spawn doesn't have the /= or *= 8 stuff
+		world.initSpawn();
+	} else {
+		world.spawnPoint = saveManager.getLevelData().spawnPoint;
+	}
+	worldHell.spawnPoint = world.spawnPoint; // Interestingly the world spawn doesn't have the /= or *= 8 stuff
 }
 
 Server::~Server() {
-    this->stop();
+	this->stop();
 }
 
 void Server::indexAddChunk(PlayerSession& session, const Int32_2& pos) {
-    auto& vec = chunkSessions[chunkKey(pos, session.dimension)];
-    // Avoid duplicates (should never happen, but be safe)
-    for (auto* p : vec)
-        if (p == &session) return;
-    vec.push_back(&session);
+	auto& vec = chunkSessions[chunkKey(pos, session.dimension)];
+	// Avoid duplicates (should never happen, but be safe)
+	for (auto* p : vec)
+		if (p == &session)
+			return;
+	vec.push_back(&session);
 }
 
 void Server::indexRemoveChunk(PlayerSession& session, const Int32_2& pos) {
-    auto it = chunkSessions.find(chunkKey(pos, session.dimension));
-    if (it == chunkSessions.end()) return;
-    auto& vec = it->second;
-    vec.erase(std::remove(vec.begin(), vec.end(), &session), vec.end());
-    if (vec.empty()) chunkSessions.erase(it);
+	auto it = chunkSessions.find(chunkKey(pos, session.dimension));
+	if (it == chunkSessions.end())
+		return;
+	auto& vec = it->second;
+	vec.erase(std::remove(vec.begin(), vec.end(), &session), vec.end());
+	if (vec.empty())
+		chunkSessions.erase(it);
 }
 
 void Server::indexRemoveSession(PlayerSession& session) {
-    for (const auto& pos : session.flushedChunks)
-        indexRemoveChunk(session, pos);
+	for (const auto& pos : session.flushedChunks)
+		indexRemoveChunk(session, pos);
 }
 
 void Server::loadConfig() {
-    if (!config.LoadFromDisk()) {
-        config.Overwrite({ {"level-name", "world"},
-            //{"view-distance", "10"},
-            //{"white-list", "false"},
-            //{"server-ip", ""},
-            //{"motd", "A Minecraft Server"},
-            //{"pvp","true"},
-            // use a random device to seed another prng that gives us our seed
-            {"level-seed", std::to_string(std::mt19937(std::random_device()())())},
-            //{"spawn-animals",true}
-            {"server-port", "25565"},
-            //{"allow-nether",true},
-            //{"spawn-monsters","true"},
-            //{"max-players", "-1"},
-            //{"online-mode","false"},
-            //{"allow-flight","false"}
-            });
-        config.SaveToDisk();
-    }
-    //chunkDistance = config.GetAsNumber<int32_t>("view-distance");
-    serverPort = config.GetAsNumber<int32_t>("server-port");
-    //motd = config.GetAsString("motd");
-    //maximumPlayers = config.GetAsNumber<int32_t>("max-players");
-    //maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
-    //whitelistEnabled = config.GetAsBoolean("white-list");
+	if (!config.LoadFromDisk()) {
+		config.Overwrite({
+		    { "level-name", "world" },
+		    //{"view-distance", "10"},
+		    //{"white-list", "false"},
+		    //{"server-ip", ""},
+		    //{"motd", "A Minecraft Server"},
+		    //{"pvp","true"},
+		    // use a random device to seed another prng that gives us our seed
+		    { "level-seed", std::to_string(std::mt19937(std::random_device()())()) },
+		    //{"spawn-animals",true}
+		    { "server-port", "25565" },
+		    //{"allow-nether",true},
+		    //{"spawn-monsters","true"},
+		    //{"max-players", "-1"},
+		    //{"online-mode","false"},
+		    //{"allow-flight","false"}
+		});
+		config.SaveToDisk();
+	}
+	//chunkDistance = config.GetAsNumber<int32_t>("view-distance");
+	serverPort = config.GetAsNumber<int32_t>("server-port");
+	//motd = config.GetAsString("motd");
+	//maximumPlayers = config.GetAsNumber<int32_t>("max-players");
+	//maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
+	//whitelistEnabled = config.GetAsBoolean("white-list");
 }
 
 void Server::startup() {
-    auto startupStart = std::chrono::steady_clock::now();
-    GlobalLogger().info << "Initializing server startup.. \n";
-    GlobalLogger().info << "Thread count: " << int(world.pool.get_thread_count()) << "\n";
+	auto startupStart = std::chrono::steady_clock::now();
+	GlobalLogger().info << "Initializing server startup.. \n";
+	GlobalLogger().info << "Thread count: " << int(world.pool.get_thread_count()) << "\n";
 
-    // Register blocks, setup the world, setup commands, etc.
-    Blocks::registerAll();
-    command_manager.Init();
+	// Register blocks, setup the world, setup commands, etc.
+	Blocks::registerAll();
+	command_manager.Init();
 
-    // Setup the block callback so we can send it to clients
-    world.onBlockUpdate = [this](PendingBlock pendingBlock, Int32_2 chunkPos) {
-        // Only enqueue if at least one session knows about this chunk.
-        auto idxIt = chunkSessions.find(chunkKey(chunkPos, 0));
-        bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
-        if (!anyInterested) {
-            // Any session with this chunk in-flight?
-            for (auto& session : players) {
-                if (session->dimension == 0 && session->sentChunks.contains(chunkPos)) { anyInterested = true; break; }
-            }
-        }
-        if (!anyInterested) return;
+	// Setup the block callback so we can send it to clients
+	world.onBlockUpdate = [this](PendingBlock pendingBlock, Int32_2 chunkPos) {
+		// Only enqueue if at least one session knows about this chunk.
+		auto idxIt = chunkSessions.find(chunkKey(chunkPos, 0));
+		bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
+		if (!anyInterested) {
+			// Any session with this chunk in-flight?
+			for (auto& session : players) {
+				if (session->dimension == 0 && session->sentChunks.contains(chunkPos)) {
+					anyInterested = true;
+					break;
+				}
+			}
+		}
+		if (!anyInterested)
+			return;
 
-        PendingBlock pendingNew = pendingBlock;
-        pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y, pendingBlock.block_pos.z & 15 };
-        chunkBlockChanges[chunkPos].push_back(pendingNew);
-        };
+		PendingBlock pendingNew = pendingBlock;
+		pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y,
+			                     pendingBlock.block_pos.z & 15 };
+		chunkBlockChanges[chunkPos].push_back(pendingNew);
+	};
 
-    worldHell.onBlockUpdate = [this](PendingBlock pendingBlock, Int32_2 chunkPos) {
-        auto idxIt = chunkSessions.find(chunkKey(chunkPos, -1));
-        bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
-        if (!anyInterested) {
-            for (auto& session : players) {
-                if (session->dimension == -1 && session->sentChunks.contains(chunkPos)) { anyInterested = true; break; }
-            }
-        }
-        if (!anyInterested) return;
+	worldHell.onBlockUpdate = [this](PendingBlock pendingBlock, Int32_2 chunkPos) {
+		auto idxIt = chunkSessions.find(chunkKey(chunkPos, -1));
+		bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
+		if (!anyInterested) {
+			for (auto& session : players) {
+				if (session->dimension == -1 && session->sentChunks.contains(chunkPos)) {
+					anyInterested = true;
+					break;
+				}
+			}
+		}
+		if (!anyInterested)
+			return;
 
-        PendingBlock pendingNew = pendingBlock;
-        pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y, pendingBlock.block_pos.z & 15 };
-        chunkBlockChangesHell[chunkPos].push_back(pendingNew);
-        };
+		PendingBlock pendingNew = pendingBlock;
+		pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y,
+			                     pendingBlock.block_pos.z & 15 };
+		chunkBlockChangesHell[chunkPos].push_back(pendingNew);
+	};
 
-    // Get spawn ready
-    constexpr int spawn_chunk_distance = 4;
-    int total_spawn_chunks =
-        (spawn_chunk_distance + spawn_chunk_distance + 1) *
-        (spawn_chunk_distance + spawn_chunk_distance + 1);
-    int loaded_chunks = 0;
-    bool spawnDone = false;
-    auto start = std::chrono::steady_clock::now();
-    GlobalLogger().info << "Server spawn is " << Int2(int(world.spawnPoint.x), int(world.spawnPoint.z)) << "\n";
-    GlobalLogger().info << "Loading spawn chunks for Overworld: (" << total_spawn_chunks << ")\n";
+	// Get spawn ready
+	constexpr int spawn_chunk_distance = 4;
+	int total_spawn_chunks = (spawn_chunk_distance + spawn_chunk_distance + 1) *
+	                         (spawn_chunk_distance + spawn_chunk_distance + 1);
+	int loaded_chunks = 0;
+	bool spawnDone = false;
+	auto start = std::chrono::steady_clock::now();
+	GlobalLogger().info << "Server spawn is " << Int2(int(world.spawnPoint.x), int(world.spawnPoint.z)) << "\n";
+	GlobalLogger().info << "Loading spawn chunks for Overworld: (" << total_spawn_chunks << ")\n";
 
-    // Push every single spawn chunk to get ready for generation
-    std::unordered_set<Int32_2> wanted;
-    for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
-        for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
-            Int32_2 pos = { (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz };
-            wanted.insert(pos);
-        }
-    }
+	// Push every single spawn chunk to get ready for generation
+	std::unordered_set<Int32_2> wanted;
+	for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
+		for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
+			Int32_2 pos = { (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz };
+			wanted.insert(pos);
+		}
+	}
 
-    // Actually request chunks
-    for (auto pos : wanted) {
-        if (!world.chunks.contains(pos)) {
-            auto c = std::make_shared<Chunk>();
-            c->spawnChunk = true;
-            c->cpos = pos;
-            world.chunks.emplace(pos, std::move(c));
-        }
-        if (!worldHell.chunks.contains(pos)) {
-            auto c = std::make_shared<Chunk>();
-            c->spawnChunk = true;
-            c->cpos = pos;
-            worldHell.chunks.emplace(pos, std::move(c));
-        }
-    }
+	// Actually request chunks
+	for (auto pos : wanted) {
+		if (!world.chunks.contains(pos)) {
+			auto c = std::make_shared<Chunk>();
+			c->spawnChunk = true;
+			c->cpos = pos;
+			world.chunks.emplace(pos, std::move(c));
+		}
+		if (!worldHell.chunks.contains(pos)) {
+			auto c = std::make_shared<Chunk>();
+			c->spawnChunk = true;
+			c->cpos = pos;
+			worldHell.chunks.emplace(pos, std::move(c));
+		}
+	}
 
-    // Load the overworld
-    while (!spawnDone) {
-        loaded_chunks = 0;
-        // Force gen these chunks AS FAST AS POSSIBLE
-        world.pumpPipeline({});
-        world.pool.wait();
-        world.drainGenQueue();
-        world.regionManager->iopool.wait();
-        world.drainLoadQueue();            
-        world.populateReady();
-        world.lightManager.processLightQueue(world);
-        // Make sure all lighting is done
-        world.lightManager.processLightQueue(world);
+	// Load the overworld
+	while (!spawnDone) {
+		loaded_chunks = 0;
+		// Force gen these chunks AS FAST AS POSSIBLE
+		world.pumpPipeline({});
+		world.pool.wait();
+		world.drainGenQueue();
+		world.regionManager->iopool.wait();
+		world.drainLoadQueue();
+		world.populateReady();
+		world.lightManager.processLightQueue(world);
+		// Make sure all lighting is done
+		world.lightManager.processLightQueue(world);
 
-        for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
-            for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
-                Int32_2 p{ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz };
-                auto it = world.chunks.find(p);
-                if (it != world.chunks.end() && it->second->state.load() >= ChunkState::Generated)
-                    loaded_chunks++;
-            }
-        }
+		for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
+			for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
+				Int32_2 p{ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz };
+				auto it = world.chunks.find(p);
+				if (it != world.chunks.end() && it->second->state.load() >= ChunkState::Generated)
+					loaded_chunks++;
+			}
+		}
 
-        // Update load percentage every second
-        if (std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count() >= 1.0f)
-        {
-            int percentLoaded = int((float(loaded_chunks) / float(total_spawn_chunks)) * 100.0f);
-            GlobalLogger().info << "Loading spawn.. " << percentLoaded << "%\n";
-            start = std::chrono::steady_clock::now();
-        }
+		// Update load percentage every second
+		if (std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count() >= 1.0f) {
+			int percentLoaded = int((float(loaded_chunks) / float(total_spawn_chunks)) * 100.0f);
+			GlobalLogger().info << "Loading spawn.. " << percentLoaded << "%\n";
+			start = std::chrono::steady_clock::now();
+		}
 
-        // Have we loaded all the spawn chunks?
-        spawnDone = loaded_chunks >= total_spawn_chunks;
-    }
-    GlobalLogger().info << "Loading spawn.. 100%\n";
-    GlobalLogger().info << "Loading spawn chunks for Hell: (" << total_spawn_chunks << ")\n";
-    spawnDone = false;
-    // Load the hell dimension
-    while (!spawnDone) {
-        loaded_chunks = 0;
-        // Force gen these chunks AS FAST AS POSSIBLE
-        worldHell.pumpPipeline({});
-        worldHell.pool.wait();
-        worldHell.drainGenQueue();
-        worldHell.regionManager->iopool.wait();
-        worldHell.drainLoadQueue();
-        worldHell.populateReady();
-        worldHell.lightManager.processLightQueue(worldHell);
-        // Make sure all lighting is done
-        worldHell.lightManager.processLightQueue(worldHell);
-        for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
-            for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
-                Int32_2 p{ (worldHell.spawnPoint.x >> 4) + dx, (worldHell.spawnPoint.z >> 4) + dz };
-                auto it = worldHell.chunks.find(p);
-                if (it != worldHell.chunks.end() && it->second->state.load() >= ChunkState::Generated)
-                    loaded_chunks++;
-            }
-        }
+		// Have we loaded all the spawn chunks?
+		spawnDone = loaded_chunks >= total_spawn_chunks;
+	}
+	GlobalLogger().info << "Loading spawn.. 100%\n";
+	GlobalLogger().info << "Loading spawn chunks for Hell: (" << total_spawn_chunks << ")\n";
+	spawnDone = false;
+	// Load the hell dimension
+	while (!spawnDone) {
+		loaded_chunks = 0;
+		// Force gen these chunks AS FAST AS POSSIBLE
+		worldHell.pumpPipeline({});
+		worldHell.pool.wait();
+		worldHell.drainGenQueue();
+		worldHell.regionManager->iopool.wait();
+		worldHell.drainLoadQueue();
+		worldHell.populateReady();
+		worldHell.lightManager.processLightQueue(worldHell);
+		// Make sure all lighting is done
+		worldHell.lightManager.processLightQueue(worldHell);
+		for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
+			for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
+				Int32_2 p{ (worldHell.spawnPoint.x >> 4) + dx, (worldHell.spawnPoint.z >> 4) + dz };
+				auto it = worldHell.chunks.find(p);
+				if (it != worldHell.chunks.end() && it->second->state.load() >= ChunkState::Generated)
+					loaded_chunks++;
+			}
+		}
 
-        // Update load percentage every second
-        if (std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count() >= 1.0f)
-        {
-            int percentLoaded = int((float(loaded_chunks) / float(total_spawn_chunks)) * 100.0f);
-            GlobalLogger().info << "Loading spawn.. " << percentLoaded << "%\n";
-            start = std::chrono::steady_clock::now();
-        }
+		// Update load percentage every second
+		if (std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count() >= 1.0f) {
+			int percentLoaded = int((float(loaded_chunks) / float(total_spawn_chunks)) * 100.0f);
+			GlobalLogger().info << "Loading spawn.. " << percentLoaded << "%\n";
+			start = std::chrono::steady_clock::now();
+		}
 
-        // Have we loaded all the spawn chunks?
-        spawnDone = loaded_chunks >= total_spawn_chunks;
-    }
-    GlobalLogger().info << "Loading spawn.. 100%\n";
+		// Have we loaded all the spawn chunks?
+		spawnDone = loaded_chunks >= total_spawn_chunks;
+	}
+	GlobalLogger().info << "Loading spawn.. 100%\n";
 
-    float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
-    GlobalLogger().info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";
+	float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
+	GlobalLogger().info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";
 }
 
 void Server::run() {
-    startup();
-    auto lastTime = std::chrono::steady_clock::now();
+	startup();
+	auto lastTime = std::chrono::steady_clock::now();
 
-    while (!shutdownRequested.load()) {
-        int ticks_ran = 0;
+	while (!shutdownRequested.load()) {
+		int ticks_ran = 0;
 
-        auto now = std::chrono::steady_clock::now();
-        float delta = std::chrono::duration<float>(now - lastTime).count();
-        lastTime = now;
+		auto now = std::chrono::steady_clock::now();
+		float delta = std::chrono::duration<float>(now - lastTime).count();
+		lastTime = now;
 
-        accumulator += delta;
+		accumulator += delta;
 
-        while (accumulator >= TICK_DELTA && ticks_ran <= MAX_TICKS_PER_FRAME) {
-            auto tickStart = std::chrono::steady_clock::now();
-            tick();
-            float tickMs = std::chrono::duration<float>(std::chrono::steady_clock::now() - tickStart).count() * 1000.0f;
-            if (tickMs > 50.0f) {
-                GlobalLogger().warn << "Can't keep up! Tick took " << int(tickMs) << " ms\n";
-            }
-            tickTimeAccum += tickMs;
-            tickCount++;
-            if (tickCount >= 40) {
-                GlobalLogger().info << std::setprecision(2) << "Avg tick: " << (double(tickTimeAccum) / double(tickCount)) << " ms\n";
-                tickTimeAccum = 0.0f;
-                tickCount = 0;
-            }
-            accumulator -= TICK_DELTA;
-            ticks_ran++;
-        }
+		while (accumulator >= TICK_DELTA && ticks_ran <= MAX_TICKS_PER_FRAME) {
+			auto tickStart = std::chrono::steady_clock::now();
+			tick();
+			float tickMs = std::chrono::duration<float>(std::chrono::steady_clock::now() - tickStart).count() * 1000.0f;
+			if (tickMs > 50.0f) {
+				GlobalLogger().warn << "Can't keep up! Tick took " << int(tickMs) << " ms\n";
+			}
+			tickTimeAccum += tickMs;
+			tickCount++;
+			if (tickCount >= 40) {
+				GlobalLogger().info << std::setprecision(2)
+				                    << "Avg tick: " << (double(tickTimeAccum) / double(tickCount)) << " ms\n";
+				tickTimeAccum = 0.0f;
+				tickCount = 0;
+			}
+			accumulator -= TICK_DELTA;
+			ticks_ran++;
+		}
 
-        if (ticks_ran == MAX_TICKS_PER_FRAME)
-            accumulator = 0.0f;
-    }
+		if (ticks_ran == MAX_TICKS_PER_FRAME)
+			accumulator = 0.0f;
+	}
 
-    // Shutdown was requested. Save and clean up on the main thread
-    stop();
-    shutdownRequested.store(false); // unblock the ctrl handler thread
+	// Shutdown was requested. Save and clean up on the main thread
+	stop();
+	shutdownRequested.store(false); // unblock the ctrl handler thread
 }
 
 void Server::stop() {
-    if (stopped) return;
-    stopped = true;
-    GlobalLogger().info << "Server shutting down...\n";
-    for (auto& session : players) {
-        disconnectPlayer(*session, L"Server Closed");
-        session->stream.flushWriteBufferBlocking();
-        auto savedNbt = session->serializeToNBT();
-        saveManager.savePlayerNBT(
-            std::string(session->username.begin(), session->username.end()),
-            savedNbt
-        );
-    }
-    closeSocket();
-    world.shutdown();
-    worldHell.shutdown();
+	if (stopped)
+		return;
+	stopped = true;
+	GlobalLogger().info << "Server shutting down...\n";
+	for (auto& session : players) {
+		disconnectPlayer(*session, L"Server Closed");
+		session->stream.flushWriteBufferBlocking();
+		auto savedNbt = session->serializeToNBT();
+		saveManager.savePlayerNBT(std::string(session->username.begin(), session->username.end()), savedNbt);
+	}
+	closeSocket();
+	world.shutdown();
+	worldHell.shutdown();
 
-    // Save our level file
-    levelData& curLevelData = saveManager.getLevelData();
-    curLevelData.RandomSeed = world.seed;
-    curLevelData.spawnPoint = world.spawnPoint;
-    curLevelData.time = world.elapsed_ticks;
-    saveManager.saveLevelFile(curLevelData);
+	// Save our level file
+	levelData& curLevelData = saveManager.getLevelData();
+	curLevelData.RandomSeed = world.seed;
+	curLevelData.spawnPoint = world.spawnPoint;
+	curLevelData.time = world.elapsed_ticks;
+	saveManager.saveLevelFile(curLevelData);
 }
 
 void Server::acceptNewPlayers() {
-    auto clientSocket = createClientSocket();
-    if (clientSocket < 0) return;
-    players.push_back(std::make_unique<PlayerSession>(clientSocket));
-    players.back()->players = &players;
+	auto clientSocket = createClientSocket();
+	if (clientSocket < 0)
+		return;
+	players.push_back(std::make_unique<PlayerSession>(clientSocket));
+	players.back()->players = &players;
 }
 
 // Positions in entity space are quantized!!
 void Server::broadcastPlayerMovement(PlayerSession& session) {
-    int32_t newFpX = static_cast<int32_t>(session.position.pos.x * 32.0);
+	int32_t newFpX = static_cast<int32_t>(session.position.pos.x * 32.0);
 
-    // Subtract 1/64 offset: client adds (serverPosY/32 + 1/64) on teleport,
-    int32_t newFpY = static_cast<int32_t>((session.position.pos.y - (1.0 / 64.0)) * 32.0);
-    int32_t newFpZ = static_cast<int32_t>(session.position.pos.z * 32.0);
-    int8_t newYaw = static_cast<int8_t>(session.rotation.x / 360.0f * 256.0f);
-    int8_t newPitch = static_cast<int8_t>(session.rotation.y / 360.0f * 256.0f);
+	// Subtract 1/64 offset: client adds (serverPosY/32 + 1/64) on teleport,
+	int32_t newFpY = static_cast<int32_t>((session.position.pos.y - (1.0 / 64.0)) * 32.0);
+	int32_t newFpZ = static_cast<int32_t>(session.position.pos.z * 32.0);
+	int8_t newYaw = static_cast<int8_t>(session.rotation.x / 360.0f * 256.0f);
+	int8_t newPitch = static_cast<int8_t>(session.rotation.y / 360.0f * 256.0f);
 
-    // Relative-move Y does not have the 1/64 offset
-    int32_t relFpY = static_cast<int32_t>(session.position.pos.y * 32.0);
-    int32_t dx = newFpX - session.lastFpX;
-    int32_t dy = relFpY - session.lastFpY;
-    int32_t dz = newFpZ - session.lastFpZ;
+	// Relative-move Y does not have the 1/64 offset
+	int32_t relFpY = static_cast<int32_t>(session.position.pos.y * 32.0);
+	int32_t dx = newFpX - session.lastFpX;
+	int32_t dy = relFpY - session.lastFpY;
+	int32_t dz = newFpZ - session.lastFpZ;
 
-    bool moved = (dx != 0 || dy != 0 || dz != 0);
-    bool rotated = (newYaw != session.lastYaw || newPitch != session.lastPitch);
-    if (!moved && !rotated) return;
+	bool moved = (dx != 0 || dy != 0 || dz != 0);
+	bool rotated = (newYaw != session.lastYaw || newPitch != session.lastPitch);
+	if (!moved && !rotated)
+		return;
 
-    // If delta is too large, use teleport instead (128 fp units = 4 blocks)
-    bool needsTeleport = (std::abs(dx) > 128 || std::abs(dy) > 128 || std::abs(dz) > 128);
+	// If delta is too large, use teleport instead (128 fp units = 4 blocks)
+	bool needsTeleport = (std::abs(dx) > 128 || std::abs(dy) > 128 || std::abs(dz) > 128);
 
-    // Update last-broadcast state
-    session.lastFpX = newFpX;
-    session.lastFpY = relFpY;
-    session.lastFpZ = newFpZ;
-    session.lastYaw = newYaw;
-    session.lastPitch = newPitch;
+	// Update last-broadcast state
+	session.lastFpX = newFpX;
+	session.lastFpY = relFpY;
+	session.lastFpZ = newFpZ;
+	session.lastYaw = newYaw;
+	session.lastPitch = newPitch;
 }
 
 void Server::tick() {
-    acceptNewPlayers();
-    const int playerCount = int(players.size());
-    std::vector<ClientPosition> overworldPositions;
-    std::vector<ClientPosition> netherPositions;
-    for (auto& session : players) {
-        if (session->connState == ConnectionState::WaitingForSpawnChunks ||
-            session->connState == ConnectionState::Playing) {
-            if (session->dimension == -1)
-                netherPositions.push_back(session->position);
-            else
-                overworldPositions.push_back(session->position);
-        }
-    }
-    world.tick(overworldPositions);
-    world.update(overworldPositions);
-    worldHell.tick(netherPositions);
-    worldHell.update(netherPositions);
+	acceptNewPlayers();
+	const int playerCount = int(players.size());
+	std::vector<ClientPosition> overworldPositions;
+	std::vector<ClientPosition> netherPositions;
+	for (auto& session : players) {
+		if (session->connState == ConnectionState::WaitingForSpawnChunks ||
+		    session->connState == ConnectionState::Playing) {
+			if (session->dimension == -1)
+				netherPositions.push_back(session->position);
+			else
+				overworldPositions.push_back(session->position);
+		}
+	}
+	world.tick(overworldPositions);
+	world.update(overworldPositions);
+	worldHell.tick(netherPositions);
+	worldHell.update(netherPositions);
 
-    // Send all of the block changes that have accumulated since the last tick, then clear the list.
-    std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChanges;
-    std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChangesHell;
-    localBlockChanges.swap(chunkBlockChanges);
-    localBlockChangesHell.swap(chunkBlockChangesHell);
-    for (auto& session : players) {
-        switch (session->connState) {
-        case ConnectionState::Handshaking:           handleHandshake(*session);    break;
-        case ConnectionState::LoggingIn:             handleLogin(*session);        break;
-        case ConnectionState::WaitingForSpawnChunks:
-            waitForSpawnChunks(*session); break;
-        case ConnectionState::Playing: {
-            WorldManager& sessionWorld = session->dimension == -1 ? worldHell : world;
-            chunkSender.enqueue(*session, sessionWorld, 16);
-            chunkSender.flush(*session);
-            processIncoming(*session);
-            broadcastPlayerMovement(*session);
-            if (sessionWorld.elapsed_ticks % 20 == 0) {
-                // Update the server time so client's don't desync
-                Packet::SetTime time;
-                time.time = sessionWorld.elapsed_ticks;
-                time.Serialize(session->stream);
-            }
-            break;
-        }
-        }
-    }
+	// Send all of the block changes that have accumulated since the last tick, then clear the list.
+	std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChanges;
+	std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChangesHell;
+	localBlockChanges.swap(chunkBlockChanges);
+	localBlockChangesHell.swap(chunkBlockChangesHell);
+	for (auto& session : players) {
+		switch (session->connState) {
+		case ConnectionState::Handshaking:
+			handleHandshake(*session);
+			break;
+		case ConnectionState::LoggingIn:
+			handleLogin(*session);
+			break;
+		case ConnectionState::WaitingForSpawnChunks:
+			waitForSpawnChunks(*session);
+			break;
+		case ConnectionState::Playing: {
+			WorldManager& sessionWorld = session->dimension == -1 ? worldHell : world;
+			chunkSender.enqueue(*session, sessionWorld, 16);
+			chunkSender.flush(*session);
+			processIncoming(*session);
+			broadcastPlayerMovement(*session);
+			if (sessionWorld.elapsed_ticks % 20 == 0) {
+				// Update the server time so client's don't desync
+				Packet::SetTime time;
+				time.time = sessionWorld.elapsed_ticks;
+				time.Serialize(session->stream);
+			}
+			break;
+		}
+		}
+	}
 
-    for (auto& session : players) {
-        // Drain chunk-session index updates that ChunkSender recorded.
-        for (const auto& pos : session->newlyFlushed)
-            indexAddChunk(*session, pos);
-        session->newlyFlushed.clear();
-        for (const auto& pos : session->newlyUnloaded)
-            indexRemoveChunk(*session, pos);
-        session->newlyUnloaded.clear();
+	for (auto& session : players) {
+		// Drain chunk-session index updates that ChunkSender recorded.
+		for (const auto& pos : session->newlyFlushed)
+			indexAddChunk(*session, pos);
+		session->newlyFlushed.clear();
+		for (const auto& pos : session->newlyUnloaded)
+			indexRemoveChunk(*session, pos);
+		session->newlyUnloaded.clear();
 
-        // Check inventory diffs
-        if (!session->activeInteraction) continue;
+		// Check inventory diffs
+		if (!session->activeInteraction)
+			continue;
 
-        // Force close windows that reference tile entities that have been deleted
-        if (!session->activeInteraction->canExist()) {
-            PacketUtilities::CloseContainer(*session);
-            continue;
-        }
+		// Force close windows that reference tile entities that have been deleted
+		if (!session->activeInteraction->canExist()) {
+			PacketUtilities::CloseContainer(*session);
+			continue;
+		}
 
-        // Send each differing slot
-        auto diffs = session->activeInteraction->tickDiff();
-        if (diffs.size() <= 5) {
-            for (auto difference : diffs) {
-                ItemStack invalid{ ITEM_INVALID };
-                ItemStack* item = difference.stack.has_value() ? &difference.stack.value() : &invalid;
-                PacketUtilities::sendSlot(*session, session->openWindowId, difference.slot, item);
-            }
-        }
-        else {
-            // Too many changes, just resend the whole inventory
-            PacketUtilities::sendInventory(*session, session->openWindowId, *session->activeInteraction->inventory);
-        }
-    }
+		// Send each differing slot
+		auto diffs = session->activeInteraction->tickDiff();
+		if (diffs.size() <= 5) {
+			for (auto difference : diffs) {
+				ItemStack invalid{ ITEM_INVALID };
+				ItemStack* item = difference.stack.has_value() ? &difference.stack.value() : &invalid;
+				PacketUtilities::sendSlot(*session, session->openWindowId, difference.slot, item);
+			}
+		} else {
+			// Too many changes, just resend the whole inventory
+			PacketUtilities::sendInventory(*session, session->openWindowId, *session->activeInteraction->inventory);
+		}
+	}
 
-    // Dispatch block changes. 
-    auto dispatchBlockChanges = [&](std::unordered_map<Int32_2, std::vector<PendingBlock>>& changes, int8_t dimension, WorldManager& dimWorld) {
-        for (auto& [chunk, blockChanges] : changes) {
-            // Find which sessions care about this chunk
-            // Split into flushed (send immediately) and sentOnly (queue).
-            auto indexIt = chunkSessions.find(chunkKey(chunk, dimension));
-            std::vector<PlayerSession*> flushedSessions;
-            std::vector<PlayerSession*> sentOnlySessions;
+	// Dispatch block changes.
+	auto dispatchBlockChanges = [&](std::unordered_map<Int32_2, std::vector<PendingBlock>>& changes, int8_t dimension,
+	                                WorldManager& dimWorld) {
+		for (auto& [chunk, blockChanges] : changes) {
+			// Find which sessions care about this chunk
+			// Split into flushed (send immediately) and sentOnly (queue).
+			auto indexIt = chunkSessions.find(chunkKey(chunk, dimension));
+			std::vector<PlayerSession*> flushedSessions;
+			std::vector<PlayerSession*> sentOnlySessions;
 
-            if (indexIt != chunkSessions.end())
-                flushedSessions = indexIt->second;
+			if (indexIt != chunkSessions.end())
+				flushedSessions = indexIt->second;
 
-            // Sessions that have the chunk in-flight (sentChunks but not flushedChunks) still need to queue the updates.
-            for (auto& session : players) {
-                if (session->connState != ConnectionState::Playing &&
-                    session->connState != ConnectionState::WaitingForSpawnChunks) continue;
-                if (session->dimension != dimension) continue;
-                if (session->flushedChunks.contains(chunk)) continue; // already in flushedSessions
-                if (session->sentChunks.contains(chunk)) {
-                    sentOnlySessions.push_back(session.get());
-                }
-            }
+			// Sessions that have the chunk in-flight (sentChunks but not flushedChunks) still need to queue the updates.
+			for (auto& session : players) {
+				if (session->connState != ConnectionState::Playing &&
+				    session->connState != ConnectionState::WaitingForSpawnChunks)
+					continue;
+				if (session->dimension != dimension)
+					continue;
+				if (session->flushedChunks.contains(chunk))
+					continue; // already in flushedSessions
+				if (session->sentChunks.contains(chunk)) {
+					sentOnlySessions.push_back(session.get());
+				}
+			}
 
-            // Queue updates for sessions still waiting on the chunk to flush.
-            for (auto* session : sentOnlySessions) {
-                auto& q = session->pendingBlockChanges[chunk];
-                q.insert(q.end(), blockChanges.begin(), blockChanges.end());
-            }
-            if (flushedSessions.empty()) continue;
+			// Queue updates for sessions still waiting on the chunk to flush.
+			for (auto* session : sentOnlySessions) {
+				auto& q = session->pendingBlockChanges[chunk];
+				q.insert(q.end(), blockChanges.begin(), blockChanges.end());
+			}
+			if (flushedSessions.empty())
+				continue;
 
-            // Capture chunk ref once for sub-region jobs.
-            std::shared_ptr<Chunk> chunkRef = dimWorld.getChunk(chunk);
+			// Capture chunk ref once for sub-region jobs.
+			std::shared_ptr<Chunk> chunkRef = dimWorld.getChunk(chunk);
 
-            if (blockChanges.size() == 1) {
-                // Single block change: serialise once, raw-copy to every session.
-                const PendingBlock& pb = blockChanges[0];
-                Packet::SetBlock sb;
-                sb.block = { pb.block.type, pb.block.data };
-                sb.position = {
-                    static_cast<int32_t>(pb.block_pos.x + (chunk.x * 16)),
-                    static_cast<int8_t>(pb.block_pos.y),
-                    static_cast<int32_t>(pb.block_pos.z + (chunk.z * 16))
-                };
-                // Serialise into a temporary buffer, then send to all sessions.
-                NetworkStream tmpStream(-1);
-                sb.Serialize(tmpStream);
-                const auto& buf = tmpStream.getRawWriteBuffer();
-                for (auto* session : flushedSessions)
-                    session->stream.writeRaw(buf.data(), buf.size());
-            }
-            else if (blockChanges.size() < 10) {
-                // Multi-block packet
-                auto format_multi_block = [](int8_t x, int8_t y, int8_t z) {
-                    return (
-                        ((int16_t(x) & 0x0F) << 12) |
-                        ((int16_t(z) & 0x0F) << 8) |
-                        ((int16_t(y) & 0xFF))
-                        );
-                    };
-                Packet::SetMultipleBlocks smb;
-                smb.chunk_position = { chunk.x, chunk.z };
-                for (const auto& pb : blockChanges) {
-                    smb.block_coordinates.push_back(
-                        static_cast<int16_t>(
-                            format_multi_block(
-                                int8_t(pb.block_pos.x),
-                                int8_t(pb.block_pos.y),
-                                int8_t(pb.block_pos.z)
-                            )
-                            )
-                    );
-                    smb.block_metadata.push_back(int8_t(pb.block.data));
-                    smb.block_types.push_back(pb.block.type);
-                }
-                smb.number_of_blocks = static_cast<int16_t>(smb.block_coordinates.size());
-                NetworkStream tmpStream(-1);
-                smb.Serialize(tmpStream);
-                const auto& buf = tmpStream.getRawWriteBuffer();
-                for (auto* session : flushedSessions)
-                    session->stream.writeRaw(buf.data(), buf.size());
-            }
-            else {
-                // Sub-region: compression is async per-session via ChunkSender.
-                for (auto* session : flushedSessions)
-                    chunkSender.sendBlockUpdates(*session, chunk, blockChanges, chunkRef);
-            }
-        }
-        };
-    dispatchBlockChanges(localBlockChanges, 0, world);
-    dispatchBlockChanges(localBlockChangesHell, -1, worldHell);
+			if (blockChanges.size() == 1) {
+				// Single block change: serialise once, raw-copy to every session.
+				const PendingBlock& pb = blockChanges[0];
+				Packet::SetBlock sb;
+				sb.block = { pb.block.type, pb.block.data };
+				sb.position = { static_cast<int32_t>(pb.block_pos.x + (chunk.x * 16)),
+					            static_cast<int8_t>(pb.block_pos.y),
+					            static_cast<int32_t>(pb.block_pos.z + (chunk.z * 16)) };
+				// Serialise into a temporary buffer, then send to all sessions.
+				NetworkStream tmpStream(-1);
+				sb.Serialize(tmpStream);
+				const auto& buf = tmpStream.getRawWriteBuffer();
+				for (auto* session : flushedSessions)
+					session->stream.writeRaw(buf.data(), buf.size());
+			} else if (blockChanges.size() < 10) {
+				// Multi-block packet
+				auto format_multi_block = [](int8_t x, int8_t y, int8_t z) {
+					return (((int16_t(x) & 0x0F) << 12) | ((int16_t(z) & 0x0F) << 8) | ((int16_t(y) & 0xFF)));
+				};
+				Packet::SetMultipleBlocks smb;
+				smb.chunk_position = { chunk.x, chunk.z };
+				for (const auto& pb : blockChanges) {
+					smb.block_coordinates.push_back(static_cast<int16_t>(
+					    format_multi_block(int8_t(pb.block_pos.x), int8_t(pb.block_pos.y), int8_t(pb.block_pos.z))));
+					smb.block_metadata.push_back(int8_t(pb.block.data));
+					smb.block_types.push_back(pb.block.type);
+				}
+				smb.number_of_blocks = static_cast<int16_t>(smb.block_coordinates.size());
+				NetworkStream tmpStream(-1);
+				smb.Serialize(tmpStream);
+				const auto& buf = tmpStream.getRawWriteBuffer();
+				for (auto* session : flushedSessions)
+					session->stream.writeRaw(buf.data(), buf.size());
+			} else {
+				// Sub-region: compression is async per-session via ChunkSender.
+				for (auto* session : flushedSessions)
+					chunkSender.sendBlockUpdates(*session, chunk, blockChanges, chunkRef);
+			}
+		}
+	};
+	dispatchBlockChanges(localBlockChanges, 0, world);
+	dispatchBlockChanges(localBlockChangesHell, -1, worldHell);
 
-    // Flush all pending outgoing data to the socket once per tick.
-    for (auto& session : players) {
-        session->stream.flushWriteBuffer();
-    }
+	// Flush all pending outgoing data to the socket once per tick.
+	for (auto& session : players) {
+		session->stream.flushWriteBuffer();
+	}
 
-    // Mark clients who have timed out for removal
-    auto now = std::chrono::steady_clock::now();
-    for (auto& session : players) {
-        if (session->connState == ConnectionState::Playing) {
-            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
-                now - session->last_packet_time).count();
-            if (elapsed > timeout_seconds) {
-                GlobalLogger().info << L"Player " << session->username << L" timed out\n";
-                disconnectPlayer(*session, L"Connection timed out.");
-            }
-        }
-        else {
-            // Kill stuck handshakers
-            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
-                now - session->last_packet_time).count();
-            if (elapsed > timeout_seconds) {
-                session->stream.setConnected(false);
-                GlobalLogger().info << L"Disconnected dataless stream. (Most likely a prober!)\n";
-            }
-        }
-    }
+	// Mark clients who have timed out for removal
+	auto now = std::chrono::steady_clock::now();
+	for (auto& session : players) {
+		if (session->connState == ConnectionState::Playing) {
+			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - session->last_packet_time).count();
+			if (elapsed > timeout_seconds) {
+				GlobalLogger().info << L"Player " << session->username << L" timed out\n";
+				disconnectPlayer(*session, L"Connection timed out.");
+			}
+		} else {
+			// Kill stuck handshakers
+			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - session->last_packet_time).count();
+			if (elapsed > timeout_seconds) {
+				session->stream.setConnected(false);
+				GlobalLogger().info << L"Disconnected dataless stream. (Most likely a prober!)\n";
+			}
+		}
+	}
 
-    // Force disconnect players that quit
-    players.erase(
-        std::remove_if(players.begin(), players.end(), [&](const auto& s) {
-            if (!s->stream.isConnected()) {
-                GlobalLogger().info << L"Disconnected client " << s->username
-                    << L" with entity id " << s->entityId << L"\n";
+	// Force disconnect players that quit
+	players.erase(std::remove_if(players.begin(), players.end(),
+	                             [&](const auto& s) {
+		                             if (!s->stream.isConnected()) {
+			                             GlobalLogger().info << L"Disconnected client " << s->username
+			                                                 << L" with entity id " << s->entityId << L"\n";
 
-                if (s->connState == ConnectionState::Playing ||
-                    s->connState == ConnectionState::WaitingForSpawnChunks) {
-                    auto savedNbt = s->serializeToNBT();
-                    saveManager.savePlayerNBT(
-                        std::string(s->username.begin(), s->username.end()),
-                        savedNbt
-                    );
-                }
+			                             if (s->connState == ConnectionState::Playing ||
+			                                 s->connState == ConnectionState::WaitingForSpawnChunks) {
+				                             auto savedNbt = s->serializeToNBT();
+				                             saveManager.savePlayerNBT(
+				                                 std::string(s->username.begin(), s->username.end()), savedNbt);
+			                             }
 
-                indexRemoveSession(*s);
-                chunkSender.remove(*s);
-                for (auto& other : players) {
-                    if (other.get() == s.get()) continue;
-                    if (other->connState != ConnectionState::Playing) continue;
-                    Packet::DespawnEntity despawn;
-                    despawn.entity_id = s->entityId;
-                    despawn.Serialize(other->stream);
-                }
-                return true;
-            }
-            return false;
-            }),
-        players.end()
-    );
+			                             indexRemoveSession(*s);
+			                             chunkSender.remove(*s);
+			                             for (auto& other : players) {
+				                             if (other.get() == s.get())
+					                             continue;
+				                             if (other->connState != ConnectionState::Playing)
+					                             continue;
+				                             Packet::DespawnEntity despawn;
+				                             despawn.entity_id = s->entityId;
+				                             despawn.Serialize(other->stream);
+			                             }
+			                             return true;
+		                             }
+		                             return false;
+	                             }),
+	              players.end());
 }
 
 void Server::handleHandshake(PlayerSession& session) {
-    if (!session.stream.hasData()) return;
-    PacketId packetId = session.stream.Read<PacketId>();
+	if (!session.stream.hasData())
+		return;
+	PacketId packetId = session.stream.Read<PacketId>();
 
-    if (session.stream.checkAndClearShortRead()) return;
-    if (packetId != PacketId::PreLogin) return;
+	if (session.stream.checkAndClearShortRead())
+		return;
+	if (packetId != PacketId::PreLogin)
+		return;
 
-    Packet::PreLogin incoming;
-    incoming.Deserialize(session.stream);
-    if (session.stream.checkAndClearShortRead()) {
-        return;
-    }
-    session.username = incoming.username;
+	Packet::PreLogin incoming;
+	incoming.Deserialize(session.stream);
+	if (session.stream.checkAndClearShortRead()) {
+		return;
+	}
+	session.username = incoming.username;
 
-    Packet::PreLogin response;
-    response.username = L"-";
-    response.Serialize(session.stream);
+	Packet::PreLogin response;
+	response.username = L"-";
+	response.Serialize(session.stream);
 
-    int realPlayers = 0;
-    for (auto& s : players)
-        if (s->connState == ConnectionState::Playing ||
-            s->connState == ConnectionState::WaitingForSpawnChunks)
-            realPlayers++;
+	int realPlayers = 0;
+	for (auto& s : players)
+		if (s->connState == ConnectionState::Playing || s->connState == ConnectionState::WaitingForSpawnChunks)
+			realPlayers++;
 
-    GlobalLogger().info << L"Player " << session.username << L" is logging in. Total players: " << realPlayers + 1 << L"\n";
+	GlobalLogger().info << L"Player " << session.username << L" is logging in. Total players: " << realPlayers + 1
+	                    << L"\n";
 
-    session.connState = ConnectionState::LoggingIn;
+	session.connState = ConnectionState::LoggingIn;
 }
 
 void Server::handleLogin(PlayerSession& session) {
-    if (!session.stream.hasData()) return;
+	if (!session.stream.hasData())
+		return;
 
-    PacketId packetId = session.stream.Read<PacketId>();
-    if (session.stream.checkAndClearShortRead()) return;
-    if (packetId != PacketId::Login) return;
+	PacketId packetId = session.stream.Read<PacketId>();
+	if (session.stream.checkAndClearShortRead())
+		return;
+	if (packetId != PacketId::Login)
+		return;
 
-    Packet::Login incoming;
-    incoming.Deserialize(session.stream);
-    if (session.stream.checkAndClearShortRead()) {
-        return;
-    }
+	Packet::Login incoming;
+	incoming.Deserialize(session.stream);
+	if (session.stream.checkAndClearShortRead()) {
+		return;
+	}
 
-    session.entityId = nextEntityId++;
-    Packet::Login response;
-    response.entity_id = session.entityId;
-    response.username = session.username;
-    response.worldSeed = world.seed;
+	session.entityId = nextEntityId++;
+	Packet::Login response;
+	response.entity_id = session.entityId;
+	response.username = session.username;
+	response.worldSeed = world.seed;
 
-    // Load player data before building the Login response so we know which dimension they're in
-    auto playerNbt = saveManager.getPlayerNBT(std::string(session.username.begin(), session.username.end()));
-    session.loadPlayerNBT(playerNbt);
+	// Load player data before building the Login response so we know which dimension they're in
+	auto playerNbt = saveManager.getPlayerNBT(std::string(session.username.begin(), session.username.end()));
+	session.loadPlayerNBT(playerNbt);
 
-    response.dimension = static_cast<Dimension>(session.dimension);
-    response.Serialize(session.stream);
+	response.dimension = static_cast<Dimension>(session.dimension);
+	response.Serialize(session.stream);
 
-    WorldManager& sessionWorld = session.dimension == -1 ? worldHell : world;
+	WorldManager& sessionWorld = session.dimension == -1 ? worldHell : world;
 
-    Packet::SetSpawnPosition spawn;
-    spawn.position = sessionWorld.spawnPoint;
-    spawn.Serialize(session.stream);
+	Packet::SetSpawnPosition spawn;
+	spawn.position = sessionWorld.spawnPoint;
+	spawn.Serialize(session.stream);
 
-    Packet::SetHealth health;
-    health.health = 20;
-    health.Serialize(session.stream);
+	Packet::SetHealth health;
+	health.health = 20;
+	health.Serialize(session.stream);
 
-    Packet::SetTime time;
-    time.time = sessionWorld.elapsed_ticks;
-    time.Serialize(session.stream);
+	Packet::SetTime time;
+	time.time = sessionWorld.elapsed_ticks;
+	time.Serialize(session.stream);
 
-    // Get a fresh respawn point
-    auto respawnPoint = sessionWorld.getSpawnPoint(true);
+	// Get a fresh respawn point
+	auto respawnPoint = sessionWorld.getSpawnPoint(true);
 
-    // If our session position is the default then overwrite it
-    if (session.position.pos == Vec3{ -1, -1000000, -1 }) {
-        session.position.pos = { float(respawnPoint.x) + 0.5, float(respawnPoint.y), float(respawnPoint.z) + 0.5 };
-    }
+	// If our session position is the default then overwrite it
+	if (session.position.pos == Vec3{ -1, -1000000, -1 }) {
+		session.position.pos = { float(respawnPoint.x) + 0.5, float(respawnPoint.y), float(respawnPoint.z) + 0.5 };
+	}
 
-    // Offset so we don't spawn in the ground
-    session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
+	// Offset so we don't spawn in the ground
+	session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
 
-    // Log that we logged in!
-    GlobalLogger().info << L"Player " << session.username << L" logged in with entity ID " << session.entityId << L" at (" << session.position.pos.x << ", " << session.position.pos.y << ", " << session.position.pos.z << ")\n";
+	// Log that we logged in!
+	GlobalLogger().info << L"Player " << session.username << L" logged in with entity ID " << session.entityId
+	                    << L" at (" << session.position.pos.x << ", " << session.position.pos.y << ", "
+	                    << session.position.pos.z << ")\n";
 
-    // Send our inventory
-    PacketUtilities::sendInventory(session, 0, session.inventory);
+	// Send our inventory
+	PacketUtilities::sendInventory(session, 0, session.inventory);
 
-    session.connState = ConnectionState::WaitingForSpawnChunks;
+	session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
 void Server::disconnectPlayer(PlayerSession& session, const std::wstring& reason) {
-    // Send disconnect reason to the leaving player
-    Packet::Disconnect kick;
-    kick.reason = reason;
-    kick.Serialize(session.stream);
-    session.stream.setConnected(false); // This should force an NBT save
-    GlobalLogger().info << L"Player " << session.username << L" disconnected: " << reason << L"\n";
+	// Send disconnect reason to the leaving player
+	Packet::Disconnect kick;
+	kick.reason = reason;
+	kick.Serialize(session.stream);
+	session.stream.setConnected(false); // This should force an NBT save
+	GlobalLogger().info << L"Player " << session.username << L" disconnected: " << reason << L"\n";
 }
 
 void Server::waitForSpawnChunks(PlayerSession& session) {
-    WorldManager& sessionWorld = session.dimension == -1 ? worldHell : world;
-    chunkSender.enqueue(session, sessionWorld, flushChunkCount);
-    chunkSender.flush(session);
+	WorldManager& sessionWorld = session.dimension == -1 ? worldHell : world;
+	chunkSender.enqueue(session, sessionWorld, flushChunkCount);
+	chunkSender.flush(session);
 
-    // Force a tiny view distance for players trying to spawn in
-    session.position.viewDistanceOverride = 3;
+	// Force a tiny view distance for players trying to spawn in
+	session.position.viewDistanceOverride = 3;
 
-    // Spawn chunk radius; 3 chunks in each direction
-    int spawnChunkX = int(std::floor(session.position.pos.x)) >> 4;
-    int spawnChunkZ = int(std::floor(session.position.pos.z)) >> 4;
+	// Spawn chunk radius; 3 chunks in each direction
+	int spawnChunkX = int(std::floor(session.position.pos.x)) >> 4;
+	int spawnChunkZ = int(std::floor(session.position.pos.z)) >> 4;
 
-    int radius = CrossPlatform::Math::min(3, sessionWorld.getViewRadius());
+	int radius = CrossPlatform::Math::min(3, sessionWorld.getViewRadius());
 
-    int total_spawn_chunks = ((radius * 2) + 1) * ((radius * 2) + 1);
-    int loaded_chunks = 0;
+	int total_spawn_chunks = ((radius * 2) + 1) * ((radius * 2) + 1);
+	int loaded_chunks = 0;
 
-    for (int dx = -radius; dx <= radius; dx++) {
-        for (int dz = -radius; dz <= radius; dz++) {
-            Int32_2 p{ spawnChunkX + dx, spawnChunkZ + dz };
-            if (session.flushedChunks.contains(p))
-                loaded_chunks++;
-        }
-    }
+	for (int dx = -radius; dx <= radius; dx++) {
+		for (int dz = -radius; dz <= radius; dz++) {
+			Int32_2 p{ spawnChunkX + dx, spawnChunkZ + dz };
+			if (session.flushedChunks.contains(p))
+				loaded_chunks++;
+		}
+	}
 
-    GlobalLogger().info << "Spawn chunks: " << loaded_chunks << " / " << total_spawn_chunks << "\n";
+	GlobalLogger().info << "Spawn chunks: " << loaded_chunks << " / " << total_spawn_chunks << "\n";
 
-    if (loaded_chunks < total_spawn_chunks)
-        return;
+	if (loaded_chunks < total_spawn_chunks)
+		return;
 
-    GlobalLogger().info << "Spawn chunks sent. Setting player position\n";
+	GlobalLogger().info << "Spawn chunks sent. Setting player position\n";
 
-    Packet::PlayerPositionAndRotation pos;
-    pos.x = session.position.pos.x;
-    pos.y = session.position.pos.y;
-    pos.stance = session.position.pos.y + PLAYER_EYE_HEIGHT;
-    pos.z = session.position.pos.z;
-    pos.yaw = session.rotation.x;
-    pos.pitch = session.rotation.z;
-    pos.onGround = false;
-    pos.Serialize(session.stream);
+	Packet::PlayerPositionAndRotation pos;
+	pos.x = session.position.pos.x;
+	pos.y = session.position.pos.y;
+	pos.stance = session.position.pos.y + PLAYER_EYE_HEIGHT;
+	pos.z = session.position.pos.z;
+	pos.yaw = session.rotation.x;
+	pos.pitch = session.rotation.z;
+	pos.onGround = false;
+	pos.Serialize(session.stream);
 
-    session.lastFpX = int32_t(session.position.pos.x * 32.0);
-    session.lastFpY = int32_t(session.position.pos.y * 32.0);
-    session.lastFpZ = int32_t(session.position.pos.z * 32.0);
-    session.lastYaw = int8_t(session.rotation.x / 360.0f * 256.0f);
-    session.lastPitch = int8_t(session.rotation.y / 360.0f * 256.0f);
+	session.lastFpX = int32_t(session.position.pos.x * 32.0);
+	session.lastFpY = int32_t(session.position.pos.y * 32.0);
+	session.lastFpZ = int32_t(session.position.pos.z * 32.0);
+	session.lastYaw = int8_t(session.rotation.x / 360.0f * 256.0f);
+	session.lastPitch = int8_t(session.rotation.y / 360.0f * 256.0f);
 
-    // Set view distance to server default
-    session.position.viewDistanceOverride = 0;
+	// Set view distance to server default
+	session.position.viewDistanceOverride = 0;
 
-    GlobalLogger().info << "Client connected\n";
-    session.connState = ConnectionState::Playing;
-    Packet::ChatMessage welcomeMsg;
-    welcomeMsg.message =
-        std::wstring(L"§eThis Server runs on ") + 
-        std::wstring(PROJECT_FULL_VERSION_LABEL);
-    welcomeMsg.Serialize(session.stream);
+	GlobalLogger().info << "Client connected\n";
+	session.connState = ConnectionState::Playing;
+	Packet::ChatMessage welcomeMsg;
+	welcomeMsg.message = std::wstring(L"§eThis Server runs on ") + std::wstring(PROJECT_FULL_VERSION_LABEL);
+	welcomeMsg.Serialize(session.stream);
 }
 
 void Server::transferPlayerDimension(PlayerSession& session) {
-    double newX = session.position.pos.x;
-    double newZ = session.position.pos.z;
-    if (session.dimension == 0) {
-        newX /= 8.0;
-        newZ /= 8.0;
-        session.dimension = -1;
-    }
-    else {
-        newX *= 8.0;
-        newZ *= 8.0;
-        session.dimension = 0;
-    }
+	double newX = session.position.pos.x;
+	double newZ = session.position.pos.z;
+	if (session.dimension == 0) {
+		newX /= 8.0;
+		newZ /= 8.0;
+		session.dimension = -1;
+	} else {
+		newX *= 8.0;
+		newZ *= 8.0;
+		session.dimension = 0;
+	}
 
-    // Clear everything client side
-    Packet::Respawn respawn;
-    respawn.dimension = static_cast<Dimension>(session.dimension);
-    respawn.Serialize(session.stream);
+	// Clear everything client side
+	Packet::Respawn respawn;
+	respawn.dimension = static_cast<Dimension>(session.dimension);
+	respawn.Serialize(session.stream);
 
-    // Unload all chunks from the old dimension on our side
-    for (const auto& cpos : session.flushedChunks)
-        indexRemoveChunk(session, cpos);
-    session.sentChunks.clear();
-    session.flushedChunks.clear();
-    session.pendingBlockChanges.clear();
-    chunkSender.remove(session);
+	// Unload all chunks from the old dimension on our side
+	for (const auto& cpos : session.flushedChunks)
+		indexRemoveChunk(session, cpos);
+	session.sentChunks.clear();
+	session.flushedChunks.clear();
+	session.pendingBlockChanges.clear();
+	chunkSender.remove(session);
 
-    session.position.pos.x = float(newX);
-    session.position.pos.z = float(newZ);
+	session.position.pos.x = float(newX);
+	session.position.pos.z = float(newZ);
 
-    // Send our inventory again and close any containers we are in
-    if (session.activeInteraction) {
-        PacketUtilities::CloseContainer(session);
-    }
-    PacketUtilities::sendInventory(session, 0, session.inventory);
-    GlobalLogger().info << L"Player " << session.username << L" transferred to dimension " << int(session.dimension) << L"\n";
+	// Send our inventory again and close any containers we are in
+	if (session.activeInteraction) {
+		PacketUtilities::CloseContainer(session);
+	}
+	PacketUtilities::sendInventory(session, 0, session.inventory);
+	GlobalLogger().info << L"Player " << session.username << L" transferred to dimension " << int(session.dimension)
+	                    << L"\n";
 
-    session.connState = ConnectionState::WaitingForSpawnChunks;
+	session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
 void Server::processIncoming(PlayerSession& session) {
-    WorldManager& sessionWorld = session.dimension == -1 ? worldHell : world;
+	WorldManager& sessionWorld = session.dimension == -1 ? worldHell : world;
 
-    // Feed available socket bytes into the staging buffer, then process as
-    // many complete packets as are available this tick.
-    while (session.stream.hasData()) {
-        PacketId packetId = session.stream.Read<PacketId>();
+	// Feed available socket bytes into the staging buffer, then process as
+	// many complete packets as are available this tick.
+	while (session.stream.hasData()) {
+		PacketId packetId = session.stream.Read<PacketId>();
 
-        switch (packetId) {
-        case PacketId::KeepAlive: {
-            Packet::KeepAlive pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::KeepAlive(pkt, session);
-            break;
-        }
-        case PacketId::ChatMessage: {
-            Packet::ChatMessage pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::ChatMessage(pkt, session, players, sessionWorld, command_manager, [this](PlayerSession& s) { transferPlayerDimension(s); });
-            break;
-        }
-        case PacketId::SetTime: {
-            Packet::SetTime pkt;
-            pkt.Deserialize(session.stream);
-            break;
-        }
-        case PacketId::InteractWithEntity: {
-            Packet::InteractWithEntity pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::InteractWithEntity(pkt, session);
-            break;
-        }
-        case PacketId::Respawn: {
-            Packet::Respawn pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::Respawn(pkt, session);
-            break;
-        }
-        case PacketId::PlayerMovement: {
-            Packet::PlayerMovement pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::PlayerMovement(pkt, session);
-            break;
-        }
-        case PacketId::PlayerPosition: {
-            Packet::PlayerPosition pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::PlayerPosition(pkt, session);
-            break;
-        }
-        case PacketId::PlayerRotation: {
-            Packet::PlayerRotation pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::PlayerRotation(pkt, session);
-            break;
-        }
-        case PacketId::PlayerPositionAndRotation: {
-            Packet::PlayerPositionAndRotation pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::PlayerPositionAndRotation(pkt, session);
-            break;
-        }
-        case PacketId::MineBlock: {
-            Packet::MineBlock pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::MineBlock(pkt, session, sessionWorld, players);
-            break;
-        }
-        case PacketId::PlaceBlock: {
-            Packet::PlaceBlock pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::PlaceBlock(pkt, session, sessionWorld, players);
-            break;
-        }
-        case PacketId::SetHotbarSlot: {
-            Packet::SetHotbarSlot pkt;
-            pkt.Deserialize(session.stream);
-            break;
-        }
-        case PacketId::InteractWithBlock: {
-            Packet::InteractWithBlock pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::InteractWithBlock(pkt, session, sessionWorld);
-            break;
-        }
-        case PacketId::Animation: {
-            Packet::Animation pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::Animation(pkt, session, players);
-            break;
-        }
-        case PacketId::PlayerAction: {
-            Packet::PlayerAction pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::PlayerAction(pkt, session);
-            break;
-        }
-        case PacketId::PlayerInput: {
-            Packet::PlayerInput pkt;
-            pkt.Deserialize(session.stream);
-            break;
-        }
-        case PacketId::CloseContainer: {
-            Packet::CloseContainer pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::CloseContainer(pkt, session);
-            break;
-        }
-        case PacketId::ClickSlot: {
-            Packet::ClickSlot pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::ClickSlot(pkt, session);
-            break;
-        }
-        case PacketId::ContainerTransaction: {
-            Packet::ContainerTransaction pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::ContainerTransaction(pkt, session);
-            break;
-        }
-        case PacketId::UpdateSign: {
-            Packet::UpdateSign pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::UpdateSign(pkt, session, sessionWorld);
-            break;
-        }
-        case PacketId::Disconnect: {
-            Packet::Disconnect pkt;
-            pkt.Deserialize(session.stream);
-            HandlePacket::Disconnect(pkt, session);
-            return; // session is dead; stop processing
-        }
-        default:
-            GlobalLogger().warn << "UNHANDLED packet 0x" << std::hex
-                << static_cast<int>(packetId) << "\n";
-            disconnectPlayer(session, L"Unknown packet");
-            return;
-        }
-        // If any Deserialize hit a recv timeout, ReadBytes has already rolled back
-        // all consumed bytes into readBackBuffer. Just break and retry next tick.
-        if (session.stream.checkAndClearShortRead()) {
-            break;
-        }
-    }
-    // Update our last packet time for the timeout code
-    session.last_packet_time = std::chrono::steady_clock::now();
+		switch (packetId) {
+		case PacketId::KeepAlive: {
+			Packet::KeepAlive pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::KeepAlive(pkt, session);
+			break;
+		}
+		case PacketId::ChatMessage: {
+			Packet::ChatMessage pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::ChatMessage(pkt, session, players, sessionWorld, command_manager,
+			                          [this](PlayerSession& s) { transferPlayerDimension(s); });
+			break;
+		}
+		case PacketId::SetTime: {
+			Packet::SetTime pkt;
+			pkt.Deserialize(session.stream);
+			break;
+		}
+		case PacketId::InteractWithEntity: {
+			Packet::InteractWithEntity pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::InteractWithEntity(pkt, session);
+			break;
+		}
+		case PacketId::Respawn: {
+			Packet::Respawn pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::Respawn(pkt, session);
+			break;
+		}
+		case PacketId::PlayerMovement: {
+			Packet::PlayerMovement pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::PlayerMovement(pkt, session);
+			break;
+		}
+		case PacketId::PlayerPosition: {
+			Packet::PlayerPosition pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::PlayerPosition(pkt, session);
+			break;
+		}
+		case PacketId::PlayerRotation: {
+			Packet::PlayerRotation pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::PlayerRotation(pkt, session);
+			break;
+		}
+		case PacketId::PlayerPositionAndRotation: {
+			Packet::PlayerPositionAndRotation pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::PlayerPositionAndRotation(pkt, session);
+			break;
+		}
+		case PacketId::MineBlock: {
+			Packet::MineBlock pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::MineBlock(pkt, session, sessionWorld, players);
+			break;
+		}
+		case PacketId::PlaceBlock: {
+			Packet::PlaceBlock pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::PlaceBlock(pkt, session, sessionWorld, players);
+			break;
+		}
+		case PacketId::SetHotbarSlot: {
+			Packet::SetHotbarSlot pkt;
+			pkt.Deserialize(session.stream);
+			break;
+		}
+		case PacketId::InteractWithBlock: {
+			Packet::InteractWithBlock pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::InteractWithBlock(pkt, session, sessionWorld);
+			break;
+		}
+		case PacketId::Animation: {
+			Packet::Animation pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::Animation(pkt, session, players);
+			break;
+		}
+		case PacketId::PlayerAction: {
+			Packet::PlayerAction pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::PlayerAction(pkt, session);
+			break;
+		}
+		case PacketId::PlayerInput: {
+			Packet::PlayerInput pkt;
+			pkt.Deserialize(session.stream);
+			break;
+		}
+		case PacketId::CloseContainer: {
+			Packet::CloseContainer pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::CloseContainer(pkt, session);
+			break;
+		}
+		case PacketId::ClickSlot: {
+			Packet::ClickSlot pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::ClickSlot(pkt, session);
+			break;
+		}
+		case PacketId::ContainerTransaction: {
+			Packet::ContainerTransaction pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::ContainerTransaction(pkt, session);
+			break;
+		}
+		case PacketId::UpdateSign: {
+			Packet::UpdateSign pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::UpdateSign(pkt, session, sessionWorld);
+			break;
+		}
+		case PacketId::Disconnect: {
+			Packet::Disconnect pkt;
+			pkt.Deserialize(session.stream);
+			HandlePacket::Disconnect(pkt, session);
+			return; // session is dead; stop processing
+		}
+		default:
+			GlobalLogger().warn << "UNHANDLED packet 0x" << std::hex << static_cast<int>(packetId) << "\n";
+			disconnectPlayer(session, L"Unknown packet");
+			return;
+		}
+		// If any Deserialize hit a recv timeout, ReadBytes has already rolled back
+		// all consumed bytes into readBackBuffer. Just break and retry next tick.
+		if (session.stream.checkAndClearShortRead()) {
+			break;
+		}
+	}
+	// Update our last packet time for the timeout code
+	session.last_packet_time = std::chrono::steady_clock::now();
 }

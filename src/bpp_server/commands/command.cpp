@@ -11,7 +11,8 @@ std::vector<std::wstring> command;
 std::wstring failureReason;
 
 // Base Command
-Command::Command(std::wstring pLabel, std::wstring pDescription, std::wstring pSyntax, bool pRequiresOp, bool pRequiresCreative) {
+Command::Command(std::wstring pLabel, std::wstring pDescription, std::wstring pSyntax, bool pRequiresOp,
+                 bool pRequiresCreative) {
 	this->label = pLabel;
 	this->description = pDescription;
 	this->syntax = pSyntax;
@@ -36,8 +37,6 @@ std::string Command::CheckPermissions(Client *client) {
 	return "";
 }
 */
-
-
 
 /*
 // Shows how long the server has been alive in ticks

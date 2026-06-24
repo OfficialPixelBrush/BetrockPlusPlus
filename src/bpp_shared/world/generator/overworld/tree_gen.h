@@ -7,30 +7,29 @@
 
 #pragma once
 
+#include "../shared/feature_gen.h" // brings in GenView, IsSolid, IsOpaque
 #include "java_random.h"
 #include "world.h"
-#include "../shared/feature_gen.h" // brings in GenView, IsSolid, IsOpaque
 
 /**
  * @brief Used for generating Oak or Birch Trees
  * 
  */
 class TreeGenerator {
-  public:
+public:
 	TreeGenerator() {};
 	virtual ~TreeGenerator() = default;
 	virtual bool Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, bool birch = false);
 	virtual void Configure([[maybe_unused]] double treeHeight, [[maybe_unused]] double branchLength,
-						   [[maybe_unused]] double trunkShape) {};
+	                       [[maybe_unused]] double trunkShape) {};
 };
-
 
 /**
  * @brief Used for generating Big Oak Trees
  * 
  */
 class BigTreeGenerator : public TreeGenerator {
-  private:
+private:
 	struct BranchPos {
 		Int3 pos;
 		int32_t trunkY;
@@ -78,7 +77,7 @@ class BigTreeGenerator : public TreeGenerator {
 	void PlaceCircularLayer(Int3 centerPos, float radius, BranchAxis axis, BlockType blockType);
 	bool CanGenerateBranchAtHeight(int32_t y);
 
-  public:
+public:
 	BigTreeGenerator() {}
 	~BigTreeGenerator() = default;
 	bool Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, bool birch = false);
@@ -90,7 +89,7 @@ class BigTreeGenerator : public TreeGenerator {
  * 
  */
 class TaigaTreeGenerator : public TreeGenerator {
-  public:
+public:
 	TaigaTreeGenerator() {};
 	~TaigaTreeGenerator() = default;
 	bool Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, bool birch = false);
@@ -101,7 +100,7 @@ class TaigaTreeGenerator : public TreeGenerator {
  * 
  */
 class AltTaigaTreeGenerator : public TreeGenerator {
-  public:
+public:
 	AltTaigaTreeGenerator() {};
 	~AltTaigaTreeGenerator() = default;
 	bool Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, bool birch = false);

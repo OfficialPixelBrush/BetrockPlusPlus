@@ -9,24 +9,25 @@
 #include "glfw_context.h"
 #include "inputs.h"
 #include "window.h"
-#include "world/world.h"
-#include "world/storage/save_manager.h"
 #include "world/storage/region_manager.h"
+#include "world/storage/save_manager.h"
+#include "world/world.h"
 
 class Client {
 public:
-    Client();
-    int run();
+	Client();
+	int run();
+
 private:
-    static constexpr float TICK_DELTA = 1.0f / 20.0f;
-    static constexpr int   MAX_TICKS_PER_FRAME = 10;
+	static constexpr float TICK_DELTA = 1.0f / 20.0f;
+	static constexpr int MAX_TICKS_PER_FRAME = 10;
 
-    void tick();
-    void render([[maybe_unused]] float partial_tick);
+	void tick();
+	void render([[maybe_unused]] float partial_tick);
 
-    Window      m_window;
-    Input       m_input;
-    GlfwContext m_ctx;
-    ClientPosition m_singlePlayerPos{};
-    float       m_accumulator = 0.0f;
+	Window m_window;
+	Input m_input;
+	GlfwContext m_ctx;
+	ClientPosition m_singlePlayerPos{};
+	float m_accumulator = 0.0f;
 };

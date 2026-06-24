@@ -5,17 +5,17 @@
  * Based on code by Mojang Studios (2011)
 */
 
-#include "../generator.h"
-#include "world.h"
-#include "../shared/cave_gen.h"
 #include "../../noise/noise_octaves_perlin.h"
+#include "../generator.h"
+#include "../shared/cave_gen.h"
+#include "world.h"
 
 /**
  * @brief A faithful reimplementation of the Beta 1.7.3 Nether Generator
  * 
  */
 class NetherGenerator : public Generator {
-  private:
+private:
 	// Perlin Noise Generators
 	NoiseOctavesPerlin m_lowNoiseGen;
 	NoiseOctavesPerlin m_highNoiseGen;
@@ -41,9 +41,10 @@ class NetherGenerator : public Generator {
 	CaveGenerator m_caver;
 
 	void GenerateTerrain(Chunk& chunk);
-	void GenerateTerrainNoise(std::vector<double> &terrainMap, Int3 cpos, Int3 max);
+	void GenerateTerrainNoise(std::vector<double>& terrainMap, Int3 cpos, Int3 max);
 	void ReplaceBlocksForBiome(Chunk& chunk);
-  public:
+
+public:
 	NetherGenerator(int64_t seed);
 	~NetherGenerator() = default;
 	void GenerateChunk(Chunk& chunk) override;

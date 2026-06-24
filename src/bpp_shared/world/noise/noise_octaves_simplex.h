@@ -13,7 +13,7 @@
 #include <vector>
 
 class NoiseOctavesSimplex {
-  public:
+public:
 	NoiseOctavesSimplex() {}
 	NoiseOctavesSimplex(int32_t octaves);
 	NoiseOctavesSimplex(Java::Random& rand, int32_t octaves);
@@ -22,9 +22,10 @@ class NoiseOctavesSimplex {
 	void GenerateOctaves(std::vector<double>& noiseField, Vec2 offset, Int32_2 size, Vec2 scale, double lacunarity);
 	void GenerateOctaves(std::vector<double>& noiseField, Int32_2 offset, Int32_2 size, Vec2 scale, double lacunarity);
 	// func_4111_a
-	void GenerateOctaves(std::vector<double>& noiseField, Vec2 offset, Int32_2 size, Vec2 scale, double lacunarity, double persistence);
+	void GenerateOctaves(std::vector<double>& noiseField, Vec2 offset, Int32_2 size, Vec2 scale, double lacunarity,
+	                     double persistence);
 
-  private:
+private:
 	int32_t octaves;
 	std::vector<NoiseSimplex> generator_collection;
 };
@@ -39,21 +40,18 @@ inline NoiseOctavesSimplex::NoiseOctavesSimplex(Java::Random& rand, int32_t poct
 		generator_collection.push_back(NoiseSimplex(rand));
 }
 
-inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField, Int32_2 offset, Int32_2 size, Vec2 scale, double lacunarity) {
-	this->GenerateOctaves(
-		noiseField, 
-		Vec2{double(offset.x), double(offset.y)},
-		size,
-		scale,
-		lacunarity
-	);
+inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField, Int32_2 offset, Int32_2 size,
+                                                 Vec2 scale, double lacunarity) {
+	this->GenerateOctaves(noiseField, Vec2{ double(offset.x), double(offset.y) }, size, scale, lacunarity);
 }
 
-inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField, Vec2 offset, Int32_2 size, Vec2 scale, double lacunarity) {
+inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField, Vec2 offset, Int32_2 size, Vec2 scale,
+                                                 double lacunarity) {
 	this->GenerateOctaves(noiseField, offset, size, scale, lacunarity, 0.5);
 }
 
-inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField, Vec2 offset, Int32_2 size, Vec2 scale, double lacunarity, double persistence) {
+inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField, Vec2 offset, Int32_2 size, Vec2 scale,
+                                                 double lacunarity, double persistence) {
 	scale.x /= 1.5;
 	scale.y /= 1.5;
 	if (!noiseField.empty() && int32_t(noiseField.size()) >= size.x * size.y) {

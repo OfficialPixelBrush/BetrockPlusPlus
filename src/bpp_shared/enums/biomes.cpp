@@ -20,7 +20,6 @@ BlockType GetTopBlock(Biome biome) {
 	return BLOCK_GRASS;
 }
 
-
 /**
  * @brief Get the Filler Block object
  * 

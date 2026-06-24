@@ -5,9 +5,9 @@
  *
 */
 #pragma once
+#include "inventory/inventories.h"
 #include "nbt/nbt.h"
 #include "numeric_structs.h"
-#include "inventory/inventories.h"
 
 // I hate doing inheritance but its simple to do for this
 struct TileEntity {
@@ -23,9 +23,9 @@ struct TileEntity {
 		root.type = TAG_COMPOUND;
 
 		auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
-		auto x 	= Tag{ .type = TAG_INT,    .name = "x",  .intValue = m_position.x };
-		auto y 	= Tag{ .type = TAG_INT,    .name = "y",  .intValue = m_position.y };
-		auto z 	= Tag{ .type = TAG_INT,    .name = "z",  .intValue = m_position.z };
+		auto x = Tag{ .type = TAG_INT, .name = "x", .intValue = m_position.x };
+		auto y = Tag{ .type = TAG_INT, .name = "y", .intValue = m_position.y };
+		auto z = Tag{ .type = TAG_INT, .name = "z", .intValue = m_position.z };
 
 		root.compound["id"] = id;
 		root.compound["x"] = x;
@@ -47,9 +47,9 @@ struct TileEntityChest : TileEntity {
 		root.type = TAG_COMPOUND;
 
 		auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
-		auto x 	= Tag{ .type = TAG_INT,    .name = "x",  .intValue = m_position.x };
-		auto y 	= Tag{ .type = TAG_INT,    .name = "y",  .intValue = m_position.y };
-		auto z 	= Tag{ .type = TAG_INT,    .name = "z",  .intValue = m_position.z };
+		auto x = Tag{ .type = TAG_INT, .name = "x", .intValue = m_position.x };
+		auto y = Tag{ .type = TAG_INT, .name = "y", .intValue = m_position.y };
+		auto z = Tag{ .type = TAG_INT, .name = "z", .intValue = m_position.z };
 
 		// Construct our inventory
 		auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
@@ -57,10 +57,10 @@ struct TileEntityChest : TileEntity {
 		for (auto& stack : inventory.slots) {
 			if (stack.has_value()) {
 				auto item = Tag{ .type = TAG_COMPOUND };
-				auto Count = Tag{ .type = TAG_BYTE,  .name = "Count",  .byteValue = stack->count };
+				auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack->count };
 				auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack->data };
-				auto Id = Tag{ .type = TAG_SHORT, .name = "id",     .shortValue = stack->id };
-				auto Slot = Tag{ .type = TAG_BYTE,  .name = "Slot",   .byteValue = currentSlot };
+				auto Id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack->id };
+				auto Slot = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = currentSlot };
 
 				item.compound["Count"] = Count;
 				item.compound["Damage"] = Damage;
@@ -85,16 +85,18 @@ struct TileEntityChest : TileEntity {
 // Furnace
 struct TileEntityFurnace : TileEntity {
 	InventoryFurnace inventory;
-	TileEntityFurnace(Int3 pPosition) : TileEntity("Furnace", pPosition) { m_canTick = true; };
+	TileEntityFurnace(Int3 pPosition) : TileEntity("Furnace", pPosition) {
+		m_canTick = true;
+	};
 
 	Tag serialize() override {
 		auto root = Tag{};
 		root.type = TAG_COMPOUND;
 
 		auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
-		auto x 	= Tag{ .type = TAG_INT,    .name = "x",  .intValue = m_position.x };
-		auto y 	= Tag{ .type = TAG_INT,    .name = "y",  .intValue = m_position.y };
-		auto z 	= Tag{ .type = TAG_INT,    .name = "z",  .intValue = m_position.z };
+		auto x = Tag{ .type = TAG_INT, .name = "x", .intValue = m_position.x };
+		auto y = Tag{ .type = TAG_INT, .name = "y", .intValue = m_position.y };
+		auto z = Tag{ .type = TAG_INT, .name = "z", .intValue = m_position.z };
 
 		// Construct our inventory
 		auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
@@ -102,10 +104,10 @@ struct TileEntityFurnace : TileEntity {
 		for (auto& stack : inventory.slots) {
 			if (stack.has_value()) {
 				auto item = Tag{ .type = TAG_COMPOUND };
-				auto Count = Tag{ .type = TAG_BYTE,  .name = "Count",  .byteValue = stack->count };
+				auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack->count };
 				auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack->data };
-				auto Id = Tag{ .type = TAG_SHORT, .name = "id",     .shortValue = stack->id };
-				auto Slot = Tag{ .type = TAG_BYTE,  .name = "Slot",   .byteValue = currentSlot };
+				auto Id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack->id };
+				auto Slot = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = currentSlot };
 
 				item.compound["Count"] = Count;
 				item.compound["Damage"] = Damage;
@@ -137,9 +139,9 @@ struct TileEntityDispenser : TileEntity {
 		root.type = TAG_COMPOUND;
 
 		auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
-		auto x 	= Tag{ .type = TAG_INT,    .name = "x",  .intValue = m_position.x };
-		auto y 	= Tag{ .type = TAG_INT,    .name = "y",  .intValue = m_position.y };
-		auto z 	= Tag{ .type = TAG_INT,    .name = "z",  .intValue = m_position.z };
+		auto x = Tag{ .type = TAG_INT, .name = "x", .intValue = m_position.x };
+		auto y = Tag{ .type = TAG_INT, .name = "y", .intValue = m_position.y };
+		auto z = Tag{ .type = TAG_INT, .name = "z", .intValue = m_position.z };
 
 		// Construct our inventory
 		auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
@@ -147,10 +149,10 @@ struct TileEntityDispenser : TileEntity {
 		for (auto& stack : inventory.slots) {
 			if (stack.has_value()) {
 				auto item = Tag{ .type = TAG_COMPOUND };
-				auto Count = Tag{ .type = TAG_BYTE,  .name = "Count",  .byteValue = stack->count };
+				auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack->count };
 				auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack->data };
-				auto Id = Tag{ .type = TAG_SHORT, .name = "id",     .shortValue = stack->id };
-				auto Slot = Tag{ .type = TAG_BYTE,  .name = "Slot",   .byteValue = currentSlot };
+				auto Id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack->id };
+				auto Slot = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = currentSlot };
 
 				item.compound["Count"] = Count;
 				item.compound["Damage"] = Damage;
@@ -184,10 +186,10 @@ struct TileEntitySign : TileEntity {
 		auto root = Tag{};
 		root.type = TAG_COMPOUND;
 
-		auto id = Tag{ .type = TAG_STRING, .name = "id",    .stringValue = m_id };
-		auto x 	= Tag{ .type = TAG_INT,    .name = "x",     .intValue = m_position.x };
-		auto y 	= Tag{ .type = TAG_INT,    .name = "y",     .intValue = m_position.y };
-		auto z 	= Tag{ .type = TAG_INT,    .name = "z",     .intValue = m_position.z };
+		auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
+		auto x = Tag{ .type = TAG_INT, .name = "x", .intValue = m_position.x };
+		auto y = Tag{ .type = TAG_INT, .name = "y", .intValue = m_position.y };
+		auto z = Tag{ .type = TAG_INT, .name = "z", .intValue = m_position.z };
 		auto text1 = Tag{ .type = TAG_STRING, .name = "Text1", .stringValue = m_text1 };
 		auto text2 = Tag{ .type = TAG_STRING, .name = "Text2", .stringValue = m_text2 };
 		auto text3 = Tag{ .type = TAG_STRING, .name = "Text3", .stringValue = m_text3 };
@@ -210,18 +212,20 @@ struct TileEntitySign : TileEntity {
 struct TileEntityMobSpawner : TileEntity {
 	std::string m_entityId = "";
 	int16_t m_delay = 0;
-	TileEntityMobSpawner(Int3 pPosition) : TileEntity("MobSpawner", pPosition) { m_canTick = true; };
+	TileEntityMobSpawner(Int3 pPosition) : TileEntity("MobSpawner", pPosition) {
+		m_canTick = true;
+	};
 
 	Tag serialize() override {
 		auto root = Tag{};
 		root.type = TAG_COMPOUND;
 
-		auto id = Tag{ .type = TAG_STRING, .name = "id",       .stringValue = m_id };
-		auto x = Tag{ .type = TAG_INT,    .name = "x",        .intValue = m_position.x };
-		auto y = Tag{ .type = TAG_INT,    .name = "y",        .intValue = m_position.y };
-		auto z = Tag{ .type = TAG_INT,    .name = "z",        .intValue = m_position.z };
+		auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
+		auto x = Tag{ .type = TAG_INT, .name = "x", .intValue = m_position.x };
+		auto y = Tag{ .type = TAG_INT, .name = "y", .intValue = m_position.y };
+		auto z = Tag{ .type = TAG_INT, .name = "z", .intValue = m_position.z };
 		auto entityId = Tag{ .type = TAG_STRING, .name = "EntityId", .stringValue = m_entityId };
-		auto delay = Tag{ .type = TAG_SHORT,  .name = "Delay",    .shortValue = m_delay };
+		auto delay = Tag{ .type = TAG_SHORT, .name = "Delay", .shortValue = m_delay };
 
 		root.compound["EntityId"] = entityId;
 		root.compound["Delay"] = delay;
