@@ -137,6 +137,12 @@ inline void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManag
 
 inline void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& world,
                        std::vector<std::unique_ptr<PlayerSession>>& /*players*/) {
+	// The held item and the item in the slot must match otherwise we reject it
+	if (pkt.item != *session.inventory.getCurrentItem()) {
+		GlobalLogger().warn << "Client attempted to place a non-matching item! (Held: "
+		                    << *session.inventory.getCurrentItem() << ", Placed: " << pkt.item << ")\n";
+		return;
+	}
 	// Block interactions
 	auto block = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z });
 	if (block == BLOCK_CHEST) {
@@ -229,6 +235,11 @@ inline void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldMan
 	// Make sure the block id is valid for placement otherwise we will crash
 	if (pkt.item.id < BLOCK_MAX && (pkt.item.id >= 0))
 		world.setBlock({ pos.x, pos.y, pos.z }, BlockType(pkt.item.id), pkt.item.data);
+
+	// Update the player's inventory to remove the item they just placed
+	// The client already decrements the item count, so we just need to do the same on our side
+	session.activeInteraction->inventory->decreaseStackSize(session.inventory.currentItem,
+	                                                        session.inventory.getCurrentItem()->count);
 }
 
 // Click handler
