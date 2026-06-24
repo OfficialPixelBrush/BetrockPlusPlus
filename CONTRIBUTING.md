@@ -25,7 +25,12 @@ Grab the `main` branch for the most up-to-date, albeit unstable, repository.
 - Enums **must** have a type
 - If possible, do not pass values separately. Make use of structs that combine them
     - i.e. instead of `int32_t posX, int32_t posY, int32_t posZ`, just use `Int3 pos`
-- Run `clang-format -i` over the files you changed
+- Run `clang-format` over the files you changed
+    ```bash
+    cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -B build
+    run-clang-tidy -p build -fix
+    clang-format -i $(find . -name "*.cpp" -o -name "*.h")
+    ```
 - Provide a short description what a file is for the relevant file, why it exists and what its used for
 - PLEASE include the copyright notice at the top. This also serves as a nice way for people to get credited, if the git history is ever lost. **Any** change will get you added to there (within reason).
 
