@@ -26,7 +26,7 @@
 #include <filesystem>
 #include <iostream>
 
-Server::Server() : config("server.properties"), worldHell(true) {
+Server::Server() : worldHell(true), config("server.properties") {
 	loadConfig();
 	createServerSocket(serverPort);
 	if (serverSocket < 0) {
