@@ -202,7 +202,7 @@ void NetworkStream::ReadEntityMetadata(std::vector<PacketData::EntityMetadata::D
 			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = item });
 			break;
 		}
-		case PacketData::EntityMetadata::Type::COORINDATES: {
+		case PacketData::EntityMetadata::Type::COORDINATES: {
 			Int32_3 coordinate(Read<int32_t>(), Read<int32_t>(), Read<int32_t>());
 			metadata.push_back(
 			    PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = coordinate });
@@ -247,7 +247,7 @@ void NetworkStream::WriteEntityMetadata(const std::vector<PacketData::EntityMeta
 				Write(std::get<ItemStack>(entry.value).data);
 			}
 			break;
-		case PacketData::EntityMetadata::Type::COORINDATES:
+		case PacketData::EntityMetadata::Type::COORDINATES:
 			Write(std::get<Int32_3>(entry.value).x);
 			Write(std::get<Int32_3>(entry.value).y);
 			Write(std::get<Int32_3>(entry.value).z);
