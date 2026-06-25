@@ -388,4 +388,13 @@ struct hash<TriNumber<T>> {
 		return h;
 	}
 };
+
+template <typename T>
+struct hash<BiNumber<T>> {
+	size_t operator()(const BiNumber<T>& p) const noexcept {
+		size_t h = hash<T>{}(p.x);
+		h ^= hash<T>{}(p.y) * 0x9e3779b9u + 0x6b3a9a4fu;
+		return h;
+	}
+};
 } // namespace std

@@ -5,6 +5,8 @@
 */
 #pragma once
 #include "inventories.h"
+#include "tile_entities/tile_entity.h"
+#include <memory>
 
 struct difference {
 	std::optional<ItemStack>& stack;

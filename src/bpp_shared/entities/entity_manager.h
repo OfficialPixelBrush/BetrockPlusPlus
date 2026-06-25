@@ -6,6 +6,7 @@
 */
 #pragma once
 #include "entity.h"
+#include "logger/logger.h"
 
 struct EntityBucket {
 	// 16 blocks tall

@@ -897,6 +897,7 @@ void Server::processIncoming(PlayerSession& session) {
 		case PacketId::SetHotbarSlot: {
 			Packet::SetHotbarSlot pkt;
 			pkt.Deserialize(session.stream);
+			HandlePacket::SetHotbarSlot(pkt, session);
 			break;
 		}
 		case PacketId::InteractWithBlock: {
