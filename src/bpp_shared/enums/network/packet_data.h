@@ -120,7 +120,7 @@ public:
 		FLOAT = 3,
 		STRING = 4,
 		ITEM = 5,
-		COORINDATES = 6
+		COORDINATES = 6
 	};
 
 	enum Flags {
