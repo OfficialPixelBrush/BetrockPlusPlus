@@ -119,10 +119,10 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 // Helper: send a PlayerPositionAndRotation packet to move a session to new coords.
 [[maybe_unused]] static void SendTeleport(PlayerSession& target, Vec3 position, float yaw = 0.0f, float pitch = 0.0f) {
 	Packet::PlayerPositionAndRotation pkt;
-	pkt.x = position.x;
-	pkt.y = position.y;
-	pkt.stance = position.y + PLAYER_EYE_HEIGHT;
-	pkt.z = position.z;
+	pkt.position.x = position.x;
+	pkt.position.y = position.y;
+	pkt.camera_y = position.y + PLAYER_EYE_HEIGHT;
+	pkt.position.z = position.z;
 	pkt.yaw = yaw;
 	pkt.pitch = pitch;
 	pkt.onGround = false;

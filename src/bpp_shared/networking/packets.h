@@ -125,8 +125,8 @@ public:
 		SetEquipment() : BasePacket{ PacketId::SetEquipment } {}
 		EntityId entity_id;
 		int16_t inventory_slot;
-		int16_t item_id;
-		int16_t item_metadata;
+		ItemId item_id;
+		ItemDamage item_metadata;
 
 		void Serialize(NetworkStream& stream) const override {
 			stream.Write(m_id);
@@ -139,8 +139,8 @@ public:
 		void Deserialize(NetworkStream& stream) override {
 			entity_id = stream.Read<EntityId>();
 			inventory_slot = stream.Read<int16_t>();
-			item_id = stream.Read<int16_t>();
-			item_metadata = stream.Read<int16_t>();
+			item_id = stream.Read<ItemId>();
+			item_metadata = stream.Read<ItemDamage>();
 		}
 	};
 
@@ -279,30 +279,29 @@ public:
 	// Defines the players position and rotation
 	struct PlayerPositionAndRotation : BasePacket {
 		PlayerPositionAndRotation() : BasePacket{ PacketId::PlayerPositionAndRotation } {}
-		double x = 0.0;
-		double y = 0.0;
-		double stance = 0.0; // must be between (y + 1.6) and (y + 1.7)(?)
-		double z = 0.0;
-		float yaw = 0.0f;
-		float pitch = 0.0f;
+		Vec3 position;
+		double camera_y;
+		Float2 rotation;
+		float& yaw = rotation.x; // wire order: yaw first
+		float& pitch = rotation.y;
 		bool onGround = false;
 
 		void Serialize(NetworkStream& stream) const override {
 			stream.Write(m_id);
-			stream.Write(x);
-			stream.Write(y);
-			stream.Write(stance);
-			stream.Write(z);
+			stream.Write(position.x);
+			stream.Write(position.y);
+			stream.Write(camera_y);
+			stream.Write(position.z);
 			stream.Write(yaw);
 			stream.Write(pitch);
 			stream.Write(onGround);
 		}
 
 		void Deserialize(NetworkStream& stream) override {
-			x = stream.Read<double>();
-			y = stream.Read<double>();
-			stance = stream.Read<double>();
-			z = stream.Read<double>();
+			position.x = stream.Read<double>();
+			position.y = stream.Read<double>();
+			camera_y = stream.Read<double>();
+			position.z = stream.Read<double>();
 			yaw = stream.Read<float>();
 			pitch = stream.Read<float>();
 			onGround = stream.Read<bool>();
@@ -581,7 +580,7 @@ public:
 		Int8_2 q_rotation;
 		int8_t& q_yaw = q_rotation.x; // wire order: yaw first
 		int8_t& q_pitch = q_rotation.y;
-		//std::vector<uint8_t> metadata;
+		std::vector<PacketData::EntityMetadata::DataEntry> metadata;
 
 		void Serialize(NetworkStream& stream) const override {
 			stream.Write(m_id);
@@ -592,7 +591,7 @@ public:
 			stream.Write(q_position.z);
 			stream.Write(q_yaw);
 			stream.Write(q_pitch);
-			// TODO: Metadata handling
+			stream.WriteEntityMetadata(metadata);
 		}
 
 		void Deserialize(NetworkStream& stream) override {
@@ -603,7 +602,7 @@ public:
 			q_position.z = stream.Read<int32_t>();
 			q_yaw = stream.Read<int8_t>();
 			q_pitch = stream.Read<int8_t>();
-			stream.ReadEntityMetadata();
+			stream.ReadEntityMetadata(metadata);
 		}
 	};
 
@@ -857,7 +856,7 @@ public:
 	struct EntityMetadata : BasePacket {
 		EntityMetadata() : BasePacket{ PacketId::EntityMetadata } {}
 		EntityId entity_id;
-		std::vector<uint8_t> metadata;
+		std::vector<PacketData::EntityMetadata::DataEntry> metadata;
 
 		// TODO: Ideally this'd immediately read/write
 		// the relevant data for the entity behind the ID,
@@ -866,12 +865,12 @@ public:
 		void Serialize(NetworkStream& stream) const override {
 			stream.Write(m_id);
 			stream.Write(entity_id);
-			// TODO: Metadata handling
+			stream.WriteEntityMetadata(metadata);
 		}
 
 		void Deserialize(NetworkStream& stream) override {
 			entity_id = stream.Read<EntityId>();
-			stream.ReadEntityMetadata();
+			stream.ReadEntityMetadata(metadata);
 		}
 	};
 

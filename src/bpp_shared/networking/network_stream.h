@@ -17,6 +17,7 @@
 #pragma comment(lib, "ws2_32.lib")
 #endif
 #include "helpers/byteswap_compat.h"
+#include "packet_data.h"
 #include <bit>
 #include <cstdint>
 #include <cstring>
@@ -103,10 +104,10 @@ public:
 	void WriteBytes(const uint8_t* buf, size_t len);
 
 	// Handles Entity Metadata Interpreting
-	void ReadEntityMetadata();
+	void ReadEntityMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& metadata);
 
 	// Handles Entity Metadata Conversion
-	void WriteEntityMetadata();
+	void WriteEntityMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& metadata);
 
 	// Flush the write buffer to the socket once per tick.
 	// Returns false if the connection was lost.
