@@ -5,9 +5,11 @@
  *
  */
 #pragma once
-
 #include "helpers/AABB.h"
+#include "numeric_structs.h"
 #include "world/world.h"
+
+class WorldManager;
 
 struct Entity {
 	// World pointer

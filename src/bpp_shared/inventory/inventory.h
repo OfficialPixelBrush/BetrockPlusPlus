@@ -9,9 +9,11 @@
 #include "item_stack.h"
 #include <algorithm>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
+
 
 struct ItemStack;
 struct EntityPlayer;

@@ -137,10 +137,22 @@ inline void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManag
 
 inline void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& world,
                        std::vector<std::unique_ptr<PlayerSession>>& /*players*/) {
+	auto* currentItem = session.inventory.getHeldItem();
+	if (!currentItem) {
+		GlobalLogger().error << "Current inventory slot is null\n";
+		return;
+	}
+	// Client sends a count of n-1 when placing a block,
+	// so we increment it here to match the actual count
+	// If the placement failed it'll just be n, so we can
+	// safely ignore those cases like that
+	if (pkt.item.count >= 0)
+		pkt.item.count++;
+
 	// The held item and the item in the slot must match otherwise we reject it
-	if (pkt.item != *session.inventory.getCurrentItem()) {
+	if (pkt.item != *currentItem) {
 		GlobalLogger().warn << "Client attempted to place a non-matching item! (Held: "
-		                    << *session.inventory.getCurrentItem() << ", Placed: " << pkt.item << ")\n";
+		                    << *session.inventory.getHeldItem() << ", Placed: " << pkt.item << ")\n";
 		return;
 	}
 	// Block interactions
@@ -238,8 +250,13 @@ inline void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldMan
 
 	// Update the player's inventory to remove the item they just placed
 	// The client already decrements the item count, so we just need to do the same on our side
-	session.activeInteraction->inventory->decreaseStackSize(session.inventory.currentItem,
-	                                                        session.inventory.getCurrentItem()->count);
+	currentItem->decrementCount(1);
+}
+
+inline void SetHotbarSlot(Packet::SetHotbarSlot& pkt, PlayerSession& session) {
+	if (pkt.slot < 0 || pkt.slot >= 9)
+		return;
+	session.inventory.activeHotbarSlot = pkt.slot;
 }
 
 // Click handler

@@ -10,6 +10,7 @@
 #include "item_stack.h"
 #include "logger.h"
 #include <algorithm>
+#include <memory>
 #include <optional>
 #include <random>
 
@@ -34,6 +35,7 @@ enum InvMap {
 // Slot 0 is the crafting result
 struct InventoryPlayer : Inventory {
 public:
+	int activeHotbarSlot = 0;
 	int currentItem = 0;
 	bool inventoryChanged = false;
 	EntityPlayer* player = nullptr;
@@ -46,6 +48,12 @@ public:
 		if (currentItem < 0 || currentItem >= 9)
 			return nullptr;
 		return getStackInSlot(currentItem);
+	}
+
+	ItemStack* getHeldItem() {
+		if (activeHotbarSlot < 0 || activeHotbarSlot >= 9)
+			return nullptr;
+		return getStackInSlot(activeHotbarSlot + 36);
 	}
 
 	InvMap getInventoryAreaFromSlot(int slot) {

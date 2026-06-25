@@ -14,9 +14,9 @@
 
 // Just a virtual container
 struct ItemStack {
-	int16_t id = 0;
-	int8_t count = 0;
-	int16_t data = 0; // This is "damage" in the og java but data makes more sense for what this is used for
+	ItemId id = ITEM_INVALID;
+	ItemAmount count = 0;
+	ItemDamage data = 0; // This is "damage" in the og java but data makes more sense for what this is used for
 
 	bool operator==(const ItemStack& o) const {
 		return id == o.id && count == o.count && data == o.data;
@@ -35,6 +35,18 @@ struct ItemStack {
 		os << "(" << static_cast<int64_t>(val.id) << ":" << static_cast<int64_t>(val.data) << " x"
 		   << static_cast<int64_t>(val.count) << ")";
 		return os;
+	}
+
+	void decrementCount(int8_t amount) {
+		if (count - amount < 0) {
+			count = 0;
+		} else {
+			count -= amount;
+		}
+		if (count <= 0) {
+			id = ITEM_INVALID;
+			data = 0;
+		}
 	}
 
 	std::wstring wstr() const {

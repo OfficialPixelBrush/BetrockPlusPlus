@@ -28,17 +28,6 @@ enum class ChunkState : uint8_t {
 	Unloading
 };
 
-inline uint64_t getCPosHash(const Int32_2& pcpos) {
-	return (uint64_t(pcpos.x) << 32) | uint64_t(pcpos.z);
-}
-
-template <>
-struct std::hash<Int32_2> {
-	std::size_t operator()(const Int32_2& p) const noexcept {
-		return std::hash<uint64_t>{}(getCPosHash(p));
-	}
-};
-
 struct Chunk {
 	static constexpr int VOLUME = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH;
 	static constexpr int META_VOLUME = VOLUME / 2;
