@@ -99,7 +99,7 @@ inline void PlayerRotation(Packet::PlayerRotation& pkt, PlayerSession& session) 
 }
 
 inline void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& pkt, PlayerSession& session) {
-	session.position.pos = { pkt.x, pkt.y, pkt.z };
+	session.position.pos = pkt.position;
 	session.rotation.x = pkt.yaw;
 	session.rotation.y = pkt.pitch;
 }

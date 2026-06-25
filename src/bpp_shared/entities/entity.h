@@ -5,6 +5,7 @@
  *
  */
 #pragma once
+#include "entity_type.h"
 #include "helpers/AABB.h"
 #include "numeric_structs.h"
 #include "world/world.h"
@@ -12,6 +13,7 @@
 class WorldManager;
 
 struct Entity {
+	EntityType type = ENTITY_NONE;
 	// World pointer
 	WorldManager* world = nullptr;
 

@@ -6,7 +6,11 @@
 */
 
 #pragma once
+#include "inventory/item_stack.h"
+#include "numeric_structs.h"
 #include <cstdint>
+#include <string>
+#include <variant>
 
 namespace PacketData {
 // Used by the Mine Block Packet (0x0E)
@@ -123,6 +127,14 @@ public:
 		BURNING = 0,
 		SNEAKING = 1,
 		RIDING = 2
+	};
+	struct DataEntry {
+		Type type;
+		uint8_t index;
+
+		using Value = std::variant<int8_t, int16_t, int32_t, float, std::wstring, ItemStack, Int32_3>;
+
+		Value value;
 	};
 };
 

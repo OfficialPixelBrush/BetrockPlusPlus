@@ -754,12 +754,9 @@ void Server::waitForSpawnChunks(PlayerSession& session) {
 	GlobalLogger().info << "Spawn chunks sent. Setting player position\n";
 
 	Packet::PlayerPositionAndRotation pos;
-	pos.x = session.position.pos.x;
-	pos.y = session.position.pos.y;
-	pos.stance = session.position.pos.y + PLAYER_EYE_HEIGHT;
-	pos.z = session.position.pos.z;
-	pos.yaw = session.rotation.x;
-	pos.pitch = session.rotation.z;
+	pos.position = session.position.pos;
+	pos.camera_y = session.position.pos.y + PLAYER_EYE_HEIGHT;
+	pos.rotation = session.rotation;
 	pos.onGround = false;
 	pos.Serialize(session.stream);
 
