@@ -8,6 +8,4 @@
 
 #include "entity.h"
 
-struct ItemEntity : public Entity {
-	EntityType type = ENTITY_ITEM;
-};
+struct ItemEntity : public Entity {};

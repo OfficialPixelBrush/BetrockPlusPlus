@@ -5,15 +5,16 @@
  *
  */
 #pragma once
-#include "entity_type.h"
 #include "helpers/AABB.h"
 #include "numeric_structs.h"
+#include "packet_data.h"
 #include "world/world.h"
+#include <vector>
+
 
 class WorldManager;
 
 struct Entity {
-	EntityType type = ENTITY_NONE;
 	// World pointer
 	WorldManager* world = nullptr;
 
@@ -101,4 +102,6 @@ struct Entity {
 	virtual void tick() {
 		ticksExisted++;
 	}
+
+	virtual void applyMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {}
 };
