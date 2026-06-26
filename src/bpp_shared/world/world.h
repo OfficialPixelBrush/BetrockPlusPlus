@@ -12,6 +12,7 @@
 #include "BS_thread_pool.hpp"
 #include "base_structs.h"
 #include "blocks.h"
+#include "blocks/block_builder.h"
 #include "entities/entity_manager.h"
 #include "helpers/AABB.h"
 #include "java_math.h"
@@ -175,6 +176,10 @@ struct WorldManager {
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return 0;
 		return chunk->getMeta({ wpos.x & 15, wpos.y, wpos.z & 15 });
+	}
+
+	void setBlock(Int3 wpos, const Block& block) {
+		setBlock(wpos, block.type, block.data);
 	}
 
 	void setBlock(Int3 wpos, BlockType block_type, uint8_t metadata = 0) {
