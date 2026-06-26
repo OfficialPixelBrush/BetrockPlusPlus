@@ -97,12 +97,6 @@ struct Entity {
 	// How high a block face this entity can step onto without jumping.
 	float stepHeight = 0.5f;
 
-	// Collision state
-	bool onGround = false;
-	bool collided = false;
-	bool collidedHorizontally = false;
-	bool collidedVertically = false;
-
     // Collision state
     bool onGround = false;
     bool collided = false;
@@ -130,10 +124,6 @@ struct Entity {
 
 	float moveForward = 0.0f; // Forward/backward input axis
 	float moveStrafe = 0.0f;  // Left/right input axis
-
-    // Accumulated walk distance this tick (unused rn its mostly for the client)
-    float distanceWalkedModified = 0.0f;
-    float prevDistanceWalkedModified = 0.0f;
 
 	// Fire
 	int fire = 0;           // Ticks remaining on fire; 0 = not on fire
