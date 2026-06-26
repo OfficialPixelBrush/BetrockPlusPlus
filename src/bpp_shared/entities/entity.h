@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  *
  * SPDX-License-Identifier: GPL-3.0-only
  *
@@ -11,10 +12,9 @@
 #include "world/world.h"
 #include <vector>
 
-
 class WorldManager;
 
-// Constants pulled from the betaWiki! 
+// Constants pulled from the betaWiki!
 // https://pixelbrush.dev/beta-wiki/entities/movement
 // I <3 BETA WIKI!
 const float KNOCKBACK_VELOCITY_DAMPENING = 0.5f;
@@ -97,13 +97,13 @@ struct Entity {
 	// How high a block face this entity can step onto without jumping.
 	float stepHeight = 0.5f;
 
-    // Collision state
-    bool onGround = false;
-    bool collided = false;
-    bool collidedHorizontally = false;
-    bool collidedVertically = false;
-    bool sneaking = false;
-    bool jumping = false;
+	// Collision state
+	bool onGround = false;
+	bool collided = false;
+	bool collidedHorizontally = false;
+	bool collidedVertically = false;
+	bool sneaking = false;
+	bool jumping = false;
 
 	// Movement / environment state
 	bool hasPhysics = true;
@@ -120,7 +120,7 @@ struct Entity {
 	// Accumulated walk distance this tick (unused rn its mostly for the client)
 	float distanceWalkedModified = 0.0f;
 	float prevDistanceWalkedModified = 0.0f;
-    float ySize = 0.0f;
+	float ySize = 0.0f;
 
 	float moveForward = 0.0f; // Forward/backward input axis
 	float moveStrafe = 0.0f;  // Left/right input axis
@@ -139,13 +139,17 @@ struct Entity {
 	bool preventEntitySpawning = false;
 	bool isFirstUpdate = true; // True only on the very first tick
 
-	virtual void applyMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {}
+	// Encode Entity info into relevant Metadata
+	virtual void encodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {}
 
-    // main per-tick movement update: reads input, applies jumping, dispatches to the appropriate movement path
+	// Apply Metadata to Entity
+	virtual void decodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {}
+
+	// main per-tick movement update: reads input, applies jumping, dispatches to the appropriate movement path
 	virtual void tick() {
-        ticksExisted++;
+		ticksExisted++;
 
-        /*
+		/*
         // input axes are decayed every tick before new input is added
         moveForward *= INPUT_DECAY;
         moveStrafe *= INPUT_DECAY;
@@ -203,72 +207,75 @@ struct Entity {
             motionZ *= friction;
         }
         */
-    }
+	}
 
-    // applies an impulse pushing the entity away from its attacker
-    void applyKnockback(Vec3 direction) {
-		motionX *= KNOCKBACK_VELOCITY_DAMPENING; motionY *= KNOCKBACK_VELOCITY_DAMPENING; motionZ *= KNOCKBACK_VELOCITY_DAMPENING;
-        motionX -= direction.x * HORIZONTAL_KNOCKBACK;
-        motionZ -= direction.z * HORIZONTAL_KNOCKBACK;
-        motionY = std::min(float(motionY + VERTICAL_KNOCKBACK), VERTICAL_KNOCKBACK);
-    }
+	// applies an impulse pushing the entity away from its attacker
+	void applyKnockback(Vec3 direction) {
+		motionX *= KNOCKBACK_VELOCITY_DAMPENING;
+		motionY *= KNOCKBACK_VELOCITY_DAMPENING;
+		motionZ *= KNOCKBACK_VELOCITY_DAMPENING;
+		motionX -= direction.x * HORIZONTAL_KNOCKBACK;
+		motionZ -= direction.z * HORIZONTAL_KNOCKBACK;
+		motionY = std::min(float(motionY + VERTICAL_KNOCKBACK), VERTICAL_KNOCKBACK);
+	}
 
-    // converts strafe/forward input into a velocity impulse along the entity's facing direction
-    void applyInput(float strafe, float forward, float acceleration) {
-        float length = sqrt((strafe * strafe) + (forward * forward));
+	// converts strafe/forward input into a velocity impulse along the entity's facing direction
+	void applyInput(float strafe, float forward, float acceleration) {
+		float length = sqrt((strafe * strafe) + (forward * forward));
 
-        if (length < 0.01) {
-            return;
-        }
+		if (length < 0.01) {
+			return;
+		}
 
-        if (length < 1.0) {
-            length = 1.0;
-        }
+		if (length < 1.0) {
+			length = 1.0;
+		}
 
-        strafe /= length;
-        forward /= length;
+		strafe /= length;
+		forward /= length;
 
-        motionX += (strafe * cos(rotationYaw) - forward * sin(rotationYaw)) * acceleration;
-        motionZ += (forward * cos(rotationYaw) + strafe * sin(rotationYaw)) * acceleration;
-    }
+		motionX += (strafe * cos(rotationYaw) - forward * sin(rotationYaw)) * acceleration;
+		motionZ += (forward * cos(rotationYaw) + strafe * sin(rotationYaw)) * acceleration;
+	}
 
-    // moves the entity by the given vector, handling cobwebs, sneaking, block collisions, and fall state
-    void move(Vec3 movement) {
-        ySize *= 0.4;
+	// moves the entity by the given vector, handling cobwebs, sneaking, block collisions, and fall state
+	void move(Vec3 movement) {
+		ySize *= 0.4;
 
-        if (inWeb) {
-            inWeb = false;
-            movement.x *= COBWEB_HORIZONTAL_DRAG;
-            movement.y *= COBWEB_VERTICAL_DRAG;
-            movement.z *= COBWEB_HORIZONTAL_DRAG;
-			motionX = 0.0f; motionY = 0.0f; motionZ = 0.0f;
-        }
+		if (inWeb) {
+			inWeb = false;
+			movement.x *= COBWEB_HORIZONTAL_DRAG;
+			movement.y *= COBWEB_VERTICAL_DRAG;
+			movement.z *= COBWEB_HORIZONTAL_DRAG;
+			motionX = 0.0f;
+			motionY = 0.0f;
+			motionZ = 0.0f;
+		}
 
-        Vec3 original = movement;
+		Vec3 original = movement;
 
-        if (onGround && sneaking) {
-            sneakClipMovement(movement);
-        }
+		if (onGround && sneaking) {
+			sneakClipMovement(movement);
+		}
 
-        resolveCollisions(movement, original);
-        updateFallState(movement.y);
-    }
+		resolveCollisions(movement, original);
+		updateFallState(movement.y);
+	}
 
-    void sneakClipMovement(Vec3& movement) {}
+	void sneakClipMovement(Vec3& movement) {}
 	void resolveCollisions(Vec3& movement, const Vec3& original) {}
 	void dealDamage(int amount) {}
 
-    // accumulates fall distance while airborne and deals damage on landing
-    void updateFallState(float movedY) {
-        if (onGround) {
-            if (fallDistance > FALL_DAMAGE_FLOOR) {
-                dealDamage(ceil(fallDistance - FALL_DAMAGE_FLOOR));
-            }
+	// accumulates fall distance while airborne and deals damage on landing
+	void updateFallState(float movedY) {
+		if (onGround) {
+			if (fallDistance > FALL_DAMAGE_FLOOR) {
+				dealDamage(ceil(fallDistance - FALL_DAMAGE_FLOOR));
+			}
 
-            fallDistance = 0;
-        }
-        else if (movedY < 0) {
-            fallDistance -= movedY;
-        }
-    }
+			fallDistance = 0;
+		} else if (movedY < 0) {
+			fallDistance -= movedY;
+		}
+	}
 };
