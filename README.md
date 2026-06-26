@@ -49,37 +49,39 @@ Betrock++ also works on Linux! Theoretically, any Distro should be supported, so
 
 ##### Debian / Ubuntu / Linux Mint
 ```bash
-sudo apt install git cmake clang build-essential libdeflate-dev libglfw3-dev libglm-dev libopenal-dev
+sudo apt install git cmake clang build-essential libdeflate-dev libglfw3-dev libglm-dev libopenal-dev libsdl3-dev libgl1-mesa-dev libasan8
 ```
+> Note: `libsdl3-dev` is only packaged on Debian 13 (trixie) and newer, and Ubuntu 25.10 and newer. On Ubuntu 24.04/22.04 LTS it is not in `apt`, so you'll need a newer release or to build SDL3 from source.
 
 ##### RHEL / Fedora
 ```bash
-sudo dnf install git cmake clang gcc gcc-c++ make libdeflate-devel glfw-devel glm-devel openal-soft-devel
+sudo dnf install git cmake clang gcc gcc-c++ make libasan libdeflate-devel glfw-devel glm-devel openal-soft-devel SDL3-devel mesa-libGL-devel
 ```
 
 ##### Arch Linux / SteamOS / CachyOS
 ```bash
-sudo pacman -S git cmake clang base-devel libdeflate glfw glm openal
+sudo pacman -S git cmake clang base-devel libdeflate glfw glm openal sdl3 libasan
 ```
 
 ##### openSUSE (Leap / Tumbleweed)
 ```bash
-sudo zypper install git cmake clang gcc gcc-c++ make libdeflate-devel glfw-devel glm-devel openal-soft-devel
+sudo zypper install git cmake clang gcc gcc-c++ make libdeflate-devel glfw-devel glm-devel openal-soft-devel SDL3-devel Mesa-libGL-devel libasan8
 ```
 
 ##### Alpine Linux
 ```bash
-sudo apk add git cmake clang gcc g++ make libdeflate-dev glfw-dev glm-dev openal-soft-dev
+sudo apk add git cmake clang gcc g++ make libdeflate-dev glfw-dev glm-dev openal-soft-dev sdl3-dev mesa-dev compiler-rt
 ```
+> Note: `sdl3-dev` is currently only in the **edge** branch's `community` repo. Also, Alpine ships no `libasan` and GCC's AddressSanitizer is broken on musl, so for Debug builds (which use `-fsanitize=address`) compile with **clang**, which uses the ASan runtime from `compiler-rt`.
 
 ##### Void Linux
 ```bash
-sudo xbps-install -S base-devel git cmake clang libdeflate-devel glfw-devel glm libopenal-devel
+sudo xbps-install -S base-devel git cmake clang libdeflate-devel glfw-devel glm libopenal-devel SDL3-devel MesaLib-devel libsanitizer-devel
 ```
 
 ##### Gentoo
 ```bash
-sudo emerge dev-vcs/git dev-util/cmake sys-devel/clang sys-devel/gcc sys-devel/make dev-libs/libdeflate media-libs/glfw media-libs glm media-libs/openal
+sudo emerge dev-vcs/git dev-util/cmake sys-devel/clang sys-devel/gcc sys-devel/make dev-libs/libdeflate media-libs/glfw media-libs/glm media-libs/openal media-libs/libsdl3 media-libs/mesa
 ```
 
 ### Building
