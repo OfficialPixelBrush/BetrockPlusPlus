@@ -60,6 +60,30 @@ void Server::indexRemoveChunk(PlayerSession& session, const Int32_2& pos) {
 		chunkSessions.erase(it);
 }
 
+void Server::indexAddDimensionalPlayer(PlayerSession& session) {
+	auto it = std::find_if(players.begin(), players.end(),
+	                       [&session](const std::shared_ptr<PlayerSession>& p) { return p.get() == &session; });
+	if (it == players.end())
+		return;
+	if (session.dimension == -1)
+		hellPlayers.push_back(*it);
+	else
+		overworldPlayers.push_back(*it);
+}
+
+void Server::indexRemoveDimensionalPlayer(PlayerSession& session) {
+	auto removeFrom = [&session](std::vector<std::weak_ptr<PlayerSession>>& vec) {
+		vec.erase(std::remove_if(vec.begin(), vec.end(),
+		                         [&session](const std::weak_ptr<PlayerSession>& w) {
+			                         auto locked = w.lock();
+			                         return !locked || locked.get() == &session;
+		                         }),
+		          vec.end());
+	};
+	removeFrom(overworldPlayers);
+	removeFrom(hellPlayers);
+}
+
 void Server::indexRemoveSession(PlayerSession& session) {
 	for (const auto& pos : session.flushedChunks)
 		indexRemoveChunk(session, pos);
@@ -151,7 +175,8 @@ void Server::startup() {
 	int loaded_chunks = 0;
 	bool spawnDone = false;
 	auto start = std::chrono::steady_clock::now();
-	GlobalLogger().info << "Server spawn is " << Int2(int(gameRuntime.world.spawnPoint.x), int(gameRuntime.world.spawnPoint.z)) << "\n";
+	GlobalLogger().info << "Server spawn is "
+	                    << Int2(int(gameRuntime.world.spawnPoint.x), int(gameRuntime.world.spawnPoint.z)) << "\n";
 	GlobalLogger().info << "Loading spawn chunks for Overworld: (" << total_spawn_chunks << ")\n";
 
 	// Push every single spawn chunk to get ready for generation
@@ -230,7 +255,8 @@ void Server::startup() {
 		gameRuntime.worldHell.lightManager.processLightQueue(gameRuntime.worldHell);
 		for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
 			for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
-				Int32_2 p{ (gameRuntime.worldHell.spawnPoint.x >> 4) + dx, (gameRuntime.worldHell.spawnPoint.z >> 4) + dz };
+				Int32_2 p{ (gameRuntime.worldHell.spawnPoint.x >> 4) + dx,
+					       (gameRuntime.worldHell.spawnPoint.z >> 4) + dz };
 				auto it = gameRuntime.worldHell.chunks.find(p);
 				if (it != gameRuntime.worldHell.chunks.end() && it->second->state.load() >= ChunkState::Generated)
 					loaded_chunks++;
@@ -320,7 +346,7 @@ void Server::acceptNewPlayers() {
 	auto clientSocket = createClientSocket();
 	if (clientSocket < 0)
 		return;
-	players.push_back(std::make_unique<PlayerSession>(clientSocket));
+	players.push_back(std::make_shared<PlayerSession>(clientSocket));
 	players.back()->players = &players;
 }
 
@@ -672,6 +698,9 @@ void Server::handleLogin(PlayerSession& session) {
 	// Send our inventory
 	PacketUtilities::sendInventory(session, 0, session.inventory);
 
+	// Register into the correct dimensional player list
+	indexAddDimensionalPlayer(session);
+
 	session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
@@ -682,6 +711,9 @@ void Server::disconnectPlayer(PlayerSession& session, const std::wstring& reason
 	kick.Serialize(session.stream);
 	session.stream.setConnected(false); // This should force an NBT save
 	GlobalLogger().info << L"Player " << session.username << L" disconnected: " << reason << L"\n";
+
+	// Remove from dimensional player list
+	indexRemoveDimensionalPlayer(session);
 }
 
 void Server::waitForSpawnChunks(PlayerSession& session) {
@@ -773,6 +805,11 @@ void Server::transferPlayerDimension(PlayerSession& session) {
 		PacketUtilities::CloseContainer(session);
 	}
 	PacketUtilities::sendInventory(session, 0, session.inventory);
+
+	// Move player into the correct dimensional list for the new dimension
+	indexRemoveDimensionalPlayer(session);
+	indexAddDimensionalPlayer(session);
+
 	GlobalLogger().info << L"Player " << session.username << L" transferred to dimension " << int(session.dimension)
 	                    << L"\n";
 
