@@ -49,6 +49,10 @@ struct Runtime {
 		overworldRegionManager.initialize(levelPath + "/region");
 		hellRegionManager.initialize(levelPath + "/DIM-1/region");
 
+		// Bind our pointers
+		overworldRegionManager.world = &world;
+		hellRegionManager.world = &worldHell;
+
 		// Initialize save data with our world objects
 		saveManager.loadLevelData();
 		world.initWorldSeed(saveManager.getLevelData().RandomSeed);
