@@ -27,10 +27,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "networking/network_stream.h"
 #include "networking/packets.h"
 #include "player_session.h"
-#include "world/client_pos.h"
-#include "world/storage/region_manager.h"
-#include "world/storage/save_manager.h"
-#include "world/world.h"
+#include "runtime.h"
 #include <chrono>
 #include <memory>
 #include <thread>
@@ -127,21 +124,16 @@ private:
 	static constexpr float TICK_DELTA = 1.0f / 20.0f;
 	static constexpr int MAX_TICKS_PER_FRAME = 10;
 
-	WorldManager world;
-	WorldManager worldHell;
+	Runtime gameRuntime;
 	ChunkSender chunkSender;
 	std::vector<std::unique_ptr<PlayerSession>> players;
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> chunkBlockChanges;
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> chunkBlockChangesHell;
 
-	// Reverse index: which sessions currently have a given chunk loaded.
-	// Maintained in sync with session.flushedChunks so block-change dispatch
-	// can skip chunks that no player has received, avoiding a full player scan.
-	// Key is {chunkX, chunkZ, dimension} to avoid overworld/nether collisions.
+	// Which sessions currently have a given chunk loaded?
 	std::unordered_map<Int32_3, std::vector<PlayerSession*>> chunkSessions;
 	int serverSocket = -1;
 	int serverPort = 25565;
-	EntityId nextEntityId = 2;
 	int64_t timeout_seconds = 60;
 	int flushChunkCount = 10;
 	float accumulator = 0.0f;
@@ -150,9 +142,4 @@ private:
 	CommandManager command_manager;
 	bool stopped = false;
 	Config config;
-
-	// Storage
-	SaveManager saveManager;
-	RegionManager overworldRegionManager;
-	RegionManager hellRegionManager; // hehe i call it hell instead of nether cause im quirky
 };
