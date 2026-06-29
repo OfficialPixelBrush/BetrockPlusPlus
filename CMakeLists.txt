@@ -125,7 +125,7 @@ set(CLIENT_SOURCES
 add_executable(BetrockPlusPlus
     src/main.cpp
     ${SHARED_SOURCES}
-)
+ "src/bpp_shared/world/storage/region_manager.cpp")
 
 # Includes
 include_directories(
