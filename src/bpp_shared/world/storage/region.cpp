@@ -21,9 +21,9 @@
 #include <memory>
 #include <string>
 
-void Region::AddChunk(std::shared_ptr<Chunk> chunk) {
+void Region::AddChunk(std::shared_ptr<Chunk> chunk, int64_t timestamp) {
 	std::lock_guard<std::mutex> lock(m_mutex);
-	auto compressed = EncodeNbtData(chunk);
+	auto compressed = EncodeNbtData(chunk, timestamp);
 	if (compressed.empty())
 		return;
 
@@ -145,7 +145,7 @@ std::shared_ptr<Chunk> Region::GetChunk(Int32_2 cpos) {
 	return DecodeNbtData(compressed);
 }
 
-std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk) {
+std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk, int64_t timestamp) {
 	// Build a compound tag representing a chunk level entry
 	Tag root;
 	root.type = TAG_COMPOUND;
@@ -171,7 +171,7 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk) 
 	Tag lastUpdate;
 	lastUpdate.type = TAG_LONG;
 	lastUpdate.name = "LastUpdate";
-	lastUpdate.longValue = 123456789LL;
+	lastUpdate.longValue = timestamp;
 
 	// Byte array, blocks
 	Tag blocks;

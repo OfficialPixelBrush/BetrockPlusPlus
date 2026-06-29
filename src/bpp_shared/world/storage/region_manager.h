@@ -38,6 +38,9 @@ struct RegionManager {
 	std::mutex outChunksMutex;
 	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> outChunks;
 
+	// As much as I hate to do this it makes my job easier
+	WorldManager* world = nullptr;
+
 	~RegionManager() {
 		release();
 	}
@@ -63,6 +66,8 @@ struct RegionManager {
 
 		// Clear the folder path so the manager can't be accidentally reused
 		m_folderPath.clear();
+
+		world = nullptr;
 
 		return true;
 	}
@@ -168,8 +173,9 @@ struct RegionManager {
 				requeue.push_back(chunk);
 				continue;
 			}
-			iopool.detach_task([chunk, region]() {
-				region->AddChunk(chunk); // Region stays alive via shared_ptr capture
+			auto currentTime = world->elapsed_ticks;
+			iopool.detach_task([chunk, region, currentTime]() {
+				region->AddChunk(chunk, currentTime); // Region stays alive via shared_ptr capture
 			});
 		}
 
