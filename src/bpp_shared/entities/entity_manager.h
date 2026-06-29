@@ -66,9 +66,13 @@ struct EntityManager {
 			GlobalLogger().error << "Attempted to add an entity before EntityManager was bound to a world!\n";
 			return;
 		}
-		entity->id = forceEntityId == -1 ? nextEntityId++
+		entity->id = forceEntityId == -1 ? getNextEntityId()
 		                                 : forceEntityId; // Assign an ID if we weren't forced to use one
 		entity->world = world; // Bind the world pointer so the entity can interact with the world
 		entities.push_back(std::move(entity));
+	}
+
+	int64_t getNextEntityId() {
+		return nextEntityId++;
 	}
 };

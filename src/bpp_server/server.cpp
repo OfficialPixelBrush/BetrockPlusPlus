@@ -26,7 +26,7 @@
 #include <filesystem>
 #include <iostream>
 
-Server::Server() : worldHell(true), config("server.properties") {
+Server::Server() : config("server.properties") {
 	loadConfig();
 	createServerSocket(serverPort);
 	if (serverSocket < 0) {
@@ -34,41 +34,7 @@ Server::Server() : worldHell(true), config("server.properties") {
 		exit(1);
 	}
 	GlobalLogger().info << "Server initialized on port " << serverPort << "\n";
-
-	// Basic save loading
-	bool newSave = false;
-	if (!saveManager.initialize(config.GetAsString("level-name"))) {
-		GlobalLogger().warn << "**** FAILED TO LOAD WORLD DATA! Attempting to create new world... \n";
-		newSave = true;
-		if (!saveManager.createNewWorld({ .RandomSeed = saveManager.seedFromString(config.GetAsString("level-seed")) })) {
-			GlobalLogger().error << "**** FAILED TO CREATE NEW WORLD! \n";
-			exit(1);
-		}
-		GlobalLogger().info << "New world created successfully. \n";
-	}
-	// Initialize our region managers
-	overworldRegionManager.initialize(config.GetAsString("level-name") + "/region");
-	hellRegionManager.initialize(config.GetAsString("level-name") + "/DIM-1/region");
-
-	// Initialize our world seed
-	saveManager.loadLevelData();
-	world.initWorldSeed(saveManager.getLevelData().RandomSeed);
-	worldHell.initWorldSeed(saveManager.getLevelData().RandomSeed);
-
-	world.elapsed_ticks = saveManager.getLevelData().time;
-	worldHell.elapsed_ticks = saveManager.getLevelData().time;
-
-	// Bind our region managers
-	world.regionManager = &overworldRegionManager;
-	worldHell.regionManager = &hellRegionManager;
-
-	// If we created a new save then make a new spawn point
-	if (newSave) {
-		world.initSpawn();
-	} else {
-		world.spawnPoint = saveManager.getLevelData().spawnPoint;
-	}
-	worldHell.spawnPoint = world.spawnPoint; // Interestingly the world spawn doesn't have the /= or *= 8 stuff
+	gameRuntime.init(config.GetAsString("level-name"), config.GetAsString("level-seed"));
 }
 
 Server::~Server() {
@@ -131,14 +97,12 @@ void Server::loadConfig() {
 void Server::startup() {
 	auto startupStart = std::chrono::steady_clock::now();
 	GlobalLogger().info << "Initializing server startup.. \n";
-	GlobalLogger().info << "Thread count: " << int(world.pool.get_thread_count()) << "\n";
 
-	// Register blocks, setup the world, setup commands, etc.
-	Blocks::registerAll();
+	// Setup commands
 	command_manager.Init();
 
 	// Setup the block callback so we can send it to clients
-	world.onBlockUpdate = [this](PendingBlock pendingBlock, Int32_2 chunkPos) {
+	gameRuntime.world.onBlockUpdate = [this](PendingBlock pendingBlock, Int32_2 chunkPos) {
 		// Only enqueue if at least one session knows about this chunk.
 		auto idxIt = chunkSessions.find(chunkKey(chunkPos, 0));
 		bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
@@ -160,7 +124,7 @@ void Server::startup() {
 		chunkBlockChanges[chunkPos].push_back(pendingNew);
 	};
 
-	worldHell.onBlockUpdate = [this](PendingBlock pendingBlock, Int32_2 chunkPos) {
+	gameRuntime.worldHell.onBlockUpdate = [this](PendingBlock pendingBlock, Int32_2 chunkPos) {
 		auto idxIt = chunkSessions.find(chunkKey(chunkPos, -1));
 		bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
 		if (!anyInterested) {
@@ -187,31 +151,31 @@ void Server::startup() {
 	int loaded_chunks = 0;
 	bool spawnDone = false;
 	auto start = std::chrono::steady_clock::now();
-	GlobalLogger().info << "Server spawn is " << Int2(int(world.spawnPoint.x), int(world.spawnPoint.z)) << "\n";
+	GlobalLogger().info << "Server spawn is " << Int2(int(gameRuntime.world.spawnPoint.x), int(gameRuntime.world.spawnPoint.z)) << "\n";
 	GlobalLogger().info << "Loading spawn chunks for Overworld: (" << total_spawn_chunks << ")\n";
 
 	// Push every single spawn chunk to get ready for generation
 	std::unordered_set<Int32_2> wanted;
 	for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
 		for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
-			Int32_2 pos = { (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz };
+			Int32_2 pos = { (gameRuntime.world.spawnPoint.x >> 4) + dx, (gameRuntime.world.spawnPoint.z >> 4) + dz };
 			wanted.insert(pos);
 		}
 	}
 
 	// Actually request chunks
 	for (auto pos : wanted) {
-		if (!world.chunks.contains(pos)) {
+		if (!gameRuntime.world.chunks.contains(pos)) {
 			auto c = std::make_shared<Chunk>();
 			c->spawnChunk = true;
 			c->cpos = pos;
-			world.chunks.emplace(pos, std::move(c));
+			gameRuntime.world.chunks.emplace(pos, std::move(c));
 		}
-		if (!worldHell.chunks.contains(pos)) {
+		if (!gameRuntime.worldHell.chunks.contains(pos)) {
 			auto c = std::make_shared<Chunk>();
 			c->spawnChunk = true;
 			c->cpos = pos;
-			worldHell.chunks.emplace(pos, std::move(c));
+			gameRuntime.worldHell.chunks.emplace(pos, std::move(c));
 		}
 	}
 
@@ -219,21 +183,21 @@ void Server::startup() {
 	while (!spawnDone) {
 		loaded_chunks = 0;
 		// Force gen these chunks AS FAST AS POSSIBLE
-		world.pumpPipeline({});
-		world.pool.wait();
-		world.drainGenQueue();
-		world.regionManager->iopool.wait();
-		world.drainLoadQueue();
-		world.populateReady();
-		world.lightManager.processLightQueue(world);
+		gameRuntime.world.pumpPipeline({});
+		gameRuntime.world.pool.wait();
+		gameRuntime.world.drainGenQueue();
+		gameRuntime.world.regionManager->iopool.wait();
+		gameRuntime.world.drainLoadQueue();
+		gameRuntime.world.populateReady();
+		gameRuntime.world.lightManager.processLightQueue(gameRuntime.world);
 		// Make sure all lighting is done
-		world.lightManager.processLightQueue(world);
+		gameRuntime.world.lightManager.processLightQueue(gameRuntime.world);
 
 		for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
 			for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
-				Int32_2 p{ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz };
-				auto it = world.chunks.find(p);
-				if (it != world.chunks.end() && it->second->state.load() >= ChunkState::Generated)
+				Int32_2 p{ (gameRuntime.world.spawnPoint.x >> 4) + dx, (gameRuntime.world.spawnPoint.z >> 4) + dz };
+				auto it = gameRuntime.world.chunks.find(p);
+				if (it != gameRuntime.world.chunks.end() && it->second->state.load() >= ChunkState::Generated)
 					loaded_chunks++;
 			}
 		}
@@ -255,20 +219,20 @@ void Server::startup() {
 	while (!spawnDone) {
 		loaded_chunks = 0;
 		// Force gen these chunks AS FAST AS POSSIBLE
-		worldHell.pumpPipeline({});
-		worldHell.pool.wait();
-		worldHell.drainGenQueue();
-		worldHell.regionManager->iopool.wait();
-		worldHell.drainLoadQueue();
-		worldHell.populateReady();
-		worldHell.lightManager.processLightQueue(worldHell);
+		gameRuntime.worldHell.pumpPipeline({});
+		gameRuntime.worldHell.pool.wait();
+		gameRuntime.worldHell.drainGenQueue();
+		gameRuntime.worldHell.regionManager->iopool.wait();
+		gameRuntime.worldHell.drainLoadQueue();
+		gameRuntime.worldHell.populateReady();
+		gameRuntime.worldHell.lightManager.processLightQueue(gameRuntime.worldHell);
 		// Make sure all lighting is done
-		worldHell.lightManager.processLightQueue(worldHell);
+		gameRuntime.worldHell.lightManager.processLightQueue(gameRuntime.worldHell);
 		for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
 			for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
-				Int32_2 p{ (worldHell.spawnPoint.x >> 4) + dx, (worldHell.spawnPoint.z >> 4) + dz };
-				auto it = worldHell.chunks.find(p);
-				if (it != worldHell.chunks.end() && it->second->state.load() >= ChunkState::Generated)
+				Int32_2 p{ (gameRuntime.worldHell.spawnPoint.x >> 4) + dx, (gameRuntime.worldHell.spawnPoint.z >> 4) + dz };
+				auto it = gameRuntime.worldHell.chunks.find(p);
+				if (it != gameRuntime.worldHell.chunks.end() && it->second->state.load() >= ChunkState::Generated)
 					loaded_chunks++;
 			}
 		}
@@ -306,9 +270,6 @@ void Server::run() {
 			auto tickStart = std::chrono::steady_clock::now();
 			tick();
 			float tickMs = std::chrono::duration<float>(std::chrono::steady_clock::now() - tickStart).count() * 1000.0f;
-			if (tickMs > 50.0f) {
-				GlobalLogger().warn << "Can't keep up! Tick took " << int(tickMs) << " ms\n";
-			}
 			tickTimeAccum += tickMs;
 			tickCount++;
 			if (tickCount >= 40) {
@@ -321,8 +282,10 @@ void Server::run() {
 			ticks_ran++;
 		}
 
-		if (ticks_ran == MAX_TICKS_PER_FRAME)
+		if (ticks_ran == MAX_TICKS_PER_FRAME) {
 			accumulator = 0.0f;
+			GlobalLogger().warn << "Can't keep up!";
+		}
 	}
 
 	// Shutdown was requested. Save and clean up on the main thread
@@ -339,18 +302,18 @@ void Server::stop() {
 		disconnectPlayer(*session, L"Server Closed");
 		session->stream.flushWriteBufferBlocking();
 		auto savedNbt = session->serializeToNBT();
-		saveManager.savePlayerNBT(std::string(session->username.begin(), session->username.end()), savedNbt);
+		gameRuntime.saveManager.savePlayerNBT(std::string(session->username.begin(), session->username.end()), savedNbt);
 	}
 	closeSocket();
-	world.shutdown();
-	worldHell.shutdown();
+	gameRuntime.world.shutdown();
+	gameRuntime.worldHell.shutdown();
 
 	// Save our level file
-	levelData& curLevelData = saveManager.getLevelData();
-	curLevelData.RandomSeed = world.seed;
-	curLevelData.spawnPoint = world.spawnPoint;
-	curLevelData.time = world.elapsed_ticks;
-	saveManager.saveLevelFile(curLevelData);
+	levelData& curLevelData = gameRuntime.saveManager.getLevelData();
+	curLevelData.RandomSeed = gameRuntime.world.seed;
+	curLevelData.spawnPoint = gameRuntime.world.spawnPoint;
+	curLevelData.time = gameRuntime.world.elapsed_ticks;
+	gameRuntime.saveManager.saveLevelFile(curLevelData);
 }
 
 void Server::acceptNewPlayers() {
@@ -407,10 +370,10 @@ void Server::tick() {
 				overworldPositions.push_back(session->position);
 		}
 	}
-	world.tick(overworldPositions);
-	world.update(overworldPositions);
-	worldHell.tick(netherPositions);
-	worldHell.update(netherPositions);
+	gameRuntime.world.tick(overworldPositions);
+	gameRuntime.world.update(overworldPositions);
+	gameRuntime.worldHell.tick(netherPositions);
+	gameRuntime.worldHell.update(netherPositions);
 
 	// Send all of the block changes that have accumulated since the last tick, then clear the list.
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChanges;
@@ -429,7 +392,7 @@ void Server::tick() {
 			waitForSpawnChunks(*session);
 			break;
 		case ConnectionState::Playing: {
-			WorldManager& sessionWorld = session->dimension == -1 ? worldHell : world;
+			WorldManager& sessionWorld = session->dimension == -1 ? gameRuntime.worldHell : gameRuntime.world;
 			chunkSender.enqueue(*session, sessionWorld, 16);
 			chunkSender.flush(*session);
 			processIncoming(*session);
@@ -556,8 +519,8 @@ void Server::tick() {
 			}
 		}
 	};
-	dispatchBlockChanges(localBlockChanges, 0, world);
-	dispatchBlockChanges(localBlockChangesHell, -1, worldHell);
+	dispatchBlockChanges(localBlockChanges, 0, gameRuntime.world);
+	dispatchBlockChanges(localBlockChangesHell, -1, gameRuntime.worldHell);
 
 	// Flush all pending outgoing data to the socket once per tick.
 	for (auto& session : players) {
@@ -593,7 +556,7 @@ void Server::tick() {
 			                             if (s->connState == ConnectionState::Playing ||
 			                                 s->connState == ConnectionState::WaitingForSpawnChunks) {
 				                             auto savedNbt = s->serializeToNBT();
-				                             saveManager.savePlayerNBT(
+				                             gameRuntime.saveManager.savePlayerNBT(
 				                                 std::string(s->username.begin(), s->username.end()), savedNbt);
 			                             }
 
@@ -663,20 +626,20 @@ void Server::handleLogin(PlayerSession& session) {
 		return;
 	}
 
-	session.entityId = nextEntityId++;
 	Packet::Login response;
 	response.entity_id = session.entityId;
 	response.username = session.username;
-	response.worldSeed = world.seed;
+	response.worldSeed = gameRuntime.world.seed;
 
 	// Load player data before building the Login response so we know which dimension they're in
-	auto playerNbt = saveManager.getPlayerNBT(std::string(session.username.begin(), session.username.end()));
+	auto playerNbt = gameRuntime.saveManager.getPlayerNBT(std::string(session.username.begin(), session.username.end()));
 	session.loadPlayerNBT(playerNbt);
 
 	response.dimension = static_cast<Dimension>(session.dimension);
 	response.Serialize(session.stream);
 
-	WorldManager& sessionWorld = session.dimension == -1 ? worldHell : world;
+	WorldManager& sessionWorld = session.dimension == -1 ? gameRuntime.worldHell : gameRuntime.world;
+	session.entityId = sessionWorld.entityManager.getNextEntityId();
 
 	Packet::SetSpawnPosition spawn;
 	spawn.position = sessionWorld.spawnPoint;
@@ -722,7 +685,7 @@ void Server::disconnectPlayer(PlayerSession& session, const std::wstring& reason
 }
 
 void Server::waitForSpawnChunks(PlayerSession& session) {
-	WorldManager& sessionWorld = session.dimension == -1 ? worldHell : world;
+	WorldManager& sessionWorld = session.dimension == -1 ? gameRuntime.worldHell : gameRuntime.world;
 	chunkSender.enqueue(session, sessionWorld, flushChunkCount);
 	chunkSender.flush(session);
 
@@ -817,7 +780,7 @@ void Server::transferPlayerDimension(PlayerSession& session) {
 }
 
 void Server::processIncoming(PlayerSession& session) {
-	WorldManager& sessionWorld = session.dimension == -1 ? worldHell : world;
+	WorldManager& sessionWorld = session.dimension == -1 ? gameRuntime.worldHell : gameRuntime.world;
 
 	// Feed available socket bytes into the staging buffer, then process as
 	// many complete packets as are available this tick.
