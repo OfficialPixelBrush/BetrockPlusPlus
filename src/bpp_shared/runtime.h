@@ -8,9 +8,9 @@
 #include "cross_platform.h"
 #include "logger.h"
 #include "world/client_pos.h"
+#include "world/world.h"
 #include "world/storage/region_manager.h"
 #include "world/storage/save_manager.h"
-#include "world/world.h"
 #include <chrono>
 #include <memory>
 #include <thread>

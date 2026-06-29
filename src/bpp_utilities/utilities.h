@@ -91,7 +91,7 @@ inline bool cleanLevel(std::string relPath) {
 						chunksCleaned++;
 						auto chunk = region->GetChunk({ regionCoord.x * 32 + cx, regionCoord.z * 32 + cz });
 						// Save to a new region file
-						newRegion->AddChunk(chunk);
+						newRegion->AddChunk(chunk, 0);
 					}
 				}
 			}
@@ -160,7 +160,7 @@ inline bool cleanLevel(std::string relPath) {
 						chunksCleaned++;
 						auto chunk = region->GetChunk({ regionCoord.x * 32 + cx, regionCoord.z * 32 + cz });
 						// Save to a new region file
-						newRegion->AddChunk(chunk);
+						newRegion->AddChunk(chunk, 0);
 					}
 				}
 			}
