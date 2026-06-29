@@ -69,7 +69,7 @@ inline void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& session) {
 }
 
 inline void ChatMessage(Packet::ChatMessage& pkt, PlayerSession& session,
-                        std::vector<std::unique_ptr<PlayerSession>>& players, WorldManager& world,
+                        std::vector<std::shared_ptr<PlayerSession>>& players, WorldManager& world,
                         CommandManager& cmd_mgr, std::function<void(PlayerSession&)> transferDimension) {
 	if (pkt.message.size() > 0 && pkt.message[0] == '/') {
 		cmd_mgr.Parse(pkt.message, session, world, transferDimension);
@@ -105,7 +105,7 @@ inline void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& pkt, Pl
 }
 
 inline void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& world,
-                      std::vector<std::unique_ptr<PlayerSession>>& /*players*/) {
+                      std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
 	if (pkt.status != 2)
 		return;
 	auto pos = pkt.position;
@@ -136,7 +136,7 @@ inline void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManag
 }
 
 inline void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& world,
-                       std::vector<std::unique_ptr<PlayerSession>>& /*players*/) {
+                       std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
 	// Block interactions
 	auto block = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z });
 	if (block == BLOCK_CHEST) {
@@ -329,7 +329,7 @@ inline void InteractWithEntity(Packet::InteractWithEntity& /*pkt*/, PlayerSessio
 inline void InteractWithBlock(Packet::InteractWithBlock& pkt, PlayerSession& session, WorldManager& world) {}
 
 inline void Animation(Packet::Animation& pkt, PlayerSession& session,
-                      std::vector<std::unique_ptr<PlayerSession>>& players) {
+                      std::vector<std::shared_ptr<PlayerSession>>& players) {
 	for (auto& other : players) {
 		if (other.get() == &session)
 			continue;

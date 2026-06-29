@@ -61,6 +61,10 @@ private:
 	void indexRemoveChunk(PlayerSession& session, const Int32_2& pos);
 	void indexRemoveSession(PlayerSession& session);
 
+	// Dimensional player list helpers
+	void indexAddDimensionalPlayer(PlayerSession& session);
+	void indexRemoveDimensionalPlayer(PlayerSession& session);
+
 	// Encodes chunk position + dimension into a single key for chunkSessions.
 	// x = chunk X, y = chunk Z, z = dimension id
 	static Int32_3 chunkKey(const Int32_2& pos, int8_t dimension) {
@@ -126,7 +130,13 @@ private:
 
 	Runtime gameRuntime;
 	ChunkSender chunkSender;
-	std::vector<std::unique_ptr<PlayerSession>> players;
+
+	// Global players and dimensional players
+	std::vector<std::shared_ptr<PlayerSession>> players;
+	std::vector<std::weak_ptr<PlayerSession>> overworldPlayers;
+	std::vector<std::weak_ptr<PlayerSession>> hellPlayers;
+
+	// Block change tracking
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> chunkBlockChanges;
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> chunkBlockChangesHell;
 

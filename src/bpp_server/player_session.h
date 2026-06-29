@@ -34,7 +34,7 @@ struct PlayerSession {
 
 	// Commands use this to look up other sessions by username.
 	// Should probably handle this in the server!!
-	std::vector<std::unique_ptr<PlayerSession>>* players = nullptr;
+	std::vector<std::shared_ptr<PlayerSession>>* players = nullptr;
 
 	// rotation.x = yaw, rotation.y = pitch
 	Float2 rotation = { 0.0f, 0.0f };
