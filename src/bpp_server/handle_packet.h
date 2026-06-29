@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: GPL-3.0-only
  *
 */
+#pragma once
 #include "logger/logger.h"
 #include <functional>
 #include <string>
@@ -19,7 +20,6 @@
 #pragma comment(lib, "ws2_32.lib")
 #endif
 
-#pragma once
 #include "blocks/block_properties.h"
 #include "commands/command_manager.h"
 #include "networking/network_stream.h"
