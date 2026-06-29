@@ -73,7 +73,8 @@ set(SHARED_SOURCES
     src/bpp_shared/world/world.cpp
     src/bpp_shared/world/lighter.cpp
     src/bpp_shared/world/storage/region.cpp
-    src/bpp_shared/blocks/block_properties.cpp 
+    src/bpp_shared/world/storage/region_manager.cpp
+    src/bpp_shared/blocks/block_properties.cpp
 
     # Generation
     src/bpp_shared/world/noise/noise_generator.cpp
@@ -125,7 +126,7 @@ set(CLIENT_SOURCES
 add_executable(BetrockPlusPlus
     src/main.cpp
     ${SHARED_SOURCES}
- "src/bpp_shared/world/storage/region_manager.cpp")
+)
 
 # Includes
 include_directories(
