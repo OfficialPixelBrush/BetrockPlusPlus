@@ -1,0 +1,36 @@
+#pragma once
+
+namespace PacketUtilities {
+inline void sendInventory(PlayerSession& session, int8_t windowId, Inventory inventory) {
+	std::vector<ItemStack> items;
+	for (auto& item : inventory.slots) {
+		if (!item.has_value()) {
+			items.emplace_back(ITEM_INVALID); // empty slot
+			continue;
+		}
+		items.emplace_back(item->id, item->count, item->data);
+	}
+	Packet::FillContainer fc;
+	fc.window_id = windowId;
+	fc.items = std::move(items);
+	fc.Serialize(session.stream);
+}
+
+// Sends a single slot update. windowId=-1 / slotId=-1 updates the cursor.
+inline void sendSlot(PlayerSession& session, int8_t windowId, int16_t slotId, ItemStack* stack) {
+	Packet::SetSlot pkt;
+	pkt.window_id = windowId;
+	pkt.slot_id = slotId;
+	pkt.item = stack ? ItemStack{ stack->id, stack->count, stack->data } : ItemStack{ ITEM_INVALID };
+	pkt.Serialize(session.stream);
+}
+
+inline void CloseContainer(PlayerSession& session) {
+	// Get rid of our active interaction and reset the window id
+	Packet::CloseContainer cc;
+	cc.window_id = session.openWindowId;
+	cc.Serialize(session.stream);
+	session.activeInteraction = nullptr;
+	session.openWindowId = 0;
+}
+}; // namespace PacketUtilities
