@@ -103,6 +103,7 @@ set(SHARED_SOURCES
 # Server-specific source code
 set(SERVER_SOURCES
     src/bpp_server/server.cpp
+    src/bpp_server/handle_packet.cpp
 
     src/bpp_server/commands/command.cpp
     src/bpp_server/commands/command_manager.cpp
