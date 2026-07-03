@@ -37,7 +37,6 @@ struct InventoryPlayer : Inventory {
 public:
 	int activeHotbarSlot = 0;
 	int currentItem = 0;
-	bool inventoryChanged = false;
 	EntityPlayer* player = nullptr;
 
 	InventoryPlayer() : Inventory(45) {
@@ -89,10 +88,6 @@ public:
 		if (slot >= 0 && slot <= 8)
 			return slot + 36;
 		return -1;
-	}
-
-	void onInventoryChanged() override {
-		inventoryChanged = true;
 	}
 };
 

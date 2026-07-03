@@ -91,13 +91,25 @@ struct WorldManager {
 	void populateReady();
 	void drainLoadQueue();
 
+	// For creating a fresh tile entity for generation etc
 	void createTileEntity(std::shared_ptr<TileEntity> tileEntity) {
 		Int32_2 cpos{ tileEntity->m_position.x >> 4, tileEntity->m_position.z >> 4 };
 		Chunk* chunk = getChunkRaw(cpos);
 		if (!chunk)
 			return;
+		tileEntity->m_chunk = chunk;
 		tileEntityManager.initializeTileEntity(tileEntity);   // weak_ptr added if canTick
 		chunk->tileEntities.push_back(std::move(tileEntity)); // chunk takes ownership
+	}
+
+	// For registering a tile entity that already exists in the world (e.g. loaded from disk)
+	void registerChunkTileEntities(Chunk* chunk) {
+		for (auto& te : chunk->tileEntities) {
+			if (te) {
+				tileEntityManager.initializeTileEntity(te);
+				te->m_chunk = chunk;
+			}
+		}
 	}
 
 	// Returns the tile entity at world m_position `pos`, or nullptr if none.
