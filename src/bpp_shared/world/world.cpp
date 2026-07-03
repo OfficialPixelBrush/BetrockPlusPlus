@@ -217,6 +217,10 @@ void WorldManager::drainLoadQueue() {
 				setBlock(wpos, block.type, block.data);
 			pendingBleedWrites.erase(pit);
 		}
+
+		// Register our tile entities
+		registerChunkTileEntities(it->second.get());
+
 		//seedChunkLighting(pos);
 	}
 }

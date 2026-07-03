@@ -65,6 +65,7 @@ file(GLOB COMMAND_SOURCES
 # Shared source-code
 set(SHARED_SOURCES
     # Shared files
+    src/bpp_shared/tile_entities/tile_entity.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/enums/items.cpp
     src/bpp_shared/strings/labels.cpp

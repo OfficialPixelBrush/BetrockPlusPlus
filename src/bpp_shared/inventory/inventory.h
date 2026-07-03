@@ -22,6 +22,7 @@ struct EntityPlayer;
 struct Inventory {
 	std::string name = "Inventory";
 	std::vector<std::optional<ItemStack>> slots;
+	bool isModified = false;
 
 	Inventory(size_t size) : slots(size) {}
 
@@ -69,7 +70,7 @@ struct Inventory {
 	virtual const std::string& getInventoryName() const {
 		return name;
 	}
-	virtual void onInventoryChanged() {}
+	virtual void onInventoryChanged() { isModified = true; }
 	virtual ~Inventory() = default;
 
 	void clearSlot(int slot) {
