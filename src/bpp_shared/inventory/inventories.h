@@ -18,15 +18,6 @@ struct EntityPlayer;
 struct Container;
 struct InventoryCrafting;
 
-enum ContainerType {
-	NONE,
-	CHEST,
-	LARGE_CHEST,
-	DISPENSER,
-	FURNACE,
-	CRAFTING_TABLE
-};
-
 enum InvMap {
 	ARMOR,
 	INVENTORY,

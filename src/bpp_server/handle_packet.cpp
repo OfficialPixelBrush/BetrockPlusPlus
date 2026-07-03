@@ -14,8 +14,9 @@ void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& session) {
 	ka.Serialize(session.stream);
 }
 
-void ChatMessage(Packet::ChatMessage& pkt, PlayerSession& session, std::vector<std::shared_ptr<PlayerSession>>& players,
-                 WorldManager& world, CommandManager& cmd_mgr, std::function<void(PlayerSession&)> transferDimension) {
+void ChatMessage(Packet::ChatMessage& pkt, PlayerSession& session,
+                        std::vector<std::shared_ptr<PlayerSession>>& players, WorldManager& world,
+                        CommandManager& cmd_mgr, std::function<void(PlayerSession&)> transferDimension) {
 	if (pkt.message.size() > 0 && pkt.message[0] == '/') {
 		cmd_mgr.Parse(pkt.message, session, world, transferDimension);
 		return;
@@ -50,7 +51,7 @@ void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& pkt, PlayerSes
 }
 
 void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& world,
-               std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
+                      std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
 	if (pkt.status != 2)
 		return;
 	auto pos = pkt.position;
@@ -81,19 +82,79 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 }
 
 void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& world,
-                std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
+                       std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
 	// Block interactions
 	auto block = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z });
-	Int3 pos = { pkt.position.x, pkt.position.y, pkt.position.z };
-	if (Blocks::blockBehaviors[static_cast<uint8_t>(block)].onBlockActivated) {
-		bool interacted = Blocks::blockBehaviors[static_cast<uint8_t>(block)].onBlockActivated(world, pos,
-		                                                                                       world.getMetadata(pos),
-		                                                                                       session);
-		if (interacted) {
+	if (block == BLOCK_CHEST) {
+		// Are we a double chest?
+		auto l = world.getBlockId({ pkt.position.x - 1, pkt.position.y, pkt.position.z });
+		auto r = world.getBlockId({ pkt.position.x + 1, pkt.position.y, pkt.position.z });
+		auto f = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z - 1 });
+		auto b = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z + 1 });
+		bool doubleChest = (l == BLOCK_CHEST || r == BLOCK_CHEST || f == BLOCK_CHEST || b == BLOCK_CHEST);
+
+		if (doubleChest) {
+			auto chest = world.getTileEntityShared<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z });
+			if (!chest)
+				return;
+
+			std::shared_ptr<TileEntityChest> partnerChest = nullptr;
+			if (l == BLOCK_CHEST)
+				partnerChest = world.getTileEntityShared<TileEntityChest>(
+				    { pkt.position.x - 1, pkt.position.y, pkt.position.z });
+			else if (r == BLOCK_CHEST)
+				partnerChest = world.getTileEntityShared<TileEntityChest>(
+				    { pkt.position.x + 1, pkt.position.y, pkt.position.z });
+			else if (f == BLOCK_CHEST)
+				partnerChest = world.getTileEntityShared<TileEntityChest>(
+				    { pkt.position.x, pkt.position.y, pkt.position.z - 1 });
+			else
+				partnerChest = world.getTileEntityShared<TileEntityChest>(
+				    { pkt.position.x, pkt.position.y, pkt.position.z + 1 });
+			if (!partnerChest)
+				return;
+
+			bool isLeftSide = (r == BLOCK_CHEST || b == BLOCK_CHEST);
+			if (!isLeftSide)
+				std::swap(chest, partnerChest);
+
+			Packet::OpenContainer ow;
+			ow.window_id = session.getNextWindowId();
+			ow.slot_count = 54;
+			ow.title = "Large Chest";
+			ow.window_type = PacketData::WindowType::CHEST;
+			ow.Serialize(session.stream);
+
+			session.activeInteraction = std::make_unique<LargeChestInventoryInteraction>(&session.inventory, chest,
+			                                                                             partnerChest);
+			session.activeInteraction->initSnapshot();
+
 			PacketUtilities::sendInventory(session, session.openWindowId, *session.activeInteraction->inventory);
 			return;
 		}
+
+		// Setup interaction
+		auto chest = world.getTileEntityShared<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z });
+		if (!chest)
+			return; // not a chest tile entity
+		session.activeInteraction = std::make_unique<ChestInventoryInteraction>(&session.inventory, chest);
+		session.activeInteraction->initSnapshot();
+
+		// Single chest
+		// Open the chest window
+		Packet::OpenContainer ow;
+		ow.window_id = session.getNextWindowId();
+		ow.slot_count = 27;
+		ow.title = "Chest";
+		ow.window_type = PacketData::WindowType::CHEST;
+		ow.Serialize(session.stream);
+
+		// Send inventory
+		PacketUtilities::sendInventory(session, session.openWindowId, *session.activeInteraction->inventory);
+		return;
 	}
+
+	auto pos = pkt.position;
 	// NOTE: Also sent for when a block placement is invalid
 	if (pkt.face == PacketData::FaceDirection::USE_ITEM) {
 		GlobalLogger().info << "Tried to use item\n";
@@ -113,7 +174,7 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 		pos.x += 1;
 	// Make sure the block id is valid for placement otherwise we will crash
 	if (pkt.item.id < BLOCK_MAX && (pkt.item.id >= 0))
-		world.setBlock(pos, BlockType(pkt.item.id), pkt.item.data);
+		world.setBlock({ pos.x, pos.y, pos.z }, BlockType(pkt.item.id), pkt.item.data);
 }
 
 void SetHotbarSlot(Packet::SetHotbarSlot& pkt, PlayerSession& session) {
@@ -213,7 +274,8 @@ void InteractWithEntity(Packet::InteractWithEntity& /*pkt*/, PlayerSession& /*se
 
 void InteractWithBlock(Packet::InteractWithBlock& pkt, PlayerSession& session, WorldManager& world) {}
 
-void Animation(Packet::Animation& pkt, PlayerSession& session, std::vector<std::shared_ptr<PlayerSession>>& players) {
+void Animation(Packet::Animation& pkt, PlayerSession& session,
+                      std::vector<std::shared_ptr<PlayerSession>>& players) {
 	for (auto& other : players) {
 		if (other.get() == &session)
 			continue;
