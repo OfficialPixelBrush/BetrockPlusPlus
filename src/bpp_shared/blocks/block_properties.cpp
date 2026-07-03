@@ -1028,7 +1028,7 @@ void registerAll() {
 	};
 
 	// Chest
-	blockProperties[BlockType::BLOCK_CHEST] = Blocks::BlockProperties{
+	blockProperties[BlockType::BLOCK_CHEST] = {
 		.material = Material::Wood(),
 		.stepSound = StepSound::Wood,
 		.lightOpacity = 0,
@@ -1635,51 +1635,6 @@ void registerAll() {
 	};
 	blockBehaviors[BlockType::BLOCK_STAIRS_COBBLESTONE] = {
 		.getCollider = stairCollider,
-	};
-
-	blockBehaviors[BlockType::BLOCK_CHEST] = {
-		.onBlockActivated = [](WorldManager& world, Int3 pos, [[maybe_unused]] uint8_t meta,
-		                       PlayerSession& session) -> bool {
-		    // Are we a double chest?
-		    auto l = world.getBlockId({ pos.x - 1, pos.y, pos.z });
-		    auto r = world.getBlockId({ pos.x + 1, pos.y, pos.z });
-		    auto f = world.getBlockId({ pos.x, pos.y, pos.z - 1 });
-		    auto b = world.getBlockId({ pos.x, pos.y, pos.z + 1 });
-		    bool doubleChest = (l == BLOCK_CHEST || r == BLOCK_CHEST || f == BLOCK_CHEST || b == BLOCK_CHEST);
-
-		    if (doubleChest) {
-			    auto chest = world.getTileEntityShared<TileEntityChest>({ pos.x, pos.y, pos.z });
-			    if (!chest)
-				    return false;
-
-			    std::shared_ptr<TileEntityChest> partnerChest = nullptr;
-			    if (l == BLOCK_CHEST)
-				    partnerChest = world.getTileEntityShared<TileEntityChest>({ pos.x - 1, pos.y, pos.z });
-			    else if (r == BLOCK_CHEST)
-				    partnerChest = world.getTileEntityShared<TileEntityChest>({ pos.x + 1, pos.y, pos.z });
-			    else if (f == BLOCK_CHEST)
-				    partnerChest = world.getTileEntityShared<TileEntityChest>({ pos.x, pos.y, pos.z - 1 });
-			    else
-				    partnerChest = world.getTileEntityShared<TileEntityChest>({ pos.x, pos.y, pos.z + 1 });
-			    if (!partnerChest)
-				    return false;
-
-			    bool isLeftSide = (r == BLOCK_CHEST || b == BLOCK_CHEST);
-			    if (!isLeftSide)
-				    std::swap(chest, partnerChest);
-			    session.openContainer(ContainerType::LARGE_CHEST, chest, partnerChest);
-			    return true;
-		    }
-
-		    // Setup interaction
-		    auto chest = world.getTileEntityShared<TileEntityChest>({ pos.x, pos.y, pos.z });
-		    if (!chest)
-			    return false; // not a chest tile entity
-		    session.openContainer(ContainerType::CHEST, chest);
-
-		    // Send inventory
-		    return true; // Indicate that the activation was successful
-		},
 	};
 
 	blockBehaviors[BlockType::BLOCK_CACTUS] = {

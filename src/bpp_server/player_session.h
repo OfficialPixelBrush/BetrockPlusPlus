@@ -264,28 +264,4 @@ struct PlayerSession {
 
 		return root;
 	}
-
-	bool openContainer(ContainerType type, std::shared_ptr<TileEntity> container = nullptr,
-	                   std::shared_ptr<TileEntity> partnerContainer = nullptr) {
-		Packet::OpenContainer ow;
-		ow.window_id = getNextWindowId();
-		switch (type) {
-		case ContainerType::LARGE_CHEST:
-			ow.slot_count = 27;
-			ow.title = "Chest";
-			ow.window_type = PacketData::WindowType::CHEST;
-			activeInteraction = std::make_unique<ChestInventoryInteraction>(&inventory, container);
-			break;
-		case ContainerType::CHEST:
-			ow.slot_count = 54;
-			ow.title = "Large Chest";
-			ow.window_type = PacketData::WindowType::CHEST;
-			activeInteraction = std::make_unique<LargeChestInventoryInteraction>(&inventory, container,
-			                                                                     partnerContainer);
-			break;
-		}
-		ow.Serialize(stream);
-		activeInteraction->initSnapshot();
-		return openWindowId;
-	}
 };
