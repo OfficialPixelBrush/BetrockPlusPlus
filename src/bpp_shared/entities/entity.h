@@ -50,6 +50,9 @@ const float INPUT_DECAY = 0.98f;
 const float SNEAK_SPEED_MODIFIER = 0.3f;
 
 struct Entity {
+	// Entity name because notch split stuff into multiple packets based on type
+	std::string name = "";
+
 	// World pointer
 	WorldManager* world = nullptr;
 
@@ -153,8 +156,6 @@ struct Entity {
 	void applyKnockback(Vec3 direction);
 	void applyInput(float strafe, float forward, float acceleration);
 	void move(Vec3 movement);
-	void sneakClipMovement(Vec3& movement);
-	void resolveCollisions(Vec3& movement, const Vec3& original);
 	void dealDamage(int amount);
 	void updateFallState(float movedY);
 };
