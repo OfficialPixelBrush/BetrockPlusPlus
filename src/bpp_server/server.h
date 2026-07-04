@@ -11,23 +11,17 @@
 extern std::atomic<bool> shutdownRequested;
 
 #include "config/config.h"
-#if defined(__linux__) || defined(__APPLE__)
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#elif defined(_WIN32) || defined(_WIN64)
-#include <winsock2.h>
-#pragma comment(lib, "ws2_32.lib")
-#endif
-
+#include "chunk_broadcaster.h"
 #include "chunk_sender.h"
 #include "commands/command_manager.h"
 #include "handle_packet.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
+#include "packet_dispatcher.h"
 #include "player_session.h"
 #include "runtime.h"
+#include "server_socket.h"
+#include "server_pconnstate_manager.h"
 #include <chrono>
 #include <memory>
 #include <thread>
@@ -40,17 +34,22 @@ public:
 	~Server();
 	void run();
 	void stop();
+	void processIncoming(PlayerSession& session);
+	void broadcastPlayerMovement(PlayerSession& session);
 
+	Runtime gameRuntime;
+	ChunkSender chunkSender;
+	int flushChunkCount = 10;
 private:
+	friend bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, WorldManager& sessionWorld,
+	                                        Server& server);
+	friend void ChunkBroadcaster::broadcastBlockChanges(Server& server,
+	                                                     std::unordered_map<Int32_2, std::vector<PendingBlock>>& changes,
+	                                                     int8_t dimension, WorldManager& dimWorld);
+
 	void tick();
 	void startup();
 	void acceptNewPlayers();
-	void handleHandshake(PlayerSession& session);
-	void handleLogin(PlayerSession& session);
-	void waitForSpawnChunks(PlayerSession& session);
-	void disconnectPlayer(PlayerSession& session, const std::wstring& reason);
-	void broadcastPlayerMovement(PlayerSession& session);
-	void processIncoming(PlayerSession& session);
 	void transferPlayerDimension(PlayerSession& session);
 
 	// Config file stuff
@@ -71,70 +70,13 @@ private:
 		return Int32_3{ pos.x, pos.z, int32_t(dimension) };
 	}
 
-	void closeSocket() const {
-#if defined(_WIN32) || defined(_WIN64)
-		closesocket(serverSocket);
-		WSACleanup();
-#else
-		close(serverSocket);
-#endif
-	}
-
-	void createServerSocket(int port) {
-		// This is horrific to look at but it works
-#if defined(_WIN32) || defined(_WIN64)
-		WSADATA wsaData;
-		WSAStartup(MAKEWORD(2, 2), &wsaData);
-#endif
-		serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-		sockaddr_in addr{};
-		addr.sin_family = AF_INET;
-		addr.sin_port = htons(port);
-		addr.sin_addr.s_addr = INADDR_ANY;
-		if (bind(serverSocket, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
-			std::cerr << "**** FAILED TO BIND TO PORT!" << std::endl;
-		}
-		listen(serverSocket, 8);
-#if defined(_WIN32) || defined(_WIN64)
-		u_long mode = 1;
-		ioctlsocket(serverSocket, FIONBIO, &mode);
-#else
-		fcntl(serverSocket, F_SETFL, O_NONBLOCK);
-#endif
-	}
-
-	int createClientSocket() const {
-#if defined(_WIN32) || defined(_WIN64)
-		SOCKET rawSocket = accept(serverSocket, nullptr, nullptr);
-		if (rawSocket == INVALID_SOCKET)
-			return -1;
-		u_long clientMode = 1;
-		ioctlsocket(rawSocket, FIONBIO, &clientMode);
-		DWORD recvTimeout = 45;
-		setsockopt(rawSocket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
-		int clientSocket = static_cast<int>(rawSocket);
-#else
-		int clientSocket = accept(serverSocket, nullptr, nullptr);
-		if (clientSocket < 0)
-			return -1;
-		fcntl(clientSocket, F_SETFL, O_NONBLOCK);
-		struct timeval recvTimeout{ 0, 45000 };
-		setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&recvTimeout),
-		           sizeof(recvTimeout));
-#endif
-		return clientSocket;
-	}
-
 	static constexpr float TICK_DELTA = 1.0f / 20.0f;
 	static constexpr int MAX_TICKS_PER_FRAME = 10;
 
-	Runtime gameRuntime;
-	ChunkSender chunkSender;
+	PlayerConnStateManager connStateManager;
 
 	// Global players and dimensional players
 	std::vector<std::shared_ptr<PlayerSession>> players;
-	std::vector<std::weak_ptr<PlayerSession>> overworldPlayers;
-	std::vector<std::weak_ptr<PlayerSession>> hellPlayers;
 
 	// Block change tracking
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> chunkBlockChanges;
@@ -145,7 +87,6 @@ private:
 	int serverSocket = -1;
 	int serverPort = 25565;
 	int64_t timeout_seconds = 60;
-	int flushChunkCount = 10;
 	float accumulator = 0.0f;
 	float tickTimeAccum = 0.0f;
 	int tickCount = 0;

@@ -28,7 +28,7 @@
 
 Server::Server() : config("server.properties") {
 	loadConfig();
-	createServerSocket(serverPort);
+	serverSocket = ServerSocketManager::createServerSocket(serverPort);
 	if (serverSocket < 0) {
 		GlobalLogger().error << "**** FAILED TO CREATE SERVER SOCKET!" << "\n";
 		exit(1);
@@ -58,30 +58,6 @@ void Server::indexRemoveChunk(PlayerSession& session, const Int32_2& pos) {
 	vec.erase(std::remove(vec.begin(), vec.end(), &session), vec.end());
 	if (vec.empty())
 		chunkSessions.erase(it);
-}
-
-void Server::indexAddDimensionalPlayer(PlayerSession& session) {
-	auto it = std::find_if(players.begin(), players.end(),
-	                       [&session](const std::shared_ptr<PlayerSession>& p) { return p.get() == &session; });
-	if (it == players.end())
-		return;
-	if (session.dimension == -1)
-		hellPlayers.push_back(*it);
-	else
-		overworldPlayers.push_back(*it);
-}
-
-void Server::indexRemoveDimensionalPlayer(PlayerSession& session) {
-	auto removeFrom = [&session](std::vector<std::weak_ptr<PlayerSession>>& vec) {
-		vec.erase(std::remove_if(vec.begin(), vec.end(),
-		                         [&session](const std::weak_ptr<PlayerSession>& w) {
-			                         auto locked = w.lock();
-			                         return !locked || locked.get() == &session;
-		                         }),
-		          vec.end());
-	};
-	removeFrom(overworldPlayers);
-	removeFrom(hellPlayers);
 }
 
 void Server::indexRemoveSession(PlayerSession& session) {
@@ -325,12 +301,12 @@ void Server::stop() {
 	stopped = true;
 	GlobalLogger().info << "Server shutting down...\n";
 	for (auto& session : players) {
-		disconnectPlayer(*session, L"Server Closed");
+		connStateManager.disconnectPlayer(*session, L"Server Closed", *this);
 		session->stream.flushWriteBufferBlocking();
 		auto savedNbt = session->serializeToNBT();
 		gameRuntime.saveManager.savePlayerNBT(std::string(session->username.begin(), session->username.end()), savedNbt);
 	}
-	closeSocket();
+	ServerSocketManager::closeSocket(serverSocket);
 	gameRuntime.world.shutdown();
 	gameRuntime.worldHell.shutdown();
 
@@ -343,7 +319,7 @@ void Server::stop() {
 }
 
 void Server::acceptNewPlayers() {
-	auto clientSocket = createClientSocket();
+	auto clientSocket = ServerSocketManager::createClientSocket(serverSocket);
 	if (clientSocket < 0)
 		return;
 	players.push_back(std::make_shared<PlayerSession>(clientSocket));
@@ -365,14 +341,6 @@ void Server::broadcastPlayerMovement(PlayerSession& session) {
 	int32_t dx = newFpX - session.lastFpX;
 	int32_t dy = relFpY - session.lastFpY;
 	int32_t dz = newFpZ - session.lastFpZ;
-
-	bool moved = (dx != 0 || dy != 0 || dz != 0);
-	bool rotated = (newYaw != session.lastYaw || newPitch != session.lastPitch);
-	if (!moved && !rotated)
-		return;
-
-	// If delta is too large, use teleport instead (128 fp units = 4 blocks)
-	bool needsTeleport = (std::abs(dx) > 128 || std::abs(dy) > 128 || std::abs(dz) > 128);
 
 	// Update last-broadcast state
 	session.lastFpX = newFpX;
@@ -406,35 +374,11 @@ void Server::tick() {
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChangesHell;
 	localBlockChanges.swap(chunkBlockChanges);
 	localBlockChangesHell.swap(chunkBlockChangesHell);
-	for (auto& session : players) {
-		switch (session->connState) {
-		case ConnectionState::Handshaking:
-			handleHandshake(*session);
-			break;
-		case ConnectionState::LoggingIn:
-			handleLogin(*session);
-			break;
-		case ConnectionState::WaitingForSpawnChunks:
-			waitForSpawnChunks(*session);
-			break;
-		case ConnectionState::Playing: {
-			WorldManager& sessionWorld = session->dimension == -1 ? gameRuntime.worldHell : gameRuntime.world;
-			chunkSender.enqueue(*session, sessionWorld, 16);
-			chunkSender.flush(*session);
-			processIncoming(*session);
-			broadcastPlayerMovement(*session);
-			if (sessionWorld.elapsed_ticks % 20 == 0) {
-				// Update the server time so client's don't desync
-				Packet::SetTime time;
-				time.time = sessionWorld.elapsed_ticks;
-				time.Serialize(session->stream);
-			}
-			break;
-		}
-		}
-	}
 
+	// Handle connection state for each player
 	for (auto& session : players) {
+		connStateManager.handleConnectionState(*session, *this);
+
 		// Drain chunk-session index updates that ChunkSender recorded.
 		for (const auto& pos : session->newlyFlushed)
 			indexAddChunk(*session, pos);
@@ -468,85 +412,8 @@ void Server::tick() {
 	}
 
 	// Dispatch block changes.
-	auto dispatchBlockChanges = [&](std::unordered_map<Int32_2, std::vector<PendingBlock>>& changes, int8_t dimension,
-	                                WorldManager& dimWorld) {
-		for (auto& [chunk, blockChanges] : changes) {
-			// Find which sessions care about this chunk
-			// Split into flushed (send immediately) and sentOnly (queue).
-			auto indexIt = chunkSessions.find(chunkKey(chunk, dimension));
-			std::vector<PlayerSession*> flushedSessions;
-			std::vector<PlayerSession*> sentOnlySessions;
-
-			if (indexIt != chunkSessions.end())
-				flushedSessions = indexIt->second;
-
-			// Sessions that have the chunk in-flight (sentChunks but not flushedChunks) still need to queue the updates.
-			for (auto& session : players) {
-				if (session->connState != ConnectionState::Playing &&
-				    session->connState != ConnectionState::WaitingForSpawnChunks)
-					continue;
-				if (session->dimension != dimension)
-					continue;
-				if (session->flushedChunks.contains(chunk))
-					continue; // already in flushedSessions
-				if (session->sentChunks.contains(chunk)) {
-					sentOnlySessions.push_back(session.get());
-				}
-			}
-
-			// Queue updates for sessions still waiting on the chunk to flush.
-			for (auto* session : sentOnlySessions) {
-				auto& q = session->pendingBlockChanges[chunk];
-				q.insert(q.end(), blockChanges.begin(), blockChanges.end());
-			}
-			if (flushedSessions.empty())
-				continue;
-
-			// Capture chunk ref once for sub-region jobs.
-			std::shared_ptr<Chunk> chunkRef = dimWorld.getChunk(chunk);
-
-			if (blockChanges.size() == 1) {
-				// Single block change: serialise once, raw-copy to every session.
-				const PendingBlock& pb = blockChanges[0];
-				Packet::SetBlock sb;
-				sb.block = { pb.block.type, pb.block.data };
-				sb.position = { static_cast<int32_t>(pb.block_pos.x + (chunk.x * 16)),
-					            static_cast<int8_t>(pb.block_pos.y),
-					            static_cast<int32_t>(pb.block_pos.z + (chunk.z * 16)) };
-				// Serialise into a temporary buffer, then send to all sessions.
-				NetworkStream tmpStream(-1);
-				sb.Serialize(tmpStream);
-				const auto& buf = tmpStream.getRawWriteBuffer();
-				for (auto* session : flushedSessions)
-					session->stream.writeRaw(buf.data(), buf.size());
-			} else if (blockChanges.size() < 10) {
-				// Multi-block packet
-				auto format_multi_block = [](int8_t x, int8_t y, int8_t z) {
-					return (((int16_t(x) & 0x0F) << 12) | ((int16_t(z) & 0x0F) << 8) | ((int16_t(y) & 0xFF)));
-				};
-				Packet::SetMultipleBlocks smb;
-				smb.chunk_position = { chunk.x, chunk.z };
-				for (const auto& pb : blockChanges) {
-					smb.block_coordinates.push_back(static_cast<int16_t>(
-					    format_multi_block(int8_t(pb.block_pos.x), int8_t(pb.block_pos.y), int8_t(pb.block_pos.z))));
-					smb.block_metadata.push_back(int8_t(pb.block.data));
-					smb.block_types.push_back(pb.block.type);
-				}
-				smb.number_of_blocks = static_cast<int16_t>(smb.block_coordinates.size());
-				NetworkStream tmpStream(-1);
-				smb.Serialize(tmpStream);
-				const auto& buf = tmpStream.getRawWriteBuffer();
-				for (auto* session : flushedSessions)
-					session->stream.writeRaw(buf.data(), buf.size());
-			} else {
-				// Sub-region: compression is async per-session via ChunkSender.
-				for (auto* session : flushedSessions)
-					chunkSender.sendBlockUpdates(*session, chunk, blockChanges, chunkRef);
-			}
-		}
-	};
-	dispatchBlockChanges(localBlockChanges, 0, gameRuntime.world);
-	dispatchBlockChanges(localBlockChangesHell, -1, gameRuntime.worldHell);
+	ChunkBroadcaster::broadcastBlockChanges(*this, localBlockChanges, 0, gameRuntime.world);
+	ChunkBroadcaster::broadcastBlockChanges(*this, localBlockChangesHell, -1, gameRuntime.worldHell);
 
 	// Flush all pending outgoing data to the socket once per tick.
 	for (auto& session : players) {
@@ -560,7 +427,7 @@ void Server::tick() {
 			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - session->last_packet_time).count();
 			if (elapsed > timeout_seconds) {
 				GlobalLogger().info << L"Player " << session->username << L" timed out\n";
-				disconnectPlayer(*session, L"Connection timed out.");
+				connStateManager.disconnectPlayer(*session, L"Connection timed out.", *this);
 			}
 		} else {
 			// Kill stuck handshakers
@@ -604,359 +471,18 @@ void Server::tick() {
 	              players.end());
 }
 
-void Server::handleHandshake(PlayerSession& session) {
-	if (!session.stream.hasData())
-		return;
-	PacketId packetId = session.stream.Read<PacketId>();
-
-	if (session.stream.checkAndClearShortRead())
-		return;
-	if (packetId != PacketId::PreLogin)
-		return;
-
-	Packet::PreLogin incoming;
-	incoming.Deserialize(session.stream);
-	if (session.stream.checkAndClearShortRead()) {
-		return;
-	}
-	session.username = incoming.username;
-
-	Packet::PreLogin response;
-	response.username = L"-";
-	response.Serialize(session.stream);
-
-	int realPlayers = 0;
-	for (auto& s : players)
-		if (s->connState == ConnectionState::Playing || s->connState == ConnectionState::WaitingForSpawnChunks)
-			realPlayers++;
-
-	GlobalLogger().info << L"Player " << session.username << L" is logging in. Total players: " << realPlayers + 1
-	                    << L"\n";
-
-	session.connState = ConnectionState::LoggingIn;
-}
-
-void Server::handleLogin(PlayerSession& session) {
-	if (!session.stream.hasData())
-		return;
-
-	PacketId packetId = session.stream.Read<PacketId>();
-	if (session.stream.checkAndClearShortRead())
-		return;
-	if (packetId != PacketId::Login)
-		return;
-
-	Packet::Login incoming;
-	incoming.Deserialize(session.stream);
-	if (session.stream.checkAndClearShortRead()) {
-		return;
-	}
-
-	Packet::Login response;
-	response.entity_id = session.entityId;
-	response.username = session.username;
-	response.worldSeed = gameRuntime.world.seed;
-
-	// Load player data before building the Login response so we know which dimension they're in
-	auto playerNbt = gameRuntime.saveManager.getPlayerNBT(std::string(session.username.begin(), session.username.end()));
-	session.loadPlayerNBT(playerNbt);
-
-	response.dimension = static_cast<Dimension>(session.dimension);
-	response.Serialize(session.stream);
-
-	WorldManager& sessionWorld = session.dimension == -1 ? gameRuntime.worldHell : gameRuntime.world;
-	session.entityId = sessionWorld.entityManager.getNextEntityId();
-
-	Packet::SetSpawnPosition spawn;
-	spawn.position = sessionWorld.spawnPoint;
-	spawn.Serialize(session.stream);
-
-	Packet::SetHealth health;
-	health.health = 20;
-	health.Serialize(session.stream);
-
-	Packet::SetTime time;
-	time.time = sessionWorld.elapsed_ticks;
-	time.Serialize(session.stream);
-
-	// Get a fresh respawn point
-	auto respawnPoint = sessionWorld.getSpawnPoint(true);
-
-	// If our session position is the default then overwrite it
-	if (session.position.pos == Vec3{ -1, -1000000, -1 }) {
-		session.position.pos = { float(respawnPoint.x) + 0.5, float(respawnPoint.y), float(respawnPoint.z) + 0.5 };
-	}
-
-	// Offset so we don't spawn in the ground
-	session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
-
-	// Log that we logged in!
-	GlobalLogger().info << L"Player " << session.username << L" logged in with entity ID " << session.entityId
-	                    << L" at (" << session.position.pos.x << ", " << session.position.pos.y << ", "
-	                    << session.position.pos.z << ")\n";
-
-	// Send our inventory
-	PacketUtilities::sendInventory(session, 0, session.inventory);
-
-	// Register into the correct dimensional player list
-	indexAddDimensionalPlayer(session);
-
-	session.connState = ConnectionState::WaitingForSpawnChunks;
-}
-
-void Server::disconnectPlayer(PlayerSession& session, const std::wstring& reason) {
-	// Send disconnect reason to the leaving player
-	Packet::Disconnect kick;
-	kick.reason = reason;
-	kick.Serialize(session.stream);
-	session.stream.setConnected(false); // This should force an NBT save
-	GlobalLogger().info << L"Player " << session.username << L" disconnected: " << reason << L"\n";
-
-	// Remove from dimensional player list
-	indexRemoveDimensionalPlayer(session);
-}
-
-void Server::waitForSpawnChunks(PlayerSession& session) {
-	WorldManager& sessionWorld = session.dimension == -1 ? gameRuntime.worldHell : gameRuntime.world;
-	chunkSender.enqueue(session, sessionWorld, flushChunkCount);
-	chunkSender.flush(session);
-
-	// Force a tiny view distance for players trying to spawn in
-	session.position.viewDistanceOverride = 3;
-
-	// Spawn chunk radius; 3 chunks in each direction
-	int spawnChunkX = int(std::floor(session.position.pos.x)) >> 4;
-	int spawnChunkZ = int(std::floor(session.position.pos.z)) >> 4;
-
-	int radius = CrossPlatform::Math::min(3, sessionWorld.getViewRadius());
-
-	int total_spawn_chunks = ((radius * 2) + 1) * ((radius * 2) + 1);
-	int loaded_chunks = 0;
-
-	for (int dx = -radius; dx <= radius; dx++) {
-		for (int dz = -radius; dz <= radius; dz++) {
-			Int32_2 p{ spawnChunkX + dx, spawnChunkZ + dz };
-			if (session.flushedChunks.contains(p))
-				loaded_chunks++;
-		}
-	}
-
-	GlobalLogger().info << "Spawn chunks: " << loaded_chunks << " / " << total_spawn_chunks << "\n";
-
-	if (loaded_chunks < total_spawn_chunks)
-		return;
-
-	GlobalLogger().info << "Spawn chunks sent. Setting player position\n";
-
-	Packet::PlayerPositionAndRotation pos;
-	pos.position = session.position.pos;
-	pos.camera_y = session.position.pos.y + PLAYER_EYE_HEIGHT;
-	pos.rotation = session.rotation;
-	pos.onGround = false;
-	pos.Serialize(session.stream);
-
-	session.lastFpX = int32_t(session.position.pos.x * 32.0);
-	session.lastFpY = int32_t(session.position.pos.y * 32.0);
-	session.lastFpZ = int32_t(session.position.pos.z * 32.0);
-	session.lastYaw = int8_t(session.rotation.x / 360.0f * 256.0f);
-	session.lastPitch = int8_t(session.rotation.y / 360.0f * 256.0f);
-
-	// Set view distance to server default
-	session.position.viewDistanceOverride = 0;
-
-	GlobalLogger().info << "Client connected\n";
-	session.connState = ConnectionState::Playing;
-	Packet::ChatMessage welcomeMsg;
-	welcomeMsg.message = std::wstring(L"§eThis Server runs on ") + std::wstring(PROJECT_FULL_VERSION_LABEL);
-	welcomeMsg.Serialize(session.stream);
-}
-
 void Server::transferPlayerDimension(PlayerSession& session) {
-	double newX = session.position.pos.x;
-	double newZ = session.position.pos.z;
-	if (session.dimension == 0) {
-		newX /= 8.0;
-		newZ /= 8.0;
-		session.dimension = -1;
-	} else {
-		newX *= 8.0;
-		newZ *= 8.0;
-		session.dimension = 0;
-	}
-
-	// Clear everything client side
-	Packet::Respawn respawn;
-	respawn.dimension = static_cast<Dimension>(session.dimension);
-	respawn.Serialize(session.stream);
-
-	// Unload all chunks from the old dimension on our side
-	for (const auto& cpos : session.flushedChunks)
-		indexRemoveChunk(session, cpos);
-	session.sentChunks.clear();
-	session.flushedChunks.clear();
-	session.pendingBlockChanges.clear();
-	chunkSender.remove(session);
-
-	session.position.pos.x = float(newX);
-	session.position.pos.z = float(newZ);
-
-	// Send our inventory again and close any containers we are in
-	if (session.activeInteraction) {
-		PacketUtilities::CloseContainer(session);
-	}
-	PacketUtilities::sendInventory(session, 0, session.inventory);
-
-	// Move player into the correct dimensional list for the new dimension
-	indexRemoveDimensionalPlayer(session);
-	indexAddDimensionalPlayer(session);
-
-	GlobalLogger().info << L"Player " << session.username << L" transferred to dimension " << int(session.dimension)
-	                    << L"\n";
-
-	session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
 void Server::processIncoming(PlayerSession& session) {
 	WorldManager& sessionWorld = session.dimension == -1 ? gameRuntime.worldHell : gameRuntime.world;
 
-	// Feed available socket bytes into the staging buffer, then process as
-	// many complete packets as are available this tick.
 	while (session.stream.hasData()) {
 		PacketId packetId = session.stream.Read<PacketId>();
 
-		switch (packetId) {
-		case PacketId::KeepAlive: {
-			Packet::KeepAlive pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::KeepAlive(pkt, session);
-			break;
-		}
-		case PacketId::ChatMessage: {
-			Packet::ChatMessage pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::ChatMessage(pkt, session, players, sessionWorld, command_manager,
-			                          [this](PlayerSession& s) { transferPlayerDimension(s); });
-			break;
-		}
-		case PacketId::SetTime: {
-			Packet::SetTime pkt;
-			pkt.Deserialize(session.stream);
-			break;
-		}
-		case PacketId::InteractWithEntity: {
-			Packet::InteractWithEntity pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::InteractWithEntity(pkt, session);
-			break;
-		}
-		case PacketId::Respawn: {
-			Packet::Respawn pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::Respawn(pkt, session);
-			break;
-		}
-		case PacketId::PlayerMovement: {
-			Packet::PlayerMovement pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::PlayerMovement(pkt, session);
-			break;
-		}
-		case PacketId::PlayerPosition: {
-			Packet::PlayerPosition pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::PlayerPosition(pkt, session);
-			break;
-		}
-		case PacketId::PlayerRotation: {
-			Packet::PlayerRotation pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::PlayerRotation(pkt, session);
-			break;
-		}
-		case PacketId::PlayerPositionAndRotation: {
-			Packet::PlayerPositionAndRotation pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::PlayerPositionAndRotation(pkt, session);
-			break;
-		}
-		case PacketId::MineBlock: {
-			Packet::MineBlock pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::MineBlock(pkt, session, sessionWorld, players);
-			break;
-		}
-		case PacketId::PlaceBlock: {
-			Packet::PlaceBlock pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::PlaceBlock(pkt, session, sessionWorld, players);
-			break;
-		}
-		case PacketId::SetHotbarSlot: {
-			Packet::SetHotbarSlot pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::SetHotbarSlot(pkt, session);
-			break;
-		}
-		case PacketId::InteractWithBlock: {
-			Packet::InteractWithBlock pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::InteractWithBlock(pkt, session, sessionWorld);
-			break;
-		}
-		case PacketId::Animation: {
-			Packet::Animation pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::Animation(pkt, session, players);
-			break;
-		}
-		case PacketId::PlayerAction: {
-			Packet::PlayerAction pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::PlayerAction(pkt, session);
-			break;
-		}
-		case PacketId::PlayerInput: {
-			Packet::PlayerInput pkt;
-			pkt.Deserialize(session.stream);
-			break;
-		}
-		case PacketId::CloseContainer: {
-			Packet::CloseContainer pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::CloseContainer(pkt, session);
-			break;
-		}
-		case PacketId::ClickSlot: {
-			Packet::ClickSlot pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::ClickSlot(pkt, session);
-			break;
-		}
-		case PacketId::ContainerTransaction: {
-			Packet::ContainerTransaction pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::ContainerTransaction(pkt, session);
-			break;
-		}
-		case PacketId::UpdateSign: {
-			Packet::UpdateSign pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::UpdateSign(pkt, session, sessionWorld);
-			break;
-		}
-		case PacketId::Disconnect: {
-			Packet::Disconnect pkt;
-			pkt.Deserialize(session.stream);
-			HandlePacket::Disconnect(pkt, session);
-			return; // session is dead; stop processing
-		}
-		default:
-			GlobalLogger().warn << "UNHANDLED packet 0x" << std::hex << static_cast<int>(packetId) << "\n";
-			disconnectPlayer(session, L"Unknown packet");
-			return;
-		}
-		// If any Deserialize hit a recv timeout, ReadBytes has already rolled back
-		// all consumed bytes into readBackBuffer. Just break and retry next tick.
+		if (!PacketDispatcher::dispatch(packetId, session, sessionWorld, *this))
+			return; // session is dead, or sent an unknown packet
+
 		if (session.stream.checkAndClearShortRead()) {
 			break;
 		}

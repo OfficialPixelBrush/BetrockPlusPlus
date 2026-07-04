@@ -105,6 +105,9 @@ set(SHARED_SOURCES
 set(SERVER_SOURCES
     src/bpp_server/server.cpp
     src/bpp_server/handle_packet.cpp
+    src/bpp_server/server_pconnstate_manager.cpp
+    src/bpp_server/packet_dispatcher.cpp
+    src/bpp_server/chunk_broadcaster.cpp
 
     src/bpp_server/commands/command.cpp
     src/bpp_server/commands/command_manager.cpp
