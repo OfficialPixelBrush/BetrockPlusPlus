@@ -9,20 +9,12 @@
 
 namespace {
 // Beta's own client always reports the true feet position (boundingBox.minY)
-// on the wire for ongoing movement packets - never the eye-level posY. Real
-// Beta never rebuilds its boundingBox from posY during normal play either;
-// moveEntity() just offsets whatever box it already has, and posY becomes a
-// write-only bookkeeping value. So when validating a network-reported
-// position here, we build the collider directly from feet, bypassing
-// Entity::rebuildCollider()'s yOffset subtraction - that formula is only
-// correct for the one-time spawn/teleport conversion from a ground height,
-// not for interpreting values that are already feet.
 AABB colliderFromFeet(Vec3 feetPos, float width, float height) {
 	double halfWidth = double(width) / 2.0;
 	return { feetPos.x - halfWidth, feetPos.y, feetPos.z - halfWidth, feetPos.x + halfWidth, feetPos.y + double(height),
 		     feetPos.z + halfWidth };
 }
-} // namespace
+}
 
 // We ignore physics for the player entity and just grab what the client tells us
 void EntityMPPlayer::tick() {
