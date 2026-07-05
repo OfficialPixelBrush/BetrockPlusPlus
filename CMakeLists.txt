@@ -66,6 +66,7 @@ file(GLOB COMMAND_SOURCES
 set(SHARED_SOURCES
     # Shared files
     src/bpp_shared/tile_entities/tile_entity.cpp
+    src/bpp_shared/entities/entity.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/enums/items.cpp
     src/bpp_shared/strings/labels.cpp
@@ -104,10 +105,12 @@ set(SHARED_SOURCES
 # Server-specific source code
 set(SERVER_SOURCES
     src/bpp_server/server.cpp
-    src/bpp_server/handle_packet.cpp
-    src/bpp_server/server_pconnstate_manager.cpp
-    src/bpp_server/packet_dispatcher.cpp
-    src/bpp_server/chunk_broadcaster.cpp
+    src/bpp_server/packet/handle_packet.cpp
+    src/bpp_server/player_conn/server_pconnstate_manager.cpp
+    src/bpp_server/packet/packet_dispatcher.cpp
+    src/bpp_server/chunk_IO/chunk_broadcaster.cpp
+    src/bpp_server/entities/entity_tracker.cpp
+    src/bpp_server/entities/entity_mp_player.cpp
 
     src/bpp_server/commands/command.cpp
     src/bpp_server/commands/command_manager.cpp

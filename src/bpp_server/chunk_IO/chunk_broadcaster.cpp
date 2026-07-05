@@ -7,7 +7,7 @@
 */
 #include "chunk_broadcaster.h"
 
-#include "server.h"
+#include "../server.h"
 
 void ChunkBroadcaster::broadcastBlockChanges(Server& server, std::unordered_map<Int32_2, std::vector<PendingBlock>>& changes,
                                               int8_t dimension, WorldManager& dimWorld) {

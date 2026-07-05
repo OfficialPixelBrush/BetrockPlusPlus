@@ -14,9 +14,8 @@ void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& session) {
 	ka.Serialize(session.stream);
 }
 
-void ChatMessage(Packet::ChatMessage& pkt, PlayerSession& session,
-                        std::vector<std::shared_ptr<PlayerSession>>& players, WorldManager& world,
-                        CommandManager& cmd_mgr, std::function<void(PlayerSession&)> transferDimension) {
+void ChatMessage(Packet::ChatMessage& pkt, PlayerSession& session, std::vector<std::shared_ptr<PlayerSession>>& players,
+                 WorldManager& world, CommandManager& cmd_mgr, std::function<void(PlayerSession&)> transferDimension) {
 	if (pkt.message.size() > 0 && pkt.message[0] == '/') {
 		cmd_mgr.Parse(pkt.message, session, world, transferDimension);
 		return;
@@ -35,7 +34,26 @@ void PlayerMovement(Packet::PlayerMovement& /*pkt*/, PlayerSession& /*session*/)
 	// onGround flag only, so no position update needed.
 }
 
+// Returns true if it's safe to accept pos as the client's new position right now.
+static bool AcceptClientPosition(PlayerSession& session, const Vec3& pos) {
+	if (!session.awaitingTeleportAck)
+		return true;
+
+	Vec3 d = { pos.x - session.pendingTeleportPos.x, pos.y - session.pendingTeleportPos.y,
+		       pos.z - session.pendingTeleportPos.z };
+	if ((d.x * d.x + d.y * d.y + d.z * d.z) < 1.0) {
+		// Client has caught up to the teleport - resume trusting normal movement.
+		session.awaitingTeleportAck = false;
+		return true;
+	}
+
+	// Still a stale pre-teleport packet in flight - ignore it.
+	return false;
+}
+
 void PlayerPosition(Packet::PlayerPosition& pkt, PlayerSession& session) {
+	if (!AcceptClientPosition(session, pkt.position))
+		return;
 	session.position.pos = pkt.position;
 }
 
@@ -45,20 +63,22 @@ void PlayerRotation(Packet::PlayerRotation& pkt, PlayerSession& session) {
 }
 
 void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& pkt, PlayerSession& session) {
+	if (!AcceptClientPosition(session, pkt.position))
+		return;
 	session.position.pos = pkt.position;
 	session.rotation.x = pkt.yaw;
 	session.rotation.y = pkt.pitch;
 }
 
 void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& world,
-                      std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
+               std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
 	if (pkt.status != 2)
 		return;
 	auto pos = pkt.position;
 	// Use last known good position
-	double dx = session.lastFpX / 32.0 - (pos.x + 0.5);
-	double dy = session.lastFpY / 32.0 - (pos.y + 0.5);
-	double dz = session.lastFpZ / 32.0 - (pos.z + 0.5);
+	double dx = session.entity->prevPosX;
+	double dy = session.entity->prevPosY;
+	double dz = session.entity->prevPosZ;
 	double distance = dx * dx + dy * dy + dz * dz;
 	if (distance > 36.0) {
 		return; // more than 6 blocks away so we drop it
@@ -82,7 +102,7 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 }
 
 void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& world,
-                       std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
+                std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
 	// Block interactions
 	auto block = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z });
 	if (block == BLOCK_CHEST) {
@@ -274,8 +294,7 @@ void InteractWithEntity(Packet::InteractWithEntity& /*pkt*/, PlayerSession& /*se
 
 void InteractWithBlock(Packet::InteractWithBlock& pkt, PlayerSession& session, WorldManager& world) {}
 
-void Animation(Packet::Animation& pkt, PlayerSession& session,
-                      std::vector<std::shared_ptr<PlayerSession>>& players) {
+void Animation(Packet::Animation& pkt, PlayerSession& session, std::vector<std::shared_ptr<PlayerSession>>& players) {
 	for (auto& other : players) {
 		if (other.get() == &session)
 			continue;

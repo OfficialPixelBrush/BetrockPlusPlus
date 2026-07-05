@@ -8,7 +8,7 @@
 #include "packet_dispatcher.h"
 
 #include "logger/logger.h"
-#include "server.h"
+#include "../server.h"
 #include <iomanip>
 
 bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, WorldManager& sessionWorld, Server& server) {

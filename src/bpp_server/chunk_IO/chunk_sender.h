@@ -9,7 +9,7 @@
 #include "BS_thread_pool.hpp"
 #include "chunk_serializer.h"
 #include "networking/packets.h"
-#include "player_session.h"
+#include "../player_conn/player_session.h"
 #include "world/world.h"
 #include <algorithm>
 #include <future>

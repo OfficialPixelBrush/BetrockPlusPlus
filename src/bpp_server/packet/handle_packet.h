@@ -21,10 +21,10 @@
 #endif
 
 #include "blocks/block_properties.h"
-#include "commands/command_manager.h"
+#include "../commands/command_manager.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
-#include "player_session.h"
+#include "../player_conn/player_session.h"
 #include "world/world.h"
 #include "packet_utils.h"
 

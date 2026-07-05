@@ -39,37 +39,39 @@ void Entity::tick() {
 		}
 	}
 
-	if (inWater) {
-		moveInFluid(WATER_DRAG);
-	} else if (inLava) {
-		moveInFluid(LAVA_DRAG);
-	} else {
-		// Friction depends on the block underfoot; slippery blocks reduce both braking and acceleration
-		float friction = onGround ? belowBlock.slipperiness * HORIZONTAL_FRICTION : HORIZONTAL_FRICTION;
+	if (hasPhysics) {
+		if (inWater) {
+			moveInFluid(WATER_DRAG);
+		} else if (inLava) {
+			moveInFluid(LAVA_DRAG);
+		} else {
+			// Friction depends on the block underfoot; slippery blocks reduce both braking and acceleration
+			float friction = onGround ? belowBlock.slipperiness * HORIZONTAL_FRICTION : HORIZONTAL_FRICTION;
 
-		// Acceleration is tuned so that on normal ground (slipperiness 0.6) it equals exactly 0.1
-		float acceleration = onGround ? 0.1f * (NORMAL_FRICTION_CUBED / (friction * friction * friction))
-		                              : AIR_ACCELERATION;
-		applyInput(moveStrafe, moveForward, acceleration);
+			// Acceleration is tuned so that on normal ground (slipperiness 0.6) it equals exactly 0.1
+			float acceleration = onGround ? 0.1f * (NORMAL_FRICTION_CUBED / (friction * friction * friction))
+			                              : AIR_ACCELERATION;
+			applyInput(moveStrafe, moveForward, acceleration);
 
-		if (onLadder) {
-			motionX = std::clamp(float(motionX), -LADDER_MAX_HORIZONTAL, LADDER_MAX_HORIZONTAL);
-			motionY = std::max(float(motionY), sneaking ? LADDER_SNEAK_DESCENT : -LADDER_MAX_DESCENT);
-			motionZ = std::clamp(float(motionZ), -LADDER_MAX_HORIZONTAL, LADDER_MAX_HORIZONTAL);
-			fallDistance = 0;
+			if (onLadder) {
+				motionX = std::clamp(float(motionX), -LADDER_MAX_HORIZONTAL, LADDER_MAX_HORIZONTAL);
+				motionY = std::max(float(motionY), sneaking ? LADDER_SNEAK_DESCENT : -LADDER_MAX_DESCENT);
+				motionZ = std::clamp(float(motionZ), -LADDER_MAX_HORIZONTAL, LADDER_MAX_HORIZONTAL);
+				fallDistance = 0;
+			}
+
+			move({ motionX, motionY, motionZ });
+
+			// Climb upward when pressing into a ladder
+			if (collidedHorizontally && onLadder) {
+				motionY = LADDER_WALL_BOOST;
+			}
+
+			motionY -= GRAVITY;
+			motionX *= friction;
+			motionY *= VERTICAL_FRICTION;
+			motionZ *= friction;
 		}
-
-		move({ motionX, motionY, motionZ });
-
-		// Climb upward when pressing into a ladder
-		if (collidedHorizontally && onLadder) {
-			motionY = LADDER_WALL_BOOST;
-		}
-
-		motionY -= GRAVITY;
-		motionX *= friction;
-		motionY *= VERTICAL_FRICTION;
-		motionZ *= friction;
 	}
 }
 
@@ -153,7 +155,7 @@ void Entity::move(Vec3 movement) {
 	for (auto& col : sweptCollider) {
 		movement.y = col.calculateYOffset(collider, movement.y);
 	}
-	collider.offset(0.0, movement.y, 0.0);
+	collider = collider.offset(0.0, movement.y, 0.0);
 
 	// Check if we are on ground or landed this tick
 	bool canStepUp = onGround || (original.y != movement.y && original.y < 0.0);
@@ -162,20 +164,20 @@ void Entity::move(Vec3 movement) {
 	for (auto& col : sweptCollider) {
 		movement.x = col.calculateXOffset(collider, movement.x);
 	}
-	collider.offset(movement.x, 0.0, 0.0);
+	collider = collider.offset(movement.x, 0.0, 0.0);
 
-	// Resolve Z 
+	// Resolve Z
 	for (auto& col : sweptCollider) {
 		movement.z = col.calculateZOffset(collider, movement.z);
 	}
-	collider.offset(0.0, 0.0, movement.z);
+	collider = collider.offset(0.0, 0.0, movement.z);
 
 	collidedHorizontally = original.x != movement.x || original.z != movement.z;
 
-	if (stepHeight > 0.0f && canStepUp && (clampSneak || yOffset < 0.05f) && collidedHorizontally) {
+	if (stepHeight > 0.0f && canStepUp && (clampSneak || ySize < 0.05f) && collidedHorizontally) {
 		auto stepUpMovement = movement;
-		movement = {original.x, stepHeight, original.z};
-		
+		movement = { original.x, stepHeight, original.z };
+
 		AABB resolvedCollider = collider;
 		collider = originalCollider;
 
@@ -186,51 +188,49 @@ void Entity::move(Vec3 movement) {
 		for (auto& col : stepUpSweptCollider) {
 			movement.y = col.calculateYOffset(collider, movement.y);
 		}
-		collider.offset(0.0, movement.y, 0.0);
+		collider = collider.offset(0.0, movement.y, 0.0);
 
 		// Resolve X
 		for (auto& col : stepUpSweptCollider) {
 			movement.x = col.calculateXOffset(collider, movement.x);
 		}
-		collider.offset(movement.x, 0.0, 0.0);
+		collider = collider.offset(movement.x, 0.0, 0.0);
 
 		// Resolve Z
 		for (auto& col : stepUpSweptCollider) {
 			movement.z = col.calculateZOffset(collider, movement.z);
 		}
-		collider.offset(0.0, 0.0, movement.z);
+		collider = collider.offset(0.0, 0.0, movement.z);
 
 		// Snap down
-		double downY = -stepHeight; 
+		double downY = -stepHeight;
 		for (auto& col : stepUpSweptCollider) {
 			downY = col.calculateYOffset(collider, downY);
 		}
-		collider.offset(0.0, downY, 0.0);
+		collider = collider.offset(0.0, downY, 0.0);
 
 		// Keep whichever collision path moved further horizontally
 		if (stepUpMovement.x * stepUpMovement.x + stepUpMovement.z * stepUpMovement.z >
 		    movement.x * movement.x + movement.z * movement.z) {
 			movement = stepUpMovement;
 			collider = resolvedCollider;
-		}
-		else {
-			movement.y += (boundingBox.minY - originalCollider.minY) - stepHeight;
-			double frac = boundingBox.minY - collider.minY;
+		} else {
+			movement.y += (resolvedCollider.minY - originalCollider.minY) - stepHeight;
+			double frac = resolvedCollider.minY - collider.minY;
 			if (frac > 0.0)
-				yOffset += float(frac + 0.01);
+				ySize += float(frac + 0.01);
 		}
-
 	}
 
 	// Derive our current position from our collider
 	posX = (collider.minX + collider.maxX) / 2.0;
-	posY = collider.minY;
+	posY = collider.minY + double(yOffset) - double(ySize);
 	posZ = (collider.minZ + collider.maxZ) / 2.0;
 
 	collidedHorizontally = original.x != movement.x || original.z != movement.z;
 	collidedVertically = original.y != movement.y;
 	onGround = original.y != movement.y && original.y < 0.0;
-	isCollided = collidedHorizontally || collidedVertically;
+	collided = collidedHorizontally || collidedVertically;
 
 	if (original.x != movement.x)
 		motionX = 0.0;

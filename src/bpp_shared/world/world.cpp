@@ -225,6 +225,48 @@ void WorldManager::drainLoadQueue() {
 	}
 }
 
+void WorldManager::forceGenChunkSync(Int32_2 pos) {
+	if (chunks.find(pos) == chunks.end()) {
+		auto chunk = std::make_shared<Chunk>();
+		chunk->cpos = pos;
+
+		if (regionManager->chunkExists(pos)) {
+			// Chunk already exists on disk - load it instead of regenerating it.
+			chunk->state.store(ChunkState::Loading, std::memory_order_release);
+			chunks[pos] = std::move(chunk);
+			regionManager->loadChunk(pos);
+		} else {
+			// Brand new chunk - generate it on the pool, same as pumpPipeline does.
+			chunk->state.store(ChunkState::Generating, std::memory_order_release);
+			chunks[pos] = std::move(chunk);
+			pool.detach_task([pos, this]() {
+				auto genChunk = std::make_shared<Chunk>();
+				genChunk->cpos = pos;
+				if (isHell) {
+					thread_local NetherGenerator tl_gen(this->seed);
+					tl_gen.GenerateChunk(*genChunk);
+				} else {
+					thread_local OverworldGenerator tl_gen(this->seed);
+					tl_gen.GenerateChunk(*genChunk);
+				}
+				genChunk->isModified = true;
+				genChunk->generateSkylightMap();
+				genChunk->state.store(ChunkState::Generated, std::memory_order_release);
+				this->postGenResult(std::move(genChunk));
+			});
+		}
+	}
+
+	// Block only on this specific chunk - drain both completion paths (fresh
+	// generation and disk load) since we don't know up front which one applies.
+	while (chunks[pos]->state.load() < ChunkState::Generated) {
+		pool.wait();
+		regionManager->iopool.wait();
+		drainGenQueue();
+		drainLoadQueue();
+	}
+}
+
 void WorldManager::seedChunkLighting(Int32_2 pos) {
 	auto* chunk = getChunkRaw(pos);
 	if (!chunk)

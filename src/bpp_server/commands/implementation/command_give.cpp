@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-only
 */
 
-#include "../../handle_packet.h"
+#include "../../packet/handle_packet.h"
 #include "../command.h"
 #include "../command_manager.h"
 #include "inventory/item_stack.h"

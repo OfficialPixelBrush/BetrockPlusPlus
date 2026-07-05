@@ -7,6 +7,7 @@
 */
 
 #pragma once
+#include "../entities/entity_mp_player.h"
 #include "inventory/inventory_interaction.h"
 #include "nbt/nbt.h"
 #include "networking/network_stream.h"
@@ -32,19 +33,15 @@ struct PlayerSession {
 	NetworkStream stream;
 	ClientPosition position;
 
+	// Our player entity
+	std::shared_ptr<EntityMPPlayer> entity;
+
 	// Commands use this to look up other sessions by username.
 	// Should probably handle this in the server!!
 	std::vector<std::shared_ptr<PlayerSession>>* players = nullptr;
 
 	// rotation.x = yaw, rotation.y = pitch
 	Float2 rotation = { 0.0f, 0.0f };
-
-	// Stored as integer * 32
-	int32_t lastFpX = 0;
-	int32_t lastFpY = 0;
-	int32_t lastFpZ = 0;
-	int8_t lastYaw = 0;
-	int8_t lastPitch = 0;
 
 	std::unordered_set<Int32_2> sentChunks;
 	std::unordered_set<Int32_2> flushedChunks; // actually written to stream
@@ -83,7 +80,29 @@ struct PlayerSession {
 
 	int8_t dimension = 0; // 0 = overworld, -1 = nether
 
+	// While true, incoming client position packets are checked against
+	// pendingTeleportPos before being trusted - this stops a stale movement
+	// packet (sent by the client before it received our teleport) from
+	// clobbering session.position.pos right after a server-initiated teleport.
+	bool awaitingTeleportAck = false;
+	Vec3 pendingTeleportPos{ 0.0, 0.0, 0.0 };
+
+	// Server's currently-trusted position - equivalent to Beta's
+	// NetServerHandler.lastPosX/lastPosY/lastPosZ. Only updated when a
+	// client-claimed move is actually accepted (see EntityMPPlayer::tick()).
+	Vec3 lastGoodPos{ 0.0, 0.0, 0.0 };
+
+	// Matches Beta's NetServerHandler.hasMoved: until the client's own reported
+	// position settles near our last known-good spot, we don't run rebound
+	// validation at all - this avoids fighting the client while it's still
+	// catching up (e.g. loading its mesh) right after spawn/teleport.
+	bool hasMoved = false;
+
 	explicit PlayerSession(int socket) : stream(socket), inventoryInteraction(&inventory) {}
+	~PlayerSession() {
+		// So our player entity despawns from the world
+		entity->isDead = true;
+	}
 
 	// Load our player data from file
 	void loadPlayerNBT(Tag& nbt) {

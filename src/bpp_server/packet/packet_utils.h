@@ -6,6 +6,9 @@
  *
 */
 #pragma once
+#include "../player_conn/player_session.h"
+#include "networking/packets.h"
+#include <vector>
 
 namespace PacketUtilities {
 inline void sendInventory(PlayerSession& session, int8_t windowId, Inventory inventory) {

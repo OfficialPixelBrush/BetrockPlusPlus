@@ -50,8 +50,8 @@ const float INPUT_DECAY = 0.98f;
 const float SNEAK_SPEED_MODIFIER = 0.3f;
 
 struct Entity {
-	// Entity name because notch split stuff into multiple packets based on type
-	std::string name = "";
+	// Entity type because notch split stuff into multiple packets based on type
+	std::string type = "";
 
 	// World pointer
 	WorldManager* world = nullptr;
@@ -144,6 +144,10 @@ struct Entity {
 	bool preventEntitySpawning = false;
 	bool isFirstUpdate = true; // True only on the very first tick
 
+	Entity() {
+		rebuildCollider();
+	}
+
 	// Encode Entity info into relevant Metadata
 	virtual void encodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {}
 
@@ -152,6 +156,23 @@ struct Entity {
 
 	virtual void tick();
 
+	void rebuildCollider() {
+		double halfWidth = double(width) / 2.0;
+		double bottom = posY - double(yOffset) + double(ySize);
+		collider = {
+			posX - halfWidth, bottom, posZ - halfWidth,
+			posX + halfWidth, bottom + double(height), posZ + halfWidth
+		};
+	}
+	void teleport(Vec3 newpos, Vec2 newrot = { 0, 0 }) {
+		posX = newpos.x;
+		posY = newpos.y;
+		posZ = newpos.z;
+		rotationYaw = newrot.x;
+		rotationPitch = newrot.y;
+		ySize = 0.0f;
+		rebuildCollider();
+	}
 	void moveInFluid(float drag);
 	void applyKnockback(Vec3 direction);
 	void applyInput(float strafe, float forward, float acceleration);
