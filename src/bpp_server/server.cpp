@@ -326,30 +326,6 @@ void Server::acceptNewPlayers() {
 	players.back()->players = &players;
 }
 
-// Positions in entity space are quantized!!
-void Server::broadcastPlayerMovement(PlayerSession& session) {
-	int32_t newFpX = static_cast<int32_t>(session.position.pos.x * 32.0);
-
-	// Subtract 1/64 offset: client adds (serverPosY/32 + 1/64) on teleport,
-	int32_t newFpY = static_cast<int32_t>((session.position.pos.y - (1.0 / 64.0)) * 32.0);
-	int32_t newFpZ = static_cast<int32_t>(session.position.pos.z * 32.0);
-	int8_t newYaw = static_cast<int8_t>(session.rotation.x / 360.0f * 256.0f);
-	int8_t newPitch = static_cast<int8_t>(session.rotation.y / 360.0f * 256.0f);
-
-	// Relative-move Y does not have the 1/64 offset
-	int32_t relFpY = static_cast<int32_t>(session.position.pos.y * 32.0);
-	int32_t dx = newFpX - session.lastFpX;
-	int32_t dy = relFpY - session.lastFpY;
-	int32_t dz = newFpZ - session.lastFpZ;
-
-	// Update last-broadcast state
-	session.lastFpX = newFpX;
-	session.lastFpY = relFpY;
-	session.lastFpZ = newFpZ;
-	session.lastYaw = newYaw;
-	session.lastPitch = newPitch;
-}
-
 void Server::tick() {
 	acceptNewPlayers();
 	const int playerCount = int(players.size());

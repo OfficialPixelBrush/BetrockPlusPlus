@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: GPL-3.0-only
  *
 */
-#include "server.h"
+#include "../packet/packet_utils.h"
+#include "../server.h"
 #include "version.h"
-#include "packet_utils.h"
 
 void PlayerConnStateManager::handleConnectionState(PlayerSession& session, Server& server) {
 	switch (session.connState) {
@@ -24,7 +24,6 @@ void PlayerConnStateManager::handleConnectionState(PlayerSession& session, Serve
 		server.chunkSender.enqueue(session, sessionWorld, 16);
 		server.chunkSender.flush(session);
 		server.processIncoming(session);
-		server.broadcastPlayerMovement(session);
 		if (sessionWorld.elapsed_ticks % 20 == 0) {
 			// Update the server time so client's don't desync
 			Packet::SetTime time;
@@ -84,7 +83,8 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 	response.worldSeed = server.gameRuntime.world.seed;
 
 	// Load player data before building the Login response so we know which dimension they're in
-	auto playerNbt = server.gameRuntime.saveManager.getPlayerNBT(std::string(session.username.begin(), session.username.end()));
+	auto playerNbt = server.gameRuntime.saveManager.getPlayerNBT(
+	    std::string(session.username.begin(), session.username.end()));
 	session.loadPlayerNBT(playerNbt);
 
 	response.dimension = static_cast<Dimension>(session.dimension);
@@ -113,8 +113,11 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 		session.position.pos = { float(respawnPoint.x) + 0.5, float(respawnPoint.y), float(respawnPoint.z) + 0.5 };
 	}
 
-	// Offset so we don't spawn in the ground
+	// Convert the feet-based respawn height into our posY convention (eye level, matching yOffset)
 	session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
+
+	// Our first "trusted" position is wherever we just placed the player
+	session.lastGoodPos = session.position.pos;
 
 	// Log that we logged in!
 	GlobalLogger().info << L"Player " << session.username << L" logged in with entity ID " << session.entityId
@@ -168,6 +171,7 @@ void PlayerConnStateManager::waitForSpawnChunks(PlayerSession& session, Server& 
 
 	GlobalLogger().info << "Spawn chunks sent. Setting player position\n";
 
+	session.position.pos.y += 0.0625;
 	Packet::PlayerPositionAndRotation pos;
 	pos.position = session.position.pos;
 	pos.camera_y = session.position.pos.y + PLAYER_EYE_HEIGHT;
@@ -175,14 +179,14 @@ void PlayerConnStateManager::waitForSpawnChunks(PlayerSession& session, Server& 
 	pos.onGround = false;
 	pos.Serialize(session.stream);
 
-	session.lastFpX = int32_t(session.position.pos.x * 32.0);
-	session.lastFpY = int32_t(session.position.pos.y * 32.0);
-	session.lastFpZ = int32_t(session.position.pos.z * 32.0);
-	session.lastYaw = int8_t(session.rotation.x / 360.0f * 256.0f);
-	session.lastPitch = int8_t(session.rotation.y / 360.0f * 256.0f);
-
 	// Set view distance to server default
 	session.position.viewDistanceOverride = 0;
+
+	// Initialize our entity
+	if (!session.entity)
+		session.entity = std::make_shared<EntityMPPlayer>();
+	session.entity->session = &session;
+	sessionWorld.entityManager.addEntity(session.entity);
 
 	GlobalLogger().info << "Client connected\n";
 	session.connState = ConnectionState::Playing;

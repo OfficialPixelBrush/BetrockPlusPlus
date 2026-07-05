@@ -8,7 +8,7 @@
 #include <functional>
 #include <sstream>
 
-#include "../player_session.h"
+#include "../player_conn/player_session.h"
 #include "world.h"
 
 #define ERROR_OPERATOR L"Only operators can use this command!"
@@ -127,13 +127,24 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 	pkt.pitch = pitch;
 	pkt.onGround = false;
 	pkt.Serialize(target.stream);
+
+	// This is hacky but force gen the chunk we are at
+	Int2 chunkPos{ int(position.x) >> 4, int(position.z) >> 4 };
+	target.entity->world->forceGenChunkSync(chunkPos);
+
+	// Update our server-side entity position to match the teleport, so that movement broadcasts are correct.
+	target.entity->teleport(position, { yaw, pitch });
+
 	// Keep server-side position in sync so movement broadcasts are correct.
 	target.position.pos = position;
-	target.lastFpX = static_cast<int32_t>(position.x * 32.0);
-	target.lastFpY = static_cast<int32_t>(position.y * 32.0);
-	target.lastFpZ = static_cast<int32_t>(position.z * 32.0);
-	target.lastYaw = static_cast<int8_t>(yaw / 360.0f * 256.0f);
-	target.lastPitch = static_cast<int8_t>(pitch / 360.0f * 256.0f);
+
+	// Ignore any client position packets that don't match this new position until the client actually catches up
+	target.awaitingTeleportAck = true;
+	target.pendingTeleportPos = position;
+
+	// The teleport destination is now our trusted baseline for rebound checks.
+	target.lastGoodPos = position;
+	target.hasMoved = false;
 }
 
 // Helper: find a playing session by username.

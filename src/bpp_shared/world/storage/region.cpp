@@ -7,7 +7,6 @@
 */
 
 #include "region.h"
-#include "../../../bpp_server/chunk_serializer.h"
 #include "chunk.h"
 #include "helpers/byteswap_compat.h"
 #include "logger.h"

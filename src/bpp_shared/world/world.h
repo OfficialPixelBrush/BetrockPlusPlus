@@ -313,16 +313,7 @@ struct WorldManager {
 			if (b == BlockType::BLOCK_INVALID) {
 				// Force generate this chunk so we can check the block type.
 				auto cpos = Int32_2{ x >> 4, z >> 4 };
-				auto chunk = std::make_shared<Chunk>();
-				chunk->cpos = cpos;
-				chunk->spawnChunk = true;
-				chunks[cpos] = std::move(chunk);
-				// Wait until this chunk is done generating. We don't care about populating or lighting
-				while (chunks[cpos]->state.load() < ChunkState::Generated) {
-					this->pumpPipeline({});
-					this->pool.wait();
-					this->drainGenQueue();
-				};
+				forceGenChunkSync(cpos);
 				b = getFirstUncoveredBlock(x, z);
 			}
 			return getFirstUncoveredBlock(x, z) == BlockType::BLOCK_SAND;
@@ -333,6 +324,9 @@ struct WorldManager {
 		this->spawnPoint = { sx, 64, sz };
 		chunks.clear(); // Clear all chunks so we can start fresh from the spawn area
 	}
+
+	// Force generate a chunk synchronously, blocking until the chunk is fully generated
+	void forceGenChunkSync(Int32_2 pos);
 
 	Int3 getSpawnPoint(bool adjust) {
 		if (!adjust)

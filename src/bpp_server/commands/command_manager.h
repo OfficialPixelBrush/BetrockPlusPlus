@@ -5,7 +5,7 @@
 */
 
 #pragma once
-#include "../player_session.h"
+#include "../player_conn/player_session.h"
 #include "command.h"
 #include <functional>
 
