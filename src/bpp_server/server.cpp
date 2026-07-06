@@ -11,6 +11,7 @@
 #include "logger.h"
 #include "world.h"
 #include <string>
+#include <thread>
 #if defined(__linux__) || defined(__APPLE__)
 #include <fcntl.h>
 #include <iomanip>
@@ -216,42 +217,53 @@ void Server::startup() {
 
 void Server::run() {
 	startup();
-	auto lastTime = std::chrono::steady_clock::now();
 
+	static constexpr auto TICK_DURATION = std::chrono::nanoseconds(std::chrono::seconds{ 1 }) / TICKS_PER_SECOND;
+
+	using clock = std::chrono::steady_clock;
+
+	std::chrono::nanoseconds avgTotalTickDuration{ 0 };
+	int avgTickCount = 0;
+
+	uint64_t ticks = 0;
+	auto baseTime = clock::now();
+
+	// Main tick loop
+	// Heavily based on https://github.com/Minestom/Minestom/blob/59406d5b54d5221df85f381f204fbc07fd861a43/src/main/java/net/minestom/server/thread/TickSchedulerThread.java
 	while (!shutdownRequested.load()) {
-		int ticks_ran = 0;
+		auto tickStart = clock::now();
+		tick();
+		auto tickEnd = clock::now();
 
-		auto now = std::chrono::steady_clock::now();
-		float delta = std::chrono::duration<float>(now - lastTime).count();
-		lastTime = now;
+		// Sample and print average tick data
+		avgTotalTickDuration += (tickEnd - tickStart);
+		++avgTickCount;
 
-		accumulator += delta;
-
-		while (accumulator >= TICK_DELTA && ticks_ran <= MAX_TICKS_PER_FRAME) {
-			auto tickStart = std::chrono::steady_clock::now();
-			tick();
-			float tickMs = std::chrono::duration<float>(std::chrono::steady_clock::now() - tickStart).count() * 1000.0f;
-			tickTimeAccum += tickMs;
-			tickCount++;
-			if (tickCount >= 40) {
-				GlobalLogger().info << std::setprecision(2)
-				                    << "Avg tick: " << (double(tickTimeAccum) / double(tickCount)) << " ms\n";
-				tickTimeAccum = 0.0f;
-				tickCount = 0;
-			}
-			accumulator -= TICK_DELTA;
-			ticks_ran++;
+		if (ticks % (TICKS_PER_SECOND * 2) == 0) {
+			double avgMs = std::chrono::duration<double, std::milli>(avgTotalTickDuration).count() /
+			               double(avgTickCount);
+			GlobalLogger().info << "Avg MSPT: " << avgMs << " ms\n";
+			avgTotalTickDuration = std::chrono::nanoseconds{ 0 };
+			avgTickCount = 0;
 		}
 
-		if (ticks_ran == MAX_TICKS_PER_FRAME) {
-			accumulator = 0.0f;
-			GlobalLogger().warn << "Can't keep up!";
+		++ticks;
+		auto nextTickTime = baseTime + ticks * TICK_DURATION;
+		std::this_thread::sleep_until(nextTickTime);
+
+		// Check if the server can not keep up with the tickrate
+		// if it gets too far behind, reset the ticks & baseTime
+		// to avoid running too many ticks at once
+		if (clock::now() > nextTickTime + MAX_TICK_CATCH_UP * TICK_DURATION) {
+			baseTime = clock::now();
+			ticks = 0;
+			GlobalLogger().warn << "Can't keep up with ticks!";
 		}
 	}
 
 	// Shutdown was requested. Save and clean up on the main thread
 	stop();
-	shutdownRequested.store(false); // unblock the ctrl handler thread
+	shutdownRequested.store(false); // Unblock the ctrl handler thread
 }
 
 void Server::stop() {
