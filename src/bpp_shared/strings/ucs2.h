@@ -79,6 +79,8 @@ static std::u16string ToUCS2(std::string str) {
 		}
 
 		out.push_back(static_cast<char16_t>(cp));
+
+		GlobalLogger().info << std::to_string(cp) << "\n";
 	}
 
 	return out;
