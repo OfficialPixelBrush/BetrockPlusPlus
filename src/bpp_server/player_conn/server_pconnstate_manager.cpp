@@ -113,7 +113,7 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 		session.position.pos = { float(respawnPoint.x) + 0.5, float(respawnPoint.y), float(respawnPoint.z) + 0.5 };
 	}
 
-	// Convert the feet-based respawn height into our posY convention (eye level, matching yOffset)
+	// Convert the feet-based respawn height into our posY convention (eye level)
 	session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
 
 	// Log that we logged in!
