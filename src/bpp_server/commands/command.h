@@ -137,14 +137,6 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 
 	// Keep server-side position in sync so movement broadcasts are correct.
 	target.position.pos = position;
-
-	// Ignore any client position packets that don't match this new position until the client actually catches up
-	target.awaitingTeleportAck = true;
-	target.pendingTeleportPos = position;
-
-	// The teleport destination is now our trusted baseline for rebound checks.
-	target.lastGoodPos = position;
-	target.hasMoved = false;
 }
 
 // Helper: find a playing session by username.

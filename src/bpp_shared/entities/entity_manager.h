@@ -37,8 +37,8 @@ struct EntityManager {
 			// Entity collisions below and above the world are just gonna be inefficient
 			if (newBucketPos.z < 0)
 				newBucketPos.z = 0;
-			else if (newBucketPos.z > 10)
-				newBucketPos.z = 10;
+			else if (newBucketPos.z > 9)
+				newBucketPos.z = 9;
 
 			if (newBucketPos != entity->bucketPos) {
 				// Remove from the old bucket

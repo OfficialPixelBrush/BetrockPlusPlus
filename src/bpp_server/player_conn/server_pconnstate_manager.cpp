@@ -116,9 +116,6 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 	// Convert the feet-based respawn height into our posY convention (eye level, matching yOffset)
 	session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
 
-	// Our first "trusted" position is wherever we just placed the player
-	session.lastGoodPos = session.position.pos;
-
 	// Log that we logged in!
 	GlobalLogger().info << L"Player " << session.username << L" logged in with entity ID " << session.entityId
 	                    << L" at (" << session.position.pos.x << ", " << session.position.pos.y << ", "

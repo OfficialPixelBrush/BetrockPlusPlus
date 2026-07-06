@@ -34,26 +34,7 @@ void PlayerMovement(Packet::PlayerMovement& /*pkt*/, PlayerSession& /*session*/)
 	// onGround flag only, so no position update needed.
 }
 
-// Returns true if it's safe to accept pos as the client's new position right now.
-static bool AcceptClientPosition(PlayerSession& session, const Vec3& pos) {
-	if (!session.awaitingTeleportAck)
-		return true;
-
-	Vec3 d = { pos.x - session.pendingTeleportPos.x, pos.y - session.pendingTeleportPos.y,
-		       pos.z - session.pendingTeleportPos.z };
-	if ((d.x * d.x + d.y * d.y + d.z * d.z) < 1.0) {
-		// Client has caught up to the teleport - resume trusting normal movement.
-		session.awaitingTeleportAck = false;
-		return true;
-	}
-
-	// Still a stale pre-teleport packet in flight - ignore it.
-	return false;
-}
-
 void PlayerPosition(Packet::PlayerPosition& pkt, PlayerSession& session) {
-	if (!AcceptClientPosition(session, pkt.position))
-		return;
 	session.position.pos = pkt.position;
 }
 
@@ -63,8 +44,6 @@ void PlayerRotation(Packet::PlayerRotation& pkt, PlayerSession& session) {
 }
 
 void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& pkt, PlayerSession& session) {
-	if (!AcceptClientPosition(session, pkt.position))
-		return;
 	session.position.pos = pkt.position;
 	session.rotation.x = pkt.yaw;
 	session.rotation.y = pkt.pitch;
