@@ -19,7 +19,7 @@ std::wstring CommandSpawn::Execute(std::vector<std::wstring>& parameters, Player
 
 	SendTeleport(
 	    session, Vec3 {
-		    double(ipos.x) + 0.5, double(ipos.y) + PLAYER_EYE_HEIGHT + session.position.pos.y + 0.0625, double(ipos.z) + 0.5
+		    double(ipos.x) + 0.5, double(ipos.y) + PLAYER_EYE_HEIGHT + 0.0625, double(ipos.z) + 0.5
 	    });
 	return L"";
 }
