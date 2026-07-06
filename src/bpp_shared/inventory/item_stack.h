@@ -49,12 +49,6 @@ struct ItemStack {
 		}
 	}
 
-	std::wstring wstr() const {
-		std::wostringstream woss;
-		woss << *this;
-		return woss.str();
-	}
-
 	std::string str() const {
 		std::ostringstream oss;
 		oss << *this;

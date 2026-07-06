@@ -132,7 +132,7 @@ public:
 		Type type;
 		uint8_t index;
 
-		using Value = std::variant<int8_t, int16_t, int32_t, float, std::wstring, ItemStack, Int32_3>;
+		using Value = std::variant<int8_t, int16_t, int32_t, float, std::string, ItemStack, Int32_3>;
 
 		Value value;
 	};

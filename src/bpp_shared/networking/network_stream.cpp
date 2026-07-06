@@ -9,6 +9,8 @@
 #include "logger.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
+#include "ucs2.h"
+#include <string>
 #include <vector>
 
 NetworkStream::NetworkStream(int p_client_socket) {
@@ -65,7 +67,7 @@ void NetworkStream::flushWriteBufferBlocking() {
 }
 
 // String-8 Handling
-void NetworkStream::Write(const std::string& str) {
+void NetworkStream::WriteString8(const std::string& str) {
 	uint16_t length = static_cast<uint16_t>(str.size());
 	Write(length);
 	std::vector<uint8_t> data;
@@ -76,7 +78,7 @@ void NetworkStream::Write(const std::string& str) {
 	WriteBytes(data.data(), data.size());
 }
 
-std::string NetworkStream::ReadString() {
+std::string NetworkStream::ReadString8() {
 	uint16_t len = Read<uint16_t>(); // adjust to uint32_t if your protocol uses 4-byte lengths
 	std::string result(len, '\0');
 	ReadBytes(reinterpret_cast<uint8_t*>(result.data()), len);
@@ -84,31 +86,32 @@ std::string NetworkStream::ReadString() {
 }
 
 // String-16 Handling
-void NetworkStream::Write(const std::wstring& str) {
-	uint16_t length = static_cast<uint16_t>(str.size());
+void NetworkStream::WriteString16(const std::string& str) {
+	std::u16string str16 = ToUCS2(str);
+	uint16_t length = static_cast<uint16_t>(str16.size());
 	Write(length);
 	std::vector<uint8_t> data;
-	data.reserve(str.size());
-	for (const wchar_t c : str) {
+	data.reserve(str16.size());
+	for (const char16_t c : str16) {
 		data.push_back(static_cast<uint8_t>((c >> 8) & 0xFF));
 		data.push_back(static_cast<uint8_t>(c & 0xFF));
 	}
 	WriteBytes(data.data(), data.size());
 }
 
-std::wstring NetworkStream::ReadWString() {
+std::string NetworkStream::ReadString16() {
 	uint16_t len = Read<uint16_t>();
 
 	// Read as UTF-16 (2 bytes per char) regardless of platform wchar_t size
 	std::vector<uint16_t> buf(len);
-	ReadBytes(reinterpret_cast<uint8_t*>(buf.data()), len * sizeof(uint16_t));
+	ReadBytes(reinterpret_cast<uint8_t*>(buf.data()), len * sizeof(char16_t));
 
-	std::wstring result(len, L'\0');
+	std::u16string result(len, u'\0');
 	for (uint16_t i = 0; i < len; i++) {
 		// byteswap each UTF-16 unit, then widen to wchar_t
-		result[i] = static_cast<wchar_t>(__builtin_bswap16(buf[i]));
+		result[i] = static_cast<char16_t>(__builtin_bswap16(buf[i]));
 	}
-	return result;
+	return ToUTF8(result);
 }
 
 size_t NetworkStream::ReadBytes(uint8_t* buf, size_t len) {
@@ -186,7 +189,7 @@ void NetworkStream::ReadEntityMetadata(std::vector<PacketData::EntityMetadata::D
 			break;
 		}
 		case PacketData::EntityMetadata::Type::STRING: {
-			std::wstring str = Read<std::wstring>();
+			std::string str = ReadString16();
 			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = str });
 			break;
 		}
@@ -238,7 +241,7 @@ void NetworkStream::WriteEntityMetadata(const std::vector<PacketData::EntityMeta
 			Write(std::get<float>(entry.value));
 			break;
 		case PacketData::EntityMetadata::Type::STRING:
-			Write(std::get<std::wstring>(entry.value));
+			WriteString16(std::get<std::string>(entry.value));
 			break;
 		case PacketData::EntityMetadata::Type::ITEM:
 			Write(std::get<ItemStack>(entry.value).id);

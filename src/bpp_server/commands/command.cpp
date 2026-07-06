@@ -7,11 +7,11 @@
 #include "command.h"
 #include <string>
 
-std::vector<std::wstring> command;
-std::wstring failureReason;
+std::vector<std::string> command;
+std::string failureReason;
 
 // Base Command
-Command::Command(std::wstring pLabel, std::wstring pDescription, std::wstring pSyntax, bool pRequiresOp,
+Command::Command(std::string pLabel, std::string pDescription, std::string pSyntax, bool pRequiresOp,
                  bool pRequiresCreative) {
 	this->label = pLabel;
 	this->description = pDescription;

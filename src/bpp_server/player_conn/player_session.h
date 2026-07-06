@@ -56,7 +56,7 @@ struct PlayerSession {
 	std::vector<Int32_2> newlyUnloaded;
 	ConnectionState connState = ConnectionState::Handshaking;
 	EntityId entityId = 0;
-	std::wstring username;
+	std::string username;
 	std::chrono::steady_clock::time_point last_packet_time = std::chrono::steady_clock::now();
 
 	// Inventory

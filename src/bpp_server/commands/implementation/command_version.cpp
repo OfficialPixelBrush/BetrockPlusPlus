@@ -10,11 +10,11 @@
 // Shows the current Server version
 // Usage:
 //   /version
-std::wstring CommandVersion::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world,
+std::string CommandVersion::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
                                      std::function<void(PlayerSession&)> transferDimension) {
 	Packet::ChatMessage pkt;
-	pkt.message = L"\u00a77Current " + std::wstring(PROJECT_NAME) + L" version is " +
-	              std::wstring(PROJECT_VERSION_FULL_STRING);
+	pkt.message = "\u00a77Current " + std::string(PROJECT_NAME) + " version is " +
+	              std::string(PROJECT_VERSION_FULL_STRING);
 	pkt.Serialize(session.stream);
-	return L"";
+	return "";
 }

@@ -20,4 +20,4 @@ extern std::array<std::string, BLOCK_MAX> blockLabels;
 extern std::array<std::string, ITEM_MAX - ITEM_MINIMUM> itemLabels;
 
 std::string IdToLabel(const int16_t id);
-std::wstring wIdToLabel(const int16_t id);
+std::string wIdToLabel(const int16_t id);

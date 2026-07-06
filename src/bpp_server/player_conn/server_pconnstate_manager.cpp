@@ -53,10 +53,10 @@ void PlayerConnStateManager::handleHandshake(PlayerSession& session, Server& ser
 	session.username = incoming.username;
 
 	Packet::PreLogin response;
-	response.username = L"-";
+	response.username = "-";
 	response.Serialize(session.stream);
 
-	GlobalLogger().info << L"Player " << session.username << L" is logging in.\n";
+	GlobalLogger().info << "Player " << session.username << " is logging in.\n";
 
 	session.connState = ConnectionState::LoggingIn;
 }
@@ -117,8 +117,8 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 	session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
 
 	// Log that we logged in!
-	GlobalLogger().info << L"Player " << session.username << L" logged in with entity ID " << session.entityId
-	                    << L" at (" << session.position.pos.x << ", " << session.position.pos.y << ", "
+	GlobalLogger().info << "Player " << session.username << " logged in with entity ID " << session.entityId
+	                    << " at (" << session.position.pos.x << ", " << session.position.pos.y << ", "
 	                    << session.position.pos.z << ")\n";
 
 	// Send our inventory
@@ -127,13 +127,13 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 	session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
-void PlayerConnStateManager::disconnectPlayer(PlayerSession& session, const std::wstring& reason, Server& server) {
+void PlayerConnStateManager::disconnectPlayer(PlayerSession& session, const std::string& reason, Server& server) {
 	// Send disconnect reason to the leaving player
 	Packet::Disconnect kick;
 	kick.reason = reason;
 	kick.Serialize(session.stream);
 	session.stream.setConnected(false); // This should force an NBT save
-	GlobalLogger().info << L"Player " << session.username << L" disconnected: " << reason << L"\n";
+	GlobalLogger().info << "Player " << session.username << " disconnected: " << reason << "\n";
 }
 
 void PlayerConnStateManager::waitForSpawnChunks(PlayerSession& session, Server& server) {
@@ -188,6 +188,6 @@ void PlayerConnStateManager::waitForSpawnChunks(PlayerSession& session, Server& 
 	GlobalLogger().info << "Client connected\n";
 	session.connState = ConnectionState::Playing;
 	Packet::ChatMessage welcomeMsg;
-	welcomeMsg.message = std::wstring(L"§eThis Server runs on ") + std::wstring(PROJECT_FULL_VERSION_LABEL);
+	welcomeMsg.message = std::string("§eThis Server runs on ") + std::string(PROJECT_FULL_VERSION_LABEL);
 	welcomeMsg.Serialize(session.stream);
 }

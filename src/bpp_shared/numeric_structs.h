@@ -75,12 +75,6 @@ struct TriNumber {
 		return TriNumber<R>{ static_cast<R>(x) / other, static_cast<R>(y) / other, static_cast<R>(z) / other };
 	}
 
-	friend std::wostream& operator<<(std::wostream& wos, const TriNumber& val) {
-		wos << "(" << static_cast<int64_t>(val.x) << ", " << static_cast<int64_t>(val.y) << ", "
-		    << static_cast<int64_t>(val.z) << ")";
-		return wos;
-	}
-
 	friend std::ostream& operator<<(std::ostream& os, const TriNumber& val) {
 		os << "(" << static_cast<int64_t>(val.x) << ", " << static_cast<int64_t>(val.y) << ", "
 		   << static_cast<int64_t>(val.z) << ")";
@@ -92,12 +86,6 @@ struct TriNumber {
 	}
 	const T& operator[](int axis) const {
 		return data[axis];
-	}
-
-	std::wstring wstr() const {
-		std::wostringstream woss;
-		woss << *this; // Use the overloaded << operator
-		return woss.str();
 	}
 
 	std::string str() const {
@@ -166,11 +154,6 @@ struct BiNumber {
 		};
 	}
 
-	friend std::wostream& operator<<(std::wostream& wos, const BiNumber& val) {
-		wos << "(" << static_cast<int64_t>(val.x) << ", " << static_cast<int64_t>(val.y) << ")";
-		return wos;
-	}
-
 	friend std::ostream& operator<<(std::ostream& os, const BiNumber& val) {
 		os << "(" << static_cast<int64_t>(val.x) << ", " << static_cast<int64_t>(val.y) << ")";
 		return os;
@@ -180,12 +163,6 @@ struct BiNumber {
 		std::ostringstream oss;
 		oss << *this; // Use the overloaded << operator
 		return oss.str();
-	}
-
-	std::wstring wstr() const {
-		std::wostringstream woss;
-		woss << *this; // Use the overloaded << operator
-		return woss.str();
 	}
 };
 
@@ -253,22 +230,10 @@ struct SlimInt3 {
 		return SlimInt3{ static_cast<R>(x) / other, static_cast<R>(y) / other, static_cast<R>(z) / other };
 	}
 
-	friend std::wostream& operator<<(std::wostream& wos, const SlimInt3& val) {
-		wos << "(" << static_cast<int64_t>(val.x) << ", " << static_cast<int64_t>(val.y) << ", "
-		    << static_cast<int64_t>(val.z) << ")";
-		return wos;
-	}
-
 	friend std::ostream& operator<<(std::ostream& os, const SlimInt3& val) {
 		os << "(" << static_cast<int64_t>(val.x) << ", " << static_cast<int64_t>(val.y) << ", "
 		   << static_cast<int64_t>(val.z) << ")";
 		return os;
-	}
-
-	std::wstring wstr() const {
-		std::wostringstream woss;
-		woss << *this; // Use the overloaded << operator
-		return woss.str();
 	}
 
 	std::string str() const {

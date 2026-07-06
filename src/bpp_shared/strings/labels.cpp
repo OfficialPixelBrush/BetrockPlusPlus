@@ -22,9 +22,9 @@ std::string IdToLabel(const int16_t id) {
 	return "Invalid";
 }
 
-std::wstring wIdToLabel(const int16_t id) {
+std::string wIdToLabel(const int16_t id) {
 	std::string label = IdToLabel(id);
-	std::wstring wlabel(label.begin(), label.end());
+	std::string wlabel(label.begin(), label.end());
 	return wlabel;
 }
 

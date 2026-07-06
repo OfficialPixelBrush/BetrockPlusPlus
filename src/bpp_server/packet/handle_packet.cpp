@@ -20,7 +20,7 @@ void ChatMessage(Packet::ChatMessage& pkt, PlayerSession& session, std::vector<s
 		cmd_mgr.Parse(pkt.message, session, world, transferDimension);
 		return;
 	}
-	std::wstring broadcast = L"<" + session.username + L"> " + pkt.message;
+	std::string broadcast = "<" + session.username + "> " + pkt.message;
 	for (auto& other : players) {
 		if (other->connState != ConnectionState::Playing)
 			continue;

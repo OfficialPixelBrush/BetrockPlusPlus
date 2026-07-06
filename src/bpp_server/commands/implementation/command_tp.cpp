@@ -11,7 +11,7 @@
 //   /tp <x> <y> <z>
 //   /tp <player> <x> <y> <z>
 //   /tp <source_player> <target_player>
-std::wstring CommandTeleport::Execute(std::vector<std::wstring>& parameters, PlayerSession& session,
+std::string CommandTeleport::Execute(std::vector<std::string>& parameters, PlayerSession& session,
                                       WorldManager& world, std::function<void(PlayerSession&)> transferDimension) {
 	if (parameters.size() < 2)
 		return ERROR_REASON_SYNTAX;
@@ -22,7 +22,7 @@ std::wstring CommandTeleport::Execute(std::vector<std::wstring>& parameters, Pla
 	// Check if player is even passed
 	// Inspired by https://stackoverflow.com/a/16575564
 	{
-		std::wstringstream ss;
+		std::stringstream ss;
 		ss << parameters[offset];
 		double num = 0.0;
 		ss >> num;
@@ -34,7 +34,7 @@ std::wstring CommandTeleport::Execute(std::vector<std::wstring>& parameters, Pla
 
 	// TODO Should prolly report if a non-existent player runs this
 	if (!source)
-		return parameters[offset - 1] + L" does not exist!";
+		return parameters[offset - 1] + " does not exist!";
 
 	// /tp <player> <x> <y> <z>
 	if (parameters.size() - offset >= 3) {
@@ -43,9 +43,9 @@ std::wstring CommandTeleport::Execute(std::vector<std::wstring>& parameters, Pla
 			SendTeleport(*source, pos);
 
 			Packet::ChatMessage reply;
-			reply.message = L"\u00a77Teleported " + source->username + L" to " + pos.wstr();
+			reply.message = "\u00a77Teleported " + source->username + " to " + pos.str();
 			reply.Serialize(session.stream);
-			return L"";
+			return "";
 		} catch (...) {
 			return ERROR_REASON_PARAMETERS;
 		}
@@ -55,12 +55,12 @@ std::wstring CommandTeleport::Execute(std::vector<std::wstring>& parameters, Pla
 	if (parameters.size() - offset == 1) { // offset=1→params[1], offset=2→params[2]
 		PlayerSession* dest = FindSession(session, parameters[offset]);
 		if (!dest)
-			return parameters[offset] + L" does not exist!";
+			return parameters[offset] + " does not exist!";
 		SendTeleport(*source, dest->position.pos, dest->rotation.x, dest->rotation.y);
 		Packet::ChatMessage reply;
-		reply.message = L"\u00a77Teleported " + source->username + L" to " + session.username;
+		reply.message = "\u00a77Teleported " + source->username + " to " + session.username;
 		reply.Serialize(session.stream);
-		return L"";
+		return "";
 	}
 
 	return ERROR_REASON_SYNTAX;
