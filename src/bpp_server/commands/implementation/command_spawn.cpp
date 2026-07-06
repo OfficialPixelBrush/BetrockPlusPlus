@@ -9,7 +9,7 @@
 // Teleport to spawn
 // Usage:
 //   /spawn
-std::wstring CommandSpawn::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world,
+std::string CommandSpawn::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
                                    std::function<void(PlayerSession&)> transferDimension) {
 	Int32_3 ipos = world.getSpawnPoint(false);
 	world.forceGenChunkSync({ ipos.x >> 4, ipos.z >> 4 });
@@ -19,5 +19,5 @@ std::wstring CommandSpawn::Execute(std::vector<std::wstring>& parameters, Player
 
 	SendTeleport(session,
 	             Vec3{ double(ipos.x) + 0.5, double(ipos.y) + PLAYER_EYE_HEIGHT + 0.0625, double(ipos.z) + 0.5 });
-	return L"";
+	return "";
 }

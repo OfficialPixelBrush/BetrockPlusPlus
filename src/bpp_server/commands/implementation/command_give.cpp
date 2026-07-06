@@ -15,19 +15,19 @@
 // Give yourself a block or item
 // Usage:
 //   /give <id>[:meta] [amount]
-std::wstring CommandGive::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world,
+std::string CommandGive::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
                                   std::function<void(PlayerSession&)> transferDimension) {
 	// TODO: Let player specify another player to give to
 	if (parameters.size() <= 1)
 
-		return L"Missing item id!";
+		return "Missing item id!";
 
 	ItemStack item;
-	const std::wstring& itemArg = parameters[1];
-	size_t colonPos = itemArg.find(L':');
-	std::wstring idString = itemArg.substr(0, colonPos);
-	std::wstring metaString = L"";
-	if (colonPos != std::wstring::npos) {
+	const std::string& itemArg = parameters[1];
+	size_t colonPos = itemArg.find(':');
+	std::string idString = itemArg.substr(0, colonPos);
+	std::string metaString = "";
+	if (colonPos != std::string::npos) {
 		metaString = itemArg.substr(colonPos + 1);
 	}
 	item.id = static_cast<int16_t>(std::stoi(idString));
@@ -43,25 +43,25 @@ std::wstring CommandGive::Execute(std::vector<std::wstring>& parameters, PlayerS
 	if ((item.id > BLOCK_AIR && item.id < BLOCK_MAX) || (item.id >= ITEM_SHOVEL_IRON && item.id < ITEM_MAX) ||
 	    (item.id >= ITEM_RECORD_13 && item.id < ITEM_RECORD_MAX)) {
 		Packet::ChatMessage reply;
-		reply.message = L"\u00a77Gave " + wIdToLabel(item.id) + L" (" + std::to_wstring(item.id) + L":" +
-		                std::to_wstring(item.data) + L") x" + std::to_wstring(item.count) + L" to " + session.username;
+		reply.message = "\u00a77Gave " + wIdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
+		                std::to_string(item.data) + ") x" + std::to_string(item.count) + " to " + session.username;
 
 		reply.Serialize(session.stream);
 
 		// Try the hotbar
 		if (session.inventory.mergeItemStackInInventory(item, false, 36, 44)) {
 			PacketUtilities::sendInventory(session, session.openWindowId, session.inventory);
-			return L"";
+			return "";
 		}
 
 		// Try the main inventory
 		if (session.inventory.mergeItemStackInInventory(item, false, 9, 35)) {
 			PacketUtilities::sendInventory(session, session.openWindowId, session.inventory);
-			return L"";
+			return "";
 		}
 
 		// TODO: Drop on the ground
-		return L"";
+		return "";
 	}
-	return std::to_wstring(item.id) + L" is not a valid item id!";
+	return std::to_string(item.id) + " is not a valid item id!";
 }

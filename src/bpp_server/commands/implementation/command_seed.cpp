@@ -5,14 +5,15 @@
 */
 
 #include "../command.h"
+#include <string>
 
 // Get the world seed
 // Usage:
 //   /seed
-std::wstring CommandSeed::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world,
+std::string CommandSeed::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
                                   std::function<void(PlayerSession&)> transferDimension) {
 	Packet::ChatMessage reply;
-	reply.message = L"\u00a77" + std::to_wstring(world.seed);
+	reply.message = "\u00a77" + std::to_string(world.seed);
 	reply.Serialize(session.stream);
-	return L"";
+	return "";
 }

@@ -11,7 +11,7 @@
 // Usage:
 //   /help
 //   /help [command]
-std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world,
+std::string CommandHelp::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
                                   std::function<void(PlayerSession&)> transferDimension) {
 	//DEFINE_PERMSCHECK(pClient)
 	const auto& registered_commands = CommandManager::GetRegisteredCommands();
@@ -20,39 +20,39 @@ std::wstring CommandHelp::Execute(std::vector<std::wstring>& parameters, PlayerS
 	if (parameters.size() > 1) {
 		for (size_t i = 0; i < registered_commands.size(); i++) {
 			if (registered_commands[i]->GetLabel() == parameters[1]) {
-				pkt.message = L"§7" + registered_commands[i]->GetLabel() + L": " +
+				pkt.message = "§7" + registered_commands[i]->GetLabel() + ": " +
 				              registered_commands[i]->GetDescription();
 				pkt.Serialize(session.stream);
 				// Only print syntax if it has a value
 				if (!registered_commands[i]->GetSyntax().empty()) {
-					pkt.message = L"§7/" + registered_commands[i]->GetLabel() + L" " +
+					pkt.message = "§7/" + registered_commands[i]->GetLabel() + " " +
 					              registered_commands[i]->GetSyntax();
 					pkt.Serialize(session.stream);
 				}
 				if (registered_commands[i]->GetRequiresOperator()) {
-					pkt.message = L"§7(Requires operator)";
+					pkt.message = "§7(Requires operator)";
 					pkt.Serialize(session.stream);
 				}
-				return L"";
+				return "";
 			}
 		}
-		return L"Command not found!";
+		return "Command not found!";
 	} else {
 		// List all commands
-		pkt.message = L"§7-- All commands --";
+		pkt.message = "§7-- All commands --";
 		pkt.Serialize(session.stream);
-		pkt.message = L"§7";
+		pkt.message = "§7";
 		for (size_t i = 0; i < registered_commands.size(); i++) {
 			pkt.message += registered_commands[i]->GetLabel();
 			if (i < registered_commands.size() - 1) {
-				pkt.message += L", ";
+				pkt.message += ", ";
 			}
 			if (pkt.message.size() > MAX_CHAT_LINE_SIZE || i == registered_commands.size() - 1) {
 				pkt.Serialize(session.stream);
-				pkt.message = L"§7";
+				pkt.message = "§7";
 			}
 		}
-		return L"";
+		return "";
 	}
 	return ERROR_REASON_SYNTAX;
 }

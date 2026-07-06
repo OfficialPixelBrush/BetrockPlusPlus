@@ -6,12 +6,12 @@
 */
 #pragma once
 #include <string_view>
-constexpr std::wstring_view PROJECT_NAME = L"@PROJECT_NAME@";
+constexpr std::string_view PROJECT_NAME = "@PROJECT_NAME@";
 constexpr int PROJECT_VERSION_MAJOR = @PROJECT_VERSION_MAJOR@;
 constexpr int PROJECT_VERSION_MINOR = @PROJECT_VERSION_MINOR@;
 constexpr int PROJECT_VERSION_PATCH = @PROJECT_VERSION_PATCH@;
-constexpr std::wstring_view PROJECT_VERSION_STRING = L"@PROJECT_VERSION@"; // Unused until first true release
-constexpr std::wstring_view PROJECT_GIT_COMMIT = L"@PROJECT_GIT_COMMIT@";
-constexpr std::wstring_view PROJECT_GIT_BRANCH = L"@PROJECT_GIT_BRANCH@";
-constexpr std::wstring_view PROJECT_VERSION_FULL_STRING = L"(@PROJECT_GIT_BRANCH@/@PROJECT_GIT_COMMIT@)";
-constexpr std::wstring_view PROJECT_FULL_VERSION_LABEL = L"@PROJECT_NAME@ (@PROJECT_GIT_BRANCH@/@PROJECT_GIT_COMMIT@)";
+constexpr std::string_view PROJECT_VERSION_STRING = "@PROJECT_VERSION@"; // Unused until first true release
+constexpr std::string_view PROJECT_GIT_COMMIT = "@PROJECT_GIT_COMMIT@";
+constexpr std::string_view PROJECT_GIT_BRANCH = "@PROJECT_GIT_BRANCH@";
+constexpr std::string_view PROJECT_VERSION_FULL_STRING = "(@PROJECT_GIT_BRANCH@/@PROJECT_GIT_COMMIT@)";
+constexpr std::string_view PROJECT_FULL_VERSION_LABEL = "@PROJECT_NAME@ (@PROJECT_GIT_BRANCH@/@PROJECT_GIT_COMMIT@)";

@@ -62,7 +62,7 @@ public:
 	template <typename T>
 	T Read() {
 		static_assert(std::is_trivially_copyable_v<T>,
-		              "NetworkStream::Read<T>: use Read<std::string>() or Read<std::wstring>() for string types");
+		              "NetworkStream::Read<T>: use Read<std::string>() or Read<std::string>() for string types");
 		T buffer{};
 		ReadBytes(reinterpret_cast<uint8_t*>(&buffer), sizeof(T));
 		return byteswap_any(buffer);
@@ -87,12 +87,12 @@ public:
 	}
 
 	// String-8 Read-Write
-	std::string ReadString();
-	void Write(const std::string& str);
+	std::string ReadString8();
+	void WriteString8(const std::string& str);
 
 	// String-16 Read-Write
-	std::wstring ReadWString();
-	void Write(const std::wstring& str);
+	std::string ReadString16();
+	void WriteString16(const std::string& str);
 
 	// Raw byte buffer Read-Write (no endian conversion).
 	// On a short read (EAGAIN/EWOULDBLOCK mid-packet), all bytes fetched so far
@@ -146,14 +146,3 @@ private:
 	std::deque<uint8_t> readBackBuffer;
 	std::vector<uint8_t> writeBuffer;
 };
-
-// Out-of-class explicit specializations (GCC/Clang require these outside the class body)
-template <>
-inline std::string NetworkStream::Read<std::string>() {
-	return ReadString();
-}
-
-template <>
-inline std::wstring NetworkStream::Read<std::wstring>() {
-	return ReadWString();
-}

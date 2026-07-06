@@ -13,5 +13,5 @@ struct PlayerConnStateManager {
 	void handleHandshake(PlayerSession& session, Server& server);
 	void handleLogin(PlayerSession& session, Server& server);
 	void waitForSpawnChunks(PlayerSession& session, Server& server);
-	void disconnectPlayer(PlayerSession& session, const std::wstring& reason, Server& server);
+	void disconnectPlayer(PlayerSession& session, const std::string& reason, Server& server);
 };

@@ -272,7 +272,7 @@ void Server::stop() {
 	stopped = true;
 	GlobalLogger().info << "Server shutting down...\n";
 	for (auto& session : players) {
-		connStateManager.disconnectPlayer(*session, L"Server Closed", *this);
+		connStateManager.disconnectPlayer(*session, "Server Closed", *this);
 		session->stream.flushWriteBufferBlocking();
 		auto savedNbt = session->serializeToNBT();
 		gameRuntime.saveManager.savePlayerNBT(std::string(session->username.begin(), session->username.end()), savedNbt);
@@ -373,15 +373,15 @@ void Server::tick() {
 		if (session->connState == ConnectionState::Playing) {
 			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - session->last_packet_time).count();
 			if (elapsed > timeout_seconds) {
-				GlobalLogger().info << L"Player " << session->username << L" timed out\n";
-				connStateManager.disconnectPlayer(*session, L"Connection timed out.", *this);
+				GlobalLogger().info << "Player " << session->username << " timed out\n";
+				connStateManager.disconnectPlayer(*session, "Connection timed out.", *this);
 			}
 		} else {
 			// Kill stuck handshakers
 			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - session->last_packet_time).count();
 			if (elapsed > timeout_seconds) {
 				session->stream.setConnected(false);
-				GlobalLogger().info << L"Disconnected dataless stream. (Most likely a prober!)\n";
+				GlobalLogger().info << "Disconnected dataless stream. (Most likely a prober!)\n";
 			}
 		}
 	}
@@ -390,8 +390,8 @@ void Server::tick() {
 	players.erase(std::remove_if(players.begin(), players.end(),
 	                             [&](const auto& s) {
 		                             if (!s->stream.isConnected()) {
-			                             GlobalLogger().info << L"Disconnected client " << s->username
-			                                                 << L" with entity id " << s->entityId << L"\n";
+			                             GlobalLogger().info << "Disconnected client " << s->username
+			                                                 << " with entity id " << s->entityId << "\n";
 
 			                             if (s->connState == ConnectionState::Playing ||
 			                                 s->connState == ConnectionState::WaitingForSpawnChunks) {

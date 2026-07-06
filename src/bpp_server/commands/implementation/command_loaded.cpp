@@ -9,11 +9,11 @@
 // Shows the number of loaded chunks
 // Usage:
 //   /loaded
-std::wstring CommandLoaded::Execute([[maybe_unused]] std::vector<std::wstring>& parameters, PlayerSession& session,
+std::string CommandLoaded::Execute([[maybe_unused]] std::vector<std::string>& parameters, PlayerSession& session,
                                     [[maybe_unused]] WorldManager& world,
                                     [[maybe_unused]] std::function<void(PlayerSession&)> transferDimension) {
 	Packet::ChatMessage reply;
-	reply.message = L"\u00a77" + std::to_wstring(world.chunks.size());
+	reply.message = "\u00a77" + std::to_string(world.chunks.size());
 	reply.Serialize(session.stream);
-	return L"";
+	return "";
 }

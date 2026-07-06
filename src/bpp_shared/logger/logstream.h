@@ -27,20 +27,7 @@ public:
 		return *this;
 	}
 
-	LogStream& operator<<(const wchar_t* value) {
-		std::wstring ws(value);
-		std::string narrow(ws.begin(), ws.end());
-		std::string_view sv(narrow);
-		if (!sv.empty() && sv.back() == '\n') {
-			m_buffer << sv.substr(0, sv.size() - 1);
-			Flush();
-		} else {
-			m_buffer << narrow;
-		}
-		return *this;
-	}
-
-	LogStream& operator<<(const std::wstring& value) {
+	LogStream& operator<<(const std::string& value) {
 		return operator<<(value.c_str());
 	}
 

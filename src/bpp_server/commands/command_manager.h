@@ -16,7 +16,7 @@
 class CommandManager {
 public:
 	static void Init();
-	static void Parse(std::wstring& cmd_string, PlayerSession& session, WorldManager& world,
+	static void Parse(std::string& cmd_string, PlayerSession& session, WorldManager& world,
 	                  std::function<void(PlayerSession&)> transferDimension) noexcept;
 	static const std::vector<std::unique_ptr<Command>>& GetRegisteredCommands() noexcept;
 

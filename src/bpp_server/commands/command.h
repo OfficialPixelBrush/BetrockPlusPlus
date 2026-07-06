@@ -11,13 +11,13 @@
 #include "../player_conn/player_session.h"
 #include "world.h"
 
-#define ERROR_OPERATOR L"Only operators can use this command!"
-#define ERROR_CREATIVE L"Only creative players can use this command!"
-#define ERROR_WHITELIST L"Only whitelisted players can use this command!"
-#define ERROR_REASON_SYNTAX L"Invalid Syntax"
-#define ERROR_REASON_PARAMETERS L"Invalid Parameters"
-#define ERROR_REASON_ERROR L"Error"
-#define ERROR_REASON_NO_CMD L"No command passed"
+#define ERROR_OPERATOR "Only operators can use this command!"
+#define ERROR_CREATIVE "Only creative players can use this command!"
+#define ERROR_WHITELIST "Only whitelisted players can use this command!"
+#define ERROR_REASON_SYNTAX "Invalid Syntax"
+#define ERROR_REASON_PARAMETERS "Invalid Parameters"
+#define ERROR_REASON_ERROR "Error"
+#define ERROR_REASON_NO_CMD "No command passed"
 
 #define MAX_CHAT_LINE_SIZE 60
 
@@ -26,7 +26,7 @@
 	class name : public Command {                                                                                      \
 	public:                                                                                                            \
 		name() : Command(label, description, syntax, requiresOp, requiresCreative) {}                                  \
-		std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world,       \
+		std::string Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,       \
 		                     std::function<void(PlayerSession&)> transferDimension) override;                          \
 	};
 
@@ -42,20 +42,20 @@ class CommandManager;
 // Base class for how a command is defined
 class Command {
 private:
-	std::wstring label;
-	std::wstring description;
-	std::wstring syntax;
+	std::string label;
+	std::string description;
+	std::string syntax;
 	bool requiresOp;
 	bool requiresCreative;
 
 public:
-	std::wstring GetLabel() {
+	std::string GetLabel() {
 		return label;
 	}
-	std::wstring GetDescription() {
+	std::string GetDescription() {
 		return description;
 	}
-	std::wstring GetSyntax() {
+	std::string GetSyntax() {
 		return syntax;
 	}
 	bool GetRequiresOperator() {
@@ -66,26 +66,26 @@ public:
 	}
 
 	std::string CheckPermissions(PlayerSession& session);
-	Command(std::wstring label, std::wstring description, std::wstring syntax, bool requiresOp = true,
+	Command(std::string label, std::string description, std::string syntax, bool requiresOp = true,
 	        bool requiresCreative = false);
-	virtual std::wstring Execute(std::vector<std::wstring>& parameters, PlayerSession& session, WorldManager& world,
+	virtual std::string Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
 	                             std::function<void(PlayerSession&)> transferDimension) = 0;
 	virtual ~Command() = default;
 };
 
 // Commands
 // Anyone can run these
-DEFINE_COMMAND(CommandHelp, L"help", L"Lists commands or helps with command", L"[command]", false, false);
-DEFINE_COMMAND(CommandTeleport, L"tp", L"Teleports player to coordinates or another player",
-               L"<player> <x> <y> <z> / <player> <player>", false, false);
-DEFINE_COMMAND(CommandTime, L"time", L"Gets or sets the current world time", L"<new_time>", false, false);
-DEFINE_COMMAND(CommandSpawn, L"spawn", L"Teleport to spawn", L"", false, false);
-DEFINE_COMMAND(CommandSeed, L"seed", L"Get the world seed", L"", false, false);
-DEFINE_COMMAND(CommandGive, L"give", L"Give yourself a block or item", L"<id>:[meta] [amount]", false, false);
-DEFINE_COMMAND(CommandList, L"list", L"List all currently online players", L"", false, false);
-DEFINE_COMMAND(CommandLoaded, L"loaded", L"Shows the number of loaded chunks", L"", false, false);
-DEFINE_COMMAND(CommandDimension, L"dim", L"Swap to the other dimension", L"", false, false);
-DEFINE_COMMAND(CommandVersion, L"version", L"Shows the current Server version", L"", false, false);
+DEFINE_COMMAND(CommandHelp, "help", "Lists commands or helps with command", "[command]", false, false);
+DEFINE_COMMAND(CommandTeleport, "tp", "Teleports player to coordinates or another player",
+               "<player> <x> <y> <z> / <player> <player>", false, false);
+DEFINE_COMMAND(CommandTime, "time", "Gets or sets the current world time", "<new_time>", false, false);
+DEFINE_COMMAND(CommandSpawn, "spawn", "Teleport to spawn", "", false, false);
+DEFINE_COMMAND(CommandSeed, "seed", "Get the world seed", "", false, false);
+DEFINE_COMMAND(CommandGive, "give", "Give yourself a block or item", "<id>:[meta] [amount]", false, false);
+DEFINE_COMMAND(CommandList, "list", "List all currently online players", "", false, false);
+DEFINE_COMMAND(CommandLoaded, "loaded", "Shows the number of loaded chunks", "", false, false);
+DEFINE_COMMAND(CommandDimension, "dim", "Swap to the other dimension", "", false, false);
+DEFINE_COMMAND(CommandVersion, "version", "Shows the current Server version", "", false, false);
 /*
 DEFINE_COMMAND(CommandPose, "pose", "Set the current players' pose", "<crouch/fire/sit>", false, false);
 DEFINE_COMMAND(CommandInterface, "interface", "Open the desired interface", "<id>", false, false);
@@ -101,7 +101,7 @@ DEFINE_COMMAND(CommandWhitelist, "whitelist", "Modify the whitelist", "<reload/l
 DEFINE_COMMAND(CommandKick, "kick", "Kick a player from the server", "[player]", true, false);
 DEFINE_COMMAND(CommandCreative, "creative", "Toggle creative mode", "", true, false);
 DEFINE_COMMAND(CommandSound, "sound", "Play a specified sound", "<id> [meta]", true, false);
-DEFINE_COMMAND(CommandKill, "kill", "Kill the specified player", "[player]", true, false);
+DEFINE_COMMAND(CommandKill, "kil", "Kill the specified player", "[player]", true, false);
 DEFINE_COMMAND(CommandGamerule, "gamerule", "Configure gamerules", "<rule> <state>", true, false);
 DEFINE_COMMAND(CommandSave, "save", "Forces the server to save all loaded chunks", "", true, false);
 DEFINE_COMMAND(CommandStop, "stop", "Forces the server to stop", "", true, false);
@@ -140,7 +140,7 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 }
 
 // Helper: find a playing session by username.
-[[maybe_unused]] static PlayerSession* FindSession(PlayerSession& caller, const std::wstring& name) {
+[[maybe_unused]] static PlayerSession* FindSession(PlayerSession& caller, const std::string& name) {
 	if (!caller.players)
 		return nullptr;
 	for (auto& s : *caller.players) {
@@ -150,7 +150,7 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 	return nullptr;
 }
 
-inline Int3 ParseInt3(size_t& offset, std::vector<std::wstring>& parameters) {
+inline Int3 ParseInt3(size_t& offset, std::vector<std::string>& parameters) {
 	Int3 out{
 		std::stoi(parameters[offset]),
 		std::stoi(parameters[offset + 1]),
@@ -160,7 +160,7 @@ inline Int3 ParseInt3(size_t& offset, std::vector<std::wstring>& parameters) {
 	return out;
 }
 
-inline Float2 ParseFloat2(size_t& offset, std::vector<std::wstring>& parameters) {
+inline Float2 ParseFloat2(size_t& offset, std::vector<std::string>& parameters) {
 	Float2 out{
 		std::stof(parameters[offset]),
 		std::stof(parameters[offset + 1]),
@@ -169,7 +169,7 @@ inline Float2 ParseFloat2(size_t& offset, std::vector<std::wstring>& parameters)
 	return out;
 }
 
-inline Float3 ParseFloat3(size_t& offset, std::vector<std::wstring>& parameters) {
+inline Float3 ParseFloat3(size_t& offset, std::vector<std::string>& parameters) {
 	Float3 out{
 		std::stof(parameters[offset]),
 		std::stof(parameters[offset + 1]),
@@ -179,7 +179,7 @@ inline Float3 ParseFloat3(size_t& offset, std::vector<std::wstring>& parameters)
 	return out;
 }
 
-inline Double2 ParseDouble2(size_t& offset, std::vector<std::wstring>& parameters) {
+inline Double2 ParseDouble2(size_t& offset, std::vector<std::string>& parameters) {
 	Double2 out{
 		std::stod(parameters[offset]),
 		std::stod(parameters[offset + 1]),
@@ -188,7 +188,7 @@ inline Double2 ParseDouble2(size_t& offset, std::vector<std::wstring>& parameter
 	return out;
 }
 
-inline Double3 ParseDouble3(size_t& offset, std::vector<std::wstring>& parameters) {
+inline Double3 ParseDouble3(size_t& offset, std::vector<std::string>& parameters) {
 	Double3 out{
 		std::stod(parameters[offset]),
 		std::stod(parameters[offset + 1]),

@@ -140,7 +140,7 @@ bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, World
 	}
 	default:
 		GlobalLogger().warn << "UNHANDLED packet 0x" << std::hex << static_cast<int>(packetId) << "\n";
-		server.connStateManager.disconnectPlayer(session, L"Unknown packet", server);
+		server.connStateManager.disconnectPlayer(session, "Unknown packet", server);
 		return false;
 	}
 	return true;
