@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
  *
  * SPDX-License-Identifier: GPL-3.0-only
  *
@@ -8,6 +9,7 @@
 
 #include "cross_platform.h"
 #include "logger.h"
+#include "world.h"
 #include <string>
 #if defined(__linux__) || defined(__APPLE__)
 #include <fcntl.h>
@@ -102,59 +104,40 @@ void Server::startup() {
 	command_manager.Init();
 
 	// Setup the block callback so we can send it to clients
-	gameRuntime.world.onBlockUpdate = [this](PendingBlock pendingBlock, Int32_2 chunkPos) {
-		// Only enqueue if at least one session knows about this chunk.
-		auto idxIt = chunkSessions.find(chunkKey(chunkPos, 0));
-		bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
-		if (!anyInterested) {
-			// Any session with this chunk in-flight?
-			for (auto& session : players) {
-				if (session->dimension == 0 && session->sentChunks.contains(chunkPos)) {
-					anyInterested = true;
-					break;
+	auto makeBlockUpdateCallback = [this](int dimensionId, auto& blockChangeMap) {
+		return [this, dimensionId, &blockChangeMap](PendingBlock pendingBlock, Int32_2 chunkPos) {
+			auto idxIt = chunkSessions.find(chunkKey(chunkPos, -1));
+			bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
+			if (!anyInterested) {
+				for (auto& session : players) {
+					if (session->dimension == dimensionId && session->sentChunks.contains(chunkPos)) {
+						anyInterested = true;
+						break;
+					}
 				}
 			}
-		}
-		if (!anyInterested)
-			return;
+			if (!anyInterested)
+				return;
 
-		PendingBlock pendingNew = pendingBlock;
-		pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y,
-			                     pendingBlock.block_pos.z & 15 };
-		chunkBlockChanges[chunkPos].push_back(pendingNew);
+			PendingBlock pendingNew = pendingBlock;
+			pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y,
+				                     pendingBlock.block_pos.z & 15 };
+			blockChangeMap[chunkPos].push_back(pendingNew);
+		};
 	};
 
-	gameRuntime.worldHell.onBlockUpdate = [this](PendingBlock pendingBlock, Int32_2 chunkPos) {
-		auto idxIt = chunkSessions.find(chunkKey(chunkPos, -1));
-		bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
-		if (!anyInterested) {
-			for (auto& session : players) {
-				if (session->dimension == -1 && session->sentChunks.contains(chunkPos)) {
-					anyInterested = true;
-					break;
-				}
-			}
-		}
-		if (!anyInterested)
-			return;
+	gameRuntime.world.onBlockUpdate = makeBlockUpdateCallback(0, chunkBlockChanges);
 
-		PendingBlock pendingNew = pendingBlock;
-		pendingNew.block_pos = { pendingBlock.block_pos.x & 15, pendingBlock.block_pos.y,
-			                     pendingBlock.block_pos.z & 15 };
-		chunkBlockChangesHell[chunkPos].push_back(pendingNew);
-	};
+	gameRuntime.worldHell.onBlockUpdate = makeBlockUpdateCallback(-1, chunkBlockChangesHell);
 
 	// Get spawn ready
 	constexpr int spawn_chunk_distance = 4;
 	int total_spawn_chunks = (spawn_chunk_distance + spawn_chunk_distance + 1) *
 	                         (spawn_chunk_distance + spawn_chunk_distance + 1);
-	int loaded_chunks = 0;
-	bool spawnDone = false;
-	auto start = std::chrono::steady_clock::now();
 	GlobalLogger().info << "Server spawn is "
 	                    << Int2(int(gameRuntime.world.spawnPoint.x), int(gameRuntime.world.spawnPoint.z)) << "\n";
-	GlobalLogger().info << "Loading spawn chunks for Overworld: (" << total_spawn_chunks << ")\n";
 
+	GlobalLogger().info << "Preparing spawn chunks..\n";
 	// Push every single spawn chunk to get ready for generation
 	std::unordered_set<Int32_2> wanted;
 	for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
@@ -180,76 +163,52 @@ void Server::startup() {
 		}
 	}
 
-	// Load the overworld
-	while (!spawnDone) {
-		loaded_chunks = 0;
-		// Force gen these chunks AS FAST AS POSSIBLE
-		gameRuntime.world.pumpPipeline({});
-		gameRuntime.world.pool.wait();
-		gameRuntime.world.drainGenQueue();
-		gameRuntime.world.regionManager->iopool.wait();
-		gameRuntime.world.drainLoadQueue();
-		gameRuntime.world.populateReady();
-		gameRuntime.world.lightManager.processLightQueue(gameRuntime.world);
-		// Make sure all lighting is done
-		gameRuntime.world.lightManager.processLightQueue(gameRuntime.world);
+	// Chunks are ready to load at this point.
 
-		for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
-			for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
-				Int32_2 p{ (gameRuntime.world.spawnPoint.x >> 4) + dx, (gameRuntime.world.spawnPoint.z >> 4) + dz };
-				auto it = gameRuntime.world.chunks.find(p);
-				if (it != gameRuntime.world.chunks.end() && it->second->state.load() >= ChunkState::Generated)
-					loaded_chunks++;
+	auto loadSpawnChunks = [total_spawn_chunks](WorldManager& world) {
+		auto start = std::chrono::steady_clock::now();
+		int loaded_chunks = 0;
+		while (true) {
+			loaded_chunks = 0;
+			// Force gen these chunks AS FAST AS POSSIBLE
+			world.pumpPipeline({});
+			world.pool.wait();
+			world.drainGenQueue();
+			world.regionManager->iopool.wait();
+			world.drainLoadQueue();
+			world.populateReady();
+			world.lightManager.processLightQueue(world);
+			// Make sure all lighting is done
+			world.lightManager.processLightQueue(world);
+
+			for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
+				for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
+					Int32_2 p{ (world.spawnPoint.x >> 4) + dx, (world.spawnPoint.z >> 4) + dz };
+					auto it = world.chunks.find(p);
+					if (it != world.chunks.end() && it->second->state.load() >= ChunkState::Generated)
+						loaded_chunks++;
+				}
 			}
-		}
 
-		// Update load percentage every second
-		if (std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count() >= 1.0f) {
-			int percentLoaded = int((float(loaded_chunks) / float(total_spawn_chunks)) * 100.0f);
-			GlobalLogger().info << "Loading spawn.. " << percentLoaded << "%\n";
-			start = std::chrono::steady_clock::now();
-		}
+			// Update load percentage every second
+			if (std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count() >= 1.0f) {
+				int percentLoaded = int((float(loaded_chunks) / float(total_spawn_chunks)) * 100.0f);
+				GlobalLogger().info << "Loading spawn.. " << percentLoaded << "%\n";
+				start = std::chrono::steady_clock::now();
+			}
 
-		// Have we loaded all the spawn chunks?
-		spawnDone = loaded_chunks >= total_spawn_chunks;
-	}
-	GlobalLogger().info << "Loading spawn.. 100%\n";
+			// Have we loaded all the spawn chunks?
+			if (loaded_chunks >= total_spawn_chunks)
+				break;
+		}
+		GlobalLogger().info << "Loading spawn.. 100%\n";
+	};
+
+	GlobalLogger().info << "Loading spawn chunks for Overworld: (" << total_spawn_chunks << ")\n";
+	loadSpawnChunks(gameRuntime.world);
+
 	GlobalLogger().info << "Loading spawn chunks for Hell: (" << total_spawn_chunks << ")\n";
-	spawnDone = false;
-	// Load the hell dimension
-	while (!spawnDone) {
-		loaded_chunks = 0;
-		// Force gen these chunks AS FAST AS POSSIBLE
-		gameRuntime.worldHell.pumpPipeline({});
-		gameRuntime.worldHell.pool.wait();
-		gameRuntime.worldHell.drainGenQueue();
-		gameRuntime.worldHell.regionManager->iopool.wait();
-		gameRuntime.worldHell.drainLoadQueue();
-		gameRuntime.worldHell.populateReady();
-		gameRuntime.worldHell.lightManager.processLightQueue(gameRuntime.worldHell);
-		// Make sure all lighting is done
-		gameRuntime.worldHell.lightManager.processLightQueue(gameRuntime.worldHell);
-		for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
-			for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
-				Int32_2 p{ (gameRuntime.worldHell.spawnPoint.x >> 4) + dx,
-					       (gameRuntime.worldHell.spawnPoint.z >> 4) + dz };
-				auto it = gameRuntime.worldHell.chunks.find(p);
-				if (it != gameRuntime.worldHell.chunks.end() && it->second->state.load() >= ChunkState::Generated)
-					loaded_chunks++;
-			}
-		}
-
-		// Update load percentage every second
-		if (std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count() >= 1.0f) {
-			int percentLoaded = int((float(loaded_chunks) / float(total_spawn_chunks)) * 100.0f);
-			GlobalLogger().info << "Loading spawn.. " << percentLoaded << "%\n";
-			start = std::chrono::steady_clock::now();
-		}
-
-		// Have we loaded all the spawn chunks?
-		spawnDone = loaded_chunks >= total_spawn_chunks;
-	}
-	GlobalLogger().info << "Loading spawn.. 100%\n";
+	loadSpawnChunks(gameRuntime.world);
 
 	float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
 	GlobalLogger().info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";
