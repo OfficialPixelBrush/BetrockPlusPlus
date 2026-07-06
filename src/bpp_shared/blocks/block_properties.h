@@ -111,7 +111,7 @@ struct BlockBehavior {
 	ItemAmount (*quantityDropped)(Java::Random& random) = nullptr;
 };
 
-// Global tables — indexed by block ID, populated by registerAll()
+// Indexed by block ID, populated by registerAll()
 extern BlockProperties blockProperties[256];
 extern BlockBehavior blockBehaviors[256];
 

@@ -357,7 +357,7 @@ static AABB sugarcaneAABB(uint8_t) {
 	return { 0.5f - f, 0.0f, 0.5f - f, 0.5f + f, 1.0f, 0.5f + f };
 }
 
-// liquid (zero-size — not selectable)
+// Liquids have no collision
 static AABB liquidAABB(uint8_t) {
 	return { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 }
@@ -1318,7 +1318,7 @@ void registerAll() {
 
 	// Snow (layer)
 	blockProperties[BlockType::BLOCK_SNOW_LAYER] = {
-		.material = Material::Snow(),
+		.material = Material::SnowLayer(),
 		.stepSound = StepSound::Cloth,
 		.lightOpacity = 0,
 		.hardness = 0.1f,
@@ -1339,7 +1339,7 @@ void registerAll() {
 
 	// Snow Block
 	blockProperties[BlockType::BLOCK_SNOW] = {
-		.material = Material::BuiltSnow(),
+		.material = Material::SnowBlock(),
 		.stepSound = StepSound::Cloth,
 		.lightOpacity = 255,
 		.hardness = 0.2f,
@@ -1514,7 +1514,7 @@ void registerAll() {
 
 	// block behaviors (non-default shapes)
 
-	// Liquids — zero-size AABB (not selectable/collidable)
+	// Liquids/zero-size AABBs
 	blockBehaviors[BlockType::BLOCK_WATER_FLOWING] = {
 		.getSelectionBox = liquidAABB,
 		.getRayBounds = liquidAABB,
@@ -1557,7 +1557,7 @@ void registerAll() {
 		.getCollider = emptyCollider,
 	};
 
-	// Farmland — full-cube collider, short ray/selection box
+	// Farmland
 	blockBehaviors[BlockType::BLOCK_FARMLAND] = {
 		.getSelectionBox = farmlandAABB,
 		.getRayBounds = farmlandAABB,
@@ -1631,7 +1631,7 @@ void registerAll() {
 
 	blockBehaviors[BlockType::BLOCK_STAIRS_WOOD] = {
 		.getCollider = stairCollider,
-		// ray/selection stay as defaultAABB — full cube is correct
+		// ray/selection stay as defaultAABB (full cube is correct)
 	};
 	blockBehaviors[BlockType::BLOCK_STAIRS_COBBLESTONE] = {
 		.getCollider = stairCollider,
@@ -1680,7 +1680,7 @@ void registerAll() {
 
 	blockBehaviors[BlockType::BLOCK_FENCE] = {
 		.getCollider = fenceCollider,
-		// ray/selection stay as defaultAABB — full cube
+		// ray/selection stay as defaultAABB (full cube)
 	};
 
 	blockBehaviors[BlockType::BLOCK_CAKE] = {

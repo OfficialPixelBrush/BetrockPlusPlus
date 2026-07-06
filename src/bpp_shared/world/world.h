@@ -124,7 +124,7 @@ struct WorldManager {
 		return nullptr;
 	}
 
-	// Typed lookup — returns nullptr if not found or wrong type.
+	// Returns nullptr if not found or wrong type.
 	template <typename T>
 	T* getTileEntityAs(Int3 pos) {
 		return dynamic_cast<T*>(getTileEntity(pos));

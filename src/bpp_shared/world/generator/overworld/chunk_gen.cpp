@@ -388,22 +388,13 @@ Biome OverworldGenerator::GetBiomeAt(Int2 worldPos) {
 void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& world, Java::Random& pRand, Int3 pos, Biome biome) {
 	switch (biome) {
 	case BIOME_TAIGA:
-		// Java: nextInt(3)==0 ? new WorldGenTaiga1() : new WorldGenTaiga2()
-		// betrock++:
-		//   TaigaTreeGenerator    has the WorldGenTaiga1 RNG sequence (nextInt(5)+7 height,
-		//                                                              3 RNG, narrow spruce)
-		//   AltTaigaTreeGenerator has the WorldGenTaiga2 RNG sequence (nextInt(4)+6 height,
-		//                                                              5 RNG, bushy pine)
 		if (pRand.nextInt(3) == 0)
-			TaigaTreeGenerator().Generate(world, pRand, pos); // = WorldGenTaiga1
+			TaigaTreeGenerator().Generate(world, pRand, pos);
 		else
-			AltTaigaTreeGenerator().Generate(world, pRand, pos); // = WorldGenTaiga2
+			AltTaigaTreeGenerator().Generate(world, pRand, pos);
 		break;
-
 	case BIOME_FOREST:
-		// nextInt(5)==0 -> birch, else nextInt(3)==0 -> BigTree, else oak
 		if (pRand.nextInt(5) == 0) {
-			// WorldGenForest (birch): same as oak but birch=true adds 1 to height base
 			TreeGenerator().Generate(world, pRand, pos, true);
 		} else if (pRand.nextInt(3) == 0) {
 			BigTreeGenerator big;
@@ -413,9 +404,7 @@ void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& world, Java::Random&
 			TreeGenerator().Generate(world, pRand, pos);
 		}
 		break;
-
 	case BIOME_RAINFOREST:
-		// nextInt(3)==0 -> BigTree, else oak
 		if (pRand.nextInt(3) == 0) {
 			BigTreeGenerator big;
 			big.Configure(1.0, 1.0, 1.0);
@@ -424,9 +413,7 @@ void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& world, Java::Random&
 			TreeGenerator().Generate(world, pRand, pos);
 		}
 		break;
-
 	default:
-		// nextInt(10)==0 -> BigTree, else oak
 		if (pRand.nextInt(10) == 0) {
 			BigTreeGenerator big;
 			big.Configure(1.0, 1.0, 1.0);
@@ -466,7 +453,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator(BLOCK_WATER_STILL).GenerateLake(world, m_rand, coord);
 	}
 
-	// Lava lakes — nextInt(10) is always consumed when y >= WATER_LEVEL
+	// Lava lakes
 	if (m_rand.nextInt(8) == 0) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = m_rand.nextInt(m_rand.nextInt(120) + 8);
@@ -483,7 +470,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator().GenerateDungeon(world, m_rand, coord);
 	}
 
-	// Clay (no +8)
+	// Clay
 	for (int32_t i = 0; i < 10; ++i) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
@@ -491,7 +478,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator().GenerateClay(world, m_rand, coord, 32);
 	}
 
-	// Dirt blobs (no +8)
+	// Dirt blobs
 	for (int32_t i = 0; i < 20; ++i) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
@@ -499,7 +486,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator(BLOCK_DIRT).GenerateMinable(world, m_rand, coord, 32);
 	}
 
-	// Gravel blobs (no +8)
+	// Gravel blobs
 	for (int32_t i = 0; i < 10; ++i) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
@@ -507,7 +494,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator(BLOCK_GRAVEL).GenerateMinable(world, m_rand, coord, 32);
 	}
 
-	// Coal
+	// Coal Ore blobs
 	for (int32_t i = 0; i < 20; ++i) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
@@ -515,7 +502,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator(BLOCK_ORE_COAL).GenerateMinable(world, m_rand, coord, 16);
 	}
 
-	// Iron (below y=64)
+	// Iron Ore blobs
 	for (int32_t i = 0; i < 20; ++i) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 2);
@@ -523,7 +510,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator(BLOCK_ORE_IRON).GenerateMinable(world, m_rand, coord, 8);
 	}
 
-	// Gold (below y=32)
+	// Gold Ore blobs
 	for (int32_t i = 0; i < 2; ++i) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 4);
@@ -531,7 +518,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator(BLOCK_ORE_GOLD).GenerateMinable(world, m_rand, coord, 8);
 	}
 
-	// Redstone (below y=16)
+	// Redstone Ore blobs
 	for (int32_t i = 0; i < 8; ++i) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 8);
@@ -539,7 +526,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator(BLOCK_ORE_REDSTONE_OFF).GenerateMinable(world, m_rand, coord, 7);
 	}
 
-	// Diamond (below y=16)
+	// Diamond Ore blobs
 	{
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 8);
@@ -547,7 +534,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator(BLOCK_ORE_DIAMOND).GenerateMinable(world, m_rand, coord, 7);
 	}
 
-	// Lapis lazuli — two independent nextInt(16) rolls (triangular distribution ~y=16)
+	// Lapis lazuli Ore blobs
 	{
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 8) + m_rand.nextInt(CHUNK_HEIGHT / 8);
@@ -555,28 +542,29 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator(BLOCK_ORE_LAPIS_LAZULI).GenerateMinable(world, m_rand, coord, 6);
 	}
 
-	// Tree count — noise at blockX*0.5, blockZ*0.5 (matches Java's var11=0.5 scale)
+	// Tree count
 	double noiseVal = m_treeDensityNoiseGen.GenerateOctaves({ double(blockX) * 0.5, double(blockZ) * 0.5 });
 	int32_t baseTreeCount = Java::DoubleToInt32((noiseVal / 8.0 + m_rand.nextDouble() * 4.0 + 4.0) / 3.0);
 	int32_t treeCount = 0;
 	if (m_rand.nextInt(10) == 0)
 		++treeCount;
 
-	// Biome tree adjustments — additive (not else-if), matching Java exactly
-	if (biome == BIOME_FOREST)
+	// Biome tree adjustments
+	switch (biome) {
+	case BIOME_FOREST:
+	case BIOME_RAINFOREST:
+	case BIOME_TAIGA:
 		treeCount += baseTreeCount + 5;
-	if (biome == BIOME_RAINFOREST)
-		treeCount += baseTreeCount + 5;
-	if (biome == BIOME_SEASONALFOREST)
+		break;
+	case BIOME_SEASONALFOREST:
 		treeCount += baseTreeCount + 2;
-	if (biome == BIOME_TAIGA)
-		treeCount += baseTreeCount + 5;
-	if (biome == BIOME_DESERT)
+		break;
+	case BIOME_DESERT:
+	case BIOME_TUNDRA:
+	case BIOME_PLAINS:
 		treeCount -= 20;
-	if (biome == BIOME_TUNDRA)
-		treeCount -= 20;
-	if (biome == BIOME_PLAINS)
-		treeCount -= 20;
+		break;
+	}
 
 	for (int32_t i = 0; i < treeCount; ++i) {
 		int32_t tx = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
@@ -586,17 +574,26 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		GenerateTreeForBiome(world, m_rand, coord, biome);
 	}
 
-	// Dandelions
+	// Dandelion patches
 	{
 		int32_t count = 0;
-		if (biome == BIOME_FOREST)
+		switch (biome) {
+		case BIOME_FOREST:
 			count = 2;
-		if (biome == BIOME_SEASONALFOREST)
+			break;
+		case BIOME_SEASONALFOREST:
 			count = 4;
-		if (biome == BIOME_TAIGA)
+			break;
+		case BIOME_TAIGA:
 			count = 2;
-		if (biome == BIOME_PLAINS)
+			break;
+		case BIOME_PLAINS:
 			count = 3;
+			break;
+		default:
+			count = 0;
+			break;
+		}
 		for (int32_t i = 0; i < count; ++i) {
 			coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
 			coord.y = m_rand.nextInt(CHUNK_HEIGHT);
@@ -605,19 +602,29 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		}
 	}
 
-	// Tall grass / ferns — rainforest nextInt(3) consumed inside loop
+	// Tall grass / fern patches
 	{
 		int32_t count = 0;
-		if (biome == BIOME_FOREST)
+		switch (biome) {
+		case BIOME_FOREST:
 			count = 2;
-		if (biome == BIOME_RAINFOREST)
+			break;
+		case BIOME_RAINFOREST:
 			count = 10;
-		if (biome == BIOME_SEASONALFOREST)
+			break;
+		case BIOME_SEASONALFOREST:
 			count = 2;
-		if (biome == BIOME_TAIGA)
+			break;
+		case BIOME_TAIGA:
 			count = 1;
-		if (biome == BIOME_PLAINS)
+			break;
+		case BIOME_PLAINS:
 			count = 10;
+			break;
+		default:
+			count = 0;
+			break;
+		}
 		for (int32_t i = 0; i < count; ++i) {
 			int8_t grassMeta = 1;
 			if (biome == BIOME_RAINFOREST && m_rand.nextInt(3) != 0)
@@ -629,7 +636,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		}
 	}
 
-	// Dead bush (desert only)
+	// Deadbush patches
 	{
 		int32_t count = (biome == BIOME_DESERT) ? 2 : 0;
 		for (int32_t i = 0; i < count; ++i) {
@@ -640,7 +647,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		}
 	}
 
-	// Rose (1-in-2)
+	// Rose patches
 	if (m_rand.nextInt(2) == 0) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
@@ -648,7 +655,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator(BLOCK_ROSE).GenerateFlowers(world, m_rand, coord);
 	}
 
-	// Brown mushroom (1-in-4)
+	// Brown mushroom patches
 	if (m_rand.nextInt(4) == 0) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
@@ -656,7 +663,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator(BLOCK_MUSHROOM_BROWN).GenerateFlowers(world, m_rand, coord);
 	}
 
-	// Red mushroom (1-in-8)
+	// Red mushroom patches
 	if (m_rand.nextInt(8) == 0) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
@@ -664,7 +671,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator(BLOCK_MUSHROOM_RED).GenerateFlowers(world, m_rand, coord);
 	}
 
-	// Sugar cane (10 attempts)
+	// Sugar cane
 	for (int32_t i = 0; i < 10; ++i) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
@@ -672,7 +679,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator().GenerateSugarcane(world, m_rand, coord);
 	}
 
-	// Pumpkins (1-in-32)
+	// Pumpkin patches
 	if (m_rand.nextInt(32) == 0) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
@@ -680,7 +687,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator().GeneratePumpkins(world, m_rand, coord);
 	}
 
-	// Cacti (desert only)
+	// Cacti
 	{
 		int32_t count = (biome == BIOME_DESERT) ? 10 : 0;
 		for (int32_t i = 0; i < count; ++i) {
@@ -691,7 +698,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		}
 	}
 
-	// Water springs (50 attempts)
+	// Water springs
 	for (int32_t i = 0; i < 50; ++i) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = m_rand.nextInt(m_rand.nextInt(120) + 8);
@@ -699,7 +706,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator(BLOCK_WATER_FLOWING).GenerateLiquid(world, m_rand, coord);
 	}
 
-	// Lava springs (20 attempts)
+	// Lava springs
 	for (int32_t i = 0; i < 20; ++i) {
 		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		coord.y = m_rand.nextInt(m_rand.nextInt(m_rand.nextInt(112) + 8) + 8);
@@ -707,9 +714,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 		FeatureGenerator(BLOCK_LAVA_FLOWING).GenerateLiquid(world, m_rand, coord);
 	}
 
-	// Snow/ice — iterate blockX+8 to blockX+8+16 matching Java's region offset.
-	// Java uses getTopSolidOrLiquidBlock here (skips non-solid like leaves) — NOT
-	// the heightmap (which would stop at leaves). Use findTopSolidBlock to match.
+	// Snow/ice placement for cold biomes
 	for (int32_t x = blockX + 8; x < blockX + 8 + CHUNK_WIDTH; ++x) {
 		for (int32_t z = blockZ + 8; z < blockZ + 8 + CHUNK_WIDTH; ++z) {
 			int32_t topY = world.findTopSolidBlock(x, z);

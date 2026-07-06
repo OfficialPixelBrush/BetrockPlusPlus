@@ -76,8 +76,8 @@ enum class MaterialType : uint8_t {
 	TNT,
 	Coral,
 	Ice,
-	Snow,      // snow layer
-	BuiltSnow, // snow block
+	SnowLayer, // snow layer
+	SnowBlock, // snow block
 	Cactus,
 	Clay,
 	Pumpkin,
@@ -87,17 +87,23 @@ enum class MaterialType : uint8_t {
 	Piston,
 };
 
+enum PushabilityFlag : uint8_t {
+	Normal = 0,
+	NoPush = 1,
+	Immovable = 2,
+};
+
 struct Material {
 	MaterialType type = MaterialType::Rock;
 	MapColor mapColor = MapColor::Stone();
 	bool isLiquid = false;
 	bool isSolid = true;
-	bool isOpaque = true; // false = translucent (glass, ice, leaves)
+	bool isOpaque = true;
 	bool canBurn = false;
 	bool isGroundCover = false;
 	bool canBlockGrass = true;
 	bool isHarvestable = true;
-	int mobilityFlag = 0; // 0 = normal, 1 = no push, 2 = immovable
+	PushabilityFlag mobilityFlag = PushabilityFlag::Normal;
 
 	bool operator==(const Material& other) const {
 		return type == other.type;
@@ -106,8 +112,6 @@ struct Material {
 		return type != other.type;
 	}
 
-	// Materials are built and discarded as needed so we can be thread safe.
-	// MaterialTransparent in Java — isSolid=false, canBlockGrass=false, isOpaque=false
 	static constexpr Material Air() {
 		Material m{};
 		m.type = MaterialType::Air;
@@ -141,7 +145,6 @@ struct Material {
 		return m;
 	}
 
-	// setNoHarvest in Java
 	static constexpr Material Rock() {
 		Material m{};
 		m.type = MaterialType::Rock;
@@ -150,7 +153,6 @@ struct Material {
 		return m;
 	}
 
-	// setNoHarvest in Java
 	static constexpr Material Iron() {
 		Material m{};
 		m.type = MaterialType::Iron;
@@ -159,7 +161,6 @@ struct Material {
 		return m;
 	}
 
-	// MaterialLiquid — isLiquid=true, isSolid=false, setNoPushMobility
 	static constexpr Material Water() {
 		Material m{};
 		m.type = MaterialType::Water;
@@ -167,11 +168,10 @@ struct Material {
 		m.isLiquid = true;
 		m.isSolid = false;
 		m.isGroundCover = true;
-		m.mobilityFlag = 1;
+		m.mobilityFlag = PushabilityFlag::NoPush;
 		return m;
 	}
 
-	// MaterialLiquid — lava uses tnt map color in Java
 	static constexpr Material Lava() {
 		Material m{};
 		m.type = MaterialType::Lava;
@@ -179,22 +179,20 @@ struct Material {
 		m.isLiquid = true;
 		m.isSolid = false;
 		m.isGroundCover = true;
-		m.mobilityFlag = 1;
+		m.mobilityFlag = PushabilityFlag::NoPush;
 		return m;
 	}
 
-	// setBurning + setIsTranslucent (isOpaque=false) + setNoPushMobility
 	static constexpr Material Leaves() {
 		Material m{};
 		m.type = MaterialType::Leaves;
 		m.mapColor = MapColor::Foliage();
 		m.canBurn = true;
 		m.isOpaque = false;
-		m.mobilityFlag = 1;
+		m.mobilityFlag = PushabilityFlag::NoPush;
 		return m;
 	}
 
-	// MaterialLogic — isSolid=false, canBlockGrass=false, setNoPushMobility
 	static constexpr Material Plants() {
 		Material m{};
 		m.type = MaterialType::Plants;
@@ -202,7 +200,7 @@ struct Material {
 		m.isSolid = false;
 		m.isOpaque = false;
 		m.canBlockGrass = false;
-		m.mobilityFlag = 1;
+		m.mobilityFlag = PushabilityFlag::NoPush;
 		return m;
 	}
 
@@ -221,7 +219,6 @@ struct Material {
 		return m;
 	}
 
-	// MaterialTransparent + setNoPushMobility
 	static constexpr Material Fire() {
 		Material m{};
 		m.type = MaterialType::Fire;
@@ -230,7 +227,7 @@ struct Material {
 		m.isOpaque = false;
 		m.canBlockGrass = false;
 		m.isGroundCover = true;
-		m.mobilityFlag = 1;
+		m.mobilityFlag = PushabilityFlag::NoPush;
 		return m;
 	}
 
@@ -249,11 +246,10 @@ struct Material {
 		m.isSolid = false;
 		m.isOpaque = false;
 		m.canBlockGrass = false;
-		m.mobilityFlag = 1;
+		m.mobilityFlag = PushabilityFlag::NoPush;
 		return m;
 	}
 
-	// setIsTranslucent (isOpaque=false)
 	static constexpr Material Glass() {
 		Material m{};
 		m.type = MaterialType::Glass;
@@ -262,7 +258,6 @@ struct Material {
 		return m;
 	}
 
-	// setBurning + setIsTranslucent
 	static constexpr Material TNT() {
 		Material m{};
 		m.type = MaterialType::TNT;
@@ -276,11 +271,10 @@ struct Material {
 		Material m{};
 		m.type = MaterialType::Coral;
 		m.mapColor = MapColor::Foliage();
-		m.mobilityFlag = 1;
+		m.mobilityFlag = PushabilityFlag::NoPush;
 		return m;
 	}
 
-	// setIsTranslucent
 	static constexpr Material Ice() {
 		Material m{};
 		m.type = MaterialType::Ice;
@@ -289,36 +283,33 @@ struct Material {
 		return m;
 	}
 
-	// MaterialLogic + setIsGroundCover + setIsTranslucent + setNoHarvest + setNoPushMobility
-	static constexpr Material Snow() {
+	static constexpr Material SnowLayer() {
 		Material m{};
-		m.type = MaterialType::Snow;
+		m.type = MaterialType::SnowLayer;
 		m.mapColor = MapColor::Snow();
 		m.isSolid = false;
 		m.isOpaque = false;
 		m.isGroundCover = true;
 		m.isHarvestable = false;
 		m.canBlockGrass = false;
-		m.mobilityFlag = 1;
+		m.mobilityFlag = PushabilityFlag::NoPush;
 		return m;
 	}
 
-	// setNoHarvest
-	static constexpr Material BuiltSnow() {
+	static constexpr Material SnowBlock() {
 		Material m{};
-		m.type = MaterialType::BuiltSnow;
+		m.type = MaterialType::SnowBlock;
 		m.mapColor = MapColor::Snow();
 		m.isHarvestable = false;
 		return m;
 	}
 
-	// setIsTranslucent + setNoPushMobility
 	static constexpr Material Cactus() {
 		Material m{};
 		m.type = MaterialType::Cactus;
 		m.mapColor = MapColor::Foliage();
 		m.isOpaque = false;
-		m.mobilityFlag = 1;
+		m.mobilityFlag = PushabilityFlag::NoPush;
 		return m;
 	}
 
@@ -333,11 +324,10 @@ struct Material {
 		Material m{};
 		m.type = MaterialType::Pumpkin;
 		m.mapColor = MapColor::Foliage();
-		m.mobilityFlag = 1;
+		m.mobilityFlag = PushabilityFlag::NoPush;
 		return m;
 	}
 
-	// MaterialPortal + setImmovableMobility
 	static constexpr Material Portal() {
 		Material m{};
 		m.type = MaterialType::Portal;
@@ -345,36 +335,33 @@ struct Material {
 		m.isSolid = false;
 		m.isOpaque = false;
 		m.canBlockGrass = false;
-		m.mobilityFlag = 2;
+		m.mobilityFlag = PushabilityFlag::Immovable;
 		return m;
 	}
 
-	// Uses air map color in Java, setNoPushMobility
 	static constexpr Material Cake() {
 		Material m{};
 		m.type = MaterialType::Cake;
 		m.mapColor = MapColor::Air();
-		m.mobilityFlag = 1;
+		m.mobilityFlag = PushabilityFlag::NoPush;
 		return m;
 	}
 
-	// setNoHarvest + setNoPushMobility, uses cloth map color in Java
 	static constexpr Material Web() {
 		Material m{};
 		m.type = MaterialType::Web;
 		m.mapColor = MapColor::Cloth();
 		m.isHarvestable = false;
-		m.mobilityFlag = 1;
+		m.mobilityFlag = PushabilityFlag::NoPush;
 		return m;
 	}
 
-	// setImmovableMobility, uses stone map color in Java
 	static constexpr Material Piston() {
 		Material m{};
 		m.type = MaterialType::Piston;
 		m.mapColor = MapColor::Stone();
 		m.isHarvestable = false;
-		m.mobilityFlag = 2;
+		m.mobilityFlag = PushabilityFlag::Immovable;
 		return m;
 	}
 };
