@@ -7,7 +7,6 @@
 
 #include "feature_gen.h"
 #include "tile_entities/tile_entity.h"
-#include <algorithm>
 
 //  GenerateLake
 bool FeatureGenerator::GenerateLake(WorldWrapper& world, Java::Random& rand, Int3 pos) {

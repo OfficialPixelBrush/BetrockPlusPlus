@@ -7,10 +7,8 @@
 
 #pragma once
 #include "nbt.h"
-#include <bit>
 #include <cstdint>
 #include <cstring>
-#include <memory>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>

@@ -7,6 +7,8 @@
 
 #include "chunk_gen.h"
 #include "chunk.h"
+#include "generator/overworld/biome_gen.h"
+#include "generator/overworld/tree_gen.h"
 
 /**
  * @brief Construct a new Beta 1.7.3 Overworld Generator
@@ -563,6 +565,14 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	case BIOME_TUNDRA:
 	case BIOME_PLAINS:
 		treeCount -= 20;
+		break;
+	case BIOME_NONE:
+	case BIOME_SWAMPLAND:
+	case BIOME_SAVANNA:
+	case BIOME_SHRUBLAND:
+	case BIOME_ICEDESERT:
+	case BIOME_HELL:
+	case BIOME_SKY:
 		break;
 	}
 

@@ -6,6 +6,7 @@
 */
 
 #include "noise_perlin.h"
+#include "java_math.h"
 
 NoisePerlin::NoisePerlin() {
 	Java::Random rand = Java::Random();

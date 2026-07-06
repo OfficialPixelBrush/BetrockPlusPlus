@@ -6,11 +6,8 @@
 */
 
 #pragma once
-#include "java_math.h"
 #include "java_random.h"
 #include "numeric_structs.h"
-#include <cmath>
-#include <vector>
 
 /**
  * @brief The base Noise generator object that splits into Perlin and Simplex noise

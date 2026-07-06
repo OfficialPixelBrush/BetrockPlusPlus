@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "java_math.h"
 #include "java_random.h"
 #include "noise_simplex.h"
 #include <vector>

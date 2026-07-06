@@ -9,7 +9,6 @@
 #include "world/storage/save_manager.h"
 #include <cstdio>
 #include <filesystem>
-#include <iostream>
 
 namespace fs = std::filesystem;
 

@@ -5,17 +5,10 @@
  *
 */
 
-#include "cross_platform.h"
 #include "logger.h"
-#include "world/client_pos.h"
 #include "world/storage/region_manager.h"
 #include "world/storage/save_manager.h"
 #include "world/world.h"
-#include <chrono>
-#include <memory>
-#include <thread>
-#include <unordered_set>
-#include <vector>
 
 // General game runtime that the client and server can use so that way we don't reuse a bunch of code and have to maintain it in two places.
 struct Runtime {

@@ -6,9 +6,9 @@
 */
 
 #include "server_manager.h"
+#include "logger.h"
 #include "networking/network_stream.h"
 #include <cerrno>
-#include <iostream>
 
 ServerManager::ServerManager(uint16_t port) {
 	// Only bind new socket if it doesn't exist already
@@ -26,7 +26,7 @@ ServerManager::ServerManager(uint16_t port) {
 	serverAddress.sin_addr.s_addr = INADDR_ANY;
 	server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (bind(server_socket, reinterpret_cast<struct sockaddr*>(&serverAddress), sizeof(serverAddress)) != 0) {
-		std::cerr << "Bind error: " << errno << std::endl;
+		GlobalLogger().error << "Bind error: " << errno << std::endl;
 		return;
 	}
 	listen(server_socket, 1);

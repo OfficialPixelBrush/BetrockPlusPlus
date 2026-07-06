@@ -22,9 +22,6 @@
 #include <winsock2.h>
 #endif
 
-// For testing
-#include "bpp_utilities/utilities.h"
-
 Server* server;
 std::atomic<bool> shutdownRequested{ false };
 

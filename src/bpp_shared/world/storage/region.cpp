@@ -8,13 +8,10 @@
 
 #include "region.h"
 #include "chunk.h"
-#include "helpers/byteswap_compat.h"
 #include "logger.h"
 #include "nbt/nbt.h"
 #include "tile_entities/tile_entity.h"
-#include "world.h"
 #include <cstdint>
-#include <filesystem>
 #include <fstream>
 #include <libdeflate.h>
 #include <memory>
