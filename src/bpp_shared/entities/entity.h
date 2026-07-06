@@ -159,10 +159,8 @@ struct Entity {
 	void rebuildCollider() {
 		double halfWidth = double(width) / 2.0;
 		double bottom = posY - double(yOffset) + double(ySize);
-		collider = {
-			posX - halfWidth, bottom, posZ - halfWidth,
-			posX + halfWidth, bottom + double(height), posZ + halfWidth
-		};
+		collider = { posX - halfWidth,        bottom,          posZ - halfWidth, posX + halfWidth,
+			         bottom + double(height), posZ + halfWidth };
 	}
 	void teleport(Vec3 newpos, Vec2 newrot = { 0, 0 }) {
 		posX = newpos.x;

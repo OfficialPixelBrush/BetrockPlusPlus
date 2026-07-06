@@ -51,33 +51,52 @@ void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& pkt, PlayerSes
 
 void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& world,
                std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
-	if (pkt.status != 2)
+	switch (pkt.status) {
+	case PacketData::MineStatus::DIGGING_STARTED: {
+		session.startedMiningAtTick = world.elapsed_ticks;
+		session.lastTargetedBlock = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z });
 		return;
-	auto pos = pkt.position;
-	// Use last known good position
-	double dx = session.entity->prevPosX;
-	double dy = session.entity->prevPosY;
-	double dz = session.entity->prevPosZ;
-	double distance = dx * dx + dy * dy + dz * dz;
-	if (distance > 36.0) {
-		return; // more than 6 blocks away so we drop it
 	}
+	case PacketData::MineStatus::DIGGING_FINISHED: {
+		// TODO: Estimate block breaking time based on tool and block type,
+		// and only drop if enough time has passed
+		if (session.lastTargetedBlock != world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z })) {
+			return; // block changed while mining so we don't drop it
+		}
+		auto pos = pkt.position;
+		// Use last known good position
+		double dx = session.entity->prevPosX;
+		double dy = session.entity->prevPosY;
+		double dz = session.entity->prevPosZ;
+		double distance = dx * dx + dy * dy + dz * dz;
+		if (distance > 36.0) {
+			return; // more than 6 blocks away so we drop it
+		}
 
-	// TODO: make it so when you break stone with your fist it doesn't drop (based on tool you are holding)
-	BlockType blockId = world.getBlockId({ pos.x, pos.y, pos.z });
-	uint8_t meta = world.getMetadata({ pos.x, pos.y, pos.z });
-	world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
+		// TODO: make it so when you break stone with your fist it doesn't drop (based on tool you are holding)
+		BlockType blockId = world.getBlockId({ pos.x, pos.y, pos.z });
+		uint8_t meta = world.getMetadata({ pos.x, pos.y, pos.z });
+		world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
 
-	std::vector<ItemStack> drops = Blocks::getBlockDrops(blockId, meta, world.rand);
+		std::vector<ItemStack> drops = Blocks::getBlockDrops(blockId, meta, world.rand);
 
-	// TODO: spawn an item instead of adding it to your inventory
-	for (ItemStack drop : drops) {
-		// hotbar makes up slots 36-44 so try that first
-		if (session.inventory.mergeItemStackInInventory(drop, false, 36, 44) ||
-		    session.inventory.mergeItemStackInInventory(drop, false, 9, 35)) {
-			PacketUtilities::sendInventory(session, session.openWindowId, session.inventory);
+		// TODO: spawn an item instead of adding it to your inventory
+		for (ItemStack drop : drops) {
+			// hotbar makes up slots 36-44 so try that first
+			if (session.inventory.mergeItemStackInInventory(drop, false, 36, 44) ||
+			    session.inventory.mergeItemStackInInventory(drop, false, 9, 35)) {
+				PacketUtilities::sendInventory(session, session.openWindowId, session.inventory);
+			}
 		}
 	}
+	case PacketData::MineStatus::DROPPED_ITEM: {
+		// TODO: Spawn dropped item in the world
+		return;
+	}
+	default:
+		return;
+	}
+	return;
 }
 
 void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& world,

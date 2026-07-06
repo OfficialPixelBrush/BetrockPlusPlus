@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 
-
 struct ItemStack;
 struct EntityPlayer;
 
@@ -70,7 +69,9 @@ struct Inventory {
 	virtual const std::string& getInventoryName() const {
 		return name;
 	}
-	virtual void onInventoryChanged() { isModified = true; }
+	virtual void onInventoryChanged() {
+		isModified = true;
+	}
 	virtual ~Inventory() = default;
 
 	void clearSlot(int slot) {

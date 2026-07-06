@@ -447,8 +447,7 @@ void Server::tick() {
 	              players.end());
 }
 
-void Server::transferPlayerDimension(PlayerSession& session) {
-}
+void Server::transferPlayerDimension(PlayerSession& session) {}
 
 void Server::processIncoming(PlayerSession& session) {
 	WorldManager& sessionWorld = session.dimension == -1 ? gameRuntime.worldHell : gameRuntime.world;

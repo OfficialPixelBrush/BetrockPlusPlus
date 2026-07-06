@@ -89,6 +89,7 @@ struct BlockBehavior {
 	void (*onBlockDestroyedByPlayer)(WorldManager&, Int3 pos, uint8_t meta) = nullptr;
 
 	// Called when an explosion destroys the block
+	// TODO: Should default to onBlockDestroyedByPlayer if not set
 	void (*onBlockDestroyedByExplosion)(WorldManager&, Int3 pos) = nullptr;
 
 	// Called when an entity walks on top of the block

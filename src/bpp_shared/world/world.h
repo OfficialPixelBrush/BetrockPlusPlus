@@ -56,7 +56,7 @@ struct WorldManager {
 	BS::thread_pool<> populationPool{ 1 }; // unused
 
 	int64_t seed = 0;
-	int64_t elapsed_ticks = 0;
+	TickTime elapsed_ticks = 0;
 
 	Int3 spawnPoint{ 0, 0, 0 };
 

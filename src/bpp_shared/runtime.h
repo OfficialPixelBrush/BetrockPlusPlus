@@ -8,9 +8,9 @@
 #include "cross_platform.h"
 #include "logger.h"
 #include "world/client_pos.h"
-#include "world/world.h"
 #include "world/storage/region_manager.h"
 #include "world/storage/save_manager.h"
+#include "world/world.h"
 #include <chrono>
 #include <memory>
 #include <thread>
@@ -37,8 +37,9 @@ struct Runtime {
 		if (!saveManager.initialize(levelPath)) {
 			GlobalLogger().warn << "**** FAILED TO LOAD WORLD DATA! Attempting to create new world... \n";
 			newSave = true;
-			if (!saveManager.createNewWorld(
-			        { .RandomSeed = (seedOverride != "") ? saveManager.seedFromString(seedOverride) : Java::Random().nextLong() })) {
+			if (!saveManager.createNewWorld({ .RandomSeed = (seedOverride != "")
+			                                                    ? saveManager.seedFromString(seedOverride)
+			                                                    : Java::Random().nextLong() })) {
 				GlobalLogger().error << "**** FAILED TO CREATE NEW WORLD! \n";
 				exit(1);
 			}

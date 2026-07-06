@@ -9,8 +9,9 @@
 
 #include "../server.h"
 
-void ChunkBroadcaster::broadcastBlockChanges(Server& server, std::unordered_map<Int32_2, std::vector<PendingBlock>>& changes,
-                                              int8_t dimension, WorldManager& dimWorld) {
+void ChunkBroadcaster::broadcastBlockChanges(Server& server,
+                                             std::unordered_map<Int32_2, std::vector<PendingBlock>>& changes,
+                                             int8_t dimension, WorldManager& dimWorld) {
 	for (auto& [chunk, blockChanges] : changes) {
 		// Find which sessions care about this chunk
 		// Split into flushed (send immediately) and sentOnly (queue).

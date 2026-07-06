@@ -108,7 +108,7 @@ public:
 	// Holds the current time
 	struct SetTime : BasePacket {
 		SetTime() : BasePacket{ PacketId::SetTime } {}
-		int64_t time;
+		TickTime time;
 
 		void Serialize(NetworkStream& stream) const override {
 			stream.Write(m_id);
@@ -116,7 +116,7 @@ public:
 		}
 
 		void Deserialize(NetworkStream& stream) override {
-			time = stream.Read<int64_t>();
+			time = stream.Read<TickTime>();
 		}
 	};
 

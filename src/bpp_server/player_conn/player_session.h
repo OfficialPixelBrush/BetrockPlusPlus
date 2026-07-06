@@ -80,6 +80,9 @@ struct PlayerSession {
 
 	int8_t dimension = 0; // 0 = overworld, -1 = nether
 
+	BlockType lastTargetedBlock = BLOCK_AIR;
+	TickTime startedMiningAtTick = 0;
+
 	explicit PlayerSession(int socket) : stream(socket), inventoryInteraction(&inventory) {}
 	~PlayerSession() {
 		// So our player entity despawns from the world

@@ -15,5 +15,5 @@ struct Server;
 
 // Dispatches a single already-identified incoming packet to its handler.
 namespace PacketDispatcher {
-	bool dispatch(PacketId packetId, PlayerSession& session, WorldManager& sessionWorld, Server& server);
-}
+bool dispatch(PacketId packetId, PlayerSession& session, WorldManager& sessionWorld, Server& server);
+} // namespace PacketDispatcher
