@@ -17,6 +17,7 @@
 #pragma comment(lib, "ws2_32.lib")
 #endif
 #include "packet_data.h"
+#include "helpers/byteswap_compat.h"
 #include <cstdint>
 #include <cstring>
 #include <deque>

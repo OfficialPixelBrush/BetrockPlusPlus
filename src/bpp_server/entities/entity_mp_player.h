@@ -17,5 +17,8 @@ struct EntityMPPlayer : public Entity {
 		height = 1.8f;
 		yOffset = 1.62f;
 	}
+	~EntityMPPlayer() {
+		session = nullptr;
+	}
 	void tick() override;
 };

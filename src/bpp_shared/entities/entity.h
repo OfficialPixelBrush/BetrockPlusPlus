@@ -147,6 +147,7 @@ struct Entity {
 	Entity() {
 		rebuildCollider();
 	}
+	~Entity() = default;
 
 	// Encode Entity info into relevant Metadata
 	virtual void encodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {}

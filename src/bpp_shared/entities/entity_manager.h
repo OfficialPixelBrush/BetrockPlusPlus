@@ -29,6 +29,21 @@ struct EntityManager {
 	void tick() {
 		// Tick EVERY entity
 		for (std::shared_ptr<Entity> entity : entities) {
+			// Remove dead entities from the system
+			if (entity->isDead) {
+				entity->world = nullptr;
+				std::remove(entities.begin(), entities.end(), entity);
+				auto& container = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
+				auto& b = container.buckets[entity->bucketPos.z];
+				b.entities.erase(std::remove_if(b.entities.begin(), b.entities.end(),
+				                                [&entity](const std::weak_ptr<Entity>& weak) {
+					                                auto locked = weak.lock();
+					                                return !locked ||
+					                                       locked == entity; // Remove if expired or matches our entity
+				                                }),
+				                 b.entities.end());
+				continue;
+			}
 			entity->tick();
 
 			// Check to see if this entity went into another container or bucket
