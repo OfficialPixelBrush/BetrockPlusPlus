@@ -108,7 +108,7 @@ struct WorldWrapper {
 		if (!inBounds(wpos.y))
 			return BlockType::BLOCK_AIR;
 		auto chunk = m_chunkRegion.getChunk(getRegionChunkPos(wpos));
-		// Falls outside our grabbed region — ask the m_manager directly (read-only, safe)
+		// Falls outside our grabbed region -> ask the m_manager directly (read-only, safe)
 		if (!chunk)
 			return m_manager.getBlockId(wpos);
 		if (chunk->state.load() < ChunkState::Generated)
@@ -226,7 +226,7 @@ inline bool IsOpaque(BlockType t) {
 	return Blocks::blockProperties[t].lightOpacity > 0;
 }
 
-// FeatureGenerator — Beta 1.7.3 world-decoration features
+// Used for generating features in the world
 class FeatureGenerator {
 public:
 	BlockType type = BLOCK_AIR;

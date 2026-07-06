@@ -12,7 +12,7 @@ void Input::keyCallback(GLFWwindow* window, int key, int, int action, int) {
 	if (key < 0 || key >= 1024)
 		return;
 	if (action == GLFW_REPEAT)
-		return; // ignore repeats — held state handles continuous input
+		return;
 	auto* ctx = static_cast<GlfwContext*>(glfwGetWindowUserPointer(window));
 	ctx->m_input->m_eventQueue.push_back({ key, action, false });
 }
@@ -34,7 +34,7 @@ void Input::cursorCallback(GLFWwindow* window, double x, double y) {
 		return;
 	}
 	input->m_deltaX += float(x) - input->m_lastX;
-	input->m_deltaY += input->m_lastY - float(y); // flipped — screen Y is inverted
+	input->m_deltaY += input->m_lastY - float(y);
 	input->m_lastX = float(x);
 	input->m_lastY = float(y);
 }
