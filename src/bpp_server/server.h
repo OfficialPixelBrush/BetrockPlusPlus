@@ -67,8 +67,8 @@ private:
 		return Int32_3{ pos.x, pos.z, int32_t(dimension) };
 	}
 
-	static constexpr float TICK_DELTA = 1.0f / 20.0f;
-	static constexpr int MAX_TICKS_PER_FRAME = 10;
+	static constexpr int TICKS_PER_SECOND = 20;
+	static constexpr int MAX_TICK_CATCH_UP = 5;
 
 	PlayerConnStateManager connStateManager;
 
@@ -86,9 +86,6 @@ private:
 	int serverSocket = -1;
 	int serverPort = 25565;
 	int64_t timeout_seconds = 60;
-	float accumulator = 0.0f;
-	float tickTimeAccum = 0.0f;
-	TickTime tickCount = 0;
 	CommandManager command_manager;
 	bool stopped = false;
 	Config config;
