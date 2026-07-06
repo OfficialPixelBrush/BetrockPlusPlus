@@ -87,6 +87,7 @@ struct PlayerSession {
 	~PlayerSession() {
 		// So our player entity despawns from the world
 		entity->isDead = true;
+		entity->session = nullptr;
 	}
 
 	// Load our player data from file
