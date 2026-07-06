@@ -69,6 +69,7 @@ set(SHARED_SOURCES
     src/bpp_shared/entities/entity.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/enums/items.cpp
+    src/bpp_shared/strings/ucs2.cpp
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
     src/bpp_shared/networking/server_manager.cpp
@@ -150,7 +151,6 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/world/noise"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/helpers/java"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/helpers"
-    "${PROJECT_SOURCE_DIR}/src/bpp_shared/logger"
 )
 
 if(BUILD_SERVER)

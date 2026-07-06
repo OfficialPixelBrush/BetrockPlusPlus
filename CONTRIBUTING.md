@@ -31,7 +31,8 @@ Grab the `main` branch for the most up-to-date, albeit unstable, repository.
     run-clang-tidy -p build -fix
     clang-format -i $(find . -name "*.cpp" -o -name "*.h")
     ```
-- Provide a short description what a file is for the relevant file, why it exists and what its used for
+- Unless this is already obvious via its name or usage, provide a short description what a file is for the relevant file, why it exists and what its used for
+- Avoid keeping unsued `include`s. If an included thing is used inside of a `.cpp` file instead of the `.h` file it's included in, please move it out of the `.h` file and into the `.cpp` file
 - PLEASE include the copyright notice at the top. This also serves as a nice way for people to get credited, if the git history is ever lost. **Any** change will get you added to there (within reason).
 
 Use the template below if you're creating a new page.

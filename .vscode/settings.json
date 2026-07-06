@@ -2,6 +2,9 @@
     "cmake.ignoreCMakeListsMissing": true,
     "cmake.useCMakePresets": "always",
     "editor.formatOnSave": true,
+    "clangd.arguments": [
+        "--compile-commands-dir=build/server-release"
+    ],
     "[cpp]": {
         "editor.defaultFormatter": "xaver.clang-format"
     }
