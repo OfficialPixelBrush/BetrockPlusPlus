@@ -8,6 +8,8 @@
 #pragma once
 #include <cstdint>
 
+typedef int64_t TickTime;
+
 typedef int32_t EntityId;
 
 typedef int16_t ItemId;

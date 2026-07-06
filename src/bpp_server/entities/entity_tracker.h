@@ -6,10 +6,10 @@
 */
 
 #pragma once
-#include "world/world.h"
-#include "entities/entity_manager.h"
 #include "../player_conn/player_session.h"
+#include "entities/entity_manager.h"
 #include "logger.h"
+#include "world/world.h"
 #include <cstdio>
 
 // Entity tracker so we can send entity updates to the right players. This is server side only annoyingly enough.

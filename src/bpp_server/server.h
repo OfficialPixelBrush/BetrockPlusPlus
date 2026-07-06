@@ -10,19 +10,19 @@
 #include <atomic>
 extern std::atomic<bool> shutdownRequested;
 
-#include "config/config.h"
 #include "chunk_IO/chunk_broadcaster.h"
 #include "chunk_IO/chunk_sender.h"
 #include "commands/command_manager.h"
-#include "packet/handle_packet.h"
+#include "config/config.h"
+#include "entities/entity_tracker.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
+#include "packet/handle_packet.h"
 #include "packet/packet_dispatcher.h"
 #include "player_conn/player_session.h"
+#include "player_conn/server_pconnstate_manager.h"
 #include "runtime.h"
 #include "server_socket.h"
-#include "player_conn/server_pconnstate_manager.h"
-#include "entities/entity_tracker.h"
 #include <chrono>
 #include <memory>
 #include <thread>
@@ -40,9 +40,13 @@ public:
 	Runtime gameRuntime;
 	ChunkSender chunkSender;
 	int flushChunkCount = 10;
+
 private:
-	friend bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, WorldManager& sessionWorld, Server& server);
-	friend void ChunkBroadcaster::broadcastBlockChanges(Server& server, std::unordered_map<Int32_2, std::vector<PendingBlock>>& changes, int8_t dimension, WorldManager& dimWorld);
+	friend bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, WorldManager& sessionWorld,
+	                                       Server& server);
+	friend void ChunkBroadcaster::broadcastBlockChanges(Server& server,
+	                                                    std::unordered_map<Int32_2, std::vector<PendingBlock>>& changes,
+	                                                    int8_t dimension, WorldManager& dimWorld);
 
 	void tick();
 	void startup();
@@ -84,7 +88,7 @@ private:
 	int64_t timeout_seconds = 60;
 	float accumulator = 0.0f;
 	float tickTimeAccum = 0.0f;
-	int tickCount = 0;
+	TickTime tickCount = 0;
 	CommandManager command_manager;
 	bool stopped = false;
 	Config config;
