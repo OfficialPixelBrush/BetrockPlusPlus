@@ -11,11 +11,9 @@
 #include "constants.h"
 #include "helpers/cross_platform.h"
 #include "tile_entities/tile_entity.h"
-#include <array>
 #include <atomic>
 #include <cstdint>
 #include <cstring>
-#include <functional>
 #include <numeric_structs.h>
 
 enum class ChunkState : uint8_t {

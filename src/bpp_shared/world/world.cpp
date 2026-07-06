@@ -6,9 +6,10 @@
 */
 #include "world.h"
 #include "blocks.h"
-#include "debug_generator/debug_generator.h"
 #include "generator/nether/chunk_gen.h"
+#include "generator/overworld/biome_gen.h"
 #include "generator/overworld/chunk_gen.h"
+#include <unordered_set>
 
 // Get colliders for an area
 std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {

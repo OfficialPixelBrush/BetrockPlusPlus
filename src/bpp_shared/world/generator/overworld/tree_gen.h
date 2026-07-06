@@ -9,7 +9,6 @@
 
 #include "../shared/feature_gen.h" // brings in GenView, IsSolid, IsOpaque
 #include "java_random.h"
-#include "world.h"
 
 /**
  * @brief Used for generating Oak or Birch Trees

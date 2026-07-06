@@ -12,12 +12,10 @@
 #include "BS_thread_pool.hpp"
 #include "base_structs.h"
 #include "blocks.h"
-#include "blocks/block_builder.h"
 #include "entities/entity_manager.h"
 #include "helpers/AABB.h"
 #include "java_math.h"
 #include "lighter.h"
-#include "storage/region.h"
 #include "tile_entities/tile_entity_manager.h"
 #include "world/chunk.h"
 #include "world/client_pos.h"
@@ -29,7 +27,6 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 struct PendingBlock {

@@ -9,7 +9,6 @@
 #pragma once
 #include "blocks/block_properties.h"
 #include "chunk.h"
-#include <algorithm>
 #include <climits>
 #include <cstdint>
 #include <numeric_structs.h>

@@ -8,10 +8,8 @@
 #include "../generator.h"
 #include "../shared/cave_gen.h"
 #include "../shared/feature_gen.h"
-#include "biome_gen.h"
 #include "biomes.h"
-#include "tree_gen.h"
-#include "world.h"
+#include "../noise/noise_octaves_perlin.h"
 
 /**
  * @brief A faithful reimplementation of the Beta 1.7.3 Overworld Generator

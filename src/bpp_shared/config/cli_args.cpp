@@ -6,6 +6,7 @@
 */
 
 #include "cli_args.h"
+#include "logger.h"
 #include <iostream>
 #include <string>
 
@@ -79,7 +80,7 @@ CommandLineArguments ParseArgs(int& argc, char** argv) {
 			cliargs.nether = false;
 			continue;
 		default:
-			std::cout << "Invalid CLI argument!" << std::endl;
+			GlobalLogger().warn << "Invalid CLI argument!" << std::endl;
 			continue;
 		}
 	}

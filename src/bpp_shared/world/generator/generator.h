@@ -7,7 +7,6 @@
 
 #pragma once
 #include "./shared/feature_gen.h"
-#include "generator.h"
 #include <cstdint>
 
 /**

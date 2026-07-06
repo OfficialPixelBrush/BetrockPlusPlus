@@ -16,9 +16,7 @@
 #include <winsock2.h>
 #pragma comment(lib, "ws2_32.lib")
 #endif
-#include "helpers/byteswap_compat.h"
 #include "packet_data.h"
-#include <bit>
 #include <cstdint>
 #include <cstring>
 #include <deque>

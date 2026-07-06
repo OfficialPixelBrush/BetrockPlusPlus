@@ -7,10 +7,8 @@
 
 #pragma once
 
-#include "base_structs.h"
 #include "blocks/block_properties.h"
 #include "constants.h"
-#include "helpers/java/java_math.h"
 #include "java_random.h"
 #include "world/world.h"
 

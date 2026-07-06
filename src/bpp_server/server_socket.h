@@ -6,6 +6,7 @@
  *
 */
 #pragma once
+#include "logger.h"
 #if defined(__linux__) || defined(__APPLE__)
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -39,7 +40,7 @@ inline int createServerSocket(int port) {
 	addr.sin_port = htons(port);
 	addr.sin_addr.s_addr = INADDR_ANY;
 	if (bind(serverSocket, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
-		std::cerr << "**** FAILED TO BIND SOCKET! ****" << std::endl;
+		GlobalLogger().warn << "**** FAILED TO BIND SOCKET! ****" << "\n";
 	}
 	listen(serverSocket, 8);
 

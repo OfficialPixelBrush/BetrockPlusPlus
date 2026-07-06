@@ -6,9 +6,7 @@
 */
 
 #include "noise_simplex.h"
-#include "debug.h"
 #include <cassert>
-#include <iostream>
 
 NoiseSimplex::NoiseSimplex() {
 	Java::Random rand;
