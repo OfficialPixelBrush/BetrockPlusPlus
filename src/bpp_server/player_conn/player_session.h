@@ -66,8 +66,8 @@ struct PlayerSession {
 
 	// windowId = 0 is always the player inventory. Non-zero means a container is open.
 	// ranges from 0-127 and wraps
-	int8_t openWindowId = 0;
-	int8_t getNextWindowId() {
+	WindowId openWindowId = 0;
+	WindowId getNextWindowId() {
 		openWindowId = (openWindowId + 1) % 128;
 		return openWindowId;
 	}
@@ -106,8 +106,8 @@ struct PlayerSession {
 
 		auto& it3 = nbt.get("Inventory").getList();
 		for (auto& item : it3) {
-			int8_t nbtSlot = item.get("Slot").getByte();
-			int networkSlot = inventory.getNetworkSlotId(nbtSlot);
+			NbtSlotId nbtSlot = item.get("Slot").getByte();
+			NetworkSlotId networkSlot = inventory.getNetworkSlotId(nbtSlot);
 			if (networkSlot < 0 || networkSlot >= int(inventory.slots.size()))
 				continue;
 			inventory.slots[size_t(networkSlot)] = ItemStack{ item.get("id").getShort(), item.get("Count").getByte(),
@@ -219,7 +219,7 @@ struct PlayerSession {
 		Motion.list.push_back(movZ);
 
 		// Save our current inventory
-		int8_t slotId = 0;
+		NetworkSlotId slotId = 0;
 		for (auto& item : inventory.slots) {
 			if (item.has_value()) {
 				Tag itemTag;

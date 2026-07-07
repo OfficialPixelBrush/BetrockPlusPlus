@@ -28,7 +28,7 @@ struct TrackedEntry {
 	int lastBroadcastPitch = 0;
 	int updateCounter = 0;
 	int ticksSinceTeleport = 0;
-	std::unordered_set<int64_t> visibleTo; // what player ids can see this entity
+	std::unordered_set<EntityId> visibleTo; // what player ids can see this entity
 };
 
 struct EntityTracker {

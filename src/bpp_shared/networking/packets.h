@@ -124,7 +124,7 @@ public:
 	struct SetEquipment : BasePacket {
 		SetEquipment() : BasePacket{ PacketId::SetEquipment } {}
 		EntityId entity_id;
-		int16_t inventory_slot;
+		NetworkSlotId inventory_slot;
 		ItemId item_id;
 		ItemDamage item_metadata;
 
@@ -138,7 +138,7 @@ public:
 
 		void Deserialize(NetworkStream& stream) override {
 			entity_id = stream.Read<EntityId>();
-			inventory_slot = stream.Read<int16_t>();
+			inventory_slot = stream.Read<NetworkSlotId>();
 			item_id = stream.Read<ItemId>();
 			item_metadata = stream.Read<ItemDamage>();
 		}
@@ -367,7 +367,7 @@ public:
 	// The clients active hotbar slot
 	struct SetHotbarSlot : BasePacket {
 		SetHotbarSlot() : BasePacket{ PacketId::SetHotbarSlot } {}
-		int16_t slot;
+		NetworkSlotId slot;
 
 		void Serialize(NetworkStream& stream) const override {
 			stream.Write(m_id);
@@ -375,7 +375,7 @@ public:
 		}
 
 		void Deserialize(NetworkStream& stream) override {
-			slot = stream.Read<int16_t>();
+			slot = stream.Read<NetworkSlotId>();
 		}
 	};
 
@@ -1171,7 +1171,7 @@ public:
 	struct ClickSlot : BasePacket {
 		ClickSlot() : BasePacket{ PacketId::ClickSlot } {}
 		WindowId window_id;
-		SlotId slot_id;
+		NetworkSlotId slot_id;
 		bool right_click;
 		TransactionId transaction_id;
 		bool shift;
@@ -1192,7 +1192,7 @@ public:
 		}
 		void Deserialize(NetworkStream& stream) override {
 			window_id = stream.Read<WindowId>();
-			slot_id = stream.Read<SlotId>();
+			slot_id = stream.Read<NetworkSlotId>();
 			right_click = stream.Read<bool>();
 			transaction_id = stream.Read<TransactionId>();
 			shift = stream.Read<bool>();
@@ -1208,7 +1208,7 @@ public:
 	struct SetSlot : BasePacket {
 		SetSlot() : BasePacket{ PacketId::SetSlot } {}
 		WindowId window_id;
-		SlotId slot_id;
+		NetworkSlotId slot_id;
 		ItemStack item;
 
 		void Serialize(NetworkStream& stream) const override {
@@ -1223,7 +1223,7 @@ public:
 		}
 		void Deserialize(NetworkStream& stream) override {
 			window_id = stream.Read<WindowId>();
-			slot_id = stream.Read<SlotId>();
+			slot_id = stream.Read<NetworkSlotId>();
 			item.id = stream.Read<ItemId>();
 			if (item.id != ITEM_INVALID) {
 				item.count = stream.Read<ItemAmount>();

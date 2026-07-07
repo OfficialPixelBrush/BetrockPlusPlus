@@ -192,7 +192,7 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 		pos.x += 1;
 	// Make sure the block id is valid for placement otherwise we will crash
 	if (pkt.item.id < BLOCK_MAX && (pkt.item.id >= 0))
-		world.setBlock({ pos.x, pos.y, pos.z }, BlockType(pkt.item.id), pkt.item.data);
+		world.setBlock({ pos.x, pos.y, pos.z }, BlockType(pkt.item.id.value), pkt.item.data);
 }
 
 void SetHotbarSlot(Packet::SetHotbarSlot& pkt, PlayerSession& session) {
