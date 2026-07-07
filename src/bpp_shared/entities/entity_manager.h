@@ -27,12 +27,15 @@ struct EntityManager {
 	WorldManager* world = nullptr; // we need to bind a pointer to this later
 
 	void tick() {
+		// Make a copy so we aren't modifying the vector while iterating over it
+		std::vector<std::shared_ptr<Entity>> copy = entities;
+
 		// Tick EVERY entity
-		for (std::shared_ptr<Entity> entity : entities) {
+		for (std::shared_ptr<Entity> entity : copy) {
 			// Remove dead entities from the system
 			if (entity->isDead) {
 				entity->world = nullptr;
-				std::remove(entities.begin(), entities.end(), entity);
+				entities.erase(std::remove(entities.begin(), entities.end(), entity), entities.end());
 				auto& container = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
 				auto& b = container.buckets[entity->bucketPos.z];
 				b.entities.erase(std::remove_if(b.entities.begin(), b.entities.end(),
@@ -74,6 +77,7 @@ struct EntityManager {
 				entity->bucketPos = newBucketPos;
 			}
 		}
+		copy.clear(); // Clear the copy to free memory
 	}
 
 	void addEntity(std::shared_ptr<Entity> entity, int64_t forceEntityId = -1) {
