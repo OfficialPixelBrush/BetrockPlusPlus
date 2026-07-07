@@ -6,6 +6,7 @@
  *
  */
 #pragma once
+#include "base_types.h"
 #include "blocks/block_properties.h"
 #include "helpers/AABB.h"
 #include "numeric_structs.h"
@@ -57,9 +58,9 @@ struct Entity {
 	WorldManager* world = nullptr;
 
 	// Identity
-	int id = -1; // -1 = not yet spawned
+	EntityId id = -1; // -1 = not yet spawned
 	bool isDead = false;
-	int ticksExisted = 0;
+	TickTime ticksExisted = 0;
 
 	// Riding
 	Entity* ridingEntity = nullptr;
