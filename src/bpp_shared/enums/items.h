@@ -14,7 +14,7 @@ static constexpr int16_t ITEM_THRESHOLD = 255;
 // Maximum number of items in a stack
 static constexpr int8_t ITEM_STACK_MAX = 64;
 
-enum Items : ItemId {
+enum Items : ItemId::Underlying {
 	ITEM_INVALID = -1,
 	ITEM_NONE = 0,
 

@@ -439,7 +439,7 @@ std::vector<ItemStack> getBlockDrops(BlockType blockId, uint8_t meta, Java::Rand
 	int16_t damage = behavior.damageDropped ? behavior.damageDropped(meta) : 0;
 
 	for (int i = 0; i < count; i++) {
-		int16_t id = behavior.idDropped ? behavior.idDropped(meta, rng) : static_cast<int16_t>(blockId);
+		ItemId id = behavior.idDropped ? behavior.idDropped(meta, rng) : ItemId(blockId);
 
 		if (id > 0) {
 			drops.push_back(ItemStack{ id, 1, damage });
@@ -1800,13 +1800,13 @@ void registerAll() {
 	};
 
 	// --------------- drop themselves but pass their metadata onto the item ---------------
-	blockBehaviors[BLOCK_WOOL].damageDropped = [](uint8_t meta) -> ItemId {
+	blockBehaviors[BLOCK_WOOL].damageDropped = [](uint8_t meta) -> ItemDamage {
 		return meta;
 	};
-	blockBehaviors[BLOCK_LOG].damageDropped = [](uint8_t meta) -> ItemId {
+	blockBehaviors[BLOCK_LOG].damageDropped = [](uint8_t meta) -> ItemDamage {
 		return meta;
 	};
-	blockBehaviors[BLOCK_SAPLING].damageDropped = [](uint8_t meta) -> ItemId {
+	blockBehaviors[BLOCK_SAPLING].damageDropped = [](uint8_t meta) -> ItemDamage {
 		return meta & 3;
 	};
 
@@ -1912,14 +1912,14 @@ void registerAll() {
 		return 4;
 	};
 
-	blockBehaviors[BLOCK_SLAB].damageDropped = [](uint8_t meta) -> ItemId {
+	blockBehaviors[BLOCK_SLAB].damageDropped = [](uint8_t meta) -> ItemDamage {
 		return meta;
 	};
 
 	blockBehaviors[BLOCK_DOUBLE_SLAB].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return BLOCK_SLAB;
 	};
-	blockBehaviors[BLOCK_DOUBLE_SLAB].damageDropped = [](uint8_t meta) -> ItemId {
+	blockBehaviors[BLOCK_DOUBLE_SLAB].damageDropped = [](uint8_t meta) -> ItemDamage {
 		return meta;
 	};
 	blockBehaviors[BLOCK_DOUBLE_SLAB].quantityDropped = [](Java::Random&) -> ItemAmount {
