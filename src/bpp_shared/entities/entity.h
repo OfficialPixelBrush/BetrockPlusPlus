@@ -2,7 +2,7 @@
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  *
- * SPDX-License-Identifier: GPL-3.0-only
+ * SPDX-License-Identifier: AGPL-3.0-only
  *
  */
 #pragma once
