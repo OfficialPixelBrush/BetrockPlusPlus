@@ -21,7 +21,7 @@ struct EntityContainer {
 
 // For ticking all entities and keeping track of them in the world
 struct EntityManager {
-	int64_t nextEntityId = 2; // Minecraft seems to reserve 0 and 1
+	EntityId nextEntityId = 2; // Minecraft seems to reserve 0 and 1
 	std::vector<std::shared_ptr<Entity>> entities;
 	std::unordered_map<Int2, EntityContainer> entityContainers;
 	WorldManager* world = nullptr; // we need to bind a pointer to this later
@@ -80,7 +80,7 @@ struct EntityManager {
 		copy.clear(); // Clear the copy to free memory
 	}
 
-	void addEntity(std::shared_ptr<Entity> entity, int64_t forceEntityId = -1) {
+	void addEntity(std::shared_ptr<Entity> entity, EntityId forceEntityId = -1) {
 		if (!world) {
 			GlobalLogger().error << "Attempted to add an entity before EntityManager was bound to a world!\n";
 			return;
@@ -91,7 +91,7 @@ struct EntityManager {
 		entities.push_back(std::move(entity));
 	}
 
-	int64_t getNextEntityId() {
+	EntityId getNextEntityId() {
 		return nextEntityId++;
 	}
 };
