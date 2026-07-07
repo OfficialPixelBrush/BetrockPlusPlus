@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
  *
- * SPDX-License-Identifier: GPL-3.0-only
+ * SPDX-License-Identifier: AGPL-3.0-only
 */
 
 #include "command_manager.h"

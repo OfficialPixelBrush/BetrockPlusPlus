@@ -317,7 +317,7 @@ file(GLOB_RECURSE SOURCE_FILES
 
 set(REQUIRED_STRINGS
     "Copyright \\(c\\)"
-    "SPDX-License-Identifier: GPL-3.0-only"
+    "SPDX-License-Identifier: AGPL-3.0-only"
 )
 
 foreach(FILE ${SOURCE_FILES})

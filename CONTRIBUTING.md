@@ -40,7 +40,7 @@ Use the template below if you're creating a new page.
 /*
  * Copyright (c) [year], [name] <temp@example.com>
  *
- * SPDX-License-Identifier: GPL-3.0-only
+ * SPDX-License-Identifier: AGPL-3.0-only
  * 
 */
 ```
