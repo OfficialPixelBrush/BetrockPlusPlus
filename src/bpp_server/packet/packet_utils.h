@@ -11,7 +11,7 @@
 #include <vector>
 
 namespace PacketUtilities {
-inline void sendInventory(PlayerSession& session, int8_t windowId, Inventory inventory) {
+inline void sendInventory(PlayerSession& session, WindowId windowId, Inventory inventory) {
 	std::vector<ItemStack> items;
 	for (auto& item : inventory.slots) {
 		if (!item.has_value()) {
@@ -27,7 +27,7 @@ inline void sendInventory(PlayerSession& session, int8_t windowId, Inventory inv
 }
 
 // Sends a single slot update. windowId=-1 / slotId=-1 updates the cursor.
-inline void sendSlot(PlayerSession& session, int8_t windowId, int16_t slotId, ItemStack* stack) {
+inline void sendSlot(PlayerSession& session, WindowId windowId, NetworkSlotId slotId, ItemStack* stack) {
 	Packet::SetSlot pkt;
 	pkt.window_id = windowId;
 	pkt.slot_id = slotId;
