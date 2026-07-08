@@ -8,6 +8,7 @@
 
 #include "handle_packet.h"
 #include "entities/entity_item.h"
+#include "inventory/item_stack.h"
 
 namespace HandlePacket {
 void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& session) {
@@ -95,6 +96,7 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 		Vec3 dropPos = { session.position.pos.x, session.position.pos.y + 1.62, session.position.pos.z };
 		GlobalLogger().info << "Dropped item at " << dropPos << "\n";
 		ItemEntity item(dropPos);
+		item.itemStack = *session.inventory.getHeldItem();
 		world.entityManager.addEntity(std::make_shared<ItemEntity>(item));
 		return;
 	}

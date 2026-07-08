@@ -7,8 +7,10 @@
 #pragma once
 
 #include "entity.h"
+#include "inventory/item_stack.h"
 
 struct ItemEntity : public Entity {
+	ItemStack itemStack;
 	ItemEntity(Vec3 position) : Entity() {
 		type = "Item";
 		width = 0.25f;
