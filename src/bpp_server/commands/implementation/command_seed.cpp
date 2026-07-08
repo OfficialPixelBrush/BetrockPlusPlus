@@ -13,7 +13,7 @@
 std::string CommandSeed::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
                                   std::function<void(PlayerSession&)> transferDimension) {
 	Packet::ChatMessage reply;
-	reply.message = "\u00a77" + std::to_string(world.seed);
+	reply.message = "§e" + std::to_string(world.seed);
 	reply.Serialize(session.stream);
 	return "";
 }

@@ -91,7 +91,6 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 	response.Serialize(session.stream);
 
 	WorldManager& sessionWorld = session.dimension == -1 ? server.gameRuntime.worldHell : server.gameRuntime.world;
-	session.entityId = sessionWorld.entityManager.getNextEntityId();
 
 	Packet::SetSpawnPosition spawn;
 	spawn.position = sessionWorld.spawnPoint;

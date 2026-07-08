@@ -15,8 +15,8 @@ std::string CommandDimension::Execute(std::vector<std::string>& parameters, Play
 	transferDimension(session);
 
 	Packet::ChatMessage reply;
-	reply.message = session.dimension == -1 ? "\u00a77Transferring to the Nether..."
-	                                        : "\u00a77Transferring to the Overworld...";
+	reply.message = session.dimension == -1 ? "§eTransferring to the Nether..."
+	                                        : "§7Transferring to the Overworld...";
 	reply.Serialize(session.stream);
 
 	return "";

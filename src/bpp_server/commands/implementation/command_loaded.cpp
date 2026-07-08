@@ -13,7 +13,7 @@ std::string CommandLoaded::Execute([[maybe_unused]] std::vector<std::string>& pa
                                     [[maybe_unused]] WorldManager& world,
                                     [[maybe_unused]] std::function<void(PlayerSession&)> transferDimension) {
 	Packet::ChatMessage reply;
-	reply.message = "\u00a77" + std::to_string(world.chunks.size());
+	reply.message = "§e" + std::to_string(world.chunks.size());
 	reply.Serialize(session.stream);
 	return "";
 }
