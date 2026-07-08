@@ -6,6 +6,7 @@
 */
 #include "entity_tracker.h"
 #include "../server.h"
+#include "entities/entity_item.h"
 
 // Update each player instance so entities properly despawn and spawn for them
 void EntityTracker::tick() {
@@ -50,9 +51,10 @@ void EntityTracker::tick() {
 			    entityEntry.visibleTo.find(playerId) == entityEntry.visibleTo.end()) {
 				auto& pSession = server->getSessionById(playerId);
 				if (entityEntry.entity->type == "Item") {
+					ItemEntity& ie = dynamic_cast<ItemEntity&>(*entityEntry.entity);
 					Packet::SpawnItem pkt;
 					pkt.entity_id = entityEntry.entity->id;
-					pkt.item = { 4, 1, 0 };
+					pkt.item = ie.itemStack;
 					pkt.q_pitch = entityEntry.entity->rotationPitch;
 					pkt.q_yaw = entityEntry.entity->rotationYaw;
 					pkt.q_position = { int32_t(entityEntry.entity->posX * 32.0),
