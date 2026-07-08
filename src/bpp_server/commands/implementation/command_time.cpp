@@ -22,7 +22,7 @@ std::string CommandTime::Execute(std::vector<std::string>& parameters, PlayerSes
 			return "Invalid argument " + parameters[1];
 		}
 		Packet::ChatMessage reply;
-		reply.message = "\u00a77Set time to " + std::to_string(world.elapsed_ticks);
+		reply.message = "§eSet time to " + std::to_string(world.elapsed_ticks);
 		reply.Serialize(session.stream);
 		return "";
 	}
@@ -30,7 +30,7 @@ std::string CommandTime::Execute(std::vector<std::string>& parameters, PlayerSes
 	// Get the time
 	if (parameters.size() == 1) {
 		Packet::ChatMessage reply;
-		reply.message = "\u00a77Current Time is " + std::to_string(world.elapsed_ticks);
+		reply.message = "§eCurrent Time is " + std::to_string(world.elapsed_ticks);
 		reply.Serialize(session.stream);
 		return "";
 	}

@@ -43,7 +43,7 @@ std::string CommandTeleport::Execute(std::vector<std::string>& parameters, Playe
 			SendTeleport(*source, pos);
 
 			Packet::ChatMessage reply;
-			reply.message = "\u00a77Teleported " + source->username + " to " + pos.str();
+			reply.message = "§eTeleported " + source->username + " to " + pos.str();
 			reply.Serialize(session.stream);
 			return "";
 		} catch (...) {
@@ -58,7 +58,7 @@ std::string CommandTeleport::Execute(std::vector<std::string>& parameters, Playe
 			return parameters[offset] + " does not exist!";
 		SendTeleport(*source, dest->position.pos, dest->rotation.x, dest->rotation.y);
 		Packet::ChatMessage reply;
-		reply.message = "\u00a77Teleported " + source->username + " to " + session.username;
+		reply.message = "§eTeleported " + source->username + " to " + session.username;
 		reply.Serialize(session.stream);
 		return "";
 	}

@@ -43,7 +43,7 @@ std::string CommandGive::Execute(std::vector<std::string>& parameters, PlayerSes
 	if ((item.id > BLOCK_AIR && item.id < BLOCK_MAX) || (item.id >= ITEM_SHOVEL_IRON && item.id < ITEM_MAX) ||
 	    (item.id >= ITEM_RECORD_13 && item.id < ITEM_RECORD_MAX)) {
 		Packet::ChatMessage reply;
-		reply.message = "\u00a77Gave " + wIdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
+		reply.message = "§eGave " + wIdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
 		                std::to_string(item.data) + ") x" + std::to_string(item.count) + " to " + session.username;
 
 		reply.Serialize(session.stream);
