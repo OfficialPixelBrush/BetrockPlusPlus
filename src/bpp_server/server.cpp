@@ -127,9 +127,28 @@ void Server::startup() {
 		};
 	};
 
-	gameRuntime.world.onBlockUpdate = makeBlockUpdateCallback(0, chunkBlockChanges);
+	auto registerEntityTrackerCallbacks = [this](EntityTracker & entityTracker, EntityManager & entityManager) {
+		entityManager.onEntitySpawn = [&entityTracker](std::shared_ptr<Entity> entity) {
+			if (entity->type == "Player") {
+				entityTracker.addPlayer(entity.get());
+				return;
+			}
+			entityTracker.trackEntity(entity.get());
+		};
+		entityManager.onEntityDespawn = [&entityTracker](std::shared_ptr<Entity> entity) {
+			if (entity->type == "Player") {
+				entityTracker.removePlayer(entity.get());
+				return;
+			}
+			entityTracker.untrackEntity(entity.get());
+		};
+		entityTracker.server = this;
+	};
 
+	gameRuntime.world.onBlockUpdate = makeBlockUpdateCallback(0, chunkBlockChanges);
 	gameRuntime.worldHell.onBlockUpdate = makeBlockUpdateCallback(-1, chunkBlockChangesHell);
+	registerEntityTrackerCallbacks(overworldEntityTracker, gameRuntime.world.entityManager);
+	registerEntityTrackerCallbacks(hellEntityTracker, gameRuntime.worldHell.entityManager);
 
 	// Get spawn ready
 	constexpr int spawn_chunk_distance = 4;
@@ -165,7 +184,6 @@ void Server::startup() {
 	}
 
 	// Chunks are ready to load at this point.
-
 	auto loadSpawnChunks = [total_spawn_chunks](WorldManager& world) {
 		auto start = std::chrono::steady_clock::now();
 		int loaded_chunks = 0;
@@ -321,6 +339,10 @@ void Server::tick() {
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChangesHell;
 	localBlockChanges.swap(chunkBlockChanges);
 	localBlockChangesHell.swap(chunkBlockChangesHell);
+
+	// Update the entity trackers
+	overworldEntityTracker.tick();
+	hellEntityTracker.tick();
 
 	// Handle connection state for each player
 	for (auto& session : players) {

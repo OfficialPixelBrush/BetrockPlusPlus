@@ -7,6 +7,7 @@
 */
 
 #include "handle_packet.h"
+#include "entities/entity_item.h"
 
 namespace HandlePacket {
 void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& session) {
@@ -90,7 +91,11 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 		}
 	}
 	case PacketData::MineStatus::DROPPED_ITEM: {
-		// TODO: Spawn dropped item in the world
+		// Should drop an item at eye height
+		Vec3 dropPos = { session.position.pos.x, session.position.pos.y + 1.62, session.position.pos.z };
+		GlobalLogger().info << "Dropped item at " << dropPos << "\n";
+		ItemEntity item(dropPos);
+		world.entityManager.addEntity(std::make_shared<ItemEntity>(item));
 		return;
 	}
 	default:

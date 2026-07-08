@@ -26,6 +26,10 @@ struct EntityManager {
 	std::unordered_map<Int2, EntityContainer> entityContainers;
 	WorldManager* world = nullptr; // we need to bind a pointer to this later
 
+	// Callbacks that we can link into
+	std::function<void(std::shared_ptr<Entity>)> onEntitySpawn;
+	std::function<void(std::shared_ptr<Entity>)> onEntityDespawn;
+
 	void tick() {
 		// Make a copy so we aren't modifying the vector while iterating over it
 		std::vector<std::shared_ptr<Entity>> copy = entities;
@@ -45,6 +49,9 @@ struct EntityManager {
 					                                       locked == entity; // Remove if expired or matches our entity
 				                                }),
 				                 b.entities.end());
+
+				if (onEntityDespawn)
+					onEntityDespawn(entity);
 				continue;
 			}
 			entity->tick();
@@ -89,6 +96,8 @@ struct EntityManager {
 		                                 : forceEntityId; // Assign an ID if we weren't forced to use one
 		entity->world = world; // Bind the world pointer so the entity can interact with the world
 		entities.push_back(std::move(entity));
+		if (onEntitySpawn)
+			onEntitySpawn(entities.back());
 	}
 
 	EntityId getNextEntityId() {
