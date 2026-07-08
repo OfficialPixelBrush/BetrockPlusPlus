@@ -1,10 +1,12 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
 
+#include "crafting/recipe_manager.h"
 #include "logger.h"
 #include "world/storage/region_manager.h"
 #include "world/storage/save_manager.h"
@@ -19,8 +21,11 @@ struct Runtime {
 	RegionManager overworldRegionManager;
 	RegionManager hellRegionManager; // hehe i call it hell instead of nether cause im quirky
 
+	RecipeManager recipeManager;
+
 	Runtime() : worldHell(true) {
 		Blocks::registerAll();
+		recipeManager.addVanillaRecipes();
 		GlobalLogger().info << "New game runtime created!\n";
 	}
 

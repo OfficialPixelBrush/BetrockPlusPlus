@@ -80,6 +80,8 @@ set(SHARED_SOURCES
     src/bpp_shared/world/storage/region.cpp
     src/bpp_shared/world/storage/region_manager.cpp
     src/bpp_shared/blocks/block_properties.cpp
+    src/bpp_shared/crafting/recipe_manager.cpp
+    src/bpp_shared/crafting/vanilla_recipes.cpp
 
     # Generation
     src/bpp_shared/world/noise/noise_generator.cpp
