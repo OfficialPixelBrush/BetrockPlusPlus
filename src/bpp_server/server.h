@@ -41,6 +41,22 @@ public:
 	ChunkSender chunkSender;
 	int flushChunkCount = 10;
 
+	PlayerSession& getSessionById(EntityId entityId) {
+		for (auto& player : players) {
+			if (player->entity->id == entityId) {
+				return *player;
+			}
+		}
+	}
+
+	PlayerSession& getSessionByUsername(const std::string& username) {
+		for (auto& player : players) {
+			if (player->username == username) {
+				return *player;
+			}
+		}
+	}
+
 private:
 	friend bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, WorldManager& sessionWorld,
 	                                       Server& server);

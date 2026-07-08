@@ -10,20 +10,22 @@
 #include "entities/entity_manager.h"
 #include "logger.h"
 #include "world/world.h"
+#include "networking/network_stream.h"
+#include "networking/packets.h"
 #include <cstdio>
 
 // Entity tracker so we can send entity updates to the right players. This is server side only annoyingly enough.
 // I am not entirely happy with how this is done but notch demands we have several packet types for each type of entity
 struct TrackingProfile {
-	int range;
-	int updateFrequency; // ticks between movement-sync packets
-	bool sendVelocity;
+	int range = 0;
+	int updateFrequency = 0; // ticks between movement-sync packets
+	bool sendVelocity = false;
 };
 
 struct TrackedEntry {
-	Entity* entity;
-	TrackingProfile profile;
-	Vec3 lastBroadcastPos{};
+	Entity* entity = nullptr;
+	TrackingProfile profile{};
+	Int3 lastBroadcastPos{};
 	int lastBroadcastYaw = 0;
 	int lastBroadcastPitch = 0;
 	int updateCounter = 0;
@@ -31,30 +33,44 @@ struct TrackedEntry {
 	std::unordered_set<EntityId> visibleTo; // what player ids can see this entity
 };
 
+struct Server;
 struct EntityTracker {
-	std::vector<TrackedEntry> trackedEntities;
-	std::vector<TrackedEntry> trackedPlayers;
+	Server* server = nullptr;
+
+	std::unordered_map<EntityId, TrackedEntry> trackedEntities;
+	std::unordered_set<EntityId> playerIds;
 
 	void tick();
-	void trackEntity(Entity* entity);
-	void untrackEntity(Entity* entity);
-	void addPlayer(PlayerSession* player) {
-		TrackedEntry playerEntry;
-		playerEntry.entity = player->entity.get();
-		playerEntry.profile = getTrackingProfile(*player->entity);
-		trackedPlayers.push_back(std::move(playerEntry));
+
+	void trackEntity(Entity* entity) {
+		TrackedEntry entry;
+		entry.entity = entity;
+		entry.profile = getTrackingProfile(*entity);
+		trackedEntities[entity->id] = std::move(entry);
+		this->tick();
 	}
 
-	// Remove the player from the trackedPlayers list and remove them from all visibleTo sets
-	void removePlayer(PlayerSession* player) {
-		for (auto& entry : trackedEntities) {
-			entry.visibleTo.erase(player->entityId);
+	void untrackEntity(Entity* entity) {
+		trackedEntities.erase(entity->id);
+		this->tick();
+	}
+
+	void addPlayer(Entity* player) {
+		TrackedEntry entry;
+		entry.entity = player;
+		entry.profile = getTrackingProfile(*player);
+		trackedEntities[player->id] = std::move(entry);
+		playerIds.insert(player->id);
+		this->tick();
+	}
+
+	void removePlayer(Entity* player) {
+		for (auto& [id, entry] : trackedEntities) {
+			entry.visibleTo.erase(player->id);
 		}
-		trackedPlayers.erase(std::remove_if(trackedPlayers.begin(), trackedPlayers.end(),
-		                                    [player](const TrackedEntry& entry) {
-			                                    return entry.entity->id == player->entityId;
-		                                    }),
-		                     trackedPlayers.end());
+		playerIds.erase(player->id);
+		trackedEntities.erase(player->id);
+		this->tick();
 	}
 
 	// With my strict goal of keeping strict separation we cannot put this as a virtual in the actual entity class itself
