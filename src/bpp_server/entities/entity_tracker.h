@@ -28,6 +28,7 @@ struct TrackedEntry {
 	Entity* entity = nullptr;
 	TrackingProfile profile{};
 	Int3 lastBroadcastPos{};
+	Vec3 lastBroadcastMotion{};
 	int lastBroadcastYaw = 0;
 	int lastBroadcastPitch = 0;
 	int updateCounter = 0;
@@ -41,6 +42,8 @@ struct EntityTracker {
 
 	std::unordered_map<EntityId, TrackedEntry> trackedEntities;
 	std::unordered_set<EntityId> playerIds;
+
+	TickTime forceTeleportTicks = 400; // 20 seconds
 
 	void tick();
 

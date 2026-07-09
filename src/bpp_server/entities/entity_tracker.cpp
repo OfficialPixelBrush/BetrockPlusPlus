@@ -11,7 +11,7 @@
 #include <algorithm>
 
 static int16_t quantizeVelocity(double v) {
-	return int16_t(v * 8000.0);
+	return MathHelper::floor_double(v * 8000.0);
 }
 static int32_t quantizePosition(double p) {
 	return MathHelper::floor_double(p * 32.0);
@@ -139,21 +139,29 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 	Int3 currentPosition = { quantizePosition(entity->posX), quantizePosition(entity->posY),
 		                     quantizePosition(entity->posZ) };
 
-	// Send velocity if its enabled and the dirty flag is set
-	if (trackedEntry.profile.sendVelocity && entity->velocityChanged) {
+	// Check the magnitude of the velocity and if it has changed since the last tick
+	Vec3 currentMotion = { entity->motionX, entity->motionY, entity->motionZ };
+	Vec3& lastMotion = trackedEntry.lastBroadcastMotion;
+	double currentMagnitude = std::sqrt(currentMotion.x * currentMotion.x + currentMotion.y * currentMotion.y + currentMotion.z * currentMotion.z);
+	double lastMagnitude = std::sqrt(lastMotion.x * lastMotion.x + lastMotion.y * lastMotion.y + lastMotion.z * lastMotion.z);
+
+	// If our velocityChanged flag is dirty force a velocity update independent if the tracker profile allows it
+	// Else, check to see if the difference in magnitude for the current and last motion vectors are past a threshold
+	bool needsVelocityUpdate = entity->velocityChanged || (trackedEntry.profile.sendVelocity && std::abs(currentMagnitude - lastMagnitude) >= 0.001);
+
+	// Send velocity
+	if (needsVelocityUpdate) {
 		entity->velocityChanged = false;
 		Packet::EntityVelocity pkt;
 		pkt.entity_id = entity->id;
-		pkt.velocity = { quantizeVelocity(entity->motionX), quantizeVelocity(entity->motionY),
-			             quantizeVelocity(entity->motionZ) }; // Quantized for 16 bit shorts
+		pkt.velocity = { quantizeVelocity(entity->motionX), quantizeVelocity(entity->motionY), quantizeVelocity(entity->motionZ) }; // Quantized for 16 bit shorts
 		sendPacketToPlayersInTrackedEntry(pkt, trackedEntry);
 	}
 
 	trackedEntry.ticksSinceTeleport++;
 	trackedEntry.updateCounter++;
 
-	bool needsMovementUpdate = trackedEntry.updateCounter >= trackedEntry.profile.updateFrequency ||
-	                           trackedEntry.ticksSinceTeleport >= 40; // Force a resync every 2 seconds
+	bool needsMovementUpdate = trackedEntry.updateCounter >= trackedEntry.profile.updateFrequency || trackedEntry.ticksSinceTeleport >= 40; // Force a resync
 
 	// Reset our values
 	if (needsMovementUpdate) {
@@ -165,7 +173,7 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 		auto zdist = currentPosition.z - trackedEntry.lastBroadcastPos.z;
 		auto dist = std::sqrt((xdist * xdist) + (ydist * ydist) + (zdist * zdist));
 
-		bool needsTP = dist >= (4 * 32) || trackedEntry.ticksSinceTeleport >= 40;
+		bool needsTP = dist >= double(quantizePosition(4)) || trackedEntry.ticksSinceTeleport >= forceTeleportTicks;
 
 		if (needsTP) {
 			trackedEntry.ticksSinceTeleport = 0;
