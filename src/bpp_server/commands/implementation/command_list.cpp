@@ -16,6 +16,5 @@ std::string CommandList::Execute(std::vector<std::string>& parameters, PlayerSes
 	pkt.message = "§7-- All players --";
 	pkt.Serialize(session.stream);
 	pkt.message = "§7";
-	size_t i = 0;
 	return "";
 }

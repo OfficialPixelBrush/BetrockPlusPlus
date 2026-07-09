@@ -103,7 +103,7 @@ private:
 };
 
 struct SaveManager {
-	bool initialize(const std::string& pSaveName, bool isMultiplayerSave = false) {
+	bool initialize(const std::string& pSaveName, [[maybe_unused]] bool isMultiplayerSave = false) {
 		SaveDirectory = pSaveName;
 
 		// Make sure we have the necessary folders

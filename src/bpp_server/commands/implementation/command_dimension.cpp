@@ -10,7 +10,7 @@
 // Transfers the player to the opposite dimension.
 // Usage:
 //   /dim
-std::string CommandDimension::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
+std::string CommandDimension::Execute([[maybe_unused]] std::vector<std::string>& parameters, PlayerSession& session, [[maybe_unused]] WorldManager& world,
                                       std::function<void(PlayerSession&)> transferDimension) {
 	transferDimension(session);
 

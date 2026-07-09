@@ -34,7 +34,7 @@ void PlayerConnStateManager::handleConnectionState(PlayerSession& session, Serve
 	}
 }
 
-void PlayerConnStateManager::handleHandshake(PlayerSession& session, Server& server) {
+void PlayerConnStateManager::handleHandshake(PlayerSession& session, [[maybe_unused]] Server& server) {
 	if (!session.stream.hasData())
 		return;
 	PacketId packetId = session.stream.Read<PacketId>();
@@ -134,7 +134,7 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 	session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
-void PlayerConnStateManager::disconnectPlayer(PlayerSession& session, const std::string& reason, Server& server) {
+void PlayerConnStateManager::disconnectPlayer(PlayerSession& session, const std::string& reason, [[maybe_unused]] Server& server) {
 	// Send disconnect reason to the leaving player
 	Packet::Disconnect kick;
 	kick.reason = reason;

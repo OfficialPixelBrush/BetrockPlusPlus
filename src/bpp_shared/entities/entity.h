@@ -142,13 +142,13 @@ struct Entity {
 	Entity() {
 		rebuildCollider();
 	}
-	~Entity() = default;
+	virtual ~Entity() = default;
 
 	// Encode Entity info into relevant Metadata
-	virtual void encodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {}
+	virtual void encodeMetadata([[maybe_unused]] const std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {}
 
 	// Apply Metadata to Entity
-	virtual void decodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {}
+	virtual void decodeMetadata([[maybe_unused]] const std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {}
 
 	virtual void tick();
 
