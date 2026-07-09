@@ -66,38 +66,28 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 			return; // block changed while mining so we don't drop it
 		}
 		auto pos = pkt.position;
-		// Use last known good position
-		double dx = session.entity->prevPosX;
-		double dy = session.entity->prevPosY;
-		double dz = session.entity->prevPosZ;
-		double distance = dx * dx + dy * dy + dz * dz;
-		if (distance > 36.0) {
-			return; // more than 6 blocks away so we drop it
-		}
 
 		// TODO: make it so when you break stone with your fist it doesn't drop (based on tool you are holding)
+		// TODO: anti cheat!!
 		BlockType blockId = world.getBlockId({ pos.x, pos.y, pos.z });
 		uint8_t meta = world.getMetadata({ pos.x, pos.y, pos.z });
 		world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
 
 		std::vector<ItemStack> drops = Blocks::getBlockDrops(blockId, meta, world.rand);
 
-		// TODO: spawn an item instead of adding it to your inventory
 		for (ItemStack drop : drops) {
-			// hotbar makes up slots 36-44 so try that first
-			if (session.inventory.mergeItemStackInInventory(drop, false, 36, 44) ||
-			    session.inventory.mergeItemStackInInventory(drop, false, 9, 35)) {
-				PacketUtilities::sendInventory(session, session.openWindowId, session.inventory);
-			}
+			Vec3 dropPos = { double(pos.x), double(pos.y), double(pos.z) };
+			float offset = 0.7f;
+			dropPos.x += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+			dropPos.y += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+			dropPos.z += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+			ItemEntity item(dropPos);
+			item.itemStack = drop;
+			world.entityManager.addEntity(std::make_shared<ItemEntity>(item));
 		}
+		return;
 	}
 	case PacketData::MineStatus::DROPPED_ITEM: {
-		// Should drop an item at eye height
-		Vec3 dropPos = { session.position.pos.x, session.position.pos.y + 1.62, session.position.pos.z };
-		GlobalLogger().info << "Dropped item at " << dropPos << "\n";
-		ItemEntity item(dropPos);
-		item.itemStack = *session.inventory.getHeldItem();
-		world.entityManager.addEntity(std::make_shared<ItemEntity>(item));
 		return;
 	}
 	default:

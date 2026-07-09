@@ -71,22 +71,15 @@ struct Entity {
 	double posY = 0.0;
 	double posZ = 0.0;
 
-	// Position at the start of the current tick
-	double prevPosX = 0.0;
-	double prevPosY = 0.0;
-	double prevPosZ = 0.0;
-
 	// Velocity
 	double motionX = 0.0;
 	double motionY = 0.0;
 	double motionZ = 0.0;
+	bool velocityChanged = false;
 
 	// Look direction
 	float rotationYaw = 0.0f;
 	float rotationPitch = 0.0f;
-
-	float prevRotationYaw = 0.0f;
-	float prevRotationPitch = 0.0f;
 
 	// Collision
 	AABB collider;

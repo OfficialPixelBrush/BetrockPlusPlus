@@ -127,7 +127,7 @@ void Server::startup() {
 		};
 	};
 
-	auto registerEntityTrackerCallbacks = [this](EntityTracker & entityTracker, EntityManager & entityManager) {
+	auto registerEntityTrackerCallbacks = [this](EntityTracker& entityTracker, EntityManager& entityManager) {
 		entityManager.onEntitySpawn = [&entityTracker](std::shared_ptr<Entity> entity) {
 			if (entity->type == "Player") {
 				entityTracker.addPlayer(entity.get());
@@ -318,6 +318,12 @@ void Server::acceptNewPlayers() {
 void Server::tick() {
 	acceptNewPlayers();
 	const int playerCount = int(players.size());
+
+	for (auto& session : players) {
+		if (session->connState == ConnectionState::Playing)
+			processIncoming(*session);
+	}
+
 	std::vector<ClientPosition> overworldPositions;
 	std::vector<ClientPosition> netherPositions;
 	for (auto& session : players) {

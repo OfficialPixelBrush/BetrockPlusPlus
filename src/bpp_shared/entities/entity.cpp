@@ -84,6 +84,7 @@ void Entity::applyKnockback(Vec3 direction) {
 	motionX -= direction.x * HORIZONTAL_KNOCKBACK;
 	motionZ -= direction.z * HORIZONTAL_KNOCKBACK;
 	motionY = std::min(float(motionY + VERTICAL_KNOCKBACK), VERTICAL_KNOCKBACK);
+	velocityChanged = true;
 }
 
 void Entity::applyInput(float strafe, float forward, float acceleration) {

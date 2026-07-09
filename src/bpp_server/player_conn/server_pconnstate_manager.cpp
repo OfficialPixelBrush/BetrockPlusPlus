@@ -23,7 +23,6 @@ void PlayerConnStateManager::handleConnectionState(PlayerSession& session, Serve
 		WorldManager& sessionWorld = session.dimension == -1 ? server.gameRuntime.worldHell : server.gameRuntime.world;
 		server.chunkSender.enqueue(session, sessionWorld, 16);
 		server.chunkSender.flush(session);
-		server.processIncoming(session);
 		if (sessionWorld.elapsed_ticks % 20 == 0) {
 			// Update the server time so client's don't desync
 			Packet::SetTime time;
@@ -116,9 +115,9 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 	session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
 
 	// Log that we logged in!
-	GlobalLogger().info << "Player " << session.username << " logged in with entity ID " << session.entityId
-	                    << " at (" << session.position.pos.x << ", " << session.position.pos.y << ", "
-	                    << session.position.pos.z << ")\n";
+	GlobalLogger().info << "Player " << session.username << " logged in with entity ID " << session.entityId << " at ("
+	                    << session.position.pos.x << ", " << session.position.pos.y << ", " << session.position.pos.z
+	                    << ")\n";
 
 	// Send our inventory
 	PacketUtilities::sendInventory(session, 0, session.inventory);
