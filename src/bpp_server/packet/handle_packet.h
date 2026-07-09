@@ -28,6 +28,7 @@
 #include "packet_utils.h"
 #include "world/world.h"
 
+struct EntityTracker;
 namespace HandlePacket {
 void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& session);
 void ChatMessage(Packet::ChatMessage& pkt, PlayerSession& session, std::vector<std::shared_ptr<PlayerSession>>& players,
@@ -49,8 +50,8 @@ void ContainerTransaction(Packet::ContainerTransaction& pkt, PlayerSession& sess
 // Other handlers
 void InteractWithEntity(Packet::InteractWithEntity& /*pkt*/, PlayerSession& /*session*/);
 void InteractWithBlock(Packet::InteractWithBlock& pkt, PlayerSession& session, WorldManager& world);
-void Animation(Packet::Animation& pkt, PlayerSession& session, std::vector<std::shared_ptr<PlayerSession>>& players);
-void PlayerAction(Packet::PlayerAction& /*pkt*/, PlayerSession& /*session*/);
+void Animation(Packet::Animation& pkt, PlayerSession& session, EntityTracker& entityTracker);
+void PlayerAction(Packet::PlayerAction& pkt, PlayerSession& session, EntityTracker& entityTracker);
 void Respawn(Packet::Respawn& /*pkt*/, PlayerSession& /*session*/);
 void UpdateSign(Packet::UpdateSign& /*pkt*/, PlayerSession& /*session*/, WorldManager& /*world*/);
 void Disconnect(Packet::Disconnect& /*pkt*/, PlayerSession& session);

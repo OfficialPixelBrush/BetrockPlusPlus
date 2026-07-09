@@ -73,6 +73,8 @@ struct EntityTracker {
 	}
 
 	void sendPacketToPlayersInTrackedEntry(Packet::BasePacket& pkt, TrackedEntry& trackedEntry);
+	void sendPacketToViewers(Packet::BasePacket& pkt, EntityId id);
+	TrackedEntry& getTrackerForEntityId(EntityId id);
 	void update(TrackedEntry& trackedEntry);
 
 	// With my strict goal of keeping strict separation we cannot put this as a virtual in the actual entity class itself

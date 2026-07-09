@@ -131,6 +131,22 @@ void EntityTracker::sendPacketToPlayersInTrackedEntry(Packet::BasePacket& pkt, T
 	}
 }
 
+TrackedEntry& EntityTracker::getTrackerForEntityId(EntityId id) {
+	for (auto& [entityId, entityEntry] : trackedEntities) {
+		if (entityId == id)
+			return entityEntry; 
+	}
+}
+
+void EntityTracker::sendPacketToViewers(Packet::BasePacket& pkt, EntityId id) {
+	for (auto& playerId : playerIds) {
+		auto& playerEntry = getTrackerForEntityId(playerId);
+		if (playerEntry.visibleTo.contains(id)) {
+			pkt.Serialize(server->getSessionById(playerId).stream);
+		}
+	}
+}
+
 void EntityTracker::update(TrackedEntry& trackedEntry) {
 	auto& entity = trackedEntry.entity;
 	Int3 currentPosition = { quantizePosition(entity->posX), quantizePosition(entity->posY),

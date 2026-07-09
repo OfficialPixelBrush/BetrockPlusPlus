@@ -9,6 +9,7 @@
 #include "handle_packet.h"
 #include "entities/entity_item.h"
 #include "inventory/item_stack.h"
+#include "../entities/entity_tracker.h"
 
 namespace HandlePacket {
 void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& session) {
@@ -289,21 +290,16 @@ void InteractWithEntity(Packet::InteractWithEntity& /*pkt*/, PlayerSession& /*se
 
 void InteractWithBlock(Packet::InteractWithBlock& pkt, PlayerSession& session, WorldManager& world) {}
 
-void Animation(Packet::Animation& pkt, PlayerSession& session, std::vector<std::shared_ptr<PlayerSession>>& players) {
-	for (auto& other : players) {
-		if (other.get() == &session)
-			continue;
-		if (other->connState != ConnectionState::Playing)
-			continue;
-		Packet::Animation anim;
-		anim.entity_id = session.entity->id;
-		anim.animation = pkt.animation;
-		anim.Serialize(other->stream);
-	}
+void Animation(Packet::Animation& pkt, PlayerSession& session, EntityTracker& entityTracker) {
+	// Broadcast what we were sent to players who can see this player
+	Packet::Animation anim;
+	anim.entity_id = session.entity->id;
+	anim.animation = pkt.animation;
+	entityTracker.sendPacketToViewers(anim, anim.entity_id);
 }
 
-void PlayerAction(Packet::PlayerAction& /*pkt*/, PlayerSession& /*session*/) {
-	// TODO: sneak/sleep state changes
+void PlayerAction(Packet::PlayerAction& pkt, PlayerSession& session, EntityTracker& entityTracker) {
+	// Broadcast what we were sent to players who can see this player
 }
 
 void Respawn(Packet::Respawn& /*pkt*/, PlayerSession& /*session*/) {
