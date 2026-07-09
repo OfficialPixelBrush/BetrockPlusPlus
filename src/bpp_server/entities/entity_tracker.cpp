@@ -10,13 +10,6 @@
 #include "entities/entity_item.h"
 #include <algorithm>
 
-static int16_t quantizeVelocity(double v) {
-	return MathHelper::floor_double(v * 8000.0);
-}
-static int32_t quantizePosition(double p) {
-	return MathHelper::floor_double(p * 32.0);
-}
-
 // Update each player instance so entities properly despawn and spawn for them
 void EntityTracker::tick() {
 	std::vector<EntityId> deadThisTick;
@@ -120,7 +113,6 @@ void EntityTracker::tick() {
 			}
 			// TODO: Implement other types
 			entityEntry.visibleTo.insert(playerId);
-			break;
 		}
 	}
 }
@@ -134,7 +126,7 @@ void EntityTracker::sendPacketToPlayersInTrackedEntry(Packet::BasePacket& pkt, T
 TrackedEntry& EntityTracker::getTrackerForEntityId(EntityId id) {
 	for (auto& [entityId, entityEntry] : trackedEntities) {
 		if (entityId == id)
-			return entityEntry; 
+			return entityEntry;
 	}
 }
 
@@ -149,89 +141,92 @@ void EntityTracker::sendPacketToViewers(Packet::BasePacket& pkt, EntityId id) {
 
 void EntityTracker::update(TrackedEntry& trackedEntry) {
 	auto& entity = trackedEntry.entity;
-	Int3 currentPosition = { quantizePosition(entity->posX), quantizePosition(entity->posY),
-		                     quantizePosition(entity->posZ) };
+	Vec3 currentPosition = { entity->posX, entity->posY, entity->posZ };
 
-	// Check the magnitude of the velocity and if it has changed since the last tick
 	Vec3 currentMotion = { entity->motionX, entity->motionY, entity->motionZ };
 	Vec3& lastMotion = trackedEntry.lastBroadcastMotion;
-	double currentMagnitude = std::sqrt(currentMotion.x * currentMotion.x + currentMotion.y * currentMotion.y + currentMotion.z * currentMotion.z);
-	double lastMagnitude = std::sqrt(lastMotion.x * lastMotion.x + lastMotion.y * lastMotion.y + lastMotion.z * lastMotion.z);
+	double dmx = currentMotion.x - lastMotion.x;
+	double dmy = currentMotion.y - lastMotion.y;
+	double dmz = currentMotion.z - lastMotion.z;
+	double deltaSq = dmx * dmx + dmy * dmy + dmz * dmz;
+	const double motionThreshold = 0.02;
 
-	// If our velocityChanged flag is dirty force a velocity update independent if the tracker profile allows it
-	// Else, check to see if the difference in magnitude for the current and last motion vectors are past a threshold
-	bool needsVelocityUpdate = entity->velocityChanged || (trackedEntry.profile.sendVelocity && std::abs(currentMagnitude - lastMagnitude) >= 0.001);
+	bool needsVelocityUpdate = entity->velocityChanged || (trackedEntry.profile.sendVelocity &&
+	                                                      (deltaSq > motionThreshold * motionThreshold ||
+	                                                      (deltaSq > 0.0 && currentMotion.x == 0.0 && currentMotion.y == 0.0 && currentMotion.z == 0.0)));
 
-	// Send velocity
 	if (needsVelocityUpdate) {
 		entity->velocityChanged = false;
+		lastMotion = currentMotion;
 		Packet::EntityVelocity pkt;
 		pkt.entity_id = entity->id;
-		pkt.velocity = { quantizeVelocity(entity->motionX), quantizeVelocity(entity->motionY), quantizeVelocity(entity->motionZ) }; // Quantized for 16 bit shorts
+		pkt.velocity = { quantizeVelocity(entity->motionX), quantizeVelocity(entity->motionY),
+			             quantizeVelocity(entity->motionZ) };
 		sendPacketToPlayersInTrackedEntry(pkt, trackedEntry);
 	}
 
 	trackedEntry.ticksSinceTeleport++;
 	trackedEntry.updateCounter++;
 
-	bool needsMovementUpdate = trackedEntry.updateCounter >= trackedEntry.profile.updateFrequency || trackedEntry.ticksSinceTeleport >= 40; // Force a resync
+	bool needsMovementUpdate = trackedEntry.updateCounter >= trackedEntry.profile.updateFrequency ||
+	                           trackedEntry.ticksSinceTeleport >= forceTeleportTicks;
 
-	// Reset our values
 	if (needsMovementUpdate) {
 		trackedEntry.updateCounter = 0;
 
-		// Check our distance from our last broadcast position
-		auto xdist = currentPosition.x - trackedEntry.lastBroadcastPos.x;
-		auto ydist = currentPosition.y - trackedEntry.lastBroadcastPos.y;
-		auto zdist = currentPosition.z - trackedEntry.lastBroadcastPos.z;
-		auto dist = std::sqrt((xdist * xdist) + (ydist * ydist) + (zdist * zdist));
+		int32_t qx = quantizePosition(currentPosition.x);
+		int32_t qy = quantizePosition(currentPosition.y);
+		int32_t qz = quantizePosition(currentPosition.z);
+		int32_t qYaw = quantizeRotation(entity->rotationYaw);
+		int32_t qPitch = quantizeRotation(entity->rotationPitch);
 
-		bool needsTP = dist >= double(quantizePosition(4)) || trackedEntry.ticksSinceTeleport >= forceTeleportTicks;
+		int32_t dx = qx - trackedEntry.lastEncodedPos.x;
+		int32_t dy = qy - trackedEntry.lastEncodedPos.y;
+		int32_t dz = qz - trackedEntry.lastEncodedPos.z;
+
+		bool needsTP = dx < -128 || dx >= 128 || dy < -128 || dy >= 128 || dz < -128 || dz >= 128 ||
+		               trackedEntry.ticksSinceTeleport >= forceTeleportTicks;
 
 		if (needsTP) {
 			trackedEntry.ticksSinceTeleport = 0;
 			Packet::TeleportEntity pkt;
 			pkt.entity_id = entity->id;
-			pkt.position = { currentPosition.x, MathHelper::floor_double(currentPosition.y - (1.0 / 64.0)), currentPosition.z };
-			pkt.rotation = { int8_t((entity->rotationYaw / 360.0) * 256.0),
-				             int8_t((entity->rotationPitch / 360.0) * 256.0) };
+			pkt.position = { qx, MathHelper::floor_double(qy - (1.0 / 64.0)), qz };
+			pkt.rotation = { int8_t(qYaw), int8_t(qPitch) };
 			sendPacketToPlayersInTrackedEntry(pkt, trackedEntry);
-			trackedEntry.lastBroadcastPos = currentPosition;
-			trackedEntry.lastBroadcastYaw = entity->rotationYaw;
-			trackedEntry.lastBroadcastPitch = entity->rotationPitch;
+			trackedEntry.lastEncodedPos = { qx, qy, qz };
+			trackedEntry.lastEncodedYaw = qYaw;
+			trackedEntry.lastEncodedPitch = qPitch;
 		} else {
-			bool needsRelMove = dist > 0;
-			bool needsRot = (trackedEntry.lastBroadcastYaw != entity->rotationYaw) ||
-			                (trackedEntry.lastBroadcastPitch != entity->rotationPitch);
+			bool needsRelMove = dx != 0 || dy != 0 || dz != 0;
+			bool needsRot = qYaw != trackedEntry.lastEncodedYaw || qPitch != trackedEntry.lastEncodedPitch;
 
 			if (needsRelMove && needsRot) {
 				Packet::EntityPositionAndRotation pkt;
-				pkt.qr_position = { int8_t(xdist), int8_t(ydist), int8_t(zdist) };
-				pkt.q_rotation = { int8_t((entity->rotationYaw / 360.0) * 256.0),
-					               int8_t((entity->rotationPitch / 360.0) * 256.0) };
+				pkt.qr_position = { int8_t(dx), int8_t(dy), int8_t(dz) };
+				pkt.q_rotation = { int8_t(qYaw), int8_t(qPitch) };
 				pkt.entity_id = entity->id;
 				sendPacketToPlayersInTrackedEntry(pkt, trackedEntry);
-				trackedEntry.lastBroadcastPos = currentPosition;
-				trackedEntry.lastBroadcastYaw = entity->rotationYaw;
-				trackedEntry.lastBroadcastPitch = entity->rotationPitch;
+				trackedEntry.lastEncodedPos = { qx, qy, qz };
+				trackedEntry.lastEncodedYaw = qYaw;
+				trackedEntry.lastEncodedPitch = qPitch;
 				return;
 			};
 			if (needsRelMove) {
 				Packet::EntityPosition pkt;
-				pkt.qr_position = { int8_t(xdist), int8_t(ydist), int8_t(zdist) };
+				pkt.qr_position = { int8_t(dx), int8_t(dy), int8_t(dz) };
 				pkt.entity_id = entity->id;
 				sendPacketToPlayersInTrackedEntry(pkt, trackedEntry);
-				trackedEntry.lastBroadcastPos = currentPosition;
+				trackedEntry.lastEncodedPos = { qx, qy, qz };
 				return;
 			}
 			if (needsRot) {
 				Packet::EntityRotation pkt;
-				pkt.q_rotation = { int8_t((entity->rotationYaw / 360.0) * 256.0),
-					               int8_t((entity->rotationPitch / 360.0) * 256.0) };
+				pkt.q_rotation = { int8_t(qYaw), int8_t(qPitch) };
 				pkt.entity_id = entity->id;
 				sendPacketToPlayersInTrackedEntry(pkt, trackedEntry);
-				trackedEntry.lastBroadcastYaw = entity->rotationYaw;
-				trackedEntry.lastBroadcastPitch = entity->rotationPitch;
+				trackedEntry.lastEncodedYaw = qYaw;
+				trackedEntry.lastEncodedPitch = qPitch;
 				return;
 			}
 		}

@@ -27,10 +27,10 @@ struct TrackingProfile {
 struct TrackedEntry {
 	Entity* entity = nullptr;
 	TrackingProfile profile{};
-	Int3 lastBroadcastPos{};
+	TriNumber<int32_t> lastEncodedPos{};
 	Vec3 lastBroadcastMotion{};
-	int lastBroadcastYaw = 0;
-	int lastBroadcastPitch = 0;
+	int32_t lastEncodedYaw = 0;
+	int32_t lastEncodedPitch = 0;
 	int updateCounter = 0;
 	int ticksSinceTeleport = 0;
 	std::unordered_set<EntityId> visibleTo; // what player ids can see this entity
@@ -47,10 +47,34 @@ struct EntityTracker {
 
 	void tick();
 
+	int16_t quantizeVelocity(double v) {
+		const double clamp = 3.9;
+		if (v < -clamp)
+			v = -clamp;
+		if (v > clamp)
+			v = clamp;
+		return int16_t(v * 8000.0);
+	}
+	int32_t quantizePosition(double p) {
+		return MathHelper::floor_double(p * 32.0);
+	}
+	int32_t quantizeRotation(float r) {
+		return MathHelper::floor_float(r * 256.0f / 360.0f);
+	}
+
 	void trackEntity(Entity* entity) {
 		TrackedEntry entry;
 		entry.entity = entity;
 		entry.profile = getTrackingProfile(*entity);
+
+		Vec3 currentMotion = { entity->motionX, entity->motionY, entity->motionZ };
+
+		entry.lastEncodedPos = { quantizePosition(entity->posX), quantizePosition(entity->posY),
+			                     quantizePosition(entity->posZ) };
+		entry.lastBroadcastMotion = currentMotion;
+		entry.lastEncodedPitch = quantizeRotation(entity->rotationPitch);
+		entry.lastEncodedYaw = quantizeRotation(entity->rotationYaw);
+
 		trackedEntities[entity->id] = std::move(entry);
 		this->tick();
 	}
@@ -63,6 +87,15 @@ struct EntityTracker {
 		TrackedEntry entry;
 		entry.entity = player;
 		entry.profile = getTrackingProfile(*player);
+
+		Vec3 currentMotion = { player->motionX, player->motionY, player->motionZ };
+
+		entry.lastEncodedPos = { quantizePosition(player->posX), quantizePosition(player->posY),
+			                     quantizePosition(player->posZ) };
+		entry.lastBroadcastMotion = currentMotion;
+		entry.lastEncodedPitch = quantizeRotation(player->rotationPitch);
+		entry.lastEncodedYaw = quantizeRotation(player->rotationYaw);
+
 		trackedEntities[player->id] = std::move(entry);
 		playerIds.insert(player->id);
 		this->tick();
