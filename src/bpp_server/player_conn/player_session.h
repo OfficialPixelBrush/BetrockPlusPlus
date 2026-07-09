@@ -36,26 +36,22 @@ struct PlayerSession {
 	// Our player entity
 	std::shared_ptr<EntityMPPlayer> entity;
 
-	// Commands use this to look up other sessions by username.
-	// Should probably handle this in the server!!
-	std::vector<std::shared_ptr<PlayerSession>>* players = nullptr;
-
 	// rotation.x = yaw, rotation.y = pitch
 	Float2 rotation = { 0.0f, 0.0f };
 
 	std::unordered_set<Int32_2> sentChunks;
-	std::unordered_set<Int32_2> flushedChunks; // actually written to stream
-
-	// Block updates that arrived while the chunk was enqueued but not yet flushed.
-	std::unordered_map<Int32_2, std::vector<PendingBlock>> pendingBlockChanges;
+	std::unordered_set<Int32_2> flushedChunks; // Actually written to stream
 
 	// Chunks that were written to the stream during the last flush() call.
 	std::vector<Int32_2> newlyFlushed;
 
 	// Chunks that were unloaded during the last enqueue() call.
 	std::vector<Int32_2> newlyUnloaded;
+
+	// Block updates that arrived while the chunk was enqueued but not yet flushed.
+	std::unordered_map<Int32_2, std::vector<PendingBlock>> pendingBlockChanges;
+
 	ConnectionState connState = ConnectionState::Handshaking;
-	EntityId entityId = 0;
 	std::string username;
 	std::chrono::steady_clock::time_point last_packet_time = std::chrono::steady_clock::now();
 

@@ -29,7 +29,8 @@ std::string CommandTeleport::Execute(std::vector<std::string>& parameters, Playe
 		if (!ss.fail() && ss.eof())
 			source = &session;
 		else
-			source = FindSession(session, parameters[offset++]);
+			// source = FindSession(session, parameters[offset++]);
+			return "";
 	}
 
 	// TODO Should prolly report if a non-existent player runs this
@@ -52,6 +53,7 @@ std::string CommandTeleport::Execute(std::vector<std::string>& parameters, Playe
 	}
 
 	// /tp <player> <target_player>
+	/*
 	if (parameters.size() - offset == 1) { // offset=1→params[1], offset=2→params[2]
 		PlayerSession* dest = FindSession(session, parameters[offset]);
 		if (!dest)
@@ -62,6 +64,7 @@ std::string CommandTeleport::Execute(std::vector<std::string>& parameters, Playe
 		reply.Serialize(session.stream);
 		return "";
 	}
+	*/
 
 	return ERROR_REASON_SYNTAX;
 }

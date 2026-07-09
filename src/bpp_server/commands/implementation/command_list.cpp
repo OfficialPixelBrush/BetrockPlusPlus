@@ -17,21 +17,5 @@ std::string CommandList::Execute(std::vector<std::string>& parameters, PlayerSes
 	pkt.Serialize(session.stream);
 	pkt.message = "§7";
 	size_t i = 0;
-	if (session.players) {
-		for (const auto& sessionPtr : *session.players) {
-			if (!sessionPtr)
-				continue;
-			PlayerSession& localSession = *sessionPtr;
-			pkt.message += localSession.username;
-			if (i < session.players->size() - 1) {
-				pkt.message += ", ";
-			}
-			if (pkt.message.size() > MAX_CHAT_LINE_SIZE || i == session.players->size() - 1) {
-				pkt.Serialize(session.stream);
-				pkt.message = "§7";
-			}
-			i++;
-		}
-	}
 	return "";
 }

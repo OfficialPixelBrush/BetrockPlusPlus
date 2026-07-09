@@ -139,17 +139,6 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 	pkt.Serialize(target.stream);
 }
 
-// Helper: find a playing session by username.
-[[maybe_unused]] static PlayerSession* FindSession(PlayerSession& caller, const std::string& name) {
-	if (!caller.players)
-		return nullptr;
-	for (auto& s : *caller.players) {
-		if (s->username == name && s->connState == ConnectionState::Playing)
-			return s.get();
-	}
-	return nullptr;
-}
-
 inline Int3 ParseInt3(size_t& offset, std::vector<std::string>& parameters) {
 	Int3 out{
 		std::stoi(parameters[offset]),

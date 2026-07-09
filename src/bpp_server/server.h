@@ -65,6 +65,17 @@ public:
 		}
 	}
 
+	// Send a message to all players
+	void sendGlobalChatMessage(std::string message) {
+		for (auto& other : players) {
+			if (other->connState != ConnectionState::Playing)
+				continue;
+			Packet::ChatMessage reply;
+			reply.message = message;
+			reply.Serialize(other->stream);
+		}
+	}
+
 private:
 	friend bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, WorldManager& sessionWorld,
 	                                       Server& server);
@@ -76,6 +87,7 @@ private:
 	void startup();
 	void acceptNewPlayers();
 	void transferPlayerDimension(PlayerSession& session);
+	void disconnectClients();
 
 	// Config file stuff
 	void loadConfig();

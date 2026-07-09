@@ -33,7 +33,6 @@ void EntityTracker::tick() {
 			Packet::DespawnEntity pkt;
 			pkt.entity_id = entityId;
 			pkt.Serialize(pSession.stream);
-			GlobalLogger().info << "Despawning entity " << entityId << " for player " << viewerId << "\n";
 		}
 		for (auto& [id, otherEntry] : trackedEntities) {
 			otherEntry.visibleTo.erase(entityId);
@@ -63,7 +62,6 @@ void EntityTracker::tick() {
 				pkt.Serialize(pSession.stream);
 
 				it = entry.visibleTo.erase(it);
-				GlobalLogger().info << "Despawning entity " << entry.entity->id << " for player " << playerId << "\n";
 			} else {
 				++it;
 			}
@@ -122,7 +120,6 @@ void EntityTracker::tick() {
 			}
 			// TODO: Implement other types
 			entityEntry.visibleTo.insert(playerId);
-			GlobalLogger().info << "Spawning entity " << entityEntry.entity->id << " for player " << playerId << "\n";
 			break;
 		}
 	}
@@ -179,7 +176,7 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 			trackedEntry.ticksSinceTeleport = 0;
 			Packet::TeleportEntity pkt;
 			pkt.entity_id = entity->id;
-			pkt.position = currentPosition;
+			pkt.position = { currentPosition.x, MathHelper::floor_double(currentPosition.y - (1.0 / 64.0)), currentPosition.z };
 			pkt.rotation = { int8_t((entity->rotationYaw / 360.0) * 256.0),
 				             int8_t((entity->rotationPitch / 360.0) * 256.0) };
 			sendPacketToPlayersInTrackedEntry(pkt, trackedEntry);
