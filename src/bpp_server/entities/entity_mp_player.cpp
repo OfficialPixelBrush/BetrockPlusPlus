@@ -16,4 +16,6 @@ void EntityMPPlayer::tick() {
 	posX = claimed.x;
 	posY = claimed.y;
 	posZ = claimed.z;
+	rotationYaw = session->rotation.x;
+	rotationPitch = session->rotation.y;
 }

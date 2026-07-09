@@ -51,7 +51,6 @@ struct EntityTracker {
 	}
 
 	void untrackEntity(Entity* entity) {
-		trackedEntities.erase(entity->id);
 		this->tick();
 	}
 
@@ -65,13 +64,11 @@ struct EntityTracker {
 	}
 
 	void removePlayer(Entity* player) {
-		for (auto& [id, entry] : trackedEntities) {
-			entry.visibleTo.erase(player->id);
-		}
-		playerIds.erase(player->id);
-		trackedEntities.erase(player->id);
 		this->tick();
 	}
+
+	void sendPacketToPlayersInTrackedEntry(Packet::BasePacket& pkt, TrackedEntry& trackedEntry);
+	void update(TrackedEntry& trackedEntry);
 
 	// With my strict goal of keeping strict separation we cannot put this as a virtual in the actual entity class itself
 	TrackingProfile getTrackingProfile(Entity& entity) {

@@ -57,6 +57,14 @@ public:
 		}
 	}
 
+	std::string getUsernameByEntityId(EntityId id) {
+		for (auto& player : players) {
+			if (player->entity->id == id) {
+				return player->username;
+			}
+		}
+	}
+
 private:
 	friend bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, WorldManager& sessionWorld,
 	                                       Server& server);

@@ -26,4 +26,6 @@ struct ItemEntity : public Entity {
 		motionY = 0.2;
 		motionZ = Java::Random().nextDouble() * 0.2 - 0.1;
 	}
+
+	void tick() override;
 };

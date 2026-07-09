@@ -22,8 +22,9 @@
 // around the networking packets
 
 class Packet {
-private:
+public:
 	// NOTE: The base packet should never be used directly!!
+	// Only public so that packets can be passed through functions
 	struct BasePacket {
 		PacketId m_id;
 		BasePacket(PacketId id) : m_id(id) {}
@@ -32,7 +33,6 @@ private:
 		virtual void Deserialize(NetworkStream& stream) = 0;
 	};
 
-public:
 	// Used to keep the connection alive
 	struct KeepAlive : BasePacket {
 		KeepAlive() : BasePacket{ PacketId::KeepAlive } {}
