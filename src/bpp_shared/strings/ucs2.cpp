@@ -13,7 +13,7 @@ std::string ToUTF8(std::u16string str) {
 	// which we will ignore
 	std::string out;
 	for (size_t i = 0; i < str.size(); i++) {
-        const char16_t c = str[i];
+		const char16_t c = str[i];
 		if (c <= 0x7F) {
 			out.push_back(static_cast<char>(c));
 		} else if (c <= 0x7FF) {

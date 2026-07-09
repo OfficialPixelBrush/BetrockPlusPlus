@@ -11,10 +11,9 @@
 // Usage:
 //   /version
 std::string CommandVersion::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
-                                     std::function<void(PlayerSession&)> transferDimension) {
+                                    std::function<void(PlayerSession&)> transferDimension) {
 	Packet::ChatMessage pkt;
-	pkt.message = "§eCurrent " + std::string(PROJECT_NAME) + " version is " +
-	              std::string(PROJECT_VERSION_FULL_STRING);
+	pkt.message = "§eCurrent " + std::string(PROJECT_NAME) + " version is " + std::string(PROJECT_VERSION_FULL_STRING);
 	pkt.Serialize(session.stream);
 	return "";
 }

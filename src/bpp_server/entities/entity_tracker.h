@@ -7,12 +7,14 @@
 
 #pragma once
 #include "../player_conn/player_session.h"
+#include "entities.h"
 #include "entities/entity_manager.h"
 #include "logger.h"
-#include "world/world.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
+#include "world/world.h"
 #include <cstdio>
+#include <string>
 
 // Entity tracker so we can send entity updates to the right players. This is server side only annoyingly enough.
 // I am not entirely happy with how this is done but notch demands we have several packet types for each type of entity
@@ -72,48 +74,55 @@ struct EntityTracker {
 
 	// With my strict goal of keeping strict separation we cannot put this as a virtual in the actual entity class itself
 	TrackingProfile getTrackingProfile(Entity& entity) {
-		const std::string& type = entity.type;
-		if (type == "Player") {
+		const EntityType& type = entity.type;
+		switch (type) {
+		case EntityType::NONE:
+			return { 0, 0, false };
+		case EntityType::PLAYER:
 			return { 512, 2, false };
-		} else if (type == "Fish") {
+		case EntityType::FISH:
 			return { 64, 5, true };
-		} else if (type == "Arrow") {
+		case EntityType::ARROW:
 			return { 64, 20, false };
-		} else if (type == "Fireball") {
+		case EntityType::FIREBALL:
 			return { 64, 10, false };
-		} else if (type == "Snowball") {
+		case EntityType::THROWN_SNOWBALL:
+		case EntityType::THROWN_EGG:
 			return { 64, 10, true };
-		} else if (type == "Egg") {
-			return { 64, 10, true };
-		} else if (type == "Item") {
+		case EntityType::ITEM:
 			return { 64, 20, true };
-		} else if (type == "Minecart") {
+		case EntityType::MINECART:
+		case EntityType::BOAT:
 			return { 160, 5, true };
-		} else if (type == "Boat") {
-			return { 160, 5, true };
-		} else if (type == "Squid") {
+		case EntityType::SQUID:
 			return { 160, 3, true };
-		} else if (isGenericMob(type)) {
-			// Fallback for every plain land mob
+		case EntityType::CHICKEN:
+		case EntityType::COW:
+		case EntityType::PIG:
+		case EntityType::SHEEP:
+		case EntityType::WOLF:
+		case EntityType::ZOMBIE:
+		case EntityType::ZOMBIE_PIGMAN:
+		case EntityType::SKELETON:
+		case EntityType::CREEPER:
+		case EntityType::SPIDER:
+		case EntityType::GHAST:
+		case EntityType::SLIME:
+		case EntityType::GIANT_ZOMBIE:
 			return { 160, 3, false };
-		} else if (type == "TNTPrimed") {
+		case EntityType::LIT_TNT:
 			return { 160, 10, true };
-		} else if (type == "FallingSand") {
+		case EntityType::FALLING_SAND:
+		case EntityType::FALLING_GRAVEL:
 			return { 160, 20, true };
-		} else if (type == "Painting") {
+		case EntityType::PAINTING:
 			// Paintings never move so there's nothing to resync
 			return { 160, INT_MAX, false };
+		default:
+			return { 0, 0, false };
+
+			GlobalLogger().warn << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) +
+			                           "'\n";
 		}
-
-		GlobalLogger().warn << "EntityTracker: no tracking profile for entity type '" + type + "'\n";
-	}
-
-private:
-	bool isGenericMob(const std::string& type) const {
-		static const std::unordered_set<std::string> genericMobs = { "Chicken",    "Cow",    "Pig",       "Sheep",
-			                                                         "Wolf",       "Zombie", "PigZombie", "Skeleton",
-			                                                         "Creeper",    "Spider", "Ghast",     "Slime",
-			                                                         "GiantZombie" };
-		return genericMobs.count(type) != 0;
 	}
 };

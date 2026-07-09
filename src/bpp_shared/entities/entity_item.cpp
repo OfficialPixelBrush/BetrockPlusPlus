@@ -45,7 +45,7 @@ void ItemEntity::tick() {
 
 			// Bounce when we land
 			if (onGround)
-				motionY *= -0.5; 
+				motionY *= -0.5;
 		}
 	}
 }

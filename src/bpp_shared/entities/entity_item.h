@@ -12,7 +12,7 @@
 struct ItemEntity : public Entity {
 	ItemStack itemStack;
 	ItemEntity(Vec3 position) : Entity() {
-		type = "Item";
+		type = EntityType::ITEM;
 		width = 0.25f;
 		height = 0.25f;
 		yOffset = 0.125f; // height / 2

@@ -10,13 +10,12 @@
 // Transfers the player to the opposite dimension.
 // Usage:
 //   /dim
-std::string CommandDimension::Execute(std::vector<std::string>& parameters, PlayerSession& session,
-                                       WorldManager& world, std::function<void(PlayerSession&)> transferDimension) {
+std::string CommandDimension::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
+                                      std::function<void(PlayerSession&)> transferDimension) {
 	transferDimension(session);
 
 	Packet::ChatMessage reply;
-	reply.message = session.dimension == -1 ? "§eTransferring to the Nether..."
-	                                        : "§7Transferring to the Overworld...";
+	reply.message = session.dimension == -1 ? "§eTransferring to the Nether..." : "§7Transferring to the Overworld...";
 	reply.Serialize(session.stream);
 
 	return "";

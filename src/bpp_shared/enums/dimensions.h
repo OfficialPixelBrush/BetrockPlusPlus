@@ -6,6 +6,7 @@
 */
 
 #pragma once
+#include <cstdint>
 
 // Used as the identifier for the current dimension
 // The End would become Dimenion id 1

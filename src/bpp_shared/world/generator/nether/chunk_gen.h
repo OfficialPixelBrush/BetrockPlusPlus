@@ -5,9 +5,9 @@
  * Based on code by Mojang Studios (2011)
 */
 
+#include "../../noise/noise_octaves_perlin.h"
 #include "../generator.h"
 #include "../shared/cave_gen.h"
-#include "../../noise/noise_octaves_perlin.h"
 
 /**
  * @brief A faithful reimplementation of the Beta 1.7.3 Nether Generator

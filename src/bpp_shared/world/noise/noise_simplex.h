@@ -7,9 +7,9 @@
 
 // A recreation of the the Infdev 20100227-1433 Perlin noise function
 #pragma once
-#include <cmath>
-#include "noise_generator.h"
 #include "java_math.h"
+#include "noise_generator.h"
+#include <cmath>
 
 /**
  * @brief A faithful reimplementation of the Beta-era simplex noise generator, often used for Biome generation
