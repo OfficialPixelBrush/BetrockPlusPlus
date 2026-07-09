@@ -76,20 +76,26 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 		return;
 	}
 
-	Packet::Login response;
-	response.entity_id = session.entityId;
-	response.username = session.username;
-	response.worldSeed = server.gameRuntime.world.seed;
-
 	// Load player data before building the Login response so we know which dimension they're in
 	auto playerNbt = server.gameRuntime.saveManager.getPlayerNBT(
 	    std::string(session.username.begin(), session.username.end()));
 	session.loadPlayerNBT(playerNbt);
 
-	response.dimension = static_cast<Dimension>(session.dimension);
-	response.Serialize(session.stream);
-
+	// Get the right world pointer
 	WorldManager& sessionWorld = session.dimension == -1 ? server.gameRuntime.worldHell : server.gameRuntime.world;
+
+	// Initialize our entity
+	if (!session.entity)
+		session.entity = std::make_shared<EntityMPPlayer>();
+	session.entity->session = &session;
+	session.entity->id = sessionWorld.entityManager.getNextEntityId();
+
+	Packet::Login response;
+	response.entity_id = session.entity->id;
+	response.username = session.username;
+	response.worldSeed = server.gameRuntime.world.seed;
+	response.dimension = Dimension(session.dimension);
+	response.Serialize(session.stream);
 
 	Packet::SetSpawnPosition spawn;
 	spawn.position = sessionWorld.spawnPoint;
@@ -115,9 +121,12 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 	session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
 
 	// Log that we logged in!
-	GlobalLogger().info << "Player " << session.username << " logged in with entity ID " << session.entityId << " at ("
+	GlobalLogger().info << "Player " << session.username << " logged in with entity ID " << session.entity->id << " at ("
 	                    << session.position.pos.x << ", " << session.position.pos.y << ", " << session.position.pos.z
 	                    << ")\n";
+
+	// Let everyone else know we logged in
+	server.sendGlobalChatMessage("§e" + session.username + " joined the game.");
 
 	// Send our inventory
 	PacketUtilities::sendInventory(session, 0, session.inventory);
@@ -177,14 +186,13 @@ void PlayerConnStateManager::waitForSpawnChunks(PlayerSession& session, Server& 
 	// Set view distance to server default
 	session.position.viewDistanceOverride = 0;
 
-	// Initialize our entity
-	if (!session.entity)
-		session.entity = std::make_shared<EntityMPPlayer>();
-	session.entity->session = &session;
-	sessionWorld.entityManager.addEntity(session.entity);
-
 	GlobalLogger().info << "Client connected\n";
 	session.connState = ConnectionState::Playing;
+
+	// Register our entity with the world
+	sessionWorld.entityManager.addEntity(session.entity, session.entity->id);
+	
+	// Welcome message
 	Packet::ChatMessage welcomeMsg;
 	welcomeMsg.message = std::string("§eThis Server runs on ") + std::string(PROJECT_FULL_VERSION_LABEL);
 	welcomeMsg.Serialize(session.stream);

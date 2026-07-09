@@ -312,7 +312,6 @@ void Server::acceptNewPlayers() {
 	if (clientSocket < 0)
 		return;
 	players.push_back(std::make_shared<PlayerSession>(clientSocket));
-	players.back()->players = &players;
 }
 
 void Server::tick() {
@@ -394,7 +393,10 @@ void Server::tick() {
 	for (auto& session : players) {
 		session->stream.flushWriteBuffer();
 	}
+	this->disconnectClients();
+}
 
+void Server::disconnectClients() {
 	// Mark clients who have timed out for removal
 	auto now = std::chrono::steady_clock::now();
 	for (auto& session : players) {
@@ -403,6 +405,7 @@ void Server::tick() {
 			if (elapsed > timeout_seconds) {
 				GlobalLogger().info << "Player " << session->username << " timed out\n";
 				connStateManager.disconnectPlayer(*session, "Connection timed out.", *this);
+				sendGlobalChatMessage("§e" + session->username + " left the game.");
 			}
 		} else {
 			// Kill stuck handshakers
@@ -419,7 +422,7 @@ void Server::tick() {
 	                             [&](const auto& s) {
 		                             if (!s->stream.isConnected()) {
 			                             GlobalLogger().info << "Disconnected client " << s->username
-			                                                 << " with entity id " << s->entityId << "\n";
+			                                                 << " with entity id " << s->entity->id << "\n";
 
 			                             if (s->connState == ConnectionState::Playing ||
 			                                 s->connState == ConnectionState::WaitingForSpawnChunks) {
@@ -430,21 +433,13 @@ void Server::tick() {
 
 			                             indexRemoveSession(*s);
 			                             chunkSender.remove(*s);
-			                             for (auto& other : players) {
-				                             if (other.get() == s.get())
-					                             continue;
-				                             if (other->connState != ConnectionState::Playing)
-					                             continue;
-				                             Packet::DespawnEntity despawn;
-				                             despawn.entity_id = s->entityId;
-				                             despawn.Serialize(other->stream);
-			                             }
+			                             sendGlobalChatMessage("§e" + s->username + " left the game.");
 			                             return true;
 		                             }
 		                             return false;
 	                             }),
 	              players.end());
-}
+};
 
 void Server::transferPlayerDimension(PlayerSession& session) {}
 

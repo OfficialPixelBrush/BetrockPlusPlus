@@ -296,7 +296,7 @@ void Animation(Packet::Animation& pkt, PlayerSession& session, std::vector<std::
 		if (other->connState != ConnectionState::Playing)
 			continue;
 		Packet::Animation anim;
-		anim.entity_id = session.entityId;
+		anim.entity_id = session.entity->id;
 		anim.animation = pkt.animation;
 		anim.Serialize(other->stream);
 	}
