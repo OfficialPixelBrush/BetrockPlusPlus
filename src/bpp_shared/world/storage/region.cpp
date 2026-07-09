@@ -295,7 +295,7 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& raw_dat
 	int32_t cx = lvl.get("xPos").getInt();
 	int32_t cz = lvl.get("zPos").getInt();
 	bool tp = lvl.get("TerrainPopulated").getByte() != 0;
-	int64_t lu = lvl.get("LastUpdate").getLong();
+	[[maybe_unused]] int64_t lu = lvl.get("LastUpdate").getLong();
 
 	const auto& blocks = lvl.get("Blocks").getByteArray();
 	const auto& data = lvl.get("Data").getByteArray();

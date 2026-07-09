@@ -72,7 +72,7 @@ public:
 
 	NbtSlotId getNbtSlotID(NetworkSlotId slot) {
 		if (slot >= 9 && slot <= 35)
-			return slot.value;
+			return slot.m_value;
 		if (slot >= 5 && slot <= 8)
 			return (5 + (8 - slot)) + 95;
 		if (slot >= 36 && slot <= 44)
@@ -84,7 +84,7 @@ public:
 		if (slot >= 100 && slot <= 103)
 			return 5 + (8 - (slot - 95));
 		if (slot >= 9 && slot <= 35)
-			return slot.value;
+			return slot.m_value;
 		if (slot >= 0 && slot <= 8)
 			return slot + 36;
 		return -1;

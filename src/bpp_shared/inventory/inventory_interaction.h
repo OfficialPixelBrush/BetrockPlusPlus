@@ -20,6 +20,7 @@ struct InventoryInteraction {
 	Inventory* inventory;
 
 	InventoryInteraction(Inventory* inv) : inventory(inv) {}
+	virtual ~InventoryInteraction() = default;
 
 	virtual bool canExist() {
 		return inventory != nullptr;
@@ -35,7 +36,7 @@ struct InventoryInteraction {
 	virtual std::vector<difference> tickDiff() {
 		std::vector<difference> differences;
 		for (size_t i = 0; i < snapshot.size(); i++) {
-			auto* current = inventory->getStackInSlot(i);
+			[[maybe_unused]] auto* current = inventory->getStackInSlot(i);
 			auto& snap = snapshot[i];
 
 			bool changed = snap != inventory->slots[i];
@@ -177,12 +178,12 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
 		mergeInventories();
 	}
 
-	~LargeChestInventoryInteraction() {
+	virtual ~LargeChestInventoryInteraction() {
 		if (canExist())
 			writeBack();
 	}
 
-	virtual bool canExist() {
+	virtual bool canExist() override {
 		return !upperChest.expired() && !lowerChest.expired();
 	}
 
@@ -241,10 +242,10 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
 
 		if (slot <= 53) {
 			// Chest -> inventory
-			bool success = playerInventory->mergeItemStackInInventory(copy, true, 9, 44);
+			[[maybe_unused]] bool success = playerInventory->mergeItemStackInInventory(copy, true, 9, 44);
 		} else {
 			// Inventory -> Chest
-			bool success = chestInventory.mergeItemStackInInventory(copy);
+			[[maybe_unused]] bool success = chestInventory.mergeItemStackInInventory(copy);
 		}
 
 		// Update the source in the real inventory before re-merging
@@ -283,27 +284,27 @@ struct ChestInventoryInteraction : InventoryInteraction {
 		mergeInventories();
 	}
 
-	~ChestInventoryInteraction() {
+	virtual ~ChestInventoryInteraction() {
 		if (canExist())
 			writeBack();
 	}
 
-	virtual bool canExist() {
+	virtual bool canExist() override {
 		return !chestHandle.expired();
 	}
 
 	// Only snapshot the chest portion we don't need the attached inventory
 	void initSnapshot() override {
 		snapshot.resize(size_t(chestInventory->getSizeInventory()));
-		for (size_t i = 0; i < chestInventory->getSizeInventory(); i++)
+		for (size_t i = 0; i < size_t(chestInventory->getSizeInventory()); i++)
 			snapshot[i] = chestInventory->slots[i];
 	}
 
 	// Analyze the snapshot vs the current chest inventory
-	std::vector<difference> tickDiff() {
+	std::vector<difference> tickDiff() override {
 		std::vector<difference> differences;
 		for (size_t i = 0; i < snapshot.size(); i++) {
-			auto* current = chestInventory->getStackInSlot(i);
+			[[maybe_unused]] auto* current = chestInventory->getStackInSlot(i);
 			auto& snap = snapshot[i];
 
 			bool changed = snap != chestInventory->slots[i];
@@ -341,10 +342,10 @@ struct ChestInventoryInteraction : InventoryInteraction {
 
 		if (slot <= 26) {
 			// Chest -> inventory
-			bool success = playerInventory->mergeItemStackInInventory(copy, true, 9, 44);
+			[[maybe_unused]] bool success = playerInventory->mergeItemStackInInventory(copy, true, 9, 44);
 		} else {
 			// Inventory -> Chest
-			bool success = chestInventory->mergeItemStackInInventory(copy);
+			[[maybe_unused]] bool success = chestInventory->mergeItemStackInInventory(copy);
 		}
 
 		// Update the source in the real inventory before re-merging
@@ -366,7 +367,7 @@ struct PlayerInventoryInteraction : InventoryInteraction {
 
 	PlayerInventoryInteraction(InventoryPlayer* inv) : InventoryInteraction(inv), playerInventory(inv) {}
 
-	virtual bool canExist() {
+	virtual bool canExist() override {
 		return playerInventory != nullptr;
 	}
 

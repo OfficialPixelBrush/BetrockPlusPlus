@@ -190,7 +190,7 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 		pos.x += 1;
 	// Make sure the block id is valid for placement otherwise we will crash
 	if (pkt.item.id < BLOCK_MAX && (pkt.item.id >= 0))
-		world.setBlock({ pos.x, pos.y, pos.z }, BlockType(pkt.item.id.value), pkt.item.data);
+		world.setBlock({ pos.x, pos.y, pos.z }, BlockType(pkt.item.id.m_value), pkt.item.data);
 }
 
 void SetHotbarSlot(Packet::SetHotbarSlot& pkt, PlayerSession& session) {
@@ -288,7 +288,7 @@ void InteractWithEntity(Packet::InteractWithEntity& /*pkt*/, PlayerSession& /*se
 	// TODO: attack / interact logic
 }
 
-void InteractWithBlock(Packet::InteractWithBlock& pkt, PlayerSession& session, WorldManager& world) {}
+void InteractWithBlock([[maybe_unused]] Packet::InteractWithBlock& pkt, [[maybe_unused]] PlayerSession& session, [[maybe_unused]] WorldManager& world) {}
 
 void Animation(Packet::Animation& pkt, PlayerSession& session, EntityTracker& entityTracker) {
 	// Broadcast what we were sent to players who can see this player
@@ -298,7 +298,7 @@ void Animation(Packet::Animation& pkt, PlayerSession& session, EntityTracker& en
 	entityTracker.sendPacketToViewers(anim, anim.entity_id);
 }
 
-void PlayerAction(Packet::PlayerAction& pkt, PlayerSession& session, EntityTracker& entityTracker) {
+void PlayerAction([[maybe_unused]] Packet::PlayerAction& pkt, [[maybe_unused]] PlayerSession& session, [[maybe_unused]] EntityTracker& entityTracker) {
 	// Broadcast what we were sent to players who can see this player
 }
 

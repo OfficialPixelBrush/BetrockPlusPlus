@@ -316,7 +316,7 @@ void Server::acceptNewPlayers() {
 
 void Server::tick() {
 	acceptNewPlayers();
-	const int playerCount = int(players.size());
+	[[maybe_unused]] const int playerCount = int(players.size());
 
 	for (auto& session : players) {
 		if (session->connState == ConnectionState::Playing)
@@ -441,7 +441,7 @@ void Server::disconnectClients() {
 	              players.end());
 };
 
-void Server::transferPlayerDimension(PlayerSession& session) {}
+void Server::transferPlayerDimension([[maybe_unused]] PlayerSession& session) {}
 
 void Server::processIncoming(PlayerSession& session) {
 	WorldManager& sessionWorld = session.dimension == -1 ? gameRuntime.worldHell : gameRuntime.world;

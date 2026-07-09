@@ -240,7 +240,7 @@ target_compile_options(BetrockPlusPlus PRIVATE
         # Multiple declarations of the same function/variable
         -Wredundant-decls
         # Comparing floating-point values for equality can be iffy
-        -Wfloat-equal
+        #-Wfloat-equal
         # Warn about code that will never be executed (Clang only)
         $<$<CXX_COMPILER_ID:Clang>:-Wunreachable-code>
     >

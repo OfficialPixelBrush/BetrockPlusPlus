@@ -75,7 +75,7 @@ void Entity::tick() {
 	}
 }
 
-void Entity::moveInFluid(float drag) {}
+void Entity::moveInFluid([[maybe_unused]] float drag) {}
 
 void Entity::applyKnockback(Vec3 direction) {
 	motionX *= KNOCKBACK_VELOCITY_DAMPENING;
@@ -243,7 +243,7 @@ void Entity::move(Vec3 movement) {
 	updateFallState(movement.y);
 }
 
-void Entity::dealDamage(int amount) {}
+void Entity::dealDamage([[maybe_unused]] int amount) {}
 
 void Entity::updateFallState(float movedY) {
 	if (onGround) {

@@ -79,7 +79,7 @@ struct EntityTracker {
 		this->tick();
 	}
 
-	void untrackEntity(Entity* entity) {
+	void untrackEntity([[maybe_unused]] Entity* entity) {
 		this->tick();
 	}
 
@@ -101,7 +101,7 @@ struct EntityTracker {
 		this->tick();
 	}
 
-	void removePlayer(Entity* player) {
+	void removePlayer([[maybe_unused]] Entity* player) {
 		this->tick();
 	}
 

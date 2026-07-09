@@ -62,7 +62,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 	std::signal(SIGINT, signalHandler);
 	std::signal(SIGTERM, signalHandler);
 
-	CommandLineArguments cliargs = ParseArgs(argc, argv);
+	// TODO: Implement fully
+	//CommandLineArguments cliargs = ParseArgs(argc, argv);
 
 	MathHelper::InitSinTable();
 

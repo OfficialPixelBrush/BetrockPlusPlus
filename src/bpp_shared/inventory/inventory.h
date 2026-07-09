@@ -7,9 +7,7 @@
 #include "cross_platform.h"
 #include "enums/items.h"
 #include "item_stack.h"
-#include <algorithm>
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -32,7 +30,7 @@ struct Inventory {
 	virtual NetworkSlotId getNetworkSlotId(NbtSlotId slot) const {
 		if (slot < 0 || slot >= int(slots.size()))
 			return -1;
-		return slot.value;
+		return slot.m_value;
 	}
 
 	virtual ItemStack* getStackInSlot(int slot) {
