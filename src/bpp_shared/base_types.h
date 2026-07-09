@@ -24,20 +24,19 @@ struct Branded {
 	constexpr Branded(UnderlyingT value) : value(value) {}
 
 	template <typename OtherUnderlyingT, typename OtherTagT>
-	    requires(!std::is_same_v<TagT, OtherTagT>)
-	constexpr Branded(Branded<OtherUnderlyingT, OtherTagT>) = delete;
+	requires(!std::is_same_v<TagT, OtherTagT>) constexpr Branded(Branded<OtherUnderlyingT, OtherTagT>) = delete;
 
 	constexpr operator UnderlyingT() const {
 		return value;
 	}
 
 	template <typename OtherUnderlyingT, typename OtherTagT>
-	    requires(!std::is_same_v<TagT, OtherTagT>)
-	constexpr bool operator==(Branded<OtherUnderlyingT, OtherTagT>) const = delete;
+	requires(!std::is_same_v<TagT, OtherTagT>) constexpr bool operator==(Branded<OtherUnderlyingT, OtherTagT>) const =
+	    delete;
 
 	template <typename OtherUnderlyingT, typename OtherTagT>
-	    requires(!std::is_same_v<TagT, OtherTagT>)
-	constexpr auto operator<=>(Branded<OtherUnderlyingT, OtherTagT>) const = delete;
+	    requires(!std::is_same_v<TagT, OtherTagT>) constexpr auto operator<=>
+	    (Branded<OtherUnderlyingT, OtherTagT>) const = delete;
 
 	constexpr Branded& operator++() {
 		++value;

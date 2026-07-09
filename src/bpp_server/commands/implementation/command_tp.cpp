@@ -11,8 +11,8 @@
 //   /tp <x> <y> <z>
 //   /tp <player> <x> <y> <z>
 //   /tp <source_player> <target_player>
-std::string CommandTeleport::Execute(std::vector<std::string>& parameters, PlayerSession& session,
-                                      WorldManager& world, std::function<void(PlayerSession&)> transferDimension) {
+std::string CommandTeleport::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
+                                     std::function<void(PlayerSession&)> transferDimension) {
 	if (parameters.size() < 2)
 		return ERROR_REASON_SYNTAX;
 

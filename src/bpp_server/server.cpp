@@ -129,14 +129,14 @@ void Server::startup() {
 
 	auto registerEntityTrackerCallbacks = [this](EntityTracker& entityTracker, EntityManager& entityManager) {
 		entityManager.onEntitySpawn = [&entityTracker](std::shared_ptr<Entity> entity) {
-			if (entity->type == "Player") {
+			if (entity->type == EntityType::PLAYER) {
 				entityTracker.addPlayer(entity.get());
 				return;
 			}
 			entityTracker.trackEntity(entity.get());
 		};
 		entityManager.onEntityDespawn = [&entityTracker](std::shared_ptr<Entity> entity) {
-			if (entity->type == "Player") {
+			if (entity->type == EntityType::PLAYER) {
 				entityTracker.removePlayer(entity.get());
 				return;
 			}

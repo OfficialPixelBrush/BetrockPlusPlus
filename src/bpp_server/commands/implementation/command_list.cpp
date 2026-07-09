@@ -11,7 +11,7 @@
 // Usage:
 //   /list
 std::string CommandList::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
-                                  std::function<void(PlayerSession&)> transferDimension) {
+                                 std::function<void(PlayerSession&)> transferDimension) {
 	Packet::ChatMessage pkt;
 	pkt.message = "§7-- All players --";
 	pkt.Serialize(session.stream);

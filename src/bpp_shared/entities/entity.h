@@ -8,6 +8,7 @@
 #pragma once
 #include "base_types.h"
 #include "blocks/block_properties.h"
+#include "entities.h"
 #include "helpers/AABB.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
@@ -52,7 +53,7 @@ const float SNEAK_SPEED_MODIFIER = 0.3f;
 
 struct Entity {
 	// Entity type because notch split stuff into multiple packets based on type
-	std::string type = "";
+	EntityType type = EntityType::NONE;
 
 	// World pointer
 	WorldManager* world = nullptr;

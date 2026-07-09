@@ -6,6 +6,7 @@
 */
 #include "entity_tracker.h"
 #include "../server.h"
+#include "entities.h"
 #include "entities/entity_item.h"
 #include <algorithm>
 
@@ -79,43 +80,50 @@ void EntityTracker::tick() {
 
 			auto distanceTo = std::abs(std::max(std::abs(entityEntry.entity->posX - player.entity->posX),
 			                                    std::abs(entityEntry.entity->posZ - player.entity->posZ)));
-			if (distanceTo <= entityEntry.profile.range &&
-			    entityEntry.visibleTo.find(playerId) == entityEntry.visibleTo.end()) {
-				auto& pSession = server->getSessionById(playerId);
-				if (entityEntry.entity->type == "Item") {
-					ItemEntity& ie = dynamic_cast<ItemEntity&>(*entityEntry.entity);
-					Packet::SpawnItem pkt;
-					pkt.entity_id = entityEntry.entity->id;
-					pkt.item = ie.itemStack;
-					pkt.q_position = { quantizePosition(entityEntry.entity->posX),
-						               quantizePosition(entityEntry.entity->posY),
-						               quantizePosition(entityEntry.entity->posZ) };
-					// For some reason notch decided this should be a convoluted way of getting the initial spawn velocity
-					auto quantizeSpawnVelocity = [](double v) -> int8_t {
-						return int8_t(v * 128.0);
-					};
-					pkt.q_rotation = { quantizeSpawnVelocity(entityEntry.entity->motionX),
-						               quantizeSpawnVelocity(entityEntry.entity->motionY),
-						               quantizeSpawnVelocity(entityEntry.entity->motionZ) };
-					pkt.Serialize(pSession.stream);
-				}
-				if (entityEntry.entity->type == "Player") {
-					Packet::SpawnPlayer pkt;
-					pkt.entity_id = entityEntry.entity->id;
-					pkt.held_item_id = ITEM_APPLE;
-					pkt.q_position = { quantizePosition(entityEntry.entity->posX),
-						               quantizePosition(entityEntry.entity->posY),
-						               quantizePosition(entityEntry.entity->posZ) };
-					pkt.q_rotation = { 0, 0 };
-					pkt.username = server->getUsernameByEntityId(entityEntry.entity->id);
-					pkt.Serialize(pSession.stream);
-				}
-				// TODO: Implement other types
-
-				entityEntry.visibleTo.insert(playerId);
-				GlobalLogger().info << "Spawning entity " << entityEntry.entity->id << " for player " << playerId
-				                    << "\n";
+			if (distanceTo > entityEntry.profile.range ||
+			    entityEntry.visibleTo.find(playerId) != entityEntry.visibleTo.end()) {
+				continue;
 			}
+
+			auto& pSession = server->getSessionById(playerId);
+			switch (entityEntry.entity->type) {
+			case EntityType::ITEM: {
+				ItemEntity& ie = dynamic_cast<ItemEntity&>(*entityEntry.entity);
+				Packet::SpawnItem pkt;
+				pkt.entity_id = entityEntry.entity->id;
+				pkt.item = ie.itemStack;
+				pkt.q_position = { quantizePosition(entityEntry.entity->posX),
+					               quantizePosition(entityEntry.entity->posY),
+					               quantizePosition(entityEntry.entity->posZ) };
+				// For some reason notch decided this should be a convoluted way of getting the initial spawn velocity
+				auto quantizeSpawnVelocity = [](double v) -> int8_t {
+					return int8_t(v * 128.0);
+				};
+				pkt.q_rotation = { quantizeSpawnVelocity(entityEntry.entity->motionX),
+					               quantizeSpawnVelocity(entityEntry.entity->motionY),
+					               quantizeSpawnVelocity(entityEntry.entity->motionZ) };
+				pkt.Serialize(pSession.stream);
+				break;
+			}
+			case EntityType::PLAYER: {
+				Packet::SpawnPlayer pkt;
+				pkt.entity_id = entityEntry.entity->id;
+				pkt.held_item_id = ITEM_APPLE;
+				pkt.q_position = { quantizePosition(entityEntry.entity->posX),
+					               quantizePosition(entityEntry.entity->posY),
+					               quantizePosition(entityEntry.entity->posZ) };
+				pkt.q_rotation = { 0, 0 };
+				pkt.username = server->getUsernameByEntityId(entityEntry.entity->id);
+				pkt.Serialize(pSession.stream);
+				break;
+			}
+			default:
+				break;
+			}
+			// TODO: Implement other types
+			entityEntry.visibleTo.insert(playerId);
+			GlobalLogger().info << "Spawning entity " << entityEntry.entity->id << " for player " << playerId << "\n";
+			break;
 		}
 	}
 }

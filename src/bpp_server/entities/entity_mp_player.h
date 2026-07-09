@@ -5,13 +5,14 @@
  *
 */
 #pragma once
+#include "entities.h"
 #include "entities/entity.h"
 
 struct PlayerSession;
 struct EntityMPPlayer : public Entity {
 	PlayerSession* session = nullptr;
 	EntityMPPlayer() : Entity() {
-		type = "Player";
+		type = EntityType::PLAYER;
 		hasPhysics = false;
 		width = 0.6f;
 		height = 1.8f;

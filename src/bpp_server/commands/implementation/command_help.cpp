@@ -12,7 +12,7 @@
 //   /help
 //   /help [command]
 std::string CommandHelp::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
-                                  std::function<void(PlayerSession&)> transferDimension) {
+                                 std::function<void(PlayerSession&)> transferDimension) {
 	//DEFINE_PERMSCHECK(pClient)
 	const auto& registered_commands = CommandManager::GetRegisteredCommands();
 	Packet::ChatMessage pkt;
@@ -25,8 +25,7 @@ std::string CommandHelp::Execute(std::vector<std::string>& parameters, PlayerSes
 				pkt.Serialize(session.stream);
 				// Only print syntax if it has a value
 				if (!registered_commands[i]->GetSyntax().empty()) {
-					pkt.message = "§7/" + registered_commands[i]->GetLabel() + " " +
-					              registered_commands[i]->GetSyntax();
+					pkt.message = "§7/" + registered_commands[i]->GetLabel() + " " + registered_commands[i]->GetSyntax();
 					pkt.Serialize(session.stream);
 				}
 				if (registered_commands[i]->GetRequiresOperator()) {

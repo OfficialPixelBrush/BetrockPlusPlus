@@ -6,11 +6,11 @@
 */
 
 #pragma once
+#include "blocks.h"
 #include <cstdint>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "blocks.h"
 
 // Block Struct
 struct Block {
