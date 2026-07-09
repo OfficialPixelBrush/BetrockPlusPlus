@@ -94,13 +94,13 @@ bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, World
 	case PacketId::Animation: {
 		Packet::Animation pkt;
 		pkt.Deserialize(session.stream);
-		HandlePacket::Animation(pkt, session, server.players);
+		HandlePacket::Animation(pkt, session, session.dimension == 0 ? server.overworldEntityTracker : server.hellEntityTracker);
 		break;
 	}
 	case PacketId::PlayerAction: {
 		Packet::PlayerAction pkt;
 		pkt.Deserialize(session.stream);
-		HandlePacket::PlayerAction(pkt, session);
+		HandlePacket::PlayerAction(pkt, session, session.dimension == 0 ? server.overworldEntityTracker : server.hellEntityTracker);
 		break;
 	}
 	case PacketId::PlayerInput: {
