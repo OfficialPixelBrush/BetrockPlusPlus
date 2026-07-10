@@ -121,15 +121,19 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 	session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
 
 	// Log that we logged in!
-	GlobalLogger().info << "Player " << session.username << " logged in with entity ID " << session.entity->id << " at ("
-	                    << session.position.pos.x << ", " << session.position.pos.y << ", " << session.position.pos.z
-	                    << ")\n";
+	GlobalLogger().info << "Player " << session.username << " logged in with entity ID " << session.entity->id
+	                    << " at (" << session.position.pos.x << ", " << session.position.pos.y << ", "
+	                    << session.position.pos.z << ")\n";
 
 	// Let everyone else know we logged in
 	server.sendGlobalChatMessage("§e" + session.username + " joined the game.");
 
 	// Send our inventory
 	PacketUtilities::sendInventory(session, 0, session.inventory);
+
+	// Snapshot current contents so the tick loop's diffing (tickDiff) has a real baseline
+	// to compare against, instead of starting from an empty snapshot for the whole session.
+	session.inventoryInteraction.initSnapshot();
 
 	session.connState = ConnectionState::WaitingForSpawnChunks;
 }
@@ -191,7 +195,10 @@ void PlayerConnStateManager::waitForSpawnChunks(PlayerSession& session, Server& 
 
 	// Register our entity with the world
 	sessionWorld.entityManager.addEntity(session.entity, session.entity->id);
-	
+
+	// Give our player session a pointer to the entity tracker
+	session.entityTracker = session.dimension == 0 ? &server.overworldEntityTracker : &server.hellEntityTracker;
+
 	// Welcome message
 	Packet::ChatMessage welcomeMsg;
 	welcomeMsg.message = std::string("§eThis Server runs on ") + std::string(PROJECT_FULL_VERSION_LABEL);

@@ -76,6 +76,10 @@ public:
 		}
 	}
 
+	// Entity trackers are so we can send entity updates to players and vice versa.
+	EntityTracker overworldEntityTracker;
+	EntityTracker hellEntityTracker;
+
 private:
 	friend bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, WorldManager& sessionWorld,
 	                                       Server& server);
@@ -125,8 +129,4 @@ private:
 	CommandManager command_manager;
 	bool stopped = false;
 	Config config;
-
-	// Entity trackers are so we can send entity updates to players and vice versa.
-	EntityTracker overworldEntityTracker;
-	EntityTracker hellEntityTracker;
 };

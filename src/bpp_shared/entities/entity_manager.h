@@ -6,6 +6,7 @@
 */
 #pragma once
 #include "entity.h"
+#include "helpers/java/java_math.h"
 #include "logger/logger.h"
 
 struct EntityBucket {
@@ -29,6 +30,59 @@ struct EntityManager {
 	// Callbacks that we can link into
 	std::function<void(std::shared_ptr<Entity>)> onEntitySpawn;
 	std::function<void(std::shared_ptr<Entity>)> onEntityDespawn;
+
+	static Int3 computeBucketPos(double posX, double posY, double posZ) {
+		Int3 pos = { int(MathHelper::floor_double(posX / 16.0)), int(MathHelper::floor_double(posZ / 16.0)),
+			         int(MathHelper::floor_double(posY / 16.0)) };
+
+		// Entity collisions below and above the world are just gonna be inefficient
+		pos.z = std::max(0, pos.z);
+		pos.z = std::min(9, pos.z);
+		return pos;
+	}
+
+	std::vector<std::shared_ptr<Entity>> getEntitiesWithinAABBExcluding(AABB& box, EntityId entityId) {
+		auto entities = getEntitiesWithinAABB(box);
+		entities.erase(std::remove_if(entities.begin(), entities.end(),
+		                              [entityId](std::shared_ptr<Entity> entity) { return entity->id == entityId; }),
+		               entities.end());
+		return entities;
+	}
+
+	std::vector<std::shared_ptr<Entity>> getEntitiesWithinAABB(AABB& box) {
+		std::vector<std::shared_ptr<Entity>> collidingEntities;
+
+		// Normalize to block coordinates
+		int blockMinX = MathHelper::floor_double((box.minX - 2.0) / 16.0);
+		int blockMinZ = MathHelper::floor_double((box.minZ - 2.0) / 16.0);
+		int blockMaxX = MathHelper::floor_double((box.maxX + 2.0) / 16.0);
+		int blockMaxZ = MathHelper::floor_double((box.maxZ + 2.0) / 16.0);
+
+		// Get our start and end bucket
+		int bucketMinY = MathHelper::floor_double((box.minY - 2.0) / 16.0);
+		int bucketMaxY = MathHelper::floor_double((box.maxY + 2.0) / 16.0);
+		bucketMinY = std::max(0, bucketMinY);
+		bucketMinY = std::min(9, bucketMinY);
+		bucketMaxY = std::max(0, bucketMaxY);
+		bucketMaxY = std::min(9, bucketMaxY);
+
+		// Go through each block position
+		for (int x = blockMinX; x <= blockMaxX; x++) {
+			for (int z = blockMinZ; z <= blockMaxZ; z++) {
+				auto& container = entityContainers[{ x, z }];
+				for (int by = bucketMinY; by <= bucketMaxY; by++) {
+					// Get every entity within every bucket
+					for (int i = 0; i < container.buckets[by].entities.size(); i++) {
+						// Make sure the weak ptr is still valid
+						auto& entityPtrWeak = container.buckets[by].entities[i];
+						if (auto entityPtrShared = entityPtrWeak.lock())
+							collidingEntities.push_back(entityPtrShared);
+					}
+				}
+			}
+		}
+		return collidingEntities;
+	}
 
 	void tick() {
 		// Make a copy so we aren't modifying the vector while iterating over it
@@ -57,13 +111,7 @@ struct EntityManager {
 			entity->tick();
 
 			// Check to see if this entity went into another container or bucket
-			Int3 newBucketPos = { int(entity->posX / 16.0), int(entity->posZ / 16.0), int(entity->posY / 16.0) };
-
-			// Entity collisions below and above the world are just gonna be inefficient
-			if (newBucketPos.z < 0)
-				newBucketPos.z = 0;
-			else if (newBucketPos.z > 9)
-				newBucketPos.z = 9;
+			Int3 newBucketPos = computeBucketPos(entity->posX, entity->posY, entity->posZ);
 
 			if (newBucketPos != entity->bucketPos) {
 				// Remove from the old bucket
@@ -95,6 +143,13 @@ struct EntityManager {
 		entity->id = forceEntityId == -1 ? getNextEntityId()
 		                                 : forceEntityId; // Assign an ID if we weren't forced to use one
 		entity->world = world; // Bind the world pointer so the entity can interact with the world
+		entity->entityManager = this;
+
+		// Register the entity into its initial bucket
+		entity->bucketPos = computeBucketPos(entity->posX, entity->posY, entity->posZ);
+		auto& container = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
+		container.buckets[entity->bucketPos.z].entities.push_back(entity);
+
 		entities.push_back(std::move(entity));
 		if (onEntitySpawn)
 			onEntitySpawn(entities.back());

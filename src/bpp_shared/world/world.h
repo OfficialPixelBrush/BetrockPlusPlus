@@ -443,6 +443,17 @@ struct WorldManager {
 		return (it != chunks.end()) ? it->second.get() : nullptr;
 	}
 
+	bool isChunkValid(Int32_2 pos) {
+		auto* chunk = getChunkRaw({ pos.x, pos.z });
+		if (!chunk) return false;
+		if (chunk->state.load() >= ChunkState::Generated) return true;
+		return false;
+	}
+
+	Int32_2 blockToChunkPos(Int32_2 blockPos) {
+		return { blockPos.x >> 4, blockPos.z >> 4 };
+	}
+
 	void flushBleedWrites() {
 		for (auto it = pendingBleedWrites.begin(); it != pendingBleedWrites.end();) {
 			auto* target = getChunkRaw(it->first);

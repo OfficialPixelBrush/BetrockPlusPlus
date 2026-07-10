@@ -6,7 +6,6 @@
 */
 
 #pragma once
-#include "../player_conn/player_session.h"
 #include "entities.h"
 #include "entities/entity_manager.h"
 #include "logger.h"
@@ -15,6 +14,8 @@
 #include "world/world.h"
 #include <cstdio>
 #include <string>
+#include <unordered_set>
+#include <unordered_map>
 
 // Entity tracker so we can send entity updates to the right players. This is server side only annoyingly enough.
 // I am not entirely happy with how this is done but notch demands we have several packet types for each type of entity

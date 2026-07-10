@@ -6,20 +6,15 @@
 */
 #pragma once
 #include "entities.h"
-#include "entities/entity.h"
+#include "entities/entity_player.h"
 
 struct PlayerSession;
-struct EntityMPPlayer : public Entity {
+struct EntityMPPlayer : public PlayerEntity {
 	PlayerSession* session = nullptr;
-	EntityMPPlayer() : Entity() {
-		type = EntityType::PLAYER;
-		hasPhysics = false;
-		width = 0.6f;
-		height = 1.8f;
-		yOffset = 1.62f;
-	}
+	EntityMPPlayer() : PlayerEntity() {}
 	~EntityMPPlayer() {
 		session = nullptr;
 	}
 	void tick() override;
+	bool pickupItem(ItemStack& stack, EntityId entityId) override;
 };

@@ -11,6 +11,7 @@
 
 struct ItemEntity : public Entity {
 	ItemStack itemStack;
+	int8_t pickupCooldown = 10;
 	ItemEntity(Vec3 position) : Entity() {
 		type = EntityType::ITEM;
 		width = 0.25f;
@@ -27,5 +28,6 @@ struct ItemEntity : public Entity {
 		motionZ = Java::Random().nextDouble() * 0.2 - 0.1;
 	}
 
+	void onCollideWithPlayer(PlayerEntity& entity) override;
 	void tick() override;
 };

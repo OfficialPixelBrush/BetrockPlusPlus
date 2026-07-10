@@ -5,9 +5,15 @@
  *
  */
 #include "entity.h"
+#include "entity_player.h"
 #include "world/world.h"
+#include "entity_manager.h"
 #include <algorithm>
 #include <cmath>
+
+void Entity::onCollideWithPlayer(PlayerEntity& entity) {
+	return;
+}
 
 void Entity::tick() {
 	ticksExisted++;
