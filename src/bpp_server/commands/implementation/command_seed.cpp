@@ -11,7 +11,7 @@
 // Usage:
 //   /seed
 std::string CommandSeed::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
-                                 std::function<void(PlayerSession&)> transferDimension) {
+                                 std::function<void(PlayerSession&)> transferDimension, Server& server) {
 	Packet::ChatMessage reply;
 	reply.message = "§e" + std::to_string(world.seed);
 	reply.Serialize(session.stream);

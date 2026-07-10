@@ -27,7 +27,7 @@
 	public:                                                                                                            \
 		name() : Command(label, description, syntax, requiresOp, requiresCreative) {}                                  \
 		std::string Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,         \
-		                    std::function<void(PlayerSession&)> transferDimension) override;                           \
+		                    std::function<void(PlayerSession&)> transferDimension, Server& server) override;                           \
 	};
 
 /*
@@ -69,7 +69,7 @@ public:
 	Command(std::string label, std::string description, std::string syntax, bool requiresOp = true,
 	        bool requiresCreative = false);
 	virtual std::string Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
-	                            std::function<void(PlayerSession&)> transferDimension) = 0;
+	                            std::function<void(PlayerSession&)> transferDimension, Server& server) = 0;
 	virtual ~Command() = default;
 };
 

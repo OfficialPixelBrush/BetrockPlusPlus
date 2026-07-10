@@ -76,6 +76,10 @@ public:
 		}
 	}
 
+	const std::vector<std::shared_ptr<PlayerSession>>& GetPlayers() noexcept {
+		return players;
+	}
+
 	// Entity trackers are so we can send entity updates to players and vice versa.
 	EntityTracker overworldEntityTracker;
 	EntityTracker hellEntityTracker;

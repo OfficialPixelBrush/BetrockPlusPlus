@@ -11,7 +11,7 @@
 //   /time
 //   /time <new_time>
 std::string CommandTime::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
-                                 std::function<void(PlayerSession&)> transferDimension) {
+                                 std::function<void(PlayerSession&)> transferDimension, Server& server) {
 	// Set the time
 	if (parameters.size() > 2) {
 		if (parameters[1] == "set") {

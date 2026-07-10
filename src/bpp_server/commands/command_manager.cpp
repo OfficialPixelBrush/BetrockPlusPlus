@@ -9,9 +9,11 @@
 #include "logger.h"
 
 std::vector<std::unique_ptr<Command>> CommandManager::registeredCommands;
+Server* CommandManager::m_server = nullptr;
 
 // Register all commands
-void CommandManager::Init() {
+void CommandManager::Init(Server* server) {
+	m_server = server;
 	// Anyone can run these
 	registeredCommands.push_back(std::make_unique<CommandHelp>());
 	registeredCommands.push_back(std::make_unique<CommandTeleport>());
@@ -82,7 +84,7 @@ void CommandManager::Parse(std::string& cmd_string, PlayerSession& session, Worl
 			for (size_t i = 0; i < registeredCommands.size(); i++) {
 				// This'll throw an out of bounds error
 				if (registeredCommands[i]->GetLabel() == command.at(0)) {
-					failureReason = registeredCommands[i]->Execute(command, session, world, transferDimension);
+					failureReason = registeredCommands[i]->Execute(command, session, world, transferDimension, *m_server);
 					break;
 				}
 			}
