@@ -11,7 +11,7 @@
 enum class PacketId : uint8_t;
 struct PlayerSession;
 struct WorldManager;
-struct Server;
+class Server;
 
 // Dispatches a single already-identified incoming packet to its handler.
 namespace PacketDispatcher {

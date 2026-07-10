@@ -143,21 +143,10 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 	auto& entity = trackedEntry.entity;
 	Vec3 currentPosition = { entity->posX, entity->posY, entity->posZ };
 
-	Vec3 currentMotion = { entity->motionX, entity->motionY, entity->motionZ };
-	Vec3& lastMotion = trackedEntry.lastBroadcastMotion;
-	double dmx = currentMotion.x - lastMotion.x;
-	double dmy = currentMotion.y - lastMotion.y;
-	double dmz = currentMotion.z - lastMotion.z;
-	double deltaSq = dmx * dmx + dmy * dmy + dmz * dmz;
-	const double motionThreshold = 0.02;
-
-	bool needsVelocityUpdate = entity->velocityChanged || (trackedEntry.profile.sendVelocity &&
-	                                                      (deltaSq > motionThreshold * motionThreshold ||
-	                                                      (deltaSq > 0.0 && currentMotion.x == 0.0 && currentMotion.y == 0.0 && currentMotion.z == 0.0)));
-
-	if (needsVelocityUpdate) {
+	// Check for the dirty flag EVERY TICK!
+	if (entity->velocityChanged) {
 		entity->velocityChanged = false;
-		lastMotion = currentMotion;
+		trackedEntry.lastBroadcastMotion = { entity->motionX, entity->motionY, entity->motionZ };
 		Packet::EntityVelocity pkt;
 		pkt.entity_id = entity->id;
 		pkt.velocity = { quantizeVelocity(entity->motionX), quantizeVelocity(entity->motionY),
@@ -174,6 +163,29 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 	if (needsMovementUpdate) {
 		trackedEntry.updateCounter = 0;
 
+		if (trackedEntry.profile.sendVelocity) {
+			Vec3 currentMotion = { entity->motionX, entity->motionY, entity->motionZ };
+			Vec3& lastMotion = trackedEntry.lastBroadcastMotion;
+			double dmx = currentMotion.x - lastMotion.x;
+			double dmy = currentMotion.y - lastMotion.y;
+			double dmz = currentMotion.z - lastMotion.z;
+			double deltaSq = dmx * dmx + dmy * dmy + dmz * dmz;
+			const double motionThreshold = 0.02;
+
+			bool needsVelocityUpdate = deltaSq > motionThreshold * motionThreshold ||
+			                           (deltaSq > 0.0 && currentMotion.x == 0.0 && currentMotion.y == 0.0 &&
+			                            currentMotion.z == 0.0);
+
+			if (needsVelocityUpdate) {
+				lastMotion = currentMotion;
+				Packet::EntityVelocity pkt;
+				pkt.entity_id = entity->id;
+				pkt.velocity = { quantizeVelocity(entity->motionX), quantizeVelocity(entity->motionY),
+					             quantizeVelocity(entity->motionZ) };
+				sendPacketToPlayersInTrackedEntry(pkt, trackedEntry);
+			}
+		}
+
 		int32_t qx = quantizePosition(currentPosition.x);
 		int32_t qy = quantizePosition(currentPosition.y);
 		int32_t qz = quantizePosition(currentPosition.z);
@@ -189,9 +201,16 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 
 		if (needsTP) {
 			trackedEntry.ticksSinceTeleport = 0;
+
+			// Resync entity position
+			entity->posX = double(qx) / 32.0;
+			entity->posY = double(qy) / 32.0;
+			entity->posZ = double(qz) / 32.0;
+			entity->rebuildCollider();
+
 			Packet::TeleportEntity pkt;
 			pkt.entity_id = entity->id;
-			pkt.position = { qx, MathHelper::floor_double(qy - (1.0 / 64.0)), qz };
+			pkt.position = { qx, qy, qz };
 			pkt.rotation = { int8_t(qYaw), int8_t(qPitch) };
 			sendPacketToPlayersInTrackedEntry(pkt, trackedEntry);
 			trackedEntry.lastEncodedPos = { qx, qy, qz };

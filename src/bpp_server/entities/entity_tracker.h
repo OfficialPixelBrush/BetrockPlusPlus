@@ -37,7 +37,7 @@ struct TrackedEntry {
 	std::unordered_set<EntityId> visibleTo; // what player ids can see this entity
 };
 
-struct Server;
+class Server;
 struct EntityTracker {
 	Server* server = nullptr;
 

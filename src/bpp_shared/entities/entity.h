@@ -54,6 +54,9 @@ const float SNEAK_SPEED_MODIFIER = 0.3f;
 struct PlayerEntity;
 struct EntityManager;
 struct Entity {
+	// For randomness
+	Java::Random rand;
+
 	// Entity type because notch split stuff into multiple packets based on type
 	EntityType type = EntityType::NONE;
 
@@ -98,7 +101,7 @@ struct Entity {
 	float yOffset = 0.0f;
 
 	// How high a block face this entity can step onto without jumping.
-	float stepHeight = 0.5f;
+	float stepHeight = 0.0f;
 
 	// Collision state
 	bool onGround = false;

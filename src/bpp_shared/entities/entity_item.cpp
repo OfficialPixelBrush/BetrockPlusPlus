@@ -5,8 +5,8 @@
  *
  */
 #include "entity_item.h"
-#include "world/world.h"
 #include "entity_player.h"
+#include "world/world.h"
 #include <algorithm>
 #include <cmath>
 
@@ -24,39 +24,34 @@ void ItemEntity::tick() {
 	pickupCooldown--;
 	pickupCooldown = std::max(int8_t(0), pickupCooldown);
 
-	// Update what block is below us
-	int bx = (int)std::floor(posX);
-	int by = (int)std::floor(posY - 0.2 - yOffset);
-	int bz = (int)std::floor(posZ);
-	int blockId = world->getBlockId({ bx, by, bz });
-	if (world->getBlockId({ bx, by - 1, bz }) == BLOCK_FENCE) {
-		blockId = world->getBlockId({ bx, by - 1, bz });
-	}
-	belowBlock = Blocks::blockProperties[blockId];
-
 	if (hasPhysics) {
-		if (inWater) {
-			moveInFluid(WATER_DRAG);
-		} else if (inLava) {
-			moveInFluid(LAVA_DRAG);
-		} else {
-			motionY -= 0.04;
-			move({ motionX, motionY, motionZ });
+		motionY -= 0.03999999910593033;
+		move({ motionX, motionY, motionZ });
 
-			float horizontalDrag = 0.98f;
-			if (onGround) {
-				horizontalDrag = 0.588f;
-				if (blockId > 0)
-					horizontalDrag = belowBlock.slipperiness * 0.98f;
-			}
+		float horizontalDrag = 0.98f;
+		if (onGround) {
+			horizontalDrag = 0.58800006f;
 
-			motionX *= double(horizontalDrag);
-			motionY *= 0.98;
-			motionZ *= double(horizontalDrag);
+			// Look up the block below us
+			int bx = MathHelper::floor_double(posX);
+			int by = MathHelper::floor_double(collider.minY) - 1;
+			int bz = MathHelper::floor_double(posZ);
+			int blockId = world->getBlockId({ bx, by, bz });
+			belowBlock = Blocks::blockProperties[blockId];
 
-			// Bounce when we land
-			if (onGround)
-				motionY *= -0.5;
+			if (blockId > 0)
+				horizontalDrag = belowBlock.slipperiness * 0.98f;
 		}
+
+		motionX *= double(horizontalDrag);
+		motionY *= 0.9800000190734863;
+		motionZ *= double(horizontalDrag);
+
+		// Bounce when we land
+		if (onGround)
+			motionY *= -0.5;
 	}
+
+	if (ticksExisted >= 6000)
+		isDead = true;
 }
