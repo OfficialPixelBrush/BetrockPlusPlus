@@ -9,7 +9,7 @@
 #include "command.h"
 #include <functional>
 
-struct Server;
+class Server;
 
 /**
  * @brief Responsible for all command handling and execution

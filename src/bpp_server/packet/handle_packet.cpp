@@ -89,6 +89,8 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 		return;
 	}
 	case PacketData::MineStatus::DROPPED_ITEM: {
+		int count = 1;
+		session.entity->dropHeldItem(count);
 		return;
 	}
 	default:

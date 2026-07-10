@@ -6,7 +6,7 @@
 */
 #pragma once
 
-struct Server;
+class Server;
 // For managing the player's connection state
 struct PlayerConnStateManager {
 	void handleConnectionState(PlayerSession& session, Server& server);

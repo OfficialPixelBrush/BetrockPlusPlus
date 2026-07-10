@@ -17,68 +17,6 @@ void Entity::onCollideWithPlayer(PlayerEntity& entity) {
 
 void Entity::tick() {
 	ticksExisted++;
-
-	// Input axes are decayed every tick before new input is added
-	moveForward *= INPUT_DECAY;
-	moveStrafe *= INPUT_DECAY;
-
-	// Update what block is below us
-	int bx = (int)std::floor(posX);
-	int by = (int)std::floor(posY - 0.2 - yOffset);
-	int bz = (int)std::floor(posZ);
-	int blockId = world->getBlockId({ bx, by, bz });
-	if (world->getBlockId({ bx, by - 1, bz }) == BLOCK_FENCE) {
-		blockId = world->getBlockId({ bx, by - 1, bz });
-	}
-	belowBlock = Blocks::blockProperties[blockId];
-
-	if (sneaking) {
-		moveForward *= SNEAK_SPEED_MODIFIER;
-		moveStrafe *= SNEAK_SPEED_MODIFIER;
-	}
-
-	if (jumping) {
-		if (inWater || inLava) {
-			motionY += FLUID_JUMP_BOOST;
-		} else if (onGround) {
-			motionY = JUMP_VELOCITY;
-		}
-	}
-
-	if (hasPhysics) {
-		if (inWater) {
-			moveInFluid(WATER_DRAG);
-		} else if (inLava) {
-			moveInFluid(LAVA_DRAG);
-		} else {
-			// Friction depends on the block underfoot; slippery blocks reduce both braking and acceleration
-			float friction = onGround ? belowBlock.slipperiness * HORIZONTAL_FRICTION : HORIZONTAL_FRICTION;
-
-			// Acceleration is tuned so that on normal ground (slipperiness 0.6) it equals exactly 0.1
-			float acceleration = onGround ? 0.1f * (NORMAL_FRICTION_CUBED / (friction * friction * friction))
-			                              : AIR_ACCELERATION;
-			applyInput(moveStrafe, moveForward, acceleration);
-
-			if (onLadder) {
-				motionX = std::clamp(float(motionX), -LADDER_MAX_HORIZONTAL, LADDER_MAX_HORIZONTAL);
-				motionY = std::max(float(motionY), sneaking ? LADDER_SNEAK_DESCENT : -LADDER_MAX_DESCENT);
-				motionZ = std::clamp(float(motionZ), -LADDER_MAX_HORIZONTAL, LADDER_MAX_HORIZONTAL);
-				fallDistance = 0;
-			}
-
-			move({ motionX, motionY, motionZ });
-
-			// Climb upward when pressing into a ladder
-			if (collidedHorizontally && onLadder) {
-				motionY = LADDER_WALL_BOOST;
-			}
-
-			motionY -= GRAVITY;
-			motionX *= friction;
-			motionY *= VERTICAL_FRICTION;
-			motionZ *= friction;
-		}
-	}
 }
 
 void Entity::moveInFluid([[maybe_unused]] float drag) {}

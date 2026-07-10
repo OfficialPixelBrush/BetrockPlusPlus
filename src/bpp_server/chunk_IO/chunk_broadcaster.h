@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
-struct Server;
+class Server;
 
 // Sends accumulated per-tick block changes out to whichever player sessions care about them
 namespace ChunkBroadcaster {
