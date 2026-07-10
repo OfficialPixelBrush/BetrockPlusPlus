@@ -10,6 +10,7 @@
 #include "../entities/entity_mp_player.h"
 #include "../entities/entity_tracker.h"
 #include "inventory/inventory_interaction.h"
+#include "items.h"
 #include "nbt/nbt.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
@@ -220,7 +221,7 @@ struct PlayerSession {
 		// Save our current inventory
 		NetworkSlotId slotId = 0;
 		for (auto& item : inventory.slots) {
-			if (item.has_value()) {
+			if (item.id != ITEM_INVALID) {
 				Tag itemTag;
 				itemTag.type = TAG_COMPOUND;
 				itemTag.name = "";
@@ -231,15 +232,15 @@ struct PlayerSession {
 				Tag idTag;
 				idTag.type = TAG_SHORT;
 				idTag.name = "id";
-				idTag.shortValue = item->id;
+				idTag.shortValue = item.id;
 				Tag countTag;
 				countTag.type = TAG_BYTE;
 				countTag.name = "Count";
-				countTag.byteValue = item->count;
+				countTag.byteValue = item.count;
 				Tag damageTag;
 				damageTag.type = TAG_SHORT;
 				damageTag.name = "Damage";
-				damageTag.shortValue = item->data;
+				damageTag.shortValue = item.data;
 
 				itemTag.compound["Slot"] = slotTag;
 				itemTag.compound["id"] = idTag;

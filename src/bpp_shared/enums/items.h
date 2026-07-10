@@ -16,7 +16,7 @@ static constexpr int8_t ITEM_STACK_MAX = 64;
 
 enum Items : ItemId::Underlying {
 	ITEM_INVALID = -1,
-	ITEM_NONE = 0,
+	ITEM_NONE = 0, // This is usually not you want to use, use ITEM_INVALID instead
 
 	// Tools - Iron
 	ITEM_SHOVEL_IRON = 256,

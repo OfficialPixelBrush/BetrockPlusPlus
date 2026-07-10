@@ -5,18 +5,20 @@
 */
 #pragma once
 #include "inventories.h"
+#include "inventory/item_stack.h"
+#include "items.h"
 #include "tile_entities/tile_entity.h"
 #include <memory>
 
-struct difference {
-	std::optional<ItemStack>& stack;
+struct DeltaSlot {
+	ItemStack stack;
 	int slot = 0;
 };
 
 // Used for actually interacting with inventories, will typically wrap 1 or more inventory objects for things like chests, etc
 struct InventoryInteraction {
-	std::vector<std::optional<ItemStack>> snapshot;
-	std::optional<ItemStack> carried;
+	std::vector<ItemStack> snapshot;
+	ItemStack carried;
 	Inventory* inventory;
 
 	InventoryInteraction(Inventory* inv) : inventory(inv) {}
@@ -33,8 +35,8 @@ struct InventoryInteraction {
 
 	// Analyze the snapshot vs the current inventory
 	// Returns a list of slots that are different
-	virtual std::vector<difference> tickDiff() {
-		std::vector<difference> differences;
+	virtual std::vector<DeltaSlot> tickDiff() {
+		std::vector<DeltaSlot> differences;
 		for (size_t i = 0; i < snapshot.size(); i++) {
 			[[maybe_unused]] auto* current = inventory->getStackInSlot(i);
 			auto& snap = snapshot[i];
@@ -54,16 +56,16 @@ struct InventoryInteraction {
 
 		// Empty slot
 		if (!targetSlot) {
-			if (carried.has_value()) {
-				inventory->setInventorySlotContents(slot, &carried.value());
-				carried = std::nullopt;
+			if (carried.id != ITEM_INVALID) {
+				inventory->setInventorySlotContents(slot, &carried);
+				carried = ItemStack{};
 			}
 			inventory->onInventoryChanged();
 			return;
 		}
 
 		// Not carrying anything
-		if (!carried.has_value()) {
+		if (carried.id == ITEM_INVALID) {
 			carried = *targetSlot;
 			inventory->clearSlot(slot);
 			inventory->onInventoryChanged();
@@ -71,21 +73,21 @@ struct InventoryInteraction {
 		}
 
 		// Same item; merge
-		if (targetSlot->id == carried->id && targetSlot->data == carried->data) {
+		if (targetSlot->id == carried.id && targetSlot->data == carried.data) {
 			int maxStack = GetMaxStack(targetSlot->id);
 			int space = maxStack - targetSlot->count;
-			int toMove = std::min(space, (int)carried->count);
+			int toMove = std::min(space, (int)carried.count);
 			targetSlot->count += toMove;
-			carried->count -= toMove;
-			if (carried->count == 0)
-				carried = std::nullopt;
+			carried.count -= toMove;
+			if (carried.count == 0)
+				carried = ItemStack{};
 			inventory->onInventoryChanged();
 			return;
 		}
 
 		// Different item; swap
 		ItemStack temp = *targetSlot;
-		*targetSlot = *carried;
+		*targetSlot = carried;
 		carried = temp;
 		inventory->onInventoryChanged();
 	}
@@ -93,26 +95,26 @@ struct InventoryInteraction {
 	virtual void onRightClick(int slot) {
 		auto targetSlot = inventory->getStackInSlot(slot);
 
-		if (carried.has_value()) {
+		if (carried.id != ITEM_INVALID) {
 			if (!targetSlot) {
-				ItemStack single{ carried->id, 1, carried->data };
+				ItemStack single{ carried.id, 1, carried.data };
 				inventory->setInventorySlotContents(slot, &single);
-				carried->count -= 1;
-				if (carried->count == 0)
-					carried = std::nullopt;
+				carried.count -= 1;
+				if (carried.count == 0)
+					carried = ItemStack{};
 				inventory->onInventoryChanged();
 				return;
 			}
 
 			// If we right click on the same item we are carrying just add one
-			if (targetSlot->id == carried->id && targetSlot->data == carried->data) {
+			if (targetSlot->id == carried.id && targetSlot->data == carried.data) {
 				int maxStack = GetMaxStack(targetSlot->id);
 				int space = maxStack - targetSlot->count;
 				if (space >= 1) {
 					targetSlot->count += 1;
-					carried->count -= 1;
-					if (carried->count == 0)
-						carried = std::nullopt;
+					carried.count -= 1;
+					if (carried.count == 0)
+						carried = ItemStack{};
 					inventory->onInventoryChanged();
 				}
 				return;
@@ -120,7 +122,7 @@ struct InventoryInteraction {
 
 			// If we right click on a different item, swap the cursor and that item
 			ItemStack temp = *targetSlot;
-			*targetSlot = *carried;
+			*targetSlot = carried;
 			carried = temp;
 			inventory->onInventoryChanged();
 			return;
@@ -192,21 +194,21 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
 		snapshot.resize(size_t(chestInventory.getSizeInventory()));
 		for (size_t i = 0; i < size_t(chestInventory.getSizeInventory()); i++) {
 			auto* stack = chestInventory.getStackInSlot(i);
-			snapshot[i] = stack ? std::optional<ItemStack>(*stack) : std::nullopt;
+			snapshot[i] = stack ? *stack : ItemStack{};
 		}
 	}
 
 	// Analyze the snapshot vs the current chest inventory
-	std::vector<difference> tickDiff() override {
-		std::vector<difference> differences;
+	std::vector<DeltaSlot> tickDiff() override {
+		std::vector<DeltaSlot> differences;
 		for (size_t i = 0; i < snapshot.size(); i++) {
-			auto* current = chestInventory.getStackInSlot(int(i));
-			auto currentOpt = current ? std::optional<ItemStack>(*current) : std::nullopt;
+			auto* currentPtr = chestInventory.getStackInSlot(int(i));
+			auto current = currentPtr ? *currentPtr : ItemStack{};
 
-			if (snapshot[i] == currentOpt)
+			if (snapshot[i] == current)
 				continue;
 
-			snapshot[i] = currentOpt;
+			snapshot[i] = current;
 			differences.push_back({ snapshot[i], int(i) });
 		}
 		mergeInventories();
@@ -217,7 +219,7 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
 		size_t slotCount = 0;
 		for (size_t i = 0; i < size_t(chestInventory.getSizeInventory()); i++) {
 			auto* stack = chestInventory.getStackInSlot(i);
-			sharedInventory.slots[slotCount++] = stack ? std::optional<ItemStack>(*stack) : std::nullopt;
+			sharedInventory.slots[slotCount++] = stack ? *stack : ItemStack{};
 		}
 		for (size_t i = 9; i <= 44; i++)
 			sharedInventory.slots[slotCount++] = playerInventory->slots[i];
@@ -226,7 +228,7 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
 	void writeBack() {
 		for (size_t i = 0; i < 54; i++) {
 			auto& slot = sharedInventory.slots[i];
-			ItemStack* ptr = slot.has_value() ? &slot.value() : nullptr;
+			ItemStack* ptr = slot.id != ITEM_INVALID ? &slot : nullptr;
 			chestInventory.setInventorySlotContents(i, ptr);
 		}
 		for (size_t i = 54; i < 90; i++)
@@ -254,8 +256,7 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
 			chestInventory.setInventorySlotContents(slot, ptr);
 		} else {
 			int playerSlot = slot - 54 + 9;
-			playerInventory->slots[size_t(playerSlot)] = copy.count == 0 ? std::nullopt
-			                                                             : std::optional<ItemStack>(copy);
+			playerInventory->slots[size_t(playerSlot)] = copy.count == 0 ? ItemStack{} : copy;
 		}
 
 		// Re-sync sharedInventory from the real inventories
@@ -301,8 +302,8 @@ struct ChestInventoryInteraction : InventoryInteraction {
 	}
 
 	// Analyze the snapshot vs the current chest inventory
-	std::vector<difference> tickDiff() override {
-		std::vector<difference> differences;
+	std::vector<DeltaSlot> tickDiff() override {
+		std::vector<DeltaSlot> differences;
 		for (size_t i = 0; i < snapshot.size(); i++) {
 			[[maybe_unused]] auto* current = chestInventory->getStackInSlot(i);
 			auto& snap = snapshot[i];
@@ -350,11 +351,10 @@ struct ChestInventoryInteraction : InventoryInteraction {
 
 		// Update the source in the real inventory before re-merging
 		if (slot <= 26) {
-			chestInventory->slots[size_t(slot)] = copy.count == 0 ? std::nullopt : std::optional<ItemStack>(copy);
+			chestInventory->slots[size_t(slot)] = copy.count == 0 ? ItemStack{} : copy;
 		} else {
 			int playerSlot = slot - 27 + 9;
-			playerInventory->slots[size_t(playerSlot)] = copy.count == 0 ? std::nullopt
-			                                                             : std::optional<ItemStack>(copy);
+			playerInventory->slots[size_t(playerSlot)] = copy.count == 0 ? ItemStack{} : copy;
 		}
 
 		// Re-sync sharedInventory from the real inventories

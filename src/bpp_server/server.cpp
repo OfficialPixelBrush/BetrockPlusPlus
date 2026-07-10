@@ -365,9 +365,7 @@ void Server::tick() {
 		auto diffs2 = session->inventoryInteraction.tickDiff();
 		if (diffs2.size() <= 5) {
 			for (auto difference : diffs2) {
-				ItemStack invalid{ ITEM_INVALID };
-				ItemStack* item = difference.stack.has_value() ? &difference.stack.value() : &invalid;
-				PacketUtilities::sendSlot(*session, 0, difference.slot, item);
+				PacketUtilities::sendSlot(*session, 0, difference.slot, &difference.stack);
 			}
 		} else {
 			// Too many changes, just resend the whole inventory
@@ -388,8 +386,7 @@ void Server::tick() {
 		if (diffs.size() <= 5) {
 			for (auto difference : diffs) {
 				ItemStack invalid{ ITEM_INVALID };
-				ItemStack* item = difference.stack.has_value() ? &difference.stack.value() : &invalid;
-				PacketUtilities::sendSlot(*session, session->openWindowId, difference.slot, item);
+				PacketUtilities::sendSlot(*session, session->openWindowId, difference.slot, &difference.stack);
 			}
 		} else {
 			// Too many changes, just resend the whole inventory
@@ -433,7 +430,9 @@ void Server::disconnectClients() {
 	players.erase(std::remove_if(players.begin(), players.end(),
 	                             [&](const auto& s) {
 		                             if (!s->stream.isConnected()) {
-			                             if (s->entity) GlobalLogger().info << "Disconnected client " << s->username << " with entity id " << s->entity->id << "\n";
+			                             if (s->entity)
+				                             GlobalLogger().info << "Disconnected client " << s->username
+				                                                 << " with entity id " << s->entity->id << "\n";
 
 			                             if (s->connState == ConnectionState::Playing ||
 			                                 s->connState == ConnectionState::WaitingForSpawnChunks) {
