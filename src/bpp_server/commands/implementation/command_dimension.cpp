@@ -11,7 +11,7 @@
 // Usage:
 //   /dim
 std::string CommandDimension::Execute([[maybe_unused]] std::vector<std::string>& parameters, PlayerSession& session, [[maybe_unused]] WorldManager& world,
-                                      std::function<void(PlayerSession&)> transferDimension) {
+                                      std::function<void(PlayerSession&)> transferDimension, [[maybe_unused]] Server& server) {
 	transferDimension(session);
 
 	Packet::ChatMessage reply;

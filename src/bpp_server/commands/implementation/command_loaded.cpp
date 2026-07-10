@@ -11,7 +11,7 @@
 //   /loaded
 std::string CommandLoaded::Execute([[maybe_unused]] std::vector<std::string>& parameters, PlayerSession& session,
                                    [[maybe_unused]] WorldManager& world,
-                                   [[maybe_unused]] std::function<void(PlayerSession&)> transferDimension) {
+                                   [[maybe_unused]] std::function<void(PlayerSession&)> transferDimension, Server& server) {
 	Packet::ChatMessage reply;
 	reply.message = "§e" + std::to_string(world.chunks.size());
 	reply.Serialize(session.stream);

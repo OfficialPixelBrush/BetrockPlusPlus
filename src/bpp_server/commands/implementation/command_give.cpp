@@ -15,8 +15,8 @@
 // Give yourself a block or item
 // Usage:
 //   /give <id>[:meta] [amount]
-std::string CommandGive::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
-                                 std::function<void(PlayerSession&)> transferDimension) {
+std::string CommandGive::Execute(std::vector<std::string>& parameters, PlayerSession& session, [[maybe_unused]] WorldManager& world,
+                                 [[maybe_unused]] std::function<void(PlayerSession&)> transferDimension, [[maybe_unused]] Server& server) {
 	// TODO: Let player specify another player to give to
 	if (parameters.size() <= 1)
 

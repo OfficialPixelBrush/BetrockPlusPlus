@@ -102,7 +102,7 @@ void Server::startup() {
 	GlobalLogger().info << "Initializing server startup.. \n";
 
 	// Setup commands
-	command_manager.Init();
+	command_manager.Init(this);
 
 	// Setup the block callback so we can send it to clients
 	auto makeBlockUpdateCallback = [this](int dimensionId, auto& blockChangeMap) {
