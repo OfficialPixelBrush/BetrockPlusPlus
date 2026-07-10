@@ -18,7 +18,7 @@ struct EntityPlayer;
 // Inventory
 struct Inventory {
 	std::string name = "Inventory";
-	std::vector<std::optional<ItemStack>> slots;
+	std::vector<ItemStack> slots;
 	bool isModified = false;
 
 	Inventory(size_t size) : slots(size) {}
@@ -36,18 +36,18 @@ struct Inventory {
 	virtual ItemStack* getStackInSlot(int slot) {
 		if (slot < 0 || slot >= (int)slots.size())
 			return nullptr;
-		if (!slots[size_t(slot)].has_value())
+		if (slots[size_t(slot)].id == ITEM_INVALID)
 			return nullptr;
-		return &slots[size_t(slot)].value();
+		return &slots[size_t(slot)];
 	}
 
 	virtual ItemStack decreaseStackSize(int slot, int count) {
-		if (slot < 0 || slot >= (int)slots.size() || !slots[size_t(slot)].has_value())
+		if (slot < 0 || slot >= (int)slots.size() || slots[size_t(slot)].id == ITEM_INVALID)
 			return ItemStack{};
-		auto& stack = slots[size_t(slot)].value();
+		auto& stack = slots[size_t(slot)];
 		if (stack.count <= count) {
 			ItemStack taken = stack;
-			slots[size_t(slot)] = std::nullopt;
+			slots[slot] = ItemStack{};
 			onInventoryChanged();
 			return taken;
 		}
@@ -60,7 +60,7 @@ struct Inventory {
 	virtual void setInventorySlotContents(int slot, ItemStack* stack) {
 		if (slot < 0 || slot >= (int)slots.size())
 			return;
-		slots[size_t(slot)] = stack ? std::optional<ItemStack>(*stack) : std::nullopt;
+		slots[size_t(slot)] = stack ? *stack : ItemStack{};
 		onInventoryChanged();
 	}
 
@@ -75,7 +75,7 @@ struct Inventory {
 	void clearSlot(int slot) {
 		if (slot < 0 || slot >= (int)slots.size())
 			return;
-		slots[size_t(slot)] = std::nullopt;
+		slots[size_t(slot)] = ItemStack{};
 		onInventoryChanged();
 	}
 
@@ -113,7 +113,7 @@ struct Inventory {
 
 		// We couldn't merge into existing items so just try and find an empty slot
 		for (int i = reverse ? end : start; reverse ? i >= start : i <= end; reverse ? i-- : i++) {
-			if (!slots[size_t(i)].has_value()) {
+			if (slots[size_t(i)].id == ITEM_INVALID) {
 				slots[size_t(i)] = ItemStack{ stack.id, stack.count, stack.data };
 				stack.id = ITEM_INVALID;
 				stack.data = 0;

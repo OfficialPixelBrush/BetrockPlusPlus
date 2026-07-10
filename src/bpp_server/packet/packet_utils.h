@@ -14,11 +14,7 @@ namespace PacketUtilities {
 inline void sendInventory(PlayerSession& session, WindowId windowId, Inventory inventory) {
 	std::vector<ItemStack> items;
 	for (auto& item : inventory.slots) {
-		if (!item.has_value()) {
-			items.emplace_back(ITEM_INVALID); // empty slot
-			continue;
-		}
-		items.emplace_back(item->id, item->count, item->data);
+		items.emplace_back(item.id, item.count, item.data);
 	}
 	Packet::FillContainer fc;
 	fc.window_id = windowId;
