@@ -51,12 +51,15 @@ const float AIR_ACCELERATION = 0.02f;
 const float INPUT_DECAY = 0.98f;
 const float SNEAK_SPEED_MODIFIER = 0.3f;
 
+struct PlayerEntity;
+struct EntityManager;
 struct Entity {
 	// Entity type because notch split stuff into multiple packets based on type
 	EntityType type = EntityType::NONE;
 
 	// World pointer
 	WorldManager* world = nullptr;
+	EntityManager* entityManager = nullptr;
 
 	// Identity
 	EntityId id = -1; // -1 = not yet spawned
@@ -111,7 +114,6 @@ struct Entity {
 	bool inWater = false;
 	bool inLava = false;
 	bool onLadder = false;
-	bool isJumping = false;
 
 	float fallDistance = 0.0f;
 
@@ -119,7 +121,6 @@ struct Entity {
 
 	// Accumulated walk distance this tick (unused rn its mostly for the client)
 	float distanceWalkedModified = 0.0f;
-	float prevDistanceWalkedModified = 0.0f;
 	float ySize = 0.0f;
 
 	float moveForward = 0.0f; // Forward/backward input axis
@@ -154,10 +155,11 @@ struct Entity {
 
 	void rebuildCollider() {
 		double halfWidth = double(width) / 2.0;
-		double bottom = posY - double(yOffset) + double(ySize);
+		double bottom = posY + double(yOffset) - double(ySize);
 		collider = { posX - halfWidth,        bottom,          posZ - halfWidth, posX + halfWidth,
 			         bottom + double(height), posZ + halfWidth };
 	}
+
 	void teleport(Vec3 newpos, Vec2 newrot = { 0, 0 }) {
 		posX = newpos.x;
 		posY = newpos.y;
@@ -167,10 +169,11 @@ struct Entity {
 		ySize = 0.0f;
 		rebuildCollider();
 	}
-	void moveInFluid(float drag);
-	void applyKnockback(Vec3 direction);
-	void applyInput(float strafe, float forward, float acceleration);
-	void move(Vec3 movement);
-	void dealDamage(int amount);
-	void updateFallState(float movedY);
+	virtual void onCollideWithPlayer(PlayerEntity& entity);
+	virtual void moveInFluid(float drag);
+	virtual void applyKnockback(Vec3 direction);
+	virtual void applyInput(float strafe, float forward, float acceleration);
+	virtual void move(Vec3 movement);
+	virtual void dealDamage(int amount);
+	virtual void updateFallState(float movedY);
 };

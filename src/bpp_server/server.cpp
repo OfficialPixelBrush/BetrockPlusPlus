@@ -362,6 +362,18 @@ void Server::tick() {
 		session->newlyUnloaded.clear();
 
 		// Check inventory diffs
+		auto diffs2 = session->inventoryInteraction.tickDiff();
+		if (diffs2.size() <= 5) {
+			for (auto difference : diffs2) {
+				ItemStack invalid{ ITEM_INVALID };
+				ItemStack* item = difference.stack.has_value() ? &difference.stack.value() : &invalid;
+				PacketUtilities::sendSlot(*session, 0, difference.slot, item);
+			}
+		} else {
+			// Too many changes, just resend the whole inventory
+			PacketUtilities::sendInventory(*session, 0, *session->inventoryInteraction.inventory);
+		}
+
 		if (!session->activeInteraction)
 			continue;
 
@@ -421,8 +433,7 @@ void Server::disconnectClients() {
 	players.erase(std::remove_if(players.begin(), players.end(),
 	                             [&](const auto& s) {
 		                             if (!s->stream.isConnected()) {
-			                             GlobalLogger().info << "Disconnected client " << s->username
-			                                                 << " with entity id " << s->entity->id << "\n";
+			                             if (s->entity) GlobalLogger().info << "Disconnected client " << s->username << " with entity id " << s->entity->id << "\n";
 
 			                             if (s->connState == ConnectionState::Playing ||
 			                                 s->connState == ConnectionState::WaitingForSpawnChunks) {

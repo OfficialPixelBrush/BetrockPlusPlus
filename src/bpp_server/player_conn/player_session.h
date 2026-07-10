@@ -8,6 +8,7 @@
 
 #pragma once
 #include "../entities/entity_mp_player.h"
+#include "../entities/entity_tracker.h"
 #include "inventory/inventory_interaction.h"
 #include "nbt/nbt.h"
 #include "networking/network_stream.h"
@@ -35,6 +36,7 @@ struct PlayerSession {
 
 	// Our player entity
 	std::shared_ptr<EntityMPPlayer> entity;
+	EntityTracker* entityTracker = nullptr;
 
 	// rotation.x = yaw, rotation.y = pitch
 	Float2 rotation = { 0.0f, 0.0f };
@@ -84,6 +86,7 @@ struct PlayerSession {
 		// So our player entity despawns from the world
 		entity->isDead = true;
 		entity->session = nullptr;
+		entityTracker = nullptr;
 	}
 
 	// Load our player data from file

@@ -89,6 +89,54 @@ public:
 			return slot + 36;
 		return -1;
 	}
+
+	// Tries to "pickup" an item. Returns if it succeeded 
+	// Not sure why vanilla does it in such a convoluted way
+	// but it is the way it is
+	bool pickupItem(ItemStack& stack) {
+		// Can we combine with anything in the inventory?
+		if (canMergeItemStackInInventory(stack, false, 9, 35)) {
+			mergeItemStackInInventory(stack, false, 9, 35);
+			return true;
+		} else {
+			// We couldn't combine this stack with anything in the inventory
+			// so try the hotbar
+			if (mergeItemStackInInventory(stack, false, 36, 44)) {
+				return true;
+			}
+			// Try to find an empty slot in the inventory as a last resort
+			return mergeItemStackInInventory(stack, false, 9, 35);
+		}
+	}
+
+	// Returns whether we could merge an item stack without changing the inventory. 
+	bool canMergeItemStackInInventory(ItemStack& stack, bool reverse = false, int startSlot = 0, int endSlot = -1) {
+		auto start = startSlot;
+		auto end = endSlot == -1 ? getSizeInventory() - 1 : endSlot;
+
+		// Try and merge into an already existing stack of the same type if this item is stackable
+		if (IsStackable(stack.id)) {
+			for (int i = reverse ? end : start; reverse ? i >= start : i <= end; reverse ? i-- : i++) {
+				auto slot = getStackInSlot(i);
+				if (!slot)
+					continue;
+				if (slot->id == stack.id && slot->data == stack.data) {
+					auto maxStack = GetMaxStack(slot->id);
+					// Don't try and merge into an already maxed out stack
+					if (slot->count >= maxStack)
+						continue;
+
+					// Add the stacks together and do some checks to make sure we don't overflow
+					int space = maxStack - slot->count;
+					int toMove = CrossPlatform::Math::min(space, (int)stack.count);
+
+					if (toMove > 0)
+						return true;
+				}
+			}
+		}
+		return false; // Give up
+	}
 };
 
 struct InventoryChest : Inventory {

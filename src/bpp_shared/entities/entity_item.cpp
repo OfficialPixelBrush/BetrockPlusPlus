@@ -6,12 +6,23 @@
  */
 #include "entity_item.h"
 #include "world/world.h"
+#include "entity_player.h"
 #include <algorithm>
 #include <cmath>
+
+void ItemEntity::onCollideWithPlayer(PlayerEntity& entity) {
+	if (pickupCooldown)
+		return;
+	entity.pickupItem(this->itemStack, this->id);
+	if (this->itemStack.count <= 0)
+		this->isDead = true;
+}
 
 void ItemEntity::tick() {
 	// Item entities have differing physics
 	ticksExisted++;
+	pickupCooldown--;
+	pickupCooldown = std::max(int8_t(0), pickupCooldown);
 
 	// Update what block is below us
 	int bx = (int)std::floor(posX);
