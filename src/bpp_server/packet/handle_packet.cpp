@@ -7,9 +7,9 @@
 */
 
 #include "handle_packet.h"
+#include "../entities/entity_tracker.h"
 #include "entities/entity_item.h"
 #include "inventory/item_stack.h"
-#include "../entities/entity_tracker.h"
 
 namespace HandlePacket {
 void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& session) {
@@ -175,7 +175,9 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 	if (pkt.face == PacketData::FaceDirection::USE_ITEM) {
 		GlobalLogger().info << "Tried to use item\n";
 		GlobalLogger().info << pkt.position << "\n";
+		return;
 	}
+
 	if (pkt.face == PacketData::FaceDirection::Y_MINUS)
 		pos.y -= 1;
 	if (pkt.face == PacketData::FaceDirection::Y_PLUS)
@@ -188,9 +190,18 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 		pos.x -= 1;
 	if (pkt.face == PacketData::FaceDirection::X_PLUS)
 		pos.x += 1;
+
+	ItemStack* heldItem = session.inventory.getHeldItem();
+	if (!heldItem)
+		return;
+
 	// Make sure the block id is valid for placement otherwise we will crash
-	if (pkt.item.id < BLOCK_MAX && (pkt.item.id >= 0))
-		world.setBlock({ pos.x, pos.y, pos.z }, BlockType(pkt.item.id.m_value), pkt.item.data);
+	if (heldItem->id >= BLOCK_MAX || (heldItem->id <= 0))
+		return;
+
+	BlockType blockId = static_cast<BlockType>(heldItem->id.m_value);
+	world.setBlock({ pos.x, pos.y, pos.z }, blockId, heldItem->data);
+	heldItem->decrementCount(1);
 }
 
 void SetHotbarSlot(Packet::SetHotbarSlot& pkt, PlayerSession& session) {
@@ -288,7 +299,8 @@ void InteractWithEntity(Packet::InteractWithEntity& /*pkt*/, PlayerSession& /*se
 	// TODO: attack / interact logic
 }
 
-void InteractWithBlock([[maybe_unused]] Packet::InteractWithBlock& pkt, [[maybe_unused]] PlayerSession& session, [[maybe_unused]] WorldManager& world) {}
+void InteractWithBlock([[maybe_unused]] Packet::InteractWithBlock& pkt, [[maybe_unused]] PlayerSession& session,
+                       [[maybe_unused]] WorldManager& world) {}
 
 void Animation(Packet::Animation& pkt, PlayerSession& session, EntityTracker& entityTracker) {
 	// Broadcast what we were sent to players who can see this player
@@ -298,7 +310,8 @@ void Animation(Packet::Animation& pkt, PlayerSession& session, EntityTracker& en
 	entityTracker.sendPacketToViewers(anim, anim.entity_id);
 }
 
-void PlayerAction([[maybe_unused]] Packet::PlayerAction& pkt, [[maybe_unused]] PlayerSession& session, [[maybe_unused]] EntityTracker& entityTracker) {
+void PlayerAction([[maybe_unused]] Packet::PlayerAction& pkt, [[maybe_unused]] PlayerSession& session,
+                  [[maybe_unused]] EntityTracker& entityTracker) {
 	// Broadcast what we were sent to players who can see this player
 }
 
