@@ -90,7 +90,7 @@ public:
 		return -1;
 	}
 
-	// Tries to "pickup" an item. Returns if it succeeded 
+	// Tries to "pickup" an item. Returns if it succeeded
 	// Not sure why vanilla does it in such a convoluted way
 	// but it is the way it is
 	bool pickupItem(ItemStack& stack) {
@@ -109,7 +109,7 @@ public:
 		}
 	}
 
-	// Returns whether we could merge an item stack without changing the inventory. 
+	// Returns whether we could merge an item stack without changing the inventory.
 	bool canMergeItemStackInInventory(ItemStack& stack, bool reverse = false, int startSlot = 0, int endSlot = -1) {
 		auto start = startSlot;
 		auto end = endSlot == -1 ? getSizeInventory() - 1 : endSlot;
@@ -214,7 +214,7 @@ struct InventoryDispenser : Inventory {
 	std::optional<ItemStack> getRandomStack() {
 		int chosen = -1, weight = 1;
 		for (int i = 0; i < 9; i++) {
-			if (!slots[size_t(i)].has_value())
+			if (slots[size_t(i)].id == ITEM_INVALID)
 				continue;
 			if (std::uniform_int_distribution<int>(0, weight++ - 1)(rng) == 0)
 				chosen = i;
