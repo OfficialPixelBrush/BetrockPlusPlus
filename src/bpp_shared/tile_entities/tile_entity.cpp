@@ -5,6 +5,7 @@
  *
 */
 #include "tile_entity.h"
+#include "items.h"
 #include "world/chunk.h"
 
 void TileEntityChest::tick() {
@@ -58,11 +59,11 @@ Tag TileEntityChest::serialize() {
 	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
 	int8_t currentSlot = 0;
 	for (auto& stack : inventory.slots) {
-		if (stack.has_value()) {
+		if (stack.id != ITEM_INVALID) {
 			auto item = Tag{ .type = TAG_COMPOUND };
-			auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack->count };
-			auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack->data };
-			auto Id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack->id };
+			auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
+			auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
+			auto Id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
 			auto Slot = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = currentSlot };
 
 			item.compound["Count"] = Count;
@@ -97,11 +98,11 @@ Tag TileEntityFurnace::serialize() {
 	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
 	int8_t currentSlot = 0;
 	for (auto& stack : inventory.slots) {
-		if (stack.has_value()) {
+		if (stack.id != ITEM_INVALID) {
 			auto item = Tag{ .type = TAG_COMPOUND };
-			auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack->count };
-			auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack->data };
-			auto Id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack->id };
+			auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
+			auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
+			auto Id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
 			auto Slot = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = currentSlot };
 
 			item.compound["Count"] = Count;
@@ -136,11 +137,11 @@ Tag TileEntityDispenser::serialize() {
 	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
 	int8_t currentSlot = 0;
 	for (auto& stack : inventory.slots) {
-		if (stack.has_value()) {
+		if (stack.id != ITEM_INVALID) {
 			auto item = Tag{ .type = TAG_COMPOUND };
-			auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack->count };
-			auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack->data };
-			auto Id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack->id };
+			auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
+			auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
+			auto Id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
 			auto Slot = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = currentSlot };
 
 			item.compound["Count"] = Count;
