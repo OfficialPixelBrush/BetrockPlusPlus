@@ -6,6 +6,7 @@
  *
 */
 
+#pragma once
 #include "crafting/recipe_manager.h"
 #include "logger.h"
 #include "world/storage/region_manager.h"
@@ -21,6 +22,7 @@ struct Runtime {
 	RegionManager overworldRegionManager;
 	RegionManager hellRegionManager; // hehe i call it hell instead of nether cause im quirky
 
+	// Gameplay
 	RecipeManager recipeManager;
 
 	Runtime() : worldHell(true) {

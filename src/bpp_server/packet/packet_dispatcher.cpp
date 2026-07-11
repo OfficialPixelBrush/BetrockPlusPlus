@@ -76,7 +76,7 @@ bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, World
 	case PacketId::PlaceBlock: {
 		Packet::PlaceBlock pkt;
 		pkt.Deserialize(session.stream);
-		HandlePacket::PlaceBlock(pkt, session, sessionWorld, server.players);
+		HandlePacket::PlaceBlock(pkt, session, sessionWorld, server.gameRuntime);
 		break;
 	}
 	case PacketId::SetHotbarSlot: {
@@ -94,13 +94,15 @@ bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, World
 	case PacketId::Animation: {
 		Packet::Animation pkt;
 		pkt.Deserialize(session.stream);
-		HandlePacket::Animation(pkt, session, session.dimension == 0 ? server.overworldEntityTracker : server.hellEntityTracker);
+		HandlePacket::Animation(pkt, session,
+		                        session.dimension == 0 ? server.overworldEntityTracker : server.hellEntityTracker);
 		break;
 	}
 	case PacketId::PlayerAction: {
 		Packet::PlayerAction pkt;
 		pkt.Deserialize(session.stream);
-		HandlePacket::PlayerAction(pkt, session, session.dimension == 0 ? server.overworldEntityTracker : server.hellEntityTracker);
+		HandlePacket::PlayerAction(pkt, session,
+		                           session.dimension == 0 ? server.overworldEntityTracker : server.hellEntityTracker);
 		break;
 	}
 	case PacketId::PlayerInput: {
