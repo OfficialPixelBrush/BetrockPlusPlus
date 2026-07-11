@@ -6,10 +6,11 @@
 */
 
 #include "recipe_manager.h"
+#include "inventory/item_stack.h"
 #include "logger.h"
 
-void RecipeManager::addShapelessRecipe(std::span<const ItemStack> grid, ItemStack output) {
-	auto [it, inserted] = shapelessRecipes.try_emplace(makeShapelessKey(grid), output);
+void RecipeManager::addShapelessRecipe(std::span<const ItemKey> items, ItemStack output) {
+	auto [it, inserted] = shapelessRecipes.try_emplace(makeShapelessKey(items), output);
 
 	[[unlikely]]
 	if (!inserted) {
@@ -20,11 +21,10 @@ void RecipeManager::addShapelessRecipe(std::span<const ItemStack> grid, ItemStac
 
 // The space character ' ' is reserved for empty slots
 void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> rows,
-                                    std::initializer_list<std::pair<char, ItemStack>> mapping, ItemStack output) {
-	std::array<ItemStack, 9> grid{};
-	grid.fill({ ITEM_NONE });
+                                    std::initializer_list<std::pair<char, ItemKey>> mapping, ItemStack output) {
+	std::array<ItemKey, 9> grid{};
 
-	std::unordered_map<char, ItemStack> table;
+	std::unordered_map<char, ItemKey> table;
 	for (const auto& m : mapping)
 		table.emplace(m.first, m.second);
 
@@ -46,7 +46,7 @@ void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> rows
 			if (c == ' ')
 				continue;
 
-			ItemStack mappedItem;
+			ItemKey mappedItem;
 
 			for (const auto& [symbol, item] : mapping) {
 				if (symbol == c)
@@ -73,14 +73,20 @@ void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> rows
 }
 
 const ItemStack RecipeManager::matchGrid(std::span<const ItemStack, 9> grid) const {
+	std::array<ItemKey, 9> keyGrid;
+	for (size_t i = 0; i < grid.size(); ++i) {
+		const ItemStack& stack = grid[i];
+		keyGrid[i] = ItemKey{ stack.id, stack.data };
+	}
+
 	{
-		auto it = shapedRecipes.find(makeShapedKey(grid));
+		auto it = shapedRecipes.find(makeShapedKey(keyGrid));
 		if (it != shapedRecipes.end())
 			return it->second;
 	}
 
 	{
-		auto it = shapelessRecipes.find(makeShapelessKey(grid));
+		auto it = shapelessRecipes.find(makeShapelessKey(keyGrid));
 		if (it != shapelessRecipes.end())
 			return it->second;
 	}
@@ -88,7 +94,7 @@ const ItemStack RecipeManager::matchGrid(std::span<const ItemStack, 9> grid) con
 	return ItemStack{ .id = ITEM_INVALID };
 }
 
-ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemStack, 9> grid) {
+ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemKey, 9> grid) {
 	int minX = 3;
 	int minY = 3;
 	int maxX = -1;
@@ -110,7 +116,6 @@ ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemStack, 9> grid)
 	}
 
 	ShapedRecipeKey key{};
-	key.cells.fill(ItemStack{});
 
 	// Recipe is empty
 	if (maxX == -1)
@@ -129,9 +134,8 @@ ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemStack, 9> grid)
 	return key;
 }
 
-ShapelessRecipeKey RecipeManager::makeShapelessKey(std::span<const ItemStack> items) {
+ShapelessRecipeKey RecipeManager::makeShapelessKey(std::span<const ItemKey> items) {
 	ShapelessRecipeKey key{};
-	key.items.fill(ItemStack{});
 
 	for (const auto& item : items) {
 		if (item.id == ITEM_INVALID || item.id == ITEM_NONE)
@@ -141,13 +145,7 @@ ShapelessRecipeKey RecipeManager::makeShapelessKey(std::span<const ItemStack> it
 	}
 
 	// Sort the items to make sure the hash is consistent
-	std::sort(key.items.begin(), key.items.begin() + key.count, [](const ItemStack& a, const ItemStack& b) {
-		if (a.id != b.id)
-			return a.id < b.id;
-		if (a.count != b.count)
-			return a.count < b.count;
-		return a.data < b.data;
-	});
+	std::sort(key.items.begin(), key.items.begin() + key.count);
 
 	return key;
 }
