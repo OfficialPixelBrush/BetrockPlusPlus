@@ -6,9 +6,7 @@
  *
 */
 #pragma once
-#include "logger/logger.h"
 #include <functional>
-#include <string>
 #if defined(__linux__)
 #define INVALID_SOCKET -1
 #include <netinet/in.h>
@@ -23,9 +21,8 @@
 #include "../commands/command_manager.h"
 #include "../player_conn/player_session.h"
 #include "blocks/block_properties.h"
-#include "networking/network_stream.h"
 #include "networking/packets.h"
-#include "packet_utils.h"
+#include "runtime.h"
 #include "world/world.h"
 
 struct EntityTracker;
@@ -39,8 +36,7 @@ void PlayerRotation(Packet::PlayerRotation& pkt, PlayerSession& session);
 void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& pkt, PlayerSession& session);
 void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& world,
                std::vector<std::shared_ptr<PlayerSession>>& /*players*/);
-void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& world,
-                std::vector<std::shared_ptr<PlayerSession>>& /*players*/);
+void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& world, Runtime& gameRuntime);
 void SetHotbarSlot(Packet::SetHotbarSlot& pkt, PlayerSession& session);
 // Click handler
 void ClickSlot(Packet::ClickSlot& pkt, PlayerSession& session);

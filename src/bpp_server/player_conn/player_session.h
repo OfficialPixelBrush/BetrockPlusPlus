@@ -9,13 +9,11 @@
 #pragma once
 #include "../entities/entity_mp_player.h"
 #include "../entities/entity_tracker.h"
+#include "inventory/interactions/player.h"
 #include "inventory/inventory_interaction.h"
 #include "items.h"
 #include "nbt/nbt.h"
 #include "networking/network_stream.h"
-#include "networking/packets.h"
-#include "tile_entities/tile_entity.h"
-#include "world/chunk.h"
 #include "world/client_pos.h"
 #include "world/world.h"
 #include <chrono>

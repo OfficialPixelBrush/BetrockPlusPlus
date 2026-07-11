@@ -7,8 +7,8 @@
  *
 */
 
-#include "cross_platform.h"
 #include "logger.h"
+#include "packet/packet_utils.h"
 #include "world.h"
 #include <string>
 #include <thread>
@@ -26,8 +26,6 @@
 #include "server.h"
 #include "version.h"
 #include <chrono>
-#include <filesystem>
-#include <iostream>
 
 Server::Server() : config("server.properties") {
 	loadConfig();
