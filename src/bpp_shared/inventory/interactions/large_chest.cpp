@@ -54,7 +54,7 @@ void LargeChestInventoryInteraction::mergeInventories() {
 		auto* stack = chestInventory.getStackInSlot(i);
 		sharedInventory.slots[slotCount++] = stack ? *stack : ItemStack{};
 	}
-	for (size_t i = 9; i <= 44; i++)
+	for (size_t i = 9; i < 45; i++)
 		sharedInventory.slots[slotCount++] = playerInventory->slots[i];
 }
 

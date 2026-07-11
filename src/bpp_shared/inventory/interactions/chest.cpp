@@ -49,7 +49,7 @@ void ChestInventoryInteraction::mergeInventories() {
 	size_t slotCount = 0;
 	for (auto& slot : chestInventory->slots)
 		sharedInventory.slots[slotCount++] = slot;
-	for (size_t i = 9; i <= 44; i++)
+	for (size_t i = 9; i < 45; i++)
 		sharedInventory.slots[slotCount++] = playerInventory->slots[i];
 }
 
