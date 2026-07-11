@@ -99,12 +99,15 @@ void EntityTracker::tick() {
 			case EntityType::PLAYER: {
 				Packet::SpawnPlayer pkt;
 				pkt.entity_id = entityEntry.entity->id;
-				pkt.held_item_id = ITEM_APPLE;
+				pkt.held_item_id = ITEM_NONE;
 				pkt.q_position = { quantizePosition(entityEntry.entity->posX),
 					               quantizePosition(entityEntry.entity->posY),
 					               quantizePosition(entityEntry.entity->posZ) };
-				pkt.q_rotation = { 0, 0 };
-				pkt.username = server->getUsernameByEntityId(entityEntry.entity->id);
+				pkt.q_rotation = { int8_t(quantizeRotation(entityEntry.entity->rotationYaw)), int8_t(quantizeRotation(entityEntry.entity->rotationPitch)) };
+
+				// To prevent bad behavior when we share a name with another entity
+				auto username = server->getUsernameByEntityId(entityEntry.entity->id);
+				pkt.username = username;
 				pkt.Serialize(pSession.stream);
 				break;
 			}
@@ -143,7 +146,7 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 	auto& entity = trackedEntry.entity;
 	Vec3 currentPosition = { entity->posX, entity->posY, entity->posZ };
 
-	// Check for the dirty flag EVERY TICK!
+	// Dirty flag gets checked every tick
 	if (entity->velocityChanged) {
 		entity->velocityChanged = false;
 		trackedEntry.lastBroadcastMotion = { entity->motionX, entity->motionY, entity->motionZ };
@@ -163,6 +166,7 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 	if (needsMovementUpdate) {
 		trackedEntry.updateCounter = 0;
 
+		// The threshold-based velocity check
 		if (trackedEntry.profile.sendVelocity) {
 			Vec3 currentMotion = { entity->motionX, entity->motionY, entity->motionZ };
 			Vec3& lastMotion = trackedEntry.lastBroadcastMotion;
@@ -202,7 +206,7 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 		if (needsTP) {
 			trackedEntry.ticksSinceTeleport = 0;
 
-			// Resync entity position
+			// resyncs the entity position
 			entity->posX = double(qx) / 32.0;
 			entity->posY = double(qy) / 32.0;
 			entity->posZ = double(qz) / 32.0;

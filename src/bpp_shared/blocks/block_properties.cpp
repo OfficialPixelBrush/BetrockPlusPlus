@@ -17,7 +17,6 @@ BlockProperties blockProperties[256] = {};
 BlockBehavior blockBehaviors[256] = {};
 
 //  Behavior helper functions
-//  Must live at namespace scope — cannot be defined inside a function
 
 // defaults
 static AABB defaultAABB(uint8_t) {

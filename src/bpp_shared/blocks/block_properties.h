@@ -62,44 +62,44 @@ struct BlockBehavior {
 	CollisionShape (*getCollider)(uint8_t metadata) = nullptr;
 
 	// Called each random tick if ticksOnLoad = true
-	void (*onTick)(WorldManager&, Int3 pos, uint8_t meta, Java::Random&) = nullptr;
+	void (*onTick)(WorldManager&, Int3 pos, uint8_t meta, Java::Random& random) = nullptr;
 
 	// Called when block is placed by world gen or setBlock
-	void (*onBlockAdded)(WorldManager&, Int3 pos) = nullptr;
+	void (*onBlockAdded)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when block is removed
-	void (*onBlockRemoval)(WorldManager&, Int3 pos) = nullptr;
+	void (*onBlockRemoval)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when a neighboring block changes
-	void (*onNeighborBlockChange)(WorldManager&, Int3 pos, BlockType) = nullptr;
+	void (*onNeighborBlockChange)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when a player left-clicks the block (not breaks, just clicks)
-	void (*onBlockClicked)(WorldManager&, Int3 pos, uint8_t meta) = nullptr;
+	// pos is where that block that is interacted with is
+	void (*onBlockClicked)(WorldManager& world, Int3 pos) = nullptr;
 
-	// Called when a player right-clicks the block; returns true if consumed.
-	bool (*onBlockActivated)(WorldManager&, Int3 pos, uint8_t meta, PlayerSession&) = nullptr;
+	// Called when a player right-clicks the block
+	// Return true if we allow the player to still place their held block
+	bool (*onBlockActivated)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when the block is placed by a player or dispenser
-	void (*onBlockPlacedBy)(WorldManager&, Int3 pos, uint8_t meta) = nullptr;
+	// pos is where this block should be placed in the world
+	void (*onBlockPlacedBy)(WorldManager& world, Int3 pos, uint8_t meta) = nullptr;
 
 	// Called when block is placed, receives the face it was placed against
-	void (*onBlockPlaced)(WorldManager&, Int3 pos, int face) = nullptr;
+	void (*onBlockPlaced)(WorldManager& world, Int3 pos, int face) = nullptr;
 
 	// Called when player breaks the block
-	void (*onBlockDestroyedByPlayer)(WorldManager&, Int3 pos, uint8_t meta) = nullptr;
+	void (*onBlockDestroyedByPlayer)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when an explosion destroys the block
 	// TODO: Should default to onBlockDestroyedByPlayer if not set
-	void (*onBlockDestroyedByExplosion)(WorldManager&, Int3 pos) = nullptr;
+	void (*onBlockDestroyedByExplosion)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when an entity walks on top of the block
-	void (*onEntityWalking)(WorldManager&, Int3 pos, Entity&) = nullptr;
+	void (*onEntityWalking)(WorldManager& world, Int3 pos, Entity& entity) = nullptr;
 
 	// Called when an entity collides with the block (cactus damage, etc.)
-	void (*onEntityCollidedWithBlock)(WorldManager&, Int3 pos, Entity&) = nullptr;
-
-	// Modify entity velocity
-	void (*velocityToAddToEntity)(WorldManager&, Int3 pos, Entity&, Vec3&) = nullptr;
+	void (*onEntityCollidedWithBlock)(WorldManager& world, Int3 pos, Entity& entity) = nullptr;
 
 	// What item/block this drops when broken
 	ItemId (*idDropped)(uint8_t meta, Java::Random& random) = nullptr;
