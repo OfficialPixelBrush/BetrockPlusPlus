@@ -101,7 +101,7 @@ struct Entity {
 	float yOffset = 0.0f;
 
 	// How high a block face this entity can step onto without jumping.
-	float stepHeight = 0.0f;
+	float stepHeight = 0.5f;
 
 	// Collision state
 	bool onGround = false;
@@ -158,7 +158,7 @@ struct Entity {
 
 	void rebuildCollider() {
 		double halfWidth = double(width) / 2.0;
-		double bottom = posY + double(yOffset) - double(ySize);
+		double bottom = posY - double(yOffset) + double(ySize);
 		collider = { posX - halfWidth,        bottom,          posZ - halfWidth, posX + halfWidth,
 			         bottom + double(height), posZ + halfWidth };
 	}

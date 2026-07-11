@@ -151,7 +151,7 @@ void Server::startup() {
 	registerEntityTrackerCallbacks(hellEntityTracker, gameRuntime.worldHell.entityManager);
 
 	// Get spawn ready
-	constexpr int spawn_chunk_distance = 4;
+	constexpr int spawn_chunk_distance = 9;
 	int total_spawn_chunks = (spawn_chunk_distance + spawn_chunk_distance + 1) *
 	                         (spawn_chunk_distance + spawn_chunk_distance + 1);
 	GlobalLogger().info << "Server spawn is "
@@ -227,7 +227,7 @@ void Server::startup() {
 	loadSpawnChunks(gameRuntime.world);
 
 	GlobalLogger().info << "Loading spawn chunks for Hell: (" << total_spawn_chunks << ")\n";
-	loadSpawnChunks(gameRuntime.world);
+	loadSpawnChunks(gameRuntime.worldHell);
 
 	float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
 	GlobalLogger().info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";

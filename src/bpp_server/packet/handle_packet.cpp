@@ -54,10 +54,16 @@ void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& pkt, PlayerSes
 
 void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& world,
                std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
+	Int3 packetPos = {pkt.position.x, pkt.position.y, pkt.position.z};
 	switch (pkt.status) {
 	case PacketData::MineStatus::DIGGING_STARTED: {
 		session.startedMiningAtTick = world.elapsed_ticks;
-		session.lastTargetedBlock = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z });
+		BlockType blockId = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z });
+		session.lastTargetedBlock = blockId;
+
+		if (Blocks::blockBehaviors[session.lastTargetedBlock].onBlockClicked) {
+			Blocks::blockBehaviors[session.lastTargetedBlock].onBlockClicked(world, packetPos);
+		}
 		return;
 	}
 	case PacketData::MineStatus::DIGGING_FINISHED: {
