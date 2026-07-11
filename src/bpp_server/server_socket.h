@@ -35,12 +35,19 @@ inline int createServerSocket(int port) {
 #endif
 
 	serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+
+	// This allows the server to quickly restart,
+	// if not enabled the OS will hold the port until the last packet time expires.
+	int reuse = 1;
+	setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+
 	sockaddr_in addr{};
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
 	addr.sin_addr.s_addr = INADDR_ANY;
 	if (bind(serverSocket, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
-		GlobalLogger().warn << "**** FAILED TO BIND SOCKET! ****" << "\n";
+		GlobalLogger().error << "**** FAILED TO BIND SOCKET! ****" << "\n";
+		return -1;
 	}
 	listen(serverSocket, 8);
 
