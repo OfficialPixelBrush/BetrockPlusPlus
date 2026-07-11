@@ -2,7 +2,7 @@
 # Derived from network_stream.cpp and chunk_gen.cpp
 
 Language: Cpp
-Standard: c++17
+Standard: Latest
 
 # Indentation
 IndentWidth: 4

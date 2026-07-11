@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -8,8 +9,14 @@
 
 #include "handle_packet.h"
 #include "../entities/entity_tracker.h"
+#include "blocks.h"
 #include "entities/entity_item.h"
+#include "inventory/interactions/chest.h"
+#include "inventory/interactions/crafting.h"
+#include "inventory/interactions/large_chest.h"
+#include "inventory/inventory_interaction.h"
 #include "inventory/item_stack.h"
+#include "packet_utils.h"
 
 namespace HandlePacket {
 void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& session) {
@@ -105,36 +112,49 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 	return;
 }
 
-void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& world,
-                std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
+void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& world, Runtime& gameRuntime) {
+	Int3 position = { pkt.position.x, pkt.position.y, pkt.position.z };
 	// Block interactions
-	auto block = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z });
+	auto block = world.getBlockId(position);
+
+	if (block == BLOCK_CRAFTING_TABLE) {
+		Packet::OpenContainer ow;
+		ow.window_id = session.getNextWindowId();
+		ow.slot_count = 9;
+		ow.title = "Crafting";
+		ow.window_type = PacketData::WindowType::CRAFTING_TABLE;
+		ow.Serialize(session.stream);
+
+		session.activeInteraction = std::make_unique<CraftingInventoryInteraction>(&session.inventory, world,
+		                                                                           gameRuntime, position);
+		session.activeInteraction->initSnapshot();
+		return;
+	}
+
 	if (block == BLOCK_CHEST) {
+		auto chest = world.getTileEntityShared<TileEntityChest>(position);
+		if (!chest) {
+			chest = std::make_shared<TileEntityChest>(position);
+			world.createTileEntity(chest);
+		}
+
 		// Are we a double chest?
-		auto l = world.getBlockId({ pkt.position.x - 1, pkt.position.y, pkt.position.z });
-		auto r = world.getBlockId({ pkt.position.x + 1, pkt.position.y, pkt.position.z });
-		auto f = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z - 1 });
-		auto b = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z + 1 });
+		auto l = world.getBlockId({ pkt.position.x - 1, position.y, position.z });
+		auto r = world.getBlockId({ position.x + 1, position.y, position.z });
+		auto f = world.getBlockId({ position.x, position.y, position.z - 1 });
+		auto b = world.getBlockId({ position.x, position.y, position.z + 1 });
 		bool doubleChest = (l == BLOCK_CHEST || r == BLOCK_CHEST || f == BLOCK_CHEST || b == BLOCK_CHEST);
 
 		if (doubleChest) {
-			auto chest = world.getTileEntityShared<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z });
-			if (!chest)
-				return;
-
 			std::shared_ptr<TileEntityChest> partnerChest = nullptr;
 			if (l == BLOCK_CHEST)
-				partnerChest = world.getTileEntityShared<TileEntityChest>(
-				    { pkt.position.x - 1, pkt.position.y, pkt.position.z });
+				partnerChest = world.getTileEntityShared<TileEntityChest>({ position.x - 1, position.y, position.z });
 			else if (r == BLOCK_CHEST)
-				partnerChest = world.getTileEntityShared<TileEntityChest>(
-				    { pkt.position.x + 1, pkt.position.y, pkt.position.z });
+				partnerChest = world.getTileEntityShared<TileEntityChest>({ position.x + 1, position.y, position.z });
 			else if (f == BLOCK_CHEST)
-				partnerChest = world.getTileEntityShared<TileEntityChest>(
-				    { pkt.position.x, pkt.position.y, pkt.position.z - 1 });
+				partnerChest = world.getTileEntityShared<TileEntityChest>({ position.x, position.y, position.z - 1 });
 			else
-				partnerChest = world.getTileEntityShared<TileEntityChest>(
-				    { pkt.position.x, pkt.position.y, pkt.position.z + 1 });
+				partnerChest = world.getTileEntityShared<TileEntityChest>({ position.x, position.y, position.z + 1 });
 			if (!partnerChest)
 				return;
 
@@ -158,9 +178,6 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 		}
 
 		// Setup interaction
-		auto chest = world.getTileEntityShared<TileEntityChest>({ pkt.position.x, pkt.position.y, pkt.position.z });
-		if (!chest)
-			return; // not a chest tile entity
 		session.activeInteraction = std::make_unique<ChestInventoryInteraction>(&session.inventory, chest);
 		session.activeInteraction->initSnapshot();
 
@@ -178,26 +195,26 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 		return;
 	}
 
-	auto pos = pkt.position;
 	// NOTE: Also sent for when a block placement is invalid
 	if (pkt.face == PacketData::FaceDirection::USE_ITEM) {
 		GlobalLogger().info << "Tried to use item\n";
-		GlobalLogger().info << pkt.position << "\n";
+		GlobalLogger().info << position << "\n";
 		return;
 	}
 
+	Int3 placePosition = position;
 	if (pkt.face == PacketData::FaceDirection::Y_MINUS)
-		pos.y -= 1;
+		placePosition.y -= 1;
 	if (pkt.face == PacketData::FaceDirection::Y_PLUS)
-		pos.y += 1;
+		placePosition.y += 1;
 	if (pkt.face == PacketData::FaceDirection::Z_MINUS)
-		pos.z -= 1;
+		placePosition.z -= 1;
 	if (pkt.face == PacketData::FaceDirection::Z_PLUS)
-		pos.z += 1;
+		placePosition.z += 1;
 	if (pkt.face == PacketData::FaceDirection::X_MINUS)
-		pos.x -= 1;
+		placePosition.x -= 1;
 	if (pkt.face == PacketData::FaceDirection::X_PLUS)
-		pos.x += 1;
+		placePosition.x += 1;
 
 	ItemStack* heldItem = session.inventory.getHeldItem();
 	if (!heldItem)
@@ -208,7 +225,7 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 		return;
 
 	BlockType blockId = static_cast<BlockType>(heldItem->id.m_value);
-	world.setBlock({ pos.x, pos.y, pos.z }, blockId, heldItem->data);
+	world.setBlock(placePosition, blockId, heldItem->data);
 	heldItem->decrementCount(1);
 }
 
