@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
 */
@@ -200,6 +201,12 @@ struct InventoryLargeChest : Inventory {
 			    CrossPlatform::Math::min(m_lower->getSizeInventory() - 1, end - upperSize));
 		}
 		return success || stack.count == 0;
+	}
+};
+
+struct InventoryCrafting : Inventory {
+	InventoryCrafting() : Inventory(10) {
+		name = "Crafting";
 	}
 };
 
