@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -11,6 +12,7 @@
 #include "blocks.h"
 #include "entities/entity_item.h"
 #include "inventory/interactions/chest.h"
+#include "inventory/interactions/crafting.h"
 #include "inventory/interactions/large_chest.h"
 #include "inventory/inventory_interaction.h"
 #include "inventory/item_stack.h"
@@ -114,6 +116,20 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 	Int3 position = { pkt.position.x, pkt.position.y, pkt.position.z };
 	// Block interactions
 	auto block = world.getBlockId(position);
+
+	if (block == BLOCK_CRAFTING_TABLE) {
+		Packet::OpenContainer ow;
+		ow.window_id = session.getNextWindowId();
+		ow.slot_count = 9;
+		ow.title = "Crafting";
+		ow.window_type = PacketData::WindowType::CRAFTING_TABLE;
+		ow.Serialize(session.stream);
+
+		session.activeInteraction = std::make_unique<CraftingInventoryInteraction>(&session.inventory, world,
+		                                                                           gameRuntime, position);
+		session.activeInteraction->initSnapshot();
+		return;
+	}
 
 	if (block == BLOCK_CHEST) {
 		auto chest = world.getTileEntityShared<TileEntityChest>(position);
