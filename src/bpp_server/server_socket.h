@@ -39,7 +39,7 @@ inline int createServerSocket(int port) {
 	// This allows the server to quickly restart,
 	// if not enabled the OS will hold the port until the last packet time expires.
 	int reuse = 1;
-	setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+	setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuse), sizeof(reuse));
 
 	sockaddr_in addr{};
 	addr.sin_family = AF_INET;
