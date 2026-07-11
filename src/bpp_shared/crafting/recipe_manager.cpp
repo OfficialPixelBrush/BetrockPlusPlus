@@ -8,6 +8,7 @@
 #include "recipe_manager.h"
 #include "inventory/item_stack.h"
 #include "logger.h"
+#include <algorithm>
 
 void RecipeManager::addShapelessRecipe(std::span<const ItemKey> items, ItemStack output) {
 	auto [it, inserted] = shapelessRecipes.try_emplace(makeShapelessKey(items), output);

@@ -33,25 +33,21 @@ bool CraftingInventoryInteraction::canExist() {
 }
 
 void CraftingInventoryInteraction::initSnapshot() {
-	snapshot.resize(size_t(craftInventory.getSizeInventory()));
-	for (size_t i = 0; i < size_t(craftInventory.getSizeInventory()); i++)
-		snapshot[i] = craftInventory.slots[i];
+	snapshot.resize(size_t(sharedInventory.getSizeInventory()));
+	for (size_t i = 0; i < snapshot.size(); i++)
+		snapshot[i] = sharedInventory.slots[i];
 }
 
-// Analyze the snapshot vs the current crafting table inventory
 std::vector<DeltaSlot> CraftingInventoryInteraction::tickDiff() {
 	std::vector<DeltaSlot> differences;
+	mergeInventories(); // make sure sharedInventory is current before diffing
 	for (size_t i = 0; i < snapshot.size(); i++) {
 		auto& snap = snapshot[i];
-
-		bool changed = snap != craftInventory.slots[i];
-		if (!changed)
+		if (snap == sharedInventory.slots[i])
 			continue;
-
-		snap = craftInventory.slots[i];
+		snap = sharedInventory.slots[i];
 		differences.push_back({ snap, int(i) });
 	}
-	mergeInventories();
 	return differences;
 }
 
@@ -59,7 +55,7 @@ void CraftingInventoryInteraction::mergeInventories() {
 	size_t slotCount = 0;
 	for (size_t i = 0; i < 10; i++)
 		sharedInventory.slots[slotCount++] = craftInventory.slots[i];
-	for (size_t i = 9; i < 44; i++)
+	for (size_t i = 9; i < 45; i++)
 		sharedInventory.slots[slotCount++] = playerInventory->slots[i];
 }
 
@@ -67,7 +63,7 @@ void CraftingInventoryInteraction::writeBack() {
 	size_t slotCount = 0;
 	for (size_t i = 0; i < 10; i++)
 		craftInventory.slots[i] = sharedInventory.slots[slotCount++];
-	for (size_t i = 9; i < 44; i++)
+	for (size_t i = 9; i < 45; i++)
 		playerInventory->slots[i] = sharedInventory.slots[slotCount++];
 }
 
@@ -141,9 +137,13 @@ void CraftingInventoryInteraction::shiftClickResult() {
 		return;
 
 	ItemStack copy = result;
-	bool success = playerInventory->mergeItemStackInInventory(copy, true, 9, 44);
-	if (success)
+	if (playerInventory->mergeItemStackInInventory(copy, true, 9, 44)) {
 		finishCraft();
+	} else {
+		craftInventory.slots[0] = copy.count == 0 ? ItemStack{} : copy;
+	}
+
+	mergeInventories();
 }
 
 void CraftingInventoryInteraction::onShiftClick(int slot) {
@@ -162,11 +162,19 @@ void CraftingInventoryInteraction::shiftClickGrid(int slot) {
 	ItemStack copy = *stack;
 
 	if (slot < 10) {
-		// Chest -> inventory
-		[[maybe_unused]] bool success = playerInventory->mergeItemStackInInventory(copy, true, 9, 44);
+		// Grid -> inventory
+		// Try the main inventory then the hotbar
+		bool success = playerInventory->mergeItemStackInInventory(copy, false, 9, 35);
+		if (!success)
+			playerInventory->mergeItemStackInInventory(copy, false, 36, 44);
 	} else {
-		// Inventory -> Chest
-		[[maybe_unused]] bool success = craftInventory.mergeItemStackInInventory(copy, false, 1, 9);
+		// We can't shift click into the crafting grid itself, so just try the other area of the inventory
+		// We shift clicked in the inventory
+		if (slot > 9 && slot < 37) {
+			playerInventory->mergeItemStackInInventory(copy, false, 36, 44);
+		} else {
+			playerInventory->mergeItemStackInInventory(copy, false, 9, 35);
+		}
 	}
 
 	// Update the source in the real inventory before re-merging
