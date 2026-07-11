@@ -10,6 +10,6 @@
 #include "recipe_manager.h"
 
 void RecipeManager::addVanillaRecipes() {
-	addShapedRecipe({ "###", "# #", "###" }, { { '#', { BLOCK_COBBLESTONE, 1 } } }, { BLOCK_FURNACE, 1 });
+	addShapedRecipe({ "###", "# #", "###" }, { { '#', { BLOCK_COBBLESTONE } } }, { BLOCK_FURNACE, 1 });
 	//TODO: Add all recipes
 }

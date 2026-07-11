@@ -15,20 +15,39 @@
 #include <unordered_map>
 #include <utility>
 
+struct ItemKey {
+	ItemId id = ITEM_INVALID;
+	ItemDamage data = 0;
+
+	auto operator<=>(const ItemKey&) const = default;
+};
+
 struct ShapedRecipeKey {
 	uint8_t width = 0;
 	uint8_t height = 0;
-	std::array<ItemStack, 9> cells{};
+	std::array<ItemKey, 9> cells{};
 
 	friend bool operator==(const ShapedRecipeKey&, const ShapedRecipeKey&) = default;
 };
 
 struct ShapelessRecipeKey {
 	uint8_t count = 0;
-	std::array<ItemStack, 9> items{};
+	std::array<ItemKey, 9> items{};
 
 	friend bool operator==(const ShapelessRecipeKey&, const ShapelessRecipeKey&) = default;
 };
+
+namespace std {
+template <>
+struct hash<ItemKey> {
+	size_t operator()(const ItemKey& k) const noexcept {
+		size_t h = 0;
+		hash_combine(h, k.id);
+		hash_combine(h, k.data);
+		return h;
+	}
+};
+} // namespace std
 
 struct ShapedRecipeKeyHasher {
 	size_t operator()(const ShapedRecipeKey& key) const {
@@ -60,16 +79,16 @@ struct ShapelessRecipeKeyHasher {
 class RecipeManager {
 public:
 	void addShapedRecipe(std::initializer_list<std::string_view> rows,
-	                     std::initializer_list<std::pair<char, ItemStack>> mapping, ItemStack output);
-	void addShapelessRecipe(std::span<const ItemStack> items, ItemStack output);
+	                     std::initializer_list<std::pair<char, ItemKey>> mapping, ItemStack output);
+	void addShapelessRecipe(std::span<const ItemKey> items, ItemStack output);
 
 	void addVanillaRecipes();
 
-	const ItemStack matchGrid(std::span<const ItemStack, 9> grid) const;
+	[[nodiscard]] const ItemStack matchGrid(std::span<const ItemStack, 9> grid) const;
 
 private:
-	static ShapedRecipeKey makeShapedKey(std::span<const ItemStack, 9> grid);
-	static ShapelessRecipeKey makeShapelessKey(std::span<const ItemStack> items);
+	static ShapedRecipeKey makeShapedKey(std::span<const ItemKey, 9> grid);
+	static ShapelessRecipeKey makeShapelessKey(std::span<const ItemKey> items);
 
 	std::unordered_map<ShapedRecipeKey, ItemStack, ShapedRecipeKeyHasher> shapedRecipes;
 	std::unordered_map<ShapelessRecipeKey, ItemStack, ShapelessRecipeKeyHasher> shapelessRecipes;
