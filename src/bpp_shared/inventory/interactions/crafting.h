@@ -20,15 +20,14 @@ public:
 	// We don't do any inventory merging in this class because
 	// sharedInventory, craftingInventory, playerInventory all may or may not be the same thing.
 	CraftingInventoryInteraction(Inventory* sharedInventory, Inventory* craftingInventory,
-	                             InventoryPlayer* playerInventory, Runtime& gameRuntime, uint8_t width, uint8_t height);
+	                             InventoryPlayer* playerInventory, Runtime& gameRuntime, UInt8_2 gridSize);
 
 	void onLeftClick(int slot) override;
 	void onRightClick(int slot) override;
 	void onShiftClick(int slot) override;
 
 protected:
-	const uint8_t gridWidth;
-	const uint8_t gridHeight;
+	const UInt8_2 m_gridSize;
 
 	void handleCrafting(int slot);
 	void finishCraft();

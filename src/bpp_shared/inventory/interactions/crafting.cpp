@@ -5,16 +5,17 @@
 */
 #include "crafting.h"
 #include "inventory/inventory_interaction.h"
+#include "numeric_structs.h"
 
 CraftingInventoryInteraction::CraftingInventoryInteraction(Inventory* sharedInventory, Inventory* craftingInventory,
                                                            InventoryPlayer* playerInventory, Runtime& gameRuntime,
-                                                           uint8_t width, uint8_t height)
+                                                           UInt8_2 gridSize)
     : InventoryInteraction(sharedInventory), craftInventory(craftingInventory), playerInventory(playerInventory),
-      runtime(gameRuntime), gridWidth(width), gridHeight(height) {}
+      runtime(gameRuntime), m_gridSize(gridSize) {}
 
 void CraftingInventoryInteraction::updateResult() {
-	auto grid = std::span<const ItemStack>(craftInventory->slots.data() + 1, gridWidth * gridHeight);
-	ItemStack result = runtime.recipeManager.matchGrid(grid, gridWidth, gridHeight);
+	auto grid = std::span<const ItemStack>(craftInventory->slots.data() + 1, m_gridSize.total());
+	ItemStack result = runtime.recipeManager.matchGrid(grid, m_gridSize);
 	craftInventory->slots[0] = result;
 }
 
@@ -22,7 +23,7 @@ void CraftingInventoryInteraction::finishCraft() {
 	craftInventory->slots[0] = ItemStack{};
 
 	// Consume one of each ingredient that went into this craft
-	for (size_t i = 1; i <= gridWidth * gridHeight; ++i)
+	for (size_t i = 1; i <= m_gridSize.total(); ++i)
 		craftInventory->slots[i].decrementCount(1);
 
 	// The grid changed, there might be another possible craft
@@ -51,7 +52,7 @@ void CraftingInventoryInteraction::takeResult() {
 }
 
 void CraftingInventoryInteraction::handleCrafting(int slot) {
-	if (slot == 0 || slot > gridWidth * gridHeight)
+	if (slot == 0 || slot > m_gridSize.total())
 		return;
 
 	updateResult();
