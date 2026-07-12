@@ -93,6 +93,10 @@ struct TriNumber {
 		oss << *this; // Use the overloaded << operator
 		return oss.str();
 	}
+
+	T total() const {
+		return x*y*z;
+	}
 };
 
 /**
@@ -163,6 +167,10 @@ struct BiNumber {
 		std::ostringstream oss;
 		oss << *this; // Use the overloaded << operator
 		return oss.str();
+	}
+
+	T total() const {
+		return x*y;
 	}
 };
 
@@ -240,6 +248,10 @@ struct SlimInt3 {
 		std::ostringstream oss;
 		oss << *this; // Use the overloaded << operator
 		return oss.str();
+	}
+
+	T total() const {
+		return x*y*z;
 	}
 };
 
