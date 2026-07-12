@@ -9,3 +9,7 @@
 bool PlayerEntity::pickupItem(ItemStack& stack, EntityId entityId) {
 	return true;
 }
+
+bool PlayerEntity::dropItem(ItemStack stack) {
+	return true;
+}
