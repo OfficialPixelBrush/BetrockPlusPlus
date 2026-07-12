@@ -81,8 +81,8 @@ struct ChunkSender {
 		}
 		for (auto& p : toUnload) {
 			Packet::SetChunkVisibility vis;
-			vis.chunkX = p.x;
-			vis.chunkZ = p.z;
+			vis.pos.x = p.x;
+			vis.pos.z = p.z;
 			vis.visible = false;
 			vis.Serialize(session.stream);
 			session.sentChunks.erase(p);
@@ -171,12 +171,12 @@ struct ChunkSender {
 
 			PendingSubRegion psr;
 			psr.chunkPos = chunk;
-			psr.header.chunkX = chunk.x * 16 + xmin;
-			psr.header.chunkZ = chunk.z * 16 + zmin;
-			psr.header.chunkY = static_cast<int16_t>(ymin);
-			psr.header.sizeX = static_cast<uint8_t>(xmax - xmin);
-			psr.header.sizeY = static_cast<uint8_t>(ymax - ymin);
-			psr.header.sizeZ = static_cast<uint8_t>(zmax - zmin);
+			psr.header.pos.x = chunk.x * CHUNK_WIDTH + xmin;
+			psr.header.pos.z = chunk.z * CHUNK_WIDTH + zmin;
+			psr.header.pos.y = static_cast<int16_t>(ymin);
+			psr.header.size.x = static_cast<uint8_t>(xmax - xmin);
+			psr.header.size.y = static_cast<uint8_t>(ymax - ymin);
+			psr.header.size.z = static_cast<uint8_t>(zmax - zmin);
 			if (chunkRef) {
 				std::shared_ptr<const Chunk> ref = chunkRef;
 				psr.data = pool.submit_task([ref, xmin, xmax, ymin, ymax, zmin, zmax]() {
@@ -208,14 +208,14 @@ struct ChunkSender {
 			auto compressed = pc.data.get();
 
 			Packet::SetChunkVisibility vis;
-			vis.chunkX = pc.pos.x;
-			vis.chunkZ = pc.pos.z;
+			vis.pos.x = pc.pos.x;
+			vis.pos.z = pc.pos.z;
 			vis.visible = true;
 			vis.Serialize(session.stream);
 
 			Packet::ChunkData data;
-			data.chunkX = pc.pos.x * 16;
-			data.chunkZ = pc.pos.z * 16;
+			data.pos.x = pc.pos.x * 16;
+			data.pos.z = pc.pos.z * 16;
 			data.compressedData = std::move(compressed);
 			data.Serialize(session.stream);
 
