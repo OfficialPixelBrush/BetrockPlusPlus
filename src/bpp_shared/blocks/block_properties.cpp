@@ -16,7 +16,7 @@ namespace Blocks {
 BlockProperties blockProperties[256] = {};
 BlockBehavior blockBehaviors[256] = {};
 
-//  Behavior helper functions
+// Behavior helper functions
 
 // defaults
 static AABB defaultAABB(uint8_t) {
@@ -1742,6 +1742,27 @@ void registerAll() {
 		.getSelectionBox = pistonHeadAABB,
 		.getRayBounds = pistonHeadAABB,
 		.getCollider = pistonHeadCollider,
+	};
+
+	// for when the block is interacted with!
+	blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated = [](WorldManager& world, Int3 pos) -> bool {
+		auto meta = world.getMetadata(pos);
+		if (meta & 8) {
+			// We are the top half of the door
+			if (!world.getBlockId({ pos.x, pos.y - 1, pos.z }) == BLOCK_DOOR_WOOD)
+				// Below us is not the bottom of a door! This is bad!
+				return false;
+			// Recall this function on the bottom of the door
+			blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated(world, { pos.x, pos.y - 1, pos.z });
+			return false;
+		}
+		// We are the top half so lets open
+		Int3 top = { pos.x, pos.y + 1, pos.z };
+		if (world.getBlockId(top) == BLOCK_DOOR_WOOD && (world.getMetadata(top) & 8)) {
+			world.setMeta(top, uint8_t((meta ^ 4) + 8));
+		}
+		world.setMeta(pos, uint8_t(meta ^ 4)); // XOR bit 2; flips open/closed
+		return false;
 	};
 
 	// --------------- block drops, only exceptions are included (something that doesn't drop itself) ---------------

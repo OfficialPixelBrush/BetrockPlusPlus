@@ -28,6 +28,7 @@
 #include <chrono>
 
 Server::Server() : config("server.properties") {
+	ServerBlock::initialize();
 	loadConfig();
 	serverSocket = ServerSocketManager::createServerSocket(serverPort);
 	if (serverSocket < 0) {
