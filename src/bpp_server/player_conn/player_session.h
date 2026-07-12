@@ -83,8 +83,10 @@ struct PlayerSession {
 	explicit PlayerSession(int socket) : stream(socket), inventoryInteraction(&inventory) {}
 	~PlayerSession() {
 		// So our player entity despawns from the world
-		entity->isDead = true;
-		entity->session = nullptr;
+		if (entity) {
+			entity->isDead = true;
+			entity->session = nullptr;
+		}
 		entityTracker = nullptr;
 	}
 
