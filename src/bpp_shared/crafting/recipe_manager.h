@@ -84,10 +84,10 @@ public:
 
 	void addVanillaRecipes();
 
-	[[nodiscard]] const ItemStack matchGrid(std::span<const ItemStack, 9> grid) const;
+	[[nodiscard]] const ItemStack matchGrid(std::span<const ItemStack> grid, uint8_t width, uint8_t height) const;
 
 private:
-	static ShapedRecipeKey makeShapedKey(std::span<const ItemKey, 9> grid);
+	static ShapedRecipeKey makeShapedKey(std::span<const ItemKey> grid, uint8_t width, uint8_t height);
 	static ShapelessRecipeKey makeShapelessKey(std::span<const ItemKey> items);
 
 	std::unordered_map<ShapedRecipeKey, ItemStack, ShapedRecipeKeyHasher> shapedRecipes;
