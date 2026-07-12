@@ -34,3 +34,4 @@ struct LitBlock : Block {
 	uint8_t blocklight = 0;
 	uint8_t skylight = 0;
 };
+
