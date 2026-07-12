@@ -8,12 +8,8 @@
 #include "enums/items.h"
 #include "item_stack.h"
 #include <cstdint>
-#include <optional>
 #include <string>
 #include <vector>
-
-struct ItemStack;
-struct EntityPlayer;
 
 // Inventory
 struct Inventory {

@@ -15,10 +15,6 @@
 #include <optional>
 #include <random>
 
-struct EntityPlayer;
-struct Container;
-struct InventoryCrafting;
-
 enum InvMap {
 	ARMOR,
 	INVENTORY,
@@ -38,7 +34,6 @@ struct InventoryPlayer : Inventory {
 public:
 	int activeHotbarSlot = 0;
 	int currentItem = 0;
-	EntityPlayer* player = nullptr;
 
 	InventoryPlayer() : Inventory(45) {
 		name = "Inventory";
@@ -204,8 +199,8 @@ struct InventoryLargeChest : Inventory {
 	}
 };
 
-struct InventoryCrafting : Inventory {
-	InventoryCrafting() : Inventory(10) {
+struct InventoryCraftingTable : Inventory {
+	InventoryCraftingTable() : Inventory(10) {
 		name = "Crafting";
 	}
 };

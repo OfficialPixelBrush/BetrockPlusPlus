@@ -6,16 +6,17 @@
 */
 #include "serverBlockBehaviors.h"
 #include "inventory/interactions/chest.h"
-#include "inventory/interactions/crafting.h"
+#include "inventory/interactions/crafting_table.h"
 #include "inventory/interactions/large_chest.h"
 
 namespace ServerBlock {
 BlockBehavior blockBehaviors[256] = {};
-}
+} // namespace ServerBlock
 
 void ServerBlock::initialize() {
 	// Register unique behaviors here
-	blockBehaviors[BLOCK_CRAFTING_TABLE].onBlockActivated = [](WorldManager& world, Int3 position, PlayerSession& session, Runtime& gameRuntime) -> bool {
+	blockBehaviors[BLOCK_CRAFTING_TABLE].onBlockActivated = [](WorldManager& world, Int3 position,
+	                                                           PlayerSession& session, Runtime& gameRuntime) -> bool {
 		Packet::OpenContainer ow;
 		ow.window_id = session.getNextWindowId();
 		ow.slot_count = 9;
@@ -23,11 +24,13 @@ void ServerBlock::initialize() {
 		ow.window_type = PacketData::WindowType::CRAFTING_TABLE;
 		ow.Serialize(session.stream);
 
-		session.activeInteraction = std::make_unique<CraftingInventoryInteraction>(&session.inventory, world, gameRuntime, position);
+		session.activeInteraction = std::make_unique<CraftingTableInventoryInteraction>(&session.inventory, world,
+		                                                                                gameRuntime, position);
 		session.activeInteraction->initSnapshot();
 		return false;
 	};
-	blockBehaviors[BLOCK_CHEST].onBlockActivated = [](WorldManager& world, Int3 position, PlayerSession& session, Runtime& gameRuntime) -> bool {
+	blockBehaviors[BLOCK_CHEST].onBlockActivated = [](WorldManager& world, Int3 position, PlayerSession& session,
+	                                                  Runtime& gameRuntime) -> bool {
 		auto chest = world.getTileEntityShared<TileEntityChest>(position);
 		if (!chest) {
 			chest = std::make_shared<TileEntityChest>(position);
@@ -66,7 +69,7 @@ void ServerBlock::initialize() {
 			ow.Serialize(session.stream);
 
 			session.activeInteraction = std::make_unique<LargeChestInventoryInteraction>(&session.inventory, chest,
-																						 partnerChest);
+			                                                                             partnerChest);
 			session.activeInteraction->initSnapshot();
 
 			PacketUtilities::sendInventory(session, session.openWindowId, *session.activeInteraction->inventory);
