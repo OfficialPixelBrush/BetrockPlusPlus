@@ -141,12 +141,13 @@ ShapelessRecipeKey RecipeManager::makeShapelessKey(std::span<const ItemKey> item
 	for (const auto& item : items) {
 		if (item.id == ITEM_INVALID || item.id == ITEM_NONE)
 			continue;
-
+		if (key.count >= key.items.size()) {
+			GlobalLogger().error << "Shapeless recipe has more than 9 valid items!\n";
+			break;
+		}
 		key.items[key.count++] = item;
 	}
 
-	// Sort the items to make sure the hash is consistent
 	std::sort(key.items.begin(), key.items.begin() + key.count);
-
 	return key;
 }
