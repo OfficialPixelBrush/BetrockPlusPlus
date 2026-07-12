@@ -49,8 +49,8 @@ struct SubChunk {
 		overlayVBO = other.overlayVBO;
 		overlayVertexCount = other.overlayVertexCount;
 		dirty = other.dirty;
-		chunkX = other.chunkX;
-		chunkZ = other.chunkZ;
+		pos.x = other.pos.x;
+		pos.z = other.pos.z;
 		chunk_slice = other.chunk_slice;
 		offset_x = other.offset_x;
 		offset_z = other.offset_z;
@@ -80,8 +80,8 @@ struct SubChunk {
 			overlayVBO = other.overlayVBO;
 			overlayVertexCount = other.overlayVertexCount;
 			dirty = other.dirty;
-			chunkX = other.chunkX;
-			chunkZ = other.chunkZ;
+			pos.x = other.pos.x;
+			pos.z = other.pos.z;
 			chunk_slice = other.chunk_slice;
 			offset_x = other.offset_x;
 			offset_z = other.offset_z;

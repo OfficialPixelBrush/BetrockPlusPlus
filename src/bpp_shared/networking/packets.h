@@ -13,6 +13,7 @@
 #include "network_stream.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
+#include "quantized_types.h"
 #include <dimensions.h>
 #include <packet_ids.h>
 #include <string>
@@ -877,20 +878,19 @@ public:
 	// Tells the client to allocate or free a chunk slot. Must be sent before ChunkData
 	struct SetChunkVisibility : BasePacket {
 		SetChunkVisibility() : BasePacket{ PacketId::SetChunkVisibility } {}
-		int32_t chunkX;
-		int32_t chunkZ;
+		Int32_2 pos;
 		bool visible;
 
 		void Serialize(NetworkStream& stream) const override {
 			stream.Write(m_id);
-			stream.Write(chunkX);
-			stream.Write(chunkZ);
+			stream.Write(pos.x);
+			stream.Write(pos.z);
 			stream.Write(visible);
 		}
 
 		void Deserialize(NetworkStream& stream) override {
-			chunkX = stream.Read<int32_t>();
-			chunkZ = stream.Read<int32_t>();
+			pos.x = stream.Read<int32_t>();
+			pos.z = stream.Read<int32_t>();
 			visible = stream.Read<bool>();
 		}
 	};
@@ -898,36 +898,32 @@ public:
 	// Sends compressed chunk data; always preceded by SetChunkVisibility
 	struct ChunkData : BasePacket {
 		ChunkData() : BasePacket{ PacketId::Chunk } {}
-		int32_t chunkX;
-		int16_t chunkY = 0; // always 0 for a full-height chunk
-		int32_t chunkZ;
-		uint8_t sizeX = CHUNK_WIDTH - 1;  // sent as (size - 1), so 15 = 16 wide
-		uint8_t sizeY = CHUNK_HEIGHT - 1; // 127 = 128 tall
-		uint8_t sizeZ = CHUNK_WIDTH - 1;
+		SlimInt3<int16_t> pos {0,0,0};
+		TriNumber<uint8_t> size {CHUNK_WIDTH-1, CHUNK_HEIGHT-1,CHUNK_WIDTH-1};
 		std::vector<uint8_t> compressedData;
 
 		void Serialize(NetworkStream& stream) const override {
 			stream.Write(m_id);
-			stream.Write(chunkX);
-			stream.Write(chunkY);
-			stream.Write(chunkZ);
-			stream.Write(sizeX);
-			stream.Write(sizeY);
-			stream.Write(sizeZ);
+			stream.Write(pos.x);
+			stream.Write(pos.y);
+			stream.Write(pos.z);
+			stream.Write(size.x);
+			stream.Write(size.y);
+			stream.Write(size.z);
 			stream.Write(static_cast<int32_t>(compressedData.size()));
 			stream.WriteBytes(compressedData.data(), compressedData.size());
 		}
 
 		void Deserialize(NetworkStream& stream) override {
-			chunkX = stream.Read<int32_t>();
-			chunkY = stream.Read<int16_t>();
-			chunkZ = stream.Read<int32_t>();
-			sizeX = stream.Read<uint8_t>();
-			sizeY = stream.Read<uint8_t>();
-			sizeZ = stream.Read<uint8_t>();
-			int32_t size = stream.Read<int32_t>();
-			compressedData.resize(static_cast<size_t>(size));
-			stream.ReadBytes(compressedData.data(), static_cast<size_t>(size));
+			pos.x = stream.Read<int32_t>();
+			pos.y = stream.Read<int16_t>();
+			pos.z = stream.Read<int32_t>();
+			size.x = stream.Read<uint8_t>();
+			size.y = stream.Read<uint8_t>();
+			size.z = stream.Read<uint8_t>();
+			int32_t length = stream.Read<int32_t>();
+			compressedData.resize(static_cast<size_t>(length));
+			stream.ReadBytes(compressedData.data(), static_cast<size_t>(length));
 		}
 	};
 
@@ -1362,7 +1358,7 @@ public:
 	// Used for changing the value of a statistic
 	struct IncrementStatistic : BasePacket {
 		IncrementStatistic() : BasePacket{ PacketId::IncrementStatistic } {}
-		int32_t statistic_id;
+		int32_t statistic_id; // TODO: Replace with Enum
 		int8_t amount;
 
 		void Serialize(NetworkStream& stream) const override {
