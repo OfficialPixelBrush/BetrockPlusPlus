@@ -80,7 +80,8 @@ struct PlayerSession {
 	BlockType lastTargetedBlock = BLOCK_AIR;
 	TickTime startedMiningAtTick = 0;
 
-	explicit PlayerSession(int socket) : stream(socket), inventoryInteraction(&inventory) {}
+	explicit PlayerSession(int socket, Runtime& gameRuntime)
+	    : stream(socket), inventoryInteraction(&inventory, gameRuntime) {}
 	~PlayerSession() {
 		// So our player entity despawns from the world
 		if (entity) {

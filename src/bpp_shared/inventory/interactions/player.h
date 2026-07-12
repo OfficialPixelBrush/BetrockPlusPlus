@@ -4,14 +4,18 @@
  * SPDX-License-Identifier: AGPL-3.0-only
 */
 #pragma once
-#include "../inventory_interaction.h"
+#include "entities/entity_player.h"
+#include "inventory/interactions/crafting.h"
 #include "inventory/inventories.h"
 
-struct PlayerInventoryInteraction : InventoryInteraction {
+struct PlayerInventoryInteraction : CraftingInventoryInteraction {
 	InventoryPlayer* playerInventory;
 
-	PlayerInventoryInteraction(InventoryPlayer* inv);
-
+	PlayerInventoryInteraction(InventoryPlayer* inv, Runtime& gameRuntime);
+	void onClose();
 	bool canExist() override;
-	void onShiftClick(int slot) override;
+
+protected:
+	void shiftClickResult() override;
+	void shiftClickOther(int slot) override;
 };
