@@ -121,6 +121,7 @@ set(SERVER_SOURCES
     src/bpp_server/chunk_IO/chunk_broadcaster.cpp
     src/bpp_server/entities/entity_tracker.cpp
     src/bpp_server/entities/entity_mp_player.cpp
+    src/bpp_server/blocks/serverBlockBehaviors.cpp
 
     src/bpp_server/commands/command.cpp
     src/bpp_server/commands/command_manager.cpp

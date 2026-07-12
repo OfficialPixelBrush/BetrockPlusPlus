@@ -81,18 +81,13 @@ struct BlockBehavior {
 	// Return true if we allow the player to still place their held block
 	bool (*onBlockActivated)(WorldManager& world, Int3 pos) = nullptr;
 
-	// Called when the block is placed by a player or dispenser
-	// pos is where this block should be placed in the world
-	void (*onBlockPlacedBy)(WorldManager& world, Int3 pos, uint8_t meta) = nullptr;
-
 	// Called when block is placed, receives the face it was placed against
-	void (*onBlockPlaced)(WorldManager& world, Int3 pos, int face) = nullptr;
+	void (*onBlockPlaced)(WorldManager& world, Int3 pos, uint8_t meta, int face) = nullptr;
 
 	// Called when player breaks the block
 	void (*onBlockDestroyedByPlayer)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when an explosion destroys the block
-	// TODO: Should default to onBlockDestroyedByPlayer if not set
 	void (*onBlockDestroyedByExplosion)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when an entity walks on top of the block

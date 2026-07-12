@@ -191,12 +191,29 @@ struct WorldManager {
 		setBlock(wpos, block.type, block.data);
 	}
 
+	void setMeta(Int3 wpos, uint8_t metadata = 0) {
+		if (!inBounds(wpos.y))
+			return;
+		Int32_2 cp{ wpos.x >> 4, wpos.z >> 4 };
+		auto* chunk = getChunkRaw(cp);
+		if (!isChunkValid(cp)) return;
+		Int3 local{ wpos.x & 15, wpos.y, wpos.z & 15 };
+		chunk->setMeta(local, metadata);
+
+		// Callback for the client and server to know about this block update
+		if (onBlockUpdate)
+			onBlockUpdate(PendingBlock{ .block{ chunk->getBlock(local), metadata },
+			                            .block_pos{ wpos.x, wpos.y, wpos.z },
+			                            .light{ chunk->getBlockLight(local), chunk->getSkyLight(local) } },
+			              chunk->cpos);
+	}
+
 	void setBlock(Int3 wpos, BlockType block_type, uint8_t metadata = 0) {
 		if (!inBounds(wpos.y))
 			return;
 		Int32_2 cp{ wpos.x >> 4, wpos.z >> 4 };
 		auto* chunk = getChunkRaw(cp);
-		if (!chunk || chunk->state.load() < ChunkState::Generated || chunk->inUse.load()) {
+		if (!isChunkValid(cp)) {
 			// Target chunk isn't ready; cache the write for replay
 			pendingBleedWrites[cp].push_back({ wpos, Block{ block_type, metadata } });
 			return;
@@ -474,7 +491,7 @@ struct WorldManager {
 
 private:
 	// I believe the vanilla default is
-	static constexpr int VIEW_RADIUS = 4;
+	static constexpr int VIEW_RADIUS = 12;
 	static constexpr int SIMULATION_RADIUS = 9;
 
 	bool isHell = false; // for the nether

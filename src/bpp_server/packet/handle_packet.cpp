@@ -6,14 +6,11 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
-
-#include "handle_packet.h"
 #include "../entities/entity_tracker.h"
+#include "../blocks/serverBlockBehaviors.h"
+#include "handle_packet.h"
 #include "blocks.h"
 #include "entities/entity_item.h"
-#include "inventory/interactions/chest.h"
-#include "inventory/interactions/crafting.h"
-#include "inventory/interactions/large_chest.h"
 #include "inventory/inventory_interaction.h"
 #include "inventory/item_stack.h"
 #include "packet_utils.h"
@@ -74,15 +71,11 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 		return;
 	}
 	case PacketData::MineStatus::DIGGING_FINISHED: {
-		// TODO: Estimate block breaking time based on tool and block type,
-		// and only drop if enough time has passed
 		if (session.lastTargetedBlock != world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z })) {
 			return; // block changed while mining so we don't drop it
 		}
 		auto pos = pkt.position;
 
-		// TODO: make it so when you break stone with your fist it doesn't drop (based on tool you are holding)
-		// TODO: anti cheat!!
 		BlockType blockId = world.getBlockId({ pos.x, pos.y, pos.z });
 		uint8_t meta = world.getMetadata({ pos.x, pos.y, pos.z });
 		world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
@@ -117,82 +110,15 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 	// Block interactions
 	auto block = world.getBlockId(position);
 
-	if (block == BLOCK_CRAFTING_TABLE) {
-		Packet::OpenContainer ow;
-		ow.window_id = session.getNextWindowId();
-		ow.slot_count = 9;
-		ow.title = "Crafting";
-		ow.window_type = PacketData::WindowType::CRAFTING_TABLE;
-		ow.Serialize(session.stream);
-
-		session.activeInteraction = std::make_unique<CraftingInventoryInteraction>(&session.inventory, world,
-		                                                                           gameRuntime, position);
-		session.activeInteraction->initSnapshot();
-		return;
-	}
-
-	if (block == BLOCK_CHEST) {
-		auto chest = world.getTileEntityShared<TileEntityChest>(position);
-		if (!chest) {
-			chest = std::make_shared<TileEntityChest>(position);
-			world.createTileEntity(chest);
-		}
-
-		// Are we a double chest?
-		auto l = world.getBlockId({ pkt.position.x - 1, position.y, position.z });
-		auto r = world.getBlockId({ position.x + 1, position.y, position.z });
-		auto f = world.getBlockId({ position.x, position.y, position.z - 1 });
-		auto b = world.getBlockId({ position.x, position.y, position.z + 1 });
-		bool doubleChest = (l == BLOCK_CHEST || r == BLOCK_CHEST || f == BLOCK_CHEST || b == BLOCK_CHEST);
-
-		if (doubleChest) {
-			std::shared_ptr<TileEntityChest> partnerChest = nullptr;
-			if (l == BLOCK_CHEST)
-				partnerChest = world.getTileEntityShared<TileEntityChest>({ position.x - 1, position.y, position.z });
-			else if (r == BLOCK_CHEST)
-				partnerChest = world.getTileEntityShared<TileEntityChest>({ position.x + 1, position.y, position.z });
-			else if (f == BLOCK_CHEST)
-				partnerChest = world.getTileEntityShared<TileEntityChest>({ position.x, position.y, position.z - 1 });
-			else
-				partnerChest = world.getTileEntityShared<TileEntityChest>({ position.x, position.y, position.z + 1 });
-			if (!partnerChest)
-				return;
-
-			bool isLeftSide = (r == BLOCK_CHEST || b == BLOCK_CHEST);
-			if (!isLeftSide)
-				std::swap(chest, partnerChest);
-
-			Packet::OpenContainer ow;
-			ow.window_id = session.getNextWindowId();
-			ow.slot_count = 54;
-			ow.title = "Large Chest";
-			ow.window_type = PacketData::WindowType::CHEST;
-			ow.Serialize(session.stream);
-
-			session.activeInteraction = std::make_unique<LargeChestInventoryInteraction>(&session.inventory, chest,
-			                                                                             partnerChest);
-			session.activeInteraction->initSnapshot();
-
-			PacketUtilities::sendInventory(session, session.openWindowId, *session.activeInteraction->inventory);
+	// Function returns true if we can place a block after running the function
+	if (ServerBlock::blockBehaviors[block].onBlockActivated) {
+		if (!ServerBlock::blockBehaviors[block].onBlockActivated(world, position, session, gameRuntime))
+			return; 
+	} 
+	// The server didn't override our block's behavior so check the base behavior
+	else if (Blocks::blockBehaviors[block].onBlockActivated) {
+		if (!Blocks::blockBehaviors[block].onBlockActivated(world, position))
 			return;
-		}
-
-		// Setup interaction
-		session.activeInteraction = std::make_unique<ChestInventoryInteraction>(&session.inventory, chest);
-		session.activeInteraction->initSnapshot();
-
-		// Single chest
-		// Open the chest window
-		Packet::OpenContainer ow;
-		ow.window_id = session.getNextWindowId();
-		ow.slot_count = 27;
-		ow.title = "Chest";
-		ow.window_type = PacketData::WindowType::CHEST;
-		ow.Serialize(session.stream);
-
-		// Send inventory
-		PacketUtilities::sendInventory(session, session.openWindowId, *session.activeInteraction->inventory);
-		return;
 	}
 
 	// NOTE: Also sent for when a block placement is invalid

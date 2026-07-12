@@ -23,6 +23,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "player_conn/server_pconnstate_manager.h"
 #include "runtime.h"
 #include "server_socket.h"
+#include "blocks/serverBlockBehaviors.h"
 #include <chrono>
 #include <memory>
 #include <thread>
