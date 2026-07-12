@@ -60,7 +60,7 @@ struct RegionManager {
 
 private:
 	bool tryMergePendingRegion(std::shared_ptr<Region>& region);
-	void createRegionOnCache(Int2 rpos);
+	bool createRegionOnCache(Int2 rpos);
 
 	std::vector<std::shared_ptr<Region>> m_pendingRegions;
 	std::shared_ptr<Region> m_regionCache[8];
