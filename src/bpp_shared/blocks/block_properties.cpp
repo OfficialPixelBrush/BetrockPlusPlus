@@ -180,6 +180,13 @@ static AABB trapdoorAABB(uint8_t meta) {
 		return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 	}
 }
+
+static CollisionShape farmlandCollider(uint8_t) {
+	CollisionShape s;
+	s.add({ 0.0, 0.0, 0.0, 1.0, 0.9375, 1.0 });
+	return s;
+}
+
 static CollisionShape trapdoorCollider(uint8_t meta) {
 	constexpr double T = 0.1875;
 	CollisionShape s;
@@ -318,7 +325,7 @@ static AABB redstoneDustAABB(uint8_t) {
 // farmland
 // Collider is full cube; ray/selection use visual height 0.937
 static AABB farmlandAABB(uint8_t) {
-	return { 0.0, 0.0, 0.0, 1.0, 0.9375, 1.0 };
+	return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 }
 
 // crop
@@ -1560,7 +1567,7 @@ void registerAll() {
 	blockBehaviors[BlockType::BLOCK_FARMLAND] = {
 		.getSelectionBox = farmlandAABB,
 		.getRayBounds = farmlandAABB,
-		// getCollider stays as defaultCollider (full cube)
+		.getCollider = farmlandCollider,
 	};
 
 	// Crops
