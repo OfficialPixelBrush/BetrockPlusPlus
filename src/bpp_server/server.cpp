@@ -150,7 +150,7 @@ void Server::startup() {
 	registerEntityTrackerCallbacks(hellEntityTracker, gameRuntime.worldHell.entityManager);
 
 	// Get spawn ready
-	constexpr int spawn_chunk_distance = 50;
+	constexpr int spawn_chunk_distance = 9;
 	int total_spawn_chunks = (spawn_chunk_distance + spawn_chunk_distance + 1) *
 	                         (spawn_chunk_distance + spawn_chunk_distance + 1);
 	GlobalLogger().info << "Server spawn is "
