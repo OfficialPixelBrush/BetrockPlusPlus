@@ -196,8 +196,6 @@ void Server::startup() {
 			world.drainLoadQueue();
 			world.populateReady();
 			world.lightManager.processLightQueue(world);
-			// Make sure all lighting is done
-			world.lightManager.processLightQueue(world);
 
 			for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
 				for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
