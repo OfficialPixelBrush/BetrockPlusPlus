@@ -178,6 +178,12 @@ std::shared_ptr<Region> RegionManager::loadRegion(Int32_2 rpos) {
 			return m_regionCache[i];
 	}
 
+	// Also check regions awaiting merge
+	for (auto& pending : m_pendingRegions) {
+		if (pending->m_rpos == rpos)
+			return pending;
+	}
+
 	if (!regionExists(rpos)) {
 		if (!createRegion(rpos)) {
 			GlobalLogger().error << "Failed to create region file for " << rpos.x << "," << rpos.z << "\n";
@@ -190,7 +196,7 @@ std::shared_ptr<Region> RegionManager::loadRegion(Int32_2 rpos) {
 			if (m_regionCache[i] && m_regionCache[i]->m_rpos == rpos)
 				return m_regionCache[i];
 		}
-	} 
+	}
 
 	return nullptr; // all 8 slots still busy
 }
