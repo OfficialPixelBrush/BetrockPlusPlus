@@ -178,16 +178,6 @@ std::shared_ptr<Region> RegionManager::loadRegion(Int32_2 rpos) {
 			return m_regionCache[i];
 	}
 
-	// Cache miss, so we wait for all in-flight IO to finish before we potentially evict a slot,
-	// preventing two Region objects opening the same file (BAD!)
-	iopool.wait();
-
-	// Check cache again after wait
-	for (int i = 0; i < 8; i++) {
-		if (m_regionCache[i] && m_regionCache[i]->m_rpos == rpos)
-			return m_regionCache[i];
-	}
-
 	if (!regionExists(rpos)) {
 		if (!createRegion(rpos)) {
 			GlobalLogger().error << "Failed to create region file for " << rpos.x << "," << rpos.z << "\n";
@@ -195,14 +185,14 @@ std::shared_ptr<Region> RegionManager::loadRegion(Int32_2 rpos) {
 		}
 	}
 
-	createRegionOnCache(rpos);
+	if (createRegionOnCache(rpos)) {
+		for (int i = 0; i < 8; i++) {
+			if (m_regionCache[i] && m_regionCache[i]->m_rpos == rpos)
+				return m_regionCache[i];
+		}
+	} 
 
-	for (int i = 0; i < 8; i++) {
-		if (m_regionCache[i] && m_regionCache[i]->m_rpos == rpos)
-			return m_regionCache[i];
-	}
-
-	return nullptr; // all 8 slots still busy (shouldn't happen after wait)
+	return nullptr; // all 8 slots still busy
 }
 
 bool RegionManager::tryMergePendingRegion(std::shared_ptr<Region>& region) {
@@ -224,8 +214,11 @@ bool RegionManager::tryMergePendingRegion(std::shared_ptr<Region>& region) {
 	return false; // all 8 slots actively in use
 }
 
-void RegionManager::createRegionOnCache(Int2 rpos) {
+bool RegionManager::createRegionOnCache(Int2 rpos) {
 	auto region = std::make_shared<Region>(rpos, m_folderPath);
-	if (!tryMergePendingRegion(region))
+	if (!tryMergePendingRegion(region)) {
 		m_pendingRegions.push_back(std::move(region));
+		return false;
+	}
+	return true;
 }
