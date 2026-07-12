@@ -44,7 +44,7 @@ public:
 
 	PlayerSession& getSessionById(EntityId entityId) {
 		for (auto& player : players) {
-			if (player->entity->id == entityId) {
+			if (player->entity && player->entity->id == entityId) {
 				return *player;
 			}
 		}
@@ -60,7 +60,7 @@ public:
 
 	std::string getUsernameByEntityId(EntityId id) {
 		for (auto& player : players) {
-			if (player->entity->id == id) {
+			if (player->entity && player->entity->id == id) {
 				return player->username;
 			}
 		}
