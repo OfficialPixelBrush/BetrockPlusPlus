@@ -65,7 +65,7 @@ void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> rows
 		++y;
 	}
 
-	auto [it, inserted] = shapedRecipes.try_emplace(makeShapedKey(grid), output);
+	auto [it, inserted] = shapedRecipes.try_emplace(makeShapedKey(grid, 3, 3), output);
 
 	if (!inserted) {
 		it->second = output;
@@ -73,40 +73,39 @@ void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> rows
 	}
 }
 
-const ItemStack RecipeManager::matchGrid(std::span<const ItemStack, 9> grid) const {
-	std::array<ItemKey, 9> keyGrid;
-	for (size_t i = 0; i < grid.size(); ++i) {
-		const ItemStack& stack = grid[i];
-		keyGrid[i] = ItemKey{ stack.id, stack.data };
-	}
+const ItemStack RecipeManager::matchGrid(std::span<const ItemStack> grid, uint8_t width, uint8_t height) const {
+	std::array<ItemKey, 9> keyGrid{};
 
-	{
-		auto it = shapedRecipes.find(makeShapedKey(keyGrid));
-		if (it != shapedRecipes.end())
-			return it->second;
-	}
+	const size_t size = static_cast<size_t>(width) * height;
 
-	{
-		auto it = shapelessRecipes.find(makeShapelessKey(keyGrid));
-		if (it != shapelessRecipes.end())
-			return it->second;
-	}
+	for (size_t i = 0; i < size; ++i)
+		keyGrid[i] = { grid[i].id, grid[i].data };
 
-	return ItemStack{ .id = ITEM_INVALID };
+	auto shaped = shapedRecipes.find(makeShapedKey(std::span<const ItemKey>(keyGrid.data(), size), width, height));
+
+	if (shaped != shapedRecipes.end())
+		return shaped->second;
+
+	auto shapeless = shapelessRecipes.find(makeShapelessKey(std::span<const ItemKey>(keyGrid.data(), size)));
+
+	if (shapeless != shapelessRecipes.end())
+		return shapeless->second;
+
+	return { .id = ITEM_INVALID };
 }
 
-ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemKey, 9> grid) {
+ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemKey> grid, uint8_t width, uint8_t height) {
 	int minX = 3;
 	int minY = 3;
 	int maxX = -1;
 	int maxY = -1;
 
 	// Find the bounding box of the recipe
-	for (int y = 0; y < 3; ++y) {
-		for (int x = 0; x < 3; ++x) {
-			const auto& item = grid[y * 3 + x];
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			const auto& item = grid[y * width + x];
 
-			if (item.id == ITEM_INVALID || item.id == ITEM_NONE)
+			if (item.id == ITEM_INVALID)
 				continue;
 
 			minX = std::min(minX, x);
@@ -128,7 +127,7 @@ ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemKey, 9> grid) {
 	// Copy the actual recipe to top left
 	for (int y = 0; y < key.height; ++y) {
 		for (int x = 0; x < key.width; ++x) {
-			key.cells[y * 3 + x] = grid[(minY + y) * 3 + (minX + x)];
+			key.cells[y * 3 + x] = grid[(minY + y) * width + (minX + x)];
 		}
 	}
 
