@@ -7,6 +7,7 @@
 #pragma once
 #include "entities.h"
 #include "entities/entity_player.h"
+#include "inventory/item_stack.h"
 
 struct PlayerSession;
 struct EntityMPPlayer : public PlayerEntity {
@@ -17,5 +18,5 @@ struct EntityMPPlayer : public PlayerEntity {
 	}
 	void tick() override;
 	bool pickupItem(ItemStack& stack, EntityId entityId) override;
-	bool dropHeldItem(int count);
+	bool dropItem(ItemStack stack) override;
 };
