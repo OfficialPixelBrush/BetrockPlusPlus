@@ -350,6 +350,74 @@ typedef Int64_2 Long2;
 #define LONG2_ZERO INT64_2_ZERO
 #define LONG2_ONE INT64_2_ONE
 
+// Unsigned 8-Bit Integer
+typedef TriNumber<uint8_t> UInt8_3;
+typedef BiNumber<uint8_t> UInt8_2;
+
+#define UINT8_3_ZERO UInt8_3{ 0, 0, 0 }
+#define UINT8_3_ONE UInt8_3{ 1, 1, 1 }
+#define UINT8_2_ZERO UInt8_2{ 0, 0 }
+#define UINT8_2_ONE UInt8_2{ 1, 1 }
+
+typedef UInt8_3 UByte3;
+typedef UInt8_2 UByte2;
+
+#define UBYTE3_ZERO UINT8_3_ZERO
+#define UBYTE3_ONE UINT8_3_ONE
+#define UBYTE2_ZERO UINT8_2_ZERO
+#define UBYTE2_ONE UINT8_2_ONE
+
+// Unsigned 16-Bit Integer
+typedef TriNumber<uint16_t> UInt16_3;
+typedef BiNumber<uint16_t> UInt16_2;
+
+#define UINT16_3_ZERO UInt16_3{ 0, 0, 0 }
+#define UINT16_3_ONE UInt16_3{ 1, 1, 1 }
+#define UINT16_2_ZERO UInt16_2{ 0, 0 }
+#define UINT16_2_ONE UInt16_2{ 1, 1 }
+
+typedef UInt16_3 UShort3;
+typedef UInt16_2 UShort2;
+
+#define USHORT3_ZERO UINT16_3_ZERO
+#define USHORT3_ONE UINT16_3_ONE
+#define USHORT2_ZERO UINT16_2_ZERO
+#define USHORT2_ONE UINT16_2_ONE
+
+// Unsigned 32-Bit Integer (default)
+typedef TriNumber<uint32_t> UInt32_3;
+typedef BiNumber<uint32_t> UInt32_2;
+
+#define UINT32_3_ZERO UInt32_3{ 0, 0, 0 }
+#define UINT32_3_ONE UInt32_3{ 1, 1, 1 }
+#define UINT32_2_ZERO UInt32_2{ 0, 0 }
+#define UINT32_2_ONE UInt32_2{ 1, 1 }
+
+typedef UInt32_3 UInt3;
+typedef UInt32_2 UInt2;
+
+#define UINT3_ZERO UINT32_3_ZERO
+#define UINT3_ONE UINT32_3_ONE
+#define UINT2_ZERO UINT32_2_ZERO
+#define UINT2_ONE UINT32_2_ONE
+
+// Unsigned 64-Bit Integer
+typedef TriNumber<uint64_t> UInt64_3;
+typedef BiNumber<uint64_t> UInt64_2;
+
+#define UINT64_3_ZERO UInt64_3{ 0, 0, 0 }
+#define UINT64_3_ONE UInt64_3{ 1, 1, 1 }
+#define UINT64_2_ZERO UInt64_2{ 0, 0 }
+#define UINT64_2_ONE UInt64_2{ 1, 1 }
+
+typedef Int64_3 ULong3;
+typedef Int64_2 ULong2;
+
+#define ULONG3_ZERO UINT64_3_ZERO
+#define ULONG3_ONE UINT64_3_ONE
+#define ULONG2_ZERO UINT64_2_ZERO
+#define ULONG2_ONE UINT64_2_ONE
+
 // Slim Int3 defines
 #define SLIM_INT3_ZERO SlimInt3{ 0, 0, 0 }
 #define SLIM_INT3_ONE SlimInt3{ 1, 1, 1 }
