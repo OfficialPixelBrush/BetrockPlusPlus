@@ -12,4 +12,8 @@
 #define __builtin_bswap16(x) _byteswap_ushort(x)
 #define __builtin_bswap32(x) _byteswap_ulong(x)
 #define __builtin_bswap64(x) _byteswap_uint64(x)
+
+#include <__msvc_int128.hpp>
+using __int128_t = std::_Signed128;
+using __uint128_t = std::_Unsigned128;
 #endif

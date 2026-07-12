@@ -11,6 +11,7 @@
 #include <ostream>
 #include <type_traits>
 #include "numeric_structs.h"
+#include "helpers/byteswap_compat.h"
 
 template <typename Storage = int32_t, int Scale = 32>
 struct Fixed {
