@@ -85,6 +85,7 @@ set(SHARED_SOURCES
     src/bpp_shared/inventory/interactions/large_chest.cpp
     src/bpp_shared/inventory/interactions/crafting.cpp
     src/bpp_shared/inventory/interactions/player.cpp
+    src/bpp_shared/inventory/interactions/crafting_table.cpp
     src/bpp_shared/crafting/recipe_manager.cpp
     src/bpp_shared/crafting/vanilla_recipes.cpp
 

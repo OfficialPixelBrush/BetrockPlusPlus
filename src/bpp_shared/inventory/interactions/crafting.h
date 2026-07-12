@@ -6,45 +6,34 @@
 #pragma once
 #include "../inventory_interaction.h"
 #include "inventory/inventories.h"
+#include "inventory/inventory.h"
 #include "runtime.h"
-#include "world.h"
 
 struct CraftingInventoryInteraction : InventoryInteraction {
+private:
+	Inventory* craftInventory;
+
+public:
 	InventoryPlayer* playerInventory;
-	InventoryCrafting craftInventory;
-	WorldManager& world;
 	Runtime& runtime;
-	Int3 blockPosition;
-	ItemStack lastResult;
 
-	struct SharedInventory : Inventory {
-		CraftingInventoryInteraction* owner = nullptr;
-		SharedInventory() : Inventory(46) {}
-		void onInventoryChanged() override {
-			if (owner)
-				owner->writeBack();
-		}
-	} sharedInventory;
+	// We don't do any inventory merging in this class because
+	// sharedInventory, craftingInventory, playerInventory all may or may not be the same thing.
+	CraftingInventoryInteraction(Inventory* sharedInventory, Inventory* craftingInventory,
+	                             InventoryPlayer* playerInventory, Runtime& gameRuntime, UInt8_2 gridSize);
 
-	CraftingInventoryInteraction(InventoryPlayer* pinv, WorldManager& worldMng, Runtime& gameRuntime,
-	                             Int3 craftingTablePos);
-
-	virtual ~CraftingInventoryInteraction();
-
-	bool canExist() override;
-	void initSnapshot() override;
-	std::vector<DeltaSlot> tickDiff() override;
 	void onLeftClick(int slot) override;
 	void onRightClick(int slot) override;
 	void onShiftClick(int slot) override;
 
-private:
-	void mergeInventories();
-	void writeBack();
-	void updateResult();
+protected:
+	const UInt8_2 m_gridSize;
+
 	void handleCrafting(int slot);
 	void finishCraft();
 	void takeResult();
-	void shiftClickResult();
-	void shiftClickGrid(int slot);
+
+	virtual void updateResult();
+	virtual void shiftClickResult() = 0;
+	virtual void shiftClickOther(int slot) = 0;
 };

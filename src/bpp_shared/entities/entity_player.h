@@ -18,4 +18,5 @@ struct PlayerEntity : public Entity {
 	}
 	~PlayerEntity() = default;
 	virtual bool pickupItem(ItemStack& stack, EntityId entityId);
+	virtual bool dropItem(ItemStack stack);
 };

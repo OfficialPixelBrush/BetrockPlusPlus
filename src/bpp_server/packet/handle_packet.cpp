@@ -6,9 +6,9 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
-#include "../entities/entity_tracker.h"
-#include "../blocks/serverBlockBehaviors.h"
 #include "handle_packet.h"
+#include "../blocks/serverBlockBehaviors.h"
+#include "../entities/entity_tracker.h"
 #include "blocks.h"
 #include "entities/entity_item.h"
 #include "inventory/inventory_interaction.h"
@@ -58,7 +58,7 @@ void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& pkt, PlayerSes
 
 void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& world,
                std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
-	Int3 packetPos = {pkt.position.x, pkt.position.y, pkt.position.z};
+	Int3 packetPos = { pkt.position.x, pkt.position.y, pkt.position.z };
 	switch (pkt.status) {
 	case PacketData::MineStatus::DIGGING_STARTED: {
 		session.startedMiningAtTick = world.elapsed_ticks;
@@ -95,8 +95,15 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 		return;
 	}
 	case PacketData::MineStatus::DROPPED_ITEM: {
-		int count = 1;
-		session.entity->dropHeldItem(count);
+		ItemStack* heldStack = session.inventory.getHeldItem();
+		if (!heldStack)
+			return;
+
+		ItemStack droppedStack = *heldStack;
+		droppedStack.count = 1;
+
+		if (session.entity->dropItem(droppedStack))
+			heldStack->decrementCount(1);
 		return;
 	}
 	default:
@@ -113,8 +120,8 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 	// Function returns true if we can place a block after running the function
 	if (ServerBlock::blockBehaviors[block].onBlockActivated) {
 		if (!ServerBlock::blockBehaviors[block].onBlockActivated(world, position, session, gameRuntime))
-			return; 
-	} 
+			return;
+	}
 	// The server didn't override our block's behavior so check the base behavior
 	else if (Blocks::blockBehaviors[block].onBlockActivated) {
 		if (!Blocks::blockBehaviors[block].onBlockActivated(world, position))
@@ -231,7 +238,16 @@ void ClickSlot(Packet::ClickSlot& pkt, PlayerSession& session) {
 	return;
 }
 
-void CloseContainer(Packet::CloseContainer& /*pkt*/, PlayerSession& session) {
+void CloseContainer(Packet::CloseContainer& pkt, PlayerSession& session) {
+	if (pkt.window_id == 0 && session.entity) {
+		// Drop the crafting grid items on inventory close
+		for (size_t i = 1; i <= 4; i++) {
+			ItemStack& stack = session.inventory.slots[i];
+			session.entity->dropItem(session.inventory.slots[i]);
+			stack = ItemStack{};
+		}
+	}
+
 	// Get rid of our active interaction and reset the window id
 	session.activeInteraction = nullptr;
 	session.openWindowId = 0;

@@ -310,7 +310,7 @@ void Server::acceptNewPlayers() {
 	auto clientSocket = ServerSocketManager::createClientSocket(serverSocket);
 	if (clientSocket < 0)
 		return;
-	players.push_back(std::make_shared<PlayerSession>(clientSocket));
+	players.push_back(std::make_shared<PlayerSession>(clientSocket, gameRuntime));
 }
 
 void Server::tick() {

@@ -5,8 +5,10 @@
  *
 */
 #include "entity_mp_player.h"
-#include "entities/entity_item.h"
 #include "../player_conn/player_session.h"
+#include "entities/entity_item.h"
+#include "entities/entity_player.h"
+#include "inventory/item_stack.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
 
@@ -19,43 +21,27 @@ bool EntityMPPlayer::pickupItem(ItemStack& stack, EntityId entityId) {
 		pkt.Serialize(this->session->stream);
 		return true;
 	}
+
+	return false;
 }
 
-bool EntityMPPlayer::dropHeldItem(int count) {
-	auto itemStack = this->session->inventory.getHeldItem();
-	if (!itemStack) return false;
-	if (itemStack->id == ITEM_INVALID || itemStack->count <= 0) return false;
-
-	int difference = itemStack->count - count;
-	int newSize = std::max(0, difference);
-	int droppedSize = count;
-	if (difference < 0) droppedSize -= difference;
-
-	itemStack->count = newSize;
-
-	// Create our new item stack
-	ItemStack newStack;
-	newStack.count = droppedSize;
-	newStack.data = itemStack->data;
-	newStack.id = itemStack->id;
+// This works over a copy of your item, it doesn't remove or decrement it !!!
+bool EntityMPPlayer::dropItem(ItemStack stack) {
+	if (stack.id == ITEM_INVALID || stack.count <= 0)
+		return false;
 
 	// Create the item entity
 	Vec3 position = { posX, posY - 0.3 + PLAYER_EYE_HEIGHT, posZ };
 	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(position);
-	itemEntity->itemStack = std::move(newStack);
+	itemEntity->itemStack = stack;
 	itemEntity->pickupCooldown = 40; // So we don't pick it up instantly
-
-	// If we exhausted all our held item then clear it
-	if (itemStack->count <= 0) {
-		itemStack->id = ITEM_INVALID;
-		itemStack->count = 0;
-		itemStack->data = 0;
-	}
 
 	// Give ourselves some random velocity based on look direction
 	float velocity = 0.4f;
-	itemEntity->motionX = double(-std::sin(this->rotationYaw   / 180.0F * JavaMath::PI_FLOAT) * std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity);
-	itemEntity->motionZ = double( std::cos(this->rotationYaw   / 180.0F * JavaMath::PI_FLOAT) * std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity);
+	itemEntity->motionX = double(-std::sin(this->rotationYaw / 180.0F * JavaMath::PI_FLOAT) *
+	                             std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity);
+	itemEntity->motionZ = double(std::cos(this->rotationYaw / 180.0F * JavaMath::PI_FLOAT) *
+	                             std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity);
 	itemEntity->motionY = double(-std::sin(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity + 0.1F);
 
 	// Add a little bit of randomness
