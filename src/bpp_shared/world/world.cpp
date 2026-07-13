@@ -106,8 +106,8 @@ void WorldManager::shutdown() {
 
 	// Save all currently loaded modified chunks
 	for (auto& [pos, chunk] : chunks) {
-		if (!chunk->isModified && !chunk->tileEntities.size())
-			continue; // unconditionally save chunks with tile entities for now this is a bandaid fix!!
+		if (!chunk->isModified)
+			continue;
 		ChunkState s = chunk->state.load();
 		if (s < ChunkState::Generated)
 			continue;
@@ -117,8 +117,7 @@ void WorldManager::shutdown() {
 		chunk->isModified = false;
 	}
 
-	// For every position that still has pending bleed writes, force-load or
-	// force-generate the chunk, apply the writes, then save it.
+	// For every position that still has pending bleed writes, forceload or forcegenerate the chunk, apply the writes, then save it.
 	while (!pendingBleedWrites.empty()) {
 		auto it = pendingBleedWrites.begin();
 		Int32_2 cpos = it->first;
@@ -130,7 +129,7 @@ void WorldManager::shutdown() {
 			chunks.emplace(cpos, std::move(c));
 		}
 
-		// Spin until this chunk is ready — load from disk or generate fresh
+		// Wait until the chunk is ready
 		while (chunks[cpos]->state.load() < ChunkState::Generated) {
 			pumpPipeline({});
 			pool.wait();
@@ -176,7 +175,6 @@ void WorldManager::drainGenQueue() {
 					setBlock(wpos, block.type, block.data);
 				pendingBleedWrites.erase(pit);
 			}
-			seedChunkLighting(pos);
 		}
 	}
 }
@@ -221,8 +219,6 @@ void WorldManager::drainLoadQueue() {
 
 		// Register our tile entities
 		registerChunkTileEntities(it->second.get());
-
-		//seedChunkLighting(pos);
 	}
 }
 
@@ -232,12 +228,12 @@ void WorldManager::forceGenChunkSync(Int32_2 pos) {
 		chunk->cpos = pos;
 
 		if (regionManager->chunkExists(pos)) {
-			// Chunk already exists on disk - load it instead of regenerating it.
+			// Chunk already exists on disk; load it instead of regenerating it.
 			chunk->state.store(ChunkState::Loading, std::memory_order_release);
 			chunks[pos] = std::move(chunk);
 			regionManager->loadChunk(pos);
 		} else {
-			// Brand new chunk - generate it on the pool, same as pumpPipeline does.
+			// Brand new chunk; generate it on the pool, same as pumpPipeline does.
 			chunk->state.store(ChunkState::Generating, std::memory_order_release);
 			chunks[pos] = std::move(chunk);
 			pool.detach_task([pos, this]() {
@@ -258,8 +254,7 @@ void WorldManager::forceGenChunkSync(Int32_2 pos) {
 		}
 	}
 
-	// Block only on this specific chunk - drain both completion paths (fresh
-	// generation and disk load) since we don't know up front which one applies.
+	// Block only on this specific chunk
 	while (chunks[pos]->state.load() < ChunkState::Generated) {
 		pool.wait();
 		regionManager->iopool.wait();
@@ -541,11 +536,234 @@ void WorldManager::populateReady() {
 			OverworldGenerator tl_gen(this->seed);
 			tl_gen.PopulateChunk(*cit->second, wrapper);
 		}
-		cit->second->isTerrainPopulated = true;
-		cit->second->isModified = true;
-		cit->second->state.store(ChunkState::Populated, std::memory_order_release);
+		auto& chunk = cit->second;
+		chunk->isTerrainPopulated = true;
+		chunk->isModified = true;
+		chunk->generateSkylightMap(); // Regen our skylight map
+		this->seedChunkLighting(chunk->cpos); // Reseed our lighting
+
+		chunk->state.store(ChunkState::Populated, std::memory_order_release);
 		populatedThisTick.insert(pos);
 		wrapper.freeChunkRegion();
 		flushBleedWrites();
+	}
+}
+
+void WorldManager::setMeta(Int3 wpos, uint8_t metadata) {
+	if (!inBounds(wpos.y))
+		return;
+	Int32_2 cp{ wpos.x >> 4, wpos.z >> 4 };
+	auto* chunk = getChunkRaw(cp);
+	if (!isChunkValid(cp))
+		return;
+	Int3 local{ wpos.x & 15, wpos.y, wpos.z & 15 };
+	auto oldMeta = chunk->getMeta(local);
+	auto blockId = chunk->getBlock(local);
+	chunk->setMeta(local, metadata);
+
+	// Update our neighbors
+	this->notifyNeighborsOfUpdate(wpos);
+
+	// Callback for the client and server to know about this block update
+	if (onBlockUpdate && (oldMeta != metadata && Blocks::blockProperties[blockId].notifySelfOnMetaChange))
+		onBlockUpdate(PendingBlock{ .block{ chunk->getBlock(local), metadata },
+		                            .block_pos{ wpos.x, wpos.y, wpos.z },
+		                            .light{ chunk->getBlockLight(local), chunk->getSkyLight(local) } },
+		              chunk->cpos);
+}
+
+void WorldManager::setBlock(Int3 wpos, BlockType block_type, uint8_t metadata) {
+	if (!inBounds(wpos.y))
+		return;
+	Int32_2 cp{ wpos.x >> 4, wpos.z >> 4 };
+	auto* chunk = getChunkRaw(cp);
+	if (!isChunkValid(cp)) {
+		// Target chunk isn't ready; cache the write for replay
+		pendingBleedWrites[cp].push_back({ wpos, Block{ block_type, metadata } });
+		return;
+	}
+
+	// Remove any tile entities that exist at this spot
+	auto& tes = chunk->tileEntities;
+	tes.erase(std::remove_if(tes.begin(), tes.end(),
+	                         [&](const std::shared_ptr<TileEntity>& te) { return te && te->m_position == wpos; }),
+	          tes.end());
+
+	// Unlight before changing the block
+	lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Block, *this);
+	lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Sky, *this);
+
+	// Get the local coordinates of this block within the chunk and set it
+	int lx = wpos.x & 15;
+	int lz = wpos.z & 15;
+	Int3 local{ lx, wpos.y, lz };
+	auto oldBlock = chunk->getBlock(local);
+	auto oldMeta = chunk->getMeta(local);
+	chunk->setBlock(local, block_type);
+	chunk->setMeta(local, metadata);
+
+	int y = wpos.y;
+	int x = wpos.x;
+	int z = wpos.z;
+	int oldHeight = chunk->getHeightValue({ lx, lz });
+
+	if (Blocks::blockProperties[block_type].lightOpacity != 0) {
+		// Placing opaque block; heightmap may rise
+		if (y >= oldHeight) {
+			chunk->relightColumn({ lx, lz });
+
+			// The column below the new top was zeroed out by relightColumn.
+			// Notify the BFS that all blocks from y down to oldHeight need updating
+			for (int sy = oldHeight; sy <= y; ++sy)
+				lightManager.unlightAt(x, sy, z, LightType::Sky, *this);
+		}
+	} else if (y == oldHeight - 1) {
+		// Removing top opaque block; heightmap may fall
+		chunk->relightColumn({ lx, lz });
+	}
+
+	int newHeight = chunk->getHeightValue({ lx, lz });
+	if (newHeight < oldHeight) {
+		for (int sy = newHeight; sy < oldHeight; ++sy)
+			lightManager.scheduleLightUpdate({ x, sy, z }, LightType::Sky);
+	}
+
+	// Always re-evaluate the edited block and its 4 horizontal neighbours
+	lightManager.scheduleLightUpdate({ x, y, z }, LightType::Sky);
+	const int ndx[] = { -1, 1, 0, 0 };
+	const int ndz[] = { 0, 0, -1, 1 };
+	for (int i = 0; i < 4; ++i) {
+		int nx = x + ndx[i], nz = z + ndz[i];
+		int neighborHeight = getHeightValue(nx, nz);
+		int thisHeight = chunk->getHeightValue({ lx, lz });
+		if (neighborHeight == thisHeight)
+			continue;
+		int minY = CrossPlatform::Math::min(thisHeight, neighborHeight);
+		int maxY = CrossPlatform::Math::max(thisHeight, neighborHeight);
+		lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
+	}
+	// Schedule a block light update for the m_position itself
+	lightManager.scheduleLightUpdate({ x, y, z }, LightType::Block);
+
+	// Update our neighbors
+	this->notifyNeighborsOfUpdate(wpos);
+
+	// Callback for the client and server to know about this block update
+	if (onBlockUpdate &&
+	    (oldBlock != block_type || (oldMeta != metadata && Blocks::blockProperties[block_type].notifySelfOnMetaChange)))
+		onBlockUpdate(PendingBlock{ .block{ block_type, metadata },
+		                            .block_pos{ wpos.x, wpos.y, wpos.z },
+		                            .light{ chunk->getBlockLight(local), chunk->getSkyLight(local) } },
+		              chunk->cpos);
+}
+
+int WorldManager::findTopSolidBlock(int wx, int wz) {
+	auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
+	if (!chunk || chunk->state.load() < ChunkState::Generated)
+		return -1;
+	int lx = wx & 15, lz = wz & 15;
+	for (int y = 127; y > 0; --y) {
+		BlockType block = chunk->getBlock({ lx, y, lz });
+		if (block == BlockType::BLOCK_AIR)
+			continue;
+		Material mat = Blocks::blockProperties[block].material;
+		if (mat.isSolid || mat.isLiquid)
+			return y + 1;
+	}
+	return -1;
+}
+
+BlockType WorldManager::getFirstUncoveredBlock(int wx, int wz) {
+	auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
+	if (!chunk || chunk->state.load() < ChunkState::Generated)
+		return BlockType(-1);
+	int lx = wx & 15, lz = wz & 15;
+	int y = 63;
+	while (y < 127 && chunk->getBlock({ lx, y + 1, lz }) != BlockType::BLOCK_AIR) {
+		++y;
+	}
+	return chunk->getBlock({ lx, y, lz });
+}
+
+void WorldManager::initSpawn() {
+	int sx = 0;
+	int sz = 0;
+	auto canCoordinateBeSpawn = [&](int x, int z) -> bool {
+		auto b = getFirstUncoveredBlock(x, z);
+		if (b == BlockType::BLOCK_INVALID) {
+			// Force generate this chunk so we can check the block type.
+			auto cpos = Int32_2{ x >> 4, z >> 4 };
+			forceGenChunkSync(cpos);
+			b = getFirstUncoveredBlock(x, z);
+		}
+		return getFirstUncoveredBlock(x, z) == BlockType::BLOCK_SAND;
+	};
+	for (; !canCoordinateBeSpawn(sx, sz); sz += this->rand.nextInt(64) - this->rand.nextInt(64)) {
+		sx += this->rand.nextInt(64) - this->rand.nextInt(64);
+	}
+	this->spawnPoint = { sx, 64, sz };
+	chunks.clear(); // Clear all chunks so we can start fresh from the spawn area
+}
+
+void WorldManager::propagateChunkLightBorders(Int32_2 cpos) {
+	// Iterate through our chunk borders
+	const int ndx[] = { -1, 1, 0, 0 };
+	const int ndz[] = { 0, 0, -1, 1 };
+	int bx = cpos.x * 16;
+	int bz = cpos.z * 16;
+	for (int i = 0; i < 4; ++i) {
+		Chunk* neighborChunk = getChunkRaw({ cpos.x + ndx[i], cpos.z + ndz[i] });
+		if (!neighborChunk)
+			continue;
+
+		// Walk the border edge of this chunk that faces the neighbor
+		for (int t = 0; t < 16; ++t) {
+			// Pick the border column of this chunk facing direction i
+			int lx, lz, nx, nz;
+			if (ndx[i] == -1) {
+				lx = 0;
+				lz = t;
+				nx = 15;
+				nz = t;
+			} else if (ndx[i] == 1) {
+				lx = 15;
+				lz = t;
+				nx = 0;
+				nz = t;
+			} else if (ndz[i] == -1) {
+				lx = t;
+				lz = 0;
+				nx = t;
+				nz = 15;
+			} else {
+				lx = t;
+				lz = 15;
+				nx = t;
+				nz = 0;
+			}
+
+			for (int y = 0; y < CHUNK_HEIGHT; ++y) {
+				// Does our neighbor block have a block light > 0 or sky light > 0? If so, schedule a light update for the block on our side of the border.
+				if (neighborChunk->getBlockLight({ nx, y, nz })) {
+					lightManager.scheduleLightUpdate({ bx + lx, y, bz + lz }, LightType::Block);
+				}
+				if (neighborChunk->getSkyLight({ nx, y, nz }) > 0) {
+					lightManager.scheduleLightUpdate({ bx + lx, y, bz + lz }, LightType::Sky);
+				}
+			}
+		}
+	}
+}
+
+void WorldManager::flushBleedWrites() {
+	for (auto it = pendingBleedWrites.begin(); it != pendingBleedWrites.end();) {
+		auto* target = getChunkRaw(it->first);
+		if (target && target->state.load() >= ChunkState::Generated && !target->inUse.load()) {
+			for (auto& [wpos, block] : it->second)
+				setBlock(wpos, block.type, block.data);
+			it = pendingBleedWrites.erase(it);
+		} else {
+			++it;
+		}
 	}
 }
