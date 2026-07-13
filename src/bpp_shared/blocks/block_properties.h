@@ -48,6 +48,7 @@ struct BlockProperties {
 	bool ticksOnLoad = false;
 	bool canBlockGrass = true;
 	bool notifyNeighborsOnMetaChange = true;
+	bool notifySelfOnMetaChange = true;
 	bool enableStats = true; // false = breaking doesn't count for achievements
 };
 
@@ -81,11 +82,11 @@ struct BlockBehavior {
 	// Return true if we allow the player to still place their held block
 	bool (*onBlockActivated)(WorldManager& world, Int3 pos) = nullptr;
 
-	// Called when block is placed, receives the face it was placed against
-	void (*onBlockPlaced)(WorldManager& world, Int3 pos, uint8_t meta, int face) = nullptr;
+	// Called when block is placed by a player
+	void (*onBlockPlaced)(WorldManager& world, Int3 pos, Entity& placer) = nullptr;
 
 	// Called when player breaks the block
-	void (*onBlockDestroyedByPlayer)(WorldManager& world, Int3 pos) = nullptr;
+	void (*onBlockDestroyedByPlayer)(WorldManager& world, Int3 pos, Entity& destroyer) = nullptr;
 
 	// Called when an explosion destroys the block
 	void (*onBlockDestroyedByExplosion)(WorldManager& world, Int3 pos) = nullptr;

@@ -157,7 +157,7 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 	if (heldItem->id >= BLOCK_MAX || (heldItem->id <= 0))
 		return;
 
-	BlockType blockId = static_cast<BlockType>(heldItem->id.m_value);
+	auto blockId = BlockType(heldItem->id.m_value);
 	world.setBlock(placePosition, blockId, heldItem->data);
 	heldItem->decrementCount(1);
 }
