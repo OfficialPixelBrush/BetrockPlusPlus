@@ -16,6 +16,8 @@ void RecipeManager::addVanillaRecipes() {
 	addShapedRecipe({ "##", "##" }, { { '#', { BLOCK_PLANKS } } }, { BLOCK_CRAFTING_TABLE, 1 });
 	addShapedRecipe({ "#", "#" }, { { '#', { BLOCK_PLANKS } } }, { ITEM_STICK, 4 });
 	addShapedRecipe({ "#" }, { { '#', { BLOCK_LOG } } }, { BLOCK_PLANKS, 4 });
+	addShapedRecipe({ "#" }, { { '#', { BLOCK_LOG, 1 } } }, { BLOCK_PLANKS, 4 });
+	addShapedRecipe({ "#" }, { { '#', { BLOCK_LOG, 2 } } }, { BLOCK_PLANKS, 4 });
 	addShapedRecipe({ "###" }, { { '#', { ITEM_SUGARCANE } } }, { ITEM_PAPER, 3 });
 	addShapedRecipe({ "#", "#", "#" }, { { '#', { ITEM_PAPER } } }, { ITEM_BOOK, 1 });
 	addShapedRecipe({ "###", "#X#", "###" }, { { '#', { BLOCK_PLANKS } }, { 'X', { ITEM_DIAMOND } } },
