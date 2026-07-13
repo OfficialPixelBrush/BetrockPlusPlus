@@ -443,7 +443,14 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	m_rand.setSeed(world.getSeed());
 	int64_t xSalt = m_rand.nextLong() / 2L * 2L + 1L;
 	int64_t zSalt = m_rand.nextLong() / 2L * 2L + 1L;
-	m_rand.setSeed((int64_t(chunk.cpos.x) * xSalt + int64_t(chunk.cpos.z) * zSalt) ^ world.getSeed());
+	// Use unsigned arithmetic to avoid overflow UB
+	uint64_t xSalt_u = static_cast<uint64_t>(xSalt);
+	uint64_t zSalt_u = static_cast<uint64_t>(zSalt);
+	uint64_t xPart = static_cast<uint64_t>(static_cast<int64_t>(chunk.cpos.x)) * xSalt_u;
+	uint64_t zPart = static_cast<uint64_t>(static_cast<int64_t>(chunk.cpos.z)) * zSalt_u;
+	uint64_t combined = (xPart + zPart) ^ static_cast<uint64_t>(world.getSeed());
+
+	m_rand.setSeed(static_cast<int64_t>(combined));
 
 	Int3 coord;
 

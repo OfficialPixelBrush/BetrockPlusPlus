@@ -23,11 +23,11 @@
 namespace Java {
 class Random {
 private:
-	static constexpr int64_t multiplier = 0x5DEECE66D;
-	static constexpr int64_t addend = 0xB;
-	static constexpr int64_t mask = (1LL << 48) - 1;
+	static constexpr uint64_t multiplier = 0x5DEECE66DULL;
+	static constexpr uint64_t addend = 0xBULL;
+	static constexpr uint64_t mask = (1ULL << 48) - 1;
 
-	int64_t seed;
+	uint64_t seed;
 
 	/**
 		* @brief Performs a new iteration of the PRNG
@@ -64,7 +64,7 @@ public:
 		* @param s Seed value
 		*/
 	void setSeed(int64_t s) {
-		seed = (s ^ multiplier) & mask;
+		seed = (static_cast<uint64_t>(s) ^ multiplier) & mask;
 	}
 
 	/**
@@ -93,7 +93,7 @@ public:
 		do {
 			bits = next(31);
 			val = bits % bound;
-		} while (int64_t(bits) - val + (bound - 1) < 0);
+		} while (int32_t(uint32_t(bits) - uint32_t(val) + uint32_t(bound - 1)) < 0);
 		return val;
 	}
 

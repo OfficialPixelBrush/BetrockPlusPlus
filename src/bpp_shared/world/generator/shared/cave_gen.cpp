@@ -17,13 +17,20 @@
 void CaveGenerator::GenerateCavesForChunk(Chunk& chunk, int64_t seed) {
 	int32_t carveExtent = this->m_carveExtentLimit;
 	m_rand.setSeed(seed);
-	// Ensure odd offset
 	int64_t xOffset = m_rand.nextLong() / 2L * 2L + 1L;
 	int64_t zOffset = m_rand.nextLong() / 2L * 2L + 1L;
 
+	// Use unsigned arithmetic to avoid overflow UB
+	uint64_t xOffset_u = static_cast<uint64_t>(xOffset);
+	uint64_t zOffset_u = static_cast<uint64_t>(zOffset);
+	uint64_t seed_u = static_cast<uint64_t>(seed);
+
 	for (int32_t cXoffset = chunk.cpos.x - carveExtent; cXoffset <= chunk.cpos.x + carveExtent; ++cXoffset) {
 		for (int32_t cZoffset = chunk.cpos.z - carveExtent; cZoffset <= chunk.cpos.z + carveExtent; ++cZoffset) {
-			m_rand.setSeed(((int64_t(cXoffset) * xOffset) + (int64_t(cZoffset) * zOffset)) ^ seed);
+			uint64_t xPart = static_cast<uint64_t>(static_cast<int64_t>(cXoffset)) * xOffset_u;
+			uint64_t zPart = static_cast<uint64_t>(static_cast<int64_t>(cZoffset)) * zOffset_u;
+			uint64_t combined = (xPart + zPart) ^ seed_u;
+			m_rand.setSeed(static_cast<int64_t>(combined));
 			this->GenerateCaves(chunk, { cXoffset, cZoffset });
 		}
 	}
