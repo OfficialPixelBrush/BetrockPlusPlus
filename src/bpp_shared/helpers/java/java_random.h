@@ -93,7 +93,7 @@ public:
 		do {
 			bits = next(31);
 			val = bits % bound;
-		} while (bits - val + (bound - 1) < 0);
+		} while (int64_t(bits) - val + (bound - 1) < 0);
 		return val;
 	}
 
