@@ -162,7 +162,7 @@ void NetworkStream::WriteBytes(const uint8_t* buf, size_t len) {
 // a certain number of bytes
 void NetworkStream::ReadEntityMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {
 	uint8_t val = Read<uint8_t>();
-	while (val != 0x7F) {
+	while (val != PacketData::EntityMetadata::END) {
 		// What type the data has
 		PacketData::EntityMetadata::Type type = PacketData::EntityMetadata::Type(val >> 5);
 		// Where the data goes for the relevant entity
@@ -261,6 +261,7 @@ void NetworkStream::WriteEntityMetadata(const std::vector<PacketData::EntityMeta
 			break;
 		}
 	}
+	Write(PacketData::EntityMetadata::END);
 }
 
 bool NetworkStream::flushWriteBuffer() {

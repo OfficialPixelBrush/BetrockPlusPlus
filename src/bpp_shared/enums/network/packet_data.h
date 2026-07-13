@@ -113,7 +113,8 @@ enum EntityEvent : int8_t {
 // Only used for the Entity Metadata pseudo-VM
 class EntityMetadata {
 public:
-	enum Type {
+	static constexpr uint8_t END = 0x7F;
+	enum Type : uint8_t {
 		BYTE = 0,
 		SHORT = 1,
 		INTEGER = 2,
@@ -123,7 +124,7 @@ public:
 		COORDINATES = 6
 	};
 
-	enum Flags {
+	enum Flags : uint8_t {
 		BURNING = 0,
 		SNEAKING = 1,
 		RIDING = 2
