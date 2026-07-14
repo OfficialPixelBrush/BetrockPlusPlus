@@ -27,6 +27,7 @@ struct Runtime {
 
 	Runtime() : worldHell(true) {
 		Blocks::registerAll();
+		Items::registerAll();
 		recipeManager.addVanillaRecipes();
 		GlobalLogger().info << "New game runtime created!\n";
 	}
