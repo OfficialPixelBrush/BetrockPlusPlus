@@ -5,9 +5,9 @@
  *
  */
 #include "entity.h"
+#include "entity_manager.h"
 #include "entity_player.h"
 #include "world/world.h"
-#include "entity_manager.h"
 #include <algorithm>
 #include <cmath>
 
@@ -141,8 +141,12 @@ void Entity::applyInput(float strafe, float forward, float acceleration) {
 	strafe /= length;
 	forward /= length;
 
-	motionX += (strafe * std::cos(rotationYaw) - forward * std::sin(rotationYaw)) * acceleration;
-	motionZ += (forward * std::cos(rotationYaw) + strafe * std::sin(rotationYaw)) * acceleration;
+	float yaw = rotationYaw * (JavaMath::PI / 180.0f);
+	float sinYaw = std::sin(yaw);
+	float cosYaw = std::cos(yaw);
+
+	motionX += (strafe * cosYaw - forward * sinYaw) * acceleration;
+	motionZ += (forward * cosYaw + strafe * sinYaw) * acceleration;
 }
 
 void Entity::move(Vec3 movement) {
@@ -253,13 +257,12 @@ void Entity::move(Vec3 movement) {
 		collider = collider.offset(0.0, downY, 0.0);
 
 		// Keep whichever collision path moved further horizontally
-		if (stepUpMovement.x * stepUpMovement.x + stepUpMovement.z * stepUpMovement.z >
+		if (stepUpMovement.x * stepUpMovement.x + stepUpMovement.z * stepUpMovement.z >=
 		    movement.x * movement.x + movement.z * movement.z) {
 			movement = stepUpMovement;
 			collider = resolvedCollider;
 		} else {
-			movement.y += (resolvedCollider.minY - originalCollider.minY) - stepHeight;
-			double frac = resolvedCollider.minY - collider.minY;
+			double frac = collider.minY - std::trunc(collider.minY);
 			if (frac > 0.0)
 				ySize += float(frac + 0.01);
 		}
