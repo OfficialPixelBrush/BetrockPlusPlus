@@ -292,15 +292,18 @@ ItemDamage GetMaxDurability(ItemId id) {
 	}
 }
 
-void ShovelUse(WorldManager& world, Int3 usedBlockPos) {
-	world.setBlock(usedBlockPos, BLOCK_NETHERRACK);
+void useHoe(WorldManager& world, Int3 pos) {
+	BlockType b = world.getBlockId(pos);
+	if (b == BLOCK_GRASS || b == BLOCK_DIRT) {
+		world.setBlock(pos, BLOCK_FARMLAND);
+	}
 }
 
 void registerAll() {
-	itemBehavior[Items::Id::SHOVEL_WOOD] = ItemBehavior{ .onBlockUse = ShovelUse };
-	itemBehavior[Items::Id::SHOVEL_STONE] = ItemBehavior{ .onBlockUse = ShovelUse };
-	itemBehavior[Items::Id::SHOVEL_IRON] = ItemBehavior{ .onBlockUse = ShovelUse };
-	itemBehavior[Items::Id::SHOVEL_GOLD] = ItemBehavior{ .onBlockUse = ShovelUse };
-	itemBehavior[Items::Id::SHOVEL_DIAMOND] = ItemBehavior{ .onBlockUse = ShovelUse };
+	itemBehavior[Items::Id::HOE_WOOD] = ItemBehavior{ .onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_STONE] = ItemBehavior{ .onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_IRON] = ItemBehavior{ .onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_GOLD] = ItemBehavior{ .onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_DIAMOND] = ItemBehavior{ .onBlockUse = useHoe };
 };
 }; // namespace Items
