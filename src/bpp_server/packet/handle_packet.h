@@ -44,7 +44,7 @@ void CloseContainer(Packet::CloseContainer& /*pkt*/, PlayerSession& session);
 // Client acknowledges a rejected transaction
 void ContainerTransaction(Packet::ContainerTransaction& pkt, PlayerSession& session);
 // Other handlers
-void InteractWithEntity(Packet::InteractWithEntity& /*pkt*/, PlayerSession& /*session*/);
+void InteractWithEntity(Packet::InteractWithEntity& pkt, PlayerSession& session, WorldManager& world);
 void InteractWithBlock(Packet::InteractWithBlock& pkt, PlayerSession& session, WorldManager& world);
 void Animation(Packet::Animation& pkt, PlayerSession& session, EntityTracker& entityTracker);
 void PlayerAction(Packet::PlayerAction& pkt, PlayerSession& session, EntityTracker& entityTracker);

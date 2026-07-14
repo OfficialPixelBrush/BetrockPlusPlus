@@ -169,19 +169,19 @@ public:
 		InteractWithEntity() : BasePacket{ PacketId::InteractWithEntity } {}
 		EntityId source_entity_id;
 		EntityId target_entity_id;
-		bool left_click;
+		bool attack; // Usually sent when left-clicking
 
 		void Serialize(NetworkStream& stream) const override {
 			stream.Write(m_id);
 			stream.Write(source_entity_id);
 			stream.Write(target_entity_id);
-			stream.Write(left_click);
+			stream.Write(attack);
 		}
 
 		void Deserialize(NetworkStream& stream) override {
 			source_entity_id = stream.Read<EntityId>();
 			target_entity_id = stream.Read<EntityId>();
-			left_click = stream.Read<bool>();
+			attack = stream.Read<bool>();
 		}
 	};
 
