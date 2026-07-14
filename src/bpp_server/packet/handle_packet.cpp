@@ -130,43 +130,38 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 			return;
 	}
 
-	// NOTE: Also sent for when a block placement is invalid
-	if (pkt.face == PacketData::FaceDirection::USE_ITEM) {
-		GlobalLogger().info << "Tried to use item\n";
-		GlobalLogger().info << position << "\n";
-		if (Items::IsValid(session.inventory.getHeldItem()->id) &&
-		    Items::itemBehavior[session.inventory.getHeldItem()->id].onBlockUse) {
-			GlobalLogger().info << "Used on " << session.position.getBlockPos() << "\n";
-			Items::itemBehavior[session.inventory.getHeldItem()->id].onBlockUse(world, session.position.getBlockPos());
-		}
-		return;
-	}
-
-	Int3 placePosition = position;
-	if (pkt.face == PacketData::FaceDirection::Y_MINUS)
-		placePosition.y -= 1;
-	if (pkt.face == PacketData::FaceDirection::Y_PLUS)
-		placePosition.y += 1;
-	if (pkt.face == PacketData::FaceDirection::Z_MINUS)
-		placePosition.z -= 1;
-	if (pkt.face == PacketData::FaceDirection::Z_PLUS)
-		placePosition.z += 1;
-	if (pkt.face == PacketData::FaceDirection::X_MINUS)
-		placePosition.x -= 1;
-	if (pkt.face == PacketData::FaceDirection::X_PLUS)
-		placePosition.x += 1;
-
 	ItemStack* heldItem = session.inventory.getHeldItem();
 	if (!heldItem)
 		return;
 
-	// Make sure the block id is valid for placement otherwise we will crash
-	if (heldItem->id >= BLOCK_MAX || (heldItem->id <= 0))
-		return;
+	if (!Items::IsValid(heldItem->id)) {
+		// It's a block
+		Int3 placePosition = position;
+		if (pkt.face == PacketData::FaceDirection::Y_MINUS)
+			placePosition.y -= 1;
+		if (pkt.face == PacketData::FaceDirection::Y_PLUS)
+			placePosition.y += 1;
+		if (pkt.face == PacketData::FaceDirection::Z_MINUS)
+			placePosition.z -= 1;
+		if (pkt.face == PacketData::FaceDirection::Z_PLUS)
+			placePosition.z += 1;
+		if (pkt.face == PacketData::FaceDirection::X_MINUS)
+			placePosition.x -= 1;
+		if (pkt.face == PacketData::FaceDirection::X_PLUS)
+			placePosition.x += 1;
 
-	auto blockId = BlockType(heldItem->id.m_value);
-	world.setBlock(placePosition, blockId, heldItem->data);
-	heldItem->decrementCount(1);
+		auto blockId = BlockType(heldItem->id.m_value);
+		world.setBlock(placePosition, blockId, heldItem->data);
+		heldItem->decrementCount(1);
+	} else {
+		// It's an item
+		GlobalLogger().info << "Tried to use item\n";
+		GlobalLogger().info << position << "\n";
+		if (Items::itemBehavior[heldItem->id].onBlockUse) {
+			GlobalLogger().info << "Used on " << position << "\n";
+			Items::itemBehavior[heldItem->id].onBlockUse(world, position);
+		}
+	}
 }
 
 void SetHotbarSlot(Packet::SetHotbarSlot& pkt, PlayerSession& session) {
