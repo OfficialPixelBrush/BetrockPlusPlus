@@ -9,25 +9,25 @@
 
 void EntityManager::removeEntity(EntityId id) {
 	// Find the entity for this ID
-	auto it = std::find_if(entities.begin(), entities.end(),
+	auto it = std::find_if(m_entities.begin(), m_entities.end(),
 	                       [id](const std::shared_ptr<Entity>& e) { return e->id == id; });
-	if (it == entities.end())
+	if (it == m_entities.end())
 		return; // Not found, nothing to do
 
 	std::shared_ptr<Entity> entity = *it;
 
 	// Remove from its bucket
-	auto& container = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
+	auto& container = m_entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
 	auto& bucket = container.buckets[entity->bucketPos.z];
-	bucket.entities.erase(std::remove_if(bucket.entities.begin(), bucket.entities.end(),
+	bucket.m_entities.erase(std::remove_if(bucket.m_entities.begin(), bucket.m_entities.end(),
 	                                     [&entity](const std::weak_ptr<Entity>& weak) {
 		                                     auto locked = weak.lock();
 		                                     return !locked || locked == entity;
 	                                     }),
-	                      bucket.entities.end());
+	                      bucket.m_entities.end());
 
 	// Remove from the master list
-	entities.erase(it);
+	m_entities.erase(it);
 	
 	// Unbind ourselves
 	entity->entityManager = nullptr;
@@ -39,45 +39,45 @@ void EntityManager::removeEntity(EntityId id) {
 }
 
 void EntityManager::addEntity(std::shared_ptr<Entity> entity, EntityId forceEntityId) {
-	if (!world) {
-		GlobalLogger().error << "Attempted to add an entity before EntityManager was bound to a world!\n";
+	if (!m_world) {
+		GlobalLogger().error << "Attempted to add an entity before EntityManager was bound to a m_world!\n";
 		return;
 	}
 	entity->id = forceEntityId == -1 ? getNextEntityId()
 	                                 : forceEntityId; // Assign an ID if we weren't forced to use one
-	entity->world = world; // Bind the world pointer so the entity can interact with the world
+	entity->world = m_world; // Bind the m_world pointer so the entity can interact with the m_world
 	entity->entityManager = this;
-	entity->dim = world->thisDimension;
+	entity->dim = m_world->thisDimension;
 
 	// Register the entity into its initial bucket
 	entity->bucketPos = computeBucketPos(entity->posX, entity->posY, entity->posZ);
-	auto& container = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
-	container.buckets[entity->bucketPos.z].entities.push_back(entity);
+	auto& container = m_entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
+	container.buckets[entity->bucketPos.z].m_entities.push_back(entity);
 
-	entities.push_back(std::move(entity));
+	m_entities.push_back(std::move(entity));
 	if (onEntitySpawn)
-		onEntitySpawn(entities.back());
+		onEntitySpawn(m_entities.back());
 }
 
 void EntityManager::tick() {
 	// Make a copy so we aren't modifying the vector while iterating over it
-	std::vector<std::shared_ptr<Entity>> copy = entities;
+	std::vector<std::shared_ptr<Entity>> copy = m_entities;
 
 	// Tick EVERY entity
 	for (std::shared_ptr<Entity> entity : copy) {
-		// Remove dead entities from the system
+		// Remove dead m_entities from the system
 		if (entity->isDead) {
 			entity->world = nullptr;
-			entities.erase(std::remove(entities.begin(), entities.end(), entity), entities.end());
-			auto& container = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
+			m_entities.erase(std::remove(m_entities.begin(), m_entities.end(), entity), m_entities.end());
+			auto& container = m_entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
 			auto& b = container.buckets[entity->bucketPos.z];
-			b.entities.erase(std::remove_if(b.entities.begin(), b.entities.end(),
+			b.m_entities.erase(std::remove_if(b.m_entities.begin(), b.m_entities.end(),
 			                                [&entity](const std::weak_ptr<Entity>& weak) {
 				                                auto locked = weak.lock();
 				                                return !locked ||
 				                                       locked == entity; // Remove if expired or matches our entity
 			                                }),
-			                 b.entities.end());
+			                 b.m_entities.end());
 
 			if (onEntityDespawn)
 				onEntityDespawn(entity);
@@ -90,20 +90,20 @@ void EntityManager::tick() {
 
 		if (newBucketPos != entity->bucketPos) {
 			// Remove from the old bucket
-			auto& oldContainer = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
+			auto& oldContainer = m_entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
 			auto& b = oldContainer.buckets[entity->bucketPos.z];
-			b.entities.erase(std::remove_if(b.entities.begin(), b.entities.end(),
+			b.m_entities.erase(std::remove_if(b.m_entities.begin(), b.m_entities.end(),
 			                                [&entity](const std::weak_ptr<Entity>& weak) {
 				                                auto locked = weak.lock();
 				                                return !locked ||
 				                                       locked == entity; // Remove if expired or matches our entity
 			                                }),
-			                 b.entities.end());
+			                 b.m_entities.end());
 
 			// Put in the new bucket
-			auto& newContainer = entityContainers[{ newBucketPos.x, newBucketPos.y }];
+			auto& newContainer = m_entityContainers[{ newBucketPos.x, newBucketPos.y }];
 			auto& newB = newContainer.buckets[newBucketPos.z];
-			newB.entities.push_back(entity);
+			newB.m_entities.push_back(entity);
 			entity->bucketPos = newBucketPos;
 		}
 	}
@@ -120,7 +120,7 @@ std::vector<std::shared_ptr<Entity>> EntityManager::getEntitiesWithinAABBExcludi
 }
 
 std::vector<std::shared_ptr<Entity>> EntityManager::getEntitiesWithinAABB(AABB& box) {
-	// Get all entities within an AABB
+	// Get all m_entities within an AABB
 	std::vector<std::shared_ptr<Entity>> collidingEntities;
 
 	// Normalize to block coordinates
@@ -140,12 +140,12 @@ std::vector<std::shared_ptr<Entity>> EntityManager::getEntitiesWithinAABB(AABB& 
 	// Go through each block position
 	for (int x = blockMinX; x <= blockMaxX; x++) {
 		for (int z = blockMinZ; z <= blockMaxZ; z++) {
-			auto& container = entityContainers[{ x, z }];
+			auto& container = m_entityContainers[{ x, z }];
 			for (int by = bucketMinY; by <= bucketMaxY; by++) {
 				// Get every entity within every bucket
-				for (int i = 0; i < container.buckets[by].entities.size(); i++) {
+				for (size_t i = 0; i < container.buckets[by].m_entities.size(); i++) {
 					// Make sure the weak ptr is still valid
-					auto& entityPtrWeak = container.buckets[by].entities[i];
+					auto& entityPtrWeak = container.buckets[by].m_entities[i];
 					if (auto entityPtrShared = entityPtrWeak.lock())
 						collidingEntities.push_back(entityPtrShared);
 				}

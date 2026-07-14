@@ -11,7 +11,7 @@
 
 struct EntityBucket {
 	// 16 blocks tall
-	std::vector<std::weak_ptr<Entity>> entities;
+	std::vector<std::weak_ptr<Entity>> m_entities;
 };
 
 struct EntityContainer {
@@ -22,10 +22,10 @@ struct EntityContainer {
 
 // For ticking all entities and keeping track of them in the world
 struct EntityManager {
-	EntityId nextEntityId = 2; // Minecraft seems to reserve 0 and 1
-	std::vector<std::shared_ptr<Entity>> entities;
-	std::unordered_map<Int2, EntityContainer> entityContainers;
-	WorldManager* world = nullptr; // we need to bind a pointer to this later
+	EntityId m_nextEntityId = 2; // Minecraft seems to reserve 0 and 1
+	std::vector<std::shared_ptr<Entity>> m_entities;
+	std::unordered_map<Int2, EntityContainer> m_entityContainers;
+	WorldManager* m_world = nullptr; // we need to bind a pointer to this later
 
 	// Callbacks that we can link into
 	std::function<void(std::shared_ptr<Entity>)> onEntitySpawn;
@@ -48,6 +48,6 @@ struct EntityManager {
 	void removeEntity(EntityId id);
 
 	EntityId getNextEntityId() {
-		return nextEntityId++;
+		return m_nextEntityId++;
 	}
 };

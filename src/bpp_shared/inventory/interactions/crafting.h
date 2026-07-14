@@ -11,11 +11,11 @@
 
 struct CraftingInventoryInteraction : InventoryInteraction {
 private:
-	Inventory* craftInventory;
+	Inventory* m_craftInventory;
 
 public:
-	InventoryPlayer* playerInventory;
-	Runtime& runtime;
+	InventoryPlayer* m_playerInventory;
+	Runtime& m_runtime;
 
 	// We don't do any inventory merging in this class because
 	// sharedInventory, craftingInventory, playerInventory all may or may not be the same thing.

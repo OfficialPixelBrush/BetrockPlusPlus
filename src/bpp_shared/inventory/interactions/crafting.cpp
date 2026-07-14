@@ -10,28 +10,28 @@
 CraftingInventoryInteraction::CraftingInventoryInteraction(Inventory* sharedInventory, Inventory* craftingInventory,
                                                            InventoryPlayer* playerInventory, Runtime& gameRuntime,
                                                            UInt8_2 gridSize)
-    : InventoryInteraction(sharedInventory), craftInventory(craftingInventory), playerInventory(playerInventory),
-      runtime(gameRuntime), m_gridSize(gridSize) {}
+    : InventoryInteraction(sharedInventory), m_craftInventory(craftingInventory), m_playerInventory(playerInventory),
+      m_runtime(gameRuntime), m_gridSize(gridSize) {}
 
 void CraftingInventoryInteraction::updateResult() {
-	auto grid = std::span<const ItemStack>(craftInventory->slots.data() + 1, m_gridSize.total());
-	ItemStack result = runtime.recipeManager.matchGrid(grid, m_gridSize);
-	craftInventory->slots[0] = result;
+	auto grid = std::span<const ItemStack>(m_craftInventory->slots.data() + 1, m_gridSize.total());
+	ItemStack result = m_runtime.recipeManager.matchGrid(grid, m_gridSize);
+	m_craftInventory->slots[0] = result;
 }
 
 void CraftingInventoryInteraction::finishCraft() {
-	craftInventory->slots[0] = ItemStack{};
+	m_craftInventory->slots[0] = ItemStack{};
 
 	// Consume one of each ingredient that went into this craft
 	for (size_t i = 1; i <= m_gridSize.total(); ++i)
-		craftInventory->slots[i].decrementCount(1);
+		m_craftInventory->slots[i].decrementCount(1);
 
 	// The grid changed, there might be another possible craft
 	updateResult();
 }
 
 void CraftingInventoryInteraction::takeResult() {
-	ItemStack& result = craftInventory->slots[0];
+	ItemStack& result = m_craftInventory->slots[0];
 	if (result.id == Items::Id::INVALID)
 		return;
 
