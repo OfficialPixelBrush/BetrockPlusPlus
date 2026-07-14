@@ -8,7 +8,9 @@
 #include "../server.h"
 #include "entities.h"
 #include "entities/entity_item.h"
+#include "packet_data.h"
 #include <algorithm>
+#include <cstdint>
 
 // Update each player instance so entities properly despawn and spawn for them
 void EntityTracker::tick() {
@@ -109,6 +111,20 @@ void EntityTracker::tick() {
 				// To prevent bad behavior when we share a name with another entity
 				auto username = server->getUsernameByEntityId(entityEntry.entity->id);
 				pkt.username = username;
+				pkt.Serialize(pSession.stream);
+				break;
+			}
+			case EntityType::CREEPER: {
+				Packet::SpawnMob pkt;
+				pkt.entity_id = entityEntry.entity->id;
+				pkt.mob_type = PacketData::MobType::CREEPER;
+				pkt.q_position = { quantizePosition(entityEntry.entity->posX),
+					               quantizePosition(entityEntry.entity->posY),
+					               quantizePosition(entityEntry.entity->posZ) };
+				pkt.q_rotation = { int8_t(quantizeRotation(entityEntry.entity->rotationYaw)),
+					               int8_t(quantizeRotation(entityEntry.entity->rotationPitch)) };
+				pkt.metadata.push_back(
+				    PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
 				pkt.Serialize(pSession.stream);
 				break;
 			}

@@ -79,8 +79,8 @@ void Entity::onCollideWithPlayer(PlayerEntity& entity) {
 void Entity::tick() {
 	ticksExisted++;
 
-	if (this->ridingEntity != nullptr && this->ridingEntity->isDead) {
-		this->ridingEntity = nullptr;
+	if (this->rider != nullptr && this->rider->isDead) {
+		this->rider = nullptr;
 	}
 
 	// Returns if we are in water and applies a push to our entity
@@ -294,11 +294,12 @@ void Entity::move(Vec3 movement) {
 	auto maxX = MathHelper::floor_double(collider.maxX - 0.001);
 	auto maxY = MathHelper::floor_double(collider.maxY - 0.001);
 	auto maxZ = MathHelper::floor_double(collider.maxZ - 0.001);
-	if (world->AABBinValidChunks({ double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ) })){
+	if (world->AABBinValidChunks(
+	        { double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ) })) {
 		for (int x = minX; x <= maxX; x++) {
 			for (int y = minY; y <= maxY; y++) {
 				for (int z = minZ; z <= maxZ; z++) {
-					auto blockId = world->getBlockId({x, y, z});
+					auto blockId = world->getBlockId({ x, y, z });
 					auto function = Blocks::blockBehaviors[blockId < 0 ? 0 : blockId].onEntityCollidedWithBlock;
 					if (blockId > 0 && function) {
 						function(*world, { x, y, z }, *this);

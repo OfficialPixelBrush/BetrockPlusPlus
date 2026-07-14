@@ -8,6 +8,7 @@
 #pragma once
 #include "base_types.h"
 #include "blocks/block_properties.h"
+#include "dimensions.h"
 #include "entities.h"
 #include "helpers/AABB.h"
 #include "numeric_structs.h"
@@ -73,15 +74,17 @@ struct Entity {
 	Dimension dim = Dimension::Overworld;
 
 	// Riding
-	Entity* ridingEntity = nullptr;
-	Entity* riddenByEntity = nullptr;
+	Entity* rider = nullptr;
+	Entity* passenger = nullptr;
 
 	// Position
+	//TODO: use a Vec3 instead
 	double posX = 0.0;
 	double posY = 0.0;
 	double posZ = 0.0;
 
 	// Velocity
+	//TODO: use a Vec3 instead
 	double motionX = 0.0;
 	double motionY = 0.0;
 	double motionZ = 0.0;
@@ -129,6 +132,7 @@ struct Entity {
 	float distanceWalkedModified = 0.0f;
 	float ySize = 0.0f;
 
+	//TODO: combine moveForward, moveStrafe and maybe jumping into an input vector
 	float moveForward = 0.0f; // Forward/backward input axis
 	float moveStrafe = 0.0f;  // Left/right input axis
 
@@ -197,8 +201,10 @@ struct Entity {
 	virtual bool pushOutOfBlocks(Vec3 pos);
 	virtual void onCollideWithPlayer(PlayerEntity& entity);
 	virtual void applyKnockback(Vec3 direction);
+	//TODO: use moveForward, moveStrafe or the new input vector instead of args
 	virtual void applyInput(float strafe, float forward, float acceleration);
 	virtual void move(Vec3 movement);
+	//TODO: Move to LivingEntity
 	virtual void dealDamage(int amount);
 	virtual void updateFallState(float movedY);
 	virtual std::optional<Tag> serializeToNBT();
