@@ -157,6 +157,9 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 
 		auto blockId = BlockType(heldItem->id.m_value);
 		world.setBlock(placePosition, blockId, heldItem->data);
+		auto function = Blocks::blockBehaviors[blockId].onBlockPlaced;
+		if (function)
+			function(world, placePosition, *session.entity, pkt.face);
 		heldItem->decrementCount(1);
 	} else {
 		// It's an item

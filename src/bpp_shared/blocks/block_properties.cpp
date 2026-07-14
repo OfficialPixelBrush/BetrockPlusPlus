@@ -1881,6 +1881,24 @@ void registerAll() {
 		entity.motionZ *= 0.4;
 	};
 
+	// placement overrides
+	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& world, Int3 pos, Entity& placer,
+	                                               PacketData::FaceDirection face) -> void {
+		auto meta = world.getMetadata(pos);
+		if (face == PacketData::FaceDirection::Y_PLUS && (world.isBlockNormalCube({ pos.x, pos.y - 1, pos.z }) || world.getBlockId({ pos.x, pos.y - 1, pos.z }) == BLOCK_FENCE))
+			meta = 5;
+		if (face == PacketData::FaceDirection::Z_MINUS && world.isBlockNormalCube({ pos.x, pos.y, pos.z + 1 }))
+			meta = 4;
+		if (face == PacketData::FaceDirection::Z_PLUS && world.isBlockNormalCube({ pos.x, pos.y, pos.z - 1 }))
+			meta = 3;
+		if (face == PacketData::FaceDirection::X_MINUS && world.isBlockNormalCube({ pos.x + 1, pos.y, pos.z }))
+			meta = 2;
+		if (face == PacketData::FaceDirection::X_PLUS && world.isBlockNormalCube({ pos.x - 1, pos.y, pos.z }))
+			meta = 1;
+		world.setMeta(pos, meta);
+	};
+
+
 	// for when the block is interacted with!
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated = [](WorldManager& world, Int3 pos) -> bool {
 		auto meta = world.getMetadata(pos);
