@@ -181,6 +181,14 @@ struct Entity {
 		velocityChanged = true;
 		return false;
 	}
+	virtual AABB getFluidCollider() {
+		// Returns the collider we use to compare if we are in a fluid
+		return collider.expand(0.0, -0.4, 0.0);
+	}
+	virtual AABB getLavaCollider() {
+		// Returns the collider we use to detect if we are in lava
+		return collider.expand(-0.1, -0.4, -0.1);
+	}
 	virtual bool pushOutOfBlocks(Vec3 pos);
 	virtual void onCollideWithPlayer(PlayerEntity& entity);
 	virtual void applyKnockback(Vec3 direction);

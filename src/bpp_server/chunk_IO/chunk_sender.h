@@ -17,9 +17,7 @@
 #include <unordered_map>
 #include <vector>
 
-// ChunkSender offloads zlib chunk serialization onto a thread-pool so the
-// main server tick is never blocked waiting for compression.
-// enqueue() and flush() must only be called from the main thread.
+// ChunkSender offloads zlib chunk serialization onto a thread-pool
 struct ChunkSender {
 	// One result slot per in-flight chunk.
 	struct PendingChunk {

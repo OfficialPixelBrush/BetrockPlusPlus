@@ -30,6 +30,14 @@ struct ItemEntity : public Entity {
 		motionZ = rand.nextDouble() * 0.2 - 0.1;
 	}
 
+	AABB getFluidCollider() override {
+		// Returns the collider we use to compare if we are in a fluid
+		return collider;
+	}
+	AABB getLavaCollider() override {
+		// Returns the collider we use to detect if we are in lava
+		return collider;
+	}
 	void onCollideWithPlayer(PlayerEntity& entity) override;
 	void tick() override;
 	bool attackEntityFrom(Entity* entity, int damage) override {

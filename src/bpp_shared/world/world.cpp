@@ -251,6 +251,9 @@ void WorldManager::drainGenQueue() {
 					setBlock(wpos, block.type, block.data);
 				pendingBleedWrites.erase(pit);
 			}
+
+			it->second->generateSkylightMap();         // Regen our skylight map
+			this->seedChunkLighting(it->second->cpos); // Reseed our lighting
 		}
 	}
 }
@@ -615,9 +618,6 @@ void WorldManager::populateReady() {
 		auto& chunk = cit->second;
 		chunk->isTerrainPopulated = true;
 		chunk->isModified = true;
-		chunk->generateSkylightMap();         // Regen our skylight map
-		this->seedChunkLighting(chunk->cpos); // Reseed our lighting
-
 		chunk->state.store(ChunkState::Populated, std::memory_order_release);
 		populatedThisTick.insert(pos);
 		wrapper.freeChunkRegion();
