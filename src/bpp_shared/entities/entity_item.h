@@ -8,9 +8,11 @@
 
 #include "entity.h"
 #include "inventory/item_stack.h"
+#include "logger.h"
 
 struct ItemEntity : public Entity {
 	ItemStack itemStack;
+	int8_t health = 5;
 	int8_t pickupCooldown = 10;
 	ItemEntity(Vec3 position) : Entity() {
 		type = EntityType::ITEM;
@@ -22,12 +24,19 @@ struct ItemEntity : public Entity {
 		this->teleport(position);
 
 		// This stuff is mostly randomized
-		rotationYaw = Java::Random().nextDouble() * 360.0;
-		motionX = Java::Random().nextDouble() * 0.2 - 0.1;
+		rotationYaw = rand.nextDouble() * 360.0;
+		motionX = rand.nextDouble() * 0.2 - 0.1;
 		motionY = 0.2;
-		motionZ = Java::Random().nextDouble() * 0.2 - 0.1;
+		motionZ = rand.nextDouble() * 0.2 - 0.1;
 	}
 
 	void onCollideWithPlayer(PlayerEntity& entity) override;
 	void tick() override;
+	bool attackEntityFrom(Entity* entity, int damage) override {
+		Entity::attackEntityFrom(entity, damage);
+		health -= damage;
+		if (health <= 0)
+			isDead = true;
+		return false;
+	}
 };

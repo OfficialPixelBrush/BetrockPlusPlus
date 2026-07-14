@@ -20,37 +20,85 @@ void ItemEntity::onCollideWithPlayer(PlayerEntity& entity) {
 
 void ItemEntity::tick() {
 	// Item entities have differing physics
-	ticksExisted++;
+	{
+		ticksExisted++;
+
+		if (this->ridingEntity != nullptr && this->ridingEntity->isDead) {
+			this->ridingEntity = nullptr;
+		}
+
+		// Returns if we are in water and applies a push to our entity
+		if (world->handleFluidAcceleration(collider, Material::Water(), *this)) {
+			fallDistance = 0.0;
+			inWater = true;
+			fire = 0;
+		} else {
+			inWater = false;
+		}
+
+		// If we are on fire decrement the fire
+		if (fire > 0) {
+			if (isImmuneToFire) {
+				fire -= 4;
+				fire = std::max(0, fire);
+			} else {
+				if (fire % 20 == 0)
+					attackEntityFrom(nullptr, 1);
+				fire--;
+			}
+		}
+
+		// Returns if we are in lava
+		if (world->isMaterialInAABB(collider, Material::Lava())) {
+			if (!isImmuneToFire) {
+				attackEntityFrom(nullptr, 4);
+				fire = 600;
+			}
+		}
+
+		// Kill our entity if its below the world
+		if (posY < -64.0)
+			isDead = true;
+
+		isFirstUpdate = false;
+	}
 	pickupCooldown--;
 	pickupCooldown = std::max(int8_t(0), pickupCooldown);
 
-	if (hasPhysics) {
-		motionY -= 0.03999999910593033;
-		move({ motionX, motionY, motionZ });
+	motionY -= 0.04;
 
-		float horizontalDrag = 0.98f;
-		if (onGround) {
-			horizontalDrag = 0.58800006f;
-
-			// Look up the block below us
-			int bx = MathHelper::floor_double(posX);
-			int by = MathHelper::floor_double(collider.minY) - 1;
-			int bz = MathHelper::floor_double(posZ);
-			int blockId = world->getBlockId({ bx, by, bz });
-			belowBlock = Blocks::blockProperties[blockId];
-
-			if (blockId > 0)
-				horizontalDrag = belowBlock.slipperiness * 0.98f;
-		}
-
-		motionX *= double(horizontalDrag);
-		motionY *= 0.9800000190734863;
-		motionZ *= double(horizontalDrag);
-
-		// Bounce when we land
-		if (onGround)
-			motionY *= -0.5;
+	if (world->getMaterial({ MathHelper::floor_double(posX), MathHelper::floor_double(posY),
+	                         MathHelper::floor_double(posZ) }) == Material::Lava()) {
+		motionY = 0.2;
+		motionX = double((rand.nextFloat() - rand.nextFloat()) * 0.2F);
+		motionZ = double((rand.nextFloat() - rand.nextFloat()) * 0.2F);
 	}
+
+	pushOutOfBlocks({ posX, (collider.minY + collider.maxY) / 2.0, posZ });
+	move({ motionX, motionY, motionZ });
+
+	float horizontalDrag = 0.98f;
+	if (onGround) {
+		horizontalDrag = 0.58800006f;
+
+		// Look up the block below us
+		int bx = MathHelper::floor_double(posX);
+		int by = MathHelper::floor_double(collider.minY) - 1;
+		int bz = MathHelper::floor_double(posZ);
+		int blockId = world->getBlockId({ bx, by, bz });
+		belowBlock = Blocks::blockProperties[blockId];
+
+		if (blockId > 0)
+			horizontalDrag = belowBlock.slipperiness * 0.98f;
+	}
+
+	motionX *= double(horizontalDrag);
+	motionY *= 0.9800000190734863;
+	motionZ *= double(horizontalDrag);
+
+	// Bounce when we land
+	if (onGround)
+		motionY *= -0.5;
 
 	if (ticksExisted >= 6000)
 		isDead = true;

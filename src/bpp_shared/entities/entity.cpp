@@ -11,15 +11,113 @@
 #include <algorithm>
 #include <cmath>
 
+bool Entity::pushOutOfBlocks(Vec3 pos) {
+	int bx = MathHelper::floor_double(pos.x);
+	int by = MathHelper::floor_double(pos.y);
+	int bz = MathHelper::floor_double(pos.z);
+	double fracX = pos.x - double(bx);
+	double fracY = pos.y - double(by);
+	double fracZ = pos.z - double(bz);
+
+	if (world->isBlockNormalCube({ bx, by, bz })) {
+		bool openNegX = !world->isBlockNormalCube({ bx - 1, by, bz });
+		bool openPosX = !world->isBlockNormalCube({ bx + 1, by, bz });
+		bool openNegY = !world->isBlockNormalCube({ bx, by - 1, bz });
+		bool openPosY = !world->isBlockNormalCube({ bx, by + 1, bz });
+		bool openNegZ = !world->isBlockNormalCube({ bx, by, bz - 1 });
+		bool openPosZ = !world->isBlockNormalCube({ bx, by, bz + 1 });
+
+		int8_t direction = -1;
+		double closest = 9999.0;
+
+		if (openNegX && fracX < closest) {
+			closest = fracX;
+			direction = 0;
+		}
+		if (openPosX && 1.0 - fracX < closest) {
+			closest = 1.0 - fracX;
+			direction = 1;
+		}
+		if (openNegY && fracY < closest) {
+			closest = fracY;
+			direction = 2;
+		}
+		if (openPosY && 1.0 - fracY < closest) {
+			closest = 1.0 - fracY;
+			direction = 3;
+		}
+		if (openNegZ && fracZ < closest) {
+			closest = fracZ;
+			direction = 4;
+		}
+		if (openPosZ && 1.0 - fracZ < closest) {
+			closest = 1.0 - fracZ;
+			direction = 5;
+		}
+
+		float pushSpeed = rand.nextFloat() * 0.2f + 0.1f;
+		if (direction == 0)
+			motionX = double(-pushSpeed);
+		if (direction == 1)
+			motionX = double(pushSpeed);
+		if (direction == 2)
+			motionY = double(-pushSpeed);
+		if (direction == 3)
+			motionY = double(pushSpeed);
+		if (direction == 4)
+			motionZ = double(-pushSpeed);
+		if (direction == 5)
+			motionZ = double(pushSpeed);
+	}
+
+	return false;
+}
 void Entity::onCollideWithPlayer(PlayerEntity& entity) {
 	return;
 }
 
 void Entity::tick() {
 	ticksExisted++;
-}
 
-void Entity::moveInFluid([[maybe_unused]] float drag) {}
+	if (this->ridingEntity != nullptr && this->ridingEntity->isDead) {
+		this->ridingEntity = nullptr;
+	}
+
+	// Returns if we are in water and applies a push to our entity
+	if (world->handleFluidAcceleration(collider.expand(0.0, -0.4, 0.0), Material::Water(), *this)) {
+		fallDistance = 0.0;
+		inWater = true;
+		fire = 0;
+	} else {
+		inWater = false;
+	}
+
+	// If we are in fire decrement the fire
+	if (fire > 0) {
+		if (isImmuneToFire) {
+			fire -= 4;
+			fire = std::max(0, fire);
+		} else {
+			if (fire % 20 == 0)
+				attackEntityFrom(nullptr, 1);
+			fire--;
+		}
+	}
+
+	// Returns if we are in lava
+	if (world->isMaterialInAABB(collider.expand(-0.1, -0.4, -0.1), Material::Lava())) {
+		if (!isImmuneToFire) {
+			attackEntityFrom(nullptr, 4);
+			fire = 600;
+		}
+	}
+
+	// Kill our entity if its below the world
+	if (posY < -64.0)
+		isDead = true;
+
+	isFirstUpdate = false;
+}
 
 void Entity::applyKnockback(Vec3 direction) {
 	motionX *= KNOCKBACK_VELOCITY_DAMPENING;
@@ -185,6 +283,27 @@ void Entity::move(Vec3 movement) {
 		motionZ = 0.0;
 
 	updateFallState(movement.y);
+
+	// Scan each block this entity overlaps so we can trigger collided with code
+	auto minX = MathHelper::floor_double(collider.minX + 0.001);
+	auto minY = MathHelper::floor_double(collider.minY + 0.001);
+	auto minZ = MathHelper::floor_double(collider.minZ + 0.001);
+	auto maxX = MathHelper::floor_double(collider.maxX - 0.001);
+	auto maxY = MathHelper::floor_double(collider.maxY - 0.001);
+	auto maxZ = MathHelper::floor_double(collider.maxZ - 0.001);
+	if (world->AABBinValidChunks({ double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ) })){
+		for (int x = minX; x <= maxX; x++) {
+			for (int y = minY; y <= maxY; y++) {
+				for (int z = minZ; z <= maxZ; z++) {
+					auto blockId = world->getBlockId({x, y, z});
+					auto function = Blocks::blockBehaviors[blockId < 0 ? 0 : blockId].onEntityCollidedWithBlock;
+					if (blockId > 0 && function) {
+						function(*world, { x, y, z }, *this);
+					}
+				}
+			}
+		}
+	}
 }
 
 void Entity::dealDamage([[maybe_unused]] int amount) {}

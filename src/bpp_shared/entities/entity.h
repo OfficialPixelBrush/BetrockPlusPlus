@@ -130,9 +130,10 @@ struct Entity {
 	float moveStrafe = 0.0f;  // Left/right input axis
 
 	// Fire
-	int fire = 0;           // Ticks remaining on fire; 0 = not on fire
-	bool inFire = false;    // Currently touching a fire/lava block
-	int fireResistance = 1; // Ticks of immunity after catching fire
+	int fire = 0;                // Ticks remaining on fire; 0 = not on fire
+	bool inFire = false;         // Currently touching a fire/lava block
+	int fireResistance = 1;      // Ticks of immunity after catching fire
+	bool isImmuneToFire = false; // Total fire immunity
 
 	// Combat
 	bool beenAttacked = false;
@@ -172,8 +173,14 @@ struct Entity {
 		ySize = 0.0f;
 		rebuildCollider();
 	}
+
+	virtual bool attackEntityFrom(Entity* entity, int damage) {
+		beenAttacked = true;
+		velocityChanged = true;
+		return false;
+	}
+	virtual bool pushOutOfBlocks(Vec3 pos);
 	virtual void onCollideWithPlayer(PlayerEntity& entity);
-	virtual void moveInFluid(float drag);
 	virtual void applyKnockback(Vec3 direction);
 	virtual void applyInput(float strafe, float forward, float acceleration);
 	virtual void move(Vec3 movement);
