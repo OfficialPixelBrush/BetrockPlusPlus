@@ -132,6 +132,7 @@ TrackedEntry& EntityTracker::getTrackerForEntityId(EntityId id) {
 		if (entityId == id)
 			return entityEntry;
 	}
+    throw std::out_of_range("Entity not found");
 }
 
 void EntityTracker::sendPacketToViewers(Packet::BasePacket& pkt, EntityId id) {

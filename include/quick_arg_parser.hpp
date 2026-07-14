@@ -528,12 +528,12 @@ private:
 	std::vector<std::string> findOption(const std::string& argument, char shortcut) const {
 		// This returns hogwash if the option is bool, but in that case, we only care that the vector is not empty
 		std::vector<std::string> collected;
-		auto matches = [&] (const std::string& matched, int argument) {
+		auto matches = [&] (const std::string& matched, int argument_index) {
 			for (int i = 0; i < int(matched.size()); i++) {
-				if (matched[i] != _argv[argument][i])
+				if (matched[i] != _argv[argument_index][i])
 					return false;
 			}
-			return matched.size() == _argv[argument].size() || _argv[argument][matched.size()] == '=';
+			return matched.size() == _argv[argument_index].size() || _argv[argument_index][matched.size()] == '=';
 		};
 	
 		for (int i = 0; i < int(_argv.size()); i++) {

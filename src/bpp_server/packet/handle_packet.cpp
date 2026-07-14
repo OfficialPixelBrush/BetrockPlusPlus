@@ -273,7 +273,7 @@ void InteractWithEntity(Packet::InteractWithEntity& pkt, PlayerSession& session,
 	// Check if session entity and source entity match
 	if (pkt.source_entity_id != session.entity->id) return;
 	 // Check if target entity exists
-	auto& entity = world.entityManager.entities[pkt.target_entity_id];
+	auto& entity = world.entityManager.m_entities[pkt.target_entity_id];
 	if (!entity) return;
 	// Attacking
 	if (Items::itemBehavior[session.inventory.getHeldItem()->id].onEntityAttack && pkt.attack) {

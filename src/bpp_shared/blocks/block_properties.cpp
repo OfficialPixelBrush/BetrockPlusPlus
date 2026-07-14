@@ -29,10 +29,10 @@ float getFluidPercentAir(uint8_t meta) {
 static Vec3 getFluidFlowVector(WorldManager& world, Int3 pos) {
 	auto waterMaterial = Material::Water();
 	Vec3 flowVector{};
-	auto getEffectiveFlowDecay = [&](WorldManager& world, Int3 pos, Material material) {
-		if (world.getMaterial(pos) != material)
+	auto getEffectiveFlowDecay = [&](WorldManager& lWorld, Int3 lPos, Material lMaterial) {
+		if (lWorld.getMaterial(pos) != lMaterial)
 			return -1;
-		int meta = world.getMetadata(pos);
+		int meta = lWorld.getMetadata(lPos);
 		if (meta >= 8)
 			meta = 0;
 

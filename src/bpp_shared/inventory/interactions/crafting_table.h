@@ -11,9 +11,9 @@
 #include "world.h"
 
 struct CraftingTableInventoryInteraction : CraftingInventoryInteraction {
-	InventoryCraftingTable craftInventory;
-	WorldManager& world;
-	Int3 blockPosition;
+	InventoryCraftingTable m_craftInventory;
+	WorldManager& m_world;
+	Int3 m_blockPosition;
 
 	struct SharedInventory : Inventory {
 		CraftingTableInventoryInteraction* owner = nullptr;
@@ -22,7 +22,7 @@ struct CraftingTableInventoryInteraction : CraftingInventoryInteraction {
 			if (owner)
 				owner->writeBack();
 		}
-	} sharedInventory;
+	} m_sharedInventory;
 
 	CraftingTableInventoryInteraction(InventoryPlayer* pinv, WorldManager& worldMng, Runtime& gameRuntime,
 	                                  Int3 craftingTablePos);

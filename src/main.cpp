@@ -53,10 +53,10 @@ struct Args : MainArguments<Args> {
 	uint16_t port = option("port", 'p', "Port the server will run on (25565)") = 25565;
 	int32_t max_players = option("max_players", '\0',
 	                             "Maximum number of players. Anything less than 0 removes the cap (-1)") = -1;
-	bool enable_whitelist = option("whitelist", 'w', "Enables usage of the whitelist") = false;
+	bool enable_whitelist = (option("whitelist", 'w', "Enables usage of the whitelist") = false);
 	int64_t seed = option("seed", 's', "Overwrites the worlds current seed") = 0;
-	bool disable_portals = option("no_portals", '\0', "Disables Portal-travel") = false;
-	bool force_nether_spawn = option("force_nether_spawn", '\0', "Makes players spawn in the Nether") = false;
+	bool disable_portals = (option("no_portals", '\0', "Disables Portal-travel") = false);
+	bool force_nether_spawn = (option("force_nether_spawn", '\0', "Makes players spawn in the Nether") = false);
 	uint32_t pregen_radius = option("pregen_radius", '\0',
 	                                "Generates chunks around 0,0 until the desired radius is met") = 5;
 	uint32_t chunk_render_radius = option(

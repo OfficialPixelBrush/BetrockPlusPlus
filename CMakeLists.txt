@@ -222,7 +222,7 @@ endif()
 target_compile_options(BetrockPlusPlus PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang>:
         -Wall
-        -Wextra
+        #-Wextra
         # Implicit conversions (int32_t -> float, etc.)
         #-Wconversion
         # Sign mismatches
@@ -230,7 +230,7 @@ target_compile_options(BetrockPlusPlus PRIVATE
         # Variable shadowing
         -Wshadow
         # Unused variables, params, etc.
-        -Wunused
+        #-Wunused
         #-Wuninitialized
         # Treat warnings as errors
         #-Werror

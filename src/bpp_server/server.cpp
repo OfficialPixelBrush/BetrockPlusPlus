@@ -436,7 +436,6 @@ void Server::tick() {
 		auto diffs = session->activeInteraction->tickDiff();
 		if (diffs.size() <= 5) {
 			for (auto difference : diffs) {
-				ItemStack invalid{ Items::Id::INVALID };
 				PacketUtilities::sendSlot(*session, session->openWindowId, difference.slot, &difference.stack);
 			}
 		} else {
