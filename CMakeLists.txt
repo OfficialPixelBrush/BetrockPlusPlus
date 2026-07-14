@@ -89,6 +89,7 @@ set(SHARED_SOURCES
     src/bpp_shared/inventory/interactions/crafting_table.cpp
     src/bpp_shared/crafting/recipe_manager.cpp
     src/bpp_shared/crafting/vanilla_recipes.cpp
+    src/bpp_shared/pathfinding/pathfinder.cpp
 
     # Generation
     src/bpp_shared/world/noise/noise_generator.cpp
