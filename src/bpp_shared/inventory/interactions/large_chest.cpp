@@ -61,7 +61,7 @@ void LargeChestInventoryInteraction::mergeInventories() {
 void LargeChestInventoryInteraction::writeBack() {
 	for (size_t i = 0; i < 54; i++) {
 		auto& slot = sharedInventory.slots[i];
-		ItemStack* ptr = slot.id != ITEM_INVALID ? &slot : nullptr;
+		ItemStack* ptr = slot.id != Items::Id::INVALID ? &slot : nullptr;
 		chestInventory.setInventorySlotContents(i, ptr);
 	}
 	for (size_t i = 54; i < 90; i++)

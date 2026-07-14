@@ -16,7 +16,7 @@
 
 // Just a virtual container
 struct ItemStack {
-	ItemId id = ITEM_INVALID;
+	ItemId id = Items::Id::INVALID;
 	ItemAmount count = 0;
 	ItemDamage data = 0; // This is "damage" in the og java but data makes more sense for what this is used for
 
@@ -46,7 +46,7 @@ struct ItemStack {
 			count -= amount;
 		}
 		if (count <= 0) {
-			id = ITEM_INVALID;
+			id = Items::Id::INVALID;
 			data = 0;
 		}
 	}

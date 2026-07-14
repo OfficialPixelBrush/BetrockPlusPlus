@@ -27,7 +27,7 @@ bool EntityMPPlayer::pickupItem(ItemStack& stack, EntityId entityId) {
 
 // This works over a copy of your item, it doesn't remove or decrement it !!!
 bool EntityMPPlayer::dropItem(ItemStack stack) {
-	if (stack.id == ITEM_INVALID || stack.count <= 0)
+	if (stack.id == Items::Id::INVALID || stack.count <= 0)
 		return false;
 
 	// Create the item entity

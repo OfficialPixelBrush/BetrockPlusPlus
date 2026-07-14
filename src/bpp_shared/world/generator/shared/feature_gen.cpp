@@ -157,7 +157,7 @@ bool FeatureGenerator::GenerateDungeon(WorldWrapper& world, Java::Random& rand, 
 				auto chest = std::make_shared<TileEntityChest>(Int3{ cx, pos.y, cz });
 				for (int32_t slot = 0; slot < 8; ++slot) {
 					auto stack = GenerateDungeonChestLoot(rand);
-					if (stack.id != ITEM_INVALID) {
+					if (stack.id != Items::Id::INVALID) {
 						int32_t slotIndex = rand.nextInt(27);
 						chest->inventory.setInventorySlotContents(slotIndex, &stack);
 					}
@@ -180,47 +180,47 @@ ItemStack FeatureGenerator::GenerateDungeonChestLoot(Java::Random& rand) {
 	int32_t roll = rand.nextInt(11);
 	switch (roll) {
 	case 0:
-		return { .id = ITEM_SADDLE, .count = 1 };
+		return { .id = Items::Id::SADDLE, .count = 1 };
 	case 1: {
 		int8_t qty = rand.nextInt(4) + 1;
-		return { .id = ITEM_IRON, .count = qty };
+		return { .id = Items::Id::IRON, .count = qty };
 	}
 	case 2:
-		return { .id = ITEM_BREAD, .count = 1 };
+		return { .id = Items::Id::BREAD, .count = 1 };
 	case 3: {
 		int8_t qty = rand.nextInt(4) + 1;
-		return { .id = ITEM_WHEAT, .count = qty };
+		return { .id = Items::Id::WHEAT, .count = qty };
 	}
 	case 4: {
 		int8_t qty = rand.nextInt(4) + 1;
-		return { .id = ITEM_GUNPOWDER, .count = qty };
+		return { .id = Items::Id::GUNPOWDER, .count = qty };
 	}
 	case 5: {
 		int8_t qty = rand.nextInt(4) + 1;
-		return { .id = ITEM_STRING, .count = qty };
+		return { .id = Items::Id::STRING, .count = qty };
 	}
 	case 6:
-		return { .id = ITEM_BUCKET, .count = 1 };
+		return { .id = Items::Id::BUCKET, .count = 1 };
 	case 7:
 		if (rand.nextInt(100) == 0)
-			return { .id = ITEM_APPLE_GOLDEN, .count = 1 };
-		return { .id = ITEM_INVALID };
+			return { .id = Items::Id::APPLE_GOLDEN, .count = 1 };
+		return { .id = Items::Id::INVALID };
 	case 8:
 		if (rand.nextInt(2) == 0) {
 			int8_t qty = rand.nextInt(4) + 1;
-			return { .id = ITEM_REDSTONE, .count = qty };
+			return { .id = Items::Id::REDSTONE, .count = qty };
 		}
-		return { .id = ITEM_INVALID };
+		return { .id = Items::Id::INVALID };
 	case 9:
 		if (rand.nextInt(10) == 0) {
-			int16_t discId = (rand.nextInt(2) == 0) ? ITEM_RECORD_13 : ITEM_RECORD_CAT;
+			int16_t discId = (rand.nextInt(2) == 0) ? Items::Id::RECORD_13 : Items::Id::RECORD_CAT;
 			return { .id = discId, .count = 1 };
 		}
-		return { .id = ITEM_INVALID };
+		return { .id = Items::Id::INVALID };
 	case 10:
-		return { .id = ITEM_DYE, .count = 1, .data = 3 };
+		return { .id = Items::Id::DYE, .count = 1, .data = 3 };
 	default:
-		return { .id = ITEM_INVALID };
+		return { .id = Items::Id::INVALID };
 	}
 }
 

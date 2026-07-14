@@ -7,6 +7,7 @@
 
 #include "recipe_manager.h"
 #include "inventory/item_stack.h"
+#include "items/item_properties.h"
 #include "logger.h"
 #include "numeric_structs.h"
 #include <algorithm>
@@ -55,7 +56,7 @@ void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> rows
 					mappedItem = item;
 			}
 
-			if (mappedItem.id == ITEM_INVALID) {
+			if (mappedItem.id == Items::Id::INVALID) {
 				GlobalLogger().warn << "Unknown recipe symbol '" << c << "'. Skipping recipe.";
 				return;
 			}
@@ -66,7 +67,7 @@ void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> rows
 		++y;
 	}
 
-	auto [it, inserted] = shapedRecipes.try_emplace(makeShapedKey(grid, {3, 3}), output);
+	auto [it, inserted] = shapedRecipes.try_emplace(makeShapedKey(grid, { 3, 3 }), output);
 
 	if (!inserted) {
 		it->second = output;
@@ -92,7 +93,7 @@ const ItemStack RecipeManager::matchGrid(std::span<const ItemStack> grid, UInt8_
 	if (shapeless != shapelessRecipes.end())
 		return shapeless->second;
 
-	return { .id = ITEM_INVALID };
+	return { .id = Items::Id::INVALID };
 }
 
 ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemKey> grid, UInt8_2 size) {
@@ -106,7 +107,7 @@ ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemKey> grid, UInt
 		for (int x = 0; x < size.x; ++x) {
 			const auto& item = grid[y * size.x + x];
 
-			if (item.id == ITEM_INVALID)
+			if (item.id == Items::Id::INVALID)
 				continue;
 
 			minX = std::min(minX, x);
@@ -139,7 +140,7 @@ ShapelessRecipeKey RecipeManager::makeShapelessKey(std::span<const ItemKey> item
 	ShapelessRecipeKey key{};
 
 	for (const auto& item : items) {
-		if (item.id == ITEM_INVALID || item.id == ITEM_NONE)
+		if (!Items::IsValid(item.id))
 			continue;
 		if (key.count >= key.items.size()) {
 			GlobalLogger().error << "Shapeless recipe has more than 9 valid items!\n";

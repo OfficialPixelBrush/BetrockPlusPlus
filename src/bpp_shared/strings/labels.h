@@ -13,11 +13,10 @@
 #include "blocks.h"
 #include "items.h"
 
-static constexpr int16_t ITEM_MINIMUM = 255; // IDs above this are pure items
-static constexpr int SLOT_EMPTY = -1;        // sentinel for "no slot found"
+static constexpr int SLOT_EMPTY = -1; // sentinel for "no slot found"
 
 extern std::array<std::string, BLOCK_MAX> blockLabels;
-extern std::array<std::string, ITEM_MAX - ITEM_MINIMUM> itemLabels;
+extern std::array<std::string, Items::MAX - Items::THRESHOLD> itemLabels;
 
 std::string IdToLabel(const int16_t id);
 std::string wIdToLabel(const int16_t id);

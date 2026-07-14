@@ -179,7 +179,7 @@ void ClickSlot(Packet::ClickSlot& pkt, PlayerSession& session) {
 	// The player's inventory is handled seperate
 	if (pkt.window_id == 0) {
 		// Make sure what the client thinks and what we have line up
-		ItemStack empty{ ITEM_INVALID };
+		ItemStack empty{ Items::Id::INVALID };
 		auto expected = session.inventory.getStackInSlot(pkt.slot_id);
 		ItemStack& slotItem = expected ? *expected : empty;
 		if (slotItem.id != pkt.item.id || slotItem.data != pkt.item.data || slotItem.count != pkt.item.count) {
@@ -209,7 +209,7 @@ void ClickSlot(Packet::ClickSlot& pkt, PlayerSession& session) {
 		session.inventoryInteraction.onLeftClick(pkt.slot_id);
 		return;
 	}
-	ItemStack empty{ ITEM_INVALID };
+	ItemStack empty{ Items::Id::INVALID };
 	auto expected = session.activeInteraction->inventory->getStackInSlot(pkt.slot_id);
 	ItemStack& slotItem = expected ? *expected : empty;
 	if (slotItem.id != pkt.item.id || slotItem.data != pkt.item.data || slotItem.count != pkt.item.count) {

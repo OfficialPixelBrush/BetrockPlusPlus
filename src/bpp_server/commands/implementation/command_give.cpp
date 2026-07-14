@@ -34,16 +34,15 @@ std::string CommandGive::Execute(std::vector<std::string>& parameters, PlayerSes
 	}
 	item.id = static_cast<int16_t>(std::stoi(idString));
 	if (!metaString.empty()) {
-		item.data = static_cast<int8_t>(std::stoi(metaString));
+		item.data = static_cast<int16_t>(std::stoi(metaString));
 	}
-	item.count = GetMaxStack(item.id); // I don't want 64 pickaxes anymore!!
+	item.count = Items::GetMaxStack(item.id); // I don't want 64 pickaxes anymore!!
 	if (parameters.size() > 2) {
 		item.count = static_cast<int8_t>(std::stoi(parameters[2]));
 	}
 
 	// Check if its even a valid item
-	if ((item.id > BLOCK_AIR && item.id < BLOCK_MAX) || (item.id >= ITEM_SHOVEL_IRON && item.id < ITEM_MAX) ||
-	    (item.id >= ITEM_RECORD_13 && item.id < ITEM_RECORD_MAX)) {
+	if ((item.id > BLOCK_AIR && item.id < BLOCK_MAX) || Items::IsValid(item.id)) {
 		Packet::ChatMessage reply;
 		reply.message = "§eGave " + wIdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
 		                std::to_string(item.data) + ") x" + std::to_string(item.count) + " to " + session.username;

@@ -27,7 +27,7 @@ inline void sendSlot(PlayerSession& session, WindowId windowId, NetworkSlotId sl
 	Packet::SetSlot pkt;
 	pkt.window_id = windowId;
 	pkt.slot_id = slotId;
-	pkt.item = stack ? ItemStack{ stack->id, stack->count, stack->data } : ItemStack{ ITEM_INVALID };
+	pkt.item = stack ? ItemStack{ stack->id, stack->count, stack->data } : ItemStack{ Items::Id::INVALID };
 	pkt.Serialize(session.stream);
 }
 
