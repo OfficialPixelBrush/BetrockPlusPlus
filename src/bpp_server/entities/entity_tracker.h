@@ -14,8 +14,8 @@
 #include "world/world.h"
 #include <cstdio>
 #include <string>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 
 // Entity tracker so we can send entity updates to the right players. This is server side only annoyingly enough.
 // I am not entirely happy with how this is done but notch demands we have several packet types for each type of entity
@@ -118,13 +118,13 @@ struct EntityTracker {
 		case EntityType::NONE:
 			return { 0, 0, false };
 		case EntityType::PLAYER:
-			return { 512, 2, false };
+			return { 512, 2, true };
 		case EntityType::FISH:
 			return { 64, 5, true };
 		case EntityType::ARROW:
-			return { 64, 20, false };
+			return { 64, 20, true };
 		case EntityType::FIREBALL:
-			return { 64, 10, false };
+			return { 64, 10, true };
 		case EntityType::THROWN_SNOWBALL:
 		case EntityType::THROWN_EGG:
 			return { 64, 10, true };
@@ -148,7 +148,7 @@ struct EntityTracker {
 		case EntityType::GHAST:
 		case EntityType::SLIME:
 		case EntityType::GIANT_ZOMBIE:
-			return { 160, 3, false };
+			return { 160, 3, true };
 		case EntityType::LIT_TNT:
 			return { 160, 10, true };
 		case EntityType::FALLING_SAND:
