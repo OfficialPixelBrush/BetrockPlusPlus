@@ -198,7 +198,7 @@ void NetworkStream::ReadEntityMetadata(std::vector<PacketData::EntityMetadata::D
 			item.id = Read<ItemId>();
 			// TODO: Check if B1.7.3 actually does
 			// this for Entity Metadata too
-			if (item.id != ITEM_INVALID) {
+			if (item.id != Items::Id::INVALID) {
 				item.count = Read<ItemAmount>();
 				item.data = Read<ItemDamage>();
 			}
@@ -245,7 +245,7 @@ void NetworkStream::WriteEntityMetadata(const std::vector<PacketData::EntityMeta
 			break;
 		case PacketData::EntityMetadata::Type::ITEM:
 			Write(std::get<ItemStack>(entry.value).id);
-			if (std::get<ItemStack>(entry.value).id != ITEM_INVALID) {
+			if (std::get<ItemStack>(entry.value).id != Items::Id::INVALID) {
 				Write(std::get<ItemStack>(entry.value).count);
 				Write(std::get<ItemStack>(entry.value).data);
 			}

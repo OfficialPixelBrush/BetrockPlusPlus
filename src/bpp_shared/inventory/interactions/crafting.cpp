@@ -32,14 +32,14 @@ void CraftingInventoryInteraction::finishCraft() {
 
 void CraftingInventoryInteraction::takeResult() {
 	ItemStack& result = craftInventory->slots[0];
-	if (result.id == ITEM_INVALID)
+	if (result.id == Items::Id::INVALID)
 		return;
 
-	if (carried.id == ITEM_INVALID) {
+	if (carried.id == Items::Id::INVALID) {
 		carried = result;
 	} else if (carried.id == result.id && carried.data == result.data) {
 		// Same type, try merge with cursor
-		int maxStack = GetMaxStack(carried.id);
+		int maxStack = Items::GetMaxStack(carried.id);
 		if (int(carried.count) + int(result.count) > maxStack)
 			return;
 		carried.count += result.count;

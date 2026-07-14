@@ -223,7 +223,7 @@ struct PlayerSession {
 		// Save our current inventory
 		NetworkSlotId slotId = 0;
 		for (auto& item : inventory.slots) {
-			if (item.id != ITEM_INVALID) {
+			if (item.id != Items::Id::INVALID) {
 				Tag itemTag;
 				itemTag.type = TAG_COMPOUND;
 				itemTag.name = "";

@@ -111,13 +111,13 @@ public:
 		auto end = endSlot == -1 ? getSizeInventory() - 1 : endSlot;
 
 		// Try and merge into an already existing stack of the same type if this item is stackable
-		if (IsStackable(stack.id)) {
+		if (Items::IsStackable(stack.id)) {
 			for (int i = reverse ? end : start; reverse ? i >= start : i <= end; reverse ? i-- : i++) {
 				auto slot = getStackInSlot(i);
 				if (!slot)
 					continue;
 				if (slot->id == stack.id && slot->data == stack.data) {
-					auto maxStack = GetMaxStack(slot->id);
+					auto maxStack = Items::GetMaxStack(slot->id);
 					// Don't try and merge into an already maxed out stack
 					if (slot->count >= maxStack)
 						continue;
@@ -216,7 +216,7 @@ struct InventoryDispenser : Inventory {
 	std::optional<ItemStack> getRandomStack() {
 		int chosen = -1, weight = 1;
 		for (int i = 0; i < 9; i++) {
-			if (slots[size_t(i)].id == ITEM_INVALID)
+			if (slots[size_t(i)].id == Items::Id::INVALID)
 				continue;
 			if (std::uniform_int_distribution<int>(0, weight++ - 1)(rng) == 0)
 				chosen = i;

@@ -17,7 +17,7 @@
 #include <utility>
 
 struct ItemKey {
-	ItemId id = ITEM_INVALID;
+	ItemId id = Items::Id::INVALID;
 	ItemDamage data = 0;
 
 	auto operator<=>(const ItemKey&) const = default;

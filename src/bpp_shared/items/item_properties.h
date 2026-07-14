@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+*/
+
+#pragma once
+#include "base_structs.h"
+#include "base_types.h"
+#include "items.h"
+#include <algorithm>
+#include <cstdint>
+#include <unordered_map>
+
+namespace Items {
+
+enum class ToolLevel : int8_t {
+	None = -1,
+	Wooden = 0,
+	Gold = 0,
+	Stone = 1,
+	Iron = 2,
+	Diamond = 3
+};
+enum class ToolType : int8_t {
+	None = -1,
+	Hoe = 0,
+	Shovel = 1,
+	Pickaxe = 2,
+	Axe = 3,
+	Sword = 4,
+};
+
+struct ToolProperties {
+	ToolType type = ToolType::None;
+	ToolLevel level = ToolLevel::None;
+	ItemDamage max_damage = -1;
+};
+
+struct ItemProperties {
+	ItemAmount max_stack = STACK_MAX;
+};
+
+struct ItemBehavior {
+	void (*onAttack)() = nullptr;
+	void (*onUse)() = nullptr;
+};
+
+extern std::unordered_map<ItemId, ItemBehavior> itemBehavior;
+extern std::unordered_map<ItemId, ItemProperties> itemProperties;
+extern std::unordered_map<ItemId, ToolProperties> toolProperties;
+void registerAll();
+
+bool IsValid(ItemId id);
+
+bool IsArmor(ItemId id);
+bool IsHoe(ItemId id);
+bool IsSword(ItemId id);
+bool IsPickaxe(ItemId id);
+bool IsAxe(ItemId id);
+bool IsShovel(ItemId id);
+bool IsWeapon(ItemId id);
+bool IsTool(ItemId id);
+bool IsThrowable(ItemId id);
+bool IsEdible(ItemId id);
+bool IsStackable(ItemId id); // max stack > 1
+bool IsBlock(ItemId id);
+
+// Returns max stack size for this item/block id
+int32_t GetMaxStack(ItemId id);
+
+// Returns max durability (0 = not damageable)
+ItemDamage GetMaxDurability(ItemId id);
+}; // namespace Items

@@ -9,7 +9,7 @@
 #include "inventory/inventories.h"
 
 PlayerInventoryInteraction::PlayerInventoryInteraction(InventoryPlayer* inv, Runtime& gameRuntime)
-    : CraftingInventoryInteraction(inv, inv, inv, gameRuntime, {2, 2}), playerInventory(inv) {}
+    : CraftingInventoryInteraction(inv, inv, inv, gameRuntime, { 2, 2 }), playerInventory(inv) {}
 
 bool PlayerInventoryInteraction::canExist() {
 	return playerInventory != nullptr;
@@ -17,7 +17,7 @@ bool PlayerInventoryInteraction::canExist() {
 
 void PlayerInventoryInteraction::shiftClickResult() {
 	ItemStack& result = playerInventory->slots[0];
-	if (result.id == ITEM_INVALID)
+	if (result.id == Items::Id::INVALID)
 		return;
 
 	ItemStack copy = result;

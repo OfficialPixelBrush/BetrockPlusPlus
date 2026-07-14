@@ -99,11 +99,12 @@ void EntityTracker::tick() {
 			case EntityType::PLAYER: {
 				Packet::SpawnPlayer pkt;
 				pkt.entity_id = entityEntry.entity->id;
-				pkt.held_item_id = ITEM_NONE;
+				pkt.held_item_id = Items::Id::NONE;
 				pkt.q_position = { quantizePosition(entityEntry.entity->posX),
 					               quantizePosition(entityEntry.entity->posY),
 					               quantizePosition(entityEntry.entity->posZ) };
-				pkt.q_rotation = { int8_t(quantizeRotation(entityEntry.entity->rotationYaw)), int8_t(quantizeRotation(entityEntry.entity->rotationPitch)) };
+				pkt.q_rotation = { int8_t(quantizeRotation(entityEntry.entity->rotationYaw)),
+					               int8_t(quantizeRotation(entityEntry.entity->rotationPitch)) };
 
 				// To prevent bad behavior when we share a name with another entity
 				auto username = server->getUsernameByEntityId(entityEntry.entity->id);

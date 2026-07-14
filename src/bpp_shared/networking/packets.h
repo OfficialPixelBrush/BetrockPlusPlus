@@ -898,8 +898,8 @@ public:
 	// Sends compressed chunk data; always preceded by SetChunkVisibility
 	struct ChunkData : BasePacket {
 		ChunkData() : BasePacket{ PacketId::Chunk } {}
-		SlimInt3<int16_t> pos {0,0,0};
-		TriNumber<uint8_t> size {CHUNK_WIDTH-1, CHUNK_HEIGHT-1,CHUNK_WIDTH-1};
+		SlimInt3<int16_t> pos{ 0, 0, 0 };
+		TriNumber<uint8_t> size{ CHUNK_WIDTH - 1, CHUNK_HEIGHT - 1, CHUNK_WIDTH - 1 };
 		std::vector<uint8_t> compressedData;
 
 		void Serialize(NetworkStream& stream) const override {
@@ -1181,7 +1181,7 @@ public:
 			stream.Write(transaction_id);
 			stream.Write(shift);
 			stream.Write(item.id);
-			if (item.id != ITEM_INVALID) {
+			if (item.id != Items::Id::INVALID) {
 				stream.Write(item.count);
 				stream.Write(item.data);
 			}
@@ -1193,7 +1193,7 @@ public:
 			transaction_id = stream.Read<TransactionId>();
 			shift = stream.Read<bool>();
 			item.id = stream.Read<ItemId>();
-			if (item.id != ITEM_INVALID) {
+			if (item.id != Items::Id::INVALID) {
 				item.count = stream.Read<ItemAmount>();
 				item.data = stream.Read<ItemDamage>();
 			}
@@ -1212,7 +1212,7 @@ public:
 			stream.Write(window_id);
 			stream.Write(slot_id);
 			stream.Write(item.id);
-			if (item.id != ITEM_INVALID) {
+			if (item.id != Items::Id::INVALID) {
 				stream.Write(item.count);
 				stream.Write(item.data);
 			}
@@ -1221,7 +1221,7 @@ public:
 			window_id = stream.Read<WindowId>();
 			slot_id = stream.Read<NetworkSlotId>();
 			item.id = stream.Read<ItemId>();
-			if (item.id != ITEM_INVALID) {
+			if (item.id != Items::Id::INVALID) {
 				item.count = stream.Read<ItemAmount>();
 				item.data = stream.Read<ItemDamage>();
 			}
@@ -1241,7 +1241,7 @@ public:
 			stream.Write(int16_t(items.size()));
 			for (ItemStack item : items) {
 				stream.Write(item.id);
-				if (item.id != ITEM_INVALID) {
+				if (item.id != Items::Id::INVALID) {
 					stream.Write(item.count);
 					stream.Write(item.data);
 				}
@@ -1250,10 +1250,10 @@ public:
 		void Deserialize(NetworkStream& stream) override {
 			window_id = stream.Read<WindowId>();
 			size_t number_of_slots = size_t(stream.Read<int16_t>());
-			items.resize(number_of_slots, ItemStack{ ITEM_INVALID });
+			items.resize(number_of_slots, ItemStack{ Items::Id::INVALID });
 			for (size_t i = 0; i < number_of_slots; i++) {
 				items[i].id = stream.Read<ItemId>();
-				if (items[i].id != ITEM_INVALID) {
+				if (items[i].id != Items::Id::INVALID) {
 					items[i].count = stream.Read<ItemAmount>();
 					items[i].data = stream.Read<ItemDamage>();
 				}

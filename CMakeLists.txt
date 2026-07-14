@@ -70,7 +70,6 @@ set(SHARED_SOURCES
     src/bpp_shared/entities/entity_item.cpp
     src/bpp_shared/entities/entity_player.cpp
     src/bpp_shared/enums/biomes.cpp
-    src/bpp_shared/enums/items.cpp
     src/bpp_shared/strings/ucs2.cpp
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
@@ -80,6 +79,7 @@ set(SHARED_SOURCES
     src/bpp_shared/world/storage/region.cpp
     src/bpp_shared/world/storage/region_manager.cpp
     src/bpp_shared/blocks/block_properties.cpp
+    src/bpp_shared/items/item_properties.cpp
     src/bpp_shared/inventory/inventory_interaction.cpp
     src/bpp_shared/inventory/interactions/chest.cpp
     src/bpp_shared/inventory/interactions/large_chest.cpp

@@ -36,7 +36,7 @@ void InventoryInteraction::onLeftClick(int slot) {
 
 	// Empty slot
 	if (!targetSlot) {
-		if (carried.id != ITEM_INVALID) {
+		if (carried.id != Items::Id::INVALID) {
 			inventory->setInventorySlotContents(slot, &carried);
 			carried = ItemStack{};
 		}
@@ -45,7 +45,7 @@ void InventoryInteraction::onLeftClick(int slot) {
 	}
 
 	// Not carrying anything
-	if (carried.id == ITEM_INVALID) {
+	if (carried.id == Items::Id::INVALID) {
 		carried = *targetSlot;
 		inventory->clearSlot(slot);
 		inventory->onInventoryChanged();
@@ -54,7 +54,7 @@ void InventoryInteraction::onLeftClick(int slot) {
 
 	// Same item; merge
 	if (targetSlot->id == carried.id && targetSlot->data == carried.data) {
-		int maxStack = GetMaxStack(targetSlot->id);
+		int maxStack = Items::GetMaxStack(targetSlot->id);
 		int space = maxStack - targetSlot->count;
 		int toMove = std::min(space, (int)carried.count);
 		targetSlot->count += toMove;
@@ -75,7 +75,7 @@ void InventoryInteraction::onLeftClick(int slot) {
 void InventoryInteraction::onRightClick(int slot) {
 	auto targetSlot = inventory->getStackInSlot(slot);
 
-	if (carried.id != ITEM_INVALID) {
+	if (carried.id != Items::Id::INVALID) {
 		if (!targetSlot) {
 			ItemStack single{ carried.id, 1, carried.data };
 			inventory->setInventorySlotContents(slot, &single);
@@ -88,7 +88,7 @@ void InventoryInteraction::onRightClick(int slot) {
 
 		// If we right click on the same item we are carrying just add one
 		if (targetSlot->id == carried.id && targetSlot->data == carried.data) {
-			int maxStack = GetMaxStack(targetSlot->id);
+			int maxStack = Items::GetMaxStack(targetSlot->id);
 			int space = maxStack - targetSlot->count;
 			if (space >= 1) {
 				targetSlot->count += 1;

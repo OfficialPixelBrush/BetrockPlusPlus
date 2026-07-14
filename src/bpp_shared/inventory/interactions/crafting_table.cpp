@@ -11,7 +11,7 @@
 
 CraftingTableInventoryInteraction::CraftingTableInventoryInteraction(InventoryPlayer* pinv, WorldManager& worldMng,
                                                                      Runtime& gameRuntime, Int3 craftingTablePos)
-    : CraftingInventoryInteraction(&sharedInventory, &craftInventory, pinv, gameRuntime, {3, 3}), world(worldMng),
+    : CraftingInventoryInteraction(&sharedInventory, &craftInventory, pinv, gameRuntime, { 3, 3 }), world(worldMng),
       blockPosition(craftingTablePos) {
 	sharedInventory.owner = this;
 	mergeInventories();
@@ -22,7 +22,7 @@ CraftingTableInventoryInteraction::~CraftingTableInventoryInteraction() {
 
 	for (size_t i = 1; i <= m_gridSize.total(); i++) {
 		ItemStack& stack = craftInventory.slots[i];
-		if (stack.id == ITEM_INVALID)
+		if (stack.id == Items::Id::INVALID)
 			continue;
 		playerInventory->mergeItemStackInInventory(stack, true, 9, 44);
 	}
@@ -74,7 +74,7 @@ void CraftingTableInventoryInteraction::updateResult() {
 
 void CraftingTableInventoryInteraction::shiftClickResult() {
 	ItemStack& result = craftInventory.slots[0];
-	if (result.id == ITEM_INVALID)
+	if (result.id == Items::Id::INVALID)
 		return;
 
 	ItemStack copy = result;

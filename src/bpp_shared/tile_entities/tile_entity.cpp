@@ -59,7 +59,7 @@ Tag TileEntityChest::serialize() {
 	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
 	int8_t currentSlot = 0;
 	for (auto& stack : inventory.slots) {
-		if (stack.id != ITEM_INVALID) {
+		if (stack.id != Items::Id::INVALID) {
 			auto item = Tag{ .type = TAG_COMPOUND };
 			auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
 			auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
@@ -98,7 +98,7 @@ Tag TileEntityFurnace::serialize() {
 	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
 	int8_t currentSlot = 0;
 	for (auto& stack : inventory.slots) {
-		if (stack.id != ITEM_INVALID) {
+		if (stack.id != Items::Id::INVALID) {
 			auto item = Tag{ .type = TAG_COMPOUND };
 			auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
 			auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
@@ -137,7 +137,7 @@ Tag TileEntityDispenser::serialize() {
 	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
 	int8_t currentSlot = 0;
 	for (auto& stack : inventory.slots) {
-		if (stack.id != ITEM_INVALID) {
+		if (stack.id != Items::Id::INVALID) {
 			auto item = Tag{ .type = TAG_COMPOUND };
 			auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
 			auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };

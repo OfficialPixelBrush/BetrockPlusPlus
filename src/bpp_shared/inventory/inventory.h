@@ -7,6 +7,7 @@
 #include "cross_platform.h"
 #include "enums/items.h"
 #include "item_stack.h"
+#include "items/item_properties.h"
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -32,13 +33,13 @@ struct Inventory {
 	virtual ItemStack* getStackInSlot(int slot) {
 		if (slot < 0 || slot >= (int)slots.size())
 			return nullptr;
-		if (slots[size_t(slot)].id == ITEM_INVALID)
+		if (slots[size_t(slot)].id == Items::Id::INVALID)
 			return nullptr;
 		return &slots[size_t(slot)];
 	}
 
 	virtual ItemStack decreaseStackSize(int slot, int count) {
-		if (slot < 0 || slot >= (int)slots.size() || slots[size_t(slot)].id == ITEM_INVALID)
+		if (slot < 0 || slot >= (int)slots.size() || slots[size_t(slot)].id == Items::Id::INVALID)
 			return ItemStack{};
 		auto& stack = slots[size_t(slot)];
 		if (stack.count <= count) {
@@ -82,13 +83,13 @@ struct Inventory {
 		auto end = endSlot == -1 ? getSizeInventory() - 1 : endSlot;
 
 		// Try and merge into an already existing stack of the same type if this item is stackable
-		if (IsStackable(stack.id)) {
+		if (Items::IsStackable(stack.id)) {
 			for (int i = reverse ? end : start; reverse ? i >= start : i <= end; reverse ? i-- : i++) {
 				auto slot = getStackInSlot(i);
 				if (!slot)
 					continue;
 				if (slot->id == stack.id && slot->data == stack.data) {
-					auto maxStack = GetMaxStack(slot->id);
+					auto maxStack = Items::GetMaxStack(slot->id);
 					// Don't try and merge into an already maxed out stack
 					if (slot->count >= maxStack)
 						continue;
@@ -109,9 +110,9 @@ struct Inventory {
 
 		// We couldn't merge into existing items so just try and find an empty slot
 		for (int i = reverse ? end : start; reverse ? i >= start : i <= end; reverse ? i-- : i++) {
-			if (slots[size_t(i)].id == ITEM_INVALID) {
+			if (slots[size_t(i)].id == Items::Id::INVALID) {
 				slots[size_t(i)] = ItemStack{ stack.id, stack.count, stack.data };
-				stack.id = ITEM_INVALID;
+				stack.id = Items::Id::INVALID;
 				stack.data = 0;
 				stack.count = 0;
 				onInventoryChanged();
