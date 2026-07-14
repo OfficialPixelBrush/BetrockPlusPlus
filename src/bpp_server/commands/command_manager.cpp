@@ -25,6 +25,7 @@ void CommandManager::Init(Server* server) {
 	registeredCommands.push_back(std::make_unique<CommandLoaded>());
 	registeredCommands.push_back(std::make_unique<CommandDimension>());
 	registeredCommands.push_back(std::make_unique<CommandVersion>());
+	registeredCommands.push_back(std::make_unique<CommandSummon>());
 	/*
 	registeredCommands.push_back(CommandPose());
 	// Needs at least creative mode to run
@@ -84,7 +85,8 @@ void CommandManager::Parse(std::string& cmd_string, PlayerSession& session, Worl
 			for (size_t i = 0; i < registeredCommands.size(); i++) {
 				// This'll throw an out of bounds error
 				if (registeredCommands[i]->GetLabel() == command.at(0)) {
-					failureReason = registeredCommands[i]->Execute(command, session, world, transferDimension, *m_server);
+					failureReason = registeredCommands[i]->Execute(command, session, world, transferDimension,
+					                                               *m_server);
 					break;
 				}
 			}
