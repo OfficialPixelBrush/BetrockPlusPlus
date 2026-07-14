@@ -6,8 +6,8 @@
 */
 
 #include "item_properties.h"
+#include "blocks.h"
 #include "enums/items.h"
-#include "tile_entities/tile_entity.h"
 #include "world/world.h"
 
 namespace Items {
@@ -291,4 +291,16 @@ ItemDamage GetMaxDurability(ItemId id) {
 		return 0; // not damageable
 	}
 }
+
+void ShovelUse(WorldManager& world, Int3 usedBlockPos) {
+	world.setBlock(usedBlockPos, BLOCK_NETHERRACK);
+}
+
+void registerAll() {
+	itemBehavior[Items::Id::SHOVEL_WOOD] = ItemBehavior{ .onBlockUse = ShovelUse };
+	itemBehavior[Items::Id::SHOVEL_STONE] = ItemBehavior{ .onBlockUse = ShovelUse };
+	itemBehavior[Items::Id::SHOVEL_IRON] = ItemBehavior{ .onBlockUse = ShovelUse };
+	itemBehavior[Items::Id::SHOVEL_GOLD] = ItemBehavior{ .onBlockUse = ShovelUse };
+	itemBehavior[Items::Id::SHOVEL_DIAMOND] = ItemBehavior{ .onBlockUse = ShovelUse };
+};
 }; // namespace Items
