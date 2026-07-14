@@ -36,6 +36,7 @@ struct PlayerSession {
 	// Our player entity
 	std::shared_ptr<EntityMPPlayer> entity;
 	EntityTracker* entityTracker = nullptr;
+	bool entityRegistered = false;
 
 	// rotation.x = yaw, rotation.y = pitch
 	Float2 rotation = { 0.0f, 0.0f };

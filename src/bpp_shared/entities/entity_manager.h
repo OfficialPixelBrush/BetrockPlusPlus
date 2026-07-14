@@ -155,6 +155,36 @@ struct EntityManager {
 			onEntitySpawn(entities.back());
 	}
 
+	void removeEntity(EntityId id) {
+		auto it = std::find_if(entities.begin(), entities.end(),
+		                       [id](const std::shared_ptr<Entity>& e) { return e->id == id; });
+		if (it == entities.end())
+			return; // Not found, nothing to do
+
+		std::shared_ptr<Entity> entity = *it;
+
+		// Remove from its bucket
+		auto& container = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
+		auto& bucket = container.buckets[entity->bucketPos.z];
+		bucket.entities.erase(std::remove_if(bucket.entities.begin(), bucket.entities.end(),
+		                                     [&entity](const std::weak_ptr<Entity>& weak) {
+			                                     auto locked = weak.lock();
+			                                     return !locked || locked == entity;
+		                                     }),
+		                      bucket.entities.end());
+
+		// Remove from the master list
+		entities.erase(it);
+
+		entity->entityManager = nullptr;
+
+		// Set as dead for cleanup
+		entity->isDead = true;
+
+		if (onEntityDespawn)
+			onEntityDespawn(entity);
+	}
+
 	EntityId getNextEntityId() {
 		return nextEntityId++;
 	}

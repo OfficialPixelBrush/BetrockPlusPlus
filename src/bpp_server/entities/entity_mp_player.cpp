@@ -35,6 +35,7 @@ bool EntityMPPlayer::dropItem(ItemStack stack) {
 	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(position);
 	itemEntity->itemStack = stack;
 	itemEntity->pickupCooldown = 40; // So we don't pick it up instantly
+	itemEntity->dim = dim;
 
 	// Give ourselves some random velocity based on look direction
 	float velocity = 0.4f;

@@ -89,6 +89,7 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 		session.entity = std::make_shared<EntityMPPlayer>();
 	session.entity->session = &session;
 	session.entity->id = sessionWorld.entityManager.getNextEntityId();
+	session.entity->dim = session.dimension == -1 ? Dimension::Nether : Dimension::Overworld;
 
 	Packet::Login response;
 	response.entity_id = session.entity->id;
@@ -194,7 +195,8 @@ void PlayerConnStateManager::waitForSpawnChunks(PlayerSession& session, Server& 
 	session.connState = ConnectionState::Playing;
 
 	// Register our entity with the world
-	sessionWorld.entityManager.addEntity(session.entity, session.entity->id);
+	if (!session.entityRegistered) sessionWorld.entityManager.addEntity(session.entity, session.entity->id);
+	session.entityRegistered = true;
 
 	// Give our player session a pointer to the entity tracker
 	session.entityTracker = session.dimension == 0 ? &server.overworldEntityTracker : &server.hellEntityTracker;

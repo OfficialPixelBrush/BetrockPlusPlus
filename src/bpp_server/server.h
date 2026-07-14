@@ -69,7 +69,7 @@ public:
 	// Send a message to all players
 	void sendGlobalChatMessage(std::string message) {
 		for (auto& other : players) {
-			if (other->connState != ConnectionState::Playing)
+			if (other && other->connState != ConnectionState::Playing)
 				continue;
 			Packet::ChatMessage reply;
 			reply.message = message;
@@ -79,6 +79,31 @@ public:
 
 	const std::vector<std::shared_ptr<PlayerSession>>& GetPlayers() noexcept {
 		return players;
+	}
+
+	void sendEntityToDimension(Dimension dim, std::shared_ptr<Entity> entity);
+	void sendPlayerToDimension(Dimension dim, PlayerSession& session) {
+		if (dim == session.dimension)
+			return;
+
+		// Flush all of our data
+		session.dimension = dim;
+		session.flushedChunks.clear();
+		session.sentChunks.clear();
+		session.pendingBlockChanges.clear();
+		session.newlyFlushed.clear();
+		session.newlyUnloaded.clear();
+		session.entityTracker = session.dimension == 0 ? &overworldEntityTracker : &hellEntityTracker;
+
+		// Send a respawn packet
+		Packet::Respawn pkt;
+		pkt.dimension = dim;
+		pkt.Serialize(session.stream);
+		session.connState = ConnectionState::WaitingForSpawnChunks;
+		PacketUtilities::sendInventory(session, 0, session.inventory);
+
+		// Transfer our entity
+		sendEntityToDimension(dim, session.entity);
 	}
 
 	// Entity trackers are so we can send entity updates to players and vice versa.
@@ -105,6 +130,10 @@ private:
 	void indexAddChunk(PlayerSession& session, const Int32_2& pos);
 	void indexRemoveChunk(PlayerSession& session, const Int32_2& pos);
 	void indexRemoveSession(PlayerSession& session);
+
+	WorldManager* getWorldForDimension(Dimension dim) {
+		return dim == Dimension::Nether ? &this->gameRuntime.worldHell : &this->gameRuntime.world;
+	}
 
 	// Encodes chunk position + dimension into a single key for chunkSessions.
 	// x = chunk X, y = chunk Z, z = dimension id

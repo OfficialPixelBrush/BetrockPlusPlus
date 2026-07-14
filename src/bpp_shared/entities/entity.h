@@ -12,6 +12,7 @@
 #include "helpers/AABB.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
+#include "dimensions.h"
 #include <vector>
 
 // Forward declare
@@ -68,6 +69,7 @@ struct Entity {
 	EntityId id = -1; // -1 = not yet spawned
 	bool isDead = false;
 	TickTime ticksExisted = 0;
+	Dimension dim = Dimension::Overworld;
 
 	// Riding
 	Entity* ridingEntity = nullptr;
