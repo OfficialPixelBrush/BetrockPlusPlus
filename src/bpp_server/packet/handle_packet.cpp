@@ -134,6 +134,11 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 	if (!heldItem)
 		return;
 
+	if (pkt.face == PacketData::FaceDirection::INVALID_USE) {
+		// Custom behaviour can be here if needed.
+		return;
+	}
+
 	if (!Items::IsValid(heldItem->id)) {
 		// It's a block
 		Int3 placePosition = position;
