@@ -69,6 +69,7 @@ set(SHARED_SOURCES
     src/bpp_shared/entities/entity.cpp
     src/bpp_shared/entities/entity_item.cpp
     src/bpp_shared/entities/entity_player.cpp
+    src/bpp_shared/entities/entity_manager.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/strings/ucs2.cpp
     src/bpp_shared/strings/labels.cpp

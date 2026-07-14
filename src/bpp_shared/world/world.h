@@ -57,10 +57,14 @@ struct WorldManager {
 
 	Int3 spawnPoint{ 0, 0, 0 };
 
+	Dimension thisDimension = Dimension::Overworld;
+
 	Java::Random rand;
 
 	WorldManager(bool pIsHell = false) : isHell(pIsHell) {
 		entityManager.world = this; // Bind the world pointer in EntityManager
+		if (isHell)
+			thisDimension = Dimension::Nether;
 	}
 
 	~WorldManager() {}

@@ -64,8 +64,7 @@ void Server::sendEntityToDimension(Dimension dim, std::shared_ptr<Entity> entity
 	}
 	world->entityManager.removeEntity(entity->id);
 
-	// Rebind entity stuff
-	entity->dim = dim;
+	// Rebind entity
 	entity->isDead = false;
 	newWorld->entityManager.addEntity(entity);
 }
@@ -74,7 +73,7 @@ void Server::sendPlayerToDimension(Dimension dim, PlayerSession& session) {
 	if (dim == session.dimension)
 		return;
 
-	// Flush all of our data
+	// Flush all of our dimension dependent data
 	session.dimension = dim;
 	session.flushedChunks.clear();
 	session.sentChunks.clear();
@@ -82,6 +81,10 @@ void Server::sendPlayerToDimension(Dimension dim, PlayerSession& session) {
 	session.newlyFlushed.clear();
 	session.newlyUnloaded.clear();
 	session.entityTracker = session.dimension == 0 ? &overworldEntityTracker : &hellEntityTracker;
+
+	// Make sure we don't send any pending chunk updates
+	chunkSender.inFlight.erase(&session);
+	chunkSender.subRegionFlight.erase(&session);
 
 	// Send a respawn packet
 	Packet::Respawn pkt;

@@ -20,48 +20,7 @@ void ItemEntity::onCollideWithPlayer(PlayerEntity& entity) {
 
 void ItemEntity::tick() {
 	// Item entities have differing physics
-	{
-		ticksExisted++;
-
-		if (this->ridingEntity != nullptr && this->ridingEntity->isDead) {
-			this->ridingEntity = nullptr;
-		}
-
-		// Returns if we are in water and applies a push to our entity
-		if (world->handleFluidAcceleration(collider, Material::Water(), *this)) {
-			fallDistance = 0.0;
-			inWater = true;
-			fire = 0;
-		} else {
-			inWater = false;
-		}
-
-		// If we are on fire decrement the fire
-		if (fire > 0) {
-			if (isImmuneToFire) {
-				fire -= 4;
-				fire = std::max(0, fire);
-			} else {
-				if (fire % 20 == 0)
-					attackEntityFrom(nullptr, 1);
-				fire--;
-			}
-		}
-
-		// Returns if we are in lava
-		if (world->isMaterialInAABB(collider, Material::Lava())) {
-			if (!isImmuneToFire) {
-				attackEntityFrom(nullptr, 4);
-				fire = 600;
-			}
-		}
-
-		// Kill our entity if its below the world
-		if (posY < -64.0)
-			isDead = true;
-
-		isFirstUpdate = false;
-	}
+	Entity::tick();
 	pickupCooldown--;
 	pickupCooldown = std::max(int8_t(0), pickupCooldown);
 

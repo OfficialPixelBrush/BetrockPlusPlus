@@ -84,7 +84,7 @@ void Entity::tick() {
 	}
 
 	// Returns if we are in water and applies a push to our entity
-	if (world->handleFluidAcceleration(collider.expand(0.0, -0.4, 0.0), Material::Water(), *this)) {
+	if (world->handleFluidAcceleration(getFluidCollider(), Material::Water(), *this)) {
 		fallDistance = 0.0;
 		inWater = true;
 		fire = 0;
@@ -105,7 +105,7 @@ void Entity::tick() {
 	}
 
 	// Returns if we are in lava
-	if (world->isMaterialInAABB(collider.expand(-0.1, -0.4, -0.1), Material::Lava())) {
+	if (world->isMaterialInAABB(getLavaCollider(), Material::Lava())) {
 		if (!isImmuneToFire) {
 			attackEntityFrom(nullptr, 4);
 			fire = 600;
