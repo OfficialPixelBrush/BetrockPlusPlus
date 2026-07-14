@@ -70,6 +70,30 @@ void Server::sendEntityToDimension(Dimension dim, std::shared_ptr<Entity> entity
 	newWorld->entityManager.addEntity(entity);
 }
 
+void Server::sendPlayerToDimension(Dimension dim, PlayerSession& session) {
+	if (dim == session.dimension)
+		return;
+
+	// Flush all of our data
+	session.dimension = dim;
+	session.flushedChunks.clear();
+	session.sentChunks.clear();
+	session.pendingBlockChanges.clear();
+	session.newlyFlushed.clear();
+	session.newlyUnloaded.clear();
+	session.entityTracker = session.dimension == 0 ? &overworldEntityTracker : &hellEntityTracker;
+
+	// Send a respawn packet
+	Packet::Respawn pkt;
+	pkt.dimension = dim;
+	pkt.Serialize(session.stream);
+	session.connState = ConnectionState::WaitingForSpawnChunks;
+	PacketUtilities::sendInventory(session, 0, session.inventory);
+
+	// Transfer our entity
+	sendEntityToDimension(dim, session.entity);
+}
+
 void Server::indexAddChunk(PlayerSession& session, const Int32_2& pos) {
 	auto& vec = chunkSessions[chunkKey(pos, session.dimension)];
 	// Avoid duplicates (should never happen, but be safe)
