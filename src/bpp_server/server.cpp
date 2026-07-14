@@ -43,6 +43,33 @@ Server::~Server() {
 	this->stop();
 }
 
+void Server::sendEntityToDimension(Dimension dim, std::shared_ptr<Entity> entity) {
+	// Remove our entity from our watcher
+	Dimension oldDim = entity->dim;
+	if (oldDim == dim)
+		return;
+
+	// Remove the entity from the world's entity managers
+	WorldManager* world = getWorldForDimension(oldDim);
+	WorldManager* newWorld = getWorldForDimension(dim);
+	if (!world) {
+		GlobalLogger().info << "Something went seriously wrong! Couldn't find world object for dimension " << oldDim
+		                    << "\n";
+		return;
+	}
+	if (!newWorld) {
+		GlobalLogger().info << "Something went seriously wrong! Couldn't find world object for dimension " << dim
+		                    << "\n";
+		return;
+	}
+	world->entityManager.removeEntity(entity->id);
+
+	// Rebind entity stuff
+	entity->dim = dim;
+	entity->isDead = false;
+	newWorld->entityManager.addEntity(entity);
+}
+
 void Server::indexAddChunk(PlayerSession& session, const Int32_2& pos) {
 	auto& vec = chunkSessions[chunkKey(pos, session.dimension)];
 	// Avoid duplicates (should never happen, but be safe)
