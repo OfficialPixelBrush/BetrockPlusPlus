@@ -22,7 +22,7 @@ enum MineStatus : uint8_t {
 
 // Used by Mine and Place Block Packets (0x0E and 0x0F)
 enum FaceDirection : int8_t {
-	USE_ITEM = -1,
+	INVALID_USE = -1,
 	Y_MINUS = 0,
 	Y_PLUS = 1,
 	Z_MINUS = 2,
