@@ -34,7 +34,7 @@ bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, World
 	case PacketId::InteractWithEntity: {
 		Packet::InteractWithEntity pkt;
 		pkt.Deserialize(session.stream);
-		HandlePacket::InteractWithEntity(pkt, session);
+		HandlePacket::InteractWithEntity(pkt, session, sessionWorld);
 		break;
 	}
 	case PacketId::Respawn: {

@@ -269,8 +269,22 @@ void ContainerTransaction(Packet::ContainerTransaction& pkt, PlayerSession& sess
 }
 
 // Other handlers
-void InteractWithEntity(Packet::InteractWithEntity& /*pkt*/, PlayerSession& /*session*/) {
-	// TODO: attack / interact logic
+void InteractWithEntity(Packet::InteractWithEntity& pkt, PlayerSession& session, WorldManager& world) {
+	// Check if session entity and source entity match
+	if (pkt.source_entity_id != session.entity->id) return;
+	 // Check if target entity exists
+	auto& entity = world.entityManager.entities[pkt.target_entity_id];
+	if (!entity) return;
+	// Attacking
+	if (Items::itemBehavior[session.inventory.getHeldItem()->id].onEntityAttack && pkt.attack) {
+		Items::itemBehavior[session.inventory.getHeldItem()->id].onEntityAttack(*entity);
+		return;
+	}
+	// Using
+	if (Items::itemBehavior[session.inventory.getHeldItem()->id].onEntityUse && !pkt.attack) {
+		Items::itemBehavior[session.inventory.getHeldItem()->id].onEntityUse(*entity);
+		return;
+	}
 }
 
 void InteractWithBlock([[maybe_unused]] Packet::InteractWithBlock& pkt, [[maybe_unused]] PlayerSession& session,
