@@ -38,7 +38,7 @@ bool EntityMPPlayer::dropItem(ItemStack stack) {
 	itemEntity->dim = dim;
 
 	// Give ourselves some random velocity based on look direction
-	float velocity = 0.4f;
+	float velocity = 0.3f;
 	itemEntity->motionX = double(-std::sin(this->rotationYaw / 180.0F * JavaMath::PI_FLOAT) *
 	                             std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity);
 	itemEntity->motionZ = double(std::cos(this->rotationYaw / 180.0F * JavaMath::PI_FLOAT) *
