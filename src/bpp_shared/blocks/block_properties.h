@@ -10,6 +10,7 @@
 #include "helpers/java/java_random.h"
 #include "inventory/item_stack.h"
 #include "materials.h"
+#include "networking/packets.h"
 #include <numeric_structs.h>
 #include <vector>
 
@@ -86,7 +87,7 @@ struct BlockBehavior {
 	bool (*onBlockActivated)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when block is placed by a player
-	void (*onBlockPlaced)(WorldManager& world, Int3 pos, Entity& placer) = nullptr;
+	void (*onBlockPlaced)(WorldManager& world, Int3 pos, Entity& placer, PacketData::FaceDirection face) = nullptr;
 
 	// Called when player breaks the block
 	void (*onBlockDestroyedByPlayer)(WorldManager& world, Int3 pos, Entity& destroyer) = nullptr;
