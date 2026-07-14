@@ -18,6 +18,9 @@ struct Entity;
 struct PlayerSession;
 
 namespace Blocks {
+
+float getFluidPercentAir(uint8_t meta);
+
 enum class StepSound : uint8_t {
 	Stone, // default, also metal (different pitch)
 	Wood,
@@ -96,6 +99,9 @@ struct BlockBehavior {
 
 	// Called when an entity collides with the block (cactus damage, etc.)
 	void (*onEntityCollidedWithBlock)(WorldManager& world, Int3 pos, Entity& entity) = nullptr;
+
+	// Called when we need to find how this block would contribute to the push vector of an entity
+	void (*velocityToAddToEntity)(WorldManager& world, Int3 pos, Vec3& pushVector) = nullptr;
 
 	// What item/block this drops when broken
 	ItemId (*idDropped)(uint8_t meta, Java::Random& random) = nullptr;

@@ -18,6 +18,110 @@ BlockBehavior blockBehaviors[256] = {};
 
 // Behavior helper functions
 
+// Some fluid specific stuff
+float getFluidPercentAir(uint8_t meta) {
+	if (meta >= 8)
+		meta = 0;
+
+	return float(meta + 1) / 9.0f;
+}
+
+static Vec3 getFluidFlowVector(WorldManager& world, Int3 pos) {
+	auto waterMaterial = Material::Water();
+	Vec3 flowVector{};
+	auto getEffectiveFlowDecay = [&](WorldManager& world, Int3 pos, Material material) {
+		if (world.getMaterial(pos) != material)
+			return -1;
+		int meta = world.getMetadata(pos);
+		if (meta >= 8)
+			meta = 0;
+
+		return meta;
+	};
+
+	int myFlowContribution = getEffectiveFlowDecay(world, pos, waterMaterial);
+
+	// Get the contribution of our horizontal neighbors
+	int ndx[] = { -1, 1, 0, 0 };
+	int ndz[] = { 0, 0, -1, 1 };
+	for (int i = 0; i < 4; i++) {
+		int dx = pos.x + ndx[i];
+		int dz = pos.z + ndz[i];
+		int neighborFlowContribution = getEffectiveFlowDecay(world, { dx, pos.y, dz }, waterMaterial);
+		int flowDifference = 0;
+		// Our neighbor block didn't have the same material
+		if (neighborFlowContribution < 0) {
+			if (!world.getMaterial({ dx, pos.y, dz }).isSolid) {
+				// Check the block below us to see if its water, if it is, STRONGLY pull down
+				int belowFlowContribution = getEffectiveFlowDecay(world, { dx, pos.y - 1, dz }, waterMaterial);
+				if (belowFlowContribution >= 0) {
+					flowDifference = belowFlowContribution - (myFlowContribution - 8);
+					flowVector.x += double((dx - pos.x) * flowDifference);
+					flowVector.z += double((dz - pos.z) * flowDifference);
+				}
+			}
+		} else {
+			flowDifference = neighborFlowContribution - myFlowContribution;
+			flowVector.x += double((dx - pos.x) * flowDifference);
+			flowVector.z += double((dz - pos.z) * flowDifference);
+		}
+	}
+
+	auto isFluidWall = [&](Int3 checkPos) {
+		Material neighborMaterial = world.getMaterial(checkPos);
+		if (neighborMaterial == waterMaterial)
+			return false;
+		if (neighborMaterial == Material::Ice())
+			return false;
+		return neighborMaterial.isSolid;
+	};
+
+	// If we're a falling fluid segment, check whether we're clinging to a wall
+	if (world.getMetadata(pos) >= 8) {
+		bool nearWall = false;
+
+		if (!nearWall && isFluidWall({ pos.x, pos.y, pos.z - 1 }))
+			nearWall = true;
+		if (!nearWall && isFluidWall({ pos.x, pos.y, pos.z + 1 }))
+			nearWall = true;
+		if (!nearWall && isFluidWall({ pos.x - 1, pos.y, pos.z }))
+			nearWall = true;
+		if (!nearWall && isFluidWall({ pos.x + 1, pos.y, pos.z }))
+			nearWall = true;
+		if (!nearWall && isFluidWall({ pos.x, pos.y + 1, pos.z - 1 }))
+			nearWall = true;
+		if (!nearWall && isFluidWall({ pos.x, pos.y + 1, pos.z + 1 }))
+			nearWall = true;
+		if (!nearWall && isFluidWall({ pos.x - 1, pos.y + 1, pos.z }))
+			nearWall = true;
+		if (!nearWall && isFluidWall({ pos.x + 1, pos.y + 1, pos.z }))
+			nearWall = true;
+
+		if (nearWall) {
+			// Normalize what we have so far, then let the huge -6 dominate the normalization after this
+			double lenSq = flowVector.x * flowVector.x + flowVector.y * flowVector.y + flowVector.z * flowVector.z;
+			if (lenSq > 0.0) {
+				double invLen = 1.0 / std::sqrt(lenSq);
+				flowVector.x *= invLen;
+				flowVector.y *= invLen;
+				flowVector.z *= invLen;
+			}
+			flowVector.y += -6.0;
+		}
+	}
+
+	// Final normalize
+	double lenSq = flowVector.x * flowVector.x + flowVector.y * flowVector.y + flowVector.z * flowVector.z;
+	if (lenSq > 0.0) {
+		double invLen = 1.0 / std::sqrt(lenSq);
+		flowVector.x *= invLen;
+		flowVector.y *= invLen;
+		flowVector.z *= invLen;
+	}
+
+	return flowVector;
+}
+
 // defaults
 static AABB defaultAABB(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
@@ -1541,6 +1645,9 @@ void registerAll() {
 		.getRayBounds = liquidAABB,
 		.getCollider = emptyCollider,
 	};
+	blockBehaviors[BlockType::BLOCK_COBWEB] = {
+		.getCollider = emptyCollider,
+	};
 
 	// Rails
 	blockBehaviors[BlockType::BLOCK_RAIL] = {
@@ -1749,6 +1856,26 @@ void registerAll() {
 		.getSelectionBox = pistonHeadAABB,
 		.getRayBounds = pistonHeadAABB,
 		.getCollider = pistonHeadCollider,
+	};
+
+	// specific behavioral overrides
+	blockBehaviors[BLOCK_WATER_FLOWING].velocityToAddToEntity = [](WorldManager& world, Int3 pos, Vec3& pushVector) -> void {
+		Vec3 flowVector = getFluidFlowVector(world, pos);
+		pushVector = pushVector + flowVector;
+	};
+	blockBehaviors[BLOCK_WATER_STILL].velocityToAddToEntity = [](WorldManager& world, Int3 pos, Vec3& pushVector) -> void {
+		Vec3 flowVector = getFluidFlowVector(world, pos);
+		pushVector = pushVector + flowVector;
+	};
+	blockBehaviors[BLOCK_CACTUS].onEntityCollidedWithBlock = [](WorldManager& world, Int3 pos, Entity& entity) -> void {
+		entity.attackEntityFrom(nullptr, 1);
+	};
+	blockBehaviors[BLOCK_COBWEB].onEntityCollidedWithBlock = [](WorldManager& world, Int3 pos, Entity& entity) -> void {
+		entity.inWeb = true;
+	};
+	blockBehaviors[BLOCK_SOULSAND].onEntityCollidedWithBlock = [](WorldManager& world, Int3 pos, Entity& entity) -> void {
+		entity.motionX *= 0.4;
+		entity.motionZ *= 0.4;
 	};
 
 	// for when the block is interacted with!

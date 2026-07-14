@@ -83,6 +83,8 @@ struct WorldManager {
 	int getSimulationDistance() {
 		return SIMULATION_RADIUS;
 	}
+	bool handleFluidAcceleration(AABB collider, Material material, Entity& entity);
+	bool isMaterialInAABB(AABB collider, Material material);
 	void updateLoadRadius(const std::vector<ClientPosition>& players);
 	void pumpPipeline(const std::vector<ClientPosition>& players);
 	void populateReady();
@@ -312,6 +314,23 @@ struct WorldManager {
 		if (chunk->state.load() >= ChunkState::Generated)
 			return true;
 		return false;
+	}
+
+	bool AABBinValidChunks(AABB collider) {
+		if (collider.minY < 0.0 || collider.maxY >= 128.0)
+			return false;
+		int minCX = MathHelper::floor_double(collider.minX) >> 4;
+		int maxCX = MathHelper::floor_double(collider.maxX + 1.0) >> 4;
+		int minCZ = MathHelper::floor_double(collider.minZ) >> 4;
+		int maxCZ = MathHelper::floor_double(collider.maxZ + 1.0) >> 4;
+
+		for (int cx = minCX; cx <= maxCX; cx++) {
+			for (int cz = minCZ; cz <= maxCZ; cz++) {
+				if (!isChunkValid({ cx, cz }))
+					return false;
+			}
+		}
+		return true;
 	}
 
 	Int32_2 blockToChunkPos(Int32_2 blockPos) {

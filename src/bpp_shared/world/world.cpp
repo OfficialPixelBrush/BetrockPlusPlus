@@ -11,6 +11,82 @@
 #include "generator/overworld/chunk_gen.h"
 #include <unordered_set>
 
+bool WorldManager::isMaterialInAABB(AABB collider, Material material) {
+	int minX = MathHelper::floor_double(collider.minX);
+	int maxX = MathHelper::floor_double(collider.maxX + 1.0);
+	int minY = MathHelper::floor_double(collider.minY);
+	int maxY = MathHelper::floor_double(collider.maxY + 1.0);
+	int minZ = MathHelper::floor_double(collider.minZ);
+	int maxZ = MathHelper::floor_double(collider.maxZ + 1.0);
+
+	// Check every block within the collider
+	// We are looking to see if the materials match
+	for (int x = minX; x < maxX; x++)
+		for (int y = minY; y < maxY; y++)
+			for (int z = minZ; z < maxZ; z++) {
+				auto blockId = this->getBlockId({ x, y, z });
+				auto block = Blocks::blockProperties[blockId];
+				if (block.material == material) {
+					return true;
+				}
+			}
+	return false;
+}
+
+bool WorldManager::handleFluidAcceleration(AABB collider, Material material, Entity& entity) {
+	// Handles the fluid push physics, only counts fluids of the same material
+	// Returns whether the entity is in the material
+	// This is almost entirely used for water
+	int minX = MathHelper::floor_double(collider.minX);
+	int maxX = MathHelper::floor_double(collider.maxX + 1.0);
+	int minY = MathHelper::floor_double(collider.minY);
+	int maxY = MathHelper::floor_double(collider.maxY + 1.0);
+	int minZ = MathHelper::floor_double(collider.minZ);
+	int maxZ = MathHelper::floor_double(collider.maxZ + 1.0);
+	if (!this->AABBinValidChunks({ double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ) }))
+		return false;
+
+	bool inMaterial = false;
+	Vec3 pushVector = { 0, 0, 0 };
+
+	// Check every block within the collider
+	// We are looking to see if the materials match
+	for (int x = minX; x < maxX; x++)
+		for (int y = minY; y < maxY; y++)
+			for (int z = minZ; z < maxZ; z++) {
+				auto blockId = this->getBlockId({ x, y, z });
+				auto block = Blocks::blockProperties[blockId];
+				if (block.material == material) {
+					double fluidHeight = double(float(y + 1) -
+					                            Blocks::getFluidPercentAir(this->getMetadata({ x, y, z })));
+					if (double(maxY) >= fluidHeight) {
+						// We are definitely in this material
+						// Lets get how this material contributes to our flow vector
+						inMaterial = true;
+						auto velocityFunction = Blocks::blockBehaviors[blockId].velocityToAddToEntity;
+						if (velocityFunction)
+							velocityFunction(*this, { x, y, z }, pushVector);
+					}
+				}
+			}
+
+	// Normalize the vector
+	auto magnitude = std::sqrt(pushVector.x * pushVector.x + pushVector.y * pushVector.y + pushVector.z * pushVector.z);
+	if (magnitude > 0.0) {
+		pushVector.x /= magnitude;
+		pushVector.y /= magnitude;
+		pushVector.z /= magnitude;
+
+		// Apply the vector
+		double pushForce = 0.014;
+		entity.motionX += pushVector.x * pushForce;
+		entity.motionY += pushVector.y * pushForce;
+		entity.motionZ += pushVector.z * pushForce;
+	}
+
+	return inMaterial;
+}
+
 // Get colliders for an area
 std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {
 	std::vector<AABB> collidingBoxes;
@@ -539,7 +615,7 @@ void WorldManager::populateReady() {
 		auto& chunk = cit->second;
 		chunk->isTerrainPopulated = true;
 		chunk->isModified = true;
-		chunk->generateSkylightMap(); // Regen our skylight map
+		chunk->generateSkylightMap();         // Regen our skylight map
 		this->seedChunkLighting(chunk->cpos); // Reseed our lighting
 
 		chunk->state.store(ChunkState::Populated, std::memory_order_release);
