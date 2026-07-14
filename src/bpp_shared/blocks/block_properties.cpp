@@ -1886,7 +1886,7 @@ void registerAll() {
 		auto meta = world.getMetadata(pos);
 		if (meta & 8) {
 			// We are the top half of the door
-			if (!world.getBlockId({ pos.x, pos.y - 1, pos.z }) == BLOCK_DOOR_WOOD)
+			if (world.getBlockId({ pos.x, pos.y - 1, pos.z }) != BLOCK_DOOR_WOOD)
 				// Below us is not the bottom of a door! This is bad!
 				return false;
 			// Recall this function on the bottom of the door

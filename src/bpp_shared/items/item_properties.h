@@ -6,12 +6,14 @@
 */
 
 #pragma once
-#include "base_structs.h"
 #include "base_types.h"
 #include "items.h"
-#include <algorithm>
+#include "numeric_structs.h"
 #include <cstdint>
 #include <unordered_map>
+
+struct WorldManager;
+struct Entity;
 
 namespace Items {
 
@@ -43,8 +45,11 @@ struct ItemProperties {
 };
 
 struct ItemBehavior {
-	void (*onAttack)() = nullptr;
-	void (*onUse)() = nullptr;
+	void (*onBlockStartMining)(WorldManager& world, Int3 pos) = nullptr;
+	void (*onBlockStopMining)(WorldManager& world, Int3 pos) = nullptr;
+	void (*onBlockUse)(WorldManager& world, Int3 pos) = nullptr;
+	void (*onEntityAttack)(Entity& attackedEntity) = nullptr;
+	void (*onEntityUse)(Entity& usedEntity) = nullptr;
 };
 
 extern std::unordered_map<ItemId, ItemBehavior> itemBehavior;

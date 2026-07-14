@@ -13,6 +13,7 @@
 #include "entities/entity_item.h"
 #include "inventory/inventory_interaction.h"
 #include "inventory/item_stack.h"
+#include "items/item_properties.h"
 #include "packet_utils.h"
 
 namespace HandlePacket {
@@ -133,6 +134,11 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 	if (pkt.face == PacketData::FaceDirection::USE_ITEM) {
 		GlobalLogger().info << "Tried to use item\n";
 		GlobalLogger().info << position << "\n";
+		if (Items::IsValid(session.inventory.getHeldItem()->id) &&
+		    Items::itemBehavior[session.inventory.getHeldItem()->id].onBlockUse) {
+			GlobalLogger().info << "Used on " << session.position.getBlockPos() << "\n";
+			Items::itemBehavior[session.inventory.getHeldItem()->id].onBlockUse(world, session.position.getBlockPos());
+		}
 		return;
 	}
 
