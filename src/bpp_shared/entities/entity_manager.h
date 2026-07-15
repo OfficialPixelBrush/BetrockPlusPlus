@@ -48,7 +48,7 @@ struct EntityManager {
 	void removeEntity(EntityId id);
 	bool chunkHasEntities(Int2 cpos) {
 		auto& container = this->m_entityContainers[cpos];
-		for (int i = 0; i < container.buckets.size(); i++) {
+		for (size_t i = 0; i < container.buckets.size(); i++) {
 			auto& bucket = container.buckets[i];
 			if (bucket.m_entities.size() > 0)
 				return true;
