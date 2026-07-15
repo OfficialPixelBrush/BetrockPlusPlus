@@ -278,7 +278,7 @@ void InteractWithEntity(Packet::InteractWithEntity& pkt, PlayerSession& session,
 	auto& entity = world.entityManager.m_entities[pkt.target_entity_id];
 	if (!entity) return;
 	// No item behaviors, skip
-	if (!Items::itemBehavior.contains(session.inventory.getHeldItem()->id)) return;
+	if (!session.inventory.getHeldItem() || !Items::itemBehavior.contains(session.inventory.getHeldItem()->id)) return;
 	// Attacking
 	if (Items::itemBehavior[session.inventory.getHeldItem()->id].onEntityAttack && pkt.attack) {
 		Items::itemBehavior[session.inventory.getHeldItem()->id].onEntityAttack(*entity);
