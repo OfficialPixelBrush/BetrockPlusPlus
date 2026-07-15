@@ -10,6 +10,62 @@
 #include <algorithm>
 #include <cmath>
 
+void ItemEntity::loadFromNBT(Tag& nbt) {
+	Entity::loadFromNBT(nbt);
+
+	// Load item specific stuff
+	this->health = nbt.compound["Health"].getShort();
+	this->ticksExisted = nbt.compound["Age"].getShort();
+
+	// Load our item
+	const auto& itemCompound = nbt.compound["Item"].getCompound();
+	this->itemStack = { itemCompound.at("id").getShort(), itemCompound.at("Count").getByte(),
+		                itemCompound.at("Damage").getShort() };
+}
+
+std::optional<Tag> ItemEntity::serializeToNBT() {
+	auto tag = Entity::serializeToNBT();
+	if (!tag)
+		return std::nullopt;
+
+	// Our additions
+	Tag Health;
+	Health.name = "Health";
+	Health.type = TAG_SHORT;
+	Health.shortValue = this->health;
+	Tag Age;
+	Age.name = "Age";
+	Age.type = TAG_SHORT;
+	Age.shortValue = this->ticksExisted;
+
+	// Construct the item nbt
+	Tag Item;
+	Item.name = "Item";
+	Item.type = TAG_COMPOUND;
+	Tag id;
+	id.name = "id";
+	id.type = TAG_SHORT;
+	id.shortValue = this->itemStack.id;
+	Tag Count;
+	Count.name = "Count";
+	Count.type = TAG_BYTE;
+	Count.byteValue = this->itemStack.count;
+	Tag Damage;
+	Damage.name = "Damage";
+	Damage.type = TAG_SHORT;
+	Damage.shortValue = this->itemStack.data;
+	Item.compound["id"] = id;
+	Item.compound["Count"] = Count;
+	Item.compound["Damage"] = Damage;
+
+	// Add our additions to the base tag
+	tag->compound["Health"] = Health;
+	tag->compound["Age"] = Age;
+	tag->compound["Item"] = Item;
+
+	return tag;
+}
+
 void ItemEntity::onCollideWithPlayer(PlayerEntity& entity) {
 	if (pickupCooldown)
 		return;

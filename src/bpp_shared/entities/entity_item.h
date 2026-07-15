@@ -40,6 +40,8 @@ struct ItemEntity : public Entity {
 	}
 	void onCollideWithPlayer(PlayerEntity& entity) override;
 	void tick() override;
+	std::optional<Tag> serializeToNBT() override;
+	void loadFromNBT(Tag& nbt) override;
 	bool attackEntityFrom(Entity* entity, int damage) override {
 		Entity::attackEntityFrom(entity, damage);
 		health -= damage;

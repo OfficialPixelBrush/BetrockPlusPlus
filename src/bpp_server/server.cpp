@@ -442,6 +442,12 @@ void Server::tick() {
 			// Too many changes, just resend the whole inventory
 			PacketUtilities::sendInventory(*session, session->openWindowId, *session->activeInteraction->inventory);
 		}
+
+		if (this->gameRuntime.world.elapsed_ticks % 40 == 0) {
+			// Save periodically
+			auto savedNbt = session->serializeToNBT();
+			gameRuntime.saveManager.savePlayerNBT(std::string(session->username.begin(), session->username.end()), savedNbt);
+		}
 	}
 
 	// Dispatch block changes.

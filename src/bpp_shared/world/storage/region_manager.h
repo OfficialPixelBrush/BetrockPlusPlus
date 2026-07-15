@@ -13,13 +13,18 @@
 #include <unordered_map>
 #include <vector>
 
+struct SnapshotContainer {
+	std::shared_ptr<Chunk> chunkSnapshot;
+	std::shared_ptr<const std::vector<Tag>> entitySnapshot;
+};
+
 struct WorldManager;
 
 struct RegionManager {
 	BS::thread_pool<> iopool{ 2 };
 
 	std::mutex saveQueueMutex;
-	std::vector<std::shared_ptr<Chunk>> saveQueue;
+	std::vector<SnapshotContainer> saveQueue;
 
 	std::mutex outChunksMutex;
 	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> outChunks;
@@ -42,7 +47,7 @@ struct RegionManager {
 	bool createRegion(Int32_2 rpos);
 
 	// Serialize and save a chunk to a region
-	void saveChunk(std::shared_ptr<Chunk> chunk);
+	void saveChunk(std::shared_ptr<Chunk> chunk, bool unloadEntities = false);
 
 	// Queue a chunk to be loaded from disk
 	void loadChunk(Int32_2 cpos);

@@ -318,3 +318,122 @@ void Entity::updateFallState(float movedY) {
 		fallDistance -= movedY;
 	}
 }
+
+void Entity::loadFromNBT(Tag& nbt) {
+	auto& motion = nbt.compound["Motion"].getList();
+	auto& pos = nbt.compound["Pos"].getList();
+	auto& rotation = nbt.compound["Rotation"].getList();
+
+	motionX = motion[0].getDouble();
+	motionY = motion[1].getDouble();
+	motionZ = motion[2].getDouble();
+
+	posX = pos[0].getDouble();
+	posY = pos[1].getDouble();
+	posZ = pos[2].getDouble();
+
+	rotationYaw = rotation[0].getFloat();
+	rotationPitch = rotation[1].getFloat();
+
+	air = nbt.compound["Air"].getShort();
+	onGround = nbt.compound["OnGround"].getByte();
+	fallDistance = nbt.compound["FallDistance"].getFloat();
+	fire = nbt.compound["Fire"].getShort();
+
+	rebuildCollider();
+}
+
+std::optional<Tag> Entity::serializeToNBT() {
+	Tag root;
+	root.type = TAG_COMPOUND;
+	root.name = "";
+
+	Tag Motion;
+	Motion.type = TAG_LIST;
+	Motion.name = "Motion";
+	Motion.listType = TAG_DOUBLE;
+	Tag Air;
+	Air.type = TAG_SHORT;
+	Air.name = "Air";
+	Air.shortValue = this->air;
+	Tag OnGround;
+	OnGround.type = TAG_BYTE;
+	OnGround.name = "OnGround";
+	OnGround.byteValue = this->onGround;
+	Tag FallDistance;
+	FallDistance.type = TAG_FLOAT;
+	FallDistance.name = "FallDistance";
+	FallDistance.floatValue =this->fallDistance;
+	Tag Pos;
+	Pos.type = TAG_LIST;
+	Pos.name = "Pos";
+	Pos.listType = TAG_DOUBLE;
+	Tag Rotation;
+	Rotation.type = TAG_LIST;
+	Rotation.name = "Rotation";
+	Rotation.listType = TAG_FLOAT;
+	Tag Fire;
+	Fire.type = TAG_SHORT;
+	Fire.name = "Fire";
+	Fire.shortValue = this->fire;
+
+	// Save position and rotation / velocity
+	Tag posX;
+	posX.type = TAG_DOUBLE;
+	posX.doubleValue = this->posX;
+	Tag posY;
+	posY.type = TAG_DOUBLE;
+	posY.doubleValue = this->posY;
+	Tag posZ;
+	posZ.type = TAG_DOUBLE;
+	posZ.doubleValue = this->posZ;
+	Pos.list.push_back(posX);
+	Pos.list.push_back(posY);
+	Pos.list.push_back(posZ);
+
+	Tag movX;
+	movX.type = TAG_DOUBLE;
+	movX.doubleValue = this->motionX;
+	Tag movY;
+	movY.type = TAG_DOUBLE;
+	movY.doubleValue = this->motionY;
+	Tag movZ;
+	movZ.type = TAG_DOUBLE;
+	movZ.doubleValue = this->motionZ;
+	Motion.list.push_back(movX);
+	Motion.list.push_back(movY);
+	Motion.list.push_back(movZ);
+
+	Tag rotYaw;
+	rotYaw.type = TAG_FLOAT;
+	rotYaw.floatValue = this->rotationYaw;
+	Tag rotPitch;
+	rotPitch.type = TAG_FLOAT;
+	rotPitch.floatValue = this->rotationPitch;
+	Rotation.list.push_back(rotYaw);
+	Rotation.list.push_back(rotPitch);
+
+	// Get our string ID
+	auto stringId = this->entityManager->getEntityNbtId(type);
+
+	// If we don't have a string id fail to save
+	if (!stringId)
+		return std::nullopt; 
+
+	Tag id;
+	id.type = TAG_STRING;
+	id.name = "id";
+	id.stringValue = *stringId;
+
+	// Link together our compound
+	root.compound["Pos"] = Pos;
+	root.compound["Motion"] = Motion;
+	root.compound["Rotation"] = Rotation;
+	root.compound["FallDistance"] = FallDistance;
+	root.compound["Fire"] = Fire;
+	root.compound["Air"] = Air;
+	root.compound["OnGround"] = OnGround;
+	root.compound["id"] = id;
+
+	return root;
+}

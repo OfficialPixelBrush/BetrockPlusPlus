@@ -76,13 +76,13 @@ bool RegionManager::createRegion(Int32_2 rpos) {
 	return file.good(); // catch write failures too
 }
 
-void RegionManager::saveChunk(std::shared_ptr<Chunk> chunk) {
+void RegionManager::saveChunk(std::shared_ptr<Chunk> chunk, bool unloadEntities) {
 	{
 		std::lock_guard lk(outChunksMutex);
 		outChunks.erase(chunk->cpos);
 	}
 
-	// Make a snapshot because I kept crashing..
+	// Make a snapshot
 	auto snapshot = std::make_shared<Chunk>();
 	snapshot->cpos = chunk->cpos;
 	snapshot->isTerrainPopulated = chunk->isTerrainPopulated;
@@ -97,8 +97,15 @@ void RegionManager::saveChunk(std::shared_ptr<Chunk> chunk) {
 	std::memcpy(snapshot->temperature, chunk->temperature, sizeof(chunk->temperature));
 	std::memcpy(snapshot->humidity, chunk->humidity, sizeof(chunk->humidity));
 	snapshot->tileEntities = chunk->tileEntities;
+
+	// Entities are wrapped in a shared_ptr<const vector>
+	auto entities = std::make_shared<const std::vector<Tag>>(
+	    world->entityManager.collectEntitiesForSave(snapshot->cpos, unloadEntities));
+
+	SnapshotContainer container{ std::move(snapshot), std::move(entities) };
+
 	std::lock_guard lk(saveQueueMutex);
-	saveQueue.push_back(std::move(snapshot));
+	saveQueue.push_back(std::move(container));
 }
 
 void RegionManager::loadChunk(Int32_2 cpos) {
@@ -128,7 +135,7 @@ std::shared_ptr<Chunk> RegionManager::getChunk(Int32_2 cpos) {
 }
 
 void RegionManager::pumpPipeline() {
-	std::vector<std::shared_ptr<Chunk>> toSave;
+	std::vector<SnapshotContainer> toSave;
 	{
 		std::lock_guard lk(saveQueueMutex);
 		toSave.swap(saveQueue);
@@ -136,25 +143,28 @@ void RegionManager::pumpPipeline() {
 			saveQueue.shrink_to_fit();
 	}
 
-	std::vector<std::shared_ptr<Chunk>> requeue;
-	for (auto& chunk : toSave) {
+	std::vector<SnapshotContainer> requeue;
+	for (auto& snapshot : toSave) {
+		auto& chunk = snapshot.chunkSnapshot;
+		auto entitySnapshot = snapshot.entitySnapshot; // shared_ptr copy
 		Int32_2 rpos{ chunk->cpos.x >> 5, chunk->cpos.z >> 5 };
 		if (!regionExists(rpos))
 			createRegion(rpos);
 		auto region = loadRegion(rpos); // shared_ptr keeps Region alive for the task
 		if (!region) {
-			requeue.push_back(chunk);
+			requeue.push_back(std::move(snapshot)); // keep chunk + entities together
 			continue;
 		}
 		auto currentTime = world->elapsed_ticks;
-		iopool.detach_task([chunk, region, currentTime]() {
-			region->AddChunk(chunk, currentTime); // Region stays alive via shared_ptr capture
+		iopool.detach_task([chunk, region, currentTime, entitySnapshot]() {
+			region->AddChunk(chunk, currentTime, entitySnapshot); // Region stays alive via shared_ptr capture
 		});
 	}
 
 	if (!requeue.empty()) {
 		std::lock_guard lk(saveQueueMutex);
-		saveQueue.insert(saveQueue.end(), requeue.begin(), requeue.end());
+		saveQueue.insert(saveQueue.end(), std::make_move_iterator(requeue.begin()),
+		                 std::make_move_iterator(requeue.end()));
 	}
 
 	// Try to merge any pending regions that couldn't fit before

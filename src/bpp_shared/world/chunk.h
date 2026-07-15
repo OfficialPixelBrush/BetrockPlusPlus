@@ -11,6 +11,7 @@
 #include "constants.h"
 #include "helpers/cross_platform.h"
 #include "tile_entities/tile_entity.h"
+#include "nbt/nbt.h"
 #include <atomic>
 #include <cstdint>
 #include <cstring>
@@ -49,6 +50,9 @@ struct Chunk {
 
 	// Tile entities
 	std::vector<std::shared_ptr<TileEntity>> tileEntities;
+
+	// Used for loading entities into the world from disk
+	std::vector<Tag> entityTags;
 
 	inline int blockIndex(Int3 pos) const {
 		return (pos.y * CHUNK_WIDTH * CHUNK_WIDTH) + (pos.z * CHUNK_WIDTH) + pos.x;
