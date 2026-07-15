@@ -182,6 +182,7 @@ std::vector<Tag> EntityManager::collectEntitiesForSave(Int2 cpos, bool clearColl
 			// Is this entity dead but not collected?
 			if (auto entityPtrShared = entityPtrWeak.lock()) {
 				if (entityPtrShared->isDead) continue; // We are dead so no save
+				if (entityPtrShared->type == EntityType::PLAYER) continue; // players cannot be saved
 				if (clearCollectedEntities) entityPtrShared->isDead = true; // Mark the entity as dead for cleanup
 				auto compound = entityPtrShared->serializeToNBT();
 				if (!compound) continue; // If something went wrong abort save
