@@ -139,7 +139,8 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 	session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
-void PlayerConnStateManager::disconnectPlayer(PlayerSession& session, const std::string& reason, [[maybe_unused]] Server& server) {
+void PlayerConnStateManager::disconnectPlayer(PlayerSession& session, const std::string& reason,
+                                              [[maybe_unused]] Server& server) {
 	// Send disconnect reason to the leaving player
 	Packet::Disconnect kick;
 	kick.reason = reason;
@@ -195,7 +196,8 @@ void PlayerConnStateManager::waitForSpawnChunks(PlayerSession& session, Server& 
 	session.connState = ConnectionState::Playing;
 
 	// Register our entity with the world
-	if (!session.entityRegistered) sessionWorld.entityManager.addEntity(session.entity, session.entity->id);
+	if (!session.entityRegistered)
+		sessionWorld.entityManager.addEntity(session.entity, session.entity->id);
 	session.entityRegistered = true;
 
 	// Give our player session a pointer to the entity tracker

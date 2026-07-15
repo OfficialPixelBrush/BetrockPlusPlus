@@ -22,7 +22,8 @@ void MobileEntity::setGoal(std::optional<Int3> goal) {
 		currentPathIdx = 0;
 		return;
 	}
-	Int3 start = { MathHelper::floor_double(posX), MathHelper::floor_double(posY), MathHelper::floor_double(posZ) };
+	Int3 start = { MathHelper::floor_double(position.x), MathHelper::floor_double(position.y),
+		           MathHelper::floor_double(position.z) };
 	currentPath = pathFinder.findPath(start, *goal);
 	currentPathIdx = 0;
 	std::cout << "Calculated path!" << std::endl;
@@ -40,8 +41,8 @@ void MobileEntity::followPath() {
 
 	while (currentPathIdx < currentPath.size()) {
 		Int3 p = currentPath[currentPathIdx];
-		double dx = p.x + 0.5 - posX;
-		double dz = p.z + 0.5 - posZ;
+		double dx = p.x + 0.5 - position.x;
+		double dz = p.z + 0.5 - position.z;
 
 		double threshold = width * 2.0;
 		if (dx * dx + dz * dz > threshold * threshold)
@@ -58,8 +59,8 @@ void MobileEntity::followPath() {
 	}
 
 	Int3 target = currentPath[currentPathIdx];
-	double dx = target.x + 0.5 - posX;
-	double dz = target.z + 0.5 - posZ;
+	double dx = target.x + 0.5 - position.x;
+	double dz = target.z + 0.5 - position.z;
 
 	float targetYaw = std::atan2(dz, dx) * 180.0 / JavaMath::PI - 90.0;
 	float yawDelta = targetYaw - rotationYaw;
@@ -85,7 +86,7 @@ void MobileEntity::resolveEntityCollision(Entity& other) {
 	if (rider == &other || passenger == &other)
 		return;
 
-	Vec2 delta = { other.posX - posX, other.posZ - posZ };
+	Vec2 delta = { other.position.x - position.x, other.position.z - position.z };
 	double dist = MathHelper::abs_max(delta.x, delta.y);
 
 	if (dist >= 0.01) {

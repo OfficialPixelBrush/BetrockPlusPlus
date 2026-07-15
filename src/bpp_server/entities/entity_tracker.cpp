@@ -48,8 +48,8 @@ void EntityTracker::tick() {
 			}
 			auto& player = playerIt->second;
 
-			auto distanceTo = std::abs(std::max(std::abs(entry.entity->posX - player.entity->posX),
-			                                    std::abs(entry.entity->posZ - player.entity->posZ)));
+			auto distanceTo = std::abs(std::max(std::abs(entry.entity->position.x - player.entity->position.x),
+			                                    std::abs(entry.entity->position.z - player.entity->position.z)));
 			if (distanceTo > entry.profile.range) {
 				auto& pSession = server->getSessionById(playerId);
 				Packet::DespawnEntity pkt;
@@ -71,8 +71,8 @@ void EntityTracker::tick() {
 			if (entityId == playerId)
 				continue;
 
-			auto distanceTo = std::abs(std::max(std::abs(entityEntry.entity->posX - player.entity->posX),
-			                                    std::abs(entityEntry.entity->posZ - player.entity->posZ)));
+			auto distanceTo = std::abs(std::max(std::abs(entityEntry.entity->position.x - player.entity->position.x),
+			                                    std::abs(entityEntry.entity->position.z - player.entity->position.z)));
 			if (distanceTo > entityEntry.profile.range ||
 			    entityEntry.visibleTo.find(playerId) != entityEntry.visibleTo.end()) {
 				continue;
@@ -85,9 +85,9 @@ void EntityTracker::tick() {
 				Packet::SpawnItem pkt;
 				pkt.entity_id = entityEntry.entity->id;
 				pkt.item = ie.itemStack;
-				pkt.q_position = { quantizePosition(entityEntry.entity->posX),
-					               quantizePosition(entityEntry.entity->posY),
-					               quantizePosition(entityEntry.entity->posZ) };
+				pkt.q_position = { quantizePosition(entityEntry.entity->position.x),
+					               quantizePosition(entityEntry.entity->position.y),
+					               quantizePosition(entityEntry.entity->position.z) };
 				// For some reason notch decided this should be a convoluted way of getting the initial spawn velocity
 				auto quantizeSpawnVelocity = [](double v) -> int8_t {
 					return int8_t(v * 128.0);
@@ -102,9 +102,9 @@ void EntityTracker::tick() {
 				Packet::SpawnPlayer pkt;
 				pkt.entity_id = entityEntry.entity->id;
 				pkt.held_item_id = Items::Id::NONE;
-				pkt.q_position = { quantizePosition(entityEntry.entity->posX),
-					               quantizePosition(entityEntry.entity->posY),
-					               quantizePosition(entityEntry.entity->posZ) };
+				pkt.q_position = { quantizePosition(entityEntry.entity->position.x),
+					               quantizePosition(entityEntry.entity->position.y),
+					               quantizePosition(entityEntry.entity->position.z) };
 				pkt.q_rotation = { int8_t(quantizeRotation(entityEntry.entity->rotationYaw)),
 					               int8_t(quantizeRotation(entityEntry.entity->rotationPitch)) };
 
@@ -118,9 +118,9 @@ void EntityTracker::tick() {
 				Packet::SpawnMob pkt;
 				pkt.entity_id = entityEntry.entity->id;
 				pkt.mob_type = PacketData::MobType::CREEPER;
-				pkt.q_position = { quantizePosition(entityEntry.entity->posX),
-					               quantizePosition(entityEntry.entity->posY),
-					               quantizePosition(entityEntry.entity->posZ) };
+				pkt.q_position = { quantizePosition(entityEntry.entity->position.x),
+					               quantizePosition(entityEntry.entity->position.y),
+					               quantizePosition(entityEntry.entity->position.z) };
 				pkt.q_rotation = { int8_t(quantizeRotation(entityEntry.entity->rotationYaw)),
 					               int8_t(quantizeRotation(entityEntry.entity->rotationPitch)) };
 				pkt.metadata.push_back(
@@ -148,7 +148,7 @@ TrackedEntry& EntityTracker::getTrackerForEntityId(EntityId id) {
 		if (entityId == id)
 			return entityEntry;
 	}
-    throw std::out_of_range("Entity not found");
+	throw std::out_of_range("Entity not found");
 }
 
 void EntityTracker::sendPacketToViewers(Packet::BasePacket& pkt, EntityId id) {
@@ -162,11 +162,10 @@ void EntityTracker::sendPacketToViewers(Packet::BasePacket& pkt, EntityId id) {
 
 void EntityTracker::update(TrackedEntry& trackedEntry) {
 	auto& entity = trackedEntry.entity;
-	Vec3 currentPosition = { entity->posX, entity->posY, entity->posZ };
 
 	// Dirty flag gets checked every tick
-	if (entity->velocityChanged) {
-		entity->velocityChanged = false;
+	if (entity->forceVelocityUpdate) {
+		entity->forceVelocityUpdate = false;
 		trackedEntry.lastBroadcastMotion = { entity->motionX, entity->motionY, entity->motionZ };
 		Packet::EntityVelocity pkt;
 		pkt.entity_id = entity->id;
@@ -208,9 +207,9 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 			}
 		}
 
-		int32_t qx = quantizePosition(currentPosition.x);
-		int32_t qy = quantizePosition(currentPosition.y);
-		int32_t qz = quantizePosition(currentPosition.z);
+		int32_t qx = quantizePosition(entity->position.x);
+		int32_t qy = quantizePosition(entity->position.y);
+		int32_t qz = quantizePosition(entity->position.z);
 		int32_t qYaw = quantizeRotation(entity->rotationYaw);
 		int32_t qPitch = quantizeRotation(entity->rotationPitch);
 
@@ -225,9 +224,9 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 			trackedEntry.ticksSinceTeleport = 0;
 
 			// resyncs the entity position
-			entity->posX = double(qx) / 32.0;
-			entity->posY = double(qy) / 32.0;
-			entity->posZ = double(qz) / 32.0;
+			entity->position.x = double(qx) / 32.0;
+			entity->position.y = double(qy) / 32.0;
+			entity->position.z = double(qz) / 32.0;
 			entity->rebuildCollider();
 
 			Packet::TeleportEntity pkt;

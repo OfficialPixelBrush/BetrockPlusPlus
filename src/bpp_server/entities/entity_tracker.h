@@ -70,8 +70,8 @@ struct EntityTracker {
 
 		Vec3 currentMotion = { entity->motionX, entity->motionY, entity->motionZ };
 
-		entry.lastEncodedPos = { quantizePosition(entity->posX), quantizePosition(entity->posY),
-			                     quantizePosition(entity->posZ) };
+		entry.lastEncodedPos = { quantizePosition(entity->position.x), quantizePosition(entity->position.y),
+			                     quantizePosition(entity->position.z) };
 		entry.lastBroadcastMotion = currentMotion;
 		entry.lastEncodedPitch = quantizeRotation(entity->rotationPitch);
 		entry.lastEncodedYaw = quantizeRotation(entity->rotationYaw);
@@ -91,8 +91,8 @@ struct EntityTracker {
 
 		Vec3 currentMotion = { player->motionX, player->motionY, player->motionZ };
 
-		entry.lastEncodedPos = { quantizePosition(player->posX), quantizePosition(player->posY),
-			                     quantizePosition(player->posZ) };
+		entry.lastEncodedPos = { quantizePosition(player->position.x), quantizePosition(player->position.y),
+			                     quantizePosition(player->position.z) };
 		entry.lastBroadcastMotion = currentMotion;
 		entry.lastEncodedPitch = quantizeRotation(player->rotationPitch);
 		entry.lastEncodedYaw = quantizeRotation(player->rotationYaw);

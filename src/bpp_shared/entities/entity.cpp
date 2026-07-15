@@ -113,7 +113,7 @@ void Entity::tick() {
 	}
 
 	// Kill our entity if its below the world
-	if (posY < -64.0)
+	if (position.y < -64.0)
 		isDead = true;
 
 	isFirstUpdate = false;
@@ -126,7 +126,7 @@ void Entity::applyKnockback(Vec3 direction) {
 	motionX -= direction.x * HORIZONTAL_KNOCKBACK;
 	motionZ -= direction.z * HORIZONTAL_KNOCKBACK;
 	motionY = std::min(float(motionY + VERTICAL_KNOCKBACK), VERTICAL_KNOCKBACK);
-	velocityChanged = true;
+	forceVelocityUpdate = true;
 }
 
 void Entity::applyInput(float strafe, float forward, float acceleration) {
@@ -269,9 +269,9 @@ void Entity::move(Vec3 movement) {
 	}
 
 	// Derive our current position from our collider
-	posX = (collider.minX + collider.maxX) / 2.0;
-	posY = collider.minY + double(yOffset) - double(ySize);
-	posZ = (collider.minZ + collider.maxZ) / 2.0;
+	position.x = (collider.minX + collider.maxX) / 2.0;
+	position.y = collider.minY + double(yOffset) - double(ySize);
+	position.z = (collider.minZ + collider.maxZ) / 2.0;
 
 	collidedHorizontally = original.x != movement.x || original.z != movement.z;
 	collidedVertically = original.y != movement.y;
@@ -332,9 +332,9 @@ void Entity::loadFromNBT(Tag& nbt) {
 	motionY = motion[1].getDouble();
 	motionZ = motion[2].getDouble();
 
-	posX = pos[0].getDouble();
-	posY = pos[1].getDouble();
-	posZ = pos[2].getDouble();
+	position.x = pos[0].getDouble();
+	position.y = pos[1].getDouble();
+	position.z = pos[2].getDouble();
 
 	rotationYaw = rotation[0].getFloat();
 	rotationPitch = rotation[1].getFloat();
@@ -367,7 +367,7 @@ std::optional<Tag> Entity::serializeToNBT() {
 	Tag FallDistance;
 	FallDistance.type = TAG_FLOAT;
 	FallDistance.name = "FallDistance";
-	FallDistance.floatValue =this->fallDistance;
+	FallDistance.floatValue = this->fallDistance;
 	Tag Pos;
 	Pos.type = TAG_LIST;
 	Pos.name = "Pos";
@@ -384,13 +384,13 @@ std::optional<Tag> Entity::serializeToNBT() {
 	// Save position and rotation / velocity
 	Tag posX;
 	posX.type = TAG_DOUBLE;
-	posX.doubleValue = this->posX;
+	posX.doubleValue = this->position.x;
 	Tag posY;
 	posY.type = TAG_DOUBLE;
-	posY.doubleValue = this->posY;
+	posY.doubleValue = this->position.y;
 	Tag posZ;
 	posZ.type = TAG_DOUBLE;
-	posZ.doubleValue = this->posZ;
+	posZ.doubleValue = this->position.z;
 	Pos.list.push_back(posX);
 	Pos.list.push_back(posY);
 	Pos.list.push_back(posZ);
@@ -422,7 +422,7 @@ std::optional<Tag> Entity::serializeToNBT() {
 
 	// If we don't have a string id fail to save
 	if (!stringId)
-		return std::nullopt; 
+		return std::nullopt;
 
 	Tag id;
 	id.type = TAG_STRING;
