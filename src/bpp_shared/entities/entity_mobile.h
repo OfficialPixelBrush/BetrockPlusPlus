@@ -21,6 +21,7 @@ private:
 	size_t currentPathIdx = 0;
 
 	void followPath();
+	void resolveEntityCollision(Entity& other);
 	void tickPhysics();
 
 public:

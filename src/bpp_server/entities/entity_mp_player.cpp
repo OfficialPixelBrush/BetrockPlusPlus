@@ -74,10 +74,10 @@ void EntityMPPlayer::tick() {
 
 	// Tell entities we collided with them
 	if (entityManager) {
-		AABB colliderCopy = collider.expand(1.0, 0.0, 1.0);
-		auto entitiesCollidingWith = entityManager->getEntitiesWithinAABBExcluding(colliderCopy, this->id);
-		for (auto& entity : entitiesCollidingWith) {
-			if (entity->collider.intersects(colliderCopy) && !entity->isDead)
+		auto entitiesCollidingWith = entityManager->getEntitiesWithinAABBExcluding(collider.expand(1.0, 0.0, 1.0),
+		                                                                           this->id);
+		for (const auto& entity : entitiesCollidingWith) {
+			if (!entity->isDead)
 				entity->onCollideWithPlayer(*this);
 		}
 	}

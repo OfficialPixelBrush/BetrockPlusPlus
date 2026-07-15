@@ -41,8 +41,8 @@ struct EntityManager {
 		return pos;
 	}
 
-	std::vector<std::shared_ptr<Entity>> getEntitiesWithinAABBExcluding(AABB& box, EntityId entityId);
-	std::vector<std::shared_ptr<Entity>> getEntitiesWithinAABB(AABB& box);
+	std::vector<std::shared_ptr<Entity>> getEntitiesWithinAABBExcluding(const AABB& box, EntityId entityId);
+	std::vector<std::shared_ptr<Entity>> getEntitiesWithinAABB(const AABB& box);
 	void tick();
 	void addEntity(std::shared_ptr<Entity> entity, EntityId forceEntityId = -1);
 	void removeEntity(EntityId id);
