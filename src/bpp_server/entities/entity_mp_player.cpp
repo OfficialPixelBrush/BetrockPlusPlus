@@ -31,8 +31,8 @@ bool EntityMPPlayer::dropItem(ItemStack stack) {
 		return false;
 
 	// Create the item entity
-	Vec3 position = { posX, posY - 0.3 + PLAYER_EYE_HEIGHT, posZ };
-	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(position);
+	Vec3 itemPos = { position.x, position.y - 0.3 + PLAYER_EYE_HEIGHT, position.z };
+	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(itemPos);
 	itemEntity->itemStack = stack;
 	itemEntity->pickupCooldown = 40; // So we don't pick it up instantly
 	itemEntity->dim = dim;
@@ -64,9 +64,9 @@ void EntityMPPlayer::tick() {
 		return;
 	Vec3 claimed = session->position.pos;
 
-	posX = claimed.x;
-	posY = claimed.y;
-	posZ = claimed.z;
+	position.x = claimed.x;
+	position.y = claimed.y;
+	position.z = claimed.z;
 	rotationYaw = session->rotation.x;
 	rotationPitch = session->rotation.y;
 

@@ -431,7 +431,7 @@ struct SaveManager {
 		Rotation.list.push_back(rotX);
 		Rotation.list.push_back(rotY);
 
-		// Initialize our position with a default
+		// Initialize our velocity with a default
 		Tag movX;
 		movX.type = TAG_DOUBLE;
 		movX.doubleValue = 0.0;

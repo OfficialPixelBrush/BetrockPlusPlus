@@ -11,10 +11,9 @@
 #include "dimensions.h"
 #include "entities.h"
 #include "helpers/AABB.h"
+#include "nbt/nbt.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
-#include "dimensions.h"
-#include "nbt/nbt.h"
 #include <vector>
 
 // Forward declare
@@ -79,16 +78,14 @@ struct Entity {
 
 	// Position
 	//TODO: use a Vec3 instead
-	double posX = 0.0;
-	double posY = 0.0;
-	double posZ = 0.0;
+	Vec3 position;
 
 	// Velocity
 	//TODO: use a Vec3 instead
 	double motionX = 0.0;
 	double motionY = 0.0;
 	double motionZ = 0.0;
-	bool velocityChanged = false;
+	bool forceVelocityUpdate = false;
 
 	// Look direction
 	float rotationYaw = 0.0f;
@@ -103,7 +100,7 @@ struct Entity {
 	float width = 0.6f;
 	float height = 1.8f;
 
-	// Vertical offset from posY down to the bottom of the bounding box
+	// Vertical offset from position.y down to the bottom of the bounding box
 	float yOffset = 0.0f;
 
 	// How high a block face this entity can step onto without jumping.
@@ -170,15 +167,16 @@ struct Entity {
 
 	void rebuildCollider() {
 		double halfWidth = double(width) / 2.0;
-		double bottom = posY - double(yOffset) + double(ySize);
-		collider = { posX - halfWidth,        bottom,          posZ - halfWidth, posX + halfWidth,
-			         bottom + double(height), posZ + halfWidth };
+		double bottom = position.y - double(yOffset) + double(ySize);
+		collider = { position.x - halfWidth,  bottom,
+			         position.z - halfWidth,  position.x + halfWidth,
+			         bottom + double(height), position.z + halfWidth };
 	}
 
 	void teleport(Vec3 newpos, Vec2 newrot = { 0, 0 }) {
-		posX = newpos.x;
-		posY = newpos.y;
-		posZ = newpos.z;
+		position.x = newpos.x;
+		position.y = newpos.y;
+		position.z = newpos.z;
 		rotationYaw = newrot.x;
 		rotationPitch = newrot.y;
 		ySize = 0.0f;
@@ -187,7 +185,7 @@ struct Entity {
 
 	virtual bool attackEntityFrom(Entity* entity, int damage) {
 		beenAttacked = true;
-		velocityChanged = true;
+		forceVelocityUpdate = true;
 		return false;
 	}
 	virtual AABB getFluidCollider() {

@@ -51,7 +51,7 @@ void EntityManager::addEntity(std::shared_ptr<Entity> entity, EntityId forceEnti
 	entity->dim = m_world->thisDimension;
 
 	// Register the entity into its initial bucket
-	entity->bucketPos = computeBucketPos(entity->posX, entity->posY, entity->posZ);
+	entity->bucketPos = computeBucketPos(entity->position);
 	auto& container = m_entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
 	container.buckets[entity->bucketPos.z].m_entities.push_back(entity);
 
@@ -87,7 +87,7 @@ void EntityManager::tick() {
 		entity->tick();
 
 		// Check to see if this entity went into another container or bucket
-		Int3 newBucketPos = computeBucketPos(entity->posX, entity->posY, entity->posZ);
+		Int3 newBucketPos = computeBucketPos(entity->position);
 
 		if (newBucketPos != entity->bucketPos) {
 			// Remove from the old bucket
@@ -183,9 +183,12 @@ std::vector<Tag> EntityManager::collectEntitiesForSave(Int2 cpos, bool clearColl
 		for (auto& entityPtrWeak : bucket.m_entities) {
 			// Is this entity dead but not collected?
 			if (auto entityPtrShared = entityPtrWeak.lock()) {
-				if (entityPtrShared->isDead) continue; // We are dead so no save
-				if (entityPtrShared->type == EntityType::PLAYER) continue; // players cannot be saved
-				if (clearCollectedEntities) entityPtrShared->isDead = true; // Mark the entity as dead for cleanup
+				if (entityPtrShared->isDead)
+					continue; // We are dead so no save
+				if (entityPtrShared->type == EntityType::PLAYER)
+					continue; // players cannot be saved
+				if (clearCollectedEntities)
+					entityPtrShared->isDead = true; // Mark the entity as dead for cleanup
 				auto compound = entityPtrShared->serializeToNBT();
 				if (!compound)
 					continue; // If something went wrong abort save
