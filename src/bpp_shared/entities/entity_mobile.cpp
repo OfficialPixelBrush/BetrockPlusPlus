@@ -81,6 +81,34 @@ void MobileEntity::followPath() {
 		jumping = true;
 }
 
+void MobileEntity::resolveEntityCollision(Entity& other) {
+	if (rider == &other || passenger == &other)
+		return;
+
+	Vec2 delta = { other.posX - posX, other.posZ - posZ };
+	double dist = MathHelper::abs_max(delta.x, delta.y);
+
+	if (dist >= 0.01) {
+		dist = std::sqrt(dist);
+
+		delta = delta / dist;
+
+		double forceScale = 1.0 / dist;
+
+		if (forceScale > 1.0) {
+			forceScale = 1.0;
+		}
+
+		delta = delta * forceScale;
+		delta = delta * 0.05;
+
+		this->motionX -= delta.x;
+		this->motionZ -= delta.y;
+		other.motionX += delta.x;
+		other.motionZ += delta.y;
+	}
+}
+
 void MobileEntity::tickPhysics() {
 	//TODO: Handle water/lava/ladders and possibly other stuff
 
@@ -111,6 +139,15 @@ void MobileEntity::tickPhysics() {
 	// Gravity
 	motionY -= 0.08;
 	motionY *= 0.98f;
+
+	auto collidingEntities = world->entityManager.getEntitiesWithinAABBExcluding(collider.expand(0.2, 0.0, 0.2), id);
+
+	for (const auto& entity : collidingEntities) {
+		//TODO: Only minecarts, boats and (not dead) living entities can be pushed
+		//if (entity.canBePushed()) {
+		this->resolveEntityCollision(*entity);
+		//}
+	}
 }
 
 void MobileEntity::tick() {
