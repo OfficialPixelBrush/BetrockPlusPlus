@@ -9,6 +9,7 @@
 #include "blocks.h"
 #include "enums/items.h"
 #include "world/world.h"
+#include "entities/entity_mobile.h"
 
 namespace Items {
 
@@ -299,7 +300,6 @@ void useHoe(WorldManager& world, Int3 pos) {
 	}
 }
 
-#include "entities/entity_mobile.h"
 void testSetGoal(WorldManager& world, Int3 usedBlockPos) {
 	Int3 topPos = usedBlockPos;
 	topPos.y += 1;
