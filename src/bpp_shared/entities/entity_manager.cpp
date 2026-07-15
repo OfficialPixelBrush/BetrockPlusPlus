@@ -5,6 +5,7 @@
  *
 */
 #include "entity_manager.h"
+#include "entity_item.h"
 #include "world.h"
 
 void EntityManager::removeEntity(EntityId id) {
@@ -153,4 +154,108 @@ std::vector<std::shared_ptr<Entity>> EntityManager::getEntitiesWithinAABB(AABB& 
 		}
 	}
 	return collidingEntities;
+}
+
+void EntityManager::createEntityFromNBT(Tag& nbt) {
+	// Load an entity from the nbt list
+	std::string id = nbt.compound["id"].getString();
+
+	// TODO: load other entity types
+	if (id == "Item") {
+		ItemEntity item({});
+		item.loadFromNBT(nbt);
+		addEntity(std::make_shared<ItemEntity>(item));
+	}
+}
+
+std::vector<Tag> EntityManager::collectEntitiesForSave(Int2 cpos, bool clearCollectedEntities) {
+	// Collect entities for this chunk coordinates (basically our entity container)
+	// We then serialize these entities and return the vector of nbt tags
+	// We mark the entities as dead for cleanup afterwards
+	std::vector<Tag> collectedEntities;
+
+	auto& container = m_entityContainers[cpos];
+
+	for (int i = 0; i < container.buckets.size(); i++) {
+		auto& bucket = container.buckets[i];
+		for (auto& entityPtrWeak : bucket.m_entities) {
+			// Is this entity dead but not collected?
+			if (auto entityPtrShared = entityPtrWeak.lock()) {
+				if (entityPtrShared->isDead) continue; // We are dead so no save
+				if (clearCollectedEntities) entityPtrShared->isDead = true; // Mark the entity as dead for cleanup
+				auto compound = entityPtrShared->serializeToNBT();
+				if (!compound) continue; // If something went wrong abort save
+				collectedEntities.push_back(*compound);
+			}
+		}
+	}
+	return collectedEntities;
+}
+
+std::optional<std::string> EntityManager::getEntityNbtId(EntityType type) {
+	switch (type) {
+	case EntityType::ITEM:
+		return "Item";
+	case EntityType::BOAT:
+		return "Boat";
+	case EntityType::LIT_TNT:
+		return "PrimedTnt";
+	case EntityType::ARROW:
+		return "Arrow";
+	case EntityType::THROWN_SNOWBALL:
+		return "Snowball";
+	case EntityType::PAINTING:
+		return "Painting";
+	case EntityType::CREEPER:
+		return "Creeper";
+	case EntityType::SKELETON:
+		return "Skeleton";
+	case EntityType::SPIDER:
+		return "Spider";
+	case EntityType::GIANT_ZOMBIE:
+		return "Giant";
+	case EntityType::ZOMBIE:
+		return "Zombie";
+	case EntityType::SLIME:
+		return "Slime";
+	case EntityType::GHAST:
+		return "Ghast";
+	case EntityType::ZOMBIE_PIGMAN:
+		return "PigZombie";
+	case EntityType::PIG:
+		return "Pig";
+	case EntityType::SHEEP:
+		return "Sheep";
+	case EntityType::COW:
+		return "Cow";
+	case EntityType::CHICKEN:
+		return "Chicken";
+	case EntityType::SQUID:
+		return "Squid";
+	case EntityType::WOLF:
+		return "Wolf";
+
+	// Vanilla only has ONE minecart entity/string
+	// There is a type field in the nbt itself
+	case EntityType::MINECART:
+	case EntityType::STORAGE_MINECART:
+	case EntityType::FURNACE_MINECART:
+		return "Minecart";
+
+	// Same deal as minecarts
+	// not a separate string.
+	case EntityType::FALLING_SAND:
+	case EntityType::FALLING_GRAVEL:
+		return "FallingSand";
+
+	// These have no mapping!
+	case EntityType::NONE:
+	case EntityType::PLAYER: // Note: Players are saved differently (thanks notch)
+	case EntityType::FISH:
+	case EntityType::FIREBALL:
+	case EntityType::THROWN_EGG:
+	case EntityType::FISHING_BOBBER:
+	default:
+		return std::nullopt;
+	}
 }

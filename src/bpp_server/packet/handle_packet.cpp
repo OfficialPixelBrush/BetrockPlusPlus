@@ -91,7 +91,6 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 			dropPos.z += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
 			ItemEntity item(dropPos);
 			item.itemStack = drop;
-			item.dim = session.dimension == -1 ? Dimension::Nether : Dimension::Overworld;
 			world.entityManager.addEntity(std::make_shared<ItemEntity>(item));
 		}
 		return;

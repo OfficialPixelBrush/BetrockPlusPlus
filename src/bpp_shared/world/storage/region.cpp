@@ -17,9 +17,10 @@
 #include <memory>
 #include <string>
 
-void Region::AddChunk(std::shared_ptr<Chunk> chunk, int64_t timestamp) {
+void Region::AddChunk(std::shared_ptr<Chunk> chunk, int64_t timestamp,
+                      std::shared_ptr<const std::vector<Tag>> entities) {
 	std::lock_guard<std::mutex> lock(m_mutex);
-	auto compressed = EncodeNbtData(chunk, timestamp);
+	auto compressed = EncodeNbtData(chunk, timestamp, entities);
 	if (compressed.empty())
 		return;
 
@@ -141,7 +142,8 @@ std::shared_ptr<Chunk> Region::GetChunk(Int32_2 cpos) {
 	return DecodeNbtData(compressed);
 }
 
-std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk, int64_t timestamp) {
+std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk, int64_t timestamp,
+                                           std::shared_ptr<const std::vector<Tag>> entities) {
 	// Build a compound tag representing a chunk level entry
 	Tag root;
 	root.type = TAG_COMPOUND;
@@ -217,11 +219,14 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk, 
 		}
 	}
 
-	// List tag for entities (empty for now)
-	Tag entities;
-	entities.type = TAG_LIST;
-	entities.name = "Entities";
-	entities.listType = TAG_COMPOUND;
+	// List tag for entities
+	Tag entitiesTag;
+	entitiesTag.type = TAG_LIST;
+	entitiesTag.name = "Entities";
+	entitiesTag.listType = TAG_COMPOUND;
+	if (entities) {
+		entitiesTag.list.insert(entitiesTag.list.end(), entities->begin(), entities->end());
+	}
 
 	// Nested compound inside a list for tile entities
 	Tag tileEntities;
@@ -243,7 +248,7 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk, 
 	level.compound["BlockLight"] = blockLight;
 	level.compound["SkyLight"] = skyLight;
 	level.compound["HeightMap"] = heightMap;
-	level.compound["Entities"] = entities;
+	level.compound["Entities"] = entitiesTag;
 	level.compound["TileEntities"] = tileEntities;
 
 	root.compound["Level"] = level;
@@ -303,6 +308,7 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& raw_dat
 	const auto& skyLight = lvl.get("SkyLight").getByteArray();
 	const auto& heightMap = lvl.get("HeightMap").getByteArray();
 	const auto& tileEntities = lvl.get("TileEntities").getList();
+	const auto& entities = lvl.get("Entities").getList();
 
 	// Setup our chunk
 	auto chunk = std::make_shared<Chunk>();
@@ -329,6 +335,9 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& raw_dat
 			}
 		}
 	}
+
+	// Load our entities
+	chunk->entityTags = std::move(entities);
 
 	// Load our tile entities
 	for (auto& te : tileEntities) {

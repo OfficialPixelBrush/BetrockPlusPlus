@@ -53,7 +53,7 @@ public:
 		return (rHeader->numberOfSectors != 0 && rHeader->offset != 0);
 	}
 
-	void AddChunk(std::shared_ptr<Chunk> chunk, int64_t timestamp);
+	void AddChunk(std::shared_ptr<Chunk> chunk, int64_t timestamp, std::shared_ptr<const std::vector<Tag>> entities);
 	std::shared_ptr<Chunk> GetChunk(Int32_2 cpos);
 
 	// Read our header data into the "regionHeader"
@@ -71,7 +71,8 @@ public:
 
 private:
 	std::array<std::shared_ptr<Chunk>, REGION_AREA> chunks;
-	std::vector<uint8_t> EncodeNbtData(const std::shared_ptr<Chunk>& chunk, int64_t timestamp);
+	std::vector<uint8_t> EncodeNbtData(const std::shared_ptr<Chunk>& chunk, int64_t timestamp,
+	                                   std::shared_ptr<const std::vector<Tag>> entities);
 	std::shared_ptr<Chunk> DecodeNbtData(const std::vector<uint8_t>& raw_data);
 	std::string GetPath();
 	std::array<FileHeaderEntry, 1024> regionHeader;

@@ -13,6 +13,7 @@
 #include "numeric_structs.h"
 #include "packet_data.h"
 #include "dimensions.h"
+#include "nbt/nbt.h"
 #include <vector>
 
 // Forward declare
@@ -146,6 +147,10 @@ struct Entity {
 	bool preventEntitySpawning = false;
 	bool isFirstUpdate = true; // True only on the very first tick
 
+	// Air
+	int maxAir = 300;
+	int air = 300;
+
 	Entity() {
 		rebuildCollider();
 	}
@@ -196,4 +201,6 @@ struct Entity {
 	virtual void move(Vec3 movement);
 	virtual void dealDamage(int amount);
 	virtual void updateFallState(float movedY);
+	virtual std::optional<Tag> serializeToNBT();
+	virtual void loadFromNBT(Tag& nbt);
 };

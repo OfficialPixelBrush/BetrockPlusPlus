@@ -146,16 +146,31 @@ void WorldManager::tick(const std::vector<ClientPosition>& players) {
 		GlobalLogger().error << "No region manager while trying to tick!\n";
 		return;
 	}
-	for (auto& [pos, chunk] : chunks) {
-		if (!chunk->isModified)
-			continue;
-		ChunkState s = chunk->state.load();
-		if (s < ChunkState::Generated)
-			continue;
-		if (s == ChunkState::Generating || s == ChunkState::Loading)
-			continue;
-		regionManager->saveChunk(chunk);
-		chunk->isModified = false;
+	if (this->elapsed_ticks % 40 == 0) {
+		// Save periodically
+		for (auto& [pos, chunk] : chunks) {
+			if (!chunk->isModified)
+				continue;
+			ChunkState s = chunk->state.load();
+			if (s < ChunkState::Generated)
+				continue;
+			if (s == ChunkState::Generating || s == ChunkState::Loading)
+				continue;
+			regionManager->saveChunk(chunk);
+			chunk->isModified = false;
+		}
+	}
+	// Save entities in a chunk every 30 seconds
+	if (this->elapsed_ticks % 600 == 0) {
+		for (auto& [pos, chunk] : chunks) {
+			ChunkState s = chunk->state.load();
+			if (s < ChunkState::Generated)
+				continue;
+			if (s == ChunkState::Generating || s == ChunkState::Loading)
+				continue;
+			if(entityManager.chunkHasEntities(pos)) regionManager->saveChunk(chunk);
+			chunk->isModified = false;
+		}
 	}
 	regionManager->pumpPipeline();
 
@@ -182,14 +197,14 @@ void WorldManager::shutdown() {
 
 	// Save all currently loaded modified chunks
 	for (auto& [pos, chunk] : chunks) {
-		if (!chunk->isModified)
+		if (!chunk->isModified && !entityManager.chunkHasEntities(pos))
 			continue;
 		ChunkState s = chunk->state.load();
 		if (s < ChunkState::Generated)
 			continue;
 		if (s == ChunkState::Generating || s == ChunkState::Loading)
 			continue;
-		regionManager->saveChunk(chunk);
+		regionManager->saveChunk(chunk, /*unload entities = */ true);
 		chunk->isModified = false;
 	}
 
@@ -298,6 +313,13 @@ void WorldManager::drainLoadQueue() {
 
 		// Register our tile entities
 		registerChunkTileEntities(it->second.get());
+
+		// Register our entities
+		for (auto& entityTag : it->second.get()->entityTags) {
+			this->entityManager.createEntityFromNBT(entityTag);
+		}
+		it->second.get()->entityTags.clear();
+		it->second.get()->entityTags.shrink_to_fit();
 	}
 }
 
@@ -381,7 +403,6 @@ void WorldManager::seedChunkLighting(Int32_2 pos) {
 }
 
 void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) {
-	// Get all the chunk positions we want to be loaded based on player positions
 	std::unordered_set<Int32_2> wanted;
 	for (const auto& player : players) {
 		Int2 center = player.getChunkPos();
@@ -391,8 +412,7 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
 				wanted.insert({ center.x + dx, center.z + dz });
 	}
 
-	// Make dummy chunks for any new positions we want
-	// The generater picks up that this chunk is not generated yet and fills it in, then replaces the chunk in the map with the real one when done
+	// Get chunks we want
 	for (const auto& pos : wanted) {
 		if (!chunks.contains(pos)) {
 			auto c = std::make_shared<Chunk>();
@@ -413,10 +433,16 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
 		}
 		ChunkState s = it->second->state.load();
 		if (s == ChunkState::Generating || s == ChunkState::Loading) {
-			// Leave the slot so drainGenQueue/drainLoadQueue can still find it
 			++it;
 			continue;
 		}
+
+		// This chunk is actually leaving simulation so force unload entities
+		if (it->second->isModified || this->entityManager.chunkHasEntities(it->second->cpos)) {
+			regionManager->saveChunk(it->second, /*unloadingEntities=*/true);
+			it->second->isModified = false;
+		}
+
 		it = chunks.erase(it);
 	}
 }

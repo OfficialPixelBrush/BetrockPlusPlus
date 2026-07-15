@@ -46,8 +46,21 @@ struct EntityManager {
 	void tick();
 	void addEntity(std::shared_ptr<Entity> entity, EntityId forceEntityId = -1);
 	void removeEntity(EntityId id);
+	bool chunkHasEntities(Int2 cpos) {
+		auto& container = this->m_entityContainers[cpos];
+		for (int i = 0; i < container.buckets.size(); i++) {
+			auto& bucket = container.buckets[i];
+			if (bucket.m_entities.size() > 0)
+				return true;
+		}
+		return false;
+	}
+	std::vector<Tag> collectEntitiesForSave(Int2 cpos, bool clearCollectedEntities = false);
+	void createEntityFromNBT(Tag& nbt);
 
 	EntityId getNextEntityId() {
 		return m_nextEntityId++;
 	}
+
+	std::optional<std::string> getEntityNbtId(EntityType type);
 };
