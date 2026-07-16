@@ -158,7 +158,7 @@ void NetherGenerator::GenerateTerrain(Chunk& chunk) {
 	const Int3 max{ CHUNK_WIDTH / 4 + 1, CHUNK_HEIGHT / 8 + 1, CHUNK_WIDTH / 4 + 1 };
 
 	// Generate 4x16x4 low resolution noise map
-	GenerateTerrainNoise(m_terrainNoiseField, Int3{ chunk.cpos.x * 4, 0, chunk.cpos.z * 4 }, max);
+	GenerateTerrainNoise(Int3{ chunk.cpos.x * 4, 0, chunk.cpos.z * 4 }, max);
 
 	// Terrain noise is interpolated and only sampled every 4 blocks
 	for (int32_t sampleX = 0; sampleX < 4; ++sampleX) {
@@ -247,9 +247,7 @@ void NetherGenerator::GenerateTerrain(Chunk& chunk) {
  * @param chunkPos The x,y,z coordinate of the sub-chunk
  * @param max Defines the area of the terrainMap
  */
-void NetherGenerator::GenerateTerrainNoise(std::vector<double>& terrainMap, Int3 cpos, Int3 max) {
-	terrainMap.resize(size_t(max.x * max.y * max.z), 0.0);
-
+void NetherGenerator::GenerateTerrainNoise(Int3 cpos, Int3 max) {
 	double horiScale = 684.412;
 	double vertScale = 2053.236;
 
@@ -343,7 +341,7 @@ void NetherGenerator::GenerateTerrainNoise(std::vector<double>& terrainMap, Int3
 					terrainDensity = (terrainDensity * (1.0 - heightEdgeFade)) + (-10.0 * heightEdgeFade);
 				}
 
-				terrainMap[xyzIndex] = terrainDensity;
+				m_terrainNoiseField[xyzIndex] = terrainDensity;
 				++xyzIndex;
 			}
 		}

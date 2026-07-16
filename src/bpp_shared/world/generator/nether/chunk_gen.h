@@ -25,7 +25,7 @@ private:
 	NoiseOctavesPerlin m_depthNoiseGen;
 
 	// Stored noise Fields
-	std::vector<double> m_terrainNoiseField;
+	double m_terrainNoiseField[(CHUNK_WIDTH / 4 + 1) * (CHUNK_HEIGHT / 8 + 1) * (CHUNK_WIDTH / 4 + 1)];
 	std::vector<double> m_lowNoiseField;
 	std::vector<double> m_highNoiseField;
 	std::vector<double> m_selectorNoiseField;
@@ -40,7 +40,7 @@ private:
 	CaveGenerator m_caver;
 
 	void GenerateTerrain(Chunk& chunk);
-	void GenerateTerrainNoise(std::vector<double>& terrainMap, Int3 cpos, Int3 max);
+	void GenerateTerrainNoise(Int3 cpos, Int3 max);
 	void ReplaceBlocksForBiome(Chunk& chunk);
 
 public:
