@@ -21,6 +21,7 @@ struct PlayerSession;
 namespace Blocks {
 
 float getFluidPercentAir(uint8_t meta);
+void BreakAndDropBlock(WorldManager& world, Int3& pos);
 
 enum class StepSound : uint8_t {
 	Stone, // default, also metal (different pitch)

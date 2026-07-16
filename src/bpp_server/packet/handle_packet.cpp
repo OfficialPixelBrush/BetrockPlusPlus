@@ -58,38 +58,17 @@ void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& pkt, PlayerSes
 	session.rotation.y = pkt.pitch;
 }
 
-// TODO: Move this elsewhere!!!!!
-void BreakAndDropBlock(WorldManager& world, SlimInt3<int8_t>& pos) {
-	BlockType blockId = world.getBlockId({ pos.x, pos.y, pos.z });
-	uint8_t meta = world.getMetadata({ pos.x, pos.y, pos.z });
-	world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
-
-	std::vector<ItemStack> drops = Blocks::getBlockDrops(blockId, meta, world.rand);
-
-	for (ItemStack drop : drops) {
-		Vec3 dropPos = { double(pos.x), double(pos.y), double(pos.z) };
-		float offset = 0.7f;
-		dropPos.x += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
-		dropPos.y += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
-		dropPos.z += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
-		ItemEntity item(dropPos);
-		item.itemStack = drop;
-		world.entityManager.addEntity(std::make_shared<ItemEntity>(item));
-	}
-	return;
-}
-
 void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& world,
                std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
 	Int3 packetPos = { pkt.position.x, pkt.position.y, pkt.position.z };
 	switch (pkt.status) {
 	case PacketData::MineStatus::DIGGING_STARTED: {
 		session.startedMiningAtTick = world.elapsed_ticks;
-		BlockType blockId = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z });
+		BlockType blockId = world.getBlockId(packetPos);
 		session.lastTargetedBlock = blockId;
 
 		if (Blocks::blockProperties[session.lastTargetedBlock].hardness == 0.0f) {
-			BreakAndDropBlock(world, pkt.position);
+		    Blocks::BreakAndDropBlock(world, packetPos);
 			return;
 		}
 
@@ -102,7 +81,7 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 		if (session.lastTargetedBlock != world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z })) {
 			return; // block changed while mining so we don't drop it
 		}
-		BreakAndDropBlock(world, pkt.position);
+		Blocks::BreakAndDropBlock(world, packetPos);
 		return;
 	}
 	case PacketData::MineStatus::DROPPED_ITEM: {
