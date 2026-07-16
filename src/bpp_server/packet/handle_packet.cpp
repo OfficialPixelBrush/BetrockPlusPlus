@@ -274,20 +274,28 @@ void ContainerTransaction(Packet::ContainerTransaction& pkt, PlayerSession& sess
 void InteractWithEntity(Packet::InteractWithEntity& pkt, PlayerSession& session, WorldManager& world) {
 	// Check if session entity and source entity match
 	if (pkt.source_entity_id != session.entity->id) return;
+
 	 // Check if target entity exists
 	auto& entity = world.entityManager.m_entities[pkt.target_entity_id];
 	if (!entity) return;
-	// No item behaviors, skip
-	if (!session.inventory.getHeldItem() || !Items::itemBehavior.contains(session.inventory.getHeldItem()->id)) return;
-	// Attacking
-	if (Items::itemBehavior[session.inventory.getHeldItem()->id].onEntityAttack && pkt.attack) {
-		Items::itemBehavior[session.inventory.getHeldItem()->id].onEntityAttack(*entity);
+
+	const ItemStack* heldItem = session.inventory.getHeldItem();
+	if (!heldItem)
 		return;
-	}
-	// Using
-	if (Items::itemBehavior[session.inventory.getHeldItem()->id].onEntityUse && !pkt.attack) {
-		Items::itemBehavior[session.inventory.getHeldItem()->id].onEntityUse(*entity);
+
+	// Get item behavior
+	auto iter = Items::itemBehavior.find(heldItem->id);
+	if (iter == Items::itemBehavior.end())
 		return;
+
+	const auto& behavior = iter->second;
+
+	if (pkt.attack) {
+		if (behavior.onEntityAttack)
+			behavior.onEntityAttack(*entity);
+	} else {
+		if (behavior.onEntityUse)
+			behavior.onEntityUse(*entity);
 	}
 }
 
