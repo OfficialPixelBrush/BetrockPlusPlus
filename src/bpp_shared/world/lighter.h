@@ -83,12 +83,9 @@ public:
 	void unlightAt(int x, int y, int z, LightType type, WorldManager& world);
 
 	// Process up to `maxIterations` light-queue entries this call.
-	// Pass INT_MAX (or omit) to drain everything — used during startup
-	// where the old "finish in one go" behaviour is still wanted.
-	// Returns true if work remains after the budget is exhausted.
 	bool processLightQueue(WorldManager& world, int maxIterations = INT_MAX);
 
-	// Schedule a single-block update — bypasses merge (used for BFS fan-out).
+	// Schedule a single-block update; bypasses merge (used for BFS fan-out).
 	void scheduleLightUpdate(Int3 pos, LightType type) {
 		if (pos.y < 0 || pos.y >= CHUNK_HEIGHT)
 			return;
@@ -96,7 +93,7 @@ public:
 			lightQueue.push_back({ pos, pos, type });
 	}
 
-	// Schedule a region [mn, mx] update with merge/dedup — used for seeding.
+	// Schedule a region [mn, mx] update with merge/dedup
 	void scheduleLightRegion(Int3 mn, Int3 mx, LightType type) {
 		mn.y = CrossPlatform::Math::max(mn.y, 0);
 		mx.y = CrossPlatform::Math::min(mx.y, CHUNK_HEIGHT - 1);
@@ -121,4 +118,7 @@ private:
 	std::vector<LightRegion> lightQueue;
 	std::vector<UnlightUpdate> unlightQueue;
 	int processingDepth = 0;
+
+	// Persistent cache for unlightAt
+	ChunkCache m_unlightCache;
 };
