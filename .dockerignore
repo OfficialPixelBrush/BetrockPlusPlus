@@ -1,0 +1,10 @@
+.git
+.gitmodules
+build/
+build-*/
+out/
+data/
+world/
+*.log
+.vscode/
+.idea/

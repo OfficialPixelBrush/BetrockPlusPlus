@@ -20,6 +20,7 @@ find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(OpenAL CONFIG REQUIRED)
+find_package(Threads REQUIRED)
 endif()
 
 # Try to find Git, but don't fail if it's missing
@@ -179,6 +180,7 @@ else()
     target_compile_definitions(BetrockPlusPlus PRIVATE
         BUILD_CLIENT
         NOMINMAX
+        GLFW_INCLUDE_NONE
     )
     target_sources(BetrockPlusPlus PRIVATE
         ${CLIENT_SOURCES}
