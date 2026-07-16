@@ -8,19 +8,38 @@
 #include "blocks.h"
 #include "constants.h"
 #include "world.h"
+#include <cstring>
 
 // ChunkCache so we don't have to do map lookups for every neighbor access during light propagation.
+// Reuses chunks from the previous window whenever they overlap the new one.
 void ChunkCache::refresh(int ncx, int ncz, WorldManager& world) {
 	if (ncx == cx && ncz == cz)
 		return;
+
+	Chunk* oldGrid[3][3];
+	std::memcpy(oldGrid, grid, sizeof(grid));
+	int oldCx = cx, oldCz = cz;
+
 	cx = ncx;
 	cz = ncz;
-	for (int dx = -1; dx <= 1; ++dx)
+
+	for (int dx = -1; dx <= 1; ++dx) {
 		for (int dz = -1; dz <= 1; ++dz) {
-			Chunk* c = world.getChunkRaw({ ncx + dx, ncz + dz });
-			grid[dx + 1][dz + 1] = (c && c->state.load(std::memory_order_acquire) >= ChunkState::Generated) ? c
-			                                                                                                : nullptr;
+			int tcx = ncx + dx, tcz = ncz + dz;
+			int odx = tcx - oldCx, odz = tcz - oldCz;
+
+			// Already held from the previous window? Reuse it as-is.
+			Chunk* c = (odx >= -1 && odx <= 1 && odz >= -1 && odz <= 1) ? oldGrid[odx + 1][odz + 1] : nullptr;
+
+			if (!c) {
+				Chunk* fetched = world.getChunkRaw({ tcx, tcz });
+				c = (fetched && fetched->state.load(std::memory_order_acquire) >= ChunkState::Generated) ? fetched
+				                                                                                         : nullptr;
+			}
+
+			grid[dx + 1][dz + 1] = c;
 		}
+	}
 }
 
 static inline int getLightDirect(Chunk* chunk, int lx, int y, int lz, LightType type) {
@@ -85,8 +104,7 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
 		if (world.onBlockUpdate)
 			world.onBlockUpdate(PendingBlock{ .block{ BlockType(blockId), chunk->getMeta({ lx, y, lz }) },
 			                                  .block_pos{ x, y, z },
-			                                  .light{ chunk->getBlockLight({ lx, y, lz }),
-			                                          chunk->getSkyLight({ lx, y, lz }) } },
+			                                  .light{ chunk->getBlockLight({ lx, y, lz }), uint8_t(newVal) } },
 			                    chunk->cpos);
 	} else {
 		int emitted = Blocks::blockProperties[blockId].lightEmission;
@@ -111,7 +129,7 @@ void Lighter::propagateLightAt(int x, int y, int z, LightType type, WorldManager
 			    PendingBlock{
 			        .block{ BlockType(blockId), chunk->getMeta({ lx, y, lz }) },
 			        .block_pos{ x, y, z },
-			        .light{ chunk->getBlockLight({ lx, y, lz }), chunk->getSkyLight({ lx, y, lz }) },
+			        .light{ uint8_t(newVal), chunk->getSkyLight({ lx, y, lz }) },
 			    },
 			    chunk->cpos);
 	}
@@ -138,9 +156,8 @@ void Lighter::unlightAt(int x, int y, int z, LightType type, WorldManager& world
 	if (y < 0 || y >= CHUNK_HEIGHT)
 		return;
 
-	ChunkCache cache;
-	cache.refresh(x >> 4, z >> 4, world);
-	Chunk* chunk = cache.grid[1][1];
+	m_unlightCache.refresh(x >> 4, z >> 4, world);
+	Chunk* chunk = m_unlightCache.grid[1][1];
 	if (!chunk)
 		return;
 
@@ -158,7 +175,9 @@ void Lighter::unlightAt(int x, int y, int z, LightType type, WorldManager& world
 		    PendingBlock{
 		        .block{ BlockType(chunk->getBlock({ lx, y, lz })), chunk->getMeta({ lx, y, lz }) },
 		        .block_pos{ x, y, z },
-		        .light{ chunk->getBlockLight({ lx, y, lz }), chunk->getSkyLight({ lx, y, lz }) },
+		        // Whichever type we just unlit was just set to 0 above
+		        .light{ (type == LightType::Block) ? uint8_t(0) : chunk->getBlockLight({ lx, y, lz }),
+		                (type == LightType::Sky) ? uint8_t(0) : chunk->getSkyLight({ lx, y, lz }) },
 		    },
 		    chunk->cpos);
 
@@ -169,7 +188,7 @@ void Lighter::unlightAt(int x, int y, int z, LightType type, WorldManager& world
 		auto [pos, t, val] = unlightQueue.back();
 		unlightQueue.pop_back();
 
-		cache.refresh(pos.x >> 4, pos.z >> 4, world);
+		m_unlightCache.refresh(pos.x >> 4, pos.z >> 4, world);
 
 		const int ndx[] = { -1, 1, 0, 0, 0, 0 };
 		const int ndy[] = { 0, 0, -1, 1, 0, 0 };
@@ -183,8 +202,8 @@ void Lighter::unlightAt(int x, int y, int z, LightType type, WorldManager& world
 
 			int ncx = nx >> 4, ncz = nz >> 4;
 			int nlx = nx & 15, nlz = nz & 15;
-			int dx = ncx - cache.cx, dz = ncz - cache.cz;
-			Chunk* nc = (dx >= -1 && dx <= 1 && dz >= -1 && dz <= 1) ? cache.grid[dx + 1][dz + 1]
+			int dx = ncx - m_unlightCache.cx, dz = ncz - m_unlightCache.cz;
+			Chunk* nc = (dx >= -1 && dx <= 1 && dz >= -1 && dz <= 1) ? m_unlightCache.grid[dx + 1][dz + 1]
 			                                                         : world.getChunkRaw({ ncx, ncz });
 			if (!nc)
 				continue;
