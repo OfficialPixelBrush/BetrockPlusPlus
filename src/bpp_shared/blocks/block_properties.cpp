@@ -8,6 +8,7 @@
 #include "block_properties.h"
 #include "enums/items.h"
 #include "tile_entities/tile_entity.h"
+#include "entities/entity_item.h"
 #include "world/world.h"
 
 namespace Blocks {
@@ -17,6 +18,25 @@ BlockProperties blockProperties[256] = {};
 BlockBehavior blockBehaviors[256] = {};
 
 // Behavior helper functions
+void BreakAndDropBlock(WorldManager& world, Int3& pos) {
+	BlockType blockId = world.getBlockId({ pos.x, pos.y, pos.z });
+	uint8_t meta = world.getMetadata({ pos.x, pos.y, pos.z });
+	world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
+
+	std::vector<ItemStack> drops = Blocks::getBlockDrops(blockId, meta, world.rand);
+
+	for (ItemStack drop : drops) {
+		Vec3 dropPos = { double(pos.x), double(pos.y), double(pos.z) };
+		float offset = 0.7f;
+		dropPos.x += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		dropPos.y += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		dropPos.z += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		ItemEntity item(dropPos);
+		item.itemStack = drop;
+		world.entityManager.addEntity(std::make_shared<ItemEntity>(item));
+	}
+	return;
+}
 
 // Some fluid specific stuff
 float getFluidPercentAir(uint8_t meta) {
@@ -1879,6 +1899,29 @@ void registerAll() {
 	                                                              Entity& entity) -> void {
 		entity.motionX *= 0.4;
 		entity.motionZ *= 0.4;
+	};
+	blockBehaviors[BLOCK_SUGARCANE].onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
+		// Check to see if our placement is still valid
+		auto canStay = [&world, &pos]() -> bool {
+			auto belowBlock = world.getBlockId({ pos.x, pos.y - 1, pos.z });
+			if (belowBlock == BLOCK_SUGARCANE)
+				return true;
+			if (belowBlock != BLOCK_GRASS && belowBlock != BLOCK_DIRT)
+				return false;
+			// Check for water
+			int d[4] = { -1, 1, 0, 0 };
+			for (int i = 0; i < 4; i++) {
+				int dx = d[i];
+				int dz = d[3 - i];
+				auto adjacentBlock = world.getBlockId({ pos.x + dx, pos.y - 1, pos.z + dz });
+				if (adjacentBlock == BLOCK_WATER_FLOWING || adjacentBlock == BLOCK_WATER_STILL)
+					return true;
+			}
+			return false;
+		};
+
+		if (!canStay())
+			BreakAndDropBlock(world, pos);
 	};
 
 	// placement overrides
