@@ -283,7 +283,7 @@ void InteractWithEntity(Packet::InteractWithEntity& pkt, PlayerSession& session,
 
 	if (pkt.attack) {
 		if (behavior.onEntityAttack)
-			behavior.onEntityAttack(*entity);
+			behavior.onEntityAttack(*entity, heldItem->id);
 	} else {
 		if (behavior.onEntityUse)
 			behavior.onEntityUse(*entity);
