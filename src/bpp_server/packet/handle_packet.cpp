@@ -10,6 +10,7 @@
 #include "../blocks/serverBlockBehaviors.h"
 #include "../entities/entity_tracker.h"
 #include "blocks.h"
+#include "blocks/block_properties.h"
 #include "entities/entity_item.h"
 #include "inventory/inventory_interaction.h"
 #include "inventory/item_stack.h"
@@ -57,6 +58,27 @@ void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& pkt, PlayerSes
 	session.rotation.y = pkt.pitch;
 }
 
+// TODO: Move this elsewhere!!!!!
+void BreakAndDropBlock(WorldManager& world, SlimInt3<int8_t>& pos) {
+	BlockType blockId = world.getBlockId({ pos.x, pos.y, pos.z });
+	uint8_t meta = world.getMetadata({ pos.x, pos.y, pos.z });
+	world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
+
+	std::vector<ItemStack> drops = Blocks::getBlockDrops(blockId, meta, world.rand);
+
+	for (ItemStack drop : drops) {
+		Vec3 dropPos = { double(pos.x), double(pos.y), double(pos.z) };
+		float offset = 0.7f;
+		dropPos.x += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		dropPos.y += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		dropPos.z += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		ItemEntity item(dropPos);
+		item.itemStack = drop;
+		world.entityManager.addEntity(std::make_shared<ItemEntity>(item));
+	}
+	return;
+}
+
 void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& world,
                std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
 	Int3 packetPos = { pkt.position.x, pkt.position.y, pkt.position.z };
@@ -65,6 +87,11 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 		session.startedMiningAtTick = world.elapsed_ticks;
 		BlockType blockId = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z });
 		session.lastTargetedBlock = blockId;
+
+		if (Blocks::blockProperties[session.lastTargetedBlock].hardness == 0.0f) {
+			BreakAndDropBlock(world, pkt.position);
+			return;
+		}
 
 		if (Blocks::blockBehaviors[session.lastTargetedBlock].onBlockClicked) {
 			Blocks::blockBehaviors[session.lastTargetedBlock].onBlockClicked(world, packetPos);
@@ -75,24 +102,7 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 		if (session.lastTargetedBlock != world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z })) {
 			return; // block changed while mining so we don't drop it
 		}
-		auto pos = pkt.position;
-
-		BlockType blockId = world.getBlockId({ pos.x, pos.y, pos.z });
-		uint8_t meta = world.getMetadata({ pos.x, pos.y, pos.z });
-		world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
-
-		std::vector<ItemStack> drops = Blocks::getBlockDrops(blockId, meta, world.rand);
-
-		for (ItemStack drop : drops) {
-			Vec3 dropPos = { double(pos.x), double(pos.y), double(pos.z) };
-			float offset = 0.7f;
-			dropPos.x += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
-			dropPos.y += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
-			dropPos.z += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
-			ItemEntity item(dropPos);
-			item.itemStack = drop;
-			world.entityManager.addEntity(std::make_shared<ItemEntity>(item));
-		}
+		BreakAndDropBlock(world, pkt.position);
 		return;
 	}
 	case PacketData::MineStatus::DROPPED_ITEM: {
@@ -273,11 +283,13 @@ void ContainerTransaction(Packet::ContainerTransaction& pkt, PlayerSession& sess
 // Other handlers
 void InteractWithEntity(Packet::InteractWithEntity& pkt, PlayerSession& session, WorldManager& world) {
 	// Check if session entity and source entity match
-	if (pkt.source_entity_id != session.entity->id) return;
+	if (pkt.source_entity_id != session.entity->id)
+		return;
 
-	 // Check if target entity exists
+	// Check if target entity exists
 	auto& entity = world.entityManager.m_entities[pkt.target_entity_id];
-	if (!entity) return;
+	if (!entity)
+		return;
 
 	const ItemStack* heldItem = session.inventory.getHeldItem();
 	if (!heldItem)

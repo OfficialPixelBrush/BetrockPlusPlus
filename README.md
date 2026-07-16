@@ -99,7 +99,7 @@ cd build
 ```
 Then you build the project.
 ```bash
-cmake --build .
+cmake --build . -j$(nproc)
 ```
 After that, it's as easy as running the built application.
 ```bash
