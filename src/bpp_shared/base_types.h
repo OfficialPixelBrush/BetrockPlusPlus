@@ -62,6 +62,8 @@ typedef int64_t TickTime;
 typedef int8_t ItemAmount;
 typedef int16_t ItemDamage;
 
+typedef int16_t EntityHealth;
+
 using EntityId = Branded<int32_t, struct EntityIdTag>;
 using ItemId = Branded<int16_t, struct ItemIdTag>;
 using MapId = Branded<int16_t, struct MapIdTag>;

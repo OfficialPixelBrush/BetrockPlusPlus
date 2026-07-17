@@ -6,6 +6,7 @@
 */
 
 #include "block_properties.h"
+#include "entities/entity_item.h"
 #include "enums/items.h"
 #include "tile_entities/tile_entity.h"
 #include "world/world.h"
@@ -17,6 +18,67 @@ BlockProperties blockProperties[256] = {};
 BlockBehavior blockBehaviors[256] = {};
 
 // Behavior helper functions
+void BreakAndDropBlock(WorldManager& world, Int3 pos) {
+	BlockType blockId = world.getBlockId({ pos.x, pos.y, pos.z });
+	uint8_t meta = world.getMetadata({ pos.x, pos.y, pos.z });
+	world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
+
+	std::vector<ItemStack> drops = Blocks::getBlockDrops(blockId, meta, world.rand);
+
+	for (ItemStack drop : drops) {
+		Vec3 dropPos = { double(pos.x), double(pos.y), double(pos.z) };
+		float offset = 0.7f;
+		dropPos.x += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		dropPos.y += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		dropPos.z += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		ItemEntity item(dropPos);
+		item.itemStack = drop;
+		world.entityManager.addEntity(std::make_shared<ItemEntity>(item));
+	}
+	return;
+}
+
+Int3 getAdjacentBlockPos(Int3 pos, PacketData::FaceDirection face) {
+	switch (face) {
+	case PacketData::FaceDirection::Y_MINUS:
+		--pos.y;
+		break;
+	case PacketData::FaceDirection::Y_PLUS:
+		++pos.y;
+		break;
+	case PacketData::FaceDirection::Z_MINUS:
+		--pos.z;
+		break;
+	case PacketData::FaceDirection::Z_PLUS:
+		++pos.z;
+		break;
+	case PacketData::FaceDirection::X_MINUS:
+		--pos.x;
+		break;
+	case PacketData::FaceDirection::X_PLUS:
+		++pos.x;
+		break;
+	}
+	return pos;
+}
+
+bool canSugarcaneSurviveAt(WorldManager& world, Int3 pos) {
+	auto belowBlock = world.getBlockId({ pos.x, pos.y - 1, pos.z });
+	if (belowBlock == BLOCK_SUGARCANE)
+		return true;
+	if (belowBlock != BLOCK_GRASS && belowBlock != BLOCK_DIRT)
+		return false;
+	// Check for water
+	int d[4] = { -1, 1, 0, 0 };
+	for (int i = 0; i < 4; i++) {
+		int dx = d[i];
+		int dz = d[3 - i];
+		auto adjacentBlock = world.getBlockId({ pos.x + dx, pos.y - 1, pos.z + dz });
+		if (adjacentBlock == BLOCK_WATER_FLOWING || adjacentBlock == BLOCK_WATER_STILL)
+			return true;
+	}
+	return false;
+}
 
 // Some fluid specific stuff
 float getFluidPercentAir(uint8_t meta) {
@@ -1880,12 +1942,18 @@ void registerAll() {
 		entity.motionX *= 0.4;
 		entity.motionZ *= 0.4;
 	};
+	blockBehaviors[BLOCK_SUGARCANE].onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
+		// Check to see if our placement is still valid
+		if (!canSugarcaneSurviveAt(world, pos))
+			BreakAndDropBlock(world, pos);
+	};
 
 	// placement overrides
 	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& world, Int3 pos, Entity& placer,
 	                                               PacketData::FaceDirection face) -> void {
 		auto meta = world.getMetadata(pos);
-		if (face == PacketData::FaceDirection::Y_PLUS && (world.isBlockNormalCube({ pos.x, pos.y - 1, pos.z }) || world.getBlockId({ pos.x, pos.y - 1, pos.z }) == BLOCK_FENCE))
+		if (face == PacketData::FaceDirection::Y_PLUS && (world.isBlockNormalCube({ pos.x, pos.y - 1, pos.z }) ||
+		                                                  world.getBlockId({ pos.x, pos.y - 1, pos.z }) == BLOCK_FENCE))
 			meta = 5;
 		if (face == PacketData::FaceDirection::Z_MINUS && world.isBlockNormalCube({ pos.x, pos.y, pos.z + 1 }))
 			meta = 4;
@@ -1897,7 +1965,6 @@ void registerAll() {
 			meta = 1;
 		world.setMeta(pos, meta);
 	};
-
 
 	// for when the block is interacted with!
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated = [](WorldManager& world, Int3 pos) -> bool {
