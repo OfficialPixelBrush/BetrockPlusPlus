@@ -8,9 +8,12 @@
 #include "item_properties.h"
 #include "base_types.h"
 #include "blocks.h"
+#include "blocks/block_properties.h"
 #include "entities/entity.h"
 #include "enums/items.h"
+#include "inventory/item_stack.h"
 #include "logger.h"
+#include "packet_data.h"
 #include "world/world.h"
 
 namespace Items {
@@ -169,7 +172,7 @@ int32_t GetMaxStack(ItemId id) {
 }
 
 ItemDamage GetMaterialUses(ToolMaterial material) {
-	switch(material) {
+	switch (material) {
 	case ToolMaterial::Wooden:
 		return DURABILITY_WOOD;
 	case ToolMaterial::Gold:
@@ -185,7 +188,7 @@ ItemDamage GetMaterialUses(ToolMaterial material) {
 	}
 }
 
-void useHoe(WorldManager& world, Int3 pos) {
+void useHoe(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) {
 	BlockType b = world.getBlockId(pos);
 	if (b == BLOCK_GRASS || b == BLOCK_DIRT) {
 		world.setBlock(pos, BLOCK_FARMLAND);
@@ -246,107 +249,107 @@ void attackWithItem(Entity& target_entity, ItemId item) {
 void registerAll() {
 	// Tool Properties
 	// Sword
-	toolProperties[Items::Id::SWORD_WOOD] = ToolProperties {
+	toolProperties[Items::Id::SWORD_WOOD] = ToolProperties{
 		.type = ToolType::Sword,
 		.material = ToolMaterial::Wooden,
 	};
-	toolProperties[Items::Id::SWORD_STONE] = ToolProperties {
+	toolProperties[Items::Id::SWORD_STONE] = ToolProperties{
 		.type = ToolType::Sword,
 		.material = ToolMaterial::Stone,
 	};
-	toolProperties[Items::Id::SWORD_IRON] = ToolProperties {
+	toolProperties[Items::Id::SWORD_IRON] = ToolProperties{
 		.type = ToolType::Sword,
 		.material = ToolMaterial::Iron,
 	};
-	toolProperties[Items::Id::SWORD_GOLD] = ToolProperties {
+	toolProperties[Items::Id::SWORD_GOLD] = ToolProperties{
 		.type = ToolType::Sword,
 		.material = ToolMaterial::Gold,
 	};
-	toolProperties[Items::Id::SWORD_DIAMOND] = ToolProperties {
+	toolProperties[Items::Id::SWORD_DIAMOND] = ToolProperties{
 		.type = ToolType::Sword,
 		.material = ToolMaterial::Diamond,
 	};
 	// Pickaxe
-	toolProperties[Items::Id::PICKAXE_WOOD] = ToolProperties {
+	toolProperties[Items::Id::PICKAXE_WOOD] = ToolProperties{
 		.type = ToolType::Pickaxe,
 		.material = ToolMaterial::Wooden,
 	};
-	toolProperties[Items::Id::PICKAXE_STONE] = ToolProperties {
+	toolProperties[Items::Id::PICKAXE_STONE] = ToolProperties{
 		.type = ToolType::Pickaxe,
 		.material = ToolMaterial::Stone,
 	};
-	toolProperties[Items::Id::PICKAXE_IRON] = ToolProperties {
+	toolProperties[Items::Id::PICKAXE_IRON] = ToolProperties{
 		.type = ToolType::Pickaxe,
 		.material = ToolMaterial::Iron,
 	};
-	toolProperties[Items::Id::PICKAXE_GOLD] = ToolProperties {
+	toolProperties[Items::Id::PICKAXE_GOLD] = ToolProperties{
 		.type = ToolType::Pickaxe,
 		.material = ToolMaterial::Gold,
 	};
-	toolProperties[Items::Id::PICKAXE_DIAMOND] = ToolProperties {
+	toolProperties[Items::Id::PICKAXE_DIAMOND] = ToolProperties{
 		.type = ToolType::Pickaxe,
 		.material = ToolMaterial::Diamond,
 	};
 	// Axe
-	toolProperties[Items::Id::AXE_WOOD] = ToolProperties {
+	toolProperties[Items::Id::AXE_WOOD] = ToolProperties{
 		.type = ToolType::Axe,
 		.material = ToolMaterial::Wooden,
 	};
-	toolProperties[Items::Id::AXE_STONE] = ToolProperties {
+	toolProperties[Items::Id::AXE_STONE] = ToolProperties{
 		.type = ToolType::Axe,
 		.material = ToolMaterial::Stone,
 	};
-	toolProperties[Items::Id::AXE_IRON] = ToolProperties {
+	toolProperties[Items::Id::AXE_IRON] = ToolProperties{
 		.type = ToolType::Axe,
 		.material = ToolMaterial::Iron,
 	};
-	toolProperties[Items::Id::AXE_GOLD] = ToolProperties {
+	toolProperties[Items::Id::AXE_GOLD] = ToolProperties{
 		.type = ToolType::Axe,
 		.material = ToolMaterial::Gold,
 	};
-	toolProperties[Items::Id::AXE_DIAMOND] = ToolProperties {
+	toolProperties[Items::Id::AXE_DIAMOND] = ToolProperties{
 		.type = ToolType::Axe,
 		.material = ToolMaterial::Diamond,
 	};
 	// Shovel
-	toolProperties[Items::Id::SHOVEL_WOOD] = ToolProperties {
+	toolProperties[Items::Id::SHOVEL_WOOD] = ToolProperties{
 		.type = ToolType::Shovel,
 		.material = ToolMaterial::Wooden,
 	};
-	toolProperties[Items::Id::SHOVEL_STONE] = ToolProperties {
+	toolProperties[Items::Id::SHOVEL_STONE] = ToolProperties{
 		.type = ToolType::Shovel,
 		.material = ToolMaterial::Stone,
 	};
-	toolProperties[Items::Id::SHOVEL_IRON] = ToolProperties {
+	toolProperties[Items::Id::SHOVEL_IRON] = ToolProperties{
 		.type = ToolType::Shovel,
 		.material = ToolMaterial::Iron,
 	};
-	toolProperties[Items::Id::SHOVEL_GOLD] = ToolProperties {
+	toolProperties[Items::Id::SHOVEL_GOLD] = ToolProperties{
 		.type = ToolType::Shovel,
 		.material = ToolMaterial::Gold,
 	};
-	toolProperties[Items::Id::SHOVEL_DIAMOND] = ToolProperties {
+	toolProperties[Items::Id::SHOVEL_DIAMOND] = ToolProperties{
 		.type = ToolType::Shovel,
 		.material = ToolMaterial::Diamond,
 	};
 	// Hoe
-	toolProperties[Items::Id::HOE_WOOD] = ToolProperties {
+	toolProperties[Items::Id::HOE_WOOD] = ToolProperties{
 		.type = ToolType::Hoe,
 		.material = ToolMaterial::Wooden,
 	};
-	toolProperties[Items::Id::HOE_STONE] = ToolProperties {
+	toolProperties[Items::Id::HOE_STONE] = ToolProperties{
 		.type = ToolType::Hoe,
 		.material = ToolMaterial::Stone,
 	};
-	toolProperties[Items::Id::HOE_IRON] = ToolProperties {
+	toolProperties[Items::Id::HOE_IRON] = ToolProperties{
 		.type = ToolType::Hoe,
 		.material = ToolMaterial::Iron,
 	};
-	toolProperties[Items::Id::HOE_GOLD] = ToolProperties {
+	toolProperties[Items::Id::HOE_GOLD] = ToolProperties{
 		.type = ToolType::Hoe,
 		.material = ToolMaterial::Gold,
 	};
-	toolProperties[Items::Id::HOE_DIAMOND] = ToolProperties {
+	toolProperties[Items::Id::HOE_DIAMOND] = ToolProperties{
 		.type = ToolType::Hoe,
 		.material = ToolMaterial::Diamond,
 	};
@@ -355,31 +358,23 @@ void registerAll() {
 		toolProperty.second.max_uses = GetMaterialUses(toolProperty.second.material);
 	}
 	// Misc tools
-	toolProperties[Items::Id::FLINT_AND_STEEL] = ToolProperties {
-		.type = ToolType::None,
-		.material = ToolMaterial::None,
-		.max_uses = DURABILITY_FLINT_AND_STEEL
-	};
-	toolProperties[Items::Id::SHEARS] = ToolProperties {
-		.type = ToolType::None,
-		.material = ToolMaterial::None,
-		.max_uses = DURABILITY_SHEARS
-	};
-	toolProperties[Items::Id::BOW] = ToolProperties {
-		.type = ToolType::None,
-		.material = ToolMaterial::None,
-		.max_uses = DURABILITY_BOW
-	};
-	toolProperties[Items::Id::FISHING_ROD] = ToolProperties {
-		.type = ToolType::None,
-		.material = ToolMaterial::None,
-		.max_uses = DURABILITY_FISHING_ROD
-	};
+	toolProperties[Items::Id::FLINT_AND_STEEL] = ToolProperties{ .type = ToolType::None,
+		                                                         .material = ToolMaterial::None,
+		                                                         .max_uses = DURABILITY_FLINT_AND_STEEL };
+	toolProperties[Items::Id::SHEARS] = ToolProperties{ .type = ToolType::None,
+		                                                .material = ToolMaterial::None,
+		                                                .max_uses = DURABILITY_SHEARS };
+	toolProperties[Items::Id::BOW] = ToolProperties{ .type = ToolType::None,
+		                                             .material = ToolMaterial::None,
+		                                             .max_uses = DURABILITY_BOW };
+	toolProperties[Items::Id::FISHING_ROD] = ToolProperties{ .type = ToolType::None,
+		                                                     .material = ToolMaterial::None,
+		                                                     .max_uses = DURABILITY_FISHING_ROD };
 
 	// Item behaviors
 	for (auto& toolProperty : toolProperties) {
 		// Apply sword behavior to all swords
-		switch(toolProperty.second.type) {
+		switch (toolProperty.second.type) {
 		case ToolType::Sword:
 			itemBehavior[toolProperty.first] = ItemBehavior{ .onEntityAttack = attackWithItem };
 			continue;
@@ -396,5 +391,15 @@ void registerAll() {
 			continue;
 		}
 	}
+
+	itemBehavior[SUGARCANE].onBlockUse = [](WorldManager& world, ItemStack* stack, Int3 pos,
+	                                        PacketData::FaceDirection face) {
+		Int3 placePos = Blocks::getAdjacentBlockPos(pos, face);
+		if (!Blocks::canSugarcaneSurviveAt(world, placePos))
+			return;
+
+		world.setBlock(placePos, BLOCK_SUGARCANE);
+		stack->decrementCount(1);
+	};
 };
 }; // namespace Items

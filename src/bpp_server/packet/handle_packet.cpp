@@ -129,19 +129,7 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 
 	if (!Items::IsValid(heldItem->id)) {
 		// It's a block
-		Int3 placePosition = position;
-		if (pkt.face == PacketData::FaceDirection::Y_MINUS)
-			placePosition.y -= 1;
-		if (pkt.face == PacketData::FaceDirection::Y_PLUS)
-			placePosition.y += 1;
-		if (pkt.face == PacketData::FaceDirection::Z_MINUS)
-			placePosition.z -= 1;
-		if (pkt.face == PacketData::FaceDirection::Z_PLUS)
-			placePosition.z += 1;
-		if (pkt.face == PacketData::FaceDirection::X_MINUS)
-			placePosition.x -= 1;
-		if (pkt.face == PacketData::FaceDirection::X_PLUS)
-			placePosition.x += 1;
+		Int3 placePosition = Blocks::getAdjacentBlockPos(position, pkt.face);
 
 		auto blockId = BlockType(heldItem->id.m_value);
 		world.setBlock(placePosition, blockId, heldItem->data);
@@ -155,7 +143,7 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 		GlobalLogger().info << position << "\n";
 		if (Items::itemBehavior[heldItem->id].onBlockUse) {
 			GlobalLogger().info << "Used on " << position << "\n";
-			Items::itemBehavior[heldItem->id].onBlockUse(world, position);
+			Items::itemBehavior[heldItem->id].onBlockUse(world, heldItem, position, pkt.face);
 		}
 	}
 }

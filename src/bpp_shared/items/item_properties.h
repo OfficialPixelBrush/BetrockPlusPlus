@@ -9,6 +9,7 @@
 #include "base_types.h"
 #include "items.h"
 #include "numeric_structs.h"
+#include "packet_data.h"
 #include <cstdint>
 #include <unordered_map>
 
@@ -56,7 +57,7 @@ struct ItemProperties {
 struct ItemBehavior {
 	void (*onBlockStartMining)(WorldManager& world, Int3 pos) = nullptr;
 	void (*onBlockStopMining)(WorldManager& world, Int3 pos) = nullptr;
-	void (*onBlockUse)(WorldManager& world, Int3 pos) = nullptr;
+	void (*onBlockUse)(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) = nullptr;
 	void (*onEntityAttack)(Entity& attackedEntity, ItemId item) = nullptr;
 	void (*onEntityUse)(Entity& usedEntity) = nullptr;
 };
