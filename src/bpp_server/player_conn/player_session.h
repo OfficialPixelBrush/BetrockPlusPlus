@@ -33,6 +33,12 @@ struct PlayerSession {
 	NetworkStream stream;
 	ClientPosition position;
 
+	Vec3 lastTrustedPosition = { 0, 0, 0 };
+	Vec2 lastTrustedRotation = { 0, 0 };
+
+	Vec3 pendingPosition = { 0, 0, 0 };
+	Vec2 pendingRotation = { 0, 0 };
+
 	// Our player entity
 	std::shared_ptr<EntityMPPlayer> entity;
 	EntityTracker* entityTracker = nullptr;

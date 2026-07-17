@@ -10,6 +10,7 @@
 #include "../blocks/serverBlockBehaviors.h"
 #include "../entities/entity_tracker.h"
 #include "blocks.h"
+#include "blocks/block_properties.h"
 #include "entities/entity_item.h"
 #include "inventory/inventory_interaction.h"
 #include "inventory/item_stack.h"
@@ -63,8 +64,13 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 	switch (pkt.status) {
 	case PacketData::MineStatus::DIGGING_STARTED: {
 		session.startedMiningAtTick = world.elapsed_ticks;
-		BlockType blockId = world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z });
+		BlockType blockId = world.getBlockId(packetPos);
 		session.lastTargetedBlock = blockId;
+
+		if (Blocks::blockProperties[session.lastTargetedBlock].hardness == 0.0f) {
+		    Blocks::BreakAndDropBlock(world, packetPos);
+			return;
+		}
 
 		if (Blocks::blockBehaviors[session.lastTargetedBlock].onBlockClicked) {
 			Blocks::blockBehaviors[session.lastTargetedBlock].onBlockClicked(world, packetPos);
@@ -75,24 +81,7 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 		if (session.lastTargetedBlock != world.getBlockId({ pkt.position.x, pkt.position.y, pkt.position.z })) {
 			return; // block changed while mining so we don't drop it
 		}
-		auto pos = pkt.position;
-
-		BlockType blockId = world.getBlockId({ pos.x, pos.y, pos.z });
-		uint8_t meta = world.getMetadata({ pos.x, pos.y, pos.z });
-		world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
-
-		std::vector<ItemStack> drops = Blocks::getBlockDrops(blockId, meta, world.rand);
-
-		for (ItemStack drop : drops) {
-			Vec3 dropPos = { double(pos.x), double(pos.y), double(pos.z) };
-			float offset = 0.7f;
-			dropPos.x += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
-			dropPos.y += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
-			dropPos.z += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
-			ItemEntity item(dropPos);
-			item.itemStack = drop;
-			world.entityManager.addEntity(std::make_shared<ItemEntity>(item));
-		}
+		Blocks::BreakAndDropBlock(world, packetPos);
 		return;
 	}
 	case PacketData::MineStatus::DROPPED_ITEM: {
@@ -140,19 +129,7 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 
 	if (!Items::IsValid(heldItem->id)) {
 		// It's a block
-		Int3 placePosition = position;
-		if (pkt.face == PacketData::FaceDirection::Y_MINUS)
-			placePosition.y -= 1;
-		if (pkt.face == PacketData::FaceDirection::Y_PLUS)
-			placePosition.y += 1;
-		if (pkt.face == PacketData::FaceDirection::Z_MINUS)
-			placePosition.z -= 1;
-		if (pkt.face == PacketData::FaceDirection::Z_PLUS)
-			placePosition.z += 1;
-		if (pkt.face == PacketData::FaceDirection::X_MINUS)
-			placePosition.x -= 1;
-		if (pkt.face == PacketData::FaceDirection::X_PLUS)
-			placePosition.x += 1;
+		Int3 placePosition = Blocks::getAdjacentBlockPos(position, pkt.face);
 
 		auto blockId = BlockType(heldItem->id.m_value);
 		world.setBlock(placePosition, blockId, heldItem->data);
@@ -166,7 +143,7 @@ void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& w
 		GlobalLogger().info << position << "\n";
 		if (Items::itemBehavior[heldItem->id].onBlockUse) {
 			GlobalLogger().info << "Used on " << position << "\n";
-			Items::itemBehavior[heldItem->id].onBlockUse(world, position);
+			Items::itemBehavior[heldItem->id].onBlockUse(world, heldItem, position, pkt.face);
 		}
 	}
 }
@@ -273,11 +250,13 @@ void ContainerTransaction(Packet::ContainerTransaction& pkt, PlayerSession& sess
 // Other handlers
 void InteractWithEntity(Packet::InteractWithEntity& pkt, PlayerSession& session, WorldManager& world) {
 	// Check if session entity and source entity match
-	if (pkt.source_entity_id != session.entity->id) return;
+	if (pkt.source_entity_id != session.entity->id)
+		return;
 
-	 // Check if target entity exists
+	// Check if target entity exists
 	auto& entity = world.entityManager.m_entities[pkt.target_entity_id];
-	if (!entity) return;
+	if (!entity)
+		return;
 
 	const ItemStack* heldItem = session.inventory.getHeldItem();
 	if (!heldItem)
@@ -292,7 +271,7 @@ void InteractWithEntity(Packet::InteractWithEntity& pkt, PlayerSession& session,
 
 	if (pkt.attack) {
 		if (behavior.onEntityAttack)
-			behavior.onEntityAttack(*entity);
+			behavior.onEntityAttack(*entity, heldItem->id);
 	} else {
 		if (behavior.onEntityUse)
 			behavior.onEntityUse(*entity);

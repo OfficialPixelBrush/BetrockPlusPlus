@@ -9,6 +9,7 @@
 #include "base_types.h"
 #include "items.h"
 #include "numeric_structs.h"
+#include "packet_data.h"
 #include <cstdint>
 #include <unordered_map>
 
@@ -19,11 +20,18 @@ namespace Items {
 
 enum class ToolLevel : int8_t {
 	None = -1,
-	Wooden = 0,
-	Gold = 0,
+	WoodenOrGold = 0,
 	Stone = 1,
 	Iron = 2,
 	Diamond = 3
+};
+enum class ToolMaterial : int8_t {
+	None = -1,
+	Wooden = 0,
+	Gold = 1,
+	Stone = 2,
+	Iron = 3,
+	Diamond = 4
 };
 enum class ToolType : int8_t {
 	None = -1,
@@ -34,10 +42,12 @@ enum class ToolType : int8_t {
 	Sword = 4,
 };
 
+ItemDamage GetMaterialUses(ToolMaterial material);
+
 struct ToolProperties {
 	ToolType type = ToolType::None;
-	ToolLevel level = ToolLevel::None;
-	ItemDamage max_damage = -1;
+	ToolMaterial material = ToolMaterial::None;
+	ItemDamage max_uses = -1;
 };
 
 struct ItemProperties {
@@ -47,8 +57,8 @@ struct ItemProperties {
 struct ItemBehavior {
 	void (*onBlockStartMining)(WorldManager& world, Int3 pos) = nullptr;
 	void (*onBlockStopMining)(WorldManager& world, Int3 pos) = nullptr;
-	void (*onBlockUse)(WorldManager& world, Int3 pos) = nullptr;
-	void (*onEntityAttack)(Entity& attackedEntity) = nullptr;
+	void (*onBlockUse)(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) = nullptr;
+	void (*onEntityAttack)(Entity& attackedEntity, ItemId item) = nullptr;
 	void (*onEntityUse)(Entity& usedEntity) = nullptr;
 };
 

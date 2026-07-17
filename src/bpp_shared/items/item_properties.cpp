@@ -6,8 +6,14 @@
 */
 
 #include "item_properties.h"
+#include "base_types.h"
 #include "blocks.h"
+#include "blocks/block_properties.h"
+#include "entities/entity.h"
 #include "enums/items.h"
+#include "inventory/item_stack.h"
+#include "logger.h"
+#include "packet_data.h"
 #include "world/world.h"
 #include "entities/entity_mobile.h"
 
@@ -166,134 +172,24 @@ int32_t GetMaxStack(ItemId id) {
 	return Items::STACK_MAX;
 }
 
-ItemDamage GetMaxDurability(ItemId id) {
-	switch (id) {
-		// Swords
-	case Items::SWORD_WOOD:
-		return Items::DURABILITY_WOOD;
-	case Items::SWORD_STONE:
-		return Items::DURABILITY_STONE;
-	case Items::SWORD_IRON:
-		return Items::DURABILITY_IRON;
-	case Items::SWORD_DIAMOND:
-		return Items::DURABILITY_DIAMOND;
-	case Items::SWORD_GOLD:
-		return Items::DURABILITY_GOLD;
-
-		// Shovels
-	case Items::SHOVEL_WOOD:
-		return Items::DURABILITY_WOOD;
-	case Items::SHOVEL_STONE:
-		return Items::DURABILITY_STONE;
-	case Items::SHOVEL_IRON:
-		return Items::DURABILITY_IRON;
-	case Items::SHOVEL_DIAMOND:
-		return Items::DURABILITY_DIAMOND;
-	case Items::SHOVEL_GOLD:
-		return Items::DURABILITY_GOLD;
-
-		// Pickaxes
-	case Items::PICKAXE_WOOD:
-		return Items::DURABILITY_WOOD;
-	case Items::PICKAXE_STONE:
-		return Items::DURABILITY_STONE;
-	case Items::PICKAXE_IRON:
-		return Items::DURABILITY_IRON;
-	case Items::PICKAXE_DIAMOND:
-		return Items::DURABILITY_DIAMOND;
-	case Items::PICKAXE_GOLD:
-		return Items::DURABILITY_GOLD;
-
-		// Axes
-	case Items::AXE_WOOD:
-		return Items::DURABILITY_WOOD;
-	case Items::AXE_STONE:
-		return Items::DURABILITY_STONE;
-	case Items::AXE_IRON:
-		return Items::DURABILITY_IRON;
-	case Items::AXE_DIAMOND:
-		return Items::DURABILITY_DIAMOND;
-	case Items::AXE_GOLD:
-		return Items::DURABILITY_GOLD;
-
-		// Hoes
-	case Items::HOE_WOOD:
-		return Items::DURABILITY_WOOD;
-	case Items::HOE_STONE:
-		return Items::DURABILITY_STONE;
-	case Items::HOE_IRON:
-		return Items::DURABILITY_IRON;
-	case Items::HOE_DIAMOND:
-		return Items::DURABILITY_DIAMOND;
-	case Items::HOE_GOLD:
-		return Items::DURABILITY_GOLD;
-
-		// Armor - Leather
-	case Items::HELMET_LEATHER:
-		return Items::DURABILITY_HELMET_LEATHER;
-	case Items::CHESTPLATE_LEATHER:
-		return Items::DURABILITY_CHEST_LEATHER;
-	case Items::LEGGINGS_LEATHER:
-		return Items::DURABILITY_LEGS_LEATHER;
-	case Items::BOOTS_LEATHER:
-		return Items::DURABILITY_BOOTS_LEATHER;
-
-		// Armor - Chainmail
-	case Items::HELMET_CHAINMAIL:
-		return Items::DURABILITY_HELMET_CHAINMAIL;
-	case Items::CHESTPLATE_CHAINMAIL:
-		return Items::DURABILITY_CHEST_CHAINMAIL;
-	case Items::LEGGINGS_CHAINMAIL:
-		return Items::DURABILITY_LEGS_CHAINMAIL;
-	case Items::BOOTS_CHAINMAIL:
-		return Items::DURABILITY_BOOTS_CHAINMAIL;
-
-		// Armor - Iron
-	case Items::HELMET_IRON:
-		return Items::DURABILITY_HELMET_IRON;
-	case Items::CHESTPLATE_IRON:
-		return Items::DURABILITY_CHEST_IRON;
-	case Items::LEGGINGS_IRON:
-		return Items::DURABILITY_LEGS_IRON;
-	case Items::BOOTS_IRON:
-		return Items::DURABILITY_BOOTS_IRON;
-
-		// Armor - Diamond
-	case Items::HELMET_DIAMOND:
-		return Items::DURABILITY_HELMET_DIAMOND;
-	case Items::CHESTPLATE_DIAMOND:
-		return Items::DURABILITY_CHEST_DIAMOND;
-	case Items::LEGGINGS_DIAMOND:
-		return Items::DURABILITY_LEGS_DIAMOND;
-	case Items::BOOTS_DIAMOND:
-		return Items::DURABILITY_BOOTS_DIAMOND;
-
-		// Armor - Gold
-	case Items::HELMET_GOLD:
-		return Items::DURABILITY_HELMET_GOLD;
-	case Items::CHESTPLATE_GOLD:
-		return Items::DURABILITY_CHEST_GOLD;
-	case Items::LEGGINGS_GOLD:
-		return Items::DURABILITY_LEGS_GOLD;
-	case Items::BOOTS_GOLD:
-		return Items::DURABILITY_BOOTS_GOLD;
-
-		// Misc damageable
-	case Items::FLINT_AND_STEEL:
-		return Items::DURABILITY_FLINT_AND_STEEL;
-	case Items::FISHING_ROD:
-		return Items::DURABILITY_FISHING_ROD;
-	case Items::SHEARS:
-		return Items::DURABILITY_SHEARS;
-	case Items::BOW:
-		return Items::DURABILITY_BOW;
-
+ItemDamage GetMaterialUses(ToolMaterial material) {
+	switch (material) {
+	case ToolMaterial::Wooden:
+		return DURABILITY_WOOD;
+	case ToolMaterial::Gold:
+		return DURABILITY_GOLD;
+	case ToolMaterial::Stone:
+		return DURABILITY_STONE;
+	case ToolMaterial::Iron:
+		return DURABILITY_IRON;
+	case ToolMaterial::Diamond:
+		return DURABILITY_DIAMOND;
 	default:
-		return 0; // not damageable
+		return -1;
 	}
 }
 
-void useHoe(WorldManager& world, Int3 pos) {
+void useHoe(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) {
 	BlockType b = world.getBlockId(pos);
 	if (b == BLOCK_GRASS || b == BLOCK_DIRT) {
 		world.setBlock(pos, BLOCK_FARMLAND);
@@ -322,5 +218,211 @@ void registerAll() {
 	itemBehavior[Items::Id::HOE_GOLD] = ItemBehavior{ .onBlockUse = useHoe };
 	itemBehavior[Items::Id::HOE_DIAMOND] = ItemBehavior{ .onBlockUse = useHoe };
 	itemBehavior[Items::Id::FLINT_AND_STEEL] = ItemBehavior{ .onBlockUse = testSetGoal };
+ToolLevel materialToLevel(ToolMaterial material) {
+	switch (material) {
+	case ToolMaterial::None:
+		return ToolLevel::None;
+	case ToolMaterial::Wooden:
+		return ToolLevel::WoodenOrGold;
+	case ToolMaterial::Gold:
+		return ToolLevel::WoodenOrGold;
+	case ToolMaterial::Stone:
+		return ToolLevel::Stone;
+	case ToolMaterial::Iron:
+		return ToolLevel::Iron;
+	case ToolMaterial::Diamond:
+		return ToolLevel::Diamond;
+	}
+	return ToolLevel::None;
+}
+
+int baseToolDamage(ToolType type) {
+	switch (type) {
+	case ToolType::Sword:
+		return 4;
+	case ToolType::Axe:
+		return 3;
+	case ToolType::Pickaxe:
+		return 2;
+	case ToolType::Shovel:
+	case ToolType::Hoe:
+		return 1;
+	case ToolType::None:
+		return 0;
+	}
+}
+
+EntityHealth calculateDamage(ToolType type, ToolLevel level) {
+	return baseToolDamage(type) + (int(level) * 2);
+}
+
+void inflictDamage(Entity& target_entity, EntityHealth damage) {
+	//target_entity.health -= damage;
+	return;
+}
+
+void attackWithItem(Entity& target_entity, ItemId item) {
+	EntityHealth damage = 1;
+	if (toolProperties.contains(item))
+		damage = calculateDamage(toolProperties[item].type, materialToLevel(toolProperties[item].material));
+	inflictDamage(target_entity, damage);
+	GlobalLogger().info << "Dealt " << damage << " damage to " << target_entity.id << "!\n";
+}
+
+void registerAll() {
+	// Tool Properties
+	// Sword
+	toolProperties[Items::Id::SWORD_WOOD] = ToolProperties{
+		.type = ToolType::Sword,
+		.material = ToolMaterial::Wooden,
+	};
+	toolProperties[Items::Id::SWORD_STONE] = ToolProperties{
+		.type = ToolType::Sword,
+		.material = ToolMaterial::Stone,
+	};
+	toolProperties[Items::Id::SWORD_IRON] = ToolProperties{
+		.type = ToolType::Sword,
+		.material = ToolMaterial::Iron,
+	};
+	toolProperties[Items::Id::SWORD_GOLD] = ToolProperties{
+		.type = ToolType::Sword,
+		.material = ToolMaterial::Gold,
+	};
+	toolProperties[Items::Id::SWORD_DIAMOND] = ToolProperties{
+		.type = ToolType::Sword,
+		.material = ToolMaterial::Diamond,
+	};
+	// Pickaxe
+	toolProperties[Items::Id::PICKAXE_WOOD] = ToolProperties{
+		.type = ToolType::Pickaxe,
+		.material = ToolMaterial::Wooden,
+	};
+	toolProperties[Items::Id::PICKAXE_STONE] = ToolProperties{
+		.type = ToolType::Pickaxe,
+		.material = ToolMaterial::Stone,
+	};
+	toolProperties[Items::Id::PICKAXE_IRON] = ToolProperties{
+		.type = ToolType::Pickaxe,
+		.material = ToolMaterial::Iron,
+	};
+	toolProperties[Items::Id::PICKAXE_GOLD] = ToolProperties{
+		.type = ToolType::Pickaxe,
+		.material = ToolMaterial::Gold,
+	};
+	toolProperties[Items::Id::PICKAXE_DIAMOND] = ToolProperties{
+		.type = ToolType::Pickaxe,
+		.material = ToolMaterial::Diamond,
+	};
+	// Axe
+	toolProperties[Items::Id::AXE_WOOD] = ToolProperties{
+		.type = ToolType::Axe,
+		.material = ToolMaterial::Wooden,
+	};
+	toolProperties[Items::Id::AXE_STONE] = ToolProperties{
+		.type = ToolType::Axe,
+		.material = ToolMaterial::Stone,
+	};
+	toolProperties[Items::Id::AXE_IRON] = ToolProperties{
+		.type = ToolType::Axe,
+		.material = ToolMaterial::Iron,
+	};
+	toolProperties[Items::Id::AXE_GOLD] = ToolProperties{
+		.type = ToolType::Axe,
+		.material = ToolMaterial::Gold,
+	};
+	toolProperties[Items::Id::AXE_DIAMOND] = ToolProperties{
+		.type = ToolType::Axe,
+		.material = ToolMaterial::Diamond,
+	};
+	// Shovel
+	toolProperties[Items::Id::SHOVEL_WOOD] = ToolProperties{
+		.type = ToolType::Shovel,
+		.material = ToolMaterial::Wooden,
+	};
+	toolProperties[Items::Id::SHOVEL_STONE] = ToolProperties{
+		.type = ToolType::Shovel,
+		.material = ToolMaterial::Stone,
+	};
+	toolProperties[Items::Id::SHOVEL_IRON] = ToolProperties{
+		.type = ToolType::Shovel,
+		.material = ToolMaterial::Iron,
+	};
+	toolProperties[Items::Id::SHOVEL_GOLD] = ToolProperties{
+		.type = ToolType::Shovel,
+		.material = ToolMaterial::Gold,
+	};
+	toolProperties[Items::Id::SHOVEL_DIAMOND] = ToolProperties{
+		.type = ToolType::Shovel,
+		.material = ToolMaterial::Diamond,
+	};
+	// Hoe
+	toolProperties[Items::Id::HOE_WOOD] = ToolProperties{
+		.type = ToolType::Hoe,
+		.material = ToolMaterial::Wooden,
+	};
+	toolProperties[Items::Id::HOE_STONE] = ToolProperties{
+		.type = ToolType::Hoe,
+		.material = ToolMaterial::Stone,
+	};
+	toolProperties[Items::Id::HOE_IRON] = ToolProperties{
+		.type = ToolType::Hoe,
+		.material = ToolMaterial::Iron,
+	};
+	toolProperties[Items::Id::HOE_GOLD] = ToolProperties{
+		.type = ToolType::Hoe,
+		.material = ToolMaterial::Gold,
+	};
+	toolProperties[Items::Id::HOE_DIAMOND] = ToolProperties{
+		.type = ToolType::Hoe,
+		.material = ToolMaterial::Diamond,
+	};
+	// Apply max uses based on material
+	for (auto& toolProperty : toolProperties) {
+		toolProperty.second.max_uses = GetMaterialUses(toolProperty.second.material);
+	}
+	// Misc tools
+	toolProperties[Items::Id::FLINT_AND_STEEL] = ToolProperties{ .type = ToolType::None,
+		                                                         .material = ToolMaterial::None,
+		                                                         .max_uses = DURABILITY_FLINT_AND_STEEL };
+	toolProperties[Items::Id::SHEARS] = ToolProperties{ .type = ToolType::None,
+		                                                .material = ToolMaterial::None,
+		                                                .max_uses = DURABILITY_SHEARS };
+	toolProperties[Items::Id::BOW] = ToolProperties{ .type = ToolType::None,
+		                                             .material = ToolMaterial::None,
+		                                             .max_uses = DURABILITY_BOW };
+	toolProperties[Items::Id::FISHING_ROD] = ToolProperties{ .type = ToolType::None,
+		                                                     .material = ToolMaterial::None,
+		                                                     .max_uses = DURABILITY_FISHING_ROD };
+
+	// Item behaviors
+	for (auto& toolProperty : toolProperties) {
+		// Apply sword behavior to all swords
+		switch (toolProperty.second.type) {
+		case ToolType::Sword:
+			itemBehavior[toolProperty.first] = ItemBehavior{ .onEntityAttack = attackWithItem };
+			continue;
+		case ToolType::Pickaxe:
+			continue;
+		case ToolType::Axe:
+			continue;
+		case ToolType::Shovel:
+			continue;
+		case ToolType::Hoe:
+			itemBehavior[toolProperty.first] = ItemBehavior{ .onBlockUse = useHoe };
+			continue;
+		default:
+			continue;
+		}
+	}
+
+	itemBehavior[SUGARCANE].onBlockUse = [](WorldManager& world, ItemStack* stack, Int3 pos,
+	                                        PacketData::FaceDirection face) {
+		Int3 placePos = Blocks::getAdjacentBlockPos(pos, face);
+		if (!Blocks::canSugarcaneSurviveAt(world, placePos))
+			return;
+
+		world.setBlock(placePos, BLOCK_SUGARCANE);
+		stack->decrementCount(1);
+	};
 };
 }; // namespace Items

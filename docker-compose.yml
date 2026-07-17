@@ -1,0 +1,21 @@
+services:
+  bpp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_TARGET: server
+        BUILD_TYPE: Release
+        COMPILER: clang
+    image: betrockpp:server
+    container_name: betrockpp-server
+    restart: unless-stopped
+    ports:
+      - "25565:25565"
+    volumes:
+      # World save, server config/properties, etc. all live in the working
+      # directory the process is started in - persist it on the host.
+      - ./data:/data
+    # Example: pass CLI flags straight through to BetrockPlusPlus, e.g.
+    #   command: ["--port", "25565", "--max_players", "20"]
+    command: []
