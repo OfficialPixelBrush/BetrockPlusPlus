@@ -106,10 +106,12 @@ std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {
 	for (int x = minX; x < maxX; x++) {
 		for (int z = minZ; z < maxZ; z++) {
 			// Get the chunk once for this X/Z column
-			Chunk* chunk = getChunkRaw({ x >> 4, z >> 4 });
+			Int2 cpos = { x >> 4, z >> 4 };
+			Chunk* chunk = getChunkRaw(cpos);
 
-			// If chunk isn't loaded, Beta 1.7.3 usually treats it as air
-			if (!chunk)
+			// If chunk isn't loaded, treat it as a solid wall
+			if (!isChunkValid(cpos) || !chunk)
+				collidingBoxes.push_back(AABB{ (double)x, -1.0, (double)z, (double)(x + 1), 128.0, (double)(z + 1) });
 				continue;
 
 			// local coords inside the chunk
