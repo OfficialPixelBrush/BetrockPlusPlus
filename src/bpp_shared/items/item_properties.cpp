@@ -196,8 +196,8 @@ void useHoe(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDir
 	}
 }
 
-void testSetGoal(WorldManager& world, Int3 usedBlockPos) {
-	Int3 topPos = usedBlockPos;
+void testSetGoal(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) {
+	Int3 topPos = pos;
 	topPos.y += 1;
 	world.setBlock(topPos, BLOCK_AIR);
 	std::cout << "lol!!" << std::endl;
@@ -211,13 +211,6 @@ void testSetGoal(WorldManager& world, Int3 usedBlockPos) {
 	}
 }
 
-void registerAll() {
-	itemBehavior[Items::Id::HOE_WOOD] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::HOE_STONE] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::HOE_IRON] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::HOE_GOLD] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::HOE_DIAMOND] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::FLINT_AND_STEEL] = ItemBehavior{ .onBlockUse = testSetGoal };
 ToolLevel materialToLevel(ToolMaterial material) {
 	switch (material) {
 	case ToolMaterial::None:
@@ -270,6 +263,13 @@ void attackWithItem(Entity& target_entity, ItemId item) {
 }
 
 void registerAll() {
+	itemBehavior[Items::Id::HOE_WOOD] = ItemBehavior{ .onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_STONE] = ItemBehavior{ .onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_IRON] = ItemBehavior{ .onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_GOLD] = ItemBehavior{ .onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_DIAMOND] = ItemBehavior{ .onBlockUse = useHoe };
+	itemBehavior[Items::Id::FLINT_AND_STEEL] = ItemBehavior{ .onBlockUse = testSetGoal };
+
 	// Tool Properties
 	// Sword
 	toolProperties[Items::Id::SWORD_WOOD] = ToolProperties{

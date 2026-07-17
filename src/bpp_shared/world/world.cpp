@@ -110,9 +110,10 @@ std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {
 			Chunk* chunk = getChunkRaw(cpos);
 
 			// If chunk isn't loaded, treat it as a solid wall
-			if (!isChunkValid(cpos) || !chunk)
+			if (!isChunkValid(cpos) || !chunk) {
 				collidingBoxes.push_back(AABB{ (double)x, -1.0, (double)z, (double)(x + 1), 128.0, (double)(z + 1) });
 				continue;
+			}
 
 			// local coords inside the chunk
 			int localX = x & 15;
