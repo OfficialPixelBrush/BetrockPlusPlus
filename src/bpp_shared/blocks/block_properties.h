@@ -20,8 +20,10 @@ struct PlayerSession;
 
 namespace Blocks {
 
+Int3 getAdjacentBlockPos(Int3 pos, PacketData::FaceDirection face);
+bool canSugarcaneSurviveAt(WorldManager& world, Int3 pos);
 float getFluidPercentAir(uint8_t meta);
-void BreakAndDropBlock(WorldManager& world, Int3& pos);
+void BreakAndDropBlock(WorldManager& world, Int3 pos);
 
 enum class StepSound : uint8_t {
 	Stone, // default, also metal (different pitch)
