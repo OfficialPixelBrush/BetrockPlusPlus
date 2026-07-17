@@ -8,12 +8,12 @@
 #pragma once
 #include "base_types.h"
 #include "blocks/block_properties.h"
+#include "dimensions.h"
 #include "entities.h"
 #include "helpers/AABB.h"
+#include "nbt/nbt.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
-#include "dimensions.h"
-#include "nbt/nbt.h"
 #include <vector>
 
 // Forward declare
@@ -73,19 +73,19 @@ struct Entity {
 	Dimension dim = Dimension::Overworld;
 
 	// Riding
-	Entity* ridingEntity = nullptr;
-	Entity* riddenByEntity = nullptr;
+	Entity* rider = nullptr;
+	Entity* passenger = nullptr;
 
 	// Position
-	double posX = 0.0;
-	double posY = 0.0;
-	double posZ = 0.0;
+	//TODO: use a Vec3 instead
+	Vec3 position;
 
 	// Velocity
+	//TODO: use a Vec3 instead
 	double motionX = 0.0;
 	double motionY = 0.0;
 	double motionZ = 0.0;
-	bool velocityChanged = false;
+	bool forceVelocityUpdate = false;
 
 	// Look direction
 	float rotationYaw = 0.0f;
@@ -100,7 +100,7 @@ struct Entity {
 	float width = 0.6f;
 	float height = 1.8f;
 
-	// Vertical offset from posY down to the bottom of the bounding box
+	// Vertical offset from position.y down to the bottom of the bounding box
 	float yOffset = 0.0f;
 
 	// How high a block face this entity can step onto without jumping.
@@ -129,6 +129,7 @@ struct Entity {
 	float distanceWalkedModified = 0.0f;
 	float ySize = 0.0f;
 
+	//TODO: combine moveForward, moveStrafe and maybe jumping into an input vector
 	float moveForward = 0.0f; // Forward/backward input axis
 	float moveStrafe = 0.0f;  // Left/right input axis
 
@@ -166,15 +167,16 @@ struct Entity {
 
 	void rebuildCollider() {
 		double halfWidth = double(width) / 2.0;
-		double bottom = posY - double(yOffset) + double(ySize);
-		collider = { posX - halfWidth,        bottom,          posZ - halfWidth, posX + halfWidth,
-			         bottom + double(height), posZ + halfWidth };
+		double bottom = position.y - double(yOffset) + double(ySize);
+		collider = { position.x - halfWidth,  bottom,
+			         position.z - halfWidth,  position.x + halfWidth,
+			         bottom + double(height), position.z + halfWidth };
 	}
 
 	void teleport(Vec3 newpos, Vec2 newrot = { 0, 0 }) {
-		posX = newpos.x;
-		posY = newpos.y;
-		posZ = newpos.z;
+		position.x = newpos.x;
+		position.y = newpos.y;
+		position.z = newpos.z;
 		rotationYaw = newrot.x;
 		rotationPitch = newrot.y;
 		ySize = 0.0f;
@@ -183,7 +185,7 @@ struct Entity {
 
 	virtual bool attackEntityFrom(Entity* entity, int damage) {
 		beenAttacked = true;
-		velocityChanged = true;
+		forceVelocityUpdate = true;
 		return false;
 	}
 	virtual AABB getFluidCollider() {
@@ -197,8 +199,10 @@ struct Entity {
 	virtual bool pushOutOfBlocks(Vec3 pos);
 	virtual void onCollideWithPlayer(PlayerEntity& entity);
 	virtual void applyKnockback(Vec3 direction);
+	//TODO: use moveForward, moveStrafe or the new input vector instead of args
 	virtual void applyInput(float strafe, float forward, float acceleration);
 	virtual void move(Vec3 movement);
+	//TODO: Move to LivingEntity
 	virtual void dealDamage(int amount);
 	virtual void updateFallState(float movedY);
 	virtual std::optional<Tag> serializeToNBT();

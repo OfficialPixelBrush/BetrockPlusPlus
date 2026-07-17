@@ -5,9 +5,9 @@
  *
  */
 #include "entity.h"
+#include "entity_manager.h"
 #include "entity_player.h"
 #include "world/world.h"
-#include "entity_manager.h"
 #include <algorithm>
 #include <cmath>
 
@@ -79,8 +79,8 @@ void Entity::onCollideWithPlayer(PlayerEntity& entity) {
 void Entity::tick() {
 	ticksExisted++;
 
-	if (this->ridingEntity != nullptr && this->ridingEntity->isDead) {
-		this->ridingEntity = nullptr;
+	if (this->rider != nullptr && this->rider->isDead) {
+		this->rider = nullptr;
 	}
 
 	// Returns if we are in water and applies a push to our entity
@@ -113,7 +113,7 @@ void Entity::tick() {
 	}
 
 	// Kill our entity if its below the world
-	if (posY < -64.0)
+	if (position.y < -64.0)
 		isDead = true;
 
 	isFirstUpdate = false;
@@ -126,7 +126,7 @@ void Entity::applyKnockback(Vec3 direction) {
 	motionX -= direction.x * HORIZONTAL_KNOCKBACK;
 	motionZ -= direction.z * HORIZONTAL_KNOCKBACK;
 	motionY = std::min(float(motionY + VERTICAL_KNOCKBACK), VERTICAL_KNOCKBACK);
-	velocityChanged = true;
+	forceVelocityUpdate = true;
 }
 
 void Entity::applyInput(float strafe, float forward, float acceleration) {
@@ -141,8 +141,12 @@ void Entity::applyInput(float strafe, float forward, float acceleration) {
 	strafe /= length;
 	forward /= length;
 
-	motionX += (strafe * std::cos(rotationYaw) - forward * std::sin(rotationYaw)) * acceleration;
-	motionZ += (forward * std::cos(rotationYaw) + strafe * std::sin(rotationYaw)) * acceleration;
+	float yaw = rotationYaw * (JavaMath::PI / 180.0f);
+	float sinYaw = std::sin(yaw);
+	float cosYaw = std::cos(yaw);
+
+	motionX += (strafe * cosYaw - forward * sinYaw) * acceleration;
+	motionZ += (forward * cosYaw + strafe * sinYaw) * acceleration;
 }
 
 void Entity::move(Vec3 movement) {
@@ -253,22 +257,21 @@ void Entity::move(Vec3 movement) {
 		collider = collider.offset(0.0, downY, 0.0);
 
 		// Keep whichever collision path moved further horizontally
-		if (stepUpMovement.x * stepUpMovement.x + stepUpMovement.z * stepUpMovement.z >
+		if (stepUpMovement.x * stepUpMovement.x + stepUpMovement.z * stepUpMovement.z >=
 		    movement.x * movement.x + movement.z * movement.z) {
 			movement = stepUpMovement;
 			collider = resolvedCollider;
 		} else {
-			movement.y += (resolvedCollider.minY - originalCollider.minY) - stepHeight;
-			double frac = resolvedCollider.minY - collider.minY;
+			double frac = collider.minY - std::trunc(collider.minY);
 			if (frac > 0.0)
 				ySize += float(frac + 0.01);
 		}
 	}
 
 	// Derive our current position from our collider
-	posX = (collider.minX + collider.maxX) / 2.0;
-	posY = collider.minY + double(yOffset) - double(ySize);
-	posZ = (collider.minZ + collider.maxZ) / 2.0;
+	position.x = (collider.minX + collider.maxX) / 2.0;
+	position.y = collider.minY + double(yOffset) - double(ySize);
+	position.z = (collider.minZ + collider.maxZ) / 2.0;
 
 	collidedHorizontally = original.x != movement.x || original.z != movement.z;
 	collidedVertically = original.y != movement.y;
@@ -291,11 +294,12 @@ void Entity::move(Vec3 movement) {
 	auto maxX = MathHelper::floor_double(collider.maxX - 0.001);
 	auto maxY = MathHelper::floor_double(collider.maxY - 0.001);
 	auto maxZ = MathHelper::floor_double(collider.maxZ - 0.001);
-	if (world->AABBinValidChunks({ double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ) })){
+	if (world->AABBinValidChunks(
+	        { double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ) })) {
 		for (int x = minX; x <= maxX; x++) {
 			for (int y = minY; y <= maxY; y++) {
 				for (int z = minZ; z <= maxZ; z++) {
-					auto blockId = world->getBlockId({x, y, z});
+					auto blockId = world->getBlockId({ x, y, z });
 					auto function = Blocks::blockBehaviors[blockId < 0 ? 0 : blockId].onEntityCollidedWithBlock;
 					if (blockId > 0 && function) {
 						function(*world, { x, y, z }, *this);
@@ -328,9 +332,9 @@ void Entity::loadFromNBT(Tag& nbt) {
 	motionY = motion[1].getDouble();
 	motionZ = motion[2].getDouble();
 
-	posX = pos[0].getDouble();
-	posY = pos[1].getDouble();
-	posZ = pos[2].getDouble();
+	position.x = pos[0].getDouble();
+	position.y = pos[1].getDouble();
+	position.z = pos[2].getDouble();
 
 	rotationYaw = rotation[0].getFloat();
 	rotationPitch = rotation[1].getFloat();
@@ -363,7 +367,7 @@ std::optional<Tag> Entity::serializeToNBT() {
 	Tag FallDistance;
 	FallDistance.type = TAG_FLOAT;
 	FallDistance.name = "FallDistance";
-	FallDistance.floatValue =this->fallDistance;
+	FallDistance.floatValue = this->fallDistance;
 	Tag Pos;
 	Pos.type = TAG_LIST;
 	Pos.name = "Pos";
@@ -380,13 +384,13 @@ std::optional<Tag> Entity::serializeToNBT() {
 	// Save position and rotation / velocity
 	Tag posX;
 	posX.type = TAG_DOUBLE;
-	posX.doubleValue = this->posX;
+	posX.doubleValue = this->position.x;
 	Tag posY;
 	posY.type = TAG_DOUBLE;
-	posY.doubleValue = this->posY;
+	posY.doubleValue = this->position.y;
 	Tag posZ;
 	posZ.type = TAG_DOUBLE;
-	posZ.doubleValue = this->posZ;
+	posZ.doubleValue = this->position.z;
 	Pos.list.push_back(posX);
 	Pos.list.push_back(posY);
 	Pos.list.push_back(posZ);
@@ -418,7 +422,7 @@ std::optional<Tag> Entity::serializeToNBT() {
 
 	// If we don't have a string id fail to save
 	if (!stringId)
-		return std::nullopt; 
+		return std::nullopt;
 
 	Tag id;
 	id.type = TAG_STRING;

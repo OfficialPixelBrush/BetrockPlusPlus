@@ -15,6 +15,7 @@
 #include "logger.h"
 #include "packet_data.h"
 #include "world/world.h"
+#include "entities/entity_mobile.h"
 
 namespace Items {
 
@@ -195,6 +196,28 @@ void useHoe(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDir
 	}
 }
 
+void testSetGoal(WorldManager& world, Int3 usedBlockPos) {
+	Int3 topPos = usedBlockPos;
+	topPos.y += 1;
+	world.setBlock(topPos, BLOCK_AIR);
+	std::cout << "lol!!" << std::endl;
+	for (auto entity : world.entityManager.m_entities) {
+		std::cout << (int)entity->type << std::endl;
+		if (entity->type == EntityType::CREEPER) {
+			auto finder = std::static_pointer_cast<MobileEntity>(entity);
+			std::cout << "Setting goal to" << topPos << std::endl;
+			finder->setGoal(topPos);
+		}
+	}
+}
+
+void registerAll() {
+	itemBehavior[Items::Id::HOE_WOOD] = ItemBehavior{ .onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_STONE] = ItemBehavior{ .onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_IRON] = ItemBehavior{ .onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_GOLD] = ItemBehavior{ .onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_DIAMOND] = ItemBehavior{ .onBlockUse = useHoe };
+	itemBehavior[Items::Id::FLINT_AND_STEEL] = ItemBehavior{ .onBlockUse = testSetGoal };
 ToolLevel materialToLevel(ToolMaterial material) {
 	switch (material) {
 	case ToolMaterial::None:

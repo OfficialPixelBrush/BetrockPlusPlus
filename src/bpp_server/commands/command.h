@@ -27,7 +27,7 @@
 	public:                                                                                                            \
 		name() : Command(label, description, syntax, requiresOp, requiresCreative) {}                                  \
 		std::string Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,         \
-		                    std::function<void(PlayerSession&)> transferDimension, Server& server) override;                           \
+		                    std::function<void(PlayerSession&)> transferDimension, Server& server) override;           \
 	};
 
 /*
@@ -86,6 +86,7 @@ DEFINE_COMMAND(CommandList, "list", "List all currently online players", "", fal
 DEFINE_COMMAND(CommandLoaded, "loaded", "Shows the number of loaded chunks", "", false, false);
 DEFINE_COMMAND(CommandDimension, "dim", "Swap to the other dimension", "", false, false);
 DEFINE_COMMAND(CommandVersion, "version", "Shows the current Server version", "", false, false);
+DEFINE_COMMAND(CommandSummon, "summon", "Summons a smart entity", "", false, false);
 /*
 DEFINE_COMMAND(CommandPose, "pose", "Set the current players' pose", "<crouch/fire/sit>", false, false);
 DEFINE_COMMAND(CommandInterface, "interface", "Open the desired interface", "<id>", false, false);

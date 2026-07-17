@@ -82,14 +82,14 @@ void ItemEntity::tick() {
 
 	motionY -= 0.04;
 
-	if (world->getMaterial({ MathHelper::floor_double(posX), MathHelper::floor_double(posY),
-	                         MathHelper::floor_double(posZ) }) == Material::Lava()) {
+	if (world->getMaterial({ MathHelper::floor_double(position.x), MathHelper::floor_double(position.y),
+	                         MathHelper::floor_double(position.z) }) == Material::Lava()) {
 		motionY = 0.2;
 		motionX = double((rand.nextFloat() - rand.nextFloat()) * 0.2F);
 		motionZ = double((rand.nextFloat() - rand.nextFloat()) * 0.2F);
 	}
 
-	pushOutOfBlocks({ posX, (collider.minY + collider.maxY) / 2.0, posZ });
+	pushOutOfBlocks({ position.x, (collider.minY + collider.maxY) / 2.0, position.z });
 	move({ motionX, motionY, motionZ });
 
 	float horizontalDrag = 0.98f;
@@ -97,9 +97,9 @@ void ItemEntity::tick() {
 		horizontalDrag = 0.58800006f;
 
 		// Look up the block below us
-		int bx = MathHelper::floor_double(posX);
+		int bx = MathHelper::floor_double(position.x);
 		int by = MathHelper::floor_double(collider.minY) - 1;
-		int bz = MathHelper::floor_double(posZ);
+		int bz = MathHelper::floor_double(position.z);
 		int blockId = world->getBlockId({ bx, by, bz });
 		belowBlock = Blocks::blockProperties[blockId];
 

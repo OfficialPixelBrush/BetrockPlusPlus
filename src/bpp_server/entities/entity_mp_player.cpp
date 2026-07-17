@@ -31,8 +31,8 @@ bool EntityMPPlayer::dropItem(ItemStack stack) {
 		return false;
 
 	// Create the item entity
-	Vec3 position = { posX, posY - 0.3 + PLAYER_EYE_HEIGHT, posZ };
-	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(position);
+	Vec3 itemPos = { position.x, position.y - 0.3 + PLAYER_EYE_HEIGHT, position.z };
+	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(itemPos);
 	itemEntity->itemStack = stack;
 	itemEntity->pickupCooldown = 40; // So we don't pick it up instantly
 	itemEntity->dim = dim;
@@ -64,9 +64,9 @@ void EntityMPPlayer::tick() {
 		return;
 	Vec3 claimed = session->position.pos;
 
-	posX = claimed.x;
-	posY = claimed.y;
-	posZ = claimed.z;
+	position.x = claimed.x;
+	position.y = claimed.y;
+	position.z = claimed.z;
 	rotationYaw = session->rotation.x;
 	rotationPitch = session->rotation.y;
 
@@ -74,10 +74,10 @@ void EntityMPPlayer::tick() {
 
 	// Tell entities we collided with them
 	if (entityManager) {
-		AABB colliderCopy = collider.expand(1.0, 0.0, 1.0);
-		auto entitiesCollidingWith = entityManager->getEntitiesWithinAABBExcluding(colliderCopy, this->id);
-		for (auto& entity : entitiesCollidingWith) {
-			if (entity->collider.intersects(colliderCopy) && !entity->isDead)
+		auto entitiesCollidingWith = entityManager->getEntitiesWithinAABBExcluding(collider.expand(1.0, 0.0, 1.0),
+		                                                                           this->id);
+		for (const auto& entity : entitiesCollidingWith) {
+			if (!entity->isDead)
 				entity->onCollideWithPlayer(*this);
 		}
 	}

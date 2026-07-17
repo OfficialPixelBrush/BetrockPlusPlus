@@ -31,18 +31,19 @@ struct EntityManager {
 	std::function<void(std::shared_ptr<Entity>)> onEntitySpawn;
 	std::function<void(std::shared_ptr<Entity>)> onEntityDespawn;
 
-	static Int3 computeBucketPos(double posX, double posY, double posZ) {
-		Int3 pos = { int(MathHelper::floor_double(posX / 16.0)), int(MathHelper::floor_double(posZ / 16.0)),
-			         int(MathHelper::floor_double(posY / 16.0)) };
+	static Int3 computeBucketPos(Vec3 position) {
+		Int3 bucketPos = { int(MathHelper::floor_double(position.x / 16.0)),
+			               int(MathHelper::floor_double(position.z / 16.0)),
+			               int(MathHelper::floor_double(position.y / 16.0)) };
 
 		// Entity collisions below and above the world are just gonna be inefficient
-		pos.z = std::max(0, pos.z);
-		pos.z = std::min(9, pos.z);
-		return pos;
+		bucketPos.z = std::max(0, bucketPos.z);
+		bucketPos.z = std::min(9, bucketPos.z);
+		return bucketPos;
 	}
 
-	std::vector<std::shared_ptr<Entity>> getEntitiesWithinAABBExcluding(AABB& box, EntityId entityId);
-	std::vector<std::shared_ptr<Entity>> getEntitiesWithinAABB(AABB& box);
+	std::vector<std::shared_ptr<Entity>> getEntitiesWithinAABBExcluding(const AABB& box, EntityId entityId);
+	std::vector<std::shared_ptr<Entity>> getEntitiesWithinAABB(const AABB& box);
 	void tick();
 	void addEntity(std::shared_ptr<Entity> entity, EntityId forceEntityId = -1);
 	void removeEntity(EntityId id);

@@ -21,15 +21,15 @@ void EntityManager::removeEntity(EntityId id) {
 	auto& container = m_entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
 	auto& bucket = container.buckets[entity->bucketPos.z];
 	bucket.m_entities.erase(std::remove_if(bucket.m_entities.begin(), bucket.m_entities.end(),
-	                                     [&entity](const std::weak_ptr<Entity>& weak) {
-		                                     auto locked = weak.lock();
-		                                     return !locked || locked == entity;
-	                                     }),
-	                      bucket.m_entities.end());
+	                                       [&entity](const std::weak_ptr<Entity>& weak) {
+		                                       auto locked = weak.lock();
+		                                       return !locked || locked == entity;
+	                                       }),
+	                        bucket.m_entities.end());
 
 	// Remove from the master list
 	m_entities.erase(it);
-	
+
 	// Unbind ourselves
 	entity->entityManager = nullptr;
 
@@ -51,7 +51,7 @@ void EntityManager::addEntity(std::shared_ptr<Entity> entity, EntityId forceEnti
 	entity->dim = m_world->thisDimension;
 
 	// Register the entity into its initial bucket
-	entity->bucketPos = computeBucketPos(entity->posX, entity->posY, entity->posZ);
+	entity->bucketPos = computeBucketPos(entity->position);
 	auto& container = m_entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
 	container.buckets[entity->bucketPos.z].m_entities.push_back(entity);
 
@@ -73,12 +73,12 @@ void EntityManager::tick() {
 			auto& container = m_entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
 			auto& b = container.buckets[entity->bucketPos.z];
 			b.m_entities.erase(std::remove_if(b.m_entities.begin(), b.m_entities.end(),
-			                                [&entity](const std::weak_ptr<Entity>& weak) {
-				                                auto locked = weak.lock();
-				                                return !locked ||
-				                                       locked == entity; // Remove if expired or matches our entity
-			                                }),
-			                 b.m_entities.end());
+			                                  [&entity](const std::weak_ptr<Entity>& weak) {
+				                                  auto locked = weak.lock();
+				                                  return !locked ||
+				                                         locked == entity; // Remove if expired or matches our entity
+			                                  }),
+			                   b.m_entities.end());
 
 			if (onEntityDespawn)
 				onEntityDespawn(entity);
@@ -87,19 +87,19 @@ void EntityManager::tick() {
 		entity->tick();
 
 		// Check to see if this entity went into another container or bucket
-		Int3 newBucketPos = computeBucketPos(entity->posX, entity->posY, entity->posZ);
+		Int3 newBucketPos = computeBucketPos(entity->position);
 
 		if (newBucketPos != entity->bucketPos) {
 			// Remove from the old bucket
 			auto& oldContainer = m_entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
 			auto& b = oldContainer.buckets[entity->bucketPos.z];
 			b.m_entities.erase(std::remove_if(b.m_entities.begin(), b.m_entities.end(),
-			                                [&entity](const std::weak_ptr<Entity>& weak) {
-				                                auto locked = weak.lock();
-				                                return !locked ||
-				                                       locked == entity; // Remove if expired or matches our entity
-			                                }),
-			                 b.m_entities.end());
+			                                  [&entity](const std::weak_ptr<Entity>& weak) {
+				                                  auto locked = weak.lock();
+				                                  return !locked ||
+				                                         locked == entity; // Remove if expired or matches our entity
+			                                  }),
+			                   b.m_entities.end());
 
 			// Put in the new bucket
 			auto& newContainer = m_entityContainers[{ newBucketPos.x, newBucketPos.y }];
@@ -111,7 +111,7 @@ void EntityManager::tick() {
 	copy.clear(); // Clear the copy to free memory
 }
 
-std::vector<std::shared_ptr<Entity>> EntityManager::getEntitiesWithinAABBExcluding(AABB& box, EntityId entityId) {
+std::vector<std::shared_ptr<Entity>> EntityManager::getEntitiesWithinAABBExcluding(const AABB& box, EntityId entityId) {
 	// Get all entities within an AABB excluding this entity id
 	auto entities = getEntitiesWithinAABB(box);
 	entities.erase(std::remove_if(entities.begin(), entities.end(),
@@ -120,7 +120,7 @@ std::vector<std::shared_ptr<Entity>> EntityManager::getEntitiesWithinAABBExcludi
 	return entities;
 }
 
-std::vector<std::shared_ptr<Entity>> EntityManager::getEntitiesWithinAABB(AABB& box) {
+std::vector<std::shared_ptr<Entity>> EntityManager::getEntitiesWithinAABB(const AABB& box) {
 	// Get all m_entities within an AABB
 	std::vector<std::shared_ptr<Entity>> collidingEntities;
 
@@ -147,8 +147,10 @@ std::vector<std::shared_ptr<Entity>> EntityManager::getEntitiesWithinAABB(AABB& 
 				for (size_t i = 0; i < container.buckets[by].m_entities.size(); i++) {
 					// Make sure the weak ptr is still valid
 					auto& entityPtrWeak = container.buckets[by].m_entities[i];
-					if (auto entityPtrShared = entityPtrWeak.lock())
-						collidingEntities.push_back(entityPtrShared);
+					if (auto entityPtrShared = entityPtrWeak.lock()) {
+						if (entityPtrShared->collider.intersects(box))
+							collidingEntities.push_back(entityPtrShared);
+					}
 				}
 			}
 		}
@@ -181,11 +183,15 @@ std::vector<Tag> EntityManager::collectEntitiesForSave(Int2 cpos, bool clearColl
 		for (auto& entityPtrWeak : bucket.m_entities) {
 			// Is this entity dead but not collected?
 			if (auto entityPtrShared = entityPtrWeak.lock()) {
-				if (entityPtrShared->isDead) continue; // We are dead so no save
-				if (entityPtrShared->type == EntityType::PLAYER) continue; // players cannot be saved
-				if (clearCollectedEntities) entityPtrShared->isDead = true; // Mark the entity as dead for cleanup
+				if (entityPtrShared->isDead)
+					continue; // We are dead so no save
+				if (entityPtrShared->type == EntityType::PLAYER)
+					continue; // players cannot be saved
+				if (clearCollectedEntities)
+					entityPtrShared->isDead = true; // Mark the entity as dead for cleanup
 				auto compound = entityPtrShared->serializeToNBT();
-				if (!compound) continue; // If something went wrong abort save
+				if (!compound)
+					continue; // If something went wrong abort save
 				collectedEntities.push_back(*compound);
 			}
 		}
