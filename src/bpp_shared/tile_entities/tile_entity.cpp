@@ -29,11 +29,26 @@ void TileEntityDispenser::tick() {
 	}
 }
 
+constexpr std::string getTileNbtId(TileType type) {
+	switch (type) {
+	case TileType::CHEST:
+		return "Chest";
+	case TileType::DISPENSER:
+		return "Trap";
+	case TileType::FURNACE:
+		return "Furnace";
+	case TileType::SIGN:
+		return "Sign";
+	case TileType::SPAWNER:
+		return "MobSpawner";
+	}
+}
+
 Tag TileEntity::serialize() {
 	auto root = Tag{};
 	root.type = TAG_COMPOUND;
 
-	auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
+	auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = getTileNbtId(m_type) };
 	auto x = Tag{ .type = TAG_INT, .name = "x", .intValue = m_position.x };
 	auto y = Tag{ .type = TAG_INT, .name = "y", .intValue = m_position.y };
 	auto z = Tag{ .type = TAG_INT, .name = "z", .intValue = m_position.z };
@@ -47,13 +62,7 @@ Tag TileEntity::serialize() {
 }
 
 Tag TileEntityChest::serialize() {
-	auto root = Tag{};
-	root.type = TAG_COMPOUND;
-
-	auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
-	auto x = Tag{ .type = TAG_INT, .name = "x", .intValue = m_position.x };
-	auto y = Tag{ .type = TAG_INT, .name = "y", .intValue = m_position.y };
-	auto z = Tag{ .type = TAG_INT, .name = "z", .intValue = m_position.z };
+	auto root = TileEntity::serialize();
 
 	// Construct our inventory
 	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
@@ -77,22 +86,12 @@ Tag TileEntityChest::serialize() {
 	}
 
 	root.compound["Items"] = items;
-	root.compound["id"] = id;
-	root.compound["x"] = x;
-	root.compound["y"] = y;
-	root.compound["z"] = z;
 
 	return root;
 }
 
 Tag TileEntityFurnace::serialize() {
-	auto root = Tag{};
-	root.type = TAG_COMPOUND;
-
-	auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
-	auto x = Tag{ .type = TAG_INT, .name = "x", .intValue = m_position.x };
-	auto y = Tag{ .type = TAG_INT, .name = "y", .intValue = m_position.y };
-	auto z = Tag{ .type = TAG_INT, .name = "z", .intValue = m_position.z };
+	auto root = TileEntity::serialize();
 
 	// Construct our inventory
 	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
@@ -116,22 +115,12 @@ Tag TileEntityFurnace::serialize() {
 	}
 
 	root.compound["Items"] = items;
-	root.compound["id"] = id;
-	root.compound["x"] = x;
-	root.compound["y"] = y;
-	root.compound["z"] = z;
 
 	return root;
 }
 
 Tag TileEntityDispenser::serialize() {
-	auto root = Tag{};
-	root.type = TAG_COMPOUND;
-
-	auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
-	auto x = Tag{ .type = TAG_INT, .name = "x", .intValue = m_position.x };
-	auto y = Tag{ .type = TAG_INT, .name = "y", .intValue = m_position.y };
-	auto z = Tag{ .type = TAG_INT, .name = "z", .intValue = m_position.z };
+	auto root = TileEntity::serialize();
 
 	// Construct our inventory
 	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
@@ -155,22 +144,13 @@ Tag TileEntityDispenser::serialize() {
 	}
 
 	root.compound["Items"] = items;
-	root.compound["id"] = id;
-	root.compound["x"] = x;
-	root.compound["y"] = y;
-	root.compound["z"] = z;
 
 	return root;
 }
 
 Tag TileEntitySign::serialize() {
-	auto root = Tag{};
-	root.type = TAG_COMPOUND;
+	auto root = TileEntity::serialize();
 
-	auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
-	auto x = Tag{ .type = TAG_INT, .name = "x", .intValue = m_position.x };
-	auto y = Tag{ .type = TAG_INT, .name = "y", .intValue = m_position.y };
-	auto z = Tag{ .type = TAG_INT, .name = "z", .intValue = m_position.z };
 	auto text1 = Tag{ .type = TAG_STRING, .name = "Text1", .stringValue = m_text1 };
 	auto text2 = Tag{ .type = TAG_STRING, .name = "Text2", .stringValue = m_text2 };
 	auto text3 = Tag{ .type = TAG_STRING, .name = "Text3", .stringValue = m_text3 };
@@ -180,31 +160,18 @@ Tag TileEntitySign::serialize() {
 	root.compound["Text2"] = text2;
 	root.compound["Text3"] = text3;
 	root.compound["Text4"] = text4;
-	root.compound["id"] = id;
-	root.compound["x"] = x;
-	root.compound["y"] = y;
-	root.compound["z"] = z;
 
 	return root;
 }
 
 Tag TileEntityMobSpawner::serialize() {
-	auto root = Tag{};
-	root.type = TAG_COMPOUND;
+	auto root = TileEntity::serialize();
 
-	auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = m_id };
-	auto x = Tag{ .type = TAG_INT, .name = "x", .intValue = m_position.x };
-	auto y = Tag{ .type = TAG_INT, .name = "y", .intValue = m_position.y };
-	auto z = Tag{ .type = TAG_INT, .name = "z", .intValue = m_position.z };
 	auto entityId = Tag{ .type = TAG_STRING, .name = "EntityId", .stringValue = m_entityId };
 	auto delay = Tag{ .type = TAG_SHORT, .name = "Delay", .shortValue = m_delay };
 
 	root.compound["EntityId"] = entityId;
 	root.compound["Delay"] = delay;
-	root.compound["id"] = id;
-	root.compound["x"] = x;
-	root.compound["y"] = y;
-	root.compound["z"] = z;
 
 	return root;
 }

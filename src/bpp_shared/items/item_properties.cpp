@@ -10,12 +10,12 @@
 #include "blocks.h"
 #include "blocks/block_properties.h"
 #include "entities/entity.h"
+#include "entities/entity_mobile.h"
 #include "enums/items.h"
 #include "inventory/item_stack.h"
 #include "logger.h"
 #include "packet_data.h"
 #include "world/world.h"
-#include "entities/entity_mobile.h"
 
 namespace Items {
 
@@ -422,6 +422,16 @@ void registerAll() {
 			return;
 
 		world.setBlock(placePos, BLOCK_SUGARCANE);
+		stack->decrementCount(1);
+	};
+
+	itemBehavior[SIGN].onBlockUse = [](WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) {
+		Int3 placePos = Blocks::getAdjacentBlockPos(pos, face);
+		if (face == PacketData::FaceDirection::Y_PLUS)
+			world.setBlock(placePos, BLOCK_SIGN); //TODO: facing meta
+		else
+			world.setBlock(placePos, BLOCK_SIGN_WALL, face);
+
 		stack->decrementCount(1);
 	};
 };

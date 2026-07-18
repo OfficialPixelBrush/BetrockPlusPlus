@@ -9,16 +9,24 @@
 #include "nbt/nbt.h"
 #include "numeric_structs.h"
 
+enum class TileType {
+	CHEST,
+	FURNACE,
+	DISPENSER,
+	SIGN,
+	SPAWNER
+};
+
 // I hate doing inheritance but its simple to do for this
 struct Chunk;
 struct TileEntity {
-	std::string m_id = "";
+	TileType m_type;
 	Int3 m_position{ 0, 0, 0 }; // Global coordinates
 	bool m_canTick = false;
 	Chunk* m_chunk =
 	    nullptr; // The chunk this tile entity is in; may not be best practice to have this as a raw pointer but it should be fine since the chunk will always exist while the tile entity exists
 
-	TileEntity(std::string pId, Int3 pPosition) : m_id(pId), m_position(pPosition) {};
+	TileEntity(TileType pType, Int3 pPosition) : m_type(pType), m_position(pPosition) {};
 
 	virtual void tick() {};
 	virtual Tag serialize();
@@ -28,7 +36,7 @@ struct TileEntity {
 // Chest
 struct TileEntityChest : TileEntity {
 	InventoryChest inventory;
-	TileEntityChest(Int3 pPosition) : TileEntity("Chest", pPosition) {};
+	TileEntityChest(Int3 pPosition) : TileEntity(TileType::CHEST, pPosition) {};
 
 	Tag serialize() override;
 	void tick() override;
@@ -37,7 +45,7 @@ struct TileEntityChest : TileEntity {
 // Furnace
 struct TileEntityFurnace : TileEntity {
 	InventoryFurnace inventory;
-	TileEntityFurnace(Int3 pPosition) : TileEntity("Furnace", pPosition) {
+	TileEntityFurnace(Int3 pPosition) : TileEntity(TileType::FURNACE, pPosition) {
 		m_canTick = true;
 	};
 
@@ -48,7 +56,7 @@ struct TileEntityFurnace : TileEntity {
 // Dispenser (Trap)
 struct TileEntityDispenser : TileEntity {
 	InventoryDispenser inventory;
-	TileEntityDispenser(Int3 pPosition) : TileEntity("Trap", pPosition) {};
+	TileEntityDispenser(Int3 pPosition) : TileEntity(TileType::DISPENSER, pPosition) {};
 
 	Tag serialize() override;
 	void tick() override;
@@ -60,7 +68,7 @@ struct TileEntitySign : TileEntity {
 	std::string m_text2 = "";
 	std::string m_text3 = "";
 	std::string m_text4 = "";
-	TileEntitySign(Int3 pPosition) : TileEntity("Sign", pPosition) {};
+	TileEntitySign(Int3 pPosition) : TileEntity(TileType::SIGN, pPosition) {};
 
 	Tag serialize() override;
 };
@@ -69,7 +77,7 @@ struct TileEntitySign : TileEntity {
 struct TileEntityMobSpawner : TileEntity {
 	std::string m_entityId = "";
 	int16_t m_delay = 0;
-	TileEntityMobSpawner(Int3 pPosition) : TileEntity("MobSpawner", pPosition) {
+	TileEntityMobSpawner(Int3 pPosition) : TileEntity(TileType::SPAWNER, pPosition) {
 		m_canTick = true;
 	};
 

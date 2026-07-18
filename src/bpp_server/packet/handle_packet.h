@@ -49,6 +49,7 @@ void InteractWithBlock(Packet::InteractWithBlock& pkt, PlayerSession& session, W
 void Animation(Packet::Animation& pkt, PlayerSession& session, EntityTracker& entityTracker);
 void PlayerAction(Packet::PlayerAction& pkt, PlayerSession& session, EntityTracker& entityTracker);
 void Respawn(Packet::Respawn& /*pkt*/, PlayerSession& /*session*/);
-void UpdateSign(Packet::UpdateSign& /*pkt*/, PlayerSession& /*session*/, WorldManager& /*world*/);
+void UpdateSign(Packet::UpdateSign& pkt, PlayerSession& session, WorldManager& world,
+                std::vector<std::shared_ptr<PlayerSession>>& players);
 void Disconnect(Packet::Disconnect& /*pkt*/, PlayerSession& session);
 } // namespace HandlePacket

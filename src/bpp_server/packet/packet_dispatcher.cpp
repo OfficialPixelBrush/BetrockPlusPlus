@@ -131,7 +131,7 @@ bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, World
 	case PacketId::UpdateSign: {
 		Packet::UpdateSign pkt;
 		pkt.Deserialize(session.stream);
-		HandlePacket::UpdateSign(pkt, session, sessionWorld);
+		HandlePacket::UpdateSign(pkt, session, sessionWorld, server.players);
 		break;
 	}
 	case PacketId::Disconnect: {

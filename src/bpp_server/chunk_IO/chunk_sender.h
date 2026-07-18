@@ -10,9 +10,11 @@
 #include "BS_thread_pool.hpp"
 #include "chunk_serializer.h"
 #include "networking/packets.h"
+#include "tile_entities/tile_entity.h"
 #include "world/world.h"
 #include <algorithm>
 #include <future>
+#include <memory>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -228,6 +230,23 @@ struct ChunkSender {
 			if (pending != session.pendingBlockChanges.end()) {
 				sendBlockUpdates(session, pc.pos, pending->second, std::shared_ptr<const Chunk>(pc.chunkRef));
 				session.pendingBlockChanges.erase(pending);
+			}
+
+			// Signs need to inform the client when they are loaded
+			for (auto te : pc.chunkRef->tileEntities) {
+				if (te->m_type != TileType::SIGN)
+					continue;
+				auto sign = std::static_pointer_cast<TileEntitySign>(te);
+
+				Packet::UpdateSign pkt;
+				pkt.position = SlimInt3<int16_t>{ sign->m_position.x, static_cast<short>(sign->m_position.y),
+					                              sign->m_position.z };
+				pkt.lines[0] = sign->m_text1;
+				pkt.lines[1] = sign->m_text2;
+				pkt.lines[2] = sign->m_text3;
+				pkt.lines[3] = sign->m_text4;
+
+				pkt.Serialize(session.stream);
 			}
 		}
 

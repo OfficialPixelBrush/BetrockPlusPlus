@@ -16,6 +16,9 @@
 #include "inventory/item_stack.h"
 #include "items/item_properties.h"
 #include "packet_utils.h"
+#include "tile_entities/tile_entity.h"
+#include <cstring>
+#include <memory>
 
 namespace HandlePacket {
 void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& session) {
@@ -29,13 +32,15 @@ void ChatMessage(Packet::ChatMessage& pkt, PlayerSession& session, std::vector<s
 		cmd_mgr.Parse(pkt.message, session, world, transferDimension);
 		return;
 	}
-	std::string broadcast = "<" + session.username + "> " + pkt.message;
-	for (auto& other : players) {
-		if (other->connState != ConnectionState::Playing)
+
+	Packet::ChatMessage reply;
+	reply.message = "<" + session.username + "> " + pkt.message;
+
+	// This includes the current session too
+	for (auto& receiver : players) {
+		if (receiver->connState != ConnectionState::Playing)
 			continue;
-		Packet::ChatMessage reply;
-		reply.message = broadcast;
-		reply.Serialize(other->stream);
+		reply.Serialize(receiver->stream);
 	}
 }
 
@@ -68,7 +73,7 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 		session.lastTargetedBlock = blockId;
 
 		if (Blocks::blockProperties[session.lastTargetedBlock].hardness == 0.0f) {
-		    Blocks::BreakAndDropBlock(world, packetPos);
+			Blocks::BreakAndDropBlock(world, packetPos);
 			return;
 		}
 
@@ -302,8 +307,32 @@ void Respawn(Packet::Respawn& /*pkt*/, PlayerSession& /*session*/) {
 	// TODO: reset position, health, send spawn chunks
 }
 
-void UpdateSign(Packet::UpdateSign& /*pkt*/, PlayerSession& /*session*/, WorldManager& /*world*/) {
-	// TODO: write sign text to world, broadcast to nearby clients
+void UpdateSign(Packet::UpdateSign& pkt, PlayerSession& session, WorldManager& world,
+                std::vector<std::shared_ptr<PlayerSession>>& players) {
+	Int3 position = { pkt.position.x, pkt.position.y, pkt.position.z };
+	BlockType blockId = world.getBlockId(position);
+	if (blockId != BLOCK_SIGN && blockId != BLOCK_SIGN_WALL)
+		return;
+
+	auto tile = std::make_shared<TileEntitySign>(position);
+
+	tile->m_text1 = pkt.lines[0];
+	tile->m_text2 = pkt.lines[1];
+	tile->m_text3 = pkt.lines[2];
+	tile->m_text4 = pkt.lines[3];
+
+	world.createTileEntity(tile);
+
+	for (auto& viewer : players) {
+		if (viewer->connState != ConnectionState::Playing || viewer->dimension != world.thisDimension)
+			continue;
+
+		Int2 chunkCoord = Int2{ static_cast<int32_t>(position.x / 16.0), static_cast<int32_t>(position.z / 16.0) };
+		if (!viewer->sentChunks.contains(chunkCoord))
+			return;
+
+		pkt.Serialize(viewer->stream);
+	}
 }
 
 void Disconnect(Packet::Disconnect& /*pkt*/, PlayerSession& session) {
