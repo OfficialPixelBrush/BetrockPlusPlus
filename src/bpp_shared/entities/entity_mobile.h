@@ -20,6 +20,16 @@ private:
 	std::vector<Int3> currentPath;
 	size_t currentPathIdx = 0;
 
+	int64_t age = 0;
+	int health = 10;
+	int maxHurtTime = 10;
+	int lastAttackDamage = 0;
+	float attackedAtYaw = 0.0f;
+	int deathTime = 0;
+	int attackTime = 0;
+	float eyeHeight = height * 0.85f;
+	bool canBreatheUnderwater = false;
+
 	void followPath();
 	void resolveEntityCollision(Entity& other);
 	void tickPhysics();
@@ -27,6 +37,18 @@ private:
 public:
 	MobileEntity(WorldManager& world);
 
-	void setGoal(std::optional<Int3> goal);
-	void tick() override;
+	virtual void onDeath();
+	virtual void tick() override;
+	virtual void setGoal(std::optional<Int3> goal);
+	bool AABBNotInLiquidOrObstructed(AABB& collider);
+	bool headInOpaqueBlock();
+	bool headInWater();
+	bool entityAlive() {
+		return !isDead && health > 0;
+	}
+	bool onLadder() {
+		auto fd = MathHelper::floor_double;
+		return world->getBlockId({ fd(position.x), fd(collider.minY), fd(position.z) }) == BLOCK_LADDER;
+	}
+	bool attackEntityFrom(Entity* entity, int damage) override;
 };

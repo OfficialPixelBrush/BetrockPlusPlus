@@ -104,7 +104,7 @@ struct Entity {
 	float yOffset = 0.0f;
 
 	// How high a block face this entity can step onto without jumping.
-	float stepHeight = 0.5f;
+	float stepHeight = 0.0f;
 
 	// Collision state
 	bool onGround = false;
@@ -122,7 +122,6 @@ struct Entity {
 	bool onLadder = false;
 
 	float fallDistance = 0.0f;
-
 	int nextStepDistance = 0;
 
 	// Accumulated walk distance this tick (unused rn its mostly for the client)

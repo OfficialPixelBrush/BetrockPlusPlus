@@ -254,9 +254,13 @@ void InteractWithEntity(Packet::InteractWithEntity& pkt, PlayerSession& session,
 		return;
 
 	// Check if target entity exists
-	auto& entity = world.entityManager.m_entities[pkt.target_entity_id];
-	if (!entity)
+	auto entity = world.entityManager.getEntityByIdShared(pkt.target_entity_id);
+	auto sourceEntity = world.entityManager.getEntityByIdShared(pkt.source_entity_id);
+	if (!entity || !sourceEntity)
 		return;
+
+	if (pkt.attack) // For funsies hehe
+		entity->attackEntityFrom(sourceEntity.get(), 1);
 
 	const ItemStack* heldItem = session.inventory.getHeldItem();
 	if (!heldItem)

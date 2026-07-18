@@ -33,6 +33,27 @@ bool WorldManager::isMaterialInAABB(AABB collider, Material material) {
 	return false;
 }
 
+bool WorldManager::isLiquidInAABB(AABB collider) {
+	int minX = MathHelper::floor_double(collider.minX);
+	int maxX = MathHelper::floor_double(collider.maxX + 1.0);
+	int minY = MathHelper::floor_double(collider.minY);
+	int maxY = MathHelper::floor_double(collider.maxY + 1.0);
+	int minZ = MathHelper::floor_double(collider.minZ);
+	int maxZ = MathHelper::floor_double(collider.maxZ + 1.0);
+
+	// Check every block within the collider
+	for (int x = minX; x < maxX; x++)
+		for (int y = minY; y < maxY; y++)
+			for (int z = minZ; z < maxZ; z++) {
+				auto blockId = this->getBlockId({ x, y, z });
+				auto block = Blocks::blockProperties[blockId];
+				if (block.material.isLiquid) {
+					return true;
+				}
+			}
+	return false;
+}
+
 bool WorldManager::handleFluidAcceleration(AABB collider, Material material, Entity& entity) {
 	// Handles the fluid push physics, only counts fluids of the same material
 	// Returns whether the entity is in the material

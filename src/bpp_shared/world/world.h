@@ -36,29 +36,21 @@ struct PendingBlock {
 };
 
 struct WorldManager {
-	RegionManager* regionManager = nullptr;
 	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> chunks;
 	std::function<void(PendingBlock, Int32_2)> onBlockUpdate;
-
 	std::unordered_map<Int32_2, std::vector<std::pair<Int3, Block>>> pendingBleedWrites;
-
 	std::mutex genDoneMutex;
 	std::deque<std::shared_ptr<Chunk>> genDoneQueue;
-
 	Lighter lightManager;
 	TileEntityManager tileEntityManager;
 	EntityManager entityManager;
-
-	BS::thread_pool<> pool{ 2 };
-	BS::thread_pool<> populationPool{ 1 }; // unused
-
+	RegionManager* regionManager = nullptr;
 	int64_t seed = 0;
 	TickTime elapsed_ticks = 0;
-
 	Int3 spawnPoint{ 0, 0, 0 };
-
 	Dimension thisDimension = Dimension::Overworld;
-
+	BS::thread_pool<> pool{ 2 };
+	BS::thread_pool<> populationPool{ 1 }; // unused
 	Java::Random rand;
 
 	WorldManager(bool pIsHell = false) : isHell(pIsHell) {
@@ -69,6 +61,34 @@ struct WorldManager {
 
 	~WorldManager() {}
 
+	void tick(const std::vector<ClientPosition>& players);
+	void update(const std::vector<ClientPosition>& players);
+	void shutdown();
+	std::vector<AABB> getCollidingBoundingBoxes(const AABB& area);
+	void flushBleedWrites();
+	void propagateChunkLightBorders(Int32_2 cpos);
+	BlockType getFirstUncoveredBlock(int wx, int wz);
+	void forceGenChunkSync(Int32_2 pos);
+	int findTopSolidBlock(int wx, int wz);
+	void setMeta(Int3 wpos, uint8_t metadata = 0);
+	void setBlock(Int3 wpos, BlockType block_type, uint8_t metadata = 0);
+	void drainGenQueue();
+	bool isLiquidInAABB(AABB collider);
+	void initSpawn();
+	bool handleFluidAcceleration(AABB collider, Material material, Entity& entity);
+	bool isMaterialInAABB(AABB collider, Material material);
+	void updateLoadRadius(const std::vector<ClientPosition>& players);
+	void pumpPipeline(const std::vector<ClientPosition>& players);
+	void populateReady();
+	void drainLoadQueue();
+
+	int getViewRadius() {
+		return VIEW_RADIUS;
+	}
+	int getSimulationDistance() {
+		return SIMULATION_RADIUS;
+	}
+
 	void initWorldSeed(std::string pSeed) {
 		this->seed = hashCode(pSeed);
 	}
@@ -76,23 +96,6 @@ struct WorldManager {
 	void initWorldSeed(int64_t pSeed) {
 		this->seed = pSeed;
 	}
-
-	void tick(const std::vector<ClientPosition>& players);
-	void update(const std::vector<ClientPosition>& players);
-	void shutdown();
-	std::vector<AABB> getCollidingBoundingBoxes(const AABB& area);
-	int getViewRadius() {
-		return VIEW_RADIUS;
-	}
-	int getSimulationDistance() {
-		return SIMULATION_RADIUS;
-	}
-	bool handleFluidAcceleration(AABB collider, Material material, Entity& entity);
-	bool isMaterialInAABB(AABB collider, Material material);
-	void updateLoadRadius(const std::vector<ClientPosition>& players);
-	void pumpPipeline(const std::vector<ClientPosition>& players);
-	void populateReady();
-	void drainLoadQueue();
 
 	void notifyNeighborsOfUpdate(Int3 globalPos) {
 		// Update our six neighbors
@@ -192,8 +195,6 @@ struct WorldManager {
 		genDoneQueue.push_back(std::move(chunk));
 	}
 
-	void drainGenQueue();
-
 	std::shared_ptr<Chunk> getChunk(Int32_2 pos) {
 		return getChunkShared(pos);
 	}
@@ -224,10 +225,6 @@ struct WorldManager {
 		setBlock(wpos, block.type, block.data);
 	}
 
-	void setMeta(Int3 wpos, uint8_t metadata = 0);
-
-	void setBlock(Int3 wpos, BlockType block_type, uint8_t metadata = 0);
-
 	bool isAirBlock(Int3 wpos) {
 		return getBlockId(wpos) == BlockType::BLOCK_AIR;
 	}
@@ -244,13 +241,6 @@ struct WorldManager {
 		return props.material.isSolid && props.isNormalCube;
 	}
 
-	int findTopSolidBlock(int wx, int wz);
-
-	void initSpawn();
-
-	// Force generate a chunk synchronously, blocking until the chunk is fully generated
-	void forceGenChunkSync(Int32_2 pos);
-
 	Int3 getSpawnPoint(bool adjust) {
 		if (!adjust)
 			return spawnPoint;
@@ -261,8 +251,6 @@ struct WorldManager {
 		int sy = findTopSolidBlock(sx, sz);
 		return { sx, sy, sz };
 	}
-
-	BlockType getFirstUncoveredBlock(int wx, int wz);
 
 	int getHeightValue(int wx, int wz) {
 		auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
@@ -304,8 +292,6 @@ struct WorldManager {
 		return chunk->getBlockLight({ pos.x & 15, pos.y, pos.z & 15 });
 	}
 
-	void propagateChunkLightBorders(Int32_2 cpos);
-
 	Chunk* getChunkRaw(Int32_2 pos) {
 		auto it = chunks.find(pos);
 		return (it != chunks.end()) ? it->second.get() : nullptr;
@@ -340,8 +326,6 @@ struct WorldManager {
 	Int32_2 blockToChunkPos(Int32_2 blockPos) {
 		return { blockPos.x >> 4, blockPos.z >> 4 };
 	}
-
-	void flushBleedWrites();
 
 	// Returns true when the world-space Y is within valid chunk bounds.
 	static constexpr bool inBounds(int y) {

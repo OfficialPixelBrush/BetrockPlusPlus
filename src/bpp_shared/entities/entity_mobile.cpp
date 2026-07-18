@@ -14,6 +14,11 @@
 
 MobileEntity::MobileEntity(WorldManager& world) : pathFinder(world) {
 	type = EntityType::CREEPER;
+	stepHeight = 0.5;
+}
+
+void MobileEntity::onDeath() {
+	return;
 }
 
 void MobileEntity::setGoal(std::optional<Int3> goal) {
@@ -111,48 +116,208 @@ void MobileEntity::resolveEntityCollision(Entity& other) {
 }
 
 void MobileEntity::tickPhysics() {
-	//TODO: Handle water/lava/ladders and possibly other stuff
-
-	// Normal ground/air movement
-	float friction = 0.91f;
-	if (onGround) {
-		// Default block slipperiness is 0.6. (0.6 * 0.91 = 0.546)
-		friction = 0.546f;
-	}
-
-	if (onGround) {
-		float acceleration = 0.16277136f / (friction * friction * friction);
-		applyInput(moveStrafe, moveForward, 0.1f * acceleration);
-		if (jumping)
-			motionY = 0.42;
-	} else {
-		// In air
+	if (inWater || inLava) {
+		// Water and lava movement
+		auto oldY = position.y;
+		double friction = 0.8;
 		applyInput(moveStrafe, moveForward, 0.02f);
-	}
+		move({ motionX, motionY, motionZ });
+		motionX *= friction;
+		motionY *= friction;
+		motionZ *= friction;
+		motionY -= 0.2; // Sink
 
-	// Move the entity
-	move({ motionX, motionY, motionZ });
+		AABB offsetCollider = collider.offset(motionX, motionY + 0.6 - position.y + oldY, motionZ);
 
-	// Apply friction
-	motionX *= friction;
-	motionZ *= friction;
+		// Check if we are colliding with a block and we are 
+		// Moving up and unobstructed, if so, apply a nudge
+		if (collidedHorizontally && AABBNotInLiquidOrObstructed(offsetCollider)) {
+			motionY += 0.3;
+		}
+	} 
+	else {
+		// Normal ground/air movement
+		float friction = 0.91f;
 
-	// Gravity
-	motionY -= 0.08;
-	motionY *= 0.98f;
+		if (onGround) {
+			friction = 0.546f;
+			auto belowBlock = world->getBlockId({MathHelper::floor_double(position.x), MathHelper::floor_double(position.y) - 1, MathHelper::floor_double(position.z)});
+			if (belowBlock > BLOCK_AIR) {
+				friction = Blocks::blockProperties[belowBlock < BLOCK_MAX ? belowBlock : BLOCK_MAX].slipperiness * 0.91f;
+			}
+		}
 
-	auto collidingEntities = world->entityManager.getEntitiesWithinAABBExcluding(collider.expand(0.2, 0.0, 0.2), id);
+		float acceleration = 0.16277136f / (friction * friction * friction);
+		applyInput(moveStrafe, moveForward, onGround ? 0.1f * acceleration : 0.02f);
 
-	for (const auto& entity : collidingEntities) {
-		//TODO: Only minecarts, boats and (not dead) living entities can be pushed
-		//if (entity.canBePushed()) {
-		this->resolveEntityCollision(*entity);
-		//}
+		// Clamp our velocity if we are touching a ladder
+		// Also make sure we stop if we sneak
+		bool isOnLadder = onLadder();
+		if (isOnLadder) {
+			double maxLadderVelocity = 0.15;
+			motionX = std::min(maxLadderVelocity, std::max(-maxLadderVelocity, motionX));
+			motionZ = std::min(maxLadderVelocity, std::max(-maxLadderVelocity, motionZ));
+			motionY = std::max(-maxLadderVelocity, motionY);
+
+			// No fall damage on ladders
+			fallDistance = 0.0f;
+
+			// If sneaking we dont descend
+			if (sneaking && motionY < 0.0)
+				motionY = 0.0;
+		}
+
+		// Move the entity
+		move({ motionX, motionY, motionZ });
+
+		// Our entity is pushing itself into the wall the ladder is on
+		// So apply an upwards nudge
+		if (collidedHorizontally && isOnLadder) {
+			motionY = 0.2;
+		}
+
+		// Apply friction
+		motionX *= friction;
+		motionZ *= friction;
+
+		// Gravity
+		motionY -= 0.08;
+		motionY *= 0.98f;
+
+		auto collidingEntities = world->entityManager.getEntitiesWithinAABBExcluding(collider.expand(0.2, 0.0, 0.2), id);
+
+		for (const auto& entity : collidingEntities) {
+			//TODO: Only minecarts, boats and (not dead) living entities can be pushed
+			//if (entity.canBePushed()) {
+			this->resolveEntityCollision(*entity);
+			//}
+		}
 	}
 }
 
+bool MobileEntity::AABBNotInLiquidOrObstructed(AABB& collider) {
+	auto collided = world->getCollidingBoundingBoxes(collider);
+	if (collided.size() > 0)
+		return false;
+	return !world->isLiquidInAABB(collider);
+}
+
+bool MobileEntity::headInOpaqueBlock() {
+	// Check 8 corners of a slightly shrunk hitbox
+	for (int corner = 0; corner < 8; corner++) {
+		float xOffset = (float((corner >> 0) % 2) - 0.5f) * width * 0.9f;
+		float yOffset = (float((corner >> 1) % 2) - 0.5f) * 0.1f;
+		float zOffset = (float((corner >> 2) % 2) - 0.5f) * width * 0.9f;
+		auto fd = MathHelper::floor_double;
+		Int3 cornerBlockPos = { fd(position.x + xOffset), fd(position.y + eyeHeight + yOffset), fd(position.z + zOffset)};
+		if (world->isBlockNormalCube(cornerBlockPos))
+			return true;
+	}
+	return false;
+}
+
+bool MobileEntity::headInWater() {
+	auto eyePosY = position.y + eyeHeight;
+	auto fd = MathHelper::floor_double;
+	Int3 headBlockPos = { fd(position.x), fd(eyePosY), fd(position.z) };
+	auto headBlock = world->getBlockId(headBlockPos);
+
+	if (headBlock == BLOCK_WATER_STILL || headBlock == BLOCK_WATER_FLOWING) {
+		float percentAir = Blocks::getFluidPercentAir(world->getMetadata(headBlockPos));
+		float surfaceHeight = float(headBlockPos.y + 1) - percentAir;
+		return eyePosY < double(surfaceHeight);
+	}
+	return false;
+}
+
+bool MobileEntity::attackEntityFrom(Entity* entity, int damage) {
+	GlobalLogger().info << "Entity hit! Owie!\n";
+	age = 0;
+	if (health <= 0)
+		return false;
+
+	bool freshHit = true;
+
+	if (hurtResistantTime > maxHurtTime / 2.0f) {
+		if (damage <= lastAttackDamage)
+			return false;
+
+		health -= (damage - lastAttackDamage);
+		lastAttackDamage = damage;
+		freshHit = false;
+	} else {
+		lastAttackDamage = damage;
+		hurtResistantTime = maxHurtTime;
+		health -= damage;
+	}
+
+	if (freshHit) {
+		if (entity != nullptr) {
+			auto dx = entity->position.x - position.x;
+			auto dz = entity->position.z - position.z;
+
+			// We are super close so just randomize
+			while (dx * dx + dz * dz < 0.0001) {
+				dx = (double(rand.nextInt()) / INT_MAX - double(rand.nextInt()) / INT_MAX) * 0.01;
+				dz = (double(rand.nextInt()) / INT_MAX - double(rand.nextInt()) / INT_MAX) * 0.01;
+			}
+
+			attackedAtYaw = float(std::atan2(dz, dx) * 180.0 / JavaMath::PI) - rotationYaw;
+			double dist = std::sqrt(dx * dx + dz * dz);
+			applyKnockback({ float(dx / dist), 0.0f, float(dz / dist) });
+		} else {
+			attackedAtYaw = float(int(double(rand.nextInt() / INT_MAX * 2.0) * 180));
+		}
+		// TODO: callback here for the server / client?
+	}
+	// TODO: hurt sound?
+	return true;
+}
+
 void MobileEntity::tick() {
+	age++;
 	Entity::tick();
 	followPath();
+
+	// Suffocation
+	if (entityAlive() && headInOpaqueBlock()) {
+		attackEntityFrom(nullptr, 1);
+	}
+
+	// Drowning
+	if (entityAlive() && headInWater() && !canBreatheUnderwater) {
+		air--;
+		if (air <= -20) {
+			air = 0;
+			attackEntityFrom(nullptr, 2);
+		}
+	}
+
+	// Reset timers
+	attackTime = std::max(0, attackTime - 1);
+	hurtResistantTime = std::max(0, hurtResistantTime - 1);
+
+	// Timer for the death animation
+	if (health <= 0) {
+		deathTime++;
+		if (deathTime > 20) {
+			onDeath();
+			isDead = true;
+		}
+	}
+
+	// Jump code
+	if (jumping)
+		if (inWater || inLava) {
+			motionY += 0.04;
+		} 
+		else if (onGround) {
+			motionY = 0.42;
+		}
+
+	// Movement easing
+	moveStrafe *= 0.98f;
+	moveForward *= 0.98f;
+
 	tickPhysics();
 }

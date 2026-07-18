@@ -105,7 +105,8 @@ void Entity::tick() {
 	}
 
 	// Returns if we are in lava
-	if (world->isMaterialInAABB(getLavaCollider(), Material::Lava())) {
+	inLava = world->isMaterialInAABB(getLavaCollider(), Material::Lava());
+	if (inLava) {
 		if (!isImmuneToFire) {
 			attackEntityFrom(nullptr, 4);
 			fire = 600;

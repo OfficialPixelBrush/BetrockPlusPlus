@@ -57,6 +57,13 @@ struct EntityManager {
 		return false;
 	}
 	std::vector<Tag> collectEntitiesForSave(Int2 cpos, bool clearCollectedEntities = false);
+	std::shared_ptr<Entity> getEntityByIdShared(EntityId id) {
+		for (auto& entity : m_entities) {
+			if (entity->id == id)
+				return entity;
+		}
+		return nullptr;
+	}
 	void createEntityFromNBT(Tag& nbt);
 
 	EntityId getNextEntityId() {
