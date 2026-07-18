@@ -2025,6 +2025,7 @@ void registerAll() {
 			Vec3 spawnPos = { pos.x + 0.5, pos.y + 0.5, pos.z + 0.5 };
 			auto entity = std::make_shared<FallingBlockEntity>(spawnPos, BLOCK_GRAVEL);
 			world.entityManager.addEntity(std::move(entity));
+			world.setBlock(pos, BLOCK_AIR, 0);
 		} else {
 			world.setBlock(pos, BLOCK_AIR, 0);
 
@@ -2056,6 +2057,7 @@ void registerAll() {
 			Vec3 spawnPos = { pos.x + 0.5, pos.y + 0.5, pos.z + 0.5 };
 			auto entity = std::make_shared<FallingBlockEntity>(spawnPos, BLOCK_SAND);
 			world.entityManager.addEntity(std::move(entity));
+			world.setBlock(pos, BLOCK_AIR, 0);
 		} else {
 			world.setBlock(pos, BLOCK_AIR, 0);
 

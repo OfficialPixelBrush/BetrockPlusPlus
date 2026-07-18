@@ -22,9 +22,6 @@ void FallingBlockEntity::tick() {
 
 	auto fd = MathHelper::floor_double;
 	Int3 blockPosition = { fd(position.x), fd(position.y), fd(position.z) };
-	if (this->world->getBlockId(blockPosition) == this->block) {
-		this->world->setBlock(blockPosition, BLOCK_AIR, 0);
-	}
 
 	if (onGround) {
 		velocity *= { 0.7, -0.5, 0.7 };

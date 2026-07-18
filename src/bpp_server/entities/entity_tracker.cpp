@@ -23,17 +23,13 @@ void EntityTracker::tick() {
 
 	for (auto& entityId : deadThisTick) {
 		auto& entry = trackedEntities.at(entityId);
-		for (EntityId viewerId : entry.visibleTo) {
-			auto& pSession = server->getSessionById(viewerId);
-			Packet::DespawnEntity pkt;
-			pkt.entity_id = entityId;
-			pkt.Serialize(pSession.stream);
-		}
+		despawnEntityForViewers(entityId, entry);
 		for (auto& [id, otherEntry] : trackedEntities) {
 			otherEntry.visibleTo.erase(entityId);
 		}
 		trackedEntities.erase(entityId);
 		playerIds.erase(entityId);
+		GlobalLogger().info << "Killed entity id " << entityId << "\n";
 	}
 
 	// Despawn pass / update
@@ -57,6 +53,8 @@ void EntityTracker::tick() {
 				pkt.Serialize(pSession.stream);
 
 				it = entry.visibleTo.erase(it);
+				GlobalLogger().info << "Sent despawn packet to session id " << playerId << " for entity "
+				                    << pkt.entity_id << "\n";
 			} else {
 				++it;
 			}
@@ -78,82 +76,99 @@ void EntityTracker::tick() {
 				continue;
 			}
 
-			auto& pSession = server->getSessionById(playerId);
-			switch (entityEntry.entity->type) {
-			case EntityType::ITEM: {
-				ItemEntity& ie = dynamic_cast<ItemEntity&>(*entityEntry.entity);
-				Packet::SpawnItem pkt;
-				pkt.entity_id = entityEntry.entity->id;
-				pkt.item = ie.itemStack;
-				pkt.q_position = quantizePosition(entityEntry.entity->position);
-				// For some reason notch decided this should be a convoluted way of getting the initial spawn velocity
-				auto quantizeSpawnVelocity = [](double v) -> int8_t {
-					return int8_t(v * 128.0);
-				};
-				pkt.q_rotation = { quantizeSpawnVelocity(entityEntry.entity->velocity.x),
-					               quantizeSpawnVelocity(entityEntry.entity->velocity.y),
-					               quantizeSpawnVelocity(entityEntry.entity->velocity.z) };
-				pkt.Serialize(pSession.stream);
-				break;
-			}
-			case EntityType::PLAYER: {
-				Packet::SpawnPlayer pkt;
-				pkt.entity_id = entityEntry.entity->id;
-				pkt.held_item_id = Items::Id::NONE;
-				pkt.q_position = quantizePosition(entityEntry.entity->position);
-				pkt.q_rotation = { int8_t(quantizeRotation(entityEntry.entity->rotationYaw)),
-					               int8_t(quantizeRotation(entityEntry.entity->rotationPitch)) };
-
-				// To prevent bad behavior when we share a name with another entity
-				auto username = server->getUsernameByEntityId(entityEntry.entity->id);
-				pkt.username = username;
-				pkt.Serialize(pSession.stream);
-				break;
-			}
-			case EntityType::CREEPER: {
-				Packet::SpawnMob pkt;
-				pkt.entity_id = entityEntry.entity->id;
-				pkt.mob_type = PacketData::MobType::CREEPER;
-				pkt.q_position = quantizePosition(entityEntry.entity->position);
-				pkt.q_rotation = { int8_t(quantizeRotation(entityEntry.entity->rotationYaw)),
-					               int8_t(quantizeRotation(entityEntry.entity->rotationPitch)) };
-				pkt.metadata.push_back(
-				    PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
-				pkt.Serialize(pSession.stream);
-				break;
-			}
-			case EntityType::BOAT: {
-				Packet::SpawnObject pkt;
-				pkt.entity_id = entityEntry.entity->id;
-				pkt.object_type = PacketData::ObjectType::BOAT;
-				pkt.q_position = quantizePosition(entityEntry.entity->position);
-				pkt.Serialize(pSession.stream);
-				break;
-			}
-			case EntityType::FALLING_SAND: {
-				Packet::SpawnObject pkt;
-				pkt.entity_id = entityEntry.entity->id;
-				pkt.object_type = PacketData::ObjectType::FALLING_SAND;
-				pkt.q_position = quantizePosition(entityEntry.entity->position);
-				pkt.q_velocity = quantizeVelocity(entityEntry.entity->velocity);
-				pkt.Serialize(pSession.stream);
-				break;
-			}
-			case EntityType::FALLING_GRAVEL: {
-				Packet::SpawnObject pkt;
-				pkt.entity_id = entityEntry.entity->id;
-				pkt.object_type = PacketData::ObjectType::FALLING_GRAVEL;
-				pkt.q_position = quantizePosition(entityEntry.entity->position);
-				pkt.q_velocity = quantizeVelocity(entityEntry.entity->velocity);
-				pkt.Serialize(pSession.stream);
-				break;
-			}
-			default:
-				continue;
-			}
-			// TODO: Implement other types
-			entityEntry.visibleTo.insert(playerId);
+			spawnEntityForPlayer(playerId, entityEntry);
 		}
+	}
+}
+
+void EntityTracker::spawnEntityForPlayer(EntityId playerId, TrackedEntry& entityEntry) {
+	GlobalLogger().info << "Spawning entity at " << entityEntry.entity->position << "\n";
+	auto& pSession = server->getSessionById(playerId);
+	switch (entityEntry.entity->type) {
+	case EntityType::ITEM: {
+		GlobalLogger().info << "Spawned item entity\n";
+		ItemEntity& ie = dynamic_cast<ItemEntity&>(*entityEntry.entity);
+		Packet::SpawnItem pkt;
+		pkt.entity_id = entityEntry.entity->id;
+		pkt.item = ie.itemStack;
+		pkt.q_position = quantizePosition(entityEntry.entity->position);
+		// For some reason notch decided this should be a convoluted way of getting the initial spawn velocity
+		auto quantizeSpawnVelocity = [](double v) -> int8_t {
+			return int8_t(v * 128.0);
+		};
+		pkt.q_rotation = { quantizeSpawnVelocity(entityEntry.entity->velocity.x),
+			               quantizeSpawnVelocity(entityEntry.entity->velocity.y),
+			               quantizeSpawnVelocity(entityEntry.entity->velocity.z) };
+		pkt.Serialize(pSession.stream);
+		break;
+	}
+	case EntityType::PLAYER: {
+		GlobalLogger().info << "Spawned player entity\n";
+		Packet::SpawnPlayer pkt;
+		pkt.entity_id = entityEntry.entity->id;
+		pkt.held_item_id = Items::Id::NONE;
+		pkt.q_position = quantizePosition(entityEntry.entity->position);
+		pkt.q_rotation = { int8_t(quantizeRotation(entityEntry.entity->rotationYaw)),
+			               int8_t(quantizeRotation(entityEntry.entity->rotationPitch)) };
+
+		// To prevent bad behavior when we share a name with another entity
+		auto username = server->getUsernameByEntityId(entityEntry.entity->id);
+		pkt.username = username;
+		pkt.Serialize(pSession.stream);
+		break;
+	}
+	case EntityType::CREEPER: {
+		Packet::SpawnMob pkt;
+		pkt.entity_id = entityEntry.entity->id;
+		pkt.mob_type = PacketData::MobType::CREEPER;
+		pkt.q_position = quantizePosition(entityEntry.entity->position);
+		pkt.q_rotation = { int8_t(quantizeRotation(entityEntry.entity->rotationYaw)),
+			               int8_t(quantizeRotation(entityEntry.entity->rotationPitch)) };
+		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		pkt.Serialize(pSession.stream);
+		break;
+	}
+	case EntityType::BOAT: {
+		Packet::SpawnObject pkt;
+		pkt.entity_id = entityEntry.entity->id;
+		pkt.object_type = PacketData::ObjectType::BOAT;
+		pkt.q_position = quantizePosition(entityEntry.entity->position);
+		pkt.Serialize(pSession.stream);
+		break;
+	}
+	case EntityType::FALLING_SAND: {
+		GlobalLogger().info << "Spawned falling sand entity\n";
+		Packet::SpawnObject pkt;
+		pkt.entity_id = entityEntry.entity->id;
+		pkt.object_type = PacketData::ObjectType::FALLING_SAND;
+		pkt.q_position = quantizePosition(entityEntry.entity->position);
+		pkt.q_velocity = quantizeVelocity(entityEntry.entity->velocity);
+		pkt.Serialize(pSession.stream);
+		break;
+	}
+	case EntityType::FALLING_GRAVEL: {
+		GlobalLogger().info << "Spawned falling gravel entity\n";
+		Packet::SpawnObject pkt;
+		pkt.entity_id = entityEntry.entity->id;
+		pkt.object_type = PacketData::ObjectType::FALLING_GRAVEL;
+		pkt.q_position = quantizePosition(entityEntry.entity->position);
+		pkt.q_velocity = quantizeVelocity(entityEntry.entity->velocity);
+		pkt.Serialize(pSession.stream);
+		break;
+	}
+	default:
+		// TODO: Implement other types
+		return;
+	}
+	entityEntry.visibleTo.insert(playerId);
+}
+
+void EntityTracker::despawnEntityForViewers(EntityId entityId, TrackedEntry& entry) {
+	for (EntityId viewerId : entry.visibleTo) {
+		auto& pSession = server->getSessionById(viewerId);
+		Packet::DespawnEntity pkt;
+		pkt.entity_id = entityId;
+		pkt.Serialize(pSession.stream);
 	}
 }
 

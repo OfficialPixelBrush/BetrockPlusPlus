@@ -79,11 +79,36 @@ struct EntityTracker {
 		entry.lastEncodedYaw = quantizeRotation(entity->rotationYaw);
 
 		trackedEntities[entity->id] = std::move(entry);
-		this->tick();
+
+		// Let any player already in range see this entity right away
+		auto& newEntry = trackedEntities.at(entity->id);
+		for (EntityId playerId : playerIds) {
+			if (playerId == entity->id)
+				continue;
+			auto playerIt = trackedEntities.find(playerId);
+			if (playerIt == trackedEntities.end())
+				continue;
+			auto& player = playerIt->second;
+			auto distanceTo = std::abs(std::max(std::abs(entity->position.x - player.entity->position.x),
+			                                    std::abs(entity->position.z - player.entity->position.z)));
+			if (distanceTo > newEntry.profile.range)
+				continue;
+			spawnEntityForPlayer(playerId, newEntry);
+		}
 	}
 
-	void untrackEntity([[maybe_unused]] Entity* entity) {
-		this->tick();
+	void untrackEntity(Entity* entity) {
+		auto it = trackedEntities.find(entity->id);
+		if (it == trackedEntities.end())
+			return;
+
+		despawnEntityForViewers(entity->id, it->second);
+
+		for (auto& [id, otherEntry] : trackedEntities)
+			otherEntry.visibleTo.erase(entity->id);
+
+		trackedEntities.erase(it);
+		playerIds.erase(entity->id);
 	}
 
 	void addPlayer(Entity* player) {
@@ -98,12 +123,39 @@ struct EntityTracker {
 
 		trackedEntities[player->id] = std::move(entry);
 		playerIds.insert(player->id);
-		this->tick();
+		auto& newPlayerEntry = trackedEntities.at(player->id);
+
+		// This new player should immediately see anything already in range
+		for (auto& [entityId, entityEntry] : trackedEntities) {
+			if (entityId == player->id)
+				continue;
+			auto distanceTo = std::abs(std::max(std::abs(entityEntry.entity->position.x - player->position.x),
+			                                    std::abs(entityEntry.entity->position.z - player->position.z)));
+			if (distanceTo > entityEntry.profile.range)
+				continue;
+			spawnEntityForPlayer(player->id, entityEntry);
+		}
+
+		for (EntityId otherPlayerId : playerIds) {
+			if (otherPlayerId == player->id)
+				continue;
+			auto otherIt = trackedEntities.find(otherPlayerId);
+			if (otherIt == trackedEntities.end())
+				continue;
+			auto distanceTo = std::abs(std::max(std::abs(player->position.x - otherIt->second.entity->position.x),
+			                                    std::abs(player->position.z - otherIt->second.entity->position.z)));
+			if (distanceTo > newPlayerEntry.profile.range)
+				continue;
+			spawnEntityForPlayer(otherPlayerId, newPlayerEntry);
+		}
 	}
 
-	void removePlayer([[maybe_unused]] Entity* player) {
-		this->tick();
+	void removePlayer(Entity* player) {
+		untrackEntity(player);
 	}
+
+	void spawnEntityForPlayer(EntityId playerId, TrackedEntry& entityEntry);
+	void despawnEntityForViewers(EntityId entityId, TrackedEntry& entry);
 
 	void sendPacketToPlayersInTrackedEntry(Packet::BasePacket& pkt, TrackedEntry& trackedEntry);
 	void sendPacketToViewers(Packet::BasePacket& pkt, EntityId id);
@@ -159,7 +211,8 @@ struct EntityTracker {
 		default:
 			return { 0, 0, false };
 
-			GlobalLogger().warn << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) + "'\n";
+			GlobalLogger().warn << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) +
+			                           "'\n";
 		}
 	}
 };

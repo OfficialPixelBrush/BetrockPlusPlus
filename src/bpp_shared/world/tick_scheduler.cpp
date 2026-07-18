@@ -9,10 +9,9 @@
 
 void TickScheduler::tick() {
 	if (!this->world) return;
-	currentTick = world->elapsed_ticks;
 
 	while (!this->scheduledTicks.empty() && scheduledTicks.top().tickDue <= currentTick) {
-		auto& entry = scheduledTicks.top();
+		ScheduledTick entry = scheduledTicks.top();
 		scheduledTicks.pop();
 
 		// Did we reschedule this position?
@@ -26,4 +25,5 @@ void TickScheduler::tick() {
 				fn(*world, entry.pos, 0, world->rand);
 		}
 	}
+	currentTick++;
 }
