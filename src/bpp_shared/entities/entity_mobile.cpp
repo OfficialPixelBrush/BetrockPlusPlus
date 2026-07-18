@@ -38,7 +38,7 @@ void MobileEntity::setGoal(std::optional<Int3> goal) {
 }
 
 void MobileEntity::followPath() {
-	moveForward = 0.0f;
+	input.y = 0.0f;
 	jumping = false;
 
 	if (currentPath.empty())
@@ -78,7 +78,7 @@ void MobileEntity::followPath() {
 
 	rotationYaw += yawDelta;
 
-	moveForward = 0.7f;
+	input.y = 0.7f;
 
 	int floorY = MathHelper::floor_double(collider.minY + 0.5);
 	double dy = target.y - floorY;
@@ -120,8 +120,8 @@ void MobileEntity::tickPhysics() {
 		// Water and lava movement
 		auto oldY = position.y;
 		double friction = 0.8;
-		applyInput(moveStrafe, moveForward, 0.02f);
-		move({ velocity.x, velocity.y, velocity.z });
+		applyInput(0.02f);
+		move();
 		velocity *= friction;
 		velocity.y -= 0.2; // Sink
 
@@ -147,7 +147,7 @@ void MobileEntity::tickPhysics() {
 		}
 
 		float acceleration = 0.16277136f / (friction * friction * friction);
-		applyInput(moveStrafe, moveForward, onGround ? 0.1f * acceleration : 0.02f);
+		applyInput(onGround ? 0.1f * acceleration : 0.02f);
 
 		// Clamp our velocity if we are touching a ladder
 		// Also make sure we stop if we sneak
@@ -167,7 +167,7 @@ void MobileEntity::tickPhysics() {
 		}
 
 		// Move the entity
-		move(velocity);
+		move();
 
 		// Our entity is pushing itself into the wall the ladder is on
 		// So apply an upwards nudge
@@ -316,8 +316,8 @@ void MobileEntity::tick() {
 	}
 
 	// Movement easing
-	moveStrafe *= 0.98f;
-	moveForward *= 0.98f;
+	input.x *= 0.98f;
+	input.y *= 0.98f;
 
 	tickPhysics();
 }

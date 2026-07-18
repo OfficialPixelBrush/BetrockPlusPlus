@@ -130,8 +130,8 @@ void Entity::applyKnockback(Vec3 direction) {
 	forceVelocityUpdate = true;
 }
 
-void Entity::applyInput(float strafe, float forward, float acceleration) {
-	float length = std::sqrt((strafe * strafe) + (forward * forward));
+void Entity::applyInput(float acceleration) {
+	float length = std::sqrt((input.x * input.x) + (input.y * input.y));
 
 	if (length < 0.01f)
 		return;
@@ -139,31 +139,31 @@ void Entity::applyInput(float strafe, float forward, float acceleration) {
 	if (length < 1.0f)
 		length = 1.0f;
 
-	strafe /= length;
-	forward /= length;
+	input.x /= length;
+	input.y /= length;
 
 	float yaw = rotationYaw * (JavaMath::PI / 180.0f);
 	float sinYaw = std::sin(yaw);
 	float cosYaw = std::cos(yaw);
 
-	velocity.x += (strafe * cosYaw - forward * sinYaw) * acceleration;
-	velocity.z += (forward * cosYaw + strafe * sinYaw) * acceleration;
+	velocity.x += (input.x * cosYaw - input.y * sinYaw) * acceleration;
+	velocity.z += (input.y * cosYaw + input.x * sinYaw) * acceleration;
 }
 
-void Entity::move(Vec3 movement) {
+void Entity::move() {
 	ySize *= 0.4f;
 
 	if (inWeb) {
 		inWeb = false;
-		movement.x *= COBWEB_HORIZONTAL_DRAG;
-		movement.y *= COBWEB_VERTICAL_DRAG;
-		movement.z *= COBWEB_HORIZONTAL_DRAG;
+		velocity.x *= COBWEB_HORIZONTAL_DRAG;
+		velocity.y *= COBWEB_VERTICAL_DRAG;
+		velocity.z *= COBWEB_HORIZONTAL_DRAG;
 		velocity.x = 0.0;
 		velocity.y = 0.0;
 		velocity.z = 0.0;
 	}
 
-	Vec3 original = movement;
+	Vec3 original = velocity;
 	AABB originalCollider = collider;
 	bool clampSneak = onGround && sneaking;
 
@@ -175,80 +175,80 @@ void Entity::move(Vec3 movement) {
 		};
 
 		// Clamp on the X and Z axes to avoid falling off edges while sneaking
-		while (movement.x != 0.0 && !groundBelow(movement.x, 0.0)) {
-			if (movement.x < step && movement.x >= -step)
-				movement.x = 0.0;
-			else if (movement.x > 0.0)
-				movement.x -= step;
+		while (velocity.x != 0.0 && !groundBelow(velocity.x, 0.0)) {
+			if (velocity.x < step && velocity.x >= -step)
+				velocity.x = 0.0;
+			else if (velocity.x > 0.0)
+				velocity.x -= step;
 			else
-				movement.x += step;
+				velocity.x += step;
 		}
-		while (movement.z != 0.0 && !groundBelow(0.0, movement.z)) {
-			if (movement.z < step && movement.z >= -step)
-				movement.z = 0.0;
-			else if (movement.z > 0.0)
-				movement.z -= step;
+		while (velocity.z != 0.0 && !groundBelow(0.0, velocity.z)) {
+			if (velocity.z < step && velocity.z >= -step)
+				velocity.z = 0.0;
+			else if (velocity.z > 0.0)
+				velocity.z -= step;
 			else
-				movement.z += step;
+				velocity.z += step;
 		}
 
 		// Update our og values so step up logic uses the correct position
-		original.x = movement.x;
-		original.z = movement.z;
+		original.x = velocity.x;
+		original.z = velocity.z;
 	}
 
-	auto sweptCollider = world->getCollidingBoundingBoxes(collider.addCoord(movement.x, movement.y, movement.z));
+	auto sweptCollider = world->getCollidingBoundingBoxes(collider.addCoord(velocity.x, velocity.y, velocity.z));
 
 	// Resolve Y first
 	for (auto& col : sweptCollider) {
-		movement.y = col.calculateYOffset(collider, movement.y);
+		velocity.y = col.calculateYOffset(collider, velocity.y);
 	}
-	collider = collider.offset(0.0, movement.y, 0.0);
+	collider = collider.offset(0.0, velocity.y, 0.0);
 
 	// Check if we are on ground or landed this tick
-	bool canStepUp = onGround || (original.y != movement.y && original.y < 0.0);
+	bool canStepUp = onGround || (original.y != velocity.y && original.y < 0.0);
 
 	// Resolve X
 	for (auto& col : sweptCollider) {
-		movement.x = col.calculateXOffset(collider, movement.x);
+		velocity.x = col.calculateXOffset(collider, velocity.x);
 	}
-	collider = collider.offset(movement.x, 0.0, 0.0);
+	collider = collider.offset(velocity.x, 0.0, 0.0);
 
 	// Resolve Z
 	for (auto& col : sweptCollider) {
-		movement.z = col.calculateZOffset(collider, movement.z);
+		velocity.z = col.calculateZOffset(collider, velocity.z);
 	}
-	collider = collider.offset(0.0, 0.0, movement.z);
+	collider = collider.offset(0.0, 0.0, velocity.z);
 
-	collidedHorizontally = original.x != movement.x || original.z != movement.z;
+	collidedHorizontally = original.x != velocity.x || original.z != velocity.z;
 
 	if (stepHeight > 0.0f && canStepUp && (clampSneak || ySize < 0.05f) && collidedHorizontally) {
-		auto stepUpMovement = movement;
-		movement = { original.x, stepHeight, original.z };
+		auto stepUpMovement = velocity;
+		velocity = { original.x, stepHeight, original.z };
 
 		AABB resolvedCollider = collider;
 		collider = originalCollider;
 
 		auto stepUpSweptCollider = world->getCollidingBoundingBoxes(
-		    collider.addCoord(movement.x, movement.y, movement.z));
+		    collider.addCoord(velocity.x, velocity.y, velocity.z));
 
 		// Resolve Y first
 		for (auto& col : stepUpSweptCollider) {
-			movement.y = col.calculateYOffset(collider, movement.y);
+			velocity.y = col.calculateYOffset(collider, velocity.y);
 		}
-		collider = collider.offset(0.0, movement.y, 0.0);
+		collider = collider.offset(0.0, velocity.y, 0.0);
 
 		// Resolve X
 		for (auto& col : stepUpSweptCollider) {
-			movement.x = col.calculateXOffset(collider, movement.x);
+			velocity.x = col.calculateXOffset(collider, velocity.x);
 		}
-		collider = collider.offset(movement.x, 0.0, 0.0);
+		collider = collider.offset(velocity.x, 0.0, 0.0);
 
 		// Resolve Z
 		for (auto& col : stepUpSweptCollider) {
-			movement.z = col.calculateZOffset(collider, movement.z);
+			velocity.z = col.calculateZOffset(collider, velocity.z);
 		}
-		collider = collider.offset(0.0, 0.0, movement.z);
+		collider = collider.offset(0.0, 0.0, velocity.z);
 
 		// Snap down
 		double downY = -stepHeight;
@@ -259,8 +259,8 @@ void Entity::move(Vec3 movement) {
 
 		// Keep whichever collision path moved further horizontally
 		if (stepUpMovement.x * stepUpMovement.x + stepUpMovement.z * stepUpMovement.z >=
-		    movement.x * movement.x + movement.z * movement.z) {
-			movement = stepUpMovement;
+		    velocity.x * velocity.x + velocity.z * velocity.z) {
+			velocity = stepUpMovement;
 			collider = resolvedCollider;
 		} else {
 			double frac = collider.minY - std::trunc(collider.minY);
@@ -274,19 +274,19 @@ void Entity::move(Vec3 movement) {
 	position.y = collider.minY + double(yOffset) - double(ySize);
 	position.z = (collider.minZ + collider.maxZ) / 2.0;
 
-	collidedHorizontally = original.x != movement.x || original.z != movement.z;
-	collidedVertically = original.y != movement.y;
-	onGround = original.y != movement.y && original.y < 0.0;
+	collidedHorizontally = original.x != velocity.x || original.z != velocity.z;
+	collidedVertically = original.y != velocity.y;
+	onGround = original.y != velocity.y && original.y < 0.0;
 	collided = collidedHorizontally || collidedVertically;
 
-	if (original.x != movement.x)
+	if (original.x != velocity.x)
 		velocity.x = 0.0;
-	if (original.y != movement.y)
+	if (original.y != velocity.y)
 		velocity.y = 0.0;
-	if (original.z != movement.z)
+	if (original.z != velocity.z)
 		velocity.z = 0.0;
 
-	updateFallState(movement.y);
+	updateFallState(velocity.y);
 
 	// Scan each block this entity overlaps so we can trigger collided with code
 	auto minX = MathHelper::floor_double(collider.minX + 0.001);

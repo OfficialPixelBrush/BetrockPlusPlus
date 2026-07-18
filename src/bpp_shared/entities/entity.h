@@ -101,8 +101,6 @@ struct Entity {
 	bool collided = false;
 	bool collidedHorizontally = false;
 	bool collidedVertically = false;
-	bool sneaking = false;
-	bool jumping = false;
 
 	// Movement / environment state
 	bool hasPhysics = true;
@@ -118,9 +116,10 @@ struct Entity {
 	float distanceWalkedModified = 0.0f;
 	float ySize = 0.0f;
 
-	//TODO: combine moveForward, moveStrafe and maybe jumping into an input vector
-	float moveForward = 0.0f; // Forward/backward input axis
-	float moveStrafe = 0.0f;  // Left/right input axis
+	// Inputs
+	Float2 input; // Think of this like a 2D joystick (up/down Y -> forward/backward, right/left X -> strafe)
+	bool sneaking = false;
+	bool jumping = false;
 
 	// Fire
 	int fireTicks = 0;           // Ticks remaining on fire; 0 = not on fire
@@ -188,9 +187,8 @@ struct Entity {
 	virtual bool pushOutOfBlocks(Vec3 pos);
 	virtual void onCollideWithPlayer(PlayerEntity& entity);
 	virtual void applyKnockback(Vec3 direction);
-	//TODO: use moveForward, moveStrafe or the new input vector instead of args
-	virtual void applyInput(float strafe, float forward, float acceleration);
-	virtual void move(Vec3 movement);
+	virtual void applyInput(float acceleration);
+	virtual void move();
 	//TODO: Move to LivingEntity
 	virtual void dealDamage(int amount);
 	virtual void updateFallState(float movedY);
