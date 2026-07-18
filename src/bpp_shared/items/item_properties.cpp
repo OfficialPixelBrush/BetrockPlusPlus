@@ -189,11 +189,25 @@ ItemDamage GetMaterialUses(ToolMaterial material) {
 	}
 }
 
+void harmTool(ItemStack* stack) {
+	stack->data++;
+	if (stack->data >= toolProperties[stack->id].max_uses) {
+		stack->decrementCount(1);
+	}
+}
+
 void useHoe(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) {
 	BlockType b = world.getBlockId(pos);
 	if (b == BLOCK_GRASS || b == BLOCK_DIRT) {
 		world.setBlock(pos, BLOCK_FARMLAND);
 	}
+	harmTool(stack);
+}
+
+void useFlintAndSteel(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) {
+	pos = Blocks::getAdjacentBlockPos(pos, face);
+	world.setBlock(pos, BLOCK_FIRE);
+	harmTool(stack);
 }
 
 void testSetGoal(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) {
@@ -254,12 +268,13 @@ void inflictDamage(Entity& target_entity, EntityHealth damage) {
 	return;
 }
 
-void attackWithItem(Entity& target_entity, ItemId item) {
+void attackWithItem(Entity& target_entity, ItemStack* stack) {
 	EntityHealth damage = 1;
-	if (toolProperties.contains(item))
-		damage = calculateDamage(toolProperties[item].type, materialToLevel(toolProperties[item].material));
+	if (toolProperties.contains(stack->id))
+		damage = calculateDamage(toolProperties[stack->id].type, materialToLevel(toolProperties[stack->id].material));
 	inflictDamage(target_entity, damage);
 	GlobalLogger().info << "Dealt " << damage << " damage to " << target_entity.id << "!\n";
+	harmTool(stack);
 }
 
 void registerAll() {
@@ -268,7 +283,10 @@ void registerAll() {
 	itemBehavior[Items::Id::HOE_IRON] = ItemBehavior{ .onBlockUse = useHoe };
 	itemBehavior[Items::Id::HOE_GOLD] = ItemBehavior{ .onBlockUse = useHoe };
 	itemBehavior[Items::Id::HOE_DIAMOND] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::FLINT_AND_STEEL] = ItemBehavior{ .onBlockUse = testSetGoal };
+	itemBehavior[Items::Id::FLINT_AND_STEEL] = ItemBehavior{
+		.onBlockStartMining = testSetGoal,
+		.onBlockUse = useFlintAndSteel
+	};
 
 	// Tool Properties
 	// Sword

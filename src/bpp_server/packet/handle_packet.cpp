@@ -80,6 +80,11 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 		if (Blocks::blockBehaviors[session.lastTargetedBlock].onBlockClicked) {
 			Blocks::blockBehaviors[session.lastTargetedBlock].onBlockClicked(world, packetPos);
 		}
+
+		ItemStack* heldItem = session.inventory.getHeldItem();
+		if (!heldItem) return;
+		if (!Items::itemBehavior[heldItem->id].onBlockStartMining) return;
+		Items::itemBehavior[heldItem->id].onBlockStartMining(world, heldItem, packetPos, pkt.face);
 		return;
 	}
 	case PacketData::MineStatus::DIGGING_FINISHED: {
@@ -87,6 +92,11 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 			return; // block changed while mining so we don't drop it
 		}
 		Blocks::BreakAndDropBlock(world, packetPos);
+
+		ItemStack* heldItem = session.inventory.getHeldItem();
+		if (!heldItem) return;
+		if (!Items::itemBehavior[heldItem->id].onBlockFinishMining) return;
+		Items::itemBehavior[heldItem->id].onBlockFinishMining(world, heldItem, packetPos, pkt.face);
 		return;
 	}
 	case PacketData::MineStatus::DROPPED_ITEM: {
@@ -267,7 +277,7 @@ void InteractWithEntity(Packet::InteractWithEntity& pkt, PlayerSession& session,
 	if (pkt.attack) // For funsies hehe
 		entity->attackEntityFrom(sourceEntity.get(), 1);
 
-	const ItemStack* heldItem = session.inventory.getHeldItem();
+	ItemStack* heldItem = session.inventory.getHeldItem();
 	if (!heldItem)
 		return;
 
@@ -280,10 +290,10 @@ void InteractWithEntity(Packet::InteractWithEntity& pkt, PlayerSession& session,
 
 	if (pkt.attack) {
 		if (behavior.onEntityAttack)
-			behavior.onEntityAttack(*entity, heldItem->id);
+			behavior.onEntityAttack(*entity, heldItem);
 	} else {
 		if (behavior.onEntityUse)
-			behavior.onEntityUse(*entity);
+			behavior.onEntityUse(*entity, heldItem);
 	}
 }
 

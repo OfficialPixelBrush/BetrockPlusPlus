@@ -41,6 +41,13 @@ enum class ToolType : int8_t {
 	Axe = 3,
 	Sword = 4,
 };
+enum class ArmorType : int8_t {
+	None = -1,
+	Boots = 0,
+	Leggings = 1,
+	Chestplate = 2,
+	Helmet = 3,
+};
 
 ItemDamage GetMaterialUses(ToolMaterial material);
 
@@ -55,11 +62,11 @@ struct ItemProperties {
 };
 
 struct ItemBehavior {
-	void (*onBlockStartMining)(WorldManager& world, Int3 pos) = nullptr;
-	void (*onBlockStopMining)(WorldManager& world, Int3 pos) = nullptr;
+	void (*onBlockStartMining)(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) = nullptr;
+	void (*onBlockFinishMining)(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) = nullptr;
 	void (*onBlockUse)(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) = nullptr;
-	void (*onEntityAttack)(Entity& attackedEntity, ItemId item) = nullptr;
-	void (*onEntityUse)(Entity& usedEntity) = nullptr;
+	void (*onEntityAttack)(Entity& attackedEntity, ItemStack* stack) = nullptr;
+	void (*onEntityUse)(Entity& usedEntity, ItemStack* stack) = nullptr;
 };
 
 extern std::unordered_map<ItemId, ItemBehavior> itemBehavior;
@@ -81,6 +88,8 @@ bool IsThrowable(ItemId id);
 bool IsEdible(ItemId id);
 bool IsStackable(ItemId id); // max stack > 1
 bool IsBlock(ItemId id);
+
+void harmTool(ItemStack* stack);
 
 // Returns max stack size for this item/block id
 int32_t GetMaxStack(ItemId id);
