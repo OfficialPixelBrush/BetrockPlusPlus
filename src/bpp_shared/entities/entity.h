@@ -70,7 +70,7 @@ struct Entity {
 	Dimension dim = Dimension::Overworld;
 
 	// Riding
-	Entity* rider = nullptr;
+	Entity* vehicle = nullptr;
 	Entity* passenger = nullptr;
 
 	Vec3 position;

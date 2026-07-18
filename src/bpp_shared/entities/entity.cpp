@@ -79,8 +79,8 @@ void Entity::onCollideWithPlayer(PlayerEntity& entity) {
 void Entity::tick() {
 	ticksExisted++;
 
-	if (this->rider != nullptr && this->rider->isDead) {
-		this->rider = nullptr;
+	if (this->vehicle != nullptr && this->vehicle->isDead) {
+		this->vehicle = nullptr;
 	}
 
 	// Returns if we are in water and applies a push to our entity
