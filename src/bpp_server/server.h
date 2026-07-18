@@ -48,7 +48,6 @@ public:
 				return *player;
 			}
 		}
-    	throw std::out_of_range("Session by Id not found");
 	}
 
 	PlayerSession& getSessionByUsername(const std::string& username) {
@@ -57,7 +56,6 @@ public:
 				return *player;
 			}
 		}
-    	throw std::out_of_range("Session by Username not found");
 	}
 
 	std::string getUsernameByEntityId(EntityId id) {
@@ -66,7 +64,6 @@ public:
 				return player->username;
 			}
 		}
-    	throw std::out_of_range("Username by Entity Id not found");
 	}
 
 	// Send a message to all players

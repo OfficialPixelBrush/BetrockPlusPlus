@@ -2008,7 +2008,7 @@ void registerAll() {
 		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_GRAVEL, 3);
 	};
 	blockBehaviors[BLOCK_GRAVEL].onBlockAdded = [](WorldManager& world, Int3 pos) -> void {
-		blockBehaviors[BLOCK_GRAVEL].onTick(world, pos, 0, world.rand);
+		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_GRAVEL, 3);
 	};
 	blockBehaviors[BLOCK_GRAVEL].onTick = [](WorldManager& world, Int3 pos, uint8_t meta, Java::Random& random) -> void {
 		Int3 below = { pos.x, pos.y - 1, pos.z };
@@ -2041,7 +2041,7 @@ void registerAll() {
 		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_SAND, 3);
 	};
 	blockBehaviors[BLOCK_SAND].onBlockAdded = [](WorldManager& world, Int3 pos) -> void {
-		blockBehaviors[BLOCK_SAND].onTick(world, pos, 0, world.rand);
+		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_SAND, 3);
 	};
 	blockBehaviors[BLOCK_SAND].onTick = [](WorldManager& world, Int3 pos, uint8_t meta, Java::Random& random) -> void {
 		Int3 below = { pos.x, pos.y - 1, pos.z };

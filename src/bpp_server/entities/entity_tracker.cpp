@@ -149,7 +149,7 @@ void EntityTracker::tick() {
 				break;
 			}
 			default:
-				break;
+				continue;
 			}
 			// TODO: Implement other types
 			entityEntry.visibleTo.insert(playerId);
