@@ -130,6 +130,24 @@ void EntityTracker::tick() {
 				pkt.Serialize(pSession.stream);
 				break;
 			}
+			case EntityType::FALLING_SAND: {
+				Packet::SpawnObject pkt;
+				pkt.entity_id = entityEntry.entity->id;
+				pkt.object_type = PacketData::ObjectType::FALLING_SAND;
+				pkt.q_position = quantizePosition(entityEntry.entity->position);
+				pkt.q_velocity = quantizeVelocity(entityEntry.entity->velocity);
+				pkt.Serialize(pSession.stream);
+				break;
+			}
+			case EntityType::FALLING_GRAVEL: {
+				Packet::SpawnObject pkt;
+				pkt.entity_id = entityEntry.entity->id;
+				pkt.object_type = PacketData::ObjectType::FALLING_GRAVEL;
+				pkt.q_position = quantizePosition(entityEntry.entity->position);
+				pkt.q_velocity = quantizeVelocity(entityEntry.entity->velocity);
+				pkt.Serialize(pSession.stream);
+				break;
+			}
 			default:
 				break;
 			}

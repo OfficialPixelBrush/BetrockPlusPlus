@@ -19,6 +19,11 @@ struct FallingBlockEntity : public Entity {
 		this->yOffset = height / 2.0f;
 		this->preventEntitySpawning = true;
 		rebuildCollider();
+
+		if (block == BLOCK_SAND)
+			type = EntityType::FALLING_SAND;
+		if (block == BLOCK_GRAVEL)
+			type = EntityType::FALLING_GRAVEL;
 	}
 
 	void tick() override;

@@ -2002,7 +2002,40 @@ void registerAll() {
 		return false;
 	};
 
-	// Falling sand!
+	// Falling blocks!
+	blockBehaviors[BLOCK_GRAVEL].onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
+		// Schedule a check to see if we can fall
+		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_GRAVEL, 3);
+	};
+	blockBehaviors[BLOCK_GRAVEL].onBlockAdded = [](WorldManager& world, Int3 pos) -> void {
+		blockBehaviors[BLOCK_GRAVEL].onTick(world, pos, 0, world.rand);
+	};
+	blockBehaviors[BLOCK_GRAVEL].onTick = [](WorldManager& world, Int3 pos, uint8_t meta, Java::Random& random) -> void {
+		Int3 below = { pos.x, pos.y - 1, pos.z };
+
+		if (!Blocks::canFallAt(world, below) || pos.y < 0)
+			return;
+
+		constexpr int32_t checkRadius = 32; // Blocks
+		bool areaLoaded = world.AABBinValidChunks({ double(pos.x - checkRadius), double(pos.y - checkRadius),
+		                                            double(pos.z - checkRadius), double(pos.x + checkRadius),
+		                                            double(pos.y + checkRadius), double(pos.z + checkRadius) });
+
+		if (areaLoaded) {
+			Vec3 spawnPos = { pos.x + 0.5, pos.y + 0.5, pos.z + 0.5 };
+			auto entity = std::make_shared<FallingBlockEntity>(spawnPos, BLOCK_GRAVEL);
+			world.entityManager.addEntity(std::move(entity));
+		} else {
+			world.setBlock(pos, BLOCK_AIR, 0);
+
+			Int3 landing = pos;
+			while (Blocks::canFallAt(world, { landing.x, landing.y - 1, landing.z }) && landing.y > 0)
+				landing.y--;
+
+			if (landing.y > 0)
+				world.setBlock(landing, BLOCK_GRAVEL, 0);
+		}
+	};
 	blockBehaviors[BLOCK_SAND].onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
 		// Schedule a check to see if we can fall
 		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_SAND, 3);
