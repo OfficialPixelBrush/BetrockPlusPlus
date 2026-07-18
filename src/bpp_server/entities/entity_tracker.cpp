@@ -85,9 +85,7 @@ void EntityTracker::tick() {
 				Packet::SpawnItem pkt;
 				pkt.entity_id = entityEntry.entity->id;
 				pkt.item = ie.itemStack;
-				pkt.q_position = { quantizePositionComponent(entityEntry.entity->position.x),
-					               quantizePositionComponent(entityEntry.entity->position.y),
-					               quantizePositionComponent(entityEntry.entity->position.z) };
+				pkt.q_position = quantizePosition(entityEntry.entity->position);
 				// For some reason notch decided this should be a convoluted way of getting the initial spawn velocity
 				auto quantizeSpawnVelocity = [](double v) -> int8_t {
 					return int8_t(v * 128.0);
@@ -102,9 +100,7 @@ void EntityTracker::tick() {
 				Packet::SpawnPlayer pkt;
 				pkt.entity_id = entityEntry.entity->id;
 				pkt.held_item_id = Items::Id::NONE;
-				pkt.q_position = { quantizePositionComponent(entityEntry.entity->position.x),
-					               quantizePositionComponent(entityEntry.entity->position.y),
-					               quantizePositionComponent(entityEntry.entity->position.z) };
+				pkt.q_position = quantizePosition(entityEntry.entity->position);
 				pkt.q_rotation = { int8_t(quantizeRotation(entityEntry.entity->rotationYaw)),
 					               int8_t(quantizeRotation(entityEntry.entity->rotationPitch)) };
 
@@ -118,9 +114,7 @@ void EntityTracker::tick() {
 				Packet::SpawnMob pkt;
 				pkt.entity_id = entityEntry.entity->id;
 				pkt.mob_type = PacketData::MobType::CREEPER;
-				pkt.q_position = { quantizePositionComponent(entityEntry.entity->position.x),
-					               quantizePositionComponent(entityEntry.entity->position.y),
-					               quantizePositionComponent(entityEntry.entity->position.z) };
+				pkt.q_position = quantizePosition(entityEntry.entity->position);
 				pkt.q_rotation = { int8_t(quantizeRotation(entityEntry.entity->rotationYaw)),
 					               int8_t(quantizeRotation(entityEntry.entity->rotationPitch)) };
 				pkt.metadata.push_back(
@@ -132,9 +126,7 @@ void EntityTracker::tick() {
 				Packet::SpawnObject pkt;
 				pkt.entity_id = entityEntry.entity->id;
 				pkt.object_type = PacketData::ObjectType::BOAT;
-				pkt.q_position = { quantizePositionComponent(entityEntry.entity->position.x),
-					               quantizePositionComponent(entityEntry.entity->position.y),
-					               quantizePositionComponent(entityEntry.entity->position.z) };
+				pkt.q_position = quantizePosition(entityEntry.entity->position);
 				pkt.Serialize(pSession.stream);
 				break;
 			}
