@@ -80,17 +80,17 @@ void ItemEntity::tick() {
 	pickupCooldown--;
 	pickupCooldown = std::max(int8_t(0), pickupCooldown);
 
-	motionY -= 0.04;
+	velocity.y -= 0.04;
 
 	if (world->getMaterial({ MathHelper::floor_double(position.x), MathHelper::floor_double(position.y),
 	                         MathHelper::floor_double(position.z) }) == Material::Lava()) {
-		motionY = 0.2;
-		motionX = double((rand.nextFloat() - rand.nextFloat()) * 0.2F);
-		motionZ = double((rand.nextFloat() - rand.nextFloat()) * 0.2F);
+		velocity.y = 0.2;
+		velocity.x = double((rand.nextFloat() - rand.nextFloat()) * 0.2F);
+		velocity.z = double((rand.nextFloat() - rand.nextFloat()) * 0.2F);
 	}
 
 	pushOutOfBlocks({ position.x, (collider.minY + collider.maxY) / 2.0, position.z });
-	move({ motionX, motionY, motionZ });
+	move({ velocity.x, velocity.y, velocity.z });
 
 	float horizontalDrag = 0.98f;
 	if (onGround) {
@@ -107,13 +107,13 @@ void ItemEntity::tick() {
 			horizontalDrag = belowBlock.slipperiness * 0.98f;
 	}
 
-	motionX *= double(horizontalDrag);
-	motionY *= 0.9800000190734863;
-	motionZ *= double(horizontalDrag);
+	velocity.x *= double(horizontalDrag);
+	velocity.y *= 0.9800000190734863;
+	velocity.z *= double(horizontalDrag);
 
 	// Bounce when we land
 	if (onGround)
-		motionY *= -0.5;
+		velocity.y *= -0.5;
 
 	if (ticksExisted >= 6000)
 		isDead = true;

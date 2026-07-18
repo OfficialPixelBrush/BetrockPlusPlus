@@ -85,16 +85,16 @@ void EntityTracker::tick() {
 				Packet::SpawnItem pkt;
 				pkt.entity_id = entityEntry.entity->id;
 				pkt.item = ie.itemStack;
-				pkt.q_position = { quantizePosition(entityEntry.entity->position.x),
-					               quantizePosition(entityEntry.entity->position.y),
-					               quantizePosition(entityEntry.entity->position.z) };
+				pkt.q_position = { quantizePositionComponent(entityEntry.entity->position.x),
+					               quantizePositionComponent(entityEntry.entity->position.y),
+					               quantizePositionComponent(entityEntry.entity->position.z) };
 				// For some reason notch decided this should be a convoluted way of getting the initial spawn velocity
 				auto quantizeSpawnVelocity = [](double v) -> int8_t {
 					return int8_t(v * 128.0);
 				};
-				pkt.q_rotation = { quantizeSpawnVelocity(entityEntry.entity->motionX),
-					               quantizeSpawnVelocity(entityEntry.entity->motionY),
-					               quantizeSpawnVelocity(entityEntry.entity->motionZ) };
+				pkt.q_rotation = { quantizeSpawnVelocity(entityEntry.entity->velocity.x),
+					               quantizeSpawnVelocity(entityEntry.entity->velocity.y),
+					               quantizeSpawnVelocity(entityEntry.entity->velocity.z) };
 				pkt.Serialize(pSession.stream);
 				break;
 			}
@@ -102,9 +102,9 @@ void EntityTracker::tick() {
 				Packet::SpawnPlayer pkt;
 				pkt.entity_id = entityEntry.entity->id;
 				pkt.held_item_id = Items::Id::NONE;
-				pkt.q_position = { quantizePosition(entityEntry.entity->position.x),
-					               quantizePosition(entityEntry.entity->position.y),
-					               quantizePosition(entityEntry.entity->position.z) };
+				pkt.q_position = { quantizePositionComponent(entityEntry.entity->position.x),
+					               quantizePositionComponent(entityEntry.entity->position.y),
+					               quantizePositionComponent(entityEntry.entity->position.z) };
 				pkt.q_rotation = { int8_t(quantizeRotation(entityEntry.entity->rotationYaw)),
 					               int8_t(quantizeRotation(entityEntry.entity->rotationPitch)) };
 
@@ -118,9 +118,9 @@ void EntityTracker::tick() {
 				Packet::SpawnMob pkt;
 				pkt.entity_id = entityEntry.entity->id;
 				pkt.mob_type = PacketData::MobType::CREEPER;
-				pkt.q_position = { quantizePosition(entityEntry.entity->position.x),
-					               quantizePosition(entityEntry.entity->position.y),
-					               quantizePosition(entityEntry.entity->position.z) };
+				pkt.q_position = { quantizePositionComponent(entityEntry.entity->position.x),
+					               quantizePositionComponent(entityEntry.entity->position.y),
+					               quantizePositionComponent(entityEntry.entity->position.z) };
 				pkt.q_rotation = { int8_t(quantizeRotation(entityEntry.entity->rotationYaw)),
 					               int8_t(quantizeRotation(entityEntry.entity->rotationPitch)) };
 				pkt.metadata.push_back(
@@ -166,11 +166,11 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 	// Dirty flag gets checked every tick
 	if (entity->forceVelocityUpdate) {
 		entity->forceVelocityUpdate = false;
-		trackedEntry.lastBroadcastMotion = { entity->motionX, entity->motionY, entity->motionZ };
+		trackedEntry.lastBroadcastMotion = { entity->velocity.x, entity->velocity.y, entity->velocity.z };
 		Packet::EntityVelocity pkt;
 		pkt.entity_id = entity->id;
-		pkt.velocity = { quantizeVelocity(entity->motionX), quantizeVelocity(entity->motionY),
-			             quantizeVelocity(entity->motionZ) };
+		pkt.velocity = { quantizeVelocityComponent(entity->velocity.x), quantizeVelocityComponent(entity->velocity.y),
+			             quantizeVelocityComponent(entity->velocity.z) };
 		sendPacketToPlayersInTrackedEntry(pkt, trackedEntry);
 	}
 
@@ -185,7 +185,7 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 
 		// The threshold-based velocity check
 		if (trackedEntry.profile.sendVelocity) {
-			Vec3 currentMotion = { entity->motionX, entity->motionY, entity->motionZ };
+			Vec3 currentMotion = { entity->velocity.x, entity->velocity.y, entity->velocity.z };
 			Vec3& lastMotion = trackedEntry.lastBroadcastMotion;
 			double dmx = currentMotion.x - lastMotion.x;
 			double dmy = currentMotion.y - lastMotion.y;
@@ -201,15 +201,16 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 				lastMotion = currentMotion;
 				Packet::EntityVelocity pkt;
 				pkt.entity_id = entity->id;
-				pkt.velocity = { quantizeVelocity(entity->motionX), quantizeVelocity(entity->motionY),
-					             quantizeVelocity(entity->motionZ) };
+				pkt.velocity = { quantizeVelocityComponent(entity->velocity.x),
+					             quantizeVelocityComponent(entity->velocity.y),
+					             quantizeVelocityComponent(entity->velocity.z) };
 				sendPacketToPlayersInTrackedEntry(pkt, trackedEntry);
 			}
 		}
 
-		int32_t qx = quantizePosition(entity->position.x);
-		int32_t qy = quantizePosition(entity->position.y);
-		int32_t qz = quantizePosition(entity->position.z);
+		int32_t qx = quantizePositionComponent(entity->position.x);
+		int32_t qy = quantizePositionComponent(entity->position.y);
+		int32_t qz = quantizePositionComponent(entity->position.z);
 		int32_t qYaw = quantizeRotation(entity->rotationYaw);
 		int32_t qPitch = quantizeRotation(entity->rotationPitch);
 

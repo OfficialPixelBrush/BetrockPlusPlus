@@ -39,19 +39,19 @@ bool EntityMPPlayer::dropItem(ItemStack stack) {
 
 	// Give ourselves some random velocity based on look direction
 	float velocity = 0.3f;
-	itemEntity->motionX = double(-std::sin(this->rotationYaw / 180.0F * JavaMath::PI_FLOAT) *
-	                             std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity);
-	itemEntity->motionZ = double(std::cos(this->rotationYaw / 180.0F * JavaMath::PI_FLOAT) *
-	                             std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity);
-	itemEntity->motionY = double(-std::sin(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity + 0.1F);
+	itemEntity->velocity.x = double(-std::sin(this->rotationYaw / 180.0F * JavaMath::PI_FLOAT) *
+	                                std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity);
+	itemEntity->velocity.z = double(std::cos(this->rotationYaw / 180.0F * JavaMath::PI_FLOAT) *
+	                                std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity);
+	itemEntity->velocity.y = double(-std::sin(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity + 0.1F);
 
 	// Add a little bit of randomness
 	velocity = 0.02f;
 	float angle = rand.nextFloat() * JavaMath::PI_FLOAT * 2.0f;
 	velocity *= rand.nextFloat();
-	itemEntity->motionX += std::cos(angle) * velocity;
-	itemEntity->motionY += (rand.nextFloat() - rand.nextFloat()) * 0.1f;
-	itemEntity->motionZ += std::sin(angle) * velocity;
+	itemEntity->velocity.x += std::cos(angle) * velocity;
+	itemEntity->velocity.y += (rand.nextFloat() - rand.nextFloat()) * 0.1f;
+	itemEntity->velocity.z += std::sin(angle) * velocity;
 
 	// Register our item with the world
 	this->world->entityManager.addEntity(std::move(itemEntity));

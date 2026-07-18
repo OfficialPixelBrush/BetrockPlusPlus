@@ -1940,8 +1940,8 @@ void registerAll() {
 	};
 	blockBehaviors[BLOCK_SOULSAND].onEntityCollidedWithBlock = [](WorldManager& world, Int3 pos,
 	                                                              Entity& entity) -> void {
-		entity.motionX *= 0.4;
-		entity.motionZ *= 0.4;
+		entity.velocity.x *= 0.4;
+		entity.velocity.z *= 0.4;
 	};
 	blockBehaviors[BLOCK_SUGARCANE].onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
 		// Check to see if our placement is still valid

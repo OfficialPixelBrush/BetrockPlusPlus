@@ -25,9 +25,9 @@ struct ItemEntity : public Entity {
 
 		// This stuff is mostly randomized
 		rotationYaw = rand.nextDouble() * 360.0;
-		motionX = rand.nextDouble() * 0.2 - 0.1;
-		motionY = 0.2;
-		motionZ = rand.nextDouble() * 0.2 - 0.1;
+		velocity.x = rand.nextDouble() * 0.2 - 0.1;
+		velocity.y = 0.2;
+		velocity.z = rand.nextDouble() * 0.2 - 0.1;
 	}
 
 	AABB getFluidCollider() override {

@@ -108,10 +108,10 @@ void MobileEntity::resolveEntityCollision(Entity& other) {
 		delta = delta * forceScale;
 		delta = delta * 0.05;
 
-		this->motionX -= delta.x;
-		this->motionZ -= delta.y;
-		other.motionX += delta.x;
-		other.motionZ += delta.y;
+		this->velocity.x -= delta.x;
+		this->velocity.z -= delta.y;
+		other.velocity.x += delta.x;
+		other.velocity.z += delta.y;
 	}
 }
 
@@ -121,27 +121,26 @@ void MobileEntity::tickPhysics() {
 		auto oldY = position.y;
 		double friction = 0.8;
 		applyInput(moveStrafe, moveForward, 0.02f);
-		move({ motionX, motionY, motionZ });
-		motionX *= friction;
-		motionY *= friction;
-		motionZ *= friction;
-		motionY -= 0.2; // Sink
+		move({ velocity.x, velocity.y, velocity.z });
+		velocity *= friction;
+		velocity.y -= 0.2; // Sink
 
-		AABB offsetCollider = collider.offset(motionX, motionY + 0.6 - position.y + oldY, motionZ);
+		AABB offsetCollider = collider.offset(velocity.x, velocity.y + 0.6 - position.y + oldY, velocity.z);
 
-		// Check if we are colliding with a block and we are 
+		// Check if we are colliding with a block and we are
 		// Moving up and unobstructed, if so, apply a nudge
 		if (collidedHorizontally && AABBNotInLiquidOrObstructed(offsetCollider)) {
-			motionY += 0.3;
+			velocity.y += 0.3;
 		}
-	} 
-	else {
+	} else {
 		// Normal ground/air movement
 		float friction = 0.91f;
 
 		if (onGround) {
 			friction = 0.546f;
-			auto belowBlock = world->getBlockId({MathHelper::floor_double(position.x), MathHelper::floor_double(position.y) - 1, MathHelper::floor_double(position.z)});
+			auto belowBlock = world->getBlockId({ MathHelper::floor_double(position.x),
+			                                      MathHelper::floor_double(position.y) - 1,
+			                                      MathHelper::floor_double(position.z) });
 			if (belowBlock > BLOCK_AIR) {
 				friction = Blocks::blockProperties[belowBlock < BLOCK_MAX ? belowBlock : BLOCK_MAX].slipperiness * 0.91f;
 			}
@@ -155,34 +154,34 @@ void MobileEntity::tickPhysics() {
 		bool isOnLadder = onLadder();
 		if (isOnLadder) {
 			double maxLadderVelocity = 0.15;
-			motionX = std::min(maxLadderVelocity, std::max(-maxLadderVelocity, motionX));
-			motionZ = std::min(maxLadderVelocity, std::max(-maxLadderVelocity, motionZ));
-			motionY = std::max(-maxLadderVelocity, motionY);
+			velocity.x = std::min(maxLadderVelocity, std::max(-maxLadderVelocity, velocity.x));
+			velocity.z = std::min(maxLadderVelocity, std::max(-maxLadderVelocity, velocity.z));
+			velocity.y = std::max(-maxLadderVelocity, velocity.y);
 
 			// No fall damage on ladders
 			fallDistance = 0.0f;
 
 			// If sneaking we dont descend
-			if (sneaking && motionY < 0.0)
-				motionY = 0.0;
+			if (sneaking && velocity.y < 0.0)
+				velocity.y = 0.0;
 		}
 
 		// Move the entity
-		move({ motionX, motionY, motionZ });
+		move(velocity);
 
 		// Our entity is pushing itself into the wall the ladder is on
 		// So apply an upwards nudge
 		if (collidedHorizontally && isOnLadder) {
-			motionY = 0.2;
+			velocity.y = 0.2;
 		}
 
 		// Apply friction
-		motionX *= friction;
-		motionZ *= friction;
+		velocity.x *= friction;
+		velocity.y *= 0.98f;
+		velocity.z *= friction;
 
 		// Gravity
-		motionY -= 0.08;
-		motionY *= 0.98f;
+		velocity.y -= 0.08;
 
 		auto collidingEntities = world->entityManager.getEntitiesWithinAABBExcluding(collider.expand(0.2, 0.0, 0.2), id);
 
@@ -209,7 +208,8 @@ bool MobileEntity::headInOpaqueBlock() {
 		float yOffset = (float((corner >> 1) % 2) - 0.5f) * 0.1f;
 		float zOffset = (float((corner >> 2) % 2) - 0.5f) * width * 0.9f;
 		auto fd = MathHelper::floor_double;
-		Int3 cornerBlockPos = { fd(position.x + xOffset), fd(position.y + eyeHeight + yOffset), fd(position.z + zOffset)};
+		Int3 cornerBlockPos = { fd(position.x + xOffset), fd(position.y + eyeHeight + yOffset),
+			                    fd(position.z + zOffset) };
 		if (world->isBlockNormalCube(cornerBlockPos))
 			return true;
 	}
@@ -307,13 +307,13 @@ void MobileEntity::tick() {
 	}
 
 	// Jump code
-	if (jumping)
+	if (jumping) {
 		if (inWater || inLava) {
-			motionY += 0.04;
-		} 
-		else if (onGround) {
-			motionY = 0.42;
+			velocity.y += 0.04;
+		} else if (onGround) {
+			velocity.y = 0.42;
 		}
+	}
 
 	// Movement easing
 	moveStrafe *= 0.98f;

@@ -57,17 +57,17 @@ bool Entity::pushOutOfBlocks(Vec3 pos) {
 
 		float pushSpeed = rand.nextFloat() * 0.2f + 0.1f;
 		if (direction == 0)
-			motionX = double(-pushSpeed);
+			velocity.x = double(-pushSpeed);
 		if (direction == 1)
-			motionX = double(pushSpeed);
+			velocity.x = double(pushSpeed);
 		if (direction == 2)
-			motionY = double(-pushSpeed);
+			velocity.y = double(-pushSpeed);
 		if (direction == 3)
-			motionY = double(pushSpeed);
+			velocity.y = double(pushSpeed);
 		if (direction == 4)
-			motionZ = double(-pushSpeed);
+			velocity.z = double(-pushSpeed);
 		if (direction == 5)
-			motionZ = double(pushSpeed);
+			velocity.z = double(pushSpeed);
 	}
 
 	return false;
@@ -87,20 +87,20 @@ void Entity::tick() {
 	if (world->handleFluidAcceleration(getFluidCollider(), Material::Water(), *this)) {
 		fallDistance = 0.0;
 		inWater = true;
-		fire = 0;
+		fireTicks = 0;
 	} else {
 		inWater = false;
 	}
 
 	// If we are in fire decrement the fire
-	if (fire > 0) {
+	if (fireTicks > 0) {
 		if (isImmuneToFire) {
-			fire -= 4;
-			fire = std::max(0, fire);
+			fireTicks -= 4;
+			fireTicks = std::max(0, fireTicks);
 		} else {
-			if (fire % 20 == 0)
+			if (fireTicks % 20 == 0)
 				attackEntityFrom(nullptr, 1);
-			fire--;
+			fireTicks--;
 		}
 	}
 
@@ -109,7 +109,7 @@ void Entity::tick() {
 	if (inLava) {
 		if (!isImmuneToFire) {
 			attackEntityFrom(nullptr, 4);
-			fire = 600;
+			fireTicks = 600;
 		}
 	}
 
@@ -121,12 +121,12 @@ void Entity::tick() {
 }
 
 void Entity::applyKnockback(Vec3 direction) {
-	motionX *= KNOCKBACK_VELOCITY_DAMPENING;
-	motionY *= KNOCKBACK_VELOCITY_DAMPENING;
-	motionZ *= KNOCKBACK_VELOCITY_DAMPENING;
-	motionX -= direction.x * HORIZONTAL_KNOCKBACK;
-	motionZ -= direction.z * HORIZONTAL_KNOCKBACK;
-	motionY = std::min(float(motionY + VERTICAL_KNOCKBACK), VERTICAL_KNOCKBACK);
+	velocity.x *= KNOCKBACK_VELOCITY_DAMPENING;
+	velocity.y *= KNOCKBACK_VELOCITY_DAMPENING;
+	velocity.z *= KNOCKBACK_VELOCITY_DAMPENING;
+	velocity.x -= direction.x * HORIZONTAL_KNOCKBACK;
+	velocity.z -= direction.z * HORIZONTAL_KNOCKBACK;
+	velocity.y = std::min(float(velocity.y + VERTICAL_KNOCKBACK), VERTICAL_KNOCKBACK);
 	forceVelocityUpdate = true;
 }
 
@@ -146,8 +146,8 @@ void Entity::applyInput(float strafe, float forward, float acceleration) {
 	float sinYaw = std::sin(yaw);
 	float cosYaw = std::cos(yaw);
 
-	motionX += (strafe * cosYaw - forward * sinYaw) * acceleration;
-	motionZ += (forward * cosYaw + strafe * sinYaw) * acceleration;
+	velocity.x += (strafe * cosYaw - forward * sinYaw) * acceleration;
+	velocity.z += (forward * cosYaw + strafe * sinYaw) * acceleration;
 }
 
 void Entity::move(Vec3 movement) {
@@ -158,9 +158,9 @@ void Entity::move(Vec3 movement) {
 		movement.x *= COBWEB_HORIZONTAL_DRAG;
 		movement.y *= COBWEB_VERTICAL_DRAG;
 		movement.z *= COBWEB_HORIZONTAL_DRAG;
-		motionX = 0.0;
-		motionY = 0.0;
-		motionZ = 0.0;
+		velocity.x = 0.0;
+		velocity.y = 0.0;
+		velocity.z = 0.0;
 	}
 
 	Vec3 original = movement;
@@ -280,11 +280,11 @@ void Entity::move(Vec3 movement) {
 	collided = collidedHorizontally || collidedVertically;
 
 	if (original.x != movement.x)
-		motionX = 0.0;
+		velocity.x = 0.0;
 	if (original.y != movement.y)
-		motionY = 0.0;
+		velocity.y = 0.0;
 	if (original.z != movement.z)
-		motionZ = 0.0;
+		velocity.z = 0.0;
 
 	updateFallState(movement.y);
 
@@ -329,9 +329,9 @@ void Entity::loadFromNBT(Tag& nbt) {
 	auto& pos = nbt.compound["Pos"].getList();
 	auto& rotation = nbt.compound["Rotation"].getList();
 
-	motionX = motion[0].getDouble();
-	motionY = motion[1].getDouble();
-	motionZ = motion[2].getDouble();
+	velocity.x = motion[0].getDouble();
+	velocity.y = motion[1].getDouble();
+	velocity.z = motion[2].getDouble();
 
 	position.x = pos[0].getDouble();
 	position.y = pos[1].getDouble();
@@ -343,7 +343,7 @@ void Entity::loadFromNBT(Tag& nbt) {
 	air = nbt.compound["Air"].getShort();
 	onGround = nbt.compound["OnGround"].getByte();
 	fallDistance = nbt.compound["FallDistance"].getFloat();
-	fire = nbt.compound["Fire"].getShort();
+	fireTicks = nbt.compound["Fire"].getShort();
 
 	rebuildCollider();
 }
@@ -380,7 +380,7 @@ std::optional<Tag> Entity::serializeToNBT() {
 	Tag Fire;
 	Fire.type = TAG_SHORT;
 	Fire.name = "Fire";
-	Fire.shortValue = this->fire;
+	Fire.shortValue = this->fireTicks;
 
 	// Save position and rotation / velocity
 	Tag posX;
@@ -398,13 +398,13 @@ std::optional<Tag> Entity::serializeToNBT() {
 
 	Tag movX;
 	movX.type = TAG_DOUBLE;
-	movX.doubleValue = this->motionX;
+	movX.doubleValue = this->velocity.x;
 	Tag movY;
 	movY.type = TAG_DOUBLE;
-	movY.doubleValue = this->motionY;
+	movY.doubleValue = this->velocity.y;
 	Tag movZ;
 	movZ.type = TAG_DOUBLE;
-	movZ.doubleValue = this->motionZ;
+	movZ.doubleValue = this->velocity.z;
 	Motion.list.push_back(movX);
 	Motion.list.push_back(movY);
 	Motion.list.push_back(movZ);

@@ -100,9 +100,7 @@ bool WorldManager::handleFluidAcceleration(AABB collider, Material material, Ent
 
 		// Apply the vector
 		double pushForce = 0.014;
-		entity.motionX += pushVector.x * pushForce;
-		entity.motionY += pushVector.y * pushForce;
-		entity.motionZ += pushVector.z * pushForce;
+		entity.velocity += pushVector * pushForce;
 	}
 
 	return inMaterial;
@@ -192,7 +190,8 @@ void WorldManager::tick(const std::vector<ClientPosition>& players) {
 				continue;
 			if (s == ChunkState::Generating || s == ChunkState::Loading)
 				continue;
-			if(entityManager.chunkHasEntities(pos)) regionManager->saveChunk(chunk);
+			if (entityManager.chunkHasEntities(pos))
+				regionManager->saveChunk(chunk);
 			chunk->isModified = false;
 		}
 	}
@@ -777,12 +776,14 @@ void WorldManager::setBlock(Int3 wpos, BlockType block_type, uint8_t metadata) {
 	if (block_type == BLOCK_AIR) {
 		// We removed this block effectively
 		auto function = Blocks::blockBehaviors[oldBlock].onBlockRemoval;
-		if (function) function(*this, wpos);
+		if (function)
+			function(*this, wpos);
 	} else {
 		// Java has this functionality in the chunk setters themselves, but
 		// in my opinion (Aidan here) that is stupid and redundant
 		auto function = Blocks::blockBehaviors[block_type].onBlockAdded;
-		if (function) function(*this, wpos);
+		if (function)
+			function(*this, wpos);
 	}
 
 	// Callback for the client and server to know about this block update

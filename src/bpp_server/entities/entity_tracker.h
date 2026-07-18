@@ -28,7 +28,7 @@ struct TrackingProfile {
 struct TrackedEntry {
 	Entity* entity = nullptr;
 	TrackingProfile profile{};
-	TriNumber<int32_t> lastEncodedPos{};
+	Int32_3 lastEncodedPos{};
 	Vec3 lastBroadcastMotion{};
 	int32_t lastEncodedYaw = 0;
 	int32_t lastEncodedPitch = 0;
@@ -48,17 +48,22 @@ struct EntityTracker {
 
 	void tick();
 
-	int16_t quantizeVelocity(double v) {
-		const double clamp = 3.9;
-		if (v < -clamp)
-			v = -clamp;
-		if (v > clamp)
-			v = clamp;
+	int16_t quantizeVelocityComponent(double v) {
+		v = std::clamp(v, -3.9, 3.9);
 		return int16_t(v * 8000.0);
 	}
-	int32_t quantizePosition(double p) {
+	int32_t quantizePositionComponent(double p) {
 		return MathHelper::floor_double(p * 32.0);
 	}
+
+	Int16_3 quantizeVelocity(Vec3 v) {
+		return { quantizeVelocityComponent(v.x), quantizeVelocityComponent(v.y), quantizeVelocityComponent(v.z) };
+	}
+
+	Int32_3 quantizePosition(Vec3 p) {
+		return { quantizePositionComponent(p.x), quantizePositionComponent(p.y), quantizePositionComponent(p.z) };
+	}
+
 	int32_t quantizeRotation(float r) {
 		return MathHelper::floor_float(r * 256.0f / 360.0f);
 	}
@@ -68,11 +73,8 @@ struct EntityTracker {
 		entry.entity = entity;
 		entry.profile = getTrackingProfile(*entity);
 
-		Vec3 currentMotion = { entity->motionX, entity->motionY, entity->motionZ };
-
-		entry.lastEncodedPos = { quantizePosition(entity->position.x), quantizePosition(entity->position.y),
-			                     quantizePosition(entity->position.z) };
-		entry.lastBroadcastMotion = currentMotion;
+		entry.lastEncodedPos = quantizePosition(entity->position);
+		entry.lastBroadcastMotion = entity->velocity;
 		entry.lastEncodedPitch = quantizeRotation(entity->rotationPitch);
 		entry.lastEncodedYaw = quantizeRotation(entity->rotationYaw);
 
@@ -89,11 +91,8 @@ struct EntityTracker {
 		entry.entity = player;
 		entry.profile = getTrackingProfile(*player);
 
-		Vec3 currentMotion = { player->motionX, player->motionY, player->motionZ };
-
-		entry.lastEncodedPos = { quantizePosition(player->position.x), quantizePosition(player->position.y),
-			                     quantizePosition(player->position.z) };
-		entry.lastBroadcastMotion = currentMotion;
+		entry.lastEncodedPos = quantizePosition(player->position);
+		entry.lastBroadcastMotion = player->velocity;
 		entry.lastEncodedPitch = quantizeRotation(player->rotationPitch);
 		entry.lastEncodedYaw = quantizeRotation(player->rotationYaw);
 

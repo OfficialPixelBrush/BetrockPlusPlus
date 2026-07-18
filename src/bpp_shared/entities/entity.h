@@ -16,9 +16,6 @@
 #include "packet_data.h"
 #include <vector>
 
-// Forward declare
-class WorldManager;
-
 // Constants pulled from the betaWiki!
 // https://pixelbrush.dev/beta-wiki/entities/movement
 // I <3 BETA WIKI!
@@ -76,15 +73,8 @@ struct Entity {
 	Entity* rider = nullptr;
 	Entity* passenger = nullptr;
 
-	// Position
-	//TODO: use a Vec3 instead
 	Vec3 position;
-
-	// Velocity
-	//TODO: use a Vec3 instead
-	double motionX = 0.0;
-	double motionY = 0.0;
-	double motionZ = 0.0;
+	Vec3 velocity;
 	bool forceVelocityUpdate = false;
 
 	// Look direction
@@ -93,7 +83,7 @@ struct Entity {
 
 	// Collision
 	AABB collider;
-	Int3 bucketPos = { 0, 0, 0 }; // The bucket this entity is currently in (for spatial partitioning)
+	Int3 bucketPos; // The bucket this entity is currently in (for spatial partitioning)
 	Blocks::BlockProperties belowBlock;
 
 	// Width/height of the collision box in blocks.
@@ -133,7 +123,7 @@ struct Entity {
 	float moveStrafe = 0.0f;  // Left/right input axis
 
 	// Fire
-	int fire = 0;                // Ticks remaining on fire; 0 = not on fire
+	int fireTicks = 0;           // Ticks remaining on fire; 0 = not on fire
 	bool inFire = false;         // Currently touching a fire/lava block
 	int fireResistance = 1;      // Ticks of immunity after catching fire
 	bool isImmuneToFire = false; // Total fire immunity
