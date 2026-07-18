@@ -59,8 +59,9 @@ Int3 getAdjacentBlockPos(Int3 pos, PacketData::FaceDirection face) {
 		++pos.x;
 		break;
 	default:
-		return pos;
+		break;
 	}
+	return pos;
 }
 
 bool canSugarcaneSurviveAt(WorldManager& world, Int3 pos) {
