@@ -128,6 +128,16 @@ void EntityTracker::tick() {
 				pkt.Serialize(pSession.stream);
 				break;
 			}
+			case EntityType::BOAT: {
+				Packet::SpawnObject pkt;
+				pkt.entity_id = entityEntry.entity->id;
+				pkt.object_type = PacketData::ObjectType::BOAT;
+				pkt.q_position = { quantizePositionComponent(entityEntry.entity->position.x),
+					               quantizePositionComponent(entityEntry.entity->position.y),
+					               quantizePositionComponent(entityEntry.entity->position.z) };
+				pkt.Serialize(pSession.stream);
+				break;
+			}
 			default:
 				break;
 			}
