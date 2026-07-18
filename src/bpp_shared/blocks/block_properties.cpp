@@ -7,6 +7,7 @@
 
 #include "block_properties.h"
 #include "entities/entity_item.h"
+#include "entities/entity_falling_block.h"
 #include "enums/items.h"
 #include "tile_entities/tile_entity.h"
 #include "world/world.h"
@@ -18,6 +19,18 @@ BlockProperties blockProperties[256] = {};
 BlockBehavior blockBehaviors[256] = {};
 
 // Behavior helper functions
+static bool canFallAt(WorldManager& world, Int3 position) {
+	auto block = world.getBlockId(position);
+	if (block == BLOCK_AIR)
+		return true;
+	if (block == BLOCK_FIRE)
+		return true;
+	auto material = Blocks::blockProperties[block].material.type;
+	if (material == MaterialType::Lava || material == MaterialType::Water)
+		return true;
+	return false;
+}
+
 void BreakAndDropBlock(WorldManager& world, Int3 pos) {
 	BlockType blockId = world.getBlockId({ pos.x, pos.y, pos.z });
 	uint8_t meta = world.getMetadata({ pos.x, pos.y, pos.z });
@@ -1987,6 +2000,39 @@ void registerAll() {
 		}
 		world.setMeta(pos, uint8_t(meta ^ 4)); // XOR bit 2; flips open/closed
 		return false;
+	};
+
+	// Falling sand!
+	blockBehaviors[BLOCK_SAND].onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
+		// Schedule a check to see if we can fall
+		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_SAND, 3);
+	};
+	blockBehaviors[BLOCK_SAND].onBlockAdded = [](WorldManager& world, Int3 pos) -> void {
+		blockBehaviors[BLOCK_SAND].onTick(world, pos, 0, world.rand);
+	};
+	blockBehaviors[BLOCK_SAND].onTick = [](WorldManager& world, Int3 pos, uint8_t meta, Java::Random& random) -> void {
+		Int3 below = { pos.x, pos.y - 1, pos.z };
+
+		if (!Blocks::canFallAt(world, below) || pos.y < 0)
+			return;
+
+		constexpr int32_t checkRadius = 32; // Blocks
+		bool areaLoaded = world.AABBinValidChunks({ double(pos.x - checkRadius), double(pos.y - checkRadius), double(pos.z - checkRadius), double(pos.x + checkRadius), double(pos.y + checkRadius), double(pos.z + checkRadius) });
+
+		if (areaLoaded) {
+			Vec3 spawnPos = { pos.x + 0.5, pos.y + 0.5, pos.z + 0.5 };
+			auto entity = std::make_shared<FallingBlockEntity>(spawnPos, BLOCK_SAND);
+			world.entityManager.addEntity(std::move(entity));
+		} else {
+			world.setBlock(pos, BLOCK_AIR, 0);
+
+			Int3 landing = pos;
+			while (Blocks::canFallAt(world, { landing.x, landing.y - 1, landing.z }) && landing.y > 0)
+				landing.y--;
+
+			if (landing.y > 0)
+				world.setBlock(landing, BLOCK_SAND, 0);
+		}
 	};
 
 	// --------------- block drops, only exceptions are included (something that doesn't drop itself) ---------------

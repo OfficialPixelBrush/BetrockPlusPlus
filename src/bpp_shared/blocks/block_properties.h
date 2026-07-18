@@ -69,8 +69,9 @@ struct BlockBehavior {
 	// Called when we need to check the collision of this block
 	CollisionShape (*getCollider)(uint8_t metadata) = nullptr;
 
-	// Called each random tick if ticksOnLoad = true
-	void (*onTick)(WorldManager&, Int3 pos, uint8_t meta, Java::Random& random) = nullptr;
+	// Called each random tick if ticksOnLoad = true\
+	// Also called for scheduled ticks
+	void (*onTick)(WorldManager& world, Int3 pos, uint8_t meta, Java::Random& random) = nullptr;
 
 	// Called when block is placed by world gen or setBlock
 	void (*onBlockAdded)(WorldManager& world, Int3 pos) = nullptr;

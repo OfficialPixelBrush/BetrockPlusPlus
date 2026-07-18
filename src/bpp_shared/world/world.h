@@ -17,8 +17,9 @@
 #include "java_math.h"
 #include "lighter.h"
 #include "tile_entities/tile_entity_manager.h"
-#include "world/chunk.h"
-#include "world/client_pos.h"
+#include "tick_scheduler.h"
+#include "chunk.h"
+#include "client_pos.h"
 #include "world/storage/region_manager.h"
 #include <algorithm>
 #include <atomic>
@@ -44,6 +45,7 @@ struct WorldManager {
 	Lighter lightManager;
 	TileEntityManager tileEntityManager;
 	EntityManager entityManager;
+	TickScheduler tickScheduler;
 	RegionManager* regionManager = nullptr;
 	int64_t seed = 0;
 	TickTime elapsed_ticks = 0;
@@ -55,6 +57,7 @@ struct WorldManager {
 
 	WorldManager(bool pIsHell = false) : isHell(pIsHell) {
 		entityManager.m_world = this; // Bind the world pointer in EntityManager
+		tickScheduler.world = this;
 		if (isHell)
 			thisDimension = Dimension::Nether;
 	}

@@ -168,6 +168,11 @@ void WorldManager::tick(const std::vector<ClientPosition>& players) {
 		GlobalLogger().error << "No region manager while trying to tick!\n";
 		return;
 	}
+
+	// Update our tick scheduler
+	tickScheduler.tick();
+
+	// Saving
 	if (this->elapsed_ticks % 40 == 0) {
 		// Save periodically
 		for (auto& [pos, chunk] : chunks) {

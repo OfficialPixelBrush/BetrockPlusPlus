@@ -153,6 +153,10 @@ struct Entity {
 
 	virtual void tick();
 
+	virtual bool canBePushed() {
+		return false;
+	}
+
 	void rebuildCollider() {
 		double halfWidth = double(width) / 2.0;
 		double bottom = position.y - double(yOffset) + double(ySize);

@@ -40,6 +40,7 @@ public:
 	virtual void onDeath();
 	virtual void tick() override;
 	virtual void setGoal(std::optional<Int3> goal);
+	bool attackEntityFrom(Entity* entity, int damage) override;
 	bool AABBNotInLiquidOrObstructed(AABB& collider);
 	bool headInOpaqueBlock();
 	bool headInWater();
@@ -50,5 +51,7 @@ public:
 		auto fd = MathHelper::floor_double;
 		return world->getBlockId({ fd(position.x), fd(collider.minY), fd(position.z) }) == BLOCK_LADDER;
 	}
-	bool attackEntityFrom(Entity* entity, int damage) override;
+	bool canBePushed() override {
+		return true;
+	}
 };

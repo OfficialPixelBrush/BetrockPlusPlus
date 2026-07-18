@@ -186,10 +186,9 @@ void MobileEntity::tickPhysics() {
 		auto collidingEntities = world->entityManager.getEntitiesWithinAABBExcluding(collider.expand(0.2, 0.0, 0.2), id);
 
 		for (const auto& entity : collidingEntities) {
-			//TODO: Only minecarts, boats and (not dead) living entities can be pushed
-			//if (entity.canBePushed()) {
-			this->resolveEntityCollision(*entity);
-			//}
+			if (entity->canBePushed()) {
+				this->resolveEntityCollision(*entity);
+			}
 		}
 	}
 }
@@ -231,7 +230,6 @@ bool MobileEntity::headInWater() {
 }
 
 bool MobileEntity::attackEntityFrom(Entity* entity, int damage) {
-	GlobalLogger().info << "Entity hit! Owie!\n";
 	age = 0;
 	if (health <= 0)
 		return false;
@@ -280,12 +278,12 @@ void MobileEntity::tick() {
 	followPath();
 
 	// Suffocation
-	if (entityAlive() && headInOpaqueBlock()) {
+	if (headInOpaqueBlock()) {
 		attackEntityFrom(nullptr, 1);
 	}
 
 	// Drowning
-	if (entityAlive() && headInWater() && !canBreatheUnderwater) {
+	if (headInWater() && !canBreatheUnderwater) {
 		air--;
 		if (air <= -20) {
 			air = 0;
