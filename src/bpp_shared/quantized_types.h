@@ -75,7 +75,11 @@ struct Fixed {
         using Wide = std::conditional_t<
             sizeof(Storage) <= 4,
             int64_t,
+            #ifdef __SIZEOF_INT128__
             __int128_t
+            #else
+            int64_t
+            #endif
         >;
 
         return from_raw(
@@ -90,7 +94,11 @@ struct Fixed {
         using Wide = std::conditional_t<
             sizeof(Storage) <= 4,
             int64_t,
+            #ifdef __SIZEOF_INT128__
             __int128_t
+            #else
+            int64_t
+            #endif
         >;
 
         return from_raw(
