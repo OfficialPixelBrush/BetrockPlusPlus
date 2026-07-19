@@ -98,7 +98,7 @@ void EntityMPPlayer::tick() {
 		bool wasClearBefore = world->getCollidingBoundingBoxes(collider.expand(-0.0625, -0.0625, -0.0625)).empty();
 		auto& pending = *session->pendingPosition;
 		Vec3 lastPosition = this->position;
-		Vec3 claimed = { pending.x, pending.y + PLAYER_EYE_HEIGHT, pending.z };
+		Vec3 claimed = { pending.x, pending.y, pending.z };
 		Vec3 delta = claimed - lastPosition;
 		if (delta.x * delta.x + delta.y * delta.y + delta.z * delta.z > 100.0) {
 			GlobalLogger().warn << "Client " << session->username << " moved wrongly!\n";
@@ -111,6 +111,7 @@ void EntityMPPlayer::tick() {
 		double residual = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
 		if (residual < 0.0625) {
 			this->position = claimed; // Trust it
+			session->position.pos = claimed;
 			rebuildCollider();
 		} else {
 			// Send a correction
@@ -122,11 +123,18 @@ void EntityMPPlayer::tick() {
 
 		if ((wasClearBefore && (residualTooLarge || !clearNow)) || movedWrong) {
 			// TP our player back
+			GlobalLogger().info << "Residual from move was: " << residual << "\n";
+			GlobalLogger().info << "Rubberbanded player! wasClear=" << wasClearBefore
+			                    << " residual=" << residualTooLarge << " clearNow=" << clearNow
+			                    << " movedWrong=" << movedWrong << " pos=(" << this->position.x << ","
+			                    << this->position.y << "," << this->position.z << ")"
+			                    << " colliderY=[" << collider.minY << "," << collider.maxY << "]"
+			                    << "\n";
 			this->teleport(lastPosition, {rotationYaw, rotationPitch});
 			session->position.pos = lastPosition;
 			Packet::PlayerPosition pkt;
 			pkt.on_ground = onGround;
-			pkt.position = position;
+			pkt.position = { position.x, position.y + PLAYER_EYE_HEIGHT, position.z };
 			pkt.Serialize(session->stream);
 		}
 	}

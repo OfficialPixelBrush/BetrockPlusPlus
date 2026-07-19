@@ -12,7 +12,6 @@
 std::string CommandSpawn::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
                                   std::function<void(PlayerSession&)> transferDimension, Server& server) {
 	Int32_3 ipos = world.getSpawnPoint(false);
-	world.forceGenChunkSync({ ipos.x >> 4, ipos.z >> 4 });
 	ipos.y = world.getHeightValue(
 	    ipos.x,
 	    ipos.z); // So we don't clip in the ground since get spawn point gives the raw data which defaults to y=64

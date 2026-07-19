@@ -128,9 +128,8 @@ std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {
 			Int2 cpos = { x >> 4, z >> 4 };
 			Chunk* chunk = getChunkRaw(cpos);
 
-			// If chunk isn't loaded, treat it as a solid wall
+			// If chunk isn't loaded, treat it as air
 			if (!isChunkValid(cpos) || !chunk) {
-				collidingBoxes.push_back(AABB{ (double)x, -1.0, (double)z, (double)(x + 1), 128.0, (double)(z + 1) });
 				continue;
 			}
 
@@ -348,82 +347,6 @@ void WorldManager::drainLoadQueue() {
 		}
 		it->second.get()->entityTags.clear();
 		it->second.get()->entityTags.shrink_to_fit();
-	}
-}
-
-void WorldManager::forceGenChunkSync(Int32_2 pos) {
-	if (chunks.find(pos) == chunks.end()) {
-		auto chunk = std::make_shared<Chunk>();
-		chunk->cpos = pos;
-
-		if (regionManager->chunkExists(pos)) {
-			// Chunk already exists on disk; load it instead of regenerating it.
-			chunk->state.store(ChunkState::Loading, std::memory_order_release);
-			chunks[pos] = std::move(chunk);
-			regionManager->loadChunk(pos);
-		} else {
-			// Brand new chunk; generate it on the pool, same as pumpPipeline does.
-			chunk->state.store(ChunkState::Generating, std::memory_order_release);
-			chunks[pos] = std::move(chunk);
-			pool.detach_task([pos, this]() {
-				auto genChunk = std::make_shared<Chunk>();
-				genChunk->cpos = pos;
-				if (isHell) {
-					thread_local NetherGenerator tl_gen(this->seed);
-					tl_gen.GenerateChunk(*genChunk);
-				} else {
-					thread_local OverworldGenerator tl_gen(this->seed);
-					tl_gen.GenerateChunk(*genChunk);
-				}
-				genChunk->isModified = true;
-				genChunk->generateSkylightMap();
-				genChunk->state.store(ChunkState::Generated, std::memory_order_release);
-				this->postGenResult(std::move(genChunk));
-			});
-		}
-	}
-
-	// Block only on this specific chunk
-	while (true) {
-		auto it = chunks.find(pos);
-		if (it == chunks.end()) {
-			// Got evicted mid-wait. Re-request it and keep waiting
-			auto chunk = std::make_shared<Chunk>();
-			chunk->cpos = pos;
-
-			if (regionManager->chunkExists(pos)) {
-				chunk->state.store(ChunkState::Loading, std::memory_order_release);
-				chunks[pos] = std::move(chunk);
-				regionManager->loadChunk(pos);
-			} else {
-				chunk->state.store(ChunkState::Generating, std::memory_order_release);
-				chunks[pos] = std::move(chunk);
-				pool.detach_task([pos, this]() {
-					auto genChunk = std::make_shared<Chunk>();
-					genChunk->cpos = pos;
-					if (isHell) {
-						thread_local NetherGenerator tl_gen(this->seed);
-						tl_gen.GenerateChunk(*genChunk);
-					} else {
-						thread_local OverworldGenerator tl_gen(this->seed);
-						tl_gen.GenerateChunk(*genChunk);
-					}
-					genChunk->isModified = true;
-					genChunk->generateSkylightMap();
-					genChunk->state.store(ChunkState::Generated, std::memory_order_release);
-					this->postGenResult(std::move(genChunk));
-				});
-			}
-			continue;
-		}
-
-		if (it->second->state.load() >= ChunkState::Generated)
-			break;
-
-		pool.wait();
-		regionManager->iopool.wait();
-		drainGenQueue();
-		drainLoadQueue();
 	}
 }
 
@@ -870,8 +793,16 @@ void WorldManager::initSpawn() {
 		auto b = getFirstUncoveredBlock(x, z);
 		if (b == BlockType::BLOCK_INVALID) {
 			// Force generate this chunk so we can check the block type.
-			auto cpos = Int32_2{ x >> 4, z >> 4 };
-			forceGenChunkSync(cpos);
+			auto pos = Int32_2{ x >> 4, z >> 4 };
+			auto chunk = std::make_shared<Chunk>();
+			chunk->cpos = pos;
+			chunks[pos] = std::move(chunk);
+			while (getFirstUncoveredBlock(x, z) == BlockType::BLOCK_INVALID) {
+				this->pumpPipeline({});
+				this->drainGenQueue();
+				this->drainLoadQueue();
+				this->pool.wait();
+			}
 			b = getFirstUncoveredBlock(x, z);
 		}
 		return getFirstUncoveredBlock(x, z) == BlockType::BLOCK_SAND;

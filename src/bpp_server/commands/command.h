@@ -119,15 +119,12 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 
 // Helper: send a PlayerPositionAndRotation packet to move a session to new coords.
 [[maybe_unused]] static void SendTeleport(PlayerSession& target, Vec3 position, float yaw = 0.0f, float pitch = 0.0f) {
-	// This is hacky but force gen the chunk we are at
-	Int2 chunkPos{ int(position.x) >> 4, int(position.z) >> 4 };
-	target.entity->world->forceGenChunkSync(chunkPos);
-
 	// Update our server-side entity position to match the teleport, so that movement broadcasts are correct.
 	target.entity->teleport(position, { yaw, pitch });
 
 	// Keep server-side position in sync so movement broadcasts are correct.
 	target.pendingTeleport = position;
+	target.pendingPosition.reset();
 
 	Packet::PlayerPositionAndRotation pkt;
 	pkt.position.x = position.x;

@@ -71,7 +71,6 @@ struct WorldManager {
 	void flushBleedWrites();
 	void propagateChunkLightBorders(Int32_2 cpos);
 	BlockType getFirstUncoveredBlock(int wx, int wz);
-	void forceGenChunkSync(Int32_2 pos);
 	int findTopSolidBlock(int wx, int wz);
 	void setMeta(Int3 wpos, uint8_t metadata = 0);
 	void setBlock(Int3 wpos, BlockType block_type, uint8_t metadata = 0);
