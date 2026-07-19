@@ -29,9 +29,9 @@ std::string CommandTeleport::Execute(std::vector<std::string>& parameters, Playe
 		ss >> num;
 		if (!ss.fail() && ss.eof())
 			source = &session;
-		else
+		else {
 			source = server.getSessionByUsername(parameters[offset++]).get();
-			return "";
+		}
 	}
 
 	// TODO Should prolly report if a non-existent player runs this
