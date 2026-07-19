@@ -95,8 +95,6 @@ void EntityMPPlayer::tick() {
 
 	// If we recieved a movement packet this tick do our server side checks
 	if (m_session->m_pendingPosition) {
-		m_session->m_pendingPosition.reset();
-
 		// Re-simulate our move
 		bool residualTooLarge = false;
 		bool movedWrong = false;
@@ -141,6 +139,8 @@ void EntityMPPlayer::tick() {
 			pkt.m_camera_y = m_position.m_y; // This is backwards, thanks notch
 			pkt.Serialize(m_session->m_stream);
 		}
+
+		m_session->m_pendingPosition.reset();
 	}
 
 	// Tell entities we collided with a player
