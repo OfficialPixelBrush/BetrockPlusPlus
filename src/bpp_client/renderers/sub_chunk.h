@@ -6,7 +6,6 @@
 */
 
 #pragma once
-#include <glad/glad.h>
 #include <numeric_structs.h>
 
 struct SubChunk {
@@ -105,23 +104,23 @@ struct SubChunk {
 	}
 
 	void cleanup() {
-		if (VAO) {
-			glDeleteVertexArrays(1, &VAO);
-			glDeleteBuffers(1, &VBO);
-			VAO = 0;
-			VBO = 0;
-		}
-		if (transVAO) {
-			glDeleteVertexArrays(1, &transVAO);
-			glDeleteBuffers(1, &transVBO);
-			transVAO = 0;
-			transVBO = 0;
-		}
-		if (overlayVAO) {
-			glDeleteVertexArrays(1, &overlayVAO);
-			glDeleteBuffers(1, &overlayVBO);
-			overlayVAO = 0;
-			overlayVBO = 0;
-		}
+		// if (VAO) {
+		// 	glDeleteVertexArrays(1, &VAO);
+		// 	glDeleteBuffers(1, &VBO);
+		// 	VAO = 0;
+		// 	VBO = 0;
+		// }
+		// if (transVAO) {
+		// 	glDeleteVertexArrays(1, &transVAO);
+		// 	glDeleteBuffers(1, &transVBO);
+		// 	transVAO = 0;
+		// 	transVBO = 0;
+		// }
+		// if (overlayVAO) {
+		// 	glDeleteVertexArrays(1, &overlayVAO);
+		// 	glDeleteBuffers(1, &overlayVBO);
+		// 	overlayVAO = 0;
+		// 	overlayVBO = 0;
+		// }
 	}
 };

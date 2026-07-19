@@ -16,10 +16,8 @@ find_package(libdeflate CONFIG REQUIRED)
 
 # Building as a client, we need this extra stuff
 if(NOT BUILD_SERVER)
-find_package(OpenGL REQUIRED)
-find_package(glfw3 CONFIG REQUIRED)
+find_package(SDL3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
-find_package(OpenAL CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 endif()
 
@@ -138,13 +136,13 @@ set(SERVER_SOURCES
 # Client-specific source code
 set(CLIENT_SOURCES
     src/bpp_client/client.cpp
-    src/bpp_client/inputs.cpp
+    src/bpp_client/window.cpp
+    src/bpp_client/input.cpp
+    src/bpp_client/renderer.cpp
     src/bpp_client/assets.cpp
 
     src/bpp_client/renderers/world_renderer.cpp
     src/bpp_client/renderers/sub_chunk_mesher.cpp
-
-    external/glad/src/glad.c
 )
 
 # Shared code
@@ -190,10 +188,8 @@ else()
         ${CLIENT_SOURCES}
     )
     target_link_libraries(BetrockPlusPlus PRIVATE
-        OpenGL::GL
-        glfw
+        SDL3::SDL3
         glm::glm
-        OpenAL::OpenAL
         Threads::Threads
     )
 endif()
