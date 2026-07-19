@@ -144,8 +144,7 @@ void EntityMPPlayer::tick() {
 
 	// Tell entities we collided with a player
 	if (m_entityManager) {
-		auto entitiesCollidingWith = m_entityManager->getEntitiesWithinAABBExcluding(m_collider.expand(1.0, 0.0, 1.0),
-		                                                                           this->m_id);
+		auto entitiesCollidingWith = m_entityManager->getEntitiesWithinAABBExcluding(m_collider.expand(1.0, 0.0, 1.0), this->m_id);
 		for (const auto& entity : entitiesCollidingWith) {
 			if (!entity->m_isDead)
 				entity->onCollideWithPlayer(*this);

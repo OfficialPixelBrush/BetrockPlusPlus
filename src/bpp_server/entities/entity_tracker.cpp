@@ -227,6 +227,7 @@ void EntityTracker::update(TrackedEntry& trackedEntry) {
 		pkt.m_velocity = { quantizeVelocityComponent(entity->m_velocity.m_x), quantizeVelocityComponent(entity->m_velocity.m_y),
 			             quantizeVelocityComponent(entity->m_velocity.m_z) };
 		sendPacketToPlayersInTrackedEntry(pkt, trackedEntry);
+		pkt.Serialize(m_server->getSessionById(entity->m_id)->m_stream);
 	}
 
 	trackedEntry.m_ticksSinceTeleport++;
