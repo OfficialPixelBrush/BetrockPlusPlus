@@ -81,8 +81,10 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 	// Hook up signals
 	std::signal(SIGINT, signalHandler);
 	std::signal(SIGTERM, signalHandler);
+#ifdef SIGPIPE
 	// Ignore broken pipes caused by early disconnecting client
-	// std::signal(SIGPIPE, SIG_IGN);
+	std::signal(SIGPIPE, SIG_IGN);
+#endif
 	// Parse CLI Args
 	Args args{ { argc, argv } };
 	// Init the sine table
