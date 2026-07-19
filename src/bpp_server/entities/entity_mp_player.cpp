@@ -134,7 +134,7 @@ void EntityMPPlayer::tick() {
 			session->position.pos = lastPosition;
 			Packet::PlayerPosition pkt;
 			pkt.on_ground = onGround;
-			pkt.position = { position.x, position.y + PLAYER_EYE_HEIGHT, position.z };
+			pkt.position = { position.x, position.y + PLAYER_EYE_HEIGHT + 0.0625, position.z };
 			pkt.Serialize(session->stream);
 		}
 	}

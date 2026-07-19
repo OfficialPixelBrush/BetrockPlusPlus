@@ -33,8 +33,7 @@ void ServerBlock::initialize() {
 	                                                  Runtime& gameRuntime) -> bool {
 		auto chest = world.getTileEntityShared<TileEntityChest>(position);
 		if (!chest) {
-			chest = std::make_shared<TileEntityChest>(position);
-			world.createTileEntity(chest);
+			return;
 		}
 
 		// Are we a double chest?

@@ -2069,6 +2069,10 @@ void registerAll() {
 				world.setBlock(landing, BLOCK_SAND, 0);
 		}
 	};
+	blockBehaviors[BLOCK_CHEST].onBlockAdded = [](WorldManager& world, Int3 pos) -> void {
+		auto chest = std::make_shared<TileEntityChest>(pos);
+		world.createTileEntity(std::move(chest));
+	};
 
 	// --------------- block drops, only exceptions are included (something that doesn't drop itself) ---------------
 	blockBehaviors[BLOCK_STONE].idDropped = [](uint8_t, Java::Random&) -> ItemId {
