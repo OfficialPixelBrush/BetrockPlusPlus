@@ -27,7 +27,7 @@
 #include "version.h"
 #include <chrono>
 
-Server::Server() : config("server.properties") {
+Server::Server() : config("server.properties"), m_gameRuntime(SERVER_VIEW_RADIUS) {
 	ServerBlock::initialize();
 	loadConfig();
 	serverSocket = ServerSocketManager::createServerSocket(serverPort);
@@ -204,7 +204,7 @@ void Server::startup() {
 	registerEntityTrackerCallbacks(m_hellEntityTracker, m_gameRuntime.m_worldHell.m_entityManager);
 
 	// Get spawn ready
-	constexpr int spawn_chunk_distance = 4;
+	int spawn_chunk_distance = this->SPAWN_CHUNK_RADIUS;
 	int total_spawn_chunks = (spawn_chunk_distance + spawn_chunk_distance + 1) *
 	                         (spawn_chunk_distance + spawn_chunk_distance + 1);
 	GlobalLogger().m_info << "Server spawn is "

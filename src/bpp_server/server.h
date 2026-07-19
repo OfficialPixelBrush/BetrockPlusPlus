@@ -124,6 +124,8 @@ private:
 
 	static constexpr int TICKS_PER_SECOND = 20;
 	static constexpr int MAX_TICK_CATCH_UP = 5;
+	int SERVER_VIEW_RADIUS = 3;
+	int SPAWN_CHUNK_RADIUS = 5;
 
 	PlayerConnStateManager connStateManager;
 

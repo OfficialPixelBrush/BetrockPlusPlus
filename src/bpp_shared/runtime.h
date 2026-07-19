@@ -31,6 +31,17 @@ struct Runtime {
 		m_recipeManager.addVanillaRecipes();
 		GlobalLogger().m_info << "New game runtime created!\n";
 	}
+	Runtime(int renderDistance) : m_worldHell(true) {	
+		Blocks::registerAll();
+		Items::registerAll();
+		m_recipeManager.addVanillaRecipes();
+
+		// Override our view distance
+		m_world.setViewRadius(renderDistance);
+		m_worldHell.setViewRadius(renderDistance);
+
+		GlobalLogger().m_info << "New game runtime created!\n";
+	}
 
 	void init(std::string levelPath, std::string seedOverride = "") {
 		// Setup our save

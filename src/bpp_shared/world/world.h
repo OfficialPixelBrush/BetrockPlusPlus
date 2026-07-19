@@ -84,11 +84,16 @@ struct WorldManager {
 	void populateReady();
 	void drainLoadQueue();
 
-	int getViewRadius() {
+	const int getViewRadius() {
 		return VIEW_RADIUS;
 	}
-	int getSimulationDistance() {
+	const int getSimulationDistance() {
 		return SIMULATION_RADIUS;
+	}
+	void setViewRadius(int viewRadius) {
+		int newViewRadius = std::max(3, viewRadius);
+		this->VIEW_RADIUS = newViewRadius;
+		this->SIMULATION_RADIUS = std::min(9, newViewRadius);
 	}
 
 	void initWorldSeed(std::string pSeed) {
@@ -336,8 +341,8 @@ struct WorldManager {
 
 private:
 	// I believe the vanilla default is
-	static constexpr int VIEW_RADIUS = 9;
-	static constexpr int SIMULATION_RADIUS = 9;
+	int VIEW_RADIUS = 9;
+	int SIMULATION_RADIUS = 9;
 
 	bool isHell = false; // for the nether
 
