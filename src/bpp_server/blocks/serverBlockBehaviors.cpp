@@ -33,7 +33,7 @@ void ServerBlock::initialize() {
 	                                                  Runtime& gameRuntime) -> bool {
 		auto chest = world.getTileEntityShared<TileEntityChest>(position);
 		if (!chest) {
-			return;
+			return false;
 		}
 
 		// Are we a double chest?
