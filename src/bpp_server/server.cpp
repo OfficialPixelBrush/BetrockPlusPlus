@@ -237,7 +237,7 @@ void Server::startup() {
 	}
 
 	// Chunks are ready to load at this point.
-	auto loadSpawnChunks = [total_spawn_chunks](WorldManager& world) {
+	auto loadSpawnChunks = [total_spawn_chunks, spawn_chunk_distance](WorldManager& world) {
 		auto start = std::chrono::steady_clock::now();
 		int loaded_chunks = 0;
 		while (true) {
