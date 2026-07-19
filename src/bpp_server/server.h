@@ -38,6 +38,11 @@ public:
 	void stop();
 	void processIncoming(PlayerSession& session);
 
+private:
+	int SERVER_VIEW_RADIUS = 8;
+	int SPAWN_CHUNK_RADIUS = 5;
+
+public:
 	Runtime m_gameRuntime;
 	ChunkSender m_chunkSender;
 	int m_flushChunkCount = 10;
@@ -124,8 +129,6 @@ private:
 
 	static constexpr int TICKS_PER_SECOND = 20;
 	static constexpr int MAX_TICK_CATCH_UP = 5;
-	int SERVER_VIEW_RADIUS = 8;
-	int SPAWN_CHUNK_RADIUS = 5;
 
 	PlayerConnStateManager connStateManager;
 

@@ -73,7 +73,7 @@ void EntityMPPlayer::tick() {
 			// Player isn't at the teleported position so send another tp packet
 			// Also reset our position
 			auto ptp = *m_session->m_pendingTeleport;
-			this->teleport({ ptp.m_x, ptp.m_y + 1.0 / 64.0, ptp.m_z}, { m_rotationYaw, m_rotationPitch });
+			this->teleport({ ptp.m_x, ptp.m_y + 0.0625, ptp.m_z }, { m_rotationYaw, m_rotationPitch });
 			m_session->m_position.m_pos = *m_session->m_pendingTeleport;
 			Packet::PlayerPosition pkt;
 			pkt.m_on_ground = m_onGround;
@@ -136,7 +136,7 @@ void EntityMPPlayer::tick() {
 			m_session->m_position.m_pos = lastPosition;
 			Packet::PlayerPosition pkt;
 			pkt.m_on_ground = m_onGround;
-			pkt.m_position = { m_position.m_x, m_position.m_y + PLAYER_EYE_HEIGHT + 1.0 / 64.0, m_position.m_z };
+			pkt.m_position = { m_position.m_x, m_position.m_y + PLAYER_EYE_HEIGHT + 0.0625, m_position.m_z };
 			pkt.m_camera_y = m_position.m_y; // This is backwards, thanks notch
 			pkt.Serialize(m_session->m_stream);
 		}

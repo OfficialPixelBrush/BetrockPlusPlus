@@ -40,7 +40,7 @@ struct Runtime {
 		m_world.setViewRadius(renderDistance);
 		m_worldHell.setViewRadius(renderDistance);
 
-		GlobalLogger().m_info << "New game runtime created!\n";
+		GlobalLogger().m_info << "New game runtime created with view radius overriden to " << renderDistance << "!\n";
 	}
 
 	void init(std::string levelPath, std::string seedOverride = "") {
