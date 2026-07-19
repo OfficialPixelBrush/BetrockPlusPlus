@@ -131,7 +131,7 @@ void RecipeManager::addVanillaRecipes() {
 	         Items::Id::BOOTS_LEATHER);
 
 	// Tools
-	auto addTools = [this](ItemId toolMaterial, ItemId swordId, ItemId pickId, ItemId shovelId, ItemId axeId) -> void {
+	auto addTools = [this](ItemId toolMaterial, ItemId swordId, ItemId pickId, ItemId shovelId, ItemId axeId, ItemId hoeId) -> void {
 		addShapedRecipe({ "###", " A ", " A " }, { { '#', { toolMaterial } }, { 'A', { Items::Id::STICK } } },
 		                { pickId, 1 });
 		addShapedRecipe({ "#", "#", "A" }, { { '#', { toolMaterial } }, { 'A', { Items::Id::STICK } } }, { swordId, 1 });
@@ -141,17 +141,22 @@ void RecipeManager::addVanillaRecipes() {
 		                { axeId, 1 });
 		addShapedRecipe({ "#", "A", "A" }, { { '#', { toolMaterial } }, { 'A', { Items::Id::STICK } } },
 		                { shovelId, 1 });
+		addShapedRecipe({ "## ", " A ", " A " }, { { '#', { toolMaterial } }, { 'A', { Items::Id::STICK } } },
+		                { hoeId, 1 });
+		addShapedRecipe({ " ##", " A ", " A " }, { { '#', { toolMaterial } }, { 'A', { Items::Id::STICK } } },
+		                { hoeId, 1 });
 	};
 
 	addTools(BLOCK_COBBLESTONE, Items::Id::SWORD_STONE, Items::Id::PICKAXE_STONE, Items::Id::SHOVEL_STONE,
-	         Items::Id::AXE_STONE);
-	addTools(BLOCK_PLANKS, Items::Id::SWORD_WOOD, Items::Id::PICKAXE_WOOD, Items::Id::SHOVEL_WOOD, Items::Id::AXE_WOOD);
+	         Items::Id::AXE_STONE, Items::Id::HOE_STONE);
+	addTools(BLOCK_PLANKS, Items::Id::SWORD_WOOD, Items::Id::PICKAXE_WOOD, Items::Id::SHOVEL_WOOD, Items::Id::AXE_WOOD,
+	         Items::Id::HOE_WOOD);
 	addTools(Items::Id::IRON, Items::Id::SWORD_IRON, Items::Id::PICKAXE_IRON, Items::Id::SHOVEL_IRON,
-	         Items::Id::AXE_IRON);
+	         Items::Id::AXE_IRON, Items::Id::HOE_IRON);
 	addTools(Items::Id::GOLD, Items::Id::SWORD_GOLD, Items::Id::PICKAXE_GOLD, Items::Id::SHOVEL_GOLD,
-	         Items::Id::AXE_GOLD);
+	         Items::Id::AXE_GOLD, Items::Id::HOE_GOLD);
 	addTools(Items::Id::DIAMOND, Items::Id::SWORD_DIAMOND, Items::Id::PICKAXE_DIAMOND, Items::Id::SHOVEL_DIAMOND,
-	         Items::Id::AXE_DIAMOND);
+	         Items::Id::AXE_DIAMOND, Items::Id::HOE_DIAMOND);
 
 	// Blocks -> ingots, ingots -> blocks
 	auto addMaterial = [this](ItemId material, uint8_t materialMeta, ItemId storedMaterial) -> void {
