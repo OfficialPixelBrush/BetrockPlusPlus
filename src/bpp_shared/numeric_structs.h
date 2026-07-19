@@ -19,60 +19,60 @@ struct TriNumber {
 	union {
 		// For accessing directly
 		struct {
-			T x, y, z;
+			T m_x, m_y, m_z;
 		};
 		// For accessing as array
-		T data[3];
+		T m_data[3];
 	};
 
-	constexpr TriNumber(T _x, T _y, T _z) : x(_x), y(_y), z(_z) {}
-	constexpr TriNumber() : x(0), y(0), z(0) {}
+	constexpr TriNumber(T _x, T _y, T _z) : m_x(_x), m_y(_y), m_z(_z) {}
+	constexpr TriNumber() : m_x(0), m_y(0), m_z(0) {}
 
 	bool operator==(const TriNumber& other) const {
-		return x == other.x && y == other.y && z == other.z;
+		return m_x == other.m_x && m_y == other.m_y && m_z == other.m_z;
 	}
 
 	TriNumber operator+(const TriNumber& other) const {
-		return TriNumber{ x + other.x, y + other.y, z + other.z };
+		return TriNumber{ m_x + other.m_x, m_y + other.m_y, m_z + other.m_z };
 	}
 
 	TriNumber operator-(const TriNumber& other) const {
-		return TriNumber{ x - other.x, y - other.y, z - other.z };
+		return TriNumber{ m_x - other.m_x, m_y - other.m_y, m_z - other.m_z };
 	}
 
 	TriNumber operator*(const TriNumber& other) const {
-		return TriNumber{ x * other.x, y * other.y, z * other.z };
+		return TriNumber{ m_x * other.m_x, m_y * other.m_y, m_z * other.m_z };
 	}
 
 	TriNumber operator/(const TriNumber& other) const {
-		return TriNumber{ x / other.x, y / other.y, z / other.z };
+		return TriNumber{ m_x / other.m_x, m_y / other.m_y, m_z / other.m_z };
 	}
 
 	TriNumber operator+=(const TriNumber& other) {
-		x += other.x;
-		y += other.y;
-		z += other.z;
+		m_x += other.m_x;
+		m_y += other.m_y;
+		m_z += other.m_z;
 		return *this;
 	}
 
 	TriNumber operator-=(const TriNumber& other) {
-		x -= other.x;
-		y -= other.y;
-		z -= other.z;
+		m_x -= other.m_x;
+		m_y -= other.m_y;
+		m_z -= other.m_z;
 		return *this;
 	}
 
 	TriNumber operator*=(const TriNumber& other) {
-		x *= other.x;
-		y *= other.y;
-		z *= other.z;
+		m_x *= other.m_x;
+		m_y *= other.m_y;
+		m_z *= other.m_z;
 		return *this;
 	}
 
 	TriNumber operator/=(const TriNumber& other) {
-		x /= other.x;
-		y /= other.y;
-		z /= other.z;
+		m_x /= other.m_x;
+		m_y /= other.m_y;
+		m_z /= other.m_z;
 		return *this;
 	}
 
@@ -80,77 +80,77 @@ struct TriNumber {
 	template <typename U>
 	auto operator-(const U& other) const {
 		using R = std::common_type_t<T, U>;
-		return TriNumber<R>{ static_cast<R>(x) - other, static_cast<R>(y) - other, static_cast<R>(z) - other };
+		return TriNumber<R>{ static_cast<R>(m_x) - other, static_cast<R>(m_y) - other, static_cast<R>(m_z) - other };
 	}
 
 	// Allows for tri - 1 = (x-1,y-1,z-1)
 	template <typename U>
 	auto operator+(const U& other) const {
 		using R = std::common_type_t<T, U>;
-		return TriNumber<R>{ static_cast<R>(x) + other, static_cast<R>(y) + other, static_cast<R>(z) + other };
+		return TriNumber<R>{ static_cast<R>(m_x) + other, static_cast<R>(m_y) + other, static_cast<R>(m_z) + other };
 	}
 
 	// Allows for tri * 2 = (x*2,y*2,z*2)
 	template <typename U>
 	auto operator*(const U& other) const {
 		using R = std::common_type_t<T, U>;
-		return TriNumber<R>{ static_cast<R>(x) * other, static_cast<R>(y) * other, static_cast<R>(z) * other };
+		return TriNumber<R>{ static_cast<R>(m_x) * other, static_cast<R>(m_y) * other, static_cast<R>(m_z) * other };
 	}
 
 	// Allows for tri / 2 = (x/2,y/2,z/2)
 	template <typename U>
 	auto operator/(const U& other) const {
 		using R = std::common_type_t<T, U>;
-		return TriNumber<R>{ static_cast<R>(x) / other, static_cast<R>(y) / other, static_cast<R>(z) / other };
+		return TriNumber<R>{ static_cast<R>(m_x) / other, static_cast<R>(m_y) / other, static_cast<R>(m_z) / other };
 	}
 
 	template <typename U>
 	auto operator-=(const U& other) {
 		using R = std::common_type_t<T, U>;
-		x -= static_cast<R>(other);
-		y -= static_cast<R>(other);
-		z -= static_cast<R>(other);
+		m_x -= static_cast<R>(other);
+		m_y -= static_cast<R>(other);
+		m_z -= static_cast<R>(other);
 		return *this;
 	}
 
 	template <typename U>
 	auto operator+=(const U& other) {
 		using R = std::common_type_t<T, U>;
-		x += static_cast<R>(other);
-		y += static_cast<R>(other);
-		z += static_cast<R>(other);
+		m_x += static_cast<R>(other);
+		m_y += static_cast<R>(other);
+		m_z += static_cast<R>(other);
 		return *this;
 	}
 
 	template <typename U>
 	auto operator*=(const U& other) {
 		using R = std::common_type_t<T, U>;
-		x *= static_cast<R>(other);
-		y *= static_cast<R>(other);
-		z *= static_cast<R>(other);
+		m_x *= static_cast<R>(other);
+		m_y *= static_cast<R>(other);
+		m_z *= static_cast<R>(other);
 		return *this;
 	}
 
 	template <typename U>
 	auto operator/=(const U& other) {
 		using R = std::common_type_t<T, U>;
-		x /= static_cast<R>(other);
-		y /= static_cast<R>(other);
-		z /= static_cast<R>(other);
+		m_x /= static_cast<R>(other);
+		m_y /= static_cast<R>(other);
+		m_z /= static_cast<R>(other);
 		return *this;
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const TriNumber& val) {
-		os << "(" << static_cast<int64_t>(val.x) << ", " << static_cast<int64_t>(val.y) << ", "
-		   << static_cast<int64_t>(val.z) << ")";
+		os << "(" << static_cast<int64_t>(val.m_x) << ", " << static_cast<int64_t>(val.m_y) << ", "
+		   << static_cast<int64_t>(val.m_z) << ")";
 		return os;
 	}
 
 	T& operator[](int axis) {
-		return data[axis];
+		return m_data[axis];
 	}
 	const T& operator[](int axis) const {
-		return data[axis];
+		return m_data[axis];
 	}
 
 	std::string str() const {
@@ -160,7 +160,7 @@ struct TriNumber {
 	}
 
 	T total() const {
-		return x * y * z;
+		return m_x * m_y * m_z;
 	}
 };
 
@@ -173,60 +173,60 @@ struct BiNumber {
 	union {
 		// For accessing directly
 		struct {
-			T x;
+			T m_x;
 			union {
-				T y;
-				T z;
+				T m_y;
+				T m_z;
 			};
 		};
 		// For accessing as array
-		T data[2];
+		T m_data[2];
 	};
 
-	constexpr BiNumber(T _x, T _y) : x(_x), y(_y) {}
-	constexpr BiNumber() : x(0), y(0) {}
+	constexpr BiNumber(T _x, T _y) : m_x(_x), m_y(_y) {}
+	constexpr BiNumber() : m_x(0), m_y(0) {}
 
 	bool operator==(const BiNumber& other) const {
-		return x == other.x && y == other.y;
+		return m_x == other.m_x && m_y == other.m_y;
 	}
 
 	BiNumber operator+(const BiNumber& other) const {
-		return BiNumber{ x + other.x, y + other.y };
+		return BiNumber{ m_x + other.m_x, m_y + other.m_y };
 	}
 
 	BiNumber operator-(const BiNumber& other) const {
-		return BiNumber{ x - other.x, y - other.y };
+		return BiNumber{ m_x - other.m_x, m_y - other.m_y };
 	}
 
 	BiNumber operator*(const BiNumber& other) const {
-		return BiNumber{ x * other.x, y * other.y };
+		return BiNumber{ m_x * other.m_x, m_y * other.m_y };
 	}
 
 	BiNumber operator/(const BiNumber& other) const {
-		return BiNumber{ x / other.x, y / other.y };
+		return BiNumber{ m_x / other.m_x, m_y / other.m_y };
 	}
 
 	BiNumber operator+=(const BiNumber& other) {
-		x += other.x;
-		y += other.y;
+		m_x += other.m_x;
+		m_y += other.m_y;
 		return *this;
 	}
 
 	BiNumber operator-=(const BiNumber& other) {
-		x -= other.x;
-		y -= other.y;
+		m_x -= other.m_x;
+		m_y -= other.m_y;
 		return *this;
 	}
 
 	BiNumber operator*=(const BiNumber& other) {
-		x *= other.x;
-		y *= other.y;
+		m_x *= other.m_x;
+		m_y *= other.m_y;
 		return *this;
 	}
 
 	BiNumber operator/=(const BiNumber& other) {
-		x /= other.x;
-		y /= other.y;
+		m_x /= other.m_x;
+		m_y /= other.m_y;
 		return *this;
 	}
 
@@ -234,7 +234,7 @@ struct BiNumber {
 	template <typename U>
 	auto operator+(const U& other) const {
 		using R = std::common_type_t<T, U>;
-		return BiNumber<R>{ static_cast<R>(x) + other, static_cast<R>(y) + other };
+		return BiNumber<R>{ static_cast<R>(m_x) + other, static_cast<R>(m_y) + other };
 	}
 
 	// Allows for bi - 2 = (x-2,y-2)
@@ -242,8 +242,8 @@ struct BiNumber {
 	auto operator-(const U& other) const {
 		using R = std::common_type_t<T, U>;
 		return BiNumber<R>{
-			static_cast<R>(x) - other,
-			static_cast<R>(y) - other,
+			static_cast<R>(m_x) - other,
+			static_cast<R>(m_y) - other,
 		};
 	}
 
@@ -251,7 +251,7 @@ struct BiNumber {
 	template <typename U>
 	auto operator*(const U& other) const {
 		using R = std::common_type_t<T, U>;
-		return BiNumber<R>{ static_cast<R>(x) * other, static_cast<R>(y) * other };
+		return BiNumber<R>{ static_cast<R>(m_x) * other, static_cast<R>(m_y) * other };
 	}
 
 	// Allows for bi / 2 = (x/2,y/2)
@@ -259,45 +259,45 @@ struct BiNumber {
 	auto operator/(const U& other) const {
 		using R = std::common_type_t<T, U>;
 		return BiNumber<R>{
-			static_cast<R>(x) / other,
-			static_cast<R>(y) / other,
+			static_cast<R>(m_x) / other,
+			static_cast<R>(m_y) / other,
 		};
 	}
 
 	template <typename U>
 	auto operator-=(const U& other) {
 		using R = std::common_type_t<T, U>;
-		x -= static_cast<R>(other);
-		y -= static_cast<R>(other);
+		m_x -= static_cast<R>(other);
+		m_y -= static_cast<R>(other);
 		return *this;
 	}
 
 	template <typename U>
 	auto operator+=(const U& other) {
 		using R = std::common_type_t<T, U>;
-		x += static_cast<R>(other);
-		y += static_cast<R>(other);
+		m_x += static_cast<R>(other);
+		m_y += static_cast<R>(other);
 		return *this;
 	}
 
 	template <typename U>
 	auto operator*=(const U& other) {
 		using R = std::common_type_t<T, U>;
-		x *= static_cast<R>(other);
-		y *= static_cast<R>(other);
+		m_x *= static_cast<R>(other);
+		m_y *= static_cast<R>(other);
 		return *this;
 	}
 
 	template <typename U>
 	auto operator/=(const U& other) {
 		using R = std::common_type_t<T, U>;
-		x /= static_cast<R>(other);
-		y /= static_cast<R>(other);
+		m_x /= static_cast<R>(other);
+		m_y /= static_cast<R>(other);
 		return *this;
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const BiNumber& val) {
-		os << "(" << static_cast<int64_t>(val.x) << ", " << static_cast<int64_t>(val.y) << ")";
+		os << "(" << static_cast<int64_t>(val.m_x) << ", " << static_cast<int64_t>(val.m_y) << ")";
 		return os;
 	}
 
@@ -308,7 +308,7 @@ struct BiNumber {
 	}
 
 	T total() const {
-		return x * y;
+		return m_x * m_y;
 	}
 };
 
@@ -320,65 +320,65 @@ template <typename T = int>
 struct SlimInt3 {
 	// For accessing directly
 	struct {
-		int32_t x;
-		T y;
-		int32_t z;
+		int32_t m_x;
+		T m_y;
+		int32_t m_z;
 	};
 
-	constexpr SlimInt3(int32_t _x, T _y, int32_t _z) : x(_x), y(_y), z(_z) {}
-	constexpr SlimInt3() : x(0), y(0), z(0) {}
+	constexpr SlimInt3(int32_t _x, T _y, int32_t _z) : m_x(_x), m_y(_y), m_z(_z) {}
+	constexpr SlimInt3() : m_x(0), m_y(0), m_z(0) {}
 
 	bool operator==(const SlimInt3& other) const {
-		return x == other.x && y == other.y && z == other.z;
+		return m_x == other.m_x && m_y == other.m_y && m_z == other.m_z;
 	}
 
 	SlimInt3 operator+(const SlimInt3& other) const {
-		return SlimInt3{ x + other.x, y + other.y, z + other.z };
+		return SlimInt3{ m_x + other.m_x, m_y + other.m_y, m_z + other.m_z };
 	}
 
 	SlimInt3 operator-(const SlimInt3& other) const {
-		return SlimInt3{ x - other.x, y - other.y, z - other.z };
+		return SlimInt3{ m_x - other.m_x, m_y - other.m_y, m_z - other.m_z };
 	}
 
 	SlimInt3 operator*(const SlimInt3& other) const {
-		return SlimInt3{ x * other.x, y * other.y, z * other.z };
+		return SlimInt3{ m_x * other.m_x, m_y * other.m_y, m_z * other.m_z };
 	}
 
 	SlimInt3 operator/(const SlimInt3& other) const {
-		return SlimInt3{ x / other.x, y / other.y, z / other.z };
+		return SlimInt3{ m_x / other.m_x, m_y / other.m_y, m_z / other.m_z };
 	}
 
 	// Allows for tri + 1 = (x+1,y+1,z+1)
 	template <typename U>
 	auto operator-(const U& other) const {
 		using R = std::common_type_t<SlimInt3, U>;
-		return SlimInt3{ static_cast<R>(x) - other, static_cast<R>(y) - other, static_cast<R>(z) - other };
+		return SlimInt3{ static_cast<R>(m_x) - other, static_cast<R>(m_y) - other, static_cast<R>(m_z) - other };
 	}
 
 	// Allows for tri - 1 = (x-1,y-1,z-1)
 	template <typename U>
 	auto operator+(const U& other) const {
 		using R = std::common_type_t<SlimInt3, U>;
-		return SlimInt3{ static_cast<R>(x) + other, static_cast<R>(y) + other, static_cast<R>(z) + other };
+		return SlimInt3{ static_cast<R>(m_x) + other, static_cast<R>(m_y) + other, static_cast<R>(m_z) + other };
 	}
 
 	// Allows for tri * 2 = (x*2,y*2,z*2)
 	template <typename U>
 	auto operator*(const U& other) const {
 		using R = std::common_type_t<SlimInt3, U>;
-		return SlimInt3{ static_cast<R>(x) * other, static_cast<R>(y) * other, static_cast<R>(z) * other };
+		return SlimInt3{ static_cast<R>(m_x) * other, static_cast<R>(m_y) * other, static_cast<R>(m_z) * other };
 	}
 
 	// Allows for tri / 2 = (x/2,y/2,z/2)
 	template <typename U>
 	auto operator/(const U& other) const {
 		using R = std::common_type_t<SlimInt3, U>;
-		return SlimInt3{ static_cast<R>(x) / other, static_cast<R>(y) / other, static_cast<R>(z) / other };
+		return SlimInt3{ static_cast<R>(m_x) / other, static_cast<R>(m_y) / other, static_cast<R>(m_z) / other };
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const SlimInt3& val) {
-		os << "(" << static_cast<int64_t>(val.x) << ", " << static_cast<int64_t>(val.y) << ", "
-		   << static_cast<int64_t>(val.z) << ")";
+		os << "(" << static_cast<int64_t>(val.m_x) << ", " << static_cast<int64_t>(val.m_y) << ", "
+		   << static_cast<int64_t>(val.m_z) << ")";
 		return os;
 	}
 
@@ -389,7 +389,7 @@ struct SlimInt3 {
 	}
 
 	T total() const {
-		return x * y * z;
+		return m_x * m_y * m_z;
 	}
 };
 
@@ -565,9 +565,9 @@ namespace std {
 template <typename T>
 struct hash<TriNumber<T>> {
 	size_t operator()(const TriNumber<T>& p) const noexcept {
-		size_t h = hash<T>{}(p.x);
-		h ^= hash<T>{}(p.y) * 0x9e3779b9u + 0x6b3a9a4fu;
-		h ^= hash<T>{}(p.z) * 0x517cc1b7u + 0x2c62a8d3u;
+		size_t h = hash<T>{}(p.m_x);
+		h ^= hash<T>{}(p.m_y) * 0x9e3779b9u + 0x6b3a9a4fu;
+		h ^= hash<T>{}(p.m_z) * 0x517cc1b7u + 0x2c62a8d3u;
 		return h;
 	}
 };
@@ -575,8 +575,8 @@ struct hash<TriNumber<T>> {
 template <typename T>
 struct hash<BiNumber<T>> {
 	size_t operator()(const BiNumber<T>& p) const noexcept {
-		size_t h = hash<T>{}(p.x);
-		h ^= hash<T>{}(p.y) * 0x9e3779b9u + 0x6b3a9a4fu;
+		size_t h = hash<T>{}(p.m_x);
+		h ^= hash<T>{}(p.m_y) * 0x9e3779b9u + 0x6b3a9a4fu;
 		return h;
 	}
 };

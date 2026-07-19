@@ -30,8 +30,8 @@ public:
 class BigTreeGenerator : public TreeGenerator {
 private:
 	struct BranchPos {
-		Int3 pos;
-		int32_t trunkY;
+		Int3 m_pos;
+		int32_t m_trunkY;
 	};
 	enum BranchAxis : int8_t {
 		AXIS_X = 0,

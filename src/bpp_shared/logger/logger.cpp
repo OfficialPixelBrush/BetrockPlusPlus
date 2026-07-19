@@ -33,8 +33,8 @@ std::string Logger::GetCurrentTimeString(bool file_format) {
 }
 
 Logger::Logger()
-    : msg(*this, LOG_MESSAGE), chat(*this, LOG_CHAT), info(*this, LOG_INFO), warn(*this, LOG_WARNING),
-      error(*this, LOG_ERROR), debug(*this, LOG_DEBUG) {
+    : m_msg(*this, LOG_MESSAGE), m_chat(*this, LOG_CHAT), m_info(*this, LOG_INFO), m_warn(*this, LOG_WARNING),
+      m_error(*this, LOG_ERROR), m_debug(*this, LOG_DEBUG) {
 	if (logLevelText != LOG_NONE) {
 		fs::path logDir = "logs";
 

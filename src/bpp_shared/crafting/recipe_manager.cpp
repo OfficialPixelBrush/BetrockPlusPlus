@@ -18,7 +18,7 @@ void RecipeManager::addShapelessRecipe(std::span<const ItemKey> items, ItemStack
 	[[unlikely]]
 	if (!inserted) {
 		it->second = output;
-		GlobalLogger().warn << "Overwriting existing shapeless recipe for output item " << output;
+		GlobalLogger().m_warn << "Overwriting existing shapeless recipe for output item " << output;
 	}
 }
 
@@ -34,12 +34,12 @@ void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> rows
 	size_t y = 0;
 	for (auto row : rows) {
 		if (y >= 3) {
-			GlobalLogger().warn << "Recipe has more than 3 rows. Skipping extra rows.";
+			GlobalLogger().m_warn << "Recipe has more than 3 rows. Skipping extra rows.";
 			break;
 		}
 
 		if (row.size() > 3) {
-			GlobalLogger().warn << "Recipe row has more than 3 columns. Skipping extra columns.";
+			GlobalLogger().m_warn << "Recipe row has more than 3 columns. Skipping extra columns.";
 			row = row.substr(0, 3);
 		}
 
@@ -56,8 +56,8 @@ void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> rows
 					mappedItem = item;
 			}
 
-			if (mappedItem.id == Items::Id::INVALID) {
-				GlobalLogger().warn << "Unknown recipe symbol '" << c << "'. Skipping recipe.";
+			if (mappedItem.m_id == Items::Id::INVALID) {
+				GlobalLogger().m_warn << "Unknown recipe symbol '" << c << "'. Skipping recipe.";
 				return;
 			}
 
@@ -71,7 +71,7 @@ void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> rows
 
 	if (!inserted) {
 		it->second = output;
-		GlobalLogger().warn << "Overwriting existing shaped recipe for output item " << output;
+		GlobalLogger().m_warn << "Overwriting existing shaped recipe for output item " << output;
 	}
 }
 
@@ -81,7 +81,7 @@ const ItemStack RecipeManager::matchGrid(std::span<const ItemStack> grid, UInt8_
 	const size_t total_size = size_t(size.total());
 
 	for (size_t i = 0; i < total_size; ++i)
-		keyGrid[i] = { grid[i].id, grid[i].data };
+		keyGrid[i] = { grid[i].m_id, grid[i].m_data };
 
 	auto shaped = shapedRecipes.find(makeShapedKey(std::span<const ItemKey>(keyGrid.data(), total_size), size));
 
@@ -93,7 +93,7 @@ const ItemStack RecipeManager::matchGrid(std::span<const ItemStack> grid, UInt8_
 	if (shapeless != shapelessRecipes.end())
 		return shapeless->second;
 
-	return { .id = Items::Id::INVALID };
+	return { .m_id = Items::Id::INVALID };
 }
 
 ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemKey> grid, UInt8_2 size) {
@@ -103,11 +103,11 @@ ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemKey> grid, UInt
 	int maxY = -1;
 
 	// Find the bounding box of the recipe
-	for (int y = 0; y < size.y; ++y) {
-		for (int x = 0; x < size.x; ++x) {
-			const auto& item = grid[y * size.x + x];
+	for (int y = 0; y < size.m_y; ++y) {
+		for (int x = 0; x < size.m_x; ++x) {
+			const auto& item = grid[y * size.m_x + x];
 
-			if (item.id == Items::Id::INVALID)
+			if (item.m_id == Items::Id::INVALID)
 				continue;
 
 			minX = std::min(minX, x);
@@ -123,13 +123,13 @@ ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemKey> grid, UInt
 	if (maxX == -1)
 		return key;
 
-	key.width = static_cast<uint8_t>(maxX - minX + 1);
-	key.height = static_cast<uint8_t>(maxY - minY + 1);
+	key.m_width = static_cast<uint8_t>(maxX - minX + 1);
+	key.m_height = static_cast<uint8_t>(maxY - minY + 1);
 
 	// Copy the actual recipe to top left
-	for (int y = 0; y < key.height; ++y) {
-		for (int x = 0; x < key.width; ++x) {
-			key.cells[y * 3 + x] = grid[(minY + y) * size.x + (minX + x)];
+	for (int y = 0; y < key.m_height; ++y) {
+		for (int x = 0; x < key.m_width; ++x) {
+			key.m_cells[y * 3 + x] = grid[(minY + y) * size.m_x + (minX + x)];
 		}
 	}
 
@@ -140,15 +140,15 @@ ShapelessRecipeKey RecipeManager::makeShapelessKey(std::span<const ItemKey> item
 	ShapelessRecipeKey key{};
 
 	for (const auto& item : items) {
-		if (!Items::IsValid(item.id))
+		if (!Items::IsValid(item.m_id))
 			continue;
-		if (key.count >= key.items.size()) {
-			GlobalLogger().error << "Shapeless recipe has more than 9 valid items!\n";
+		if (key.m_count >= key.m_items.size()) {
+			GlobalLogger().m_error << "Shapeless recipe has more than 9 valid items!\n";
 			break;
 		}
-		key.items[key.count++] = item;
+		key.m_items[key.m_count++] = item;
 	}
 
-	std::sort(key.items.begin(), key.items.begin() + key.count);
+	std::sort(key.m_items.begin(), key.m_items.begin() + key.m_count);
 	return key;
 }

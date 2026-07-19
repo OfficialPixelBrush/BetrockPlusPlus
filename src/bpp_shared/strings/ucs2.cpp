@@ -68,14 +68,14 @@ std::u16string ToUCS2(std::string str) {
 		char32_t cp = DecodeUTF8Char(str, i);
 
 		if (cp > 0xFFFF) {
-			GlobalLogger().warn << "Code point not representable in UCS-2\n";
+			GlobalLogger().m_warn << "Code point not representable in UCS-2\n";
 			// Spit out whatever we managed to get
 			return out;
 		}
 
 		// optionally reject surrogate range too
 		if (cp >= 0xD800 && cp <= 0xDFFF) {
-			GlobalLogger().warn << "Invalid Unicode scalar\n";
+			GlobalLogger().m_warn << "Invalid Unicode scalar\n";
 			// Spit out whatever we managed to get
 			return out;
 		}

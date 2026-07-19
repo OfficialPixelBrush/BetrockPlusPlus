@@ -14,23 +14,23 @@
 #include <vector>
 
 struct SnapshotContainer {
-	std::shared_ptr<Chunk> chunkSnapshot;
-	std::shared_ptr<const std::vector<Tag>> entitySnapshot;
+	std::shared_ptr<Chunk> m_chunkSnapshot;
+	std::shared_ptr<const std::vector<Tag>> m_entitySnapshot;
 };
 
 struct WorldManager;
 
 struct RegionManager {
-	BS::thread_pool<> iopool{ 2 };
+	BS::thread_pool<> m_iopool{ 2 };
 
-	std::mutex saveQueueMutex;
-	std::vector<SnapshotContainer> saveQueue;
+	std::mutex m_saveQueueMutex;
+	std::vector<SnapshotContainer> m_saveQueue;
 
-	std::mutex outChunksMutex;
-	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> outChunks;
+	std::mutex m_outChunksMutex;
+	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> m_outChunks;
 
 	// As much as I hate to do this it makes my job easier
-	WorldManager* world = nullptr;
+	WorldManager* m_world = nullptr;
 
 	~RegionManager();
 

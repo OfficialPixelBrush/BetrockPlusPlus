@@ -11,19 +11,19 @@
 // This struct stores the client's position as well as some helper functions to get their current chunk and exact block coords.
 // This is used by the world manager to determine which chunks to load and unload around a player
 struct ClientPosition {
-	Vec3 pos{ 0.0, 0.0, 0.0 };
-	int viewDistanceOverride = 0;
+	Vec3 m_pos{ 0.0, 0.0, 0.0 };
+	int m_viewDistanceOverride = 0;
 
 	inline Int2 getChunkPos() const {
-		return Int2{ static_cast<int>(std::floor(pos.x)) >> 4, static_cast<int>(std::floor(pos.z)) >> 4 };
+		return Int2{ static_cast<int>(std::floor(m_pos.m_x)) >> 4, static_cast<int>(std::floor(m_pos.m_z)) >> 4 };
 	}
 
 	inline Int3 getBlockPos() const {
-		return Int3{ static_cast<int>(std::floor(pos.x)), static_cast<int>(std::floor(pos.y)),
-			         static_cast<int>(std::floor(pos.z)) };
+		return Int3{ static_cast<int>(std::floor(m_pos.m_x)), static_cast<int>(std::floor(m_pos.m_y)),
+			         static_cast<int>(std::floor(m_pos.m_z)) };
 	}
 
 	inline Int2 getRegionPos() const {
-		return Int2{ static_cast<int>(std::floor(pos.x)) >> 9, static_cast<int>(std::floor(pos.z)) >> 9 };
+		return Int2{ static_cast<int>(std::floor(m_pos.m_x)) >> 9, static_cast<int>(std::floor(m_pos.m_z)) >> 9 };
 	}
 };

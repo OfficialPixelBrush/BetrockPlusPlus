@@ -17,9 +17,9 @@ struct ChunkPtrRegion {
 	std::shared_ptr<Chunk> m_chunks[3][3];
 
 	std::shared_ptr<Chunk> getChunk(Int2 pos) const {
-		if (pos.x < -1 || pos.x > 1 || pos.z < -1 || pos.z > 1)
+		if (pos.m_x < -1 || pos.m_x > 1 || pos.m_z < -1 || pos.m_z > 1)
 			return nullptr;
-		return m_chunks[pos.x + 1][pos.z + 1];
+		return m_chunks[pos.m_x + 1][pos.m_z + 1];
 	}
 };
 
@@ -36,10 +36,10 @@ struct WorldWrapper {
 	void getChunkRegion() {
 		for (int dx = -1; dx <= 1; dx++) {
 			for (int dz = -1; dz <= 1; dz++) {
-				int ax = m_centerChunkPos.x + dx;
-				int az = m_centerChunkPos.z + dz;
+				int ax = m_centerChunkPos.m_x + dx;
+				int az = m_centerChunkPos.m_z + dz;
 				auto c = m_manager.getChunk({ ax, az });
-				if (!c || c->inUse.load()) {
+				if (!c || c->m_inUse.load()) {
 					m_chunkRegion.m_chunks[dx + 1][dz + 1] = nullptr;
 				} else {
 					m_chunkRegion.m_chunks[dx + 1][dz + 1] = c;
@@ -50,32 +50,32 @@ struct WorldWrapper {
 		for (auto& row : m_chunkRegion.m_chunks)
 			for (auto& c : row)
 				if (c)
-					c->inUse.store(true);
+					c->m_inUse.store(true);
 	}
 
 	void freeChunkRegion() {
 		for (auto& row : m_chunkRegion.m_chunks)
 			for (auto& c : row)
 				if (c)
-					c->inUse.store(false);
+					c->m_inUse.store(false);
 	}
 
 	// Convert a world-space position to a region-local chunk offset (-1..1, -1..1)
 	Int2 getRegionChunkPos(Int3 wPos) const {
-		return { (wPos.x >> 4) - m_centerChunkPos.x, (wPos.z >> 4) - m_centerChunkPos.z };
+		return { (wPos.m_x >> 4) - m_centerChunkPos.m_x, (wPos.m_z >> 4) - m_centerChunkPos.m_z };
 	}
 
 	int findTopSolidBlock(int wx, int wz) {
 		auto chunk = m_chunkRegion.getChunk(getRegionChunkPos({ wx, 0, wz }));
-		if (!chunk || chunk->state.load() < ChunkState::Generated)
+		if (!chunk || chunk->m_state.load() < ChunkState::Generated)
 			return -1;
 		int lx = wx & 15, lz = wz & 15;
 		for (int y = 127; y > 0; --y) {
 			BlockType block = chunk->getBlock({ lx, y, lz });
 			if (block == BlockType::BLOCK_AIR)
 				continue;
-			Material mat = Blocks::blockProperties[block].material;
-			if (mat.isSolid || mat.isLiquid)
+			Material mat = Blocks::blockProperties[block].m_material;
+			if (mat.m_isSolid || mat.m_isLiquid)
 				return y + 1;
 		}
 		return -1;
@@ -83,70 +83,70 @@ struct WorldWrapper {
 
 	int getHeightValue(int wx, int wz) {
 		auto chunk = m_chunkRegion.getChunk(getRegionChunkPos({ wx, 0, wz }));
-		if (!chunk || chunk->state.load() < ChunkState::Generated)
+		if (!chunk || chunk->m_state.load() < ChunkState::Generated)
 			return 0;
 		return chunk->getHeightValue({ wx & 15, wz & 15 });
 	}
 
 	double getTemperatureAt(int wx, int wz) {
 		auto chunk = m_chunkRegion.getChunk(getRegionChunkPos({ wx, 0, wz }));
-		if (!chunk || chunk->state.load() < ChunkState::Generated)
+		if (!chunk || chunk->m_state.load() < ChunkState::Generated)
 			return 0.5;
 		return double(chunk->getTemperature({ wx & 15, wz & 15 }));
 	}
 
 	double getHumidityAt(int wx, int wz) {
 		auto chunk = m_chunkRegion.getChunk(getRegionChunkPos({ wx, 0, wz }));
-		if (!chunk || chunk->state.load() < ChunkState::Generated)
+		if (!chunk || chunk->m_state.load() < ChunkState::Generated)
 			return 0.5;
 		return double(chunk->getHumidity({ wx & 15, wz & 15 }));
 	}
 
 	BlockType getBlockId(Int3 wpos) const {
-		if (!inBounds(wpos.y))
+		if (!inBounds(wpos.m_y))
 			return BlockType::BLOCK_AIR;
 		auto chunk = m_chunkRegion.getChunk(getRegionChunkPos(wpos));
 		// Falls outside our grabbed region -> ask the m_manager directly (read-only, safe)
 		if (!chunk)
 			return m_manager.getBlockId(wpos);
-		if (chunk->state.load() < ChunkState::Generated)
+		if (chunk->m_state.load() < ChunkState::Generated)
 			return BlockType::BLOCK_AIR;
-		return chunk->getBlock({ wpos.x & 15, wpos.y, wpos.z & 15 });
+		return chunk->getBlock({ wpos.m_x & 15, wpos.m_y, wpos.m_z & 15 });
 	}
 
 	void setBlock(Int3 wpos, BlockType type, uint8_t meta = 0) {
-		if (!inBounds(wpos.y))
+		if (!inBounds(wpos.m_y))
 			return;
 		auto chunk = m_chunkRegion.getChunk(getRegionChunkPos(wpos));
-		if (!chunk || chunk->state.load() < ChunkState::Generated) {
+		if (!chunk || chunk->m_state.load() < ChunkState::Generated) {
 			// Outside our locked region
 			m_manager.setBlock(wpos, type, meta);
 			return;
 		}
 
 		// Remove any tile entities that exist at this spot
-		auto& tes = chunk->tileEntities;
+		auto& tes = chunk->m_tileEntities;
 		tes.erase(std::remove_if(tes.begin(), tes.end(),
 		                         [&](const std::shared_ptr<TileEntity>& te) { return te && te->m_position == wpos; }),
 		          tes.end());
 
 		// Unlight before changing the block
-		m_manager.lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Block, m_manager);
-		m_manager.lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Sky, m_manager);
+		m_manager.m_lightManager.unlightAt(wpos.m_x, wpos.m_y, wpos.m_z, LightType::Block, m_manager);
+		m_manager.m_lightManager.unlightAt(wpos.m_x, wpos.m_y, wpos.m_z, LightType::Sky, m_manager);
 
 		// Get the local coordinates of this block within the chunk and set it
-		int lx = wpos.x & 15;
-		int lz = wpos.z & 15;
-		Int3 local{ lx, wpos.y, lz };
+		int lx = wpos.m_x & 15;
+		int lz = wpos.m_z & 15;
+		Int3 local{ lx, wpos.m_y, lz };
 		chunk->setBlock(local, type);
 		chunk->setMeta(local, meta);
 
-		int y = wpos.y;
-		int x = wpos.x;
-		int z = wpos.z;
+		int y = wpos.m_y;
+		int x = wpos.m_x;
+		int z = wpos.m_z;
 		int oldHeight = chunk->getHeightValue({ lx, lz });
 
-		if (Blocks::blockProperties[type].lightOpacity != 0) {
+		if (Blocks::blockProperties[type].m_lightOpacity != 0) {
 			// Placing opaque block; heightmap may rise
 			if (y >= oldHeight) {
 				chunk->relightColumn({ lx, lz });
@@ -154,7 +154,7 @@ struct WorldWrapper {
 				// The column below the new top was zeroed out by relightColumn.
 				// Notify the BFS that all blocks from y down to oldHeight need updating
 				for (int sy = oldHeight; sy <= y; ++sy)
-					m_manager.lightManager.unlightAt(x, sy, z, LightType::Sky, m_manager);
+					m_manager.m_lightManager.unlightAt(x, sy, z, LightType::Sky, m_manager);
 			}
 		} else if (y == oldHeight - 1) {
 			// Removing top opaque block; heightmap may fall
@@ -164,12 +164,12 @@ struct WorldWrapper {
 		int newHeight = chunk->getHeightValue({ lx, lz });
 		if (newHeight < oldHeight) {
 			for (int sy = newHeight; sy < oldHeight; ++sy)
-				m_manager.lightManager.scheduleLightUpdate({ x, sy, z }, LightType::Sky);
+				m_manager.m_lightManager.scheduleLightUpdate({ x, sy, z }, LightType::Sky);
 		}
 
 		// Always re-evaluate the edited block and its 4 horizontal neighbours
 		// across the height transition band.
-		m_manager.lightManager.scheduleLightUpdate({ x, y, z }, LightType::Sky);
+		m_manager.m_lightManager.scheduleLightUpdate({ x, y, z }, LightType::Sky);
 		const int ndx[] = { -1, 1, 0, 0 };
 		const int ndz[] = { 0, 0, -1, 1 };
 		for (int i = 0; i < 4; ++i) {
@@ -180,31 +180,31 @@ struct WorldWrapper {
 				continue;
 			int minY = CrossPlatform::Math::min(thisHeight, neighborHeight);
 			int maxY = CrossPlatform::Math::max(thisHeight, neighborHeight);
-			m_manager.lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
+			m_manager.m_lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
 		}
 		// Schedule a block light update for the position itself
-		m_manager.lightManager.scheduleLightUpdate({ x, y, z }, LightType::Block);
+		m_manager.m_lightManager.scheduleLightUpdate({ x, y, z }, LightType::Block);
 
 		// Callback for the client and server to know about this block update
-		if (m_manager.onBlockUpdate)
-			m_manager.onBlockUpdate(PendingBlock{ .block{ type, meta },
-			                                      .block_pos{ wpos.x, wpos.y, wpos.z },
-			                                      .light{ chunk->getBlockLight({ wpos.x & 15, wpos.y, wpos.z & 15 }),
-			                                              chunk->getSkyLight({ wpos.x & 15, wpos.y, wpos.z & 15 }) } },
-			                        chunk->cpos);
+		if (m_manager.m_onBlockUpdate)
+			m_manager.m_onBlockUpdate(PendingBlock{ .m_block{ type, meta },
+			                                      .m_block_pos{ wpos.m_x, wpos.m_y, wpos.m_z },
+			                                      .m_light{ chunk->getBlockLight({ wpos.m_x & 15, wpos.m_y, wpos.m_z & 15 }),
+			                                              chunk->getSkyLight({ wpos.m_x & 15, wpos.m_y, wpos.m_z & 15 }) } },
+			                        chunk->m_cpos);
 	}
 
 	uint8_t getSkyLight(Int3 wpos) const {
-		if (!inBounds(wpos.y))
+		if (!inBounds(wpos.m_y))
 			return 0;
 		auto chunk = m_chunkRegion.getChunk(getRegionChunkPos(wpos));
-		if (!chunk || chunk->state.load() < ChunkState::Generated)
+		if (!chunk || chunk->m_state.load() < ChunkState::Generated)
 			return 0;
-		return chunk->getSkyLight({ wpos.x & 15, wpos.y, wpos.z & 15 });
+		return chunk->getSkyLight({ wpos.m_x & 15, wpos.m_y, wpos.m_z & 15 });
 	}
 
 	int64_t getSeed() const {
-		return m_manager.seed;
+		return m_manager.m_seed;
 	}
 
 	// Returns true when the world-space Y is within valid chunk bounds.
@@ -215,24 +215,24 @@ struct WorldWrapper {
 
 // Inline block-property helpers
 inline bool IsSolid(BlockType t) {
-	return Blocks::blockProperties[t].material.isSolid;
+	return Blocks::blockProperties[t].m_material.m_isSolid;
 }
 inline bool IsLiquid(BlockType t) {
-	return Blocks::blockProperties[t].material.isLiquid;
+	return Blocks::blockProperties[t].m_material.m_isLiquid;
 }
 inline bool IsOpaque(BlockType t) {
-	return Blocks::blockProperties[t].lightOpacity > 0;
+	return Blocks::blockProperties[t].m_lightOpacity > 0;
 }
 
 // Used for generating features in the world
 class FeatureGenerator {
 public:
-	BlockType type = BLOCK_AIR;
-	int8_t meta = 0;
+	BlockType m_type = BLOCK_AIR;
+	int8_t m_meta = 0;
 
 	FeatureGenerator() {}
-	explicit FeatureGenerator(BlockType pType) : type(pType) {}
-	FeatureGenerator(BlockType pType, int8_t pMeta) : type(pType), meta(pMeta) {}
+	explicit FeatureGenerator(BlockType pType) : m_type(pType) {}
+	FeatureGenerator(BlockType pType, int8_t pMeta) : m_type(pType), m_meta(pMeta) {}
 
 	// Overworld features
 	bool GenerateLake(WorldWrapper& world, Java::Random& rand, Int3 pos);

@@ -142,7 +142,7 @@ namespace BS {
  */
 struct [[nodiscard]] version
 {
-    constexpr version(const std::uint64_t major_, const std::uint64_t minor_, const std::uint64_t patch_) noexcept : major(major_), minor(minor_), patch(patch_) {}
+    constexpr version(const std::uint64_t major_, const std::uint64_t minor_, const std::uint64_t patch_) noexcept : m_major(major_), m_minor(minor_), m_patch(patch_) {}
 
 // In C++20 and later we can use the spaceship operator `<=>` to automatically generate comparison operators. In C++17 we have to define them manually.
 #ifdef __cpp_impl_three_way_comparison
@@ -181,7 +181,7 @@ struct [[nodiscard]] version
 
     [[nodiscard]] std::string to_string() const
     {
-        return std::to_string(major) + '.' + std::to_string(minor) + '.' + std::to_string(patch);
+        return std::to_string(m_major) + '.' + std::to_string(m_minor) + '.' + std::to_string(m_patch);
     }
 
     friend std::ostream& operator<<(std::ostream& stream, const version& ver)
@@ -190,9 +190,9 @@ struct [[nodiscard]] version
         return stream;
     }
 
-    std::uint64_t major;
-    std::uint64_t minor;
-    std::uint64_t patch;
+    std::uint64_t m_major;
+    std::uint64_t m_minor;
+    std::uint64_t m_patch;
 }; // struct version
 
 /**
@@ -414,7 +414,7 @@ struct [[nodiscard]] pr_task
      * @param task_ The task.
      * @param priority_ The desired priority.
      */
-    explicit pr_task(task_t&& task_, const priority_t priority_ = 0) noexcept(std::is_nothrow_move_constructible_v<task_t>) : task(std::move(task_)), priority(priority_) {}
+    explicit pr_task(task_t&& task_, const priority_t priority_ = 0) noexcept(std::is_nothrow_move_constructible_v<task_t>) : m_task(std::move(task_)), m_priority(priority_) {}
 
     /**
      * @brief Compare the priority of two tasks.
@@ -425,18 +425,18 @@ struct [[nodiscard]] pr_task
      */
     [[nodiscard]] friend bool operator<(const pr_task& lhs, const pr_task& rhs) noexcept
     {
-        return lhs.priority < rhs.priority;
+        return lhs.m_priority < rhs.m_priority;
     }
 
     /**
      * @brief The task. It is `mutable` so it can be moved out of the `const` reference returned by `std::priority_queue::top()`.
      */
-    mutable task_t task;
+    mutable task_t m_task;
 
     /**
      * @brief The priority of the task.
      */
-    priority_t priority = 0;
+    priority_t m_priority = 0;
 }; // struct pr_task
 
 // In C++20 and later we can use concepts. In C++17 we instead use SFINAE ("Substitution Failure Is Not An Error") with `std::enable_if_t`.
@@ -672,12 +672,12 @@ struct block_task
 {
     R operator()()
     {
-        return (*block_ptr)(start, end);
+        return (*m_block_ptr)(m_start, m_end);
     }
 
-    std::shared_ptr<std::decay_t<F>> block_ptr;
-    T start;
-    T end;
+    std::shared_ptr<std::decay_t<F>> m_block_ptr;
+    T m_start;
+    T m_end;
 }; // struct block_task
 
 /**
@@ -691,13 +691,13 @@ struct loop_task
 {
     void operator()()
     {
-        for (T i = start; i < end; ++i)
-            (*loop_ptr)(i);
+        for (T i = m_start; i < m_end; ++i)
+            (*m_loop_ptr)(i);
     }
 
-    std::shared_ptr<std::decay_t<F>> loop_ptr;
-    T start;
-    T end;
+    std::shared_ptr<std::decay_t<F>> m_loop_ptr;
+    T m_start;
+    T m_end;
 }; // struct loop_task
 
 /**
@@ -712,11 +712,11 @@ struct sequence_task
 {
     R operator()()
     {
-        return (*sequence_ptr)(i);
+        return (*m_sequence_ptr)(m_i);
     }
 
-    std::shared_ptr<std::decay_t<F>> sequence_ptr;
-    T i;
+    std::shared_ptr<std::decay_t<F>> m_sequence_ptr;
+    T m_i;
 }; // struct sequence_task
 
 /**
@@ -731,8 +731,8 @@ struct task_and_future
     explicit task_and_future(F&& func)
     {
         std::promise<R> promise;
-        future = promise.get_future();
-        task = [task = std::forward<F>(func), promise = std::move(promise)]() mutable
+        m_future = promise.get_future();
+        m_task = [task = std::forward<F>(func), promise = std::move(promise)]() mutable
         {
 #ifdef __cpp_exceptions
             try
@@ -763,8 +763,8 @@ struct task_and_future
         };
     }
 
-    std::future<R> future;
-    task_t task;
+    std::future<R> m_future;
+    task_t m_task;
 }; // struct task_and_future
 
 #ifdef __cpp_exceptions
@@ -1939,8 +1939,8 @@ public:
     [[nodiscard]] std::future<R> submit_task(F&& task, const priority_t priority = 0)
     {
         task_and_future<R> ft(std::forward<F>(task));
-        detach_task(std::move(ft.task), priority);
-        return std::move(ft.future);
+        detach_task(std::move(ft.m_task), priority);
+        return std::move(ft.m_future);
     }
 
     /**

@@ -77,11 +77,11 @@ void BiomeGenerator::GenerateBiomeMap(Biome biomeMap[], std::vector<double>& tem
 Biome BiomeGenerator::GetBiomeAtPoint(Int2 worldPos) {
 	std::vector<double> temp(1), humi(1), weird(1);
 
-	this->m_temperatureNoiseGen.GenerateOctaves(temp, Int2{ worldPos.x, worldPos.y }, Int32_2{ 1, 1 },
+	this->m_temperatureNoiseGen.GenerateOctaves(temp, Int2{ worldPos.m_x, worldPos.m_y }, Int32_2{ 1, 1 },
 	                                            Vec2{ double(0.025f), double(0.025f) }, 0.25);
-	this->m_humidityNoiseGen.GenerateOctaves(humi, Int2{ worldPos.x, worldPos.y }, Int32_2{ 1, 1 },
+	this->m_humidityNoiseGen.GenerateOctaves(humi, Int2{ worldPos.m_x, worldPos.m_y }, Int32_2{ 1, 1 },
 	                                         Vec2{ double(0.05f), double(0.05f) }, 1.0 / 3.0);
-	this->m_weirdnessNoiseGen.GenerateOctaves(weird, Int2{ worldPos.x, worldPos.y }, Int32_2{ 1, 1 },
+	this->m_weirdnessNoiseGen.GenerateOctaves(weird, Int2{ worldPos.m_x, worldPos.m_y }, Int32_2{ 1, 1 },
 	                                          Vec2{ 0.25, 0.25 }, 0.5882352941176471);
 
 	double w = weird[0] * 1.1 + 0.5;
@@ -110,8 +110,8 @@ Biome BiomeGenerator::GetBiomeAtPoint(Int2 worldPos) {
  */
 void BiomeGenerator::GenerateTemperature(std::vector<double>& temperature, std::vector<double>& weirdness,
                                          Int2 blockPos, Int2 max) {
-	if (temperature.empty() || temperature.size() < size_t(max.x * max.y)) {
-		temperature.resize(size_t(max.x * max.y), 0.0);
+	if (temperature.empty() || temperature.size() < size_t(max.m_x * max.m_y)) {
+		temperature.resize(size_t(max.m_x * max.m_y), 0.0);
 	}
 
 	this->m_temperatureNoiseGen.GenerateOctaves(temperature, blockPos, max, Vec2{ double(0.025f), double(0.025f) },
@@ -120,8 +120,8 @@ void BiomeGenerator::GenerateTemperature(std::vector<double>& temperature, std::
 	size_t index = 0;
 
 	// Iterate over each block column
-	for (int32_t x = 0; x < max.x; ++x) {
-		for (int32_t z = 0; z < max.y; ++z) {
+	for (int32_t x = 0; x < max.m_x; ++x) {
+		for (int32_t z = 0; z < max.m_y; ++z) {
 			double weird = weirdness[index] * 1.1 + 0.5;
 			double scale = 0.01;
 			double limit = 1.0 - scale;

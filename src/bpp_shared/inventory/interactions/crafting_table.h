@@ -16,11 +16,11 @@ struct CraftingTableInventoryInteraction : CraftingInventoryInteraction {
 	Int3 m_blockPosition;
 
 	struct SharedInventory : Inventory {
-		CraftingTableInventoryInteraction* owner = nullptr;
+		CraftingTableInventoryInteraction* m_owner = nullptr;
 		SharedInventory() : Inventory(46) {}
 		void onInventoryChanged() override {
-			if (owner)
-				owner->writeBack();
+			if (m_owner)
+				m_owner->writeBack();
 		}
 	} m_sharedInventory;
 

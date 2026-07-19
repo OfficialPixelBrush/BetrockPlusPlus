@@ -36,86 +36,86 @@ enum class StepSound : uint8_t {
 };
 
 struct BlockProperties {
-	Material material = Material::Rock();
-	StepSound stepSound = StepSound::Stone;
+	Material m_material = Material::Rock();
+	StepSound m_stepSound = StepSound::Stone;
 
-	uint8_t lightEmission = 0;  // 0-15
-	uint8_t lightOpacity = 255; // 0 = transparent, 255 = fully opaque
-	int tickRate = 10;
+	uint8_t m_lightEmission = 0;  // 0-15
+	uint8_t m_lightOpacity = 255; // 0 = transparent, 255 = fully opaque
+	int m_tickRate = 10;
 
-	float hardness = 1.0f;        // -1 = unbreakable (bedrock)
-	float resistance = 5.0f;      // blast resistance
-	float slipperiness = 0.6f;    // default friction, ice = 0.98f
-	float particleGravity = 1.0f; // how fast break particles fall
+	float m_hardness = 1.0f;        // -1 = unbreakable (bedrock)
+	float m_resistance = 5.0f;      // blast resistance
+	float m_slipperiness = 0.6f;    // default friction, ice = 0.98f
+	float m_particleGravity = 1.0f; // how fast break particles fall
 
-	bool isCollidable = true;
-	bool isOpaqueCube = true;
-	bool isNormalCube = true;
-	bool renderAsNormalBlock = true;
-	bool ticksOnLoad = false;
-	bool canBlockGrass = true;
-	bool notifyNeighborsOnMetaChange = true;
-	bool notifySelfOnMetaChange = true;
-	bool enableStats = true; // false = breaking doesn't count for achievements
+	bool m_isCollidable = true;
+	bool m_isOpaqueCube = true;
+	bool m_isNormalCube = true;
+	bool m_renderAsNormalBlock = true;
+	bool m_ticksOnLoad = false;
+	bool m_canBlockGrass = true;
+	bool m_notifyNeighborsOnMetaChange = true;
+	bool m_notifySelfOnMetaChange = true;
+	bool m_enableStats = true; // false = breaking doesn't count for achievements
 };
 
 struct BlockBehavior {
 	// Called when we need to get the AABB for the selection box
-	AABB (*getSelectionBox)(uint8_t metadata) = nullptr;
+	AABB (*m_getSelectionBox)(uint8_t metadata) = nullptr;
 
 	// Called when we need to check for ray intersections for selection
-	AABB (*getRayBounds)(uint8_t metadata) = nullptr;
+	AABB (*m_getRayBounds)(uint8_t metadata) = nullptr;
 
 	// Called when we need to check the collision of this block
-	CollisionShape (*getCollider)(uint8_t metadata) = nullptr;
+	CollisionShape (*m_getCollider)(uint8_t metadata) = nullptr;
 
-	// Called each random tick if ticksOnLoad = true\
+	// Called each random tick if ticksOnLoad = true
 	// Also called for scheduled ticks
-	void (*onTick)(WorldManager& world, Int3 pos, uint8_t meta, Java::Random& random) = nullptr;
+	void (*m_onTick)(WorldManager& world, Int3 pos, uint8_t meta, Java::Random& random) = nullptr;
 
 	// Called when block is placed by world gen or setBlock
-	void (*onBlockAdded)(WorldManager& world, Int3 pos) = nullptr;
+	void (*m_onBlockAdded)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when block is removed
-	void (*onBlockRemoval)(WorldManager& world, Int3 pos) = nullptr;
+	void (*m_onBlockRemoval)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when a neighboring block changes
-	void (*onNeighborBlockChange)(WorldManager& world, Int3 pos) = nullptr;
+	void (*m_onNeighborBlockChange)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when a player left-clicks the block (not breaks, just clicks)
 	// pos is where that block that is interacted with is
-	void (*onBlockClicked)(WorldManager& world, Int3 pos) = nullptr;
+	void (*m_onBlockClicked)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when a player right-clicks the block
 	// Return true if we allow the player to still place their held block
-	bool (*onBlockActivated)(WorldManager& world, Int3 pos) = nullptr;
+	bool (*m_onBlockActivated)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when block is placed by a player
-	void (*onBlockPlaced)(WorldManager& world, Int3 pos, Entity& placer, PacketData::FaceDirection face) = nullptr;
+	void (*m_onBlockPlaced)(WorldManager& world, Int3 pos, Entity& placer, PacketData::FaceDirection face) = nullptr;
 
 	// Called when player breaks the block
-	void (*onBlockDestroyedByPlayer)(WorldManager& world, Int3 pos, Entity& destroyer) = nullptr;
+	void (*m_onBlockDestroyedByPlayer)(WorldManager& world, Int3 pos, Entity& destroyer) = nullptr;
 
 	// Called when an explosion destroys the block
-	void (*onBlockDestroyedByExplosion)(WorldManager& world, Int3 pos) = nullptr;
+	void (*m_onBlockDestroyedByExplosion)(WorldManager& world, Int3 pos) = nullptr;
 
 	// Called when an entity walks on top of the block
-	void (*onEntityWalking)(WorldManager& world, Int3 pos, Entity& entity) = nullptr;
+	void (*m_onEntityWalking)(WorldManager& world, Int3 pos, Entity& entity) = nullptr;
 
 	// Called when an entity collides with the block (cactus damage, etc.)
-	void (*onEntityCollidedWithBlock)(WorldManager& world, Int3 pos, Entity& entity) = nullptr;
+	void (*m_onEntityCollidedWithBlock)(WorldManager& world, Int3 pos, Entity& entity) = nullptr;
 
 	// Called when we need to find how this block would contribute to the push vector of an entity
-	void (*velocityToAddToEntity)(WorldManager& world, Int3 pos, Vec3& pushVector) = nullptr;
+	void (*m_velocityToAddToEntity)(WorldManager& world, Int3 pos, Vec3& pushVector) = nullptr;
 
 	// What item/block this drops when broken
-	ItemId (*idDropped)(uint8_t meta, Java::Random& random) = nullptr;
+	ItemId (*m_idDropped)(uint8_t meta, Java::Random& random) = nullptr;
 
 	// The data value of the dropped item
-	ItemDamage (*damageDropped)(uint8_t meta) = nullptr;
+	ItemDamage (*m_damageDropped)(uint8_t meta) = nullptr;
 
 	// How many items drop
-	ItemAmount (*quantityDropped)(Java::Random& random) = nullptr;
+	ItemAmount (*m_quantityDropped)(Java::Random& random) = nullptr;
 };
 
 // Indexed by block ID, populated by registerAll()

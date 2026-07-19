@@ -10,14 +10,14 @@
 
 //  GenerateLake
 bool FeatureGenerator::GenerateLake(WorldWrapper& world, Java::Random& rand, Int3 pos) {
-	pos.x -= 8;
-	pos.z -= 8;
+	pos.m_x -= 8;
+	pos.m_z -= 8;
 
 	// Sink to first non-air block
-	while (pos.y > 0 && world.getBlockId({ pos.x, pos.y, pos.z }) == BLOCK_AIR)
-		--pos.y;
+	while (pos.m_y > 0 && world.getBlockId({ pos.m_x, pos.m_y, pos.m_z }) == BLOCK_AIR)
+		--pos.m_y;
 
-	pos.y -= 4;
+	pos.m_y -= 4;
 
 	bool shapeMask[2048] = {};
 	int32_t blobCount = rand.nextInt(4) + 4;
@@ -53,10 +53,10 @@ bool FeatureGenerator::GenerateLake(WorldWrapper& world, Java::Random& rand, Int
 				                                                 (y > 0 && shapeMask[(x * 16 + z) * 8 + y - 1]));
 				if (!edge)
 					continue;
-				BlockType bt = world.getBlockId({ pos.x + x, pos.y + y, pos.z + z });
+				BlockType bt = world.getBlockId({ pos.m_x + x, pos.m_y + y, pos.m_z + z });
 				if (y >= 4 && IsLiquid(bt))
 					return false;
-				if (y < 4 && !IsSolid(bt) && bt != this->type)
+				if (y < 4 && !IsSolid(bt) && bt != this->m_type)
 					return false;
 			}
 
@@ -65,19 +65,19 @@ bool FeatureGenerator::GenerateLake(WorldWrapper& world, Java::Random& rand, Int
 		for (int32_t z = 0; z < 16; ++z)
 			for (int32_t y = 0; y < 8; ++y)
 				if (shapeMask[(x * 16 + z) * 8 + y])
-					world.setBlock({ pos.x + x, pos.y + y, pos.z + z }, y >= 4 ? BLOCK_AIR : this->type);
+					world.setBlock({ pos.m_x + x, pos.m_y + y, pos.m_z + z }, y >= 4 ? BLOCK_AIR : this->m_type);
 
 	// Exposed dirt -> grass
 	for (int32_t x = 0; x < 16; ++x)
 		for (int32_t z = 0; z < 16; ++z)
 			for (int32_t y = 4; y < 8; ++y)
 				if (shapeMask[(x * 16 + z) * 8 + y] &&
-				    world.getBlockId({ pos.x + x, pos.y + y - 1, pos.z + z }) == BLOCK_DIRT &&
-				    world.getSkyLight({ pos.x + x, pos.y + y, pos.z + z }) > 0)
-					world.setBlock({ pos.x + x, pos.y + y - 1, pos.z + z }, BLOCK_GRASS);
+				    world.getBlockId({ pos.m_x + x, pos.m_y + y - 1, pos.m_z + z }) == BLOCK_DIRT &&
+				    world.getSkyLight({ pos.m_x + x, pos.m_y + y, pos.m_z + z }) > 0)
+					world.setBlock({ pos.m_x + x, pos.m_y + y - 1, pos.m_z + z }, BLOCK_GRASS);
 
 	// Lava: solidify exposed edges
-	if (this->type == BLOCK_LAVA_STILL || this->type == BLOCK_LAVA_FLOWING) {
+	if (this->m_type == BLOCK_LAVA_STILL || this->m_type == BLOCK_LAVA_FLOWING) {
 		for (int32_t x = 0; x < 16; ++x)
 			for (int32_t z = 0; z < 16; ++z)
 				for (int32_t y = 0; y < 8; ++y) {
@@ -88,8 +88,8 @@ bool FeatureGenerator::GenerateLake(WorldWrapper& world, Java::Random& rand, Int
 					                                                 (y < 7 && shapeMask[(x * 16 + z) * 8 + y + 1]) ||
 					                                                 (y > 0 && shapeMask[(x * 16 + z) * 8 + y - 1]));
 					if (edge && (y < 4 || rand.nextInt(2) != 0) &&
-					    IsSolid(world.getBlockId({ pos.x + x, pos.y + y, pos.z + z })))
-						world.setBlock({ pos.x + x, pos.y + y, pos.z + z }, BLOCK_STONE);
+					    IsSolid(world.getBlockId({ pos.m_x + x, pos.m_y + y, pos.m_z + z })))
+						world.setBlock({ pos.m_x + x, pos.m_y + y, pos.m_z + z }, BLOCK_STONE);
 				}
 	}
 	return true;
@@ -102,35 +102,35 @@ bool FeatureGenerator::GenerateDungeon(WorldWrapper& world, Java::Random& rand, 
 	int32_t dungeonWidthZ = rand.nextInt(2) + 2;
 	int32_t validEntries = 0;
 
-	for (int32_t xi = pos.x - dungeonWidthX - 1; xi <= pos.x + dungeonWidthX + 1; ++xi)
-		for (int32_t yi = pos.y - 1; yi <= pos.y + dungeonHeight + 1; ++yi)
-			for (int32_t zi = pos.z - dungeonWidthZ - 1; zi <= pos.z + dungeonWidthZ + 1; ++zi) {
+	for (int32_t xi = pos.m_x - dungeonWidthX - 1; xi <= pos.m_x + dungeonWidthX + 1; ++xi)
+		for (int32_t yi = pos.m_y - 1; yi <= pos.m_y + dungeonHeight + 1; ++yi)
+			for (int32_t zi = pos.m_z - dungeonWidthZ - 1; zi <= pos.m_z + dungeonWidthZ + 1; ++zi) {
 				BlockType bt = world.getBlockId({ xi, yi, zi });
-				if (yi == pos.y - 1 && !IsSolid(bt))
+				if (yi == pos.m_y - 1 && !IsSolid(bt))
 					return false;
-				if (yi == pos.y + dungeonHeight + 1 && !IsSolid(bt))
+				if (yi == pos.m_y + dungeonHeight + 1 && !IsSolid(bt))
 					return false;
-				bool isWall = (xi == pos.x - dungeonWidthX - 1 || xi == pos.x + dungeonWidthX + 1 ||
-				               zi == pos.z - dungeonWidthZ - 1 || zi == pos.z + dungeonWidthZ + 1);
-				if (isWall && yi == pos.y && bt == BLOCK_AIR && world.getBlockId({ xi, yi + 1, zi }) == BLOCK_AIR)
+				bool isWall = (xi == pos.m_x - dungeonWidthX - 1 || xi == pos.m_x + dungeonWidthX + 1 ||
+				               zi == pos.m_z - dungeonWidthZ - 1 || zi == pos.m_z + dungeonWidthZ + 1);
+				if (isWall && yi == pos.m_y && bt == BLOCK_AIR && world.getBlockId({ xi, yi + 1, zi }) == BLOCK_AIR)
 					++validEntries;
 			}
 
 	if (validEntries < 1 || validEntries > 5)
 		return false;
 
-	for (int32_t xi = pos.x - dungeonWidthX - 1; xi <= pos.x + dungeonWidthX + 1; ++xi)
-		for (int32_t yi = pos.y + dungeonHeight; yi >= pos.y - 1; --yi)
-			for (int32_t zi = pos.z - dungeonWidthZ - 1; zi <= pos.z + dungeonWidthZ + 1; ++zi) {
-				bool interior = (xi != pos.x - dungeonWidthX - 1 && xi != pos.x + dungeonWidthX + 1 &&
-				                 yi != pos.y - 1 && yi != pos.y + dungeonHeight + 1 &&
-				                 zi != pos.z - dungeonWidthZ - 1 && zi != pos.z + dungeonWidthZ + 1);
+	for (int32_t xi = pos.m_x - dungeonWidthX - 1; xi <= pos.m_x + dungeonWidthX + 1; ++xi)
+		for (int32_t yi = pos.m_y + dungeonHeight; yi >= pos.m_y - 1; --yi)
+			for (int32_t zi = pos.m_z - dungeonWidthZ - 1; zi <= pos.m_z + dungeonWidthZ + 1; ++zi) {
+				bool interior = (xi != pos.m_x - dungeonWidthX - 1 && xi != pos.m_x + dungeonWidthX + 1 &&
+				                 yi != pos.m_y - 1 && yi != pos.m_y + dungeonHeight + 1 &&
+				                 zi != pos.m_z - dungeonWidthZ - 1 && zi != pos.m_z + dungeonWidthZ + 1);
 				if (interior) {
 					world.setBlock({ xi, yi, zi }, BLOCK_AIR);
 				} else if (yi >= 0 && !IsSolid(world.getBlockId({ xi, yi - 1, zi }))) {
 					world.setBlock({ xi, yi, zi }, BLOCK_AIR);
 				} else if (IsSolid(world.getBlockId({ xi, yi, zi }))) {
-					BlockType wall = (yi == pos.y - 1 && rand.nextInt(4) != 0) ? BLOCK_COBBLESTONE_MOSSY
+					BlockType wall = (yi == pos.m_y - 1 && rand.nextInt(4) != 0) ? BLOCK_COBBLESTONE_MOSSY
 					                                                           : BLOCK_COBBLESTONE;
 					world.setBlock({ xi, yi, zi }, wall);
 				}
@@ -139,27 +139,27 @@ bool FeatureGenerator::GenerateDungeon(WorldWrapper& world, Java::Random& rand, 
 	// Up to 2 chests, 3 placement attempts each
 	for (int32_t chestAttempt = 0; chestAttempt < 2; ++chestAttempt) {
 		for (int32_t attempt = 0; attempt < 3; ++attempt) {
-			int32_t cx = pos.x + rand.nextInt(dungeonWidthX * 2 + 1) - dungeonWidthX;
-			int32_t cz = pos.z + rand.nextInt(dungeonWidthZ * 2 + 1) - dungeonWidthZ;
-			if (world.getBlockId({ cx, pos.y, cz }) != BLOCK_AIR)
+			int32_t cx = pos.m_x + rand.nextInt(dungeonWidthX * 2 + 1) - dungeonWidthX;
+			int32_t cz = pos.m_z + rand.nextInt(dungeonWidthZ * 2 + 1) - dungeonWidthZ;
+			if (world.getBlockId({ cx, pos.m_y, cz }) != BLOCK_AIR)
 				continue;
 			int32_t adj = 0;
-			if (IsSolid(world.getBlockId({ cx - 1, pos.y, cz })))
+			if (IsSolid(world.getBlockId({ cx - 1, pos.m_y, cz })))
 				++adj;
-			if (IsSolid(world.getBlockId({ cx + 1, pos.y, cz })))
+			if (IsSolid(world.getBlockId({ cx + 1, pos.m_y, cz })))
 				++adj;
-			if (IsSolid(world.getBlockId({ cx, pos.y, cz - 1 })))
+			if (IsSolid(world.getBlockId({ cx, pos.m_y, cz - 1 })))
 				++adj;
-			if (IsSolid(world.getBlockId({ cx, pos.y, cz + 1 })))
+			if (IsSolid(world.getBlockId({ cx, pos.m_y, cz + 1 })))
 				++adj;
 			if (adj == 1) {
-				world.setBlock({ cx, pos.y, cz }, BLOCK_CHEST);
-				auto chest = std::make_shared<TileEntityChest>(Int3{ cx, pos.y, cz });
+				world.setBlock({ cx, pos.m_y, cz }, BLOCK_CHEST);
+				auto chest = std::make_shared<TileEntityChest>(Int3{ cx, pos.m_y, cz });
 				for (int32_t slot = 0; slot < 8; ++slot) {
 					auto stack = GenerateDungeonChestLoot(rand);
-					if (stack.id != Items::Id::INVALID) {
+					if (stack.m_id != Items::Id::INVALID) {
 						int32_t slotIndex = rand.nextInt(27);
-						chest->inventory.setInventorySlotContents(slotIndex, &stack);
+						chest->m_inventory.setInventorySlotContents(slotIndex, &stack);
 					}
 				}
 				world.m_manager.createTileEntity(std::move(chest));
@@ -180,47 +180,47 @@ ItemStack FeatureGenerator::GenerateDungeonChestLoot(Java::Random& rand) {
 	int32_t roll = rand.nextInt(11);
 	switch (roll) {
 	case 0:
-		return { .id = Items::Id::SADDLE, .count = 1 };
+		return { .m_id = Items::Id::SADDLE, .m_count = 1 };
 	case 1: {
 		int8_t qty = rand.nextInt(4) + 1;
-		return { .id = Items::Id::IRON, .count = qty };
+		return { .m_id = Items::Id::IRON, .m_count = qty };
 	}
 	case 2:
-		return { .id = Items::Id::BREAD, .count = 1 };
+		return { .m_id = Items::Id::BREAD, .m_count = 1 };
 	case 3: {
 		int8_t qty = rand.nextInt(4) + 1;
-		return { .id = Items::Id::WHEAT, .count = qty };
+		return { .m_id = Items::Id::WHEAT, .m_count = qty };
 	}
 	case 4: {
 		int8_t qty = rand.nextInt(4) + 1;
-		return { .id = Items::Id::GUNPOWDER, .count = qty };
+		return { .m_id = Items::Id::GUNPOWDER, .m_count = qty };
 	}
 	case 5: {
 		int8_t qty = rand.nextInt(4) + 1;
-		return { .id = Items::Id::STRING, .count = qty };
+		return { .m_id = Items::Id::STRING, .m_count = qty };
 	}
 	case 6:
-		return { .id = Items::Id::BUCKET, .count = 1 };
+		return { .m_id = Items::Id::BUCKET, .m_count = 1 };
 	case 7:
 		if (rand.nextInt(100) == 0)
-			return { .id = Items::Id::APPLE_GOLDEN, .count = 1 };
-		return { .id = Items::Id::INVALID };
+			return { .m_id = Items::Id::APPLE_GOLDEN, .m_count = 1 };
+		return { .m_id = Items::Id::INVALID };
 	case 8:
 		if (rand.nextInt(2) == 0) {
 			int8_t qty = rand.nextInt(4) + 1;
-			return { .id = Items::Id::REDSTONE, .count = qty };
+			return { .m_id = Items::Id::REDSTONE, .m_count = qty };
 		}
-		return { .id = Items::Id::INVALID };
+		return { .m_id = Items::Id::INVALID };
 	case 9:
 		if (rand.nextInt(10) == 0) {
 			int16_t discId = (rand.nextInt(2) == 0) ? Items::Id::RECORD_13 : Items::Id::RECORD_CAT;
-			return { .id = discId, .count = 1 };
+			return { .m_id = discId, .m_count = 1 };
 		}
-		return { .id = Items::Id::INVALID };
+		return { .m_id = Items::Id::INVALID };
 	case 10:
-		return { .id = Items::Id::DYE, .count = 1, .data = 3 };
+		return { .m_id = Items::Id::DYE, .m_count = 1, .m_data = 3 };
 	default:
-		return { .id = Items::Id::INVALID };
+		return { .m_id = Items::Id::INVALID };
 	}
 }
 
@@ -245,12 +245,12 @@ bool FeatureGenerator::GenerateClay(WorldWrapper& world, Java::Random& rand, Int
 		return false;
 
 	float angle = rand.nextFloat() * JavaMath::PI_FLOAT;
-	double xStart = double(float(pos.x + 8) + MathHelper::sin(angle) * float(blobSize) / 8.0F);
-	double xEnd = double(float(pos.x + 8) - MathHelper::sin(angle) * float(blobSize) / 8.0F);
-	double zStart = double(float(pos.z + 8) + MathHelper::cos(angle) * float(blobSize) / 8.0F);
-	double zEnd = double(float(pos.z + 8) - MathHelper::cos(angle) * float(blobSize) / 8.0F);
-	double yStart = double(pos.y + rand.nextInt(3) + 2);
-	double yEnd = double(pos.y + rand.nextInt(3) + 2);
+	double xStart = double(float(pos.m_x + 8) + MathHelper::sin(angle) * float(blobSize) / 8.0F);
+	double xEnd = double(float(pos.m_x + 8) - MathHelper::sin(angle) * float(blobSize) / 8.0F);
+	double zStart = double(float(pos.m_z + 8) + MathHelper::cos(angle) * float(blobSize) / 8.0F);
+	double zEnd = double(float(pos.m_z + 8) - MathHelper::cos(angle) * float(blobSize) / 8.0F);
+	double yStart = double(pos.m_y + rand.nextInt(3) + 2);
+	double yEnd = double(pos.m_y + rand.nextInt(3) + 2);
 
 	for (int32_t i = 0; i <= blobSize; ++i) {
 		double xC = xStart + (xEnd - xStart) * double(i) / double(blobSize);
@@ -281,12 +281,12 @@ bool FeatureGenerator::GenerateClay(WorldWrapper& world, Java::Random& rand, Int
 //  GenerateMinable
 bool FeatureGenerator::GenerateMinable(WorldWrapper& world, Java::Random& rand, Int3 pos, int32_t blobSize) {
 	float angle = rand.nextFloat() * JavaMath::PI_FLOAT;
-	double xStart = double(float(pos.x + 8) + MathHelper::sin(angle) * float(blobSize) / 8.0F);
-	double xEnd = double(float(pos.x + 8) - MathHelper::sin(angle) * float(blobSize) / 8.0F);
-	double zStart = double(float(pos.z + 8) + MathHelper::cos(angle) * float(blobSize) / 8.0F);
-	double zEnd = double(float(pos.z + 8) - MathHelper::cos(angle) * float(blobSize) / 8.0F);
-	double yStart = double(pos.y + rand.nextInt(3) + 2);
-	double yEnd = double(pos.y + rand.nextInt(3) + 2);
+	double xStart = double(float(pos.m_x + 8) + MathHelper::sin(angle) * float(blobSize) / 8.0F);
+	double xEnd = double(float(pos.m_x + 8) - MathHelper::sin(angle) * float(blobSize) / 8.0F);
+	double zStart = double(float(pos.m_z + 8) + MathHelper::cos(angle) * float(blobSize) / 8.0F);
+	double zEnd = double(float(pos.m_z + 8) - MathHelper::cos(angle) * float(blobSize) / 8.0F);
+	double yStart = double(pos.m_y + rand.nextInt(3) + 2);
+	double yEnd = double(pos.m_y + rand.nextInt(3) + 2);
 
 	for (int32_t i = 0; i <= blobSize; ++i) {
 		double xC = xStart + (xEnd - xStart) * double(i) / double(blobSize);
@@ -312,7 +312,7 @@ bool FeatureGenerator::GenerateMinable(WorldWrapper& world, Java::Random& rand, 
 				for (int32_t z = minZ; z <= maxZ; ++z) {
 					double dz = (double(z) + 0.5 - zC) / (radXZ / 2.0);
 					if (dx * dx + dy * dy + dz * dz < 1.0 && world.getBlockId({ x, y, z }) == BLOCK_STONE)
-						world.setBlock({ x, y, z }, this->type);
+						world.setBlock({ x, y, z }, this->m_type);
 				}
 			}
 		}
@@ -322,12 +322,12 @@ bool FeatureGenerator::GenerateMinable(WorldWrapper& world, Java::Random& rand, 
 
 //  Attempts to generate flower/mushroom patches
 bool FeatureGenerator::GenerateFlowers(WorldWrapper& world, Java::Random& rand, Int3 pos) {
-	bool isMushroom = (this->type == BLOCK_MUSHROOM_BROWN || this->type == BLOCK_MUSHROOM_RED);
+	bool isMushroom = (this->m_type == BLOCK_MUSHROOM_BROWN || this->m_type == BLOCK_MUSHROOM_RED);
 
 	for (int32_t i = 0; i < 64; ++i) {
-		int32_t x = pos.x + rand.nextInt(8) - rand.nextInt(8);
-		int32_t y = pos.y + rand.nextInt(4) - rand.nextInt(4);
-		int32_t z = pos.z + rand.nextInt(8) - rand.nextInt(8);
+		int32_t x = pos.m_x + rand.nextInt(8) - rand.nextInt(8);
+		int32_t y = pos.m_y + rand.nextInt(4) - rand.nextInt(4);
+		int32_t z = pos.m_z + rand.nextInt(8) - rand.nextInt(8);
 		if (y < 0 || y >= CHUNK_HEIGHT)
 			continue;
 		if (world.getBlockId({ x, y, z }) != BLOCK_AIR)
@@ -335,11 +335,11 @@ bool FeatureGenerator::GenerateFlowers(WorldWrapper& world, Java::Random& rand, 
 
 		if (isMushroom) {
 			if (IsSolid(world.getBlockId({ x, y - 1, z })) && world.getSkyLight({ x, y, z }) == 0)
-				world.setBlock({ x, y, z }, this->type);
+				world.setBlock({ x, y, z }, this->m_type);
 		} else {
 			BlockType below = world.getBlockId({ x, y - 1, z });
 			if (below == BLOCK_GRASS)
-				world.setBlock({ x, y, z }, this->type);
+				world.setBlock({ x, y, z }, this->m_type);
 		}
 	}
 	return true;
@@ -347,41 +347,41 @@ bool FeatureGenerator::GenerateFlowers(WorldWrapper& world, Java::Random& rand, 
 
 //  Attempts to generate tallgrass patches
 bool FeatureGenerator::GenerateTallgrass(WorldWrapper& world, Java::Random& rand, Int3 pos) {
-	while (pos.y > 0) {
-		BlockType b = world.getBlockId({ pos.x, pos.y, pos.z });
+	while (pos.m_y > 0) {
+		BlockType b = world.getBlockId({ pos.m_x, pos.m_y, pos.m_z });
 		if (b != BLOCK_AIR && b != BLOCK_LEAVES)
 			break;
-		--pos.y;
+		--pos.m_y;
 	}
 
 	for (int32_t i = 0; i < 128; ++i) {
-		int32_t x = pos.x + rand.nextInt(8) - rand.nextInt(8);
-		int32_t y = pos.y + rand.nextInt(4) - rand.nextInt(4);
-		int32_t z = pos.z + rand.nextInt(8) - rand.nextInt(8);
+		int32_t x = pos.m_x + rand.nextInt(8) - rand.nextInt(8);
+		int32_t y = pos.m_y + rand.nextInt(4) - rand.nextInt(4);
+		int32_t z = pos.m_z + rand.nextInt(8) - rand.nextInt(8);
 		if (y < 0 || y >= CHUNK_HEIGHT)
 			continue;
 		if (world.getBlockId({ x, y, z }) != BLOCK_AIR)
 			continue;
 		BlockType below = world.getBlockId({ x, y - 1, z });
 		if (below == BLOCK_GRASS || below == BLOCK_DIRT)
-			world.setBlock({ x, y, z }, this->type, uint8_t(this->meta));
+			world.setBlock({ x, y, z }, this->m_type, uint8_t(this->m_meta));
 	}
 	return true;
 }
 
 //  Attempts to generate deadbush patches
 bool FeatureGenerator::GenerateDeadbush(WorldWrapper& world, Java::Random& rand, Int3 pos) {
-	while (pos.y > 0) {
-		BlockType b = world.getBlockId({ pos.x, pos.y, pos.z });
+	while (pos.m_y > 0) {
+		BlockType b = world.getBlockId({ pos.m_x, pos.m_y, pos.m_z });
 		if (b != BLOCK_AIR && b != BLOCK_LEAVES)
 			break;
-		--pos.y;
+		--pos.m_y;
 	}
 
 	for (int32_t i = 0; i < 4; ++i) {
-		int32_t x = pos.x + rand.nextInt(8) - rand.nextInt(8);
-		int32_t y = pos.y + rand.nextInt(4) - rand.nextInt(4);
-		int32_t z = pos.z + rand.nextInt(8) - rand.nextInt(8);
+		int32_t x = pos.m_x + rand.nextInt(8) - rand.nextInt(8);
+		int32_t y = pos.m_y + rand.nextInt(4) - rand.nextInt(4);
+		int32_t z = pos.m_z + rand.nextInt(8) - rand.nextInt(8);
 		if (y < 0 || y >= CHUNK_HEIGHT)
 			continue;
 		if (world.getBlockId({ x, y, z }) == BLOCK_AIR && world.getBlockId({ x, y - 1, z }) == BLOCK_SAND)
@@ -393,9 +393,9 @@ bool FeatureGenerator::GenerateDeadbush(WorldWrapper& world, Java::Random& rand,
 //  Attempts to generate sugarcane patches
 bool FeatureGenerator::GenerateSugarcane(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	for (int32_t i = 0; i < 20; ++i) {
-		int32_t x = pos.x + rand.nextInt(4) - rand.nextInt(4);
-		int32_t y = pos.y; // Y is fixed across all attempts
-		int32_t z = pos.z + rand.nextInt(4) - rand.nextInt(4);
+		int32_t x = pos.m_x + rand.nextInt(4) - rand.nextInt(4);
+		int32_t y = pos.m_y; // Y is fixed across all attempts
+		int32_t z = pos.m_z + rand.nextInt(4) - rand.nextInt(4);
 		if (world.getBlockId({ x, y, z }) != BLOCK_AIR)
 			continue;
 
@@ -423,9 +423,9 @@ bool FeatureGenerator::GenerateSugarcane(WorldWrapper& world, Java::Random& rand
 //  Attempts to generate pumpkin patches
 bool FeatureGenerator::GeneratePumpkins(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	for (int32_t i = 0; i < 64; ++i) {
-		int32_t x = pos.x + rand.nextInt(8) - rand.nextInt(8);
-		int32_t y = pos.y + rand.nextInt(4) - rand.nextInt(4);
-		int32_t z = pos.z + rand.nextInt(8) - rand.nextInt(8);
+		int32_t x = pos.m_x + rand.nextInt(8) - rand.nextInt(8);
+		int32_t y = pos.m_y + rand.nextInt(4) - rand.nextInt(4);
+		int32_t z = pos.m_z + rand.nextInt(8) - rand.nextInt(8);
 		if (y < 0 || y >= CHUNK_HEIGHT)
 			continue;
 		if (world.getBlockId({ x, y, z }) != BLOCK_AIR)
@@ -449,21 +449,21 @@ bool FeatureGenerator::GeneratePumpkins(WorldWrapper& world, Java::Random& rand,
 //  Attempts to generate cacti patches
 bool FeatureGenerator::GenerateCacti(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	for (int32_t i = 0; i < 10; ++i) {
-		int32_t x = pos.x + rand.nextInt(8) - rand.nextInt(8);
-		int32_t y = pos.y + rand.nextInt(4) - rand.nextInt(4);
-		int32_t z = pos.z + rand.nextInt(8) - rand.nextInt(8);
+		int32_t x = pos.m_x + rand.nextInt(8) - rand.nextInt(8);
+		int32_t y = pos.m_y + rand.nextInt(4) - rand.nextInt(4);
+		int32_t z = pos.m_z + rand.nextInt(8) - rand.nextInt(8);
 		if (world.getBlockId({ x, y, z }) != BLOCK_AIR)
 			continue;
 
 		int32_t height = 1 + rand.nextInt(rand.nextInt(3) + 1);
 		for (int32_t h = 0; h < height; ++h) {
-			if (Blocks::blockProperties[world.getBlockId({ x - 1, y + h, z })].material.isSolid)
+			if (Blocks::blockProperties[world.getBlockId({ x - 1, y + h, z })].m_material.m_isSolid)
 				continue;
-			if (Blocks::blockProperties[world.getBlockId({ x + 1, y + h, z })].material.isSolid)
+			if (Blocks::blockProperties[world.getBlockId({ x + 1, y + h, z })].m_material.m_isSolid)
 				continue;
-			if (Blocks::blockProperties[world.getBlockId({ x, y + h, z - 1 })].material.isSolid)
+			if (Blocks::blockProperties[world.getBlockId({ x, y + h, z - 1 })].m_material.m_isSolid)
 				continue;
-			if (Blocks::blockProperties[world.getBlockId({ x, y + h, z + 1 })].material.isSolid)
+			if (Blocks::blockProperties[world.getBlockId({ x, y + h, z + 1 })].m_material.m_isSolid)
 				continue;
 			BlockType below = world.getBlockId({ x, y + h - 1, z });
 			if (below == BLOCK_SAND || below == BLOCK_CACTUS)
@@ -475,34 +475,34 @@ bool FeatureGenerator::GenerateCacti(WorldWrapper& world, Java::Random& rand, In
 
 //  Attempts to generate a singular liquid source block
 bool FeatureGenerator::GenerateLiquid(WorldWrapper& world, [[maybe_unused]] Java::Random& rand, Int3 pos) {
-	if (world.getBlockId({ pos.x, pos.y + 1, pos.z }) != BLOCK_STONE)
+	if (world.getBlockId({ pos.m_x, pos.m_y + 1, pos.m_z }) != BLOCK_STONE)
 		return false;
-	if (world.getBlockId({ pos.x, pos.y - 1, pos.z }) != BLOCK_STONE)
+	if (world.getBlockId({ pos.m_x, pos.m_y - 1, pos.m_z }) != BLOCK_STONE)
 		return false;
 	BlockType cur = world.getBlockId(pos);
 	if (cur != BLOCK_AIR && cur != BLOCK_STONE)
 		return false;
 
 	int32_t stone = 0, air = 0;
-	if (world.getBlockId({ pos.x - 1, pos.y, pos.z }) == BLOCK_STONE)
+	if (world.getBlockId({ pos.m_x - 1, pos.m_y, pos.m_z }) == BLOCK_STONE)
 		++stone;
-	if (world.getBlockId({ pos.x + 1, pos.y, pos.z }) == BLOCK_STONE)
+	if (world.getBlockId({ pos.m_x + 1, pos.m_y, pos.m_z }) == BLOCK_STONE)
 		++stone;
-	if (world.getBlockId({ pos.x, pos.y, pos.z - 1 }) == BLOCK_STONE)
+	if (world.getBlockId({ pos.m_x, pos.m_y, pos.m_z - 1 }) == BLOCK_STONE)
 		++stone;
-	if (world.getBlockId({ pos.x, pos.y, pos.z + 1 }) == BLOCK_STONE)
+	if (world.getBlockId({ pos.m_x, pos.m_y, pos.m_z + 1 }) == BLOCK_STONE)
 		++stone;
-	if (world.getBlockId({ pos.x - 1, pos.y, pos.z }) == BLOCK_AIR)
+	if (world.getBlockId({ pos.m_x - 1, pos.m_y, pos.m_z }) == BLOCK_AIR)
 		++air;
-	if (world.getBlockId({ pos.x + 1, pos.y, pos.z }) == BLOCK_AIR)
+	if (world.getBlockId({ pos.m_x + 1, pos.m_y, pos.m_z }) == BLOCK_AIR)
 		++air;
-	if (world.getBlockId({ pos.x, pos.y, pos.z - 1 }) == BLOCK_AIR)
+	if (world.getBlockId({ pos.m_x, pos.m_y, pos.m_z - 1 }) == BLOCK_AIR)
 		++air;
-	if (world.getBlockId({ pos.x, pos.y, pos.z + 1 }) == BLOCK_AIR)
+	if (world.getBlockId({ pos.m_x, pos.m_y, pos.m_z + 1 }) == BLOCK_AIR)
 		++air;
 
 	if (stone == 3 && air == 1) {
-		world.setBlock(pos, this->type);
+		world.setBlock(pos, this->m_type);
 	}
 	return true;
 }
@@ -512,34 +512,34 @@ bool FeatureGenerator::GenerateLiquid(WorldWrapper& world, [[maybe_unused]] Java
 // TODO: Merge with GenerateLiquid?
 //  GenerateNetherLiquid
 bool FeatureGenerator::GenerateNetherLiquid(WorldWrapper& world, [[maybe_unused]] Java::Random& rand, Int3 pos) {
-	if (world.getBlockId({ pos.x, pos.y + 1, pos.z }) != BLOCK_NETHERRACK)
+	if (world.getBlockId({ pos.m_x, pos.m_y + 1, pos.m_z }) != BLOCK_NETHERRACK)
 		return false;
-	if (world.getBlockId({ pos.x, pos.y - 1, pos.z }) != BLOCK_NETHERRACK)
+	if (world.getBlockId({ pos.m_x, pos.m_y - 1, pos.m_z }) != BLOCK_NETHERRACK)
 		return false;
 	BlockType cur = world.getBlockId(pos);
 	if (cur != BLOCK_AIR && cur != BLOCK_NETHERRACK)
 		return false;
 
 	int32_t netherrack = 0, air = 0;
-	if (world.getBlockId({ pos.x - 1, pos.y, pos.z }) == BLOCK_NETHERRACK)
+	if (world.getBlockId({ pos.m_x - 1, pos.m_y, pos.m_z }) == BLOCK_NETHERRACK)
 		++netherrack;
-	if (world.getBlockId({ pos.x + 1, pos.y, pos.z }) == BLOCK_NETHERRACK)
+	if (world.getBlockId({ pos.m_x + 1, pos.m_y, pos.m_z }) == BLOCK_NETHERRACK)
 		++netherrack;
-	if (world.getBlockId({ pos.x, pos.y, pos.z - 1 }) == BLOCK_NETHERRACK)
+	if (world.getBlockId({ pos.m_x, pos.m_y, pos.m_z - 1 }) == BLOCK_NETHERRACK)
 		++netherrack;
-	if (world.getBlockId({ pos.x, pos.y, pos.z + 1 }) == BLOCK_NETHERRACK)
+	if (world.getBlockId({ pos.m_x, pos.m_y, pos.m_z + 1 }) == BLOCK_NETHERRACK)
 		++netherrack;
-	if (world.getBlockId({ pos.x - 1, pos.y, pos.z }) == BLOCK_AIR)
+	if (world.getBlockId({ pos.m_x - 1, pos.m_y, pos.m_z }) == BLOCK_AIR)
 		++air;
-	if (world.getBlockId({ pos.x + 1, pos.y, pos.z }) == BLOCK_AIR)
+	if (world.getBlockId({ pos.m_x + 1, pos.m_y, pos.m_z }) == BLOCK_AIR)
 		++air;
-	if (world.getBlockId({ pos.x, pos.y, pos.z - 1 }) == BLOCK_AIR)
+	if (world.getBlockId({ pos.m_x, pos.m_y, pos.m_z - 1 }) == BLOCK_AIR)
 		++air;
-	if (world.getBlockId({ pos.x, pos.y, pos.z + 1 }) == BLOCK_AIR)
+	if (world.getBlockId({ pos.m_x, pos.m_y, pos.m_z + 1 }) == BLOCK_AIR)
 		++air;
 
 	if (netherrack == 3 && air == 1) {
-		world.setBlock(pos, this->type);
+		world.setBlock(pos, this->m_type);
 	}
 	return true;
 }
@@ -548,9 +548,9 @@ bool FeatureGenerator::GenerateNetherLiquid(WorldWrapper& world, [[maybe_unused]
 bool FeatureGenerator::GenerateNetherFire(WorldWrapper& world, Java::Random& rand, Int3 pos) {
 	for (int i = 0; i < 64; ++i) {
 		Int3 test_pos{
-			pos.x + rand.nextInt(8) - rand.nextInt(8),
-			pos.y + rand.nextInt(4) - rand.nextInt(4),
-			pos.z + rand.nextInt(8) - rand.nextInt(8),
+			pos.m_x + rand.nextInt(8) - rand.nextInt(8),
+			pos.m_y + rand.nextInt(4) - rand.nextInt(4),
+			pos.m_z + rand.nextInt(8) - rand.nextInt(8),
 		};
 		// If air with netherrack underneath, generate
 		if (world.getBlockId(test_pos) == BLOCK_AIR && world.getBlockId(test_pos + Int3{ 0, -1, 0 }) == BLOCK_NETHERRACK)
@@ -570,9 +570,9 @@ bool FeatureGenerator::GenerateNetherGlowstone(WorldWrapper& world, Java::Random
 	world.setBlock(pos, BLOCK_GLOWSTONE);
 	for (int i = 0; i < 1500; ++i) {
 		Int3 test_pos{
-			pos.x + rand.nextInt(8) - rand.nextInt(8),
-			pos.y - rand.nextInt(12),
-			pos.z + rand.nextInt(8) - rand.nextInt(8),
+			pos.m_x + rand.nextInt(8) - rand.nextInt(8),
+			pos.m_y - rand.nextInt(12),
+			pos.m_z + rand.nextInt(8) - rand.nextInt(8),
 		};
 		// Skip non-air blocks
 		if (world.getBlockId(test_pos) != BLOCK_AIR)

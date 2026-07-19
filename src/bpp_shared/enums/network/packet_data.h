@@ -130,12 +130,12 @@ public:
 		RIDING = 2
 	};
 	struct DataEntry {
-		Type type;
-		uint8_t index;
+		Type m_type;
+		uint8_t m_index;
 
 		using Value = std::variant<int8_t, int16_t, int32_t, float, std::string, ItemStack, Int32_3>;
 
-		Value value;
+		Value m_value;
 	};
 };
 

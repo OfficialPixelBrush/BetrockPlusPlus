@@ -52,7 +52,7 @@ void CommandManager::Init(Server* server) {
 	registeredCommands.push_back(CommandModified());
 	registeredCommands.push_back(CommandPacket());
 	*/
-	GlobalLogger().info << "Registered " << registeredCommands.size() << " command(s)!" << "\n";
+	GlobalLogger().m_info << "Registered " << registeredCommands.size() << " command(s)!" << "\n";
 }
 
 // Get all registered commands
@@ -91,16 +91,16 @@ void CommandManager::Parse(std::string& cmd_string, PlayerSession& session, Worl
 				}
 			}
 		} catch (const std::exception& e) {
-			GlobalLogger().info << e.what() << " on /" << cmd_string << "\n";
+			GlobalLogger().m_info << e.what() << " on /" << cmd_string << "\n";
 		}
 	}
 
 	Packet::ChatMessage failPkt;
 	if (!failureReason.empty()) {
 		if (failureReason == "Syntax")
-			failPkt.message = "§cInvalid Syntax \"" + cmd_string + "\"";
+			failPkt.m_message = "§cInvalid Syntax \"" + cmd_string + "\"";
 		else
-			failPkt.message = "§c" + failureReason;
-		failPkt.Serialize(session.stream);
+			failPkt.m_message = "§c" + failureReason;
+		failPkt.Serialize(session.m_stream);
 	}
 }

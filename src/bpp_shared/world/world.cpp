@@ -12,12 +12,12 @@
 #include <unordered_set>
 
 bool WorldManager::isMaterialInAABB(AABB collider, Material material) {
-	int minX = MathHelper::floor_double(collider.minX);
-	int maxX = MathHelper::floor_double(collider.maxX + 1.0);
-	int minY = MathHelper::floor_double(collider.minY);
-	int maxY = MathHelper::floor_double(collider.maxY + 1.0);
-	int minZ = MathHelper::floor_double(collider.minZ);
-	int maxZ = MathHelper::floor_double(collider.maxZ + 1.0);
+	int minX = MathHelper::floor_double(collider.m_minX);
+	int maxX = MathHelper::floor_double(collider.m_maxX + 1.0);
+	int minY = MathHelper::floor_double(collider.m_minY);
+	int maxY = MathHelper::floor_double(collider.m_maxY + 1.0);
+	int minZ = MathHelper::floor_double(collider.m_minZ);
+	int maxZ = MathHelper::floor_double(collider.m_maxZ + 1.0);
 
 	// Check every block within the collider
 	// We are looking to see if the materials match
@@ -26,7 +26,7 @@ bool WorldManager::isMaterialInAABB(AABB collider, Material material) {
 			for (int z = minZ; z < maxZ; z++) {
 				auto blockId = this->getBlockId({ x, y, z });
 				auto block = Blocks::blockProperties[blockId];
-				if (block.material == material) {
+				if (block.m_material == material) {
 					return true;
 				}
 			}
@@ -34,12 +34,12 @@ bool WorldManager::isMaterialInAABB(AABB collider, Material material) {
 }
 
 bool WorldManager::isLiquidInAABB(AABB collider) {
-	int minX = MathHelper::floor_double(collider.minX);
-	int maxX = MathHelper::floor_double(collider.maxX + 1.0);
-	int minY = MathHelper::floor_double(collider.minY);
-	int maxY = MathHelper::floor_double(collider.maxY + 1.0);
-	int minZ = MathHelper::floor_double(collider.minZ);
-	int maxZ = MathHelper::floor_double(collider.maxZ + 1.0);
+	int minX = MathHelper::floor_double(collider.m_minX);
+	int maxX = MathHelper::floor_double(collider.m_maxX + 1.0);
+	int minY = MathHelper::floor_double(collider.m_minY);
+	int maxY = MathHelper::floor_double(collider.m_maxY + 1.0);
+	int minZ = MathHelper::floor_double(collider.m_minZ);
+	int maxZ = MathHelper::floor_double(collider.m_maxZ + 1.0);
 
 	// Check every block within the collider
 	for (int x = minX; x < maxX; x++)
@@ -47,7 +47,7 @@ bool WorldManager::isLiquidInAABB(AABB collider) {
 			for (int z = minZ; z < maxZ; z++) {
 				auto blockId = this->getBlockId({ x, y, z });
 				auto block = Blocks::blockProperties[blockId];
-				if (block.material.isLiquid) {
+				if (block.m_material.m_isLiquid) {
 					return true;
 				}
 			}
@@ -58,12 +58,12 @@ bool WorldManager::handleFluidAcceleration(AABB collider, Material material, Ent
 	// Handles the fluid push physics, only counts fluids of the same material
 	// Returns whether the entity is in the material
 	// This is almost entirely used for water
-	int minX = MathHelper::floor_double(collider.minX);
-	int maxX = MathHelper::floor_double(collider.maxX + 1.0);
-	int minY = MathHelper::floor_double(collider.minY);
-	int maxY = MathHelper::floor_double(collider.maxY + 1.0);
-	int minZ = MathHelper::floor_double(collider.minZ);
-	int maxZ = MathHelper::floor_double(collider.maxZ + 1.0);
+	int minX = MathHelper::floor_double(collider.m_minX);
+	int maxX = MathHelper::floor_double(collider.m_maxX + 1.0);
+	int minY = MathHelper::floor_double(collider.m_minY);
+	int maxY = MathHelper::floor_double(collider.m_maxY + 1.0);
+	int minZ = MathHelper::floor_double(collider.m_minZ);
+	int maxZ = MathHelper::floor_double(collider.m_maxZ + 1.0);
 	if (!this->AABBinValidChunks({ double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ) }))
 		return false;
 
@@ -77,14 +77,14 @@ bool WorldManager::handleFluidAcceleration(AABB collider, Material material, Ent
 			for (int z = minZ; z < maxZ; z++) {
 				auto blockId = this->getBlockId({ x, y, z });
 				auto block = Blocks::blockProperties[blockId];
-				if (block.material == material) {
+				if (block.m_material == material) {
 					double fluidHeight = double(float(y + 1) -
 					                            Blocks::getFluidPercentAir(this->getMetadata({ x, y, z })));
 					if (double(maxY) >= fluidHeight) {
 						// We are definitely in this material
 						// Lets get how this material contributes to our flow vector
 						inMaterial = true;
-						auto velocityFunction = Blocks::blockBehaviors[blockId].velocityToAddToEntity;
+						auto velocityFunction = Blocks::blockBehaviors[blockId].m_velocityToAddToEntity;
 						if (velocityFunction)
 							velocityFunction(*this, { x, y, z }, pushVector);
 					}
@@ -92,15 +92,15 @@ bool WorldManager::handleFluidAcceleration(AABB collider, Material material, Ent
 			}
 
 	// Normalize the vector
-	auto magnitude = std::sqrt(pushVector.x * pushVector.x + pushVector.y * pushVector.y + pushVector.z * pushVector.z);
+	auto magnitude = std::sqrt(pushVector.m_x * pushVector.m_x + pushVector.m_y * pushVector.m_y + pushVector.m_z * pushVector.m_z);
 	if (magnitude > 0.0) {
-		pushVector.x /= magnitude;
-		pushVector.y /= magnitude;
-		pushVector.z /= magnitude;
+		pushVector.m_x /= magnitude;
+		pushVector.m_y /= magnitude;
+		pushVector.m_z /= magnitude;
 
 		// Apply the vector
 		double pushForce = 0.014;
-		entity.velocity += pushVector * pushForce;
+		entity.m_velocity += pushVector * pushForce;
 	}
 
 	return inMaterial;
@@ -110,12 +110,12 @@ bool WorldManager::handleFluidAcceleration(AABB collider, Material material, Ent
 std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {
 	std::vector<AABB> collidingBoxes;
 
-	int minX = Java::DoubleToInt32(std::floor(area.minX));
-	int maxX = Java::DoubleToInt32(std::floor(area.maxX + 1.0));
-	int minY = Java::DoubleToInt32(std::floor(area.minY));
-	int maxY = Java::DoubleToInt32(std::floor(area.maxY + 1.0));
-	int minZ = Java::DoubleToInt32(std::floor(area.minZ));
-	int maxZ = Java::DoubleToInt32(std::floor(area.maxZ + 1.0));
+	int minX = Java::DoubleToInt32(std::floor(area.m_minX));
+	int maxX = Java::DoubleToInt32(std::floor(area.m_maxX + 1.0));
+	int minY = Java::DoubleToInt32(std::floor(area.m_minY));
+	int maxY = Java::DoubleToInt32(std::floor(area.m_maxY + 1.0));
+	int minZ = Java::DoubleToInt32(std::floor(area.m_minZ));
+	int maxZ = Java::DoubleToInt32(std::floor(area.m_maxZ + 1.0));
 
 	// Java iterates Y from var5-1 to var6 (exclusive)
 	int startY = CrossPlatform::Math::max(0, minY - 1);
@@ -142,12 +142,12 @@ std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {
 				// Air isn't collidable
 				if (block_id == BlockType::BLOCK_AIR)
 					continue;
-				if (!Blocks::blockProperties[block_id].isCollidable)
+				if (!Blocks::blockProperties[block_id].m_isCollidable)
 					continue;
 				uint8_t block_meta = chunk->getMeta({ localX, y, localZ });
 				// Offset local collider to world coordinates
-				CollisionShape worldCollider = Blocks::blockBehaviors[block_id].getCollider(block_meta).offset(x, y, z);
-				for (auto& box : worldCollider.boxes)
+				CollisionShape worldCollider = Blocks::blockBehaviors[block_id].m_getCollider(block_meta).offset(x, y, z);
+				for (auto& box : worldCollider.m_boxes)
 					if (box.intersects(area))
 						collidingBoxes.push_back(box);
 			}
@@ -158,55 +158,55 @@ std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {
 
 // Tick
 void WorldManager::tick(const std::vector<ClientPosition>& players) {
-	elapsed_ticks++;
+	m_elapsed_ticks++;
 	drainGenQueue();  // process generation results first
 	drainLoadQueue(); // integrate finished loads
 
 	// Queue any modified chunks for saving
-	if (!regionManager) {
-		GlobalLogger().error << "No region manager while trying to tick!\n";
+	if (!m_regionManager) {
+		GlobalLogger().m_error << "No region manager while trying to tick!\n";
 		return;
 	}
 
 	// Update our tick scheduler
-	tickScheduler.tick();
+	m_tickScheduler.tick();
 
 	// Saving
-	if (this->elapsed_ticks % 40 == 0) {
+	if (this->m_elapsed_ticks % 40 == 0) {
 		// Save periodically
-		for (auto& [pos, chunk] : chunks) {
-			if (!chunk->isModified)
+		for (auto& [pos, chunk] : m_chunks) {
+			if (!chunk->m_isModified)
 				continue;
-			ChunkState s = chunk->state.load();
+			ChunkState s = chunk->m_state.load();
 			if (s < ChunkState::Generated)
 				continue;
 			if (s == ChunkState::Generating || s == ChunkState::Loading)
 				continue;
-			regionManager->saveChunk(chunk);
-			chunk->isModified = false;
+			m_regionManager->saveChunk(chunk);
+			chunk->m_isModified = false;
 		}
 	}
 	// Save entities in a chunk every 30 seconds
-	if (this->elapsed_ticks % 600 == 0) {
-		for (auto& [pos, chunk] : chunks) {
-			ChunkState s = chunk->state.load();
+	if (this->m_elapsed_ticks % 600 == 0) {
+		for (auto& [pos, chunk] : m_chunks) {
+			ChunkState s = chunk->m_state.load();
 			if (s < ChunkState::Generated)
 				continue;
 			if (s == ChunkState::Generating || s == ChunkState::Loading)
 				continue;
-			if (entityManager.chunkHasEntities(pos))
-				regionManager->saveChunk(chunk);
-			chunk->isModified = false;
+			if (m_entityManager.chunkHasEntities(pos))
+				m_regionManager->saveChunk(chunk);
+			chunk->m_isModified = false;
 		}
 	}
-	regionManager->pumpPipeline();
+	m_regionManager->pumpPipeline();
 
 	updateLoadRadius(players);
 	populateReady(); // population runs on main thread
-	lightManager.processLightQueue(*this, INT_MAX);
+	m_lightManager.processLightQueue(*this, INT_MAX);
 
 	// Update our entities
-	entityManager.tick();
+	m_entityManager.tick();
 }
 
 void WorldManager::update(const std::vector<ClientPosition>& players) {
@@ -214,45 +214,45 @@ void WorldManager::update(const std::vector<ClientPosition>& players) {
 }
 
 void WorldManager::shutdown() {
-	if (!regionManager)
+	if (!m_regionManager)
 		return;
 	if (isHell) {
-		GlobalLogger().info << "Saving chunks for level -1\n";
+		GlobalLogger().m_info << "Saving chunks for level -1\n";
 	} else {
-		GlobalLogger().info << "Saving chunks for level 0\n";
+		GlobalLogger().m_info << "Saving chunks for level 0\n";
 	}
 
 	// Save all currently loaded modified chunks
-	for (auto& [pos, chunk] : chunks) {
-		if (!chunk->isModified && !entityManager.chunkHasEntities(pos))
+	for (auto& [pos, chunk] : m_chunks) {
+		if (!chunk->m_isModified && !m_entityManager.chunkHasEntities(pos))
 			continue;
-		ChunkState s = chunk->state.load();
+		ChunkState s = chunk->m_state.load();
 		if (s < ChunkState::Generated)
 			continue;
 		if (s == ChunkState::Generating || s == ChunkState::Loading)
 			continue;
-		regionManager->saveChunk(chunk, /*unload entities = */ true);
-		chunk->isModified = false;
+		m_regionManager->saveChunk(chunk, /*unload entities = */ true);
+		chunk->m_isModified = false;
 	}
 
 	// For every position that still has pending bleed writes, forceload or forcegenerate the chunk, apply the writes, then save it.
-	while (!pendingBleedWrites.empty()) {
-		auto it = pendingBleedWrites.begin();
+	while (!m_pendingBleedWrites.empty()) {
+		auto it = m_pendingBleedWrites.begin();
 		Int32_2 cpos = it->first;
 
 		// Insert a placeholder if not already in the map
-		if (!chunks.contains(cpos)) {
+		if (!m_chunks.contains(cpos)) {
 			auto c = std::make_shared<Chunk>();
-			c->cpos = cpos;
-			chunks.emplace(cpos, std::move(c));
+			c->m_cpos = cpos;
+			m_chunks.emplace(cpos, std::move(c));
 		}
 
 		// Wait until the chunk is ready
-		while (chunks[cpos]->state.load() < ChunkState::Generated) {
+		while (m_chunks[cpos]->m_state.load() < ChunkState::Generated) {
 			pumpPipeline({});
-			pool.wait();
+			m_pool.wait();
 			drainGenQueue();
-			regionManager->iopool.wait();
+			m_regionManager->m_iopool.wait();
 			drainLoadQueue();
 		}
 
@@ -260,93 +260,93 @@ void WorldManager::shutdown() {
 		flushBleedWrites();
 
 		// Save it
-		auto& chunk = chunks[cpos];
-		if (chunk->isModified) {
-			regionManager->saveChunk(chunk);
-			chunk->isModified = false;
+		auto& chunk = m_chunks[cpos];
+		if (chunk->m_isModified) {
+			m_regionManager->saveChunk(chunk);
+			chunk->m_isModified = false;
 		}
 	}
 
 	// Flush everything to disk and wait for IO to finish
-	regionManager->flushAll();
+	m_regionManager->flushAll();
 }
 
 void WorldManager::drainGenQueue() {
 	// Integrate chunks that finished generating
 	std::deque<std::shared_ptr<Chunk>> ready;
 	{
-		std::lock_guard lk(genDoneMutex);
-		ready.swap(genDoneQueue);
+		std::lock_guard lk(m_genDoneMutex);
+		ready.swap(m_genDoneQueue);
 	}
 	for (auto& c : ready) {
-		Int32_2 pos = c->cpos;
-		auto it = chunks.find(pos);
-		if (it != chunks.end()) {
-			bool wasSpawnChunk = it->second->spawnChunk;
+		Int32_2 pos = c->m_cpos;
+		auto it = m_chunks.find(pos);
+		if (it != m_chunks.end()) {
+			bool wasSpawnChunk = it->second->m_spawnChunk;
 			it->second = std::move(c);
-			it->second->spawnChunk = wasSpawnChunk;
+			it->second->m_spawnChunk = wasSpawnChunk;
 
 			// Replay any writes that arrived while this chunk was unloaded.
-			auto pit = pendingBleedWrites.find(pos);
-			if (pit != pendingBleedWrites.end()) {
+			auto pit = m_pendingBleedWrites.find(pos);
+			if (pit != m_pendingBleedWrites.end()) {
 				for (auto& [wpos, block] : pit->second)
-					setBlock(wpos, block.type, block.data);
-				pendingBleedWrites.erase(pit);
+					setBlock(wpos, block.m_type, block.m_data);
+				m_pendingBleedWrites.erase(pit);
 			}
 
 			it->second->generateSkylightMap();         // Regen our skylight map
-			this->seedChunkLighting(it->second->cpos); // Reseed our lighting
+			this->seedChunkLighting(it->second->m_cpos); // Reseed our lighting
 		}
 	}
 }
 
 void WorldManager::drainLoadQueue() {
-	for (auto& [pos, chunk] : chunks) {
-		if (chunk->state.load(std::memory_order_acquire) != ChunkState::Loading)
+	for (auto& [pos, chunk] : m_chunks) {
+		if (chunk->m_state.load(std::memory_order_acquire) != ChunkState::Loading)
 			continue;
-		auto loaded = regionManager->getChunk(pos);
+		auto loaded = m_regionManager->getChunk(pos);
 		if (!loaded)
 			continue;
 
-		auto it = chunks.find(pos);
-		if (it == chunks.end())
+		auto it = m_chunks.find(pos);
+		if (it == m_chunks.end())
 			continue;
-		bool wasSpawnChunk = it->second->spawnChunk;
+		bool wasSpawnChunk = it->second->m_spawnChunk;
 		it->second = std::move(loaded);
-		it->second->spawnChunk = wasSpawnChunk;
+		it->second->m_spawnChunk = wasSpawnChunk;
 
 		// Regenerate temp and humidity data
 		thread_local BiomeGenerator tl_biomeGen(0);
 		thread_local bool tl_biomeGenInit = false;
 		if (!tl_biomeGenInit) {
-			tl_biomeGen = BiomeGenerator(this->seed);
+			tl_biomeGen = BiomeGenerator(this->m_seed);
 			tl_biomeGenInit = true;
 		}
 		std::vector<double> temp, humi, weird;
 		Biome ignored[CHUNK_AREA];
-		tl_biomeGen.GenerateBiomeMap(ignored, temp, humi, weird, Int2{ pos.x * CHUNK_WIDTH, pos.z * CHUNK_WIDTH });
+		tl_biomeGen.GenerateBiomeMap(ignored, temp, humi, weird, Int2{ pos.m_x * CHUNK_WIDTH, pos.m_z * CHUNK_WIDTH });
 		for (int i = 0; i < CHUNK_AREA; ++i) {
-			it->second->temperature[i] = float(temp[i]);
-			it->second->humidity[i] = float(humi[i]);
+			it->second->m_temperature[i] = float(temp[i]);
+			it->second->m_humidity[i] = float(humi[i]);
 		}
 
 		// Replay any writes that arrived while this chunk was loading.
-		auto pit = pendingBleedWrites.find(pos);
-		if (pit != pendingBleedWrites.end()) {
+		auto pit = m_pendingBleedWrites.find(pos);
+		if (pit != m_pendingBleedWrites.end()) {
 			for (auto& [wpos, block] : pit->second)
-				setBlock(wpos, block.type, block.data);
-			pendingBleedWrites.erase(pit);
+				setBlock(wpos, block.m_type, block.m_data);
+			m_pendingBleedWrites.erase(pit);
 		}
 
 		// Register our tile entities
 		registerChunkTileEntities(it->second.get());
 
 		// Register our entities
-		for (auto& entityTag : it->second.get()->entityTags) {
-			this->entityManager.createEntityFromNBT(entityTag);
+		for (auto& entityTag : it->second.get()->m_entityTags) {
+			this->m_entityManager.createEntityFromNBT(entityTag);
 		}
-		it->second.get()->entityTags.clear();
-		it->second.get()->entityTags.shrink_to_fit();
+		it->second.get()->m_entityTags.clear();
+		it->second.get()->m_entityTags.shrink_to_fit();
 	}
 }
 
@@ -357,8 +357,8 @@ void WorldManager::seedChunkLighting(Int32_2 pos) {
 
 	// We check each column in the chunk's height against its neighbors, if they differ then we schedule light updates for the vertical column between them.
 	// This works like 99% of the time but can miss some edge cases; its fast though!
-	int bx = pos.x * 16;
-	int bz = pos.z * 16;
+	int bx = pos.m_x * 16;
+	int bz = pos.m_z * 16;
 	for (int x = 0; x < 16; ++x) {
 		for (int z = 0; z < 16; ++z) {
 			int wx = bx + x, wz = bz + z;
@@ -372,7 +372,7 @@ void WorldManager::seedChunkLighting(Int32_2 pos) {
 					continue;
 				int minY = CrossPlatform::Math::min(thisH, neighborH);
 				int maxY = CrossPlatform::Math::max(thisH, neighborH);
-				lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
+				m_lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
 			}
 		}
 	}
@@ -382,8 +382,8 @@ void WorldManager::seedChunkLighting(Int32_2 pos) {
 		for (int z = 0; z < 16; ++z)
 			for (int y = 0; y < CHUNK_HEIGHT; ++y) {
 				BlockType id = chunk->getBlock({ x, y, z });
-				if (Blocks::blockProperties[id].lightEmission > 0)
-					lightManager.scheduleLightUpdate({ bx + x, y, bz + z }, LightType::Block);
+				if (Blocks::blockProperties[id].m_lightEmission > 0)
+					m_lightManager.scheduleLightUpdate({ bx + x, y, bz + z }, LightType::Block);
 			}
 	propagateChunkLightBorders(pos);
 }
@@ -392,44 +392,44 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
 	std::unordered_set<Int32_2> wanted;
 	for (const auto& player : players) {
 		Int2 center = player.getChunkPos();
-		int viewDist = (player.viewDistanceOverride) ? player.viewDistanceOverride : VIEW_RADIUS;
+		int viewDist = (player.m_viewDistanceOverride) ? player.m_viewDistanceOverride : VIEW_RADIUS;
 		for (int dx = -viewDist; dx <= viewDist; dx++)
 			for (int dz = -viewDist; dz <= viewDist; dz++)
-				wanted.insert({ center.x + dx, center.z + dz });
+				wanted.insert({ center.m_x + dx, center.m_z + dz });
 	}
 
 	// Get chunks we want
 	for (const auto& pos : wanted) {
-		if (!chunks.contains(pos)) {
+		if (!m_chunks.contains(pos)) {
 			auto c = std::make_shared<Chunk>();
-			c->cpos = pos;
-			chunks.emplace(pos, std::move(c));
+			c->m_cpos = pos;
+			m_chunks.emplace(pos, std::move(c));
 		}
 	}
 
 	// Remove chunks we don't want
-	for (auto it = chunks.begin(); it != chunks.end();) {
+	for (auto it = m_chunks.begin(); it != m_chunks.end();) {
 		if (wanted.contains(it->first)) {
 			++it;
 			continue;
 		}
-		if (it->second->spawnChunk) {
+		if (it->second->m_spawnChunk) {
 			++it;
 			continue;
 		}
-		ChunkState s = it->second->state.load();
+		ChunkState s = it->second->m_state.load();
 		if (s == ChunkState::Generating || s == ChunkState::Loading) {
 			++it;
 			continue;
 		}
 
 		// This chunk is actually leaving simulation so force unload entities
-		if (it->second->isModified || this->entityManager.chunkHasEntities(it->second->cpos)) {
-			regionManager->saveChunk(it->second, /*unloadingEntities=*/true);
-			it->second->isModified = false;
+		if (it->second->m_isModified || this->m_entityManager.chunkHasEntities(it->second->m_cpos)) {
+			m_regionManager->saveChunk(it->second, /*unloadingEntities=*/true);
+			it->second->m_isModified = false;
 		}
 
-		it = chunks.erase(it);
+		it = m_chunks.erase(it);
 	}
 }
 
@@ -438,8 +438,8 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 	// This is technically a relic from when we had chunks put themselves into the world's chunk map but now the world does it all at the end of the tick
 	// Still good practice, though
 	std::vector<Int32_2> snapshot;
-	snapshot.reserve(chunks.size());
-	for (auto& [pos, chunk] : chunks)
+	snapshot.reserve(m_chunks.size());
+	for (auto& [pos, chunk] : m_chunks)
 		snapshot.push_back(pos);
 
 	const int playerCount = int(players.size());
@@ -450,17 +450,17 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 	if (playerCount == 0) {
 		// No players so try and get every chunk within load distance if its not already generating
 		for (const Int32_2& p : snapshot) {
-			auto it = chunks.find(p);
-			if (it == chunks.end())
+			auto it = m_chunks.find(p);
+			if (it == m_chunks.end())
 				continue;
-			if (it->second->state.load(std::memory_order_acquire) != ChunkState::Unloaded)
+			if (it->second->m_state.load(std::memory_order_acquire) != ChunkState::Unloaded)
 				continue;
 			noPlayerCandidates.push_back(p);
 		}
 		std::sort(noPlayerCandidates.begin(), noPlayerCandidates.end(), [](const Int32_2& a, const Int32_2& b) {
-			if (a.x != b.x)
-				return a.x < b.x;
-			return a.z < b.z;
+			if (a.m_x != b.m_x)
+				return a.m_x < b.m_x;
+			return a.m_z < b.m_z;
 		});
 	} else {
 		perPlayerQueues.reserve(size_t(playerCount));
@@ -468,18 +468,18 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 			std::vector<Int32_2> candidates;
 			candidates.reserve(snapshot.size());
 			for (const Int32_2& p : snapshot) {
-				auto it = chunks.find(p);
-				if (it == chunks.end())
+				auto it = m_chunks.find(p);
+				if (it == m_chunks.end())
 					continue;
-				if (it->second->state.load(std::memory_order_acquire) != ChunkState::Unloaded)
+				if (it->second->m_state.load(std::memory_order_acquire) != ChunkState::Unloaded)
 					continue;
 				candidates.push_back(p);
 			}
 			// Sort by load order that beta 1.7.3 seems to use
 			std::sort(candidates.begin(), candidates.end(), [](const Int32_2& a, const Int32_2& b) {
-				if (a.x != b.x)
-					return a.x < b.x;
-				return a.z < b.z;
+				if (a.m_x != b.m_x)
+					return a.m_x < b.m_x;
+				return a.m_z < b.m_z;
 			});
 			perPlayerQueues.push_back(std::move(candidates));
 		}
@@ -490,13 +490,13 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 	auto startLoading = [&](const Int32_2& pos) -> bool {
 		if (startedThisTick.contains(pos))
 			return false;
-		auto it = chunks.find(pos);
-		if (it == chunks.end())
+		auto it = m_chunks.find(pos);
+		if (it == m_chunks.end())
 			return false;
-		if (it->second->state.load(std::memory_order_acquire) != ChunkState::Unloaded)
+		if (it->second->m_state.load(std::memory_order_acquire) != ChunkState::Unloaded)
 			return false;
-		it->second->state.store(ChunkState::Loading, std::memory_order_release);
-		regionManager->loadChunk(pos);
+		it->second->m_state.store(ChunkState::Loading, std::memory_order_release);
+		m_regionManager->loadChunk(pos);
 		startedThisTick.insert(pos);
 		return true;
 	};
@@ -505,29 +505,29 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 		// Check if already started this tick (can happen with multiple players), and if chunk is still Unloaded (can be changed by another thread).
 		if (startedThisTick.contains(pos))
 			return false;
-		auto it = chunks.find(pos);
-		if (it == chunks.end())
+		auto it = m_chunks.find(pos);
+		if (it == m_chunks.end())
 			return false;
-		if (it->second->state.load(std::memory_order_acquire) != ChunkState::Unloaded)
+		if (it->second->m_state.load(std::memory_order_acquire) != ChunkState::Unloaded)
 			return false;
 
 		// Actually generate this chunk
-		it->second->state.store(ChunkState::Generating, std::memory_order_release);
-		pool.detach_task([pos, this]() {
+		it->second->m_state.store(ChunkState::Generating, std::memory_order_release);
+		m_pool.detach_task([pos, this]() {
 			// We make a new chunk here instead of modifying the existing chunk because multithreading is a pain
 			// The placeholder chunk in the map will be replaced by this one when we push to genDoneQueue
 			auto chunk = std::make_shared<Chunk>();
-			chunk->cpos = pos;
+			chunk->m_cpos = pos;
 			if (isHell) {
-				thread_local NetherGenerator tl_gen(this->seed);
+				thread_local NetherGenerator tl_gen(this->m_seed);
 				tl_gen.GenerateChunk(*chunk);
 			} else {
-				thread_local OverworldGenerator tl_gen(this->seed);
+				thread_local OverworldGenerator tl_gen(this->m_seed);
 				tl_gen.GenerateChunk(*chunk);
 			}
-			chunk->isModified = true;
+			chunk->m_isModified = true;
 			chunk->generateSkylightMap();
-			chunk->state.store(ChunkState::Generated, std::memory_order_release);
+			chunk->m_state.store(ChunkState::Generated, std::memory_order_release);
 
 			// This just posts the result so we can start lighting and check for population
 			this->postGenResult(std::move(chunk));
@@ -541,7 +541,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 		for (const Int32_2& pos : noPlayerCandidates) {
 			if (started >= slicePerPlayer)
 				break;
-			if (regionManager->chunkExists(pos)) {
+			if (m_regionManager->chunkExists(pos)) {
 				if (startLoading(pos))
 					++started;
 				continue;
@@ -563,7 +563,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 				while (playerConsumed < slicePerPlayer && cur < static_cast<int>(perPlayerQueues[size_t(i)].size())) {
 					Int32_2 cpos = perPlayerQueues[size_t(i)][size_t(cur)];
 					++cur;
-					if (regionManager->chunkExists(cpos)) {
+					if (m_regionManager->chunkExists(cpos)) {
 						if (startLoading(cpos)) {
 							++playerConsumed;
 							++totalStarted;
@@ -585,23 +585,23 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 void WorldManager::populateReady() {
 	// Try and match beta's population order its finicky lol
 	std::vector<Int32_2> ordered;
-	ordered.reserve(chunks.size());
-	for (auto& [pos, chunk] : chunks) {
-		if (chunk->isTerrainPopulated)
+	ordered.reserve(m_chunks.size());
+	for (auto& [pos, chunk] : m_chunks) {
+		if (chunk->m_isTerrainPopulated)
 			continue;
 		// Only consider chunks that could possibly be ready
 		// This excludes border chunks on the positive X and Z axes since their population needs neighbors that can't exist
-		if (!chunks.contains({ pos.x + 1, pos.z }) || !chunks.contains({ pos.x, pos.z + 1 }) ||
-		    !chunks.contains({ pos.x + 1, pos.z + 1 }))
+		if (!m_chunks.contains({ pos.m_x + 1, pos.m_z }) || !m_chunks.contains({ pos.m_x, pos.m_z + 1 }) ||
+		    !m_chunks.contains({ pos.m_x + 1, pos.m_z + 1 }))
 			continue;
 		ordered.push_back(pos);
 	}
 
 	// Sort by population order that beta 1.7.3 seems to use
 	std::sort(ordered.begin(), ordered.end(), [](const Int32_2& a, const Int32_2& b) {
-		if (a.x != b.x)
-			return a.x < b.x;
-		return a.z < b.z;
+		if (a.m_x != b.m_x)
+			return a.m_x < b.m_x;
+		return a.m_z < b.m_z;
 	});
 
 	// Make sure we don't try to populate the same chunk multiple times in one tick (can happen with the weird population order and multiple players)
@@ -613,24 +613,24 @@ void WorldManager::populateReady() {
 			break;
 		if (populatedThisTick.contains(pos))
 			continue;
-		auto cit = chunks.find(pos);
-		if (cit == chunks.end())
+		auto cit = m_chunks.find(pos);
+		if (cit == m_chunks.end())
 			break;
-		cit->second->state.store(ChunkState::Populating, std::memory_order_release);
+		cit->second->m_state.store(ChunkState::Populating, std::memory_order_release);
 		WorldWrapper wrapper{ .m_manager = *this, .m_centerChunkPos = pos };
 		wrapper.m_centerChunkPos = pos;
 		wrapper.getChunkRegion();
 		if (isHell) {
-			NetherGenerator tl_gen(this->seed);
+			NetherGenerator tl_gen(this->m_seed);
 			tl_gen.PopulateChunk(*cit->second, wrapper);
 		} else {
-			OverworldGenerator tl_gen(this->seed);
+			OverworldGenerator tl_gen(this->m_seed);
 			tl_gen.PopulateChunk(*cit->second, wrapper);
 		}
 		auto& chunk = cit->second;
-		chunk->isTerrainPopulated = true;
-		chunk->isModified = true;
-		chunk->state.store(ChunkState::Populated, std::memory_order_release);
+		chunk->m_isTerrainPopulated = true;
+		chunk->m_isModified = true;
+		chunk->m_state.store(ChunkState::Populated, std::memory_order_release);
 		populatedThisTick.insert(pos);
 		wrapper.freeChunkRegion();
 		flushBleedWrites();
@@ -638,13 +638,13 @@ void WorldManager::populateReady() {
 }
 
 void WorldManager::setMeta(Int3 wpos, uint8_t metadata) {
-	if (!inBounds(wpos.y))
+	if (!inBounds(wpos.m_y))
 		return;
-	Int32_2 cp{ wpos.x >> 4, wpos.z >> 4 };
+	Int32_2 cp{ wpos.m_x >> 4, wpos.m_z >> 4 };
 	auto* chunk = getChunkRaw(cp);
 	if (!isChunkValid(cp))
 		return;
-	Int3 local{ wpos.x & 15, wpos.y, wpos.z & 15 };
+	Int3 local{ wpos.m_x & 15, wpos.m_y, wpos.m_z & 15 };
 	auto oldMeta = chunk->getMeta(local);
 	auto blockId = chunk->getBlock(local);
 	chunk->setMeta(local, metadata);
@@ -653,49 +653,49 @@ void WorldManager::setMeta(Int3 wpos, uint8_t metadata) {
 	this->notifyNeighborsOfUpdate(wpos);
 
 	// Callback for the client and server to know about this block update
-	if (onBlockUpdate && (oldMeta != metadata && Blocks::blockProperties[blockId].notifySelfOnMetaChange))
-		onBlockUpdate(PendingBlock{ .block{ chunk->getBlock(local), metadata },
-		                            .block_pos{ wpos.x, wpos.y, wpos.z },
-		                            .light{ chunk->getBlockLight(local), chunk->getSkyLight(local) } },
-		              chunk->cpos);
+	if (m_onBlockUpdate && (oldMeta != metadata && Blocks::blockProperties[blockId].m_notifySelfOnMetaChange))
+		m_onBlockUpdate(PendingBlock{ .m_block{ chunk->getBlock(local), metadata },
+		                            .m_block_pos{ wpos.m_x, wpos.m_y, wpos.m_z },
+		                            .m_light{ chunk->getBlockLight(local), chunk->getSkyLight(local) } },
+		              chunk->m_cpos);
 }
 
 void WorldManager::setBlock(Int3 wpos, BlockType block_type, uint8_t metadata) {
-	if (!inBounds(wpos.y))
+	if (!inBounds(wpos.m_y))
 		return;
-	Int32_2 cp{ wpos.x >> 4, wpos.z >> 4 };
+	Int32_2 cp{ wpos.m_x >> 4, wpos.m_z >> 4 };
 	auto* chunk = getChunkRaw(cp);
 	if (!isChunkValid(cp)) {
 		// Target chunk isn't ready; cache the write for replay
-		pendingBleedWrites[cp].push_back({ wpos, Block{ block_type, metadata } });
+		m_pendingBleedWrites[cp].push_back({ wpos, Block{ block_type, metadata } });
 		return;
 	}
 
 	// Remove any tile entities that exist at this spot
-	auto& tes = chunk->tileEntities;
+	auto& tes = chunk->m_tileEntities;
 	tes.erase(std::remove_if(tes.begin(), tes.end(),
 	                         [&](const std::shared_ptr<TileEntity>& te) { return te && te->m_position == wpos; }),
 	          tes.end());
 
 	// Unlight before changing the block
-	lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Block, *this);
-	lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Sky, *this);
+	m_lightManager.unlightAt(wpos.m_x, wpos.m_y, wpos.m_z, LightType::Block, *this);
+	m_lightManager.unlightAt(wpos.m_x, wpos.m_y, wpos.m_z, LightType::Sky, *this);
 
 	// Get the local coordinates of this block within the chunk and set it
-	int lx = wpos.x & 15;
-	int lz = wpos.z & 15;
-	Int3 local{ lx, wpos.y, lz };
+	int lx = wpos.m_x & 15;
+	int lz = wpos.m_z & 15;
+	Int3 local{ lx, wpos.m_y, lz };
 	auto oldBlock = chunk->getBlock(local);
 	auto oldMeta = chunk->getMeta(local);
 	chunk->setBlock(local, block_type);
 	chunk->setMeta(local, metadata);
 
-	int y = wpos.y;
-	int x = wpos.x;
-	int z = wpos.z;
+	int y = wpos.m_y;
+	int x = wpos.m_x;
+	int z = wpos.m_z;
 	int oldHeight = chunk->getHeightValue({ lx, lz });
 
-	if (Blocks::blockProperties[block_type].lightOpacity != 0) {
+	if (Blocks::blockProperties[block_type].m_lightOpacity != 0) {
 		// Placing opaque block; heightmap may rise
 		if (y >= oldHeight) {
 			chunk->relightColumn({ lx, lz });
@@ -703,7 +703,7 @@ void WorldManager::setBlock(Int3 wpos, BlockType block_type, uint8_t metadata) {
 			// The column below the new top was zeroed out by relightColumn.
 			// Notify the BFS that all blocks from y down to oldHeight need updating
 			for (int sy = oldHeight; sy <= y; ++sy)
-				lightManager.unlightAt(x, sy, z, LightType::Sky, *this);
+				m_lightManager.unlightAt(x, sy, z, LightType::Sky, *this);
 		}
 	} else if (y == oldHeight - 1) {
 		// Removing top opaque block; heightmap may fall
@@ -713,11 +713,11 @@ void WorldManager::setBlock(Int3 wpos, BlockType block_type, uint8_t metadata) {
 	int newHeight = chunk->getHeightValue({ lx, lz });
 	if (newHeight < oldHeight) {
 		for (int sy = newHeight; sy < oldHeight; ++sy)
-			lightManager.scheduleLightUpdate({ x, sy, z }, LightType::Sky);
+			m_lightManager.scheduleLightUpdate({ x, sy, z }, LightType::Sky);
 	}
 
 	// Always re-evaluate the edited block and its 4 horizontal neighbours
-	lightManager.scheduleLightUpdate({ x, y, z }, LightType::Sky);
+	m_lightManager.scheduleLightUpdate({ x, y, z }, LightType::Sky);
 	const int ndx[] = { -1, 1, 0, 0 };
 	const int ndz[] = { 0, 0, -1, 1 };
 	for (int i = 0; i < 4; ++i) {
@@ -728,47 +728,47 @@ void WorldManager::setBlock(Int3 wpos, BlockType block_type, uint8_t metadata) {
 			continue;
 		int minY = CrossPlatform::Math::min(thisHeight, neighborHeight);
 		int maxY = CrossPlatform::Math::max(thisHeight, neighborHeight);
-		lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
+		m_lightManager.scheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
 	}
 	// Schedule a block light update for the m_position itself
-	lightManager.scheduleLightUpdate({ x, y, z }, LightType::Block);
+	m_lightManager.scheduleLightUpdate({ x, y, z }, LightType::Block);
 
 	// Update our neighbors
 	this->notifyNeighborsOfUpdate(wpos);
 
 	if (block_type == BLOCK_AIR) {
 		// We removed this block effectively
-		auto function = Blocks::blockBehaviors[oldBlock].onBlockRemoval;
+		auto function = Blocks::blockBehaviors[oldBlock].m_onBlockRemoval;
 		if (function)
 			function(*this, wpos);
 	} else {
 		// Java has this functionality in the chunk setters themselves, but
 		// in my opinion (Aidan here) that is stupid and redundant
-		auto function = Blocks::blockBehaviors[block_type].onBlockAdded;
+		auto function = Blocks::blockBehaviors[block_type].m_onBlockAdded;
 		if (function)
 			function(*this, wpos);
 	}
 
 	// Callback for the client and server to know about this block update
-	if (onBlockUpdate &&
-	    (oldBlock != block_type || (oldMeta != metadata && Blocks::blockProperties[block_type].notifySelfOnMetaChange)))
-		onBlockUpdate(PendingBlock{ .block{ block_type, metadata },
-		                            .block_pos{ wpos.x, wpos.y, wpos.z },
-		                            .light{ chunk->getBlockLight(local), chunk->getSkyLight(local) } },
-		              chunk->cpos);
+	if (m_onBlockUpdate &&
+	    (oldBlock != block_type || (oldMeta != metadata && Blocks::blockProperties[block_type].m_notifySelfOnMetaChange)))
+		m_onBlockUpdate(PendingBlock{ .m_block{ block_type, metadata },
+		                            .m_block_pos{ wpos.m_x, wpos.m_y, wpos.m_z },
+		                            .m_light{ chunk->getBlockLight(local), chunk->getSkyLight(local) } },
+		              chunk->m_cpos);
 }
 
 int WorldManager::findTopSolidBlock(int wx, int wz) {
 	auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
-	if (!chunk || chunk->state.load() < ChunkState::Generated)
+	if (!chunk || chunk->m_state.load() < ChunkState::Generated)
 		return -1;
 	int lx = wx & 15, lz = wz & 15;
 	for (int y = 127; y > 0; --y) {
 		BlockType block = chunk->getBlock({ lx, y, lz });
 		if (block == BlockType::BLOCK_AIR)
 			continue;
-		Material mat = Blocks::blockProperties[block].material;
-		if (mat.isSolid || mat.isLiquid)
+		Material mat = Blocks::blockProperties[block].m_material;
+		if (mat.m_isSolid || mat.m_isLiquid)
 			return y + 1;
 	}
 	return -1;
@@ -776,7 +776,7 @@ int WorldManager::findTopSolidBlock(int wx, int wz) {
 
 BlockType WorldManager::getFirstUncoveredBlock(int wx, int wz) {
 	auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
-	if (!chunk || chunk->state.load() < ChunkState::Generated)
+	if (!chunk || chunk->m_state.load() < ChunkState::Generated)
 		return BlockType(-1);
 	int lx = wx & 15, lz = wz & 15;
 	int y = 63;
@@ -795,33 +795,33 @@ void WorldManager::initSpawn() {
 			// Force generate this chunk so we can check the block type.
 			auto pos = Int32_2{ x >> 4, z >> 4 };
 			auto chunk = std::make_shared<Chunk>();
-			chunk->cpos = pos;
-			chunks[pos] = std::move(chunk);
+			chunk->m_cpos = pos;
+			m_chunks[pos] = std::move(chunk);
 			while (getFirstUncoveredBlock(x, z) == BlockType::BLOCK_INVALID) {
 				this->pumpPipeline({});
 				this->drainGenQueue();
 				this->drainLoadQueue();
-				this->pool.wait();
+				this->m_pool.wait();
 			}
 			b = getFirstUncoveredBlock(x, z);
 		}
 		return getFirstUncoveredBlock(x, z) == BlockType::BLOCK_SAND;
 	};
-	for (; !canCoordinateBeSpawn(sx, sz); sz += this->rand.nextInt(64) - this->rand.nextInt(64)) {
-		sx += this->rand.nextInt(64) - this->rand.nextInt(64);
+	for (; !canCoordinateBeSpawn(sx, sz); sz += this->m_rand.nextInt(64) - this->m_rand.nextInt(64)) {
+		sx += this->m_rand.nextInt(64) - this->m_rand.nextInt(64);
 	}
-	this->spawnPoint = { sx, 64, sz };
-	chunks.clear(); // Clear all chunks so we can start fresh from the spawn area
+	this->m_spawnPoint = { sx, 64, sz };
+	m_chunks.clear(); // Clear all chunks so we can start fresh from the spawn area
 }
 
 void WorldManager::propagateChunkLightBorders(Int32_2 cpos) {
 	// Iterate through our chunk borders
 	const int ndx[] = { -1, 1, 0, 0 };
 	const int ndz[] = { 0, 0, -1, 1 };
-	int bx = cpos.x * 16;
-	int bz = cpos.z * 16;
+	int bx = cpos.m_x * 16;
+	int bz = cpos.m_z * 16;
 	for (int i = 0; i < 4; ++i) {
-		Chunk* neighborChunk = getChunkRaw({ cpos.x + ndx[i], cpos.z + ndz[i] });
+		Chunk* neighborChunk = getChunkRaw({ cpos.m_x + ndx[i], cpos.m_z + ndz[i] });
 		if (!neighborChunk)
 			continue;
 
@@ -854,10 +854,10 @@ void WorldManager::propagateChunkLightBorders(Int32_2 cpos) {
 			for (int y = 0; y < CHUNK_HEIGHT; ++y) {
 				// Does our neighbor block have a block light > 0 or sky light > 0? If so, schedule a light update for the block on our side of the border.
 				if (neighborChunk->getBlockLight({ nx, y, nz })) {
-					lightManager.scheduleLightUpdate({ bx + lx, y, bz + lz }, LightType::Block);
+					m_lightManager.scheduleLightUpdate({ bx + lx, y, bz + lz }, LightType::Block);
 				}
 				if (neighborChunk->getSkyLight({ nx, y, nz }) > 0) {
-					lightManager.scheduleLightUpdate({ bx + lx, y, bz + lz }, LightType::Sky);
+					m_lightManager.scheduleLightUpdate({ bx + lx, y, bz + lz }, LightType::Sky);
 				}
 			}
 		}
@@ -865,12 +865,12 @@ void WorldManager::propagateChunkLightBorders(Int32_2 cpos) {
 }
 
 void WorldManager::flushBleedWrites() {
-	for (auto it = pendingBleedWrites.begin(); it != pendingBleedWrites.end();) {
+	for (auto it = m_pendingBleedWrites.begin(); it != m_pendingBleedWrites.end();) {
 		auto* target = getChunkRaw(it->first);
-		if (target && target->state.load() >= ChunkState::Generated && !target->inUse.load()) {
+		if (target && target->m_state.load() >= ChunkState::Generated && !target->m_inUse.load()) {
 			for (auto& [wpos, block] : it->second)
-				setBlock(wpos, block.type, block.data);
-			it = pendingBleedWrites.erase(it);
+				setBlock(wpos, block.m_type, block.m_data);
+			it = m_pendingBleedWrites.erase(it);
 		} else {
 			++it;
 		}

@@ -8,38 +8,38 @@
 #include "entity.h"
 
 struct FallingBlockEntity : public Entity {
-	BlockType block = BLOCK_AIR;
-	int ticksFallen = 0;
+	BlockType m_block = BLOCK_AIR;
+	int m_ticksFallen = 0;
 
 	FallingBlockEntity(Vec3 spawnPosition, BlockType block) : Entity() {
-		this->block = block;
-		this->position = spawnPosition;
-		this->height = 0.98;
-		this->width = 0.98;
-		this->yOffset = height / 2.0f;
-		this->preventEntitySpawning = true;
+		this->m_block = block;
+		this->m_position = spawnPosition;
+		this->m_height = 0.98;
+		this->m_width = 0.98;
+		this->m_yOffset = m_height / 2.0f;
+		this->m_preventEntitySpawning = true;
 		rebuildCollider();
 
 		if (block == BLOCK_SAND)
-			type = EntityType::FALLING_SAND;
+			m_type = EntityType::FALLING_SAND;
 		if (block == BLOCK_GRAVEL)
-			type = EntityType::FALLING_GRAVEL;
+			m_type = EntityType::FALLING_GRAVEL;
 	}
 
 	void tick() override;
 	std::optional<Tag> serializeToNBT() override {
 		auto root = Entity::serializeToNBT();
-		if (!root || this->block == BLOCK_AIR)
+		if (!root || this->m_block == BLOCK_AIR)
 			return std::nullopt;
 		Tag Tile;
-		Tile.type = TAG_BYTE;
-		Tile.name = "Tile";
-		Tile.byteValue = this->block;
-		root->compound["Tile"] = Tile;
+		Tile.m_type = TAG_BYTE;
+		Tile.m_name = "Tile";
+		Tile.m_byteValue = this->m_block;
+		root->m_compound["Tile"] = Tile;
 		return root;
 	}
 	void loadFromNBT(Tag& nbt) override {
 		Entity::loadFromNBT(nbt);
-		this->block = BlockType(nbt.compound["Tile"].getByte() & 255);
+		this->m_block = BlockType(nbt.m_compound["Tile"].getByte() & 255);
 	}
 };

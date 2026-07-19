@@ -44,8 +44,8 @@ std::string CommandTeleport::Execute(std::vector<std::string>& parameters, Playe
 			SendTeleport(*source, pos);
 
 			Packet::ChatMessage reply;
-			reply.message = "§eTeleported " + source->username + " to " + pos.str();
-			reply.Serialize(session.stream);
+			reply.m_message = "§eTeleported " + source->m_username + " to " + pos.str();
+			reply.Serialize(session.m_stream);
 			return "";
 		} catch (...) {
 			return ERROR_REASON_PARAMETERS;

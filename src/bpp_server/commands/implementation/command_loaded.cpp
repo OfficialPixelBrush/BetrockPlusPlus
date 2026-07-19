@@ -14,7 +14,7 @@ std::string CommandLoaded::Execute([[maybe_unused]] std::vector<std::string>& pa
                                    [[maybe_unused]] std::function<void(PlayerSession&)> transferDimension,
                                    Server& server) {
 	Packet::ChatMessage reply;
-	reply.message = "§e" + std::to_string(world.chunks.size());
-	reply.Serialize(session.stream);
+	reply.m_message = "§e" + std::to_string(world.m_chunks.size());
+	reply.Serialize(session.m_stream);
 	return "";
 }

@@ -35,7 +35,7 @@ struct TileEntity {
 
 // Chest
 struct TileEntityChest : TileEntity {
-	InventoryChest inventory;
+	InventoryChest m_inventory;
 	TileEntityChest(Int3 pPosition) : TileEntity(TileType::CHEST, pPosition) {};
 
 	Tag serialize() override;
@@ -44,7 +44,7 @@ struct TileEntityChest : TileEntity {
 
 // Furnace
 struct TileEntityFurnace : TileEntity {
-	InventoryFurnace inventory;
+	InventoryFurnace m_inventory;
 	TileEntityFurnace(Int3 pPosition) : TileEntity(TileType::FURNACE, pPosition) {
 		m_canTick = true;
 	};
@@ -55,7 +55,7 @@ struct TileEntityFurnace : TileEntity {
 
 // Dispenser (Trap)
 struct TileEntityDispenser : TileEntity {
-	InventoryDispenser inventory;
+	InventoryDispenser m_inventory;
 	TileEntityDispenser(Int3 pPosition) : TileEntity(TileType::DISPENSER, pPosition) {};
 
 	Tag serialize() override;

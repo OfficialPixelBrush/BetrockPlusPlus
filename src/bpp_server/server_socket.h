@@ -46,7 +46,7 @@ inline int createServerSocket(int port) {
 	addr.sin_port = htons(port);
 	addr.sin_addr.s_addr = INADDR_ANY;
 	if (bind(serverSocket, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
-		GlobalLogger().error << "**** FAILED TO BIND SOCKET! ****" << "\n";
+		GlobalLogger().m_error << "**** FAILED TO BIND SOCKET! ****" << "\n";
 		return -1;
 	}
 	listen(serverSocket, 8);

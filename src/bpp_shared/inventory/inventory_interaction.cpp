@@ -5,106 +5,106 @@
 */
 #include "inventory_interaction.h"
 
-InventoryInteraction::InventoryInteraction(Inventory* inv) : inventory(inv) {}
+InventoryInteraction::InventoryInteraction(Inventory* inv) : m_inventory(inv) {}
 
 bool InventoryInteraction::canExist() {
-	return inventory != nullptr;
+	return m_inventory != nullptr;
 }
 
 void InventoryInteraction::initSnapshot() {
-	snapshot = inventory->slots;
+	m_snapshot = m_inventory->m_slots;
 }
 
 std::vector<DeltaSlot> InventoryInteraction::tickDiff() {
 	std::vector<DeltaSlot> differences;
-	for (size_t i = 0; i < snapshot.size(); i++) {
-		[[maybe_unused]] auto* current = inventory->getStackInSlot(i);
-		auto& snap = snapshot[i];
+	for (size_t i = 0; i < m_snapshot.size(); i++) {
+		[[maybe_unused]] auto* current = m_inventory->getStackInSlot(i);
+		auto& snap = m_snapshot[i];
 
-		bool changed = snap != inventory->slots[i];
+		bool changed = snap != m_inventory->m_slots[i];
 		if (!changed)
 			continue;
 
-		snap = inventory->slots[i];
+		snap = m_inventory->m_slots[i];
 		differences.push_back({ snap, int(i) });
 	}
 	return differences;
 }
 
 void InventoryInteraction::onLeftClick(int slot) {
-	auto targetSlot = inventory->getStackInSlot(slot);
+	auto targetSlot = m_inventory->getStackInSlot(slot);
 
 	// Empty slot
 	if (!targetSlot) {
-		if (carried.id != Items::Id::INVALID) {
-			inventory->setInventorySlotContents(slot, &carried);
-			carried = ItemStack{};
+		if (m_carried.m_id != Items::Id::INVALID) {
+			m_inventory->setInventorySlotContents(slot, &m_carried);
+			m_carried = ItemStack{};
 		}
-		inventory->onInventoryChanged();
+		m_inventory->onInventoryChanged();
 		return;
 	}
 
 	// Not carrying anything
-	if (carried.id == Items::Id::INVALID) {
-		carried = *targetSlot;
-		inventory->clearSlot(slot);
-		inventory->onInventoryChanged();
+	if (m_carried.m_id == Items::Id::INVALID) {
+		m_carried = *targetSlot;
+		m_inventory->clearSlot(slot);
+		m_inventory->onInventoryChanged();
 		return;
 	}
 
 	// Same item; merge
-	if (targetSlot->id == carried.id && targetSlot->data == carried.data) {
-		int maxStack = Items::GetMaxStack(targetSlot->id);
-		int space = maxStack - targetSlot->count;
-		int toMove = std::min(space, (int)carried.count);
-		targetSlot->count += toMove;
-		carried.count -= toMove;
-		if (carried.count == 0)
-			carried = ItemStack{};
-		inventory->onInventoryChanged();
+	if (targetSlot->m_id == m_carried.m_id && targetSlot->m_data == m_carried.m_data) {
+		int maxStack = Items::GetMaxStack(targetSlot->m_id);
+		int space = maxStack - targetSlot->m_count;
+		int toMove = std::min(space, (int)m_carried.m_count);
+		targetSlot->m_count += toMove;
+		m_carried.m_count -= toMove;
+		if (m_carried.m_count == 0)
+			m_carried = ItemStack{};
+		m_inventory->onInventoryChanged();
 		return;
 	}
 
 	// Different item; swap
 	ItemStack temp = *targetSlot;
-	*targetSlot = carried;
-	carried = temp;
-	inventory->onInventoryChanged();
+	*targetSlot = m_carried;
+	m_carried = temp;
+	m_inventory->onInventoryChanged();
 }
 
 void InventoryInteraction::onRightClick(int slot) {
-	auto targetSlot = inventory->getStackInSlot(slot);
+	auto targetSlot = m_inventory->getStackInSlot(slot);
 
-	if (carried.id != Items::Id::INVALID) {
+	if (m_carried.m_id != Items::Id::INVALID) {
 		if (!targetSlot) {
-			ItemStack single{ carried.id, 1, carried.data };
-			inventory->setInventorySlotContents(slot, &single);
-			carried.count -= 1;
-			if (carried.count == 0)
-				carried = ItemStack{};
-			inventory->onInventoryChanged();
+			ItemStack single{ m_carried.m_id, 1, m_carried.m_data };
+			m_inventory->setInventorySlotContents(slot, &single);
+			m_carried.m_count -= 1;
+			if (m_carried.m_count == 0)
+				m_carried = ItemStack{};
+			m_inventory->onInventoryChanged();
 			return;
 		}
 
 		// If we right click on the same item we are carrying just add one
-		if (targetSlot->id == carried.id && targetSlot->data == carried.data) {
-			int maxStack = Items::GetMaxStack(targetSlot->id);
-			int space = maxStack - targetSlot->count;
+		if (targetSlot->m_id == m_carried.m_id && targetSlot->m_data == m_carried.m_data) {
+			int maxStack = Items::GetMaxStack(targetSlot->m_id);
+			int space = maxStack - targetSlot->m_count;
 			if (space >= 1) {
-				targetSlot->count += 1;
-				carried.count -= 1;
-				if (carried.count == 0)
-					carried = ItemStack{};
-				inventory->onInventoryChanged();
+				targetSlot->m_count += 1;
+				m_carried.m_count -= 1;
+				if (m_carried.m_count == 0)
+					m_carried = ItemStack{};
+				m_inventory->onInventoryChanged();
 			}
 			return;
 		}
 
 		// If we right click on a different item, swap the cursor and that item
 		ItemStack temp = *targetSlot;
-		*targetSlot = carried;
-		carried = temp;
-		inventory->onInventoryChanged();
+		*targetSlot = m_carried;
+		m_carried = temp;
+		m_inventory->onInventoryChanged();
 		return;
 	}
 
@@ -112,26 +112,26 @@ void InventoryInteraction::onRightClick(int slot) {
 		return;
 
 	// Only split items if there stack count is greater than 1 and we aren't carrying anything
-	if (targetSlot->count > 1) {
+	if (targetSlot->m_count > 1) {
 		// Beta always take the higher of the two if uneven
-		int taken = (targetSlot->count + 1) / 2;
-		int left = targetSlot->count - taken;
-		targetSlot->count = int8_t(left);
-		carried = ItemStack{ targetSlot->id, int8_t(taken), targetSlot->data };
-		inventory->onInventoryChanged();
+		int taken = (targetSlot->m_count + 1) / 2;
+		int left = targetSlot->m_count - taken;
+		targetSlot->m_count = int8_t(left);
+		m_carried = ItemStack{ targetSlot->m_id, int8_t(taken), targetSlot->m_data };
+		m_inventory->onInventoryChanged();
 		return;
 	}
 
 	// If its only one item we just pick it up
-	carried = *targetSlot;
-	inventory->clearSlot(slot);
-	inventory->onInventoryChanged();
+	m_carried = *targetSlot;
+	m_inventory->clearSlot(slot);
+	m_inventory->onInventoryChanged();
 	return;
 }
 
 void InventoryInteraction::onShiftClick(int slot) {
-	auto targetSlot = inventory->getStackInSlot(slot);
+	auto targetSlot = m_inventory->getStackInSlot(slot);
 	if (!targetSlot)
 		return;
-	inventory->mergeItemStackInInventory(*targetSlot);
+	m_inventory->mergeItemStackInInventory(*targetSlot);
 }

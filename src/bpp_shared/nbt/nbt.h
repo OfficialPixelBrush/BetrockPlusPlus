@@ -30,91 +30,91 @@ enum TagType : uint8_t {
 };
 
 struct Tag {
-	TagType type = TAG_END;
-	std::string name;
+	TagType m_type = TAG_END;
+	std::string m_name;
 
 	// Leaf values
 	// do this as an anonymous union, since they can share memory
 	union {
-		int8_t byteValue;
-		int16_t shortValue;
-		int32_t intValue;
+		int8_t m_byteValue;
+		int16_t m_shortValue;
+		int32_t m_intValue;
 		// this is enough to init all of these
-		int64_t longValue = 0;
-		float floatValue;
+		int64_t m_longValue = 0;
+		float m_floatValue;
 		// all bits as 0 is also 0 in double!
-		double doubleValue;
+		double m_doubleValue;
 	};
-	std::vector<int8_t> byteArray = {};
-	std::vector<int32_t> intArray = {};
-	std::string stringValue = "";
+	std::vector<int8_t> m_byteArray = {};
+	std::vector<int32_t> m_intArray = {};
+	std::string m_stringValue = "";
 
 	// Container values
-	TagType listType = TAG_END; // element type for TAG_LIST
-	std::vector<Tag> list = {};
-	std::unordered_map<std::string, Tag> compound = {};
+	TagType m_listType = TAG_END; // element type for TAG_LIST
+	std::vector<Tag> m_list = {};
+	std::unordered_map<std::string, Tag> m_compound = {};
 
 	// Typed getters; throw if wrong type
 	int8_t getByte() const {
 		expect(TAG_BYTE);
-		return byteValue;
+		return m_byteValue;
 	}
 	int16_t getShort() const {
 		expect(TAG_SHORT);
-		return shortValue;
+		return m_shortValue;
 	}
 	int32_t getInt() const {
 		expect(TAG_INT);
-		return intValue;
+		return m_intValue;
 	}
 	int64_t getLong() const {
 		expect(TAG_LONG);
-		return longValue;
+		return m_longValue;
 	}
 	float getFloat() const {
 		expect(TAG_FLOAT);
-		return floatValue;
+		return m_floatValue;
 	}
 	double getDouble() const {
 		expect(TAG_DOUBLE);
-		return doubleValue;
+		return m_doubleValue;
 	}
 	const std::vector<int8_t>& getByteArray() const {
 		expect(TAG_BYTEARRAY);
-		return byteArray;
+		return m_byteArray;
 	}
 	const std::vector<int32_t>& getIntArray() const {
 		expect(TAG_INTARRAY);
-		return intArray;
+		return m_intArray;
 	}
 	const std::string& getString() const {
 		expect(TAG_STRING);
-		return stringValue;
+		return m_stringValue;
 	}
 	const std::vector<Tag>& getList() const {
 		expect(TAG_LIST);
-		return list;
+		return m_list;
 	}
 	const std::unordered_map<std::string, Tag>& getCompound() const {
 		expect(TAG_COMPOUND);
-		return compound;
+		return m_compound;
 	}
 
 	// Compound lookup helpers
 	bool has(const std::string& key) const {
-		return compound.count(key) > 0;
+		return m_compound.count(key) > 0;
 	}
 
 	const Tag& get(const std::string& key) const {
-		auto it = compound.find(key);
-		if (it == compound.end())
+		auto it = m_compound.find(key);
+		if (it == m_compound.end())
 			throw std::runtime_error("NBT key not found: " + key);
 		return it->second;
 	}
 
 private:
 	void expect(TagType t) const {
-		if (type != t)
+		if (m_type != t)
 			throw std::runtime_error("NBT type mismatch");
 	}
 };
@@ -129,59 +129,59 @@ struct NBTwriter {
 
 	int64_t writeTag(std::vector<uint8_t>& out, const Tag& tag, bool payload = false) {
 		if (!payload)
-			out.push_back(uint8_t(tag.type));
-		if (!payload && tag.type != TAG_END)
-			writeString(out, tag.name);
+			out.push_back(uint8_t(tag.m_type));
+		if (!payload && tag.m_type != TAG_END)
+			writeString(out, tag.m_name);
 
-		switch (tag.type) {
+		switch (tag.m_type) {
 		case TAG_END:
 			break;
 		case TAG_BYTE:
-			out.push_back(uint8_t(tag.byteValue));
+			out.push_back(uint8_t(tag.m_byteValue));
 			break;
 		case TAG_SHORT:
-			writeI16(out, tag.shortValue);
+			writeI16(out, tag.m_shortValue);
 			break;
 		case TAG_INT:
-			writeI32(out, tag.intValue);
+			writeI32(out, tag.m_intValue);
 			break;
 		case TAG_LONG:
-			writeI64(out, tag.longValue);
+			writeI64(out, tag.m_longValue);
 			break;
 		case TAG_FLOAT:
-			writeF32(out, tag.floatValue);
+			writeF32(out, tag.m_floatValue);
 			break;
 		case TAG_DOUBLE:
-			writeF64(out, tag.doubleValue);
+			writeF64(out, tag.m_doubleValue);
 			break;
 		case TAG_STRING:
-			writeString(out, tag.stringValue);
+			writeString(out, tag.m_stringValue);
 			break;
 
 		case TAG_BYTEARRAY: {
-			writeI32(out, int32_t(tag.byteArray.size()));
-			for (int8_t b : tag.byteArray)
+			writeI32(out, int32_t(tag.m_byteArray.size()));
+			for (int8_t b : tag.m_byteArray)
 				out.push_back(uint8_t(b));
 			break;
 		}
 
 		case TAG_INTARRAY: {
-			writeI32(out, int32_t(tag.intArray.size()));
-			for (int32_t b : tag.intArray)
+			writeI32(out, int32_t(tag.m_intArray.size()));
+			for (int32_t b : tag.m_intArray)
 				writeI32(out, b);
 			break;
 		}
 
 		case TAG_LIST: {
-			writeI8(out, int8_t(tag.listType));
-			writeI32(out, int32_t(tag.list.size()));
-			for (const Tag& element : tag.list)
+			writeI8(out, int8_t(tag.m_listType));
+			writeI32(out, int32_t(tag.m_list.size()));
+			for (const Tag& element : tag.m_list)
 				writeTag(out, element, true);
 			break;
 		}
 
 		case TAG_COMPOUND: {
-			for (const auto& [key, child] : tag.compound)
+			for (const auto& [key, child] : tag.m_compound)
 				writeTag(out, child);
 			// TAG_END terminates the compound
 			out.push_back(uint8_t(TAG_END));
@@ -189,7 +189,7 @@ struct NBTwriter {
 		}
 
 		default:
-			throw std::runtime_error("Unknown tag type: " + std::to_string(tag.type));
+			throw std::runtime_error("Unknown tag type: " + std::to_string(tag.m_type));
 		}
 
 		return 0;
@@ -238,15 +238,15 @@ struct NBTwriter {
 };
 
 struct NBTParser {
-	uint8_t* data;
-	int64_t length;
-	int64_t pos;
-	Tag root;
+	uint8_t* m_data;
+	int64_t m_length;
+	int64_t m_pos;
+	Tag m_root;
 
 	NBTParser() = default;
-	NBTParser(uint8_t* pdata, int64_t plength) : data(pdata), length(plength), pos(0) {
-		root = parseTag();
-		if (root.type != TAG_COMPOUND)
+	NBTParser(uint8_t* pdata, int64_t plength) : m_data(pdata), m_length(plength), m_pos(0) {
+		m_root = parseTag();
+		if (m_root.m_type != TAG_COMPOUND)
 			throw std::runtime_error("NBT root tag is not a compound!");
 	}
 
@@ -256,40 +256,40 @@ struct NBTParser {
 
 		switch (ptype) {
 		case TAG_BYTE:
-			tag.byteValue = readI8();
+			tag.m_byteValue = readI8();
 			break;
 		case TAG_SHORT:
-			tag.shortValue = readI16();
+			tag.m_shortValue = readI16();
 			break;
 		case TAG_INT:
-			tag.intValue = readI32();
+			tag.m_intValue = readI32();
 			break;
 		case TAG_LONG:
-			tag.longValue = readI64();
+			tag.m_longValue = readI64();
 			break;
 		case TAG_FLOAT:
-			tag.floatValue = readF32();
+			tag.m_floatValue = readF32();
 			break;
 		case TAG_DOUBLE:
-			tag.doubleValue = readF64();
+			tag.m_doubleValue = readF64();
 			break;
 		case TAG_STRING:
-			tag.stringValue = readString();
+			tag.m_stringValue = readString();
 			break;
 
 		case TAG_BYTEARRAY: {
 			int32_t count = readI32();
-			tag.byteArray.reserve(size_t(count));
+			tag.m_byteArray.reserve(size_t(count));
 			for (int i = 0; i < count; i++)
-				tag.byteArray.push_back(readI8());
+				tag.m_byteArray.push_back(readI8());
 			break;
 		}
 
 		case TAG_INTARRAY: {
 			int32_t count = readI32();
-			tag.intArray.reserve(size_t(count));
+			tag.m_intArray.reserve(size_t(count));
 			for (int i = 0; i < count; i++)
-				tag.intArray.push_back(readI32());
+				tag.m_intArray.push_back(readI32());
 			break;
 		}
 
@@ -300,20 +300,20 @@ struct NBTParser {
 			if (innerType == TAG_END && count > 0)
 				throw std::runtime_error("Invalid TAG_List");
 
-			tag.list.reserve(size_t(count));
+			tag.m_list.reserve(size_t(count));
 			for (int i = 0; i < count; i++)
-				tag.list.push_back(parsePayload(TagType(innerType)));
+				tag.m_list.push_back(parsePayload(TagType(innerType)));
 
-			tag.listType = TagType(innerType);
+			tag.m_listType = TagType(innerType);
 			break;
 		}
 
 		case TAG_COMPOUND: {
 			while (true) {
 				Tag child = parseTag();
-				if (child.type == TAG_END)
+				if (child.m_type == TAG_END)
 					break;
-				tag.compound[child.name] = std::move(child);
+				tag.m_compound[child.m_name] = std::move(child);
 			}
 			break;
 		}
@@ -327,10 +327,10 @@ struct NBTParser {
 
 	// Parse a tag including its type byte and name
 	Tag parseTag() {
-		if (pos >= length)
+		if (m_pos >= m_length)
 			throw std::runtime_error("Unexpected end of NBT data");
 
-		TagType type = TagType(data[pos++]);
+		TagType type = TagType(m_data[m_pos++]);
 		if (type == TAG_END)
 			return Tag{ TAG_END, "", {} }; // no name for TAG_End
 
@@ -340,11 +340,11 @@ struct NBTParser {
 
 	// Read helpers
 	int32_t readI32() {
-		if (pos + 4 > length)
+		if (m_pos + 4 > m_length)
 			throw std::runtime_error("NBT: unexpected end");
-		uint32_t v = (uint32_t(data[pos]) << 24) | (uint32_t(data[pos + 1]) << 16) | (uint32_t(data[pos + 2]) << 8) |
-		             (uint32_t(data[pos + 3]));
-		pos += 4;
+		uint32_t v = (uint32_t(m_data[m_pos]) << 24) | (uint32_t(m_data[m_pos + 1]) << 16) | (uint32_t(m_data[m_pos + 2]) << 8) |
+		             (uint32_t(m_data[m_pos + 3]));
+		m_pos += 4;
 		return int32_t(v);
 	}
 
@@ -355,18 +355,18 @@ struct NBTParser {
 	}
 
 	int16_t readI16() {
-		if (pos + 2 > length)
+		if (m_pos + 2 > m_length)
 			throw std::runtime_error("NBT: i16 out of bounds");
-		uint16_t v = static_cast<uint16_t>((static_cast<uint16_t>(data[pos]) << 8) |
-		                                   static_cast<uint16_t>(data[pos + 1]));
-		pos += 2;
+		uint16_t v = static_cast<uint16_t>((static_cast<uint16_t>(m_data[m_pos]) << 8) |
+		                                   static_cast<uint16_t>(m_data[m_pos + 1]));
+		m_pos += 2;
 		return int16_t(v);
 	}
 
 	int8_t readI8() {
-		if (pos >= length)
+		if (m_pos >= m_length)
 			throw std::runtime_error("NBT: i8 out of bounds");
-		return int8_t(data[pos++]);
+		return int8_t(m_data[m_pos++]);
 	}
 
 	float readF32() {
@@ -385,10 +385,10 @@ struct NBTParser {
 
 	std::string readString() {
 		uint16_t len = uint16_t(readI16());
-		if (pos + len > length)
+		if (m_pos + len > m_length)
 			throw std::runtime_error("NBT: string out of bounds");
-		std::string s(reinterpret_cast<const char*>(data) + pos, len);
-		pos += len;
+		std::string s(reinterpret_cast<const char*>(m_data) + m_pos, len);
+		m_pos += len;
 		return s;
 	}
 };

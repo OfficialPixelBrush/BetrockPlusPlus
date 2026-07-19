@@ -46,12 +46,12 @@ public:
 			logFile.close();
 	}
 
-	LogStream msg;
-	LogStream chat;
-	LogStream info;
-	LogStream warn;
-	LogStream error;
-	LogStream debug;
+	LogStream m_msg;
+	LogStream m_chat;
+	LogStream m_info;
+	LogStream m_warn;
+	LogStream m_error;
+	LogStream m_debug;
 
 	std::string GetCurrentTimeString(bool file_format = false);
 	void Log(std::string message, LogLevel level = LOG_MESSAGE);

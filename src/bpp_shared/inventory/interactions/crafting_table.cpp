@@ -13,7 +13,7 @@ CraftingTableInventoryInteraction::CraftingTableInventoryInteraction(InventoryPl
                                                                      Runtime& gameRuntime, Int3 craftingTablePos)
     : CraftingInventoryInteraction(&m_sharedInventory, &m_craftInventory, pinv, gameRuntime, { 3, 3 }),
       m_world(worldMng), m_blockPosition(craftingTablePos) {
-	m_sharedInventory.owner = this;
+	m_sharedInventory.m_owner = this;
 	mergeInventories();
 }
 
@@ -21,8 +21,8 @@ CraftingTableInventoryInteraction::~CraftingTableInventoryInteraction() {
 	writeBack();
 
 	for (size_t i = 1; i <= m_gridSize.total(); i++) {
-		ItemStack& stack = m_craftInventory.slots[i];
-		if (stack.id == Items::Id::INVALID)
+		ItemStack& stack = m_craftInventory.m_slots[i];
+		if (stack.m_id == Items::Id::INVALID)
 			continue;
 		m_playerInventory->mergeItemStackInInventory(stack, true, 9, 44);
 	}
@@ -31,9 +31,9 @@ CraftingTableInventoryInteraction::~CraftingTableInventoryInteraction() {
 void CraftingTableInventoryInteraction::writeBack() {
 	size_t slotCount = 0;
 	for (size_t i = 0; i < 10; i++)
-		m_craftInventory.slots[i] = m_sharedInventory.slots[slotCount++];
+		m_craftInventory.m_slots[i] = m_sharedInventory.m_slots[slotCount++];
 	for (size_t i = 9; i < 45; i++)
-		m_playerInventory->slots[i] = m_sharedInventory.slots[slotCount++];
+		m_playerInventory->m_slots[i] = m_sharedInventory.m_slots[slotCount++];
 }
 
 bool CraftingTableInventoryInteraction::canExist() {
@@ -41,19 +41,19 @@ bool CraftingTableInventoryInteraction::canExist() {
 }
 
 void CraftingTableInventoryInteraction::initSnapshot() {
-	snapshot.resize(size_t(m_sharedInventory.getSizeInventory()));
-	for (size_t i = 0; i < snapshot.size(); i++)
-		snapshot[i] = m_sharedInventory.slots[i];
+	m_snapshot.resize(size_t(m_sharedInventory.getSizeInventory()));
+	for (size_t i = 0; i < m_snapshot.size(); i++)
+		m_snapshot[i] = m_sharedInventory.m_slots[i];
 }
 
 std::vector<DeltaSlot> CraftingTableInventoryInteraction::tickDiff() {
 	std::vector<DeltaSlot> differences;
 	mergeInventories(); // make sure sharedInventory is current before diffing
-	for (size_t i = 0; i < snapshot.size(); i++) {
-		auto& snap = snapshot[i];
-		if (snap == m_sharedInventory.slots[i])
+	for (size_t i = 0; i < m_snapshot.size(); i++) {
+		auto& snap = m_snapshot[i];
+		if (snap == m_sharedInventory.m_slots[i])
 			continue;
-		snap = m_sharedInventory.slots[i];
+		snap = m_sharedInventory.m_slots[i];
 		differences.push_back({ snap, int(i) });
 	}
 	return differences;
@@ -62,9 +62,9 @@ std::vector<DeltaSlot> CraftingTableInventoryInteraction::tickDiff() {
 void CraftingTableInventoryInteraction::mergeInventories() {
 	size_t slotCount = 0;
 	for (size_t i = 0; i < 10; i++)
-		m_sharedInventory.slots[slotCount++] = m_craftInventory.slots[i];
+		m_sharedInventory.m_slots[slotCount++] = m_craftInventory.m_slots[i];
 	for (size_t i = 9; i < 45; i++)
-		m_sharedInventory.slots[slotCount++] = m_playerInventory->slots[i];
+		m_sharedInventory.m_slots[slotCount++] = m_playerInventory->m_slots[i];
 }
 
 void CraftingTableInventoryInteraction::updateResult() {
@@ -73,15 +73,15 @@ void CraftingTableInventoryInteraction::updateResult() {
 }
 
 void CraftingTableInventoryInteraction::shiftClickResult() {
-	ItemStack& result = m_craftInventory.slots[0];
-	if (result.id == Items::Id::INVALID)
+	ItemStack& result = m_craftInventory.m_slots[0];
+	if (result.m_id == Items::Id::INVALID)
 		return;
 
 	ItemStack copy = result;
 	if (m_playerInventory->mergeItemStackInInventory(copy, true, 9, 44)) {
 		finishCraft();
 	} else {
-		m_craftInventory.slots[0] = copy.count == 0 ? ItemStack{} : copy;
+		m_craftInventory.m_slots[0] = copy.m_count == 0 ? ItemStack{} : copy;
 	}
 }
 
@@ -110,9 +110,9 @@ void CraftingTableInventoryInteraction::shiftClickOther(int slot) {
 
 	// Update the source in the real inventory before re-merging
 	if (slot < 10) {
-		m_craftInventory.slots[slot] = copy.count == 0 ? ItemStack{} : copy;
+		m_craftInventory.m_slots[slot] = copy.m_count == 0 ? ItemStack{} : copy;
 	} else {
-		m_playerInventory->slots[slot - 1] = copy.count == 0 ? ItemStack{} : copy;
+		m_playerInventory->m_slots[slot - 1] = copy.m_count == 0 ? ItemStack{} : copy;
 	}
 
 	// Re-sync sharedInventory from the real inventories

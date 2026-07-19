@@ -125,10 +125,10 @@ struct ArgConverter<std::unordered_map<std::string, T>, typename std::enable_if<
 
 template <typename T>
 class Optional {
-	alignas(T) std::array<int8_t, sizeof(T)> _contents;
-	bool _exists = false;
+	alignas(T) std::array<int8_t, sizeof(T)> contents;
+	bool exists = false;
 	void clear() {
-		if (_exists)
+		if (exists)
 			operator*().~T();
 	}
 public:
@@ -137,35 +137,35 @@ public:
 #if __cplusplus > 201402L
 	Optional(std::nullopt_t) {}
 #endif
-	Optional(const Optional& other) : _exists(other._exists) {
-		if (_exists)
+	Optional(const Optional& other) : exists(other.exists) {
+		if (exists)
 			new (operator->()) T(*other);
 	}
-	Optional(Optional&& other) : _exists(other._exists) {
-		if (_exists)
+	Optional(Optional&& other) : exists(other.exists) {
+		if (exists)
 			new (operator->()) T(*other); 
 	}
 	T& operator=(const T& other) {
 		clear();
-		if (_exists) {
+		if (exists) {
 			operator*() = other;
 		} else
-			new (_contents.data()) T(other);
-		_exists = true;
+			new (contents.data()) T(other);
+		exists = true;
 		return operator*();
 	}
 	T& operator=(T&& other) {
 		clear();
-		if (_exists)
+		if (exists)
 			operator*() = other;
 		else
-			new (_contents.data()) T(other);
-		_exists = true;
+			new (contents.data()) T(other);
+		exists = true;
 		return operator*();
 	}
 	void operator=(std::nullptr_t) {
 		clear();
-		_exists = false;
+		exists = false;
 	}
 #if __cplusplus > 201402L
 	void operator=(std::nullopt_t) {
@@ -173,23 +173,23 @@ public:
 	}
 #endif
 	T& operator*() {
-		return *reinterpret_cast<T*>(_contents.data());
+		return *reinterpret_cast<T*>(contents.data());
 	}
 	const T& operator*() const {
-		return *reinterpret_cast<const T*>(_contents.data());
+		return *reinterpret_cast<const T*>(contents.data());
 	}
 	T* operator->() {
-		return reinterpret_cast<T*>(_contents.data());
+		return reinterpret_cast<T*>(contents.data());
 	}
 	const T* operator->() const {
-		return reinterpret_cast<const T*>(_contents.data());
+		return reinterpret_cast<const T*>(contents.data());
 	}
 	operator bool() const {
-		return _exists;
+		return exists;
 	}
 #if __cplusplus > 201402L
 	operator std::optional<T>() {
-		if (_exists)
+		if (exists)
 			return std::optional<T>(operator*());
 		else
 			return std::nullopt;
@@ -366,8 +366,8 @@ struct ValidatorUser<Validator, typename std::enable_if<!std::is_same<Validator,
 
 template <typename Child>
 class MainArguments {
-	std::string _programName;
-	std::vector<std::string> _argv;
+	std::string m_programName;
+	std::vector<std::string> m_argv;
 	
 	enum InitialisationStep {
 		UNINITIALISED,
@@ -375,14 +375,14 @@ class MainArguments {
 		INITIALISED
 	};
 	struct Singleton {
-		std::stringstream helpPreface;
-		std::stringstream help;
-		std::vector<std::pair<std::string, char>> nullarySwitches;
-		std::vector<std::pair<std::string, char>> unarySwitches;
-		std::vector<std::string> confusingSwitches; // nonstandard switches starting with a single dash
-		int argumentCountMin = 0;
-		int argumentCountMax = 0;
-		InitialisationStep initialisationState = UNINITIALISED;
+		std::stringstream m_helpPreface;
+		std::stringstream m_help;
+		std::vector<std::pair<std::string, char>> m_nullarySwitches;
+		std::vector<std::pair<std::string, char>> m_unarySwitches;
+		std::vector<std::string> m_confusingSwitches; // nonstandard switches starting with a single dash
+		int m_argumentCountMin = 0;
+		int m_argumentCountMax = 0;
+		InitialisationStep m_initialisationState = UNINITIALISED;
 	};
 	static Singleton& singleton() {
 		static Singleton instance;
@@ -393,22 +393,22 @@ class MainArguments {
 public:
 	template <typename T> using Optional = QuickArgParserInternals::Optional<T>;
 	MainArguments() = default;
-	MainArguments(int argc, char** argv) : _programName(argv[0]), _argv(argv + 1, argv + argc) {
+	MainArguments(int argc, char** argv) : m_programName(argv[0]), m_argv(argv + 1, argv + argc) {
 		using namespace QuickArgParserInternals;
-		if (singleton().initialisationState == UNINITIALISED) {
+		if (singleton().m_initialisationState == UNINITIALISED) {
 			// When first created, create temporarily another instance to explore what are the members
-			singleton().initialisationState = INITIALISING;
+			singleton().m_initialisationState = INITIALISING;
 
 			Child investigator;
 			// This will fill the static variables
-			singleton().helpPreface << QuickArgParserInternals::HelpProvider<Child>::get([] (const std::string& programName) {
-				return programName + " takes between " + std::to_string(singleton().argumentCountMin) + " and " +
-						std::to_string(singleton().argumentCountMax) + " arguments, plus these options:";
-			}, _programName);
+			singleton().m_helpPreface << QuickArgParserInternals::HelpProvider<Child>::get([] (const std::string& programName) {
+				return programName + " takes between " + std::to_string(singleton().m_argumentCountMin) + " and " +
+						std::to_string(singleton().m_argumentCountMax) + " arguments, plus these options:";
+			}, m_programName);
 
-			singleton().initialisationState = INITIALISED;
+			singleton().m_initialisationState = INITIALISED;
 		}
-		if (singleton().initialisationState == INITIALISED) {
+		if (singleton().m_initialisationState == INITIALISED) {
 			bool switchesEnabled = true;
 			auto isListedAsChar = [] (const char arg, const std::vector<std::pair<std::string, char>>& switches) {
 				for (const auto& it : switches) {
@@ -436,8 +436,8 @@ public:
 				return false;
 			};
 			auto printHelp = [this] () {
-				std::cout << singleton().helpPreface.str() << std::endl;
-				std::cout << singleton().help.str() << std::endl;
+				std::cout << singleton().m_helpPreface.str() << std::endl;
+				std::cout << singleton().m_help.str() << std::endl;
 				
 				QuickArgParserInternals::OnHelpCallback<Child>::on(static_cast<Child*>(this), [] { std::exit(0); });
 			};
@@ -450,57 +450,57 @@ public:
 			};
 
 			// Collect program arguments (as opposed to switches) and validate everything
-			for (int i = 0; i < int(_argv.size()); i++) {
+			for (int i = 0; i < int(m_argv.size()); i++) {
 				if (switchesEnabled) {
-					if (_argv[i] == "--help") {
+					if (m_argv[i] == "--help") {
 						printHelp();
 						goto nextArg;
 					}
-					if (_argv[i] == "--version") {
+					if (m_argv[i] == "--version") {
 						if (printVersion())
 							goto nextArg;
 					}
-					if (_argv[i] == "--") {
+					if (m_argv[i] == "--") {
 						switchesEnabled = false;
 						goto nextArg;
 					}
 					bool skipsNext = false;
-					if (isListedAsString(_argv[i], singleton().unarySwitches, true, skipsNext)) {
+					if (isListedAsString(m_argv[i], singleton().m_unarySwitches, true, skipsNext)) {
 						if (skipsNext)
 							i++; // The next argument is part of the switch
 						goto nextArg;
-					} else if (isListedAsString(_argv[i], singleton().nullarySwitches, false, skipsNext)) {
+					} else if (isListedAsString(m_argv[i], singleton().m_nullarySwitches, false, skipsNext)) {
 						goto nextArg;
 					}
 					
 					
-					if (_argv[i][0] == '-') {
-						if (_argv[i][1] == '-')
-							throw ArgumentError("Unknown switch " + _argv[i]);
+					if (m_argv[i][0] == '-') {
+						if (m_argv[i][1] == '-')
+							throw ArgumentError("Unknown switch " + m_argv[i]);
 						
 						// Starts with -
-						if (_argv[i].size() == 2) {
+						if (m_argv[i].size() == 2) {
 							// Is an argument of type -x
-							if (_argv[i][1] == '?') {
+							if (m_argv[i][1] == '?') {
 								printHelp();
 									goto nextArg;
 							}
-							if (_argv[i][1] == 'V') {
+							if (m_argv[i][1] == 'V') {
 								if (printVersion())
 									goto nextArg;
 							}
 						}
 						
 						// Some validations that all massed single letter switches
-						for (int j = 1; j < int(_argv[i].size()); j++) {
-							if (isListedAsChar(_argv[i][j], singleton().unarySwitches)) {
-								if (j == int(_argv[i].size()) - 1) {
+						for (int j = 1; j < int(m_argv[i].size()); j++) {
+							if (isListedAsChar(m_argv[i][j], singleton().m_unarySwitches)) {
+								if (j == int(m_argv[i].size()) - 1) {
 									i++; // The next argument is part of the switch
 								}	
 								goto nextArg;
 							}
-							if (!isListedAsChar(_argv[i][j], singleton().nullarySwitches)) {
-								throw ArgumentError(std::string("Unknown switch ") + _argv[i][j]);
+							if (!isListedAsChar(m_argv[i][j], singleton().m_nullarySwitches)) {
+								throw ArgumentError(std::string("Unknown switch ") + m_argv[i][j]);
 							}
 						}
 						goto nextArg;
@@ -508,20 +508,20 @@ public:
 				}
 				
 				// Is not a switch, continue was not used
-				arguments.push_back(_argv[i]);
+				m_arguments.push_back(m_argv[i]);
 				
 				nextArg:;
 			}
 
-			if (int(arguments.size()) < singleton().argumentCountMin)
-				throw ArgumentError("Expected at least " + std::to_string(singleton().argumentCountMin)
-						+ " arguments, got " + std::to_string(arguments.size()));
-			if (int(arguments.size()) > singleton().argumentCountMax)
-				throw ArgumentError("Expected at most " + std::to_string(singleton().argumentCountMax)
-						+ " arguments, got " + std::to_string(arguments.size()));
+			if (int(m_arguments.size()) < singleton().m_argumentCountMin)
+				throw ArgumentError("Expected at least " + std::to_string(singleton().m_argumentCountMin)
+						+ " arguments, got " + std::to_string(m_arguments.size()));
+			if (int(m_arguments.size()) > singleton().m_argumentCountMax)
+				throw ArgumentError("Expected at most " + std::to_string(singleton().m_argumentCountMax)
+						+ " arguments, got " + std::to_string(m_arguments.size()));
 		}
 	}
-	std::vector<std::string> arguments;
+	std::vector<std::string> m_arguments;
 
 private:
 	
@@ -530,37 +530,37 @@ private:
 		std::vector<std::string> collected;
 		auto matches = [&] (const std::string& matched, int argument_index) {
 			for (int i = 0; i < int(matched.size()); i++) {
-				if (matched[i] != _argv[argument_index][i])
+				if (matched[i] != m_argv[argument_index][i])
 					return false;
 			}
-			return matched.size() == _argv[argument_index].size() || _argv[argument_index][matched.size()] == '=';
+			return matched.size() == m_argv[argument_index].size() || m_argv[argument_index][matched.size()] == '=';
 		};
 	
-		for (int i = 0; i < int(_argv.size()); i++) {
+		for (int i = 0; i < int(m_argv.size()); i++) {
 			// Look for shortcut, end of string means no shortcut
 			if (shortcut != '\0') {
 				// Skip this if it is a strange switch starting with a single dash
-				for (const auto& it : singleton().confusingSwitches)
+				for (const auto& it : singleton().m_confusingSwitches)
 					if (matches(it, i))
 						goto skipThisOne;
 				
-				if (_argv[i][0] == '-' && _argv[i][1] != '-') {
-					for (int j = 1; _argv[i][j] != '\0'; j++) {
-						if (_argv[i][j] == shortcut) {
-							if (_argv[i][j + 1] == '\0') // Last letter, argument follows
-								collected.push_back(_argv[std::min<int>(i + 1, _argv.size() - 1)]);
-							else if (_argv[i][j + 1] == '=') // Argument value not sperated
-								collected.push_back(_argv[i].substr(j + 2));
+				if (m_argv[i][0] == '-' && m_argv[i][1] != '-') {
+					for (int j = 1; m_argv[i][j] != '\0'; j++) {
+						if (m_argv[i][j] == shortcut) {
+							if (m_argv[i][j + 1] == '\0') // Last letter, argument follows
+								collected.push_back(m_argv[std::min<int>(i + 1, m_argv.size() - 1)]);
+							else if (m_argv[i][j + 1] == '=') // Argument value not sperated
+								collected.push_back(m_argv[i].substr(j + 2));
 							else
-								collected.push_back(_argv[i].substr(j + 1));
+								collected.push_back(m_argv[i].substr(j + 1));
 						}
 						
-						for (auto& it : singleton().unarySwitches)
-							if (it.second == _argv[i][j])
+						for (auto& it : singleton().m_unarySwitches)
+							if (it.second == m_argv[i][j])
 								goto skipThisOne; // It is a switch followed by arguments
 					}
 				}
-				if (_argv[i] == "--") {
+				if (m_argv[i] == "--") {
 					break;
 				}
 				
@@ -570,10 +570,10 @@ private:
 			// Look for full argument name, empty means no full argument name
 			if (!argument.empty()) {
 				if (matches(argument, i)) {
-					if (_argv[i].size() > argument.size() && _argv[i][argument.size()] == '=')
-						collected.push_back(_argv[i].substr(argument.size() + 1));
+					if (m_argv[i].size() > argument.size() && m_argv[i][argument.size()] == '=')
+						collected.push_back(m_argv[i].substr(argument.size() + 1));
 					else
-						collected.push_back(_argv[std::min<int>(i + 1, _argv.size() - 1)]);
+						collected.push_back(m_argv[std::min<int>(i + 1, m_argv.size() - 1)]);
 				}
 			}
 		}
@@ -585,42 +585,42 @@ protected:
 	template <typename Validator>
 	class GrabberBase {
 	protected:
-		const std::string name;
-		const MainArguments* parent;
-		const char shortcut;
-		const std::string help;
-		Validator validator;
+		const std::string m_name;
+		const MainArguments* m_parent;
+		const char m_shortcut;
+		const std::string m_help;
+		Validator m_validator;
 		GrabberBase(const MainArguments* parent, const std::string& name, char shortcut, const std::string& help, const Validator& validator)
-				: name(name), parent(parent), shortcut(shortcut), help(help), validator(validator) {}
+				: m_name(name), m_parent(parent), m_shortcut(shortcut), m_help(help), m_validator(validator) {}
 
 		void addHelpEntry() const {
 			if (QuickArgParserInternals::HasHelpOptionsProvider<Child>::value)
 				return;
 
-			if (shortcut != '\0')
-				parent->singleton().help << '-' << shortcut;
-			parent->singleton().help << '\t';
-			if (!name.empty())
-				parent->singleton().help << name;
-			parent->singleton().help << "\t " << help << std::endl;
+			if (m_shortcut != '\0')
+				m_parent->singleton().m_help << '-' << m_shortcut;
+			m_parent->singleton().m_help << '\t';
+			if (!m_name.empty())
+				m_parent->singleton().m_help << m_name;
+			m_parent->singleton().m_help << "\t " << m_help << std::endl;
 		}
 	public:
 		operator bool() const {
-			if (parent->singleton().initialisationState == INITIALISING) {
-				parent->singleton().nullarySwitches.push_back(std::make_pair(name, shortcut));
+			if (m_parent->singleton().m_initialisationState == INITIALISING) {
+				m_parent->singleton().m_nullarySwitches.push_back(std::make_pair(m_name, m_shortcut));
 				addHelpEntry();
 				return false;
 			}
-			return !parent->findOption(name, shortcut).empty();
+			return !m_parent->findOption(m_name, m_shortcut).empty();
 		}
 
 		operator std::vector<bool>() const {
-			if (parent->singleton().initialisationState == INITIALISING) {
-				parent->singleton().nullarySwitches.push_back(std::make_pair(name, shortcut));
+			if (m_parent->singleton().initialisationState == INITIALISING) {
+				m_parent->singleton().nullarySwitches.push_back(std::make_pair(m_name, m_shortcut));
 				addHelpEntry();
 				return std::vector<bool>();
 			}
-			return std::vector<bool>(parent->findOption(name, shortcut).size(), true);
+			return std::vector<bool>(m_parent->findOption(m_name, m_shortcut).size(), true);
 		}
 		
 #if _MSC_VER && !__INTEL_COMPILER
@@ -629,18 +629,18 @@ protected:
 		template <typename T>
 #endif
 		T getOption(T defaultValue) const {
-			if (parent->singleton().initialisationState == INITIALISING) {
-				parent->singleton().unarySwitches.push_back(std::make_pair(name, shortcut));
+			if (m_parent->singleton().m_initialisationState == INITIALISING) {
+				m_parent->singleton().m_unarySwitches.push_back(std::make_pair(m_name, m_shortcut));
 				addHelpEntry();
 				return defaultValue;
 			}
 			
 			auto validate = [&] (const T& value) {
-				if (!QuickArgParserInternals::ValidatorUser<Validator>::useValidator(validator, value)) {
-					throw QuickArgParserInternals::ArgumentError("Invalid value of argument " + name);
+				if (!QuickArgParserInternals::ValidatorUser<Validator>::useValidator(m_validator, value)) {
+					throw QuickArgParserInternals::ArgumentError("Invalid value of argument " + m_name);
 				}
 			};
-			const auto found = parent->findOption(name, shortcut);
+			const auto found = m_parent->findOption(m_name, m_shortcut);
 			
 			if (!found.empty()) {
 				auto obtained = QuickArgParserInternals::Demultiplexer<T>::deserialise(found);
@@ -654,12 +654,12 @@ protected:
 
 	template <typename Default, typename Validator>
 	class GrabberDefaulted : public GrabberBase<Validator> {
-		Default defaultValue;
+		Default m_defaultValue;
 		using Base = GrabberBase<Validator>;
 	public:
 		GrabberDefaulted(const MainArguments* parent, const std::string& name, char shortcut,
 				const std::string& help, Validator validator, Default defaultValue)
-				: Base(parent, name, shortcut, help, validator), defaultValue(defaultValue) {}
+				: Base(parent, name, shortcut, help, validator), m_defaultValue(defaultValue) {}
 #if _MSC_VER && !__INTEL_COMPILER
 		template <typename T, typename std::enable_if<QuickArgParserInternals::StringFilterOk<T>::value
 				&& !std::is_same<T, bool>::value>::type* = nullptr>
@@ -668,7 +668,7 @@ protected:
 #endif
 		operator T() const {
 			static_assert(QuickArgParserInternals::ArgConverter<T>::canDo, "Cannot deserialise into this type");
-			return Base::template getOption<T>(defaultValue);
+			return Base::template getOption<T>(m_defaultValue);
 		}
 	};
 	
@@ -680,7 +680,7 @@ protected:
 		using Base::GrabberBase;
 		template <typename Default>
 		GrabberDefaulted<Default, Validator> operator=(Default defaultValue) {
-			return {Base::parent, Base::name, Base::shortcut, Base::help, Base::validator, defaultValue};
+			return {Base::m_parent, Base::m_name, Base::m_shortcut, Base::m_help, Base::m_validator, defaultValue};
 		}
 		
 #if _MSC_VER && !__INTEL_COMPILER
@@ -716,26 +716,26 @@ protected:
 	template <typename Validator>
 	class ArgGrabberBase {
 	protected:
-		const MainArguments* parent;
-		const int index;
-		Validator validator;
+		const MainArguments* m_parent;
+		const int m_index;
+		Validator m_validator;
 		template <typename Value>
 		void validate(const Value& value) const {
-			if (!QuickArgParserInternals::ValidatorUser<Validator>::useValidator(validator, value)) {
-				throw QuickArgParserInternals::ArgumentError("Invalid value of argument " + std::to_string(index));
+			if (!QuickArgParserInternals::ValidatorUser<Validator>::useValidator(m_validator, value)) {
+				throw QuickArgParserInternals::ArgumentError("Invalid value of argument " + std::to_string(m_index));
 			}
 		}
 	public:
-		ArgGrabberBase(const MainArguments* parent, int index, const Validator& validator) : parent(parent), index(index), validator(validator) {}
+		ArgGrabberBase(const MainArguments* parent, int index, const Validator& validator) : m_parent(parent), m_index(index), m_validator(validator) {}
 	};
 
 	template <typename Default, typename Validator>
 	class ArgGrabberDefaulted : public ArgGrabberBase<Validator> {
-		Default defaultValue;
+		Default m_defaultValue;
 		using Base = ArgGrabberBase<Validator>;
 	public:
 		ArgGrabberDefaulted(const MainArguments* parent, int index, const Validator& validator, Default defaultValue) :
-				Base(parent, index, validator), defaultValue(defaultValue) {}
+				Base(parent, index, validator), m_defaultValue(defaultValue) {}
 				
 #if _MSC_VER && !__INTEL_COMPILER
 		template <typename T, typename std::enable_if<QuickArgParserInternals::StringFilterOk<T>::value>::type* = nullptr>
@@ -750,8 +750,8 @@ protected:
 				return QuickArgParserInternals::ArgConverter<T>::makeDefault();
 			}
 			if (Base::index >= int(Base::parent->arguments.size())) {
-				Base::validate(defaultValue);
-				return defaultValue;
+				Base::validate(m_defaultValue);
+				return m_defaultValue;
 			}
 			auto obtained = QuickArgParserInternals::ArgConverter<T>::deserialise(
 					Base::parent->arguments[Base::index]);

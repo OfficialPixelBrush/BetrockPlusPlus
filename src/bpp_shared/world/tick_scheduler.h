@@ -5,6 +5,7 @@
  *
 */
 #pragma once
+#include "base_types.h"
 #include "blocks.h"
 #include "logger.h"
 #include <cstdint>
@@ -15,37 +16,37 @@
 
 // For scheduling tick events in the world
 struct ScheduledTick {
-	int64_t tickDue;
-	int64_t sequence; // Insertion order
-	Int3 pos;
-	BlockType expectedBlock;
+	int64_t m_tickDue;
+	int64_t m_sequence; // Insertion order
+	Int3 m_pos;
+	BlockType m_expectedBlock;
 
 	bool operator>(const ScheduledTick& rhs) const {
-		if (tickDue != rhs.tickDue)
-			return tickDue > rhs.tickDue;
-		return sequence > rhs.sequence;
+		if (m_tickDue != rhs.m_tickDue)
+			return m_tickDue > rhs.m_tickDue;
+		return m_sequence > rhs.m_sequence;
 	}
 };
 
 struct WorldManager;
 struct TickScheduler {
-	WorldManager* world = nullptr;
-	std::priority_queue<ScheduledTick, std::vector<ScheduledTick>, std::greater<ScheduledTick>> scheduledTicks;
-	std::unordered_map<Int3, uint64_t> pending;
+	WorldManager* m_world = nullptr;
+	std::priority_queue<ScheduledTick, std::vector<ScheduledTick>, std::greater<ScheduledTick>> m_scheduledTicks;
+	std::unordered_map<Int3, TickTime> m_pending;
 
-	int64_t currentTick = 0;
-	int64_t nextSequence = 0;
+	TickTime m_currentTick = 0;
+	int64_t m_nextSequence = 0;
 
 	void scheduleUpdateTick(Int3 pos, BlockType block, int tickDelay) {
-		if (pending.contains(pos) && pending[pos] == currentTick + tickDelay) {
-			GlobalLogger().info << "Blocked duplicate schedule at " << pos << "\n";
+		if (m_pending.contains(pos) && m_pending[pos] == m_currentTick + TickTime(tickDelay)) {
+			GlobalLogger().m_info << "Blocked duplicate schedule at " << pos << "\n";
 			return;
 		}
-		auto sequence = nextSequence++;
-		GlobalLogger().info << "Scheduling " << pos << " seq=" << sequence << " due=" << (currentTick + tickDelay)
+		auto sequence = m_nextSequence++;
+		GlobalLogger().m_info << "Scheduling " << pos << " seq=" << sequence << " due=" << (m_currentTick + tickDelay)
 		                    << "\n";
-		scheduledTicks.push({ currentTick + tickDelay, sequence, pos, block });
-		pending[pos] = sequence;
+		m_scheduledTicks.push({ m_currentTick + tickDelay, sequence, pos, block });
+		m_pending[pos] = sequence;
 	}
 
 	void tick();

@@ -53,7 +53,7 @@ inline double NoiseOctavesPerlin::GenerateOctaves(Vec2 offset) {
 inline void NoiseOctavesPerlin::GenerateOctaves(std::vector<double>& noiseField, Vec3 coordinate, Int32_3 size,
                                                 Vec3 p_scale) {
 	if (noiseField.empty()) {
-		noiseField.resize(size_t(size.x * size.y * size.z), 0.0);
+		noiseField.resize(size_t(size.m_x * size.m_y * size.m_z), 0.0);
 	} else {
 		for (size_t i = 0; i < noiseField.size(); ++i)
 			noiseField[i] = 0.0;
@@ -68,6 +68,6 @@ inline void NoiseOctavesPerlin::GenerateOctaves(std::vector<double>& noiseField,
 
 inline void NoiseOctavesPerlin::GenerateOctaves(std::vector<double>& noiseField, Int32_2 offset, Int32_2 size,
                                                 Vec2 scale, [[maybe_unused]] double unused) {
-	this->GenerateOctaves(noiseField, Vec3{ double(offset.x), 10.0, double(offset.z) }, Int32_3{ size.x, 1, size.z },
-	                      Vec3{ scale.x, 1.0, scale.z });
+	this->GenerateOctaves(noiseField, Vec3{ double(offset.m_x), 10.0, double(offset.m_z) }, Int32_3{ size.m_x, 1, size.m_z },
+	                      Vec3{ scale.m_x, 1.0, scale.m_z });
 }

@@ -36,21 +36,21 @@ OverworldGenerator::OverworldGenerator(int64_t p_seed) : Generator(p_seed) {
  * @return std::shared_ptr<Chunk>
  */
 void OverworldGenerator::GenerateChunk(Chunk& chunk) {
-	m_rand.setSeed(int64_t(chunk.cpos.x) * 341873128712L + int64_t(chunk.cpos.z) * 132897987541L);
+	m_rand.setSeed(int64_t(chunk.m_cpos.m_x) * 341873128712L + int64_t(chunk.m_cpos.m_z) * 132897987541L);
 
 	// Allocate empty chunk
 	chunk.clear();
 
 	// Generate Biomes
 	BiomeGenerator(m_seed).GenerateBiomeMap(m_biomeMap, m_temperature, m_humidity, m_weirdness,
-	                                        Int2{ chunk.cpos.x * CHUNK_WIDTH, chunk.cpos.z * CHUNK_WIDTH });
+	                                        Int2{ chunk.m_cpos.m_x * CHUNK_WIDTH, chunk.m_cpos.m_z * CHUNK_WIDTH });
 
 	// Store the final temperature and humidity in the chunk so PopulateChunk
 	// (which runs on a different thread_local OverworldGenerator) can reconstruct the
 	// biome map via GetBiomeFromLookup without re-running the noise generators.
 	for (size_t i = 0; i < CHUNK_AREA; ++i) {
-		chunk.temperature[i] = float(m_temperature[i]);
-		chunk.humidity[i] = float(m_humidity[i]);
+		chunk.m_temperature[i] = float(m_temperature[i]);
+		chunk.m_humidity[i] = float(m_humidity[i]);
 	}
 
 	// Generate the Terrain, minus any caves, as just stone
@@ -62,7 +62,7 @@ void OverworldGenerator::GenerateChunk(Chunk& chunk) {
 	// Generate heightmap
 	chunk.generateHeightMap();
 
-	chunk.isModified = true;
+	chunk.m_isModified = true;
 }
 
 /**
@@ -80,13 +80,13 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 
 	// Populate noise maps
 	m_sandGravelNoiseGen.GenerateOctaves(
-	    m_sandNoise, Vec3{ double(chunk.cpos.x * CHUNK_WIDTH), double(chunk.cpos.z * CHUNK_WIDTH), 0.0 },
+	    m_sandNoise, Vec3{ double(chunk.m_cpos.m_x * CHUNK_WIDTH), double(chunk.m_cpos.m_z * CHUNK_WIDTH), 0.0 },
 	    Int32_3{ 16, 16, 1 }, Vec3{ oneThirtySecond, oneThirtySecond, 1.0 });
 	m_sandGravelNoiseGen.GenerateOctaves(
-	    m_gravelNoise, Vec3{ double(chunk.cpos.x * CHUNK_WIDTH), 109.0134, double(chunk.cpos.z * CHUNK_WIDTH) },
+	    m_gravelNoise, Vec3{ double(chunk.m_cpos.m_x * CHUNK_WIDTH), 109.0134, double(chunk.m_cpos.m_z * CHUNK_WIDTH) },
 	    Int32_3{ 16, 1, 16 }, Vec3{ oneThirtySecond, 1.0, oneThirtySecond });
 	m_stoneNoiseGen.GenerateOctaves(m_stoneNoise,
-	                                Vec3{ double(chunk.cpos.x * CHUNK_WIDTH), double(chunk.cpos.z * CHUNK_WIDTH), 0.0 },
+	                                Vec3{ double(chunk.m_cpos.m_x * CHUNK_WIDTH), double(chunk.m_cpos.m_z * CHUNK_WIDTH), 0.0 },
 	                                Int32_3{ 16, 16, 1 },
 	                                Vec3{ oneThirtySecond * 2.0, oneThirtySecond * 2.0, oneThirtySecond * 2.0 });
 
@@ -175,7 +175,7 @@ void OverworldGenerator::GenerateTerrain(Chunk& chunk) {
 	const Int3 max{ CHUNK_WIDTH / 4 + 1, CHUNK_HEIGHT / 8 + 1, CHUNK_WIDTH / 4 + 1 };
 
 	// Generate 4x16x4 low resolution noise map
-	GenerateTerrainNoise(Int3{ chunk.cpos.x * 4, 0, chunk.cpos.z * 4 }, max);
+	GenerateTerrainNoise(Int3{ chunk.m_cpos.m_x * 4, 0, chunk.m_cpos.m_z * 4 }, max);
 
 	// Terrain noise is interpolated and only sampled every 4 blocks
 	for (int32_t sampleX = 0; sampleX < 4; ++sampleX) {
@@ -185,27 +185,27 @@ void OverworldGenerator::GenerateTerrain(Chunk& chunk) {
 
 				// Get noise cube corners
 				double corner000 =
-				    m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 0) * max.y + sampleY + 0)];
+				    m_terrainNoiseField[size_t(((sampleX + 0) * max.m_z + sampleZ + 0) * max.m_y + sampleY + 0)];
 				double corner010 =
-				    m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 1) * max.y + sampleY + 0)];
+				    m_terrainNoiseField[size_t(((sampleX + 0) * max.m_z + sampleZ + 1) * max.m_y + sampleY + 0)];
 				double corner100 =
-				    m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 0) * max.y + sampleY + 0)];
+				    m_terrainNoiseField[size_t(((sampleX + 1) * max.m_z + sampleZ + 0) * max.m_y + sampleY + 0)];
 				double corner110 =
-				    m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 1) * max.y + sampleY + 0)];
+				    m_terrainNoiseField[size_t(((sampleX + 1) * max.m_z + sampleZ + 1) * max.m_y + sampleY + 0)];
 				double corner001 =
-				    (m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 0) * max.y + sampleY + 1)] -
+				    (m_terrainNoiseField[size_t(((sampleX + 0) * max.m_z + sampleZ + 0) * max.m_y + sampleY + 1)] -
 				     corner000) *
 				    verticalLerpStep;
 				double corner011 =
-				    (m_terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 1) * max.y + sampleY + 1)] -
+				    (m_terrainNoiseField[size_t(((sampleX + 0) * max.m_z + sampleZ + 1) * max.m_y + sampleY + 1)] -
 				     corner010) *
 				    verticalLerpStep;
 				double corner101 =
-				    (m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 0) * max.y + sampleY + 1)] -
+				    (m_terrainNoiseField[size_t(((sampleX + 1) * max.m_z + sampleZ + 0) * max.m_y + sampleY + 1)] -
 				     corner100) *
 				    verticalLerpStep;
 				double corner111 =
-				    (m_terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 1) * max.y + sampleY + 1)] -
+				    (m_terrainNoiseField[size_t(((sampleX + 1) * max.m_z + sampleZ + 1) * max.m_y + sampleY + 1)] -
 				     corner110) *
 				    verticalLerpStep;
 
@@ -246,7 +246,7 @@ void OverworldGenerator::GenerateTerrain(Chunk& chunk) {
 
 							chunk.setBlock(bpos, blockType);
 							// Prep for next iteration
-							bpos.z += 1;
+							bpos.m_z += 1;
 							terrainDensity += densityStepZ;
 						}
 
@@ -276,26 +276,26 @@ void OverworldGenerator::GenerateTerrainNoise(Int3 cpos, Int3 max) {
 	double vertScale = 684.412;
 
 	// We do this to need to generate noise as often
-	m_continentalnessNoiseGen.GenerateOctaves(m_continentalnessNoiseField, Int32_2{ cpos.x, cpos.z },
-	                                          Int32_2{ max.x, max.z }, Vec2{ 1.121, 1.121 }, 0.5);
-	m_depthNoiseGen.GenerateOctaves(m_depthNoiseField, Int32_2{ cpos.x, cpos.z }, Int32_2{ max.x, max.z },
+	m_continentalnessNoiseGen.GenerateOctaves(m_continentalnessNoiseField, Int32_2{ cpos.m_x, cpos.m_z },
+	                                          Int32_2{ max.m_x, max.m_z }, Vec2{ 1.121, 1.121 }, 0.5);
+	m_depthNoiseGen.GenerateOctaves(m_depthNoiseField, Int32_2{ cpos.m_x, cpos.m_z }, Int32_2{ max.m_x, max.m_z },
 	                                Vec2{ 200.0, 200.0 }, 0.5);
-	m_selectorNoiseGen.GenerateOctaves(m_selectorNoiseField, Vec3{ double(cpos.x), double(cpos.y), double(cpos.z) },
+	m_selectorNoiseGen.GenerateOctaves(m_selectorNoiseField, Vec3{ double(cpos.m_x), double(cpos.m_y), double(cpos.m_z) },
 	                                   max, Vec3{ horiScale / 80.0, vertScale / 160.0, horiScale / 80.0 });
-	m_lowNoiseGen.GenerateOctaves(m_lowNoiseField, Vec3{ double(cpos.x), double(cpos.y), double(cpos.z) }, max,
+	m_lowNoiseGen.GenerateOctaves(m_lowNoiseField, Vec3{ double(cpos.m_x), double(cpos.m_y), double(cpos.m_z) }, max,
 	                              Vec3{ horiScale, vertScale, horiScale });
-	m_highNoiseGen.GenerateOctaves(m_highNoiseField, Vec3{ double(cpos.x), double(cpos.y), double(cpos.z) }, max,
+	m_highNoiseGen.GenerateOctaves(m_highNoiseField, Vec3{ double(cpos.m_x), double(cpos.m_y), double(cpos.m_z) }, max,
 	                               Vec3{ horiScale, vertScale, horiScale });
 	// Used to iterate 3D noise maps (low, high, selector)
 	size_t xyzIndex = 0;
 	// Used to iterate 2D Noise maps (depth, continentalness)
 	size_t xzIndex = 0;
-	int32_t scaleFraction = 16 / max.x;
+	int32_t scaleFraction = 16 / max.m_x;
 
-	for (int32_t iX = 0; iX < max.x; ++iX) {
+	for (int32_t iX = 0; iX < max.m_x; ++iX) {
 		int32_t sampleX = iX * scaleFraction + scaleFraction / 2;
 
-		for (int32_t iZ = 0; iZ < max.z; ++iZ) {
+		for (int32_t iZ = 0; iZ < max.m_z; ++iZ) {
 			// Sample 2D noises
 			int32_t sampleZ = iZ * scaleFraction + scaleFraction / 2;
 			// Apply biome-noise-dependent variety
@@ -331,11 +331,11 @@ void OverworldGenerator::GenerateTerrainNoise(Int3 cpos, Int3 max) {
 			if (continentalness < 0.0)
 				continentalness = 0.0;
 			continentalness += 0.5;
-			depthNoise = depthNoise * double(max.y) / 16.0;
-			double elevationOffset = double(max.y) / 2.0 + depthNoise * 4.0;
+			depthNoise = depthNoise * double(max.m_y) / 16.0;
+			double elevationOffset = double(max.m_y) / 2.0 + depthNoise * 4.0;
 			++xzIndex;
 
-			for (int32_t iY = 0; iY < max.y; ++iY) {
+			for (int32_t iY = 0; iY < max.m_y; ++iY) {
 				// Sample 3D noises
 				double terrainDensity = 0.0;
 				double densityOffset = (double(iY) - elevationOffset) * 12.0 / continentalness;
@@ -358,8 +358,8 @@ void OverworldGenerator::GenerateTerrainNoise(Int3 cpos, Int3 max) {
 
 				terrainDensity -= densityOffset;
 				// Reduce density towards max height
-				if (iY > max.y - 4) {
-					double heightEdgeFade = double(float(iY - (max.y - 4)) / 3.0F);
+				if (iY > max.m_y - 4) {
+					double heightEdgeFade = double(float(iY - (max.m_y - 4)) / 3.0F);
 					terrainDensity = (terrainDensity * (1.0 - heightEdgeFade)) + (-10.0 * heightEdgeFade);
 				}
 
@@ -379,8 +379,8 @@ void OverworldGenerator::GenerateTerrainNoise(Int3 cpos, Int3 max) {
 Biome OverworldGenerator::GetBiomeAt(Int2 worldPos) {
 	// biomeMap is always for the chunk whose origin is (cpos.x*16, cpos.z*16).
 	// Convert world coords to chunk-local [0,15] and index directly.
-	int32_t localX = ((worldPos.x % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH;
-	int32_t localZ = ((worldPos.z % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH;
+	int32_t localX = ((worldPos.m_x % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH;
+	int32_t localZ = ((worldPos.m_z % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH;
 	return m_biomeMap[size_t(localX * CHUNK_WIDTH + localZ)];
 }
 
@@ -434,8 +434,8 @@ void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& world, Java::Random&
  * match the Java source exactly.
  */
 bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
-	const int32_t blockX = chunk.cpos.x * CHUNK_WIDTH;
-	const int32_t blockZ = chunk.cpos.z * CHUNK_WIDTH;
+	const int32_t blockX = chunk.m_cpos.m_x * CHUNK_WIDTH;
+	const int32_t blockZ = chunk.m_cpos.m_z * CHUNK_WIDTH;
 	Biome biome = BiomeGenerator(m_seed).GetBiomeAtPoint(Int2{ blockX + CHUNK_WIDTH, blockZ + CHUNK_WIDTH });
 	// Java RNG seeding sequence
 	m_rand.setSeed(world.getSeed());
@@ -444,8 +444,8 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	// Use unsigned arithmetic to avoid overflow UB
 	uint64_t xSalt_u = static_cast<uint64_t>(xSalt);
 	uint64_t zSalt_u = static_cast<uint64_t>(zSalt);
-	uint64_t xPart = static_cast<uint64_t>(static_cast<int64_t>(chunk.cpos.x)) * xSalt_u;
-	uint64_t zPart = static_cast<uint64_t>(static_cast<int64_t>(chunk.cpos.z)) * zSalt_u;
+	uint64_t xPart = static_cast<uint64_t>(static_cast<int64_t>(chunk.m_cpos.m_x)) * xSalt_u;
+	uint64_t zPart = static_cast<uint64_t>(static_cast<int64_t>(chunk.m_cpos.m_z)) * zSalt_u;
 	uint64_t combined = (xPart + zPart) ^ static_cast<uint64_t>(world.getSeed());
 
 	m_rand.setSeed(static_cast<int64_t>(combined));
@@ -454,98 +454,98 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 
 	// Water lakes
 	if (m_rand.nextInt(4) == 0) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_WATER_STILL).GenerateLake(world, m_rand, coord);
 	}
 
 	// Lava lakes
 	if (m_rand.nextInt(8) == 0) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(m_rand.nextInt(120) + 8);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		if (coord.y < WATER_LEVEL || m_rand.nextInt(10) == 0)
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_y = m_rand.nextInt(m_rand.nextInt(120) + 8);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		if (coord.m_y < WATER_LEVEL || m_rand.nextInt(10) == 0)
 			FeatureGenerator(BLOCK_LAVA_STILL).GenerateLake(world, m_rand, coord);
 	}
 
 	// Dungeons
 	for (int32_t i = 0; i < 8; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator().GenerateDungeon(world, m_rand, coord);
 	}
 
 	// Clay
 	for (int32_t i = 0; i < 10; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator().GenerateClay(world, m_rand, coord, 32);
 	}
 
 	// Dirt blobs
 	for (int32_t i = 0; i < 20; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_DIRT).GenerateMinable(world, m_rand, coord, 32);
 	}
 
 	// Gravel blobs
 	for (int32_t i = 0; i < 10; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_GRAVEL).GenerateMinable(world, m_rand, coord, 32);
 	}
 
 	// Coal Ore blobs
 	for (int32_t i = 0; i < 20; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_ORE_COAL).GenerateMinable(world, m_rand, coord, 16);
 	}
 
 	// Iron Ore blobs
 	for (int32_t i = 0; i < 20; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 2);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT / 2);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_ORE_IRON).GenerateMinable(world, m_rand, coord, 8);
 	}
 
 	// Gold Ore blobs
 	for (int32_t i = 0; i < 2; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 4);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT / 4);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_ORE_GOLD).GenerateMinable(world, m_rand, coord, 8);
 	}
 
 	// Redstone Ore blobs
 	for (int32_t i = 0; i < 8; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 8);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT / 8);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_ORE_REDSTONE_OFF).GenerateMinable(world, m_rand, coord, 7);
 	}
 
 	// Diamond Ore blobs
 	{
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 8);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT / 8);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_ORE_DIAMOND).GenerateMinable(world, m_rand, coord, 7);
 	}
 
 	// Lapis lazuli Ore blobs
 	{
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH);
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT / 8) + m_rand.nextInt(CHUNK_HEIGHT / 8);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH);
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT / 8) + m_rand.nextInt(CHUNK_HEIGHT / 8);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH);
 		FeatureGenerator(BLOCK_ORE_LAPIS_LAZULI).GenerateMinable(world, m_rand, coord, 6);
 	}
 
@@ -610,9 +610,9 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 			break;
 		}
 		for (int32_t i = 0; i < count; ++i) {
-			coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-			coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-			coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
+			coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+			coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+			coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
 			FeatureGenerator(BLOCK_DANDELION).GenerateFlowers(world, m_rand, coord);
 		}
 	}
@@ -644,9 +644,9 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 			int8_t grassMeta = 1;
 			if (biome == BIOME_RAINFOREST && m_rand.nextInt(3) != 0)
 				grassMeta = 2; // fern
-			coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-			coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-			coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
+			coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+			coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+			coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
 			FeatureGenerator(BLOCK_TALLGRASS, grassMeta).GenerateTallgrass(world, m_rand, coord);
 		}
 	}
@@ -655,50 +655,50 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	{
 		int32_t count = (biome == BIOME_DESERT) ? 2 : 0;
 		for (int32_t i = 0; i < count; ++i) {
-			coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-			coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-			coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
+			coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+			coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+			coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
 			FeatureGenerator(BLOCK_DEADBUSH).GenerateDeadbush(world, m_rand, coord);
 		}
 	}
 
 	// Rose patches
 	if (m_rand.nextInt(2) == 0) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_ROSE).GenerateFlowers(world, m_rand, coord);
 	}
 
 	// Brown mushroom patches
 	if (m_rand.nextInt(4) == 0) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_MUSHROOM_BROWN).GenerateFlowers(world, m_rand, coord);
 	}
 
 	// Red mushroom patches
 	if (m_rand.nextInt(8) == 0) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_MUSHROOM_RED).GenerateFlowers(world, m_rand, coord);
 	}
 
 	// Sugar cane
 	for (int32_t i = 0; i < 10; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator().GenerateSugarcane(world, m_rand, coord);
 	}
 
 	// Pumpkin patches
 	if (m_rand.nextInt(32) == 0) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator().GeneratePumpkins(world, m_rand, coord);
 	}
 
@@ -706,26 +706,26 @@ bool OverworldGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
 	{
 		int32_t count = (biome == BIOME_DESERT) ? 10 : 0;
 		for (int32_t i = 0; i < count; ++i) {
-			coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-			coord.y = m_rand.nextInt(CHUNK_HEIGHT);
-			coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
+			coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+			coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
+			coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
 			FeatureGenerator().GenerateCacti(world, m_rand, coord);
 		}
 	}
 
 	// Water springs
 	for (int32_t i = 0; i < 50; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(m_rand.nextInt(120) + 8);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_y = m_rand.nextInt(m_rand.nextInt(120) + 8);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_WATER_FLOWING).GenerateLiquid(world, m_rand, coord);
 	}
 
 	// Lava springs
 	for (int32_t i = 0; i < 20; ++i) {
-		coord.x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
-		coord.y = m_rand.nextInt(m_rand.nextInt(m_rand.nextInt(112) + 8) + 8);
-		coord.z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + 8;
+		coord.m_y = m_rand.nextInt(m_rand.nextInt(m_rand.nextInt(112) + 8) + 8);
+		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + 8;
 		FeatureGenerator(BLOCK_LAVA_FLOWING).GenerateLiquid(world, m_rand, coord);
 	}
 

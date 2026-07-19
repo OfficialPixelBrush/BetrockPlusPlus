@@ -16,32 +16,32 @@
 typedef int(heuristic_fn)(const Int3&, const Int3&);
 
 struct Node {
-	Int3 pos;
+	Int3 m_pos;
 
-	int g = INT32_MAX;
-	int f = INT32_MAX;
+	int m_g = INT32_MAX;
+	int m_f = INT32_MAX;
 
-	bool closed = false;
+	bool m_closed = false;
 
-	Node* parent = nullptr;
+	Node* m_parent = nullptr;
 };
 
 class Pathfinder {
 public:
-	WorldManager* world = nullptr;
+	WorldManager* m_world = nullptr;
 
 	Pathfinder(){};
-	Pathfinder(WorldManager* world) : world(world) {};
+	Pathfinder(WorldManager* world) : m_world(world) {};
 	[[nodiscard]] std::vector<Int3> findPath(Int3 start, Int3 goal);
 
 private:
 
 	struct PQNode {
-		int f;
-		Node* node;
+		int m_f;
+		Node* m_node;
 
 		bool operator>(const PQNode& rhs) const {
-			return f > rhs.f;
+			return m_f > rhs.m_f;
 		}
 	};
 

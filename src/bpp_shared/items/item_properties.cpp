@@ -190,8 +190,8 @@ ItemDamage GetMaterialUses(ToolMaterial material) {
 }
 
 void harmTool(ItemStack* stack) {
-	stack->data++;
-	if (stack->data >= toolProperties[stack->id].max_uses) {
+	stack->m_data++;
+	if (stack->m_data >= toolProperties[stack->m_id].m_max_uses) {
 		stack->decrementCount(1);
 	}
 }
@@ -212,12 +212,12 @@ void useFlintAndSteel(WorldManager& world, ItemStack* stack, Int3 pos, PacketDat
 
 void testSetGoal(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) {
 	Int3 topPos = pos;
-	topPos.y += 1;
+	topPos.m_y += 1;
 	world.setBlock(topPos, BLOCK_AIR);
 	std::cout << "lol!!" << std::endl;
-	for (auto entity : world.entityManager.m_entities) {
-		std::cout << (int)entity->type << std::endl;
-		if (entity->type == EntityType::CREEPER) {
+	for (auto entity : world.m_entityManager.m_entities) {
+		std::cout << (int)entity->m_type << std::endl;
+		if (entity->m_type == EntityType::CREEPER) {
 			auto finder = std::static_pointer_cast<MobileEntity>(entity);
 			std::cout << "Setting goal to" << topPos << std::endl;
 			finder->setGoal(topPos);
@@ -270,152 +270,152 @@ void inflictDamage(Entity& target_entity, EntityHealth damage) {
 
 void attackWithItem(Entity& target_entity, ItemStack* stack) {
 	EntityHealth damage = 1;
-	if (toolProperties.contains(stack->id))
-		damage = calculateDamage(toolProperties[stack->id].type, materialToLevel(toolProperties[stack->id].material));
+	if (toolProperties.contains(stack->m_id))
+		damage = calculateDamage(toolProperties[stack->m_id].m_type, materialToLevel(toolProperties[stack->m_id].m_material));
 	inflictDamage(target_entity, damage);
-	GlobalLogger().info << "Dealt " << damage << " damage to " << target_entity.id << "!\n";
+	GlobalLogger().m_info << "Dealt " << damage << " damage to " << target_entity.m_id << "!\n";
 	harmTool(stack);
 }
 
 void registerAll() {
-	itemBehavior[Items::Id::HOE_WOOD] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::HOE_STONE] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::HOE_IRON] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::HOE_GOLD] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::HOE_DIAMOND] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::FLINT_AND_STEEL] = ItemBehavior{ .onBlockStartMining = testSetGoal,
-		                                                     .onBlockUse = useFlintAndSteel };
+	itemBehavior[Items::Id::HOE_WOOD] = ItemBehavior{ .m_onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_STONE] = ItemBehavior{ .m_onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_IRON] = ItemBehavior{ .m_onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_GOLD] = ItemBehavior{ .m_onBlockUse = useHoe };
+	itemBehavior[Items::Id::HOE_DIAMOND] = ItemBehavior{ .m_onBlockUse = useHoe };
+	itemBehavior[Items::Id::FLINT_AND_STEEL] = ItemBehavior{ .m_onBlockStartMining = testSetGoal,
+		                                                     .m_onBlockUse = useFlintAndSteel };
 
 	// Tool Properties
 	// Sword
 	toolProperties[Items::Id::SWORD_WOOD] = ToolProperties{
-		.type = ToolType::Sword,
-		.material = ToolMaterial::Wooden,
+		.m_type = ToolType::Sword,
+		.m_material = ToolMaterial::Wooden,
 	};
 	toolProperties[Items::Id::SWORD_STONE] = ToolProperties{
-		.type = ToolType::Sword,
-		.material = ToolMaterial::Stone,
+		.m_type = ToolType::Sword,
+		.m_material = ToolMaterial::Stone,
 	};
 	toolProperties[Items::Id::SWORD_IRON] = ToolProperties{
-		.type = ToolType::Sword,
-		.material = ToolMaterial::Iron,
+		.m_type = ToolType::Sword,
+		.m_material = ToolMaterial::Iron,
 	};
 	toolProperties[Items::Id::SWORD_GOLD] = ToolProperties{
-		.type = ToolType::Sword,
-		.material = ToolMaterial::Gold,
+		.m_type = ToolType::Sword,
+		.m_material = ToolMaterial::Gold,
 	};
 	toolProperties[Items::Id::SWORD_DIAMOND] = ToolProperties{
-		.type = ToolType::Sword,
-		.material = ToolMaterial::Diamond,
+		.m_type = ToolType::Sword,
+		.m_material = ToolMaterial::Diamond,
 	};
 	// Pickaxe
 	toolProperties[Items::Id::PICKAXE_WOOD] = ToolProperties{
-		.type = ToolType::Pickaxe,
-		.material = ToolMaterial::Wooden,
+		.m_type = ToolType::Pickaxe,
+		.m_material = ToolMaterial::Wooden,
 	};
 	toolProperties[Items::Id::PICKAXE_STONE] = ToolProperties{
-		.type = ToolType::Pickaxe,
-		.material = ToolMaterial::Stone,
+		.m_type = ToolType::Pickaxe,
+		.m_material = ToolMaterial::Stone,
 	};
 	toolProperties[Items::Id::PICKAXE_IRON] = ToolProperties{
-		.type = ToolType::Pickaxe,
-		.material = ToolMaterial::Iron,
+		.m_type = ToolType::Pickaxe,
+		.m_material = ToolMaterial::Iron,
 	};
 	toolProperties[Items::Id::PICKAXE_GOLD] = ToolProperties{
-		.type = ToolType::Pickaxe,
-		.material = ToolMaterial::Gold,
+		.m_type = ToolType::Pickaxe,
+		.m_material = ToolMaterial::Gold,
 	};
 	toolProperties[Items::Id::PICKAXE_DIAMOND] = ToolProperties{
-		.type = ToolType::Pickaxe,
-		.material = ToolMaterial::Diamond,
+		.m_type = ToolType::Pickaxe,
+		.m_material = ToolMaterial::Diamond,
 	};
 	// Axe
 	toolProperties[Items::Id::AXE_WOOD] = ToolProperties{
-		.type = ToolType::Axe,
-		.material = ToolMaterial::Wooden,
+		.m_type = ToolType::Axe,
+		.m_material = ToolMaterial::Wooden,
 	};
 	toolProperties[Items::Id::AXE_STONE] = ToolProperties{
-		.type = ToolType::Axe,
-		.material = ToolMaterial::Stone,
+		.m_type = ToolType::Axe,
+		.m_material = ToolMaterial::Stone,
 	};
 	toolProperties[Items::Id::AXE_IRON] = ToolProperties{
-		.type = ToolType::Axe,
-		.material = ToolMaterial::Iron,
+		.m_type = ToolType::Axe,
+		.m_material = ToolMaterial::Iron,
 	};
 	toolProperties[Items::Id::AXE_GOLD] = ToolProperties{
-		.type = ToolType::Axe,
-		.material = ToolMaterial::Gold,
+		.m_type = ToolType::Axe,
+		.m_material = ToolMaterial::Gold,
 	};
 	toolProperties[Items::Id::AXE_DIAMOND] = ToolProperties{
-		.type = ToolType::Axe,
-		.material = ToolMaterial::Diamond,
+		.m_type = ToolType::Axe,
+		.m_material = ToolMaterial::Diamond,
 	};
 	// Shovel
 	toolProperties[Items::Id::SHOVEL_WOOD] = ToolProperties{
-		.type = ToolType::Shovel,
-		.material = ToolMaterial::Wooden,
+		.m_type = ToolType::Shovel,
+		.m_material = ToolMaterial::Wooden,
 	};
 	toolProperties[Items::Id::SHOVEL_STONE] = ToolProperties{
-		.type = ToolType::Shovel,
-		.material = ToolMaterial::Stone,
+		.m_type = ToolType::Shovel,
+		.m_material = ToolMaterial::Stone,
 	};
 	toolProperties[Items::Id::SHOVEL_IRON] = ToolProperties{
-		.type = ToolType::Shovel,
-		.material = ToolMaterial::Iron,
+		.m_type = ToolType::Shovel,
+		.m_material = ToolMaterial::Iron,
 	};
 	toolProperties[Items::Id::SHOVEL_GOLD] = ToolProperties{
-		.type = ToolType::Shovel,
-		.material = ToolMaterial::Gold,
+		.m_type = ToolType::Shovel,
+		.m_material = ToolMaterial::Gold,
 	};
 	toolProperties[Items::Id::SHOVEL_DIAMOND] = ToolProperties{
-		.type = ToolType::Shovel,
-		.material = ToolMaterial::Diamond,
+		.m_type = ToolType::Shovel,
+		.m_material = ToolMaterial::Diamond,
 	};
 	// Hoe
 	toolProperties[Items::Id::HOE_WOOD] = ToolProperties{
-		.type = ToolType::Hoe,
-		.material = ToolMaterial::Wooden,
+		.m_type = ToolType::Hoe,
+		.m_material = ToolMaterial::Wooden,
 	};
 	toolProperties[Items::Id::HOE_STONE] = ToolProperties{
-		.type = ToolType::Hoe,
-		.material = ToolMaterial::Stone,
+		.m_type = ToolType::Hoe,
+		.m_material = ToolMaterial::Stone,
 	};
 	toolProperties[Items::Id::HOE_IRON] = ToolProperties{
-		.type = ToolType::Hoe,
-		.material = ToolMaterial::Iron,
+		.m_type = ToolType::Hoe,
+		.m_material = ToolMaterial::Iron,
 	};
 	toolProperties[Items::Id::HOE_GOLD] = ToolProperties{
-		.type = ToolType::Hoe,
-		.material = ToolMaterial::Gold,
+		.m_type = ToolType::Hoe,
+		.m_material = ToolMaterial::Gold,
 	};
 	toolProperties[Items::Id::HOE_DIAMOND] = ToolProperties{
-		.type = ToolType::Hoe,
-		.material = ToolMaterial::Diamond,
+		.m_type = ToolType::Hoe,
+		.m_material = ToolMaterial::Diamond,
 	};
 	// Apply max uses based on material
 	for (auto& toolProperty : toolProperties) {
-		toolProperty.second.max_uses = GetMaterialUses(toolProperty.second.material);
+		toolProperty.second.m_max_uses = GetMaterialUses(toolProperty.second.m_material);
 	}
 	// Misc tools
-	toolProperties[Items::Id::FLINT_AND_STEEL] = ToolProperties{ .type = ToolType::None,
-		                                                         .material = ToolMaterial::None,
-		                                                         .max_uses = DURABILITY_FLINT_AND_STEEL };
-	toolProperties[Items::Id::SHEARS] = ToolProperties{ .type = ToolType::None,
-		                                                .material = ToolMaterial::None,
-		                                                .max_uses = DURABILITY_SHEARS };
-	toolProperties[Items::Id::BOW] = ToolProperties{ .type = ToolType::None,
-		                                             .material = ToolMaterial::None,
-		                                             .max_uses = DURABILITY_BOW };
-	toolProperties[Items::Id::FISHING_ROD] = ToolProperties{ .type = ToolType::None,
-		                                                     .material = ToolMaterial::None,
-		                                                     .max_uses = DURABILITY_FISHING_ROD };
+	toolProperties[Items::Id::FLINT_AND_STEEL] = ToolProperties{ .m_type = ToolType::None,
+		                                                         .m_material = ToolMaterial::None,
+		                                                         .m_max_uses = DURABILITY_FLINT_AND_STEEL };
+	toolProperties[Items::Id::SHEARS] = ToolProperties{ .m_type = ToolType::None,
+		                                                .m_material = ToolMaterial::None,
+		                                                .m_max_uses = DURABILITY_SHEARS };
+	toolProperties[Items::Id::BOW] = ToolProperties{ .m_type = ToolType::None,
+		                                             .m_material = ToolMaterial::None,
+		                                             .m_max_uses = DURABILITY_BOW };
+	toolProperties[Items::Id::FISHING_ROD] = ToolProperties{ .m_type = ToolType::None,
+		                                                     .m_material = ToolMaterial::None,
+		                                                     .m_max_uses = DURABILITY_FISHING_ROD };
 
 	// Item behaviors
 	for (auto& toolProperty : toolProperties) {
 		// Apply sword behavior to all swords
-		switch (toolProperty.second.type) {
+		switch (toolProperty.second.m_type) {
 		case ToolType::Sword:
-			itemBehavior[toolProperty.first] = ItemBehavior{ .onEntityAttack = attackWithItem };
+			itemBehavior[toolProperty.first] = ItemBehavior{ .m_onEntityAttack = attackWithItem };
 			continue;
 		case ToolType::Pickaxe:
 			continue;
@@ -424,14 +424,14 @@ void registerAll() {
 		case ToolType::Shovel:
 			continue;
 		case ToolType::Hoe:
-			itemBehavior[toolProperty.first] = ItemBehavior{ .onBlockUse = useHoe };
+			itemBehavior[toolProperty.first] = ItemBehavior{ .m_onBlockUse = useHoe };
 			continue;
 		default:
 			continue;
 		}
 	}
 
-	itemBehavior[SUGARCANE].onBlockUse = [](WorldManager& world, ItemStack* stack, Int3 pos,
+	itemBehavior[SUGARCANE].m_onBlockUse = [](WorldManager& world, ItemStack* stack, Int3 pos,
 	                                        PacketData::FaceDirection face) {
 		Int3 placePos = Blocks::getAdjacentBlockPos(pos, face);
 		if (!Blocks::canSugarcaneSurviveAt(world, placePos))
@@ -441,7 +441,7 @@ void registerAll() {
 		stack->decrementCount(1);
 	};
 
-	itemBehavior[SIGN].onBlockUse = [](WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) {
+	itemBehavior[SIGN].m_onBlockUse = [](WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) {
 		Int3 placePos = Blocks::getAdjacentBlockPos(pos, face);
 		if (face == PacketData::FaceDirection::Y_PLUS)
 			world.setBlock(placePos, BLOCK_SIGN); //TODO: facing meta

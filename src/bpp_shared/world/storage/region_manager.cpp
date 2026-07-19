@@ -26,7 +26,7 @@ RegionManager::~RegionManager() {
 
 bool RegionManager::initialize(const std::string& folderPath) {
 	if (!std::filesystem::is_directory(folderPath)) {
-		GlobalLogger().error << "Tried to initialize region manager with an invalid directory!\n";
+		GlobalLogger().m_error << "Tried to initialize region manager with an invalid directory!\n";
 		return false; // No region folder
 	}
 	m_folderPath = folderPath;
@@ -46,7 +46,7 @@ bool RegionManager::release() {
 	// Clear the folder path so the manager can't be accidentally reused
 	m_folderPath.clear();
 
-	world = nullptr;
+	m_world = nullptr;
 
 	return true;
 }
@@ -56,12 +56,12 @@ bool RegionManager::regionExists(Int32_2 rpos) {
 }
 
 bool RegionManager::chunkExists(Int32_2 cpos) {
-	if (!regionExists({ cpos.x >> 5, cpos.z >> 5 }))
+	if (!regionExists({ cpos.m_x >> 5, cpos.m_z >> 5 }))
 		return false;
-	auto region = loadRegion({ cpos.x >> 5, cpos.z >> 5 });
+	auto region = loadRegion({ cpos.m_x >> 5, cpos.m_z >> 5 });
 	if (!region)
 		return false;
-	return region->chunkExists({ cpos.x & 31, cpos.z & 31 });
+	return region->chunkExists({ cpos.m_x & 31, cpos.m_z & 31 });
 }
 
 bool RegionManager::createRegion(Int32_2 rpos) {
@@ -78,76 +78,76 @@ bool RegionManager::createRegion(Int32_2 rpos) {
 
 void RegionManager::saveChunk(std::shared_ptr<Chunk> chunk, bool unloadEntities) {
 	{
-		std::lock_guard lk(outChunksMutex);
-		outChunks.erase(chunk->cpos);
+		std::lock_guard lk(m_outChunksMutex);
+		m_outChunks.erase(chunk->m_cpos);
 	}
 
 	// Make a snapshot
 	auto snapshot = std::make_shared<Chunk>();
-	snapshot->cpos = chunk->cpos;
-	snapshot->isTerrainPopulated = chunk->isTerrainPopulated;
-	snapshot->isModified = chunk->isModified;
-	snapshot->spawnChunk = chunk->spawnChunk;
-	snapshot->state.store(chunk->state.load(std::memory_order_acquire));
-	snapshot->inUse.store(false);
-	std::memcpy(snapshot->blocks, chunk->blocks, sizeof(chunk->blocks));
-	std::memcpy(snapshot->lightNibble, chunk->lightNibble, sizeof(chunk->lightNibble));
-	std::memcpy(snapshot->nibbleBlockMeta, chunk->nibbleBlockMeta, sizeof(chunk->nibbleBlockMeta));
-	std::memcpy(snapshot->heightMap, chunk->heightMap, sizeof(chunk->heightMap));
-	std::memcpy(snapshot->temperature, chunk->temperature, sizeof(chunk->temperature));
-	std::memcpy(snapshot->humidity, chunk->humidity, sizeof(chunk->humidity));
-	snapshot->tileEntities = chunk->tileEntities;
+	snapshot->m_cpos = chunk->m_cpos;
+	snapshot->m_isTerrainPopulated = chunk->m_isTerrainPopulated;
+	snapshot->m_isModified = chunk->m_isModified;
+	snapshot->m_spawnChunk = chunk->m_spawnChunk;
+	snapshot->m_state.store(chunk->m_state.load(std::memory_order_acquire));
+	snapshot->m_inUse.store(false);
+	std::memcpy(snapshot->m_blocks, chunk->m_blocks, sizeof(chunk->m_blocks));
+	std::memcpy(snapshot->m_lightNibble, chunk->m_lightNibble, sizeof(chunk->m_lightNibble));
+	std::memcpy(snapshot->m_nibbleBlockMeta, chunk->m_nibbleBlockMeta, sizeof(chunk->m_nibbleBlockMeta));
+	std::memcpy(snapshot->m_heightMap, chunk->m_heightMap, sizeof(chunk->m_heightMap));
+	std::memcpy(snapshot->m_temperature, chunk->m_temperature, sizeof(chunk->m_temperature));
+	std::memcpy(snapshot->m_humidity, chunk->m_humidity, sizeof(chunk->m_humidity));
+	snapshot->m_tileEntities = chunk->m_tileEntities;
 
 	// Entities are wrapped in a shared_ptr<const vector>
 	auto entities = std::make_shared<const std::vector<Tag>>(
-	    world->entityManager.collectEntitiesForSave(snapshot->cpos, unloadEntities));
+	    m_world->m_entityManager.collectEntitiesForSave(snapshot->m_cpos, unloadEntities));
 
 	SnapshotContainer container{ std::move(snapshot), std::move(entities) };
 
-	std::lock_guard lk(saveQueueMutex);
-	saveQueue.push_back(std::move(container));
+	std::lock_guard lk(m_saveQueueMutex);
+	m_saveQueue.push_back(std::move(container));
 }
 
 void RegionManager::loadChunk(Int32_2 cpos) {
-	Int32_2 rpos{ cpos.x >> 5, cpos.z >> 5 };
+	Int32_2 rpos{ cpos.m_x >> 5, cpos.m_z >> 5 };
 	if (!regionExists(rpos))
 		return;
 	auto region = loadRegion(rpos); // shared_ptr keeps Region alive for the task
 	if (!region)
 		return;
-	iopool.detach_task([cpos, region, this]() {
+	m_iopool.detach_task([cpos, region, this]() {
 		auto chunk = region->GetChunk(cpos); // blocks until region is free
 		if (!chunk)
 			return;
-		std::lock_guard lk(outChunksMutex);
-		outChunks[cpos] = std::move(chunk);
+		std::lock_guard lk(m_outChunksMutex);
+		m_outChunks[cpos] = std::move(chunk);
 	});
 }
 
 std::shared_ptr<Chunk> RegionManager::getChunk(Int32_2 cpos) {
-	std::lock_guard lk(outChunksMutex);
-	auto it = outChunks.find(cpos);
-	if (it == outChunks.end())
+	std::lock_guard lk(m_outChunksMutex);
+	auto it = m_outChunks.find(cpos);
+	if (it == m_outChunks.end())
 		return nullptr;
 	auto chunk = std::move(it->second);
-	outChunks.erase(it);
+	m_outChunks.erase(it);
 	return chunk;
 }
 
 void RegionManager::pumpPipeline() {
 	std::vector<SnapshotContainer> toSave;
 	{
-		std::lock_guard lk(saveQueueMutex);
-		toSave.swap(saveQueue);
-		if (saveQueue.empty())
-			saveQueue.shrink_to_fit();
+		std::lock_guard lk(m_saveQueueMutex);
+		toSave.swap(m_saveQueue);
+		if (m_saveQueue.empty())
+			m_saveQueue.shrink_to_fit();
 	}
 
 	std::vector<SnapshotContainer> requeue;
 	for (auto& snapshot : toSave) {
-		auto& chunk = snapshot.chunkSnapshot;
-		auto entitySnapshot = snapshot.entitySnapshot; // shared_ptr copy
-		Int32_2 rpos{ chunk->cpos.x >> 5, chunk->cpos.z >> 5 };
+		auto& chunk = snapshot.m_chunkSnapshot;
+		auto entitySnapshot = snapshot.m_entitySnapshot; // shared_ptr copy
+		Int32_2 rpos{ chunk->m_cpos.m_x >> 5, chunk->m_cpos.m_z >> 5 };
 		if (!regionExists(rpos))
 			createRegion(rpos);
 		auto region = loadRegion(rpos); // shared_ptr keeps Region alive for the task
@@ -155,15 +155,15 @@ void RegionManager::pumpPipeline() {
 			requeue.push_back(std::move(snapshot)); // keep chunk + entities together
 			continue;
 		}
-		auto currentTime = world->elapsed_ticks;
-		iopool.detach_task([chunk, region, currentTime, entitySnapshot]() {
+		auto currentTime = m_world->m_elapsed_ticks;
+		m_iopool.detach_task([chunk, region, currentTime, entitySnapshot]() {
 			region->AddChunk(chunk, currentTime, entitySnapshot); // Region stays alive via shared_ptr capture
 		});
 	}
 
 	if (!requeue.empty()) {
-		std::lock_guard lk(saveQueueMutex);
-		saveQueue.insert(saveQueue.end(), std::make_move_iterator(requeue.begin()),
+		std::lock_guard lk(m_saveQueueMutex);
+		m_saveQueue.insert(m_saveQueue.end(), std::make_move_iterator(requeue.begin()),
 		                 std::make_move_iterator(requeue.end()));
 	}
 
@@ -178,7 +178,7 @@ void RegionManager::pumpPipeline() {
 
 void RegionManager::flushAll() {
 	pumpPipeline();
-	iopool.wait();
+	m_iopool.wait();
 }
 
 std::shared_ptr<Region> RegionManager::loadRegion(Int32_2 rpos) {
@@ -196,7 +196,7 @@ std::shared_ptr<Region> RegionManager::loadRegion(Int32_2 rpos) {
 
 	if (!regionExists(rpos)) {
 		if (!createRegion(rpos)) {
-			GlobalLogger().error << "Failed to create region file for " << rpos.x << "," << rpos.z << "\n";
+			GlobalLogger().m_error << "Failed to create region file for " << rpos.m_x << "," << rpos.m_z << "\n";
 			return nullptr;
 		}
 	}

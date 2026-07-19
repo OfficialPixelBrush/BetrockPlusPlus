@@ -15,8 +15,8 @@
  */
 class NoiseGenerator {
 protected:
-	int32_t permutations[512];
-	Vec3 coordinate;
+	int32_t m_permutations[512];
+	Vec3 m_coordinate;
 	double GenerateNoiseBase(Vec3 p_offset);
 	void InitPermTable(Java::Random& rand);
 

@@ -9,15 +9,15 @@
 #include "inventory/item_stack.h"
 
 struct DeltaSlot {
-	ItemStack stack;
-	int slot = 0;
+	ItemStack m_stack;
+	int m_slot = 0;
 };
 
 // Used for actually interacting with inventories, will typically wrap 1 or more inventory objects for things like chests, etc
 struct InventoryInteraction {
-	std::vector<ItemStack> snapshot;
-	ItemStack carried;
-	Inventory* inventory;
+	std::vector<ItemStack> m_snapshot;
+	ItemStack m_carried;
+	Inventory* m_inventory;
 
 	InventoryInteraction(Inventory* inv);
 	virtual ~InventoryInteraction() = default;

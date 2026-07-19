@@ -12,20 +12,20 @@
 #include <cmath>
 
 bool Entity::pushOutOfBlocks(Vec3 pos) {
-	int bx = MathHelper::floor_double(pos.x);
-	int by = MathHelper::floor_double(pos.y);
-	int bz = MathHelper::floor_double(pos.z);
-	double fracX = pos.x - double(bx);
-	double fracY = pos.y - double(by);
-	double fracZ = pos.z - double(bz);
+	int bx = MathHelper::floor_double(pos.m_x);
+	int by = MathHelper::floor_double(pos.m_y);
+	int bz = MathHelper::floor_double(pos.m_z);
+	double fracX = pos.m_x - double(bx);
+	double fracY = pos.m_y - double(by);
+	double fracZ = pos.m_z - double(bz);
 
-	if (world->isBlockNormalCube({ bx, by, bz })) {
-		bool openNegX = !world->isBlockNormalCube({ bx - 1, by, bz });
-		bool openPosX = !world->isBlockNormalCube({ bx + 1, by, bz });
-		bool openNegY = !world->isBlockNormalCube({ bx, by - 1, bz });
-		bool openPosY = !world->isBlockNormalCube({ bx, by + 1, bz });
-		bool openNegZ = !world->isBlockNormalCube({ bx, by, bz - 1 });
-		bool openPosZ = !world->isBlockNormalCube({ bx, by, bz + 1 });
+	if (m_world->isBlockNormalCube({ bx, by, bz })) {
+		bool openNegX = !m_world->isBlockNormalCube({ bx - 1, by, bz });
+		bool openPosX = !m_world->isBlockNormalCube({ bx + 1, by, bz });
+		bool openNegY = !m_world->isBlockNormalCube({ bx, by - 1, bz });
+		bool openPosY = !m_world->isBlockNormalCube({ bx, by + 1, bz });
+		bool openNegZ = !m_world->isBlockNormalCube({ bx, by, bz - 1 });
+		bool openPosZ = !m_world->isBlockNormalCube({ bx, by, bz + 1 });
 
 		int8_t direction = -1;
 		double closest = 9999.0;
@@ -55,19 +55,19 @@ bool Entity::pushOutOfBlocks(Vec3 pos) {
 			direction = 5;
 		}
 
-		float pushSpeed = rand.nextFloat() * 0.2f + 0.1f;
+		float pushSpeed = m_rand.nextFloat() * 0.2f + 0.1f;
 		if (direction == 0)
-			velocity.x = double(-pushSpeed);
+			m_velocity.m_x = double(-pushSpeed);
 		if (direction == 1)
-			velocity.x = double(pushSpeed);
+			m_velocity.m_x = double(pushSpeed);
 		if (direction == 2)
-			velocity.y = double(-pushSpeed);
+			m_velocity.m_y = double(-pushSpeed);
 		if (direction == 3)
-			velocity.y = double(pushSpeed);
+			m_velocity.m_y = double(pushSpeed);
 		if (direction == 4)
-			velocity.z = double(-pushSpeed);
+			m_velocity.m_z = double(-pushSpeed);
 		if (direction == 5)
-			velocity.z = double(pushSpeed);
+			m_velocity.m_z = double(pushSpeed);
 	}
 
 	return false;
@@ -77,61 +77,61 @@ void Entity::onCollideWithPlayer(PlayerEntity& entity) {
 }
 
 void Entity::tick() {
-	ticksExisted++;
+	m_ticksExisted++;
 
-	if (this->vehicle != nullptr && this->vehicle->isDead) {
-		this->vehicle = nullptr;
+	if (this->m_vehicle != nullptr && this->m_vehicle->m_isDead) {
+		this->m_vehicle = nullptr;
 	}
 
 	// Returns if we are in water and applies a push to our entity
-	if (world->handleFluidAcceleration(getFluidCollider(), Material::Water(), *this)) {
-		fallDistance = 0.0;
-		inWater = true;
-		fireTicks = 0;
+	if (m_world->handleFluidAcceleration(getFluidCollider(), Material::Water(), *this)) {
+		m_fallDistance = 0.0;
+		m_inWater = true;
+		m_fireTicks = 0;
 	} else {
-		inWater = false;
+		m_inWater = false;
 	}
 
 	// If we are in fire decrement the fire
-	if (fireTicks > 0) {
-		if (isImmuneToFire) {
-			fireTicks -= 4;
-			fireTicks = std::max(0, fireTicks);
+	if (m_fireTicks > 0) {
+		if (m_isImmuneToFire) {
+			m_fireTicks -= 4;
+			m_fireTicks = std::max(0, m_fireTicks);
 		} else {
-			if (fireTicks % 20 == 0)
+			if (m_fireTicks % 20 == 0)
 				attackEntityFrom(nullptr, 1);
-			fireTicks--;
+			m_fireTicks--;
 		}
 	}
 
 	// Returns if we are in lava
-	inLava = world->isMaterialInAABB(getLavaCollider(), Material::Lava());
-	if (inLava) {
-		if (!isImmuneToFire) {
+	m_inLava = m_world->isMaterialInAABB(getLavaCollider(), Material::Lava());
+	if (m_inLava) {
+		if (!m_isImmuneToFire) {
 			attackEntityFrom(nullptr, 4);
-			fireTicks = 600;
+			m_fireTicks = 600;
 		}
 	}
 
 	// Kill our entity if its below the world
-	if (position.y < -64.0 && (type != EntityType::PLAYER))
-		isDead = true;
+	if (m_position.m_y < -64.0 && (m_type != EntityType::PLAYER))
+		m_isDead = true;
 
-	isFirstUpdate = false;
+	m_isFirstUpdate = false;
 }
 
 void Entity::applyKnockback(Vec3 direction) {
-	velocity.x *= KNOCKBACK_VELOCITY_DAMPENING;
-	velocity.y *= KNOCKBACK_VELOCITY_DAMPENING;
-	velocity.z *= KNOCKBACK_VELOCITY_DAMPENING;
-	velocity.x -= direction.x * HORIZONTAL_KNOCKBACK;
-	velocity.z -= direction.z * HORIZONTAL_KNOCKBACK;
-	velocity.y = std::min(float(velocity.y + VERTICAL_KNOCKBACK), VERTICAL_KNOCKBACK);
-	forceVelocityUpdate = true;
+	m_velocity.m_x *= KNOCKBACK_VELOCITY_DAMPENING;
+	m_velocity.m_y *= KNOCKBACK_VELOCITY_DAMPENING;
+	m_velocity.m_z *= KNOCKBACK_VELOCITY_DAMPENING;
+	m_velocity.m_x -= direction.m_x * HORIZONTAL_KNOCKBACK;
+	m_velocity.m_z -= direction.m_z * HORIZONTAL_KNOCKBACK;
+	m_velocity.m_y = std::min(float(m_velocity.m_y + VERTICAL_KNOCKBACK), VERTICAL_KNOCKBACK);
+	m_forceVelocityUpdate = true;
 }
 
 void Entity::applyInput(float acceleration) {
-	float length = std::sqrt((input.x * input.x) + (input.y * input.y));
+	float length = std::sqrt((m_input.m_x * m_input.m_x) + (m_input.m_y * m_input.m_y));
 
 	if (length < 0.01f)
 		return;
@@ -139,171 +139,171 @@ void Entity::applyInput(float acceleration) {
 	if (length < 1.0f)
 		length = 1.0f;
 
-	input.x /= length;
-	input.y /= length;
+	m_input.m_x /= length;
+	m_input.m_y /= length;
 
-	float yaw = rotationYaw * (JavaMath::PI / 180.0f);
+	float yaw = m_rotationYaw * (JavaMath::PI / 180.0f);
 	float sinYaw = std::sin(yaw);
 	float cosYaw = std::cos(yaw);
 
-	velocity.x += (input.x * cosYaw - input.y * sinYaw) * acceleration;
-	velocity.z += (input.y * cosYaw + input.x * sinYaw) * acceleration;
+	m_velocity.m_x += (m_input.m_x * cosYaw - m_input.m_y * sinYaw) * acceleration;
+	m_velocity.m_z += (m_input.m_y * cosYaw + m_input.m_x * sinYaw) * acceleration;
 }
 
 void Entity::move(Vec3& velocity) {
-	ySize *= 0.4f;
+	m_ySize *= 0.4f;
 
-	if (inWeb) {
-		inWeb = false;
-		velocity.x *= COBWEB_HORIZONTAL_DRAG;
-		velocity.y *= COBWEB_VERTICAL_DRAG;
-		velocity.z *= COBWEB_HORIZONTAL_DRAG;
-		velocity.x = 0.0;
-		velocity.y = 0.0;
-		velocity.z = 0.0;
+	if (m_inWeb) {
+		m_inWeb = false;
+		velocity.m_x *= COBWEB_HORIZONTAL_DRAG;
+		velocity.m_y *= COBWEB_VERTICAL_DRAG;
+		velocity.m_z *= COBWEB_HORIZONTAL_DRAG;
+		velocity.m_x = 0.0;
+		velocity.m_y = 0.0;
+		velocity.m_z = 0.0;
 	}
 
 	Vec3 original = velocity;
-	AABB originalCollider = collider;
-	bool clampSneak = onGround && sneaking;
+	AABB originalCollider = m_collider;
+	bool clampSneak = m_onGround && m_sneaking;
 
 	if (clampSneak) {
 		const double step = 0.05;
 
 		auto groundBelow = [&](double dx, double dz) -> bool {
-			return !world->getCollidingBoundingBoxes(collider.offset(dx, -1.0, dz)).empty();
+			return !m_world->getCollidingBoundingBoxes(m_collider.offset(dx, -1.0, dz)).empty();
 		};
 
 		// Clamp on the X and Z axes to avoid falling off edges while sneaking
-		while (velocity.x != 0.0 && !groundBelow(velocity.x, 0.0)) {
-			if (velocity.x < step && velocity.x >= -step)
-				velocity.x = 0.0;
-			else if (velocity.x > 0.0)
-				velocity.x -= step;
+		while (velocity.m_x != 0.0 && !groundBelow(velocity.m_x, 0.0)) {
+			if (velocity.m_x < step && velocity.m_x >= -step)
+				velocity.m_x = 0.0;
+			else if (velocity.m_x > 0.0)
+				velocity.m_x -= step;
 			else
-				velocity.x += step;
+				velocity.m_x += step;
 		}
-		while (velocity.z != 0.0 && !groundBelow(0.0, velocity.z)) {
-			if (velocity.z < step && velocity.z >= -step)
-				velocity.z = 0.0;
-			else if (velocity.z > 0.0)
-				velocity.z -= step;
+		while (velocity.m_z != 0.0 && !groundBelow(0.0, velocity.m_z)) {
+			if (velocity.m_z < step && velocity.m_z >= -step)
+				velocity.m_z = 0.0;
+			else if (velocity.m_z > 0.0)
+				velocity.m_z -= step;
 			else
-				velocity.z += step;
+				velocity.m_z += step;
 		}
 
 		// Update our og values so step up logic uses the correct position
-		original.x = velocity.x;
-		original.z = velocity.z;
+		original.m_x = velocity.m_x;
+		original.m_z = velocity.m_z;
 	}
 
-	auto sweptCollider = world->getCollidingBoundingBoxes(collider.addCoord(velocity.x, velocity.y, velocity.z));
+	auto sweptCollider = m_world->getCollidingBoundingBoxes(m_collider.addCoord(velocity.m_x, velocity.m_y, velocity.m_z));
 
 	// Resolve Y first
 	for (auto& col : sweptCollider) {
-		velocity.y = col.calculateYOffset(collider, velocity.y);
+		velocity.m_y = col.calculateYOffset(m_collider, velocity.m_y);
 	}
-	collider = collider.offset(0.0, velocity.y, 0.0);
+	m_collider = m_collider.offset(0.0, velocity.m_y, 0.0);
 
 	// Check if we are on ground or landed this tick
-	bool canStepUp = onGround || (original.y != velocity.y && original.y < 0.0);
+	bool canStepUp = m_onGround || (original.m_y != velocity.m_y && original.m_y < 0.0);
 
 	// Resolve X
 	for (auto& col : sweptCollider) {
-		velocity.x = col.calculateXOffset(collider, velocity.x);
+		velocity.m_x = col.calculateXOffset(m_collider, velocity.m_x);
 	}
-	collider = collider.offset(velocity.x, 0.0, 0.0);
+	m_collider = m_collider.offset(velocity.m_x, 0.0, 0.0);
 
 	// Resolve Z
 	for (auto& col : sweptCollider) {
-		velocity.z = col.calculateZOffset(collider, velocity.z);
+		velocity.m_z = col.calculateZOffset(m_collider, velocity.m_z);
 	}
-	collider = collider.offset(0.0, 0.0, velocity.z);
+	m_collider = m_collider.offset(0.0, 0.0, velocity.m_z);
 
-	collidedHorizontally = original.x != velocity.x || original.z != velocity.z;
+	m_collidedHorizontally = original.m_x != velocity.m_x || original.m_z != velocity.m_z;
 
-	if (stepHeight > 0.0f && canStepUp && (clampSneak || ySize < 0.05f) && collidedHorizontally) {
+	if (m_stepHeight > 0.0f && canStepUp && (clampSneak || m_ySize < 0.05f) && m_collidedHorizontally) {
 		auto stepUpMovement = velocity;
-		velocity = { original.x, stepHeight, original.z };
+		velocity = { original.m_x, m_stepHeight, original.m_z };
 
-		AABB resolvedCollider = collider;
-		collider = originalCollider;
+		AABB resolvedCollider = m_collider;
+		m_collider = originalCollider;
 
-		auto stepUpSweptCollider = world->getCollidingBoundingBoxes(
-		    collider.addCoord(velocity.x, velocity.y, velocity.z));
+		auto stepUpSweptCollider = m_world->getCollidingBoundingBoxes(
+		    m_collider.addCoord(velocity.m_x, velocity.m_y, velocity.m_z));
 
 		// Resolve Y first
 		for (auto& col : stepUpSweptCollider) {
-			velocity.y = col.calculateYOffset(collider, velocity.y);
+			velocity.m_y = col.calculateYOffset(m_collider, velocity.m_y);
 		}
-		collider = collider.offset(0.0, velocity.y, 0.0);
+		m_collider = m_collider.offset(0.0, velocity.m_y, 0.0);
 
 		// Resolve X
 		for (auto& col : stepUpSweptCollider) {
-			velocity.x = col.calculateXOffset(collider, velocity.x);
+			velocity.m_x = col.calculateXOffset(m_collider, velocity.m_x);
 		}
-		collider = collider.offset(velocity.x, 0.0, 0.0);
+		m_collider = m_collider.offset(velocity.m_x, 0.0, 0.0);
 
 		// Resolve Z
 		for (auto& col : stepUpSweptCollider) {
-			velocity.z = col.calculateZOffset(collider, velocity.z);
+			velocity.m_z = col.calculateZOffset(m_collider, velocity.m_z);
 		}
-		collider = collider.offset(0.0, 0.0, velocity.z);
+		m_collider = m_collider.offset(0.0, 0.0, velocity.m_z);
 
 		// Snap down
-		double downY = -stepHeight;
+		double downY = -m_stepHeight;
 		for (auto& col : stepUpSweptCollider) {
-			downY = col.calculateYOffset(collider, downY);
+			downY = col.calculateYOffset(m_collider, downY);
 		}
-		collider = collider.offset(0.0, downY, 0.0);
+		m_collider = m_collider.offset(0.0, downY, 0.0);
 
 		// Keep whichever collision path moved further horizontally
-		if (stepUpMovement.x * stepUpMovement.x + stepUpMovement.z * stepUpMovement.z >=
-		    velocity.x * velocity.x + velocity.z * velocity.z) {
+		if (stepUpMovement.m_x * stepUpMovement.m_x + stepUpMovement.m_z * stepUpMovement.m_z >=
+		    velocity.m_x * velocity.m_x + velocity.m_z * velocity.m_z) {
 			velocity = stepUpMovement;
-			collider = resolvedCollider;
+			m_collider = resolvedCollider;
 		} else {
-			double frac = collider.minY - std::trunc(collider.minY);
+			double frac = m_collider.m_minY - std::trunc(m_collider.m_minY);
 			if (frac > 0.0)
-				ySize += float(frac + 0.01);
+				m_ySize += float(frac + 0.01);
 		}
 	}
 
 	// Derive our current position from our collider
-	position.x = (collider.minX + collider.maxX) / 2.0;
-	position.y = collider.minY + double(yOffset) - double(ySize);
-	position.z = (collider.minZ + collider.maxZ) / 2.0;
+	m_position.m_x = (m_collider.m_minX + m_collider.m_maxX) / 2.0;
+	m_position.m_y = m_collider.m_minY + double(m_yOffset) - double(m_ySize);
+	m_position.m_z = (m_collider.m_minZ + m_collider.m_maxZ) / 2.0;
 
-	collidedHorizontally = original.x != velocity.x || original.z != velocity.z;
-	collidedVertically = original.y != velocity.y;
-	onGround = original.y != velocity.y && original.y < 0.0;
-	collided = collidedHorizontally || collidedVertically;
+	m_collidedHorizontally = original.m_x != velocity.m_x || original.m_z != velocity.m_z;
+	m_collidedVertically = original.m_y != velocity.m_y;
+	m_onGround = original.m_y != velocity.m_y && original.m_y < 0.0;
+	m_collided = m_collidedHorizontally || m_collidedVertically;
 
-	if (original.x != velocity.x)
-		velocity.x = 0.0;
-	if (original.y != velocity.y)
-		velocity.y = 0.0;
-	if (original.z != velocity.z)
-		velocity.z = 0.0;
+	if (original.m_x != velocity.m_x)
+		velocity.m_x = 0.0;
+	if (original.m_y != velocity.m_y)
+		velocity.m_y = 0.0;
+	if (original.m_z != velocity.m_z)
+		velocity.m_z = 0.0;
 
-	updateFallState(velocity.y);
+	updateFallState(velocity.m_y);
 
 	// Scan each block this entity overlaps so we can trigger collided with code
-	auto minX = MathHelper::floor_double(collider.minX + 0.001);
-	auto minY = MathHelper::floor_double(collider.minY + 0.001);
-	auto minZ = MathHelper::floor_double(collider.minZ + 0.001);
-	auto maxX = MathHelper::floor_double(collider.maxX - 0.001);
-	auto maxY = MathHelper::floor_double(collider.maxY - 0.001);
-	auto maxZ = MathHelper::floor_double(collider.maxZ - 0.001);
-	if (world->AABBinValidChunks(
+	auto minX = MathHelper::floor_double(m_collider.m_minX + 0.001);
+	auto minY = MathHelper::floor_double(m_collider.m_minY + 0.001);
+	auto minZ = MathHelper::floor_double(m_collider.m_minZ + 0.001);
+	auto maxX = MathHelper::floor_double(m_collider.m_maxX - 0.001);
+	auto maxY = MathHelper::floor_double(m_collider.m_maxY - 0.001);
+	auto maxZ = MathHelper::floor_double(m_collider.m_maxZ - 0.001);
+	if (m_world->AABBinValidChunks(
 	        { double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ) })) {
 		for (int x = minX; x <= maxX; x++) {
 			for (int y = minY; y <= maxY; y++) {
 				for (int z = minZ; z <= maxZ; z++) {
-					auto blockId = world->getBlockId({ x, y, z });
-					auto function = Blocks::blockBehaviors[blockId < 0 ? 0 : blockId].onEntityCollidedWithBlock;
+					auto blockId = m_world->getBlockId({ x, y, z });
+					auto function = Blocks::blockBehaviors[blockId < 0 ? 0 : blockId].m_onEntityCollidedWithBlock;
 					if (blockId > 0 && function) {
-						function(*world, { x, y, z }, *this);
+						function(*m_world, { x, y, z }, *this);
 					}
 				}
 			}
@@ -314,131 +314,131 @@ void Entity::move(Vec3& velocity) {
 void Entity::dealDamage([[maybe_unused]] int amount) {}
 
 void Entity::updateFallState(float movedY) {
-	if (onGround) {
-		if (fallDistance > FALL_DAMAGE_FLOOR) {
-			dealDamage((int)std::ceil(fallDistance - FALL_DAMAGE_FLOOR));
+	if (m_onGround) {
+		if (m_fallDistance > FALL_DAMAGE_FLOOR) {
+			dealDamage((int)std::ceil(m_fallDistance - FALL_DAMAGE_FLOOR));
 		}
-		fallDistance = 0;
+		m_fallDistance = 0;
 	} else if (movedY < 0) {
-		fallDistance -= movedY;
+		m_fallDistance -= movedY;
 	}
 }
 
 void Entity::loadFromNBT(Tag& nbt) {
-	auto& motion = nbt.compound["Motion"].getList();
-	auto& pos = nbt.compound["Pos"].getList();
-	auto& rotation = nbt.compound["Rotation"].getList();
+	auto& motion = nbt.m_compound["Motion"].getList();
+	auto& pos = nbt.m_compound["Pos"].getList();
+	auto& rotation = nbt.m_compound["Rotation"].getList();
 
-	velocity.x = motion[0].getDouble();
-	velocity.y = motion[1].getDouble();
-	velocity.z = motion[2].getDouble();
+	m_velocity.m_x = motion[0].getDouble();
+	m_velocity.m_y = motion[1].getDouble();
+	m_velocity.m_z = motion[2].getDouble();
 
-	position.x = pos[0].getDouble();
-	position.y = pos[1].getDouble();
-	position.z = pos[2].getDouble();
+	m_position.m_x = pos[0].getDouble();
+	m_position.m_y = pos[1].getDouble();
+	m_position.m_z = pos[2].getDouble();
 
-	rotationYaw = rotation[0].getFloat();
-	rotationPitch = rotation[1].getFloat();
+	m_rotationYaw = rotation[0].getFloat();
+	m_rotationPitch = rotation[1].getFloat();
 
-	air = nbt.compound["Air"].getShort();
-	onGround = nbt.compound["OnGround"].getByte();
-	fallDistance = nbt.compound["FallDistance"].getFloat();
-	fireTicks = nbt.compound["Fire"].getShort();
+	m_air = nbt.m_compound["Air"].getShort();
+	m_onGround = nbt.m_compound["OnGround"].getByte();
+	m_fallDistance = nbt.m_compound["FallDistance"].getFloat();
+	m_fireTicks = nbt.m_compound["Fire"].getShort();
 
 	rebuildCollider();
 }
 
 std::optional<Tag> Entity::serializeToNBT() {
 	Tag root;
-	root.type = TAG_COMPOUND;
-	root.name = "";
+	root.m_type = TAG_COMPOUND;
+	root.m_name = "";
 
 	Tag Motion;
-	Motion.type = TAG_LIST;
-	Motion.name = "Motion";
-	Motion.listType = TAG_DOUBLE;
+	Motion.m_type = TAG_LIST;
+	Motion.m_name = "Motion";
+	Motion.m_listType = TAG_DOUBLE;
 	Tag Air;
-	Air.type = TAG_SHORT;
-	Air.name = "Air";
-	Air.shortValue = this->air;
+	Air.m_type = TAG_SHORT;
+	Air.m_name = "Air";
+	Air.m_shortValue = this->m_air;
 	Tag OnGround;
-	OnGround.type = TAG_BYTE;
-	OnGround.name = "OnGround";
-	OnGround.byteValue = this->onGround;
+	OnGround.m_type = TAG_BYTE;
+	OnGround.m_name = "OnGround";
+	OnGround.m_byteValue = this->m_onGround;
 	Tag FallDistance;
-	FallDistance.type = TAG_FLOAT;
-	FallDistance.name = "FallDistance";
-	FallDistance.floatValue = this->fallDistance;
+	FallDistance.m_type = TAG_FLOAT;
+	FallDistance.m_name = "FallDistance";
+	FallDistance.m_floatValue = this->m_fallDistance;
 	Tag Pos;
-	Pos.type = TAG_LIST;
-	Pos.name = "Pos";
-	Pos.listType = TAG_DOUBLE;
+	Pos.m_type = TAG_LIST;
+	Pos.m_name = "Pos";
+	Pos.m_listType = TAG_DOUBLE;
 	Tag Rotation;
-	Rotation.type = TAG_LIST;
-	Rotation.name = "Rotation";
-	Rotation.listType = TAG_FLOAT;
+	Rotation.m_type = TAG_LIST;
+	Rotation.m_name = "Rotation";
+	Rotation.m_listType = TAG_FLOAT;
 	Tag Fire;
-	Fire.type = TAG_SHORT;
-	Fire.name = "Fire";
-	Fire.shortValue = this->fireTicks;
+	Fire.m_type = TAG_SHORT;
+	Fire.m_name = "Fire";
+	Fire.m_shortValue = this->m_fireTicks;
 
 	// Save position and rotation / velocity
 	Tag posX;
-	posX.type = TAG_DOUBLE;
-	posX.doubleValue = this->position.x;
+	posX.m_type = TAG_DOUBLE;
+	posX.m_doubleValue = this->m_position.m_x;
 	Tag posY;
-	posY.type = TAG_DOUBLE;
-	posY.doubleValue = this->position.y;
+	posY.m_type = TAG_DOUBLE;
+	posY.m_doubleValue = this->m_position.m_y;
 	Tag posZ;
-	posZ.type = TAG_DOUBLE;
-	posZ.doubleValue = this->position.z;
-	Pos.list.push_back(posX);
-	Pos.list.push_back(posY);
-	Pos.list.push_back(posZ);
+	posZ.m_type = TAG_DOUBLE;
+	posZ.m_doubleValue = this->m_position.m_z;
+	Pos.m_list.push_back(posX);
+	Pos.m_list.push_back(posY);
+	Pos.m_list.push_back(posZ);
 
 	Tag movX;
-	movX.type = TAG_DOUBLE;
-	movX.doubleValue = this->velocity.x;
+	movX.m_type = TAG_DOUBLE;
+	movX.m_doubleValue = this->m_velocity.m_x;
 	Tag movY;
-	movY.type = TAG_DOUBLE;
-	movY.doubleValue = this->velocity.y;
+	movY.m_type = TAG_DOUBLE;
+	movY.m_doubleValue = this->m_velocity.m_y;
 	Tag movZ;
-	movZ.type = TAG_DOUBLE;
-	movZ.doubleValue = this->velocity.z;
-	Motion.list.push_back(movX);
-	Motion.list.push_back(movY);
-	Motion.list.push_back(movZ);
+	movZ.m_type = TAG_DOUBLE;
+	movZ.m_doubleValue = this->m_velocity.m_z;
+	Motion.m_list.push_back(movX);
+	Motion.m_list.push_back(movY);
+	Motion.m_list.push_back(movZ);
 
 	Tag rotYaw;
-	rotYaw.type = TAG_FLOAT;
-	rotYaw.floatValue = this->rotationYaw;
+	rotYaw.m_type = TAG_FLOAT;
+	rotYaw.m_floatValue = this->m_rotationYaw;
 	Tag rotPitch;
-	rotPitch.type = TAG_FLOAT;
-	rotPitch.floatValue = this->rotationPitch;
-	Rotation.list.push_back(rotYaw);
-	Rotation.list.push_back(rotPitch);
+	rotPitch.m_type = TAG_FLOAT;
+	rotPitch.m_floatValue = this->m_rotationPitch;
+	Rotation.m_list.push_back(rotYaw);
+	Rotation.m_list.push_back(rotPitch);
 
 	// Get our string ID
-	auto stringId = this->entityManager->getEntityNbtId(type);
+	auto stringId = this->m_entityManager->getEntityNbtId(m_type);
 
 	// If we don't have a string id fail to save
 	if (!stringId)
 		return std::nullopt;
 
 	Tag id;
-	id.type = TAG_STRING;
-	id.name = "id";
-	id.stringValue = *stringId;
+	id.m_type = TAG_STRING;
+	id.m_name = "id";
+	id.m_stringValue = *stringId;
 
 	// Link together our compound
-	root.compound["Pos"] = Pos;
-	root.compound["Motion"] = Motion;
-	root.compound["Rotation"] = Rotation;
-	root.compound["FallDistance"] = FallDistance;
-	root.compound["Fire"] = Fire;
-	root.compound["Air"] = Air;
-	root.compound["OnGround"] = OnGround;
-	root.compound["id"] = id;
+	root.m_compound["Pos"] = Pos;
+	root.m_compound["Motion"] = Motion;
+	root.m_compound["Rotation"] = Rotation;
+	root.m_compound["FallDistance"] = FallDistance;
+	root.m_compound["Fire"] = Fire;
+	root.m_compound["Air"] = Air;
+	root.m_compound["OnGround"] = OnGround;
+	root.m_compound["id"] = id;
 
 	return root;
 }

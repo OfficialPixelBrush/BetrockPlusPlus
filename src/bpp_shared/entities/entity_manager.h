@@ -15,9 +15,9 @@ struct EntityBucket {
 };
 
 struct EntityContainer {
-	Int2 bucketPos = { 0, 0 };
+	Int2 m_bucketPos = { 0, 0 };
 	std::array<EntityBucket, 10>
-	    buckets; // 0 = lowest bucket (below the world), 1 = Y lvl 0; 8 = y lvl 127, 9 = above the world
+	    m_buckets; // 0 = lowest bucket (below the world), 1 = Y lvl 0; 8 = y lvl 127, 9 = above the world
 };
 
 // For ticking all entities and keeping track of them in the world
@@ -28,17 +28,17 @@ struct EntityManager {
 	WorldManager* m_world = nullptr; // we need to bind a pointer to this later
 
 	// Callbacks that we can link into
-	std::function<void(std::shared_ptr<Entity>)> onEntitySpawn;
-	std::function<void(std::shared_ptr<Entity>)> onEntityDespawn;
+	std::function<void(std::shared_ptr<Entity>)> m_onEntitySpawn;
+	std::function<void(std::shared_ptr<Entity>)> m_onEntityDespawn;
 
 	static Int3 computeBucketPos(Vec3 position) {
-		Int3 bucketPos = { int(MathHelper::floor_double(position.x / 16.0)),
-			               int(MathHelper::floor_double(position.z / 16.0)),
-			               int(MathHelper::floor_double(position.y / 16.0)) };
+		Int3 bucketPos = { int(MathHelper::floor_double(position.m_x / 16.0)),
+			               int(MathHelper::floor_double(position.m_z / 16.0)),
+			               int(MathHelper::floor_double(position.m_y / 16.0)) };
 
 		// Entity collisions below and above the world are just gonna be inefficient
-		bucketPos.z = std::max(0, bucketPos.z);
-		bucketPos.z = std::min(9, bucketPos.z);
+		bucketPos.m_z = std::max(0, bucketPos.m_z);
+		bucketPos.m_z = std::min(9, bucketPos.m_z);
 		return bucketPos;
 	}
 
@@ -49,8 +49,8 @@ struct EntityManager {
 	void removeEntity(EntityId id);
 	bool chunkHasEntities(Int2 cpos) {
 		auto& container = this->m_entityContainers[cpos];
-		for (size_t i = 0; i < container.buckets.size(); i++) {
-			auto& bucket = container.buckets[i];
+		for (size_t i = 0; i < container.m_buckets.size(); i++) {
+			auto& bucket = container.m_buckets[i];
 			if (bucket.m_entities.size() > 0)
 				return true;
 		}
@@ -59,7 +59,7 @@ struct EntityManager {
 	std::vector<Tag> collectEntitiesForSave(Int2 cpos, bool clearCollectedEntities = false);
 	std::shared_ptr<Entity> getEntityByIdShared(EntityId id) {
 		for (auto& entity : m_entities) {
-			if (entity->id == id)
+			if (entity->m_id == id)
 				return entity;
 		}
 		return nullptr;

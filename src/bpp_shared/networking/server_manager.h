@@ -15,7 +15,7 @@ private:
 	int server_socket = INVALID_SOCKET;
 
 public:
-	std::vector<NetworkStream> streams;
+	std::vector<NetworkStream> m_streams;
 	ServerManager(uint16_t port = 25565);
 	~ServerManager();
 	bool InitConnection();

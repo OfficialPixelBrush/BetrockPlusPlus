@@ -32,23 +32,23 @@ enum InvMap {
 // Slot 0 is the crafting result
 struct InventoryPlayer : Inventory {
 public:
-	int activeHotbarSlot = 0;
-	int currentItem = 0;
+	int m_activeHotbarSlot = 0;
+	int m_currentItem = 0;
 
 	InventoryPlayer() : Inventory(45) {
-		name = "Inventory";
+		m_name = "Inventory";
 	}
 
 	ItemStack* getCurrentItem() {
-		if (currentItem < 0 || currentItem >= 9)
+		if (m_currentItem < 0 || m_currentItem >= 9)
 			return nullptr;
-		return getStackInSlot(currentItem);
+		return getStackInSlot(m_currentItem);
 	}
 
 	ItemStack* getHeldItem() {
-		if (activeHotbarSlot < 0 || activeHotbarSlot >= 9)
+		if (m_activeHotbarSlot < 0 || m_activeHotbarSlot >= 9)
 			return nullptr;
-		return getStackInSlot(activeHotbarSlot + 36);
+		return getStackInSlot(m_activeHotbarSlot + 36);
 	}
 
 	InvMap getInventoryAreaFromSlot(int slot) {
@@ -62,7 +62,7 @@ public:
 			return InvMap::HOTBAR;
 		if (slot >= 9 && slot <= 35)
 			return InvMap::INVENTORY;
-		GlobalLogger().error << "Invalid Inventory area slot! (" << slot << ")\n";
+		GlobalLogger().m_error << "Invalid Inventory area slot! (" << slot << ")\n";
 		return InvMap::INVALID; // Fallback,
 	}
 
@@ -111,20 +111,20 @@ public:
 		auto end = endSlot == -1 ? getSizeInventory() - 1 : endSlot;
 
 		// Try and merge into an already existing stack of the same type if this item is stackable
-		if (Items::IsStackable(stack.id)) {
+		if (Items::IsStackable(stack.m_id)) {
 			for (int i = reverse ? end : start; reverse ? i >= start : i <= end; reverse ? i-- : i++) {
 				auto slot = getStackInSlot(i);
 				if (!slot)
 					continue;
-				if (slot->id == stack.id && slot->data == stack.data) {
-					auto maxStack = Items::GetMaxStack(slot->id);
+				if (slot->m_id == stack.m_id && slot->m_data == stack.m_data) {
+					auto maxStack = Items::GetMaxStack(slot->m_id);
 					// Don't try and merge into an already maxed out stack
-					if (slot->count >= maxStack)
+					if (slot->m_count >= maxStack)
 						continue;
 
 					// Add the stacks together and do some checks to make sure we don't overflow
-					int space = maxStack - slot->count;
-					int toMove = CrossPlatform::Math::min(space, (int)stack.count);
+					int space = maxStack - slot->m_count;
+					int toMove = CrossPlatform::Math::min(space, (int)stack.m_count);
 
 					if (toMove > 0)
 						return true;
@@ -137,7 +137,7 @@ public:
 
 struct InventoryChest : Inventory {
 	InventoryChest() : Inventory(27) {
-		name = "Chest";
+		m_name = "Chest";
 	}
 };
 
@@ -147,7 +147,7 @@ struct InventoryLargeChest : Inventory {
 	InventoryChest* m_lower;
 
 	InventoryLargeChest(InventoryChest* upper, InventoryChest* lower) : Inventory(0), m_upper(upper), m_lower(lower) {
-		name = "Large Chest";
+		m_name = "Large Chest";
 	}
 
 	int getSizeInventory() const override {
@@ -190,35 +190,35 @@ struct InventoryLargeChest : Inventory {
 		bool success = m_upper->mergeItemStackInInventory(stack, reverse, CrossPlatform::Math::max(0, startSlot),
 		                                                  CrossPlatform::Math::min(upperSize - 1, end));
 
-		if (!success || stack.count > 0) {
+		if (!success || stack.m_count > 0) {
 			success = m_lower->mergeItemStackInInventory(
 			    stack, reverse, CrossPlatform::Math::max(0, startSlot - upperSize),
 			    CrossPlatform::Math::min(m_lower->getSizeInventory() - 1, end - upperSize));
 		}
-		return success || stack.count == 0;
+		return success || stack.m_count == 0;
 	}
 };
 
 struct InventoryCraftingTable : Inventory {
 	InventoryCraftingTable() : Inventory(10) {
-		name = "Crafting";
+		m_name = "Crafting";
 	}
 };
 
 struct InventoryDispenser : Inventory {
 	// TODO: Maybe use JavaRandom? (does that matter???)
-	std::mt19937 rng{ std::random_device{}() };
+	std::mt19937 m_rng{ std::random_device{}() };
 
 	InventoryDispenser() : Inventory(9) {
-		name = "Trap";
+		m_name = "Trap";
 	}
 
 	std::optional<ItemStack> getRandomStack() {
 		int chosen = -1, weight = 1;
 		for (int i = 0; i < 9; i++) {
-			if (slots[size_t(i)].id == Items::Id::INVALID)
+			if (m_slots[size_t(i)].m_id == Items::Id::INVALID)
 				continue;
-			if (std::uniform_int_distribution<int>(0, weight++ - 1)(rng) == 0)
+			if (std::uniform_int_distribution<int>(0, weight++ - 1)(m_rng) == 0)
 				chosen = i;
 		}
 		if (chosen < 0)
@@ -230,14 +230,14 @@ struct InventoryDispenser : Inventory {
 // TODO: Maybe make an enum for this?
 // Slots: 0 = input, 1 = fuel, 2 = output.
 struct InventoryFurnace : Inventory {
-	int burnTime = 0;
-	int maxBurnTime = 0;
-	int cookTime = 0;
+	int m_burnTime = 0;
+	int m_maxBurnTime = 0;
+	int m_cookTime = 0;
 
 	InventoryFurnace() : Inventory(3) {
-		name = "Furnace";
+		m_name = "Furnace";
 	}
 	bool isBurning() const {
-		return burnTime > 0;
+		return m_burnTime > 0;
 	}
 };
