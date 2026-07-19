@@ -7,6 +7,7 @@
 #include "tile_entity.h"
 #include "items.h"
 #include "world/chunk.h"
+#include <string>
 
 void TileEntityChest::tick() {
 	if (m_chunk && m_inventory.m_isModified) {
@@ -42,6 +43,8 @@ constexpr std::string getTileNbtId(TileType type) {
 	case TileType::SPAWNER:
 		return "MobSpawner";
 	}
+	// Invalid type, empty string
+	return "";
 }
 
 Tag TileEntity::serialize() {

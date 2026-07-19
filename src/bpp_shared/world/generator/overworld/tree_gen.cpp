@@ -6,7 +6,9 @@
 */
 
 #include "tree_gen.h"
+#include <cassert>
 #include <cstdint>
+#include <exception>
 
 /**
  * @brief Attempts to generate an oak or birch tree.
@@ -155,8 +157,12 @@ void BigTreeGenerator::GenerateBranchPositions() {
 	if (branchesPerLayer < 1) {
 		branchesPerLayer = 1;
 	}
+	
+	const size_t branchCapacity = static_cast<size_t>(branchesPerLayer * m_totalHeight);
+	if (branchCapacity <= 0)
+		throw "Branch capacity is 0!";
 
-	std::vector<BranchPos> candidateBranches(size_t(branchesPerLayer * m_totalHeight));
+	std::vector<BranchPos> candidateBranches(branchCapacity);
 	int32_t currentY = m_basePos.m_y + m_totalHeight - m_trunkThickness;
 	int32_t branchCount = 1;
 	int32_t targetY = m_basePos.m_y + m_height;

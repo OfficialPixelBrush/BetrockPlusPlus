@@ -137,6 +137,7 @@ void EntityMPPlayer::tick() {
 			Packet::PlayerPosition pkt;
 			pkt.m_on_ground = m_onGround;
 			pkt.m_position = { m_position.m_x, m_position.m_y + PLAYER_EYE_HEIGHT + 0.0625, m_position.m_z };
+			pkt.m_camera_y = 0.0; // Just exists because it shouldn't be uninitialized
 			pkt.Serialize(m_session->m_stream);
 		}
 	}

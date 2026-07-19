@@ -42,20 +42,22 @@ public:
 	ChunkSender m_chunkSender;
 	int m_flushChunkCount = 10;
 
-	PlayerSession& getSessionById(EntityId entityId) {
-		for (auto& player : players) {
+	std::shared_ptr<PlayerSession> getSessionById(EntityId entityId) {
+		for (auto player : players) {
 			if (player->m_entity && player->m_entity->m_id == entityId) {
-				return *player;
+				return player;
 			}
 		}
+		return nullptr;
 	}
 
-	PlayerSession& getSessionByUsername(const std::string& username) {
-		for (auto& player : players) {
+	std::shared_ptr<PlayerSession> getSessionByUsername(const std::string& username) {
+		for (auto player : players) {
 			if (player->m_username == username) {
-				return *player;
+				return player;
 			}
 		}
+		return nullptr;
 	}
 
 	std::string getUsernameByEntityId(EntityId id) {
@@ -64,6 +66,7 @@ public:
 				return player->m_username;
 			}
 		}
+		return "";
 	}
 
 	// Send a message to all players

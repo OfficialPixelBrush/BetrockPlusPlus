@@ -257,6 +257,8 @@ int baseToolDamage(ToolType type) {
 	case ToolType::None:
 		return 0;
 	}
+	// Default
+	return 0;
 }
 
 EntityHealth calculateDamage(ToolType type, ToolLevel level) {

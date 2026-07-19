@@ -8,6 +8,7 @@
 #include "../server.h"
 #include "entities.h"
 #include "entities/entity_item.h"
+#include "logger.h"
 #include "packet_data.h"
 #include <algorithm>
 #include <cstdint>
@@ -47,10 +48,11 @@ void EntityTracker::tick() {
 			auto distanceTo = std::abs(std::max(std::abs(entry.m_entity->m_position.m_x - player.m_entity->m_position.m_x),
 			                                    std::abs(entry.m_entity->m_position.m_z - player.m_entity->m_position.m_z)));
 			if (distanceTo > entry.m_profile.m_range) {
-				auto& pSession = m_server->getSessionById(playerId);
+				auto pSession = m_server->getSessionById(playerId);
+				if (!pSession) continue;
 				Packet::DespawnEntity pkt;
 				pkt.m_entity_id = entry.m_entity->m_id;
-				pkt.Serialize(pSession.m_stream);
+				pkt.Serialize(pSession->m_stream);
 
 				it = entry.m_visibleTo.erase(it);
 				GlobalLogger().m_info << "Sent despawn packet to session id " << playerId << " for entity "
@@ -83,7 +85,8 @@ void EntityTracker::tick() {
 
 void EntityTracker::spawnEntityForPlayer(EntityId playerId, TrackedEntry& entityEntry) {
 	GlobalLogger().m_info << "Spawning entity at " << entityEntry.m_entity->m_position << "\n";
-	auto& pSession = m_server->getSessionById(playerId);
+	auto pSession = m_server->getSessionById(playerId);
+	if (!pSession) return;
 	switch (entityEntry.m_entity->m_type) {
 	case EntityType::ITEM: {
 		GlobalLogger().m_info << "Spawned item entity\n";
@@ -99,7 +102,7 @@ void EntityTracker::spawnEntityForPlayer(EntityId playerId, TrackedEntry& entity
 		pkt.m_q_rotation = { quantizeSpawnVelocity(entityEntry.m_entity->m_velocity.m_x),
 			               quantizeSpawnVelocity(entityEntry.m_entity->m_velocity.m_y),
 			               quantizeSpawnVelocity(entityEntry.m_entity->m_velocity.m_z) };
-		pkt.Serialize(pSession.m_stream);
+		pkt.Serialize(pSession->m_stream);
 		break;
 	}
 	case EntityType::PLAYER: {
@@ -113,8 +116,12 @@ void EntityTracker::spawnEntityForPlayer(EntityId playerId, TrackedEntry& entity
 
 		// To prevent bad behavior when we share a name with another entity
 		auto username = m_server->getUsernameByEntityId(entityEntry.m_entity->m_id);
+		if (username.empty()) {
+			GlobalLogger().m_warn << "Refused to spawn player entity, as no username was found!\n";
+			return;
+		}
 		pkt.m_username = username;
-		pkt.Serialize(pSession.m_stream);
+		pkt.Serialize(pSession->m_stream);
 		break;
 	}
 	case EntityType::CREEPER: {
@@ -125,7 +132,7 @@ void EntityTracker::spawnEntityForPlayer(EntityId playerId, TrackedEntry& entity
 		pkt.m_q_rotation = { int8_t(quantizeRotation(entityEntry.m_entity->m_rotationYaw)),
 			               int8_t(quantizeRotation(entityEntry.m_entity->m_rotationPitch)) };
 		pkt.m_metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
-		pkt.Serialize(pSession.m_stream);
+		pkt.Serialize(pSession->m_stream);
 		break;
 	}
 	case EntityType::BOAT: {
@@ -133,7 +140,7 @@ void EntityTracker::spawnEntityForPlayer(EntityId playerId, TrackedEntry& entity
 		pkt.m_entity_id = entityEntry.m_entity->m_id;
 		pkt.m_object_type = PacketData::ObjectType::BOAT;
 		pkt.m_q_position = quantizePosition(entityEntry.m_entity->m_position);
-		pkt.Serialize(pSession.m_stream);
+		pkt.Serialize(pSession->m_stream);
 		break;
 	}
 	case EntityType::FALLING_SAND: {
@@ -143,7 +150,7 @@ void EntityTracker::spawnEntityForPlayer(EntityId playerId, TrackedEntry& entity
 		pkt.m_object_type = PacketData::ObjectType::FALLING_SAND;
 		pkt.m_q_position = quantizePosition(entityEntry.m_entity->m_position);
 		pkt.m_q_velocity = quantizeVelocity(entityEntry.m_entity->m_velocity);
-		pkt.Serialize(pSession.m_stream);
+		pkt.Serialize(pSession->m_stream);
 		break;
 	}
 	case EntityType::FALLING_GRAVEL: {
@@ -153,7 +160,7 @@ void EntityTracker::spawnEntityForPlayer(EntityId playerId, TrackedEntry& entity
 		pkt.m_object_type = PacketData::ObjectType::FALLING_GRAVEL;
 		pkt.m_q_position = quantizePosition(entityEntry.m_entity->m_position);
 		pkt.m_q_velocity = quantizeVelocity(entityEntry.m_entity->m_velocity);
-		pkt.Serialize(pSession.m_stream);
+		pkt.Serialize(pSession->m_stream);
 		break;
 	}
 	default:
@@ -167,22 +174,25 @@ void EntityTracker::spawnEntityForPlayer(EntityId playerId, TrackedEntry& entity
 		Packet::EntityVelocity velPkt;
 		velPkt.m_entity_id = entityEntry.m_entity->m_id;
 		velPkt.m_velocity = quantizeVelocity(entityEntry.m_entity->m_velocity);
-		velPkt.Serialize(pSession.m_stream);
+		velPkt.Serialize(pSession->m_stream);
 	}
 }
 
 void EntityTracker::despawnEntityForViewers(EntityId entityId, TrackedEntry& entry) {
 	for (EntityId viewerId : entry.m_visibleTo) {
-		auto& pSession = m_server->getSessionById(viewerId);
+		auto pSession = m_server->getSessionById(viewerId);
+		if (!pSession) continue;
 		Packet::DespawnEntity pkt;
 		pkt.m_entity_id = entityId;
-		pkt.Serialize(pSession.m_stream);
+		pkt.Serialize(pSession->m_stream);
 	}
 }
 
 void EntityTracker::sendPacketToPlayersInTrackedEntry(Packet::BasePacket& pkt, TrackedEntry& trackedEntry) {
 	for (auto& playerId : trackedEntry.m_visibleTo) {
-		pkt.Serialize(m_server->getSessionById(playerId).m_stream);
+		auto session = m_server->getSessionById(playerId);
+		if (!session) continue;
+		pkt.Serialize(session->m_stream);
 	}
 }
 
@@ -198,7 +208,9 @@ void EntityTracker::sendPacketToViewers(Packet::BasePacket& pkt, EntityId id) {
 	for (auto& playerId : m_playerIds) {
 		auto& playerEntry = getTrackerForEntityId(playerId);
 		if (playerEntry.m_visibleTo.contains(id)) {
-			pkt.Serialize(m_server->getSessionById(playerId).m_stream);
+			auto session = m_server->getSessionById(playerId);
+			if (!session) continue;
+			pkt.Serialize(session->m_stream);
 		}
 	}
 }
