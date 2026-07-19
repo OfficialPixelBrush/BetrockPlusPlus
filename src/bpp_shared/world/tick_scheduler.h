@@ -39,12 +39,9 @@ struct TickScheduler {
 
 	void scheduleUpdateTick(Int3 pos, BlockType block, int tickDelay) {
 		if (m_pending.contains(pos) && m_pending[pos] == m_currentTick + TickTime(tickDelay)) {
-			GlobalLogger().m_info << "Blocked duplicate schedule at " << pos << "\n";
 			return;
 		}
 		auto sequence = m_nextSequence++;
-		GlobalLogger().m_info << "Scheduling " << pos << " seq=" << sequence << " due=" << (m_currentTick + tickDelay)
-		                    << "\n";
 		m_scheduledTicks.push({ m_currentTick + tickDelay, sequence, pos, block });
 		m_pending[pos] = sequence;
 	}

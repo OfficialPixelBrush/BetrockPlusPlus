@@ -30,7 +30,6 @@ void EntityTracker::tick() {
 		}
 		m_trackedEntities.erase(entityId);
 		m_playerIds.erase(entityId);
-		GlobalLogger().m_info << "Killed entity id " << entityId << "\n";
 	}
 
 	// Despawn pass / update
@@ -55,8 +54,6 @@ void EntityTracker::tick() {
 				pkt.Serialize(pSession->m_stream);
 
 				it = entry.m_visibleTo.erase(it);
-				GlobalLogger().m_info << "Sent despawn packet to session id " << playerId << " for entity "
-				                    << pkt.m_entity_id << "\n";
 			} else {
 				++it;
 			}
@@ -84,12 +81,10 @@ void EntityTracker::tick() {
 }
 
 void EntityTracker::spawnEntityForPlayer(EntityId playerId, TrackedEntry& entityEntry) {
-	GlobalLogger().m_info << "Spawning entity at " << entityEntry.m_entity->m_position << "\n";
 	auto pSession = m_server->getSessionById(playerId);
 	if (!pSession) return;
 	switch (entityEntry.m_entity->m_type) {
 	case EntityType::ITEM: {
-		GlobalLogger().m_info << "Spawned item entity\n";
 		ItemEntity& ie = dynamic_cast<ItemEntity&>(*entityEntry.m_entity);
 		Packet::SpawnItem pkt;
 		pkt.m_entity_id = entityEntry.m_entity->m_id;
@@ -106,7 +101,6 @@ void EntityTracker::spawnEntityForPlayer(EntityId playerId, TrackedEntry& entity
 		break;
 	}
 	case EntityType::PLAYER: {
-		GlobalLogger().m_info << "Spawned player entity\n";
 		Packet::SpawnPlayer pkt;
 		pkt.m_entity_id = entityEntry.m_entity->m_id;
 		pkt.m_held_item_id = Items::Id::NONE;
@@ -144,7 +138,6 @@ void EntityTracker::spawnEntityForPlayer(EntityId playerId, TrackedEntry& entity
 		break;
 	}
 	case EntityType::FALLING_SAND: {
-		GlobalLogger().m_info << "Spawned falling sand entity\n";
 		Packet::SpawnObject pkt;
 		pkt.m_entity_id = entityEntry.m_entity->m_id;
 		pkt.m_object_type = PacketData::ObjectType::FALLING_SAND;
@@ -154,7 +147,6 @@ void EntityTracker::spawnEntityForPlayer(EntityId playerId, TrackedEntry& entity
 		break;
 	}
 	case EntityType::FALLING_GRAVEL: {
-		GlobalLogger().m_info << "Spawned falling gravel entity\n";
 		Packet::SpawnObject pkt;
 		pkt.m_entity_id = entityEntry.m_entity->m_id;
 		pkt.m_object_type = PacketData::ObjectType::FALLING_GRAVEL;

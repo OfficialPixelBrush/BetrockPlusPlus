@@ -5,6 +5,7 @@
 */
 
 #include "../command.h"
+#include "server.h"
 
 // Teleports a player to coordinates or to another player.
 // Usage:
@@ -29,7 +30,7 @@ std::string CommandTeleport::Execute(std::vector<std::string>& parameters, Playe
 		if (!ss.fail() && ss.eof())
 			source = &session;
 		else
-			// source = FindSession(session, parameters[offset++]);
+			source = server.getSessionByUsername(parameters[offset++]).get();
 			return "";
 	}
 
@@ -53,18 +54,16 @@ std::string CommandTeleport::Execute(std::vector<std::string>& parameters, Playe
 	}
 
 	// /tp <player> <target_player>
-	/*
 	if (parameters.size() - offset == 1) { // offset=1→params[1], offset=2→params[2]
-		PlayerSession* dest = FindSession(session, parameters[offset]);
+		PlayerSession* dest = server.getSessionByUsername(parameters[offset]).get();
 		if (!dest)
 			return parameters[offset] + " does not exist!";
-		SendTeleport(*source, dest->position.pos, dest->rotation.x, dest->rotation.y);
+		SendTeleport(*source, dest->m_position.m_pos, dest->m_rotation.m_x, dest->m_rotation.m_y);
 		Packet::ChatMessage reply;
-		reply.message = "§eTeleported " + source->username + " to " + session.username;
-		reply.Serialize(session.stream);
+		reply.m_message = "§eTeleported " + source->m_username + " to " + session.m_username;
+		reply.Serialize(session.m_stream);
 		return "";
 	}
-	*/
 
 	return ERROR_REASON_SYNTAX;
 }
