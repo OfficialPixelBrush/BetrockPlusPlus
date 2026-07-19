@@ -111,6 +111,7 @@ void EntityMPPlayer::tick() {
 		double residual = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
 		if (residual < 0.0625) {
 			this->position = claimed; // Trust it
+			rebuildCollider();
 		} else {
 			// Send a correction
 			residualTooLarge = true;

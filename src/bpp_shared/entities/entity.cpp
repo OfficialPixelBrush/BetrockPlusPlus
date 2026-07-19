@@ -114,7 +114,7 @@ void Entity::tick() {
 	}
 
 	// Kill our entity if its below the world
-	if (position.y < -64.0)
+	if (position.y < -64.0 && (type != EntityType::PLAYER))
 		isDead = true;
 
 	isFirstUpdate = false;
