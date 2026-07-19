@@ -72,7 +72,8 @@ void EntityMPPlayer::tick() {
 		if (dist > 0.0625) {
 			// Player isn't at the teleported position so send another tp packet
 			// Also reset our position
-			this->teleport(*m_session->m_pendingTeleport, { m_rotationYaw, m_rotationPitch });
+			auto ptp = *m_session->m_pendingTeleport;
+			this->teleport({ ptp.m_x, ptp.m_y + 1.0 / 64.0, ptp.m_z}, { m_rotationYaw, m_rotationPitch });
 			m_session->m_position.m_pos = *m_session->m_pendingTeleport;
 			Packet::PlayerPosition pkt;
 			pkt.m_on_ground = m_onGround;
@@ -81,7 +82,6 @@ void EntityMPPlayer::tick() {
 			return;
 		}
 		// Client acknowledged our tp
-		m_session->m_pendingPosition.reset();
 		m_session->m_pendingTeleport.reset();
 	}
 
@@ -94,13 +94,14 @@ void EntityMPPlayer::tick() {
 
 	// If we recieved a movement packet this tick do our server side checks
 	if (m_session->m_pendingPosition) {
+		m_session->m_pendingPosition.reset();
+
 		// Re-simulate our move
 		bool residualTooLarge = false;
 		bool movedWrong = false;
 		bool wasClearBefore = m_world->getCollidingBoundingBoxes(m_collider.expand(-0.0625, -0.0625, -0.0625)).empty();
-		auto& pending = *m_session->m_pendingPosition;
 		Vec3 lastPosition = this->m_position;
-		Vec3 claimed = { pending.m_x, pending.m_y, pending.m_z };
+		Vec3 claimed = *m_session->m_pendingPosition;
 		Vec3 delta = claimed - lastPosition;
 		if (delta.m_x * delta.m_x + delta.m_y * delta.m_y + delta.m_z * delta.m_z > 100.0) {
 			GlobalLogger().m_warn << "Client " << m_session->m_username << " moved wrongly!\n";
@@ -119,7 +120,6 @@ void EntityMPPlayer::tick() {
 			// Send a correction
 			residualTooLarge = true;
 		}
-		m_session->m_pendingPosition.reset();
 
 		bool clearNow = m_world->getCollidingBoundingBoxes(m_collider.expand(-0.0625, -0.0625, -0.0625)).empty();
 
@@ -136,8 +136,8 @@ void EntityMPPlayer::tick() {
 			m_session->m_position.m_pos = lastPosition;
 			Packet::PlayerPosition pkt;
 			pkt.m_on_ground = m_onGround;
-			pkt.m_position = { m_position.m_x, m_position.m_y + PLAYER_EYE_HEIGHT + 0.0625, m_position.m_z };
-			pkt.m_camera_y = 0.0; // Just exists because it shouldn't be uninitialized
+			pkt.m_position = { m_position.m_x, m_position.m_y + PLAYER_EYE_HEIGHT + 1.0 / 64.0, m_position.m_z };
+			pkt.m_camera_y = m_position.m_y; // This is backwards, thanks notch
 			pkt.Serialize(m_session->m_stream);
 		}
 	}
