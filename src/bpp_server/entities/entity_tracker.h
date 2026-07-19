@@ -95,6 +95,9 @@ struct EntityTracker {
 				continue;
 			spawnEntityForPlayer(playerId, newEntry);
 		}
+
+		// Force an update
+		update(entry);
 	}
 
 	void untrackEntity(Entity* entity) {
@@ -148,6 +151,9 @@ struct EntityTracker {
 				continue;
 			spawnEntityForPlayer(otherPlayerId, newPlayerEntry);
 		}
+
+		// Force an update
+		update(entry);
 	}
 
 	void removePlayer(Entity* player) {
@@ -169,7 +175,7 @@ struct EntityTracker {
 		case EntityType::NONE:
 			return { 0, 0, false };
 		case EntityType::PLAYER:
-			return { 512, 2, true };
+			return { 512, 2, false };
 		case EntityType::FISH:
 			return { 64, 5, true };
 		case EntityType::ARROW:
@@ -211,8 +217,7 @@ struct EntityTracker {
 		default:
 			return { 0, 0, false };
 
-			GlobalLogger().warn << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) +
-			                           "'\n";
+			GlobalLogger().warn << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) + "'\n";
 		}
 	}
 };

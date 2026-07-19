@@ -19,6 +19,7 @@ struct ItemEntity : public Entity {
 		width = 0.25f;
 		height = 0.25f;
 		yOffset = 0.125f; // height / 2
+		stepHeight = 0.0f;
 
 		// Set the initial position of the item entity
 		this->teleport(position);

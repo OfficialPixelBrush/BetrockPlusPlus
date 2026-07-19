@@ -161,6 +161,14 @@ void EntityTracker::spawnEntityForPlayer(EntityId playerId, TrackedEntry& entity
 		return;
 	}
 	entityEntry.visibleTo.insert(playerId);
+
+	if (entityEntry.profile.sendVelocity) {
+		// If velocity is enabled immediately send a follow up
+		Packet::EntityVelocity velPkt;
+		velPkt.entity_id = entityEntry.entity->id;
+		velPkt.velocity = quantizeVelocity(entityEntry.entity->velocity);
+		velPkt.Serialize(pSession.stream);
+	}
 }
 
 void EntityTracker::despawnEntityForViewers(EntityId entityId, TrackedEntry& entry) {

@@ -150,7 +150,7 @@ void Entity::applyInput(float acceleration) {
 	velocity.z += (input.y * cosYaw + input.x * sinYaw) * acceleration;
 }
 
-void Entity::move(Vec3 velocity) {
+void Entity::move(Vec3& velocity) {
 	ySize *= 0.4f;
 
 	if (inWeb) {
