@@ -58,21 +58,79 @@ bool EntityMPPlayer::dropItem(ItemStack stack) {
 	return true;
 }
 
-// We ignore physics for the player entity and just grab what the client tells us
 void EntityMPPlayer::tick() {
-	if (!session)
-		return;
-	Vec3 claimed = session->position.pos;
+	if (!session) return;
+	if (session->pendingTeleport) {
+		// We have a pending teleport. Check to see if the player caught up
+		if (!session->pendingPosition) return;
+		auto& pending = *session->pendingPosition;
+		Vec3 claimed = { pending.x, pending.y + PLAYER_EYE_HEIGHT, pending.z };
+		Vec3 delta = claimed - *session->pendingTeleport;
+		auto dist = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+		if (dist > 0.0625) {
+			// Player isn't at the teleported position so send another tp packet
+			// Also reset our position
+			this->teleport(*session->pendingTeleport, { rotationYaw, rotationPitch });
+			session->position.pos = *session->pendingTeleport;
+			Packet::PlayerPosition pkt;
+			pkt.on_ground = onGround;
+			pkt.position = position;
+			pkt.Serialize(session->stream);
+			return;
+		}
+		// Client acknowledged our tp
+		session->pendingPosition.reset();
+		session->pendingTeleport.reset();
+	}
 
-	position.x = claimed.x;
-	position.y = claimed.y;
-	position.z = claimed.z;
-	rotationYaw = session->rotation.x;
-	rotationPitch = session->rotation.y;
+	// Do living entity stuff
+	MobileEntity::tick();
 
-	rebuildCollider();
+	// Always trust rotations
+	this->rotationYaw = session->rotation.x;
+	this->rotationPitch = session->rotation.y;
 
-	// Tell entities we collided with them
+	// If we recieved a movement packet this tick do our server side checks
+	if (session->pendingPosition) {
+		// Re-simulate our move
+		bool residualTooLarge = false;
+		bool movedWrong = false;
+		bool wasClearBefore = world->getCollidingBoundingBoxes(collider.expand(-0.0625, -0.0625, -0.0625)).empty();
+		auto& pending = *session->pendingPosition;
+		Vec3 lastPosition = this->position;
+		Vec3 claimed = { pending.x, pending.y + PLAYER_EYE_HEIGHT, pending.z };
+		Vec3 delta = claimed - lastPosition;
+		if (delta.x * delta.x + delta.y * delta.y + delta.z * delta.z > 100.0) {
+			GlobalLogger().warn << "Client " << session->username << " moved wrongly!\n";
+			movedWrong = true;
+		}
+		move(delta);
+
+		// How far is our simulated move vs what the client says?
+		delta = claimed - this->position;
+		double residual = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+		if (residual < 0.0625) {
+			this->position = claimed; // Trust it
+		} else {
+			// Send a correction
+			residualTooLarge = true;
+		}
+		session->pendingPosition.reset();
+
+		bool clearNow = world->getCollidingBoundingBoxes(collider.expand(-0.0625, -0.0625, -0.0625)).empty();
+
+		if ((wasClearBefore && (residualTooLarge || !clearNow)) || movedWrong) {
+			// TP our player back
+			this->teleport(lastPosition, {rotationYaw, rotationPitch});
+			session->position.pos = lastPosition;
+			Packet::PlayerPosition pkt;
+			pkt.on_ground = onGround;
+			pkt.position = position;
+			pkt.Serialize(session->stream);
+		}
+	}
+
+	// Tell entities we collided with a player
 	if (entityManager) {
 		auto entitiesCollidingWith = entityManager->getEntitiesWithinAABBExcluding(collider.expand(1.0, 0.0, 1.0),
 		                                                                           this->id);

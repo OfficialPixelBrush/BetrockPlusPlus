@@ -32,8 +32,8 @@ void Pathfinder::reset() {
 bool Pathfinder::posValid(Int3 pos) {
 	Int3 bottomPos = pos;
 	bottomPos.y -= 1;
-	bool isAir = world.isAirBlock(pos);
-	bool isNormal = world.isBlockNormalCube(bottomPos);
+	bool isAir = world->isAirBlock(pos);
+	bool isNormal = world->isBlockNormalCube(bottomPos);
 	return isAir && isNormal;
 }
 
@@ -43,16 +43,16 @@ std::optional<Int3> Pathfinder::getNeighbour(Int3 from, Int2 dir) {
 	pos.z += dir.y;
 
 	// Step up one block if blocked.
-	if (!world.isAirBlock(pos)) {
+	if (!world->isAirBlock(pos)) {
 		pos.y++;
 
-		if (!world.isAirBlock(pos))
+		if (!world->isAirBlock(pos))
 			return std::nullopt;
 	}
 
 	constexpr int MAX_FALL_DISTANCE = 3;
 	int fallDistance = 0;
-	while (world.isAirBlock({ pos.x, pos.y - 1, pos.z })) {
+	while (world->isAirBlock({ pos.x, pos.y - 1, pos.z })) {
 		pos.y--;
 		fallDistance++;
 

@@ -35,7 +35,7 @@ private:
 	void tickPhysics();
 
 public:
-	MobileEntity(WorldManager& world);
+	MobileEntity();
 
 	virtual void onDeath();
 	virtual void tick() override;

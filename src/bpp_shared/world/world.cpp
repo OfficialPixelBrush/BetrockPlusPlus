@@ -384,7 +384,42 @@ void WorldManager::forceGenChunkSync(Int32_2 pos) {
 	}
 
 	// Block only on this specific chunk
-	while (chunks[pos]->state.load() < ChunkState::Generated) {
+	while (true) {
+		auto it = chunks.find(pos);
+		if (it == chunks.end()) {
+			// Got evicted mid-wait. Re-request it and keep waiting
+			auto chunk = std::make_shared<Chunk>();
+			chunk->cpos = pos;
+
+			if (regionManager->chunkExists(pos)) {
+				chunk->state.store(ChunkState::Loading, std::memory_order_release);
+				chunks[pos] = std::move(chunk);
+				regionManager->loadChunk(pos);
+			} else {
+				chunk->state.store(ChunkState::Generating, std::memory_order_release);
+				chunks[pos] = std::move(chunk);
+				pool.detach_task([pos, this]() {
+					auto genChunk = std::make_shared<Chunk>();
+					genChunk->cpos = pos;
+					if (isHell) {
+						thread_local NetherGenerator tl_gen(this->seed);
+						tl_gen.GenerateChunk(*genChunk);
+					} else {
+						thread_local OverworldGenerator tl_gen(this->seed);
+						tl_gen.GenerateChunk(*genChunk);
+					}
+					genChunk->isModified = true;
+					genChunk->generateSkylightMap();
+					genChunk->state.store(ChunkState::Generated, std::memory_order_release);
+					this->postGenResult(std::move(genChunk));
+				});
+			}
+			continue;
+		}
+
+		if (it->second->state.load() >= ChunkState::Generated)
+			break;
+
 		pool.wait();
 		regionManager->iopool.wait();
 		drainGenQueue();

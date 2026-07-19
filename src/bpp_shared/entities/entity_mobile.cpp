@@ -12,7 +12,7 @@
 #include <cmath>
 #include <optional>
 
-MobileEntity::MobileEntity(WorldManager& world) : pathFinder(world) {
+MobileEntity::MobileEntity() {
 	type = EntityType::CREEPER;
 	stepHeight = 0.5;
 }
@@ -121,7 +121,7 @@ void MobileEntity::tickPhysics() {
 		auto oldY = position.y;
 		double friction = 0.8;
 		applyInput(0.02f);
-		move();
+		move(this->velocity);
 		velocity *= friction;
 		velocity.y -= 0.2; // Sink
 
@@ -167,7 +167,7 @@ void MobileEntity::tickPhysics() {
 		}
 
 		// Move the entity
-		move();
+		move(this->velocity);
 
 		// Our entity is pushing itself into the wall the ladder is on
 		// So apply an upwards nudge
@@ -273,6 +273,10 @@ bool MobileEntity::attackEntityFrom(Entity* entity, int damage) {
 }
 
 void MobileEntity::tick() {
+	if (pathFinder.world == nullptr) {
+		pathFinder.world = world;
+	}
+
 	age++;
 	Entity::tick();
 	followPath();

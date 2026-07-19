@@ -192,7 +192,7 @@ struct Entity {
 	virtual void onCollideWithPlayer(PlayerEntity& entity);
 	virtual void applyKnockback(Vec3 direction);
 	virtual void applyInput(float acceleration);
-	virtual void move();
+	virtual void move(Vec3 velocity);
 	//TODO: Move to LivingEntity
 	virtual void dealDamage(int amount);
 	virtual void updateFallState(float movedY);

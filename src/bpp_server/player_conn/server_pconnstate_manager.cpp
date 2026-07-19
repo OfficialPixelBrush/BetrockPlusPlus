@@ -126,6 +126,11 @@ void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server)
 	                    << " at (" << session.position.pos.x << ", " << session.position.pos.y << ", "
 	                    << session.position.pos.z << ")\n";
 
+	// Update our last trusted position
+	session.entity->position = session.position.pos;
+	session.pendingTeleport = session.position.pos;
+	session.entity->rebuildCollider();
+
 	// Let everyone else know we logged in
 	server.sendGlobalChatMessage("§e" + session.username + " joined the game.");
 
@@ -188,6 +193,11 @@ void PlayerConnStateManager::waitForSpawnChunks(PlayerSession& session, Server& 
 	pos.rotation = session.rotation;
 	pos.onGround = false;
 	pos.Serialize(session.stream);
+
+	// Update our last trusted position
+	session.entity->position = session.position.pos;
+	session.pendingTeleport = session.position.pos;
+	session.entity->rebuildCollider();
 
 	// Set view distance to server default
 	session.position.viewDistanceOverride = 0;

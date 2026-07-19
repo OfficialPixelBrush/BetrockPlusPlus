@@ -5,11 +5,10 @@
  *
  */
 #pragma once
+#include "entity_mobile.h"
 
-#include "entity.h"
-
-struct PlayerEntity : public Entity {
-	PlayerEntity() : Entity() {
+struct PlayerEntity : public MobileEntity {
+	PlayerEntity() : MobileEntity() {
 		type = EntityType::PLAYER;
 		hasPhysics = false;
 		width = 0.6f;

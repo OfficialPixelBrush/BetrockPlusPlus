@@ -11,7 +11,7 @@
 
 std::string CommandSummon::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
                                   std::function<void(PlayerSession&)> transferDimension, Server& server) {
-	auto entity = std::make_shared<MobileEntity>(world);
+	auto entity = std::make_shared<MobileEntity>();
 	Vec3 spawnPos = session.position.pos;
 	entity->teleport(spawnPos);
 	world.entityManager.addEntity(std::move(entity));

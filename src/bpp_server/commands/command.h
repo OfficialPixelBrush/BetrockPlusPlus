@@ -127,7 +127,7 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 	target.entity->teleport(position, { yaw, pitch });
 
 	// Keep server-side position in sync so movement broadcasts are correct.
-	target.position.pos = position;
+	target.pendingTeleport = position;
 
 	Packet::PlayerPositionAndRotation pkt;
 	pkt.position.x = position.x;

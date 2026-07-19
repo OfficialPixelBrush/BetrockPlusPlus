@@ -90,7 +90,7 @@ void ItemEntity::tick() {
 	}
 
 	pushOutOfBlocks({ position.x, (collider.minY + collider.maxY) / 2.0, position.z });
-	move();
+	move(this->velocity);
 
 	float horizontalDrag = 0.98f;
 	if (onGround) {

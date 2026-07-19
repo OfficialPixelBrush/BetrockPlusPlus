@@ -326,7 +326,7 @@ void Server::run() {
 		if (clock::now() > nextTickTime + MAX_TICK_CATCH_UP * TICK_DURATION) {
 			baseTime = clock::now();
 			ticks = 0;
-			GlobalLogger().warn << "Can't keep up with ticks!";
+			GlobalLogger().warn << "Can't keep up with ticks!\n";
 		}
 	}
 

@@ -28,11 +28,13 @@ struct Node {
 
 class Pathfinder {
 public:
-	Pathfinder(WorldManager& world) : world(world) {};
+	WorldManager* world = nullptr;
+
+	Pathfinder(){};
+	Pathfinder(WorldManager* world) : world(world) {};
 	[[nodiscard]] std::vector<Int3> findPath(Int3 start, Int3 goal);
 
 private:
-	WorldManager& world;
 
 	struct PQNode {
 		int f;

@@ -32,12 +32,10 @@ enum class ConnectionState : uint8_t {
 struct PlayerSession {
 	NetworkStream stream;
 	ClientPosition position;
-
-	Vec3 lastTrustedPosition = { 0, 0, 0 };
-	Vec2 lastTrustedRotation = { 0, 0 };
-
-	Vec3 pendingPosition = { 0, 0, 0 };
-	Vec2 pendingRotation = { 0, 0 };
+	
+	// What our client is claiming this tick
+	std::optional<Vec3> pendingPosition = std::nullopt;
+	std::optional<Vec3> pendingTeleport = std::nullopt;
 
 	// Our player entity
 	std::shared_ptr<EntityMPPlayer> entity;

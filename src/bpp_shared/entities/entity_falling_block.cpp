@@ -17,7 +17,7 @@ void FallingBlockEntity::tick() {
 
 	ticksFallen++;
 	velocity.y -= 0.04;
-	move();
+	move(this->velocity);
 	velocity *= { 0.98, 0.98, 0.98 };
 
 	auto fd = MathHelper::floor_double;

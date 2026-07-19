@@ -49,7 +49,7 @@ void PlayerMovement(Packet::PlayerMovement& /*pkt*/, PlayerSession& /*session*/)
 }
 
 void PlayerPosition(Packet::PlayerPosition& pkt, PlayerSession& session) {
-	session.position.pos = pkt.position;
+	session.pendingPosition = { pkt.position.x, pkt.position.y, pkt.position.z };
 }
 
 void PlayerRotation(Packet::PlayerRotation& pkt, PlayerSession& session) {
@@ -58,7 +58,7 @@ void PlayerRotation(Packet::PlayerRotation& pkt, PlayerSession& session) {
 }
 
 void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& pkt, PlayerSession& session) {
-	session.position.pos = pkt.position;
+	session.pendingPosition = { pkt.position.x, pkt.position.y, pkt.position.z };
 	session.rotation.x = pkt.yaw;
 	session.rotation.y = pkt.pitch;
 }
