@@ -8,7 +8,7 @@
 #include "entity.h"
 
 struct FallingBlockEntity : public Entity {
-	BlockType block = BLOCK_AIR; 
+	BlockType block = BLOCK_AIR;
 	int ticksFallen = 0;
 
 	FallingBlockEntity(Vec3 spawnPosition, BlockType block) : Entity() {
@@ -29,7 +29,8 @@ struct FallingBlockEntity : public Entity {
 	void tick() override;
 	std::optional<Tag> serializeToNBT() override {
 		auto root = Entity::serializeToNBT();
-		if (!root || this->block == BLOCK_AIR) return std::nullopt;
+		if (!root || this->block == BLOCK_AIR)
+			return std::nullopt;
 		Tag Tile;
 		Tile.type = TAG_BYTE;
 		Tile.name = "Tile";

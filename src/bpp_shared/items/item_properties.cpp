@@ -283,10 +283,8 @@ void registerAll() {
 	itemBehavior[Items::Id::HOE_IRON] = ItemBehavior{ .onBlockUse = useHoe };
 	itemBehavior[Items::Id::HOE_GOLD] = ItemBehavior{ .onBlockUse = useHoe };
 	itemBehavior[Items::Id::HOE_DIAMOND] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::FLINT_AND_STEEL] = ItemBehavior{
-		.onBlockStartMining = testSetGoal,
-		.onBlockUse = useFlintAndSteel
-	};
+	itemBehavior[Items::Id::FLINT_AND_STEEL] = ItemBehavior{ .onBlockStartMining = testSetGoal,
+		                                                     .onBlockUse = useFlintAndSteel };
 
 	// Tool Properties
 	// Sword

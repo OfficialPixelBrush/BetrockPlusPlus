@@ -12,14 +12,14 @@
 #include "BS_thread_pool.hpp"
 #include "base_structs.h"
 #include "blocks.h"
+#include "chunk.h"
+#include "client_pos.h"
 #include "entities/entity_manager.h"
 #include "helpers/AABB.h"
 #include "java_math.h"
 #include "lighter.h"
-#include "tile_entities/tile_entity_manager.h"
 #include "tick_scheduler.h"
-#include "chunk.h"
-#include "client_pos.h"
+#include "tile_entities/tile_entity_manager.h"
 #include "world/storage/region_manager.h"
 #include <algorithm>
 #include <atomic>
@@ -103,7 +103,7 @@ struct WorldManager {
 		// Update our six neighbors
 		const int ndx[] = { -1, 1, 0, 0 };
 		const int ndz[] = { 0, 0, -1, 1 };
-		
+
 		// Notify horizontal neighbors
 		for (int i = 0; i < 4; i++) {
 			auto dx = ndx[i];

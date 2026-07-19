@@ -62,8 +62,10 @@ struct ItemProperties {
 };
 
 struct ItemBehavior {
-	void (*onBlockStartMining)(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) = nullptr;
-	void (*onBlockFinishMining)(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) = nullptr;
+	void (*onBlockStartMining)(WorldManager& world, ItemStack* stack, Int3 pos,
+	                           PacketData::FaceDirection face) = nullptr;
+	void (*onBlockFinishMining)(WorldManager& world, ItemStack* stack, Int3 pos,
+	                            PacketData::FaceDirection face) = nullptr;
 	void (*onBlockUse)(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) = nullptr;
 	void (*onEntityAttack)(Entity& attackedEntity, ItemStack* stack) = nullptr;
 	void (*onEntityUse)(Entity& usedEntity, ItemStack* stack) = nullptr;

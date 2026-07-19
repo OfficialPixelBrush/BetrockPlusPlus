@@ -82,8 +82,10 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 		}
 
 		ItemStack* heldItem = session.inventory.getHeldItem();
-		if (!heldItem) return;
-		if (!Items::itemBehavior[heldItem->id].onBlockStartMining) return;
+		if (!heldItem)
+			return;
+		if (!Items::itemBehavior[heldItem->id].onBlockStartMining)
+			return;
 		Items::itemBehavior[heldItem->id].onBlockStartMining(world, heldItem, packetPos, pkt.face);
 		return;
 	}
@@ -94,8 +96,10 @@ void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& wor
 		Blocks::BreakAndDropBlock(world, packetPos);
 
 		ItemStack* heldItem = session.inventory.getHeldItem();
-		if (!heldItem) return;
-		if (!Items::itemBehavior[heldItem->id].onBlockFinishMining) return;
+		if (!heldItem)
+			return;
+		if (!Items::itemBehavior[heldItem->id].onBlockFinishMining)
+			return;
 		Items::itemBehavior[heldItem->id].onBlockFinishMining(world, heldItem, packetPos, pkt.face);
 		return;
 	}

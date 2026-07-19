@@ -22,7 +22,7 @@ void Input::handleEvent(const SDL_Event& ev) {
 		break;
 
 	case SDL_EVENT_MOUSE_WHEEL:
-		mouseWheel += { ev.wheel.x, ev.wheel.y};
+		mouseWheel += { ev.wheel.x, ev.wheel.y };
 		break;
 
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:

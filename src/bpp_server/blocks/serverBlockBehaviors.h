@@ -6,11 +6,11 @@
 */
 
 #pragma once
-#include "../player_conn/player_session.h"
 #include "../packet/packet_utils.h"
+#include "../player_conn/player_session.h"
 #include "enums/blocks.h"
-#include "world/world.h"
 #include "runtime.h"
+#include "world/world.h"
 #include <numeric_structs.h>
 #include <vector>
 
@@ -23,4 +23,4 @@ struct BlockBehavior {
 extern BlockBehavior blockBehaviors[256];
 
 void initialize();
-}
+} // namespace ServerBlock

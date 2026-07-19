@@ -7,11 +7,11 @@
 #pragma once
 #include "blocks.h"
 #include "logger.h"
-#include <numeric_structs.h>
 #include <cstdint>
-#include <queue>  
-#include <vector> 
+#include <numeric_structs.h>
+#include <queue>
 #include <unordered_map>
+#include <vector>
 
 // For scheduling tick events in the world
 struct ScheduledTick {

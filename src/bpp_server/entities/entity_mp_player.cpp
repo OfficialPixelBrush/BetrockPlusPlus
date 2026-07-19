@@ -59,10 +59,12 @@ bool EntityMPPlayer::dropItem(ItemStack stack) {
 }
 
 void EntityMPPlayer::tick() {
-	if (!session) return;
+	if (!session)
+		return;
 	if (session->pendingTeleport) {
 		// We have a pending teleport. Check to see if the player caught up
-		if (!session->pendingPosition) return;
+		if (!session->pendingPosition)
+			return;
 		auto& pending = *session->pendingPosition;
 		Vec3 claimed = { pending.x, pending.y + PLAYER_EYE_HEIGHT, pending.z };
 		Vec3 delta = claimed - *session->pendingTeleport;
@@ -130,7 +132,7 @@ void EntityMPPlayer::tick() {
 			                    << this->position.y << "," << this->position.z << ")"
 			                    << " colliderY=[" << collider.minY << "," << collider.maxY << "]"
 			                    << "\n";
-			this->teleport(lastPosition, {rotationYaw, rotationPitch});
+			this->teleport(lastPosition, { rotationYaw, rotationPitch });
 			session->position.pos = lastPosition;
 			Packet::PlayerPosition pkt;
 			pkt.on_ground = onGround;

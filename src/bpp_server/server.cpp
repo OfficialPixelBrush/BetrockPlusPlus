@@ -446,7 +446,8 @@ void Server::tick() {
 		if (this->gameRuntime.world.elapsed_ticks % 40 == 0) {
 			// Save periodically
 			auto savedNbt = session->serializeToNBT();
-			gameRuntime.saveManager.savePlayerNBT(std::string(session->username.begin(), session->username.end()), savedNbt);
+			gameRuntime.saveManager.savePlayerNBT(std::string(session->username.begin(), session->username.end()),
+			                                      savedNbt);
 		}
 	}
 

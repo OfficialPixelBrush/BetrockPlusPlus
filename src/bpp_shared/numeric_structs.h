@@ -160,7 +160,7 @@ struct TriNumber {
 	}
 
 	T total() const {
-		return x*y*z;
+		return x * y * z;
 	}
 };
 
@@ -308,7 +308,7 @@ struct BiNumber {
 	}
 
 	T total() const {
-		return x*y;
+		return x * y;
 	}
 };
 
@@ -389,7 +389,7 @@ struct SlimInt3 {
 	}
 
 	T total() const {
-		return x*y*z;
+		return x * y * z;
 	}
 };
 

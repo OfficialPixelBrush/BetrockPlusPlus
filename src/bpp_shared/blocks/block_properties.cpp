@@ -6,8 +6,8 @@
 */
 
 #include "block_properties.h"
-#include "entities/entity_item.h"
 #include "entities/entity_falling_block.h"
+#include "entities/entity_item.h"
 #include "enums/items.h"
 #include "tile_entities/tile_entity.h"
 #include "world/world.h"
@@ -2051,7 +2051,9 @@ void registerAll() {
 			return;
 
 		constexpr int32_t checkRadius = 32; // Blocks
-		bool areaLoaded = world.AABBinValidChunks({ double(pos.x - checkRadius), double(pos.y - checkRadius), double(pos.z - checkRadius), double(pos.x + checkRadius), double(pos.y + checkRadius), double(pos.z + checkRadius) });
+		bool areaLoaded = world.AABBinValidChunks({ double(pos.x - checkRadius), double(pos.y - checkRadius),
+		                                            double(pos.z - checkRadius), double(pos.x + checkRadius),
+		                                            double(pos.y + checkRadius), double(pos.z + checkRadius) });
 
 		if (areaLoaded) {
 			Vec3 spawnPos = { pos.x + 0.5, pos.y + 0.5, pos.z + 0.5 };

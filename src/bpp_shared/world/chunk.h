@@ -10,8 +10,8 @@
 #include "blocks/block_properties.h"
 #include "constants.h"
 #include "helpers/cross_platform.h"
-#include "tile_entities/tile_entity.h"
 #include "nbt/nbt.h"
+#include "tile_entities/tile_entity.h"
 #include <atomic>
 #include <cstdint>
 #include <cstring>

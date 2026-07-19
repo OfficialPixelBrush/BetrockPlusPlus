@@ -12,7 +12,8 @@
 //   /help
 //   /help [command]
 std::string CommandHelp::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
-                                 [[maybe_unused]] std::function<void(PlayerSession&)> transferDimension, [[maybe_unused]] Server& server) {
+                                 [[maybe_unused]] std::function<void(PlayerSession&)> transferDimension,
+                                 [[maybe_unused]] Server& server) {
 	//DEFINE_PERMSCHECK(pClient)
 	const auto& registered_commands = CommandManager::GetRegisteredCommands();
 	Packet::ChatMessage pkt;

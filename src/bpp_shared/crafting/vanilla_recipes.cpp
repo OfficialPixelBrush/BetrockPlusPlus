@@ -131,7 +131,8 @@ void RecipeManager::addVanillaRecipes() {
 	         Items::Id::BOOTS_LEATHER);
 
 	// Tools
-	auto addTools = [this](ItemId toolMaterial, ItemId swordId, ItemId pickId, ItemId shovelId, ItemId axeId, ItemId hoeId) -> void {
+	auto addTools = [this](ItemId toolMaterial, ItemId swordId, ItemId pickId, ItemId shovelId, ItemId axeId,
+	                       ItemId hoeId) -> void {
 		addShapedRecipe({ "###", " A ", " A " }, { { '#', { toolMaterial } }, { 'A', { Items::Id::STICK } } },
 		                { pickId, 1 });
 		addShapedRecipe({ "#", "#", "A" }, { { '#', { toolMaterial } }, { 'A', { Items::Id::STICK } } }, { swordId, 1 });

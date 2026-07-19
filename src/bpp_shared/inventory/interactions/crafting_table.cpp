@@ -11,8 +11,8 @@
 
 CraftingTableInventoryInteraction::CraftingTableInventoryInteraction(InventoryPlayer* pinv, WorldManager& worldMng,
                                                                      Runtime& gameRuntime, Int3 craftingTablePos)
-    : CraftingInventoryInteraction(&m_sharedInventory, &m_craftInventory, pinv, gameRuntime, { 3, 3 }), m_world(worldMng),
-      m_blockPosition(craftingTablePos) {
+    : CraftingInventoryInteraction(&m_sharedInventory, &m_craftInventory, pinv, gameRuntime, { 3, 3 }),
+      m_world(worldMng), m_blockPosition(craftingTablePos) {
 	m_sharedInventory.owner = this;
 	mergeInventories();
 }

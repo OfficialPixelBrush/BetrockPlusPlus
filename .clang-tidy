@@ -1,0 +1,7 @@
+Checks: '-*,readability-identifier-naming'
+
+CheckOptions:
+  - key: readability-identifier-naming.MemberPrefix
+    value: 'm_'
+  - key: readability-identifier-naming.PrivateMemberPrefix
+    value: ''

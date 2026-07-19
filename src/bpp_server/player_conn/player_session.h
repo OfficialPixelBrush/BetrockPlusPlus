@@ -32,7 +32,7 @@ enum class ConnectionState : uint8_t {
 struct PlayerSession {
 	NetworkStream stream;
 	ClientPosition position;
-	
+
 	// What our client is claiming this tick
 	std::optional<Vec3> pendingPosition = std::nullopt;
 	std::optional<Vec3> pendingTeleport = std::nullopt;
