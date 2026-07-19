@@ -26,6 +26,7 @@ void CommandManager::Init(Server* server) {
 	registeredCommands.push_back(std::make_unique<CommandDimension>());
 	registeredCommands.push_back(std::make_unique<CommandVersion>());
 	registeredCommands.push_back(std::make_unique<CommandSummon>());
+	registeredCommands.push_back(std::make_unique<CommandStats>());
 	/*
 	registeredCommands.push_back(CommandPose());
 	// Needs at least creative mode to run

@@ -54,7 +54,7 @@ docker build --build-arg BUILD_TARGET=client -t betrockpp:client .
 > using the offline, reproducible `glad` Python generator - no internet
 > access or `git submodule` step required.
 >
-> Running a GUI client *inside* a container still needs a display (X11/Wayland
+> Running a GUI client _inside_ a container still needs a display (X11/Wayland
 > forwarding or a VNC-in-container setup), which this Dockerfile doesn't set
 > up, since it's rarely worth the complexity. Use this target to confirm the
 > client **compiles**, then copy the binary out (see below) and run it
@@ -105,8 +105,8 @@ docker rm bpp-extract
 
 ## Build arguments reference
 
-| Arg           | Values                          | Default   | Effect                                   |
-|---------------|----------------------------------|-----------|-------------------------------------------|
-| `BUILD_TARGET`| `server`, `client`               | `server`  | Which CMake target to compile             |
-| `BUILD_TYPE`  | `Release`, `Debug`, `MinSizeRel` | `Release` | CMake build type                          |
-| `COMPILER`    | `clang`, `gcc`                   | `clang`   | Which compiler to use inside the container|
+| Arg            | Values                           | Default   | Effect                                     |
+| -------------- | -------------------------------- | --------- | ------------------------------------------ |
+| `BUILD_TARGET` | `server`, `client`               | `server`  | Which CMake target to compile              |
+| `BUILD_TYPE`   | `Release`, `Debug`, `MinSizeRel` | `Release` | CMake build type                           |
+| `COMPILER`     | `clang`, `gcc`                   | `clang`   | Which compiler to use inside the container |

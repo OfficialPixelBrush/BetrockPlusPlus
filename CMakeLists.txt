@@ -9,13 +9,27 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(Betrock++ VERSION 0.0.1)
 
-# Build as server
-option(BUILD_SERVER "Build as server" ON)
+if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
+    message(STATUS "No build type specified, defaulting to RelWithDebInfo")
 
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+        "Debug"
+        "Release"
+        "RelWithDebInfo"
+        "MinSizeRel")
+endif()
+
+# Build as server by default
+option(BUILD_SERVER "Build as server" ON)
 find_package(libdeflate CONFIG REQUIRED)
 
 # Building as a client, we need this extra stuff
-if(NOT BUILD_SERVER)
+
+if(BUILD_SERVER)
+message(STATUS "Building as Server")
+else()
+message(STATUS "Building as Client")
 find_package(SDL3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(Threads REQUIRED)
