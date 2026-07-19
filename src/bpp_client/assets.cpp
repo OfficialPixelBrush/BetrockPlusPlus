@@ -5,9 +5,10 @@
  * 
 */
 
+#include <filesystem>
+
 #include "assets.h"
 #include "logger.h"
-#include <filesystem>
 
 AssetManager::AssetManager() {
 	// Check if assets already exist
