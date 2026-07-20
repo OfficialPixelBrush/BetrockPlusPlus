@@ -26,11 +26,27 @@ find_package(libdeflate CONFIG REQUIRED)
 
 # Building as a client, we need this extra stuff
 
+option(SDL_VENDORED "Use vendored (locally built) SDL library" ON)
+
 if(BUILD_SERVER)
 message(STATUS "Building as Server")
 else()
 message(STATUS "Building as Client")
+
+if(SDL_VENDORED)
+include(FetchContent)
+
+FetchContent_Declare(
+    SDL3
+    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+    GIT_TAG        release-3.4.12
+)
+
+FetchContent_MakeAvailable(SDL3)
+else()
 find_package(SDL3 CONFIG REQUIRED)
+endif()
+
 find_package(glm CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 endif()
