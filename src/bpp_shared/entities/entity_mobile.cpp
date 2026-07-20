@@ -123,14 +123,16 @@ void MobileEntity::tickPhysics() {
 		applyInput(0.02f);
 		move(this->m_velocity);
 		m_velocity *= friction;
-		m_velocity.m_y -= 0.2; // Sink
+		if (m_hasPhysics)
+			m_velocity.m_y -= 0.2; // Sink
 
 		AABB offsetCollider = m_collider.offset(m_velocity.m_x, m_velocity.m_y + 0.6 - m_position.m_y + oldY, m_velocity.m_z);
 
 		// Check if we are colliding with a block and we are
 		// Moving up and unobstructed, if so, apply a nudge
 		if (m_collidedHorizontally && AABBNotInLiquidOrObstructed(offsetCollider)) {
-			m_velocity.m_y += 0.3;
+			if (m_hasPhysics)
+				m_velocity.m_y += 0.3;
 		}
 	} else {
 		// Normal ground/air movement
@@ -172,7 +174,8 @@ void MobileEntity::tickPhysics() {
 		// Our entity is pushing itself into the wall the ladder is on
 		// So apply an upwards nudge
 		if (m_collidedHorizontally && isOnLadder) {
-			m_velocity.m_y = 0.2;
+			if (m_hasPhysics)
+				m_velocity.m_y = 0.2;
 		}
 
 		// Apply friction
@@ -181,7 +184,7 @@ void MobileEntity::tickPhysics() {
 		m_velocity.m_z *= friction;
 
 		// Gravity
-		m_velocity.m_y -= 0.08;
+		if (m_hasPhysics) m_velocity.m_y -= 0.08;
 
 		auto collidingEntities = m_world->m_entityManager.getEntitiesWithinAABBExcluding(m_collider.expand(0.2, 0.0, 0.2), m_id);
 

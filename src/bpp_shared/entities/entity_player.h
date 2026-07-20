@@ -10,7 +10,6 @@
 struct PlayerEntity : public MobileEntity {
 	PlayerEntity() : MobileEntity() {
 		m_type = EntityType::PLAYER;
-		m_hasPhysics = false;
 		m_width = 0.6f;
 		m_height = 1.8f;
 		m_stepHeight = 0.5f;

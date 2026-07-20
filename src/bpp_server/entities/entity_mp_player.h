@@ -12,7 +12,9 @@
 struct PlayerSession;
 struct EntityMPPlayer : public PlayerEntity {
 	PlayerSession* m_session = nullptr;
-	EntityMPPlayer() : PlayerEntity() {}
+	EntityMPPlayer() : PlayerEntity() {
+		m_hasPhysics = false;
+	}
 	~EntityMPPlayer() {
 		m_session = nullptr;
 	}
