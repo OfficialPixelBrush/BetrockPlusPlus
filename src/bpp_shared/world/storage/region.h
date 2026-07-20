@@ -18,7 +18,7 @@
 #define SECTOR_SIZE 4096
 
 inline std::string regionPositionToFileName(Int2 rpos) {
-	return "r." + std::to_string(rpos.m_x) + "." + std::to_string(rpos.m_z) + ".mcr";
+	return "r." + std::to_string(rpos.x) + "." + std::to_string(rpos.z) + ".mcr";
 }
 
 enum CompressorFormat {
@@ -28,29 +28,29 @@ enum CompressorFormat {
 };
 
 struct FileHeaderEntry {
-	uint32_t m_offset;
-	uint8_t m_numberOfSectors;
+	uint32_t offset;
+	uint8_t numberOfSectors;
 	// TODO: Maybe store last-updated here?
 };
 
 struct ChunkHeaderEntry {
-	uint32_t m_length;
-	uint8_t m_format;
+	uint32_t length;
+	uint8_t format;
 };
 
 class Region {
 public:
-	Int32_2 m_rpos;
-	std::mutex m_mutex;
+	Int32_2 rpos;
+	std::mutex mutex;
 	Region(Int32_2 rpos, std::string folderPath)
-	    : m_rpos(rpos), regionFile(folderPath + "/" + regionPositionToFileName(rpos)) {
+	    : rpos(rpos), regionFile(folderPath + "/" + regionPositionToFileName(rpos)) {
 		// Cache our header
 		readHeaderFromFile();
 	}
 	bool chunkExists(Int2 localcpos) {
-		int index = localcpos.m_x + localcpos.m_z * 32;
+		int index = localcpos.x + localcpos.z * 32;
 		auto* rHeader = &regionHeader[index];
-		return (rHeader->m_numberOfSectors != 0 && rHeader->m_offset != 0);
+		return (rHeader->numberOfSectors != 0 && rHeader->offset != 0);
 	}
 
 	void AddChunk(std::shared_ptr<Chunk> chunk, int64_t timestamp, std::shared_ptr<const std::vector<Tag>> entities);
@@ -64,8 +64,8 @@ public:
 			uint32_t entry;
 			file.read(reinterpret_cast<char*>(&entry), 4);
 			entry = __builtin_bswap32(entry);
-			regionHeader[i].m_numberOfSectors = entry & 0xFF; // bottom 1 byte
-			regionHeader[i].m_offset = entry >> 8;            // top 3 bytes
+			regionHeader[i].numberOfSectors = entry & 0xFF; // bottom 1 byte
+			regionHeader[i].offset = entry >> 8;            // top 3 bytes
 		}
 	}
 

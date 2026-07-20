@@ -31,31 +31,31 @@ struct Chunk {
 	static constexpr int VOLUME = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH;
 	static constexpr int META_VOLUME = VOLUME / 2;
 
-	Int32_2 m_cpos;
-	std::atomic_bool m_inUse{ false };
+	Int32_2 cpos;
+	std::atomic_bool inUse{ false };
 
 	// Flat arrays indexed by (y * CHUNK_WIDTH * CHUNK_WIDTH) + (z * CHUNK_WIDTH) + x
-	BlockType m_blocks[VOLUME] = { BLOCK_AIR };
-	uint8_t m_lightNibble[VOLUME] = { 0 };
-	uint8_t m_nibbleBlockMeta[META_VOLUME] = { 0 };
+	BlockType blocks[VOLUME] = { BLOCK_AIR };
+	uint8_t lightNibble[VOLUME] = { 0 };
+	uint8_t nibbleBlockMeta[META_VOLUME] = { 0 };
 
-	std::atomic<ChunkState> m_state{ ChunkState::Unloaded };
-	uint8_t m_heightMap[CHUNK_WIDTH * CHUNK_WIDTH] = {};
-	float m_temperature[CHUNK_WIDTH * CHUNK_WIDTH] = {};
-	float m_humidity[CHUNK_WIDTH * CHUNK_WIDTH] = {};
+	std::atomic<ChunkState> state{ ChunkState::Unloaded };
+	uint8_t heightMap[CHUNK_WIDTH * CHUNK_WIDTH] = {};
+	float temperature[CHUNK_WIDTH * CHUNK_WIDTH] = {};
+	float humidity[CHUNK_WIDTH * CHUNK_WIDTH] = {};
 
-	bool m_isTerrainPopulated = false;
-	bool m_isModified = false;
-	bool m_spawnChunk = false;
+	bool isTerrainPopulated = false;
+	bool isModified = false;
+	bool spawnChunk = false;
 
 	// Tile entities
-	std::vector<std::shared_ptr<TileEntity>> m_tileEntities;
+	std::vector<std::shared_ptr<TileEntity>> tileEntities;
 
 	// Used for loading entities into the world from disk
-	std::vector<Tag> m_entityTags;
+	std::vector<Tag> entityTags;
 
 	inline int blockIndex(Int3 pos) const {
-		return (pos.m_y * CHUNK_WIDTH * CHUNK_WIDTH) + (pos.m_z * CHUNK_WIDTH) + pos.m_x;
+		return (pos.y * CHUNK_WIDTH * CHUNK_WIDTH) + (pos.z * CHUNK_WIDTH) + pos.x;
 	}
 
 	inline uint8_t setNibble(uint8_t hi, uint8_t lo) const {
@@ -69,20 +69,20 @@ struct Chunk {
 	}
 
 	inline float getTemperature(Int2 pos) const {
-		return m_temperature[(pos.m_x << 4) | pos.m_y];
+		return temperature[(pos.x << 4) | pos.y];
 	}
 	inline float getHumidity(Int2 pos) const {
-		return m_humidity[(pos.m_x << 4) | pos.m_y];
+		return humidity[(pos.x << 4) | pos.y];
 	}
 
 	inline uint8_t getHeightValue(Int2 pos) const {
-		return m_heightMap[(pos.m_y << 4) | pos.m_x];
+		return heightMap[(pos.y << 4) | pos.x];
 	}
 	inline void setHeightValue(Int2 pos, uint8_t val) {
-		m_heightMap[(pos.m_y << 4) | pos.m_x] = val;
+		heightMap[(pos.y << 4) | pos.x] = val;
 	}
 	inline bool canBlockSeeSky(Int3 pos) const {
-		return pos.m_y >= getHeightValue({ pos.m_x, pos.m_z });
+		return pos.y >= getHeightValue({ pos.x, pos.z });
 	}
 
 	inline void generateHeightMap() {
@@ -93,7 +93,7 @@ struct Chunk {
 
 	inline void generateHeightMapColumn(Int2 pos) {
 		for (int y = CHUNK_HEIGHT - 1; y >= 0; y--) {
-			if (Blocks::blockProperties[getBlock({ pos.m_x, y, pos.m_z })].m_lightOpacity > 0) {
+			if (Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity > 0) {
 				setHeightValue(pos, uint8_t(y + 1));
 				return;
 			}
@@ -111,7 +111,7 @@ struct Chunk {
 				int skyLight = 15;
 				for (int y = height - 1; y >= 0; y--) {
 					skyLight -= CrossPlatform::Math::max(
-					    1, int(Blocks::blockProperties[getBlock({ x, y, z })].m_lightOpacity));
+					    1, int(Blocks::blockProperties[getBlock({ x, y, z })].lightOpacity));
 					skyLight = CrossPlatform::Math::max(0, skyLight);
 					setSkyLight({ x, y, z }, uint8_t(skyLight));
 				}
@@ -124,60 +124,60 @@ struct Chunk {
 		int height = getHeightValue(pos);
 
 		for (int y = CHUNK_HEIGHT - 1; y >= height; y--)
-			setSkyLight({ pos.m_x, y, pos.m_z }, 15);
+			setSkyLight({ pos.x, y, pos.z }, 15);
 
 		// only pull values up
 		int skyLight = 15;
 		for (int y = height - 1; y >= 0; y--) {
 			skyLight -= CrossPlatform::Math::max(
-			    1, int(Blocks::blockProperties[getBlock({ pos.m_x, y, pos.m_z })].m_lightOpacity));
+			    1, int(Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity));
 			skyLight = CrossPlatform::Math::max(0, skyLight);
-			uint8_t current = getSkyLight({ pos.m_x, y, pos.m_z });
+			uint8_t current = getSkyLight({ pos.x, y, pos.z });
 			if (current < skyLight)
-				setSkyLight({ pos.m_x, y, pos.m_z }, uint8_t(skyLight));
+				setSkyLight({ pos.x, y, pos.z }, uint8_t(skyLight));
 		}
 	}
 
 	inline BlockType getBlock(Int3 pos) const {
-		return m_blocks[blockIndex(pos)];
+		return blocks[blockIndex(pos)];
 	}
 
 	inline void setBlock(Int3 pos, BlockType id) {
-		m_blocks[blockIndex(pos)] = id;
-		m_isModified = true;
+		blocks[blockIndex(pos)] = id;
+		isModified = true;
 	}
 
 	inline uint8_t getMeta(Int3 pos) const {
 		int idx = blockIndex(pos);
-		uint8_t byte = m_nibbleBlockMeta[idx >> 1];
+		uint8_t byte = nibbleBlockMeta[idx >> 1];
 		return (idx & 1) ? getNibbleHigh(byte) : getNibbleLow(byte);
 	}
 
 	inline void setMeta(Int3 pos, uint8_t meta) {
 		int idx = blockIndex(pos);
-		uint8_t& byte = m_nibbleBlockMeta[idx >> 1];
+		uint8_t& byte = nibbleBlockMeta[idx >> 1];
 		byte = (idx & 1) ? setNibble(meta, getNibbleLow(byte)) : setNibble(getNibbleHigh(byte), meta);
-		m_isModified = true;
+		isModified = true;
 	}
 
 	inline uint8_t getBlockLight(Int3 pos) const {
-		return getNibbleLow(m_lightNibble[blockIndex(pos)]);
+		return getNibbleLow(lightNibble[blockIndex(pos)]);
 	}
 
 	inline uint8_t getSkyLight(Int3 pos) const {
-		return getNibbleHigh(m_lightNibble[blockIndex(pos)]);
+		return getNibbleHigh(lightNibble[blockIndex(pos)]);
 	}
 
 	inline void setBlockLight(Int3 pos, uint8_t val) {
-		uint8_t& byte = m_lightNibble[blockIndex(pos)];
+		uint8_t& byte = lightNibble[blockIndex(pos)];
 		byte = setNibble(getNibbleHigh(byte), val);
-		m_isModified = true;
+		isModified = true;
 	}
 
 	inline void setSkyLight(Int3 pos, uint8_t val) {
-		uint8_t& byte = m_lightNibble[blockIndex(pos)];
+		uint8_t& byte = lightNibble[blockIndex(pos)];
 		byte = setNibble(val, getNibbleLow(byte));
-		m_isModified = true;
+		isModified = true;
 	}
 
 	inline int getBlockLightValue(Int3 pos, int skySubtracted) const {
@@ -187,13 +187,13 @@ struct Chunk {
 	}
 
 	inline void clear() {
-		m_isTerrainPopulated = false;
-		m_isModified = false;
-		std::memset(m_blocks, 0, sizeof(m_blocks));
-		std::memset(m_lightNibble, 0, sizeof(m_lightNibble));
-		std::memset(m_nibbleBlockMeta, 0, sizeof(m_nibbleBlockMeta));
-		std::memset(m_heightMap, 0, sizeof(m_heightMap));
-		std::memset(m_temperature, 0, sizeof(m_temperature));
-		std::memset(m_humidity, 0, sizeof(m_humidity));
+		isTerrainPopulated = false;
+		isModified = false;
+		std::memset(blocks, 0, sizeof(blocks));
+		std::memset(lightNibble, 0, sizeof(lightNibble));
+		std::memset(nibbleBlockMeta, 0, sizeof(nibbleBlockMeta));
+		std::memset(heightMap, 0, sizeof(heightMap));
+		std::memset(temperature, 0, sizeof(temperature));
+		std::memset(humidity, 0, sizeof(humidity));
 	}
 };

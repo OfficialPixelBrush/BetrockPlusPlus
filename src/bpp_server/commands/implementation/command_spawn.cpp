@@ -12,11 +12,11 @@
 std::string CommandSpawn::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
                                   std::function<void(PlayerSession&)> transferDimension, Server& server) {
 	Int32_3 ipos = world.getSpawnPoint(false);
-	ipos.m_y = world.getHeightValue(
-	    ipos.m_x,
-	    ipos.m_z); // So we don't clip in the ground since get spawn point gives the raw data which defaults to y=64
+	ipos.y = world.getHeightValue(
+	    ipos.x,
+	    ipos.z); // So we don't clip in the ground since get spawn point gives the raw data which defaults to y=64
 
 	SendTeleport(session,
-	             Vec3{ double(ipos.m_x) + 0.5, double(ipos.m_y) + PLAYER_EYE_HEIGHT + 0.0625, double(ipos.m_z) + 0.5 });
+	             Vec3{ double(ipos.x) + 0.5, double(ipos.y) + PLAYER_EYE_HEIGHT + 0.0625, double(ipos.z) + 0.5 });
 	return "";
 }

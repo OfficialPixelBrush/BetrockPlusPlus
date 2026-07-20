@@ -14,17 +14,17 @@
  * @param pSeed The seed of the generated world
  * @param pWorld The world that the NetherGenerator belongs to
  */
-NetherGenerator::NetherGenerator(int64_t p_seed) : Generator(p_seed), m_caver(true) {
+NetherGenerator::NetherGenerator(int64_t p_seed) : Generator(p_seed), caver(true) {
 	// Tell caver it's a nether caver
-	m_rand = Java::Random(m_seed);
+	rand = Java::Random(seed);
 	// Init Terrain Noise
-	m_lowNoiseGen = NoiseOctavesPerlin(m_rand, 16);
-	m_highNoiseGen = NoiseOctavesPerlin(m_rand, 16);
-	m_selectorNoiseGen = NoiseOctavesPerlin(m_rand, 8);
-	m_sandGravelNoiseGen = NoiseOctavesPerlin(m_rand, 4);
-	m_stoneNoiseGen = NoiseOctavesPerlin(m_rand, 4);
-	m_continentalnessNoiseGen = NoiseOctavesPerlin(m_rand, 10);
-	m_depthNoiseGen = NoiseOctavesPerlin(m_rand, 16);
+	lowNoiseGen = NoiseOctavesPerlin(rand, 16);
+	highNoiseGen = NoiseOctavesPerlin(rand, 16);
+	selectorNoiseGen = NoiseOctavesPerlin(rand, 8);
+	sandGravelNoiseGen = NoiseOctavesPerlin(rand, 4);
+	stoneNoiseGen = NoiseOctavesPerlin(rand, 4);
+	continentalnessNoiseGen = NoiseOctavesPerlin(rand, 10);
+	depthNoiseGen = NoiseOctavesPerlin(rand, 16);
 }
 
 /**
@@ -34,7 +34,7 @@ NetherGenerator::NetherGenerator(int64_t p_seed) : Generator(p_seed), m_caver(tr
  * @return std::shared_ptr<Chunk>
  */
 void NetherGenerator::GenerateChunk(Chunk& chunk) {
-	m_rand.setSeed(int64_t(chunk.m_cpos.m_x) * 341873128712L + int64_t(chunk.m_cpos.m_z) * 132897987541L);
+	rand.setSeed(int64_t(chunk.cpos.x) * 341873128712L + int64_t(chunk.cpos.z) * 132897987541L);
 
 	// Allocate empty chunk
 	chunk.clear();
@@ -43,11 +43,11 @@ void NetherGenerator::GenerateChunk(Chunk& chunk) {
 	// Replace some of the stone with Biome-appropriate blocks
 	ReplaceBlocksForBiome(chunk);
 	// Carve caves
-	m_caver.GenerateCavesForChunk(chunk, m_seed);
+	caver.GenerateCavesForChunk(chunk, seed);
 	// Generate heightmap
 	chunk.generateHeightMap();
 
-	chunk.m_isModified = true;
+	chunk.isModified = true;
 }
 
 /**
@@ -59,19 +59,19 @@ void NetherGenerator::GenerateChunk(Chunk& chunk) {
 void NetherGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 	const double oneThirtySecond = 1.0 / 32.0;
 	// Init noise maps
-	m_sandNoise.resize(256, 0.0);
-	m_gravelNoise.resize(256, 0.0);
-	m_stoneNoise.resize(256, 0.0);
+	sandNoise.resize(256, 0.0);
+	gravelNoise.resize(256, 0.0);
+	stoneNoise.resize(256, 0.0);
 
 	// Populate noise maps
-	m_sandGravelNoiseGen.GenerateOctaves(
-	    m_sandNoise, Vec3{ double(chunk.m_cpos.m_x * CHUNK_WIDTH), double(chunk.m_cpos.m_z * CHUNK_WIDTH), 0.0 },
+	sandGravelNoiseGen.GenerateOctaves(
+	    sandNoise, Vec3{ double(chunk.cpos.x * CHUNK_WIDTH), double(chunk.cpos.z * CHUNK_WIDTH), 0.0 },
 	    Int32_3{ 16, 16, 1 }, Vec3{ oneThirtySecond, oneThirtySecond, 1.0 });
-	m_sandGravelNoiseGen.GenerateOctaves(
-	    m_gravelNoise, Vec3{ double(chunk.m_cpos.m_x * CHUNK_WIDTH), 109.0134, double(chunk.m_cpos.m_z * CHUNK_WIDTH) },
+	sandGravelNoiseGen.GenerateOctaves(
+	    gravelNoise, Vec3{ double(chunk.cpos.x * CHUNK_WIDTH), 109.0134, double(chunk.cpos.z * CHUNK_WIDTH) },
 	    Int32_3{ 16, 1, 16 }, Vec3{ oneThirtySecond, 1.0, oneThirtySecond });
-	m_stoneNoiseGen.GenerateOctaves(m_stoneNoise,
-	                                Vec3{ double(chunk.m_cpos.m_x * CHUNK_WIDTH), double(chunk.m_cpos.m_z * CHUNK_WIDTH), 0.0 },
+	stoneNoiseGen.GenerateOctaves(stoneNoise,
+	                                Vec3{ double(chunk.cpos.x * CHUNK_WIDTH), double(chunk.cpos.z * CHUNK_WIDTH), 0.0 },
 	                                Int32_3{ 16, 16, 1 },
 	                                Vec3{ oneThirtySecond * 2.0, oneThirtySecond * 2.0, oneThirtySecond * 2.0 });
 
@@ -81,9 +81,9 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 			// This is intentional, to match b1.7.3 behavior!
 			size_t bindex = size_t(x + z * CHUNK_WIDTH);
 			// Get values from noise maps
-			bool sandActive = m_sandNoise[bindex] + m_rand.nextDouble() * 0.2 > 0.0;
-			bool gravelActive = m_gravelNoise[bindex] + m_rand.nextDouble() * 0.2 > 3.0;
-			int32_t stoneActive = Java::DoubleToInt32(m_stoneNoise[bindex] / 3.0 + 3.0 + m_rand.nextDouble() * 0.25);
+			bool sandActive = sandNoise[bindex] + rand.nextDouble() * 0.2 > 0.0;
+			bool gravelActive = gravelNoise[bindex] + rand.nextDouble() * 0.2 > 3.0;
+			int32_t stoneActive = Java::DoubleToInt32(stoneNoise[bindex] / 3.0 + 3.0 + rand.nextDouble() * 0.25);
 			int32_t stoneDepth = -1;
 			// Get biome-appropriate top and filler blocks
 			BlockType topBlock = BLOCK_NETHERRACK;
@@ -94,10 +94,10 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& chunk) {
 				// This is intentional, to match b1.7.3 behavior!
 				Int3 bpos{ z, y, x };
 				// Place Bedrock at bottom and top with some randomness
-				if (y >= (CHUNK_HEIGHT - 1) - m_rand.nextInt(5)) {
+				if (y >= (CHUNK_HEIGHT - 1) - rand.nextInt(5)) {
 					chunk.setBlock(bpos, BLOCK_BEDROCK);
 					continue;
-				} else if (y <= 0 + m_rand.nextInt(5)) {
+				} else if (y <= 0 + rand.nextInt(5)) {
 					chunk.setBlock(bpos, BLOCK_BEDROCK);
 					continue;
 				}
@@ -158,7 +158,7 @@ void NetherGenerator::GenerateTerrain(Chunk& chunk) {
 	const Int3 max{ CHUNK_WIDTH / 4 + 1, CHUNK_HEIGHT / 8 + 1, CHUNK_WIDTH / 4 + 1 };
 
 	// Generate 4x16x4 low resolution noise map
-	GenerateTerrainNoise(Int3{ chunk.m_cpos.m_x * 4, 0, chunk.m_cpos.m_z * 4 }, max);
+	GenerateTerrainNoise(Int3{ chunk.cpos.x * 4, 0, chunk.cpos.z * 4 }, max);
 
 	// Terrain noise is interpolated and only sampled every 4 blocks
 	for (int32_t sampleX = 0; sampleX < 4; ++sampleX) {
@@ -168,27 +168,27 @@ void NetherGenerator::GenerateTerrain(Chunk& chunk) {
 
 				// Get noise cube corners
 				double corner000 =
-				    m_terrainNoiseField[size_t(((sampleX + 0) * max.m_z + sampleZ + 0) * max.m_y + sampleY + 0)];
+				    terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 0) * max.y + sampleY + 0)];
 				double corner010 =
-				    m_terrainNoiseField[size_t(((sampleX + 0) * max.m_z + sampleZ + 1) * max.m_y + sampleY + 0)];
+				    terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 1) * max.y + sampleY + 0)];
 				double corner100 =
-				    m_terrainNoiseField[size_t(((sampleX + 1) * max.m_z + sampleZ + 0) * max.m_y + sampleY + 0)];
+				    terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 0) * max.y + sampleY + 0)];
 				double corner110 =
-				    m_terrainNoiseField[size_t(((sampleX + 1) * max.m_z + sampleZ + 1) * max.m_y + sampleY + 0)];
+				    terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 1) * max.y + sampleY + 0)];
 				double corner001 =
-				    (m_terrainNoiseField[size_t(((sampleX + 0) * max.m_z + sampleZ + 0) * max.m_y + sampleY + 1)] -
+				    (terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 0) * max.y + sampleY + 1)] -
 				     corner000) *
 				    verticalLerpStep;
 				double corner011 =
-				    (m_terrainNoiseField[size_t(((sampleX + 0) * max.m_z + sampleZ + 1) * max.m_y + sampleY + 1)] -
+				    (terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 1) * max.y + sampleY + 1)] -
 				     corner010) *
 				    verticalLerpStep;
 				double corner101 =
-				    (m_terrainNoiseField[size_t(((sampleX + 1) * max.m_z + sampleZ + 0) * max.m_y + sampleY + 1)] -
+				    (terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 0) * max.y + sampleY + 1)] -
 				     corner100) *
 				    verticalLerpStep;
 				double corner111 =
-				    (m_terrainNoiseField[size_t(((sampleX + 1) * max.m_z + sampleZ + 1) * max.m_y + sampleY + 1)] -
+				    (terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 1) * max.y + sampleY + 1)] -
 				     corner110) *
 				    verticalLerpStep;
 
@@ -222,7 +222,7 @@ void NetherGenerator::GenerateTerrain(Chunk& chunk) {
 
 							chunk.setBlock(bpos, blockType);
 							// Prep for next iteration
-							bpos.m_z += 1;
+							bpos.z += 1;
 							terrainDensity += densityStepZ;
 						}
 
@@ -252,43 +252,43 @@ void NetherGenerator::GenerateTerrainNoise(Int3 cpos, Int3 max) {
 	double vertScale = 2053.236;
 
 	{
-		Vec3 vecCpos = Vec3{ double(cpos.m_x), double(cpos.m_y), double(cpos.m_z) };
+		Vec3 vecCpos = Vec3{ double(cpos.x), double(cpos.y), double(cpos.z) };
 		// We do this to need to generate noise as often
-		m_continentalnessNoiseGen.GenerateOctaves(m_continentalnessNoiseField, vecCpos, Int32_3{ max.m_x, 1, max.m_z },
+		continentalnessNoiseGen.GenerateOctaves(continentalnessNoiseField, vecCpos, Int32_3{ max.x, 1, max.z },
 		                                          Vec3{ 1.0, 0.0, 1.0 });
-		m_depthNoiseGen.GenerateOctaves(m_depthNoiseField, vecCpos, Int32_3{ max.m_x, 1, max.m_z },
+		depthNoiseGen.GenerateOctaves(depthNoiseField, vecCpos, Int32_3{ max.x, 1, max.z },
 		                                Vec3{ 100.0, 0.0, 100.0 });
-		m_selectorNoiseGen.GenerateOctaves(m_selectorNoiseField, vecCpos, max,
+		selectorNoiseGen.GenerateOctaves(selectorNoiseField, vecCpos, max,
 		                                   Vec3{ horiScale / 80.0, vertScale / 60.0, horiScale / 80.0 });
-		m_lowNoiseGen.GenerateOctaves(m_lowNoiseField, vecCpos, max, Vec3{ horiScale, vertScale, horiScale });
-		m_highNoiseGen.GenerateOctaves(m_highNoiseField, vecCpos, max, Vec3{ horiScale, vertScale, horiScale });
+		lowNoiseGen.GenerateOctaves(lowNoiseField, vecCpos, max, Vec3{ horiScale, vertScale, horiScale });
+		highNoiseGen.GenerateOctaves(highNoiseField, vecCpos, max, Vec3{ horiScale, vertScale, horiScale });
 	}
 	// Used to iterate 3D noise maps (low, high, selector)
 	size_t xyzIndex = 0;
 	// Used to iterate 2D Noise maps (depth, continentalness)
 	size_t xzIndex = 0;
 	// Reserve stuff
-	std::vector<double> netherDensityOffset(size_t(max.m_y));
+	std::vector<double> netherDensityOffset(size_t(max.y));
 
-	for (int iY = 0; iY < max.m_y; ++iY) {
-		netherDensityOffset[size_t(iY)] = std::cos(double(iY) * JavaMath::PI * 6.0 / double(max.m_y)) * 2.0;
+	for (int iY = 0; iY < max.y; ++iY) {
+		netherDensityOffset[size_t(iY)] = std::cos(double(iY) * JavaMath::PI * 6.0 / double(max.y)) * 2.0;
 		double diY = double(iY);
-		if (diY > max.m_y / 2)
-			diY = double(max.m_y - 1 - iY);
+		if (diY > max.y / 2)
+			diY = double(max.y - 1 - iY);
 		if (diY < 4.0) {
 			diY = 4.0 - diY;
 			netherDensityOffset[size_t(iY)] -= diY * diY * diY * 10.0;
 		}
 	}
 
-	for (int32_t iX = 0; iX < max.m_x; ++iX) {
-		for (int32_t iZ = 0; iZ < max.m_z; ++iZ) {
+	for (int32_t iX = 0; iX < max.x; ++iX) {
+		for (int32_t iZ = 0; iZ < max.z; ++iZ) {
 			// Sample contientalness noise
-			double continentalness = (m_continentalnessNoiseField[xzIndex] + 256.0) / 512.0;
+			double continentalness = (continentalnessNoiseField[xzIndex] + 256.0) / 512.0;
 			if (continentalness > 1.0)
 				continentalness = 1.0;
 			// Sample depth noise
-			double depthNoise = m_depthNoiseField[xzIndex] / 8000.0;
+			double depthNoise = depthNoiseField[xzIndex] / 8000.0;
 			if (depthNoise < 0.0)
 				depthNoise = -depthNoise;
 			depthNoise = depthNoise * 3.0 - 3.0;
@@ -305,19 +305,19 @@ void NetherGenerator::GenerateTerrainNoise(Int3 cpos, Int3 max) {
 				depthNoise /= 6.0;
 			}
 			continentalness += 0.5;
-			depthNoise = depthNoise * double(max.m_y) / 16.0;
+			depthNoise = depthNoise * double(max.y) / 16.0;
 			++xzIndex;
 
-			for (int32_t iY = 0; iY < max.m_y; ++iY) {
+			for (int32_t iY = 0; iY < max.y; ++iY) {
 				// Sample 3D noises
 				double terrainDensity = 0.0;
 				double densityOffset = netherDensityOffset[iY];
 				// Sample low noise
-				double lowNoise = m_lowNoiseField[xyzIndex] / 512.0;
+				double lowNoise = lowNoiseField[xyzIndex] / 512.0;
 				// Sample high noise
-				double highNoise = m_highNoiseField[xyzIndex] / 512.0;
+				double highNoise = highNoiseField[xyzIndex] / 512.0;
 				// Sample selector noise
-				double selectorNoise = (m_selectorNoiseField[xyzIndex] / 10.0 + 1.0) / 2.0;
+				double selectorNoise = (selectorNoiseField[xyzIndex] / 10.0 + 1.0) / 2.0;
 				if (selectorNoise < 0.0) {
 					terrainDensity = lowNoise;
 				} else if (selectorNoise > 1.0) {
@@ -328,8 +328,8 @@ void NetherGenerator::GenerateTerrainNoise(Int3 cpos, Int3 max) {
 
 				terrainDensity -= densityOffset;
 				// Reduce density towards max height
-				if (iY > max.m_y - 4) {
-					double heightEdgeFade = double(float(iY - (max.m_y - 4)) / 3.0F);
+				if (iY > max.y - 4) {
+					double heightEdgeFade = double(float(iY - (max.y - 4)) / 3.0F);
 					terrainDensity = (terrainDensity * (1.0 - heightEdgeFade)) + (-10.0 * heightEdgeFade);
 				}
 				if (double(iY) < 0.0) {
@@ -341,7 +341,7 @@ void NetherGenerator::GenerateTerrainNoise(Int3 cpos, Int3 max) {
 					terrainDensity = (terrainDensity * (1.0 - heightEdgeFade)) + (-10.0 * heightEdgeFade);
 				}
 
-				m_terrainNoiseField[xyzIndex] = terrainDensity;
+				terrainNoiseField[xyzIndex] = terrainDensity;
 				++xyzIndex;
 			}
 		}
@@ -356,73 +356,73 @@ void NetherGenerator::GenerateTerrainNoise(Int3 cpos, Int3 max) {
  * match the Java source exactly.
  */
 bool NetherGenerator::PopulateChunk(Chunk& chunk, WorldWrapper& world) {
-	const int32_t blockX = chunk.m_cpos.m_x * CHUNK_WIDTH;
-	const int32_t blockZ = chunk.m_cpos.m_z * CHUNK_WIDTH;
+	const int32_t blockX = chunk.cpos.x * CHUNK_WIDTH;
+	const int32_t blockZ = chunk.cpos.z * CHUNK_WIDTH;
 	// TODO: The nether does not initialize its prng values,
 	// meaning that *technically* they're fully up to random chance.
 	// It just happens that this random chance is somewhat consistent, apparently.
 	// So... figure that out, if possible. Probably just some chunk ordering tomfuckery.
-	m_rand.setSeed(world.getSeed());
-	int64_t xSalt = m_rand.nextLong() / 2L * 2L + 1L;
-	int64_t zSalt = m_rand.nextLong() / 2L * 2L + 1L;
+	rand.setSeed(world.getSeed());
+	int64_t xSalt = rand.nextLong() / 2L * 2L + 1L;
+	int64_t zSalt = rand.nextLong() / 2L * 2L + 1L;
 	// Use unsigned arithmetic to avoid overflow UB
 	uint64_t xSalt_u = static_cast<uint64_t>(xSalt);
 	uint64_t zSalt_u = static_cast<uint64_t>(zSalt);
-	uint64_t xPart = static_cast<uint64_t>(static_cast<int64_t>(chunk.m_cpos.m_x)) * xSalt_u;
-	uint64_t zPart = static_cast<uint64_t>(static_cast<int64_t>(chunk.m_cpos.m_z)) * zSalt_u;
+	uint64_t xPart = static_cast<uint64_t>(static_cast<int64_t>(chunk.cpos.x)) * xSalt_u;
+	uint64_t zPart = static_cast<uint64_t>(static_cast<int64_t>(chunk.cpos.z)) * zSalt_u;
 	uint64_t combined = (xPart + zPart) ^ static_cast<uint64_t>(world.getSeed());
 
-	m_rand.setSeed(static_cast<int64_t>(combined));
+	rand.setSeed(static_cast<int64_t>(combined));
 
 	Int3 coord;
 	// Generate single-block lava streams
 	for (int attempt = 0; attempt < 8; ++attempt) {
-		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT - 8) + 4; // 120
-		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		FeatureGenerator(BLOCK_LAVA_FLOWING).GenerateNetherLiquid(world, m_rand, coord);
+		coord.x = blockX + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = rand.nextInt(CHUNK_HEIGHT - 8) + 4; // 120
+		coord.z = blockZ + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		FeatureGenerator(BLOCK_LAVA_FLOWING).GenerateNetherLiquid(world, rand, coord);
 	}
 
 	// Generate fire patch
-	int max_fire_attempts = m_rand.nextInt(m_rand.nextInt(10) + 1) + 1;
+	int max_fire_attempts = rand.nextInt(rand.nextInt(10) + 1) + 1;
 	for (int attempt = 0; attempt < max_fire_attempts; ++attempt) {
-		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT - 8) + 4; // 120
-		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		FeatureGenerator().GenerateNetherFire(world, m_rand, coord);
+		coord.x = blockX + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = rand.nextInt(CHUNK_HEIGHT - 8) + 4; // 120
+		coord.z = blockZ + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		FeatureGenerator().GenerateNetherFire(world, rand, coord);
 	}
 
 	// Generate Glowstone Blob
-	int max_glowstone_attempts = m_rand.nextInt(m_rand.nextInt(10) + 1);
+	int max_glowstone_attempts = rand.nextInt(rand.nextInt(10) + 1);
 	for (int attempt = 0; attempt < max_glowstone_attempts; ++attempt) {
-		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT - 8) + 4; // 120
-		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		FeatureGenerator().GenerateNetherGlowstone(world, m_rand, coord);
+		coord.x = blockX + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = rand.nextInt(CHUNK_HEIGHT - 8) + 4; // 120
+		coord.z = blockZ + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		FeatureGenerator().GenerateNetherGlowstone(world, rand, coord);
 	}
 
 	// Generate secondary Glowstone Blob
 	for (int attempt = 0; attempt < 10; ++attempt) {
-		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		FeatureGenerator().GenerateNetherGlowstone(world, m_rand, coord);
+		coord.x = blockX + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = rand.nextInt(CHUNK_HEIGHT);
+		coord.z = blockZ + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		FeatureGenerator().GenerateNetherGlowstone(world, rand, coord);
 	}
 
 	// Generate Brown Mushrooms
-	if (m_rand.nextInt(1) == 0) {
-		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		FeatureGenerator(BLOCK_MUSHROOM_BROWN).GenerateFlowers(world, m_rand, coord);
+	if (rand.nextInt(1) == 0) {
+		coord.x = blockX + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = rand.nextInt(CHUNK_HEIGHT);
+		coord.z = blockZ + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		FeatureGenerator(BLOCK_MUSHROOM_BROWN).GenerateFlowers(world, rand, coord);
 	}
 
 	// Generate Red Mushrooms
-	if (m_rand.nextInt(1) == 0) {
-		coord.m_x = blockX + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		coord.m_y = m_rand.nextInt(CHUNK_HEIGHT);
-		coord.m_z = blockZ + m_rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		FeatureGenerator(BLOCK_MUSHROOM_RED).GenerateFlowers(world, m_rand, coord);
+	if (rand.nextInt(1) == 0) {
+		coord.x = blockX + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = rand.nextInt(CHUNK_HEIGHT);
+		coord.z = blockZ + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		FeatureGenerator(BLOCK_MUSHROOM_RED).GenerateFlowers(world, rand, coord);
 	}
 
 	return true;

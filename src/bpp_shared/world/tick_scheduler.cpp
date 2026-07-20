@@ -8,23 +8,23 @@
 #include "world.h"
 
 void TickScheduler::tick() {
-	if (!this->m_world)
+	if (!this->world)
 		return;
 
-	while (!this->m_scheduledTicks.empty() && m_scheduledTicks.top().m_tickDue <= m_currentTick) {
-		ScheduledTick entry = m_scheduledTicks.top();
-		m_scheduledTicks.pop();
+	while (!this->scheduledTicks.empty() && scheduledTicks.top().tickDue <= currentTick) {
+		ScheduledTick entry = scheduledTicks.top();
+		scheduledTicks.pop();
 
 		// Did we reschedule this position?
-		auto it = m_pending.find(entry.m_pos);
-		if (it != m_pending.end() && it->second == entry.m_sequence)
-			m_pending.erase(it);
+		auto it = pending.find(entry.pos);
+		if (it != pending.end() && it->second == entry.sequence)
+			pending.erase(it);
 
 		// Has the block changed since we scheduled this tick?
-		if (m_world->getBlockId(entry.m_pos) == entry.m_expectedBlock) {
-			if (auto fn = Blocks::blockBehaviors[entry.m_expectedBlock].m_onTick)
-				fn(*m_world, entry.m_pos, 0, m_world->m_rand);
+		if (world->getBlockId(entry.pos) == entry.expectedBlock) {
+			if (auto fn = Blocks::blockBehaviors[entry.expectedBlock].onTick)
+				fn(*world, entry.pos, 0, world->rand);
 		}
 	}
-	m_currentTick++;
+	currentTick++;
 }

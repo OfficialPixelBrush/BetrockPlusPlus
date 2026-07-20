@@ -14,65 +14,65 @@
 
 // Inventory
 struct Inventory {
-	std::string m_name = "Inventory";
-	std::vector<ItemStack> m_slots;
-	bool m_isModified = false;
+	std::string name = "Inventory";
+	std::vector<ItemStack> slots;
+	bool isModified = false;
 
-	Inventory(size_t size) : m_slots(size) {}
+	Inventory(size_t size) : slots(size) {}
 
 	virtual int getSizeInventory() const {
-		return int(m_slots.size());
+		return int(slots.size());
 	}
 
 	virtual NetworkSlotId getNetworkSlotId(NbtSlotId slot) const {
-		if (slot < 0 || slot >= int(m_slots.size()))
+		if (slot < 0 || slot >= int(slots.size()))
 			return -1;
-		return slot.m_value;
+		return slot.value;
 	}
 
 	virtual ItemStack* getStackInSlot(int slot) {
-		if (slot < 0 || slot >= (int)m_slots.size())
+		if (slot < 0 || slot >= (int)slots.size())
 			return nullptr;
-		if (m_slots[size_t(slot)].m_id == Items::Id::INVALID)
+		if (slots[size_t(slot)].id == Items::Id::INVALID)
 			return nullptr;
-		return &m_slots[size_t(slot)];
+		return &slots[size_t(slot)];
 	}
 
 	virtual ItemStack decreaseStackSize(int slot, int count) {
-		if (slot < 0 || slot >= (int)m_slots.size() || m_slots[size_t(slot)].m_id == Items::Id::INVALID)
+		if (slot < 0 || slot >= (int)slots.size() || slots[size_t(slot)].id == Items::Id::INVALID)
 			return ItemStack{};
-		auto& stack = m_slots[size_t(slot)];
-		if (stack.m_count <= count) {
+		auto& stack = slots[size_t(slot)];
+		if (stack.count <= count) {
 			ItemStack taken = stack;
-			m_slots[slot] = ItemStack{};
+			slots[slot] = ItemStack{};
 			onInventoryChanged();
 			return taken;
 		}
-		ItemStack taken{ stack.m_id, (int8_t)count, stack.m_data };
-		stack.m_count = (int8_t)(stack.m_count - count);
+		ItemStack taken{ stack.id, (int8_t)count, stack.data };
+		stack.count = (int8_t)(stack.count - count);
 		onInventoryChanged();
 		return taken;
 	}
 
 	virtual void setInventorySlotContents(int slot, ItemStack* stack) {
-		if (slot < 0 || slot >= (int)m_slots.size())
+		if (slot < 0 || slot >= (int)slots.size())
 			return;
-		m_slots[size_t(slot)] = stack ? *stack : ItemStack{};
+		slots[size_t(slot)] = stack ? *stack : ItemStack{};
 		onInventoryChanged();
 	}
 
 	virtual const std::string& getInventoryName() const {
-		return m_name;
+		return name;
 	}
 	virtual void onInventoryChanged() {
-		m_isModified = true;
+		isModified = true;
 	}
 	virtual ~Inventory() = default;
 
 	void clearSlot(int slot) {
-		if (slot < 0 || slot >= (int)m_slots.size())
+		if (slot < 0 || slot >= (int)slots.size())
 			return;
-		m_slots[size_t(slot)] = ItemStack{};
+		slots[size_t(slot)] = ItemStack{};
 		onInventoryChanged();
 	}
 
@@ -83,26 +83,26 @@ struct Inventory {
 		auto end = endSlot == -1 ? getSizeInventory() - 1 : endSlot;
 
 		// Try and merge into an already existing stack of the same type if this item is stackable
-		if (Items::IsStackable(stack.m_id)) {
+		if (Items::IsStackable(stack.id)) {
 			for (int i = reverse ? end : start; reverse ? i >= start : i <= end; reverse ? i-- : i++) {
 				auto slot = getStackInSlot(i);
 				if (!slot)
 					continue;
-				if (slot->m_id == stack.m_id && slot->m_data == stack.m_data) {
-					auto maxStack = Items::GetMaxStack(slot->m_id);
+				if (slot->id == stack.id && slot->data == stack.data) {
+					auto maxStack = Items::GetMaxStack(slot->id);
 					// Don't try and merge into an already maxed out stack
-					if (slot->m_count >= maxStack)
+					if (slot->count >= maxStack)
 						continue;
 
 					// Add the stacks together and do some checks to make sure we don't overflow
-					int space = maxStack - slot->m_count;
-					int toMove = CrossPlatform::Math::min(space, (int)stack.m_count);
+					int space = maxStack - slot->count;
+					int toMove = CrossPlatform::Math::min(space, (int)stack.count);
 
-					slot->m_count += toMove;
-					stack.m_count -= toMove;
+					slot->count += toMove;
+					stack.count -= toMove;
 
 					onInventoryChanged();
-					if (stack.m_count == 0)
+					if (stack.count == 0)
 						return true;
 				}
 			}
@@ -110,11 +110,11 @@ struct Inventory {
 
 		// We couldn't merge into existing items so just try and find an empty slot
 		for (int i = reverse ? end : start; reverse ? i >= start : i <= end; reverse ? i-- : i++) {
-			if (m_slots[size_t(i)].m_id == Items::Id::INVALID) {
-				m_slots[size_t(i)] = ItemStack{ stack.m_id, stack.m_count, stack.m_data };
-				stack.m_id = Items::Id::INVALID;
-				stack.m_data = 0;
-				stack.m_count = 0;
+			if (slots[size_t(i)].id == Items::Id::INVALID) {
+				slots[size_t(i)] = ItemStack{ stack.id, stack.count, stack.data };
+				stack.id = Items::Id::INVALID;
+				stack.data = 0;
+				stack.count = 0;
 				onInventoryChanged();
 				return true;
 			}

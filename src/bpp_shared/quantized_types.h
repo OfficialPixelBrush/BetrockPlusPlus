@@ -29,7 +29,7 @@ struct Fixed {
 	constexpr Fixed& operator=(const Fixed&) = default;
 
 	template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
-	constexpr Fixed(T value) : m_value(static_cast<Storage>(value * SCALE)) {}
+	constexpr Fixed(T m_value) : m_value(static_cast<Storage>(m_value * SCALE)) {}
 
 	static constexpr Fixed from_raw(Storage raw) {
 		Fixed result;
@@ -116,7 +116,7 @@ struct Fixed {
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, Fixed n) {
-		return os << n.value();
+		return os << n.m_value();
 	}
 };
 

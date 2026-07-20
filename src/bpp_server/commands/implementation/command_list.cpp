@@ -17,17 +17,17 @@ std::string CommandList::Execute([[maybe_unused]] std::vector<std::string>& para
                                  Server& server) {
 	const auto& players = server.GetPlayers();
 	Packet::ChatMessage pkt;
-	pkt.m_message = std::format("§7-- {} Player(s) --", players.size());
-	pkt.Serialize(session.m_stream);
-	pkt.m_message = "§7";
+	pkt.message = std::format("§7-- {} Player(s) --", players.size());
+	pkt.Serialize(session.stream);
+	pkt.message = "§7";
 	for (size_t i = 0; i < players.size(); i++) {
 		auto& p = players[i];
-		if (pkt.m_message.size() + p->m_username.size() > 64) {
-			pkt.Serialize(session.m_stream);
-			pkt.m_message = "§7";
+		if (pkt.message.size() + p->username.size() > 64) {
+			pkt.Serialize(session.stream);
+			pkt.message = "§7";
 		}
-		pkt.m_message += p->m_username + ((i < (players.size() - 1)) ? ", " : "");
+		pkt.message += p->username + ((i < (players.size() - 1)) ? ", " : "");
 	}
-	pkt.Serialize(session.m_stream);
+	pkt.Serialize(session.stream);
 	return "";
 }

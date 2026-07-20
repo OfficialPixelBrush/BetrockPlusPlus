@@ -14,11 +14,11 @@
 
 // Block Struct
 struct Block {
-	BlockType m_type = BLOCK_AIR;
-	uint8_t m_data = 0;
+	BlockType type = BLOCK_AIR;
+	uint8_t data = 0;
 
 	friend std::ostream& operator<<(std::ostream& os, const Block& b) {
-		os << "(" << int32_t(b.m_type) << ":" << int32_t(b.m_data) << ")";
+		os << "(" << int32_t(b.type) << ":" << int32_t(b.data) << ")";
 		return os;
 	}
 
@@ -31,6 +31,6 @@ struct Block {
 
 // Lighting + Block Struct
 struct LitBlock : Block {
-	uint8_t m_blocklight = 0;
-	uint8_t m_skylight = 0;
+	uint8_t blocklight = 0;
+	uint8_t skylight = 0;
 };

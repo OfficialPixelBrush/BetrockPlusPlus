@@ -26,7 +26,7 @@ ServerManager::ServerManager(uint16_t port) {
 	serverAddress.sin_addr.s_addr = INADDR_ANY;
 	server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (bind(server_socket, reinterpret_cast<struct sockaddr*>(&serverAddress), sizeof(serverAddress)) != 0) {
-		GlobalLogger().m_error << "Bind error: " << errno << std::endl;
+		GlobalLogger().error << "Bind error: " << errno << std::endl;
 		return;
 	}
 	listen(server_socket, 1);
@@ -34,7 +34,7 @@ ServerManager::ServerManager(uint16_t port) {
 
 ServerManager::~ServerManager() {
 	// Clear all streams, which should close them
-	m_streams.clear();
+	streams.clear();
 	// Close server
 	if (server_socket != INVALID_SOCKET) {
 #if defined(_WIN32) || defined(_WIN64)
@@ -54,7 +54,7 @@ ServerManager::~ServerManager() {
 bool ServerManager::InitConnection() {
 	int client_socket = accept(server_socket, nullptr, nullptr);
 	if (client_socket != INVALID_SOCKET) {
-		m_streams.push_back(NetworkStream(client_socket));
+		streams.push_back(NetworkStream(client_socket));
 		return true;
 	}
 	return false;

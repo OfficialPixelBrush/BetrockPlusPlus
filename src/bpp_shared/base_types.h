@@ -18,17 +18,17 @@ struct Branded {
 	// enum Items : ItemId::Underlying
 	using Underlying = UnderlyingT;
 
-	UnderlyingT m_value;
+	UnderlyingT value;
 
 	constexpr Branded() = default;
-	constexpr Branded(UnderlyingT value) : m_value(value) {}
+	constexpr Branded(UnderlyingT value) : value(value) {}
 
 	template <typename OtherUnderlyingT, typename OtherTagT>
 	    requires(!std::is_same_v<TagT, OtherTagT>)
 	constexpr Branded(Branded<OtherUnderlyingT, OtherTagT>) = delete;
 
 	constexpr operator UnderlyingT() const {
-		return m_value;
+		return value;
 	}
 
 	template <typename OtherUnderlyingT, typename OtherTagT>
@@ -40,13 +40,13 @@ struct Branded {
 	constexpr auto operator<=>(Branded<OtherUnderlyingT, OtherTagT>) const = delete;
 
 	constexpr Branded& operator++() {
-		++m_value;
+		++value;
 		return *this;
 	}
 
 	constexpr Branded operator++(int) {
 		Branded previous = *this;
-		++m_value;
+		++value;
 		return previous;
 	}
 };
@@ -54,7 +54,7 @@ struct Branded {
 template <typename UnderlyingT, typename TagT>
 struct std::hash<Branded<UnderlyingT, TagT>> {
 	size_t operator()(Branded<UnderlyingT, TagT> branded) const noexcept {
-		return std::hash<UnderlyingT>{}(branded.m_value);
+		return std::hash<UnderlyingT>{}(branded.value);
 	}
 };
 

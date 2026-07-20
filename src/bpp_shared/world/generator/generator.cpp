@@ -7,7 +7,7 @@
 
 #include "generator.h"
 
-Generator::Generator(int64_t seed) : m_seed(seed) {}
+Generator::Generator(int64_t seed) : seed(seed) {}
 
 void Generator::GenerateChunk([[maybe_unused]] Chunk& chunk) {}
 

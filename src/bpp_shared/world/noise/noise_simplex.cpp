@@ -18,18 +18,18 @@ NoiseSimplex::NoiseSimplex(Java::Random& rand) {
 }
 
 void NoiseSimplex::InitPermTable(Java::Random& rand) {
-	m_coordinate.m_x = rand.nextDouble() * 256.0;
-	m_coordinate.m_y = rand.nextDouble() * 256.0;
-	m_coordinate.m_z = rand.nextDouble() * 256.0;
+	coordinate.x = rand.nextDouble() * 256.0;
+	coordinate.y = rand.nextDouble() * 256.0;
+	coordinate.z = rand.nextDouble() * 256.0;
 
 	for (int32_t i = 0; i < 256; ++i) {
-		m_permutations[i] = i;
+		permutations[i] = i;
 	}
 
 	for (int32_t i = 0; i < 256; ++i) {
 		int32_t j = rand.nextInt(256 - i) + i;
-		std::swap(m_permutations[i], m_permutations[j]);
-		m_permutations[i + 256] = m_permutations[i];
+		std::swap(permutations[i], permutations[j]);
+		permutations[i + 256] = permutations[i];
 	}
 }
 
@@ -37,11 +37,11 @@ void NoiseSimplex::GenerateNoise(std::vector<double>& values, Vec2 p_offset, Int
                                  double amplitude) {
 	size_t index = 0;
 
-	for (int32_t xI = 0; xI < p_size.m_x; ++xI) {
-		double xPos = (p_offset.m_x + double(xI)) * p_scale.m_x + m_coordinate.m_x;
+	for (int32_t xI = 0; xI < p_size.x; ++xI) {
+		double xPos = (p_offset.x + double(xI)) * p_scale.x + coordinate.x;
 
-		for (int32_t yI = 0; yI < p_size.m_y; ++yI) {
-			double yPos = (p_offset.m_y + double(yI)) * p_scale.m_y + m_coordinate.m_y;
+		for (int32_t yI = 0; yI < p_size.y; ++yI) {
+			double yPos = (p_offset.y + double(yI)) * p_scale.y + coordinate.y;
 			double skew = (xPos + yPos) * skewing;
 			int32_t x0 = wrap(xPos + skew);
 			int32_t y0 = wrap(yPos + skew);
@@ -66,9 +66,9 @@ void NoiseSimplex::GenerateNoise(std::vector<double>& values, Vec2 p_offset, Int
 			double y1c = y0b - 1.0 + 2.0 * unskewing;
 			int32_t xInt = x0 & 255;
 			int32_t yInt = y0 & 255;
-			int32_t grad0 = m_permutations[xInt + m_permutations[yInt]] % 12;
-			int32_t grad1 = m_permutations[xInt + i + m_permutations[yInt + j]] % 12;
-			int32_t grad2 = m_permutations[xInt + 1 + m_permutations[yInt + 1]] % 12;
+			int32_t grad0 = permutations[xInt + permutations[yInt]] % 12;
+			int32_t grad1 = permutations[xInt + i + permutations[yInt + j]] % 12;
+			int32_t grad2 = permutations[xInt + 1 + permutations[yInt + 1]] % 12;
 			double term0 = 0.5 - x0b * x0b - y0b * y0b;
 			double contrib0;
 			if (term0 < 0.0) {

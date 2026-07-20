@@ -16,38 +16,38 @@
 
 // Just a virtual container
 struct ItemStack {
-	ItemId m_id = Items::Id::INVALID;
-	ItemAmount m_count = 0;
-	ItemDamage m_data = 0; // This is "damage" in the og java but data makes more sense for what this is used for
+	ItemId id = Items::Id::INVALID;
+	ItemAmount count = 0;
+	ItemDamage data = 0; // This is "damage" in the og java but data makes more sense for what this is used for
 
 	bool operator==(const ItemStack& o) const {
-		return m_id == o.m_id && m_count == o.m_count && m_data == o.m_data;
+		return id == o.id && count == o.count && data == o.data;
 	}
 	bool operator!=(const ItemStack& o) const {
 		return !(*this == o);
 	}
 
 	friend std::wostream& operator<<(std::wostream& wos, const ItemStack& val) {
-		wos << "(" << static_cast<int64_t>(val.m_id) << ":" << static_cast<int64_t>(val.m_data) << " x"
-		    << static_cast<int64_t>(val.m_count) << ")";
+		wos << "(" << static_cast<int64_t>(val.id) << ":" << static_cast<int64_t>(val.data) << " x"
+		    << static_cast<int64_t>(val.count) << ")";
 		return wos;
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const ItemStack& val) {
-		os << "(" << static_cast<int64_t>(val.m_id) << ":" << static_cast<int64_t>(val.m_data) << " x"
-		   << static_cast<int64_t>(val.m_count) << ")";
+		os << "(" << static_cast<int64_t>(val.id) << ":" << static_cast<int64_t>(val.data) << " x"
+		   << static_cast<int64_t>(val.count) << ")";
 		return os;
 	}
 
 	void decrementCount(int8_t amount) {
-		if (m_count - amount < 0) {
-			m_count = 0;
+		if (count - amount < 0) {
+			count = 0;
 		} else {
-			m_count -= amount;
+			count -= amount;
 		}
-		if (m_count <= 0) {
-			m_id = Items::Id::INVALID;
-			m_data = 0;
+		if (count <= 0) {
+			id = Items::Id::INVALID;
+			data = 0;
 		}
 	}
 
@@ -63,9 +63,9 @@ template <>
 struct hash<ItemStack> {
 	size_t operator()(const ItemStack& s) const noexcept {
 		size_t h = 0;
-		hash_combine(h, s.m_id);
-		hash_combine(h, s.m_count);
-		hash_combine(h, s.m_data);
+		hash_combine(h, s.id);
+		hash_combine(h, s.count);
+		hash_combine(h, s.data);
 		return h;
 	}
 };

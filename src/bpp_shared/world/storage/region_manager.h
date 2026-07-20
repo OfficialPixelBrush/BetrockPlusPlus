@@ -14,23 +14,23 @@
 #include <vector>
 
 struct SnapshotContainer {
-	std::shared_ptr<Chunk> m_chunkSnapshot;
-	std::shared_ptr<const std::vector<Tag>> m_entitySnapshot;
+	std::shared_ptr<Chunk> chunkSnapshot;
+	std::shared_ptr<const std::vector<Tag>> entitySnapshot;
 };
 
 struct WorldManager;
 
 struct RegionManager {
-	BS::thread_pool<> m_iopool{ 2 };
+	BS::thread_pool<> iopool{ 2 };
 
-	std::mutex m_saveQueueMutex;
-	std::vector<SnapshotContainer> m_saveQueue;
+	std::mutex saveQueueMutex;
+	std::vector<SnapshotContainer> saveQueue;
 
-	std::mutex m_outChunksMutex;
-	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> m_outChunks;
+	std::mutex outChunksMutex;
+	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> outChunks;
 
 	// As much as I hate to do this it makes my job easier
-	WorldManager* m_world = nullptr;
+	WorldManager* world = nullptr;
 
 	~RegionManager();
 
@@ -67,8 +67,8 @@ private:
 	bool tryMergePendingRegion(std::shared_ptr<Region>& region);
 	bool createRegionOnCache(Int2 rpos);
 
-	std::vector<std::shared_ptr<Region>> m_pendingRegions;
-	std::shared_ptr<Region> m_regionCache[8];
-	int m_cacheIndex = 0;
+	std::vector<std::shared_ptr<Region>> pendingRegions;
+	std::shared_ptr<Region> regionCache[8];
+	int cacheIndex = 0;
 	std::string m_folderPath; // Path to where all the regions get dumped
 };

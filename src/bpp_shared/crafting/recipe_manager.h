@@ -17,23 +17,23 @@
 #include <utility>
 
 struct ItemKey {
-	ItemId m_id = Items::Id::INVALID;
-	ItemDamage m_data = 0;
+	ItemId id = Items::Id::INVALID;
+	ItemDamage data = 0;
 
 	auto operator<=>(const ItemKey&) const = default;
 };
 
 struct ShapedRecipeKey {
-	uint8_t m_width = 0;
-	uint8_t m_height = 0;
-	std::array<ItemKey, 9> m_cells{};
+	uint8_t width = 0;
+	uint8_t height = 0;
+	std::array<ItemKey, 9> cells{};
 
 	friend bool operator==(const ShapedRecipeKey&, const ShapedRecipeKey&) = default;
 };
 
 struct ShapelessRecipeKey {
-	uint8_t m_count = 0;
-	std::array<ItemKey, 9> m_items{};
+	uint8_t count = 0;
+	std::array<ItemKey, 9> items{};
 
 	friend bool operator==(const ShapelessRecipeKey&, const ShapelessRecipeKey&) = default;
 };
@@ -43,8 +43,8 @@ template <>
 struct hash<ItemKey> {
 	size_t operator()(const ItemKey& k) const noexcept {
 		size_t h = 0;
-		hash_combine(h, k.m_id);
-		hash_combine(h, k.m_data);
+		hash_combine(h, k.id);
+		hash_combine(h, k.data);
 		return h;
 	}
 };
@@ -54,10 +54,10 @@ struct ShapedRecipeKeyHasher {
 	size_t operator()(const ShapedRecipeKey& key) const {
 		size_t h = 0;
 
-		hash_combine(h, key.m_width);
-		hash_combine(h, key.m_height);
+		hash_combine(h, key.width);
+		hash_combine(h, key.height);
 
-		for (const auto& cell : key.m_cells)
+		for (const auto& cell : key.cells)
 			hash_combine(h, cell);
 
 		return h;
@@ -68,9 +68,9 @@ struct ShapelessRecipeKeyHasher {
 	size_t operator()(const ShapelessRecipeKey& key) const {
 		size_t h = 0;
 
-		hash_combine(h, key.m_count);
+		hash_combine(h, key.count);
 
-		for (const auto& item : key.m_items)
+		for (const auto& item : key.items)
 			hash_combine(h, item);
 
 		return h;

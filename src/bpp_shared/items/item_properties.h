@@ -52,23 +52,23 @@ enum class ArmorType : int8_t {
 ItemDamage GetMaterialUses(ToolMaterial material);
 
 struct ToolProperties {
-	ToolType m_type = ToolType::None;
-	ToolMaterial m_material = ToolMaterial::None;
-	ItemDamage m_max_uses = -1;
+	ToolType type = ToolType::None;
+	ToolMaterial material = ToolMaterial::None;
+	ItemDamage max_uses = -1;
 };
 
 struct ItemProperties {
-	ItemAmount m_max_stack = STACK_MAX;
+	ItemAmount max_stack = STACK_MAX;
 };
 
 struct ItemBehavior {
-	void (*m_onBlockStartMining)(WorldManager& world, ItemStack* stack, Int3 pos,
+	void (*onBlockStartMining)(WorldManager& world, ItemStack* stack, Int3 pos,
 	                           PacketData::FaceDirection face) = nullptr;
-	void (*m_onBlockFinishMining)(WorldManager& world, ItemStack* stack, Int3 pos,
+	void (*onBlockFinishMining)(WorldManager& world, ItemStack* stack, Int3 pos,
 	                            PacketData::FaceDirection face) = nullptr;
-	void (*m_onBlockUse)(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) = nullptr;
-	void (*m_onEntityAttack)(Entity& attackedEntity, ItemStack* stack) = nullptr;
-	void (*m_onEntityUse)(Entity& usedEntity, ItemStack* stack) = nullptr;
+	void (*onBlockUse)(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) = nullptr;
+	void (*onEntityAttack)(Entity& attackedEntity, ItemStack* stack) = nullptr;
+	void (*onEntityUse)(Entity& usedEntity, ItemStack* stack) = nullptr;
 };
 
 extern std::unordered_map<ItemId, ItemBehavior> itemBehavior;

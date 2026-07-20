@@ -32,37 +32,37 @@ std::string CommandGive::Execute(std::vector<std::string>& parameters, PlayerSes
 	if (colonPos != std::string::npos) {
 		metaString = itemArg.substr(colonPos + 1);
 	}
-	item.m_id = static_cast<int16_t>(std::stoi(idString));
+	item.id = static_cast<int16_t>(std::stoi(idString));
 	if (!metaString.empty()) {
-		item.m_data = static_cast<int16_t>(std::stoi(metaString));
+		item.data = static_cast<int16_t>(std::stoi(metaString));
 	}
-	item.m_count = Items::GetMaxStack(item.m_id); // I don't want 64 pickaxes anymore!!
+	item.count = Items::GetMaxStack(item.id); // I don't want 64 pickaxes anymore!!
 	if (parameters.size() > 2) {
-		item.m_count = static_cast<int8_t>(std::stoi(parameters[2]));
+		item.count = static_cast<int8_t>(std::stoi(parameters[2]));
 	}
 
 	// Check if its even a valid item
-	if ((item.m_id > BLOCK_AIR && item.m_id < BLOCK_MAX) || Items::IsValid(item.m_id)) {
+	if ((item.id > BLOCK_AIR && item.id < BLOCK_MAX) || Items::IsValid(item.id)) {
 		Packet::ChatMessage reply;
-		reply.m_message = "§eGave " + wIdToLabel(item.m_id) + " (" + std::to_string(item.m_id) + ":" +
-		                std::to_string(item.m_data) + ") x" + std::to_string(item.m_count) + " to " + session.m_username;
+		reply.message = "§eGave " + wIdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
+		                std::to_string(item.data) + ") x" + std::to_string(item.count) + " to " + session.username;
 
-		reply.Serialize(session.m_stream);
+		reply.Serialize(session.stream);
 
 		// Try the hotbar
-		if (session.m_inventory.mergeItemStackInInventory(item, false, 36, 44)) {
-			PacketUtilities::sendInventory(session, session.m_openWindowId, session.m_inventory);
+		if (session.inventory.mergeItemStackInInventory(item, false, 36, 44)) {
+			PacketUtilities::sendInventory(session, session.openWindowId, session.inventory);
 			return "";
 		}
 
 		// Try the main inventory
-		if (session.m_inventory.mergeItemStackInInventory(item, false, 9, 35)) {
-			PacketUtilities::sendInventory(session, session.m_openWindowId, session.m_inventory);
+		if (session.inventory.mergeItemStackInInventory(item, false, 9, 35)) {
+			PacketUtilities::sendInventory(session, session.openWindowId, session.inventory);
 			return "";
 		}
 
 		// TODO: Drop on the ground
 		return "";
 	}
-	return std::to_string(item.m_id) + " is not a valid item id!";
+	return std::to_string(item.id) + " is not a valid item id!";
 }

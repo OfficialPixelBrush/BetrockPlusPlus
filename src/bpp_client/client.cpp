@@ -14,9 +14,9 @@ extern std::atomic<bool> shutdownRequested;
 #include "client.h"
 #include "logger.h"
 
-// This m_window size seems really random but its the size beta uses
-Client::Client() : m_window({ 854, 480 }, "Betrock++", { WindowMode::WINDOWED_RESIZABLE }), m_renderer(m_window) {
-	m_window.setCursorCapture(true);
+// This window size seems really random but its the size beta uses
+Client::Client() : window({ 854, 480 }, "Betrock++", { WindowMode::WINDOWED_RESIZABLE }), renderer(window) {
+	window.setCursorCapture(true);
 
 	GlobalLogger().info << "Client initialized\n";
 }
@@ -32,30 +32,30 @@ int Client::run() {
 		uint64_t now = SDL_GetPerformanceCounter();
 		float delta = static_cast<float>(now - lastTime) / static_cast<float>(freq);
 		lastTime = now;
-		m_accumulator += delta;
+		accumulator += delta;
 
-		m_input.newFrame();
+		input.newFrame();
 
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			if (event.type == SDL_EVENT_QUIT)
 				shutdownRequested.store(true);
 
-			m_input.handleEvent(event);
+			input.handleEvent(event);
 		}
 
 		// Run ticks until caught up, but cap to avoid spiraling on slow frames
-		while (m_accumulator >= TICK_DELTA && ticksRan < MAX_TICKS_PER_FRAME) {
+		while (accumulator >= TICK_DELTA && ticksRan < MAX_TICKS_PER_FRAME) {
 			tick();
-			m_accumulator -= TICK_DELTA;
+			accumulator -= TICK_DELTA;
 			ticksRan++;
 		}
 
 		// Discard leftover time if we hit the cap
 		if (ticksRan == MAX_TICKS_PER_FRAME)
-			m_accumulator = 0.0f;
+			accumulator = 0.0f;
 
-		m_renderer.render(m_accumulator / TICK_DELTA);
+		renderer.render(accumulator / TICK_DELTA);
 	}
 	return 0;
 }

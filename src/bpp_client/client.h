@@ -23,10 +23,10 @@ private:
 	void tick();
 	void render([[maybe_unused]] float partial_tick);
 
-	Window m_window;
-	Input m_input;
-	Renderer m_renderer;
+	Window window;
+	Input input;
+	Renderer renderer;
 	//TODO: Should this be here?
-	ClientPosition m_singlePlayerPos{};
-	float m_accumulator = 0.0f;
+	ClientPosition singlePlayerPos{};
+	float accumulator = 0.0f;
 };

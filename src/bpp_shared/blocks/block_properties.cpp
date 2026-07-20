@@ -25,28 +25,28 @@ static bool canFallAt(WorldManager& world, Int3 position) {
 		return true;
 	if (block == BLOCK_FIRE)
 		return true;
-	auto material = Blocks::blockProperties[block].m_material.m_type;
+	auto material = Blocks::blockProperties[block].material.type;
 	if (material == MaterialType::Lava || material == MaterialType::Water)
 		return true;
 	return false;
 }
 
 void BreakAndDropBlock(WorldManager& world, Int3 pos) {
-	BlockType blockId = world.getBlockId({ pos.m_x, pos.m_y, pos.m_z });
-	uint8_t meta = world.getMetadata({ pos.m_x, pos.m_y, pos.m_z });
-	world.setBlock({ pos.m_x, pos.m_y, pos.m_z }, BLOCK_AIR);
+	BlockType blockId = world.getBlockId({ pos.x, pos.y, pos.z });
+	uint8_t meta = world.getMetadata({ pos.x, pos.y, pos.z });
+	world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
 
-	std::vector<ItemStack> drops = Blocks::getBlockDrops(blockId, meta, world.m_rand);
+	std::vector<ItemStack> drops = Blocks::getBlockDrops(blockId, meta, world.rand);
 
 	for (ItemStack drop : drops) {
-		Vec3 dropPos = { double(pos.m_x), double(pos.m_y), double(pos.m_z) };
+		Vec3 dropPos = { double(pos.x), double(pos.y), double(pos.z) };
 		float offset = 0.7f;
-		dropPos.m_x += (world.m_rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
-		dropPos.m_y += (world.m_rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
-		dropPos.m_z += (world.m_rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		dropPos.x += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		dropPos.y += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		dropPos.z += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
 		ItemEntity item(dropPos);
-		item.m_itemStack = drop;
-		world.m_entityManager.addEntity(std::make_shared<ItemEntity>(item));
+		item.itemStack = drop;
+		world.entityManager.addEntity(std::make_shared<ItemEntity>(item));
 	}
 	return;
 }
@@ -54,22 +54,22 @@ void BreakAndDropBlock(WorldManager& world, Int3 pos) {
 Int3 getAdjacentBlockPos(Int3 pos, PacketData::FaceDirection face) {
 	switch (face) {
 	case PacketData::FaceDirection::Y_MINUS:
-		--pos.m_y;
+		--pos.y;
 		break;
 	case PacketData::FaceDirection::Y_PLUS:
-		++pos.m_y;
+		++pos.y;
 		break;
 	case PacketData::FaceDirection::Z_MINUS:
-		--pos.m_z;
+		--pos.z;
 		break;
 	case PacketData::FaceDirection::Z_PLUS:
-		++pos.m_z;
+		++pos.z;
 		break;
 	case PacketData::FaceDirection::X_MINUS:
-		--pos.m_x;
+		--pos.x;
 		break;
 	case PacketData::FaceDirection::X_PLUS:
-		++pos.m_x;
+		++pos.x;
 		break;
 	default:
 		break;
@@ -78,7 +78,7 @@ Int3 getAdjacentBlockPos(Int3 pos, PacketData::FaceDirection face) {
 }
 
 bool canSugarcaneSurviveAt(WorldManager& world, Int3 pos) {
-	auto belowBlock = world.getBlockId({ pos.m_x, pos.m_y - 1, pos.m_z });
+	auto belowBlock = world.getBlockId({ pos.x, pos.y - 1, pos.z });
 	if (belowBlock == BLOCK_SUGARCANE)
 		return true;
 	if (belowBlock != BLOCK_GRASS && belowBlock != BLOCK_DIRT)
@@ -88,7 +88,7 @@ bool canSugarcaneSurviveAt(WorldManager& world, Int3 pos) {
 	for (int i = 0; i < 4; i++) {
 		int dx = d[i];
 		int dz = d[3 - i];
-		auto adjacentBlock = world.getBlockId({ pos.m_x + dx, pos.m_y - 1, pos.m_z + dz });
+		auto adjacentBlock = world.getBlockId({ pos.x + dx, pos.y - 1, pos.z + dz });
 		if (adjacentBlock == BLOCK_WATER_FLOWING || adjacentBlock == BLOCK_WATER_STILL)
 			return true;
 	}
@@ -122,25 +122,25 @@ static Vec3 getFluidFlowVector(WorldManager& world, Int3 pos) {
 	int ndx[] = { -1, 1, 0, 0 };
 	int ndz[] = { 0, 0, -1, 1 };
 	for (int i = 0; i < 4; i++) {
-		int dx = pos.m_x + ndx[i];
-		int dz = pos.m_z + ndz[i];
-		int neighborFlowContribution = getEffectiveFlowDecay(world, { dx, pos.m_y, dz }, waterMaterial);
+		int dx = pos.x + ndx[i];
+		int dz = pos.z + ndz[i];
+		int neighborFlowContribution = getEffectiveFlowDecay(world, { dx, pos.y, dz }, waterMaterial);
 		int flowDifference = 0;
 		// Our neighbor block didn't have the same material
 		if (neighborFlowContribution < 0) {
-			if (!world.getMaterial({ dx, pos.m_y, dz }).m_isSolid) {
+			if (!world.getMaterial({ dx, pos.y, dz }).isSolid) {
 				// Check the block below us to see if its water, if it is, STRONGLY pull down
-				int belowFlowContribution = getEffectiveFlowDecay(world, { dx, pos.m_y - 1, dz }, waterMaterial);
+				int belowFlowContribution = getEffectiveFlowDecay(world, { dx, pos.y - 1, dz }, waterMaterial);
 				if (belowFlowContribution >= 0) {
 					flowDifference = belowFlowContribution - (myFlowContribution - 8);
-					flowVector.m_x += double((dx - pos.m_x) * flowDifference);
-					flowVector.m_z += double((dz - pos.m_z) * flowDifference);
+					flowVector.x += double((dx - pos.x) * flowDifference);
+					flowVector.z += double((dz - pos.z) * flowDifference);
 				}
 			}
 		} else {
 			flowDifference = neighborFlowContribution - myFlowContribution;
-			flowVector.m_x += double((dx - pos.m_x) * flowDifference);
-			flowVector.m_z += double((dz - pos.m_z) * flowDifference);
+			flowVector.x += double((dx - pos.x) * flowDifference);
+			flowVector.z += double((dz - pos.z) * flowDifference);
 		}
 	}
 
@@ -150,50 +150,50 @@ static Vec3 getFluidFlowVector(WorldManager& world, Int3 pos) {
 			return false;
 		if (neighborMaterial == Material::Ice())
 			return false;
-		return neighborMaterial.m_isSolid;
+		return neighborMaterial.isSolid;
 	};
 
 	// If we're a falling fluid segment, check whether we're clinging to a wall
 	if (world.getMetadata(pos) >= 8) {
 		bool nearWall = false;
 
-		if (!nearWall && isFluidWall({ pos.m_x, pos.m_y, pos.m_z - 1 }))
+		if (!nearWall && isFluidWall({ pos.x, pos.y, pos.z - 1 }))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ pos.m_x, pos.m_y, pos.m_z + 1 }))
+		if (!nearWall && isFluidWall({ pos.x, pos.y, pos.z + 1 }))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ pos.m_x - 1, pos.m_y, pos.m_z }))
+		if (!nearWall && isFluidWall({ pos.x - 1, pos.y, pos.z }))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ pos.m_x + 1, pos.m_y, pos.m_z }))
+		if (!nearWall && isFluidWall({ pos.x + 1, pos.y, pos.z }))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ pos.m_x, pos.m_y + 1, pos.m_z - 1 }))
+		if (!nearWall && isFluidWall({ pos.x, pos.y + 1, pos.z - 1 }))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ pos.m_x, pos.m_y + 1, pos.m_z + 1 }))
+		if (!nearWall && isFluidWall({ pos.x, pos.y + 1, pos.z + 1 }))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ pos.m_x - 1, pos.m_y + 1, pos.m_z }))
+		if (!nearWall && isFluidWall({ pos.x - 1, pos.y + 1, pos.z }))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ pos.m_x + 1, pos.m_y + 1, pos.m_z }))
+		if (!nearWall && isFluidWall({ pos.x + 1, pos.y + 1, pos.z }))
 			nearWall = true;
 
 		if (nearWall) {
 			// Normalize what we have so far, then let the huge -6 dominate the normalization after this
-			double lenSq = flowVector.m_x * flowVector.m_x + flowVector.m_y * flowVector.m_y + flowVector.m_z * flowVector.m_z;
+			double lenSq = flowVector.x * flowVector.x + flowVector.y * flowVector.y + flowVector.z * flowVector.z;
 			if (lenSq > 0.0) {
 				double invLen = 1.0 / std::sqrt(lenSq);
-				flowVector.m_x *= invLen;
-				flowVector.m_y *= invLen;
-				flowVector.m_z *= invLen;
+				flowVector.x *= invLen;
+				flowVector.y *= invLen;
+				flowVector.z *= invLen;
 			}
-			flowVector.m_y += -6.0;
+			flowVector.y += -6.0;
 		}
 	}
 
 	// Final normalize
-	double lenSq = flowVector.m_x * flowVector.m_x + flowVector.m_y * flowVector.m_y + flowVector.m_z * flowVector.m_z;
+	double lenSq = flowVector.x * flowVector.x + flowVector.y * flowVector.y + flowVector.z * flowVector.z;
 	if (lenSq > 0.0) {
 		double invLen = 1.0 / std::sqrt(lenSq);
-		flowVector.m_x *= invLen;
-		flowVector.m_y *= invLen;
-		flowVector.m_z *= invLen;
+		flowVector.x *= invLen;
+		flowVector.y *= invLen;
+		flowVector.z *= invLen;
 	}
 
 	return flowVector;
@@ -622,11 +622,11 @@ std::vector<ItemStack> getBlockDrops(BlockType blockId, uint8_t meta, Java::Rand
 	}
 
 	const BlockBehavior& behavior = blockBehaviors[static_cast<uint8_t>(blockId)];
-	int count = behavior.m_quantityDropped ? behavior.m_quantityDropped(rng) : 1;
-	int16_t damage = behavior.m_damageDropped ? behavior.m_damageDropped(meta) : 0;
+	int count = behavior.quantityDropped ? behavior.quantityDropped(rng) : 1;
+	int16_t damage = behavior.damageDropped ? behavior.damageDropped(meta) : 0;
 
 	for (int i = 0; i < count; i++) {
-		ItemId id = behavior.m_idDropped ? behavior.m_idDropped(meta, rng) : ItemId(blockId);
+		ItemId id = behavior.idDropped ? behavior.idDropped(meta, rng) : ItemId(blockId);
 
 		if (id > 0) {
 			drops.push_back(ItemStack{ id, 1, damage });
@@ -639,1362 +639,1362 @@ std::vector<ItemStack> getBlockDrops(BlockType blockId, uint8_t meta, Java::Rand
 void registerAll() {
 	// Default all behavior slots to full-cube before per-block overrides
 	for (int i = 0; i < 256; i++) {
-		blockBehaviors[i].m_getSelectionBox = defaultAABB;
-		blockBehaviors[i].m_getRayBounds = defaultAABB;
-		blockBehaviors[i].m_getCollider = defaultCollider;
+		blockBehaviors[i].getSelectionBox = defaultAABB;
+		blockBehaviors[i].getRayBounds = defaultAABB;
+		blockBehaviors[i].getCollider = defaultCollider;
 	}
 
 	// block properties
 
 	// Air
 	blockProperties[BlockType::BLOCK_AIR] = {
-		.m_material = Material::Air(),
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_resistance = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_canBlockGrass = false,
-		.m_enableStats = false,
+		.material = Material::Air(),
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.resistance = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.canBlockGrass = false,
+		.enableStats = false,
 	};
 
 	// Stone
 	blockProperties[BlockType::BLOCK_STONE] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 1.5f,
-		.m_resistance = 10.0f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 1.5f,
+		.resistance = 10.0f,
 	};
 
 	// Grass
 	blockProperties[BlockType::BLOCK_GRASS] = {
-		.m_material = Material::Grass(),
-		.m_stepSound = StepSound::Grass,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.6f,
-		.m_ticksOnLoad = true,
+		.material = Material::Grass(),
+		.stepSound = StepSound::Grass,
+		.lightOpacity = 255,
+		.hardness = 0.6f,
+		.ticksOnLoad = true,
 	};
 
 	// Dirt
 	blockProperties[BlockType::BLOCK_DIRT] = {
-		.m_material = Material::Ground(),
-		.m_stepSound = StepSound::Gravel,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.5f,
+		.material = Material::Ground(),
+		.stepSound = StepSound::Gravel,
+		.lightOpacity = 255,
+		.hardness = 0.5f,
 	};
 
 	// Cobblestone
 	blockProperties[BlockType::BLOCK_COBBLESTONE] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 2.0f,
-		.m_resistance = 10.0f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 2.0f,
+		.resistance = 10.0f,
 	};
 
 	// Planks (Oak Wood)
 	blockProperties[BlockType::BLOCK_PLANKS] = {
-		.m_material = Material::Wood(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 255,
-		.m_hardness = 2.0f,
-		.m_resistance = 5.0f,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Wood(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 255,
+		.hardness = 2.0f,
+		.resistance = 5.0f,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Sapling
 	blockProperties[BlockType::BLOCK_SAPLING] = {
-		.m_material = Material::Plants(),
-		.m_stepSound = StepSound::Grass,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_ticksOnLoad = true,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Plants(),
+		.stepSound = StepSound::Grass,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.ticksOnLoad = true,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Bedrock
 	blockProperties[BlockType::BLOCK_BEDROCK] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_hardness = -1.0f, // unbreakable
-		.m_resistance = 6000000.0f,
-		.m_enableStats = false,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.hardness = -1.0f, // unbreakable
+		.resistance = 6000000.0f,
+		.enableStats = false,
 	};
 
 	// Water (flowing)
 	blockProperties[BlockType::BLOCK_WATER_FLOWING] = {
-		.m_material = Material::Water(),
-		.m_lightOpacity = 3,
-		.m_hardness = 100.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Water(),
+		.lightOpacity = 3,
+		.hardness = 100.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Water (still/stationary)
 	blockProperties[BlockType::BLOCK_WATER_STILL] = {
-		.m_material = Material::Water(),
-		.m_lightOpacity = 3,
-		.m_hardness = 100.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Water(),
+		.lightOpacity = 3,
+		.hardness = 100.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Lava (flowing)
 	blockProperties[BlockType::BLOCK_LAVA_FLOWING] = {
-		.m_material = Material::Lava(),
-		.m_lightEmission = 15, // setLightValue(1.0f) -> 15*1.0 = 15
-		.m_lightOpacity = 255,
-		.m_hardness = 0.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Lava(),
+		.lightEmission = 15, // setLightValue(1.0f) -> 15*1.0 = 15
+		.lightOpacity = 255,
+		.hardness = 0.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Lava (still/stationary)
 	blockProperties[BlockType::BLOCK_LAVA_STILL] = {
-		.m_material = Material::Lava(),
-		.m_lightEmission = 15,
-		.m_lightOpacity = 255,
-		.m_hardness = 100.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Lava(),
+		.lightEmission = 15,
+		.lightOpacity = 255,
+		.hardness = 100.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Sand
 	blockProperties[BlockType::BLOCK_SAND] = {
-		.m_material = Material::Sand(),
-		.m_stepSound = StepSound::Sand,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.5f,
+		.material = Material::Sand(),
+		.stepSound = StepSound::Sand,
+		.lightOpacity = 255,
+		.hardness = 0.5f,
 	};
 
 	// Gravel
 	blockProperties[BlockType::BLOCK_GRAVEL] = {
-		.m_material = Material::Sand(),
-		.m_stepSound = StepSound::Gravel,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.6f,
+		.material = Material::Sand(),
+		.stepSound = StepSound::Gravel,
+		.lightOpacity = 255,
+		.hardness = 0.6f,
 	};
 
 	// Gold Ore
 	blockProperties[BlockType::BLOCK_ORE_GOLD] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 3.0f,
-		.m_resistance = 5.0f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 3.0f,
+		.resistance = 5.0f,
 	};
 
 	// Iron Ore
 	blockProperties[BlockType::BLOCK_ORE_IRON] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 3.0f,
-		.m_resistance = 5.0f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 3.0f,
+		.resistance = 5.0f,
 	};
 
 	// Coal Ore
 	blockProperties[BlockType::BLOCK_ORE_COAL] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 3.0f,
-		.m_resistance = 5.0f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 3.0f,
+		.resistance = 5.0f,
 	};
 
 	// Wood Log
 	blockProperties[BlockType::BLOCK_LOG] = {
-		.m_material = Material::Wood(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 255,
-		.m_hardness = 2.0f,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Wood(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 255,
+		.hardness = 2.0f,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Leaves
 	blockProperties[BlockType::BLOCK_LEAVES] = {
-		.m_material = Material::Leaves(),
-		.m_stepSound = StepSound::Grass,
-		.m_lightOpacity = 1,
-		.m_hardness = 0.2f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_ticksOnLoad = true,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Leaves(),
+		.stepSound = StepSound::Grass,
+		.lightOpacity = 1,
+		.hardness = 0.2f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.ticksOnLoad = true,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Sponge
 	blockProperties[BlockType::BLOCK_SPONGE] = {
-		.m_material = Material::Sponge(),
-		.m_stepSound = StepSound::Grass,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.6f,
+		.material = Material::Sponge(),
+		.stepSound = StepSound::Grass,
+		.lightOpacity = 255,
+		.hardness = 0.6f,
 	};
 
 	// Glass
 	blockProperties[BlockType::BLOCK_GLASS] = {
-		.m_material = Material::Glass(),
-		.m_stepSound = StepSound::Glass,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.3f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
+		.material = Material::Glass(),
+		.stepSound = StepSound::Glass,
+		.lightOpacity = 0,
+		.hardness = 0.3f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
 	};
 
 	// Lapis Lazuli Ore
 	blockProperties[BlockType::BLOCK_ORE_LAPIS_LAZULI] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 3.0f,
-		.m_resistance = 5.0f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 3.0f,
+		.resistance = 5.0f,
 	};
 
 	// Lapis Lazuli Block
 	blockProperties[BlockType::BLOCK_LAPIS_LAZULI] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 3.0f,
-		.m_resistance = 5.0f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 3.0f,
+		.resistance = 5.0f,
 	};
 
 	// Dispenser
 	blockProperties[BlockType::BLOCK_DISPENSER] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 3.5f,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 3.5f,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Sandstone
 	blockProperties[BlockType::BLOCK_SANDSTONE] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.8f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 0.8f,
 	};
 
 	// Note Block
 	blockProperties[BlockType::BLOCK_NOTEBLOCK] = {
-		.m_material = Material::Wood(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.8f,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Wood(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 255,
+		.hardness = 0.8f,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Bed
 	blockProperties[BlockType::BLOCK_BED] = {
-		.m_material = Material::Cloth(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.2f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Cloth(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 0,
+		.hardness = 0.2f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Powered Rail (Golden Rail)
 	blockProperties[BlockType::BLOCK_RAIL_POWERED] = {
-		.m_material = Material::Circuits(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.7f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Circuits(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 0,
+		.hardness = 0.7f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Detector Rail
 	blockProperties[BlockType::BLOCK_RAIL_DETECTOR] = {
-		.m_material = Material::Circuits(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.7f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Circuits(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 0,
+		.hardness = 0.7f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Sticky Piston Base
 	blockProperties[BlockType::BLOCK_PISTON_STICKY] = {
-		.m_material = Material::Piston(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.5f,
-		.m_isOpaqueCube = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Piston(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 0.5f,
+		.isOpaqueCube = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Cobweb
 	blockProperties[BlockType::BLOCK_COBWEB] = {
-		.m_material = Material::Web(),
-		.m_stepSound = StepSound::Cloth,
-		.m_lightOpacity = 1,
-		.m_hardness = 4.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
+		.material = Material::Web(),
+		.stepSound = StepSound::Cloth,
+		.lightOpacity = 1,
+		.hardness = 4.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
 	};
 
 	// Tall Grass
 	blockProperties[BlockType::BLOCK_TALLGRASS] = {
-		.m_material = Material::Plants(),
-		.m_stepSound = StepSound::Grass,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
+		.material = Material::Plants(),
+		.stepSound = StepSound::Grass,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
 	};
 
 	// Dead Bush
 	blockProperties[BlockType::BLOCK_DEADBUSH] = {
-		.m_material = Material::Plants(),
-		.m_stepSound = StepSound::Grass,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
+		.material = Material::Plants(),
+		.stepSound = StepSound::Grass,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
 	};
 
 	// Piston Base
 	blockProperties[BlockType::BLOCK_PISTON] = {
-		.m_material = Material::Piston(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.5f,
-		.m_isOpaqueCube = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Piston(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 0.5f,
+		.isOpaqueCube = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Piston Extension (head)
 	blockProperties[BlockType::BLOCK_PISTON_HEAD] = {
-		.m_material = Material::Piston(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.5f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Piston(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 0,
+		.hardness = 0.5f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Wool (Cloth)
 	blockProperties[BlockType::BLOCK_WOOL] = {
-		.m_material = Material::Cloth(),
-		.m_stepSound = StepSound::Cloth,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.8f,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Cloth(),
+		.stepSound = StepSound::Cloth,
+		.lightOpacity = 255,
+		.hardness = 0.8f,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Piston Moving (tile entity placeholder)
 	blockProperties[BlockType::BLOCK_PISTON_MOVING] = {
-		.m_material = Material::Piston(),
-		.m_lightOpacity = 0,
-		.m_hardness = -1.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_enableStats = false,
+		.material = Material::Piston(),
+		.lightOpacity = 0,
+		.hardness = -1.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.enableStats = false,
 	};
 
 	// Dandelion (Yellow Flower)
 	blockProperties[BlockType::BLOCK_DANDELION] = {
-		.m_material = Material::Plants(),
-		.m_stepSound = StepSound::Grass,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
+		.material = Material::Plants(),
+		.stepSound = StepSound::Grass,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
 	};
 
 	// Rose (Red Flower)
 	blockProperties[BlockType::BLOCK_ROSE] = {
-		.m_material = Material::Plants(),
-		.m_stepSound = StepSound::Grass,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
+		.material = Material::Plants(),
+		.stepSound = StepSound::Grass,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
 	};
 
 	// Brown Mushroom
 	blockProperties[BlockType::BLOCK_MUSHROOM_BROWN] = {
-		.m_material = Material::Plants(),
-		.m_stepSound = StepSound::Grass,
-		.m_lightEmission = 1,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
+		.material = Material::Plants(),
+		.stepSound = StepSound::Grass,
+		.lightEmission = 1,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
 	};
 
 	// Red Mushroom
 	blockProperties[BlockType::BLOCK_MUSHROOM_RED] = {
-		.m_material = Material::Plants(),
-		.m_stepSound = StepSound::Grass,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
+		.material = Material::Plants(),
+		.stepSound = StepSound::Grass,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
 	};
 
 	// Gold Block
 	blockProperties[BlockType::BLOCK_GOLD] = {
-		.m_material = Material::Iron(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 3.0f,
-		.m_resistance = 10.0f,
+		.material = Material::Iron(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 3.0f,
+		.resistance = 10.0f,
 	};
 
 	// Iron Block
 	blockProperties[BlockType::BLOCK_IRON] = {
-		.m_material = Material::Iron(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 5.0f,
-		.m_resistance = 10.0f,
+		.material = Material::Iron(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 5.0f,
+		.resistance = 10.0f,
 	};
 
 	// Double Stone Slab
 	blockProperties[BlockType::BLOCK_DOUBLE_SLAB] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 2.0f,
-		.m_resistance = 10.0f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 2.0f,
+		.resistance = 10.0f,
 	};
 
 	// Stone Slab (single)
 	blockProperties[BlockType::BLOCK_SLAB] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 2.0f,
-		.m_resistance = 10.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 2.0f,
+		.resistance = 10.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
 	};
 
 	// Bricks
 	blockProperties[BlockType::BLOCK_BRICKS] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 2.0f,
-		.m_resistance = 10.0f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 2.0f,
+		.resistance = 10.0f,
 	};
 
 	// TNT
 	blockProperties[BlockType::BLOCK_TNT] = {
-		.m_material = Material::TNT(),
-		.m_stepSound = StepSound::Grass,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.0f,
+		.material = Material::TNT(),
+		.stepSound = StepSound::Grass,
+		.lightOpacity = 255,
+		.hardness = 0.0f,
 	};
 
 	// Bookshelf
 	blockProperties[BlockType::BLOCK_BOOKSHELF] = {
-		.m_material = Material::Wood(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 255,
-		.m_hardness = 1.5f,
+		.material = Material::Wood(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 255,
+		.hardness = 1.5f,
 	};
 
 	// Mossy Cobblestone
 	blockProperties[BlockType::BLOCK_COBBLESTONE_MOSSY] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 2.0f,
-		.m_resistance = 10.0f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 2.0f,
+		.resistance = 10.0f,
 	};
 
 	// Obsidian
 	blockProperties[BlockType::BLOCK_OBSIDIAN] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 10.0f,
-		.m_resistance = 2000.0f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 10.0f,
+		.resistance = 2000.0f,
 	};
 
 	// Torch
 	blockProperties[BlockType::BLOCK_TORCH] = {
-		.m_material = Material::Circuits(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightEmission = 14,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Circuits(),
+		.stepSound = StepSound::Wood,
+		.lightEmission = 14,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Fire
 	blockProperties[BlockType::BLOCK_FIRE] = {
-		.m_material = Material::Fire(),
-		.m_lightEmission = 15,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_canBlockGrass = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Fire(),
+		.lightEmission = 15,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.canBlockGrass = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Monster Spawner
 	blockProperties[BlockType::BLOCK_MOB_SPAWNER] = {
-		.m_material = Material::Iron(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 0,
-		.m_hardness = 5.0f,
-		.m_enableStats = false,
+		.material = Material::Iron(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 0,
+		.hardness = 5.0f,
+		.enableStats = false,
 	};
 
 	// Oak Wood Stairs
 	blockProperties[BlockType::BLOCK_STAIRS_WOOD] = {
-		.m_material = Material::Wood(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 255,
-		.m_hardness = 2.0f,
-		.m_resistance = 5.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Wood(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 255,
+		.hardness = 2.0f,
+		.resistance = 5.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Chest
 	blockProperties[BlockType::BLOCK_CHEST] = {
-		.m_material = Material::Wood(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 0,
-		.m_hardness = 2.5f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Wood(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 0,
+		.hardness = 2.5f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Redstone Wire
 	blockProperties[BlockType::BLOCK_REDSTONE] = {
-		.m_material = Material::Circuits(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Circuits(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Diamond Ore
 	blockProperties[BlockType::BLOCK_ORE_DIAMOND] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 3.0f,
-		.m_resistance = 5.0f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 3.0f,
+		.resistance = 5.0f,
 	};
 
 	// Diamond Block
 	blockProperties[BlockType::BLOCK_DIAMOND] = {
-		.m_material = Material::Iron(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 5.0f,
-		.m_resistance = 10.0f,
+		.material = Material::Iron(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 5.0f,
+		.resistance = 10.0f,
 	};
 
 	// Crafting Table (Workbench)
 	blockProperties[BlockType::BLOCK_CRAFTING_TABLE] = {
-		.m_material = Material::Wood(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 255,
-		.m_hardness = 2.5f,
+		.material = Material::Wood(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 255,
+		.hardness = 2.5f,
 	};
 
 	// Crops / Wheat
 	blockProperties[BlockType::BLOCK_CROP_WHEAT] = {
-		.m_material = Material::Plants(),
-		.m_stepSound = StepSound::Grass,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_ticksOnLoad = true,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Plants(),
+		.stepSound = StepSound::Grass,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.ticksOnLoad = true,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Farmland (Tilled Field)
 	blockProperties[BlockType::BLOCK_FARMLAND] = {
-		.m_material = Material::Ground(),
-		.m_stepSound = StepSound::Gravel,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.6f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
+		.material = Material::Ground(),
+		.stepSound = StepSound::Gravel,
+		.lightOpacity = 255,
+		.hardness = 0.6f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
 	};
 
 	// Furnace (idle)
 	blockProperties[BlockType::BLOCK_FURNACE] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 3.5f,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 3.5f,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Furnace (active/lit)
 	blockProperties[BlockType::BLOCK_FURNACE_LIT] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightEmission = 13,
-		.m_lightOpacity = 255,
-		.m_hardness = 3.5f,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightEmission = 13,
+		.lightOpacity = 255,
+		.hardness = 3.5f,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Sign (standing)
 	blockProperties[BlockType::BLOCK_SIGN] = {
-		.m_material = Material::Wood(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 0,
-		.m_hardness = 1.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Wood(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 0,
+		.hardness = 1.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Wooden Door
 	blockProperties[BlockType::BLOCK_DOOR_WOOD] = {
-		.m_material = Material::Wood(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 0,
-		.m_hardness = 3.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Wood(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 0,
+		.hardness = 3.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Ladder
 	blockProperties[BlockType::BLOCK_LADDER] = {
-		.m_material = Material::Circuits(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.4f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Circuits(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 0,
+		.hardness = 0.4f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Rail (normal)
 	blockProperties[BlockType::BLOCK_RAIL] = {
-		.m_material = Material::Circuits(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.7f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Circuits(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 0,
+		.hardness = 0.7f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Cobblestone Stairs
 	blockProperties[BlockType::BLOCK_STAIRS_COBBLESTONE] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 2.0f,
-		.m_resistance = 10.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 2.0f,
+		.resistance = 10.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Wall Sign
 	blockProperties[BlockType::BLOCK_SIGN_WALL] = {
-		.m_material = Material::Wood(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 0,
-		.m_hardness = 1.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Wood(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 0,
+		.hardness = 1.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Lever
 	blockProperties[BlockType::BLOCK_LEVER] = {
-		.m_material = Material::Circuits(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.5f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Circuits(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 0,
+		.hardness = 0.5f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Stone Pressure Plate
 	blockProperties[BlockType::BLOCK_PRESSURE_PLATE_STONE] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.5f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 0,
+		.hardness = 0.5f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Iron Door
 	blockProperties[BlockType::BLOCK_DOOR_IRON] = {
-		.m_material = Material::Iron(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 0,
-		.m_hardness = 5.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Iron(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 0,
+		.hardness = 5.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Wooden Pressure Plate
 	blockProperties[BlockType::BLOCK_PRESSURE_PLATE_WOOD] = {
-		.m_material = Material::Wood(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.5f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Wood(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 0,
+		.hardness = 0.5f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Redstone Ore
 	blockProperties[BlockType::BLOCK_ORE_REDSTONE_OFF] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 3.0f,
-		.m_resistance = 5.0f,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 3.0f,
+		.resistance = 5.0f,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Redstone Ore (glowing/lit)
 	blockProperties[BlockType::BLOCK_ORE_REDSTONE_ON] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightEmission = 9,
-		.m_lightOpacity = 255,
-		.m_hardness = 3.0f,
-		.m_resistance = 5.0f,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightEmission = 9,
+		.lightOpacity = 255,
+		.hardness = 3.0f,
+		.resistance = 5.0f,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Redstone Torch (off)
 	blockProperties[BlockType::BLOCK_REDSTONE_TORCH_OFF] = {
-		.m_material = Material::Circuits(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Circuits(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Redstone Torch (on)
 	blockProperties[BlockType::BLOCK_REDSTONE_TORCH_ON] = {
-		.m_material = Material::Circuits(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightEmission = 7,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Circuits(),
+		.stepSound = StepSound::Wood,
+		.lightEmission = 7,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Stone Button
 	blockProperties[BlockType::BLOCK_BUTTON_STONE] = {
-		.m_material = Material::Circuits(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.5f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Circuits(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 0,
+		.hardness = 0.5f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Snow (layer)
 	blockProperties[BlockType::BLOCK_SNOW_LAYER] = {
-		.m_material = Material::SnowLayer(),
-		.m_stepSound = StepSound::Cloth,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.1f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_canBlockGrass = false,
+		.material = Material::SnowLayer(),
+		.stepSound = StepSound::Cloth,
+		.lightOpacity = 0,
+		.hardness = 0.1f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.canBlockGrass = false,
 	};
 
 	// Ice
 	blockProperties[BlockType::BLOCK_ICE] = {
-		.m_material = Material::Ice(),
-		.m_stepSound = StepSound::Glass,
-		.m_lightOpacity = 3,
-		.m_hardness = 0.5f,
-		.m_slipperiness = 0.98f,
+		.material = Material::Ice(),
+		.stepSound = StepSound::Glass,
+		.lightOpacity = 3,
+		.hardness = 0.5f,
+		.slipperiness = 0.98f,
 	};
 
 	// Snow Block
 	blockProperties[BlockType::BLOCK_SNOW] = {
-		.m_material = Material::SnowBlock(),
-		.m_stepSound = StepSound::Cloth,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.2f,
+		.material = Material::SnowBlock(),
+		.stepSound = StepSound::Cloth,
+		.lightOpacity = 255,
+		.hardness = 0.2f,
 	};
 
 	// Cactus
 	blockProperties[BlockType::BLOCK_CACTUS] = {
-		.m_material = Material::Cactus(),
-		.m_stepSound = StepSound::Cloth,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.4f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_ticksOnLoad = true,
+		.material = Material::Cactus(),
+		.stepSound = StepSound::Cloth,
+		.lightOpacity = 0,
+		.hardness = 0.4f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.ticksOnLoad = true,
 	};
 
 	// Clay Block
 	blockProperties[BlockType::BLOCK_CLAY] = {
-		.m_material = Material::Clay(),
-		.m_stepSound = StepSound::Gravel,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.6f,
+		.material = Material::Clay(),
+		.stepSound = StepSound::Gravel,
+		.lightOpacity = 255,
+		.hardness = 0.6f,
 	};
 
 	// Sugar Cane (Reed)
 	blockProperties[BlockType::BLOCK_SUGARCANE] = {
-		.m_material = Material::Plants(),
-		.m_stepSound = StepSound::Grass,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_ticksOnLoad = true,
-		.m_enableStats = false,
+		.material = Material::Plants(),
+		.stepSound = StepSound::Grass,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.ticksOnLoad = true,
+		.enableStats = false,
 	};
 
 	// Jukebox
 	blockProperties[BlockType::BLOCK_JUKEBOX] = {
-		.m_material = Material::Wood(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 2.0f,
-		.m_resistance = 10.0f,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Wood(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 2.0f,
+		.resistance = 10.0f,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Fence
 	blockProperties[BlockType::BLOCK_FENCE] = {
-		.m_material = Material::Wood(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 0,
-		.m_hardness = 2.0f,
-		.m_resistance = 5.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Wood(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 0,
+		.hardness = 2.0f,
+		.resistance = 5.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Pumpkin
 	blockProperties[BlockType::BLOCK_PUMPKIN] = {
-		.m_material = Material::Pumpkin(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 255,
-		.m_hardness = 1.0f,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Pumpkin(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 255,
+		.hardness = 1.0f,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Netherrack
 	blockProperties[BlockType::BLOCK_NETHERRACK] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Stone,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.4f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Stone,
+		.lightOpacity = 255,
+		.hardness = 0.4f,
 	};
 
 	// Soul Sand
 	blockProperties[BlockType::BLOCK_SOULSAND] = {
-		.m_material = Material::Sand(),
-		.m_stepSound = StepSound::Sand,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.5f,
+		.material = Material::Sand(),
+		.stepSound = StepSound::Sand,
+		.lightOpacity = 255,
+		.hardness = 0.5f,
 	};
 
 	// Glowstone
 	blockProperties[BlockType::BLOCK_GLOWSTONE] = {
-		.m_material = Material::Rock(),
-		.m_stepSound = StepSound::Glass,
-		.m_lightEmission = 15,
-		.m_lightOpacity = 255,
-		.m_hardness = 0.3f,
+		.material = Material::Rock(),
+		.stepSound = StepSound::Glass,
+		.lightEmission = 15,
+		.lightOpacity = 255,
+		.hardness = 0.3f,
 	};
 
 	// Nether Portal
 	blockProperties[BlockType::BLOCK_NETHER_PORTAL] = {
-		.m_material = Material::Portal(),
-		.m_stepSound = StepSound::Glass,
-		.m_lightEmission = 11,
-		.m_lightOpacity = 0,
-		.m_hardness = -1.0f,
-		.m_isCollidable = false,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
+		.material = Material::Portal(),
+		.stepSound = StepSound::Glass,
+		.lightEmission = 11,
+		.lightOpacity = 0,
+		.hardness = -1.0f,
+		.isCollidable = false,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
 	};
 
 	// Jack-o-Lantern (Lit Pumpkin)
 	blockProperties[BlockType::BLOCK_PUMPKIN_LIT] = {
-		.m_material = Material::Pumpkin(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightEmission = 15,
-		.m_lightOpacity = 255,
-		.m_hardness = 1.0f,
-		.m_notifyNeighborsOnMetaChange = false,
+		.material = Material::Pumpkin(),
+		.stepSound = StepSound::Wood,
+		.lightEmission = 15,
+		.lightOpacity = 255,
+		.hardness = 1.0f,
+		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Cake
 	blockProperties[BlockType::BLOCK_CAKE] = {
-		.m_material = Material::Cake(),
-		.m_stepSound = StepSound::Cloth,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.5f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Cake(),
+		.stepSound = StepSound::Cloth,
+		.lightOpacity = 0,
+		.hardness = 0.5f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Redstone Repeater (off)
 	blockProperties[BlockType::BLOCK_REDSTONE_REPEATER_OFF] = {
-		.m_material = Material::Circuits(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Circuits(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Redstone Repeater (on)
 	blockProperties[BlockType::BLOCK_REDSTONE_REPEATER_ON] = {
-		.m_material = Material::Circuits(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightEmission = 9,
-		.m_lightOpacity = 0,
-		.m_hardness = 0.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Circuits(),
+		.stepSound = StepSound::Wood,
+		.lightEmission = 9,
+		.lightOpacity = 0,
+		.hardness = 0.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// Trapdoor
 	blockProperties[BlockType::BLOCK_TRAPDOOR] = {
-		.m_material = Material::Wood(),
-		.m_stepSound = StepSound::Wood,
-		.m_lightOpacity = 0,
-		.m_hardness = 3.0f,
-		.m_isOpaqueCube = false,
-		.m_isNormalCube = false,
-		.m_renderAsNormalBlock = false,
-		.m_notifyNeighborsOnMetaChange = false,
-		.m_enableStats = false,
+		.material = Material::Wood(),
+		.stepSound = StepSound::Wood,
+		.lightOpacity = 0,
+		.hardness = 3.0f,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
+		.renderAsNormalBlock = false,
+		.notifyNeighborsOnMetaChange = false,
+		.enableStats = false,
 	};
 
 	// block behaviors (non-default shapes)
 
 	// Liquids/zero-size AABBs
 	blockBehaviors[BlockType::BLOCK_WATER_FLOWING] = {
-		.m_getSelectionBox = liquidAABB,
-		.m_getRayBounds = liquidAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = liquidAABB,
+		.getRayBounds = liquidAABB,
+		.getCollider = emptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_WATER_STILL] = {
-		.m_getSelectionBox = liquidAABB,
-		.m_getRayBounds = liquidAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = liquidAABB,
+		.getRayBounds = liquidAABB,
+		.getCollider = emptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_LAVA_FLOWING] = {
-		.m_getSelectionBox = liquidAABB,
-		.m_getRayBounds = liquidAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = liquidAABB,
+		.getRayBounds = liquidAABB,
+		.getCollider = emptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_LAVA_STILL] = {
-		.m_getSelectionBox = liquidAABB,
-		.m_getRayBounds = liquidAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = liquidAABB,
+		.getRayBounds = liquidAABB,
+		.getCollider = emptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_COBWEB] = {
-		.m_getCollider = emptyCollider,
+		.getCollider = emptyCollider,
 	};
 
 	// Rails
 	blockBehaviors[BlockType::BLOCK_RAIL] = {
-		.m_getRayBounds = railAABB,
-		.m_getCollider = emptyCollider,
+		.getRayBounds = railAABB,
+		.getCollider = emptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_RAIL_POWERED] = {
-		.m_getRayBounds = railAABB,
-		.m_getCollider = emptyCollider,
+		.getRayBounds = railAABB,
+		.getCollider = emptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_RAIL_DETECTOR] = {
-		.m_getRayBounds = railAABB,
-		.m_getCollider = emptyCollider,
+		.getRayBounds = railAABB,
+		.getCollider = emptyCollider,
 	};
 
 	// Redstone dust
 	blockBehaviors[BlockType::BLOCK_REDSTONE] = {
-		.m_getSelectionBox = redstoneDustAABB,
-		.m_getRayBounds = redstoneDustAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = redstoneDustAABB,
+		.getRayBounds = redstoneDustAABB,
+		.getCollider = emptyCollider,
 	};
 
 	// Farmland
 	blockBehaviors[BlockType::BLOCK_FARMLAND] = {
-		.m_getSelectionBox = farmlandAABB,
-		.m_getRayBounds = farmlandAABB,
-		.m_getCollider = farmlandCollider,
+		.getSelectionBox = farmlandAABB,
+		.getRayBounds = farmlandAABB,
+		.getCollider = farmlandCollider,
 	};
 
 	// Crops
 	blockBehaviors[BlockType::BLOCK_CROP_WHEAT] = {
-		.m_getSelectionBox = cropAABB,
-		.m_getRayBounds = cropAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = cropAABB,
+		.getRayBounds = cropAABB,
+		.getCollider = emptyCollider,
 	};
 
 	// Sapling
 	blockBehaviors[BlockType::BLOCK_SAPLING] = {
-		.m_getSelectionBox = saplingAABB,
-		.m_getRayBounds = saplingAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = saplingAABB,
+		.getRayBounds = saplingAABB,
+		.getCollider = emptyCollider,
 	};
 
 	// Tall grass
 	blockBehaviors[BlockType::BLOCK_TALLGRASS] = {
-		.m_getSelectionBox = tallGrassAABB,
-		.m_getRayBounds = tallGrassAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = tallGrassAABB,
+		.getRayBounds = tallGrassAABB,
+		.getCollider = emptyCollider,
 	};
 
 	// Mushrooms
 	blockBehaviors[BlockType::BLOCK_MUSHROOM_BROWN] = {
-		.m_getSelectionBox = mushroomAABB,
-		.m_getRayBounds = mushroomAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = mushroomAABB,
+		.getRayBounds = mushroomAABB,
+		.getCollider = emptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_MUSHROOM_RED] = {
-		.m_getSelectionBox = mushroomAABB,
-		.m_getRayBounds = mushroomAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = mushroomAABB,
+		.getRayBounds = mushroomAABB,
+		.getCollider = emptyCollider,
 	};
 
 	// Flowers (rose, dandelion)
 	blockBehaviors[BlockType::BLOCK_ROSE] = {
-		.m_getSelectionBox = plantAABB,
-		.m_getRayBounds = plantAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = plantAABB,
+		.getRayBounds = plantAABB,
+		.getCollider = emptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_DANDELION] = {
-		.m_getSelectionBox = plantAABB,
-		.m_getRayBounds = plantAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = plantAABB,
+		.getRayBounds = plantAABB,
+		.getCollider = emptyCollider,
 	};
 
 	// Dead bush
 	blockBehaviors[BlockType::BLOCK_DEADBUSH] = {
-		.m_getSelectionBox = saplingAABB, // same f=0.4 box as sapling
-		.m_getRayBounds = saplingAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = saplingAABB, // same f=0.4 box as sapling
+		.getRayBounds = saplingAABB,
+		.getCollider = emptyCollider,
 	};
 
 	// Sugar cane
 	blockBehaviors[BlockType::BLOCK_SUGARCANE] = {
-		.m_getSelectionBox = sugarcaneAABB,
-		.m_getRayBounds = sugarcaneAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = sugarcaneAABB,
+		.getRayBounds = sugarcaneAABB,
+		.getCollider = emptyCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_SLAB] = {
-		.m_getSelectionBox = slabAABB,
-		.m_getRayBounds = slabAABB,
-		.m_getCollider = slabCollider,
+		.getSelectionBox = slabAABB,
+		.getRayBounds = slabAABB,
+		.getCollider = slabCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_STAIRS_WOOD] = {
-		.m_getCollider = stairCollider,
+		.getCollider = stairCollider,
 		// ray/selection stay as defaultAABB (full cube is correct)
 	};
 	blockBehaviors[BlockType::BLOCK_STAIRS_COBBLESTONE] = {
-		.m_getCollider = stairCollider,
+		.getCollider = stairCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_CACTUS] = {
-		.m_getSelectionBox = cactusAABB,
-		.m_getRayBounds = cactusAABB,
-		.m_getCollider = cactusCollider,
+		.getSelectionBox = cactusAABB,
+		.getRayBounds = cactusAABB,
+		.getCollider = cactusCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_SNOW_LAYER] = {
-		.m_getRayBounds = snowLayerAABB,
-		.m_getCollider = snowLayerCollider,
+		.getRayBounds = snowLayerAABB,
+		.getCollider = snowLayerCollider,
 		// getSelectionBox stays defaultAABB
 	};
 
 	blockBehaviors[BlockType::BLOCK_LADDER] = {
-		.m_getSelectionBox = ladderAABB,
-		.m_getRayBounds = ladderAABB,
-		.m_getCollider = ladderCollider,
+		.getSelectionBox = ladderAABB,
+		.getRayBounds = ladderAABB,
+		.getCollider = ladderCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_DOOR_WOOD] = {
-		.m_getSelectionBox = doorAABB,
-		.m_getRayBounds = doorAABB,
-		.m_getCollider = doorCollider,
+		.getSelectionBox = doorAABB,
+		.getRayBounds = doorAABB,
+		.getCollider = doorCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_DOOR_IRON] = {
-		.m_getSelectionBox = doorAABB,
-		.m_getRayBounds = doorAABB,
-		.m_getCollider = doorCollider,
+		.getSelectionBox = doorAABB,
+		.getRayBounds = doorAABB,
+		.getCollider = doorCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_TRAPDOOR] = {
-		.m_getSelectionBox = trapdoorAABB,
-		.m_getRayBounds = trapdoorAABB,
-		.m_getCollider = trapdoorCollider,
+		.getSelectionBox = trapdoorAABB,
+		.getRayBounds = trapdoorAABB,
+		.getCollider = trapdoorCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_BED] = {
-		.m_getSelectionBox = bedAABB,
-		.m_getRayBounds = bedAABB,
-		.m_getCollider = bedCollider,
+		.getSelectionBox = bedAABB,
+		.getRayBounds = bedAABB,
+		.getCollider = bedCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_FENCE] = {
-		.m_getCollider = fenceCollider,
+		.getCollider = fenceCollider,
 		// ray/selection stay as defaultAABB (full cube)
 	};
 
 	blockBehaviors[BlockType::BLOCK_CAKE] = {
-		.m_getSelectionBox = cakeAABB,
-		.m_getRayBounds = cakeAABB,
-		.m_getCollider = cakeCollider,
+		.getSelectionBox = cakeAABB,
+		.getRayBounds = cakeAABB,
+		.getCollider = cakeCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_REDSTONE_REPEATER_OFF] = {
-		.m_getSelectionBox = repeaterAABB,
-		.m_getRayBounds = repeaterAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = repeaterAABB,
+		.getRayBounds = repeaterAABB,
+		.getCollider = emptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_REDSTONE_REPEATER_ON] = {
-		.m_getSelectionBox = repeaterAABB,
-		.m_getRayBounds = repeaterAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = repeaterAABB,
+		.getRayBounds = repeaterAABB,
+		.getCollider = emptyCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_BUTTON_STONE] = {
-		.m_getSelectionBox = buttonAABB,
-		.m_getRayBounds = buttonAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = buttonAABB,
+		.getRayBounds = buttonAABB,
+		.getCollider = emptyCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_LEVER] = {
-		.m_getRayBounds = leverAABB,
-		.m_getCollider = emptyCollider,
+		.getRayBounds = leverAABB,
+		.getCollider = emptyCollider,
 		// getSelectionBox stays defaultAABB
 	};
 
 	blockBehaviors[BlockType::BLOCK_PRESSURE_PLATE_STONE] = {
-		.m_getSelectionBox = pressurePlateAABB,
-		.m_getRayBounds = pressurePlateAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = pressurePlateAABB,
+		.getRayBounds = pressurePlateAABB,
+		.getCollider = emptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_PRESSURE_PLATE_WOOD] = {
-		.m_getSelectionBox = pressurePlateAABB,
-		.m_getRayBounds = pressurePlateAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = pressurePlateAABB,
+		.getRayBounds = pressurePlateAABB,
+		.getCollider = emptyCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_TORCH] = {
-		.m_getSelectionBox = torchAABB,
-		.m_getRayBounds = torchAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = torchAABB,
+		.getRayBounds = torchAABB,
+		.getCollider = emptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_REDSTONE_TORCH_OFF] = {
-		.m_getSelectionBox = torchAABB,
-		.m_getRayBounds = torchAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = torchAABB,
+		.getRayBounds = torchAABB,
+		.getCollider = emptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_REDSTONE_TORCH_ON] = {
-		.m_getSelectionBox = torchAABB,
-		.m_getRayBounds = torchAABB,
-		.m_getCollider = emptyCollider,
+		.getSelectionBox = torchAABB,
+		.getRayBounds = torchAABB,
+		.getCollider = emptyCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_PISTON_HEAD] = {
-		.m_getSelectionBox = pistonHeadAABB,
-		.m_getRayBounds = pistonHeadAABB,
-		.m_getCollider = pistonHeadCollider,
+		.getSelectionBox = pistonHeadAABB,
+		.getRayBounds = pistonHeadAABB,
+		.getCollider = pistonHeadCollider,
 	};
 
 	// specific behavioral overrides
-	blockBehaviors[BLOCK_WATER_FLOWING].m_velocityToAddToEntity = [](WorldManager& world, Int3 pos,
+	blockBehaviors[BLOCK_WATER_FLOWING].velocityToAddToEntity = [](WorldManager& world, Int3 pos,
 	                                                               Vec3& pushVector) -> void {
 		Vec3 flowVector = getFluidFlowVector(world, pos);
 		pushVector = pushVector + flowVector;
 	};
-	blockBehaviors[BLOCK_WATER_STILL].m_velocityToAddToEntity = [](WorldManager& world, Int3 pos,
+	blockBehaviors[BLOCK_WATER_STILL].velocityToAddToEntity = [](WorldManager& world, Int3 pos,
 	                                                             Vec3& pushVector) -> void {
 		Vec3 flowVector = getFluidFlowVector(world, pos);
 		pushVector = pushVector + flowVector;
 	};
-	blockBehaviors[BLOCK_CACTUS].m_onEntityCollidedWithBlock = [](WorldManager& world, Int3 pos, Entity& entity) -> void {
+	blockBehaviors[BLOCK_CACTUS].onEntityCollidedWithBlock = [](WorldManager& world, Int3 pos, Entity& entity) -> void {
 		entity.attackEntityFrom(nullptr, 1);
 	};
-	blockBehaviors[BLOCK_COBWEB].m_onEntityCollidedWithBlock = [](WorldManager& world, Int3 pos, Entity& entity) -> void {
-		entity.m_inWeb = true;
+	blockBehaviors[BLOCK_COBWEB].onEntityCollidedWithBlock = [](WorldManager& world, Int3 pos, Entity& entity) -> void {
+		entity.inWeb = true;
 	};
-	blockBehaviors[BLOCK_SOULSAND].m_onEntityCollidedWithBlock = [](WorldManager& world, Int3 pos,
+	blockBehaviors[BLOCK_SOULSAND].onEntityCollidedWithBlock = [](WorldManager& world, Int3 pos,
 	                                                              Entity& entity) -> void {
-		entity.m_velocity.m_x *= 0.4;
-		entity.m_velocity.m_z *= 0.4;
+		entity.velocity.x *= 0.4;
+		entity.velocity.z *= 0.4;
 	};
-	blockBehaviors[BLOCK_SUGARCANE].m_onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
+	blockBehaviors[BLOCK_SUGARCANE].onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
 		// Check to see if our placement is still valid
 		if (!canSugarcaneSurviveAt(world, pos))
 			BreakAndDropBlock(world, pos);
 	};
 
 	// placement overrides
-	blockBehaviors[BLOCK_TORCH].m_onBlockPlaced = [](WorldManager& world, Int3 pos, Entity& placer,
+	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& world, Int3 pos, Entity& placer,
 	                                               PacketData::FaceDirection face) -> void {
 		auto meta = world.getMetadata(pos);
-		if (face == PacketData::FaceDirection::Y_PLUS && (world.isBlockNormalCube({ pos.m_x, pos.m_y - 1, pos.m_z }) ||
-		                                                  world.getBlockId({ pos.m_x, pos.m_y - 1, pos.m_z }) == BLOCK_FENCE))
+		if (face == PacketData::FaceDirection::Y_PLUS && (world.isBlockNormalCube({ pos.x, pos.y - 1, pos.z }) ||
+		                                                  world.getBlockId({ pos.x, pos.y - 1, pos.z }) == BLOCK_FENCE))
 			meta = 5;
-		if (face == PacketData::FaceDirection::Z_MINUS && world.isBlockNormalCube({ pos.m_x, pos.m_y, pos.m_z + 1 }))
+		if (face == PacketData::FaceDirection::Z_MINUS && world.isBlockNormalCube({ pos.x, pos.y, pos.z + 1 }))
 			meta = 4;
-		if (face == PacketData::FaceDirection::Z_PLUS && world.isBlockNormalCube({ pos.m_x, pos.m_y, pos.m_z - 1 }))
+		if (face == PacketData::FaceDirection::Z_PLUS && world.isBlockNormalCube({ pos.x, pos.y, pos.z - 1 }))
 			meta = 3;
-		if (face == PacketData::FaceDirection::X_MINUS && world.isBlockNormalCube({ pos.m_x + 1, pos.m_y, pos.m_z }))
+		if (face == PacketData::FaceDirection::X_MINUS && world.isBlockNormalCube({ pos.x + 1, pos.y, pos.z }))
 			meta = 2;
-		if (face == PacketData::FaceDirection::X_PLUS && world.isBlockNormalCube({ pos.m_x - 1, pos.m_y, pos.m_z }))
+		if (face == PacketData::FaceDirection::X_PLUS && world.isBlockNormalCube({ pos.x - 1, pos.y, pos.z }))
 			meta = 1;
 		world.setMeta(pos, meta);
 	};
 
 	// for when the block is interacted with!
-	blockBehaviors[BLOCK_DOOR_WOOD].m_onBlockActivated = [](WorldManager& world, Int3 pos) -> bool {
+	blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated = [](WorldManager& world, Int3 pos) -> bool {
 		auto meta = world.getMetadata(pos);
 		if (meta & 8) {
 			// We are the top half of the door
-			if (world.getBlockId({ pos.m_x, pos.m_y - 1, pos.m_z }) != BLOCK_DOOR_WOOD)
+			if (world.getBlockId({ pos.x, pos.y - 1, pos.z }) != BLOCK_DOOR_WOOD)
 				// Below us is not the bottom of a door! This is bad!
 				return false;
 			// Recall this function on the bottom of the door
-			blockBehaviors[BLOCK_DOOR_WOOD].m_onBlockActivated(world, { pos.m_x, pos.m_y - 1, pos.m_z });
+			blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated(world, { pos.x, pos.y - 1, pos.z });
 			return false;
 		}
 		// We are the top half so lets open
-		Int3 top = { pos.m_x, pos.m_y + 1, pos.m_z };
+		Int3 top = { pos.x, pos.y + 1, pos.z };
 		if (world.getBlockId(top) == BLOCK_DOOR_WOOD && (world.getMetadata(top) & 8)) {
 			world.setMeta(top, uint8_t((meta ^ 4) + 8));
 		}
@@ -2003,264 +2003,264 @@ void registerAll() {
 	};
 
 	// Falling blocks!
-	blockBehaviors[BLOCK_GRAVEL].m_onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
+	blockBehaviors[BLOCK_GRAVEL].onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
 		// Schedule a check to see if we can fall
-		world.m_tickScheduler.scheduleUpdateTick(pos, BLOCK_GRAVEL, 3);
+		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_GRAVEL, 3);
 	};
-	blockBehaviors[BLOCK_GRAVEL].m_onBlockAdded = [](WorldManager& world, Int3 pos) -> void {
-		world.m_tickScheduler.scheduleUpdateTick(pos, BLOCK_GRAVEL, 3);
+	blockBehaviors[BLOCK_GRAVEL].onBlockAdded = [](WorldManager& world, Int3 pos) -> void {
+		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_GRAVEL, 3);
 	};
-	blockBehaviors[BLOCK_GRAVEL].m_onTick = [](WorldManager& world, Int3 pos, uint8_t meta, Java::Random& random) -> void {
-		Int3 below = { pos.m_x, pos.m_y - 1, pos.m_z };
+	blockBehaviors[BLOCK_GRAVEL].onTick = [](WorldManager& world, Int3 pos, uint8_t meta, Java::Random& random) -> void {
+		Int3 below = { pos.x, pos.y - 1, pos.z };
 
-		if (!Blocks::canFallAt(world, below) || pos.m_y < 0)
+		if (!Blocks::canFallAt(world, below) || pos.y < 0)
 			return;
 
 		constexpr int32_t checkRadius = 32; // Blocks
-		bool areaLoaded = world.AABBinValidChunks({ double(pos.m_x - checkRadius), double(pos.m_y - checkRadius),
-		                                            double(pos.m_z - checkRadius), double(pos.m_x + checkRadius),
-		                                            double(pos.m_y + checkRadius), double(pos.m_z + checkRadius) });
+		bool areaLoaded = world.AABBinValidChunks({ double(pos.x - checkRadius), double(pos.y - checkRadius),
+		                                            double(pos.z - checkRadius), double(pos.x + checkRadius),
+		                                            double(pos.y + checkRadius), double(pos.z + checkRadius) });
 
 		if (areaLoaded) {
-			Vec3 spawnPos = { pos.m_x + 0.5, pos.m_y + 0.5, pos.m_z + 0.5 };
+			Vec3 spawnPos = { pos.x + 0.5, pos.y + 0.5, pos.z + 0.5 };
 			auto entity = std::make_shared<FallingBlockEntity>(spawnPos, BLOCK_GRAVEL);
-			world.m_entityManager.addEntity(std::move(entity));
+			world.entityManager.addEntity(std::move(entity));
 			world.setBlock(pos, BLOCK_AIR, 0);
 		} else {
 			world.setBlock(pos, BLOCK_AIR, 0);
 
 			Int3 landing = pos;
-			while (Blocks::canFallAt(world, { landing.m_x, landing.m_y - 1, landing.m_z }) && landing.m_y > 0)
-				landing.m_y--;
+			while (Blocks::canFallAt(world, { landing.x, landing.y - 1, landing.z }) && landing.y > 0)
+				landing.y--;
 
-			if (landing.m_y > 0)
+			if (landing.y > 0)
 				world.setBlock(landing, BLOCK_GRAVEL, 0);
 		}
 	};
-	blockBehaviors[BLOCK_SAND].m_onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
+	blockBehaviors[BLOCK_SAND].onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
 		// Schedule a check to see if we can fall
-		world.m_tickScheduler.scheduleUpdateTick(pos, BLOCK_SAND, 3);
+		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_SAND, 3);
 	};
-	blockBehaviors[BLOCK_SAND].m_onBlockAdded = [](WorldManager& world, Int3 pos) -> void {
-		world.m_tickScheduler.scheduleUpdateTick(pos, BLOCK_SAND, 3);
+	blockBehaviors[BLOCK_SAND].onBlockAdded = [](WorldManager& world, Int3 pos) -> void {
+		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_SAND, 3);
 	};
-	blockBehaviors[BLOCK_SAND].m_onTick = [](WorldManager& world, Int3 pos, uint8_t meta, Java::Random& random) -> void {
-		Int3 below = { pos.m_x, pos.m_y - 1, pos.m_z };
+	blockBehaviors[BLOCK_SAND].onTick = [](WorldManager& world, Int3 pos, uint8_t meta, Java::Random& random) -> void {
+		Int3 below = { pos.x, pos.y - 1, pos.z };
 
-		if (!Blocks::canFallAt(world, below) || pos.m_y < 0)
+		if (!Blocks::canFallAt(world, below) || pos.y < 0)
 			return;
 
 		constexpr int32_t checkRadius = 32; // Blocks
-		bool areaLoaded = world.AABBinValidChunks({ double(pos.m_x - checkRadius), double(pos.m_y - checkRadius),
-		                                            double(pos.m_z - checkRadius), double(pos.m_x + checkRadius),
-		                                            double(pos.m_y + checkRadius), double(pos.m_z + checkRadius) });
+		bool areaLoaded = world.AABBinValidChunks({ double(pos.x - checkRadius), double(pos.y - checkRadius),
+		                                            double(pos.z - checkRadius), double(pos.x + checkRadius),
+		                                            double(pos.y + checkRadius), double(pos.z + checkRadius) });
 
 		if (areaLoaded) {
-			Vec3 spawnPos = { pos.m_x + 0.5, pos.m_y + 0.5, pos.m_z + 0.5 };
+			Vec3 spawnPos = { pos.x + 0.5, pos.y + 0.5, pos.z + 0.5 };
 			auto entity = std::make_shared<FallingBlockEntity>(spawnPos, BLOCK_SAND);
-			world.m_entityManager.addEntity(std::move(entity));
+			world.entityManager.addEntity(std::move(entity));
 			world.setBlock(pos, BLOCK_AIR, 0);
 		} else {
 			world.setBlock(pos, BLOCK_AIR, 0);
 
 			Int3 landing = pos;
-			while (Blocks::canFallAt(world, { landing.m_x, landing.m_y - 1, landing.m_z }) && landing.m_y > 0)
-				landing.m_y--;
+			while (Blocks::canFallAt(world, { landing.x, landing.y - 1, landing.z }) && landing.y > 0)
+				landing.y--;
 
-			if (landing.m_y > 0)
+			if (landing.y > 0)
 				world.setBlock(landing, BLOCK_SAND, 0);
 		}
 	};
-	blockBehaviors[BLOCK_CHEST].m_onBlockAdded = [](WorldManager& world, Int3 pos) -> void {
+	blockBehaviors[BLOCK_CHEST].onBlockAdded = [](WorldManager& world, Int3 pos) -> void {
 		auto chest = std::make_shared<TileEntityChest>(pos);
 		world.createTileEntity(std::move(chest));
 	};
 
 	// --------------- block drops, only exceptions are included (something that doesn't drop itself) ---------------
-	blockBehaviors[BLOCK_STONE].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_STONE].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return BLOCK_COBBLESTONE;
 	};
-	blockBehaviors[BLOCK_GRASS].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_GRASS].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return BLOCK_DIRT;
 	};
-	blockBehaviors[BLOCK_FARMLAND].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_FARMLAND].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return BLOCK_DIRT;
 	};
-	blockBehaviors[BLOCK_ORE_COAL].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_ORE_COAL].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::COAL;
 	};
-	blockBehaviors[BLOCK_ORE_DIAMOND].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_ORE_DIAMOND].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::DIAMOND;
 	};
-	blockBehaviors[BLOCK_REDSTONE].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_REDSTONE].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::REDSTONE;
 	};
-	blockBehaviors[BLOCK_SUGARCANE].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_SUGARCANE].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::SUGARCANE;
 	};
-	blockBehaviors[BLOCK_COBWEB].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_COBWEB].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::STRING;
 	};
-	blockBehaviors[BLOCK_DEADBUSH].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_DEADBUSH].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::INVALID;
 	};
-	blockBehaviors[BLOCK_STAIRS_WOOD].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_STAIRS_WOOD].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return BLOCK_PLANKS;
 	};
-	blockBehaviors[BLOCK_STAIRS_COBBLESTONE].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_STAIRS_COBBLESTONE].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return BLOCK_COBBLESTONE;
 	};
 
-	blockBehaviors[BLOCK_SIGN].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_SIGN].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::SIGN;
 	};
-	blockBehaviors[BLOCK_SIGN_WALL].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_SIGN_WALL].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::SIGN;
 	};
-	blockBehaviors[BLOCK_FURNACE_LIT].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_FURNACE_LIT].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return BLOCK_FURNACE;
 	};
-	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::REDSTONE_REPEATER;
 	};
-	blockBehaviors[BLOCK_REDSTONE_REPEATER_ON].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_REDSTONE_REPEATER_ON].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::REDSTONE_REPEATER;
 	};
-	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return BLOCK_REDSTONE_TORCH_ON;
 	};
 
 	// --------------- drop themselves but pass their metadata onto the item ---------------
-	blockBehaviors[BLOCK_WOOL].m_damageDropped = [](uint8_t meta) -> ItemDamage {
+	blockBehaviors[BLOCK_WOOL].damageDropped = [](uint8_t meta) -> ItemDamage {
 		return meta;
 	};
-	blockBehaviors[BLOCK_LOG].m_damageDropped = [](uint8_t meta) -> ItemDamage {
+	blockBehaviors[BLOCK_LOG].damageDropped = [](uint8_t meta) -> ItemDamage {
 		return meta;
 	};
-	blockBehaviors[BLOCK_SAPLING].m_damageDropped = [](uint8_t meta) -> ItemDamage {
+	blockBehaviors[BLOCK_SAPLING].damageDropped = [](uint8_t meta) -> ItemDamage {
 		return meta & 3;
 	};
 
 	// --------------- don't drop anything ---------------
-	blockBehaviors[BLOCK_ICE].m_quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_ICE].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_GLASS].m_quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_GLASS].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_BOOKSHELF].m_quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_BOOKSHELF].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_CAKE].m_quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_CAKE].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_MOB_SPAWNER].m_quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_MOB_SPAWNER].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_FIRE].m_quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_FIRE].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_PISTON_HEAD].m_quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_PISTON_HEAD].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_PISTON_MOVING].m_quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_PISTON_MOVING].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_NETHER_PORTAL].m_quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_NETHER_PORTAL].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_SNOW_LAYER].m_quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_SNOW_LAYER].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 0;
 	};
 
 	// --------------- drops influenced by RNG ---------------
-	blockBehaviors[BLOCK_GRAVEL].m_idDropped = [](uint8_t, Java::Random& rng) -> ItemId {
+	blockBehaviors[BLOCK_GRAVEL].idDropped = [](uint8_t, Java::Random& rng) -> ItemId {
 		return rng.nextInt(10) == 0 ? static_cast<ItemId>(Items::Id::FLINT) : static_cast<ItemId>(BLOCK_GRAVEL);
 	};
 
-	blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::DYE;
 	};
-	blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].m_damageDropped = [](uint8_t) -> ItemDamage {
+	blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].damageDropped = [](uint8_t) -> ItemDamage {
 		return 4;
 	};
-	blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].m_quantityDropped = [](Java::Random& rng) -> ItemAmount {
+	blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].quantityDropped = [](Java::Random& rng) -> ItemAmount {
 		return 4 + rng.nextInt(5);
 	};
 
-	blockBehaviors[BLOCK_ORE_REDSTONE_OFF].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_ORE_REDSTONE_OFF].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::REDSTONE;
 	};
-	blockBehaviors[BLOCK_ORE_REDSTONE_OFF].m_quantityDropped = [](Java::Random& rng) -> ItemAmount {
+	blockBehaviors[BLOCK_ORE_REDSTONE_OFF].quantityDropped = [](Java::Random& rng) -> ItemAmount {
 		return 4 + rng.nextInt(2);
 	};
-	blockBehaviors[BLOCK_ORE_REDSTONE_ON].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_ORE_REDSTONE_ON].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::REDSTONE;
 	};
-	blockBehaviors[BLOCK_ORE_REDSTONE_ON].m_quantityDropped = [](Java::Random& rng) -> ItemAmount {
+	blockBehaviors[BLOCK_ORE_REDSTONE_ON].quantityDropped = [](Java::Random& rng) -> ItemAmount {
 		return 4 + rng.nextInt(2);
 	};
 
-	blockBehaviors[BLOCK_GLOWSTONE].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_GLOWSTONE].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::GLOWSTONE_DUST;
 	};
-	blockBehaviors[BLOCK_GLOWSTONE].m_quantityDropped = [](Java::Random& rng) -> ItemAmount {
+	blockBehaviors[BLOCK_GLOWSTONE].quantityDropped = [](Java::Random& rng) -> ItemAmount {
 		return 2 + rng.nextInt(3);
 	};
 
-	blockBehaviors[BLOCK_LEAVES].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_LEAVES].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return BLOCK_SAPLING;
 	};
-	blockBehaviors[BLOCK_LEAVES].m_damageDropped = [](uint8_t meta) -> ItemDamage {
+	blockBehaviors[BLOCK_LEAVES].damageDropped = [](uint8_t meta) -> ItemDamage {
 		return meta & 3;
 	};
-	blockBehaviors[BLOCK_LEAVES].m_quantityDropped = [](Java::Random& rng) -> ItemAmount {
+	blockBehaviors[BLOCK_LEAVES].quantityDropped = [](Java::Random& rng) -> ItemAmount {
 		return rng.nextInt(20) == 0 ? 1 : 0;
 	};
 
-	blockBehaviors[BLOCK_TALLGRASS].m_idDropped = [](uint8_t, Java::Random& rng) -> ItemId {
+	blockBehaviors[BLOCK_TALLGRASS].idDropped = [](uint8_t, Java::Random& rng) -> ItemId {
 		return rng.nextInt(8) == 0 ? Items::Id::SEEDS_WHEAT : Items::Id::INVALID;
 	};
 
 	// --------------- only drop if it's the correct half of the block being broken ---------------
 	// TODO: other half of the block should be removed automatically
-	blockBehaviors[BLOCK_DOOR_WOOD].m_idDropped = [](uint8_t meta, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_DOOR_WOOD].idDropped = [](uint8_t meta, Java::Random&) -> ItemId {
 		return (meta & 8) != 0 ? Items::Id::INVALID : Items::Id::DOOR_WOOD;
 	};
 
-	blockBehaviors[BLOCK_DOOR_IRON].m_idDropped = [](uint8_t meta, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_DOOR_IRON].idDropped = [](uint8_t meta, Java::Random&) -> ItemId {
 		return (meta & 8) != 0 ? Items::Id::INVALID : Items::Id::DOOR_IRON;
 	};
 
-	blockBehaviors[BLOCK_BED].m_idDropped = [](uint8_t meta, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_BED].idDropped = [](uint8_t meta, Java::Random&) -> ItemId {
 		return (meta & 8) != 0 ? Items::Id::INVALID : Items::Id::BED;
 	};
 
-	blockBehaviors[BLOCK_CLAY].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_CLAY].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::CLAY;
 	};
-	blockBehaviors[BLOCK_CLAY].m_quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_CLAY].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 4;
 	};
 
-	blockBehaviors[BLOCK_SLAB].m_damageDropped = [](uint8_t meta) -> ItemDamage {
+	blockBehaviors[BLOCK_SLAB].damageDropped = [](uint8_t meta) -> ItemDamage {
 		return meta;
 	};
 
-	blockBehaviors[BLOCK_DOUBLE_SLAB].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_DOUBLE_SLAB].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return BLOCK_SLAB;
 	};
-	blockBehaviors[BLOCK_DOUBLE_SLAB].m_damageDropped = [](uint8_t meta) -> ItemDamage {
+	blockBehaviors[BLOCK_DOUBLE_SLAB].damageDropped = [](uint8_t meta) -> ItemDamage {
 		return meta;
 	};
-	blockBehaviors[BLOCK_DOUBLE_SLAB].m_quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_DOUBLE_SLAB].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 2;
 	};
 
-	blockBehaviors[BLOCK_SNOW].m_idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_SNOW].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::SNOWBALL;
 	};
-	blockBehaviors[BLOCK_SNOW].m_quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_SNOW].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 4;
 	};
 }

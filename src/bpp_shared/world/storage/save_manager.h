@@ -24,24 +24,24 @@
 #endif
 
 struct levelData {
-	int64_t m_RandomSeed = 0;
-	Int3 m_spawnPoint{ 0, 0, 0 };
-	int m_rainTime = 0;
-	int m_thunderTime = 0;
-	int8_t m_raining = 0;
-	int64_t m_time = 0;
-	int8_t m_thundering = 0;
-	int m_version = 19132;
-	int64_t m_lastPlayed = 0;
-	std::string m_LevelName = "world";
-	int64_t m_sizeOnDisk = 0;
+	int64_t RandomSeed = 0;
+	Int3 spawnPoint{ 0, 0, 0 };
+	int rainTime = 0;
+	int thunderTime = 0;
+	int8_t raining = 0;
+	int64_t time = 0;
+	int8_t thundering = 0;
+	int version = 19132;
+	int64_t lastPlayed = 0;
+	std::string LevelName = "world";
+	int64_t sizeOnDisk = 0;
 };
 
 struct SessionLock {
 #ifdef _WIN32
 	HANDLE handle = INVALID_HANDLE_VALUE;
 #else
-	int m_fd = -1;
+	int fd = -1;
 #endif
 
 	bool acquire(const std::string& path) {
@@ -51,12 +51,12 @@ struct SessionLock {
 		if (handle == INVALID_HANDLE_VALUE)
 			return false;
 #else
-		m_fd = open(path.c_str(), O_RDWR | O_CREAT, 0644);
-		if (m_fd < 0)
+		fd = open(path.c_str(), O_RDWR | O_CREAT, 0644);
+		if (fd < 0)
 			return false;
-		if (flock(m_fd, LOCK_EX | LOCK_NB) < 0) {
-			close(m_fd);
-			m_fd = -1;
+		if (flock(fd, LOCK_EX | LOCK_NB) < 0) {
+			close(fd);
+			fd = -1;
 			return false;
 		}
 #endif
@@ -71,10 +71,10 @@ struct SessionLock {
 			handle = INVALID_HANDLE_VALUE;
 		}
 #else
-		if (m_fd >= 0) {
-			flock(m_fd, LOCK_UN);
-			close(m_fd);
-			m_fd = -1;
+		if (fd >= 0) {
+			flock(fd, LOCK_UN);
+			close(fd);
+			fd = -1;
 		}
 #endif
 	}
@@ -97,7 +97,7 @@ private:
 		DWORD written;
 		WriteFile(handle, bytes, 8, &written, nullptr);
 #else
-		write(m_fd, bytes, 8);
+		write(fd, bytes, 8);
 #endif
 	}
 };
@@ -113,7 +113,7 @@ struct SaveManager {
 		necessaryFolders += std::filesystem::create_directories(SaveDirectory + "/DIM-1/region");
 		necessaryFolders += std::filesystem::create_directories(SaveDirectory + "/data");
 		if (necessaryFolders)
-			GlobalLogger().m_warn << "Failed to load " << necessaryFolders
+			GlobalLogger().warn << "Failed to load " << necessaryFolders
 			                    << " necessary folder(s) for level " + pSaveName + ".\n";
 
 		if (!sessionLock.acquire(SaveDirectory + "/session.lock"))
@@ -154,21 +154,21 @@ struct SaveManager {
 
 		// Parse NBT
 		NBTParser parser(raw.data(), raw.size());
-		const Tag& data = parser.m_root.get("Data");
+		const Tag& data = parser.root.get("Data");
 
-		currentLevelData.m_RandomSeed = data.get("RandomSeed").m_longValue;
-		currentLevelData.m_spawnPoint.m_x = data.get("SpawnX").m_intValue;
-		currentLevelData.m_spawnPoint.m_y = data.get("SpawnY").m_intValue;
-		currentLevelData.m_spawnPoint.m_z = data.get("SpawnZ").m_intValue;
-		currentLevelData.m_rainTime = data.get("rainTime").m_intValue;
-		currentLevelData.m_thunderTime = data.get("thunderTime").m_intValue;
-		currentLevelData.m_raining = data.get("raining").m_byteValue;
-		currentLevelData.m_time = data.get("Time").m_longValue;
-		currentLevelData.m_thundering = data.get("thundering").m_byteValue;
-		currentLevelData.m_version = data.get("version").m_intValue;
-		currentLevelData.m_lastPlayed = data.get("LastPlayed").m_longValue;
-		currentLevelData.m_LevelName = data.get("LevelName").m_stringValue;
-		currentLevelData.m_sizeOnDisk = data.get("SizeOnDisk").m_longValue;
+		currentLevelData.RandomSeed = data.get("RandomSeed").longValue;
+		currentLevelData.spawnPoint.x = data.get("SpawnX").intValue;
+		currentLevelData.spawnPoint.y = data.get("SpawnY").intValue;
+		currentLevelData.spawnPoint.z = data.get("SpawnZ").intValue;
+		currentLevelData.rainTime = data.get("rainTime").intValue;
+		currentLevelData.thunderTime = data.get("thunderTime").intValue;
+		currentLevelData.raining = data.get("raining").byteValue;
+		currentLevelData.time = data.get("Time").longValue;
+		currentLevelData.thundering = data.get("thundering").byteValue;
+		currentLevelData.version = data.get("version").intValue;
+		currentLevelData.lastPlayed = data.get("LastPlayed").longValue;
+		currentLevelData.LevelName = data.get("LevelName").stringValue;
+		currentLevelData.sizeOnDisk = data.get("SizeOnDisk").longValue;
 
 		return true;
 	}
@@ -194,80 +194,80 @@ struct SaveManager {
 		}
 
 		Tag root;
-		root.m_type = TAG_COMPOUND;
-		root.m_name = "";
+		root.type = TAG_COMPOUND;
+		root.name = "";
 
 		Tag data;
-		data.m_type = TAG_COMPOUND;
-		data.m_name = "Data";
+		data.type = TAG_COMPOUND;
+		data.name = "Data";
 
 		Tag RandomSeed;
-		RandomSeed.m_type = TAG_LONG;
-		RandomSeed.m_name = "RandomSeed";
-		RandomSeed.m_longValue = levelData.m_RandomSeed;
+		RandomSeed.type = TAG_LONG;
+		RandomSeed.name = "RandomSeed";
+		RandomSeed.longValue = levelData.RandomSeed;
 		Tag SpawnX;
-		SpawnX.m_type = TAG_INT;
-		SpawnX.m_name = "SpawnX";
-		SpawnX.m_intValue = levelData.m_spawnPoint.m_x;
+		SpawnX.type = TAG_INT;
+		SpawnX.name = "SpawnX";
+		SpawnX.intValue = levelData.spawnPoint.x;
 		Tag SpawnY;
-		SpawnY.m_type = TAG_INT;
-		SpawnY.m_name = "SpawnY";
-		SpawnY.m_intValue = levelData.m_spawnPoint.m_y;
+		SpawnY.type = TAG_INT;
+		SpawnY.name = "SpawnY";
+		SpawnY.intValue = levelData.spawnPoint.y;
 		Tag SpawnZ;
-		SpawnZ.m_type = TAG_INT;
-		SpawnZ.m_name = "SpawnZ";
-		SpawnZ.m_intValue = levelData.m_spawnPoint.m_z;
+		SpawnZ.type = TAG_INT;
+		SpawnZ.name = "SpawnZ";
+		SpawnZ.intValue = levelData.spawnPoint.z;
 		Tag rainTime;
-		rainTime.m_type = TAG_INT;
-		rainTime.m_name = "rainTime";
-		rainTime.m_intValue = levelData.m_rainTime;
+		rainTime.type = TAG_INT;
+		rainTime.name = "rainTime";
+		rainTime.intValue = levelData.rainTime;
 		Tag thunderTime;
-		thunderTime.m_type = TAG_INT;
-		thunderTime.m_name = "thunderTime";
-		thunderTime.m_intValue = levelData.m_thunderTime;
+		thunderTime.type = TAG_INT;
+		thunderTime.name = "thunderTime";
+		thunderTime.intValue = levelData.thunderTime;
 		Tag raining;
-		raining.m_type = TAG_BYTE;
-		raining.m_name = "raining";
-		raining.m_byteValue = levelData.m_raining;
+		raining.type = TAG_BYTE;
+		raining.name = "raining";
+		raining.byteValue = levelData.raining;
 		Tag Time;
-		Time.m_type = TAG_LONG;
-		Time.m_name = "Time";
-		Time.m_longValue = levelData.m_time;
+		Time.type = TAG_LONG;
+		Time.name = "Time";
+		Time.longValue = levelData.time;
 		Tag thundering;
-		thundering.m_type = TAG_BYTE;
-		thundering.m_name = "thundering";
-		thundering.m_byteValue = levelData.m_thundering;
+		thundering.type = TAG_BYTE;
+		thundering.name = "thundering";
+		thundering.byteValue = levelData.thundering;
 		Tag version;
-		version.m_type = TAG_INT;
-		version.m_name = "version";
-		version.m_intValue = levelData.m_version;
+		version.type = TAG_INT;
+		version.name = "version";
+		version.intValue = levelData.version;
 		Tag LastPlayed;
-		LastPlayed.m_type = TAG_LONG;
-		LastPlayed.m_name = "LastPlayed";
-		LastPlayed.m_longValue = levelData.m_lastPlayed;
+		LastPlayed.type = TAG_LONG;
+		LastPlayed.name = "LastPlayed";
+		LastPlayed.longValue = levelData.lastPlayed;
 		Tag LevelName;
-		LevelName.m_type = TAG_STRING;
-		LevelName.m_name = "LevelName";
-		LevelName.m_stringValue = levelData.m_LevelName;
+		LevelName.type = TAG_STRING;
+		LevelName.name = "LevelName";
+		LevelName.stringValue = levelData.LevelName;
 		Tag sizeOnDisk;
-		sizeOnDisk.m_type = TAG_LONG;
-		sizeOnDisk.m_name = "SizeOnDisk";
-		sizeOnDisk.m_longValue = levelData.m_sizeOnDisk;
+		sizeOnDisk.type = TAG_LONG;
+		sizeOnDisk.name = "SizeOnDisk";
+		sizeOnDisk.longValue = levelData.sizeOnDisk;
 
-		data.m_compound["RandomSeed"] = RandomSeed;
-		data.m_compound["SpawnX"] = SpawnX;
-		data.m_compound["SpawnY"] = SpawnY;
-		data.m_compound["SpawnZ"] = SpawnZ;
-		data.m_compound["rainTime"] = rainTime;
-		data.m_compound["thunderTime"] = thunderTime;
-		data.m_compound["raining"] = raining;
-		data.m_compound["Time"] = Time;
-		data.m_compound["thundering"] = thundering;
-		data.m_compound["version"] = version;
-		data.m_compound["LastPlayed"] = LastPlayed;
-		data.m_compound["LevelName"] = LevelName;
-		data.m_compound["SizeOnDisk"] = sizeOnDisk;
-		root.m_compound["Data"] = data;
+		data.compound["RandomSeed"] = RandomSeed;
+		data.compound["SpawnX"] = SpawnX;
+		data.compound["SpawnY"] = SpawnY;
+		data.compound["SpawnZ"] = SpawnZ;
+		data.compound["rainTime"] = rainTime;
+		data.compound["thunderTime"] = thunderTime;
+		data.compound["raining"] = raining;
+		data.compound["Time"] = Time;
+		data.compound["thundering"] = thundering;
+		data.compound["version"] = version;
+		data.compound["LastPlayed"] = LastPlayed;
+		data.compound["LevelName"] = LevelName;
+		data.compound["SizeOnDisk"] = sizeOnDisk;
+		root.compound["Data"] = data;
 
 		std::vector<uint8_t> raw;
 		NBTwriter writer(raw, root);
@@ -339,127 +339,127 @@ struct SaveManager {
 
 		raw.resize(actualSize);
 		NBTParser parser(raw.data(), raw.size());
-		return parser.m_root;
+		return parser.root;
 	}
 
 	Tag getNewPlayerNBT() {
 		Tag root;
-		root.m_type = TAG_COMPOUND;
-		root.m_name = "";
+		root.type = TAG_COMPOUND;
+		root.name = "";
 
 		Tag Motion;
-		Motion.m_type = TAG_LIST;
-		Motion.m_name = "Motion";
-		Motion.m_listType = TAG_DOUBLE;
+		Motion.type = TAG_LIST;
+		Motion.name = "Motion";
+		Motion.listType = TAG_DOUBLE;
 		Tag SleepTimer;
-		SleepTimer.m_type = TAG_SHORT;
-		SleepTimer.m_name = "SleepTimer";
-		SleepTimer.m_shortValue = 0;
+		SleepTimer.type = TAG_SHORT;
+		SleepTimer.name = "SleepTimer";
+		SleepTimer.shortValue = 0;
 		Tag Health;
-		Health.m_type = TAG_SHORT;
-		Health.m_name = "Health";
-		Health.m_shortValue = 20;
+		Health.type = TAG_SHORT;
+		Health.name = "Health";
+		Health.shortValue = 20;
 		Tag Air;
-		Air.m_type = TAG_SHORT;
-		Air.m_name = "Air";
-		Air.m_shortValue = 300;
+		Air.type = TAG_SHORT;
+		Air.name = "Air";
+		Air.shortValue = 300;
 		Tag OnGround;
-		OnGround.m_type = TAG_BYTE;
-		OnGround.m_name = "OnGround";
-		OnGround.m_byteValue = 0;
+		OnGround.type = TAG_BYTE;
+		OnGround.name = "OnGround";
+		OnGround.byteValue = 0;
 		Tag Dimension;
-		Dimension.m_type = TAG_INT;
-		Dimension.m_name = "Dimension";
-		Dimension.m_intValue = 0;
+		Dimension.type = TAG_INT;
+		Dimension.name = "Dimension";
+		Dimension.intValue = 0;
 		Tag Rotation;
-		Rotation.m_type = TAG_LIST;
-		Rotation.m_name = "Rotation";
-		Rotation.m_listType = TAG_FLOAT;
+		Rotation.type = TAG_LIST;
+		Rotation.name = "Rotation";
+		Rotation.listType = TAG_FLOAT;
 		Tag FallDistance;
-		FallDistance.m_type = TAG_FLOAT;
-		FallDistance.m_name = "FallDistance";
-		FallDistance.m_floatValue = 0.0f;
+		FallDistance.type = TAG_FLOAT;
+		FallDistance.name = "FallDistance";
+		FallDistance.floatValue = 0.0f;
 		Tag Sleeping;
-		Sleeping.m_type = TAG_BYTE;
-		Sleeping.m_name = "Sleeping";
-		Sleeping.m_byteValue = 0;
+		Sleeping.type = TAG_BYTE;
+		Sleeping.name = "Sleeping";
+		Sleeping.byteValue = 0;
 		Tag Pos;
-		Pos.m_type = TAG_LIST;
-		Pos.m_name = "Pos";
-		Pos.m_listType = TAG_DOUBLE;
+		Pos.type = TAG_LIST;
+		Pos.name = "Pos";
+		Pos.listType = TAG_DOUBLE;
 		Tag DeathTime;
-		DeathTime.m_type = TAG_SHORT;
-		DeathTime.m_name = "DeathTime";
-		DeathTime.m_shortValue = 0;
+		DeathTime.type = TAG_SHORT;
+		DeathTime.name = "DeathTime";
+		DeathTime.shortValue = 0;
 		Tag Fire;
-		Fire.m_type = TAG_SHORT;
-		Fire.m_name = "Fire";
-		Fire.m_shortValue = -20;
+		Fire.type = TAG_SHORT;
+		Fire.name = "Fire";
+		Fire.shortValue = -20;
 		Tag HurtTime;
-		HurtTime.m_type = TAG_SHORT;
-		HurtTime.m_name = "HurtTime";
-		HurtTime.m_shortValue = 0;
+		HurtTime.type = TAG_SHORT;
+		HurtTime.name = "HurtTime";
+		HurtTime.shortValue = 0;
 		Tag AttackTime;
-		AttackTime.m_type = TAG_SHORT;
-		AttackTime.m_name = "AttackTime";
-		AttackTime.m_shortValue = 0;
+		AttackTime.type = TAG_SHORT;
+		AttackTime.name = "AttackTime";
+		AttackTime.shortValue = 0;
 		Tag Inventory;
-		Inventory.m_type = TAG_LIST;
-		Inventory.m_name = "Inventory";
-		Inventory.m_listType = TAG_COMPOUND;
+		Inventory.type = TAG_LIST;
+		Inventory.name = "Inventory";
+		Inventory.listType = TAG_COMPOUND;
 
 		// Initialize our position with a default
 		Tag posX;
-		posX.m_type = TAG_DOUBLE;
-		posX.m_doubleValue = -1;
+		posX.type = TAG_DOUBLE;
+		posX.doubleValue = -1;
 		Tag posY;
-		posY.m_type = TAG_DOUBLE;
-		posY.m_doubleValue = -1000000;
+		posY.type = TAG_DOUBLE;
+		posY.doubleValue = -1000000;
 		Tag posZ;
-		posZ.m_type = TAG_DOUBLE;
-		posZ.m_doubleValue = -1;
-		Pos.m_list.push_back(posX);
-		Pos.m_list.push_back(posY);
-		Pos.m_list.push_back(posZ);
+		posZ.type = TAG_DOUBLE;
+		posZ.doubleValue = -1;
+		Pos.list.push_back(posX);
+		Pos.list.push_back(posY);
+		Pos.list.push_back(posZ);
 
 		Tag rotX;
-		rotX.m_type = TAG_FLOAT;
-		rotX.m_floatValue = 0.0f;
+		rotX.type = TAG_FLOAT;
+		rotX.floatValue = 0.0f;
 		Tag rotY;
-		rotY.m_type = TAG_FLOAT;
-		rotY.m_floatValue = 0.0f;
-		Rotation.m_list.push_back(rotX);
-		Rotation.m_list.push_back(rotY);
+		rotY.type = TAG_FLOAT;
+		rotY.floatValue = 0.0f;
+		Rotation.list.push_back(rotX);
+		Rotation.list.push_back(rotY);
 
 		// Initialize our velocity with a default
 		Tag movX;
-		movX.m_type = TAG_DOUBLE;
-		movX.m_doubleValue = 0.0;
+		movX.type = TAG_DOUBLE;
+		movX.doubleValue = 0.0;
 		Tag movY;
-		movY.m_type = TAG_DOUBLE;
-		movY.m_doubleValue = 0.0;
+		movY.type = TAG_DOUBLE;
+		movY.doubleValue = 0.0;
 		Tag movZ;
-		movZ.m_type = TAG_DOUBLE;
-		movZ.m_doubleValue = 0.0;
-		Motion.m_list.push_back(movX);
-		Motion.m_list.push_back(movY);
-		Motion.m_list.push_back(movZ);
+		movZ.type = TAG_DOUBLE;
+		movZ.doubleValue = 0.0;
+		Motion.list.push_back(movX);
+		Motion.list.push_back(movY);
+		Motion.list.push_back(movZ);
 
-		root.m_compound["Motion"] = Motion;
-		root.m_compound["SleepTimer"] = SleepTimer;
-		root.m_compound["Health"] = Health;
-		root.m_compound["Air"] = Air;
-		root.m_compound["OnGround"] = OnGround;
-		root.m_compound["Dimension"] = Dimension;
-		root.m_compound["Rotation"] = Rotation;
-		root.m_compound["FallDistance"] = FallDistance;
-		root.m_compound["Sleeping"] = Sleeping;
-		root.m_compound["Pos"] = Pos;
-		root.m_compound["DeathTime"] = DeathTime;
-		root.m_compound["Fire"] = Fire;
-		root.m_compound["HurtTime"] = HurtTime;
-		root.m_compound["AttackTime"] = AttackTime;
-		root.m_compound["Inventory"] = Inventory;
+		root.compound["Motion"] = Motion;
+		root.compound["SleepTimer"] = SleepTimer;
+		root.compound["Health"] = Health;
+		root.compound["Air"] = Air;
+		root.compound["OnGround"] = OnGround;
+		root.compound["Dimension"] = Dimension;
+		root.compound["Rotation"] = Rotation;
+		root.compound["FallDistance"] = FallDistance;
+		root.compound["Sleeping"] = Sleeping;
+		root.compound["Pos"] = Pos;
+		root.compound["DeathTime"] = DeathTime;
+		root.compound["Fire"] = Fire;
+		root.compound["HurtTime"] = HurtTime;
+		root.compound["AttackTime"] = AttackTime;
+		root.compound["Inventory"] = Inventory;
 		return root;
 	}
 

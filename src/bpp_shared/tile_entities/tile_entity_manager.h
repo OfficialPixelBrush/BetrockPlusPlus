@@ -11,17 +11,17 @@
 
 // Simple wrapper so we don't have to manually add
 struct TileEntityManager {
-	std::vector<std::weak_ptr<TileEntity>> m_tickableTileEntities;
+	std::vector<std::weak_ptr<TileEntity>> tickableTileEntities;
 
 	// Initialize a tile entity into the world
 	void initializeTileEntity(const std::shared_ptr<TileEntity>& tileEntity) {
-		if (tileEntity->m_canTick) {
-			m_tickableTileEntities.push_back(tileEntity);
+		if (tileEntity->canTick) {
+			tickableTileEntities.push_back(tileEntity);
 		}
 	}
 
 	void tickTileEntities() {
-		std::erase_if(m_tickableTileEntities, [](const std::weak_ptr<TileEntity>& wp) {
+		std::erase_if(tickableTileEntities, [](const std::weak_ptr<TileEntity>& wp) {
 			auto te = wp.lock();
 			if (!te)
 				return true;

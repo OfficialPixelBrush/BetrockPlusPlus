@@ -11,12 +11,12 @@
 
 struct PlayerSession;
 struct EntityMPPlayer : public PlayerEntity {
-	PlayerSession* m_session = nullptr;
+	PlayerSession* session = nullptr;
 	EntityMPPlayer() : PlayerEntity() {
-		m_hasPhysics = false;
+		hasPhysics = false;
 	}
 	~EntityMPPlayer() {
-		m_session = nullptr;
+		session = nullptr;
 	}
 	void tick() override;
 	bool pickupItem(ItemStack& stack, EntityId entityId) override;

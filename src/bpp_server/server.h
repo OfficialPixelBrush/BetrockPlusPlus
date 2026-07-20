@@ -43,13 +43,13 @@ private:
 	int SPAWN_CHUNK_RADIUS = 5;
 
 public:
-	Runtime m_gameRuntime;
-	ChunkSender m_chunkSender;
-	int m_flushChunkCount = 10;
+	Runtime gameRuntime;
+	ChunkSender chunkSender;
+	int flushChunkCount = 10;
 
 	std::shared_ptr<PlayerSession> getSessionById(EntityId entityId) {
 		for (auto player : players) {
-			if (player->m_entity && player->m_entity->m_id == entityId) {
+			if (player->entity && player->entity->id == entityId) {
 				return player;
 			}
 		}
@@ -58,7 +58,7 @@ public:
 
 	std::shared_ptr<PlayerSession> getSessionByUsername(const std::string& username) {
 		for (auto player : players) {
-			if (player->m_username == username) {
+			if (player->username == username) {
 				return player;
 			}
 		}
@@ -67,8 +67,8 @@ public:
 
 	std::string getUsernameByEntityId(EntityId id) {
 		for (auto& player : players) {
-			if (player->m_entity && player->m_entity->m_id == id) {
-				return player->m_username;
+			if (player->entity && player->entity->id == id) {
+				return player->username;
 			}
 		}
 		return "";
@@ -77,11 +77,11 @@ public:
 	// Send a message to all players
 	void sendGlobalChatMessage(std::string message) {
 		for (auto& other : players) {
-			if (other && other->m_connState != ConnectionState::Playing)
+			if (other && other->connState != ConnectionState::Playing)
 				continue;
 			Packet::ChatMessage reply;
-			reply.m_message = message;
-			reply.Serialize(other->m_stream);
+			reply.message = message;
+			reply.Serialize(other->stream);
 		}
 	}
 
@@ -93,8 +93,8 @@ public:
 	void sendPlayerToDimension(Dimension dim, PlayerSession& session);
 
 	// Entity trackers are so we can send entity updates to players and vice versa.
-	EntityTracker m_overworldEntityTracker;
-	EntityTracker m_hellEntityTracker;
+	EntityTracker overworldEntityTracker;
+	EntityTracker hellEntityTracker;
 
 private:
 	friend bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, WorldManager& sessionWorld,
@@ -118,13 +118,13 @@ private:
 	void indexRemoveSession(PlayerSession& session);
 
 	WorldManager* getWorldForDimension(Dimension dim) {
-		return dim == Dimension::Nether ? &this->m_gameRuntime.m_worldHell : &this->m_gameRuntime.m_world;
+		return dim == Dimension::Nether ? &this->gameRuntime.worldHell : &this->gameRuntime.world;
 	}
 
 	// Encodes chunk position + dimension into a single key for chunkSessions.
 	// x = chunk X, y = chunk Z, z = dimension id
 	static Int32_3 chunkKey(const Int32_2& pos, int8_t dimension) {
-		return Int32_3{ pos.m_x, pos.m_z, int32_t(dimension) };
+		return Int32_3{ pos.x, pos.z, int32_t(dimension) };
 	}
 
 	static constexpr int TICKS_PER_SECOND = 20;

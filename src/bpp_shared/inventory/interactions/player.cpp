@@ -9,28 +9,28 @@
 #include "inventory/inventories.h"
 
 PlayerInventoryInteraction::PlayerInventoryInteraction(InventoryPlayer* inv, Runtime& gameRuntime)
-    : CraftingInventoryInteraction(inv, inv, inv, gameRuntime, { 2, 2 }), m_playerInventory(inv) {}
+    : CraftingInventoryInteraction(inv, inv, inv, gameRuntime, { 2, 2 }), playerInventory(inv) {}
 
 bool PlayerInventoryInteraction::canExist() {
-	return m_playerInventory != nullptr;
+	return playerInventory != nullptr;
 }
 
 void PlayerInventoryInteraction::shiftClickResult() {
-	ItemStack& result = m_playerInventory->m_slots[0];
-	if (result.m_id == Items::Id::INVALID)
+	ItemStack& result = playerInventory->slots[0];
+	if (result.id == Items::Id::INVALID)
 		return;
 
 	ItemStack copy = result;
-	if (m_playerInventory->mergeItemStackInInventory(copy, true, 9, 44)) {
+	if (playerInventory->mergeItemStackInInventory(copy, true, 9, 44)) {
 		finishCraft();
 	} else {
-		m_playerInventory->m_slots[0] = copy.m_count == 0 ? ItemStack{} : copy;
+		playerInventory->slots[0] = copy.count == 0 ? ItemStack{} : copy;
 	}
 }
 
 void PlayerInventoryInteraction::shiftClickOther(int slot) {
-	auto from = m_playerInventory->getInventoryAreaFromSlot(slot);
-	auto stack = m_playerInventory->getStackInSlot(slot);
+	auto from = playerInventory->getInventoryAreaFromSlot(slot);
+	auto stack = playerInventory->getStackInSlot(slot);
 	if (!stack)
 		return;
 
@@ -38,17 +38,17 @@ void PlayerInventoryInteraction::shiftClickOther(int slot) {
 
 	if (from == InvMap::ARMOR || from == InvMap::CRAFTING_AREA || from == InvMap::CRAFTING_RESULT ||
 	    from == InvMap::HOTBAR) {
-		bool success = m_playerInventory->mergeItemStackInInventory(copy, false, 9, 35);
+		bool success = playerInventory->mergeItemStackInInventory(copy, false, 9, 35);
 		if (!success)
-			m_playerInventory->mergeItemStackInInventory(copy, false, 36, 44);
+			playerInventory->mergeItemStackInInventory(copy, false, 36, 44);
 	} else {
-		m_playerInventory->mergeItemStackInInventory(copy, false, 36, 44);
+		playerInventory->mergeItemStackInInventory(copy, false, 36, 44);
 	}
 
 	// Update the source slot to whatever count is left
-	if (copy.m_count == 0) {
-		m_playerInventory->clearSlot(slot);
+	if (copy.count == 0) {
+		playerInventory->clearSlot(slot);
 	} else {
-		stack->m_count = copy.m_count;
+		stack->count = copy.count;
 	}
 }

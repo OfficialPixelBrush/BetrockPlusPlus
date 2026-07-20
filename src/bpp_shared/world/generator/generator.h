@@ -15,8 +15,8 @@
  */
 class Generator {
 protected:
-	Java::Random m_rand;
-	int64_t m_seed = 0;
+	Java::Random rand;
+	int64_t seed = 0;
 
 public:
 	Generator(int64_t seed);

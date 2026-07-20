@@ -6,9 +6,9 @@
 #include "chest.h"
 
 ChestInventoryInteraction::ChestInventoryInteraction(InventoryPlayer* pinv, std::shared_ptr<TileEntityChest> chest)
-    : InventoryInteraction(&m_sharedInventory), m_playerInventory(pinv), m_chestHandle(chest),
-      m_chestInventory(&chest->m_inventory) {
-	m_sharedInventory.m_owner = this;
+    : InventoryInteraction(&sharedInventory), playerInventory(pinv), chestHandle(chest),
+      chestInventory(&chest->inventory) {
+	sharedInventory.owner = this;
 	mergeInventories();
 }
 
@@ -18,27 +18,27 @@ ChestInventoryInteraction::~ChestInventoryInteraction() {
 }
 
 bool ChestInventoryInteraction::canExist() {
-	return !m_chestHandle.expired();
+	return !chestHandle.expired();
 }
 
 void ChestInventoryInteraction::initSnapshot() {
-	m_snapshot.resize(size_t(m_chestInventory->getSizeInventory()));
-	for (size_t i = 0; i < size_t(m_chestInventory->getSizeInventory()); i++)
-		m_snapshot[i] = m_chestInventory->m_slots[i];
+	snapshot.resize(size_t(chestInventory->getSizeInventory()));
+	for (size_t i = 0; i < size_t(chestInventory->getSizeInventory()); i++)
+		snapshot[i] = chestInventory->slots[i];
 }
 
 // Analyze the snapshot vs the current chest inventory
 std::vector<DeltaSlot> ChestInventoryInteraction::tickDiff() {
 	std::vector<DeltaSlot> differences;
-	for (size_t i = 0; i < m_snapshot.size(); i++) {
-		[[maybe_unused]] auto* current = m_chestInventory->getStackInSlot(i);
-		auto& snap = m_snapshot[i];
+	for (size_t i = 0; i < snapshot.size(); i++) {
+		[[maybe_unused]] auto* current = chestInventory->getStackInSlot(i);
+		auto& snap = snapshot[i];
 
-		bool changed = snap != m_chestInventory->m_slots[i];
+		bool changed = snap != chestInventory->slots[i];
 		if (!changed)
 			continue;
 
-		snap = m_chestInventory->m_slots[i];
+		snap = chestInventory->slots[i];
 		differences.push_back({ snap, int(i) });
 	}
 	mergeInventories();
@@ -47,21 +47,21 @@ std::vector<DeltaSlot> ChestInventoryInteraction::tickDiff() {
 
 void ChestInventoryInteraction::mergeInventories() {
 	size_t slotCount = 0;
-	for (auto& slot : m_chestInventory->m_slots)
-		m_sharedInventory.m_slots[slotCount++] = slot;
+	for (auto& slot : chestInventory->slots)
+		sharedInventory.slots[slotCount++] = slot;
 	for (size_t i = 9; i < 45; i++)
-		m_sharedInventory.m_slots[slotCount++] = m_playerInventory->m_slots[i];
+		sharedInventory.slots[slotCount++] = playerInventory->slots[i];
 }
 
 void ChestInventoryInteraction::writeBack() {
 	for (size_t i = 0; i < 27; i++)
-		m_chestInventory->m_slots[i] = m_sharedInventory.m_slots[i];
+		chestInventory->slots[i] = sharedInventory.slots[i];
 	for (size_t i = 27; i < 63; i++)
-		m_playerInventory->m_slots[i - 27 + 9] = m_sharedInventory.m_slots[i];
+		playerInventory->slots[i - 27 + 9] = sharedInventory.slots[i];
 }
 
 void ChestInventoryInteraction::onShiftClick(int slot) {
-	auto stack = m_sharedInventory.getStackInSlot(slot);
+	auto stack = sharedInventory.getStackInSlot(slot);
 	if (!stack)
 		return;
 
@@ -69,18 +69,18 @@ void ChestInventoryInteraction::onShiftClick(int slot) {
 
 	if (slot <= 26) {
 		// Chest -> inventory
-		[[maybe_unused]] bool success = m_playerInventory->mergeItemStackInInventory(copy, true, 9, 44);
+		[[maybe_unused]] bool success = playerInventory->mergeItemStackInInventory(copy, true, 9, 44);
 	} else {
 		// Inventory -> Chest
-		[[maybe_unused]] bool success = m_chestInventory->mergeItemStackInInventory(copy);
+		[[maybe_unused]] bool success = chestInventory->mergeItemStackInInventory(copy);
 	}
 
 	// Update the source in the real inventory before re-merging
 	if (slot <= 26) {
-		m_chestInventory->m_slots[size_t(slot)] = copy.m_count == 0 ? ItemStack{} : copy;
+		chestInventory->slots[size_t(slot)] = copy.count == 0 ? ItemStack{} : copy;
 	} else {
 		int playerSlot = slot - 27 + 9;
-		m_playerInventory->m_slots[size_t(playerSlot)] = copy.m_count == 0 ? ItemStack{} : copy;
+		playerInventory->slots[size_t(playerSlot)] = copy.count == 0 ? ItemStack{} : copy;
 	}
 
 	// Re-sync sharedInventory from the real inventories

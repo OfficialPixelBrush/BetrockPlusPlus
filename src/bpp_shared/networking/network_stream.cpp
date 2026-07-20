@@ -170,49 +170,49 @@ void NetworkStream::ReadEntityMetadata(std::vector<PacketData::EntityMetadata::D
 		switch (type) {
 		case PacketData::EntityMetadata::Type::BYTE: {
 			int8_t num = Read<int8_t>();
-			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .m_type = type, .m_index = index, .m_value = num });
+			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = num });
 			break;
 		}
 		case PacketData::EntityMetadata::Type::SHORT: {
 			int16_t num = Read<int16_t>();
-			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .m_type = type, .m_index = index, .m_value = num });
+			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = num });
 			break;
 		}
 		case PacketData::EntityMetadata::Type::INTEGER: {
 			int32_t num = Read<int32_t>();
-			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .m_type = type, .m_index = index, .m_value = num });
+			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = num });
 			break;
 		}
 		case PacketData::EntityMetadata::Type::FLOAT: {
 			float num = Read<float>();
-			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .m_type = type, .m_index = index, .m_value = num });
+			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = num });
 			break;
 		}
 		case PacketData::EntityMetadata::Type::STRING: {
 			std::string str = ReadString16();
-			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .m_type = type, .m_index = index, .m_value = str });
+			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = str });
 			break;
 		}
 		case PacketData::EntityMetadata::Type::ITEM: {
 			ItemStack item;
-			item.m_id = Read<ItemId>();
+			item.id = Read<ItemId>();
 			// TODO: Check if B1.7.3 actually does
 			// this for Entity Metadata too
-			if (item.m_id != Items::Id::INVALID) {
-				item.m_count = Read<ItemAmount>();
-				item.m_data = Read<ItemDamage>();
+			if (item.id != Items::Id::INVALID) {
+				item.count = Read<ItemAmount>();
+				item.data = Read<ItemDamage>();
 			}
-			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .m_type = type, .m_index = index, .m_value = item });
+			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = item });
 			break;
 		}
 		case PacketData::EntityMetadata::Type::COORDINATES: {
 			Int32_3 coordinate(Read<int32_t>(), Read<int32_t>(), Read<int32_t>());
 			metadata.push_back(
-			    PacketData::EntityMetadata::DataEntry{ .m_type = type, .m_index = index, .m_value = coordinate });
+			    PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = coordinate });
 			break;
 		}
 		default:
-			GlobalLogger().m_warn << "NetworkStream::ReadEntityMetadata: Unknown metadata type "
+			GlobalLogger().warn << "NetworkStream::ReadEntityMetadata: Unknown metadata type "
 			                    << static_cast<int>(type);
 			break;
 		}
@@ -225,39 +225,39 @@ void NetworkStream::ReadEntityMetadata(std::vector<PacketData::EntityMetadata::D
 // and it'd take care of things automatically
 void NetworkStream::WriteEntityMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {
 	for (auto& entry : metadata) {
-		uint8_t val = (static_cast<uint8_t>(entry.m_type) << 5) | (entry.m_index & 0x1F);
+		uint8_t val = (static_cast<uint8_t>(entry.type) << 5) | (entry.index & 0x1F);
 		Write(val);
-		switch (entry.m_type) {
+		switch (entry.type) {
 		case PacketData::EntityMetadata::Type::BYTE:
-			Write(std::get<int8_t>(entry.m_value));
+			Write(std::get<int8_t>(entry.value));
 			break;
 		case PacketData::EntityMetadata::Type::SHORT:
-			Write(std::get<int16_t>(entry.m_value));
+			Write(std::get<int16_t>(entry.value));
 			break;
 		case PacketData::EntityMetadata::Type::INTEGER:
-			Write(std::get<int32_t>(entry.m_value));
+			Write(std::get<int32_t>(entry.value));
 			break;
 		case PacketData::EntityMetadata::Type::FLOAT:
-			Write(std::get<float>(entry.m_value));
+			Write(std::get<float>(entry.value));
 			break;
 		case PacketData::EntityMetadata::Type::STRING:
-			WriteString16(std::get<std::string>(entry.m_value));
+			WriteString16(std::get<std::string>(entry.value));
 			break;
 		case PacketData::EntityMetadata::Type::ITEM:
-			Write(std::get<ItemStack>(entry.m_value).m_id);
-			if (std::get<ItemStack>(entry.m_value).m_id != Items::Id::INVALID) {
-				Write(std::get<ItemStack>(entry.m_value).m_count);
-				Write(std::get<ItemStack>(entry.m_value).m_data);
+			Write(std::get<ItemStack>(entry.value).id);
+			if (std::get<ItemStack>(entry.value).id != Items::Id::INVALID) {
+				Write(std::get<ItemStack>(entry.value).count);
+				Write(std::get<ItemStack>(entry.value).data);
 			}
 			break;
 		case PacketData::EntityMetadata::Type::COORDINATES:
-			Write(std::get<Int32_3>(entry.m_value).m_x);
-			Write(std::get<Int32_3>(entry.m_value).m_y);
-			Write(std::get<Int32_3>(entry.m_value).m_z);
+			Write(std::get<Int32_3>(entry.value).x);
+			Write(std::get<Int32_3>(entry.value).y);
+			Write(std::get<Int32_3>(entry.value).z);
 			break;
 		default:
-			GlobalLogger().m_warn << "NetworkStream::WriteEntityMetadata: Unknown metadata type "
-			                    << static_cast<int>(entry.m_type);
+			GlobalLogger().warn << "NetworkStream::WriteEntityMetadata: Unknown metadata type "
+			                    << static_cast<int>(entry.type);
 			break;
 		}
 	}

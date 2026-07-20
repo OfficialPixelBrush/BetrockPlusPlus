@@ -9,7 +9,7 @@
 #include "inventory/inventories.h"
 
 struct PlayerInventoryInteraction : CraftingInventoryInteraction {
-	InventoryPlayer* m_playerInventory;
+	InventoryPlayer* playerInventory;
 
 	PlayerInventoryInteraction(InventoryPlayer* inv, Runtime& gameRuntime);
 	void onClose();

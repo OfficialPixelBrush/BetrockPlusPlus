@@ -27,7 +27,7 @@ private:
 	float attackedAtYaw = 0.0f;
 	int deathTime = 0;
 	int attackTime = 0;
-	float eyeHeight = m_height * 0.85f;
+	float eyeHeight = height * 0.85f;
 	bool canBreatheUnderwater = false;
 
 	void followPath();
@@ -45,11 +45,11 @@ public:
 	bool headInOpaqueBlock();
 	bool headInWater();
 	bool entityAlive() {
-		return !m_isDead && health > 0;
+		return !isDead && health > 0;
 	}
 	bool onLadder() {
 		auto fd = MathHelper::floor_double;
-		return m_world->getBlockId({ fd(m_position.m_x), fd(m_collider.m_minY), fd(m_position.m_z) }) == BLOCK_LADDER;
+		return world->getBlockId({ fd(position.x), fd(collider.minY), fd(position.z) }) == BLOCK_LADDER;
 	}
 	bool canBePushed() override {
 		return true;

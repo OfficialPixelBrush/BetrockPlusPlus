@@ -16,28 +16,28 @@
 class NetherGenerator : public Generator {
 private:
 	// Perlin Noise Generators
-	NoiseOctavesPerlin m_lowNoiseGen;
-	NoiseOctavesPerlin m_highNoiseGen;
-	NoiseOctavesPerlin m_selectorNoiseGen;
-	NoiseOctavesPerlin m_sandGravelNoiseGen;
-	NoiseOctavesPerlin m_stoneNoiseGen;
-	NoiseOctavesPerlin m_continentalnessNoiseGen;
-	NoiseOctavesPerlin m_depthNoiseGen;
+	NoiseOctavesPerlin lowNoiseGen;
+	NoiseOctavesPerlin highNoiseGen;
+	NoiseOctavesPerlin selectorNoiseGen;
+	NoiseOctavesPerlin sandGravelNoiseGen;
+	NoiseOctavesPerlin stoneNoiseGen;
+	NoiseOctavesPerlin continentalnessNoiseGen;
+	NoiseOctavesPerlin depthNoiseGen;
 
 	// Stored noise Fields
-	double m_terrainNoiseField[(CHUNK_WIDTH / 4 + 1) * (CHUNK_HEIGHT / 8 + 1) * (CHUNK_WIDTH / 4 + 1)];
-	std::vector<double> m_lowNoiseField;
-	std::vector<double> m_highNoiseField;
-	std::vector<double> m_selectorNoiseField;
-	std::vector<double> m_continentalnessNoiseField;
-	std::vector<double> m_depthNoiseField;
+	double terrainNoiseField[(CHUNK_WIDTH / 4 + 1) * (CHUNK_HEIGHT / 8 + 1) * (CHUNK_WIDTH / 4 + 1)];
+	std::vector<double> lowNoiseField;
+	std::vector<double> highNoiseField;
+	std::vector<double> selectorNoiseField;
+	std::vector<double> continentalnessNoiseField;
+	std::vector<double> depthNoiseField;
 
-	std::vector<double> m_sandNoise;
-	std::vector<double> m_gravelNoise;
-	std::vector<double> m_stoneNoise;
+	std::vector<double> sandNoise;
+	std::vector<double> gravelNoise;
+	std::vector<double> stoneNoise;
 
 	// Cave Gen
-	CaveGenerator m_caver;
+	CaveGenerator caver;
 
 	void GenerateTerrain(Chunk& chunk);
 	void GenerateTerrainNoise(Int3 cpos, Int3 max);

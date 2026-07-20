@@ -10,39 +10,39 @@
 CraftingInventoryInteraction::CraftingInventoryInteraction(Inventory* sharedInventory, Inventory* craftingInventory,
                                                            InventoryPlayer* playerInventory, Runtime& gameRuntime,
                                                            UInt8_2 gridSize)
-    : InventoryInteraction(sharedInventory), m_craftInventory(craftingInventory), m_playerInventory(playerInventory),
-      m_runtime(gameRuntime), m_gridSize(gridSize) {}
+    : InventoryInteraction(sharedInventory), craftInventory(craftingInventory), playerInventory(playerInventory),
+      runtime(gameRuntime), gridSize(gridSize) {}
 
 void CraftingInventoryInteraction::updateResult() {
-	auto grid = std::span<const ItemStack>(m_craftInventory->m_slots.data() + 1, m_gridSize.total());
-	ItemStack result = m_runtime.m_recipeManager.matchGrid(grid, m_gridSize);
-	m_craftInventory->m_slots[0] = result;
+	auto grid = std::span<const ItemStack>(craftInventory->slots.data() + 1, gridSize.total());
+	ItemStack result = runtime.recipeManager.matchGrid(grid, gridSize);
+	craftInventory->slots[0] = result;
 }
 
 void CraftingInventoryInteraction::finishCraft() {
-	m_craftInventory->m_slots[0] = ItemStack{};
+	craftInventory->slots[0] = ItemStack{};
 
 	// Consume one of each ingredient that went into this craft
-	for (size_t i = 1; i <= m_gridSize.total(); ++i)
-		m_craftInventory->m_slots[i].decrementCount(1);
+	for (size_t i = 1; i <= gridSize.total(); ++i)
+		craftInventory->slots[i].decrementCount(1);
 
 	// The grid changed, there might be another possible craft
 	updateResult();
 }
 
 void CraftingInventoryInteraction::takeResult() {
-	ItemStack& result = m_craftInventory->m_slots[0];
-	if (result.m_id == Items::Id::INVALID)
+	ItemStack& result = craftInventory->slots[0];
+	if (result.id == Items::Id::INVALID)
 		return;
 
-	if (m_carried.m_id == Items::Id::INVALID) {
-		m_carried = result;
-	} else if (m_carried.m_id == result.m_id && m_carried.m_data == result.m_data) {
+	if (carried.id == Items::Id::INVALID) {
+		carried = result;
+	} else if (carried.id == result.id && carried.data == result.data) {
 		// Same type, try merge with cursor
-		int maxStack = Items::GetMaxStack(m_carried.m_id);
-		if (int(m_carried.m_count) + int(result.m_count) > maxStack)
+		int maxStack = Items::GetMaxStack(carried.id);
+		if (int(carried.count) + int(result.count) > maxStack)
 			return;
-		m_carried.m_count += result.m_count;
+		carried.count += result.count;
 	} else {
 		// Cursor holds something else
 		return;
@@ -52,7 +52,7 @@ void CraftingInventoryInteraction::takeResult() {
 }
 
 void CraftingInventoryInteraction::handleCrafting(int slot) {
-	if (slot == 0 || slot > m_gridSize.total())
+	if (slot == 0 || slot > gridSize.total())
 		return;
 
 	updateResult();

@@ -11,11 +11,11 @@
 
 struct CraftingInventoryInteraction : InventoryInteraction {
 private:
-	Inventory* m_craftInventory;
+	Inventory* craftInventory;
 
 public:
-	InventoryPlayer* m_playerInventory;
-	Runtime& m_runtime;
+	InventoryPlayer* playerInventory;
+	Runtime& runtime;
 
 	// We don't do any inventory merging in this class because
 	// sharedInventory, craftingInventory, playerInventory all may or may not be the same thing.
@@ -27,7 +27,7 @@ public:
 	void onShiftClick(int slot) override;
 
 protected:
-	const UInt8_2 m_gridSize;
+	const UInt8_2 gridSize;
 
 	void handleCrafting(int slot);
 	void finishCraft();

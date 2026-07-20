@@ -9,11 +9,11 @@
 #include "logger.h"
 
 std::vector<std::unique_ptr<Command>> CommandManager::registeredCommands;
-Server* CommandManager::m_server = nullptr;
+Server* CommandManager::server = nullptr;
 
 // Register all commands
 void CommandManager::Init(Server* server) {
-	m_server = server;
+	server = server;
 	// Anyone can run these
 	registeredCommands.push_back(std::make_unique<CommandHelp>());
 	registeredCommands.push_back(std::make_unique<CommandTeleport>());
@@ -53,7 +53,7 @@ void CommandManager::Init(Server* server) {
 	registeredCommands.push_back(CommandModified());
 	registeredCommands.push_back(CommandPacket());
 	*/
-	GlobalLogger().m_info << "Registered " << registeredCommands.size() << " command(s)!" << "\n";
+	GlobalLogger().info << "Registered " << registeredCommands.size() << " command(s)!" << "\n";
 }
 
 // Get all registered commands
@@ -87,21 +87,21 @@ void CommandManager::Parse(std::string& cmd_string, PlayerSession& session, Worl
 				// This'll throw an out of bounds error
 				if (registeredCommands[i]->GetLabel() == command.at(0)) {
 					failureReason = registeredCommands[i]->Execute(command, session, world, transferDimension,
-					                                               *m_server);
+					                                               *server);
 					break;
 				}
 			}
 		} catch (const std::exception& e) {
-			GlobalLogger().m_info << e.what() << " on /" << cmd_string << "\n";
+			GlobalLogger().info << e.what() << " on /" << cmd_string << "\n";
 		}
 	}
 
 	Packet::ChatMessage failPkt;
 	if (!failureReason.empty()) {
 		if (failureReason == "Syntax")
-			failPkt.m_message = "§cInvalid Syntax \"" + cmd_string + "\"";
+			failPkt.message = "§cInvalid Syntax \"" + cmd_string + "\"";
 		else
-			failPkt.m_message = "§c" + failureReason;
-		failPkt.Serialize(session.m_stream);
+			failPkt.message = "§c" + failureReason;
+		failPkt.Serialize(session.stream);
 	}
 }

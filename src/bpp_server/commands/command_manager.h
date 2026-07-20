@@ -23,6 +23,6 @@ public:
 	static const std::vector<std::unique_ptr<Command>>& GetRegisteredCommands() noexcept;
 
 private:
-	static Server* m_server;
+	static Server* server;
 	static std::vector<std::unique_ptr<Command>> registeredCommands;
 };

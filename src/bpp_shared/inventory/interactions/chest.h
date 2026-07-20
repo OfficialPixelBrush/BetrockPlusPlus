@@ -9,18 +9,18 @@
 #include "tile_entities/tile_entity.h"
 
 struct ChestInventoryInteraction : InventoryInteraction {
-	InventoryPlayer* m_playerInventory;
-	std::weak_ptr<TileEntityChest> m_chestHandle;
-	InventoryChest* m_chestInventory;
+	InventoryPlayer* playerInventory;
+	std::weak_ptr<TileEntityChest> chestHandle;
+	InventoryChest* chestInventory;
 
 	struct SharedInventory : Inventory {
-		ChestInventoryInteraction* m_owner = nullptr;
+		ChestInventoryInteraction* owner = nullptr;
 		SharedInventory() : Inventory(63) {}
 		void onInventoryChanged() override {
-			if (m_owner)
-				m_owner->writeBack();
+			if (owner)
+				owner->writeBack();
 		}
-	} m_sharedInventory;
+	} sharedInventory;
 
 	ChestInventoryInteraction(InventoryPlayer* pinv, std::shared_ptr<TileEntityChest> chest);
 	virtual ~ChestInventoryInteraction();

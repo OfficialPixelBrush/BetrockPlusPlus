@@ -18,6 +18,6 @@ public:
 	void render(int partialTicks);
 
 private:
-	SDL_Window* m_window;
-	SDL_GPUDevice* m_gpu;
+	SDL_Window* window;
+	SDL_GPUDevice* gpu;
 };

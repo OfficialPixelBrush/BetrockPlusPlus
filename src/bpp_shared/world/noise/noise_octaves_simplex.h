@@ -41,7 +41,7 @@ inline NoiseOctavesSimplex::NoiseOctavesSimplex(Java::Random& rand, int32_t poct
 
 inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField, Int32_2 offset, Int32_2 size,
                                                  Vec2 scale, double lacunarity) {
-	this->GenerateOctaves(noiseField, Vec2{ double(offset.m_x), double(offset.m_y) }, size, scale, lacunarity);
+	this->GenerateOctaves(noiseField, Vec2{ double(offset.x), double(offset.y) }, size, scale, lacunarity);
 }
 
 inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField, Vec2 offset, Int32_2 size, Vec2 scale,
@@ -51,13 +51,13 @@ inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField
 
 inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField, Vec2 offset, Int32_2 size, Vec2 scale,
                                                  double lacunarity, double persistence) {
-	scale.m_x /= 1.5;
-	scale.m_y /= 1.5;
-	if (!noiseField.empty() && int32_t(noiseField.size()) >= size.m_x * size.m_y) {
+	scale.x /= 1.5;
+	scale.y /= 1.5;
+	if (!noiseField.empty() && int32_t(noiseField.size()) >= size.x * size.y) {
 		for (size_t i = 0; i < noiseField.size(); ++i)
 			noiseField[i] = 0.0;
 	} else {
-		noiseField.resize(size_t(size.m_x * size.m_y), 0.0);
+		noiseField.resize(size_t(size.x * size.y), 0.0);
 	}
 
 	double frequency = 1.0;

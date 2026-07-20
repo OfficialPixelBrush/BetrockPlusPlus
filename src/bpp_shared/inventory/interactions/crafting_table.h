@@ -11,18 +11,18 @@
 #include "world.h"
 
 struct CraftingTableInventoryInteraction : CraftingInventoryInteraction {
-	InventoryCraftingTable m_craftInventory;
-	WorldManager& m_world;
-	Int3 m_blockPosition;
+	InventoryCraftingTable craftInventory;
+	WorldManager& world;
+	Int3 blockPosition;
 
 	struct SharedInventory : Inventory {
-		CraftingTableInventoryInteraction* m_owner = nullptr;
+		CraftingTableInventoryInteraction* owner = nullptr;
 		SharedInventory() : Inventory(46) {}
 		void onInventoryChanged() override {
-			if (m_owner)
-				m_owner->writeBack();
+			if (owner)
+				owner->writeBack();
 		}
-	} m_sharedInventory;
+	} sharedInventory;
 
 	CraftingTableInventoryInteraction(InventoryPlayer* pinv, WorldManager& worldMng, Runtime& gameRuntime,
 	                                  Int3 craftingTablePos);

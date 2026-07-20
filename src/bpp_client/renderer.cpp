@@ -9,36 +9,36 @@
 #include "misc.h"
 #include "window.h"
 
-Renderer::Renderer(Window& window) : m_window(window.getHandle()) {
+Renderer::Renderer(Window& window) : window(window.getHandle()) {
 #ifndef NDEBUG
 	const bool debug = true;
 #else
 	const bool debug = false;
 #endif
 
-	m_gpu = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, debug, nullptr);
+	gpu = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, debug, nullptr);
 
-	if (!m_gpu)
+	if (!gpu)
 		THROW_SDL_ERROR("Failed to create GPU device!");
 
-	if (!SDL_ClaimWindowForGPUDevice(m_gpu, m_window))
+	if (!SDL_ClaimWindowForGPUDevice(gpu, window))
 		THROW_SDL_ERROR("Failed to claim window for GPU device!");
 }
 
 Renderer::~Renderer() {
-	SDL_ReleaseWindowFromGPUDevice(m_gpu, m_window);
-	SDL_DestroyGPUDevice(m_gpu);
+	SDL_ReleaseWindowFromGPUDevice(gpu, window);
+	SDL_DestroyGPUDevice(gpu);
 }
 
 void Renderer::render(int partialTicks) {
-	SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(m_gpu);
+	SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(gpu);
 	if (!cmd)
 		return;
 
 	SDL_GPUTexture* swapchainTex;
 	uint32_t width, height;
 
-	if (SDL_WaitAndAcquireGPUSwapchainTexture(cmd, m_window, &swapchainTex, &width, &height)) {
+	if (SDL_WaitAndAcquireGPUSwapchainTexture(cmd, window, &swapchainTex, &width, &height)) {
 		SDL_GPUColorTargetInfo target{};
 		target.texture = swapchainTex;
 		target.clear_color = { 0.1f, 0.2f, 0.4f, 1.0f };

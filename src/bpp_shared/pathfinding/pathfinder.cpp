@@ -16,7 +16,7 @@ Node* Pathfinder::openNode(Int3 pos) {
 	auto [it, inserted] = nodes.try_emplace(pos);
 
 	if (inserted) {
-		it->second.m_pos = pos;
+		it->second.pos = pos;
 	}
 
 	return &it->second;
@@ -31,29 +31,29 @@ void Pathfinder::reset() {
 
 bool Pathfinder::posValid(Int3 pos) {
 	Int3 bottomPos = pos;
-	bottomPos.m_y -= 1;
-	bool isAir = m_world->isAirBlock(pos);
-	bool isNormal = m_world->isBlockNormalCube(bottomPos);
+	bottomPos.y -= 1;
+	bool isAir = world->isAirBlock(pos);
+	bool isNormal = world->isBlockNormalCube(bottomPos);
 	return isAir && isNormal;
 }
 
 std::optional<Int3> Pathfinder::getNeighbour(Int3 from, Int2 dir) {
 	Int3 pos = from;
-	pos.m_x += dir.m_x;
-	pos.m_z += dir.m_y;
+	pos.x += dir.x;
+	pos.z += dir.y;
 
 	// Step up one block if blocked.
-	if (!m_world->isAirBlock(pos)) {
-		pos.m_y++;
+	if (!world->isAirBlock(pos)) {
+		pos.y++;
 
-		if (!m_world->isAirBlock(pos))
+		if (!world->isAirBlock(pos))
 			return std::nullopt;
 	}
 
 	constexpr int MAX_FALL_DISTANCE = 3;
 	int fallDistance = 0;
-	while (m_world->isAirBlock({ pos.m_x, pos.m_y - 1, pos.m_z })) {
-		pos.m_y--;
+	while (world->isAirBlock({ pos.x, pos.y - 1, pos.z })) {
+		pos.y--;
 		fallDistance++;
 
 		if (fallDistance > MAX_FALL_DISTANCE)
@@ -67,7 +67,7 @@ std::optional<Int3> Pathfinder::getNeighbour(Int3 from, Int2 dir) {
 }
 
 inline int manhattan(const Int3& a, const Int3& b) noexcept {
-	return std::abs(a.m_x - b.m_x) + std::abs(a.m_y - b.m_y) + std::abs(a.m_z - b.m_z);
+	return std::abs(a.x - b.x) + std::abs(a.y - b.y) + std::abs(a.z - b.z);
 }
 
 const Int2 CARDINAL_DIRS[4] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
@@ -81,52 +81,52 @@ std::vector<Int3> Pathfinder::findPath(Int3 start, Int3 goal) {
 	Node* startNode = openNode(start);
 	Node* goalNode = openNode(goal);
 
-	startNode->m_g = 0;
-	startNode->m_f = manhattan(start, goal);
+	startNode->g = 0;
+	startNode->f = manhattan(start, goal);
 
-	open.push({ startNode->m_f, startNode });
+	open.push({ startNode->f, startNode });
 
 	while (!open.empty()) {
-		Node* current = open.top().m_node;
+		Node* current = open.top().node;
 		open.pop();
 
-		if (current->m_closed)
+		if (current->closed)
 			continue;
 
-		current->m_closed = true;
+		current->closed = true;
 
 		if (current == goalNode)
 			break;
 
 		for (const auto& dir : CARDINAL_DIRS) {
-			std::optional<Int3> nextPos = getNeighbour(current->m_pos, dir);
+			std::optional<Int3> nextPos = getNeighbour(current->pos, dir);
 			if (!nextPos)
 				continue;
 
 			Node* next = openNode(*nextPos);
 
-			if (next->m_closed)
+			if (next->closed)
 				continue;
 
-			int g = current->m_g + 1;
+			int g = current->g + 1;
 
-			if (g < next->m_g) {
-				next->m_g = g;
-				next->m_f = g + manhattan(*nextPos, goal);
-				next->m_parent = current;
+			if (g < next->g) {
+				next->g = g;
+				next->f = g + manhattan(*nextPos, goal);
+				next->parent = current;
 
-				open.push({ next->m_f, next });
+				open.push({ next->f, next });
 			}
 		}
 	}
 
-	if (!goalNode->m_closed)
+	if (!goalNode->closed)
 		return {};
 
 	std::vector<Int3> path;
 
-	for (Node* n = goalNode; n != startNode; n = n->m_parent)
-		path.push_back(n->m_pos);
+	for (Node* n = goalNode; n != startNode; n = n->parent)
+		path.push_back(n->pos);
 
 	std::reverse(path.begin(), path.end());
 

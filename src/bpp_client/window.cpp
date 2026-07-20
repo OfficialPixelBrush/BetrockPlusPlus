@@ -32,7 +32,7 @@ void Window::sdlLogCallback(void* userdata, int category, SDL_LogPriority priori
 	GlobalLogger().Log(message, level);
 }
 
-Window::Window(Int2 screenSize, const std::string& title, const WindowOptions& options) : m_screenSize(screenSize) {
+Window::Window(Int2 screenSize, const std::string& title, const WindowOptions& options) : screenSize(screenSize) {
 	SDL_SetLogOutputFunction(sdlLogCallback, nullptr);
 #ifndef NDEBUG
 	SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
@@ -54,14 +54,14 @@ Window::Window(Int2 screenSize, const std::string& title, const WindowOptions& o
 		break;
 	}
 
-	m_handle = SDL_CreateWindow(title.c_str(), screenSize.x, screenSize.y, windowFlags);
-	if (!m_handle)
+	handle = SDL_CreateWindow(title.c_str(), screenSize.x, screenSize.y, windowFlags);
+	if (!handle)
 		THROW_SDL_ERROR("Failed to create SDL Window!");
 
 	GlobalLogger().info << "Window initialized!\n";
 }
 
 Window::~Window() {
-	SDL_DestroyWindow(m_handle);
+	SDL_DestroyWindow(handle);
 	SDL_Quit();
 }

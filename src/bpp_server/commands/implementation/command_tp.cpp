@@ -45,8 +45,8 @@ std::string CommandTeleport::Execute(std::vector<std::string>& parameters, Playe
 			SendTeleport(*source, pos);
 
 			Packet::ChatMessage reply;
-			reply.m_message = "§eTeleported " + source->m_username + " to " + pos.str();
-			reply.Serialize(session.m_stream);
+			reply.message = "§eTeleported " + source->username + " to " + pos.str();
+			reply.Serialize(session.stream);
 			return "";
 		} catch (...) {
 			return ERROR_REASON_PARAMETERS;
@@ -58,10 +58,10 @@ std::string CommandTeleport::Execute(std::vector<std::string>& parameters, Playe
 		PlayerSession* dest = server.getSessionByUsername(parameters[offset]).get();
 		if (!dest)
 			return parameters[offset] + " does not exist!";
-		SendTeleport(*source, dest->m_position.m_pos, dest->m_rotation.m_x, dest->m_rotation.m_y);
+		SendTeleport(*source, dest->position.pos, dest->rotation.x, dest->rotation.y);
 		Packet::ChatMessage reply;
-		reply.m_message = "§eTeleported " + source->m_username + " to " + session.m_username;
-		reply.Serialize(session.m_stream);
+		reply.message = "§eTeleported " + source->username + " to " + session.username;
+		reply.Serialize(session.stream);
 		return "";
 	}
 

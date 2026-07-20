@@ -121,21 +121,21 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 // Helper: send a PlayerPositionAndRotation packet to move a session to new coords.
 [[maybe_unused]] static void SendTeleport(PlayerSession& target, Vec3 position, float yaw = 0.0f, float pitch = 0.0f) {
 	// Update our server-side entity position to match the teleport, so that movement broadcasts are correct.
-	target.m_entity->teleport(position, { yaw, pitch });
+	target.entity->teleport(position, { yaw, pitch });
 
 	// Keep server-side position in sync so movement broadcasts are correct.
-	target.m_pendingTeleport = position;
-	target.m_pendingPosition.reset();
+	target.pendingTeleport = position;
+	target.pendingPosition.reset();
 
 	Packet::PlayerPositionAndRotation pkt;
-	pkt.m_position.m_x = position.m_x;
-	pkt.m_position.m_y = position.m_y;
-	pkt.m_camera_y = position.m_y + PLAYER_EYE_HEIGHT;
-	pkt.m_position.m_z = position.m_z;
-	pkt.m_yaw = yaw;
-	pkt.m_pitch = pitch;
-	pkt.m_onGround = false;
-	pkt.Serialize(target.m_stream);
+	pkt.position.x = position.x;
+	pkt.position.y = position.y;
+	pkt.camera_y = position.y + PLAYER_EYE_HEIGHT;
+	pkt.position.z = position.z;
+	pkt.yaw = yaw;
+	pkt.pitch = pitch;
+	pkt.onGround = false;
+	pkt.Serialize(target.stream);
 }
 
 inline Int3 ParseInt3(size_t& offset, std::vector<std::string>& parameters) {

@@ -20,31 +20,31 @@
 // Entity tracker so we can send entity updates to the right players. This is server side only annoyingly enough.
 // I am not entirely happy with how this is done but notch demands we have several packet types for each type of entity
 struct TrackingProfile {
-	int m_range = 0;
-	int m_updateFrequency = 0; // ticks between movement-sync packets
-	bool m_sendVelocity = false;
+	int range = 0;
+	int updateFrequency = 0; // ticks between movement-sync packets
+	bool sendVelocity = false;
 };
 
 struct TrackedEntry {
-	Entity* m_entity = nullptr;
-	TrackingProfile m_profile{};
-	Int32_3 m_lastEncodedPos{};
-	Vec3 m_lastBroadcastMotion{};
-	int32_t m_lastEncodedYaw = 0;
-	int32_t m_lastEncodedPitch = 0;
-	int m_updateCounter = 0;
-	int m_ticksSinceTeleport = 0;
-	std::unordered_set<EntityId> m_visibleTo; // what player ids can see this entity
+	Entity* entity = nullptr;
+	TrackingProfile profile{};
+	Int32_3 lastEncodedPos{};
+	Vec3 lastBroadcastMotion{};
+	int32_t lastEncodedYaw = 0;
+	int32_t lastEncodedPitch = 0;
+	int updateCounter = 0;
+	int ticksSinceTeleport = 0;
+	std::unordered_set<EntityId> visibleTo; // what player ids can see this entity
 };
 
 class Server;
 struct EntityTracker {
-	Server* m_server = nullptr;
+	Server* server = nullptr;
 
-	std::unordered_map<EntityId, TrackedEntry> m_trackedEntities;
-	std::unordered_set<EntityId> m_playerIds;
+	std::unordered_map<EntityId, TrackedEntry> trackedEntities;
+	std::unordered_set<EntityId> playerIds;
 
-	TickTime m_forceTeleportTicks = 400; // 20 seconds
+	TickTime forceTeleportTicks = 400; // 20 seconds
 
 	void tick();
 
@@ -57,11 +57,11 @@ struct EntityTracker {
 	}
 
 	Int16_3 quantizeVelocity(Vec3 v) {
-		return { quantizeVelocityComponent(v.m_x), quantizeVelocityComponent(v.m_y), quantizeVelocityComponent(v.m_z) };
+		return { quantizeVelocityComponent(v.x), quantizeVelocityComponent(v.y), quantizeVelocityComponent(v.z) };
 	}
 
 	Int32_3 quantizePosition(Vec3 p) {
-		return { quantizePositionComponent(p.m_x), quantizePositionComponent(p.m_y), quantizePositionComponent(p.m_z) };
+		return { quantizePositionComponent(p.x), quantizePositionComponent(p.y), quantizePositionComponent(p.z) };
 	}
 
 	int32_t quantizeRotation(float r) {
@@ -70,28 +70,28 @@ struct EntityTracker {
 
 	void trackEntity(Entity* entity) {
 		TrackedEntry entry;
-		entry.m_entity = entity;
-		entry.m_profile = getTrackingProfile(*entity);
+		entry.entity = entity;
+		entry.profile = getTrackingProfile(*entity);
 
-		entry.m_lastEncodedPos = quantizePosition(entity->m_position);
-		entry.m_lastBroadcastMotion = entity->m_velocity;
-		entry.m_lastEncodedPitch = quantizeRotation(entity->m_rotationPitch);
-		entry.m_lastEncodedYaw = quantizeRotation(entity->m_rotationYaw);
+		entry.lastEncodedPos = quantizePosition(entity->position);
+		entry.lastBroadcastMotion = entity->velocity;
+		entry.lastEncodedPitch = quantizeRotation(entity->rotationPitch);
+		entry.lastEncodedYaw = quantizeRotation(entity->rotationYaw);
 
-		m_trackedEntities[entity->m_id] = std::move(entry);
+		trackedEntities[entity->id] = std::move(entry);
 
 		// Let any player already in range see this entity right away
-		auto& newEntry = m_trackedEntities.at(entity->m_id);
-		for (EntityId playerId : m_playerIds) {
-			if (playerId == entity->m_id)
+		auto& newEntry = trackedEntities.at(entity->id);
+		for (EntityId playerId : playerIds) {
+			if (playerId == entity->id)
 				continue;
-			auto playerIt = m_trackedEntities.find(playerId);
-			if (playerIt == m_trackedEntities.end())
+			auto playerIt = trackedEntities.find(playerId);
+			if (playerIt == trackedEntities.end())
 				continue;
 			auto& player = playerIt->second;
-			auto distanceTo = std::abs(std::max(std::abs(entity->m_position.m_x - player.m_entity->m_position.m_x),
-			                                    std::abs(entity->m_position.m_z - player.m_entity->m_position.m_z)));
-			if (distanceTo > newEntry.m_profile.m_range)
+			auto distanceTo = std::abs(std::max(std::abs(entity->position.x - player.entity->position.x),
+			                                    std::abs(entity->position.z - player.entity->position.z)));
+			if (distanceTo > newEntry.profile.range)
 				continue;
 			spawnEntityForPlayer(playerId, newEntry);
 		}
@@ -101,53 +101,53 @@ struct EntityTracker {
 	}
 
 	void untrackEntity(Entity* entity) {
-		auto it = m_trackedEntities.find(entity->m_id);
-		if (it == m_trackedEntities.end())
+		auto it = trackedEntities.find(entity->id);
+		if (it == trackedEntities.end())
 			return;
 
-		despawnEntityForViewers(entity->m_id, it->second);
+		despawnEntityForViewers(entity->id, it->second);
 
-		for (auto& [id, otherEntry] : m_trackedEntities)
-			otherEntry.m_visibleTo.erase(entity->m_id);
+		for (auto& [id, otherEntry] : trackedEntities)
+			otherEntry.visibleTo.erase(entity->id);
 
-		m_trackedEntities.erase(it);
-		m_playerIds.erase(entity->m_id);
+		trackedEntities.erase(it);
+		playerIds.erase(entity->id);
 	}
 
 	void addPlayer(Entity* player) {
 		TrackedEntry entry;
-		entry.m_entity = player;
-		entry.m_profile = getTrackingProfile(*player);
+		entry.entity = player;
+		entry.profile = getTrackingProfile(*player);
 
-		entry.m_lastEncodedPos = quantizePosition(player->m_position);
-		entry.m_lastBroadcastMotion = player->m_velocity;
-		entry.m_lastEncodedPitch = quantizeRotation(player->m_rotationPitch);
-		entry.m_lastEncodedYaw = quantizeRotation(player->m_rotationYaw);
+		entry.lastEncodedPos = quantizePosition(player->position);
+		entry.lastBroadcastMotion = player->velocity;
+		entry.lastEncodedPitch = quantizeRotation(player->rotationPitch);
+		entry.lastEncodedYaw = quantizeRotation(player->rotationYaw);
 
-		m_trackedEntities[player->m_id] = std::move(entry);
-		m_playerIds.insert(player->m_id);
-		auto& newPlayerEntry = m_trackedEntities.at(player->m_id);
+		trackedEntities[player->id] = std::move(entry);
+		playerIds.insert(player->id);
+		auto& newPlayerEntry = trackedEntities.at(player->id);
 
 		// This new player should immediately see anything already in range
-		for (auto& [entityId, entityEntry] : m_trackedEntities) {
-			if (entityId == player->m_id)
+		for (auto& [entityId, entityEntry] : trackedEntities) {
+			if (entityId == player->id)
 				continue;
-			auto distanceTo = std::abs(std::max(std::abs(entityEntry.m_entity->m_position.m_x - player->m_position.m_x),
-			                                    std::abs(entityEntry.m_entity->m_position.m_z - player->m_position.m_z)));
-			if (distanceTo > entityEntry.m_profile.m_range)
+			auto distanceTo = std::abs(std::max(std::abs(entityEntry.entity->position.x - player->position.x),
+			                                    std::abs(entityEntry.entity->position.z - player->position.z)));
+			if (distanceTo > entityEntry.profile.range)
 				continue;
-			spawnEntityForPlayer(player->m_id, entityEntry);
+			spawnEntityForPlayer(player->id, entityEntry);
 		}
 
-		for (EntityId otherPlayerId : m_playerIds) {
-			if (otherPlayerId == player->m_id)
+		for (EntityId otherPlayerId : playerIds) {
+			if (otherPlayerId == player->id)
 				continue;
-			auto otherIt = m_trackedEntities.find(otherPlayerId);
-			if (otherIt == m_trackedEntities.end())
+			auto otherIt = trackedEntities.find(otherPlayerId);
+			if (otherIt == trackedEntities.end())
 				continue;
-			auto distanceTo = std::abs(std::max(std::abs(player->m_position.m_x - otherIt->second.m_entity->m_position.m_x),
-			                                    std::abs(player->m_position.m_z - otherIt->second.m_entity->m_position.m_z)));
-			if (distanceTo > newPlayerEntry.m_profile.m_range)
+			auto distanceTo = std::abs(std::max(std::abs(player->position.x - otherIt->second.entity->position.x),
+			                                    std::abs(player->position.z - otherIt->second.entity->position.z)));
+			if (distanceTo > newPlayerEntry.profile.range)
 				continue;
 			spawnEntityForPlayer(otherPlayerId, newPlayerEntry);
 		}
@@ -170,7 +170,7 @@ struct EntityTracker {
 
 	// With my strict goal of keeping strict separation we cannot put this as a virtual in the actual entity class itself
 	TrackingProfile getTrackingProfile(Entity& entity) {
-		const EntityType& type = entity.m_type;
+		const EntityType& type = entity.type;
 		switch (type) {
 		case EntityType::NONE:
 			return { 0, 0, false };
@@ -217,7 +217,7 @@ struct EntityTracker {
 		default:
 			return { 0, 0, false };
 
-			GlobalLogger().m_warn << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) +
+			GlobalLogger().warn << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) +
 			                           "'\n";
 		}
 	}
