@@ -18,7 +18,7 @@ struct FallingBlockEntity : public Entity {
 		this->width = 0.98;
 		this->yOffset = height / 2.0f;
 		this->preventEntitySpawning = true;
-		rebuildCollider();
+		RebuildCollider();
 
 		if (_block == BLOCK_SAND)
 			type = EntityType::FALLING_SAND;
@@ -26,20 +26,20 @@ struct FallingBlockEntity : public Entity {
 			type = EntityType::FALLING_GRAVEL;
 	}
 
-	void tick() override;
-	std::optional<Tag> serializeToNBT() override {
-		auto root = Entity::serializeToNBT();
+	void Tick() override;
+	std::optional<Tag> SerializeToNbt() override {
+		auto root = Entity::SerializeToNbt();
 		if (!root || this->block == BLOCK_AIR)
 			return std::nullopt;
-		Tag Tile;
-		Tile.type = TAG_BYTE;
-		Tile.name = "Tile";
-		Tile.byteValue = this->block;
-		root->compound["Tile"] = Tile;
+		Tag tile;
+		tile.type = TAG_BYTE;
+		tile.name = "Tile";
+		tile.byteValue = this->block;
+		root->compound["Tile"] = tile;
 		return root;
 	}
-	void loadFromNBT(Tag& _nbt) override {
-		Entity::loadFromNBT(_nbt);
-		this->block = BlockType(_nbt.compound["Tile"].getByte() & 255);
+	void LoadFromNbt(Tag& _nbt) override {
+		Entity::LoadFromNbt(_nbt);
+		this->block = BlockType(_nbt.compound["Tile"].GetByte() & 255);
 	}
 };

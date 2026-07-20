@@ -22,5 +22,5 @@ struct BlockBehavior {
 };
 extern BlockBehavior blockBehaviors[256];
 
-void initialize();
+void Initialize();
 } // namespace ServerBlock

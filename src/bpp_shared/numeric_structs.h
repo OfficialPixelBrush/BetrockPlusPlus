@@ -153,13 +153,13 @@ struct TriNumber {
 		return data[_axis];
 	}
 
-	std::string str() const {
+	std::string Str() const {
 		std::ostringstream oss;
 		oss << *this; // Use the overloaded << operator
 		return oss.str();
 	}
 
-	T total() const {
+	T Total() const {
 		return x * y * z;
 	}
 };
@@ -301,13 +301,13 @@ struct BiNumber {
 		return _os;
 	}
 
-	std::string str() const {
+	std::string Str() const {
 		std::ostringstream oss;
 		oss << *this; // Use the overloaded << operator
 		return oss.str();
 	}
 
-	T total() const {
+	T Total() const {
 		return x * y;
 	}
 };
@@ -382,13 +382,13 @@ struct SlimInt3 {
 		return _os;
 	}
 
-	std::string str() const {
+	std::string Str() const {
 		std::ostringstream oss;
 		oss << *this; // Use the overloaded << operator
 		return oss.str();
 	}
 
-	T total() const {
+	T Total() const {
 		return x * y * z;
 	}
 };

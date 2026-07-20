@@ -11,7 +11,7 @@
 #include "logger/logger.h"
 #include <iomanip>
 
-bool PacketDispatcher::dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld, Server& _server) {
+bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld, Server& _server) {
 	switch (_packetId) {
 	case PacketId::KeepAlive: {
 		Packet::KeepAlive pkt;
@@ -22,8 +22,8 @@ bool PacketDispatcher::dispatch(PacketId _packetId, PlayerSession& _session, Wor
 	case PacketId::ChatMessage: {
 		Packet::ChatMessage pkt;
 		pkt.Deserialize(_session.stream);
-		HandlePacket::ChatMessage(pkt, _session, _server.players, _sessionWorld, _server.command_manager,
-		                          [&_server](PlayerSession& _s) { _server.transferPlayerDimension(_s); });
+		HandlePacket::ChatMessage(pkt, _session, _server.players, _sessionWorld, _server.commandManager,
+		                          [&_server](PlayerSession& _s) { _server.TransferPlayerDimension(_s); });
 		break;
 	}
 	case PacketId::SetTime: {
@@ -142,7 +142,7 @@ bool PacketDispatcher::dispatch(PacketId _packetId, PlayerSession& _session, Wor
 	}
 	default:
 		GlobalLogger().warn << "UNHANDLED packet 0x" << std::hex << static_cast<int>(_packetId) << "\n";
-		_server.connStateManager.disconnectPlayer(_session, "Unknown packet", _server);
+		_server.connStateManager.DisconnectPlayer(_session, "Unknown packet", _server);
 		return false;
 	}
 	return true;

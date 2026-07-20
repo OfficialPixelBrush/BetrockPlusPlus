@@ -18,7 +18,7 @@
 #endif
 
 namespace ServerSocketManager {
-inline void closeSocket(int _socket) {
+inline void CloseSocket(int _socket) {
 #if defined(_WIN32) || defined(_WIN64)
 	closesocket(socket);
 	WSACleanup();
@@ -27,7 +27,7 @@ inline void closeSocket(int _socket) {
 #endif
 }
 
-inline int createServerSocket(int _port) {
+inline int CreateServerSocket(int _port) {
 	int serverSocket = -1;
 #if defined(_WIN32) || defined(_WIN64)
 	WSADATA wsaData;
@@ -61,7 +61,7 @@ inline int createServerSocket(int _port) {
 	return serverSocket;
 }
 
-inline int createClientSocket(int _socket = -1) {
+inline int CreateClientSocket(int _socket = -1) {
 #if defined(_WIN32) || defined(_WIN64)
 	SOCKET rawSocket = accept(socket, nullptr, nullptr);
 	if (rawSocket == INVALID_SOCKET)

@@ -12,7 +12,7 @@
 #include "numeric_structs.h"
 #include "pathfinder.hpp"
 
-Node* Pathfinder::openNode(Int3 _pos) {
+Node* Pathfinder::OpenNode(Int3 _pos) {
 	auto [it, inserted] = nodes.try_emplace(_pos);
 
 	if (inserted) {
@@ -22,37 +22,37 @@ Node* Pathfinder::openNode(Int3 _pos) {
 	return &it->second;
 }
 
-void Pathfinder::reset() {
+void Pathfinder::Reset() {
 	while (!open.empty())
 		open.pop();
 
 	nodes.clear();
 }
 
-bool Pathfinder::posValid(Int3 _pos) {
+bool Pathfinder::PosValid(Int3 _pos) {
 	Int3 bottomPos = _pos;
 	bottomPos.y -= 1;
-	bool isAir = world->isAirBlock(_pos);
-	bool isNormal = world->isBlockNormalCube(bottomPos);
+	bool isAir = world->IsAirBlock(_pos);
+	bool isNormal = world->IsBlockNormalCube(bottomPos);
 	return isAir && isNormal;
 }
 
-std::optional<Int3> Pathfinder::getNeighbour(Int3 _from, Int2 _dir) {
+std::optional<Int3> Pathfinder::GetNeighbour(Int3 _from, Int2 _dir) {
 	Int3 pos = _from;
 	pos.x += _dir.x;
 	pos.z += _dir.y;
 
 	// Step up one block if blocked.
-	if (!world->isAirBlock(pos)) {
+	if (!world->IsAirBlock(pos)) {
 		pos.y++;
 
-		if (!world->isAirBlock(pos))
+		if (!world->IsAirBlock(pos))
 			return std::nullopt;
 	}
 
 	constexpr int MAX_FALL_DISTANCE = 3;
 	int fallDistance = 0;
-	while (world->isAirBlock({ pos.x, pos.y - 1, pos.z })) {
+	while (world->IsAirBlock({ pos.x, pos.y - 1, pos.z })) {
 		pos.y--;
 		fallDistance++;
 
@@ -60,7 +60,7 @@ std::optional<Int3> Pathfinder::getNeighbour(Int3 _from, Int2 _dir) {
 			return std::nullopt;
 	}
 
-	if (!posValid(pos))
+	if (!PosValid(pos))
 		return std::nullopt;
 
 	return pos;
@@ -72,14 +72,14 @@ inline int Manhattan(const Int3& _a, const Int3& _b) noexcept {
 
 const Int2 CARDINAL_DIRS[4] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
 
-std::vector<Int3> Pathfinder::findPath(Int3 _start, Int3 _goal) {
-	reset();
+std::vector<Int3> Pathfinder::FindPath(Int3 _start, Int3 _goal) {
+	Reset();
 
-	if (!posValid(_start) || !posValid(_goal))
+	if (!PosValid(_start) || !PosValid(_goal))
 		return {};
 
-	Node* startNode = openNode(_start);
-	Node* goalNode = openNode(_goal);
+	Node* startNode = OpenNode(_start);
+	Node* goalNode = OpenNode(_goal);
 
 	startNode->g = 0;
 	startNode->f = Manhattan(_start, _goal);
@@ -99,11 +99,11 @@ std::vector<Int3> Pathfinder::findPath(Int3 _start, Int3 _goal) {
 			break;
 
 		for (const auto& dir : CARDINAL_DIRS) {
-			std::optional<Int3> nextPos = getNeighbour(current->pos, dir);
+			std::optional<Int3> nextPos = GetNeighbour(current->pos, dir);
 			if (!nextPos)
 				continue;
 
-			Node* next = openNode(*nextPos);
+			Node* next = OpenNode(*nextPos);
 
 			if (next->closed)
 				continue;

@@ -189,38 +189,38 @@ ItemDamage GetMaterialUses(ToolMaterial _material) {
 	}
 }
 
-void harmTool(ItemStack* _stack) {
+void HarmTool(ItemStack* _stack) {
 	_stack->data++;
-	if (_stack->data >= toolProperties[_stack->id].max_uses) {
-		_stack->decrementCount(1);
+	if (_stack->data >= toolProperties[_stack->id].maxUses) {
+		_stack->DecrementCount(1);
 	}
 }
 
 void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
-	BlockType b = _world.getBlockId(_pos);
+	BlockType b = _world.GetBlockId(_pos);
 	if (b == BLOCK_GRASS || b == BLOCK_DIRT) {
-		_world.setBlock(_pos, BLOCK_FARMLAND);
+		_world.SetBlock(_pos, BLOCK_FARMLAND);
 	}
-	harmTool(_stack);
+	HarmTool(_stack);
 }
 
 void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
-	_pos = Blocks::getAdjacentBlockPos(_pos, _face);
-	_world.setBlock(_pos, BLOCK_FIRE);
-	harmTool(_stack);
+	_pos = Blocks::GetAdjacentBlockPos(_pos, _face);
+	_world.SetBlock(_pos, BLOCK_FIRE);
+	HarmTool(_stack);
 }
 
 void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
 	Int3 topPos = _pos;
 	topPos.y += 1;
-	_world.setBlock(topPos, BLOCK_AIR);
+	_world.SetBlock(topPos, BLOCK_AIR);
 	std::cout << "lol!!" << std::endl;
 	for (auto entity : _world.entityManager.entities) {
 		std::cout << (int)entity->type << std::endl;
 		if (entity->type == EntityType::CREEPER) {
 			auto finder = std::static_pointer_cast<MobileEntity>(entity);
 			std::cout << "Setting goal to" << topPos << std::endl;
-			finder->setGoal(topPos);
+			finder->SetGoal(topPos);
 		}
 	}
 }
@@ -276,10 +276,10 @@ void AttackWithItem(Entity& _targetEntity, ItemStack* _stack) {
 		damage = CalculateDamage(toolProperties[_stack->id].type, MaterialToLevel(toolProperties[_stack->id].material));
 	InflictDamage(_targetEntity, damage);
 	GlobalLogger().info << "Dealt " << damage << " damage to " << _targetEntity.id << "!\n";
-	harmTool(_stack);
+	HarmTool(_stack);
 }
 
-void registerAll() {
+void RegisterAll() {
 	itemBehavior[Items::Id::HOE_WOOD] = ItemBehavior{ .onBlockUse = UseHoe };
 	itemBehavior[Items::Id::HOE_STONE] = ItemBehavior{ .onBlockUse = UseHoe };
 	itemBehavior[Items::Id::HOE_IRON] = ItemBehavior{ .onBlockUse = UseHoe };
@@ -396,21 +396,21 @@ void registerAll() {
 	};
 	// Apply max uses based on material
 	for (auto& toolProperty : toolProperties) {
-		toolProperty.second.max_uses = GetMaterialUses(toolProperty.second.material);
+		toolProperty.second.maxUses = GetMaterialUses(toolProperty.second.material);
 	}
 	// Misc tools
 	toolProperties[Items::Id::FLINT_AND_STEEL] = ToolProperties{ .type = ToolType::None,
 		                                                         .material = ToolMaterial::None,
-		                                                         .max_uses = DURABILITY_FLINT_AND_STEEL };
+		                                                         .maxUses = DURABILITY_FLINT_AND_STEEL };
 	toolProperties[Items::Id::SHEARS] = ToolProperties{ .type = ToolType::None,
 		                                                .material = ToolMaterial::None,
-		                                                .max_uses = DURABILITY_SHEARS };
+		                                                .maxUses = DURABILITY_SHEARS };
 	toolProperties[Items::Id::BOW] = ToolProperties{ .type = ToolType::None,
 		                                             .material = ToolMaterial::None,
-		                                             .max_uses = DURABILITY_BOW };
+		                                             .maxUses = DURABILITY_BOW };
 	toolProperties[Items::Id::FISHING_ROD] = ToolProperties{ .type = ToolType::None,
 		                                                     .material = ToolMaterial::None,
-		                                                     .max_uses = DURABILITY_FISHING_ROD };
+		                                                     .maxUses = DURABILITY_FISHING_ROD };
 
 	// Item behaviors
 	for (auto& toolProperty : toolProperties) {
@@ -435,22 +435,22 @@ void registerAll() {
 
 	itemBehavior[SUGARCANE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos,
 	                                        PacketData::FaceDirection _face) {
-		Int3 placePos = Blocks::getAdjacentBlockPos(_pos, _face);
-		if (!Blocks::canSugarcaneSurviveAt(_world, placePos))
+		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
+		if (!Blocks::CanSugarcaneSurviveAt(_world, placePos))
 			return;
 
-		_world.setBlock(placePos, BLOCK_SUGARCANE);
-		_stack->decrementCount(1);
+		_world.SetBlock(placePos, BLOCK_SUGARCANE);
+		_stack->DecrementCount(1);
 	};
 
 	itemBehavior[SIGN].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
-		Int3 placePos = Blocks::getAdjacentBlockPos(_pos, _face);
+		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
 		if (_face == PacketData::FaceDirection::Y_PLUS)
-			_world.setBlock(placePos, BLOCK_SIGN); //TODO: facing meta
+			_world.SetBlock(placePos, BLOCK_SIGN); //TODO: facing meta
 		else
-			_world.setBlock(placePos, BLOCK_SIGN_WALL, _face);
+			_world.SetBlock(placePos, BLOCK_SIGN_WALL, _face);
 
-		_stack->decrementCount(1);
+		_stack->DecrementCount(1);
 	};
 };
 }; // namespace Items

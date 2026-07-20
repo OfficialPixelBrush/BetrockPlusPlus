@@ -14,26 +14,26 @@
 #include <vector>
 
 NetworkStream::NetworkStream(int _pClientSocket) {
-	client_socket = _pClientSocket;
+	clientSocket = _pClientSocket;
 }
 
 NetworkStream::~NetworkStream() {
-	if (client_socket != INVALID_SOCKET) {
+	if (clientSocket != INVALID_SOCKET) {
 #if defined(_WIN32) || defined(_WIN64)
 		shutdown(client_socket, SD_BOTH);
 		closesocket(client_socket);
 		// TODO: Clean-up WSA when the server closes
 		// WSACleanup();
 #else
-		shutdown(client_socket, SHUT_RDWR);
-		close(client_socket);
+		shutdown(clientSocket, SHUT_RDWR);
+		close(clientSocket);
 #endif
-		client_socket = INVALID_SOCKET;
+		clientSocket = INVALID_SOCKET;
 	}
 }
 
-void NetworkStream::flushWriteBufferBlocking() {
-	if (writeBuffer.empty() || client_socket == INVALID_SOCKET)
+void NetworkStream::FlushWriteBufferBlocking() {
+	if (writeBuffer.empty() || clientSocket == INVALID_SOCKET)
 		return;
 
 	// Switch to blocking mode
@@ -41,13 +41,13 @@ void NetworkStream::flushWriteBufferBlocking() {
 	u_long mode = 0;
 	ioctlsocket(client_socket, FIONBIO, &mode);
 #else
-	int flags = fcntl(client_socket, F_GETFL, 0);
-	fcntl(client_socket, F_SETFL, flags & ~O_NONBLOCK);
+	int flags = fcntl(clientSocket, F_GETFL, 0);
+	fcntl(clientSocket, F_SETFL, flags & ~O_NONBLOCK);
 #endif
 
 	size_t sent = 0;
 	while (sent < writeBuffer.size()) {
-		int result = send(client_socket, reinterpret_cast<const char*>(writeBuffer.data() + sent),
+		int result = send(clientSocket, reinterpret_cast<const char*>(writeBuffer.data() + sent),
 		                  static_cast<int>(writeBuffer.size() - sent), 0);
 		if (result <= 0)
 			break;
@@ -60,10 +60,10 @@ void NetworkStream::flushWriteBufferBlocking() {
 	shutdown(client_socket, SD_SEND);
 	closesocket(client_socket);
 #else
-	shutdown(client_socket, SHUT_WR);
-	close(client_socket);
+	shutdown(clientSocket, SHUT_WR);
+	close(clientSocket);
 #endif
-	client_socket = INVALID_SOCKET;
+	clientSocket = INVALID_SOCKET;
 }
 
 // String-8 Handling
@@ -125,7 +125,7 @@ size_t NetworkStream::ReadBytes(uint8_t* _buf, size_t _len) {
 
 	// 2. try recv until we either fill or would block
 	while (received < _len) {
-		int result = recv(client_socket, reinterpret_cast<char*>(_buf + received), static_cast<int>(_len - received), 0);
+		int result = recv(clientSocket, reinterpret_cast<char*>(_buf + received), static_cast<int>(_len - received), 0);
 
 		if (result > 0) {
 			received += result;
@@ -153,7 +153,7 @@ size_t NetworkStream::ReadBytes(uint8_t* _buf, size_t _len) {
 
 void NetworkStream::WriteBytes(const uint8_t* _buf, size_t _len) {
 	// Append to the write buffer -- no syscall here.
-	// The actual send() happens once per tick in flushWriteBuffer().
+	// The actual send() happens once per Tick in flushWriteBuffer().
 	writeBuffer.insert(writeBuffer.end(), _buf, _buf + _len);
 }
 
@@ -264,12 +264,12 @@ void NetworkStream::WriteEntityMetadata(const std::vector<PacketData::EntityMeta
 	Write(PacketData::EntityMetadata::END);
 }
 
-bool NetworkStream::flushWriteBuffer() {
+bool NetworkStream::FlushWriteBuffer() {
 	if (writeBuffer.empty())
 		return connected;
 	size_t sent = 0;
 	while (sent < writeBuffer.size()) {
-		int result = send(client_socket, reinterpret_cast<const char*>(writeBuffer.data() + sent),
+		int result = send(clientSocket, reinterpret_cast<const char*>(writeBuffer.data() + sent),
 		                  static_cast<int>(writeBuffer.size() - sent), 0);
 		if (result < 0) {
 #if defined(_WIN32) || defined(_WIN64)
@@ -296,7 +296,7 @@ bool NetworkStream::flushWriteBuffer() {
 	return connected;
 }
 
-bool NetworkStream::hasData() {
+bool NetworkStream::HasData() {
 #if defined(_WIN32) || defined(_WIN64)
 	// Check rollback buffer first, then the socket.
 	if (!readBackBuffer.empty())
@@ -312,7 +312,7 @@ bool NetworkStream::hasData() {
 	if (!readBackBuffer.empty())
 		return true;
 	int bytesAvailable = 0;
-	if (ioctl(client_socket, FIONREAD, &bytesAvailable) < 0) {
+	if (ioctl(clientSocket, FIONREAD, &bytesAvailable) < 0) {
 		connected = false;
 		return false;
 	}

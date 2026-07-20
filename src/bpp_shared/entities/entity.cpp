@@ -11,21 +11,21 @@
 #include <algorithm>
 #include <cmath>
 
-bool Entity::pushOutOfBlocks(Vec3 _pos) {
-	int bx = MathHelper::floor_double(_pos.x);
-	int by = MathHelper::floor_double(_pos.y);
-	int bz = MathHelper::floor_double(_pos.z);
+bool Entity::PushOutOfBlocks(Vec3 _pos) {
+	int bx = MathHelper::FloorDouble(_pos.x);
+	int by = MathHelper::FloorDouble(_pos.y);
+	int bz = MathHelper::FloorDouble(_pos.z);
 	double fracX = _pos.x - double(bx);
 	double fracY = _pos.y - double(by);
 	double fracZ = _pos.z - double(bz);
 
-	if (world->isBlockNormalCube({ bx, by, bz })) {
-		bool openNegX = !world->isBlockNormalCube({ bx - 1, by, bz });
-		bool openPosX = !world->isBlockNormalCube({ bx + 1, by, bz });
-		bool openNegY = !world->isBlockNormalCube({ bx, by - 1, bz });
-		bool openPosY = !world->isBlockNormalCube({ bx, by + 1, bz });
-		bool openNegZ = !world->isBlockNormalCube({ bx, by, bz - 1 });
-		bool openPosZ = !world->isBlockNormalCube({ bx, by, bz + 1 });
+	if (world->IsBlockNormalCube({ bx, by, bz })) {
+		bool openNegX = !world->IsBlockNormalCube({ bx - 1, by, bz });
+		bool openPosX = !world->IsBlockNormalCube({ bx + 1, by, bz });
+		bool openNegY = !world->IsBlockNormalCube({ bx, by - 1, bz });
+		bool openPosY = !world->IsBlockNormalCube({ bx, by + 1, bz });
+		bool openNegZ = !world->IsBlockNormalCube({ bx, by, bz - 1 });
+		bool openPosZ = !world->IsBlockNormalCube({ bx, by, bz + 1 });
 
 		int8_t direction = -1;
 		double closest = 9999.0;
@@ -55,7 +55,7 @@ bool Entity::pushOutOfBlocks(Vec3 _pos) {
 			direction = 5;
 		}
 
-		float pushSpeed = rand.nextFloat() * 0.2f + 0.1f;
+		float pushSpeed = rand.NextFloat() * 0.2f + 0.1f;
 		if (direction == 0)
 			velocity.x = double(-pushSpeed);
 		if (direction == 1)
@@ -72,11 +72,11 @@ bool Entity::pushOutOfBlocks(Vec3 _pos) {
 
 	return false;
 }
-void Entity::onCollideWithPlayer(PlayerEntity& _entity) {
+void Entity::OnCollideWithPlayer(PlayerEntity& _entity) {
 	return;
 }
 
-void Entity::tick() {
+void Entity::Tick() {
 	ticksExisted++;
 
 	if (this->vehicle != nullptr && this->vehicle->isDead) {
@@ -84,7 +84,7 @@ void Entity::tick() {
 	}
 
 	// Returns if we are in water and applies a push to our entity
-	if (world->handleFluidAcceleration(getFluidCollider(), Material::Water(), *this)) {
+	if (world->HandleFluidAcceleration(GetFluidCollider(), Material::Water(), *this)) {
 		fallDistance = 0.0;
 		inWater = true;
 		fireTicks = 0;
@@ -99,16 +99,16 @@ void Entity::tick() {
 			fireTicks = std::max(0, fireTicks);
 		} else {
 			if (fireTicks % 20 == 0)
-				attackEntityFrom(nullptr, 1);
+				AttackEntityFrom(nullptr, 1);
 			fireTicks--;
 		}
 	}
 
 	// Returns if we are in lava
-	inLava = world->isMaterialInAABB(getLavaCollider(), Material::Lava());
+	inLava = world->IsMaterialInAabb(GetLavaCollider(), Material::Lava());
 	if (inLava) {
 		if (!isImmuneToFire) {
-			attackEntityFrom(nullptr, 4);
+			AttackEntityFrom(nullptr, 4);
 			fireTicks = 600;
 		}
 	}
@@ -120,7 +120,7 @@ void Entity::tick() {
 	isFirstUpdate = false;
 }
 
-void Entity::applyKnockback(Vec3 _direction) {
+void Entity::ApplyKnockback(Vec3 _direction) {
 	velocity.x *= KNOCKBACK_VELOCITY_DAMPENING;
 	velocity.y *= KNOCKBACK_VELOCITY_DAMPENING;
 	velocity.z *= KNOCKBACK_VELOCITY_DAMPENING;
@@ -130,7 +130,7 @@ void Entity::applyKnockback(Vec3 _direction) {
 	forceVelocityUpdate = true;
 }
 
-void Entity::applyInput(float _acceleration) {
+void Entity::ApplyInput(float _acceleration) {
 	float length = std::sqrt((input.x * input.x) + (input.y * input.y));
 
 	if (length < 0.01f)
@@ -150,7 +150,7 @@ void Entity::applyInput(float _acceleration) {
 	velocity.z += (input.y * cosYaw + input.x * sinYaw) * _acceleration;
 }
 
-void Entity::move(Vec3& _velocity) {
+void Entity::Move(Vec3& _velocity) {
 	ySize *= 0.4f;
 
 	if (inWeb) {
@@ -171,7 +171,7 @@ void Entity::move(Vec3& _velocity) {
 		const double step = 0.05;
 
 		auto groundBelow = [&](double _dx, double _dz) -> bool {
-			return !world->getCollidingBoundingBoxes(collider.offset(_dx, -1.0, _dz)).empty();
+			return !world->GetCollidingBoundingBoxes(collider.Offset(_dx, -1.0, _dz)).empty();
 		};
 
 		// Clamp on the X and Z axes to avoid falling off edges while sneaking
@@ -197,28 +197,28 @@ void Entity::move(Vec3& _velocity) {
 		original.z = _velocity.z;
 	}
 
-	auto sweptCollider = world->getCollidingBoundingBoxes(collider.addCoord(_velocity.x, _velocity.y, _velocity.z));
+	auto sweptCollider = world->GetCollidingBoundingBoxes(collider.AddCoord(_velocity.x, _velocity.y, _velocity.z));
 
 	// Resolve Y first
 	for (auto& col : sweptCollider) {
-		_velocity.y = col.calculateYOffset(collider, _velocity.y);
+		_velocity.y = col.CalculateYOffset(collider, _velocity.y);
 	}
-	collider = collider.offset(0.0, _velocity.y, 0.0);
+	collider = collider.Offset(0.0, _velocity.y, 0.0);
 
-	// Check if we are on ground or landed this tick
+	// Check if we are on ground or landed this Tick
 	bool canStepUp = onGround || (original.y != _velocity.y && original.y < 0.0);
 
 	// Resolve X
 	for (auto& col : sweptCollider) {
-		_velocity.x = col.calculateXOffset(collider, _velocity.x);
+		_velocity.x = col.CalculateXOffset(collider, _velocity.x);
 	}
-	collider = collider.offset(_velocity.x, 0.0, 0.0);
+	collider = collider.Offset(_velocity.x, 0.0, 0.0);
 
 	// Resolve Z
 	for (auto& col : sweptCollider) {
-		_velocity.z = col.calculateZOffset(collider, _velocity.z);
+		_velocity.z = col.CalculateZOffset(collider, _velocity.z);
 	}
-	collider = collider.offset(0.0, 0.0, _velocity.z);
+	collider = collider.Offset(0.0, 0.0, _velocity.z);
 
 	collidedHorizontally = original.x != _velocity.x || original.z != _velocity.z;
 
@@ -229,33 +229,33 @@ void Entity::move(Vec3& _velocity) {
 		AABB resolvedCollider = collider;
 		collider = originalCollider;
 
-		auto stepUpSweptCollider = world->getCollidingBoundingBoxes(
-		    collider.addCoord(_velocity.x, _velocity.y, _velocity.z));
+		auto stepUpSweptCollider = world->GetCollidingBoundingBoxes(
+		    collider.AddCoord(_velocity.x, _velocity.y, _velocity.z));
 
 		// Resolve Y first
 		for (auto& col : stepUpSweptCollider) {
-			_velocity.y = col.calculateYOffset(collider, _velocity.y);
+			_velocity.y = col.CalculateYOffset(collider, _velocity.y);
 		}
-		collider = collider.offset(0.0, _velocity.y, 0.0);
+		collider = collider.Offset(0.0, _velocity.y, 0.0);
 
 		// Resolve X
 		for (auto& col : stepUpSweptCollider) {
-			_velocity.x = col.calculateXOffset(collider, _velocity.x);
+			_velocity.x = col.CalculateXOffset(collider, _velocity.x);
 		}
-		collider = collider.offset(_velocity.x, 0.0, 0.0);
+		collider = collider.Offset(_velocity.x, 0.0, 0.0);
 
 		// Resolve Z
 		for (auto& col : stepUpSweptCollider) {
-			_velocity.z = col.calculateZOffset(collider, _velocity.z);
+			_velocity.z = col.CalculateZOffset(collider, _velocity.z);
 		}
-		collider = collider.offset(0.0, 0.0, _velocity.z);
+		collider = collider.Offset(0.0, 0.0, _velocity.z);
 
 		// Snap down
 		double downY = -stepHeight;
 		for (auto& col : stepUpSweptCollider) {
-			downY = col.calculateYOffset(collider, downY);
+			downY = col.CalculateYOffset(collider, downY);
 		}
-		collider = collider.offset(0.0, downY, 0.0);
+		collider = collider.Offset(0.0, downY, 0.0);
 
 		// Keep whichever collision path moved further horizontally
 		if (stepUpMovement.x * stepUpMovement.x + stepUpMovement.z * stepUpMovement.z >=
@@ -286,21 +286,21 @@ void Entity::move(Vec3& _velocity) {
 	if (original.z != _velocity.z)
 		_velocity.z = 0.0;
 
-	updateFallState(_velocity.y);
+	UpdateFallState(_velocity.y);
 
 	// Scan each block this entity overlaps so we can trigger collided with code
-	auto minX = MathHelper::floor_double(collider.minX + 0.001);
-	auto minY = MathHelper::floor_double(collider.minY + 0.001);
-	auto minZ = MathHelper::floor_double(collider.minZ + 0.001);
-	auto maxX = MathHelper::floor_double(collider.maxX - 0.001);
-	auto maxY = MathHelper::floor_double(collider.maxY - 0.001);
-	auto maxZ = MathHelper::floor_double(collider.maxZ - 0.001);
+	auto minX = MathHelper::FloorDouble(collider.minX + 0.001);
+	auto minY = MathHelper::FloorDouble(collider.minY + 0.001);
+	auto minZ = MathHelper::FloorDouble(collider.minZ + 0.001);
+	auto maxX = MathHelper::FloorDouble(collider.maxX - 0.001);
+	auto maxY = MathHelper::FloorDouble(collider.maxY - 0.001);
+	auto maxZ = MathHelper::FloorDouble(collider.maxZ - 0.001);
 	if (world->AABBinValidChunks(
 	        { double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ) })) {
 		for (int x = minX; x <= maxX; x++) {
 			for (int y = minY; y <= maxY; y++) {
 				for (int z = minZ; z <= maxZ; z++) {
-					auto blockId = world->getBlockId({ x, y, z });
+					auto blockId = world->GetBlockId({ x, y, z });
 					auto function = Blocks::blockBehaviors[blockId < 0 ? 0 : blockId].onEntityCollidedWithBlock;
 					if (blockId > 0 && function) {
 						function(*world, { x, y, z }, *this);
@@ -311,12 +311,12 @@ void Entity::move(Vec3& _velocity) {
 	}
 }
 
-void Entity::dealDamage([[maybe_unused]] int _amount) {}
+void Entity::DealDamage([[maybe_unused]] int _amount) {}
 
-void Entity::updateFallState(float _movedY) {
+void Entity::UpdateFallState(float _movedY) {
 	if (onGround) {
 		if (fallDistance > FALL_DAMAGE_FLOOR) {
-			dealDamage((int)std::ceil(fallDistance - FALL_DAMAGE_FLOOR));
+			DealDamage((int)std::ceil(fallDistance - FALL_DAMAGE_FLOOR));
 		}
 		fallDistance = 0;
 	} else if (_movedY < 0) {
@@ -324,31 +324,31 @@ void Entity::updateFallState(float _movedY) {
 	}
 }
 
-void Entity::loadFromNBT(Tag& _nbt) {
-	auto& motion = _nbt.compound["Motion"].getList();
-	auto& pos = _nbt.compound["Pos"].getList();
-	auto& rotation = _nbt.compound["Rotation"].getList();
+void Entity::LoadFromNbt(Tag& _nbt) {
+	auto& motion = _nbt.compound["Motion"].GetList();
+	auto& pos = _nbt.compound["Pos"].GetList();
+	auto& rotation = _nbt.compound["Rotation"].GetList();
 
-	velocity.x = motion[0].getDouble();
-	velocity.y = motion[1].getDouble();
-	velocity.z = motion[2].getDouble();
+	velocity.x = motion[0].GetDouble();
+	velocity.y = motion[1].GetDouble();
+	velocity.z = motion[2].GetDouble();
 
-	position.x = pos[0].getDouble();
-	position.y = pos[1].getDouble();
-	position.z = pos[2].getDouble();
+	position.x = pos[0].GetDouble();
+	position.y = pos[1].GetDouble();
+	position.z = pos[2].GetDouble();
 
-	rotationYaw = rotation[0].getFloat();
-	rotationPitch = rotation[1].getFloat();
+	rotationYaw = rotation[0].GetFloat();
+	rotationPitch = rotation[1].GetFloat();
 
-	air = _nbt.compound["Air"].getShort();
-	onGround = _nbt.compound["OnGround"].getByte();
-	fallDistance = _nbt.compound["FallDistance"].getFloat();
-	fireTicks = _nbt.compound["Fire"].getShort();
+	air = _nbt.compound["Air"].GetShort();
+	onGround = _nbt.compound["OnGround"].GetByte();
+	fallDistance = _nbt.compound["FallDistance"].GetFloat();
+	fireTicks = _nbt.compound["Fire"].GetShort();
 
-	rebuildCollider();
+	RebuildCollider();
 }
 
-std::optional<Tag> Entity::serializeToNBT() {
+std::optional<Tag> Entity::SerializeToNbt() {
 	Tag root;
 	root.type = TAG_COMPOUND;
 	root.name = "";
@@ -419,7 +419,7 @@ std::optional<Tag> Entity::serializeToNBT() {
 	rotation.list.push_back(rotPitch);
 
 	// Get our string ID
-	auto stringId = this->entityManager->getEntityNbtId(type);
+	auto stringId = this->entityManager->GetEntityNbtId(type);
 
 	// If we don't have a string id fail to save
 	if (!stringId)

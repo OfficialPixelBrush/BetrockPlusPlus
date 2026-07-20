@@ -12,7 +12,7 @@
 
 ServerManager::ServerManager(uint16_t _port) {
 	// Only bind new socket if it doesn't exist already
-	if (server_socket != INVALID_SOCKET)
+	if (serverSocket != INVALID_SOCKET)
 		return;
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -24,35 +24,35 @@ ServerManager::ServerManager(uint16_t _port) {
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_port = htons(_port);
 	serverAddress.sin_addr.s_addr = INADDR_ANY;
-	server_socket = socket(AF_INET, SOCK_STREAM, 0);
-	if (bind(server_socket, reinterpret_cast<struct sockaddr*>(&serverAddress), sizeof(serverAddress)) != 0) {
+	serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+	if (bind(serverSocket, reinterpret_cast<struct sockaddr*>(&serverAddress), sizeof(serverAddress)) != 0) {
 		GlobalLogger().error << "Bind error: " << errno << std::endl;
 		return;
 	}
-	listen(server_socket, 1);
+	listen(serverSocket, 1);
 }
 
 ServerManager::~ServerManager() {
 	// Clear all streams, which should close them
 	streams.clear();
 	// Close server
-	if (server_socket != INVALID_SOCKET) {
+	if (serverSocket != INVALID_SOCKET) {
 #if defined(_WIN32) || defined(_WIN64)
 		shutdown(server_socket, SD_BOTH);
 		closesocket(server_socket);
 		// Clean-up WSA when the server closes
 		WSACleanup();
 #else
-		shutdown(server_socket, SHUT_RDWR);
-		close(server_socket);
+		shutdown(serverSocket, SHUT_RDWR);
+		close(serverSocket);
 #endif
-		server_socket = INVALID_SOCKET;
+		serverSocket = INVALID_SOCKET;
 	}
 }
 
 // Init network stream
 bool ServerManager::InitConnection() {
-	int clientSocket = accept(server_socket, nullptr, nullptr);
+	int clientSocket = accept(serverSocket, nullptr, nullptr);
 	if (clientSocket != INVALID_SOCKET) {
 		streams.push_back(NetworkStream(clientSocket));
 		return true;

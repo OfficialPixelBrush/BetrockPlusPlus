@@ -27,7 +27,7 @@
 #include <vector>
 
 template <typename T>
-inline T byteswap_any(T _value) {
+inline T ByteswapAny(T _value) {
 	static_assert(std::is_trivially_copyable_v<T>, "byteswap_any: only trivially copyable types allowed");
 	if constexpr (sizeof(T) == 1) {
 		return _value;
@@ -54,7 +54,7 @@ inline T byteswap_any(T _value) {
 
 class NetworkStream {
 public:
-	NetworkStream(int _client_socket);
+	NetworkStream(int _clientSocket);
 	~NetworkStream();
 	bool NewClient();
 
@@ -64,7 +64,7 @@ public:
 		              "NetworkStream::Read<T>: use Read<std::string>() or Read<std::string>() for string types");
 		T buffer{};
 		ReadBytes(reinterpret_cast<uint8_t*>(&buffer), sizeof(T));
-		return byteswap_any(buffer);
+		return ByteswapAny(buffer);
 	}
 
 	template <typename T = int>
@@ -73,15 +73,15 @@ public:
 			int8_t boolData = static_cast<int8_t>(_data);
 			WriteBytes(reinterpret_cast<const uint8_t*>(&boolData), sizeof(int8_t));
 		} else {
-			T networkData = byteswap_any(_data);
+			T networkData = ByteswapAny(_data);
 			WriteBytes(reinterpret_cast<const uint8_t*>(&networkData), sizeof(T));
 		}
 	}
 
-	void setConnected(bool _val) {
+	void SetConnected(bool _val) {
 		connected = _val;
 	}
-	bool isConnected() const {
+	bool IsConnected() const {
 		return connected;
 	}
 
@@ -95,7 +95,7 @@ public:
 
 	// Raw byte buffer Read-Write (no endian conversion).
 	// On a short read (EAGAIN/EWOULDBLOCK mid-packet), all bytes fetched so far
-	// are pushed back into readBackBuffer so they are re-read next tick.
+	// are pushed back into readBackBuffer so they are re-read next Tick.
 	// shortRead is set; the caller does NOT need to unread anything manually.
 	size_t ReadBytes(uint8_t* _buf, size_t _len);
 
@@ -108,40 +108,40 @@ public:
 	// Handles Entity Metadata Conversion
 	void WriteEntityMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata);
 
-	// Flush the write buffer to the socket once per tick.
+	// Flush the write buffer to the socket once per Tick.
 	// Returns false if the connection was lost.
-	bool flushWriteBuffer();
+	bool FlushWriteBuffer();
 	// Blocking flush for use SHUTDOWN ONLY
-	void flushWriteBufferBlocking();
-	bool hasData();
+	void FlushWriteBufferBlocking();
+	bool HasData();
 
 	// Append pre-serialised bytes directly to the write buffer.
 	// Used for shared-packet broadcast: serialise once, copy to N sessions.
-	void writeRaw(const uint8_t* _data, size_t _len) {
+	void WriteRaw(const uint8_t* _data, size_t _len) {
 		WriteBytes(_data, _len);
 	}
 
 	// Read-only view of the pending write buffer.
 	// Valid only until the next Write*/writeRaw/flushWriteBuffer call.
-	const std::vector<uint8_t>& getRawWriteBuffer() const {
+	const std::vector<uint8_t>& GetRawWriteBuffer() const {
 		return writeBuffer;
 	}
 
 	// Returns true if the last ReadBytes call hit a receive timeout (packet split
 	// across ticks). All bytes that had already been read are held in readBackBuffer
 	// and will be replayed automatically on the next ReadBytes call.
-	bool checkAndClearShortRead() {
+	bool CheckAndClearShortRead() {
 		bool val = shortRead;
 		shortRead = false;
 		return val;
 	}
 
 private:
-	int client_socket = INVALID_SOCKET;
+	int clientSocket = INVALID_SOCKET;
 	bool connected = true;
 	bool shortRead = false;
 	// Bytes that were fetched from the socket but belong to a packet that could
-	// not be fully read this tick. Drained before touching the socket again.
+	// not be fully read this Tick. Drained before touching the socket again.
 	std::deque<uint8_t> readBackBuffer;
 	std::vector<uint8_t> writeBuffer;
 };

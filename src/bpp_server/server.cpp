@@ -27,31 +27,31 @@
 #include "version.h"
 #include <chrono>
 
-Server::Server() : gameRuntime(SERVER_VIEW_RADIUS), config("server.properties") {
-	ServerBlock::initialize();
-	loadConfig();
-	serverSocket = ServerSocketManager::createServerSocket(serverPort);
+Server::Server() : gameRuntime(serverViewRadius), config("server.properties") {
+	ServerBlock::Initialize();
+	LoadConfig();
+	serverSocket = ServerSocketManager::CreateServerSocket(serverPort);
 	if (serverSocket < 0) {
 		GlobalLogger().error << "**** FAILED TO CREATE SERVER SOCKET!" << "\n";
 		exit(1);
 	}
 	GlobalLogger().info << "Server initialized on port " << serverPort << "\n";
-	gameRuntime.init(config.GetAsString("level-name"), config.GetAsString("level-seed"));
+	gameRuntime.Init(config.GetAsString("level-name"), config.GetAsString("level-seed"));
 }
 
 Server::~Server() {
-	this->stop();
+	this->Stop();
 }
 
-void Server::sendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _entity) {
+void Server::SendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _entity) {
 	// Remove our entity from our watcher
 	Dimension oldDim = _entity->dim;
 	if (oldDim == _dim)
 		return;
 
 	// Remove the entity from the world's entity managers
-	WorldManager* world = getWorldForDimension(oldDim);
-	WorldManager* newWorld = getWorldForDimension(_dim);
+	WorldManager* world = GetWorldForDimension(oldDim);
+	WorldManager* newWorld = GetWorldForDimension(_dim);
 	if (!world) {
 		GlobalLogger().info << "Something went seriously wrong! Couldn't find world object for dimension " << oldDim
 		                    << "\n";
@@ -62,14 +62,14 @@ void Server::sendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _enti
 		                    << "\n";
 		return;
 	}
-	world->entityManager.removeEntity(_entity->id);
+	world->entityManager.RemoveEntity(_entity->id);
 
 	// Rebind entity
 	_entity->isDead = false;
-	newWorld->entityManager.addEntity(_entity);
+	newWorld->entityManager.AddEntity(_entity);
 }
 
-void Server::sendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
+void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
 	if (_dim == _session.dimension)
 		return;
 
@@ -91,14 +91,14 @@ void Server::sendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
 	pkt.dimension = _dim;
 	pkt.Serialize(_session.stream);
 	_session.connState = ConnectionState::WaitingForSpawnChunks;
-	PacketUtilities::sendInventory(_session, 0, _session.inventory);
+	PacketUtilities::SendInventory(_session, 0, _session.inventory);
 
 	// Transfer our entity
-	sendEntityToDimension(_dim, _session.entity);
+	SendEntityToDimension(_dim, _session.entity);
 }
 
-void Server::indexAddChunk(PlayerSession& _session, const Int32_2& _pos) {
-	auto& vec = chunkSessions[chunkKey(_pos, _session.dimension)];
+void Server::IndexAddChunk(PlayerSession& _session, const Int32_2& _pos) {
+	auto& vec = chunkSessions[ChunkKey(_pos, _session.dimension)];
 	// Avoid duplicates (should never happen, but be safe)
 	for (auto* p : vec)
 		if (p == &_session)
@@ -106,8 +106,8 @@ void Server::indexAddChunk(PlayerSession& _session, const Int32_2& _pos) {
 	vec.push_back(&_session);
 }
 
-void Server::indexRemoveChunk(PlayerSession& _session, const Int32_2& _pos) {
-	auto it = chunkSessions.find(chunkKey(_pos, _session.dimension));
+void Server::IndexRemoveChunk(PlayerSession& _session, const Int32_2& _pos) {
+	auto it = chunkSessions.find(ChunkKey(_pos, _session.dimension));
 	if (it == chunkSessions.end())
 		return;
 	auto& vec = it->second;
@@ -116,12 +116,12 @@ void Server::indexRemoveChunk(PlayerSession& _session, const Int32_2& _pos) {
 		chunkSessions.erase(it);
 }
 
-void Server::indexRemoveSession(PlayerSession& _session) {
+void Server::IndexRemoveSession(PlayerSession& _session) {
 	for (const auto& pos : _session.flushedChunks)
-		indexRemoveChunk(_session, pos);
+		IndexRemoveChunk(_session, pos);
 }
 
-void Server::loadConfig() {
+void Server::LoadConfig() {
 	if (!config.LoadFromDisk()) {
 		config.Overwrite({
 		    { "level-name", "world" },
@@ -150,17 +150,17 @@ void Server::loadConfig() {
 	//whitelistEnabled = config.GetAsBoolean("white-list");
 }
 
-void Server::startup() {
+void Server::Startup() {
 	auto startupStart = std::chrono::steady_clock::now();
 	GlobalLogger().info << "Initializing server startup.. \n";
 
 	// Setup commands
-	command_manager.Init(this);
+	commandManager.Init(this);
 
 	// Setup the block callback so we can send it to clients
 	auto makeBlockUpdateCallback = [this](int _dimensionId, auto& _blockChangeMap) {
 		return [this, _dimensionId, &_blockChangeMap](PendingBlock _pendingBlock, Int32_2 _chunkPos) {
-			auto idxIt = chunkSessions.find(chunkKey(_chunkPos, -1));
+			auto idxIt = chunkSessions.find(ChunkKey(_chunkPos, -1));
 			bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
 			if (!anyInterested) {
 				for (auto& session : players) {
@@ -174,8 +174,8 @@ void Server::startup() {
 				return;
 
 			PendingBlock pendingNew = _pendingBlock;
-			pendingNew.block_pos = { _pendingBlock.block_pos.x & 15, _pendingBlock.block_pos.y,
-				                     _pendingBlock.block_pos.z & 15 };
+			pendingNew.blockPos = { _pendingBlock.blockPos.x & 15, _pendingBlock.blockPos.y,
+				                    _pendingBlock.blockPos.z & 15 };
 			_blockChangeMap[_chunkPos].push_back(pendingNew);
 		};
 	};
@@ -183,17 +183,17 @@ void Server::startup() {
 	auto registerEntityTrackerCallbacks = [this](EntityTracker& _entityTracker, EntityManager& _entityManager) {
 		_entityManager.onEntitySpawn = [&_entityTracker](std::shared_ptr<Entity> _entity) {
 			if (_entity->type == EntityType::PLAYER) {
-				_entityTracker.addPlayer(_entity.get());
+				_entityTracker.AddPlayer(_entity.get());
 				return;
 			}
-			_entityTracker.trackEntity(_entity.get());
+			_entityTracker.TrackEntity(_entity.get());
 		};
 		_entityManager.onEntityDespawn = [&_entityTracker](std::shared_ptr<Entity> _entity) {
 			if (_entity->type == EntityType::PLAYER) {
-				_entityTracker.removePlayer(_entity.get());
+				_entityTracker.RemovePlayer(_entity.get());
 				return;
 			}
-			_entityTracker.untrackEntity(_entity.get());
+			_entityTracker.UntrackEntity(_entity.get());
 		};
 		_entityTracker.server = this;
 	};
@@ -204,17 +204,16 @@ void Server::startup() {
 	registerEntityTrackerCallbacks(hellEntityTracker, gameRuntime.worldHell.entityManager);
 
 	// Get spawn ready
-	int spawn_chunk_distance = this->SPAWN_CHUNK_RADIUS;
-	int total_spawn_chunks = (spawn_chunk_distance + spawn_chunk_distance + 1) *
-	                         (spawn_chunk_distance + spawn_chunk_distance + 1);
+	int spawnChunkDistance = this->spawnChunkRadius;
+	int totalSpawnChunks = (spawnChunkDistance + spawnChunkDistance + 1) * (spawnChunkDistance + spawnChunkDistance + 1);
 	GlobalLogger().info << "Server spawn is "
 	                    << Int2(int(gameRuntime.world.spawnPoint.x), int(gameRuntime.world.spawnPoint.z)) << "\n";
 
 	GlobalLogger().info << "Preparing spawn chunks..\n";
 	// Push every single spawn chunk to get ready for generation
 	std::unordered_set<Int32_2> wanted;
-	for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
-		for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
+	for (int dx = -spawnChunkDistance; dx <= spawnChunkDistance; dx++) {
+		for (int dz = -spawnChunkDistance; dz <= spawnChunkDistance; dz++) {
 			Int32_2 pos = { (gameRuntime.world.spawnPoint.x >> 4) + dx, (gameRuntime.world.spawnPoint.z >> 4) + dz };
 			wanted.insert(pos);
 		}
@@ -237,74 +236,74 @@ void Server::startup() {
 	}
 
 	// Chunks are ready to load at this point.
-	auto loadSpawnChunks = [total_spawn_chunks, spawn_chunk_distance](WorldManager& _world) {
+	auto loadSpawnChunks = [totalSpawnChunks, spawnChunkDistance](WorldManager& _world) {
 		auto start = std::chrono::steady_clock::now();
-		int loaded_chunks = 0;
+		int loadedChunks = 0;
 		while (true) {
-			loaded_chunks = 0;
+			loadedChunks = 0;
 			// Force gen these chunks AS FAST AS POSSIBLE
-			_world.pumpPipeline({});
+			_world.PumpPipeline({});
 			_world.pool.wait();
-			_world.drainGenQueue();
+			_world.DrainGenQueue();
 			_world.regionManager->iopool.wait();
-			_world.drainLoadQueue();
-			_world.populateReady();
-			_world.lightManager.processLightQueue(_world);
+			_world.DrainLoadQueue();
+			_world.PopulateReady();
+			_world.lightManager.ProcessLightQueue(_world);
 
-			for (int dx = -spawn_chunk_distance; dx <= spawn_chunk_distance; dx++) {
-				for (int dz = -spawn_chunk_distance; dz <= spawn_chunk_distance; dz++) {
+			for (int dx = -spawnChunkDistance; dx <= spawnChunkDistance; dx++) {
+				for (int dz = -spawnChunkDistance; dz <= spawnChunkDistance; dz++) {
 					Int32_2 p{ (_world.spawnPoint.x >> 4) + dx, (_world.spawnPoint.z >> 4) + dz };
 					auto it = _world.chunks.find(p);
 					if (it != _world.chunks.end() && it->second->state.load() >= ChunkState::Generated)
-						loaded_chunks++;
+						loadedChunks++;
 				}
 			}
 
 			// Update load percentage every second
 			if (std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count() >= 1.0f) {
-				int percentLoaded = int((float(loaded_chunks) / float(total_spawn_chunks)) * 100.0f);
+				int percentLoaded = int((float(loadedChunks) / float(totalSpawnChunks)) * 100.0f);
 				GlobalLogger().info << "Loading spawn.. " << percentLoaded << "%\n";
 				start = std::chrono::steady_clock::now();
 			}
 
 			// Have we loaded all the spawn chunks?
-			if (loaded_chunks >= total_spawn_chunks)
+			if (loadedChunks >= totalSpawnChunks)
 				break;
 		}
 		GlobalLogger().info << "Loading spawn.. 100%\n";
 	};
 
-	GlobalLogger().info << "Loading spawn chunks for Overworld: (" << total_spawn_chunks << ")\n";
+	GlobalLogger().info << "Loading spawn chunks for Overworld: (" << totalSpawnChunks << ")\n";
 	loadSpawnChunks(gameRuntime.world);
 
-	GlobalLogger().info << "Loading spawn chunks for Hell: (" << total_spawn_chunks << ")\n";
+	GlobalLogger().info << "Loading spawn chunks for Hell: (" << totalSpawnChunks << ")\n";
 	loadSpawnChunks(gameRuntime.worldHell);
 
 	float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
 	GlobalLogger().info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";
 }
 
-void Server::run() {
-	startup();
+void Server::Run() {
+	Startup();
 
 	static constexpr auto TICK_DURATION = std::chrono::nanoseconds(std::chrono::seconds{ 1 }) / TICKS_PER_SECOND;
 
-	using clock = std::chrono::steady_clock;
+	using Clock = std::chrono::steady_clock;
 
 	std::chrono::nanoseconds avgTotalTickDuration{ 0 };
 	int avgTickCount = 0;
 
 	uint64_t ticks = 0;
-	auto baseTime = clock::now();
+	auto baseTime = Clock::now();
 
-	// Main tick loop
+	// Main Tick loop
 	// Heavily based on https://github.com/Minestom/Minestom/blob/59406d5b54d5221df85f381f204fbc07fd861a43/src/main/java/net/minestom/server/thread/TickSchedulerThread.java
 	while (!shutdownRequested.load()) {
-		auto tickStart = clock::now();
-		tick();
-		auto tickEnd = clock::now();
+		auto tickStart = Clock::now();
+		Tick();
+		auto tickEnd = Clock::now();
 
-		// Sample and print average tick data
+		// Sample and print average Tick data
 		avgTotalTickDuration += (tickEnd - tickStart);
 		++avgTickCount;
 
@@ -323,55 +322,55 @@ void Server::run() {
 		// Check if the server can not keep up with the tickrate
 		// if it gets too far behind, reset the ticks & baseTime
 		// to avoid running too many ticks at once
-		if (clock::now() > nextTickTime + MAX_TICK_CATCH_UP * TICK_DURATION) {
-			baseTime = clock::now();
+		if (Clock::now() > nextTickTime + MAX_TICK_CATCH_UP * TICK_DURATION) {
+			baseTime = Clock::now();
 			ticks = 0;
 			GlobalLogger().warn << "Can't keep up with ticks!\n";
 		}
 	}
 
 	// Shutdown was requested. Save and clean up on the main thread
-	stop();
+	Stop();
 	shutdownRequested.store(false); // Unblock the ctrl handler thread
 }
 
-void Server::stop() {
+void Server::Stop() {
 	if (stopped)
 		return;
 	stopped = true;
 	GlobalLogger().info << "Server shutting down...\n";
 	for (auto& session : players) {
-		connStateManager.disconnectPlayer(*session, "Server Closed", *this);
-		session->stream.flushWriteBufferBlocking();
-		auto savedNbt = session->serializeToNBT();
-		gameRuntime.saveManager.savePlayerNBT(std::string(session->username.begin(), session->username.end()), savedNbt);
+		connStateManager.DisconnectPlayer(*session, "Server Closed", *this);
+		session->stream.FlushWriteBufferBlocking();
+		auto savedNbt = session->SerializeToNbt();
+		gameRuntime.saveManager.SavePlayerNbt(std::string(session->username.begin(), session->username.end()), savedNbt);
 	}
-	ServerSocketManager::closeSocket(serverSocket);
-	gameRuntime.world.shutdown();
-	gameRuntime.worldHell.shutdown();
+	ServerSocketManager::CloseSocket(serverSocket);
+	gameRuntime.world.Shutdown();
+	gameRuntime.worldHell.Shutdown();
 
 	// Save our level file
-	levelData& curLevelData = gameRuntime.saveManager.getLevelData();
-	curLevelData.RandomSeed = gameRuntime.world.seed;
+	LevelData& curLevelData = gameRuntime.saveManager.GetLevelData();
+	curLevelData.randomSeed = gameRuntime.world.seed;
 	curLevelData.spawnPoint = gameRuntime.world.spawnPoint;
-	curLevelData.time = gameRuntime.world.elapsed_ticks;
-	gameRuntime.saveManager.saveLevelFile(curLevelData);
+	curLevelData.time = gameRuntime.world.elapsedTicks;
+	gameRuntime.saveManager.SaveLevelFile(curLevelData);
 }
 
-void Server::acceptNewPlayers() {
-	auto clientSocket = ServerSocketManager::createClientSocket(serverSocket);
+void Server::AcceptNewPlayers() {
+	auto clientSocket = ServerSocketManager::CreateClientSocket(serverSocket);
 	if (clientSocket < 0)
 		return;
 	players.push_back(std::make_shared<PlayerSession>(clientSocket, gameRuntime));
 }
 
-void Server::tick() {
-	acceptNewPlayers();
+void Server::Tick() {
+	AcceptNewPlayers();
 	[[maybe_unused]] const int playerCount = int(players.size());
 
 	for (auto& session : players) {
 		if (session->connState == ConnectionState::Playing)
-			processIncoming(*session);
+			ProcessIncoming(*session);
 	}
 
 	std::vector<ClientPosition> overworldPositions;
@@ -385,99 +384,99 @@ void Server::tick() {
 				overworldPositions.push_back(session->position);
 		}
 	}
-	gameRuntime.world.tick(overworldPositions);
-	gameRuntime.world.update(overworldPositions);
-	gameRuntime.worldHell.tick(netherPositions);
-	gameRuntime.worldHell.update(netherPositions);
+	gameRuntime.world.Tick(overworldPositions);
+	gameRuntime.world.Update(overworldPositions);
+	gameRuntime.worldHell.Tick(netherPositions);
+	gameRuntime.worldHell.Update(netherPositions);
 
-	// Send all of the block changes that have accumulated since the last tick, then clear the list.
+	// Send all of the block changes that have accumulated since the last Tick, then clear the list.
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChanges;
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChangesHell;
 	localBlockChanges.swap(chunkBlockChanges);
 	localBlockChangesHell.swap(chunkBlockChangesHell);
 
 	// Update the entity trackers
-	overworldEntityTracker.tick();
-	hellEntityTracker.tick();
+	overworldEntityTracker.Tick();
+	hellEntityTracker.Tick();
 
 	// Handle connection state for each player
 	for (auto& session : players) {
-		connStateManager.handleConnectionState(*session, *this);
+		connStateManager.HandleConnectionState(*session, *this);
 
 		// Drain chunk-session index updates that ChunkSender recorded.
 		for (const auto& pos : session->newlyFlushed)
-			indexAddChunk(*session, pos);
+			IndexAddChunk(*session, pos);
 		session->newlyFlushed.clear();
 		for (const auto& pos : session->newlyUnloaded)
-			indexRemoveChunk(*session, pos);
+			IndexRemoveChunk(*session, pos);
 		session->newlyUnloaded.clear();
 
 		// Check inventory diffs
-		auto diffs2 = session->inventoryInteraction.tickDiff();
+		auto diffs2 = session->inventoryInteraction.TickDiff();
 		if (diffs2.size() <= 5) {
 			for (auto difference : diffs2) {
-				PacketUtilities::sendSlot(*session, 0, difference.slot, &difference.stack);
+				PacketUtilities::SendSlot(*session, 0, difference.slot, &difference.stack);
 			}
 		} else {
 			// Too many changes, just resend the whole inventory
-			PacketUtilities::sendInventory(*session, 0, *session->inventoryInteraction.inventory);
+			PacketUtilities::SendInventory(*session, 0, *session->inventoryInteraction.inventory);
 		}
 
 		if (!session->activeInteraction)
 			continue;
 
 		// Force close windows that reference tile entities that have been deleted
-		if (!session->activeInteraction->canExist()) {
+		if (!session->activeInteraction->CanExist()) {
 			PacketUtilities::CloseContainer(*session);
 			continue;
 		}
 
 		// Send each differing slot
-		auto diffs = session->activeInteraction->tickDiff();
+		auto diffs = session->activeInteraction->TickDiff();
 		if (diffs.size() <= 5) {
 			for (auto difference : diffs) {
-				PacketUtilities::sendSlot(*session, session->openWindowId, difference.slot, &difference.stack);
+				PacketUtilities::SendSlot(*session, session->openWindowId, difference.slot, &difference.stack);
 			}
 		} else {
 			// Too many changes, just resend the whole inventory
-			PacketUtilities::sendInventory(*session, session->openWindowId, *session->activeInteraction->inventory);
+			PacketUtilities::SendInventory(*session, session->openWindowId, *session->activeInteraction->inventory);
 		}
 
-		if (this->gameRuntime.world.elapsed_ticks % 40 == 0) {
+		if (this->gameRuntime.world.elapsedTicks % 40 == 0) {
 			// Save periodically
-			auto savedNbt = session->serializeToNBT();
-			gameRuntime.saveManager.savePlayerNBT(std::string(session->username.begin(), session->username.end()),
+			auto savedNbt = session->SerializeToNbt();
+			gameRuntime.saveManager.SavePlayerNbt(std::string(session->username.begin(), session->username.end()),
 			                                      savedNbt);
 		}
 	}
 
 	// Dispatch block changes.
-	ChunkBroadcaster::broadcastBlockChanges(*this, localBlockChanges, 0, gameRuntime.world);
-	ChunkBroadcaster::broadcastBlockChanges(*this, localBlockChangesHell, -1, gameRuntime.worldHell);
+	ChunkBroadcaster::BroadcastBlockChanges(*this, localBlockChanges, 0, gameRuntime.world);
+	ChunkBroadcaster::BroadcastBlockChanges(*this, localBlockChangesHell, -1, gameRuntime.worldHell);
 
-	// Flush all pending outgoing data to the socket once per tick.
+	// Flush all pending outgoing data to the socket once per Tick.
 	for (auto& session : players) {
-		session->stream.flushWriteBuffer();
+		session->stream.FlushWriteBuffer();
 	}
-	this->disconnectClients();
+	this->DisconnectClients();
 }
 
-void Server::disconnectClients() {
+void Server::DisconnectClients() {
 	// Mark clients who have timed out for removal
 	auto now = std::chrono::steady_clock::now();
 	for (auto& session : players) {
 		if (session->connState == ConnectionState::Playing) {
-			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - session->last_packet_time).count();
-			if (elapsed > timeout_seconds) {
+			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - session->lastPacketTime).count();
+			if (elapsed > timeoutSeconds) {
 				GlobalLogger().info << "Player " << session->username << " timed out\n";
-				connStateManager.disconnectPlayer(*session, "Connection timed out.", *this);
-				sendGlobalChatMessage("§e" + session->username + " left the game.");
+				connStateManager.DisconnectPlayer(*session, "Connection timed out.", *this);
+				SendGlobalChatMessage("§e" + session->username + " left the game.");
 			}
 		} else {
 			// Kill stuck handshakers
-			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - session->last_packet_time).count();
-			if (elapsed > timeout_seconds) {
-				session->stream.setConnected(false);
+			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - session->lastPacketTime).count();
+			if (elapsed > timeoutSeconds) {
+				session->stream.SetConnected(false);
 				GlobalLogger().info << "Disconnected dataless stream. (Most likely a prober!)\n";
 			}
 		}
@@ -486,21 +485,21 @@ void Server::disconnectClients() {
 	// Force disconnect players that quit
 	players.erase(std::remove_if(players.begin(), players.end(),
 	                             [&](const auto& _s) {
-		                             if (!_s->stream.isConnected()) {
+		                             if (!_s->stream.IsConnected()) {
 			                             if (_s->entity)
 				                             GlobalLogger().info << "Disconnected client " << _s->username
 				                                                 << " with entity id " << _s->entity->id << "\n";
 
 			                             if (_s->connState == ConnectionState::Playing ||
 			                                 _s->connState == ConnectionState::WaitingForSpawnChunks) {
-				                             auto savedNbt = _s->serializeToNBT();
-				                             gameRuntime.saveManager.savePlayerNBT(
+				                             auto savedNbt = _s->SerializeToNbt();
+				                             gameRuntime.saveManager.SavePlayerNbt(
 				                                 std::string(_s->username.begin(), _s->username.end()), savedNbt);
 			                             }
 
-			                             indexRemoveSession(*_s);
-			                             chunkSender.remove(*_s);
-			                             sendGlobalChatMessage("§e" + _s->username + " left the game.");
+			                             IndexRemoveSession(*_s);
+			                             chunkSender.Remove(*_s);
+			                             SendGlobalChatMessage("§e" + _s->username + " left the game.");
 			                             return true;
 		                             }
 		                             return false;
@@ -508,21 +507,21 @@ void Server::disconnectClients() {
 	              players.end());
 };
 
-void Server::transferPlayerDimension([[maybe_unused]] PlayerSession& _session) {}
+void Server::TransferPlayerDimension([[maybe_unused]] PlayerSession& _session) {}
 
-void Server::processIncoming(PlayerSession& _session) {
+void Server::ProcessIncoming(PlayerSession& _session) {
 	WorldManager& sessionWorld = _session.dimension == -1 ? gameRuntime.worldHell : gameRuntime.world;
 
-	while (_session.stream.hasData()) {
+	while (_session.stream.HasData()) {
 		PacketId packetId = _session.stream.Read<PacketId>();
 
-		if (!PacketDispatcher::dispatch(packetId, _session, sessionWorld, *this))
+		if (!PacketDispatcher::Dispatch(packetId, _session, sessionWorld, *this))
 			return; // session is dead, or sent an unknown packet
 
-		if (_session.stream.checkAndClearShortRead()) {
+		if (_session.stream.CheckAndClearShortRead()) {
 			break;
 		}
 	}
 	// Update our last packet time for the timeout code
-	_session.last_packet_time = std::chrono::steady_clock::now();
+	_session.lastPacketTime = std::chrono::steady_clock::now();
 }

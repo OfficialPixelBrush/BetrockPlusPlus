@@ -31,10 +31,10 @@ struct EntityManager {
 	std::function<void(std::shared_ptr<Entity>)> onEntitySpawn;
 	std::function<void(std::shared_ptr<Entity>)> onEntityDespawn;
 
-	static Int3 computeBucketPos(Vec3 _position) {
-		Int3 bucketPos = { int(MathHelper::floor_double(_position.x / 16.0)),
-			               int(MathHelper::floor_double(_position.z / 16.0)),
-			               int(MathHelper::floor_double(_position.y / 16.0)) };
+	static Int3 ComputeBucketPos(Vec3 _position) {
+		Int3 bucketPos = { int(MathHelper::FloorDouble(_position.x / 16.0)),
+			               int(MathHelper::FloorDouble(_position.z / 16.0)),
+			               int(MathHelper::FloorDouble(_position.y / 16.0)) };
 
 		// Entity collisions below and above the world are just gonna be inefficient
 		bucketPos.z = std::max(0, bucketPos.z);
@@ -42,12 +42,12 @@ struct EntityManager {
 		return bucketPos;
 	}
 
-	std::vector<std::shared_ptr<Entity>> getEntitiesWithinAABBExcluding(const AABB& _box, EntityId _entityId);
-	std::vector<std::shared_ptr<Entity>> getEntitiesWithinAABB(const AABB& _box);
-	void tick();
-	void addEntity(std::shared_ptr<Entity> _entity, EntityId _forceEntityId = -1);
-	void removeEntity(EntityId _id);
-	bool chunkHasEntities(Int2 _cpos) {
+	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbExcluding(const AABB& _box, EntityId _entityId);
+	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabb(const AABB& _box);
+	void Tick();
+	void AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEntityId = -1);
+	void RemoveEntity(EntityId _id);
+	bool ChunkHasEntities(Int2 _cpos) {
 		auto& container = this->entityContainers[_cpos];
 		for (size_t i = 0; i < container.buckets.size(); i++) {
 			auto& bucket = container.buckets[i];
@@ -56,19 +56,19 @@ struct EntityManager {
 		}
 		return false;
 	}
-	std::vector<Tag> collectEntitiesForSave(Int2 _cpos, bool _clearCollectedEntities = false);
-	std::shared_ptr<Entity> getEntityByIdShared(EntityId _id) {
+	std::vector<Tag> CollectEntitiesForSave(Int2 _cpos, bool _clearCollectedEntities = false);
+	std::shared_ptr<Entity> GetEntityByIdShared(EntityId _id) {
 		for (auto& entity : entities) {
 			if (entity->id == _id)
 				return entity;
 		}
 		return nullptr;
 	}
-	void createEntityFromNBT(Tag& _nbt);
+	void CreateEntityFromNbt(Tag& _nbt);
 
-	EntityId getNextEntityId() {
+	EntityId GetNextEntityId() {
 		return nextEntityId++;
 	}
 
-	std::optional<std::string> getEntityNbtId(EntityType _type);
+	std::optional<std::string> GetEntityNbtId(EntityType _type);
 };

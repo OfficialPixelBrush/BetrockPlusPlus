@@ -23,8 +23,8 @@
 #include <unistd.h>
 #endif
 
-struct levelData {
-	int64_t RandomSeed = 0;
+struct LevelData {
+	int64_t randomSeed = 0;
 	Int3 spawnPoint{ 0, 0, 0 };
 	int rainTime = 0;
 	int thunderTime = 0;
@@ -33,7 +33,7 @@ struct levelData {
 	int8_t thundering = 0;
 	int version = 19132;
 	int64_t lastPlayed = 0;
-	std::string LevelName = "world";
+	std::string levelName = "world";
 	int64_t sizeOnDisk = 0;
 };
 
@@ -44,7 +44,7 @@ struct SessionLock {
 	int fd = -1;
 #endif
 
-	bool acquire(const std::string& _path) {
+	bool Acquire(const std::string& _path) {
 #ifdef _WIN32
 		handle = CreateFileA(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
 		                     FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -60,11 +60,11 @@ struct SessionLock {
 			return false;
 		}
 #endif
-		writeTimestamp();
+		WriteTimestamp();
 		return true;
 	}
 
-	void release() {
+	void Release() {
 #ifdef _WIN32
 		if (handle != INVALID_HANDLE_VALUE) {
 			CloseHandle(handle);
@@ -80,11 +80,11 @@ struct SessionLock {
 	}
 
 	~SessionLock() {
-		release();
+		Release();
 	}
 
 private:
-	void writeTimestamp() {
+	void WriteTimestamp() {
 		int64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
 		                  std::chrono::system_clock::now().time_since_epoch())
 		                  .count();
@@ -103,34 +103,34 @@ private:
 };
 
 struct SaveManager {
-	bool initialize(const std::string& _pSaveName, [[maybe_unused]] bool _isMultiplayerSave = false) {
-		SaveDirectory = _pSaveName;
+	bool Initialize(const std::string& _pSaveName, [[maybe_unused]] bool _isMultiplayerSave = false) {
+		saveDirectory = _pSaveName;
 
 		// Make sure we have the necessary folders
 		int necessaryFolders = 0;
-		necessaryFolders += std::filesystem::create_directories(SaveDirectory + "/players");
-		necessaryFolders += std::filesystem::create_directories(SaveDirectory + "/region");
-		necessaryFolders += std::filesystem::create_directories(SaveDirectory + "/DIM-1/region");
-		necessaryFolders += std::filesystem::create_directories(SaveDirectory + "/data");
+		necessaryFolders += std::filesystem::create_directories(saveDirectory + "/players");
+		necessaryFolders += std::filesystem::create_directories(saveDirectory + "/region");
+		necessaryFolders += std::filesystem::create_directories(saveDirectory + "/DIM-1/region");
+		necessaryFolders += std::filesystem::create_directories(saveDirectory + "/data");
 		if (necessaryFolders)
 			GlobalLogger().warn << "Failed to load " << necessaryFolders
 			                    << " necessary folder(s) for level " + _pSaveName + ".\n";
 
-		if (!sessionLock.acquire(SaveDirectory + "/session.lock"))
+		if (!sessionLock.Acquire(saveDirectory + "/session.lock"))
 			return false;
-		if (!std::filesystem::exists(SaveDirectory + "/level.dat"))
+		if (!std::filesystem::exists(saveDirectory + "/level.dat"))
 			return false;
-		worldFile = std::make_unique<FileHandle>(SaveDirectory + "/level.dat");
-		if (!worldFile->get().is_open())
+		worldFile = std::make_unique<FileHandle>(saveDirectory + "/level.dat");
+		if (!worldFile->Get().is_open())
 			return false;
 		return true;
 	}
 
-	bool loadLevelData() {
-		if (!worldFile || !worldFile->get().is_open())
+	bool LoadLevelData() {
+		if (!worldFile || !worldFile->Get().is_open())
 			return false;
 
-		std::fstream& stream = worldFile->get();
+		std::fstream& stream = worldFile->Get();
 
 		// Read entire file into buffer
 		stream.seekg(0, std::ios::end);
@@ -154,42 +154,42 @@ struct SaveManager {
 
 		// Parse NBT
 		NBTParser parser(raw.data(), raw.size());
-		const Tag& data = parser.root.get("Data");
+		const Tag& data = parser.root.Get("Data");
 
-		currentLevelData.RandomSeed = data.get("RandomSeed").longValue;
-		currentLevelData.spawnPoint.x = data.get("SpawnX").intValue;
-		currentLevelData.spawnPoint.y = data.get("SpawnY").intValue;
-		currentLevelData.spawnPoint.z = data.get("SpawnZ").intValue;
-		currentLevelData.rainTime = data.get("rainTime").intValue;
-		currentLevelData.thunderTime = data.get("thunderTime").intValue;
-		currentLevelData.raining = data.get("raining").byteValue;
-		currentLevelData.time = data.get("Time").longValue;
-		currentLevelData.thundering = data.get("thundering").byteValue;
-		currentLevelData.version = data.get("version").intValue;
-		currentLevelData.lastPlayed = data.get("LastPlayed").longValue;
-		currentLevelData.LevelName = data.get("LevelName").stringValue;
-		currentLevelData.sizeOnDisk = data.get("SizeOnDisk").longValue;
+		currentLevelData.randomSeed = data.Get("RandomSeed").longValue;
+		currentLevelData.spawnPoint.x = data.Get("SpawnX").intValue;
+		currentLevelData.spawnPoint.y = data.Get("SpawnY").intValue;
+		currentLevelData.spawnPoint.z = data.Get("SpawnZ").intValue;
+		currentLevelData.rainTime = data.Get("rainTime").intValue;
+		currentLevelData.thunderTime = data.Get("thunderTime").intValue;
+		currentLevelData.raining = data.Get("raining").byteValue;
+		currentLevelData.time = data.Get("Time").longValue;
+		currentLevelData.thundering = data.Get("thundering").byteValue;
+		currentLevelData.version = data.Get("version").intValue;
+		currentLevelData.lastPlayed = data.Get("LastPlayed").longValue;
+		currentLevelData.levelName = data.Get("LevelName").stringValue;
+		currentLevelData.sizeOnDisk = data.Get("SizeOnDisk").longValue;
 
 		return true;
 	}
 
-	levelData& getLevelData() {
+	LevelData& GetLevelData() {
 		return currentLevelData;
 	}
 
-	bool createNewWorld(const levelData& _data) {
+	bool CreateNewWorld(const LevelData& _data) {
 		std::error_code ec;
-		std::filesystem::create_directories(SaveDirectory + "/players", ec);
-		std::filesystem::create_directories(SaveDirectory + "/region", ec);
-		std::filesystem::create_directories(SaveDirectory + "/DIM-1/region", ec);
-		std::filesystem::create_directories(SaveDirectory + "/data", ec);
-		return saveLevelFile(_data);
+		std::filesystem::create_directories(saveDirectory + "/players", ec);
+		std::filesystem::create_directories(saveDirectory + "/region", ec);
+		std::filesystem::create_directories(saveDirectory + "/DIM-1/region", ec);
+		std::filesystem::create_directories(saveDirectory + "/data", ec);
+		return SaveLevelFile(_data);
 	}
 
-	bool saveLevelFile(const levelData& _levelData) {
+	bool SaveLevelFile(const LevelData& _levelData) {
 		// Back up existing level.dat if present
-		if (std::filesystem::exists(SaveDirectory + "/level.dat")) {
-			std::filesystem::copy_file(SaveDirectory + "/level.dat", SaveDirectory + "/level.dat_old",
+		if (std::filesystem::exists(saveDirectory + "/level.dat")) {
+			std::filesystem::copy_file(saveDirectory + "/level.dat", saveDirectory + "/level.dat_old",
 			                           std::filesystem::copy_options::overwrite_existing);
 		}
 
@@ -201,22 +201,22 @@ struct SaveManager {
 		data.type = TAG_COMPOUND;
 		data.name = "Data";
 
-		Tag RandomSeed;
-		RandomSeed.type = TAG_LONG;
-		RandomSeed.name = "RandomSeed";
-		RandomSeed.longValue = _levelData.RandomSeed;
-		Tag SpawnX;
-		SpawnX.type = TAG_INT;
-		SpawnX.name = "SpawnX";
-		SpawnX.intValue = _levelData.spawnPoint.x;
-		Tag SpawnY;
-		SpawnY.type = TAG_INT;
-		SpawnY.name = "SpawnY";
-		SpawnY.intValue = _levelData.spawnPoint.y;
-		Tag SpawnZ;
-		SpawnZ.type = TAG_INT;
-		SpawnZ.name = "SpawnZ";
-		SpawnZ.intValue = _levelData.spawnPoint.z;
+		Tag randomSeed;
+		randomSeed.type = TAG_LONG;
+		randomSeed.name = "RandomSeed";
+		randomSeed.longValue = _levelData.randomSeed;
+		Tag spawnX;
+		spawnX.type = TAG_INT;
+		spawnX.name = "SpawnX";
+		spawnX.intValue = _levelData.spawnPoint.x;
+		Tag spawnY;
+		spawnY.type = TAG_INT;
+		spawnY.name = "SpawnY";
+		spawnY.intValue = _levelData.spawnPoint.y;
+		Tag spawnZ;
+		spawnZ.type = TAG_INT;
+		spawnZ.name = "SpawnZ";
+		spawnZ.intValue = _levelData.spawnPoint.z;
 		Tag rainTime;
 		rainTime.type = TAG_INT;
 		rainTime.name = "rainTime";
@@ -229,10 +229,10 @@ struct SaveManager {
 		raining.type = TAG_BYTE;
 		raining.name = "raining";
 		raining.byteValue = _levelData.raining;
-		Tag Time;
-		Time.type = TAG_LONG;
-		Time.name = "Time";
-		Time.longValue = _levelData.time;
+		Tag time;
+		time.type = TAG_LONG;
+		time.name = "Time";
+		time.longValue = _levelData.time;
 		Tag thundering;
 		thundering.type = TAG_BYTE;
 		thundering.name = "thundering";
@@ -241,31 +241,31 @@ struct SaveManager {
 		version.type = TAG_INT;
 		version.name = "version";
 		version.intValue = _levelData.version;
-		Tag LastPlayed;
-		LastPlayed.type = TAG_LONG;
-		LastPlayed.name = "LastPlayed";
-		LastPlayed.longValue = _levelData.lastPlayed;
-		Tag LevelName;
-		LevelName.type = TAG_STRING;
-		LevelName.name = "LevelName";
-		LevelName.stringValue = _levelData.LevelName;
+		Tag lastPlayed;
+		lastPlayed.type = TAG_LONG;
+		lastPlayed.name = "LastPlayed";
+		lastPlayed.longValue = _levelData.lastPlayed;
+		Tag levelName;
+		levelName.type = TAG_STRING;
+		levelName.name = "LevelName";
+		levelName.stringValue = _levelData.levelName;
 		Tag sizeOnDisk;
 		sizeOnDisk.type = TAG_LONG;
 		sizeOnDisk.name = "SizeOnDisk";
 		sizeOnDisk.longValue = _levelData.sizeOnDisk;
 
-		data.compound["RandomSeed"] = RandomSeed;
-		data.compound["SpawnX"] = SpawnX;
-		data.compound["SpawnY"] = SpawnY;
-		data.compound["SpawnZ"] = SpawnZ;
+		data.compound["RandomSeed"] = randomSeed;
+		data.compound["SpawnX"] = spawnX;
+		data.compound["SpawnY"] = spawnY;
+		data.compound["SpawnZ"] = spawnZ;
 		data.compound["rainTime"] = rainTime;
 		data.compound["thunderTime"] = thunderTime;
 		data.compound["raining"] = raining;
-		data.compound["Time"] = Time;
+		data.compound["Time"] = time;
 		data.compound["thundering"] = thundering;
 		data.compound["version"] = version;
-		data.compound["LastPlayed"] = LastPlayed;
-		data.compound["LevelName"] = LevelName;
+		data.compound["LastPlayed"] = lastPlayed;
+		data.compound["LevelName"] = levelName;
 		data.compound["SizeOnDisk"] = sizeOnDisk;
 		root.compound["Data"] = data;
 
@@ -283,7 +283,7 @@ struct SaveManager {
 			return false;
 		compressed.resize(actualSize);
 
-		std::ofstream file(SaveDirectory + "/level.dat", std::ios::binary);
+		std::ofstream file(saveDirectory + "/level.dat", std::ios::binary);
 		if (!file.is_open())
 			return false;
 		file.write(reinterpret_cast<const char*>(compressed.data()), compressed.size());
@@ -291,11 +291,11 @@ struct SaveManager {
 			return false;
 
 		// Reopen as FileHandle for future use
-		worldFile = std::make_unique<FileHandle>(SaveDirectory + "/level.dat");
+		worldFile = std::make_unique<FileHandle>(saveDirectory + "/level.dat");
 		return true;
 	}
 
-	static int64_t seedFromString(const std::string& _input) {
+	static int64_t SeedFromString(const std::string& _input) {
 		// If it's a plain number, use it directly
 		try {
 			size_t pos;
@@ -306,28 +306,28 @@ struct SaveManager {
 		}
 
 		// Otherwise hash it
-		return hashCode(_input);
+		return HashCode(_input);
 	}
 
-	Tag getPlayerNBT(const std::string& _playerName) { // return by value
-		std::string playerPath = SaveDirectory + "/players/" + _playerName + ".dat";
+	Tag GetPlayerNbt(const std::string& _playerName) { // return by value
+		std::string playerPath = saveDirectory + "/players/" + _playerName + ".dat";
 
 		if (!std::filesystem::exists(playerPath)) {
-			Tag fresh = getNewPlayerNBT();
-			savePlayerNBT(_playerName, fresh);
+			Tag fresh = GetNewPlayerNbt();
+			SavePlayerNbt(_playerName, fresh);
 			return fresh;
 		}
 
 		// Load existing player file
 		std::ifstream file(playerPath, std::ios::binary);
 		if (!file.is_open())
-			return getNewPlayerNBT();
+			return GetNewPlayerNbt();
 
 		std::vector<uint8_t> compressed((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
 		libdeflate_decompressor* decompressor = libdeflate_alloc_decompressor();
 		if (!decompressor)
-			return getNewPlayerNBT();
+			return GetNewPlayerNbt();
 
 		std::vector<uint8_t> raw(1024 * 1024);
 		size_t actualSize = 0;
@@ -335,78 +335,78 @@ struct SaveManager {
 		                                                      raw.data(), raw.size(), &actualSize);
 		libdeflate_free_decompressor(decompressor);
 		if (result != LIBDEFLATE_SUCCESS)
-			return getNewPlayerNBT();
+			return GetNewPlayerNbt();
 
 		raw.resize(actualSize);
 		NBTParser parser(raw.data(), raw.size());
 		return parser.root;
 	}
 
-	Tag getNewPlayerNBT() {
+	Tag GetNewPlayerNbt() {
 		Tag root;
 		root.type = TAG_COMPOUND;
 		root.name = "";
 
-		Tag Motion;
-		Motion.type = TAG_LIST;
-		Motion.name = "Motion";
-		Motion.listType = TAG_DOUBLE;
-		Tag SleepTimer;
-		SleepTimer.type = TAG_SHORT;
-		SleepTimer.name = "SleepTimer";
-		SleepTimer.shortValue = 0;
-		Tag Health;
-		Health.type = TAG_SHORT;
-		Health.name = "Health";
-		Health.shortValue = 20;
-		Tag Air;
-		Air.type = TAG_SHORT;
-		Air.name = "Air";
-		Air.shortValue = 300;
-		Tag OnGround;
-		OnGround.type = TAG_BYTE;
-		OnGround.name = "OnGround";
-		OnGround.byteValue = 0;
-		Tag Dimension;
-		Dimension.type = TAG_INT;
-		Dimension.name = "Dimension";
-		Dimension.intValue = 0;
-		Tag Rotation;
-		Rotation.type = TAG_LIST;
-		Rotation.name = "Rotation";
-		Rotation.listType = TAG_FLOAT;
-		Tag FallDistance;
-		FallDistance.type = TAG_FLOAT;
-		FallDistance.name = "FallDistance";
-		FallDistance.floatValue = 0.0f;
-		Tag Sleeping;
-		Sleeping.type = TAG_BYTE;
-		Sleeping.name = "Sleeping";
-		Sleeping.byteValue = 0;
-		Tag Pos;
-		Pos.type = TAG_LIST;
-		Pos.name = "Pos";
-		Pos.listType = TAG_DOUBLE;
-		Tag DeathTime;
-		DeathTime.type = TAG_SHORT;
-		DeathTime.name = "DeathTime";
-		DeathTime.shortValue = 0;
-		Tag Fire;
-		Fire.type = TAG_SHORT;
-		Fire.name = "Fire";
-		Fire.shortValue = -20;
-		Tag HurtTime;
-		HurtTime.type = TAG_SHORT;
-		HurtTime.name = "HurtTime";
-		HurtTime.shortValue = 0;
-		Tag AttackTime;
-		AttackTime.type = TAG_SHORT;
-		AttackTime.name = "AttackTime";
-		AttackTime.shortValue = 0;
-		Tag Inventory;
-		Inventory.type = TAG_LIST;
-		Inventory.name = "Inventory";
-		Inventory.listType = TAG_COMPOUND;
+		Tag motion;
+		motion.type = TAG_LIST;
+		motion.name = "Motion";
+		motion.listType = TAG_DOUBLE;
+		Tag sleepTimer;
+		sleepTimer.type = TAG_SHORT;
+		sleepTimer.name = "SleepTimer";
+		sleepTimer.shortValue = 0;
+		Tag health;
+		health.type = TAG_SHORT;
+		health.name = "Health";
+		health.shortValue = 20;
+		Tag air;
+		air.type = TAG_SHORT;
+		air.name = "Air";
+		air.shortValue = 300;
+		Tag onGround;
+		onGround.type = TAG_BYTE;
+		onGround.name = "OnGround";
+		onGround.byteValue = 0;
+		Tag dimension;
+		dimension.type = TAG_INT;
+		dimension.name = "Dimension";
+		dimension.intValue = 0;
+		Tag rotation;
+		rotation.type = TAG_LIST;
+		rotation.name = "Rotation";
+		rotation.listType = TAG_FLOAT;
+		Tag fallDistance;
+		fallDistance.type = TAG_FLOAT;
+		fallDistance.name = "FallDistance";
+		fallDistance.floatValue = 0.0f;
+		Tag sleeping;
+		sleeping.type = TAG_BYTE;
+		sleeping.name = "Sleeping";
+		sleeping.byteValue = 0;
+		Tag pos;
+		pos.type = TAG_LIST;
+		pos.name = "Pos";
+		pos.listType = TAG_DOUBLE;
+		Tag deathTime;
+		deathTime.type = TAG_SHORT;
+		deathTime.name = "DeathTime";
+		deathTime.shortValue = 0;
+		Tag fire;
+		fire.type = TAG_SHORT;
+		fire.name = "Fire";
+		fire.shortValue = -20;
+		Tag hurtTime;
+		hurtTime.type = TAG_SHORT;
+		hurtTime.name = "HurtTime";
+		hurtTime.shortValue = 0;
+		Tag attackTime;
+		attackTime.type = TAG_SHORT;
+		attackTime.name = "AttackTime";
+		attackTime.shortValue = 0;
+		Tag inventory;
+		inventory.type = TAG_LIST;
+		inventory.name = "Inventory";
+		inventory.listType = TAG_COMPOUND;
 
 		// Initialize our position with a default
 		Tag posX;
@@ -418,9 +418,9 @@ struct SaveManager {
 		Tag posZ;
 		posZ.type = TAG_DOUBLE;
 		posZ.doubleValue = -1;
-		Pos.list.push_back(posX);
-		Pos.list.push_back(posY);
-		Pos.list.push_back(posZ);
+		pos.list.push_back(posX);
+		pos.list.push_back(posY);
+		pos.list.push_back(posZ);
 
 		Tag rotX;
 		rotX.type = TAG_FLOAT;
@@ -428,8 +428,8 @@ struct SaveManager {
 		Tag rotY;
 		rotY.type = TAG_FLOAT;
 		rotY.floatValue = 0.0f;
-		Rotation.list.push_back(rotX);
-		Rotation.list.push_back(rotY);
+		rotation.list.push_back(rotX);
+		rotation.list.push_back(rotY);
 
 		// Initialize our velocity with a default
 		Tag movX;
@@ -441,29 +441,29 @@ struct SaveManager {
 		Tag movZ;
 		movZ.type = TAG_DOUBLE;
 		movZ.doubleValue = 0.0;
-		Motion.list.push_back(movX);
-		Motion.list.push_back(movY);
-		Motion.list.push_back(movZ);
+		motion.list.push_back(movX);
+		motion.list.push_back(movY);
+		motion.list.push_back(movZ);
 
-		root.compound["Motion"] = Motion;
-		root.compound["SleepTimer"] = SleepTimer;
-		root.compound["Health"] = Health;
-		root.compound["Air"] = Air;
-		root.compound["OnGround"] = OnGround;
-		root.compound["Dimension"] = Dimension;
-		root.compound["Rotation"] = Rotation;
-		root.compound["FallDistance"] = FallDistance;
-		root.compound["Sleeping"] = Sleeping;
-		root.compound["Pos"] = Pos;
-		root.compound["DeathTime"] = DeathTime;
-		root.compound["Fire"] = Fire;
-		root.compound["HurtTime"] = HurtTime;
-		root.compound["AttackTime"] = AttackTime;
-		root.compound["Inventory"] = Inventory;
+		root.compound["Motion"] = motion;
+		root.compound["SleepTimer"] = sleepTimer;
+		root.compound["Health"] = health;
+		root.compound["Air"] = air;
+		root.compound["OnGround"] = onGround;
+		root.compound["Dimension"] = dimension;
+		root.compound["Rotation"] = rotation;
+		root.compound["FallDistance"] = fallDistance;
+		root.compound["Sleeping"] = sleeping;
+		root.compound["Pos"] = pos;
+		root.compound["DeathTime"] = deathTime;
+		root.compound["Fire"] = fire;
+		root.compound["HurtTime"] = hurtTime;
+		root.compound["AttackTime"] = attackTime;
+		root.compound["Inventory"] = inventory;
 		return root;
 	}
 
-	bool savePlayerNBT(const std::string& _playerName, Tag& _playerData) const {
+	bool SavePlayerNbt(const std::string& _playerName, Tag& _playerData) const {
 		std::vector<uint8_t> raw;
 		NBTwriter writer(raw, _playerData);
 
@@ -478,7 +478,7 @@ struct SaveManager {
 			return false;
 		compressed.resize(actualSize);
 
-		std::string finalPath = SaveDirectory + "/players/" + _playerName + ".dat";
+		std::string finalPath = saveDirectory + "/players/" + _playerName + ".dat";
 		std::string tmpPath = finalPath + ".tmp";
 
 		std::ofstream file(tmpPath, std::ios::binary);
@@ -494,17 +494,17 @@ struct SaveManager {
 		return true;
 	}
 
-	void release() {
-		sessionLock.release();
+	void Release() {
+		sessionLock.Release();
 	}
 
 	~SaveManager() {
-		release();
+		Release();
 	}
 
 private:
-	std::string SaveDirectory;
+	std::string saveDirectory;
 	std::unique_ptr<FileHandle> worldFile;
 	SessionLock sessionLock;
-	levelData currentLevelData;
+	LevelData currentLevelData;
 };

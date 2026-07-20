@@ -53,7 +53,7 @@ public:
 	LogStream error;
 	LogStream debug;
 
-	std::string GetCurrentTimeString(bool _file_format = false);
+	std::string GetCurrentTimeString(bool _fileFormat = false);
 	void Log(std::string _message, LogLevel _level = LOG_MESSAGE);
 };
 

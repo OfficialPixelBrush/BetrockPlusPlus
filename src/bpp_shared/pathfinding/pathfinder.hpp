@@ -32,7 +32,7 @@ public:
 
 	Pathfinder(){};
 	Pathfinder(WorldManager* _world) : world(_world) {};
-	[[nodiscard]] std::vector<Int3> findPath(Int3 _start, Int3 _goal);
+	[[nodiscard]] std::vector<Int3> FindPath(Int3 _start, Int3 _goal);
 
 private:
 
@@ -49,8 +49,8 @@ private:
 
 	std::unordered_map<Int3, Node> nodes;
 
-	Node* openNode(Int3 _pos);
-	bool posValid(Int3 _pos);
-	std::optional<Int3> getNeighbour(Int3 _from, Int2 _dir);
-	void reset();
+	Node* OpenNode(Int3 _pos);
+	bool PosValid(Int3 _pos);
+	std::optional<Int3> GetNeighbour(Int3 _from, Int2 _dir);
+	void Reset();
 };

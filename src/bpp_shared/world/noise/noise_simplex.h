@@ -32,13 +32,13 @@ public:
 	NoiseSimplex();
 	NoiseSimplex(Java::Random& _rand);
 	~NoiseSimplex() override {}
-	void GenerateNoise(std::vector<double>& _values, Vec2 _p_coordinate, Int32_2 _p_size, Vec2 _p_scale, double _amplitude);
+	void GenerateNoise(std::vector<double>& _values, Vec2 _pCoordinate, Int32_2 _pSize, Vec2 _pScale, double _amplitude);
 };
 
-inline int32_t wrap(double _grad) {
+inline int32_t Wrap(double _grad) {
 	return _grad > 0.0 ? Java::DoubleToInt32(_grad) : Java::DoubleToInt32(_grad) - 1;
 }
 
-inline double dotProd(int32_t _grad[3], double _x, double _y) {
+inline double DotProd(int32_t _grad[3], double _x, double _y) {
 	return double(_grad[0]) * _x + double(_grad[1]) * _y;
 }

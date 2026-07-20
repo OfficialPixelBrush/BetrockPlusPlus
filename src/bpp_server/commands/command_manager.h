@@ -18,11 +18,11 @@ class Server;
 class CommandManager {
 public:
 	static void Init(Server* _server);
-	static void Parse(std::string& _cmd_string, PlayerSession& _session, WorldManager& _world,
+	static void Parse(std::string& _cmdString, PlayerSession& _session, WorldManager& _world,
 	                  std::function<void(PlayerSession&)> _transferDimension) noexcept;
 	static const std::vector<std::unique_ptr<Command>>& GetRegisteredCommands() noexcept;
 
 private:
-	static Server* server;
-	static std::vector<std::unique_ptr<Command>> registeredCommands;
+	static Server* m_server;
+	static std::vector<std::unique_ptr<Command>> m_registeredCommands;
 };

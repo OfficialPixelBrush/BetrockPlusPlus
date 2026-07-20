@@ -12,20 +12,20 @@ struct AABB {
 	double minX, minY, minZ;
 	double maxX, maxY, maxZ;
 
-	bool intersects(const AABB& _other) const {
+	bool Intersects(const AABB& _other) const {
 		return (_other.maxX > minX && _other.minX < maxX && _other.maxY > minY && _other.minY < maxY && _other.maxZ > minZ &&
 		        _other.minZ < maxZ);
 	}
 
-	AABB offset(double _dx, double _dy, double _dz) const {
+	AABB Offset(double _dx, double _dy, double _dz) const {
 		return { minX + _dx, minY + _dy, minZ + _dz, maxX + _dx, maxY + _dy, maxZ + _dz };
 	}
 
-	AABB expand(double _dx, double _dy, double _dz) const {
+	AABB Expand(double _dx, double _dy, double _dz) const {
 		return { minX - _dx, minY - _dy, minZ - _dz, maxX + _dx, maxY + _dy, maxZ + _dz };
 	}
 
-	AABB addCoord(double _dx, double _dy, double _dz) const {
+	AABB AddCoord(double _dx, double _dy, double _dz) const {
 		double x0 = minX, y0 = minY, z0 = minZ;
 		double x1 = maxX, y1 = maxY, z1 = maxZ;
 		if (_dx < 0)
@@ -44,7 +44,7 @@ struct AABB {
 	}
 
 	// Checks YZ overlap first, then computes how far we can move in X
-	double calculateXOffset(const AABB& _other, double _dx) const {
+	double CalculateXOffset(const AABB& _other, double _dx) const {
 		if (_other.maxY > minY && _other.minY < maxY) {
 			if (_other.maxZ > minZ && _other.minZ < maxZ) {
 				if (_dx > 0.0 && _other.maxX <= minX) {
@@ -62,7 +62,7 @@ struct AABB {
 		return _dx;
 	}
 
-	double calculateYOffset(const AABB& _other, double _dy) const {
+	double CalculateYOffset(const AABB& _other, double _dy) const {
 		if (_other.maxX > minX && _other.minX < maxX) {
 			if (_other.maxZ > minZ && _other.minZ < maxZ) {
 				if (_dy > 0.0 && _other.maxY <= minY) {
@@ -80,7 +80,7 @@ struct AABB {
 		return _dy;
 	}
 
-	double calculateZOffset(const AABB& _other, double _dz) const {
+	double CalculateZOffset(const AABB& _other, double _dz) const {
 		if (_other.maxX > minX && _other.minX < maxX) {
 			if (_other.maxY > minY && _other.minY < maxY) {
 				if (_dz > 0.0 && _other.maxZ <= minZ) {
@@ -103,53 +103,53 @@ struct AABB {
 struct CollisionShape {
 	std::vector<AABB> boxes;
 
-	void add(const AABB& _box) {
+	void Add(const AABB& _box) {
 		boxes.push_back(_box);
 	}
 
-	CollisionShape offset(double _dx, double _dy, double _dz) const {
+	CollisionShape Offset(double _dx, double _dy, double _dz) const {
 		CollisionShape result;
 		result.boxes.reserve(boxes.size());
 		for (const auto& box : boxes)
-			result.boxes.push_back(box.offset(_dx, _dy, _dz));
+			result.boxes.push_back(box.Offset(_dx, _dy, _dz));
 		return result;
 	}
 
-	bool intersects(const CollisionShape& _other) const {
+	bool Intersects(const CollisionShape& _other) const {
 		for (const auto& box1 : boxes)
 			for (const auto& box2 : _other.boxes)
-				if (box1.intersects(box2))
+				if (box1.Intersects(box2))
 					return true;
 		return false;
 	}
 
-	CollisionShape expand(double _dx, double _dy, double _dz) const {
+	CollisionShape Expand(double _dx, double _dy, double _dz) const {
 		CollisionShape result;
 		result.boxes.reserve(boxes.size());
 		for (const auto& box : boxes)
-			result.boxes.push_back(box.expand(_dx, _dy, _dz));
+			result.boxes.push_back(box.Expand(_dx, _dy, _dz));
 		return result;
 	}
 
-	double calculateXOffset(const AABB& _entity, double _dx) const {
+	double CalculateXOffset(const AABB& _entity, double _dx) const {
 		for (const auto& box : boxes)
-			_dx = box.calculateXOffset(_entity, _dx);
+			_dx = box.CalculateXOffset(_entity, _dx);
 		return _dx;
 	}
 
-	double calculateYOffset(const AABB& _entity, double _dy) const {
+	double CalculateYOffset(const AABB& _entity, double _dy) const {
 		for (const auto& box : boxes)
-			_dy = box.calculateYOffset(_entity, _dy);
+			_dy = box.CalculateYOffset(_entity, _dy);
 		return _dy;
 	}
 
-	double calculateZOffset(const AABB& _entity, double _dz) const {
+	double CalculateZOffset(const AABB& _entity, double _dz) const {
 		for (const auto& box : boxes)
-			_dz = box.calculateZOffset(_entity, _dz);
+			_dz = box.CalculateZOffset(_entity, _dz);
 		return _dz;
 	}
 
-	bool isEmpty() const {
+	bool IsEmpty() const {
 		return boxes.empty();
 	}
 };

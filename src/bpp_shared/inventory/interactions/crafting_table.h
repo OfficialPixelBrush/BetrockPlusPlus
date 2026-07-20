@@ -18,9 +18,9 @@ struct CraftingTableInventoryInteraction : CraftingInventoryInteraction {
 	struct SharedInventory : Inventory {
 		CraftingTableInventoryInteraction* owner = nullptr;
 		SharedInventory() : Inventory(46) {}
-		void onInventoryChanged() override {
+		void OnInventoryChanged() override {
 			if (owner)
-				owner->writeBack();
+				owner->WriteBack();
 		}
 	} sharedInventory;
 
@@ -28,14 +28,14 @@ struct CraftingTableInventoryInteraction : CraftingInventoryInteraction {
 	                                  Int3 _craftingTablePos);
 	~CraftingTableInventoryInteraction();
 
-	bool canExist() override;
-	void initSnapshot() override;
-	std::vector<DeltaSlot> tickDiff() override;
-	void writeBack();
+	bool CanExist() override;
+	void InitSnapshot() override;
+	std::vector<DeltaSlot> TickDiff() override;
+	void WriteBack();
 
 protected:
-	void mergeInventories();
-	void updateResult() override;
-	void shiftClickResult() override;
-	void shiftClickOther(int _slot) override;
+	void MergeInventories();
+	void UpdateResult() override;
+	void ShiftClickResult() override;
+	void ShiftClickOther(int _slot) override;
 };

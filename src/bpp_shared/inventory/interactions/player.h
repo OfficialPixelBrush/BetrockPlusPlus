@@ -12,10 +12,10 @@ struct PlayerInventoryInteraction : CraftingInventoryInteraction {
 	InventoryPlayer* playerInventory;
 
 	PlayerInventoryInteraction(InventoryPlayer* _inv, Runtime& _gameRuntime);
-	void onClose();
-	bool canExist() override;
+	void OnClose();
+	bool CanExist() override;
 
 protected:
-	void shiftClickResult() override;
-	void shiftClickOther(int _slot) override;
+	void ShiftClickResult() override;
+	void ShiftClickOther(int _slot) override;
 };

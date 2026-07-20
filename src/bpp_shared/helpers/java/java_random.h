@@ -23,9 +23,9 @@
 namespace Java {
 class Random {
 private:
-	static constexpr uint64_t m_multiplier = 0x5DEECE66DULL;
-	static constexpr uint64_t m_addend = 0xBULL;
-	static constexpr uint64_t m_mask = (1ULL << 48) - 1;
+	static constexpr uint64_t M_MULTIPLIER = 0x5DEECE66DULL;
+	static constexpr uint64_t M_ADDEND = 0xBULL;
+	static constexpr uint64_t M_MASK = (1ULL << 48) - 1;
 
 	uint64_t seed;
 
@@ -34,8 +34,8 @@ private:
 		* 
 		* @return Pseudorandom 32-bit integer value
 		*/
-	int32_t next(int32_t _bits) {
-		seed = (seed * m_multiplier + m_addend) & m_mask;
+	int32_t Next(int32_t _bits) {
+		seed = (seed * M_MULTIPLIER + M_ADDEND) & M_MASK;
 		return static_cast<int32_t>(seed >> (48 - _bits));
 	}
 
@@ -46,7 +46,7 @@ public:
 		* @param initialSeed The initial seed value (defaults to current time)
 		*/
 	Random(int64_t _initialSeed) {
-		setSeed(_initialSeed);
+		SetSeed(_initialSeed);
 	}
 
 	/**
@@ -55,7 +55,7 @@ public:
 		*/
 	Random() {
 		// Default seed: current time
-		setSeed(static_cast<int64_t>(std::chrono::steady_clock::now().time_since_epoch().count()));
+		SetSeed(static_cast<int64_t>(std::chrono::steady_clock::now().time_since_epoch().count()));
 	}
 
 	/**
@@ -63,8 +63,8 @@ public:
 		* 
 		* @param s Seed value
 		*/
-	void setSeed(int64_t _s) {
-		seed = (static_cast<uint64_t>(_s) ^ m_multiplier) & m_mask;
+	void SetSeed(int64_t _s) {
+		seed = (static_cast<uint64_t>(_s) ^ M_MULTIPLIER) & M_MASK;
 	}
 
 	/**
@@ -72,8 +72,8 @@ public:
 		* 
 		* @return Pseudorandom 32-bit integer value
 		*/
-	int32_t nextInt() {
-		return next(32);
+	int32_t NextInt() {
+		return Next(32);
 	}
 
 	/**
@@ -81,17 +81,17 @@ public:
 		* 
 		* @return Pseudorandom 32-bit integer value
 		*/
-	int32_t nextInt(int32_t _bound) {
+	int32_t NextInt(int32_t _bound) {
 		if (_bound <= 0)
 			throw std::invalid_argument("bound must be positive");
 
 		if ((_bound & -_bound) == _bound) { // power of two
-			return int32_t((_bound * int64_t(next(31))) >> 31);
+			return int32_t((_bound * int64_t(Next(31))) >> 31);
 		}
 
 		int32_t bits, val;
 		do {
-			bits = next(31);
+			bits = Next(31);
 			val = bits % _bound;
 		} while (int32_t(uint32_t(bits) - uint32_t(val) + uint32_t(_bound - 1)) < 0);
 		return val;
@@ -102,8 +102,8 @@ public:
 		* 
 		* @return Pseudorandom 64-bit long value
 		*/
-	int64_t nextLong() {
-		return (int64_t(next(32)) << 32) + next(32);
+	int64_t NextLong() {
+		return (int64_t(Next(32)) << 32) + Next(32);
 	}
 
 	/**
@@ -111,8 +111,8 @@ public:
 		* 
 		* @return Pseudorandom double value between 0.0 (inclusive) and 1.0 (exclusive)
 		*/
-	double nextDouble() {
-		return double((int64_t(next(26)) << 27) + next(27)) / double(1LL << 53);
+	double NextDouble() {
+		return double((int64_t(Next(26)) << 27) + Next(27)) / double(1LL << 53);
 	}
 
 	/**
@@ -120,8 +120,8 @@ public:
 		* 
 		* @return Pseudorandom boolean
 		*/
-	bool nextBoolean() {
-		return next(1) != 0;
+	bool NextBoolean() {
+		return Next(1) != 0;
 	}
 
 	/**
@@ -129,8 +129,8 @@ public:
 		* 
 		* @return Pseudorandom float value between 0.0 (inclusive) and 1.0 (exclusive)
 		*/
-	float nextFloat() {
-		return float(next(24)) / float(1 << 24);
+	float NextFloat() {
+		return float(Next(24)) / float(1 << 24);
 	}
 };
 } // namespace Java

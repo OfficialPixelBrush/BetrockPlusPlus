@@ -20,9 +20,9 @@ struct PlayerSession;
 
 namespace Blocks {
 
-Int3 getAdjacentBlockPos(Int3 _pos, PacketData::FaceDirection _face);
-bool canSugarcaneSurviveAt(WorldManager& _world, Int3 _pos);
-float getFluidPercentAir(uint8_t _meta);
+Int3 GetAdjacentBlockPos(Int3 _pos, PacketData::FaceDirection _face);
+bool CanSugarcaneSurviveAt(WorldManager& _world, Int3 _pos);
+float GetFluidPercentAir(uint8_t _meta);
 void BreakAndDropBlock(WorldManager& _world, Int3 _pos);
 
 enum class StepSound : uint8_t {
@@ -69,7 +69,7 @@ struct BlockBehavior {
 	// Called when we need to check the collision of this block
 	CollisionShape (*getCollider)(uint8_t _metadata) = nullptr;
 
-	// Called each random tick if ticksOnLoad = true
+	// Called each random Tick if ticksOnLoad = true
 	// Also called for scheduled ticks
 	void (*onTick)(WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& _random) = nullptr;
 
@@ -123,7 +123,7 @@ extern BlockProperties blockProperties[256];
 extern BlockBehavior blockBehaviors[256];
 
 // Call once at startup before anything reads from the tables
-void registerAll();
+void RegisterAll();
 
-std::vector<ItemStack> getBlockDrops(BlockType _blockId, uint8_t _meta, Java::Random& _rng);
+std::vector<ItemStack> GetBlockDrops(BlockType _blockId, uint8_t _meta, Java::Random& _rng);
 } // namespace Blocks

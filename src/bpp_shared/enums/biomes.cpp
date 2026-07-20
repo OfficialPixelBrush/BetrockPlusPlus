@@ -85,5 +85,5 @@ Biome GetBiome(float _temperature, float _humidity) {
 Biome GetBiomeFromLookup(float _temperature, float _humidity) {
 	int32_t temp = int32_t(_temperature * 63.0f);
 	int32_t humi = int32_t(_humidity * 63.0f);
-	return BiomeLUT[size_t(temp + humi * 64)];
+	return biomeLut[size_t(temp + humi * 64)];
 }

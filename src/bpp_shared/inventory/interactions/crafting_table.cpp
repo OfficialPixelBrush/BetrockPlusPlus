@@ -11,24 +11,24 @@
 
 CraftingTableInventoryInteraction::CraftingTableInventoryInteraction(InventoryPlayer* _pinv, WorldManager& _worldMng,
                                                                      Runtime& _gameRuntime, Int3 _craftingTablePos)
-    : CraftingInventoryInteraction(&sharedInventory, &craftInventory, _pinv, _gameRuntime, { 3, 3 }),
-      world(_worldMng), blockPosition(_craftingTablePos) {
+    : CraftingInventoryInteraction(&sharedInventory, &craftInventory, _pinv, _gameRuntime, { 3, 3 }), world(_worldMng),
+      blockPosition(_craftingTablePos) {
 	sharedInventory.owner = this;
-	mergeInventories();
+	MergeInventories();
 }
 
 CraftingTableInventoryInteraction::~CraftingTableInventoryInteraction() {
-	writeBack();
+	WriteBack();
 
-	for (size_t i = 1; i <= gridSize.total(); i++) {
+	for (size_t i = 1; i <= gridSize.Total(); i++) {
 		ItemStack& stack = craftInventory.slots[i];
 		if (stack.id == Items::Id::INVALID)
 			continue;
-		playerInventory->mergeItemStackInInventory(stack, true, 9, 44);
+		playerInventory->MergeItemStackInInventory(stack, true, 9, 44);
 	}
 }
 
-void CraftingTableInventoryInteraction::writeBack() {
+void CraftingTableInventoryInteraction::WriteBack() {
 	size_t slotCount = 0;
 	for (size_t i = 0; i < 10; i++)
 		craftInventory.slots[i] = sharedInventory.slots[slotCount++];
@@ -36,19 +36,19 @@ void CraftingTableInventoryInteraction::writeBack() {
 		playerInventory->slots[i] = sharedInventory.slots[slotCount++];
 }
 
-bool CraftingTableInventoryInteraction::canExist() {
-	return world.getBlockId(blockPosition) == BLOCK_CRAFTING_TABLE;
+bool CraftingTableInventoryInteraction::CanExist() {
+	return world.GetBlockId(blockPosition) == BLOCK_CRAFTING_TABLE;
 }
 
-void CraftingTableInventoryInteraction::initSnapshot() {
-	snapshot.resize(size_t(sharedInventory.getSizeInventory()));
+void CraftingTableInventoryInteraction::InitSnapshot() {
+	snapshot.resize(size_t(sharedInventory.GetSizeInventory()));
 	for (size_t i = 0; i < snapshot.size(); i++)
 		snapshot[i] = sharedInventory.slots[i];
 }
 
-std::vector<DeltaSlot> CraftingTableInventoryInteraction::tickDiff() {
+std::vector<DeltaSlot> CraftingTableInventoryInteraction::TickDiff() {
 	std::vector<DeltaSlot> differences;
-	mergeInventories(); // make sure sharedInventory is current before diffing
+	MergeInventories(); // make sure sharedInventory is current before diffing
 	for (size_t i = 0; i < snapshot.size(); i++) {
 		auto& snap = snapshot[i];
 		if (snap == sharedInventory.slots[i])
@@ -59,7 +59,7 @@ std::vector<DeltaSlot> CraftingTableInventoryInteraction::tickDiff() {
 	return differences;
 }
 
-void CraftingTableInventoryInteraction::mergeInventories() {
+void CraftingTableInventoryInteraction::MergeInventories() {
 	size_t slotCount = 0;
 	for (size_t i = 0; i < 10; i++)
 		sharedInventory.slots[slotCount++] = craftInventory.slots[i];
@@ -67,26 +67,26 @@ void CraftingTableInventoryInteraction::mergeInventories() {
 		sharedInventory.slots[slotCount++] = playerInventory->slots[i];
 }
 
-void CraftingTableInventoryInteraction::updateResult() {
-	CraftingInventoryInteraction::updateResult();
-	mergeInventories();
+void CraftingTableInventoryInteraction::UpdateResult() {
+	CraftingInventoryInteraction::UpdateResult();
+	MergeInventories();
 }
 
-void CraftingTableInventoryInteraction::shiftClickResult() {
+void CraftingTableInventoryInteraction::ShiftClickResult() {
 	ItemStack& result = craftInventory.slots[0];
 	if (result.id == Items::Id::INVALID)
 		return;
 
 	ItemStack copy = result;
-	if (playerInventory->mergeItemStackInInventory(copy, true, 9, 44)) {
-		finishCraft();
+	if (playerInventory->MergeItemStackInInventory(copy, true, 9, 44)) {
+		FinishCraft();
 	} else {
 		craftInventory.slots[0] = copy.count == 0 ? ItemStack{} : copy;
 	}
 }
 
-void CraftingTableInventoryInteraction::shiftClickOther(int _slot) {
-	auto stack = sharedInventory.getStackInSlot(_slot);
+void CraftingTableInventoryInteraction::ShiftClickOther(int _slot) {
+	auto stack = sharedInventory.GetStackInSlot(_slot);
 	if (!stack)
 		return;
 
@@ -95,16 +95,16 @@ void CraftingTableInventoryInteraction::shiftClickOther(int _slot) {
 	if (_slot < 10) {
 		// Grid -> inventory
 		// Try the main inventory then the hotbar
-		bool success = playerInventory->mergeItemStackInInventory(copy, false, 9, 35);
+		bool success = playerInventory->MergeItemStackInInventory(copy, false, 9, 35);
 		if (!success)
-			playerInventory->mergeItemStackInInventory(copy, false, 36, 44);
+			playerInventory->MergeItemStackInInventory(copy, false, 36, 44);
 	} else {
 		// We can't shift click into the crafting grid itself, so just try the other area of the inventory
 		// We shift clicked in the inventory
 		if (_slot > 9 && _slot < 37) {
-			playerInventory->mergeItemStackInInventory(copy, false, 36, 44);
+			playerInventory->MergeItemStackInInventory(copy, false, 36, 44);
 		} else {
-			playerInventory->mergeItemStackInInventory(copy, false, 9, 35);
+			playerInventory->MergeItemStackInInventory(copy, false, 9, 35);
 		}
 	}
 
@@ -116,5 +116,5 @@ void CraftingTableInventoryInteraction::shiftClickOther(int _slot) {
 	}
 
 	// Re-sync sharedInventory from the real inventories
-	mergeInventories();
+	MergeInventories();
 }

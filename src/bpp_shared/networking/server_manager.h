@@ -12,7 +12,7 @@
 // Should act as a singleton
 class ServerManager {
 private:
-	int server_socket = INVALID_SOCKET;
+	int serverSocket = INVALID_SOCKET;
 
 public:
 	std::vector<NetworkStream> streams;

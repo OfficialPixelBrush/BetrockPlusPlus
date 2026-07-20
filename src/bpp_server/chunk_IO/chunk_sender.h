@@ -44,13 +44,13 @@ struct ChunkSender {
 
 	BS::thread_pool<> pool{ 2 };
 
-	size_t enqueue(PlayerSession& _session, WorldManager& _world, int _batchSize = -1) {
+	size_t Enqueue(PlayerSession& _session, WorldManager& _world, int _batchSize = -1) {
 		if (_batchSize < 0)
 			_batchSize = static_cast<int>(pool.get_thread_count()) * 2;
 		int cx = int(std::floor(_session.position.pos.x)) >> 4;
 		int cz = int(std::floor(_session.position.pos.z)) >> 4;
 
-		int radius = _world.getViewRadius();
+		int radius = _world.GetViewRadius();
 
 		std::vector<Int32_2> toSend;
 		for (int dx = -radius; dx <= radius; dx++) {
@@ -108,7 +108,7 @@ struct ChunkSender {
 			std::shared_ptr<Chunk> chunkRef = _world.chunks.at(p);
 			pc.pos = p;
 			pc.chunkRef = chunkRef;
-			pc.data = pool.submit_task([chunkRef]() { return ChunkSerializer::serialize(*chunkRef); });
+			pc.data = pool.submit_task([chunkRef]() { return ChunkSerializer::Serialize(*chunkRef); });
 			queue.push_back(std::move(pc));
 			_session.sentChunks.insert(p);
 			++submitted;
@@ -116,7 +116,7 @@ struct ChunkSender {
 		return static_cast<size_t>(submitted);
 	}
 
-	void sendBlockUpdates(PlayerSession& _session, const Int32_2& _chunk, const std::vector<PendingBlock>& _changes,
+	void SendBlockUpdates(PlayerSession& _session, const Int32_2& _chunk, const std::vector<PendingBlock>& _changes,
 	                      std::shared_ptr<const Chunk> _chunkRef = nullptr) {
 		if (_changes.empty())
 			return;
@@ -125,31 +125,31 @@ struct ChunkSender {
 			const PendingBlock& pb = _changes[0];
 			Packet::SetBlock sb;
 			sb.block = { pb.block.type, pb.block.data };
-			sb.position = { static_cast<int32_t>(pb.block_pos.x + (_chunk.x * 16)), static_cast<int8_t>(pb.block_pos.y),
-				            static_cast<int32_t>(pb.block_pos.z + (_chunk.z * 16)) };
+			sb.position = { static_cast<int32_t>(pb.blockPos.x + (_chunk.x * 16)), static_cast<int8_t>(pb.blockPos.y),
+				            static_cast<int32_t>(pb.blockPos.z + (_chunk.z * 16)) };
 			sb.Serialize(_session.stream);
 		} else if (_changes.size() < 10) {
-			auto format_multi_block = [](int8_t _x, int8_t _y, int8_t _z) {
+			auto formatMultiBlock = [](int8_t _x, int8_t _y, int8_t _z) {
 				return (((int16_t(_x) & 0x0F) << 12) | ((int16_t(_z) & 0x0F) << 8) | ((int16_t(_y) & 0xFF)));
 			};
 			Packet::SetMultipleBlocks smb;
-			smb.chunk_position = { _chunk.x, _chunk.z };
+			smb.chunkPosition = { _chunk.x, _chunk.z };
 			for (const auto& pb : _changes) {
-				smb.block_coordinates.push_back(static_cast<int16_t>(
-				    format_multi_block(int8_t(pb.block_pos.x), int8_t(pb.block_pos.y), int8_t(pb.block_pos.z))));
-				smb.block_metadata.push_back(int8_t(pb.block.data));
-				smb.block_types.push_back(pb.block.type);
+				smb.blockCoordinates.push_back(static_cast<int16_t>(
+				    formatMultiBlock(int8_t(pb.blockPos.x), int8_t(pb.blockPos.y), int8_t(pb.blockPos.z))));
+				smb.blockMetadata.push_back(int8_t(pb.block.data));
+				smb.blockTypes.push_back(pb.block.type);
 			}
-			smb.number_of_blocks = static_cast<int16_t>(smb.block_coordinates.size());
+			smb.numberOfBlocks = static_cast<int16_t>(smb.blockCoordinates.size());
 			smb.Serialize(_session.stream);
 		} else {
 			// Find bounding box in chunk-local space
-			auto& p0 = _changes[0].block_pos;
+			auto& p0 = _changes[0].blockPos;
 			int xmin = p0.x, xmax = p0.x;
 			int ymin = p0.y, ymax = p0.y;
 			int zmin = p0.z, zmax = p0.z;
 			for (const auto& pb : _changes) {
-				const auto& pos = pb.block_pos;
+				const auto& pos = pb.blockPos;
 				if (pos.x > xmax)
 					xmax = pos.x;
 				if (pos.x < xmin)
@@ -166,8 +166,8 @@ struct ChunkSender {
 			// Force even ySize so the client's nibble copy doesn't desync
 			ymin = (ymin / 2) * 2;
 			ymax = (ymax / 2 + 1) * 2 - 1;
-			ymin = CrossPlatform::Math::max<int>(ymin, 0);
-			ymax = CrossPlatform::Math::min<int>(ymax, CHUNK_HEIGHT - 1);
+			ymin = CrossPlatform::Math::Max<int>(ymin, 0);
+			ymax = CrossPlatform::Math::Min<int>(ymax, CHUNK_HEIGHT - 1);
 
 			PendingSubRegion psr;
 			psr.chunkPos = _chunk;
@@ -180,7 +180,7 @@ struct ChunkSender {
 			if (_chunkRef) {
 				std::shared_ptr<const Chunk> ref = _chunkRef;
 				psr.data = pool.submit_task([ref, xmin, xmax, ymin, ymax, zmin, zmax]() {
-					return ChunkSerializer::serialize(*ref, xmin, xmax + 1, ymin, ymax + 1, zmin, zmax + 1);
+					return ChunkSerializer::Serialize(*ref, xmin, xmax + 1, ymin, ymax + 1, zmin, zmax + 1);
 				});
 			}
 			subRegionFlight[&_session].push_back(std::move(psr));
@@ -189,8 +189,8 @@ struct ChunkSender {
 
 	// Drains every job that is already done and writes the resulting
 	// SetChunkVisibility + ChunkData packets to the session stream.
-	// Jobs that aren't finished yet stay in the queue for the next tick.
-	void flush(PlayerSession& _session) {
+	// Jobs that aren't finished yet stay in the queue for the next Tick.
+	void Flush(PlayerSession& _session) {
 		auto it = inFlight.find(&_session);
 		if (it == inFlight.end())
 			return;
@@ -224,11 +224,11 @@ struct ChunkSender {
 
 			// Drain any block updates that queued up while this chunk
 			// was in-flight. They go out immediately after the chunk
-			// data in the same tick, so the client receives them in
+			// data in the same Tick, so the client receives them in
 			// order and applies them to freshly loaded terrain.
 			auto pending = _session.pendingBlockChanges.find(pc.pos);
 			if (pending != _session.pendingBlockChanges.end()) {
-				sendBlockUpdates(_session, pc.pos, pending->second, std::shared_ptr<const Chunk>(pc.chunkRef));
+				SendBlockUpdates(_session, pc.pos, pending->second, std::shared_ptr<const Chunk>(pc.chunkRef));
 				_session.pendingBlockChanges.erase(pending);
 			}
 
@@ -268,7 +268,7 @@ struct ChunkSender {
 	}
 
 	// Remove all in-flight state for a disconnected session.
-	void remove(PlayerSession& _session) {
+	void Remove(PlayerSession& _session) {
 		inFlight.erase(&_session);
 		subRegionFlight.erase(&_session);
 	}

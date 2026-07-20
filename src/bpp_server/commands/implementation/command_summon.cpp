@@ -13,11 +13,11 @@ std::string CommandSummon::Execute(std::vector<std::string>& _parameters, Player
                                    std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
 	auto entity = std::make_shared<MobileEntity>();
 	Vec3 spawnPos = _session.position.pos;
-	entity->teleport(spawnPos);
-	_world.entityManager.addEntity(std::move(entity));
+	entity->Teleport(spawnPos);
+	_world.entityManager.AddEntity(std::move(entity));
 
 	Packet::ChatMessage pkt;
-	pkt.message = "§eSpawned smart entity at " + spawnPos.str();
+	pkt.message = "§eSpawned smart entity at " + spawnPos.Str();
 	pkt.Serialize(_session.stream);
 	return "";
 }

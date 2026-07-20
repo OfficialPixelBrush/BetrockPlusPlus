@@ -30,28 +30,28 @@ private:
 	float eyeHeight = height * 0.85f;
 	bool canBreatheUnderwater = false;
 
-	void followPath();
-	void resolveEntityCollision(Entity& _other);
-	void tickPhysics();
+	void FollowPath();
+	void ResolveEntityCollision(Entity& _other);
+	void TickPhysics();
 
 public:
 	MobileEntity();
 
-	virtual void onDeath();
-	virtual void tick() override;
-	virtual void setGoal(std::optional<Int3> _goal);
-	bool attackEntityFrom(Entity* _entity, int _damage) override;
+	virtual void OnDeath();
+	virtual void Tick() override;
+	virtual void SetGoal(std::optional<Int3> _goal);
+	bool AttackEntityFrom(Entity* _entity, int _damage) override;
 	bool AABBNotInLiquidOrObstructed(AABB& _collider);
-	bool headInOpaqueBlock();
-	bool headInWater();
-	bool entityAlive() {
+	bool HeadInOpaqueBlock();
+	bool HeadInWater();
+	bool EntityAlive() {
 		return !isDead && health > 0;
 	}
 	bool onLadder() {
-		auto fd = MathHelper::floor_double;
-		return world->getBlockId({ fd(position.x), fd(collider.minY), fd(position.z) }) == BLOCK_LADDER;
+		auto fd = MathHelper::FloorDouble;
+		return world->GetBlockId({ fd(position.x), fd(collider.minY), fd(position.z) }) == BLOCK_LADDER;
 	}
-	bool canBePushed() override {
+	bool CanBePushed() override {
 		return true;
 	}
 };

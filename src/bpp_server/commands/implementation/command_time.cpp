@@ -15,14 +15,14 @@ std::string CommandTime::Execute(std::vector<std::string>& _parameters, PlayerSe
 	// Set the time
 	if (_parameters.size() > 2) {
 		if (_parameters[1] == "set") {
-			_world.elapsed_ticks = std::stol(_parameters[2]);
+			_world.elapsedTicks = std::stol(_parameters[2]);
 		} else if (_parameters[1] == "add") {
-			_world.elapsed_ticks += std::stol(_parameters[2]);
+			_world.elapsedTicks += std::stol(_parameters[2]);
 		} else {
 			return "Invalid argument " + _parameters[1];
 		}
 		Packet::ChatMessage reply;
-		reply.message = "§eSet time to " + std::to_string(_world.elapsed_ticks);
+		reply.message = "§eSet time to " + std::to_string(_world.elapsedTicks);
 		reply.Serialize(_session.stream);
 		return "";
 	}
@@ -30,7 +30,7 @@ std::string CommandTime::Execute(std::vector<std::string>& _parameters, PlayerSe
 	// Get the time
 	if (_parameters.size() == 1) {
 		Packet::ChatMessage reply;
-		reply.message = "§eCurrent Time is " + std::to_string(_world.elapsed_ticks);
+		reply.message = "§eCurrent Time is " + std::to_string(_world.elapsedTicks);
 		reply.Serialize(_session.stream);
 		return "";
 	}

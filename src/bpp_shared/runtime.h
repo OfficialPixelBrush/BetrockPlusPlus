@@ -26,32 +26,32 @@ struct Runtime {
 	RecipeManager recipeManager;
 
 	Runtime() : worldHell(true) {
-		Blocks::registerAll();
-		Items::registerAll();
-		recipeManager.addVanillaRecipes();
+		Blocks::RegisterAll();
+		Items::RegisterAll();
+		recipeManager.AddVanillaRecipes();
 		GlobalLogger().info << "New game runtime created!\n";
 	}
 	Runtime(int _renderDistance) : worldHell(true) {	
-		Blocks::registerAll();
-		Items::registerAll();
-		recipeManager.addVanillaRecipes();
+		Blocks::RegisterAll();
+		Items::RegisterAll();
+		recipeManager.AddVanillaRecipes();
 
 		// Override our view distance
-		world.setViewRadius(_renderDistance);
-		worldHell.setViewRadius(_renderDistance);
+		world.SetViewRadius(_renderDistance);
+		worldHell.SetViewRadius(_renderDistance);
 
 		GlobalLogger().info << "New game runtime created with view radius overriden to " << _renderDistance << "!\n";
 	}
 
-	void init(std::string _levelPath, std::string _seedOverride = "") {
+	void Init(std::string _levelPath, std::string _seedOverride = "") {
 		// Setup our save
 		bool newSave = false;
-		if (!saveManager.initialize(_levelPath)) {
+		if (!saveManager.Initialize(_levelPath)) {
 			GlobalLogger().warn << "**** FAILED TO LOAD WORLD DATA! Attempting to create new world... \n";
 			newSave = true;
-			if (!saveManager.createNewWorld({ .RandomSeed = (_seedOverride != "")
-			                                                    ? saveManager.seedFromString(_seedOverride)
-			                                                    : Java::Random().nextLong() })) {
+			if (!saveManager.CreateNewWorld({ .randomSeed = (_seedOverride != "")
+			                                                    ? saveManager.SeedFromString(_seedOverride)
+			                                                    : Java::Random().NextLong() })) {
 				GlobalLogger().error << "**** FAILED TO CREATE NEW WORLD! \n";
 				exit(1);
 			}
@@ -59,21 +59,21 @@ struct Runtime {
 		}
 
 		// Initialize our region managers
-		overworldRegionManager.initialize(_levelPath + "/region");
-		hellRegionManager.initialize(_levelPath + "/DIM-1/region");
+		overworldRegionManager.Initialize(_levelPath + "/region");
+		hellRegionManager.Initialize(_levelPath + "/DIM-1/region");
 
 		// Bind our pointers
 		overworldRegionManager.world = &world;
 		hellRegionManager.world = &worldHell;
 
 		// Initialize save data with our world objects
-		saveManager.loadLevelData();
-		world.initWorldSeed(saveManager.getLevelData().RandomSeed);
-		worldHell.initWorldSeed(saveManager.getLevelData().RandomSeed);
+		saveManager.LoadLevelData();
+		world.InitWorldSeed(saveManager.GetLevelData().randomSeed);
+		worldHell.InitWorldSeed(saveManager.GetLevelData().randomSeed);
 
 		// World time
-		world.elapsed_ticks = saveManager.getLevelData().time;
-		worldHell.elapsed_ticks = saveManager.getLevelData().time;
+		world.elapsedTicks = saveManager.GetLevelData().time;
+		worldHell.elapsedTicks = saveManager.GetLevelData().time;
 
 		// Bind the region managers with the world objects
 		world.regionManager = &overworldRegionManager;
@@ -81,9 +81,9 @@ struct Runtime {
 
 		// If we created a new save then make a new spawn point
 		if (newSave) {
-			world.initSpawn();
+			world.InitSpawn();
 		} else {
-			world.spawnPoint = saveManager.getLevelData().spawnPoint;
+			world.spawnPoint = saveManager.GetLevelData().spawnPoint;
 		}
 		worldHell.spawnPoint = world.spawnPoint; // Interestingly the world spawn doesn't have the /= or *= 8 stuff
 

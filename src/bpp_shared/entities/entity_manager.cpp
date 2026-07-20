@@ -8,7 +8,7 @@
 #include "entity_item.h"
 #include "world.h"
 
-void EntityManager::removeEntity(EntityId _id) {
+void EntityManager::RemoveEntity(EntityId _id) {
 	// Find the entity for this ID
 	auto it = std::find_if(entities.begin(), entities.end(),
 	                       [_id](const std::shared_ptr<Entity>& _e) { return _e->id == _id; });
@@ -39,19 +39,19 @@ void EntityManager::removeEntity(EntityId _id) {
 		onEntityDespawn(entity);
 }
 
-void EntityManager::addEntity(std::shared_ptr<Entity> _entity, EntityId _forceEntityId) {
+void EntityManager::AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEntityId) {
 	if (!world) {
 		GlobalLogger().error << "Attempted to add an entity before EntityManager was bound to a world!\n";
 		return;
 	}
-	_entity->id = _forceEntityId == -1 ? getNextEntityId()
+	_entity->id = _forceEntityId == -1 ? GetNextEntityId()
 	                                 : _forceEntityId; // Assign an ID if we weren't forced to use one
 	_entity->world = world; // Bind the world pointer so the entity can interact with the world
 	_entity->entityManager = this;
 	_entity->dim = world->thisDimension;
 
 	// Register the entity into its initial bucket
-	_entity->bucketPos = computeBucketPos(_entity->position);
+	_entity->bucketPos = ComputeBucketPos(_entity->position);
 	auto& container = entityContainers[{ _entity->bucketPos.x, _entity->bucketPos.y }];
 	container.buckets[_entity->bucketPos.z].entities.push_back(_entity);
 
@@ -60,7 +60,7 @@ void EntityManager::addEntity(std::shared_ptr<Entity> _entity, EntityId _forceEn
 		onEntitySpawn(entities.back());
 }
 
-void EntityManager::tick() {
+void EntityManager::Tick() {
 	// Make a copy so we aren't modifying the vector while iterating over it
 	std::vector<std::shared_ptr<Entity>> copy = entities;
 
@@ -84,10 +84,10 @@ void EntityManager::tick() {
 				onEntityDespawn(entity);
 			continue;
 		}
-		entity->tick();
+		entity->Tick();
 
 		// Check to see if this entity went into another container or bucket
-		Int3 newBucketPos = computeBucketPos(entity->position);
+		Int3 newBucketPos = ComputeBucketPos(entity->position);
 
 		if (newBucketPos != entity->bucketPos) {
 			// Remove from the old bucket
@@ -111,28 +111,28 @@ void EntityManager::tick() {
 	copy.clear(); // Clear the copy to free memory
 }
 
-std::vector<std::shared_ptr<Entity>> EntityManager::getEntitiesWithinAABBExcluding(const AABB& _box, EntityId _entityId) {
+std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbExcluding(const AABB& _box, EntityId _entityId) {
 	// Get all entities within an AABB excluding this entity id
-	auto entities = getEntitiesWithinAABB(_box);
+	auto entities = GetEntitiesWithinAabb(_box);
 	entities.erase(std::remove_if(entities.begin(), entities.end(),
 	                              [_entityId](std::shared_ptr<Entity> _entity) { return _entity->id == _entityId; }),
 	               entities.end());
 	return entities;
 }
 
-std::vector<std::shared_ptr<Entity>> EntityManager::getEntitiesWithinAABB(const AABB& _box) {
+std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabb(const AABB& _box) {
 	// Get all entities within an AABB
 	std::vector<std::shared_ptr<Entity>> collidingEntities;
 
 	// Normalize to block coordinates
-	int blockMinX = MathHelper::floor_double((_box.minX - 2.0) / 16.0);
-	int blockMinZ = MathHelper::floor_double((_box.minZ - 2.0) / 16.0);
-	int blockMaxX = MathHelper::floor_double((_box.maxX + 2.0) / 16.0);
-	int blockMaxZ = MathHelper::floor_double((_box.maxZ + 2.0) / 16.0);
+	int blockMinX = MathHelper::FloorDouble((_box.minX - 2.0) / 16.0);
+	int blockMinZ = MathHelper::FloorDouble((_box.minZ - 2.0) / 16.0);
+	int blockMaxX = MathHelper::FloorDouble((_box.maxX + 2.0) / 16.0);
+	int blockMaxZ = MathHelper::FloorDouble((_box.maxZ + 2.0) / 16.0);
 
 	// Get our start and end bucket
-	int bucketMinY = MathHelper::floor_double((_box.minY - 2.0) / 16.0);
-	int bucketMaxY = MathHelper::floor_double((_box.maxY + 2.0) / 16.0);
+	int bucketMinY = MathHelper::FloorDouble((_box.minY - 2.0) / 16.0);
+	int bucketMaxY = MathHelper::FloorDouble((_box.maxY + 2.0) / 16.0);
 	bucketMinY = std::max(0, bucketMinY);
 	bucketMinY = std::min(9, bucketMinY);
 	bucketMaxY = std::max(0, bucketMaxY);
@@ -148,7 +148,7 @@ std::vector<std::shared_ptr<Entity>> EntityManager::getEntitiesWithinAABB(const 
 					// Make sure the weak ptr is still valid
 					auto& entityPtrWeak = container.buckets[by].entities[i];
 					if (auto entityPtrShared = entityPtrWeak.lock()) {
-						if (entityPtrShared->collider.intersects(_box))
+						if (entityPtrShared->collider.Intersects(_box))
 							collidingEntities.push_back(entityPtrShared);
 					}
 				}
@@ -158,19 +158,19 @@ std::vector<std::shared_ptr<Entity>> EntityManager::getEntitiesWithinAABB(const 
 	return collidingEntities;
 }
 
-void EntityManager::createEntityFromNBT(Tag& _nbt) {
+void EntityManager::CreateEntityFromNbt(Tag& _nbt) {
 	// Load an entity from the nbt list
-	std::string id = _nbt.compound["id"].getString();
+	std::string id = _nbt.compound["id"].GetString();
 
 	// TODO: load other entity types
 	if (id == "Item") {
 		ItemEntity item({});
-		item.loadFromNBT(_nbt);
-		addEntity(std::make_shared<ItemEntity>(item));
+		item.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<ItemEntity>(item));
 	}
 }
 
-std::vector<Tag> EntityManager::collectEntitiesForSave(Int2 _cpos, bool _clearCollectedEntities) {
+std::vector<Tag> EntityManager::CollectEntitiesForSave(Int2 _cpos, bool _clearCollectedEntities) {
 	// Collect entities for this chunk coordinates (basically our entity container)
 	// We then serialize these entities and return the vector of nbt tags
 	// We mark the entities as dead for cleanup afterwards
@@ -189,7 +189,7 @@ std::vector<Tag> EntityManager::collectEntitiesForSave(Int2 _cpos, bool _clearCo
 					continue; // players cannot be saved
 				if (_clearCollectedEntities)
 					entityPtrShared->isDead = true; // Mark the entity as dead for cleanup
-				auto compound = entityPtrShared->serializeToNBT();
+				auto compound = entityPtrShared->SerializeToNbt();
 				if (!compound)
 					continue; // If something went wrong abort save
 				collectedEntities.push_back(*compound);
@@ -199,7 +199,7 @@ std::vector<Tag> EntityManager::collectEntitiesForSave(Int2 _cpos, bool _clearCo
 	return collectedEntities;
 }
 
-std::optional<std::string> EntityManager::getEntityNbtId(EntityType _type) {
+std::optional<std::string> EntityManager::GetEntityNbtId(EntityType _type) {
 	switch (_type) {
 	case EntityType::ITEM:
 		return "Item";

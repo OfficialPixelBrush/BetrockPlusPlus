@@ -13,24 +13,24 @@ CraftingInventoryInteraction::CraftingInventoryInteraction(Inventory* _sharedInv
     : InventoryInteraction(_sharedInventory), craftInventory(_craftingInventory), playerInventory(_playerInventory),
       runtime(_gameRuntime), gridSize(_gridSize) {}
 
-void CraftingInventoryInteraction::updateResult() {
-	auto grid = std::span<const ItemStack>(craftInventory->slots.data() + 1, gridSize.total());
-	ItemStack result = runtime.recipeManager.matchGrid(grid, gridSize);
+void CraftingInventoryInteraction::UpdateResult() {
+	auto grid = std::span<const ItemStack>(craftInventory->slots.data() + 1, gridSize.Total());
+	ItemStack result = runtime.recipeManager.MatchGrid(grid, gridSize);
 	craftInventory->slots[0] = result;
 }
 
-void CraftingInventoryInteraction::finishCraft() {
+void CraftingInventoryInteraction::FinishCraft() {
 	craftInventory->slots[0] = ItemStack{};
 
 	// Consume one of each ingredient that went into this craft
-	for (size_t i = 1; i <= gridSize.total(); ++i)
-		craftInventory->slots[i].decrementCount(1);
+	for (size_t i = 1; i <= gridSize.Total(); ++i)
+		craftInventory->slots[i].DecrementCount(1);
 
 	// The grid changed, there might be another possible craft
-	updateResult();
+	UpdateResult();
 }
 
-void CraftingInventoryInteraction::takeResult() {
+void CraftingInventoryInteraction::TakeResult() {
 	ItemStack& result = craftInventory->slots[0];
 	if (result.id == Items::Id::INVALID)
 		return;
@@ -48,36 +48,36 @@ void CraftingInventoryInteraction::takeResult() {
 		return;
 	}
 
-	finishCraft();
+	FinishCraft();
 }
 
-void CraftingInventoryInteraction::handleCrafting(int _slot) {
-	if (_slot == 0 || _slot > gridSize.total())
+void CraftingInventoryInteraction::HandleCrafting(int _slot) {
+	if (_slot == 0 || _slot > gridSize.Total())
 		return;
 
-	updateResult();
+	UpdateResult();
 }
 
-void CraftingInventoryInteraction::onLeftClick(int _slot) {
+void CraftingInventoryInteraction::OnLeftClick(int _slot) {
 	if (_slot == 0)
-		takeResult();
+		TakeResult();
 	else
-		InventoryInteraction::onLeftClick(_slot);
-	handleCrafting(_slot);
+		InventoryInteraction::OnLeftClick(_slot);
+	HandleCrafting(_slot);
 }
 
-void CraftingInventoryInteraction::onRightClick(int _slot) {
+void CraftingInventoryInteraction::OnRightClick(int _slot) {
 	if (_slot == 0)
-		takeResult();
+		TakeResult();
 	else
-		InventoryInteraction::onRightClick(_slot);
-	handleCrafting(_slot);
+		InventoryInteraction::OnRightClick(_slot);
+	HandleCrafting(_slot);
 }
 
-void CraftingInventoryInteraction::onShiftClick(int _slot) {
+void CraftingInventoryInteraction::OnShiftClick(int _slot) {
 	if (_slot == 0)
-		shiftClickResult();
+		ShiftClickResult();
 	else
-		shiftClickOther(_slot);
-	handleCrafting(_slot);
+		ShiftClickOther(_slot);
+	HandleCrafting(_slot);
 }

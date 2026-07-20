@@ -44,20 +44,20 @@ std::string CommandGive::Execute(std::vector<std::string>& _parameters, PlayerSe
 	// Check if its even a valid item
 	if ((item.id > BLOCK_AIR && item.id < BLOCK_MAX) || Items::IsValid(item.id)) {
 		Packet::ChatMessage reply;
-		reply.message = "§eGave " + wIdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
+		reply.message = "§eGave " + WIdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
 		                std::to_string(item.data) + ") x" + std::to_string(item.count) + " to " + _session.username;
 
 		reply.Serialize(_session.stream);
 
 		// Try the hotbar
-		if (_session.inventory.mergeItemStackInInventory(item, false, 36, 44)) {
-			PacketUtilities::sendInventory(_session, _session.openWindowId, _session.inventory);
+		if (_session.inventory.MergeItemStackInInventory(item, false, 36, 44)) {
+			PacketUtilities::SendInventory(_session, _session.openWindowId, _session.inventory);
 			return "";
 		}
 
 		// Try the main inventory
-		if (_session.inventory.mergeItemStackInInventory(item, false, 9, 35)) {
-			PacketUtilities::sendInventory(_session, _session.openWindowId, _session.inventory);
+		if (_session.inventory.MergeItemStackInInventory(item, false, 9, 35)) {
+			PacketUtilities::SendInventory(_session, _session.openWindowId, _session.inventory);
 			return "";
 		}
 

@@ -21,7 +21,7 @@ std::string CommandDimension::Execute([[maybe_unused]] std::vector<std::string>&
 
 	Dimension newDim = _session.dimension == -1 ? Dimension::Overworld : Dimension::Nether;
 
-	_server.sendPlayerToDimension(newDim, _session);
+	_server.SendPlayerToDimension(newDim, _session);
 
 	return "";
 }

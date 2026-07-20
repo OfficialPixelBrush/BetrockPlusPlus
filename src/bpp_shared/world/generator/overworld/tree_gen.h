@@ -40,7 +40,7 @@ private:
 		//TRUNK_Y = 3
 	};
 	static constexpr int8_t AXIS_OFFSET = 3;
-	static constexpr BranchAxis branchOrientation[6] = {
+	static constexpr BranchAxis BRANCH_ORIENTATION[6] = {
 		AXIS_Z, // X to Z
 		AXIS_X, // Y to X
 		AXIS_X, // Z to X
@@ -54,7 +54,7 @@ private:
 	int32_t totalHeight = 0;
 	int32_t height;
 	double heightFactor = 0.618;
-	double field_753_h = 1.0;
+	double field753H = 1.0;
 	double trunkSlopeFactor = 0.381;
 	double branchLength = 1.0;
 	double trunkShape = 1.0;

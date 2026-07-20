@@ -50,9 +50,9 @@ public:
 	struct Login : BasePacket {
 		Login() : BasePacket{ PacketId::Login } {}
 		// NOTE: This assumes that EntityId is always an int32_t
-		EntityId entity_id;
-		EntityId& protocolVersion = entity_id;
-		EntityId& entityId_protocolVersion = entity_id;
+		EntityId entityId;
+		EntityId& protocolVersion = entityId;
+		EntityId& entityIdProtocolVersion = entityId;
 
 		std::string username;
 		int64_t worldSeed;
@@ -60,14 +60,14 @@ public:
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entityId_protocolVersion);
+			_stream.Write(entityIdProtocolVersion);
 			_stream.WriteString16(username);
 			_stream.Write(worldSeed);
 			_stream.Write(dimension);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entityId_protocolVersion = _stream.Read<EntityId>();
+			entityIdProtocolVersion = _stream.Read<EntityId>();
 			username = _stream.ReadString16();
 			worldSeed = _stream.Read<int64_t>();
 			dimension = _stream.Read<Dimension>();
@@ -78,16 +78,16 @@ public:
 	struct PreLogin : BasePacket {
 		PreLogin() : BasePacket{ PacketId::PreLogin } {}
 		std::string username;
-		std::string& connection_hash = username;
-		std::string& username_connectionHash = username;
+		std::string& connectionHash = username;
+		std::string& usernameConnectionHash = username;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.WriteString16(username_connectionHash);
+			_stream.WriteString16(usernameConnectionHash);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			username_connectionHash = _stream.ReadString16();
+			usernameConnectionHash = _stream.ReadString16();
 		}
 	};
 
@@ -124,24 +124,24 @@ public:
 	// Defines a players equipment
 	struct SetEquipment : BasePacket {
 		SetEquipment() : BasePacket{ PacketId::SetEquipment } {}
-		EntityId entity_id;
-		NetworkSlotId inventory_slot;
-		ItemId item_id;
-		ItemDamage item_metadata;
+		EntityId entityId;
+		NetworkSlotId inventorySlot;
+		ItemId itemId;
+		ItemDamage itemMetadata;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
-			_stream.Write(inventory_slot);
-			_stream.Write(item_id);
-			_stream.Write(item_metadata);
+			_stream.Write(entityId);
+			_stream.Write(inventorySlot);
+			_stream.Write(itemId);
+			_stream.Write(itemMetadata);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
-			inventory_slot = _stream.Read<NetworkSlotId>();
-			item_id = _stream.Read<ItemId>();
-			item_metadata = _stream.Read<ItemDamage>();
+			entityId = _stream.Read<EntityId>();
+			inventorySlot = _stream.Read<NetworkSlotId>();
+			itemId = _stream.Read<ItemId>();
+			itemMetadata = _stream.Read<ItemDamage>();
 		}
 	};
 
@@ -167,20 +167,20 @@ public:
 	// Used to convey who interacted with who
 	struct InteractWithEntity : BasePacket {
 		InteractWithEntity() : BasePacket{ PacketId::InteractWithEntity } {}
-		EntityId source_entity_id;
-		EntityId target_entity_id;
+		EntityId sourceEntityId;
+		EntityId targetEntityId;
 		bool attack; // Usually sent when left-clicking
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(source_entity_id);
-			_stream.Write(target_entity_id);
+			_stream.Write(sourceEntityId);
+			_stream.Write(targetEntityId);
 			_stream.Write(attack);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			source_entity_id = _stream.Read<EntityId>();
-			target_entity_id = _stream.Read<EntityId>();
+			sourceEntityId = _stream.Read<EntityId>();
+			targetEntityId = _stream.Read<EntityId>();
 			attack = _stream.Read<bool>();
 		}
 	};
@@ -218,15 +218,15 @@ public:
 	// Base Packet for player movement packets
 	struct PlayerMovement : BasePacket {
 		PlayerMovement() : BasePacket{ PacketId::PlayerMovement } {}
-		bool on_ground;
+		bool onGround;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(on_ground);
+			_stream.Write(onGround);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			on_ground = _stream.Read<bool>();
+			onGround = _stream.Read<bool>();
 		}
 	};
 
@@ -234,24 +234,24 @@ public:
 	struct PlayerPosition : BasePacket {
 		PlayerPosition() : BasePacket{ PacketId::PlayerPosition } {}
 		Vec3 position;
-		double camera_y;
-		bool on_ground;
+		double cameraY;
+		bool onGround;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.Write(position.x);
 			_stream.Write(position.y);
-			_stream.Write(camera_y);
+			_stream.Write(cameraY);
 			_stream.Write(position.z);
-			_stream.Write(on_ground);
+			_stream.Write(onGround);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
 			position.x = _stream.Read<double>();
 			position.y = _stream.Read<double>();
-			camera_y = _stream.Read<double>();
+			cameraY = _stream.Read<double>();
 			position.z = _stream.Read<double>();
-			on_ground = _stream.Read<bool>();
+			onGround = _stream.Read<bool>();
 		}
 	};
 
@@ -261,19 +261,19 @@ public:
 		Float2 rotation;
 		float& yaw = rotation.x; // wire order: yaw first
 		float& pitch = rotation.y;
-		bool on_ground;
+		bool onGround;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.Write(yaw);
 			_stream.Write(pitch);
-			_stream.Write(on_ground);
+			_stream.Write(onGround);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
 			yaw = _stream.Read<float>();
 			pitch = _stream.Read<float>();
-			on_ground = _stream.Read<bool>();
+			onGround = _stream.Read<bool>();
 		}
 	};
 
@@ -281,7 +281,7 @@ public:
 	struct PlayerPositionAndRotation : BasePacket {
 		PlayerPositionAndRotation() : BasePacket{ PacketId::PlayerPositionAndRotation } {}
 		Vec3 position;
-		double camera_y;
+		double cameraY;
 		Float2 rotation;
 		float& yaw = rotation.x; // wire order: yaw first
 		float& pitch = rotation.y;
@@ -291,7 +291,7 @@ public:
 			_stream.Write(id);
 			_stream.Write(position.x);
 			_stream.Write(position.y);
-			_stream.Write(camera_y);
+			_stream.Write(cameraY);
 			_stream.Write(position.z);
 			_stream.Write(yaw);
 			_stream.Write(pitch);
@@ -301,7 +301,7 @@ public:
 		void Deserialize(NetworkStream& _stream) override {
 			position.x = _stream.Read<double>();
 			position.y = _stream.Read<double>();
-			camera_y = _stream.Read<double>();
+			cameraY = _stream.Read<double>();
 			position.z = _stream.Read<double>();
 			yaw = _stream.Read<float>();
 			pitch = _stream.Read<float>();
@@ -383,22 +383,22 @@ public:
 	// Interactions with blocks
 	struct InteractWithBlock : BasePacket {
 		InteractWithBlock() : BasePacket{ PacketId::InteractWithBlock } {}
-		EntityId entity_id;
-		PacketData::BlockInteraction interaction_id;
+		EntityId entityId;
+		PacketData::BlockInteraction interactionId;
 		SlimInt3<int8_t> position;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
-			_stream.Write(interaction_id);
+			_stream.Write(entityId);
+			_stream.Write(interactionId);
 			_stream.Write(position.x);
 			_stream.Write(position.y);
 			_stream.Write(position.z);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
-			interaction_id = _stream.Read<PacketData::BlockInteraction>();
+			entityId = _stream.Read<EntityId>();
+			interactionId = _stream.Read<PacketData::BlockInteraction>();
 			position.x = _stream.Read<int32_t>();
 			position.y = _stream.Read<int8_t>();
 			position.z = _stream.Read<int32_t>();
@@ -408,17 +408,17 @@ public:
 	// Informs of the desired animation
 	struct Animation : BasePacket {
 		Animation() : BasePacket{ PacketId::Animation } {}
-		EntityId entity_id;
+		EntityId entityId;
 		PacketData::Animation animation;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
+			_stream.Write(entityId);
 			_stream.Write(animation);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
+			entityId = _stream.Read<EntityId>();
 			animation = _stream.Read<PacketData::Animation>();
 		}
 	};
@@ -426,17 +426,17 @@ public:
 	// Used for simple actions, like sneaking
 	struct PlayerAction : BasePacket {
 		PlayerAction() : BasePacket{ PacketId::PlayerAction } {}
-		EntityId entity_id;
+		EntityId entityId;
 		PacketData::PlayerAction action;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
+			_stream.Write(entityId);
 			_stream.Write(action);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
+			entityId = _stream.Read<EntityId>();
 			action = _stream.Read<PacketData::PlayerAction>();
 		}
 	};
@@ -444,130 +444,130 @@ public:
 	// Used for spawning other players in the world
 	struct SpawnPlayer : BasePacket {
 		SpawnPlayer() : BasePacket{ PacketId::SpawnPlayer } {}
-		EntityId entity_id;
+		EntityId entityId;
 		std::string username;
-		Int32_3 q_position;
-		Int8_2 q_rotation;
-		int8_t& q_yaw = q_rotation.x; // wire order: yaw first
-		int8_t& q_pitch = q_rotation.y;
-		ItemId held_item_id;
+		Int32_3 qPosition;
+		Int8_2 qRotation;
+		int8_t& qYaw = qRotation.x; // wire order: yaw first
+		int8_t& qPitch = qRotation.y;
+		ItemId heldItemId;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
+			_stream.Write(entityId);
 			_stream.WriteString16(username);
-			_stream.Write(q_position.x);
-			_stream.Write(q_position.y);
-			_stream.Write(q_position.z);
-			_stream.Write(q_yaw);
-			_stream.Write(q_pitch);
-			_stream.Write(held_item_id);
+			_stream.Write(qPosition.x);
+			_stream.Write(qPosition.y);
+			_stream.Write(qPosition.z);
+			_stream.Write(qYaw);
+			_stream.Write(qPitch);
+			_stream.Write(heldItemId);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
+			entityId = _stream.Read<EntityId>();
 			username = _stream.ReadString16();
-			q_position.x = _stream.Read<int32_t>();
-			q_position.y = _stream.Read<int32_t>();
-			q_position.z = _stream.Read<int32_t>();
-			q_yaw = _stream.Read<int8_t>();
-			q_pitch = _stream.Read<int8_t>();
-			held_item_id = _stream.Read<ItemId>();
+			qPosition.x = _stream.Read<int32_t>();
+			qPosition.y = _stream.Read<int32_t>();
+			qPosition.z = _stream.Read<int32_t>();
+			qYaw = _stream.Read<int8_t>();
+			qPitch = _stream.Read<int8_t>();
+			heldItemId = _stream.Read<ItemId>();
 		}
 	};
 
 	// Used for spawning items in the world
 	struct SpawnItem : BasePacket {
 		SpawnItem() : BasePacket{ PacketId::SpawnItem } {}
-		EntityId entity_id;
+		EntityId entityId;
 		ItemStack item;
-		Int32_3 q_position;
-		Int8_3 q_rotation;
-		int8_t& q_pitch = q_rotation.x;
-		int8_t& q_yaw = q_rotation.y;
-		int8_t& q_roll = q_rotation.z;
+		Int32_3 qPosition;
+		Int8_3 qRotation;
+		int8_t& qPitch = qRotation.x;
+		int8_t& qYaw = qRotation.y;
+		int8_t& qRoll = qRotation.z;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
+			_stream.Write(entityId);
 			_stream.Write(item.id);
 			_stream.Write(item.count);
 			_stream.Write(item.data);
-			_stream.Write(q_position.x);
-			_stream.Write(q_position.y);
-			_stream.Write(q_position.z);
-			_stream.Write(q_pitch);
-			_stream.Write(q_yaw);
-			_stream.Write(q_roll);
+			_stream.Write(qPosition.x);
+			_stream.Write(qPosition.y);
+			_stream.Write(qPosition.z);
+			_stream.Write(qPitch);
+			_stream.Write(qYaw);
+			_stream.Write(qRoll);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
+			entityId = _stream.Read<EntityId>();
 			item.id = _stream.Read<ItemId>();
 			item.count = _stream.Read<ItemAmount>();
 			item.data = _stream.Read<ItemDamage>();
-			q_position.x = _stream.Read<int32_t>();
-			q_position.y = _stream.Read<int32_t>();
-			q_position.z = _stream.Read<int32_t>();
-			q_pitch = _stream.Read<int8_t>();
-			q_yaw = _stream.Read<int8_t>();
-			q_roll = _stream.Read<int8_t>();
+			qPosition.x = _stream.Read<int32_t>();
+			qPosition.y = _stream.Read<int32_t>();
+			qPosition.z = _stream.Read<int32_t>();
+			qPitch = _stream.Read<int8_t>();
+			qYaw = _stream.Read<int8_t>();
+			qRoll = _stream.Read<int8_t>();
 		}
 	};
 
 	// Used for collecting items visually
 	struct CollectItem : BasePacket {
 		CollectItem() : BasePacket{ PacketId::CollectItem } {}
-		EntityId item_entity_id;
-		EntityId collector_entity_id;
+		EntityId itemEntityId;
+		EntityId collectorEntityId;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(item_entity_id);
-			_stream.Write(collector_entity_id);
+			_stream.Write(itemEntityId);
+			_stream.Write(collectorEntityId);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			item_entity_id = _stream.Read<EntityId>();
-			collector_entity_id = _stream.Read<EntityId>();
+			itemEntityId = _stream.Read<EntityId>();
+			collectorEntityId = _stream.Read<EntityId>();
 		}
 	};
 
 	// Used for spawning objects in the world
 	struct SpawnObject : BasePacket {
 		SpawnObject() : BasePacket{ PacketId::SpawnObject } {}
-		EntityId entity_id;
-		PacketData::ObjectType object_type;
-		Int32_3 q_position;
-		EntityId owner_entity_id = 0;
-		Int16_3 q_velocity;
+		EntityId entityId;
+		PacketData::ObjectType objectType;
+		Int32_3 qPosition;
+		EntityId ownerEntityId = 0;
+		Int16_3 qVelocity;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
-			_stream.Write(object_type);
-			_stream.Write(q_position.x);
-			_stream.Write(q_position.y);
-			_stream.Write(q_position.z);
-			_stream.Write(owner_entity_id);
-			if (owner_entity_id) {
-				_stream.Write(q_velocity.x);
-				_stream.Write(q_velocity.y);
-				_stream.Write(q_velocity.z);
+			_stream.Write(entityId);
+			_stream.Write(objectType);
+			_stream.Write(qPosition.x);
+			_stream.Write(qPosition.y);
+			_stream.Write(qPosition.z);
+			_stream.Write(ownerEntityId);
+			if (ownerEntityId) {
+				_stream.Write(qVelocity.x);
+				_stream.Write(qVelocity.y);
+				_stream.Write(qVelocity.z);
 			}
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
-			object_type = _stream.Read<PacketData::ObjectType>();
-			q_position.x = _stream.Read<int32_t>();
-			q_position.y = _stream.Read<int32_t>();
-			q_position.z = _stream.Read<int32_t>();
-			owner_entity_id = _stream.Read<EntityId>();
-			if (owner_entity_id) {
-				q_velocity.x = _stream.Read<int16_t>();
-				q_velocity.y = _stream.Read<int16_t>();
-				q_velocity.z = _stream.Read<int16_t>();
+			entityId = _stream.Read<EntityId>();
+			objectType = _stream.Read<PacketData::ObjectType>();
+			qPosition.x = _stream.Read<int32_t>();
+			qPosition.y = _stream.Read<int32_t>();
+			qPosition.z = _stream.Read<int32_t>();
+			ownerEntityId = _stream.Read<EntityId>();
+			if (ownerEntityId) {
+				qVelocity.x = _stream.Read<int16_t>();
+				qVelocity.y = _stream.Read<int16_t>();
+				qVelocity.z = _stream.Read<int16_t>();
 			}
 		}
 	};
@@ -575,34 +575,34 @@ public:
 	// Used for spawning mobs in the world
 	struct SpawnMob : BasePacket {
 		SpawnMob() : BasePacket{ PacketId::SpawnMob } {}
-		EntityId entity_id;
-		PacketData::MobType mob_type;
-		Int32_3 q_position;
-		Int8_2 q_rotation;
-		int8_t& q_yaw = q_rotation.x; // wire order: yaw first
-		int8_t& q_pitch = q_rotation.y;
+		EntityId entityId;
+		PacketData::MobType mobType;
+		Int32_3 qPosition;
+		Int8_2 qRotation;
+		int8_t& qYaw = qRotation.x; // wire order: yaw first
+		int8_t& qPitch = qRotation.y;
 		std::vector<PacketData::EntityMetadata::DataEntry> metadata;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
-			_stream.Write(mob_type);
-			_stream.Write(q_position.x);
-			_stream.Write(q_position.y);
-			_stream.Write(q_position.z);
-			_stream.Write(q_yaw);
-			_stream.Write(q_pitch);
+			_stream.Write(entityId);
+			_stream.Write(mobType);
+			_stream.Write(qPosition.x);
+			_stream.Write(qPosition.y);
+			_stream.Write(qPosition.z);
+			_stream.Write(qYaw);
+			_stream.Write(qPitch);
 			_stream.WriteEntityMetadata(metadata);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
-			mob_type = _stream.Read<PacketData::MobType>();
-			q_position.x = _stream.Read<int32_t>();
-			q_position.y = _stream.Read<int32_t>();
-			q_position.z = _stream.Read<int32_t>();
-			q_yaw = _stream.Read<int8_t>();
-			q_pitch = _stream.Read<int8_t>();
+			entityId = _stream.Read<EntityId>();
+			mobType = _stream.Read<PacketData::MobType>();
+			qPosition.x = _stream.Read<int32_t>();
+			qPosition.y = _stream.Read<int32_t>();
+			qPosition.z = _stream.Read<int32_t>();
+			qYaw = _stream.Read<int8_t>();
+			qPitch = _stream.Read<int8_t>();
 			_stream.ReadEntityMetadata(metadata);
 		}
 	};
@@ -610,14 +610,14 @@ public:
 	// Used for spawning paintings in the world
 	struct SpawnPainting : BasePacket {
 		SpawnPainting() : BasePacket{ PacketId::SpawnPainting } {}
-		EntityId entity_id;
+		EntityId entityId;
 		std::string title;
 		Int32_3 position; // Block position
 		PacketData::PaintingDirection direction;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
+			_stream.Write(entityId);
 			_stream.WriteString16(title);
 			_stream.Write(position.x);
 			_stream.Write(position.y);
@@ -626,7 +626,7 @@ public:
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
+			entityId = _stream.Read<EntityId>();
 			title = _stream.ReadString16();
 			position.x = _stream.Read<int32_t>();
 			position.y = _stream.Read<int32_t>();
@@ -639,8 +639,8 @@ public:
 	struct PlayerInput : BasePacket {
 		PlayerInput() : BasePacket{ PacketId::PlayerInput } {}
 		Float2 direction;
-		float& strafe_direction = direction.x;
-		float& forward_direction = direction.y;
+		float& strafeDirection = direction.x;
+		float& forwardDirection = direction.y;
 		Float2 rotation;
 		float& pitch = rotation.x;
 		float& yaw = rotation.y;
@@ -649,8 +649,8 @@ public:
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(strafe_direction);
-			_stream.Write(forward_direction);
+			_stream.Write(strafeDirection);
+			_stream.Write(forwardDirection);
 			_stream.Write(pitch);
 			_stream.Write(yaw);
 			_stream.Write(jumping);
@@ -658,8 +658,8 @@ public:
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			strafe_direction = _stream.Read<float>();
-			forward_direction = _stream.Read<float>();
+			strafeDirection = _stream.Read<float>();
+			forwardDirection = _stream.Read<float>();
 			pitch = _stream.Read<float>();
 			yaw = _stream.Read<float>();
 			jumping = _stream.Read<bool>();
@@ -670,19 +670,19 @@ public:
 	// Used to update an entities velocity
 	struct EntityVelocity : BasePacket {
 		EntityVelocity() : BasePacket{ PacketId::EntityVelocity } {}
-		EntityId entity_id;
+		EntityId entityId;
 		Int16_3 velocity;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
+			_stream.Write(entityId);
 			_stream.Write(velocity.x);
 			_stream.Write(velocity.y);
 			_stream.Write(velocity.z);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
+			entityId = _stream.Read<EntityId>();
 			velocity.x = _stream.Read<int16_t>();
 			velocity.y = _stream.Read<int16_t>();
 			velocity.z = _stream.Read<int16_t>();
@@ -692,15 +692,15 @@ public:
 	// Used to despawn an entity
 	struct DespawnEntity : BasePacket {
 		DespawnEntity() : BasePacket{ PacketId::DespawnEntity } {}
-		EntityId entity_id;
+		EntityId entityId;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
+			_stream.Write(entityId);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
+			entityId = _stream.Read<EntityId>();
 		}
 	};
 
@@ -718,80 +718,80 @@ public:
 	// Used for setting an entitys relative position
 	struct EntityPosition : BasePacket {
 		EntityPosition() : BasePacket{ PacketId::EntityPosition } {}
-		EntityId entity_id;
-		Int8_3 qr_position;
+		EntityId entityId;
+		Int8_3 qrPosition;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
-			_stream.Write(qr_position.x);
-			_stream.Write(qr_position.y);
-			_stream.Write(qr_position.z);
+			_stream.Write(entityId);
+			_stream.Write(qrPosition.x);
+			_stream.Write(qrPosition.y);
+			_stream.Write(qrPosition.z);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
-			qr_position.x = _stream.Read<int8_t>();
-			qr_position.y = _stream.Read<int8_t>();
-			qr_position.z = _stream.Read<int8_t>();
+			entityId = _stream.Read<EntityId>();
+			qrPosition.x = _stream.Read<int8_t>();
+			qrPosition.y = _stream.Read<int8_t>();
+			qrPosition.z = _stream.Read<int8_t>();
 		}
 	};
 
 	// Used for setting an entitys rotation
 	struct EntityRotation : BasePacket {
 		EntityRotation() : BasePacket{ PacketId::EntityRotation } {}
-		EntityId entity_id;
-		Int8_2 q_rotation;
-		int8_t& q_yaw = q_rotation.x; // wire order: yaw first
-		int8_t& q_pitch = q_rotation.y;
+		EntityId entityId;
+		Int8_2 qRotation;
+		int8_t& qYaw = qRotation.x; // wire order: yaw first
+		int8_t& qPitch = qRotation.y;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
-			_stream.Write(q_yaw);
-			_stream.Write(q_pitch);
+			_stream.Write(entityId);
+			_stream.Write(qYaw);
+			_stream.Write(qPitch);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
-			q_yaw = _stream.Read<int8_t>();
-			q_pitch = _stream.Read<int8_t>();
+			entityId = _stream.Read<EntityId>();
+			qYaw = _stream.Read<int8_t>();
+			qPitch = _stream.Read<int8_t>();
 		}
 	};
 
 	// Used for setting an entitys relative position and rotation
 	struct EntityPositionAndRotation : BasePacket {
 		EntityPositionAndRotation() : BasePacket{ PacketId::EntityPositionAndRotation } {}
-		EntityId entity_id;
-		Int8_3 qr_position;
-		Int8_2 q_rotation;
-		int8_t& q_yaw = q_rotation.x; // wire order: yaw first
-		int8_t& q_pitch = q_rotation.y;
+		EntityId entityId;
+		Int8_3 qrPosition;
+		Int8_2 qRotation;
+		int8_t& qYaw = qRotation.x; // wire order: yaw first
+		int8_t& qPitch = qRotation.y;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
-			_stream.Write(qr_position.x);
-			_stream.Write(qr_position.y);
-			_stream.Write(qr_position.z);
-			_stream.Write(q_yaw);
-			_stream.Write(q_pitch);
+			_stream.Write(entityId);
+			_stream.Write(qrPosition.x);
+			_stream.Write(qrPosition.y);
+			_stream.Write(qrPosition.z);
+			_stream.Write(qYaw);
+			_stream.Write(qPitch);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
-			qr_position.x = _stream.Read<int8_t>();
-			qr_position.y = _stream.Read<int8_t>();
-			qr_position.z = _stream.Read<int8_t>();
-			q_yaw = _stream.Read<int8_t>();
-			q_pitch = _stream.Read<int8_t>();
+			entityId = _stream.Read<EntityId>();
+			qrPosition.x = _stream.Read<int8_t>();
+			qrPosition.y = _stream.Read<int8_t>();
+			qrPosition.z = _stream.Read<int8_t>();
+			qYaw = _stream.Read<int8_t>();
+			qPitch = _stream.Read<int8_t>();
 		}
 	};
 
 	// Used for setting an entitys absolute position
 	struct TeleportEntity : BasePacket {
 		TeleportEntity() : BasePacket{ PacketId::TeleportEntity } {}
-		EntityId entity_id;
+		EntityId entityId;
 		Int32_3 position;
 		Int8_2 rotation;
 		int8_t& yaw = rotation.x; // wire order: yaw first
@@ -799,7 +799,7 @@ public:
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
+			_stream.Write(entityId);
 			_stream.Write(position.x);
 			_stream.Write(position.y);
 			_stream.Write(position.z);
@@ -808,7 +808,7 @@ public:
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
+			entityId = _stream.Read<EntityId>();
 			position.x = _stream.Read<int32_t>();
 			position.y = _stream.Read<int32_t>();
 			position.z = _stream.Read<int32_t>();
@@ -820,17 +820,17 @@ public:
 	// Used for some entity animations
 	struct EntityEvent : BasePacket {
 		EntityEvent() : BasePacket{ PacketId::EntityEvent } {}
-		EntityId entity_id;
+		EntityId entityId;
 		PacketData::EntityEvent action;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
+			_stream.Write(entityId);
 			_stream.Write(action);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
+			entityId = _stream.Read<EntityId>();
 			action = _stream.Read<PacketData::EntityEvent>();
 		}
 	};
@@ -838,25 +838,25 @@ public:
 	// Used for mounting and dismounting entities
 	struct AddPassenger : BasePacket {
 		AddPassenger() : BasePacket{ PacketId::AddPassenger } {}
-		EntityId passenger_entity_id;
-		EntityId vehicle_entity_id;
+		EntityId passengerEntityId;
+		EntityId vehicleEntityId;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(passenger_entity_id);
-			_stream.Write(vehicle_entity_id);
+			_stream.Write(passengerEntityId);
+			_stream.Write(vehicleEntityId);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			passenger_entity_id = _stream.Read<EntityId>();
-			vehicle_entity_id = _stream.Read<EntityId>();
+			passengerEntityId = _stream.Read<EntityId>();
+			vehicleEntityId = _stream.Read<EntityId>();
 		}
 	};
 
 	// Used for mounting and dismounting entities
 	struct EntityMetadata : BasePacket {
 		EntityMetadata() : BasePacket{ PacketId::EntityMetadata } {}
-		EntityId entity_id;
+		EntityId entityId;
 		std::vector<PacketData::EntityMetadata::DataEntry> metadata;
 
 		// TODO: Ideally this'd immediately read/write
@@ -865,12 +865,12 @@ public:
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
+			_stream.Write(entityId);
 			_stream.WriteEntityMetadata(metadata);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
+			entityId = _stream.Read<EntityId>();
 			_stream.ReadEntityMetadata(metadata);
 		}
 	};
@@ -930,38 +930,38 @@ public:
 	// Used to set multiple blocks in a small area
 	struct SetMultipleBlocks : BasePacket {
 		SetMultipleBlocks() : BasePacket{ PacketId::SetMultipleBlocks } {}
-		Int32_2 chunk_position;
-		int16_t number_of_blocks;
-		std::vector<int16_t> block_coordinates;
-		std::vector<BlockType> block_types;
-		std::vector<int8_t> block_metadata; // Nibbles
+		Int32_2 chunkPosition;
+		int16_t numberOfBlocks;
+		std::vector<int16_t> blockCoordinates;
+		std::vector<BlockType> blockTypes;
+		std::vector<int8_t> blockMetadata; // Nibbles
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(chunk_position.x);
-			_stream.Write(chunk_position.z);
-			_stream.Write(number_of_blocks);
-			for (int16_t i = 0; i < number_of_blocks; i++)
-				_stream.Write(block_coordinates[static_cast<size_t>(i)]);
-			for (int16_t i = 0; i < number_of_blocks; i++)
-				_stream.Write(block_types[static_cast<size_t>(i)]);
-			for (int16_t i = 0; i < number_of_blocks; i++)
-				_stream.Write(block_metadata[static_cast<size_t>(i)]);
+			_stream.Write(chunkPosition.x);
+			_stream.Write(chunkPosition.z);
+			_stream.Write(numberOfBlocks);
+			for (int16_t i = 0; i < numberOfBlocks; i++)
+				_stream.Write(blockCoordinates[static_cast<size_t>(i)]);
+			for (int16_t i = 0; i < numberOfBlocks; i++)
+				_stream.Write(blockTypes[static_cast<size_t>(i)]);
+			for (int16_t i = 0; i < numberOfBlocks; i++)
+				_stream.Write(blockMetadata[static_cast<size_t>(i)]);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			chunk_position.x = _stream.Read<int32_t>();
-			chunk_position.z = _stream.Read<int32_t>();
-			number_of_blocks = _stream.Read<int16_t>();
-			block_coordinates.resize(static_cast<size_t>(number_of_blocks));
-			block_types.resize(static_cast<size_t>(number_of_blocks));
-			block_metadata.resize(static_cast<size_t>(number_of_blocks));
-			for (int16_t i = 0; i < number_of_blocks; i++)
-				block_coordinates[static_cast<size_t>(i)] = _stream.Read<int16_t>();
-			for (int16_t i = 0; i < number_of_blocks; i++)
-				block_types[static_cast<size_t>(i)] = _stream.Read<BlockType>();
-			for (int16_t i = 0; i < number_of_blocks; i++)
-				block_metadata[static_cast<size_t>(i)] = _stream.Read<int8_t>();
+			chunkPosition.x = _stream.Read<int32_t>();
+			chunkPosition.z = _stream.Read<int32_t>();
+			numberOfBlocks = _stream.Read<int16_t>();
+			blockCoordinates.resize(static_cast<size_t>(numberOfBlocks));
+			blockTypes.resize(static_cast<size_t>(numberOfBlocks));
+			blockMetadata.resize(static_cast<size_t>(numberOfBlocks));
+			for (int16_t i = 0; i < numberOfBlocks; i++)
+				blockCoordinates[static_cast<size_t>(i)] = _stream.Read<int16_t>();
+			for (int16_t i = 0; i < numberOfBlocks; i++)
+				blockTypes[static_cast<size_t>(i)] = _stream.Read<BlockType>();
+			for (int16_t i = 0; i < numberOfBlocks; i++)
+				blockMetadata[static_cast<size_t>(i)] = _stream.Read<int8_t>();
 		}
 	};
 
@@ -993,40 +993,40 @@ public:
 	struct BlockEvent : BasePacket {
 		BlockEvent() : BasePacket{ PacketId::BlockEvent } {}
 		SlimInt3<int8_t> position;
-		int8_t instrument_state;
-		int8_t pitch_direction;
+		int8_t instrumentState;
+		int8_t pitchDirection;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.Write(position.x);
 			_stream.Write(position.y);
 			_stream.Write(position.z);
-			_stream.Write(instrument_state);
-			_stream.Write(pitch_direction);
+			_stream.Write(instrumentState);
+			_stream.Write(pitchDirection);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
 			position.x = _stream.Read<int32_t>();
 			position.y = _stream.Read<int8_t>();
 			position.z = _stream.Read<int32_t>();
-			instrument_state = _stream.Read<int8_t>();
-			pitch_direction = _stream.Read<int8_t>();
+			instrumentState = _stream.Read<int8_t>();
+			pitchDirection = _stream.Read<int8_t>();
 		}
 
-		PacketData::NoteInstrument instrument() const {
-			return static_cast<PacketData::NoteInstrument>(instrument_state);
+		PacketData::NoteInstrument Instrument() const {
+			return static_cast<PacketData::NoteInstrument>(instrumentState);
 		}
 
-		PacketData::NotePitch pitch() const {
-			return static_cast<PacketData::NotePitch>(pitch_direction);
+		PacketData::NotePitch Pitch() const {
+			return static_cast<PacketData::NotePitch>(pitchDirection);
 		}
 
-		PacketData::PistonState state() const {
-			return static_cast<PacketData::PistonState>(instrument_state);
+		PacketData::PistonState State() const {
+			return static_cast<PacketData::PistonState>(instrumentState);
 		}
 
-		PacketData::PistonDirection direction() const {
-			return static_cast<PacketData::PistonDirection>(pitch_direction);
+		PacketData::PistonDirection Direction() const {
+			return static_cast<PacketData::PistonDirection>(pitchDirection);
 		}
 	};
 
@@ -1035,8 +1035,8 @@ public:
 		Explosion() : BasePacket{ PacketId::Explosion } {}
 		Vec3 position;
 		float radius;
-		int32_t number_of_destroyed_blocks;
-		std::vector<int8_t> destroyed_blocks;
+		int32_t numberOfDestroyedBlocks;
+		std::vector<int8_t> destroyedBlocks;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
@@ -1044,8 +1044,8 @@ public:
 			_stream.Write(position.y);
 			_stream.Write(position.z);
 			_stream.Write(radius);
-			_stream.Write(static_cast<int32_t>(destroyed_blocks.size()));
-			_stream.WriteBytes(reinterpret_cast<const uint8_t*>(destroyed_blocks.data()), destroyed_blocks.size());
+			_stream.Write(static_cast<int32_t>(destroyedBlocks.size()));
+			_stream.WriteBytes(reinterpret_cast<const uint8_t*>(destroyedBlocks.data()), destroyedBlocks.size());
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -1053,17 +1053,17 @@ public:
 			position.y = _stream.Read<double>();
 			position.z = _stream.Read<double>();
 			radius = _stream.Read<float>();
-			number_of_destroyed_blocks = _stream.Read<int32_t>();
-			destroyed_blocks.resize(static_cast<size_t>(number_of_destroyed_blocks));
-			_stream.ReadBytes(reinterpret_cast<uint8_t*>(destroyed_blocks.data()),
-			                 static_cast<size_t>(number_of_destroyed_blocks));
+			numberOfDestroyedBlocks = _stream.Read<int32_t>();
+			destroyedBlocks.resize(static_cast<size_t>(numberOfDestroyedBlocks));
+			_stream.ReadBytes(reinterpret_cast<uint8_t*>(destroyedBlocks.data()),
+			                 static_cast<size_t>(numberOfDestroyedBlocks));
 		}
 	};
 
 	// Used to trigger world events, such as sound effects
 	struct WorldEvent : BasePacket {
 		WorldEvent() : BasePacket{ PacketId::WorldEvent } {}
-		PacketData::WorldEvent event_id;
+		PacketData::WorldEvent eventId;
 		SlimInt3<int8_t> position;
 		int32_t data;
 
@@ -1072,7 +1072,7 @@ public:
 			_stream.Write(position.x);
 			_stream.Write(position.z);
 			_stream.Write(position.y);
-			_stream.Write(event_id);
+			_stream.Write(eventId);
 			_stream.Write(data);
 		}
 
@@ -1080,7 +1080,7 @@ public:
 			position.x = _stream.Read<int32_t>();
 			position.z = _stream.Read<int32_t>();
 			position.y = _stream.Read<int8_t>();
-			event_id = _stream.Read<PacketData::WorldEvent>();
+			eventId = _stream.Read<PacketData::WorldEvent>();
 			data = _stream.Read<int32_t>();
 		}
 	};
@@ -1088,38 +1088,38 @@ public:
 	// Used to trigger global game events, such as rain
 	struct GameEvent : BasePacket {
 		GameEvent() : BasePacket{ PacketId::GameEvent } {}
-		PacketData::GameEvent event_id;
+		PacketData::GameEvent eventId;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(event_id);
+			_stream.Write(eventId);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			event_id = _stream.Read<PacketData::GameEvent>();
+			eventId = _stream.Read<PacketData::GameEvent>();
 		}
 	};
 
 	// Used to spawn a lightning bolt
 	struct LightningBolt : BasePacket {
 		LightningBolt() : BasePacket{ PacketId::LightningBolt } {}
-		EntityId entity_id;
+		EntityId entityId;
 		// This is only ever "1", which means lightning
-		int8_t entity_type = 1;
+		int8_t entityType = 1;
 		Int32_3 position;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(entity_id);
-			_stream.Write(entity_type);
+			_stream.Write(entityId);
+			_stream.Write(entityType);
 			_stream.Write(position.x);
 			_stream.Write(position.y);
 			_stream.Write(position.z);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			entity_id = _stream.Read<EntityId>();
-			entity_type = _stream.Read<int8_t>();
+			entityId = _stream.Read<EntityId>();
+			entityType = _stream.Read<int8_t>();
 			position.x = _stream.Read<int32_t>();
 			position.y = _stream.Read<int32_t>();
 			position.z = _stream.Read<int32_t>();
@@ -1129,56 +1129,56 @@ public:
 	// Used for signaling when a container is opened
 	struct OpenContainer : BasePacket {
 		OpenContainer() : BasePacket{ PacketId::OpenContainer } {}
-		WindowId window_id;
-		PacketData::WindowType window_type;
+		WindowId windowId;
+		PacketData::WindowType windowType;
 		std::string title; // This is String8!!
-		int8_t slot_count;
+		int8_t slotCount;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(window_id);
-			_stream.Write(window_type);
+			_stream.Write(windowId);
+			_stream.Write(windowType);
 			_stream.WriteString8(title);
-			_stream.Write(slot_count);
+			_stream.Write(slotCount);
 		}
 		void Deserialize(NetworkStream& _stream) override {
-			window_id = _stream.Read<WindowId>();
-			window_type = _stream.Read<PacketData::WindowType>();
+			windowId = _stream.Read<WindowId>();
+			windowType = _stream.Read<PacketData::WindowType>();
 			title = _stream.ReadString8();
-			slot_count = _stream.Read<int8_t>();
+			slotCount = _stream.Read<int8_t>();
 		}
 	};
 
 	// Used for signaling when a container was closed
 	struct CloseContainer : BasePacket {
 		CloseContainer() : BasePacket{ PacketId::CloseContainer } {}
-		WindowId window_id;
+		WindowId windowId;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(window_id);
+			_stream.Write(windowId);
 		}
 		void Deserialize(NetworkStream& _stream) override {
-			window_id = _stream.Read<WindowId>();
+			windowId = _stream.Read<WindowId>();
 		}
 	};
 
 	// Used for signaling when a slot was clicked
 	struct ClickSlot : BasePacket {
 		ClickSlot() : BasePacket{ PacketId::ClickSlot } {}
-		WindowId window_id;
-		NetworkSlotId slot_id;
-		bool right_click;
-		TransactionId transaction_id;
+		WindowId windowId;
+		NetworkSlotId slotId;
+		bool rightClick;
+		TransactionId transactionId;
 		bool shift;
 		ItemStack item;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(window_id);
-			_stream.Write(slot_id);
-			_stream.Write(right_click);
-			_stream.Write(transaction_id);
+			_stream.Write(windowId);
+			_stream.Write(slotId);
+			_stream.Write(rightClick);
+			_stream.Write(transactionId);
 			_stream.Write(shift);
 			_stream.Write(item.id);
 			if (item.id != Items::Id::INVALID) {
@@ -1187,10 +1187,10 @@ public:
 			}
 		}
 		void Deserialize(NetworkStream& _stream) override {
-			window_id = _stream.Read<WindowId>();
-			slot_id = _stream.Read<NetworkSlotId>();
-			right_click = _stream.Read<bool>();
-			transaction_id = _stream.Read<TransactionId>();
+			windowId = _stream.Read<WindowId>();
+			slotId = _stream.Read<NetworkSlotId>();
+			rightClick = _stream.Read<bool>();
+			transactionId = _stream.Read<TransactionId>();
 			shift = _stream.Read<bool>();
 			item.id = _stream.Read<ItemId>();
 			if (item.id != Items::Id::INVALID) {
@@ -1203,14 +1203,14 @@ public:
 	// Used for setting the contents of a slot
 	struct SetSlot : BasePacket {
 		SetSlot() : BasePacket{ PacketId::SetSlot } {}
-		WindowId window_id;
-		NetworkSlotId slot_id;
+		WindowId windowId;
+		NetworkSlotId slotId;
 		ItemStack item;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(window_id);
-			_stream.Write(slot_id);
+			_stream.Write(windowId);
+			_stream.Write(slotId);
 			_stream.Write(item.id);
 			if (item.id != Items::Id::INVALID) {
 				_stream.Write(item.count);
@@ -1218,8 +1218,8 @@ public:
 			}
 		}
 		void Deserialize(NetworkStream& _stream) override {
-			window_id = _stream.Read<WindowId>();
-			slot_id = _stream.Read<NetworkSlotId>();
+			windowId = _stream.Read<WindowId>();
+			slotId = _stream.Read<NetworkSlotId>();
 			item.id = _stream.Read<ItemId>();
 			if (item.id != Items::Id::INVALID) {
 				item.count = _stream.Read<ItemAmount>();
@@ -1232,12 +1232,12 @@ public:
 	// Used for filling a container with data
 	struct FillContainer : BasePacket {
 		FillContainer() : BasePacket{ PacketId::FillContainer } {}
-		WindowId window_id;
+		WindowId windowId;
 		std::vector<ItemStack> items;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(window_id);
+			_stream.Write(windowId);
 			_stream.Write(int16_t(items.size()));
 			for (ItemStack item : items) {
 				_stream.Write(item.id);
@@ -1248,10 +1248,10 @@ public:
 			}
 		}
 		void Deserialize(NetworkStream& _stream) override {
-			window_id = _stream.Read<WindowId>();
-			size_t number_of_slots = size_t(_stream.Read<int16_t>());
-			items.resize(number_of_slots, ItemStack{ Items::Id::INVALID });
-			for (size_t i = 0; i < number_of_slots; i++) {
+			windowId = _stream.Read<WindowId>();
+			size_t numberOfSlots = size_t(_stream.Read<int16_t>());
+			items.resize(numberOfSlots, ItemStack{ Items::Id::INVALID });
+			for (size_t i = 0; i < numberOfSlots; i++) {
 				items[i].id = _stream.Read<ItemId>();
 				if (items[i].id != Items::Id::INVALID) {
 					items[i].count = _stream.Read<ItemAmount>();
@@ -1264,41 +1264,41 @@ public:
 	// Used for setting data for containers, such as furnace progress
 	struct ContainerData : BasePacket {
 		ContainerData() : BasePacket{ PacketId::ContainerData } {}
-		WindowId window_id;
+		WindowId windowId;
 		struct {
 			PacketData::ContainerDataType type;
 			int16_t value;
-		} container_data;
+		} containerData;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(window_id);
-			_stream.Write(container_data.type);
-			_stream.Write(container_data.value);
+			_stream.Write(windowId);
+			_stream.Write(containerData.type);
+			_stream.Write(containerData.value);
 		}
 		void Deserialize(NetworkStream& _stream) override {
-			window_id = _stream.Read<WindowId>();
-			container_data.type = _stream.Read<PacketData::ContainerDataType>();
-			container_data.value = _stream.Read<int16_t>();
+			windowId = _stream.Read<WindowId>();
+			containerData.type = _stream.Read<PacketData::ContainerDataType>();
+			containerData.value = _stream.Read<int16_t>();
 		}
 	};
 
 	// Used for checking if the performed transaction was valid and got through successfully
 	struct ContainerTransaction : BasePacket {
 		ContainerTransaction() : BasePacket{ PacketId::ContainerTransaction } {}
-		WindowId window_id;
-		TransactionId transaction_id;
+		WindowId windowId;
+		TransactionId transactionId;
 		bool accepted;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(window_id);
-			_stream.Write(transaction_id);
+			_stream.Write(windowId);
+			_stream.Write(transactionId);
 			_stream.Write(accepted);
 		}
 		void Deserialize(NetworkStream& _stream) override {
-			window_id = _stream.Read<WindowId>();
-			transaction_id = _stream.Read<TransactionId>();
+			windowId = _stream.Read<WindowId>();
+			transactionId = _stream.Read<TransactionId>();
 			accepted = _stream.Read<bool>();
 		}
 	};
@@ -1334,21 +1334,21 @@ public:
 	// Used for updating custom item data, only used by maps
 	struct ItemData : BasePacket {
 		ItemData() : BasePacket{ PacketId::ItemData } {}
-		ItemId item_id;
-		MapId map_id;
+		ItemId itemId;
+		MapId mapId;
 		std::vector<uint8_t> data;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(item_id);
-			_stream.Write(map_id);
+			_stream.Write(itemId);
+			_stream.Write(mapId);
 			_stream.Write(uint8_t(data.size()));
 			_stream.WriteBytes(data.data(), data.size());
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			item_id = _stream.Read<ItemId>();
-			map_id = _stream.Read<MapId>();
+			itemId = _stream.Read<ItemId>();
+			mapId = _stream.Read<MapId>();
 			uint8_t size = _stream.Read<uint8_t>();
 			data.resize(size_t(size));
 			_stream.ReadBytes(data.data(), size_t(size));
@@ -1358,17 +1358,17 @@ public:
 	// Used for changing the value of a statistic
 	struct IncrementStatistic : BasePacket {
 		IncrementStatistic() : BasePacket{ PacketId::IncrementStatistic } {}
-		int32_t statistic_id; // TODO: Replace with Enum
+		int32_t statisticId; // TODO: Replace with Enum
 		int8_t amount;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(statistic_id);
+			_stream.Write(statisticId);
 			_stream.Write(amount);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			statistic_id = _stream.Read<int32_t>();
+			statisticId = _stream.Read<int32_t>();
 			amount = _stream.Read<int8_t>();
 		}
 	};

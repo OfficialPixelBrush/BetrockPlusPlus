@@ -11,26 +11,26 @@
 PlayerInventoryInteraction::PlayerInventoryInteraction(InventoryPlayer* _inv, Runtime& _gameRuntime)
     : CraftingInventoryInteraction(_inv, _inv, _inv, _gameRuntime, { 2, 2 }), playerInventory(_inv) {}
 
-bool PlayerInventoryInteraction::canExist() {
+bool PlayerInventoryInteraction::CanExist() {
 	return playerInventory != nullptr;
 }
 
-void PlayerInventoryInteraction::shiftClickResult() {
+void PlayerInventoryInteraction::ShiftClickResult() {
 	ItemStack& result = playerInventory->slots[0];
 	if (result.id == Items::Id::INVALID)
 		return;
 
 	ItemStack copy = result;
-	if (playerInventory->mergeItemStackInInventory(copy, true, 9, 44)) {
-		finishCraft();
+	if (playerInventory->MergeItemStackInInventory(copy, true, 9, 44)) {
+		FinishCraft();
 	} else {
 		playerInventory->slots[0] = copy.count == 0 ? ItemStack{} : copy;
 	}
 }
 
-void PlayerInventoryInteraction::shiftClickOther(int _slot) {
-	auto from = playerInventory->getInventoryAreaFromSlot(_slot);
-	auto stack = playerInventory->getStackInSlot(_slot);
+void PlayerInventoryInteraction::ShiftClickOther(int _slot) {
+	auto from = playerInventory->GetInventoryAreaFromSlot(_slot);
+	auto stack = playerInventory->GetStackInSlot(_slot);
 	if (!stack)
 		return;
 
@@ -38,16 +38,16 @@ void PlayerInventoryInteraction::shiftClickOther(int _slot) {
 
 	if (from == InvMap::ARMOR || from == InvMap::CRAFTING_AREA || from == InvMap::CRAFTING_RESULT ||
 	    from == InvMap::HOTBAR) {
-		bool success = playerInventory->mergeItemStackInInventory(copy, false, 9, 35);
+		bool success = playerInventory->MergeItemStackInInventory(copy, false, 9, 35);
 		if (!success)
-			playerInventory->mergeItemStackInInventory(copy, false, 36, 44);
+			playerInventory->MergeItemStackInInventory(copy, false, 36, 44);
 	} else {
-		playerInventory->mergeItemStackInInventory(copy, false, 36, 44);
+		playerInventory->MergeItemStackInInventory(copy, false, 36, 44);
 	}
 
 	// Update the source slot to whatever count is left
 	if (copy.count == 0) {
-		playerInventory->clearSlot(_slot);
+		playerInventory->ClearSlot(_slot);
 	} else {
 		stack->count = copy.count;
 	}

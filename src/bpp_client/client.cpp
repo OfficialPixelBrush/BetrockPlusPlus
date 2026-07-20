@@ -21,7 +21,7 @@ Client::Client() : window({ 854, 480 }, "Betrock++", { WindowMode::WINDOWED_RESI
 	GlobalLogger().info << "Client initialized\n";
 }
 
-void Client::tick() {}
+void Client::Tick() {}
 
 int Client::run() {
 	const uint64_t freq = SDL_GetPerformanceFrequency();
@@ -46,7 +46,7 @@ int Client::run() {
 
 		// Run ticks until caught up, but cap to avoid spiraling on slow frames
 		while (accumulator >= TICK_DELTA && ticksRan < MAX_TICKS_PER_FRAME) {
-			tick();
+			Tick();
 			accumulator -= TICK_DELTA;
 			ticksRan++;
 		}

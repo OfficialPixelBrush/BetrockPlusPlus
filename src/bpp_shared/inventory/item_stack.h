@@ -7,6 +7,7 @@
  *
 */
 #pragma once
+#include "../base_types.h"
 #include "hash.h"
 #include "strings/labels.h"
 #include <cstdint>
@@ -29,17 +30,17 @@ struct ItemStack {
 
 	friend std::wostream& operator<<(std::wostream& _wos, const ItemStack& _val) {
 		_wos << "(" << static_cast<int64_t>(_val.id) << ":" << static_cast<int64_t>(_val.data) << " x"
-		    << static_cast<int64_t>(_val.count) << ")";
+		     << static_cast<int64_t>(_val.count) << ")";
 		return _wos;
 	}
 
 	friend std::ostream& operator<<(std::ostream& _os, const ItemStack& _val) {
 		_os << "(" << static_cast<int64_t>(_val.id) << ":" << static_cast<int64_t>(_val.data) << " x"
-		   << static_cast<int64_t>(_val.count) << ")";
+		    << static_cast<int64_t>(_val.count) << ")";
 		return _os;
 	}
 
-	void decrementCount(int8_t _amount) {
+	void DecrementCount(int8_t _amount) {
 		if (count - _amount < 0) {
 			count = 0;
 		} else {
@@ -51,7 +52,7 @@ struct ItemStack {
 		}
 	}
 
-	std::string str() const {
+	std::string Str() const {
 		std::ostringstream oss;
 		oss << *this;
 		return oss.str();
@@ -63,9 +64,9 @@ template <>
 struct hash<ItemStack> {
 	size_t operator()(const ItemStack& _s) const noexcept {
 		size_t h = 0;
-		hash_combine(h, _s.id);
-		hash_combine(h, _s.count);
-		hash_combine(h, _s.data);
+		HashCombine(h, _s.id);
+		HashCombine(h, _s.count);
+		HashCombine(h, _s.data);
 		return h;
 	}
 };

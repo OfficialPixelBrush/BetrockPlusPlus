@@ -26,17 +26,17 @@ public:
 
 private:
 	int32_t octaves;
-	std::vector<NoiseSimplex> generator_collection;
+	std::vector<NoiseSimplex> generatorCollection;
 };
 
 inline NoiseOctavesSimplex::NoiseOctavesSimplex(int32_t _poctaves) : octaves(_poctaves) {
 	for (int32_t i = 0; i < octaves; ++i)
-		generator_collection.push_back(NoiseSimplex());
+		generatorCollection.push_back(NoiseSimplex());
 }
 
 inline NoiseOctavesSimplex::NoiseOctavesSimplex(Java::Random& _rand, int32_t _poctaves) : octaves(_poctaves) {
 	for (int32_t i = 0; i < octaves; ++i)
-		generator_collection.push_back(NoiseSimplex(_rand));
+		generatorCollection.push_back(NoiseSimplex(_rand));
 }
 
 inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& _noiseField, Int32_2 _offset, Int32_2 _size,
@@ -63,7 +63,7 @@ inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& _noiseFiel
 	double frequency = 1.0;
 	double amplitude = 1.0;
 	for (size_t octave = 0; octave < size_t(octaves); ++octave) {
-		generator_collection[octave].GenerateNoise(_noiseField, _offset, _size, _scale * amplitude, 0.55 / frequency);
+		generatorCollection[octave].GenerateNoise(_noiseField, _offset, _size, _scale * amplitude, 0.55 / frequency);
 		amplitude *= _lacunarity;
 		frequency *= _persistence;
 	}

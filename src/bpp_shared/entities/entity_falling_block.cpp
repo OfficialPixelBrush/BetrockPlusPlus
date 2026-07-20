@@ -9,7 +9,7 @@
 #include "java_math.h"
 #include "world/world.h"
 
-void FallingBlockEntity::tick() {
+void FallingBlockEntity::Tick() {
 	if (block == BLOCK_AIR) {
 		isDead = true;
 		return;
@@ -17,17 +17,17 @@ void FallingBlockEntity::tick() {
 
 	ticksFallen++;
 	velocity.y -= 0.04;
-	move(this->velocity);
+	Move(this->velocity);
 	velocity *= { 0.98, 0.98, 0.98 };
 
-	auto fd = MathHelper::floor_double;
+	auto fd = MathHelper::FloorDouble;
 	Int3 blockPosition = { fd(position.x), fd(position.y), fd(position.z) };
 
 	if (onGround) {
 		velocity *= { 0.7, -0.5, 0.7 };
 		isDead = true;
 		// TODO: check if we can actually fall here properly
-		this->world->setBlock(blockPosition, this->block, 0);
+		this->world->SetBlock(blockPosition, this->block, 0);
 		return;
 	}
 	if (ticksFallen > 100) {
@@ -38,7 +38,7 @@ void FallingBlockEntity::tick() {
 		itemEntity->dim = dim;
 
 		// Register our item with the world
-		this->world->entityManager.addEntity(std::move(itemEntity));
+		this->world->entityManager.AddEntity(std::move(itemEntity));
 		isDead = true;
 	}
 }

@@ -15,6 +15,6 @@ struct PlayerEntity : public MobileEntity {
 		stepHeight = 0.5f;
 	}
 	~PlayerEntity() = default;
-	virtual bool pickupItem(ItemStack& _stack, EntityId _entityId);
-	virtual bool dropItem(ItemStack _stack);
+	virtual bool PickupItem(ItemStack& _stack, EntityId _entityId);
+	virtual bool DropItem(ItemStack _stack);
 };

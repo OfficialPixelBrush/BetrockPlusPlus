@@ -22,7 +22,7 @@ struct Block {
 		return _os;
 	}
 
-	std::string str() const {
+	std::string Str() const {
 		std::ostringstream oss;
 		oss << *this; // Use the overloaded << operator
 		return oss.str();

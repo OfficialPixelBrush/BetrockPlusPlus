@@ -34,10 +34,10 @@ NetherGenerator::NetherGenerator(int64_t _pSeed) : Generator(_pSeed), caver(true
  * @return std::shared_ptr<Chunk>
  */
 void NetherGenerator::GenerateChunk(Chunk& _chunk) {
-	rand.setSeed(int64_t(_chunk.cpos.x) * 341873128712L + int64_t(_chunk.cpos.z) * 132897987541L);
+	rand.SetSeed(int64_t(_chunk.cpos.x) * 341873128712L + int64_t(_chunk.cpos.z) * 132897987541L);
 
 	// Allocate empty chunk
-	_chunk.clear();
+	_chunk.Clear();
 	// Generate the Terrain, minus any caves, as just stone
 	GenerateTerrain(_chunk);
 	// Replace some of the stone with Biome-appropriate blocks
@@ -45,7 +45,7 @@ void NetherGenerator::GenerateChunk(Chunk& _chunk) {
 	// Carve caves
 	caver.GenerateCavesForChunk(_chunk, seed);
 	// Generate heightmap
-	_chunk.generateHeightMap();
+	_chunk.GenerateHeightMap();
 
 	_chunk.isModified = true;
 }
@@ -81,9 +81,9 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 			// This is intentional, to match b1.7.3 behavior!
 			size_t bindex = size_t(x + z * CHUNK_WIDTH);
 			// Get values from noise maps
-			bool sandActive = sandNoise[bindex] + rand.nextDouble() * 0.2 > 0.0;
-			bool gravelActive = gravelNoise[bindex] + rand.nextDouble() * 0.2 > 3.0;
-			int32_t stoneActive = Java::DoubleToInt32(stoneNoise[bindex] / 3.0 + 3.0 + rand.nextDouble() * 0.25);
+			bool sandActive = sandNoise[bindex] + rand.NextDouble() * 0.2 > 0.0;
+			bool gravelActive = gravelNoise[bindex] + rand.NextDouble() * 0.2 > 3.0;
+			int32_t stoneActive = Java::DoubleToInt32(stoneNoise[bindex] / 3.0 + 3.0 + rand.NextDouble() * 0.25);
 			int32_t stoneDepth = -1;
 			// Get biome-appropriate top and filler blocks
 			BlockType topBlock = BLOCK_NETHERRACK;
@@ -94,15 +94,15 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 				// This is intentional, to match b1.7.3 behavior!
 				Int3 bpos{ z, y, x };
 				// Place Bedrock at bottom and top with some randomness
-				if (y >= (CHUNK_HEIGHT - 1) - rand.nextInt(5)) {
-					_chunk.setBlock(bpos, BLOCK_BEDROCK);
+				if (y >= (CHUNK_HEIGHT - 1) - rand.NextInt(5)) {
+					_chunk.SetBlock(bpos, BLOCK_BEDROCK);
 					continue;
-				} else if (y <= 0 + rand.nextInt(5)) {
-					_chunk.setBlock(bpos, BLOCK_BEDROCK);
+				} else if (y <= 0 + rand.NextInt(5)) {
+					_chunk.SetBlock(bpos, BLOCK_BEDROCK);
 					continue;
 				}
 
-				BlockType currentBlock = _chunk.getBlock(bpos);
+				BlockType currentBlock = _chunk.GetBlock(bpos);
 				// Ignore air
 				if (currentBlock == BLOCK_AIR) {
 					stoneDepth = -1;
@@ -137,10 +137,10 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 
 						stoneDepth = stoneActive;
 						// Place filler block if we're under lava
-						_chunk.setBlock(bpos, (y >= NETHER_BIOME_LAVA_LEVEL - 1) ? topBlock : fillerBlock);
+						_chunk.SetBlock(bpos, (y >= NETHER_BIOME_LAVA_LEVEL - 1) ? topBlock : fillerBlock);
 					} else if (stoneDepth > 0) {
 						--stoneDepth;
-						_chunk.setBlock(bpos, fillerBlock);
+						_chunk.SetBlock(bpos, fillerBlock);
 					}
 				}
 			}
@@ -220,7 +220,7 @@ void NetherGenerator::GenerateTerrain(Chunk& _chunk) {
 							if (terrainDensity > 0.0)
 								blockType = BLOCK_NETHERRACK;
 
-							_chunk.setBlock(bpos, blockType);
+							_chunk.SetBlock(bpos, blockType);
 							// Prep for next iteration
 							bpos.z += 1;
 							terrainDensity += densityStepZ;
@@ -362,66 +362,66 @@ bool NetherGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 	// meaning that *technically* they're fully up to random chance.
 	// It just happens that this random chance is somewhat consistent, apparently.
 	// So... figure that out, if possible. Probably just some chunk ordering tomfuckery.
-	rand.setSeed(_world.getSeed());
-	int64_t xSalt = rand.nextLong() / 2L * 2L + 1L;
-	int64_t zSalt = rand.nextLong() / 2L * 2L + 1L;
+	rand.SetSeed(_world.GetSeed());
+	int64_t xSalt = rand.NextLong() / 2L * 2L + 1L;
+	int64_t zSalt = rand.NextLong() / 2L * 2L + 1L;
 	// Use unsigned arithmetic to avoid overflow UB
 	uint64_t xSaltU = static_cast<uint64_t>(xSalt);
 	uint64_t zSaltU = static_cast<uint64_t>(zSalt);
 	uint64_t xPart = static_cast<uint64_t>(static_cast<int64_t>(_chunk.cpos.x)) * xSaltU;
 	uint64_t zPart = static_cast<uint64_t>(static_cast<int64_t>(_chunk.cpos.z)) * zSaltU;
-	uint64_t combined = (xPart + zPart) ^ static_cast<uint64_t>(_world.getSeed());
+	uint64_t combined = (xPart + zPart) ^ static_cast<uint64_t>(_world.GetSeed());
 
-	rand.setSeed(static_cast<int64_t>(combined));
+	rand.SetSeed(static_cast<int64_t>(combined));
 
 	Int3 coord;
 	// Generate single-block lava streams
 	for (int attempt = 0; attempt < 8; ++attempt) {
-		coord.x = blockX + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		coord.y = rand.nextInt(CHUNK_HEIGHT - 8) + 4; // 120
-		coord.z = blockZ + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = rand.NextInt(CHUNK_HEIGHT - 8) + 4; // 120
+		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		FeatureGenerator(BLOCK_LAVA_FLOWING).GenerateNetherLiquid(_world, rand, coord);
 	}
 
 	// Generate fire patch
-	int maxFireAttempts = rand.nextInt(rand.nextInt(10) + 1) + 1;
+	int maxFireAttempts = rand.NextInt(rand.NextInt(10) + 1) + 1;
 	for (int attempt = 0; attempt < maxFireAttempts; ++attempt) {
-		coord.x = blockX + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		coord.y = rand.nextInt(CHUNK_HEIGHT - 8) + 4; // 120
-		coord.z = blockZ + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = rand.NextInt(CHUNK_HEIGHT - 8) + 4; // 120
+		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		FeatureGenerator().GenerateNetherFire(_world, rand, coord);
 	}
 
 	// Generate Glowstone Blob
-	int maxGlowstoneAttempts = rand.nextInt(rand.nextInt(10) + 1);
+	int maxGlowstoneAttempts = rand.NextInt(rand.NextInt(10) + 1);
 	for (int attempt = 0; attempt < maxGlowstoneAttempts; ++attempt) {
-		coord.x = blockX + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		coord.y = rand.nextInt(CHUNK_HEIGHT - 8) + 4; // 120
-		coord.z = blockZ + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = rand.NextInt(CHUNK_HEIGHT - 8) + 4; // 120
+		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		FeatureGenerator().GenerateNetherGlowstone(_world, rand, coord);
 	}
 
 	// Generate secondary Glowstone Blob
 	for (int attempt = 0; attempt < 10; ++attempt) {
-		coord.x = blockX + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		coord.y = rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = rand.NextInt(CHUNK_HEIGHT);
+		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		FeatureGenerator().GenerateNetherGlowstone(_world, rand, coord);
 	}
 
 	// Generate Brown Mushrooms
-	if (rand.nextInt(1) == 0) {
-		coord.x = blockX + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		coord.y = rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+	if (rand.NextInt(1) == 0) {
+		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = rand.NextInt(CHUNK_HEIGHT);
+		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		FeatureGenerator(BLOCK_MUSHROOM_BROWN).GenerateFlowers(_world, rand, coord);
 	}
 
 	// Generate Red Mushrooms
-	if (rand.nextInt(1) == 0) {
-		coord.x = blockX + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		coord.y = rand.nextInt(CHUNK_HEIGHT);
-		coord.z = blockZ + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+	if (rand.NextInt(1) == 0) {
+		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
+		coord.y = rand.NextInt(CHUNK_HEIGHT);
+		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		FeatureGenerator(BLOCK_MUSHROOM_RED).GenerateFlowers(_world, rand, coord);
 	}
 

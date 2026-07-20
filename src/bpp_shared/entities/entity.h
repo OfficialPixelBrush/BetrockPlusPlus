@@ -112,7 +112,7 @@ struct Entity {
 	float fallDistance = 0.0f;
 	int nextStepDistance = 0;
 
-	// Accumulated walk distance this tick (unused rn its mostly for the client)
+	// Accumulated walk distance this Tick (unused rn its mostly for the client)
 	float distanceWalkedModified = 0.0f;
 	float ySize = 0.0f;
 
@@ -134,30 +134,30 @@ struct Entity {
 
 	// Spawning
 	bool preventEntitySpawning = false;
-	bool isFirstUpdate = true; // True only on the very first tick
+	bool isFirstUpdate = true; // True only on the very first Tick
 
 	// Air
 	int maxAir = 300;
 	int air = 300;
 
 	Entity() {
-		rebuildCollider();
+		RebuildCollider();
 	}
 	virtual ~Entity() = default;
 
 	// Encode Entity info into relevant Metadata
-	virtual void encodeMetadata([[maybe_unused]] const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {}
+	virtual void EncodeMetadata([[maybe_unused]] const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {}
 
 	// Apply Metadata to Entity
-	virtual void decodeMetadata([[maybe_unused]] const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {}
+	virtual void DecodeMetadata([[maybe_unused]] const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {}
 
-	virtual void tick();
+	virtual void Tick();
 
-	virtual bool canBePushed() {
+	virtual bool CanBePushed() {
 		return false;
 	}
 
-	void rebuildCollider() {
+	void RebuildCollider() {
 		double halfWidth = double(width) / 2.0;
 		double bottom = position.y - double(yOffset) + double(ySize);
 		collider = { position.x - halfWidth,  bottom,
@@ -165,37 +165,37 @@ struct Entity {
 			         bottom + double(height), position.z + halfWidth };
 	}
 
-	void teleport(Vec3 _newpos, Vec2 _newrot = { 0, 0 }) {
+	void Teleport(Vec3 _newpos, Vec2 _newrot = { 0, 0 }) {
 		position.x = _newpos.x;
 		position.y = _newpos.y;
 		position.z = _newpos.z;
 		rotationYaw = _newrot.x;
 		rotationPitch = _newrot.y;
 		ySize = 0.0f;
-		rebuildCollider();
+		RebuildCollider();
 	}
 
-	virtual bool attackEntityFrom(Entity* _entity, int _damage) {
+	virtual bool AttackEntityFrom(Entity* _entity, int _damage) {
 		beenAttacked = true;
 		forceVelocityUpdate = true;
 		return false;
 	}
-	virtual AABB getFluidCollider() {
+	virtual AABB GetFluidCollider() {
 		// Returns the collider we use to compare if we are in a fluid
-		return collider.expand(0.0, -0.4, 0.0);
+		return collider.Expand(0.0, -0.4, 0.0);
 	}
-	virtual AABB getLavaCollider() {
+	virtual AABB GetLavaCollider() {
 		// Returns the collider we use to detect if we are in lava
-		return collider.expand(-0.1, -0.4, -0.1);
+		return collider.Expand(-0.1, -0.4, -0.1);
 	}
-	virtual bool pushOutOfBlocks(Vec3 _pos);
-	virtual void onCollideWithPlayer(PlayerEntity& _entity);
-	virtual void applyKnockback(Vec3 _direction);
-	virtual void applyInput(float _acceleration);
-	virtual void move(Vec3& _velocity);
+	virtual bool PushOutOfBlocks(Vec3 _pos);
+	virtual void OnCollideWithPlayer(PlayerEntity& _entity);
+	virtual void ApplyKnockback(Vec3 _direction);
+	virtual void ApplyInput(float _acceleration);
+	virtual void Move(Vec3& _velocity);
 	//TODO: Move to LivingEntity
-	virtual void dealDamage(int _amount);
-	virtual void updateFallState(float _movedY);
-	virtual std::optional<Tag> serializeToNBT();
-	virtual void loadFromNBT(Tag& _nbt);
+	virtual void DealDamage(int _amount);
+	virtual void UpdateFallState(float _movedY);
+	virtual std::optional<Tag> SerializeToNbt();
+	virtual void LoadFromNbt(Tag& _nbt);
 };

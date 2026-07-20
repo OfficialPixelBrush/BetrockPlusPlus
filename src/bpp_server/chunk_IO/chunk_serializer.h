@@ -12,7 +12,7 @@
 #include <vector>
 
 namespace ChunkSerializer {
-inline std::vector<uint8_t> serialize(const Chunk& _chunk, int _xmin = 0, int _xmax = 16, int _ymin = 0,
+inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _xmax = 16, int _ymin = 0,
                                       int _ymax = CHUNK_HEIGHT, int _zmin = 0, int _zmax = 16) {
 	int sizeX = _xmax - _xmin;
 	int sizeY = _ymax - _ymin;
@@ -40,10 +40,10 @@ inline std::vector<uint8_t> serialize(const Chunk& _chunk, int _xmin = 0, int _x
 		for (int z = _zmin; z < _zmax; z++) {
 			for (int y = _ymin; y < _ymax; y++, i++) {
 				Int3 pos{ x, y, z };
-				blockData[i] = uint8_t(_chunk.getBlock(pos));
-				packNibble(metaData[i >> 1], _chunk.getMeta(pos), i & 1);
-				packNibble(blockLight[i >> 1], _chunk.getBlockLight(pos), i & 1);
-				packNibble(skyLight[i >> 1], _chunk.getSkyLight(pos), i & 1);
+				blockData[i] = uint8_t(_chunk.GetBlock(pos));
+				packNibble(metaData[i >> 1], _chunk.GetMeta(pos), i & 1);
+				packNibble(blockLight[i >> 1], _chunk.GetBlockLight(pos), i & 1);
+				packNibble(skyLight[i >> 1], _chunk.GetSkyLight(pos), i & 1);
 			}
 		}
 	}

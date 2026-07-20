@@ -9,13 +9,13 @@
 
 #include "../server.h"
 
-void ChunkBroadcaster::broadcastBlockChanges(Server& _server,
+void ChunkBroadcaster::BroadcastBlockChanges(Server& _server,
                                              std::unordered_map<Int32_2, std::vector<PendingBlock>>& _changes,
                                              int8_t _dimension, WorldManager& _dimWorld) {
 	for (auto& [chunk, blockChanges] : _changes) {
 		// Find which sessions care about this chunk
 		// Split into flushed (send immediately) and sentOnly (queue).
-		auto indexIt = _server.chunkSessions.find(Server::chunkKey(chunk, _dimension));
+		auto indexIt = _server.chunkSessions.find(Server::ChunkKey(chunk, _dimension));
 		std::vector<PlayerSession*> flushedSessions;
 		std::vector<PlayerSession*> sentOnlySessions;
 
@@ -45,44 +45,44 @@ void ChunkBroadcaster::broadcastBlockChanges(Server& _server,
 			continue;
 
 		// Capture chunk ref once for sub-region jobs.
-		std::shared_ptr<Chunk> chunkRef = _dimWorld.getChunk(chunk);
+		std::shared_ptr<Chunk> chunkRef = _dimWorld.GetChunk(chunk);
 
 		if (blockChanges.size() == 1) {
 			// Single block change: serialise once, raw-copy to every session.
 			const PendingBlock& pb = blockChanges[0];
 			Packet::SetBlock sb;
 			sb.block = { pb.block.type, pb.block.data };
-			sb.position = { static_cast<int32_t>(pb.block_pos.x + (chunk.x * 16)), static_cast<int8_t>(pb.block_pos.y),
-				            static_cast<int32_t>(pb.block_pos.z + (chunk.z * 16)) };
+			sb.position = { static_cast<int32_t>(pb.blockPos.x + (chunk.x * 16)), static_cast<int8_t>(pb.blockPos.y),
+				            static_cast<int32_t>(pb.blockPos.z + (chunk.z * 16)) };
 			// Serialise into a temporary buffer, then send to all sessions.
 			NetworkStream tmpStream(-1);
 			sb.Serialize(tmpStream);
-			const auto& buf = tmpStream.getRawWriteBuffer();
+			const auto& buf = tmpStream.GetRawWriteBuffer();
 			for (auto* session : flushedSessions)
-				session->stream.writeRaw(buf.data(), buf.size());
+				session->stream.WriteRaw(buf.data(), buf.size());
 		} else if (blockChanges.size() < 10) {
 			// Multi-block packet
-			auto format_multi_block = [](int8_t _x, int8_t _y, int8_t _z) {
+			auto formatMultiBlock = [](int8_t _x, int8_t _y, int8_t _z) {
 				return (((int16_t(_x) & 0x0F) << 12) | ((int16_t(_z) & 0x0F) << 8) | ((int16_t(_y) & 0xFF)));
 			};
 			Packet::SetMultipleBlocks smb;
-			smb.chunk_position = { chunk.x, chunk.z };
+			smb.chunkPosition = { chunk.x, chunk.z };
 			for (const auto& pb : blockChanges) {
-				smb.block_coordinates.push_back(static_cast<int16_t>(
-				    format_multi_block(int8_t(pb.block_pos.x), int8_t(pb.block_pos.y), int8_t(pb.block_pos.z))));
-				smb.block_metadata.push_back(int8_t(pb.block.data));
-				smb.block_types.push_back(pb.block.type);
+				smb.blockCoordinates.push_back(static_cast<int16_t>(
+				    formatMultiBlock(int8_t(pb.blockPos.x), int8_t(pb.blockPos.y), int8_t(pb.blockPos.z))));
+				smb.blockMetadata.push_back(int8_t(pb.block.data));
+				smb.blockTypes.push_back(pb.block.type);
 			}
-			smb.number_of_blocks = static_cast<int16_t>(smb.block_coordinates.size());
+			smb.numberOfBlocks = static_cast<int16_t>(smb.blockCoordinates.size());
 			NetworkStream tmpStream(-1);
 			smb.Serialize(tmpStream);
-			const auto& buf = tmpStream.getRawWriteBuffer();
+			const auto& buf = tmpStream.GetRawWriteBuffer();
 			for (auto* session : flushedSessions)
-				session->stream.writeRaw(buf.data(), buf.size());
+				session->stream.WriteRaw(buf.data(), buf.size());
 		} else {
 			// Sub-region: compression is async per-session via ChunkSender.
 			for (auto* session : flushedSessions)
-				_server.chunkSender.sendBlockUpdates(*session, chunk, blockChanges, chunkRef);
+				_server.chunkSender.SendBlockUpdates(*session, chunk, blockChanges, chunkRef);
 		}
 	}
 }

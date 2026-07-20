@@ -18,16 +18,16 @@ NoiseSimplex::NoiseSimplex(Java::Random& _rand) {
 }
 
 void NoiseSimplex::InitPermTable(Java::Random& _rand) {
-	coordinate.x = _rand.nextDouble() * 256.0;
-	coordinate.y = _rand.nextDouble() * 256.0;
-	coordinate.z = _rand.nextDouble() * 256.0;
+	coordinate.x = _rand.NextDouble() * 256.0;
+	coordinate.y = _rand.NextDouble() * 256.0;
+	coordinate.z = _rand.NextDouble() * 256.0;
 
 	for (int32_t i = 0; i < 256; ++i) {
 		permutations[i] = i;
 	}
 
 	for (int32_t i = 0; i < 256; ++i) {
-		int32_t j = _rand.nextInt(256 - i) + i;
+		int32_t j = _rand.NextInt(256 - i) + i;
 		std::swap(permutations[i], permutations[j]);
 		permutations[i + 256] = permutations[i];
 	}
@@ -43,8 +43,8 @@ void NoiseSimplex::GenerateNoise(std::vector<double>& _values, Vec2 _pOffset, In
 		for (int32_t yI = 0; yI < _pSize.y; ++yI) {
 			double yPos = (_pOffset.y + double(yI)) * _pScale.y + coordinate.y;
 			double skew = (xPos + yPos) * skewing;
-			int32_t x0 = wrap(xPos + skew);
-			int32_t y0 = wrap(yPos + skew);
+			int32_t x0 = Wrap(xPos + skew);
+			int32_t y0 = Wrap(yPos + skew);
 			double unskewed = double(x0 + y0) * unskewing;
 			double x0a = double(x0) - unskewed;
 			double y0a = double(y0) - unskewed;
@@ -75,7 +75,7 @@ void NoiseSimplex::GenerateNoise(std::vector<double>& _values, Vec2 _pOffset, In
 				contrib0 = 0.0;
 			} else {
 				term0 *= term0;
-				contrib0 = term0 * term0 * dotProd(gradients[grad0], x0b, y0b);
+				contrib0 = term0 * term0 * DotProd(gradients[grad0], x0b, y0b);
 			}
 
 			double term1 = 0.5 - x0c * x0c - y0c * y0c;
@@ -84,7 +84,7 @@ void NoiseSimplex::GenerateNoise(std::vector<double>& _values, Vec2 _pOffset, In
 				contrib1 = 0.0;
 			} else {
 				term1 *= term1;
-				contrib1 = term1 * term1 * dotProd(gradients[grad1], x0c, y0c);
+				contrib1 = term1 * term1 * DotProd(gradients[grad1], x0c, y0c);
 			}
 
 			double term2 = 0.5 - x1c * x1c - y1c * y1c;
@@ -93,7 +93,7 @@ void NoiseSimplex::GenerateNoise(std::vector<double>& _values, Vec2 _pOffset, In
 				contrib2 = 0.0;
 			} else {
 				term2 *= term2;
-				contrib2 = term2 * term2 * dotProd(gradients[grad2], x1c, y1c);
+				contrib2 = term2 * term2 * DotProd(gradients[grad2], x1c, y1c);
 			}
 
 			_values[index++] += 70.0 * (contrib0 + contrib1 + contrib2) * _amplitude;

@@ -17,9 +17,9 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
 	struct SharedInventory : Inventory {
 		LargeChestInventoryInteraction* owner = nullptr;
 		SharedInventory() : Inventory(90) {}
-		void onInventoryChanged() override {
+		void OnInventoryChanged() override {
 			if (owner)
-				owner->writeBack();
+				owner->WriteBack();
 		}
 	} sharedInventory;
 
@@ -27,10 +27,10 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
 	                               std::shared_ptr<TileEntityChest> _lower);
 	virtual ~LargeChestInventoryInteraction();
 
-	bool canExist() override;
-	void initSnapshot() override;
-	std::vector<DeltaSlot> tickDiff() override;
-	void mergeInventories();
-	void writeBack();
-	void onShiftClick(int _slot) override;
+	bool CanExist() override;
+	void InitSnapshot() override;
+	std::vector<DeltaSlot> TickDiff() override;
+	void MergeInventories();
+	void WriteBack();
+	void OnShiftClick(int _slot) override;
 };

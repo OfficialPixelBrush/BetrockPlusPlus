@@ -9,21 +9,21 @@
 #include "world/chunk.h"
 #include <string>
 
-void TileEntityChest::tick() {
+void TileEntityChest::Tick() {
 	if (chunk && inventory.isModified) {
 		chunk->isModified = true;
 		inventory.isModified = false;
 	}
 }
 
-void TileEntityFurnace::tick() {
+void TileEntityFurnace::Tick() {
 	if (chunk && inventory.isModified) {
 		chunk->isModified = true;
 		inventory.isModified = false;
 	}
 }
 
-void TileEntityDispenser::tick() {
+void TileEntityDispenser::Tick() {
 	if (chunk && inventory.isModified) {
 		chunk->isModified = true;
 		inventory.isModified = false;
@@ -47,7 +47,7 @@ constexpr std::string GetTileNbtId(TileType _type) {
 	return "";
 }
 
-Tag TileEntity::serialize() {
+Tag TileEntity::Serialize() {
 	auto root = Tag{};
 	root.type = TAG_COMPOUND;
 
@@ -64,8 +64,8 @@ Tag TileEntity::serialize() {
 	return root;
 }
 
-Tag TileEntityChest::serialize() {
-	auto root = TileEntity::serialize();
+Tag TileEntityChest::Serialize() {
+	auto root = TileEntity::Serialize();
 
 	// Construct our inventory
 	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
@@ -93,8 +93,8 @@ Tag TileEntityChest::serialize() {
 	return root;
 }
 
-Tag TileEntityFurnace::serialize() {
-	auto root = TileEntity::serialize();
+Tag TileEntityFurnace::Serialize() {
+	auto root = TileEntity::Serialize();
 
 	// Construct our inventory
 	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
@@ -122,8 +122,8 @@ Tag TileEntityFurnace::serialize() {
 	return root;
 }
 
-Tag TileEntityDispenser::serialize() {
-	auto root = TileEntity::serialize();
+Tag TileEntityDispenser::Serialize() {
+	auto root = TileEntity::Serialize();
 
 	// Construct our inventory
 	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
@@ -151,8 +151,8 @@ Tag TileEntityDispenser::serialize() {
 	return root;
 }
 
-Tag TileEntitySign::serialize() {
-	auto root = TileEntity::serialize();
+Tag TileEntitySign::Serialize() {
+	auto root = TileEntity::Serialize();
 
 	auto vText1 = Tag{ .type = TAG_STRING, .name = "Text1", .stringValue = text1 };
 	auto vText2 = Tag{ .type = TAG_STRING, .name = "Text2", .stringValue = text2 };
@@ -167,8 +167,8 @@ Tag TileEntitySign::serialize() {
 	return root;
 }
 
-Tag TileEntityMobSpawner::serialize() {
-	auto root = TileEntity::serialize();
+Tag TileEntityMobSpawner::Serialize() {
+	auto root = TileEntity::Serialize();
 
 	auto vEntityId = Tag{ .type = TAG_STRING, .name = "EntityId", .stringValue = entityId };
 	auto vDelay = Tag{ .type = TAG_SHORT, .name = "Delay", .shortValue = delay };

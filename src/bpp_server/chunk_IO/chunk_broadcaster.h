@@ -14,8 +14,8 @@
 
 class Server;
 
-// Sends accumulated per-tick block changes out to whichever player sessions care about them
+// Sends accumulated per-Tick block changes out to whichever player sessions care about them
 namespace ChunkBroadcaster {
-void broadcastBlockChanges(Server& _server, std::unordered_map<Int32_2, std::vector<PendingBlock>>& _changes,
+void BroadcastBlockChanges(Server& _server, std::unordered_map<Int32_2, std::vector<PendingBlock>>& _changes,
                            int8_t _dimension, WorldManager& _dimWorld);
 } // namespace ChunkBroadcaster

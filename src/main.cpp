@@ -52,13 +52,13 @@ struct Args : MainArguments<Args> {
 	}
 	uint16_t port = option("port", 'p', "Port the server will run on (25565)") = 25565;
 	int32_t maxPlayers = option("max_players", '\0',
-	                             "Maximum number of players. Anything less than 0 removes the cap (-1)") = -1;
+	                            "Maximum number of players. Anything less than 0 removes the cap (-1)") = -1;
 	bool enableWhitelist = (option("whitelist", 'w', "Enables usage of the whitelist") = false);
 	int64_t seed = option("seed", 's', "Overwrites the worlds current seed") = 0;
 	bool disablePortals = (option("no_portals", '\0', "Disables Portal-travel") = false);
 	bool forceNetherSpawn = (option("force_nether_spawn", '\0', "Makes players spawn in the Nether") = false);
 	uint32_t pregenRadius = option("pregen_radius", '\0',
-	                                "Generates chunks around 0,0 until the desired radius is met") = 5;
+	                               "Generates chunks around 0,0 until the desired radius is met") = 5;
 	uint32_t chunkRenderRadius = option(
 	    "chunk_render_radius", '\0',
 	    "Radius within which chunks are rendered for clients. On Vanilla clients this caps out at about 16 Chunks") = 5;
@@ -98,7 +98,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 #ifdef BUILD_SERVER
 	Server serv;
 	server = &serv;
-	server->run();
+	server->Run();
 #endif
 #ifdef BUILD_CLIENT
 	Client client;

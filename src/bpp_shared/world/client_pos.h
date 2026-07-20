@@ -14,16 +14,16 @@ struct ClientPosition {
 	Vec3 pos{ 0.0, 0.0, 0.0 };
 	int viewDistanceOverride = 0;
 
-	inline Int2 getChunkPos() const {
+	inline Int2 GetChunkPos() const {
 		return Int2{ static_cast<int>(std::floor(pos.x)) >> 4, static_cast<int>(std::floor(pos.z)) >> 4 };
 	}
 
-	inline Int3 getBlockPos() const {
+	inline Int3 GetBlockPos() const {
 		return Int3{ static_cast<int>(std::floor(pos.x)), static_cast<int>(std::floor(pos.y)),
 			         static_cast<int>(std::floor(pos.z)) };
 	}
 
-	inline Int2 getRegionPos() const {
+	inline Int2 GetRegionPos() const {
 		return Int2{ static_cast<int>(std::floor(pos.x)) >> 9, static_cast<int>(std::floor(pos.z)) >> 9 };
 	}
 };

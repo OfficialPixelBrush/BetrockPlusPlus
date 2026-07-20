@@ -7,18 +7,18 @@
 
 InventoryInteraction::InventoryInteraction(Inventory* _inv) : inventory(_inv) {}
 
-bool InventoryInteraction::canExist() {
+bool InventoryInteraction::CanExist() {
 	return inventory != nullptr;
 }
 
-void InventoryInteraction::initSnapshot() {
+void InventoryInteraction::InitSnapshot() {
 	snapshot = inventory->slots;
 }
 
-std::vector<DeltaSlot> InventoryInteraction::tickDiff() {
+std::vector<DeltaSlot> InventoryInteraction::TickDiff() {
 	std::vector<DeltaSlot> differences;
 	for (size_t i = 0; i < snapshot.size(); i++) {
-		[[maybe_unused]] auto* current = inventory->getStackInSlot(i);
+		[[maybe_unused]] auto* current = inventory->GetStackInSlot(i);
 		auto& snap = snapshot[i];
 
 		bool changed = snap != inventory->slots[i];
@@ -31,24 +31,24 @@ std::vector<DeltaSlot> InventoryInteraction::tickDiff() {
 	return differences;
 }
 
-void InventoryInteraction::onLeftClick(int _slot) {
-	auto targetSlot = inventory->getStackInSlot(_slot);
+void InventoryInteraction::OnLeftClick(int _slot) {
+	auto targetSlot = inventory->GetStackInSlot(_slot);
 
 	// Empty slot
 	if (!targetSlot) {
 		if (carried.id != Items::Id::INVALID) {
-			inventory->setInventorySlotContents(_slot, &carried);
+			inventory->SetInventorySlotContents(_slot, &carried);
 			carried = ItemStack{};
 		}
-		inventory->onInventoryChanged();
+		inventory->OnInventoryChanged();
 		return;
 	}
 
 	// Not carrying anything
 	if (carried.id == Items::Id::INVALID) {
 		carried = *targetSlot;
-		inventory->clearSlot(_slot);
-		inventory->onInventoryChanged();
+		inventory->ClearSlot(_slot);
+		inventory->OnInventoryChanged();
 		return;
 	}
 
@@ -61,7 +61,7 @@ void InventoryInteraction::onLeftClick(int _slot) {
 		carried.count -= toMove;
 		if (carried.count == 0)
 			carried = ItemStack{};
-		inventory->onInventoryChanged();
+		inventory->OnInventoryChanged();
 		return;
 	}
 
@@ -69,20 +69,20 @@ void InventoryInteraction::onLeftClick(int _slot) {
 	ItemStack temp = *targetSlot;
 	*targetSlot = carried;
 	carried = temp;
-	inventory->onInventoryChanged();
+	inventory->OnInventoryChanged();
 }
 
-void InventoryInteraction::onRightClick(int _slot) {
-	auto targetSlot = inventory->getStackInSlot(_slot);
+void InventoryInteraction::OnRightClick(int _slot) {
+	auto targetSlot = inventory->GetStackInSlot(_slot);
 
 	if (carried.id != Items::Id::INVALID) {
 		if (!targetSlot) {
 			ItemStack single{ carried.id, 1, carried.data };
-			inventory->setInventorySlotContents(_slot, &single);
+			inventory->SetInventorySlotContents(_slot, &single);
 			carried.count -= 1;
 			if (carried.count == 0)
 				carried = ItemStack{};
-			inventory->onInventoryChanged();
+			inventory->OnInventoryChanged();
 			return;
 		}
 
@@ -95,7 +95,7 @@ void InventoryInteraction::onRightClick(int _slot) {
 				carried.count -= 1;
 				if (carried.count == 0)
 					carried = ItemStack{};
-				inventory->onInventoryChanged();
+				inventory->OnInventoryChanged();
 			}
 			return;
 		}
@@ -104,7 +104,7 @@ void InventoryInteraction::onRightClick(int _slot) {
 		ItemStack temp = *targetSlot;
 		*targetSlot = carried;
 		carried = temp;
-		inventory->onInventoryChanged();
+		inventory->OnInventoryChanged();
 		return;
 	}
 
@@ -118,20 +118,20 @@ void InventoryInteraction::onRightClick(int _slot) {
 		int left = targetSlot->count - taken;
 		targetSlot->count = int8_t(left);
 		carried = ItemStack{ targetSlot->id, int8_t(taken), targetSlot->data };
-		inventory->onInventoryChanged();
+		inventory->OnInventoryChanged();
 		return;
 	}
 
 	// If its only one item we just pick it up
 	carried = *targetSlot;
-	inventory->clearSlot(_slot);
-	inventory->onInventoryChanged();
+	inventory->ClearSlot(_slot);
+	inventory->OnInventoryChanged();
 	return;
 }
 
-void InventoryInteraction::onShiftClick(int _slot) {
-	auto targetSlot = inventory->getStackInSlot(_slot);
+void InventoryInteraction::OnShiftClick(int _slot) {
+	auto targetSlot = inventory->GetStackInSlot(_slot);
 	if (!targetSlot)
 		return;
-	inventory->mergeItemStackInInventory(*targetSlot);
+	inventory->MergeItemStackInInventory(*targetSlot);
 }

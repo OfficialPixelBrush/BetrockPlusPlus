@@ -30,7 +30,7 @@ std::string CommandTeleport::Execute(std::vector<std::string>& _parameters, Play
 		if (!ss.fail() && ss.eof())
 			source = &_session;
 		else {
-			source = _server.getSessionByUsername(_parameters[offset++]).get();
+			source = _server.GetSessionByUsername(_parameters[offset++]).get();
 		}
 	}
 
@@ -45,7 +45,7 @@ std::string CommandTeleport::Execute(std::vector<std::string>& _parameters, Play
 			SendTeleport(*source, pos);
 
 			Packet::ChatMessage reply;
-			reply.message = "§eTeleported " + source->username + " to " + pos.str();
+			reply.message = "§eTeleported " + source->username + " to " + pos.Str();
 			reply.Serialize(_session.stream);
 			return "";
 		} catch (...) {
@@ -55,7 +55,7 @@ std::string CommandTeleport::Execute(std::vector<std::string>& _parameters, Play
 
 	// /tp <player> <target_player>
 	if (_parameters.size() - offset == 1) { // offset=1→params[1], offset=2→params[2]
-		PlayerSession* dest = _server.getSessionByUsername(_parameters[offset]).get();
+		PlayerSession* dest = _server.GetSessionByUsername(_parameters[offset]).get();
 		if (!dest)
 			return _parameters[offset] + " does not exist!";
 		SendTeleport(*source, dest->position.pos, dest->rotation.x, dest->rotation.y);

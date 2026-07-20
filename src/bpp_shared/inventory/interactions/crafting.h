@@ -22,18 +22,18 @@ public:
 	CraftingInventoryInteraction(Inventory* _sharedInventory, Inventory* _craftingInventory,
 	                             InventoryPlayer* _playerInventory, Runtime& _gameRuntime, UInt8_2 _gridSize);
 
-	void onLeftClick(int _slot) override;
-	void onRightClick(int _slot) override;
-	void onShiftClick(int _slot) override;
+	void OnLeftClick(int _slot) override;
+	void OnRightClick(int _slot) override;
+	void OnShiftClick(int _slot) override;
 
 protected:
 	const UInt8_2 gridSize;
 
-	void handleCrafting(int _slot);
-	void finishCraft();
-	void takeResult();
+	void HandleCrafting(int _slot);
+	void FinishCraft();
+	void TakeResult();
 
-	virtual void updateResult();
-	virtual void shiftClickResult() = 0;
-	virtual void shiftClickOther(int _slot) = 0;
+	virtual void UpdateResult();
+	virtual void ShiftClickResult() = 0;
+	virtual void ShiftClickOther(int _slot) = 0;
 };

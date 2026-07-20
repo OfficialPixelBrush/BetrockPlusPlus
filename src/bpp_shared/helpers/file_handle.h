@@ -18,7 +18,7 @@ public:
 		}
 	}
 
-	std::fstream& get() {
+	std::fstream& Get() {
 		return stream;
 	}
 

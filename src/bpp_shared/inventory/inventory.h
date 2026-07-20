@@ -20,17 +20,17 @@ struct Inventory {
 
 	Inventory(size_t _size) : slots(_size) {}
 
-	virtual int getSizeInventory() const {
+	virtual int GetSizeInventory() const {
 		return int(slots.size());
 	}
 
-	virtual NetworkSlotId getNetworkSlotId(NbtSlotId _slot) const {
+	virtual NetworkSlotId GetNetworkSlotId(NbtSlotId _slot) const {
 		if (_slot < 0 || _slot >= int(slots.size()))
 			return -1;
 		return _slot.value;
 	}
 
-	virtual ItemStack* getStackInSlot(int _slot) {
+	virtual ItemStack* GetStackInSlot(int _slot) {
 		if (_slot < 0 || _slot >= (int)slots.size())
 			return nullptr;
 		if (slots[size_t(_slot)].id == Items::Id::INVALID)
@@ -38,54 +38,54 @@ struct Inventory {
 		return &slots[size_t(_slot)];
 	}
 
-	virtual ItemStack decreaseStackSize(int _slot, int _count) {
+	virtual ItemStack DecreaseStackSize(int _slot, int _count) {
 		if (_slot < 0 || _slot >= (int)slots.size() || slots[size_t(_slot)].id == Items::Id::INVALID)
 			return ItemStack{};
 		auto& stack = slots[size_t(_slot)];
 		if (stack.count <= _count) {
 			ItemStack taken = stack;
 			slots[_slot] = ItemStack{};
-			onInventoryChanged();
+			OnInventoryChanged();
 			return taken;
 		}
 		ItemStack taken{ stack.id, (int8_t)_count, stack.data };
 		stack.count = (int8_t)(stack.count - _count);
-		onInventoryChanged();
+		OnInventoryChanged();
 		return taken;
 	}
 
-	virtual void setInventorySlotContents(int _slot, ItemStack* _stack) {
+	virtual void SetInventorySlotContents(int _slot, ItemStack* _stack) {
 		if (_slot < 0 || _slot >= (int)slots.size())
 			return;
 		slots[size_t(_slot)] = _stack ? *_stack : ItemStack{};
-		onInventoryChanged();
+		OnInventoryChanged();
 	}
 
-	virtual const std::string& getInventoryName() const {
+	virtual const std::string& GetInventoryName() const {
 		return name;
 	}
-	virtual void onInventoryChanged() {
+	virtual void OnInventoryChanged() {
 		isModified = true;
 	}
 	virtual ~Inventory() = default;
 
-	void clearSlot(int _slot) {
+	void ClearSlot(int _slot) {
 		if (_slot < 0 || _slot >= (int)slots.size())
 			return;
 		slots[size_t(_slot)] = ItemStack{};
-		onInventoryChanged();
+		OnInventoryChanged();
 	}
 
 	// Take in the original item stack, try and merge it with our inventory. Returns if it was successful
 	// Start slot and end slot are inclusive
-	virtual bool mergeItemStackInInventory(ItemStack& _stack, bool _reverse = false, int _startSlot = 0, int _endSlot = -1) {
+	virtual bool MergeItemStackInInventory(ItemStack& _stack, bool _reverse = false, int _startSlot = 0, int _endSlot = -1) {
 		auto start = _startSlot;
-		auto end = _endSlot == -1 ? getSizeInventory() - 1 : _endSlot;
+		auto end = _endSlot == -1 ? GetSizeInventory() - 1 : _endSlot;
 
 		// Try and merge into an already existing stack of the same type if this item is stackable
 		if (Items::IsStackable(_stack.id)) {
 			for (int i = _reverse ? end : start; _reverse ? i >= start : i <= end; _reverse ? i-- : i++) {
-				auto slot = getStackInSlot(i);
+				auto slot = GetStackInSlot(i);
 				if (!slot)
 					continue;
 				if (slot->id == _stack.id && slot->data == _stack.data) {
@@ -96,12 +96,12 @@ struct Inventory {
 
 					// Add the stacks together and do some checks to make sure we don't overflow
 					int space = maxStack - slot->count;
-					int toMove = CrossPlatform::Math::min(space, (int)_stack.count);
+					int toMove = CrossPlatform::Math::Min(space, (int)_stack.count);
 
 					slot->count += toMove;
 					_stack.count -= toMove;
 
-					onInventoryChanged();
+					OnInventoryChanged();
 					if (_stack.count == 0)
 						return true;
 				}
@@ -115,7 +115,7 @@ struct Inventory {
 				_stack.id = Items::Id::INVALID;
 				_stack.data = 0;
 				_stack.count = 0;
-				onInventoryChanged();
+				OnInventoryChanged();
 				return true;
 			}
 		}

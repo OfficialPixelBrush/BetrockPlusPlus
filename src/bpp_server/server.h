@@ -34,20 +34,20 @@ class Server {
 public:
 	Server();
 	~Server();
-	void run();
-	void stop();
-	void processIncoming(PlayerSession& _session);
+	void Run();
+	void Stop();
+	void ProcessIncoming(PlayerSession& _session);
 
 private:
-	int SERVER_VIEW_RADIUS = 8;
-	int SPAWN_CHUNK_RADIUS = 5;
+	int serverViewRadius = 8;
+	int spawnChunkRadius = 5;
 
 public:
 	Runtime gameRuntime;
 	ChunkSender chunkSender;
 	int flushChunkCount = 10;
 
-	std::shared_ptr<PlayerSession> getSessionById(EntityId _entityId) {
+	std::shared_ptr<PlayerSession> GetSessionById(EntityId _entityId) {
 		for (auto player : players) {
 			if (player->entity && player->entity->id == _entityId) {
 				return player;
@@ -56,7 +56,7 @@ public:
 		return nullptr;
 	}
 
-	std::shared_ptr<PlayerSession> getSessionByUsername(const std::string& _username) {
+	std::shared_ptr<PlayerSession> GetSessionByUsername(const std::string& _username) {
 		for (auto player : players) {
 			if (player->username == _username) {
 				return player;
@@ -65,7 +65,7 @@ public:
 		return nullptr;
 	}
 
-	std::string getUsernameByEntityId(EntityId _id) {
+	std::string GetUsernameByEntityId(EntityId _id) {
 		for (auto& player : players) {
 			if (player->entity && player->entity->id == _id) {
 				return player->username;
@@ -75,7 +75,7 @@ public:
 	}
 
 	// Send a message to all players
-	void sendGlobalChatMessage(std::string _message) {
+	void SendGlobalChatMessage(std::string _message) {
 		for (auto& other : players) {
 			if (other && other->connState != ConnectionState::Playing)
 				continue;
@@ -89,41 +89,41 @@ public:
 		return players;
 	}
 
-	void sendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _entity);
-	void sendPlayerToDimension(Dimension _dim, PlayerSession& _session);
+	void SendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _entity);
+	void SendPlayerToDimension(Dimension _dim, PlayerSession& _session);
 
 	// Entity trackers are so we can send entity updates to players and vice versa.
 	EntityTracker overworldEntityTracker;
 	EntityTracker hellEntityTracker;
 
 private:
-	friend bool PacketDispatcher::dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld,
+	friend bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld,
 	                                       Server& _server);
-	friend void ChunkBroadcaster::broadcastBlockChanges(Server& _server,
+	friend void ChunkBroadcaster::BroadcastBlockChanges(Server& _server,
 	                                                    std::unordered_map<Int32_2, std::vector<PendingBlock>>& _changes,
 	                                                    int8_t _dimension, WorldManager& _dimWorld);
 
-	void tick();
-	void startup();
-	void acceptNewPlayers();
-	void transferPlayerDimension(PlayerSession& _session);
-	void disconnectClients();
+	void Tick();
+	void Startup();
+	void AcceptNewPlayers();
+	void TransferPlayerDimension(PlayerSession& _session);
+	void DisconnectClients();
 
 	// Config file stuff
-	void loadConfig();
+	void LoadConfig();
 
 	// Chunk-session index helpers
-	void indexAddChunk(PlayerSession& _session, const Int32_2& _pos);
-	void indexRemoveChunk(PlayerSession& _session, const Int32_2& _pos);
-	void indexRemoveSession(PlayerSession& _session);
+	void IndexAddChunk(PlayerSession& _session, const Int32_2& _pos);
+	void IndexRemoveChunk(PlayerSession& _session, const Int32_2& _pos);
+	void IndexRemoveSession(PlayerSession& _session);
 
-	WorldManager* getWorldForDimension(Dimension _dim) {
+	WorldManager* GetWorldForDimension(Dimension _dim) {
 		return _dim == Dimension::Nether ? &this->gameRuntime.worldHell : &this->gameRuntime.world;
 	}
 
 	// Encodes chunk position + dimension into a single key for chunkSessions.
 	// x = chunk X, y = chunk Z, z = dimension id
-	static Int32_3 chunkKey(const Int32_2& _pos, int8_t _dimension) {
+	static Int32_3 ChunkKey(const Int32_2& _pos, int8_t _dimension) {
 		return Int32_3{ _pos.x, _pos.z, int32_t(_dimension) };
 	}
 
@@ -145,8 +145,8 @@ private:
 	// Server specifics
 	int serverSocket = -1;
 	int serverPort = 25565;
-	int64_t timeout_seconds = 60;
-	CommandManager command_manager;
+	int64_t timeoutSeconds = 60;
+	CommandManager commandManager;
 	bool stopped = false;
 	Config config;
 };

@@ -18,8 +18,8 @@ struct EntityMPPlayer : public PlayerEntity {
 	~EntityMPPlayer() {
 		session = nullptr;
 	}
-	void tick() override;
-	bool pickupItem(ItemStack& _stack, EntityId _entityId) override;
-	bool dropItem(ItemStack _stack) override;
-	void handlePositionChecks();
+	void Tick() override;
+	bool PickupItem(ItemStack& _stack, EntityId _entityId) override;
+	bool DropItem(ItemStack _stack) override;
+	void HandlePositionChecks();
 };

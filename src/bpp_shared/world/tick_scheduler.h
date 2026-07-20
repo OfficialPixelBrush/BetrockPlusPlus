@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-// For scheduling tick events in the world
+// For scheduling Tick events in the world
 struct ScheduledTick {
 	int64_t tickDue;
 	int64_t sequence; // Insertion order
@@ -37,7 +37,7 @@ struct TickScheduler {
 	TickTime currentTick = 0;
 	int64_t nextSequence = 0;
 
-	void scheduleUpdateTick(Int3 _pos, BlockType _block, int _tickDelay) {
+	void ScheduleUpdateTick(Int3 _pos, BlockType _block, int _tickDelay) {
 		if (pending.contains(_pos) && pending[_pos] == currentTick + TickTime(_tickDelay)) {
 			return;
 		}
@@ -46,5 +46,5 @@ struct TickScheduler {
 		pending[_pos] = sequence;
 	}
 
-	void tick();
+	void Tick();
 };

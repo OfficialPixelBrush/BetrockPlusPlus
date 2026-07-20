@@ -12,12 +12,12 @@
 #include "networking/network_stream.h"
 #include "networking/packets.h"
 
-bool EntityMPPlayer::pickupItem(ItemStack& _stack, EntityId _entityId) {
-	if (this->session->inventory.pickupItem(_stack)) {
+bool EntityMPPlayer::PickupItem(ItemStack& _stack, EntityId _entityId) {
+	if (this->session->inventory.PickupItem(_stack)) {
 		Packet::CollectItem pkt;
-		pkt.collector_entity_id = this->id;
-		pkt.item_entity_id = _entityId;
-		this->session->entityTracker->sendPacketToViewers(pkt, this->id);
+		pkt.collectorEntityId = this->id;
+		pkt.itemEntityId = _entityId;
+		this->session->entityTracker->SendPacketToViewers(pkt, this->id);
 		pkt.Serialize(this->session->stream);
 		return true;
 	}
@@ -26,7 +26,7 @@ bool EntityMPPlayer::pickupItem(ItemStack& _stack, EntityId _entityId) {
 }
 
 // This works over a copy of your item, it doesn't remove or decrement it !!!
-bool EntityMPPlayer::dropItem(ItemStack _stack) {
+bool EntityMPPlayer::DropItem(ItemStack _stack) {
 	if (_stack.id == Items::Id::INVALID || _stack.count <= 0)
 		return false;
 
@@ -47,18 +47,18 @@ bool EntityMPPlayer::dropItem(ItemStack _stack) {
 
 	// Add a little bit of randomness
 	velocity = 0.02f;
-	float angle = rand.nextFloat() * JavaMath::PI_FLOAT * 2.0f;
-	velocity *= rand.nextFloat();
+	float angle = rand.NextFloat() * JavaMath::PI_FLOAT * 2.0f;
+	velocity *= rand.NextFloat();
 	itemEntity->velocity.x += std::cos(angle) * velocity;
-	itemEntity->velocity.y += (rand.nextFloat() - rand.nextFloat()) * 0.1f;
+	itemEntity->velocity.y += (rand.NextFloat() - rand.NextFloat()) * 0.1f;
 	itemEntity->velocity.z += std::sin(angle) * velocity;
 
 	// Register our item with the world
-	this->world->entityManager.addEntity(std::move(itemEntity));
+	this->world->entityManager.AddEntity(std::move(itemEntity));
 	return true;
 }
 
-void EntityMPPlayer::handlePositionChecks() {
+void EntityMPPlayer::HandlePositionChecks() {
 	if (session->pendingTeleport) {
 		// We have a pending teleport. Check to see if the player caught up
 		if (!session->pendingPosition)
@@ -71,12 +71,12 @@ void EntityMPPlayer::handlePositionChecks() {
 			// Player isn't at the teleported position so send another tp packet
 			// Also reset our position
 			auto& ptp = *session->pendingTeleport;
-			this->teleport({ ptp.x, ptp.y, ptp.z }, { rotationYaw, rotationPitch });
+			this->Teleport({ ptp.x, ptp.y, ptp.z }, { rotationYaw, rotationPitch });
 			session->position.pos = *session->pendingTeleport;
 			Packet::PlayerPosition pkt;
-			pkt.on_ground = onGround;
+			pkt.onGround = onGround;
 			pkt.position = { position.x, position.y, position.z };
-			pkt.camera_y = position.y; // This is backwards, thanks notch
+			pkt.cameraY = position.y; // This is backwards, thanks notch
 			pkt.Serialize(session->stream);
 			return;
 		}
@@ -88,12 +88,12 @@ void EntityMPPlayer::handlePositionChecks() {
 	this->rotationYaw = session->rotation.x;
 	this->rotationPitch = session->rotation.y;
 
-	// If we recieved a movement packet this tick do our server side checks
+	// If we recieved a movement packet this Tick do our server side checks
 	if (session->pendingPosition) {
 		// Re-simulate our move
 		bool residualTooLarge = false;
 		bool movedWrong = false;
-		bool wasClearBefore = world->getCollidingBoundingBoxes(collider.expand(-0.0625, -0.0625, -0.0625)).empty();
+		bool wasClearBefore = world->GetCollidingBoundingBoxes(collider.Expand(-0.0625, -0.0625, -0.0625)).empty();
 		Vec3 lastPosition = this->position;
 		Vec3 claimed = *session->pendingPosition;
 		Vec3 delta = claimed - lastPosition;
@@ -101,7 +101,7 @@ void EntityMPPlayer::handlePositionChecks() {
 			GlobalLogger().warn << "Client " << session->username << " moved wrongly!\n";
 			movedWrong = true;
 		}
-		move(delta);
+		Move(delta);
 
 		// How far is our simulated move vs what the client says?
 		delta = claimed - this->position;
@@ -109,29 +109,29 @@ void EntityMPPlayer::handlePositionChecks() {
 		if (residual < 0.0625) {
 			this->position = claimed; // Trust it
 			session->position.pos = claimed;
-			rebuildCollider();
+			RebuildCollider();
 		} else {
 			// Send a correction
 			residualTooLarge = true;
 		}
 
-		bool clearNow = world->getCollidingBoundingBoxes(collider.expand(-0.0625, -0.0625, -0.0625)).empty();
+		bool clearNow = world->GetCollidingBoundingBoxes(collider.Expand(-0.0625, -0.0625, -0.0625)).empty();
 
 		if ((wasClearBefore && (residualTooLarge || !clearNow)) || movedWrong) {
 			// TP our player back
 			GlobalLogger().info << "Residual from move was: " << residual << "\n";
 			GlobalLogger().info << "Rubberbanded player! wasClear=" << wasClearBefore
-			                      << " residual=" << residualTooLarge << " clearNow=" << clearNow
-			                      << " movedWrong=" << movedWrong << " pos=(" << this->position.x << ","
-			                      << this->position.y << "," << this->position.z << ")"
-			                      << " colliderY=[" << collider.minY << "," << collider.maxY << "]"
-			                      << "\n";
-			this->teleport(lastPosition, { rotationYaw, rotationPitch });
+			                    << " residual=" << residualTooLarge << " clearNow=" << clearNow
+			                    << " movedWrong=" << movedWrong << " pos=(" << this->position.x << ","
+			                    << this->position.y << "," << this->position.z << ")"
+			                    << " colliderY=[" << collider.minY << "," << collider.maxY << "]"
+			                    << "\n";
+			this->Teleport(lastPosition, { rotationYaw, rotationPitch });
 			session->position.pos = lastPosition;
 			Packet::PlayerPosition pkt;
-			pkt.on_ground = onGround;
+			pkt.onGround = onGround;
 			pkt.position = { position.x, position.y + PLAYER_EYE_HEIGHT + 0.0625, position.z };
-			pkt.camera_y = position.y; // This is backwards, thanks notch
+			pkt.cameraY = position.y; // This is backwards, thanks notch
 			pkt.Serialize(session->stream);
 		}
 
@@ -139,22 +139,23 @@ void EntityMPPlayer::handlePositionChecks() {
 	}
 }
 
-void EntityMPPlayer::tick() {
+void EntityMPPlayer::Tick() {
 	if (!session)
 		return;
 
 	// Handle reported vs server side position
-	this->handlePositionChecks();
+	this->HandlePositionChecks();
 
 	// Do living entity stuff
-	MobileEntity::tick();
+	MobileEntity::Tick();
 
 	// Tell entities we collided with a player
 	if (entityManager) {
-		auto entitiesCollidingWith = entityManager->getEntitiesWithinAABBExcluding(collider.expand(1.0, 0.0, 1.0), this->id);
+		auto entitiesCollidingWith = entityManager->GetEntitiesWithinAabbExcluding(collider.Expand(1.0, 0.0, 1.0),
+		                                                                           this->id);
 		for (const auto& entity : entitiesCollidingWith) {
 			if (!entity->isDead)
-				entity->onCollideWithPlayer(*this);
+				entity->OnCollideWithPlayer(*this);
 		}
 	}
 }

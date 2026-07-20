@@ -12,7 +12,7 @@
 
 // ChunkCache so we don't have to do map lookups for every neighbor access during light propagation.
 // Reuses chunks from the previous window whenever they overlap the new one.
-void ChunkCache::refresh(int _ncx, int _ncz, WorldManager& _world) {
+void ChunkCache::Refresh(int _ncx, int _ncz, WorldManager& _world) {
 	if (_ncx == cx && _ncz == cz)
 		return;
 
@@ -32,7 +32,7 @@ void ChunkCache::refresh(int _ncx, int _ncz, WorldManager& _world) {
 			Chunk* c = (odx >= -1 && odx <= 1 && odz >= -1 && odz <= 1) ? oldGrid[odx + 1][odz + 1] : nullptr;
 
 			if (!c) {
-				Chunk* fetched = _world.getChunkRaw({ tcx, tcz });
+				Chunk* fetched = _world.GetChunkRaw({ tcx, tcz });
 				c = (fetched && fetched->state.load(std::memory_order_acquire) >= ChunkState::Generated) ? fetched
 				                                                                                         : nullptr;
 			}
@@ -45,24 +45,24 @@ void ChunkCache::refresh(int _ncx, int _ncz, WorldManager& _world) {
 static inline int GetLightDirect(Chunk* _chunk, int _lx, int _y, int _lz, LightType _type) {
 	if (!_chunk || _y < 0 || _y >= CHUNK_HEIGHT)
 		return 0;
-	return (_type == LightType::Sky) ? _chunk->getSkyLight({ _lx, _y, _lz }) : _chunk->getBlockLight({ _lx, _y, _lz });
+	return (_type == LightType::Sky) ? _chunk->GetSkyLight({ _lx, _y, _lz }) : _chunk->GetBlockLight({ _lx, _y, _lz });
 }
 
-void Lighter::propagateLightAt(int _x, int _y, int _z, LightType _type, WorldManager& _world, ChunkCache& _cache) {
+void Lighter::PropagateLightAt(int _x, int _y, int _z, LightType _type, WorldManager& _world, ChunkCache& _cache) {
 	if (_y < 0 || _y >= CHUNK_HEIGHT)
 		return;
 
 	int cx = _x >> 4, cz = _z >> 4;
 
 	// Refresh the 3x3 cache only when we cross a chunk boundary.
-	_cache.refresh(cx, cz, _world);
+	_cache.Refresh(cx, cz, _world);
 
 	Chunk* chunk = _cache.grid[1][1]; // Center
 	if (!chunk)
 		return;
 
 	int lx = _x & 15, lz = _z & 15;
-	BlockType blockId = chunk->getBlock({ lx, _y, lz });
+	BlockType blockId = chunk->GetBlock({ lx, _y, lz });
 	int opacity = Blocks::blockProperties[blockId].lightOpacity;
 	if (opacity == 0)
 		opacity = 1;
@@ -81,55 +81,55 @@ void Lighter::propagateLightAt(int _x, int _y, int _z, LightType _type, WorldMan
 	int newVal = 0;
 
 	if (_type == LightType::Sky) {
-		if (chunk->canBlockSeeSky({ lx, _y, lz })) {
+		if (chunk->CanBlockSeeSky({ lx, _y, lz })) {
 			newVal = 15;
 		} else if (opacity < 15) {
 			int best = 0;
-			best = CrossPlatform::Math::max(best, GetLightDirect(cxn, lxn, _y, lz, _type));
-			best = CrossPlatform::Math::max(best, GetLightDirect(cxp, lxp, _y, lz, _type));
-			best = CrossPlatform::Math::max(best, GetLightDirect(chunk, lx, _y - 1, lz, _type));
-			best = CrossPlatform::Math::max(best, GetLightDirect(chunk, lx, _y + 1, lz, _type));
-			best = CrossPlatform::Math::max(best, GetLightDirect(czn, lx, _y, lzn, _type));
-			best = CrossPlatform::Math::max(best, GetLightDirect(czp, lx, _y, lzp, _type));
-			newVal = CrossPlatform::Math::max(0, best - opacity);
+			best = CrossPlatform::Math::Max(best, GetLightDirect(cxn, lxn, _y, lz, _type));
+			best = CrossPlatform::Math::Max(best, GetLightDirect(cxp, lxp, _y, lz, _type));
+			best = CrossPlatform::Math::Max(best, GetLightDirect(chunk, lx, _y - 1, lz, _type));
+			best = CrossPlatform::Math::Max(best, GetLightDirect(chunk, lx, _y + 1, lz, _type));
+			best = CrossPlatform::Math::Max(best, GetLightDirect(czn, lx, _y, lzn, _type));
+			best = CrossPlatform::Math::Max(best, GetLightDirect(czp, lx, _y, lzp, _type));
+			newVal = CrossPlatform::Math::Max(0, best - opacity);
 		}
-		int oldVal = chunk->getSkyLight({ lx, _y, lz });
+		int oldVal = chunk->GetSkyLight({ lx, _y, lz });
 		if (oldVal == newVal)
 			return;
-		chunk->setSkyLight({ lx, _y, lz }, uint8_t(newVal));
+		chunk->SetSkyLight({ lx, _y, lz }, uint8_t(newVal));
 		// Call a block update on the block that had its lighting updated
 		// Beta doesn't have a direct on lighting change packet for server -> client
 		// So this is what we have to resort to
 		// Technically, this doesn't work for any light update that doesn't change more than 9 blocks but its good enough
 		if (_world.onBlockUpdate)
-			_world.onBlockUpdate(PendingBlock{ .block{ BlockType(blockId), chunk->getMeta({ lx, _y, lz }) },
-			                                  .block_pos{ _x, _y, _z },
-			                                  .light{ chunk->getBlockLight({ lx, _y, lz }), uint8_t(newVal) } },
+			_world.onBlockUpdate(PendingBlock{ .block{ BlockType(blockId), chunk->GetMeta({ lx, _y, lz }) },
+			                                  .blockPos{ _x, _y, _z },
+			                                  .light{ chunk->GetBlockLight({ lx, _y, lz }), uint8_t(newVal) } },
 			                    chunk->cpos);
 	} else {
 		int emitted = Blocks::blockProperties[blockId].lightEmission;
 		if (opacity < 15) {
 			int best = 0;
-			best = CrossPlatform::Math::max(best, GetLightDirect(cxn, lxn, _y, lz, _type));
-			best = CrossPlatform::Math::max(best, GetLightDirect(cxp, lxp, _y, lz, _type));
-			best = CrossPlatform::Math::max(best, GetLightDirect(chunk, lx, _y - 1, lz, _type));
-			best = CrossPlatform::Math::max(best, GetLightDirect(chunk, lx, _y + 1, lz, _type));
-			best = CrossPlatform::Math::max(best, GetLightDirect(czn, lx, _y, lzn, _type));
-			best = CrossPlatform::Math::max(best, GetLightDirect(czp, lx, _y, lzp, _type));
-			newVal = CrossPlatform::Math::max(emitted, best - opacity);
+			best = CrossPlatform::Math::Max(best, GetLightDirect(cxn, lxn, _y, lz, _type));
+			best = CrossPlatform::Math::Max(best, GetLightDirect(cxp, lxp, _y, lz, _type));
+			best = CrossPlatform::Math::Max(best, GetLightDirect(chunk, lx, _y - 1, lz, _type));
+			best = CrossPlatform::Math::Max(best, GetLightDirect(chunk, lx, _y + 1, lz, _type));
+			best = CrossPlatform::Math::Max(best, GetLightDirect(czn, lx, _y, lzn, _type));
+			best = CrossPlatform::Math::Max(best, GetLightDirect(czp, lx, _y, lzp, _type));
+			newVal = CrossPlatform::Math::Max(emitted, best - opacity);
 		} else {
 			newVal = emitted;
 		}
-		int oldVal = chunk->getBlockLight({ lx, _y, lz });
+		int oldVal = chunk->GetBlockLight({ lx, _y, lz });
 		if (oldVal == newVal)
 			return;
-		chunk->setBlockLight({ lx, _y, lz }, uint8_t(newVal));
+		chunk->SetBlockLight({ lx, _y, lz }, uint8_t(newVal));
 		if (_world.onBlockUpdate)
 			_world.onBlockUpdate(
 			    PendingBlock{
-			        .block{ BlockType(blockId), chunk->getMeta({ lx, _y, lz }) },
-			        .block_pos{ _x, _y, _z },
-			        .light{ uint8_t(newVal), chunk->getSkyLight({ lx, _y, lz }) },
+			        .block{ BlockType(blockId), chunk->GetMeta({ lx, _y, lz }) },
+			        .blockPos{ _x, _y, _z },
+			        .light{ uint8_t(newVal), chunk->GetSkyLight({ lx, _y, lz }) },
 			    },
 			    chunk->cpos);
 	}
@@ -138,7 +138,7 @@ void Lighter::propagateLightAt(int _x, int _y, int _z, LightType _type, WorldMan
 	auto maybeQueue = [&](int _nx, int _ny, int _nz, Chunk* _nc, int _nlx, int _nlz) {
 		if (_ny < 0 || _ny >= CHUNK_HEIGHT || !_nc)
 			return;
-		int expected = CrossPlatform::Math::max(0, newVal - 1);
+		int expected = CrossPlatform::Math::Max(0, newVal - 1);
 		if (GetLightDirect(_nc, _nlx, _ny, _nlz, _type) < expected && lightQueue.size() < 1000000)
 			lightQueue.push_back({ { _nx, _ny, _nz }, { _nx, _ny, _nz }, _type });
 	};
@@ -151,33 +151,33 @@ void Lighter::propagateLightAt(int _x, int _y, int _z, LightType _type, WorldMan
 	maybeQueue(_x, _y, _z + 1, czp, lx, lzp);
 }
 
-void Lighter::unlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _world) {
+void Lighter::UnlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _world) {
 	// Separate function for this since beta's lighting engine can't decrease light values in place
 	if (_y < 0 || _y >= CHUNK_HEIGHT)
 		return;
 
-	unlightCache.refresh(_x >> 4, _z >> 4, _world);
+	unlightCache.Refresh(_x >> 4, _z >> 4, _world);
 	Chunk* chunk = unlightCache.grid[1][1];
 	if (!chunk)
 		return;
 
 	int lx = _x & 15, lz = _z & 15;
-	int oldVal = (_type == LightType::Sky) ? chunk->getSkyLight({ lx, _y, lz }) : chunk->getBlockLight({ lx, _y, lz });
+	int oldVal = (_type == LightType::Sky) ? chunk->GetSkyLight({ lx, _y, lz }) : chunk->GetBlockLight({ lx, _y, lz });
 	if (oldVal == 0)
 		return;
 
 	if (_type == LightType::Sky)
-		chunk->setSkyLight({ lx, _y, lz }, 0);
+		chunk->SetSkyLight({ lx, _y, lz }, 0);
 	else
-		chunk->setBlockLight({ lx, _y, lz }, 0);
+		chunk->SetBlockLight({ lx, _y, lz }, 0);
 	if (_world.onBlockUpdate)
 		_world.onBlockUpdate(
 		    PendingBlock{
-		        .block{ BlockType(chunk->getBlock({ lx, _y, lz })), chunk->getMeta({ lx, _y, lz }) },
-		        .block_pos{ _x, _y, _z },
+		        .block{ BlockType(chunk->GetBlock({ lx, _y, lz })), chunk->GetMeta({ lx, _y, lz }) },
+		        .blockPos{ _x, _y, _z },
 		        // Whichever type we just unlit was just set to 0 above
-		        .light{ (_type == LightType::Block) ? uint8_t(0) : chunk->getBlockLight({ lx, _y, lz }),
-		                (_type == LightType::Sky) ? uint8_t(0) : chunk->getSkyLight({ lx, _y, lz }) },
+		        .light{ (_type == LightType::Block) ? uint8_t(0) : chunk->GetBlockLight({ lx, _y, lz }),
+		                (_type == LightType::Sky) ? uint8_t(0) : chunk->GetSkyLight({ lx, _y, lz }) },
 		    },
 		    chunk->cpos);
 
@@ -188,7 +188,7 @@ void Lighter::unlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _
 		auto [pos, t, val] = unlightQueue.back();
 		unlightQueue.pop_back();
 
-		unlightCache.refresh(pos.x >> 4, pos.z >> 4, _world);
+		unlightCache.Refresh(pos.x >> 4, pos.z >> 4, _world);
 
 		const int ndx[] = { -1, 1, 0, 0, 0, 0 };
 		const int ndy[] = { 0, 0, -1, 1, 0, 0 };
@@ -204,39 +204,39 @@ void Lighter::unlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _
 			int nlx = nx & 15, nlz = nz & 15;
 			int dx = ncx - unlightCache.cx, dz = ncz - unlightCache.cz;
 			Chunk* nc = (dx >= -1 && dx <= 1 && dz >= -1 && dz <= 1) ? unlightCache.grid[dx + 1][dz + 1]
-			                                                         : _world.getChunkRaw({ ncx, ncz });
+			                                                         : _world.GetChunkRaw({ ncx, ncz });
 			if (!nc)
 				continue;
 
-			int nVal = (t == LightType::Sky) ? nc->getSkyLight({ nlx, ny, nlz }) : nc->getBlockLight({ nlx, ny, nlz });
+			int nVal = (t == LightType::Sky) ? nc->GetSkyLight({ nlx, ny, nlz }) : nc->GetBlockLight({ nlx, ny, nlz });
 			if (nVal == 0)
 				continue;
 
 			if (nVal < val) {
 				if (t == LightType::Sky)
-					nc->setSkyLight({ nlx, ny, nlz }, 0);
+					nc->SetSkyLight({ nlx, ny, nlz }, 0);
 				else
-					nc->setBlockLight({ nlx, ny, nlz }, 0);
+					nc->SetBlockLight({ nlx, ny, nlz }, 0);
 				if (_world.onBlockUpdate)
 					_world.onBlockUpdate(
 					    PendingBlock{
-					        .block{ BlockType(nc->getBlock({ nlx, ny, nlz })), nc->getMeta({ nlx, ny, nlz }) },
-					        .block_pos{ nx, ny, nz },
-					        .light{ nc->getBlockLight({ nlx, ny, nlz }), nc->getSkyLight({ nlx, ny, nlz }) },
+					        .block{ BlockType(nc->GetBlock({ nlx, ny, nlz })), nc->GetMeta({ nlx, ny, nlz }) },
+					        .blockPos{ nx, ny, nz },
+					        .light{ nc->GetBlockLight({ nlx, ny, nlz }), nc->GetSkyLight({ nlx, ny, nlz }) },
 					    },
 					    nc->cpos);
 				unlightQueue.push_back({ { nx, ny, nz }, t, nVal });
 				// Always re-queue for re-light
-				scheduleLightUpdate({ nx, ny, nz }, t);
+				ScheduleLightUpdate({ nx, ny, nz }, t);
 			} else {
 				// Neighbor is at least as bright
-				scheduleLightUpdate({ nx, ny, nz }, t);
+				ScheduleLightUpdate({ nx, ny, nz }, t);
 			}
 		}
 	}
 }
 
-bool Lighter::processLightQueue(WorldManager& _world, int _maxIterations) {
+bool Lighter::ProcessLightQueue(WorldManager& _world, int _maxIterations) {
 	if (processingDepth >= 50)
 		return !lightQueue.empty();
 	++processingDepth;
@@ -255,13 +255,13 @@ bool Lighter::processLightQueue(WorldManager& _world, int _maxIterations) {
 		if (dx * dy * dz > 32768)
 			continue;
 
-		region.min.y = CrossPlatform::Math::max(region.min.y, 0);
-		region.max.y = CrossPlatform::Math::min(region.max.y, CHUNK_HEIGHT - 1);
+		region.min.y = CrossPlatform::Math::Max(region.min.y, 0);
+		region.max.y = CrossPlatform::Math::Min(region.max.y, CHUNK_HEIGHT - 1);
 
 		for (int x = region.min.x; x <= region.max.x; ++x)
 			for (int z = region.min.z; z <= region.max.z; ++z)
 				for (int y = region.min.y; y <= region.max.y; ++y)
-					propagateLightAt(x, y, z, region.type, _world, cache);
+					PropagateLightAt(x, y, z, region.type, _world, cache);
 	}
 
 	--processingDepth;

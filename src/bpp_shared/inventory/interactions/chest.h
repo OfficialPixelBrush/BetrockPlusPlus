@@ -16,19 +16,19 @@ struct ChestInventoryInteraction : InventoryInteraction {
 	struct SharedInventory : Inventory {
 		ChestInventoryInteraction* owner = nullptr;
 		SharedInventory() : Inventory(63) {}
-		void onInventoryChanged() override {
+		void OnInventoryChanged() override {
 			if (owner)
-				owner->writeBack();
+				owner->WriteBack();
 		}
 	} sharedInventory;
 
 	ChestInventoryInteraction(InventoryPlayer* _pinv, std::shared_ptr<TileEntityChest> _chest);
 	virtual ~ChestInventoryInteraction();
 
-	virtual bool canExist() override;
-	void initSnapshot() override;
-	std::vector<DeltaSlot> tickDiff() override;
-	void mergeInventories();
-	void writeBack();
-	void onShiftClick(int _slot) override;
+	virtual bool CanExist() override;
+	void InitSnapshot() override;
+	std::vector<DeltaSlot> TickDiff() override;
+	void MergeInventories();
+	void WriteBack();
+	void OnShiftClick(int _slot) override;
 };

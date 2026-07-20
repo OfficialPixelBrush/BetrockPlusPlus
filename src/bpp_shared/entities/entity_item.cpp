@@ -10,21 +10,21 @@
 #include <algorithm>
 #include <cmath>
 
-void ItemEntity::loadFromNBT(Tag& _nbt) {
-	Entity::loadFromNBT(_nbt);
+void ItemEntity::LoadFromNbt(Tag& _nbt) {
+	Entity::LoadFromNbt(_nbt);
 
 	// Load item specific stuff
-	this->health = _nbt.compound["Health"].getShort();
-	this->ticksExisted = _nbt.compound["Age"].getShort();
+	this->health = _nbt.compound["Health"].GetShort();
+	this->ticksExisted = _nbt.compound["Age"].GetShort();
 
 	// Load our item
-	const auto& itemCompound = _nbt.compound["Item"].getCompound();
-	this->itemStack = { itemCompound.at("id").getShort(), itemCompound.at("Count").getByte(),
-		                itemCompound.at("Damage").getShort() };
+	const auto& itemCompound = _nbt.compound["Item"].GetCompound();
+	this->itemStack = { itemCompound.at("id").GetShort(), itemCompound.at("Count").GetByte(),
+		                itemCompound.at("Damage").GetShort() };
 }
 
-std::optional<Tag> ItemEntity::serializeToNBT() {
-	auto tag = Entity::serializeToNBT();
+std::optional<Tag> ItemEntity::SerializeToNbt() {
+	auto tag = Entity::SerializeToNbt();
 	if (!tag)
 		return std::nullopt;
 
@@ -66,41 +66,41 @@ std::optional<Tag> ItemEntity::serializeToNBT() {
 	return tag;
 }
 
-void ItemEntity::onCollideWithPlayer(PlayerEntity& _entity) {
+void ItemEntity::OnCollideWithPlayer(PlayerEntity& _entity) {
 	if (pickupCooldown)
 		return;
-	_entity.pickupItem(this->itemStack, this->id);
+	_entity.PickupItem(this->itemStack, this->id);
 	if (this->itemStack.count <= 0)
 		this->isDead = true;
 }
 
-void ItemEntity::tick() {
+void ItemEntity::Tick() {
 	// Item entities have differing physics
-	Entity::tick();
+	Entity::Tick();
 	pickupCooldown--;
 	pickupCooldown = std::max(int8_t(0), pickupCooldown);
 
 	velocity.y -= 0.04;
 
-	if (world->getMaterial({ MathHelper::floor_double(position.x), MathHelper::floor_double(position.y),
-	                         MathHelper::floor_double(position.z) }) == Material::Lava()) {
+	if (world->GetMaterial({ MathHelper::FloorDouble(position.x), MathHelper::FloorDouble(position.y),
+	                         MathHelper::FloorDouble(position.z) }) == Material::Lava()) {
 		velocity.y = 0.2;
-		velocity.x = double((rand.nextFloat() - rand.nextFloat()) * 0.2F);
-		velocity.z = double((rand.nextFloat() - rand.nextFloat()) * 0.2F);
+		velocity.x = double((rand.NextFloat() - rand.NextFloat()) * 0.2F);
+		velocity.z = double((rand.NextFloat() - rand.NextFloat()) * 0.2F);
 	}
 
-	pushOutOfBlocks({ position.x, (collider.minY + collider.maxY) / 2.0, position.z });
-	move(this->velocity);
+	PushOutOfBlocks({ position.x, (collider.minY + collider.maxY) / 2.0, position.z });
+	Move(this->velocity);
 
 	float horizontalDrag = 0.98f;
 	if (onGround) {
 		horizontalDrag = 0.58800006f;
 
 		// Look up the block below us
-		int bx = MathHelper::floor_double(position.x);
-		int by = MathHelper::floor_double(collider.minY) - 1;
-		int bz = MathHelper::floor_double(position.z);
-		int blockId = world->getBlockId({ bx, by, bz });
+		int bx = MathHelper::FloorDouble(position.x);
+		int by = MathHelper::FloorDouble(collider.minY) - 1;
+		int bz = MathHelper::FloorDouble(position.z);
+		int blockId = world->GetBlockId({ bx, by, bz });
 		belowBlock = Blocks::blockProperties[blockId];
 
 		if (blockId > 0)

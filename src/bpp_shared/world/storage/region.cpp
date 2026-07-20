@@ -58,7 +58,7 @@ void Region::AddChunk(std::shared_ptr<Chunk> _chunk, int64_t _timestamp,
 	}
 
 	// Write chunk data at the chosen sector
-	auto& file = regionFile.get();
+	auto& file = regionFile.Get();
 	file.seekp(chosenOffset * SECTOR_SIZE);
 
 	// 4-byte big-endian length
@@ -99,14 +99,14 @@ std::shared_ptr<Chunk> Region::GetChunk(Int32_2 _cpos) {
 	Int2 local{ _cpos.x & 31, _cpos.z & 31 };
 	int index = local.x + local.z * 32;
 
-	if (!chunkExists(local))
+	if (!ChunkExists(local))
 		return nullptr;
 
 	uint32_t offset = regionHeader[index].offset;
 	if (offset == 0)
 		return nullptr;
 
-	auto& file = regionFile.get();
+	auto& file = regionFile.Get();
 	file.seekg(static_cast<std::streamoff>(offset) * SECTOR_SIZE);
 
 	// Read 4-byte length
@@ -205,15 +205,15 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& _chunk,
 		for (int z = 0; z < CHUNK_WIDTH; z++) {
 			for (int y = 0; y < CHUNK_HEIGHT; y++) {
 				size_t idx = size_t(y + (z * CHUNK_HEIGHT) + (x * CHUNK_HEIGHT * CHUNK_WIDTH));
-				blocks.byteArray[idx] = _chunk->getBlock({ x, y, z });
+				blocks.byteArray[idx] = _chunk->GetBlock({ x, y, z });
 				if (y % 2 == 0) {
-					data.byteArray[idx / 2] |= (_chunk->getMeta({ x, y, z }));
-					skyLight.byteArray[idx / 2] |= _chunk->getSkyLight({ x, y, z });
-					blockLight.byteArray[idx / 2] |= _chunk->getBlockLight({ x, y, z });
+					data.byteArray[idx / 2] |= (_chunk->GetMeta({ x, y, z }));
+					skyLight.byteArray[idx / 2] |= _chunk->GetSkyLight({ x, y, z });
+					blockLight.byteArray[idx / 2] |= _chunk->GetBlockLight({ x, y, z });
 				} else {
-					data.byteArray[idx / 2] |= (_chunk->getMeta({ x, y, z }) << 4);
-					skyLight.byteArray[idx / 2] |= (_chunk->getSkyLight({ x, y, z }) << 4);
-					blockLight.byteArray[idx / 2] |= (_chunk->getBlockLight({ x, y, z }) << 4);
+					data.byteArray[idx / 2] |= (_chunk->GetMeta({ x, y, z }) << 4);
+					skyLight.byteArray[idx / 2] |= (_chunk->GetSkyLight({ x, y, z }) << 4);
+					blockLight.byteArray[idx / 2] |= (_chunk->GetBlockLight({ x, y, z }) << 4);
 				}
 			}
 		}
@@ -235,7 +235,7 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& _chunk,
 	tileEntities.listType = TAG_COMPOUND;
 	for (auto& te : _chunk->tileEntities) {
 		if (te)
-			tileEntities.list.push_back(te->serialize());
+			tileEntities.list.push_back(te->Serialize());
 	}
 
 	// Assemble level compound
@@ -295,20 +295,20 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& _rawDat
 	}
 	libdeflate_free_decompressor(decompressor);
 	NBTParser parser(decompressed.data(), int64_t(decompressed.size()));
-	const Tag& lvl = parser.root.get("Level");
+	const Tag& lvl = parser.root.Get("Level");
 
-	int32_t cx = lvl.get("xPos").getInt();
-	int32_t cz = lvl.get("zPos").getInt();
-	bool tp = lvl.get("TerrainPopulated").getByte() != 0;
-	[[maybe_unused]] int64_t lu = lvl.get("LastUpdate").getLong();
+	int32_t cx = lvl.Get("xPos").GetInt();
+	int32_t cz = lvl.Get("zPos").GetInt();
+	bool tp = lvl.Get("TerrainPopulated").GetByte() != 0;
+	[[maybe_unused]] int64_t lu = lvl.Get("LastUpdate").GetLong();
 
-	const auto& blocks = lvl.get("Blocks").getByteArray();
-	const auto& data = lvl.get("Data").getByteArray();
-	const auto& blockLight = lvl.get("BlockLight").getByteArray();
-	const auto& skyLight = lvl.get("SkyLight").getByteArray();
-	const auto& heightMap = lvl.get("HeightMap").getByteArray();
-	const auto& tileEntities = lvl.get("TileEntities").getList();
-	const auto& entities = lvl.get("Entities").getList();
+	const auto& blocks = lvl.Get("Blocks").GetByteArray();
+	const auto& data = lvl.Get("Data").GetByteArray();
+	const auto& blockLight = lvl.Get("BlockLight").GetByteArray();
+	const auto& skyLight = lvl.Get("SkyLight").GetByteArray();
+	const auto& heightMap = lvl.Get("HeightMap").GetByteArray();
+	const auto& tileEntities = lvl.Get("TileEntities").GetList();
+	const auto& entities = lvl.Get("Entities").GetList();
 
 	// Setup our chunk
 	auto chunk = std::make_shared<Chunk>();
@@ -322,15 +322,15 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& _rawDat
 		for (int x = 0; x < CHUNK_WIDTH; x++) {
 			for (int z = 0; z < CHUNK_WIDTH; z++) {
 				size_t idx = size_t(y + (z * CHUNK_HEIGHT) + (x * CHUNK_HEIGHT * CHUNK_WIDTH));
-				chunk->setBlock({ x, y, z }, BlockType(blocks[idx]));
+				chunk->SetBlock({ x, y, z }, BlockType(blocks[idx]));
 				if (y % 2 == 0) {
-					chunk->setMeta({ x, y, z }, data[idx / 2] & 0xF);
-					chunk->setBlockLight({ x, y, z }, blockLight[idx / 2] & 0xF);
-					chunk->setSkyLight({ x, y, z }, skyLight[idx / 2] & 0xF);
+					chunk->SetMeta({ x, y, z }, data[idx / 2] & 0xF);
+					chunk->SetBlockLight({ x, y, z }, blockLight[idx / 2] & 0xF);
+					chunk->SetSkyLight({ x, y, z }, skyLight[idx / 2] & 0xF);
 				} else {
-					chunk->setMeta({ x, y, z }, (data[idx / 2] >> 4) & 0xF);
-					chunk->setBlockLight({ x, y, z }, (blockLight[idx / 2] >> 4) & 0xF);
-					chunk->setSkyLight({ x, y, z }, (skyLight[idx / 2] >> 4) & 0xF);
+					chunk->SetMeta({ x, y, z }, (data[idx / 2] >> 4) & 0xF);
+					chunk->SetBlockLight({ x, y, z }, (blockLight[idx / 2] >> 4) & 0xF);
+					chunk->SetSkyLight({ x, y, z }, (skyLight[idx / 2] >> 4) & 0xF);
 				}
 			}
 		}
@@ -341,21 +341,21 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& _rawDat
 
 	// Load our tile entities
 	for (auto& te : tileEntities) {
-		const auto& id = te.get("id").getString();
-		int32_t tx = te.get("x").getInt();
-		int32_t ty = te.get("y").getInt();
-		int32_t tz = te.get("z").getInt();
+		const auto& id = te.Get("id").GetString();
+		int32_t tx = te.Get("x").GetInt();
+		int32_t ty = te.Get("y").GetInt();
+		int32_t tz = te.Get("z").GetInt();
 		Int3 pos{ tx, ty, tz };
 
 		// load a standard slot-based inventory from an Items list tag
 		auto loadSlots = [&](auto& _slots) {
-			if (!te.has("Items"))
+			if (!te.Has("Items"))
 				return;
-			for (auto& item : te.get("Items").getList()) {
-				int8_t slot = item.get("Slot").getByte();
-				int16_t itemId = item.get("id").getShort();
-				int8_t count = item.get("Count").getByte();
-				int16_t damage = item.get("Damage").getShort();
+			for (auto& item : te.Get("Items").GetList()) {
+				int8_t slot = item.Get("Slot").GetByte();
+				int16_t itemId = item.Get("id").GetShort();
+				int8_t count = item.Get("Count").GetByte();
+				int16_t damage = item.Get("Damage").GetShort();
 				if (slot >= 0 && slot < (int8_t)_slots.size()) {
 					_slots[size_t(slot)] = ItemStack{ itemId, count, damage };
 				}
@@ -376,21 +376,21 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& _rawDat
 			chunk->tileEntities.push_back(std::move(ent));
 		} else if (id == "Sign") {
 			auto ent = std::make_shared<TileEntitySign>(pos);
-			if (te.has("Text1"))
-				ent->text1 = te.get("Text1").getString();
-			if (te.has("Text2"))
-				ent->text2 = te.get("Text2").getString();
-			if (te.has("Text3"))
-				ent->text3 = te.get("Text3").getString();
-			if (te.has("Text4"))
-				ent->text4 = te.get("Text4").getString();
+			if (te.Has("Text1"))
+				ent->text1 = te.Get("Text1").GetString();
+			if (te.Has("Text2"))
+				ent->text2 = te.Get("Text2").GetString();
+			if (te.Has("Text3"))
+				ent->text3 = te.Get("Text3").GetString();
+			if (te.Has("Text4"))
+				ent->text4 = te.Get("Text4").GetString();
 			chunk->tileEntities.push_back(std::move(ent));
 		} else if (id == "MobSpawner") {
 			auto ent = std::make_shared<TileEntityMobSpawner>(pos);
-			if (te.has("EntityId"))
-				ent->entityId = te.get("EntityId").getString();
-			if (te.has("Delay"))
-				ent->delay = te.get("Delay").getShort();
+			if (te.Has("EntityId"))
+				ent->entityId = te.Get("EntityId").GetString();
+			if (te.Has("Delay"))
+				ent->delay = te.Get("Delay").GetShort();
 			chunk->tileEntities.push_back(std::move(ent));
 		}
 	}

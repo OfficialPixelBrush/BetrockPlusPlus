@@ -7,7 +7,7 @@
 #include "tick_scheduler.h"
 #include "world.h"
 
-void TickScheduler::tick() {
+void TickScheduler::Tick() {
 	if (!this->world)
 		return;
 
@@ -20,8 +20,8 @@ void TickScheduler::tick() {
 		if (it != pending.end() && it->second == entry.sequence)
 			pending.erase(it);
 
-		// Has the block changed since we scheduled this tick?
-		if (world->getBlockId(entry.pos) == entry.expectedBlock) {
+		// Has the block changed since we scheduled this Tick?
+		if (world->GetBlockId(entry.pos) == entry.expectedBlock) {
 			if (auto fn = Blocks::blockBehaviors[entry.expectedBlock].onTick)
 				fn(*world, entry.pos, 0, world->rand);
 		}

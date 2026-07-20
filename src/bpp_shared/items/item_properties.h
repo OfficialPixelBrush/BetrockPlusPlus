@@ -54,12 +54,12 @@ ItemDamage GetMaterialUses(ToolMaterial _material);
 struct ToolProperties {
 	ToolType type = ToolType::None;
 	ToolMaterial material = ToolMaterial::None;
-	ItemDamage max_uses = -1;
+	ItemDamage maxUses = -1;
 	TickTime predictedBreakTick = 0;
 };
 
 struct ItemProperties {
-	ItemAmount max_stack = STACK_MAX;
+	ItemAmount maxStack = STACK_MAX;
 };
 
 struct ItemBehavior {
@@ -75,7 +75,7 @@ struct ItemBehavior {
 extern std::unordered_map<ItemId, ItemBehavior> itemBehavior;
 extern std::unordered_map<ItemId, ItemProperties> itemProperties;
 extern std::unordered_map<ItemId, ToolProperties> toolProperties;
-void registerAll();
+void RegisterAll();
 
 bool IsValid(ItemId _id);
 
@@ -92,7 +92,7 @@ bool IsEdible(ItemId _id);
 bool IsStackable(ItemId _id); // max stack > 1
 bool IsBlock(ItemId _id);
 
-void harmTool(ItemStack* _stack);
+void HarmTool(ItemStack* _stack);
 
 // Returns max stack size for this item/block id
 int32_t GetMaxStack(ItemId _id);

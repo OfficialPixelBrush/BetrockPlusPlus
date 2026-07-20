@@ -18,7 +18,7 @@
 class Config {
 private:
 	struct TransparentHasher {
-		using is_transparent = void;
+		using IsTransparent = void;
 		size_t operator()(std::string_view _sv) const {
 			std::hash<std::string_view> hasher;
 			return hasher(_sv);
@@ -89,7 +89,7 @@ private:
 	Config& operator=(const Config&) = delete;
 	Config& operator=(const Config&&) = delete;
 
-	std::shared_mutex properties_mutex;
+	std::shared_mutex propertiesMutex;
 
 	std::string path;
 	ConfType properties;

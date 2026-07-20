@@ -17,19 +17,19 @@ MobileEntity::MobileEntity() {
 	stepHeight = 0.5;
 }
 
-void MobileEntity::onDeath() {
+void MobileEntity::OnDeath() {
 	return;
 }
 
-void MobileEntity::setGoal(std::optional<Int3> _goal) {
+void MobileEntity::SetGoal(std::optional<Int3> _goal) {
 	if (!_goal) {
 		currentPath.clear();
 		currentPathIdx = 0;
 		return;
 	}
-	Int3 start = { MathHelper::floor_double(position.x), MathHelper::floor_double(position.y),
-		           MathHelper::floor_double(position.z) };
-	currentPath = pathFinder.findPath(start, *_goal);
+	Int3 start = { MathHelper::FloorDouble(position.x), MathHelper::FloorDouble(position.y),
+		           MathHelper::FloorDouble(position.z) };
+	currentPath = pathFinder.FindPath(start, *_goal);
 	currentPathIdx = 0;
 	std::cout << "Calculated path!" << std::endl;
 	for (auto& node : currentPath) {
@@ -37,7 +37,7 @@ void MobileEntity::setGoal(std::optional<Int3> _goal) {
 	}
 }
 
-void MobileEntity::followPath() {
+void MobileEntity::FollowPath() {
 	input.y = 0.0f;
 	jumping = false;
 
@@ -80,19 +80,19 @@ void MobileEntity::followPath() {
 
 	input.y = 0.7f;
 
-	int floorY = MathHelper::floor_double(collider.minY + 0.5);
+	int floorY = MathHelper::FloorDouble(collider.minY + 0.5);
 	double dy = target.y - floorY;
 
 	if (dy > 0.0)
 		jumping = true;
 }
 
-void MobileEntity::resolveEntityCollision(Entity& _other) {
+void MobileEntity::ResolveEntityCollision(Entity& _other) {
 	if (vehicle == &_other || passenger == &_other)
 		return;
 
 	Vec2 delta = { _other.position.x - position.x, _other.position.z - position.z };
-	double dist = MathHelper::abs_max(delta.x, delta.y);
+	double dist = MathHelper::AbsMax(delta.x, delta.y);
 
 	if (dist >= 0.01) {
 		dist = std::sqrt(dist);
@@ -115,17 +115,17 @@ void MobileEntity::resolveEntityCollision(Entity& _other) {
 	}
 }
 
-void MobileEntity::tickPhysics() {
+void MobileEntity::TickPhysics() {
 	if (inWater || inLava) {
 		// Water and lava movement
 		auto oldY = position.y;
 		double friction = 0.8;
-		applyInput(0.02f);
-		move(this->velocity);
+		ApplyInput(0.02f);
+		Move(this->velocity);
 		velocity *= friction;
 		velocity.y -= 0.2; // Sink
 
-		AABB offsetCollider = collider.offset(velocity.x, velocity.y + 0.6 - position.y + oldY, velocity.z);
+		AABB offsetCollider = collider.Offset(velocity.x, velocity.y + 0.6 - position.y + oldY, velocity.z);
 
 		// Check if we are colliding with a block and we are
 		// Moving up and unobstructed, if so, apply a nudge
@@ -138,16 +138,16 @@ void MobileEntity::tickPhysics() {
 
 		if (onGround) {
 			friction = 0.546f;
-			auto belowBlock = world->getBlockId({ MathHelper::floor_double(position.x),
-			                                      MathHelper::floor_double(position.y) - 1,
-			                                      MathHelper::floor_double(position.z) });
+			auto belowBlock = world->GetBlockId({ MathHelper::FloorDouble(position.x),
+			                                      MathHelper::FloorDouble(position.y) - 1,
+			                                      MathHelper::FloorDouble(position.z) });
 			if (belowBlock > BLOCK_AIR) {
 				friction = Blocks::blockProperties[belowBlock < BLOCK_MAX ? belowBlock : BLOCK_MAX].slipperiness * 0.91f;
 			}
 		}
 
 		float acceleration = 0.16277136f / (friction * friction * friction);
-		applyInput(onGround ? 0.1f * acceleration : 0.02f);
+		ApplyInput(onGround ? 0.1f * acceleration : 0.02f);
 
 		// Clamp our velocity if we are touching a ladder
 		// Also make sure we stop if we sneak
@@ -167,7 +167,7 @@ void MobileEntity::tickPhysics() {
 		}
 
 		// Move the entity
-		move(this->velocity);
+		Move(this->velocity);
 
 		// Our entity is pushing itself into the wall the ladder is on
 		// So apply an upwards nudge
@@ -184,53 +184,53 @@ void MobileEntity::tickPhysics() {
 		// Gravity
 		velocity.y -= 0.08;
 
-		auto collidingEntities = world->entityManager.getEntitiesWithinAABBExcluding(collider.expand(0.2, 0.0, 0.2), id);
+		auto collidingEntities = world->entityManager.GetEntitiesWithinAabbExcluding(collider.Expand(0.2, 0.0, 0.2), id);
 
 		for (const auto& entity : collidingEntities) {
-			if (entity->canBePushed()) {
-				this->resolveEntityCollision(*entity);
+			if (entity->CanBePushed()) {
+				this->ResolveEntityCollision(*entity);
 			}
 		}
 	}
 }
 
 bool MobileEntity::AABBNotInLiquidOrObstructed(AABB& _collider) {
-	auto collided = world->getCollidingBoundingBoxes(_collider);
+	auto collided = world->GetCollidingBoundingBoxes(_collider);
 	if (collided.size() > 0)
 		return false;
-	return !world->isLiquidInAABB(_collider);
+	return !world->IsLiquidInAabb(_collider);
 }
 
-bool MobileEntity::headInOpaqueBlock() {
+bool MobileEntity::HeadInOpaqueBlock() {
 	// Check 8 corners of a slightly shrunk hitbox
 	for (int corner = 0; corner < 8; corner++) {
 		float xOffset = (float((corner >> 0) % 2) - 0.5f) * width * 0.9f;
 		float yOffset = (float((corner >> 1) % 2) - 0.5f) * 0.1f;
 		float zOffset = (float((corner >> 2) % 2) - 0.5f) * width * 0.9f;
-		auto fd = MathHelper::floor_double;
+		auto fd = MathHelper::FloorDouble;
 		Int3 cornerBlockPos = { fd(position.x + xOffset), fd(position.y + eyeHeight + yOffset),
 			                    fd(position.z + zOffset) };
-		if (world->isBlockNormalCube(cornerBlockPos))
+		if (world->IsBlockNormalCube(cornerBlockPos))
 			return true;
 	}
 	return false;
 }
 
-bool MobileEntity::headInWater() {
+bool MobileEntity::HeadInWater() {
 	auto eyePosY = position.y + eyeHeight;
-	auto fd = MathHelper::floor_double;
+	auto fd = MathHelper::FloorDouble;
 	Int3 headBlockPos = { fd(position.x), fd(eyePosY), fd(position.z) };
-	auto headBlock = world->getBlockId(headBlockPos);
+	auto headBlock = world->GetBlockId(headBlockPos);
 
 	if (headBlock == BLOCK_WATER_STILL || headBlock == BLOCK_WATER_FLOWING) {
-		float percentAir = Blocks::getFluidPercentAir(world->getMetadata(headBlockPos));
+		float percentAir = Blocks::GetFluidPercentAir(world->GetMetadata(headBlockPos));
 		float surfaceHeight = float(headBlockPos.y + 1) - percentAir;
 		return eyePosY < double(surfaceHeight);
 	}
 	return false;
 }
 
-bool MobileEntity::attackEntityFrom(Entity* _entity, int _damage) {
+bool MobileEntity::AttackEntityFrom(Entity* _entity, int _damage) {
 	age = 0;
 	if (health <= 0)
 		return false;
@@ -257,15 +257,15 @@ bool MobileEntity::attackEntityFrom(Entity* _entity, int _damage) {
 
 			// We are super close so just randomize
 			while (dx * dx + dz * dz < 0.0001) {
-				dx = (double(rand.nextInt()) / INT_MAX - double(rand.nextInt()) / INT_MAX) * 0.01;
-				dz = (double(rand.nextInt()) / INT_MAX - double(rand.nextInt()) / INT_MAX) * 0.01;
+				dx = (double(rand.NextInt()) / INT_MAX - double(rand.NextInt()) / INT_MAX) * 0.01;
+				dz = (double(rand.NextInt()) / INT_MAX - double(rand.NextInt()) / INT_MAX) * 0.01;
 			}
 
 			attackedAtYaw = float(std::atan2(dz, dx) * 180.0 / JavaMath::PI) - rotationYaw;
 			double dist = std::sqrt(dx * dx + dz * dz);
-			applyKnockback({ float(dx / dist), 0.0f, float(dz / dist) });
+			ApplyKnockback({ float(dx / dist), 0.0f, float(dz / dist) });
 		} else {
-			attackedAtYaw = float(int(double(rand.nextInt() / INT_MAX * 2.0) * 180));
+			attackedAtYaw = float(int(double(rand.NextInt() / INT_MAX * 2.0) * 180));
 		}
 		// TODO: callback here for the server / client?
 	}
@@ -273,26 +273,26 @@ bool MobileEntity::attackEntityFrom(Entity* _entity, int _damage) {
 	return true;
 }
 
-void MobileEntity::tick() {
+void MobileEntity::Tick() {
 	if (pathFinder.world == nullptr) {
 		pathFinder.world = world;
 	}
 
 	age++;
-	Entity::tick();
-	followPath();
+	Entity::Tick();
+	FollowPath();
 
 	// Suffocation
-	if (headInOpaqueBlock()) {
-		attackEntityFrom(nullptr, 1);
+	if (HeadInOpaqueBlock()) {
+		AttackEntityFrom(nullptr, 1);
 	}
 
 	// Drowning
-	if (headInWater() && !canBreatheUnderwater) {
+	if (HeadInWater() && !canBreatheUnderwater) {
 		air--;
 		if (air <= -20) {
 			air = 0;
-			attackEntityFrom(nullptr, 2);
+			AttackEntityFrom(nullptr, 2);
 		}
 	}
 
@@ -304,7 +304,7 @@ void MobileEntity::tick() {
 	if (health <= 0) {
 		deathTime++;
 		if (deathTime > 20) {
-			onDeath();
+			OnDeath();
 			isDead = true;
 		}
 	}
@@ -322,5 +322,5 @@ void MobileEntity::tick() {
 	input.x *= 0.98f;
 	input.y *= 0.98f;
 
-	tickPhysics();
+	TickPhysics();
 }

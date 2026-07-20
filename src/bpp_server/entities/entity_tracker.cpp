@@ -14,7 +14,7 @@
 #include <cstdint>
 
 // Update each player instance so entities properly despawn and spawn for them
-void EntityTracker::tick() {
+void EntityTracker::Tick() {
 	std::vector<EntityId> deadThisTick;
 
 	for (auto& [entityId, entry] : trackedEntities) {
@@ -24,7 +24,7 @@ void EntityTracker::tick() {
 
 	for (auto& entityId : deadThisTick) {
 		auto& entry = trackedEntities.at(entityId);
-		despawnEntityForViewers(entityId, entry);
+		DespawnEntityForViewers(entityId, entry);
 		for (auto& [id, otherEntry] : trackedEntities) {
 			otherEntry.visibleTo.erase(entityId);
 		}
@@ -34,7 +34,7 @@ void EntityTracker::tick() {
 
 	// Despawn pass / update
 	for (auto& [entityId, entry] : trackedEntities) {
-		this->update(entry); // Determine what packets to send
+		this->Update(entry); // Determine what packets to send
 		for (auto it = entry.visibleTo.begin(); it != entry.visibleTo.end();) {
 			EntityId playerId = *it;
 			auto playerIt = trackedEntities.find(playerId);
@@ -47,10 +47,11 @@ void EntityTracker::tick() {
 			auto distanceTo = std::abs(std::max(std::abs(entry.entity->position.x - player.entity->position.x),
 			                                    std::abs(entry.entity->position.z - player.entity->position.z)));
 			if (distanceTo > entry.profile.range) {
-				auto pSession = server->getSessionById(playerId);
-				if (!pSession) continue;
+				auto pSession = server->GetSessionById(playerId);
+				if (!pSession)
+					continue;
 				Packet::DespawnEntity pkt;
-				pkt.entity_id = entry.entity->id;
+				pkt.entityId = entry.entity->id;
 				pkt.Serialize(pSession->stream);
 
 				it = entry.visibleTo.erase(it);
@@ -75,41 +76,42 @@ void EntityTracker::tick() {
 				continue;
 			}
 
-			spawnEntityForPlayer(playerId, entityEntry);
+			SpawnEntityForPlayer(playerId, entityEntry);
 		}
 	}
 }
 
-void EntityTracker::spawnEntityForPlayer(EntityId _playerId, TrackedEntry& _entityEntry) {
-	auto pSession = server->getSessionById(_playerId);
-	if (!pSession) return;
+void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _entityEntry) {
+	auto pSession = server->GetSessionById(_playerId);
+	if (!pSession)
+		return;
 	switch (_entityEntry.entity->type) {
 	case EntityType::ITEM: {
 		ItemEntity& ie = dynamic_cast<ItemEntity&>(*_entityEntry.entity);
 		Packet::SpawnItem pkt;
-		pkt.entity_id = _entityEntry.entity->id;
+		pkt.entityId = _entityEntry.entity->id;
 		pkt.item = ie.itemStack;
-		pkt.q_position = quantizePosition(_entityEntry.entity->position);
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		// For some reason notch decided this should be a convoluted way of getting the initial spawn velocity
 		auto quantizeSpawnVelocity = [](double _v) -> int8_t {
 			return int8_t(_v * 128.0);
 		};
-		pkt.q_rotation = { quantizeSpawnVelocity(_entityEntry.entity->velocity.x),
-			               quantizeSpawnVelocity(_entityEntry.entity->velocity.y),
-			               quantizeSpawnVelocity(_entityEntry.entity->velocity.z) };
+		pkt.qRotation = { quantizeSpawnVelocity(_entityEntry.entity->velocity.x),
+			              quantizeSpawnVelocity(_entityEntry.entity->velocity.y),
+			              quantizeSpawnVelocity(_entityEntry.entity->velocity.z) };
 		pkt.Serialize(pSession->stream);
 		break;
 	}
 	case EntityType::PLAYER: {
 		Packet::SpawnPlayer pkt;
-		pkt.entity_id = _entityEntry.entity->id;
-		pkt.held_item_id = Items::Id::NONE;
-		pkt.q_position = quantizePosition(_entityEntry.entity->position);
-		pkt.q_rotation = { int8_t(quantizeRotation(_entityEntry.entity->rotationYaw)),
-			               int8_t(quantizeRotation(_entityEntry.entity->rotationPitch)) };
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.heldItemId = Items::Id::NONE;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
+			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
 
 		// To prevent bad behavior when we share a name with another entity
-		auto username = server->getUsernameByEntityId(_entityEntry.entity->id);
+		auto username = server->GetUsernameByEntityId(_entityEntry.entity->id);
 		if (username.empty()) {
 			GlobalLogger().warn << "Refused to spawn player entity, as no username was found!\n";
 			return;
@@ -120,38 +122,38 @@ void EntityTracker::spawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 	}
 	case EntityType::CREEPER: {
 		Packet::SpawnMob pkt;
-		pkt.entity_id = _entityEntry.entity->id;
-		pkt.mob_type = PacketData::MobType::CREEPER;
-		pkt.q_position = quantizePosition(_entityEntry.entity->position);
-		pkt.q_rotation = { int8_t(quantizeRotation(_entityEntry.entity->rotationYaw)),
-			               int8_t(quantizeRotation(_entityEntry.entity->rotationPitch)) };
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.mobType = PacketData::MobType::CREEPER;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
+			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
 		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
 		pkt.Serialize(pSession->stream);
 		break;
 	}
 	case EntityType::BOAT: {
 		Packet::SpawnObject pkt;
-		pkt.entity_id = _entityEntry.entity->id;
-		pkt.object_type = PacketData::ObjectType::BOAT;
-		pkt.q_position = quantizePosition(_entityEntry.entity->position);
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.objectType = PacketData::ObjectType::BOAT;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		pkt.Serialize(pSession->stream);
 		break;
 	}
 	case EntityType::FALLING_SAND: {
 		Packet::SpawnObject pkt;
-		pkt.entity_id = _entityEntry.entity->id;
-		pkt.object_type = PacketData::ObjectType::FALLING_SAND;
-		pkt.q_position = quantizePosition(_entityEntry.entity->position);
-		pkt.q_velocity = quantizeVelocity(_entityEntry.entity->velocity);
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.objectType = PacketData::ObjectType::FALLING_SAND;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
 		pkt.Serialize(pSession->stream);
 		break;
 	}
 	case EntityType::FALLING_GRAVEL: {
 		Packet::SpawnObject pkt;
-		pkt.entity_id = _entityEntry.entity->id;
-		pkt.object_type = PacketData::ObjectType::FALLING_GRAVEL;
-		pkt.q_position = quantizePosition(_entityEntry.entity->position);
-		pkt.q_velocity = quantizeVelocity(_entityEntry.entity->velocity);
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.objectType = PacketData::ObjectType::FALLING_GRAVEL;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
 		pkt.Serialize(pSession->stream);
 		break;
 	}
@@ -164,31 +166,33 @@ void EntityTracker::spawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 	if (_entityEntry.profile.sendVelocity) {
 		// If velocity is enabled immediately send a follow up
 		Packet::EntityVelocity velPkt;
-		velPkt.entity_id = _entityEntry.entity->id;
-		velPkt.velocity = quantizeVelocity(_entityEntry.entity->velocity);
+		velPkt.entityId = _entityEntry.entity->id;
+		velPkt.velocity = QuantizeVelocity(_entityEntry.entity->velocity);
 		velPkt.Serialize(pSession->stream);
 	}
 }
 
-void EntityTracker::despawnEntityForViewers(EntityId _entityId, TrackedEntry& _entry) {
+void EntityTracker::DespawnEntityForViewers(EntityId _entityId, TrackedEntry& _entry) {
 	for (EntityId viewerId : _entry.visibleTo) {
-		auto pSession = server->getSessionById(viewerId);
-		if (!pSession) continue;
+		auto pSession = server->GetSessionById(viewerId);
+		if (!pSession)
+			continue;
 		Packet::DespawnEntity pkt;
-		pkt.entity_id = _entityId;
+		pkt.entityId = _entityId;
 		pkt.Serialize(pSession->stream);
 	}
 }
 
-void EntityTracker::sendPacketToPlayersInTrackedEntry(Packet::BasePacket& _pkt, TrackedEntry& _trackedEntry) {
+void EntityTracker::SendPacketToPlayersInTrackedEntry(Packet::BasePacket& _pkt, TrackedEntry& _trackedEntry) {
 	for (auto& playerId : _trackedEntry.visibleTo) {
-		auto session = server->getSessionById(playerId);
-		if (!session) continue;
+		auto session = server->GetSessionById(playerId);
+		if (!session)
+			continue;
 		_pkt.Serialize(session->stream);
 	}
 }
 
-TrackedEntry& EntityTracker::getTrackerForEntityId(EntityId _id) {
+TrackedEntry& EntityTracker::GetTrackerForEntityId(EntityId _id) {
 	for (auto& [entityId, entityEntry] : trackedEntities) {
 		if (entityId == _id)
 			return entityEntry;
@@ -196,32 +200,33 @@ TrackedEntry& EntityTracker::getTrackerForEntityId(EntityId _id) {
 	throw std::out_of_range("Entity not found");
 }
 
-void EntityTracker::sendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id) {
+void EntityTracker::SendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id) {
 	for (auto& playerId : playerIds) {
-		auto& playerEntry = getTrackerForEntityId(playerId);
+		auto& playerEntry = GetTrackerForEntityId(playerId);
 		if (playerEntry.visibleTo.contains(_id)) {
-			auto session = server->getSessionById(playerId);
-			if (!session) continue;
+			auto session = server->GetSessionById(playerId);
+			if (!session)
+				continue;
 			_pkt.Serialize(session->stream);
 		}
 	}
 }
 
-void EntityTracker::update(TrackedEntry& _trackedEntry) {
+void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 	auto& entity = _trackedEntry.entity;
 
-	// Dirty flag gets checked every tick
+	// Dirty flag gets checked every Tick
 	if (entity->forceVelocityUpdate) {
 		entity->forceVelocityUpdate = false;
 		_trackedEntry.lastBroadcastMotion = { entity->velocity.x, entity->velocity.y, entity->velocity.z };
 		Packet::EntityVelocity pkt;
-		pkt.entity_id = entity->id;
-		pkt.velocity = { quantizeVelocityComponent(entity->velocity.x), quantizeVelocityComponent(entity->velocity.y),
-			             quantizeVelocityComponent(entity->velocity.z) };
-		sendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
+		pkt.entityId = entity->id;
+		pkt.velocity = { QuantizeVelocityComponent(entity->velocity.x), QuantizeVelocityComponent(entity->velocity.y),
+			             QuantizeVelocityComponent(entity->velocity.z) };
+		SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
 
 		// If we are a player then we need to recieve this velocity update
-		if (auto thisSession = server->getSessionById(entity->id)) {
+		if (auto thisSession = server->GetSessionById(entity->id)) {
 			pkt.Serialize(thisSession->stream);
 		}
 	}
@@ -252,19 +257,19 @@ void EntityTracker::update(TrackedEntry& _trackedEntry) {
 			if (needsVelocityUpdate) {
 				lastMotion = currentMotion;
 				Packet::EntityVelocity pkt;
-				pkt.entity_id = entity->id;
-				pkt.velocity = { quantizeVelocityComponent(entity->velocity.x),
-					             quantizeVelocityComponent(entity->velocity.y),
-					             quantizeVelocityComponent(entity->velocity.z) };
-				sendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
+				pkt.entityId = entity->id;
+				pkt.velocity = { QuantizeVelocityComponent(entity->velocity.x),
+					             QuantizeVelocityComponent(entity->velocity.y),
+					             QuantizeVelocityComponent(entity->velocity.z) };
+				SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
 			}
 		}
 
-		int32_t qx = quantizePositionComponent(entity->position.x);
-		int32_t qy = quantizePositionComponent(entity->position.y);
-		int32_t qz = quantizePositionComponent(entity->position.z);
-		int32_t qYaw = quantizeRotation(entity->rotationYaw);
-		int32_t qPitch = quantizeRotation(entity->rotationPitch);
+		int32_t qx = QuantizePositionComponent(entity->position.x);
+		int32_t qy = QuantizePositionComponent(entity->position.y);
+		int32_t qz = QuantizePositionComponent(entity->position.z);
+		int32_t qYaw = QuantizeRotation(entity->rotationYaw);
+		int32_t qPitch = QuantizeRotation(entity->rotationPitch);
 
 		int32_t dx = qx - _trackedEntry.lastEncodedPos.x;
 		int32_t dy = qy - _trackedEntry.lastEncodedPos.y;
@@ -280,13 +285,13 @@ void EntityTracker::update(TrackedEntry& _trackedEntry) {
 			entity->position.x = double(qx) / 32.0;
 			entity->position.y = double(qy) / 32.0;
 			entity->position.z = double(qz) / 32.0;
-			entity->rebuildCollider();
+			entity->RebuildCollider();
 
 			Packet::TeleportEntity pkt;
-			pkt.entity_id = entity->id;
+			pkt.entityId = entity->id;
 			pkt.position = { qx, qy, qz };
 			pkt.rotation = { int8_t(qYaw), int8_t(qPitch) };
-			sendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
+			SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
 			_trackedEntry.lastEncodedPos = { qx, qy, qz };
 			_trackedEntry.lastEncodedYaw = qYaw;
 			_trackedEntry.lastEncodedPitch = qPitch;
@@ -296,10 +301,10 @@ void EntityTracker::update(TrackedEntry& _trackedEntry) {
 
 			if (needsRelMove && needsRot) {
 				Packet::EntityPositionAndRotation pkt;
-				pkt.qr_position = { int8_t(dx), int8_t(dy), int8_t(dz) };
-				pkt.q_rotation = { int8_t(qYaw), int8_t(qPitch) };
-				pkt.entity_id = entity->id;
-				sendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
+				pkt.qrPosition = { int8_t(dx), int8_t(dy), int8_t(dz) };
+				pkt.qRotation = { int8_t(qYaw), int8_t(qPitch) };
+				pkt.entityId = entity->id;
+				SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
 				_trackedEntry.lastEncodedPos = { qx, qy, qz };
 				_trackedEntry.lastEncodedYaw = qYaw;
 				_trackedEntry.lastEncodedPitch = qPitch;
@@ -307,17 +312,17 @@ void EntityTracker::update(TrackedEntry& _trackedEntry) {
 			};
 			if (needsRelMove) {
 				Packet::EntityPosition pkt;
-				pkt.qr_position = { int8_t(dx), int8_t(dy), int8_t(dz) };
-				pkt.entity_id = entity->id;
-				sendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
+				pkt.qrPosition = { int8_t(dx), int8_t(dy), int8_t(dz) };
+				pkt.entityId = entity->id;
+				SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
 				_trackedEntry.lastEncodedPos = { qx, qy, qz };
 				return;
 			}
 			if (needsRot) {
 				Packet::EntityRotation pkt;
-				pkt.q_rotation = { int8_t(qYaw), int8_t(qPitch) };
-				pkt.entity_id = entity->id;
-				sendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
+				pkt.qRotation = { int8_t(qYaw), int8_t(qPitch) };
+				pkt.entityId = entity->id;
+				SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
 				_trackedEntry.lastEncodedYaw = qYaw;
 				_trackedEntry.lastEncodedPitch = qPitch;
 				return;

@@ -28,8 +28,8 @@ struct TileEntity {
 
 	TileEntity(TileType _pType, Int3 _pPosition) : type(_pType), position(_pPosition) {};
 
-	virtual void tick() {};
-	virtual Tag serialize();
+	virtual void Tick() {};
+	virtual Tag Serialize();
 	virtual ~TileEntity() = default;
 };
 
@@ -38,8 +38,8 @@ struct TileEntityChest : TileEntity {
 	InventoryChest inventory;
 	TileEntityChest(Int3 _pPosition) : TileEntity(TileType::CHEST, _pPosition) {};
 
-	Tag serialize() override;
-	void tick() override;
+	Tag Serialize() override;
+	void Tick() override;
 };
 
 // Furnace
@@ -49,8 +49,8 @@ struct TileEntityFurnace : TileEntity {
 		canTick = true;
 	};
 
-	Tag serialize() override;
-	void tick() override;
+	Tag Serialize() override;
+	void Tick() override;
 };
 
 // Dispenser (Trap)
@@ -58,8 +58,8 @@ struct TileEntityDispenser : TileEntity {
 	InventoryDispenser inventory;
 	TileEntityDispenser(Int3 _pPosition) : TileEntity(TileType::DISPENSER, _pPosition) {};
 
-	Tag serialize() override;
-	void tick() override;
+	Tag Serialize() override;
+	void Tick() override;
 };
 
 // Sign
@@ -70,7 +70,7 @@ struct TileEntitySign : TileEntity {
 	std::string text4 = "";
 	TileEntitySign(Int3 _pPosition) : TileEntity(TileType::SIGN, _pPosition) {};
 
-	Tag serialize() override;
+	Tag Serialize() override;
 };
 
 // MobSpawner
@@ -81,5 +81,5 @@ struct TileEntityMobSpawner : TileEntity {
 		canTick = true;
 	};
 
-	Tag serialize() override;
+	Tag Serialize() override;
 };

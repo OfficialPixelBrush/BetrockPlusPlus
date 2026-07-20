@@ -17,7 +17,7 @@
 #define REGION_AREA REGION_WIDTH* REGION_WIDTH
 #define SECTOR_SIZE 4096
 
-inline std::string regionPositionToFileName(Int2 _rpos) {
+inline std::string RegionPositionToFileName(Int2 _rpos) {
 	return "r." + std::to_string(_rpos.x) + "." + std::to_string(_rpos.z) + ".mcr";
 }
 
@@ -43,11 +43,11 @@ public:
 	Int32_2 rpos;
 	std::mutex mutex;
 	Region(Int32_2 _rpos, std::string _folderPath)
-	    : rpos(_rpos), regionFile(_folderPath + "/" + regionPositionToFileName(_rpos)) {
+	    : rpos(_rpos), regionFile(_folderPath + "/" + RegionPositionToFileName(_rpos)) {
 		// Cache our header
-		readHeaderFromFile();
+		ReadHeaderFromFile();
 	}
-	bool chunkExists(Int2 _localcpos) {
+	bool ChunkExists(Int2 _localcpos) {
 		int index = _localcpos.x + _localcpos.z * 32;
 		auto* rHeader = &regionHeader[index];
 		return (rHeader->numberOfSectors != 0 && rHeader->offset != 0);
@@ -57,8 +57,8 @@ public:
 	std::shared_ptr<Chunk> GetChunk(Int32_2 _cpos);
 
 	// Read our header data into the "regionHeader"
-	void readHeaderFromFile() {
-		auto& file = regionFile.get();
+	void ReadHeaderFromFile() {
+		auto& file = regionFile.Get();
 		file.seekg(0); // Beginning of sector 0
 		for (int i = 0; i < 1024; i++) {
 			uint32_t entry;
@@ -73,7 +73,7 @@ private:
 	std::array<std::shared_ptr<Chunk>, REGION_AREA> chunks;
 	std::vector<uint8_t> EncodeNbtData(const std::shared_ptr<Chunk>& _chunk, int64_t _timestamp,
 	                                   std::shared_ptr<const std::vector<Tag>> _entities);
-	std::shared_ptr<Chunk> DecodeNbtData(const std::vector<uint8_t>& _raw_data);
+	std::shared_ptr<Chunk> DecodeNbtData(const std::vector<uint8_t>& _rawData);
 	std::string GetPath();
 	std::array<FileHeaderEntry, 1024> regionHeader;
 	FileHandle regionFile;
