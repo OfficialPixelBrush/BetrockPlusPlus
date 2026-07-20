@@ -21,4 +21,5 @@ struct EntityMPPlayer : public PlayerEntity {
 	void tick() override;
 	bool pickupItem(ItemStack& stack, EntityId entityId) override;
 	bool dropItem(ItemStack stack) override;
+	void handlePositionChecks();
 };

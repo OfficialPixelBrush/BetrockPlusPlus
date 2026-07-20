@@ -58,9 +58,7 @@ bool EntityMPPlayer::dropItem(ItemStack stack) {
 	return true;
 }
 
-void EntityMPPlayer::tick() {
-	if (!m_session)
-		return;
+void EntityMPPlayer::handlePositionChecks() {
 	if (m_session->m_pendingTeleport) {
 		// We have a pending teleport. Check to see if the player caught up
 		if (!m_session->m_pendingPosition)
@@ -85,9 +83,6 @@ void EntityMPPlayer::tick() {
 		// Client acknowledged our tp
 		m_session->m_pendingTeleport.reset();
 	}
-
-	// Do living entity stuff
-	MobileEntity::tick();
 
 	// Always trust rotations
 	this->m_rotationYaw = m_session->m_rotation.m_x;
@@ -126,11 +121,11 @@ void EntityMPPlayer::tick() {
 			// TP our player back
 			GlobalLogger().m_info << "Residual from move was: " << residual << "\n";
 			GlobalLogger().m_info << "Rubberbanded player! wasClear=" << wasClearBefore
-			                    << " residual=" << residualTooLarge << " clearNow=" << clearNow
-			                    << " movedWrong=" << movedWrong << " pos=(" << this->m_position.m_x << ","
-			                    << this->m_position.m_y << "," << this->m_position.m_z << ")"
-			                    << " colliderY=[" << m_collider.m_minY << "," << m_collider.m_maxY << "]"
-			                    << "\n";
+			                      << " residual=" << residualTooLarge << " clearNow=" << clearNow
+			                      << " movedWrong=" << movedWrong << " pos=(" << this->m_position.m_x << ","
+			                      << this->m_position.m_y << "," << this->m_position.m_z << ")"
+			                      << " colliderY=[" << m_collider.m_minY << "," << m_collider.m_maxY << "]"
+			                      << "\n";
 			this->teleport(lastPosition, { m_rotationYaw, m_rotationPitch });
 			m_session->m_position.m_pos = lastPosition;
 			Packet::PlayerPosition pkt;
@@ -142,6 +137,17 @@ void EntityMPPlayer::tick() {
 
 		m_session->m_pendingPosition.reset();
 	}
+}
+
+void EntityMPPlayer::tick() {
+	if (!m_session)
+		return;
+
+	// Handle reported vs server side position
+	this->handlePositionChecks();
+
+	// Do living entity stuff
+	MobileEntity::tick();
 
 	// Tell entities we collided with a player
 	if (m_entityManager) {
