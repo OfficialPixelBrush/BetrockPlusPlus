@@ -34,10 +34,10 @@ public:
 	Window& operator=(const Window&) = delete;
 
 	void setTitle(const std::string& _title) {
-		SDL_SetWindowTitle(handle, title.c_str());
+		SDL_SetWindowTitle(handle, _title.c_str());
 	}
 	void setCursorCapture(bool _enabled) {
-		SDL_SetWindowRelativeMouseMode(handle, enabled);
+		SDL_SetWindowRelativeMouseMode(handle, _enabled);
 	}
 	const Int2& getScreenSize() const {
 		return screenSize;

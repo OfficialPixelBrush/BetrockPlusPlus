@@ -34,15 +34,15 @@ public:
 	}
 
 	[[nodiscard]] bool isKeyDown(SDL_Scancode _key) const {
-		return downKeys[key];
+		return downKeys[_key];
 	}
 
 	[[nodiscard]] bool isKeyPressed(SDL_Scancode _key) const {
-		return downKeys[key] && !prevDownKeys[key];
+		return downKeys[_key] && !prevDownKeys[_key];
 	}
 
 	[[nodiscard]] bool isKeyReleased(SDL_Scancode _key) const {
-		return prevDownKeys[key] && !downKeys[key];
+		return prevDownKeys[_key] && !downKeys[_key];
 	}
 
 	[[nodiscard]] bool isMouseButtonDown(uint8_t _button) const {

@@ -9,7 +9,7 @@
 #include "misc.h"
 #include "window.h"
 
-Renderer::Renderer(Window& _window) : window(window.getHandle()) {
+Renderer::Renderer(Window& _window) : window(_window.getHandle()) {
 #ifndef NDEBUG
 	const bool debug = true;
 #else

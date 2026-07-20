@@ -10,27 +10,27 @@
 void Input::handleEvent(const SDL_Event& _ev) {
 	switch (_ev.type) {
 	case SDL_EVENT_KEY_DOWN:
-		downKeys[ev.key.scancode] = true;
+		downKeys[_ev.key.scancode] = true;
 		break;
 
 	case SDL_EVENT_KEY_UP:
-		downKeys[ev.key.scancode] = false;
+		downKeys[_ev.key.scancode] = false;
 		break;
 
 	case SDL_EVENT_MOUSE_MOTION:
-		mouseDelta += { ev.motion.xrel, ev.motion.yrel };
+		mouseDelta += { _ev.motion.xrel, _ev.motion.yrel };
 		break;
 
 	case SDL_EVENT_MOUSE_WHEEL:
-		mouseWheel += { ev.wheel.x, ev.wheel.y };
+		mouseWheel += { _ev.wheel.x, _ev.wheel.y };
 		break;
 
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
-		downMouseButtons |= SDL_BUTTON_MASK(ev.button.button);
+		downMouseButtons |= SDL_BUTTON_MASK(_ev.button.button);
 		break;
 
 	case SDL_EVENT_MOUSE_BUTTON_UP:
-		downMouseButtons &= ~SDL_BUTTON_MASK(ev.button.button);
+		downMouseButtons &= ~SDL_BUTTON_MASK(_ev.button.button);
 		break;
 	}
 }
