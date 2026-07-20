@@ -6,6 +6,7 @@
 */
 
 #include "renderer.h"
+#include "logger.h"
 #include "misc.h"
 #include "window.h"
 
@@ -16,13 +17,27 @@ Renderer::Renderer(Window& _window) : window(_window.GetHandle()) {
 	const bool debug = false;
 #endif
 
-	gpu = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, debug, nullptr);
+	int numDrivers = SDL_GetNumGPUDrivers();
+	GlobalLogger().info << "GPU drivers found: " << numDrivers << "\n";
+	for (int i = 0; i < numDrivers; i++) {
+		GlobalLogger().info << "  [" << i << "] " << SDL_GetGPUDriver(i) << "\n";
+	}
 
-	if (!gpu)
-		THROW_SDL_ERROR("Failed to create GPU device!");
+	SDL_PropertiesID props = SDL_CreateProperties();
+	SDL_SetStringProperty(props, SDL_PROP_GPU_DEVICE_CREATE_NAME_STRING, "vulkan");
+	SDL_SetNumberProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_SPIRV_BOOLEAN, true);
+	SDL_SetNumberProperty(props, SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOLEAN, debug);
 
-	if (!SDL_ClaimWindowForGPUDevice(gpu, window))
-		THROW_SDL_ERROR("Failed to claim window for GPU device!");
+	gpu = SDL_CreateGPUDeviceWithProperties(props);
+	SDL_DestroyProperties(props);
+	if (SDL_GetError()[0] != '\0') {
+		GlobalLogger().error << "Critical error during initialization, aborting.\n";
+		GlobalLogger().error << SDL_GetError() << "\n";
+		throw std::runtime_error("Couldn't initialize SDL!");
+		return;
+	}
+
+	SDL_ClaimWindowForGPUDevice(gpu, window);
 }
 
 Renderer::~Renderer() {
