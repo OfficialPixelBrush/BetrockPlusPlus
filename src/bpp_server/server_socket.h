@@ -20,7 +20,7 @@
 namespace ServerSocketManager {
 inline void CloseSocket(int _socket) {
 #if defined(_WIN32) || defined(_WIN64)
-	closesocket(socket);
+	closesocket(_socket);
 	WSACleanup();
 #else
 	close(_socket);
@@ -63,7 +63,7 @@ inline int CreateServerSocket(int _port) {
 
 inline int CreateClientSocket(int _socket = -1) {
 #if defined(_WIN32) || defined(_WIN64)
-	SOCKET rawSocket = accept(socket, nullptr, nullptr);
+	SOCKET rawSocket = accept(_socket, nullptr, nullptr);
 	if (rawSocket == INVALID_SOCKET)
 		return -1;
 	u_long clientMode = 1;

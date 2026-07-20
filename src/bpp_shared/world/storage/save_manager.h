@@ -46,7 +46,7 @@ struct SessionLock {
 
 	bool Acquire(const std::string& _path) {
 #ifdef _WIN32
-		handle = CreateFileA(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
+		handle = CreateFileA(_path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
 		                     FILE_ATTRIBUTE_NORMAL, nullptr);
 		if (handle == INVALID_HANDLE_VALUE)
 			return false;

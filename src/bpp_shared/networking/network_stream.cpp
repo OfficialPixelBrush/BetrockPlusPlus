@@ -20,8 +20,8 @@ NetworkStream::NetworkStream(int _pClientSocket) {
 NetworkStream::~NetworkStream() {
 	if (clientSocket != INVALID_SOCKET) {
 #if defined(_WIN32) || defined(_WIN64)
-		shutdown(client_socket, SD_BOTH);
-		closesocket(client_socket);
+		shutdown(clientSocket, SD_BOTH);
+		closesocket(clientSocket);
 		// TODO: Clean-up WSA when the server closes
 		// WSACleanup();
 #else
@@ -39,7 +39,7 @@ void NetworkStream::FlushWriteBufferBlocking() {
 	// Switch to blocking mode
 #if defined(_WIN32) || defined(_WIN64)
 	u_long mode = 0;
-	ioctlsocket(client_socket, FIONBIO, &mode);
+	ioctlsocket(clientSocket, FIONBIO, &mode);
 #else
 	int flags = fcntl(clientSocket, F_GETFL, 0);
 	fcntl(clientSocket, F_SETFL, flags & ~O_NONBLOCK);
@@ -57,8 +57,8 @@ void NetworkStream::FlushWriteBufferBlocking() {
 
 	// We close here so the client can get the packet data we just sent out before we disconnect
 #if defined(_WIN32) || defined(_WIN64)
-	shutdown(client_socket, SD_SEND);
-	closesocket(client_socket);
+	shutdown(clientSocket, SD_SEND);
+	closesocket(clientSocket);
 #else
 	shutdown(clientSocket, SHUT_WR);
 	close(clientSocket);
@@ -302,7 +302,7 @@ bool NetworkStream::HasData() {
 	if (!readBackBuffer.empty())
 		return true;
 	u_long bytesAvailable = 0;
-	if (ioctlsocket(client_socket, FIONREAD, &bytesAvailable) == SOCKET_ERROR) {
+	if (ioctlsocket(clientSocket, FIONREAD, &bytesAvailable) == SOCKET_ERROR) {
 		connected = false;
 		return false;
 	}
