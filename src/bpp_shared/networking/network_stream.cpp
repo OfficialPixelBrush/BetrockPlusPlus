@@ -13,8 +13,8 @@
 #include <string>
 #include <vector>
 
-NetworkStream::NetworkStream(int _p_client_socket) {
-	client_socket = _p_client_socket;
+NetworkStream::NetworkStream(int _pClientSocket) {
+	client_socket = _pClientSocket;
 }
 
 NetworkStream::~NetworkStream() {

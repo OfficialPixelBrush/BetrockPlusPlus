@@ -269,7 +269,7 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& _chunk,
 	return compressed;
 }
 
-std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& _raw_data) {
+std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& _rawData) {
 	libdeflate_decompressor* decompressor = libdeflate_alloc_decompressor();
 	if (!decompressor)
 		return std::make_shared<Chunk>();
@@ -278,7 +278,7 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& _raw_da
 	while (true) {
 		decompressed.resize(decompressedSize);
 		size_t actualOutSize = 0;
-		libdeflate_result result = libdeflate_zlib_decompress(decompressor, _raw_data.data(), _raw_data.size(),
+		libdeflate_result result = libdeflate_zlib_decompress(decompressor, _rawData.data(), _rawData.size(),
 		                                                      decompressed.data(), decompressed.size(), &actualOutSize);
 
 		if (result == LIBDEFLATE_SUCCESS) {

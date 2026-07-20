@@ -30,7 +30,7 @@ void TileEntityDispenser::tick() {
 	}
 }
 
-constexpr std::string getTileNbtId(TileType _type) {
+constexpr std::string GetTileNbtId(TileType _type) {
 	switch (_type) {
 	case TileType::CHEST:
 		return "Chest";
@@ -51,7 +51,7 @@ Tag TileEntity::serialize() {
 	auto root = Tag{};
 	root.type = TAG_COMPOUND;
 
-	auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = getTileNbtId(type) };
+	auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = GetTileNbtId(type) };
 	auto x = Tag{ .type = TAG_INT, .name = "x", .intValue = position.x };
 	auto y = Tag{ .type = TAG_INT, .name = "y", .intValue = position.y };
 	auto z = Tag{ .type = TAG_INT, .name = "z", .intValue = position.z };
@@ -73,15 +73,15 @@ Tag TileEntityChest::serialize() {
 	for (auto& stack : inventory.slots) {
 		if (stack.id != Items::Id::INVALID) {
 			auto item = Tag{ .type = TAG_COMPOUND };
-			auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
-			auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
-			auto Id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
-			auto Slot = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = currentSlot };
+			auto count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
+			auto damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
+			auto id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
+			auto slot = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = currentSlot };
 
-			item.compound["Count"] = Count;
-			item.compound["Damage"] = Damage;
-			item.compound["id"] = Id;
-			item.compound["Slot"] = Slot;
+			item.compound["Count"] = count;
+			item.compound["Damage"] = damage;
+			item.compound["id"] = id;
+			item.compound["Slot"] = slot;
 
 			items.list.push_back(item);
 		}
@@ -102,15 +102,15 @@ Tag TileEntityFurnace::serialize() {
 	for (auto& stack : inventory.slots) {
 		if (stack.id != Items::Id::INVALID) {
 			auto item = Tag{ .type = TAG_COMPOUND };
-			auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
-			auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
-			auto Id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
-			auto Slot = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = currentSlot };
+			auto count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
+			auto damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
+			auto id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
+			auto slot = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = currentSlot };
 
-			item.compound["Count"] = Count;
-			item.compound["Damage"] = Damage;
-			item.compound["id"] = Id;
-			item.compound["Slot"] = Slot;
+			item.compound["Count"] = count;
+			item.compound["Damage"] = damage;
+			item.compound["id"] = id;
+			item.compound["Slot"] = slot;
 
 			items.list.push_back(item);
 		}
@@ -131,15 +131,15 @@ Tag TileEntityDispenser::serialize() {
 	for (auto& stack : inventory.slots) {
 		if (stack.id != Items::Id::INVALID) {
 			auto item = Tag{ .type = TAG_COMPOUND };
-			auto Count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
-			auto Damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
-			auto Id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
-			auto Slot = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = currentSlot };
+			auto count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
+			auto damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
+			auto id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
+			auto slot = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = currentSlot };
 
-			item.compound["Count"] = Count;
-			item.compound["Damage"] = Damage;
-			item.compound["id"] = Id;
-			item.compound["Slot"] = Slot;
+			item.compound["Count"] = count;
+			item.compound["Damage"] = damage;
+			item.compound["id"] = id;
+			item.compound["Slot"] = slot;
 
 			items.list.push_back(item);
 		}
@@ -154,15 +154,15 @@ Tag TileEntityDispenser::serialize() {
 Tag TileEntitySign::serialize() {
 	auto root = TileEntity::serialize();
 
-	auto v_text1 = Tag{ .type = TAG_STRING, .name = "Text1", .stringValue = text1 };
-	auto v_text2 = Tag{ .type = TAG_STRING, .name = "Text2", .stringValue = text2 };
-	auto v_text3 = Tag{ .type = TAG_STRING, .name = "Text3", .stringValue = text3 };
-	auto v_text4 = Tag{ .type = TAG_STRING, .name = "Text4", .stringValue = text4 };
+	auto vText1 = Tag{ .type = TAG_STRING, .name = "Text1", .stringValue = text1 };
+	auto vText2 = Tag{ .type = TAG_STRING, .name = "Text2", .stringValue = text2 };
+	auto vText3 = Tag{ .type = TAG_STRING, .name = "Text3", .stringValue = text3 };
+	auto vText4 = Tag{ .type = TAG_STRING, .name = "Text4", .stringValue = text4 };
 
-	root.compound["Text1"] = v_text1;
-	root.compound["Text2"] = v_text2;
-	root.compound["Text3"] = v_text3;
-	root.compound["Text4"] = v_text4;
+	root.compound["Text1"] = vText1;
+	root.compound["Text2"] = vText2;
+	root.compound["Text3"] = vText3;
+	root.compound["Text4"] = vText4;
 
 	return root;
 }
@@ -170,11 +170,11 @@ Tag TileEntitySign::serialize() {
 Tag TileEntityMobSpawner::serialize() {
 	auto root = TileEntity::serialize();
 
-	auto v_entityId = Tag{ .type = TAG_STRING, .name = "EntityId", .stringValue = entityId };
-	auto v_delay = Tag{ .type = TAG_SHORT, .name = "Delay", .shortValue = delay };
+	auto vEntityId = Tag{ .type = TAG_STRING, .name = "EntityId", .stringValue = entityId };
+	auto vDelay = Tag{ .type = TAG_SHORT, .name = "Delay", .shortValue = delay };
 
-	root.compound["EntityId"] = v_entityId;
-	root.compound["Delay"] = v_delay;
+	root.compound["EntityId"] = vEntityId;
+	root.compound["Delay"] = vDelay;
 
 	return root;
 }

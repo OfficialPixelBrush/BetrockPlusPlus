@@ -33,15 +33,15 @@ void NoiseSimplex::InitPermTable(Java::Random& _rand) {
 	}
 }
 
-void NoiseSimplex::GenerateNoise(std::vector<double>& _values, Vec2 _p_offset, Int32_2 _p_size, Vec2 _p_scale,
+void NoiseSimplex::GenerateNoise(std::vector<double>& _values, Vec2 _pOffset, Int32_2 _pSize, Vec2 _pScale,
                                  double _amplitude) {
 	size_t index = 0;
 
-	for (int32_t xI = 0; xI < _p_size.x; ++xI) {
-		double xPos = (_p_offset.x + double(xI)) * _p_scale.x + coordinate.x;
+	for (int32_t xI = 0; xI < _pSize.x; ++xI) {
+		double xPos = (_pOffset.x + double(xI)) * _pScale.x + coordinate.x;
 
-		for (int32_t yI = 0; yI < _p_size.y; ++yI) {
-			double yPos = (_p_offset.y + double(yI)) * _p_scale.y + coordinate.y;
+		for (int32_t yI = 0; yI < _pSize.y; ++yI) {
+			double yPos = (_pOffset.y + double(yI)) * _pScale.y + coordinate.y;
 			double skew = (xPos + yPos) * skewing;
 			int32_t x0 = wrap(xPos + skew);
 			int32_t y0 = wrap(yPos + skew);

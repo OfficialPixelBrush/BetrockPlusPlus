@@ -47,28 +47,28 @@ BOOL WINAPI consoleCtrlHandler(DWORD dwCtrlType) {
 #include "quick_arg_parser.hpp"
 
 struct Args : MainArguments<Args> {
-	[[maybe_unused]] inline static const std::string version() noexcept {
+	[[maybe_unused]] inline static const std::string Version() noexcept {
 		return std::string(PROJECT_FULL_VERSION_LABEL);
 	}
 	uint16_t port = option("port", 'p', "Port the server will run on (25565)") = 25565;
-	int32_t max_players = option("max_players", '\0',
+	int32_t maxPlayers = option("max_players", '\0',
 	                             "Maximum number of players. Anything less than 0 removes the cap (-1)") = -1;
-	bool enable_whitelist = (option("whitelist", 'w', "Enables usage of the whitelist") = false);
+	bool enableWhitelist = (option("whitelist", 'w', "Enables usage of the whitelist") = false);
 	int64_t seed = option("seed", 's', "Overwrites the worlds current seed") = 0;
-	bool disable_portals = (option("no_portals", '\0', "Disables Portal-travel") = false);
-	bool force_nether_spawn = (option("force_nether_spawn", '\0', "Makes players spawn in the Nether") = false);
-	uint32_t pregen_radius = option("pregen_radius", '\0',
+	bool disablePortals = (option("no_portals", '\0', "Disables Portal-travel") = false);
+	bool forceNetherSpawn = (option("force_nether_spawn", '\0', "Makes players spawn in the Nether") = false);
+	uint32_t pregenRadius = option("pregen_radius", '\0',
 	                                "Generates chunks around 0,0 until the desired radius is met") = 5;
-	uint32_t chunk_render_radius = option(
+	uint32_t chunkRenderRadius = option(
 	    "chunk_render_radius", '\0',
 	    "Radius within which chunks are rendered for clients. On Vanilla clients this caps out at about 16 Chunks") = 5;
-	uint32_t chunk_gen_radius = option("chunk_gen_radius", '\0', "Radius within which chunks are generated") = 5;
-	uint32_t chunk_tick_radius = option("chunk_tick_radius", '\0', "Radius within which chunks are randomly ticked") = 5;
-	uint32_t entity_render_radius = option("entity_render_radius", '\0', "Radius within which entities are shown") = 5;
-	uint32_t entity_tick_radius = option("entity_tick_radius", '\0', "Radius within which entities are ticked") = 5;
+	uint32_t chunkGenRadius = option("chunk_gen_radius", '\0', "Radius within which chunks are generated") = 5;
+	uint32_t chunkTickRadius = option("chunk_tick_radius", '\0', "Radius within which chunks are randomly ticked") = 5;
+	uint32_t entityRenderRadius = option("entity_render_radius", '\0', "Radius within which entities are shown") = 5;
+	uint32_t entityTickRadius = option("entity_tick_radius", '\0', "Radius within which entities are ticked") = 5;
 };
 
-static void signalHandler(int /*sig*/) {
+static void SignalHandler(int /*sig*/) {
 	shutdownRequested.store(true);
 }
 
@@ -79,8 +79,8 @@ static void signalHandler(int /*sig*/) {
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 	// Hook up signals
-	std::signal(SIGINT, signalHandler);
-	std::signal(SIGTERM, signalHandler);
+	std::signal(SIGINT, SignalHandler);
+	std::signal(SIGTERM, SignalHandler);
 #ifdef SIGPIPE
 	// Ignore broken pipes caused by early disconnecting client
 	std::signal(SIGPIPE, SIG_IGN);

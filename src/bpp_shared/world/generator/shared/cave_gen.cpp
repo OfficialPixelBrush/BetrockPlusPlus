@@ -21,15 +21,15 @@ void CaveGenerator::GenerateCavesForChunk(Chunk& _chunk, int64_t _seed) {
 	int64_t zOffset = rand.nextLong() / 2L * 2L + 1L;
 
 	// Use unsigned arithmetic to avoid overflow UB
-	uint64_t xOffset_u = static_cast<uint64_t>(xOffset);
-	uint64_t zOffset_u = static_cast<uint64_t>(zOffset);
-	uint64_t seed_u = static_cast<uint64_t>(_seed);
+	uint64_t xOffsetU = static_cast<uint64_t>(xOffset);
+	uint64_t zOffsetU = static_cast<uint64_t>(zOffset);
+	uint64_t seedU = static_cast<uint64_t>(_seed);
 
 	for (int32_t cXoffset = _chunk.cpos.x - carveExtent; cXoffset <= _chunk.cpos.x + carveExtent; ++cXoffset) {
 		for (int32_t cZoffset = _chunk.cpos.z - carveExtent; cZoffset <= _chunk.cpos.z + carveExtent; ++cZoffset) {
-			uint64_t xPart = static_cast<uint64_t>(static_cast<int64_t>(cXoffset)) * xOffset_u;
-			uint64_t zPart = static_cast<uint64_t>(static_cast<int64_t>(cZoffset)) * zOffset_u;
-			uint64_t combined = (xPart + zPart) ^ seed_u;
+			uint64_t xPart = static_cast<uint64_t>(static_cast<int64_t>(cXoffset)) * xOffsetU;
+			uint64_t zPart = static_cast<uint64_t>(static_cast<int64_t>(cZoffset)) * zOffsetU;
+			uint64_t combined = (xPart + zPart) ^ seedU;
 			rand.setSeed(static_cast<int64_t>(combined));
 			this->GenerateCaves(_chunk, { cXoffset, cZoffset });
 		}
@@ -76,30 +76,30 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 	Java::Random rand2(rand.nextLong());
 
 	if (_tunnelLength <= 0) {
-		int32_t max_tunnel_length = this->m_carveExtentLimit * CHUNK_WIDTH - CHUNK_WIDTH;
-		_tunnelLength = max_tunnel_length - rand2.nextInt(max_tunnel_length / 4);
+		int32_t maxTunnelLength = this->m_carveExtentLimit * CHUNK_WIDTH - CHUNK_WIDTH;
+		_tunnelLength = maxTunnelLength - rand2.nextInt(maxTunnelLength / 4);
 	}
 
-	bool branch_tunnel = false;
+	bool branchTunnel = false;
 	if (_tunnelStep == -1) {
 		_tunnelStep = _tunnelLength / 2;
-		branch_tunnel = true;
+		branchTunnel = true;
 	}
 
 	int32_t branchPoint = rand2.nextInt(_tunnelLength / 2) + _tunnelLength / 4;
 
-	bool tunnel_steepness = rand2.nextInt(6) == 0;
+	bool tunnelSteepness = rand2.nextInt(6) == 0;
 	for (; _tunnelStep < _tunnelLength; ++_tunnelStep) {
-		double radius_xz = 1.5 + double(MathHelper::sin(float(_tunnelStep) * JavaMath::PI_FLOAT / float(_tunnelLength)) *
+		double radiusXz = 1.5 + double(MathHelper::sin(float(_tunnelStep) * JavaMath::PI_FLOAT / float(_tunnelLength)) *
 		                                _tunnelRadius * 1.0f);
-		double radius_y = radius_xz * _verticalScale;
+		double radiusY = radiusXz * _verticalScale;
 		float pCos = MathHelper::cos(_carvePitch);
 		float pSin = MathHelper::sin(_carvePitch);
 		_offset.x += double(MathHelper::cos(_carveYaw) * pCos);
 		_offset.y += double(pSin);
 		_offset.z += double(MathHelper::sin(_carveYaw) * pCos);
 
-		_carvePitch *= tunnel_steepness ? 0.92f : 0.7f;
+		_carvePitch *= tunnelSteepness ? 0.92f : 0.7f;
 
 		_carvePitch += yawVel * 0.1f;
 		_carveYaw += pitchVel * 0.1f;
@@ -108,7 +108,7 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 		yawVel += (rand2.nextFloat() - rand2.nextFloat()) * rand2.nextFloat() * 2.0f;
 		pitchVel += (rand2.nextFloat() - rand2.nextFloat()) * rand2.nextFloat() * 4.0f;
 
-		if (!branch_tunnel && _tunnelStep == branchPoint && _tunnelRadius > 1.0f) {
+		if (!branchTunnel && _tunnelStep == branchPoint && _tunnelRadius > 1.0f) {
 			this->CarveCave(_chunk, _offset, rand2.nextFloat() * 0.5f + 0.5f, _carveYaw - JavaMath::PI_FLOAT * 0.5f,
 			                _carvePitch / 3.0f, _tunnelStep, _tunnelLength, 1.0);
 			this->CarveCave(_chunk, _offset, rand2.nextFloat() * 0.5f + 0.5f, _carveYaw + JavaMath::PI_FLOAT * 0.5f,
@@ -116,7 +116,7 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 			return;
 		}
 
-		if (branch_tunnel || rand2.nextInt(4) != 0) {
+		if (branchTunnel || rand2.nextInt(4) != 0) {
 			double dx = _offset.x - chunkCenterX;
 			double dz = _offset.z - chunkCenterZ;
 			double dist = double(_tunnelLength - _tunnelStep);
@@ -124,16 +124,16 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 			if ((dx * dx + dz * dz - dist * dist) > (limit * limit))
 				return;
 
-			if (_offset.x >= chunkCenterX - 16.0 - radius_xz * 2.0 &&
-			    _offset.z >= chunkCenterZ - 16.0 - radius_xz * 2.0 &&
-			    _offset.x <= chunkCenterX + 16.0 + radius_xz * 2.0 &&
-			    _offset.z <= chunkCenterZ + 16.0 + radius_xz * 2.0) {
-				int32_t xMin = MathHelper::floor_double(_offset.x - radius_xz) - _chunk.cpos.x * 16 - 1;
-				int32_t xMax = MathHelper::floor_double(_offset.x + radius_xz) - _chunk.cpos.x * 16 + 1;
-				int32_t yMin = MathHelper::floor_double(_offset.y - radius_y) - 1;
-				int32_t yMax = MathHelper::floor_double(_offset.y + radius_y) + 1;
-				int32_t zMin = MathHelper::floor_double(_offset.z - radius_xz) - _chunk.cpos.z * 16 - 1;
-				int32_t zMax = MathHelper::floor_double(_offset.z + radius_xz) - _chunk.cpos.z * 16 + 1;
+			if (_offset.x >= chunkCenterX - 16.0 - radiusXz * 2.0 &&
+			    _offset.z >= chunkCenterZ - 16.0 - radiusXz * 2.0 &&
+			    _offset.x <= chunkCenterX + 16.0 + radiusXz * 2.0 &&
+			    _offset.z <= chunkCenterZ + 16.0 + radiusXz * 2.0) {
+				int32_t xMin = MathHelper::floor_double(_offset.x - radiusXz) - _chunk.cpos.x * 16 - 1;
+				int32_t xMax = MathHelper::floor_double(_offset.x + radiusXz) - _chunk.cpos.x * 16 + 1;
+				int32_t yMin = MathHelper::floor_double(_offset.y - radiusY) - 1;
+				int32_t yMax = MathHelper::floor_double(_offset.y + radiusY) + 1;
+				int32_t zMin = MathHelper::floor_double(_offset.z - radiusXz) - _chunk.cpos.z * 16 - 1;
+				int32_t zMax = MathHelper::floor_double(_offset.z + radiusXz) - _chunk.cpos.z * 16 + 1;
 
 				if (xMin < 0)
 					xMin = 0;
@@ -174,19 +174,19 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 
 				if (!fluidIsPresent) {
 					for (int32_t blockX = xMin; blockX < xMax; ++blockX) {
-						double center_dx = (double(blockX + _chunk.cpos.x * 16) + 0.5 - _offset.x) / radius_xz;
+						double centerDx = (double(blockX + _chunk.cpos.x * 16) + 0.5 - _offset.x) / radiusXz;
 
 						for (int32_t blockZ = zMin; blockZ < zMax; ++blockZ) {
-							double center_dz = (double(blockZ + _chunk.cpos.z * 16) + 0.5 - _offset.z) / radius_xz;
+							double centerDz = (double(blockZ + _chunk.cpos.z * 16) + 0.5 - _offset.z) / radiusXz;
 
-							if (center_dx * center_dx + center_dz * center_dz < 1.0) {
+							if (centerDx * centerDx + centerDz * centerDz < 1.0) {
 								// Doesn't exist in nether caver
 								bool isGrass = false;
 								for (int32_t blockY = yMax - 1; blockY >= yMin; --blockY) {
 									Int3 bpos{ blockX, blockY + 1, blockZ };
-									double center_dy = (double(blockY) + 0.5 - _offset.y) / radius_y;
-									if (center_dy > -0.7 &&
-									    center_dx * center_dx + center_dy * center_dy + center_dz * center_dz < 1.0) {
+									double centerDy = (double(blockY) + 0.5 - _offset.y) / radiusY;
+									if (centerDy > -0.7 &&
+									    centerDx * centerDx + centerDy * centerDy + centerDz * centerDz < 1.0) {
 										BlockType blockType = _chunk.getBlock(bpos);
 										// Nether caver behavior
 										// Dirt and grass check is most likely irrelevant,
@@ -220,7 +220,7 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 						}
 					}
 
-					if (branch_tunnel)
+					if (branchTunnel)
 						break;
 				}
 			}

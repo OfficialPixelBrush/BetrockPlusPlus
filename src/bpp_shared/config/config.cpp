@@ -18,18 +18,18 @@ Config::Config(const std::string& _pPath) {
 }
 
 std::string_view Config::Get(const std::string& _key) noexcept {
-	std::shared_lock read_lock{ this->properties_mutex };
+	std::shared_lock readLock{ this->properties_mutex };
 	return this->properties.contains(_key) ? this->properties.at(_key) : std::string_view();
 }
 
 void Config::Set(const std::string& _key, std::string_view _value) noexcept {
-	std::unique_lock write_lock{ this->properties_mutex };
+	std::unique_lock writeLock{ this->properties_mutex };
 	this->properties[_key] = _value;
 }
 
 // overwrite the properties in memory
 void Config::Overwrite(const ConfType& _config) noexcept {
-	std::unique_lock write_lock{ this->properties_mutex };
+	std::unique_lock writeLock{ this->properties_mutex };
 	this->properties = _config;
 }
 

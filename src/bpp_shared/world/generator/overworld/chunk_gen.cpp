@@ -16,7 +16,7 @@
  * @param pSeed The seed of the generated world
  * @param pWorld The world that the OverworldGenerator belongs to
  */
-OverworldGenerator::OverworldGenerator(int64_t _p_seed) : Generator(_p_seed) {
+OverworldGenerator::OverworldGenerator(int64_t _pSeed) : Generator(_pSeed) {
 	rand = Java::Random(seed);
 	// Init Terrain Noise
 	lowNoiseGen = NoiseOctavesPerlin(rand, 16);
@@ -299,9 +299,9 @@ void OverworldGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
 			// Sample 2D noises
 			int32_t sampleZ = iZ * scaleFraction + scaleFraction / 2;
 			// Apply biome-noise-dependent variety
-			size_t sample_index = size_t(sampleX * CHUNK_WIDTH + sampleZ);
-			double temp = temperature[sample_index];
-			double humi = humidity[sample_index] * temp;
+			size_t sampleIndex = size_t(sampleX * CHUNK_WIDTH + sampleZ);
+			double temp = temperature[sampleIndex];
+			double humi = humidity[sampleIndex] * temp;
 			humi = 1.0 - humi;
 			humi *= humi;
 			humi *= humi;
@@ -442,10 +442,10 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 	int64_t xSalt = rand.nextLong() / 2L * 2L + 1L;
 	int64_t zSalt = rand.nextLong() / 2L * 2L + 1L;
 	// Use unsigned arithmetic to avoid overflow UB
-	uint64_t xSalt_u = static_cast<uint64_t>(xSalt);
-	uint64_t zSalt_u = static_cast<uint64_t>(zSalt);
-	uint64_t xPart = static_cast<uint64_t>(static_cast<int64_t>(_chunk.cpos.x)) * xSalt_u;
-	uint64_t zPart = static_cast<uint64_t>(static_cast<int64_t>(_chunk.cpos.z)) * zSalt_u;
+	uint64_t xSaltU = static_cast<uint64_t>(xSalt);
+	uint64_t zSaltU = static_cast<uint64_t>(zSalt);
+	uint64_t xPart = static_cast<uint64_t>(static_cast<int64_t>(_chunk.cpos.x)) * xSaltU;
+	uint64_t zPart = static_cast<uint64_t>(static_cast<int64_t>(_chunk.cpos.z)) * zSaltU;
 	uint64_t combined = (xPart + zPart) ^ static_cast<uint64_t>(_world.getSeed());
 
 	rand.setSeed(static_cast<int64_t>(combined));

@@ -188,24 +188,24 @@ void NoisePerlin::GenerateNoise(std::vector<double>& _noiseField, Vec3 _offset, 
 					if (y == 0 || py != lastPermY) {
 						lastPermY = py;
 
-						int32_t A = permutations[px] + py;
-						int32_t AA = permutations[A] + pz;
-						int32_t AB = permutations[A + 1] + pz;
-						int32_t B = permutations[px + 1] + py;
-						int32_t BA = permutations[B] + pz;
-						int32_t BB = permutations[B + 1] + pz;
+						int32_t a = permutations[px] + py;
+						int32_t aa = permutations[a] + pz;
+						int32_t ab = permutations[a + 1] + pz;
+						int32_t b = permutations[px + 1] + py;
+						int32_t ba = permutations[b] + pz;
+						int32_t bb = permutations[b + 1] + pz;
 
-						lerpAX = lerp(u, grad3d(permutations[AA], fx, fy, fz),
-						              grad3d(permutations[BA], fx - 1.0, fy, fz));
+						lerpAX = lerp(u, grad3d(permutations[aa], fx, fy, fz),
+						              grad3d(permutations[ba], fx - 1.0, fy, fz));
 
-						lerpBX = lerp(u, grad3d(permutations[AB], fx, fy - 1.0, fz),
-						              grad3d(permutations[BB], fx - 1.0, fy - 1.0, fz));
+						lerpBX = lerp(u, grad3d(permutations[ab], fx, fy - 1.0, fz),
+						              grad3d(permutations[bb], fx - 1.0, fy - 1.0, fz));
 
-						lerpAY = lerp(u, grad3d(permutations[AA + 1], fx, fy, fz - 1.0),
-						              grad3d(permutations[BA + 1], fx - 1.0, fy, fz - 1.0));
+						lerpAY = lerp(u, grad3d(permutations[aa + 1], fx, fy, fz - 1.0),
+						              grad3d(permutations[ba + 1], fx - 1.0, fy, fz - 1.0));
 
-						lerpBY = lerp(u, grad3d(permutations[AB + 1], fx, fy - 1.0, fz - 1.0),
-						              grad3d(permutations[BB + 1], fx - 1.0, fy - 1.0, fz - 1.0));
+						lerpBY = lerp(u, grad3d(permutations[ab + 1], fx, fy - 1.0, fz - 1.0),
+						              grad3d(permutations[bb + 1], fx - 1.0, fy - 1.0, fz - 1.0));
 					}
 
 					double i1 = lerp(v, lerpAX, lerpBX);

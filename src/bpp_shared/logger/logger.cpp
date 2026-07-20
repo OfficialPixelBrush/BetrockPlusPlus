@@ -16,18 +16,18 @@
 
 namespace fs = std::filesystem;
 
-std::string Logger::GetCurrentTimeString(bool _file_format) {
+std::string Logger::GetCurrentTimeString(bool _fileFormat) {
 	auto now = std::chrono::system_clock::now();
-	auto in_time_t = std::chrono::system_clock::to_time_t(now);
+	auto inTimeT = std::chrono::system_clock::to_time_t(now);
 
 	std::stringstream ss;
-	if (_file_format)
-		ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d-%H-%M-%S");
+	if (_fileFormat)
+		ss << std::put_time(std::localtime(&inTimeT), "%Y-%m-%d-%H-%M-%S");
 	else
 #ifdef LOGGER_SHORT_TIME
 		ss << std::put_time(std::localtime(&in_time_t), "%H:%M:%S");
 #else
-		ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %H:%M:%S");
+		ss << std::put_time(std::localtime(&inTimeT), "%Y-%m-%d %H:%M:%S");
 #endif
 	return ss.str();
 }

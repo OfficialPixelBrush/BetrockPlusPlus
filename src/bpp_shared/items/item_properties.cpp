@@ -196,7 +196,7 @@ void harmTool(ItemStack* _stack) {
 	}
 }
 
-void useHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
+void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
 	BlockType b = _world.getBlockId(_pos);
 	if (b == BLOCK_GRASS || b == BLOCK_DIRT) {
 		_world.setBlock(_pos, BLOCK_FARMLAND);
@@ -204,13 +204,13 @@ void useHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::Face
 	harmTool(_stack);
 }
 
-void useFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
+void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
 	_pos = Blocks::getAdjacentBlockPos(_pos, _face);
 	_world.setBlock(_pos, BLOCK_FIRE);
 	harmTool(_stack);
 }
 
-void testSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
+void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
 	Int3 topPos = _pos;
 	topPos.y += 1;
 	_world.setBlock(topPos, BLOCK_AIR);
@@ -225,7 +225,7 @@ void testSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData:
 	}
 }
 
-ToolLevel materialToLevel(ToolMaterial _material) {
+ToolLevel MaterialToLevel(ToolMaterial _material) {
 	switch (_material) {
 	case ToolMaterial::None:
 		return ToolLevel::None;
@@ -243,7 +243,7 @@ ToolLevel materialToLevel(ToolMaterial _material) {
 	return ToolLevel::None;
 }
 
-int baseToolDamage(ToolType _type) {
+int BaseToolDamage(ToolType _type) {
 	switch (_type) {
 	case ToolType::Sword:
 		return 4;
@@ -261,32 +261,32 @@ int baseToolDamage(ToolType _type) {
 	return 0;
 }
 
-EntityHealth calculateDamage(ToolType _type, ToolLevel _level) {
-	return baseToolDamage(_type) + (int(_level) * 2);
+EntityHealth CalculateDamage(ToolType _type, ToolLevel _level) {
+	return BaseToolDamage(_type) + (int(_level) * 2);
 }
 
-void inflictDamage(Entity& _target_entity, EntityHealth _damage) {
+void InflictDamage(Entity& _targetEntity, EntityHealth _damage) {
 	//target_entity.health -= damage;
 	return;
 }
 
-void attackWithItem(Entity& _target_entity, ItemStack* _stack) {
+void AttackWithItem(Entity& _targetEntity, ItemStack* _stack) {
 	EntityHealth damage = 1;
 	if (toolProperties.contains(_stack->id))
-		damage = calculateDamage(toolProperties[_stack->id].type, materialToLevel(toolProperties[_stack->id].material));
-	inflictDamage(_target_entity, damage);
-	GlobalLogger().info << "Dealt " << damage << " damage to " << _target_entity.id << "!\n";
+		damage = CalculateDamage(toolProperties[_stack->id].type, MaterialToLevel(toolProperties[_stack->id].material));
+	InflictDamage(_targetEntity, damage);
+	GlobalLogger().info << "Dealt " << damage << " damage to " << _targetEntity.id << "!\n";
 	harmTool(_stack);
 }
 
 void registerAll() {
-	itemBehavior[Items::Id::HOE_WOOD] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::HOE_STONE] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::HOE_IRON] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::HOE_GOLD] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::HOE_DIAMOND] = ItemBehavior{ .onBlockUse = useHoe };
-	itemBehavior[Items::Id::FLINT_AND_STEEL] = ItemBehavior{ .onBlockStartMining = testSetGoal,
-		                                                     .onBlockUse = useFlintAndSteel };
+	itemBehavior[Items::Id::HOE_WOOD] = ItemBehavior{ .onBlockUse = UseHoe };
+	itemBehavior[Items::Id::HOE_STONE] = ItemBehavior{ .onBlockUse = UseHoe };
+	itemBehavior[Items::Id::HOE_IRON] = ItemBehavior{ .onBlockUse = UseHoe };
+	itemBehavior[Items::Id::HOE_GOLD] = ItemBehavior{ .onBlockUse = UseHoe };
+	itemBehavior[Items::Id::HOE_DIAMOND] = ItemBehavior{ .onBlockUse = UseHoe };
+	itemBehavior[Items::Id::FLINT_AND_STEEL] = ItemBehavior{ .onBlockStartMining = TestSetGoal,
+		                                                     .onBlockUse = UseFlintAndSteel };
 
 	// Tool Properties
 	// Sword
@@ -417,7 +417,7 @@ void registerAll() {
 		// Apply sword behavior to all swords
 		switch (toolProperty.second.type) {
 		case ToolType::Sword:
-			itemBehavior[toolProperty.first] = ItemBehavior{ .onEntityAttack = attackWithItem };
+			itemBehavior[toolProperty.first] = ItemBehavior{ .onEntityAttack = AttackWithItem };
 			continue;
 		case ToolType::Pickaxe:
 			continue;
@@ -426,7 +426,7 @@ void registerAll() {
 		case ToolType::Shovel:
 			continue;
 		case ToolType::Hoe:
-			itemBehavior[toolProperty.first] = ItemBehavior{ .onBlockUse = useHoe };
+			itemBehavior[toolProperty.first] = ItemBehavior{ .onBlockUse = UseHoe };
 			continue;
 		default:
 			continue;

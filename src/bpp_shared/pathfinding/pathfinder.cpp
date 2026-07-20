@@ -66,7 +66,7 @@ std::optional<Int3> Pathfinder::getNeighbour(Int3 _from, Int2 _dir) {
 	return pos;
 }
 
-inline int manhattan(const Int3& _a, const Int3& _b) noexcept {
+inline int Manhattan(const Int3& _a, const Int3& _b) noexcept {
 	return std::abs(_a.x - _b.x) + std::abs(_a.y - _b.y) + std::abs(_a.z - _b.z);
 }
 
@@ -82,7 +82,7 @@ std::vector<Int3> Pathfinder::findPath(Int3 _start, Int3 _goal) {
 	Node* goalNode = openNode(_goal);
 
 	startNode->g = 0;
-	startNode->f = manhattan(_start, _goal);
+	startNode->f = Manhattan(_start, _goal);
 
 	open.push({ startNode->f, startNode });
 
@@ -112,7 +112,7 @@ std::vector<Int3> Pathfinder::findPath(Int3 _start, Int3 _goal) {
 
 			if (g < next->g) {
 				next->g = g;
-				next->f = g + manhattan(*nextPos, _goal);
+				next->f = g + Manhattan(*nextPos, _goal);
 				next->parent = current;
 
 				open.push({ next->f, next });

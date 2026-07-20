@@ -78,17 +78,17 @@ void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> _row
 const ItemStack RecipeManager::matchGrid(std::span<const ItemStack> _grid, UInt8_2 _size) const {
 	std::array<ItemKey, 9> keyGrid{};
 
-	const size_t total_size = size_t(_size.total());
+	const size_t totalSize = size_t(_size.total());
 
-	for (size_t i = 0; i < total_size; ++i)
+	for (size_t i = 0; i < totalSize; ++i)
 		keyGrid[i] = { _grid[i].id, _grid[i].data };
 
-	auto shaped = shapedRecipes.find(makeShapedKey(std::span<const ItemKey>(keyGrid.data(), total_size), _size));
+	auto shaped = shapedRecipes.find(makeShapedKey(std::span<const ItemKey>(keyGrid.data(), totalSize), _size));
 
 	if (shaped != shapedRecipes.end())
 		return shaped->second;
 
-	auto shapeless = shapelessRecipes.find(makeShapelessKey(std::span<const ItemKey>(keyGrid.data(), total_size)));
+	auto shapeless = shapelessRecipes.find(makeShapelessKey(std::span<const ItemKey>(keyGrid.data(), totalSize)));
 
 	if (shapeless != shapelessRecipes.end())
 		return shapeless->second;

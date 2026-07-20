@@ -305,7 +305,7 @@ struct VersionPrinter<T, typename std::enable_if<!std::is_void<decltype(std::str
 template <typename T>
 struct VersionPrinter<T, typename std::enable_if<!std::is_void<decltype(std::string(T::version()))>::value>::type> {
 	static bool print() {
-		std::cout << T::version() << std::endl;
+		std::cout << T::Version() << std::endl;
 		return true;
 	}
 };

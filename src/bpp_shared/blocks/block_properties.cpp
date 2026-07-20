@@ -19,7 +19,7 @@ BlockProperties blockProperties[256] = {};
 BlockBehavior blockBehaviors[256] = {};
 
 // Behavior helper functions
-static bool canFallAt(WorldManager& _world, Int3 _position) {
+static bool CanFallAt(WorldManager& _world, Int3 _position) {
 	auto block = _world.getBlockId(_position);
 	if (block == BLOCK_AIR)
 		return true;
@@ -103,7 +103,7 @@ float getFluidPercentAir(uint8_t _meta) {
 	return float(_meta + 1) / 9.0f;
 }
 
-static Vec3 getFluidFlowVector(WorldManager& _world, Int3 _pos) {
+static Vec3 GetFluidFlowVector(WorldManager& _world, Int3 _pos) {
 	auto waterMaterial = Material::Water();
 	Vec3 flowVector{};
 	auto getEffectiveFlowDecay = [&](WorldManager& _lWorld, Int3 _lPos, Material _lMaterial) {
@@ -200,27 +200,27 @@ static Vec3 getFluidFlowVector(WorldManager& _world, Int3 _pos) {
 }
 
 // defaults
-static AABB defaultAABB(uint8_t) {
+static AABB DefaultAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 }
-static CollisionShape defaultCollider(uint8_t) {
+static CollisionShape DefaultCollider(uint8_t) {
 	CollisionShape s;
 	s.add({ 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 });
 	return s;
 }
 
 // slab
-static AABB slabAABB(uint8_t) {
+static AABB SlabAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 0.5, 1.0 };
 }
-static CollisionShape slabCollider(uint8_t) {
+static CollisionShape SlabCollider(uint8_t) {
 	CollisionShape s;
 	s.add({ 0.0, 0.0, 0.0, 1.0, 0.5, 1.0 });
 	return s;
 }
 
 // stairs
-static CollisionShape stairCollider(uint8_t _meta) {
+static CollisionShape StairCollider(uint8_t _meta) {
 	CollisionShape s;
 	switch (_meta & 3) {
 	case 0:
@@ -244,11 +244,11 @@ static CollisionShape stairCollider(uint8_t _meta) {
 }
 
 // cactus
-static AABB cactusAABB(uint8_t) {
+static AABB CactusAabb(uint8_t) {
 	constexpr double I = 0.0625;
 	return { I, 0.0, I, 1.0 - I, 1.0, 1.0 - I };
 }
-static CollisionShape cactusCollider(uint8_t) {
+static CollisionShape CactusCollider(uint8_t) {
 	constexpr double I = 0.0625;
 	CollisionShape s;
 	s.add({ I, 0.0, I, 1.0 - I, 1.0 - I, 1.0 - I });
@@ -256,11 +256,11 @@ static CollisionShape cactusCollider(uint8_t) {
 }
 
 // snow layer
-static AABB snowLayerAABB(uint8_t _meta) {
+static AABB SnowLayerAabb(uint8_t _meta) {
 	float h = (2.0f * (1 + (_meta & 7))) / 16.0f;
 	return { 0.0, 0.0, 0.0, 1.0, h, 1.0 };
 }
-static CollisionShape snowLayerCollider(uint8_t _meta) {
+static CollisionShape SnowLayerCollider(uint8_t _meta) {
 	CollisionShape s;
 	if ((_meta & 7) >= 3)
 		s.add({ 0.0, 0.0, 0.0, 1.0, 0.5, 1.0 });
@@ -268,7 +268,7 @@ static CollisionShape snowLayerCollider(uint8_t _meta) {
 }
 
 // ladder
-static AABB ladderAABB(uint8_t _meta) {
+static AABB LadderAabb(uint8_t _meta) {
 	constexpr double T = 0.125;
 	switch (_meta) {
 	case 2:
@@ -283,7 +283,7 @@ static AABB ladderAABB(uint8_t _meta) {
 		return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 	}
 }
-static CollisionShape ladderCollider(uint8_t _meta) {
+static CollisionShape LadderCollider(uint8_t _meta) {
 	constexpr double T = 0.125;
 	CollisionShape s;
 	switch (_meta) {
@@ -305,12 +305,12 @@ static CollisionShape ladderCollider(uint8_t _meta) {
 
 // door
 // bits 0-1 = facing when closed, bit 2 = open, bit 3 = top half
-static int doorState(uint8_t _meta) {
+static int DoorState(uint8_t _meta) {
 	return ((_meta & 4) == 0) ? ((_meta - 1) & 3) : (_meta & 3);
 }
-static AABB doorAABB(uint8_t _meta) {
+static AABB DoorAabb(uint8_t _meta) {
 	constexpr double T = 0.1875;
-	switch (doorState(_meta)) {
+	switch (DoorState(_meta)) {
 	case 0:
 		return { 0.0, 0.0, 0.0, 1.0, 1.0, T };
 	case 1:
@@ -323,10 +323,10 @@ static AABB doorAABB(uint8_t _meta) {
 		return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 	}
 }
-static CollisionShape doorCollider(uint8_t _meta) {
+static CollisionShape DoorCollider(uint8_t _meta) {
 	constexpr double T = 0.1875;
 	CollisionShape s;
-	switch (doorState(_meta)) {
+	switch (DoorState(_meta)) {
 	case 0:
 		s.add({ 0.0, 0.0, 0.0, 1.0, 1.0, T });
 		break;
@@ -344,7 +344,7 @@ static CollisionShape doorCollider(uint8_t _meta) {
 }
 
 // trapdoor
-static AABB trapdoorAABB(uint8_t _meta) {
+static AABB TrapdoorAabb(uint8_t _meta) {
 	constexpr double T = 0.1875;
 	if (!(_meta & 4))
 		return { 0.0, 0.0, 0.0, 1.0, T, 1.0 };
@@ -362,13 +362,13 @@ static AABB trapdoorAABB(uint8_t _meta) {
 	}
 }
 
-static CollisionShape farmlandCollider(uint8_t) {
+static CollisionShape FarmlandCollider(uint8_t) {
 	CollisionShape s;
 	s.add({ 0.0, 0.0, 0.0, 1.0, 0.9375, 1.0 });
 	return s;
 }
 
-static CollisionShape trapdoorCollider(uint8_t _meta) {
+static CollisionShape TrapdoorCollider(uint8_t _meta) {
 	constexpr double T = 0.1875;
 	CollisionShape s;
 	if (!(_meta & 4)) {
@@ -393,28 +393,28 @@ static CollisionShape trapdoorCollider(uint8_t _meta) {
 }
 
 // bed
-static AABB bedAABB(uint8_t) {
+static AABB BedAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 0.5625, 1.0 };
 }
-static CollisionShape bedCollider(uint8_t) {
+static CollisionShape BedCollider(uint8_t) {
 	CollisionShape s;
 	s.add({ 0.0, 0.0, 0.0, 1.0, 0.5625, 1.0 });
 	return s;
 }
 
 // fence
-static CollisionShape fenceCollider(uint8_t) {
+static CollisionShape FenceCollider(uint8_t) {
 	CollisionShape s;
 	s.add({ 0.0, 0.0, 0.0, 1.0, 1.5, 1.0 });
 	return s;
 }
 
 // cake
-static AABB cakeAABB(uint8_t _meta) {
+static AABB CakeAabb(uint8_t _meta) {
 	double x0 = (1 + _meta * 2) / 16.0;
 	return { x0, 0.0, 0.0625, 1.0 - 0.0625, 0.5 - 0.0625, 1.0 - 0.0625 };
 }
-static CollisionShape cakeCollider(uint8_t _meta) {
+static CollisionShape CakeCollider(uint8_t _meta) {
 	double x0 = (1 + _meta * 2) / 16.0;
 	CollisionShape s;
 	s.add({ x0, 0.0, 0.0625, 1.0 - 0.0625, 0.5 - 0.0625, 1.0 - 0.0625 });
@@ -422,135 +422,135 @@ static CollisionShape cakeCollider(uint8_t _meta) {
 }
 
 // repeater
-static AABB repeaterAABB(uint8_t) {
+static AABB RepeaterAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 0.125, 1.0 };
 }
-static CollisionShape emptyCollider(uint8_t) {
+static CollisionShape EmptyCollider(uint8_t) {
 	return {};
 }
 
 // button
-static AABB buttonAABB(uint8_t _meta) {
+static AABB ButtonAabb(uint8_t _meta) {
 	const int face = _meta & 7;
 	const bool pressed = (_meta & 8) != 0;
-	constexpr double lo = 0.375, hi = 0.625, hw = 0.1875;
+	constexpr double LO = 0.375, HI = 0.625, HW = 0.1875;
 	const double depth = pressed ? 0.0625 : 0.125;
 	switch (face) {
 	case 1:
-		return { 0.0, lo, 0.5 - hw, depth, hi, 0.5 + hw };
+		return { 0.0, LO, 0.5 - HW, depth, HI, 0.5 + HW };
 	case 2:
-		return { 1.0 - depth, lo, 0.5 - hw, 1.0, hi, 0.5 + hw };
+		return { 1.0 - depth, LO, 0.5 - HW, 1.0, HI, 0.5 + HW };
 	case 3:
-		return { 0.5 - hw, lo, 0.0, 0.5 + hw, hi, depth };
+		return { 0.5 - HW, LO, 0.0, 0.5 + HW, HI, depth };
 	case 4:
-		return { 0.5 - hw, lo, 1.0 - depth, 0.5 + hw, hi, 1.0 };
+		return { 0.5 - HW, LO, 1.0 - depth, 0.5 + HW, HI, 1.0 };
 	default:
 		return {};
 	}
 }
 
 // lever
-static AABB leverAABB(uint8_t _meta) {
-	constexpr double f = 0.1875;
+static AABB LeverAabb(uint8_t _meta) {
+	constexpr double F = 0.1875;
 	switch (_meta & 7) {
 	case 1:
-		return { 0.0, 0.2, 0.5 - f, f * 2.0, 0.8, 0.5 + f };
+		return { 0.0, 0.2, 0.5 - F, F * 2.0, 0.8, 0.5 + F };
 	case 2:
-		return { 1.0 - f * 2.0, 0.2, 0.5 - f, 1.0, 0.8, 0.5 + f };
+		return { 1.0 - F * 2.0, 0.2, 0.5 - F, 1.0, 0.8, 0.5 + F };
 	case 3:
-		return { 0.5 - f, 0.2, 0.0, 0.5 + f, 0.8, f * 2.0 };
+		return { 0.5 - F, 0.2, 0.0, 0.5 + F, 0.8, F * 2.0 };
 	case 4:
-		return { 0.5 - f, 0.2, 1.0 - f * 2.0, 0.5 + f, 0.8, 1.0 };
+		return { 0.5 - F, 0.2, 1.0 - F * 2.0, 0.5 + F, 0.8, 1.0 };
 	default: {
-		constexpr double g = 0.25;
-		return { 0.5 - g, 0.0, 0.5 - g, 0.5 + g, 0.6, 0.5 + g };
+		constexpr double G = 0.25;
+		return { 0.5 - G, 0.0, 0.5 - G, 0.5 + G, 0.6, 0.5 + G };
 	}
 	}
 }
 
 // pressure plate
-static AABB pressurePlateAABB(uint8_t _meta) {
-	constexpr double f = 0.0625;
-	return { f, 0.0, f, 1.0 - f, (_meta == 1) ? 0.03125 : 0.0625, 1.0 - f };
+static AABB PressurePlateAabb(uint8_t _meta) {
+	constexpr double F = 0.0625;
+	return { F, 0.0, F, 1.0 - F, (_meta == 1) ? 0.03125 : 0.0625, 1.0 - F };
 }
 
 // torch (normal + redstone, same box)
-static AABB torchAABB(uint8_t _meta) {
-	constexpr double f = 0.15;
+static AABB TorchAabb(uint8_t _meta) {
+	constexpr double F = 0.15;
 	switch (_meta & 7) {
 	case 1:
-		return { 0.0, 0.2, 0.5 - f, f * 2.0, 0.8, 0.5 + f };
+		return { 0.0, 0.2, 0.5 - F, F * 2.0, 0.8, 0.5 + F };
 	case 2:
-		return { 1.0 - f * 2.0, 0.2, 0.5 - f, 1.0, 0.8, 0.5 + f };
+		return { 1.0 - F * 2.0, 0.2, 0.5 - F, 1.0, 0.8, 0.5 + F };
 	case 3:
-		return { 0.5 - f, 0.2, 0.0, 0.5 + f, 0.8, f * 2.0 };
+		return { 0.5 - F, 0.2, 0.0, 0.5 + F, 0.8, F * 2.0 };
 	case 4:
-		return { 0.5 - f, 0.2, 1.0 - f * 2.0, 0.5 + f, 0.8, 1.0 };
+		return { 0.5 - F, 0.2, 1.0 - F * 2.0, 0.5 + F, 0.8, 1.0 };
 	default: {
-		constexpr double g = 0.1;
-		return { 0.5 - g, 0.0, 0.5 - g, 0.5 + g, 0.6, 0.5 + g };
+		constexpr double G = 0.1;
+		return { 0.5 - G, 0.0, 0.5 - G, 0.5 + G, 0.6, 0.5 + G };
 	}
 	}
 }
 
 // rail
-static AABB railAABB(uint8_t) {
+static AABB RailAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 0.125, 1.0 };
 }
 
 // redstone dust
-static AABB redstoneDustAABB(uint8_t) {
+static AABB RedstoneDustAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 0.0625, 1.0 };
 }
 
 // farmland
 // Collider is full cube; ray/selection use visual height 0.937
-static AABB farmlandAABB(uint8_t) {
+static AABB FarmlandAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 }
 
 // crop
-static AABB cropAABB(uint8_t) {
+static AABB CropAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 0.25, 1.0 }; // 4/16
 }
 
 // sapling / deadbush (f=0.4)
-static AABB saplingAABB(uint8_t) {
-	constexpr float f = 0.4f;
-	return { 0.5f - f, 0.0f, 0.5f - f, 0.5f + f, f * 2.0f, 0.5f + f };
+static AABB SaplingAabb(uint8_t) {
+	constexpr float F = 0.4f;
+	return { 0.5f - F, 0.0f, 0.5f - F, 0.5f + F, F * 2.0f, 0.5f + F };
 }
 
 // tall grass
-static AABB tallGrassAABB(uint8_t) {
-	constexpr float f = 0.4f;
-	return { 0.5f - f, 0.0f, 0.5f - f, 0.5f + f, 0.8f, 0.5f + f };
+static AABB TallGrassAabb(uint8_t) {
+	constexpr float F = 0.4f;
+	return { 0.5f - F, 0.0f, 0.5f - F, 0.5f + F, 0.8f, 0.5f + F };
 }
 
 // mushroom (f=0.2)
-static AABB mushroomAABB(uint8_t) {
-	constexpr float f = 0.2f;
-	return { 0.5f - f, 0.0f, 0.5f - f, 0.5f + f, f * 2.0f, 0.5f + f };
+static AABB MushroomAabb(uint8_t) {
+	constexpr float F = 0.2f;
+	return { 0.5f - F, 0.0f, 0.5f - F, 0.5f + F, F * 2.0f, 0.5f + F };
 }
 
 // plant / flower (rose, dandelion) (f=0.2, h=f*3)
-static AABB plantAABB(uint8_t) {
-	constexpr float f = 0.2f;
-	return { 0.5f - f, 0.0f, 0.5f - f, 0.5f + f, f * 3.0f, 0.5f + f };
+static AABB PlantAabb(uint8_t) {
+	constexpr float F = 0.2f;
+	return { 0.5f - F, 0.0f, 0.5f - F, 0.5f + F, F * 3.0f, 0.5f + F };
 }
 
 // sugarcane
-static AABB sugarcaneAABB(uint8_t) {
-	constexpr float f = 0.375f;
-	return { 0.5f - f, 0.0f, 0.5f - f, 0.5f + f, 1.0f, 0.5f + f };
+static AABB SugarcaneAabb(uint8_t) {
+	constexpr float F = 0.375f;
+	return { 0.5f - F, 0.0f, 0.5f - F, 0.5f + F, 1.0f, 0.5f + F };
 }
 
 // Liquids have no collision
-static AABB liquidAABB(uint8_t) {
+static AABB LiquidAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 }
 
 // piston head
-static AABB pistonHeadAABB(uint8_t _meta) {
+static AABB PistonHeadAabb(uint8_t _meta) {
 	switch (_meta & 7) {
 	case 0:
 		return { 0.0, 0.0, 0.0, 1.0, 0.25, 1.0 };
@@ -568,7 +568,7 @@ static AABB pistonHeadAABB(uint8_t _meta) {
 		return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 	}
 }
-static CollisionShape pistonHeadCollider(uint8_t _meta) {
+static CollisionShape PistonHeadCollider(uint8_t _meta) {
 	CollisionShape s;
 	switch (_meta & 7) {
 	case 0:
@@ -639,9 +639,9 @@ std::vector<ItemStack> getBlockDrops(BlockType _blockId, uint8_t _meta, Java::Ra
 void registerAll() {
 	// Default all behavior slots to full-cube before per-block overrides
 	for (int i = 0; i < 256; i++) {
-		blockBehaviors[i].getSelectionBox = defaultAABB;
-		blockBehaviors[i].getRayBounds = defaultAABB;
-		blockBehaviors[i].getCollider = defaultCollider;
+		blockBehaviors[i].getSelectionBox = DefaultAabb;
+		blockBehaviors[i].getRayBounds = DefaultAabb;
+		blockBehaviors[i].getCollider = DefaultCollider;
 	}
 
 	// block properties
@@ -1703,247 +1703,247 @@ void registerAll() {
 
 	// Liquids/zero-size AABBs
 	blockBehaviors[BlockType::BLOCK_WATER_FLOWING] = {
-		.getSelectionBox = liquidAABB,
-		.getRayBounds = liquidAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = LiquidAabb,
+		.getRayBounds = LiquidAabb,
+		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_WATER_STILL] = {
-		.getSelectionBox = liquidAABB,
-		.getRayBounds = liquidAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = LiquidAabb,
+		.getRayBounds = LiquidAabb,
+		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_LAVA_FLOWING] = {
-		.getSelectionBox = liquidAABB,
-		.getRayBounds = liquidAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = LiquidAabb,
+		.getRayBounds = LiquidAabb,
+		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_LAVA_STILL] = {
-		.getSelectionBox = liquidAABB,
-		.getRayBounds = liquidAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = LiquidAabb,
+		.getRayBounds = LiquidAabb,
+		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_COBWEB] = {
-		.getCollider = emptyCollider,
+		.getCollider = EmptyCollider,
 	};
 
 	// Rails
 	blockBehaviors[BlockType::BLOCK_RAIL] = {
-		.getRayBounds = railAABB,
-		.getCollider = emptyCollider,
+		.getRayBounds = RailAabb,
+		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_RAIL_POWERED] = {
-		.getRayBounds = railAABB,
-		.getCollider = emptyCollider,
+		.getRayBounds = RailAabb,
+		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_RAIL_DETECTOR] = {
-		.getRayBounds = railAABB,
-		.getCollider = emptyCollider,
+		.getRayBounds = RailAabb,
+		.getCollider = EmptyCollider,
 	};
 
 	// Redstone dust
 	blockBehaviors[BlockType::BLOCK_REDSTONE] = {
-		.getSelectionBox = redstoneDustAABB,
-		.getRayBounds = redstoneDustAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = RedstoneDustAabb,
+		.getRayBounds = RedstoneDustAabb,
+		.getCollider = EmptyCollider,
 	};
 
 	// Farmland
 	blockBehaviors[BlockType::BLOCK_FARMLAND] = {
-		.getSelectionBox = farmlandAABB,
-		.getRayBounds = farmlandAABB,
-		.getCollider = farmlandCollider,
+		.getSelectionBox = FarmlandAabb,
+		.getRayBounds = FarmlandAabb,
+		.getCollider = FarmlandCollider,
 	};
 
 	// Crops
 	blockBehaviors[BlockType::BLOCK_CROP_WHEAT] = {
-		.getSelectionBox = cropAABB,
-		.getRayBounds = cropAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = CropAabb,
+		.getRayBounds = CropAabb,
+		.getCollider = EmptyCollider,
 	};
 
 	// Sapling
 	blockBehaviors[BlockType::BLOCK_SAPLING] = {
-		.getSelectionBox = saplingAABB,
-		.getRayBounds = saplingAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = SaplingAabb,
+		.getRayBounds = SaplingAabb,
+		.getCollider = EmptyCollider,
 	};
 
 	// Tall grass
 	blockBehaviors[BlockType::BLOCK_TALLGRASS] = {
-		.getSelectionBox = tallGrassAABB,
-		.getRayBounds = tallGrassAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = TallGrassAabb,
+		.getRayBounds = TallGrassAabb,
+		.getCollider = EmptyCollider,
 	};
 
 	// Mushrooms
 	blockBehaviors[BlockType::BLOCK_MUSHROOM_BROWN] = {
-		.getSelectionBox = mushroomAABB,
-		.getRayBounds = mushroomAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = MushroomAabb,
+		.getRayBounds = MushroomAabb,
+		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_MUSHROOM_RED] = {
-		.getSelectionBox = mushroomAABB,
-		.getRayBounds = mushroomAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = MushroomAabb,
+		.getRayBounds = MushroomAabb,
+		.getCollider = EmptyCollider,
 	};
 
 	// Flowers (rose, dandelion)
 	blockBehaviors[BlockType::BLOCK_ROSE] = {
-		.getSelectionBox = plantAABB,
-		.getRayBounds = plantAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = PlantAabb,
+		.getRayBounds = PlantAabb,
+		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_DANDELION] = {
-		.getSelectionBox = plantAABB,
-		.getRayBounds = plantAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = PlantAabb,
+		.getRayBounds = PlantAabb,
+		.getCollider = EmptyCollider,
 	};
 
 	// Dead bush
 	blockBehaviors[BlockType::BLOCK_DEADBUSH] = {
-		.getSelectionBox = saplingAABB, // same f=0.4 box as sapling
-		.getRayBounds = saplingAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = SaplingAabb, // same f=0.4 box as sapling
+		.getRayBounds = SaplingAabb,
+		.getCollider = EmptyCollider,
 	};
 
 	// Sugar cane
 	blockBehaviors[BlockType::BLOCK_SUGARCANE] = {
-		.getSelectionBox = sugarcaneAABB,
-		.getRayBounds = sugarcaneAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = SugarcaneAabb,
+		.getRayBounds = SugarcaneAabb,
+		.getCollider = EmptyCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_SLAB] = {
-		.getSelectionBox = slabAABB,
-		.getRayBounds = slabAABB,
-		.getCollider = slabCollider,
+		.getSelectionBox = SlabAabb,
+		.getRayBounds = SlabAabb,
+		.getCollider = SlabCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_STAIRS_WOOD] = {
-		.getCollider = stairCollider,
+		.getCollider = StairCollider,
 		// ray/selection stay as defaultAABB (full cube is correct)
 	};
 	blockBehaviors[BlockType::BLOCK_STAIRS_COBBLESTONE] = {
-		.getCollider = stairCollider,
+		.getCollider = StairCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_CACTUS] = {
-		.getSelectionBox = cactusAABB,
-		.getRayBounds = cactusAABB,
-		.getCollider = cactusCollider,
+		.getSelectionBox = CactusAabb,
+		.getRayBounds = CactusAabb,
+		.getCollider = CactusCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_SNOW_LAYER] = {
-		.getRayBounds = snowLayerAABB,
-		.getCollider = snowLayerCollider,
+		.getRayBounds = SnowLayerAabb,
+		.getCollider = SnowLayerCollider,
 		// getSelectionBox stays defaultAABB
 	};
 
 	blockBehaviors[BlockType::BLOCK_LADDER] = {
-		.getSelectionBox = ladderAABB,
-		.getRayBounds = ladderAABB,
-		.getCollider = ladderCollider,
+		.getSelectionBox = LadderAabb,
+		.getRayBounds = LadderAabb,
+		.getCollider = LadderCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_DOOR_WOOD] = {
-		.getSelectionBox = doorAABB,
-		.getRayBounds = doorAABB,
-		.getCollider = doorCollider,
+		.getSelectionBox = DoorAabb,
+		.getRayBounds = DoorAabb,
+		.getCollider = DoorCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_DOOR_IRON] = {
-		.getSelectionBox = doorAABB,
-		.getRayBounds = doorAABB,
-		.getCollider = doorCollider,
+		.getSelectionBox = DoorAabb,
+		.getRayBounds = DoorAabb,
+		.getCollider = DoorCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_TRAPDOOR] = {
-		.getSelectionBox = trapdoorAABB,
-		.getRayBounds = trapdoorAABB,
-		.getCollider = trapdoorCollider,
+		.getSelectionBox = TrapdoorAabb,
+		.getRayBounds = TrapdoorAabb,
+		.getCollider = TrapdoorCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_BED] = {
-		.getSelectionBox = bedAABB,
-		.getRayBounds = bedAABB,
-		.getCollider = bedCollider,
+		.getSelectionBox = BedAabb,
+		.getRayBounds = BedAabb,
+		.getCollider = BedCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_FENCE] = {
-		.getCollider = fenceCollider,
+		.getCollider = FenceCollider,
 		// ray/selection stay as defaultAABB (full cube)
 	};
 
 	blockBehaviors[BlockType::BLOCK_CAKE] = {
-		.getSelectionBox = cakeAABB,
-		.getRayBounds = cakeAABB,
-		.getCollider = cakeCollider,
+		.getSelectionBox = CakeAabb,
+		.getRayBounds = CakeAabb,
+		.getCollider = CakeCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_REDSTONE_REPEATER_OFF] = {
-		.getSelectionBox = repeaterAABB,
-		.getRayBounds = repeaterAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = RepeaterAabb,
+		.getRayBounds = RepeaterAabb,
+		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_REDSTONE_REPEATER_ON] = {
-		.getSelectionBox = repeaterAABB,
-		.getRayBounds = repeaterAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = RepeaterAabb,
+		.getRayBounds = RepeaterAabb,
+		.getCollider = EmptyCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_BUTTON_STONE] = {
-		.getSelectionBox = buttonAABB,
-		.getRayBounds = buttonAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = ButtonAabb,
+		.getRayBounds = ButtonAabb,
+		.getCollider = EmptyCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_LEVER] = {
-		.getRayBounds = leverAABB,
-		.getCollider = emptyCollider,
+		.getRayBounds = LeverAabb,
+		.getCollider = EmptyCollider,
 		// getSelectionBox stays defaultAABB
 	};
 
 	blockBehaviors[BlockType::BLOCK_PRESSURE_PLATE_STONE] = {
-		.getSelectionBox = pressurePlateAABB,
-		.getRayBounds = pressurePlateAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = PressurePlateAabb,
+		.getRayBounds = PressurePlateAabb,
+		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_PRESSURE_PLATE_WOOD] = {
-		.getSelectionBox = pressurePlateAABB,
-		.getRayBounds = pressurePlateAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = PressurePlateAabb,
+		.getRayBounds = PressurePlateAabb,
+		.getCollider = EmptyCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_TORCH] = {
-		.getSelectionBox = torchAABB,
-		.getRayBounds = torchAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = TorchAabb,
+		.getRayBounds = TorchAabb,
+		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_REDSTONE_TORCH_OFF] = {
-		.getSelectionBox = torchAABB,
-		.getRayBounds = torchAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = TorchAabb,
+		.getRayBounds = TorchAabb,
+		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_REDSTONE_TORCH_ON] = {
-		.getSelectionBox = torchAABB,
-		.getRayBounds = torchAABB,
-		.getCollider = emptyCollider,
+		.getSelectionBox = TorchAabb,
+		.getRayBounds = TorchAabb,
+		.getCollider = EmptyCollider,
 	};
 
 	blockBehaviors[BlockType::BLOCK_PISTON_HEAD] = {
-		.getSelectionBox = pistonHeadAABB,
-		.getRayBounds = pistonHeadAABB,
-		.getCollider = pistonHeadCollider,
+		.getSelectionBox = PistonHeadAabb,
+		.getRayBounds = PistonHeadAabb,
+		.getCollider = PistonHeadCollider,
 	};
 
 	// specific behavioral overrides
 	blockBehaviors[BLOCK_WATER_FLOWING].velocityToAddToEntity = [](WorldManager& _world, Int3 _pos,
 	                                                               Vec3& _pushVector) -> void {
-		Vec3 flowVector = getFluidFlowVector(_world, _pos);
+		Vec3 flowVector = GetFluidFlowVector(_world, _pos);
 		_pushVector = _pushVector + flowVector;
 	};
 	blockBehaviors[BLOCK_WATER_STILL].velocityToAddToEntity = [](WorldManager& _world, Int3 _pos,
 	                                                             Vec3& _pushVector) -> void {
-		Vec3 flowVector = getFluidFlowVector(_world, _pos);
+		Vec3 flowVector = GetFluidFlowVector(_world, _pos);
 		_pushVector = _pushVector + flowVector;
 	};
 	blockBehaviors[BLOCK_CACTUS].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos, Entity& _entity) -> void {
@@ -2013,13 +2013,13 @@ void registerAll() {
 	blockBehaviors[BLOCK_GRAVEL].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& _random) -> void {
 		Int3 below = { _pos.x, _pos.y - 1, _pos.z };
 
-		if (!Blocks::canFallAt(_world, below) || _pos.y < 0)
+		if (!Blocks::CanFallAt(_world, below) || _pos.y < 0)
 			return;
 
-		constexpr int32_t checkRadius = 32; // Blocks
-		bool areaLoaded = _world.AABBinValidChunks({ double(_pos.x - checkRadius), double(_pos.y - checkRadius),
-		                                            double(_pos.z - checkRadius), double(_pos.x + checkRadius),
-		                                            double(_pos.y + checkRadius), double(_pos.z + checkRadius) });
+		constexpr int32_t CHECK_RADIUS = 32; // Blocks
+		bool areaLoaded = _world.AABBinValidChunks({ double(_pos.x - CHECK_RADIUS), double(_pos.y - CHECK_RADIUS),
+		                                            double(_pos.z - CHECK_RADIUS), double(_pos.x + CHECK_RADIUS),
+		                                            double(_pos.y + CHECK_RADIUS), double(_pos.z + CHECK_RADIUS) });
 
 		if (areaLoaded) {
 			Vec3 spawnPos = { _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 };
@@ -2030,7 +2030,7 @@ void registerAll() {
 			_world.setBlock(_pos, BLOCK_AIR, 0);
 
 			Int3 landing = _pos;
-			while (Blocks::canFallAt(_world, { landing.x, landing.y - 1, landing.z }) && landing.y > 0)
+			while (Blocks::CanFallAt(_world, { landing.x, landing.y - 1, landing.z }) && landing.y > 0)
 				landing.y--;
 
 			if (landing.y > 0)
@@ -2047,13 +2047,13 @@ void registerAll() {
 	blockBehaviors[BLOCK_SAND].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& _random) -> void {
 		Int3 below = { _pos.x, _pos.y - 1, _pos.z };
 
-		if (!Blocks::canFallAt(_world, below) || _pos.y < 0)
+		if (!Blocks::CanFallAt(_world, below) || _pos.y < 0)
 			return;
 
-		constexpr int32_t checkRadius = 32; // Blocks
-		bool areaLoaded = _world.AABBinValidChunks({ double(_pos.x - checkRadius), double(_pos.y - checkRadius),
-		                                            double(_pos.z - checkRadius), double(_pos.x + checkRadius),
-		                                            double(_pos.y + checkRadius), double(_pos.z + checkRadius) });
+		constexpr int32_t CHECK_RADIUS = 32; // Blocks
+		bool areaLoaded = _world.AABBinValidChunks({ double(_pos.x - CHECK_RADIUS), double(_pos.y - CHECK_RADIUS),
+		                                            double(_pos.z - CHECK_RADIUS), double(_pos.x + CHECK_RADIUS),
+		                                            double(_pos.y + CHECK_RADIUS), double(_pos.z + CHECK_RADIUS) });
 
 		if (areaLoaded) {
 			Vec3 spawnPos = { _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 };
@@ -2064,7 +2064,7 @@ void registerAll() {
 			_world.setBlock(_pos, BLOCK_AIR, 0);
 
 			Int3 landing = _pos;
-			while (Blocks::canFallAt(_world, { landing.x, landing.y - 1, landing.z }) && landing.y > 0)
+			while (Blocks::CanFallAt(_world, { landing.x, landing.y - 1, landing.z }) && landing.y > 0)
 				landing.y--;
 
 			if (landing.y > 0)

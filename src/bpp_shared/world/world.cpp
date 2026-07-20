@@ -138,15 +138,15 @@ std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& _area) {
 			int localZ = z & 15;
 
 			for (int y = startY; y <= endY; ++y) {
-				BlockType block_id = chunk->getBlock({ localX, y, localZ });
+				BlockType blockId = chunk->getBlock({ localX, y, localZ });
 				// Air isn't collidable
-				if (block_id == BlockType::BLOCK_AIR)
+				if (blockId == BlockType::BLOCK_AIR)
 					continue;
-				if (!Blocks::blockProperties[block_id].isCollidable)
+				if (!Blocks::blockProperties[blockId].isCollidable)
 					continue;
-				uint8_t block_meta = chunk->getMeta({ localX, y, localZ });
+				uint8_t blockMeta = chunk->getMeta({ localX, y, localZ });
 				// Offset local collider to world coordinates
-				CollisionShape worldCollider = Blocks::blockBehaviors[block_id].getCollider(block_meta).offset(x, y, z);
+				CollisionShape worldCollider = Blocks::blockBehaviors[blockId].getCollider(blockMeta).offset(x, y, z);
 				for (auto& box : worldCollider.boxes)
 					if (box.intersects(_area))
 						collidingBoxes.push_back(box);
@@ -316,15 +316,15 @@ void WorldManager::drainLoadQueue() {
 		it->second->spawnChunk = wasSpawnChunk;
 
 		// Regenerate temp and humidity data
-		thread_local BiomeGenerator tl_biomeGen(0);
-		thread_local bool tl_biomeGenInit = false;
-		if (!tl_biomeGenInit) {
-			tl_biomeGen = BiomeGenerator(this->seed);
-			tl_biomeGenInit = true;
+		thread_local BiomeGenerator tlBiomeGen(0);
+		thread_local bool tlBiomeGenInit = false;
+		if (!tlBiomeGenInit) {
+			tlBiomeGen = BiomeGenerator(this->seed);
+			tlBiomeGenInit = true;
 		}
 		std::vector<double> temp, humi, weird;
 		Biome ignored[CHUNK_AREA];
-		tl_biomeGen.GenerateBiomeMap(ignored, temp, humi, weird, Int2{ pos.x * CHUNK_WIDTH, pos.z * CHUNK_WIDTH });
+		tlBiomeGen.GenerateBiomeMap(ignored, temp, humi, weird, Int2{ pos.x * CHUNK_WIDTH, pos.z * CHUNK_WIDTH });
 		for (int i = 0; i < CHUNK_AREA; ++i) {
 			it->second->temperature[i] = float(temp[i]);
 			it->second->humidity[i] = float(humi[i]);
@@ -519,11 +519,11 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& _players) {
 			auto chunk = std::make_shared<Chunk>();
 			chunk->cpos = _pos;
 			if (isHell) {
-				thread_local NetherGenerator tl_gen(this->seed);
-				tl_gen.GenerateChunk(*chunk);
+				thread_local NetherGenerator tlGen(this->seed);
+				tlGen.GenerateChunk(*chunk);
 			} else {
-				thread_local OverworldGenerator tl_gen(this->seed);
-				tl_gen.GenerateChunk(*chunk);
+				thread_local OverworldGenerator tlGen(this->seed);
+				tlGen.GenerateChunk(*chunk);
 			}
 			chunk->isModified = true;
 			chunk->generateSkylightMap();
@@ -621,11 +621,11 @@ void WorldManager::populateReady() {
 		wrapper.centerChunkPos = pos;
 		wrapper.getChunkRegion();
 		if (isHell) {
-			NetherGenerator tl_gen(this->seed);
-			tl_gen.PopulateChunk(*cit->second, wrapper);
+			NetherGenerator tlGen(this->seed);
+			tlGen.PopulateChunk(*cit->second, wrapper);
 		} else {
-			OverworldGenerator tl_gen(this->seed);
-			tl_gen.PopulateChunk(*cit->second, wrapper);
+			OverworldGenerator tlGen(this->seed);
+			tlGen.PopulateChunk(*cit->second, wrapper);
 		}
 		auto& chunk = cit->second;
 		chunk->isTerrainPopulated = true;
@@ -660,14 +660,14 @@ void WorldManager::setMeta(Int3 _wpos, uint8_t _metadata) {
 		              chunk->cpos);
 }
 
-void WorldManager::setBlock(Int3 _wpos, BlockType _block_type, uint8_t _metadata) {
+void WorldManager::setBlock(Int3 _wpos, BlockType _blockType, uint8_t _metadata) {
 	if (!inBounds(_wpos.y))
 		return;
 	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
 	auto* chunk = getChunkRaw(cp);
 	if (!isChunkValid(cp)) {
 		// Target chunk isn't ready; cache the write for replay
-		pendingBleedWrites[cp].push_back({ _wpos, Block{ _block_type, _metadata } });
+		pendingBleedWrites[cp].push_back({ _wpos, Block{ _blockType, _metadata } });
 		return;
 	}
 
@@ -687,7 +687,7 @@ void WorldManager::setBlock(Int3 _wpos, BlockType _block_type, uint8_t _metadata
 	Int3 local{ lx, _wpos.y, lz };
 	auto oldBlock = chunk->getBlock(local);
 	auto oldMeta = chunk->getMeta(local);
-	chunk->setBlock(local, _block_type);
+	chunk->setBlock(local, _blockType);
 	chunk->setMeta(local, _metadata);
 
 	int y = _wpos.y;
@@ -695,7 +695,7 @@ void WorldManager::setBlock(Int3 _wpos, BlockType _block_type, uint8_t _metadata
 	int z = _wpos.z;
 	int oldHeight = chunk->getHeightValue({ lx, lz });
 
-	if (Blocks::blockProperties[_block_type].lightOpacity != 0) {
+	if (Blocks::blockProperties[_blockType].lightOpacity != 0) {
 		// Placing opaque block; heightmap may rise
 		if (y >= oldHeight) {
 			chunk->relightColumn({ lx, lz });
@@ -736,7 +736,7 @@ void WorldManager::setBlock(Int3 _wpos, BlockType _block_type, uint8_t _metadata
 	// Update our neighbors
 	this->notifyNeighborsOfUpdate(_wpos);
 
-	if (_block_type == BLOCK_AIR) {
+	if (_blockType == BLOCK_AIR) {
 		// We removed this block effectively
 		auto function = Blocks::blockBehaviors[oldBlock].onBlockRemoval;
 		if (function)
@@ -744,15 +744,15 @@ void WorldManager::setBlock(Int3 _wpos, BlockType _block_type, uint8_t _metadata
 	} else {
 		// Java has this functionality in the chunk setters themselves, but
 		// in my opinion (Aidan here) that is stupid and redundant
-		auto function = Blocks::blockBehaviors[_block_type].onBlockAdded;
+		auto function = Blocks::blockBehaviors[_blockType].onBlockAdded;
 		if (function)
 			function(*this, _wpos);
 	}
 
 	// Callback for the client and server to know about this block update
 	if (onBlockUpdate &&
-	    (oldBlock != _block_type || (oldMeta != _metadata && Blocks::blockProperties[_block_type].notifySelfOnMetaChange)))
-		onBlockUpdate(PendingBlock{ .block{ _block_type, _metadata },
+	    (oldBlock != _blockType || (oldMeta != _metadata && Blocks::blockProperties[_blockType].notifySelfOnMetaChange)))
+		onBlockUpdate(PendingBlock{ .block{ _blockType, _metadata },
 		                            .block_pos{ _wpos.x, _wpos.y, _wpos.z },
 		                            .light{ chunk->getBlockLight(local), chunk->getSkyLight(local) } },
 		              chunk->cpos);

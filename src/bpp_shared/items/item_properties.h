@@ -55,6 +55,7 @@ struct ToolProperties {
 	ToolType type = ToolType::None;
 	ToolMaterial material = ToolMaterial::None;
 	ItemDamage max_uses = -1;
+	TickTime predictedBreakTick = 0;
 };
 
 struct ItemProperties {

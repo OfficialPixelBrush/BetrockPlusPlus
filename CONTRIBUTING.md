@@ -29,10 +29,9 @@ Grab the `main` branch for the most up-to-date, albeit unstable, repository.
 - Enums **must** have a type
 - If possible, do not pass values separately. Make use of structs that combine them
   - i.e. instead of `int32_t posX, int32_t posY, int32_t posZ`, just use `Int3 pos`
-- Run `clang-format` over the files you changed
+- Run `run-clang-tidy` and `clang-format` over the files you changed
   ```bash
-  cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -B build
-  run-clang-tidy -p build -fix
+  run-clang-tidy -fix
   clang-format -i $(find . -name "*.cpp" -o -name "*.h")
   ```
 - Unless this is already obvious via its name or usage, provide a short description what a file is for the relevant file, why it exists and what its used for

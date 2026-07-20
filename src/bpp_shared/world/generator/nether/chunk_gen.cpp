@@ -14,7 +14,7 @@
  * @param pSeed The seed of the generated world
  * @param pWorld The world that the NetherGenerator belongs to
  */
-NetherGenerator::NetherGenerator(int64_t _p_seed) : Generator(_p_seed), caver(true) {
+NetherGenerator::NetherGenerator(int64_t _pSeed) : Generator(_pSeed), caver(true) {
 	// Tell caver it's a nether caver
 	rand = Java::Random(seed);
 	// Init Terrain Noise
@@ -366,10 +366,10 @@ bool NetherGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 	int64_t xSalt = rand.nextLong() / 2L * 2L + 1L;
 	int64_t zSalt = rand.nextLong() / 2L * 2L + 1L;
 	// Use unsigned arithmetic to avoid overflow UB
-	uint64_t xSalt_u = static_cast<uint64_t>(xSalt);
-	uint64_t zSalt_u = static_cast<uint64_t>(zSalt);
-	uint64_t xPart = static_cast<uint64_t>(static_cast<int64_t>(_chunk.cpos.x)) * xSalt_u;
-	uint64_t zPart = static_cast<uint64_t>(static_cast<int64_t>(_chunk.cpos.z)) * zSalt_u;
+	uint64_t xSaltU = static_cast<uint64_t>(xSalt);
+	uint64_t zSaltU = static_cast<uint64_t>(zSalt);
+	uint64_t xPart = static_cast<uint64_t>(static_cast<int64_t>(_chunk.cpos.x)) * xSaltU;
+	uint64_t zPart = static_cast<uint64_t>(static_cast<int64_t>(_chunk.cpos.z)) * zSaltU;
 	uint64_t combined = (xPart + zPart) ^ static_cast<uint64_t>(_world.getSeed());
 
 	rand.setSeed(static_cast<int64_t>(combined));
@@ -384,8 +384,8 @@ bool NetherGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 	}
 
 	// Generate fire patch
-	int max_fire_attempts = rand.nextInt(rand.nextInt(10) + 1) + 1;
-	for (int attempt = 0; attempt < max_fire_attempts; ++attempt) {
+	int maxFireAttempts = rand.nextInt(rand.nextInt(10) + 1) + 1;
+	for (int attempt = 0; attempt < maxFireAttempts; ++attempt) {
 		coord.x = blockX + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		coord.y = rand.nextInt(CHUNK_HEIGHT - 8) + 4; // 120
 		coord.z = blockZ + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
@@ -393,8 +393,8 @@ bool NetherGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 	}
 
 	// Generate Glowstone Blob
-	int max_glowstone_attempts = rand.nextInt(rand.nextInt(10) + 1);
-	for (int attempt = 0; attempt < max_glowstone_attempts; ++attempt) {
+	int maxGlowstoneAttempts = rand.nextInt(rand.nextInt(10) + 1);
+	for (int attempt = 0; attempt < maxGlowstoneAttempts; ++attempt) {
 		coord.x = blockX + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		coord.y = rand.nextInt(CHUNK_HEIGHT - 8) + 4; // 120
 		coord.z = blockZ + rand.nextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);

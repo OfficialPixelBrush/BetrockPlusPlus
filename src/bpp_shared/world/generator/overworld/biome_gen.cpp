@@ -36,12 +36,12 @@ BiomeGenerator::BiomeGenerator(int64_t _seed) {
 void BiomeGenerator::GenerateBiomeMap(Biome _biomeMap[], std::vector<double>& _temperature, std::vector<double>& _humidity,
                                       std::vector<double>& _weirdness, Int2 _blockPos) {
 	// Get noise values
-	Int32_2 max_area{ CHUNK_WIDTH, CHUNK_WIDTH };
-	this->temperatureNoiseGen.GenerateOctaves(_temperature, _blockPos, max_area, Vec2{ double(0.025f), double(0.025f) },
+	Int32_2 maxArea{ CHUNK_WIDTH, CHUNK_WIDTH };
+	this->temperatureNoiseGen.GenerateOctaves(_temperature, _blockPos, maxArea, Vec2{ double(0.025f), double(0.025f) },
 	                                            0.25);
-	this->humidityNoiseGen.GenerateOctaves(_humidity, _blockPos, max_area, Vec2{ double(0.05f), double(0.05f) },
+	this->humidityNoiseGen.GenerateOctaves(_humidity, _blockPos, maxArea, Vec2{ double(0.05f), double(0.05f) },
 	                                         1.0 / 3.0);
-	this->weirdnessNoiseGen.GenerateOctaves(_weirdness, _blockPos, max_area, Vec2{ 0.25, 0.25 }, 0.5882352941176471);
+	this->weirdnessNoiseGen.GenerateOctaves(_weirdness, _blockPos, maxArea, Vec2{ 0.25, 0.25 }, 0.5882352941176471);
 	size_t index = 0;
 
 	// Iterate over each block column

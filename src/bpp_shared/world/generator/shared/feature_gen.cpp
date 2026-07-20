@@ -547,14 +547,14 @@ bool FeatureGenerator::GenerateNetherLiquid(WorldWrapper& _world, [[maybe_unused
 //  GenerateNetherFire
 bool FeatureGenerator::GenerateNetherFire(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 	for (int i = 0; i < 64; ++i) {
-		Int3 test_pos{
+		Int3 testPos{
 			_pos.x + _rand.nextInt(8) - _rand.nextInt(8),
 			_pos.y + _rand.nextInt(4) - _rand.nextInt(4),
 			_pos.z + _rand.nextInt(8) - _rand.nextInt(8),
 		};
 		// If air with netherrack underneath, generate
-		if (_world.getBlockId(test_pos) == BLOCK_AIR && _world.getBlockId(test_pos + Int3{ 0, -1, 0 }) == BLOCK_NETHERRACK)
-			_world.setBlock(test_pos, BLOCK_FIRE);
+		if (_world.getBlockId(testPos) == BLOCK_AIR && _world.getBlockId(testPos + Int3{ 0, -1, 0 }) == BLOCK_NETHERRACK)
+			_world.setBlock(testPos, BLOCK_FIRE);
 	}
 	return true;
 }
@@ -569,46 +569,46 @@ bool FeatureGenerator::GenerateNetherGlowstone(WorldWrapper& _world, Java::Rando
 		return false;
 	_world.setBlock(_pos, BLOCK_GLOWSTONE);
 	for (int i = 0; i < 1500; ++i) {
-		Int3 test_pos{
+		Int3 testPos{
 			_pos.x + _rand.nextInt(8) - _rand.nextInt(8),
 			_pos.y - _rand.nextInt(12),
 			_pos.z + _rand.nextInt(8) - _rand.nextInt(8),
 		};
 		// Skip non-air blocks
-		if (_world.getBlockId(test_pos) != BLOCK_AIR)
+		if (_world.getBlockId(testPos) != BLOCK_AIR)
 			continue;
-		int adjacent_glowstone_count = 0;
+		int adjacentGlowstoneCount = 0;
 		// Check for adjacent glowstone blocks
 		for (int direction = 0; direction < 6; ++direction) {
-			BlockType adjacent_block = BLOCK_AIR;
+			BlockType adjacentBlock = BLOCK_AIR;
 			switch (direction) {
 			case 0:
-				adjacent_block = _world.getBlockId(test_pos + Int3{ -1, 0, 0 });
+				adjacentBlock = _world.getBlockId(testPos + Int3{ -1, 0, 0 });
 				break;
 			case 1:
-				adjacent_block = _world.getBlockId(test_pos + Int3{ +1, 0, 0 });
+				adjacentBlock = _world.getBlockId(testPos + Int3{ +1, 0, 0 });
 				break;
 			case 2:
-				adjacent_block = _world.getBlockId(test_pos + Int3{ 0, -1, 0 });
+				adjacentBlock = _world.getBlockId(testPos + Int3{ 0, -1, 0 });
 				break;
 			case 3:
-				adjacent_block = _world.getBlockId(test_pos + Int3{ 0, +1, 0 });
+				adjacentBlock = _world.getBlockId(testPos + Int3{ 0, +1, 0 });
 				break;
 			case 4:
-				adjacent_block = _world.getBlockId(test_pos + Int3{ 0, 0, -1 });
+				adjacentBlock = _world.getBlockId(testPos + Int3{ 0, 0, -1 });
 				break;
 			case 5:
-				adjacent_block = _world.getBlockId(test_pos + Int3{ 0, 0, +1 });
+				adjacentBlock = _world.getBlockId(testPos + Int3{ 0, 0, +1 });
 				break;
 			default:
 				break;
 			}
-			if (adjacent_block == BLOCK_GLOWSTONE)
-				adjacent_glowstone_count++;
+			if (adjacentBlock == BLOCK_GLOWSTONE)
+				adjacentGlowstoneCount++;
 		}
 		// If onle one adjacent glowstone exists, place another
-		if (adjacent_glowstone_count == 1)
-			_world.setBlock(test_pos, BLOCK_GLOWSTONE);
+		if (adjacentGlowstoneCount == 1)
+			_world.setBlock(testPos, BLOCK_GLOWSTONE);
 	}
 	return true;
 }

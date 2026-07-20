@@ -52,9 +52,9 @@ ServerManager::~ServerManager() {
 
 // Init network stream
 bool ServerManager::InitConnection() {
-	int client_socket = accept(server_socket, nullptr, nullptr);
-	if (client_socket != INVALID_SOCKET) {
-		streams.push_back(NetworkStream(client_socket));
+	int clientSocket = accept(server_socket, nullptr, nullptr);
+	if (clientSocket != INVALID_SOCKET) {
+		streams.push_back(NetworkStream(clientSocket));
 		return true;
 	}
 	return false;

@@ -353,34 +353,34 @@ std::optional<Tag> Entity::serializeToNBT() {
 	root.type = TAG_COMPOUND;
 	root.name = "";
 
-	Tag Motion;
-	Motion.type = TAG_LIST;
-	Motion.name = "Motion";
-	Motion.listType = TAG_DOUBLE;
-	Tag Air;
-	Air.type = TAG_SHORT;
-	Air.name = "Air";
-	Air.shortValue = this->air;
-	Tag OnGround;
-	OnGround.type = TAG_BYTE;
-	OnGround.name = "OnGround";
-	OnGround.byteValue = this->onGround;
-	Tag FallDistance;
-	FallDistance.type = TAG_FLOAT;
-	FallDistance.name = "FallDistance";
-	FallDistance.floatValue = this->fallDistance;
-	Tag Pos;
-	Pos.type = TAG_LIST;
-	Pos.name = "Pos";
-	Pos.listType = TAG_DOUBLE;
-	Tag Rotation;
-	Rotation.type = TAG_LIST;
-	Rotation.name = "Rotation";
-	Rotation.listType = TAG_FLOAT;
-	Tag Fire;
-	Fire.type = TAG_SHORT;
-	Fire.name = "Fire";
-	Fire.shortValue = this->fireTicks;
+	Tag motion;
+	motion.type = TAG_LIST;
+	motion.name = "Motion";
+	motion.listType = TAG_DOUBLE;
+	Tag air;
+	air.type = TAG_SHORT;
+	air.name = "Air";
+	air.shortValue = this->air;
+	Tag onGround;
+	onGround.type = TAG_BYTE;
+	onGround.name = "OnGround";
+	onGround.byteValue = this->onGround;
+	Tag fallDistance;
+	fallDistance.type = TAG_FLOAT;
+	fallDistance.name = "FallDistance";
+	fallDistance.floatValue = this->fallDistance;
+	Tag pos;
+	pos.type = TAG_LIST;
+	pos.name = "Pos";
+	pos.listType = TAG_DOUBLE;
+	Tag rotation;
+	rotation.type = TAG_LIST;
+	rotation.name = "Rotation";
+	rotation.listType = TAG_FLOAT;
+	Tag fire;
+	fire.type = TAG_SHORT;
+	fire.name = "Fire";
+	fire.shortValue = this->fireTicks;
 
 	// Save position and rotation / velocity
 	Tag posX;
@@ -392,9 +392,9 @@ std::optional<Tag> Entity::serializeToNBT() {
 	Tag posZ;
 	posZ.type = TAG_DOUBLE;
 	posZ.doubleValue = this->position.z;
-	Pos.list.push_back(posX);
-	Pos.list.push_back(posY);
-	Pos.list.push_back(posZ);
+	pos.list.push_back(posX);
+	pos.list.push_back(posY);
+	pos.list.push_back(posZ);
 
 	Tag movX;
 	movX.type = TAG_DOUBLE;
@@ -405,9 +405,9 @@ std::optional<Tag> Entity::serializeToNBT() {
 	Tag movZ;
 	movZ.type = TAG_DOUBLE;
 	movZ.doubleValue = this->velocity.z;
-	Motion.list.push_back(movX);
-	Motion.list.push_back(movY);
-	Motion.list.push_back(movZ);
+	motion.list.push_back(movX);
+	motion.list.push_back(movY);
+	motion.list.push_back(movZ);
 
 	Tag rotYaw;
 	rotYaw.type = TAG_FLOAT;
@@ -415,8 +415,8 @@ std::optional<Tag> Entity::serializeToNBT() {
 	Tag rotPitch;
 	rotPitch.type = TAG_FLOAT;
 	rotPitch.floatValue = this->rotationPitch;
-	Rotation.list.push_back(rotYaw);
-	Rotation.list.push_back(rotPitch);
+	rotation.list.push_back(rotYaw);
+	rotation.list.push_back(rotPitch);
 
 	// Get our string ID
 	auto stringId = this->entityManager->getEntityNbtId(type);
@@ -431,13 +431,13 @@ std::optional<Tag> Entity::serializeToNBT() {
 	id.stringValue = *stringId;
 
 	// Link together our compound
-	root.compound["Pos"] = Pos;
-	root.compound["Motion"] = Motion;
-	root.compound["Rotation"] = Rotation;
-	root.compound["FallDistance"] = FallDistance;
-	root.compound["Fire"] = Fire;
-	root.compound["Air"] = Air;
-	root.compound["OnGround"] = OnGround;
+	root.compound["Pos"] = pos;
+	root.compound["Motion"] = motion;
+	root.compound["Rotation"] = rotation;
+	root.compound["FallDistance"] = fallDistance;
+	root.compound["Fire"] = fire;
+	root.compound["Air"] = air;
+	root.compound["OnGround"] = onGround;
 	root.compound["id"] = id;
 
 	return root;
