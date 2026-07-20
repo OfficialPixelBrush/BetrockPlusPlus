@@ -18,15 +18,15 @@
  */
 class CaveGenerator {
 private:
-	static constexpr int32_t carveExtentLimit = 8;
+	static constexpr int32_t m_carveExtentLimit = 8;
 	Java::Random rand = Java::Random();
 
 public:
-	CaveGenerator(bool isNetherCave = false) : isNetherCave(isNetherCave) {}
-	void GenerateCavesForChunk(Chunk& chunk, int64_t seed);
-	void GenerateCaves(Chunk& chunk, Int2 chunkOffset);
-	void CarveCave(Chunk& chunk, Vec3 offset);
-	void CarveCave(Chunk& chunk, Vec3 offset, float tunnelRadius, float carveYaw, float carvePitch, int32_t tunnelStep,
-	               int32_t tunnelLength, double verticalScale);
+	CaveGenerator(bool _isNetherCave = false) : isNetherCave(_isNetherCave) {}
+	void GenerateCavesForChunk(Chunk& _chunk, int64_t _seed);
+	void GenerateCaves(Chunk& _chunk, Int2 _chunkOffset);
+	void CarveCave(Chunk& _chunk, Vec3 _offset);
+	void CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, float _carveYaw, float _carvePitch, int32_t _tunnelStep,
+	               int32_t _tunnelLength, double _verticalScale);
 	bool isNetherCave = false;
 };

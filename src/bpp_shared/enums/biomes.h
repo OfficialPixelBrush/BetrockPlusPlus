@@ -27,11 +27,11 @@ enum Biome {
 	BIOME_SKY = 13
 };
 
-Biome GetBiome(float temperature, float humidity);
-Biome GetBiomeFromLookup(float temperature, float humidity);
+Biome GetBiome(float _temperature, float _humidity);
+Biome GetBiomeFromLookup(float _temperature, float _humidity);
 
-BlockType GetTopBlock(Biome biome);
-BlockType GetFillerBlock(Biome biome);
+BlockType GetTopBlock(Biome _biome);
+BlockType GetFillerBlock(Biome _biome);
 
 #define BIOME_LUT_SIZE 64 * 64
 

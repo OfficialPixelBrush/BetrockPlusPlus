@@ -11,20 +11,20 @@
 #include <string>
 
 // Get the appropriate Label for the passed id
-std::string IdToLabel(const int16_t id) {
-	if (id > SLOT_EMPTY) {
-		if (id < BLOCK_MAX) {
-			return blockLabels[size_t(id)];
+std::string IdToLabel(const int16_t _id) {
+	if (_id > SLOT_EMPTY) {
+		if (_id < BLOCK_MAX) {
+			return blockLabels[size_t(_id)];
 		}
-		if (id >= Items::SHOVEL_IRON) {
-			return itemLabels[size_t(id - Items::SHOVEL_IRON)];
+		if (_id >= Items::SHOVEL_IRON) {
+			return itemLabels[size_t(_id - Items::SHOVEL_IRON)];
 		}
 	}
 	return "Invalid";
 }
 
-std::string wIdToLabel(const int16_t id) {
-	std::string label = IdToLabel(id);
+std::string wIdToLabel(const int16_t _id) {
+	std::string label = IdToLabel(_id);
 	std::string wlabel(label.begin(), label.end());
 	return wlabel;
 }

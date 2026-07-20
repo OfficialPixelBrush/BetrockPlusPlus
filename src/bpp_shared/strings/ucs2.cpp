@@ -7,13 +7,13 @@
 #include "logger.h"
 
 // Turn a UCS-2 String into a UTF-8 String
-std::string ToUTF8(std::u16string str) {
+std::string ToUTF8(std::u16string _str) {
 	// UCS-2 limits all values to only be 0x0000 to 0xFFFF
 	// in UTF-16 land, 0xDC00–0xDFFF have a special purpose,
 	// which we will ignore
 	std::string out;
-	for (size_t i = 0; i < str.size(); i++) {
-		const char16_t c = str[i];
+	for (size_t i = 0; i < _str.size(); i++) {
+		const char16_t c = _str[i];
 		if (c <= 0x7F) {
 			out.push_back(static_cast<char>(c));
 		} else if (c <= 0x7FF) {
@@ -29,43 +29,43 @@ std::string ToUTF8(std::u16string str) {
 }
 
 // Decode a UTF-8 Character into a singular UCS-2 character
-char32_t DecodeUTF8Char(const std::string& s, size_t& i) {
-	const unsigned char c = s[i];
+char32_t DecodeUTF8Char(const std::string& _s, size_t& _i) {
+	const unsigned char c = _s[_i];
 
 	// Try to parse as a one-byte character (e.g. ASCII)
 	if (c < 0x80) {
-		return s[i++];
+		return _s[_i++];
 	}
 	// Try to parse as a two-byte character
 	if ((c & 0xE0) == 0xC0) {
-		char32_t cp = ((s[i] & 0x1F) << 6) | (s[i + 1] & 0x3F);
-		i += 2;
+		char32_t cp = ((_s[_i] & 0x1F) << 6) | (_s[_i + 1] & 0x3F);
+		_i += 2;
 		return cp;
 	}
 	// Try to parse as a three-byte character
 	if ((c & 0xF0) == 0xE0) {
-		char32_t cp = ((s[i] & 0x0F) << 12) | ((s[i + 1] & 0x3F) << 6) | (s[i + 2] & 0x3F);
-		i += 3;
+		char32_t cp = ((_s[_i] & 0x0F) << 12) | ((_s[_i + 1] & 0x3F) << 6) | (_s[_i + 2] & 0x3F);
+		_i += 3;
 		return cp;
 	}
 	// Try to parse as a four-byte character
 	if ((c & 0xF8) == 0xF0) {
-		char32_t cp = ((s[i] & 0x07) << 18) | ((s[i + 1] & 0x3F) << 12) | ((s[i + 2] & 0x3F) << 6) | (s[i + 3] & 0x3F);
-		i += 4;
+		char32_t cp = ((_s[_i] & 0x07) << 18) | ((_s[_i + 1] & 0x3F) << 12) | ((_s[_i + 2] & 0x3F) << 6) | (_s[_i + 3] & 0x3F);
+		_i += 4;
 		return cp;
 	}
 	// All other parsing failed,
 	// return Unknown/Unrecognized Character value
-	i++;
+	_i++;
 	return 0xFFFD;
 }
 
 // Turn a UTF-8 String into a UCS-2 String
-std::u16string ToUCS2(std::string str) {
+std::u16string ToUCS2(std::string _str) {
 	std::u16string out;
 
-	for (size_t i = 0; i < str.size();) {
-		char32_t cp = DecodeUTF8Char(str, i);
+	for (size_t i = 0; i < _str.size();) {
+		char32_t cp = DecodeUTF8Char(_str, i);
 
 		if (cp > 0xFFFF) {
 			GlobalLogger().warn << "Code point not representable in UCS-2\n";

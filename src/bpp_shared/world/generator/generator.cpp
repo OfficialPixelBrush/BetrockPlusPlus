@@ -7,10 +7,10 @@
 
 #include "generator.h"
 
-Generator::Generator(int64_t seed) : seed(seed) {}
+Generator::Generator(int64_t _seed) : seed(_seed) {}
 
-void Generator::GenerateChunk([[maybe_unused]] Chunk& chunk) {}
+void Generator::GenerateChunk([[maybe_unused]] Chunk& _chunk) {}
 
-bool Generator::PopulateChunk([[maybe_unused]] Chunk& chunk, [[maybe_unused]] WorldWrapper& world) {
+bool Generator::PopulateChunk([[maybe_unused]] Chunk& _chunk, [[maybe_unused]] WorldWrapper& _world) {
 	return true;
 }

@@ -38,11 +38,11 @@ struct BlockRenderContext {
 	// You can access the current block by requestion the neighbor with dx=0, dy=0, dz=0
 	std::array<BlockData, 27> neighbors;
 
-	int neighborIndex(int dx, int dy, int dz) {
-		return (dy + 1) * 9 + (dz + 1) * 3 + (dx + 1);
+	int neighborIndex(int _dx, int _dy, int _dz) {
+		return (_dy + 1) * 9 + (_dz + 1) * 3 + (_dx + 1);
 	}
 
-	BlockData& getNeighbor(int dx, int dy, int dz) {
-		return neighbors[neighborIndex(dx, dy, dz)];
+	BlockData& getNeighbor(int _dx, int _dy, int _dz) {
+		return neighbors[neighborIndex(_dx, _dy, _dz)];
 	}
 };

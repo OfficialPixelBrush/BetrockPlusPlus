@@ -8,8 +8,8 @@
 #include "inventory/interactions/crafting.h"
 #include "inventory/inventories.h"
 
-PlayerInventoryInteraction::PlayerInventoryInteraction(InventoryPlayer* inv, Runtime& gameRuntime)
-    : CraftingInventoryInteraction(inv, inv, inv, gameRuntime, { 2, 2 }), playerInventory(inv) {}
+PlayerInventoryInteraction::PlayerInventoryInteraction(InventoryPlayer* _inv, Runtime& _gameRuntime)
+    : CraftingInventoryInteraction(_inv, _inv, _inv, _gameRuntime, { 2, 2 }), playerInventory(_inv) {}
 
 bool PlayerInventoryInteraction::canExist() {
 	return playerInventory != nullptr;
@@ -28,9 +28,9 @@ void PlayerInventoryInteraction::shiftClickResult() {
 	}
 }
 
-void PlayerInventoryInteraction::shiftClickOther(int slot) {
-	auto from = playerInventory->getInventoryAreaFromSlot(slot);
-	auto stack = playerInventory->getStackInSlot(slot);
+void PlayerInventoryInteraction::shiftClickOther(int _slot) {
+	auto from = playerInventory->getInventoryAreaFromSlot(_slot);
+	auto stack = playerInventory->getStackInSlot(_slot);
 	if (!stack)
 		return;
 
@@ -47,7 +47,7 @@ void PlayerInventoryInteraction::shiftClickOther(int slot) {
 
 	// Update the source slot to whatever count is left
 	if (copy.count == 0) {
-		playerInventory->clearSlot(slot);
+		playerInventory->clearSlot(_slot);
 	} else {
 		stack->count = copy.count;
 	}

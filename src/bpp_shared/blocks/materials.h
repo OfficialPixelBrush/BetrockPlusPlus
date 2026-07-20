@@ -105,11 +105,11 @@ struct Material {
 	bool isHarvestable = true;
 	PushabilityFlag mobilityFlag = PushabilityFlag::Normal;
 
-	bool operator==(const Material& other) const {
-		return type == other.type;
+	bool operator==(const Material& _other) const {
+		return type == _other.type;
 	}
-	bool operator!=(const Material& other) const {
-		return type != other.type;
+	bool operator!=(const Material& _other) const {
+		return type != _other.type;
 	}
 
 	static constexpr Material Air() {

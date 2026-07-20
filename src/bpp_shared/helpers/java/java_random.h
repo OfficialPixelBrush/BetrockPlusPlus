@@ -23,9 +23,9 @@
 namespace Java {
 class Random {
 private:
-	static constexpr uint64_t multiplier = 0x5DEECE66DULL;
-	static constexpr uint64_t addend = 0xBULL;
-	static constexpr uint64_t mask = (1ULL << 48) - 1;
+	static constexpr uint64_t m_multiplier = 0x5DEECE66DULL;
+	static constexpr uint64_t m_addend = 0xBULL;
+	static constexpr uint64_t m_mask = (1ULL << 48) - 1;
 
 	uint64_t seed;
 
@@ -34,9 +34,9 @@ private:
 		* 
 		* @return Pseudorandom 32-bit integer value
 		*/
-	int32_t next(int32_t bits) {
-		seed = (seed * multiplier + addend) & mask;
-		return static_cast<int32_t>(seed >> (48 - bits));
+	int32_t next(int32_t _bits) {
+		seed = (seed * m_multiplier + m_addend) & m_mask;
+		return static_cast<int32_t>(seed >> (48 - _bits));
 	}
 
 public:
@@ -45,8 +45,8 @@ public:
 		* 
 		* @param initialSeed The initial seed value (defaults to current time)
 		*/
-	Random(int64_t initialSeed) {
-		setSeed(initialSeed);
+	Random(int64_t _initialSeed) {
+		setSeed(_initialSeed);
 	}
 
 	/**
@@ -63,8 +63,8 @@ public:
 		* 
 		* @param s Seed value
 		*/
-	void setSeed(int64_t s) {
-		seed = (static_cast<uint64_t>(s) ^ multiplier) & mask;
+	void setSeed(int64_t _s) {
+		seed = (static_cast<uint64_t>(_s) ^ m_multiplier) & m_mask;
 	}
 
 	/**
@@ -81,19 +81,19 @@ public:
 		* 
 		* @return Pseudorandom 32-bit integer value
 		*/
-	int32_t nextInt(int32_t bound) {
-		if (bound <= 0)
+	int32_t nextInt(int32_t _bound) {
+		if (_bound <= 0)
 			throw std::invalid_argument("bound must be positive");
 
-		if ((bound & -bound) == bound) { // power of two
-			return int32_t((bound * int64_t(next(31))) >> 31);
+		if ((_bound & -_bound) == _bound) { // power of two
+			return int32_t((_bound * int64_t(next(31))) >> 31);
 		}
 
 		int32_t bits, val;
 		do {
 			bits = next(31);
-			val = bits % bound;
-		} while (int32_t(uint32_t(bits) - uint32_t(val) + uint32_t(bound - 1)) < 0);
+			val = bits % _bound;
+		} while (int32_t(uint32_t(bits) - uint32_t(val) + uint32_t(_bound - 1)) < 0);
 		return val;
 	}
 

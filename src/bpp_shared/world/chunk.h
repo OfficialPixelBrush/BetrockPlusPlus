@@ -28,16 +28,16 @@ enum class ChunkState : uint8_t {
 };
 
 struct Chunk {
-	static constexpr int VOLUME = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH;
-	static constexpr int META_VOLUME = VOLUME / 2;
+	static constexpr int m_VOLUME = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH;
+	static constexpr int m_META_VOLUME = m_VOLUME / 2;
 
 	Int32_2 cpos;
 	std::atomic_bool inUse{ false };
 
 	// Flat arrays indexed by (y * CHUNK_WIDTH * CHUNK_WIDTH) + (z * CHUNK_WIDTH) + x
-	BlockType blocks[VOLUME] = { BLOCK_AIR };
-	uint8_t lightNibble[VOLUME] = { 0 };
-	uint8_t nibbleBlockMeta[META_VOLUME] = { 0 };
+	BlockType blocks[m_VOLUME] = { BLOCK_AIR };
+	uint8_t lightNibble[m_VOLUME] = { 0 };
+	uint8_t nibbleBlockMeta[m_META_VOLUME] = { 0 };
 
 	std::atomic<ChunkState> state{ ChunkState::Unloaded };
 	uint8_t heightMap[CHUNK_WIDTH * CHUNK_WIDTH] = {};
@@ -54,35 +54,35 @@ struct Chunk {
 	// Used for loading entities into the world from disk
 	std::vector<Tag> entityTags;
 
-	inline int blockIndex(Int3 pos) const {
-		return (pos.y * CHUNK_WIDTH * CHUNK_WIDTH) + (pos.z * CHUNK_WIDTH) + pos.x;
+	inline int blockIndex(Int3 _pos) const {
+		return (_pos.y * CHUNK_WIDTH * CHUNK_WIDTH) + (_pos.z * CHUNK_WIDTH) + _pos.x;
 	}
 
-	inline uint8_t setNibble(uint8_t hi, uint8_t lo) const {
-		return uint8_t(((hi & 0x0Fu) << 4) | (lo & 0x0Fu));
+	inline uint8_t setNibble(uint8_t _hi, uint8_t _lo) const {
+		return uint8_t(((_hi & 0x0Fu) << 4) | (_lo & 0x0Fu));
 	}
-	inline uint8_t getNibbleLow(uint8_t byte) const {
-		return byte & 0x0Fu;
+	inline uint8_t getNibbleLow(uint8_t _byte) const {
+		return _byte & 0x0Fu;
 	}
-	inline uint8_t getNibbleHigh(uint8_t byte) const {
-		return (byte >> 4) & 0x0Fu;
-	}
-
-	inline float getTemperature(Int2 pos) const {
-		return temperature[(pos.x << 4) | pos.y];
-	}
-	inline float getHumidity(Int2 pos) const {
-		return humidity[(pos.x << 4) | pos.y];
+	inline uint8_t getNibbleHigh(uint8_t _byte) const {
+		return (_byte >> 4) & 0x0Fu;
 	}
 
-	inline uint8_t getHeightValue(Int2 pos) const {
-		return heightMap[(pos.y << 4) | pos.x];
+	inline float getTemperature(Int2 _pos) const {
+		return temperature[(_pos.x << 4) | _pos.y];
 	}
-	inline void setHeightValue(Int2 pos, uint8_t val) {
-		heightMap[(pos.y << 4) | pos.x] = val;
+	inline float getHumidity(Int2 _pos) const {
+		return humidity[(_pos.x << 4) | _pos.y];
 	}
-	inline bool canBlockSeeSky(Int3 pos) const {
-		return pos.y >= getHeightValue({ pos.x, pos.z });
+
+	inline uint8_t getHeightValue(Int2 _pos) const {
+		return heightMap[(_pos.y << 4) | _pos.x];
+	}
+	inline void setHeightValue(Int2 _pos, uint8_t _val) {
+		heightMap[(_pos.y << 4) | _pos.x] = _val;
+	}
+	inline bool canBlockSeeSky(Int3 _pos) const {
+		return _pos.y >= getHeightValue({ _pos.x, _pos.z });
 	}
 
 	inline void generateHeightMap() {
@@ -91,14 +91,14 @@ struct Chunk {
 				generateHeightMapColumn({ x, z });
 	}
 
-	inline void generateHeightMapColumn(Int2 pos) {
+	inline void generateHeightMapColumn(Int2 _pos) {
 		for (int y = CHUNK_HEIGHT - 1; y >= 0; y--) {
-			if (Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity > 0) {
-				setHeightValue(pos, uint8_t(y + 1));
+			if (Blocks::blockProperties[getBlock({ _pos.x, y, _pos.z })].lightOpacity > 0) {
+				setHeightValue(_pos, uint8_t(y + 1));
 				return;
 			}
 		}
-		setHeightValue(pos, 0);
+		setHeightValue(_pos, 0);
 	}
 
 	inline void generateSkylightMap() {
@@ -119,70 +119,70 @@ struct Chunk {
 		}
 	}
 
-	inline void relightColumn(Int2 pos) {
-		generateHeightMapColumn(pos);
-		int height = getHeightValue(pos);
+	inline void relightColumn(Int2 _pos) {
+		generateHeightMapColumn(_pos);
+		int height = getHeightValue(_pos);
 
 		for (int y = CHUNK_HEIGHT - 1; y >= height; y--)
-			setSkyLight({ pos.x, y, pos.z }, 15);
+			setSkyLight({ _pos.x, y, _pos.z }, 15);
 
 		// only pull values up
 		int skyLight = 15;
 		for (int y = height - 1; y >= 0; y--) {
 			skyLight -= CrossPlatform::Math::max(
-			    1, int(Blocks::blockProperties[getBlock({ pos.x, y, pos.z })].lightOpacity));
+			    1, int(Blocks::blockProperties[getBlock({ _pos.x, y, _pos.z })].lightOpacity));
 			skyLight = CrossPlatform::Math::max(0, skyLight);
-			uint8_t current = getSkyLight({ pos.x, y, pos.z });
+			uint8_t current = getSkyLight({ _pos.x, y, _pos.z });
 			if (current < skyLight)
-				setSkyLight({ pos.x, y, pos.z }, uint8_t(skyLight));
+				setSkyLight({ _pos.x, y, _pos.z }, uint8_t(skyLight));
 		}
 	}
 
-	inline BlockType getBlock(Int3 pos) const {
-		return blocks[blockIndex(pos)];
+	inline BlockType getBlock(Int3 _pos) const {
+		return blocks[blockIndex(_pos)];
 	}
 
-	inline void setBlock(Int3 pos, BlockType id) {
-		blocks[blockIndex(pos)] = id;
+	inline void setBlock(Int3 _pos, BlockType _id) {
+		blocks[blockIndex(_pos)] = _id;
 		isModified = true;
 	}
 
-	inline uint8_t getMeta(Int3 pos) const {
-		int idx = blockIndex(pos);
+	inline uint8_t getMeta(Int3 _pos) const {
+		int idx = blockIndex(_pos);
 		uint8_t byte = nibbleBlockMeta[idx >> 1];
 		return (idx & 1) ? getNibbleHigh(byte) : getNibbleLow(byte);
 	}
 
-	inline void setMeta(Int3 pos, uint8_t meta) {
-		int idx = blockIndex(pos);
+	inline void setMeta(Int3 _pos, uint8_t _meta) {
+		int idx = blockIndex(_pos);
 		uint8_t& byte = nibbleBlockMeta[idx >> 1];
-		byte = (idx & 1) ? setNibble(meta, getNibbleLow(byte)) : setNibble(getNibbleHigh(byte), meta);
+		byte = (idx & 1) ? setNibble(_meta, getNibbleLow(byte)) : setNibble(getNibbleHigh(byte), _meta);
 		isModified = true;
 	}
 
-	inline uint8_t getBlockLight(Int3 pos) const {
-		return getNibbleLow(lightNibble[blockIndex(pos)]);
+	inline uint8_t getBlockLight(Int3 _pos) const {
+		return getNibbleLow(lightNibble[blockIndex(_pos)]);
 	}
 
-	inline uint8_t getSkyLight(Int3 pos) const {
-		return getNibbleHigh(lightNibble[blockIndex(pos)]);
+	inline uint8_t getSkyLight(Int3 _pos) const {
+		return getNibbleHigh(lightNibble[blockIndex(_pos)]);
 	}
 
-	inline void setBlockLight(Int3 pos, uint8_t val) {
-		uint8_t& byte = lightNibble[blockIndex(pos)];
-		byte = setNibble(getNibbleHigh(byte), val);
+	inline void setBlockLight(Int3 _pos, uint8_t _val) {
+		uint8_t& byte = lightNibble[blockIndex(_pos)];
+		byte = setNibble(getNibbleHigh(byte), _val);
 		isModified = true;
 	}
 
-	inline void setSkyLight(Int3 pos, uint8_t val) {
-		uint8_t& byte = lightNibble[blockIndex(pos)];
-		byte = setNibble(val, getNibbleLow(byte));
+	inline void setSkyLight(Int3 _pos, uint8_t _val) {
+		uint8_t& byte = lightNibble[blockIndex(_pos)];
+		byte = setNibble(_val, getNibbleLow(byte));
 		isModified = true;
 	}
 
-	inline int getBlockLightValue(Int3 pos, int skySubtracted) const {
-		int sky = CrossPlatform::Math::max(0, int(getSkyLight(pos)) - skySubtracted);
-		int block = int(getBlockLight(pos));
+	inline int getBlockLightValue(Int3 _pos, int _skySubtracted) const {
+		int sky = CrossPlatform::Math::max(0, int(getSkyLight(_pos)) - _skySubtracted);
+		int block = int(getBlockLight(_pos));
 		return CrossPlatform::Math::min(15, CrossPlatform::Math::max(sky, block));
 	}
 

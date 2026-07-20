@@ -36,7 +36,7 @@ public:
 	~Server();
 	void run();
 	void stop();
-	void processIncoming(PlayerSession& session);
+	void processIncoming(PlayerSession& _session);
 
 private:
 	int SERVER_VIEW_RADIUS = 8;
@@ -47,27 +47,27 @@ public:
 	ChunkSender chunkSender;
 	int flushChunkCount = 10;
 
-	std::shared_ptr<PlayerSession> getSessionById(EntityId entityId) {
+	std::shared_ptr<PlayerSession> getSessionById(EntityId _entityId) {
 		for (auto player : players) {
-			if (player->entity && player->entity->id == entityId) {
+			if (player->entity && player->entity->id == _entityId) {
 				return player;
 			}
 		}
 		return nullptr;
 	}
 
-	std::shared_ptr<PlayerSession> getSessionByUsername(const std::string& username) {
+	std::shared_ptr<PlayerSession> getSessionByUsername(const std::string& _username) {
 		for (auto player : players) {
-			if (player->username == username) {
+			if (player->username == _username) {
 				return player;
 			}
 		}
 		return nullptr;
 	}
 
-	std::string getUsernameByEntityId(EntityId id) {
+	std::string getUsernameByEntityId(EntityId _id) {
 		for (auto& player : players) {
-			if (player->entity && player->entity->id == id) {
+			if (player->entity && player->entity->id == _id) {
 				return player->username;
 			}
 		}
@@ -75,12 +75,12 @@ public:
 	}
 
 	// Send a message to all players
-	void sendGlobalChatMessage(std::string message) {
+	void sendGlobalChatMessage(std::string _message) {
 		for (auto& other : players) {
 			if (other && other->connState != ConnectionState::Playing)
 				continue;
 			Packet::ChatMessage reply;
-			reply.message = message;
+			reply.message = _message;
 			reply.Serialize(other->stream);
 		}
 	}
@@ -89,42 +89,42 @@ public:
 		return players;
 	}
 
-	void sendEntityToDimension(Dimension dim, std::shared_ptr<Entity> entity);
-	void sendPlayerToDimension(Dimension dim, PlayerSession& session);
+	void sendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _entity);
+	void sendPlayerToDimension(Dimension _dim, PlayerSession& _session);
 
 	// Entity trackers are so we can send entity updates to players and vice versa.
 	EntityTracker overworldEntityTracker;
 	EntityTracker hellEntityTracker;
 
 private:
-	friend bool PacketDispatcher::dispatch(PacketId packetId, PlayerSession& session, WorldManager& sessionWorld,
-	                                       Server& server);
-	friend void ChunkBroadcaster::broadcastBlockChanges(Server& server,
-	                                                    std::unordered_map<Int32_2, std::vector<PendingBlock>>& changes,
-	                                                    int8_t dimension, WorldManager& dimWorld);
+	friend bool PacketDispatcher::dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld,
+	                                       Server& _server);
+	friend void ChunkBroadcaster::broadcastBlockChanges(Server& _server,
+	                                                    std::unordered_map<Int32_2, std::vector<PendingBlock>>& _changes,
+	                                                    int8_t _dimension, WorldManager& _dimWorld);
 
 	void tick();
 	void startup();
 	void acceptNewPlayers();
-	void transferPlayerDimension(PlayerSession& session);
+	void transferPlayerDimension(PlayerSession& _session);
 	void disconnectClients();
 
 	// Config file stuff
 	void loadConfig();
 
 	// Chunk-session index helpers
-	void indexAddChunk(PlayerSession& session, const Int32_2& pos);
-	void indexRemoveChunk(PlayerSession& session, const Int32_2& pos);
-	void indexRemoveSession(PlayerSession& session);
+	void indexAddChunk(PlayerSession& _session, const Int32_2& _pos);
+	void indexRemoveChunk(PlayerSession& _session, const Int32_2& _pos);
+	void indexRemoveSession(PlayerSession& _session);
 
-	WorldManager* getWorldForDimension(Dimension dim) {
-		return dim == Dimension::Nether ? &this->gameRuntime.worldHell : &this->gameRuntime.world;
+	WorldManager* getWorldForDimension(Dimension _dim) {
+		return _dim == Dimension::Nether ? &this->gameRuntime.worldHell : &this->gameRuntime.world;
 	}
 
 	// Encodes chunk position + dimension into a single key for chunkSessions.
 	// x = chunk X, y = chunk Z, z = dimension id
-	static Int32_3 chunkKey(const Int32_2& pos, int8_t dimension) {
-		return Int32_3{ pos.x, pos.z, int32_t(dimension) };
+	static Int32_3 chunkKey(const Int32_2& _pos, int8_t _dimension) {
+		return Int32_3{ _pos.x, _pos.z, int32_t(_dimension) };
 	}
 
 	static constexpr int TICKS_PER_SECOND = 20;

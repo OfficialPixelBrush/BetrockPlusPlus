@@ -17,9 +17,9 @@ struct Block {
 	BlockType type = BLOCK_AIR;
 	uint8_t data = 0;
 
-	friend std::ostream& operator<<(std::ostream& os, const Block& b) {
-		os << "(" << int32_t(b.type) << ":" << int32_t(b.data) << ")";
-		return os;
+	friend std::ostream& operator<<(std::ostream& _os, const Block& _b) {
+		_os << "(" << int32_t(_b.type) << ":" << int32_t(_b.data) << ")";
+		return _os;
 	}
 
 	std::string str() const {

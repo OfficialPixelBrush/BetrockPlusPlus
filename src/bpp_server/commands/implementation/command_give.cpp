@@ -15,17 +15,17 @@
 // Give yourself a block or item
 // Usage:
 //   /give <id>[:meta] [amount]
-std::string CommandGive::Execute(std::vector<std::string>& parameters, PlayerSession& session,
-                                 [[maybe_unused]] WorldManager& world,
-                                 [[maybe_unused]] std::function<void(PlayerSession&)> transferDimension,
-                                 [[maybe_unused]] Server& server) {
+std::string CommandGive::Execute(std::vector<std::string>& _parameters, PlayerSession& _session,
+                                 [[maybe_unused]] WorldManager& _world,
+                                 [[maybe_unused]] std::function<void(PlayerSession&)> _transferDimension,
+                                 [[maybe_unused]] Server& _server) {
 	// TODO: Let player specify another player to give to
-	if (parameters.size() <= 1)
+	if (_parameters.size() <= 1)
 
 		return "Missing item id!";
 
 	ItemStack item;
-	const std::string& itemArg = parameters[1];
+	const std::string& itemArg = _parameters[1];
 	size_t colonPos = itemArg.find(':');
 	std::string idString = itemArg.substr(0, colonPos);
 	std::string metaString = "";
@@ -37,27 +37,27 @@ std::string CommandGive::Execute(std::vector<std::string>& parameters, PlayerSes
 		item.data = static_cast<int16_t>(std::stoi(metaString));
 	}
 	item.count = Items::GetMaxStack(item.id); // I don't want 64 pickaxes anymore!!
-	if (parameters.size() > 2) {
-		item.count = static_cast<int8_t>(std::stoi(parameters[2]));
+	if (_parameters.size() > 2) {
+		item.count = static_cast<int8_t>(std::stoi(_parameters[2]));
 	}
 
 	// Check if its even a valid item
 	if ((item.id > BLOCK_AIR && item.id < BLOCK_MAX) || Items::IsValid(item.id)) {
 		Packet::ChatMessage reply;
 		reply.message = "§eGave " + wIdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
-		                std::to_string(item.data) + ") x" + std::to_string(item.count) + " to " + session.username;
+		                std::to_string(item.data) + ") x" + std::to_string(item.count) + " to " + _session.username;
 
-		reply.Serialize(session.stream);
+		reply.Serialize(_session.stream);
 
 		// Try the hotbar
-		if (session.inventory.mergeItemStackInInventory(item, false, 36, 44)) {
-			PacketUtilities::sendInventory(session, session.openWindowId, session.inventory);
+		if (_session.inventory.mergeItemStackInInventory(item, false, 36, 44)) {
+			PacketUtilities::sendInventory(_session, _session.openWindowId, _session.inventory);
 			return "";
 		}
 
 		// Try the main inventory
-		if (session.inventory.mergeItemStackInInventory(item, false, 9, 35)) {
-			PacketUtilities::sendInventory(session, session.openWindowId, session.inventory);
+		if (_session.inventory.mergeItemStackInInventory(item, false, 9, 35)) {
+			PacketUtilities::sendInventory(_session, _session.openWindowId, _session.inventory);
 			return "";
 		}
 

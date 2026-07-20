@@ -20,30 +20,30 @@ struct ItemStack {
 	ItemAmount count = 0;
 	ItemDamage data = 0; // This is "damage" in the og java but data makes more sense for what this is used for
 
-	bool operator==(const ItemStack& o) const {
-		return id == o.id && count == o.count && data == o.data;
+	bool operator==(const ItemStack& _o) const {
+		return id == _o.id && count == _o.count && data == _o.data;
 	}
-	bool operator!=(const ItemStack& o) const {
-		return !(*this == o);
-	}
-
-	friend std::wostream& operator<<(std::wostream& wos, const ItemStack& val) {
-		wos << "(" << static_cast<int64_t>(val.id) << ":" << static_cast<int64_t>(val.data) << " x"
-		    << static_cast<int64_t>(val.count) << ")";
-		return wos;
+	bool operator!=(const ItemStack& _o) const {
+		return !(*this == _o);
 	}
 
-	friend std::ostream& operator<<(std::ostream& os, const ItemStack& val) {
-		os << "(" << static_cast<int64_t>(val.id) << ":" << static_cast<int64_t>(val.data) << " x"
-		   << static_cast<int64_t>(val.count) << ")";
-		return os;
+	friend std::wostream& operator<<(std::wostream& _wos, const ItemStack& _val) {
+		_wos << "(" << static_cast<int64_t>(_val.id) << ":" << static_cast<int64_t>(_val.data) << " x"
+		    << static_cast<int64_t>(_val.count) << ")";
+		return _wos;
 	}
 
-	void decrementCount(int8_t amount) {
-		if (count - amount < 0) {
+	friend std::ostream& operator<<(std::ostream& _os, const ItemStack& _val) {
+		_os << "(" << static_cast<int64_t>(_val.id) << ":" << static_cast<int64_t>(_val.data) << " x"
+		   << static_cast<int64_t>(_val.count) << ")";
+		return _os;
+	}
+
+	void decrementCount(int8_t _amount) {
+		if (count - _amount < 0) {
 			count = 0;
 		} else {
-			count -= amount;
+			count -= _amount;
 		}
 		if (count <= 0) {
 			id = Items::Id::INVALID;
@@ -61,11 +61,11 @@ struct ItemStack {
 namespace std {
 template <>
 struct hash<ItemStack> {
-	size_t operator()(const ItemStack& s) const noexcept {
+	size_t operator()(const ItemStack& _s) const noexcept {
 		size_t h = 0;
-		hash_combine(h, s.id);
-		hash_combine(h, s.count);
-		hash_combine(h, s.data);
+		hash_combine(h, _s.id);
+		hash_combine(h, _s.count);
+		hash_combine(h, _s.data);
 		return h;
 	}
 };

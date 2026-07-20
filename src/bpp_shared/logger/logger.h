@@ -32,12 +32,12 @@ private:
 	Logger& operator=(const Logger&) = delete;
 	Logger& operator=(const Logger&&) = delete;
 
-	void ChatMessage(std::string message);
-	void Message(std::string message);
-	void Info(std::string message);
-	void Warning(std::string message);
-	void Error(std::string message);
-	void Debug(std::string message);
+	void ChatMessage(std::string _message);
+	void Message(std::string _message);
+	void Info(std::string _message);
+	void Warning(std::string _message);
+	void Error(std::string _message);
+	void Debug(std::string _message);
 
 public:
 	Logger();
@@ -53,8 +53,8 @@ public:
 	LogStream error;
 	LogStream debug;
 
-	std::string GetCurrentTimeString(bool file_format = false);
-	void Log(std::string message, LogLevel level = LOG_MESSAGE);
+	std::string GetCurrentTimeString(bool _file_format = false);
+	void Log(std::string _message, LogLevel _level = LOG_MESSAGE);
 };
 
 Logger& GlobalLogger();

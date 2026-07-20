@@ -1,7 +1,9 @@
 Checks: '-*,readability-identifier-naming'
 
 CheckOptions:
-  - key: readability-identifier-naming.MemberPrefix
+  - key: readability-identifier-naming.ClassMemberPrefix
     value: 'm_'
-  - key: readability-identifier-naming.PrivateMemberPrefix
+  - key: readability-identifier-naming.PrivateClassMemberPrefix
     value: ''
+  - key: readability-identifier-naming.ParameterPrefix
+    value: '_'

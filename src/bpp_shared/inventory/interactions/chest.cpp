@@ -5,9 +5,9 @@
 */
 #include "chest.h"
 
-ChestInventoryInteraction::ChestInventoryInteraction(InventoryPlayer* pinv, std::shared_ptr<TileEntityChest> chest)
-    : InventoryInteraction(&sharedInventory), playerInventory(pinv), chestHandle(chest),
-      chestInventory(&chest->inventory) {
+ChestInventoryInteraction::ChestInventoryInteraction(InventoryPlayer* _pinv, std::shared_ptr<TileEntityChest> _chest)
+    : InventoryInteraction(&sharedInventory), playerInventory(_pinv), chestHandle(_chest),
+      chestInventory(&_chest->inventory) {
 	sharedInventory.owner = this;
 	mergeInventories();
 }
@@ -60,14 +60,14 @@ void ChestInventoryInteraction::writeBack() {
 		playerInventory->slots[i - 27 + 9] = sharedInventory.slots[i];
 }
 
-void ChestInventoryInteraction::onShiftClick(int slot) {
-	auto stack = sharedInventory.getStackInSlot(slot);
+void ChestInventoryInteraction::onShiftClick(int _slot) {
+	auto stack = sharedInventory.getStackInSlot(_slot);
 	if (!stack)
 		return;
 
 	ItemStack copy = *stack;
 
-	if (slot <= 26) {
+	if (_slot <= 26) {
 		// Chest -> inventory
 		[[maybe_unused]] bool success = playerInventory->mergeItemStackInInventory(copy, true, 9, 44);
 	} else {
@@ -76,10 +76,10 @@ void ChestInventoryInteraction::onShiftClick(int slot) {
 	}
 
 	// Update the source in the real inventory before re-merging
-	if (slot <= 26) {
-		chestInventory->slots[size_t(slot)] = copy.count == 0 ? ItemStack{} : copy;
+	if (_slot <= 26) {
+		chestInventory->slots[size_t(_slot)] = copy.count == 0 ? ItemStack{} : copy;
 	} else {
-		int playerSlot = slot - 27 + 9;
+		int playerSlot = _slot - 27 + 9;
 		playerInventory->slots[size_t(playerSlot)] = copy.count == 0 ? ItemStack{} : copy;
 	}
 

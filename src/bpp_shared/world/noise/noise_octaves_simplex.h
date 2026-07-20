@@ -14,57 +14,57 @@
 class NoiseOctavesSimplex {
 public:
 	NoiseOctavesSimplex() {}
-	NoiseOctavesSimplex(int32_t octaves);
-	NoiseOctavesSimplex(Java::Random& rand, int32_t octaves);
+	NoiseOctavesSimplex(int32_t _octaves);
+	NoiseOctavesSimplex(Java::Random& _rand, int32_t _octaves);
 
 	// func_4112_a
-	void GenerateOctaves(std::vector<double>& noiseField, Vec2 offset, Int32_2 size, Vec2 scale, double lacunarity);
-	void GenerateOctaves(std::vector<double>& noiseField, Int32_2 offset, Int32_2 size, Vec2 scale, double lacunarity);
+	void GenerateOctaves(std::vector<double>& _noiseField, Vec2 _offset, Int32_2 _size, Vec2 _scale, double _lacunarity);
+	void GenerateOctaves(std::vector<double>& _noiseField, Int32_2 _offset, Int32_2 _size, Vec2 _scale, double _lacunarity);
 	// func_4111_a
-	void GenerateOctaves(std::vector<double>& noiseField, Vec2 offset, Int32_2 size, Vec2 scale, double lacunarity,
-	                     double persistence);
+	void GenerateOctaves(std::vector<double>& _noiseField, Vec2 _offset, Int32_2 _size, Vec2 _scale, double _lacunarity,
+	                     double _persistence);
 
 private:
 	int32_t octaves;
 	std::vector<NoiseSimplex> generator_collection;
 };
 
-inline NoiseOctavesSimplex::NoiseOctavesSimplex(int32_t poctaves) : octaves(poctaves) {
+inline NoiseOctavesSimplex::NoiseOctavesSimplex(int32_t _poctaves) : octaves(_poctaves) {
 	for (int32_t i = 0; i < octaves; ++i)
 		generator_collection.push_back(NoiseSimplex());
 }
 
-inline NoiseOctavesSimplex::NoiseOctavesSimplex(Java::Random& rand, int32_t poctaves) : octaves(poctaves) {
+inline NoiseOctavesSimplex::NoiseOctavesSimplex(Java::Random& _rand, int32_t _poctaves) : octaves(_poctaves) {
 	for (int32_t i = 0; i < octaves; ++i)
-		generator_collection.push_back(NoiseSimplex(rand));
+		generator_collection.push_back(NoiseSimplex(_rand));
 }
 
-inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField, Int32_2 offset, Int32_2 size,
-                                                 Vec2 scale, double lacunarity) {
-	this->GenerateOctaves(noiseField, Vec2{ double(offset.x), double(offset.y) }, size, scale, lacunarity);
+inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& _noiseField, Int32_2 _offset, Int32_2 _size,
+                                                 Vec2 _scale, double _lacunarity) {
+	this->GenerateOctaves(_noiseField, Vec2{ double(_offset.x), double(_offset.y) }, _size, _scale, _lacunarity);
 }
 
-inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField, Vec2 offset, Int32_2 size, Vec2 scale,
-                                                 double lacunarity) {
-	this->GenerateOctaves(noiseField, offset, size, scale, lacunarity, 0.5);
+inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& _noiseField, Vec2 _offset, Int32_2 _size, Vec2 _scale,
+                                                 double _lacunarity) {
+	this->GenerateOctaves(_noiseField, _offset, _size, _scale, _lacunarity, 0.5);
 }
 
-inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& noiseField, Vec2 offset, Int32_2 size, Vec2 scale,
-                                                 double lacunarity, double persistence) {
-	scale.x /= 1.5;
-	scale.y /= 1.5;
-	if (!noiseField.empty() && int32_t(noiseField.size()) >= size.x * size.y) {
-		for (size_t i = 0; i < noiseField.size(); ++i)
-			noiseField[i] = 0.0;
+inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& _noiseField, Vec2 _offset, Int32_2 _size, Vec2 _scale,
+                                                 double _lacunarity, double _persistence) {
+	_scale.x /= 1.5;
+	_scale.y /= 1.5;
+	if (!_noiseField.empty() && int32_t(_noiseField.size()) >= _size.x * _size.y) {
+		for (size_t i = 0; i < _noiseField.size(); ++i)
+			_noiseField[i] = 0.0;
 	} else {
-		noiseField.resize(size_t(size.x * size.y), 0.0);
+		_noiseField.resize(size_t(_size.x * _size.y), 0.0);
 	}
 
 	double frequency = 1.0;
 	double amplitude = 1.0;
 	for (size_t octave = 0; octave < size_t(octaves); ++octave) {
-		generator_collection[octave].GenerateNoise(noiseField, offset, size, scale * amplitude, 0.55 / frequency);
-		amplitude *= lacunarity;
-		frequency *= persistence;
+		generator_collection[octave].GenerateNoise(_noiseField, _offset, _size, _scale * amplitude, 0.55 / frequency);
+		amplitude *= _lacunarity;
+		frequency *= _persistence;
 	}
 }

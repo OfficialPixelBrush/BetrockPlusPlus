@@ -10,7 +10,7 @@
 #include "networking/network_stream.h"
 #include <cerrno>
 
-ServerManager::ServerManager(uint16_t port) {
+ServerManager::ServerManager(uint16_t _port) {
 	// Only bind new socket if it doesn't exist already
 	if (server_socket != INVALID_SOCKET)
 		return;
@@ -22,7 +22,7 @@ ServerManager::ServerManager(uint16_t port) {
 
 	sockaddr_in serverAddress;
 	serverAddress.sin_family = AF_INET;
-	serverAddress.sin_port = htons(port);
+	serverAddress.sin_port = htons(_port);
 	serverAddress.sin_addr.s_addr = INADDR_ANY;
 	server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (bind(server_socket, reinterpret_cast<struct sockaddr*>(&serverAddress), sizeof(serverAddress)) != 0) {

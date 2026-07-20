@@ -8,163 +8,163 @@
 #include "../server.h"
 #include "version.h"
 
-void PlayerConnStateManager::handleConnectionState(PlayerSession& session, Server& server) {
-	switch (session.connState) {
+void PlayerConnStateManager::handleConnectionState(PlayerSession& _session, Server& _server) {
+	switch (_session.connState) {
 	case ConnectionState::Handshaking:
-		handleHandshake(session, server);
+		handleHandshake(_session, _server);
 		break;
 	case ConnectionState::LoggingIn:
-		handleLogin(session, server);
+		handleLogin(_session, _server);
 		break;
 	case ConnectionState::WaitingForSpawnChunks:
-		waitForSpawnChunks(session, server);
+		waitForSpawnChunks(_session, _server);
 		break;
 	case ConnectionState::Playing: {
-		WorldManager& sessionWorld = session.dimension == -1 ? server.gameRuntime.worldHell : server.gameRuntime.world;
-		server.chunkSender.enqueue(session, sessionWorld, 16);
-		server.chunkSender.flush(session);
+		WorldManager& sessionWorld = _session.dimension == -1 ? _server.gameRuntime.worldHell : _server.gameRuntime.world;
+		_server.chunkSender.enqueue(_session, sessionWorld, 16);
+		_server.chunkSender.flush(_session);
 		if (sessionWorld.elapsed_ticks % 20 == 0) {
 			// Update the server time so client's don't desync
 			Packet::SetTime time;
 			time.time = sessionWorld.elapsed_ticks;
-			time.Serialize(session.stream);
+			time.Serialize(_session.stream);
 		}
 		break;
 	}
 	}
 }
 
-void PlayerConnStateManager::handleHandshake(PlayerSession& session, [[maybe_unused]] Server& server) {
-	if (!session.stream.hasData())
+void PlayerConnStateManager::handleHandshake(PlayerSession& _session, [[maybe_unused]] Server& _server) {
+	if (!_session.stream.hasData())
 		return;
-	PacketId packetId = session.stream.Read<PacketId>();
+	PacketId packetId = _session.stream.Read<PacketId>();
 
-	if (session.stream.checkAndClearShortRead())
+	if (_session.stream.checkAndClearShortRead())
 		return;
 	if (packetId != PacketId::PreLogin)
 		return;
 
 	Packet::PreLogin incoming;
-	incoming.Deserialize(session.stream);
-	if (session.stream.checkAndClearShortRead()) {
+	incoming.Deserialize(_session.stream);
+	if (_session.stream.checkAndClearShortRead()) {
 		return;
 	}
-	session.username = incoming.username;
+	_session.username = incoming.username;
 
 	Packet::PreLogin response;
 	response.username = "-";
-	response.Serialize(session.stream);
+	response.Serialize(_session.stream);
 
-	GlobalLogger().info << "Player " << session.username << " is logging in.\n";
+	GlobalLogger().info << "Player " << _session.username << " is logging in.\n";
 
-	session.connState = ConnectionState::LoggingIn;
+	_session.connState = ConnectionState::LoggingIn;
 }
 
-void PlayerConnStateManager::handleLogin(PlayerSession& session, Server& server) {
-	if (!session.stream.hasData())
+void PlayerConnStateManager::handleLogin(PlayerSession& _session, Server& _server) {
+	if (!_session.stream.hasData())
 		return;
 
-	PacketId packetId = session.stream.Read<PacketId>();
-	if (session.stream.checkAndClearShortRead())
+	PacketId packetId = _session.stream.Read<PacketId>();
+	if (_session.stream.checkAndClearShortRead())
 		return;
 	if (packetId != PacketId::Login)
 		return;
 
 	Packet::Login incoming;
-	incoming.Deserialize(session.stream);
-	if (session.stream.checkAndClearShortRead()) {
+	incoming.Deserialize(_session.stream);
+	if (_session.stream.checkAndClearShortRead()) {
 		return;
 	}
 
 	// Load player data before building the Login response so we know which dimension they're in
-	auto playerNbt = server.gameRuntime.saveManager.getPlayerNBT(
-	    std::string(session.username.begin(), session.username.end()));
-	session.loadPlayerNBT(playerNbt);
+	auto playerNbt = _server.gameRuntime.saveManager.getPlayerNBT(
+	    std::string(_session.username.begin(), _session.username.end()));
+	_session.loadPlayerNBT(playerNbt);
 
 	// Get the right world pointer
-	WorldManager& sessionWorld = session.dimension == -1 ? server.gameRuntime.worldHell : server.gameRuntime.world;
+	WorldManager& sessionWorld = _session.dimension == -1 ? _server.gameRuntime.worldHell : _server.gameRuntime.world;
 
 	// Initialize our entity
-	if (!session.entity)
-		session.entity = std::make_shared<EntityMPPlayer>();
-	session.entity->session = &session;
-	session.entity->id = sessionWorld.entityManager.getNextEntityId();
-	session.entity->dim = session.dimension == -1 ? Dimension::Nether : Dimension::Overworld;
+	if (!_session.entity)
+		_session.entity = std::make_shared<EntityMPPlayer>();
+	_session.entity->session = &_session;
+	_session.entity->id = sessionWorld.entityManager.getNextEntityId();
+	_session.entity->dim = _session.dimension == -1 ? Dimension::Nether : Dimension::Overworld;
 
 	Packet::Login response;
-	response.entity_id = session.entity->id;
-	response.username = session.username;
-	response.worldSeed = server.gameRuntime.world.seed;
-	response.dimension = Dimension(session.dimension);
-	response.Serialize(session.stream);
+	response.entity_id = _session.entity->id;
+	response.username = _session.username;
+	response.worldSeed = _server.gameRuntime.world.seed;
+	response.dimension = Dimension(_session.dimension);
+	response.Serialize(_session.stream);
 
 	Packet::SetSpawnPosition spawn;
 	spawn.position = sessionWorld.spawnPoint;
-	spawn.Serialize(session.stream);
+	spawn.Serialize(_session.stream);
 
 	Packet::SetHealth health;
 	health.health = 20;
-	health.Serialize(session.stream);
+	health.Serialize(_session.stream);
 
 	Packet::SetTime time;
 	time.time = sessionWorld.elapsed_ticks;
-	time.Serialize(session.stream);
+	time.Serialize(_session.stream);
 
 	// Get a fresh respawn point
 	auto respawnPoint = sessionWorld.getSpawnPoint(true);
 
 	// If our session position is the default then overwrite it
-	if (session.position.pos == Vec3{ -1, -1000000, -1 }) {
-		session.position.pos = { float(respawnPoint.x) + 0.5, float(respawnPoint.y), float(respawnPoint.z) + 0.5 };
+	if (_session.position.pos == Vec3{ -1, -1000000, -1 }) {
+		_session.position.pos = { float(respawnPoint.x) + 0.5, float(respawnPoint.y), float(respawnPoint.z) + 0.5 };
 	}
 
 	// Convert the feet-based respawn height into our posY convention (eye level)
-	session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
+	_session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
 
 	// Log that we logged in!
-	GlobalLogger().info << "Player " << session.username << " logged in with entity ID " << session.entity->id
-	                    << " at (" << session.position.pos.x << ", " << session.position.pos.y << ", "
-	                    << session.position.pos.z << ")\n";
+	GlobalLogger().info << "Player " << _session.username << " logged in with entity ID " << _session.entity->id
+	                    << " at (" << _session.position.pos.x << ", " << _session.position.pos.y << ", "
+	                    << _session.position.pos.z << ")\n";
 
 	// Update our last trusted position
-	session.entity->position = session.position.pos;
-	session.pendingTeleport = session.position.pos;
-	session.entity->rebuildCollider();
+	_session.entity->position = _session.position.pos;
+	_session.pendingTeleport = _session.position.pos;
+	_session.entity->rebuildCollider();
 
 	// Let everyone else know we logged in
-	server.sendGlobalChatMessage("§e" + session.username + " joined the game.");
+	_server.sendGlobalChatMessage("§e" + _session.username + " joined the game.");
 
 	// Send our inventory
-	PacketUtilities::sendInventory(session, 0, session.inventory);
+	PacketUtilities::sendInventory(_session, 0, _session.inventory);
 
 	// Snapshot current contents so the tick loop's diffing (tickDiff) has a real baseline
 	// to compare against, instead of starting from an empty snapshot for the whole session.
-	session.inventoryInteraction.initSnapshot();
+	_session.inventoryInteraction.initSnapshot();
 
-	session.connState = ConnectionState::WaitingForSpawnChunks;
+	_session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
-void PlayerConnStateManager::disconnectPlayer(PlayerSession& session, const std::string& reason,
-                                              [[maybe_unused]] Server& server) {
+void PlayerConnStateManager::disconnectPlayer(PlayerSession& _session, const std::string& _reason,
+                                              [[maybe_unused]] Server& _server) {
 	// Send disconnect reason to the leaving player
 	Packet::Disconnect kick;
-	kick.reason = reason;
-	kick.Serialize(session.stream);
-	session.stream.setConnected(false); // This should force an NBT save
-	GlobalLogger().info << "Player " << session.username << " disconnected: " << reason << "\n";
+	kick.reason = _reason;
+	kick.Serialize(_session.stream);
+	_session.stream.setConnected(false); // This should force an NBT save
+	GlobalLogger().info << "Player " << _session.username << " disconnected: " << _reason << "\n";
 }
 
-void PlayerConnStateManager::waitForSpawnChunks(PlayerSession& session, Server& server) {
-	WorldManager& sessionWorld = session.dimension == -1 ? server.gameRuntime.worldHell : server.gameRuntime.world;
-	server.chunkSender.enqueue(session, sessionWorld, server.flushChunkCount);
-	server.chunkSender.flush(session);
+void PlayerConnStateManager::waitForSpawnChunks(PlayerSession& _session, Server& _server) {
+	WorldManager& sessionWorld = _session.dimension == -1 ? _server.gameRuntime.worldHell : _server.gameRuntime.world;
+	_server.chunkSender.enqueue(_session, sessionWorld, _server.flushChunkCount);
+	_server.chunkSender.flush(_session);
 
 	// Force a tiny view distance for players trying to spawn in
-	session.position.viewDistanceOverride = 3;
+	_session.position.viewDistanceOverride = 3;
 
 	// Spawn chunk radius; 3 chunks in each direction
-	int spawnChunkX = int(std::floor(session.position.pos.x)) >> 4;
-	int spawnChunkZ = int(std::floor(session.position.pos.z)) >> 4;
+	int spawnChunkX = int(std::floor(_session.position.pos.x)) >> 4;
+	int spawnChunkZ = int(std::floor(_session.position.pos.z)) >> 4;
 
 	int radius = CrossPlatform::Math::min(3, sessionWorld.getViewRadius());
 
@@ -174,7 +174,7 @@ void PlayerConnStateManager::waitForSpawnChunks(PlayerSession& session, Server& 
 	for (int dx = -radius; dx <= radius; dx++) {
 		for (int dz = -radius; dz <= radius; dz++) {
 			Int32_2 p{ spawnChunkX + dx, spawnChunkZ + dz };
-			if (session.flushedChunks.contains(p))
+			if (_session.flushedChunks.contains(p))
 				loaded_chunks++;
 		}
 	}
@@ -186,35 +186,35 @@ void PlayerConnStateManager::waitForSpawnChunks(PlayerSession& session, Server& 
 
 	GlobalLogger().info << "Spawn chunks sent. Setting player position\n";
 
-	session.position.pos.y += 0.0625;
+	_session.position.pos.y += 0.0625;
 	Packet::PlayerPositionAndRotation pos;
-	pos.position = session.position.pos;
-	pos.camera_y = session.position.pos.y + PLAYER_EYE_HEIGHT;
-	pos.rotation = session.rotation;
+	pos.position = _session.position.pos;
+	pos.camera_y = _session.position.pos.y + PLAYER_EYE_HEIGHT;
+	pos.rotation = _session.rotation;
 	pos.onGround = false;
-	pos.Serialize(session.stream);
+	pos.Serialize(_session.stream);
 
 	// Update our last trusted position
-	session.entity->position = session.position.pos;
-	session.pendingTeleport = session.position.pos;
-	session.entity->rebuildCollider();
+	_session.entity->position = _session.position.pos;
+	_session.pendingTeleport = _session.position.pos;
+	_session.entity->rebuildCollider();
 
 	// Set view distance to server default
-	session.position.viewDistanceOverride = 0;
+	_session.position.viewDistanceOverride = 0;
 
 	GlobalLogger().info << "Client connected\n";
-	session.connState = ConnectionState::Playing;
+	_session.connState = ConnectionState::Playing;
 
 	// Register our entity with the world
-	if (!session.entityRegistered)
-		sessionWorld.entityManager.addEntity(session.entity, session.entity->id);
-	session.entityRegistered = true;
+	if (!_session.entityRegistered)
+		sessionWorld.entityManager.addEntity(_session.entity, _session.entity->id);
+	_session.entityRegistered = true;
 
 	// Give our player session a pointer to the entity tracker
-	session.entityTracker = session.dimension == 0 ? &server.overworldEntityTracker : &server.hellEntityTracker;
+	_session.entityTracker = _session.dimension == 0 ? &_server.overworldEntityTracker : &_server.hellEntityTracker;
 
 	// Welcome message
 	Packet::ChatMessage welcomeMsg;
 	welcomeMsg.message = std::string("§eThis Server runs on ") + std::string(PROJECT_FULL_VERSION_LABEL);
-	welcomeMsg.Serialize(session.stream);
+	welcomeMsg.Serialize(_session.stream);
 }

@@ -12,11 +12,11 @@
 #include "numeric_structs.h"
 #include "pathfinder.hpp"
 
-Node* Pathfinder::openNode(Int3 pos) {
-	auto [it, inserted] = nodes.try_emplace(pos);
+Node* Pathfinder::openNode(Int3 _pos) {
+	auto [it, inserted] = nodes.try_emplace(_pos);
 
 	if (inserted) {
-		it->second.pos = pos;
+		it->second.pos = _pos;
 	}
 
 	return &it->second;
@@ -29,18 +29,18 @@ void Pathfinder::reset() {
 	nodes.clear();
 }
 
-bool Pathfinder::posValid(Int3 pos) {
-	Int3 bottomPos = pos;
+bool Pathfinder::posValid(Int3 _pos) {
+	Int3 bottomPos = _pos;
 	bottomPos.y -= 1;
-	bool isAir = world->isAirBlock(pos);
+	bool isAir = world->isAirBlock(_pos);
 	bool isNormal = world->isBlockNormalCube(bottomPos);
 	return isAir && isNormal;
 }
 
-std::optional<Int3> Pathfinder::getNeighbour(Int3 from, Int2 dir) {
-	Int3 pos = from;
-	pos.x += dir.x;
-	pos.z += dir.y;
+std::optional<Int3> Pathfinder::getNeighbour(Int3 _from, Int2 _dir) {
+	Int3 pos = _from;
+	pos.x += _dir.x;
+	pos.z += _dir.y;
 
 	// Step up one block if blocked.
 	if (!world->isAirBlock(pos)) {
@@ -66,23 +66,23 @@ std::optional<Int3> Pathfinder::getNeighbour(Int3 from, Int2 dir) {
 	return pos;
 }
 
-inline int manhattan(const Int3& a, const Int3& b) noexcept {
-	return std::abs(a.x - b.x) + std::abs(a.y - b.y) + std::abs(a.z - b.z);
+inline int manhattan(const Int3& _a, const Int3& _b) noexcept {
+	return std::abs(_a.x - _b.x) + std::abs(_a.y - _b.y) + std::abs(_a.z - _b.z);
 }
 
 const Int2 CARDINAL_DIRS[4] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
 
-std::vector<Int3> Pathfinder::findPath(Int3 start, Int3 goal) {
+std::vector<Int3> Pathfinder::findPath(Int3 _start, Int3 _goal) {
 	reset();
 
-	if (!posValid(start) || !posValid(goal))
+	if (!posValid(_start) || !posValid(_goal))
 		return {};
 
-	Node* startNode = openNode(start);
-	Node* goalNode = openNode(goal);
+	Node* startNode = openNode(_start);
+	Node* goalNode = openNode(_goal);
 
 	startNode->g = 0;
-	startNode->f = manhattan(start, goal);
+	startNode->f = manhattan(_start, _goal);
 
 	open.push({ startNode->f, startNode });
 
@@ -112,7 +112,7 @@ std::vector<Int3> Pathfinder::findPath(Int3 start, Int3 goal) {
 
 			if (g < next->g) {
 				next->g = g;
-				next->f = g + manhattan(*nextPos, goal);
+				next->f = g + manhattan(*nextPos, _goal);
 				next->parent = current;
 
 				open.push({ next->f, next });

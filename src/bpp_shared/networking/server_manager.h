@@ -16,7 +16,7 @@ private:
 
 public:
 	std::vector<NetworkStream> streams;
-	ServerManager(uint16_t port = 25565);
+	ServerManager(uint16_t _port = 25565);
 	~ServerManager();
 	bool InitConnection();
 };

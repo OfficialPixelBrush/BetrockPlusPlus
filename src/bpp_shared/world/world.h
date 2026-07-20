@@ -55,7 +55,7 @@ struct WorldManager {
 	BS::thread_pool<> populationPool{ 1 }; // unused
 	Java::Random rand;
 
-	WorldManager(bool pIsHell = false) : isHell(pIsHell) {
+	WorldManager(bool _pIsHell = false) : isHell(_pIsHell) {
 		entityManager.world = this; // Bind the world pointer in EntityManager
 		tickScheduler.world = this;
 		if (isHell)
@@ -64,23 +64,23 @@ struct WorldManager {
 
 	~WorldManager() {}
 
-	void tick(const std::vector<ClientPosition>& players);
-	void update(const std::vector<ClientPosition>& players);
+	void tick(const std::vector<ClientPosition>& _players);
+	void update(const std::vector<ClientPosition>& _players);
 	void shutdown();
-	std::vector<AABB> getCollidingBoundingBoxes(const AABB& area);
+	std::vector<AABB> getCollidingBoundingBoxes(const AABB& _area);
 	void flushBleedWrites();
-	void propagateChunkLightBorders(Int32_2 cpos);
-	BlockType getFirstUncoveredBlock(int wx, int wz);
-	int findTopSolidBlock(int wx, int wz);
-	void setMeta(Int3 wpos, uint8_t metadata = 0);
-	void setBlock(Int3 wpos, BlockType block_type, uint8_t metadata = 0);
+	void propagateChunkLightBorders(Int32_2 _cpos);
+	BlockType getFirstUncoveredBlock(int _wx, int _wz);
+	int findTopSolidBlock(int _wx, int _wz);
+	void setMeta(Int3 _wpos, uint8_t _metadata = 0);
+	void setBlock(Int3 _wpos, BlockType _block_type, uint8_t _metadata = 0);
 	void drainGenQueue();
-	bool isLiquidInAABB(AABB collider);
+	bool isLiquidInAABB(AABB _collider);
 	void initSpawn();
-	bool handleFluidAcceleration(AABB collider, Material material, Entity& entity);
-	bool isMaterialInAABB(AABB collider, Material material);
-	void updateLoadRadius(const std::vector<ClientPosition>& players);
-	void pumpPipeline(const std::vector<ClientPosition>& players);
+	bool handleFluidAcceleration(AABB _collider, Material _material, Entity& _entity);
+	bool isMaterialInAABB(AABB _collider, Material _material);
+	void updateLoadRadius(const std::vector<ClientPosition>& _players);
+	void pumpPipeline(const std::vector<ClientPosition>& _players);
 	void populateReady();
 	void drainLoadQueue();
 
@@ -90,21 +90,21 @@ struct WorldManager {
 	const int getSimulationDistance() {
 		return SIMULATION_RADIUS;
 	}
-	void setViewRadius(int viewRadius) {
-		int newViewRadius = std::max(3, viewRadius);
+	void setViewRadius(int _viewRadius) {
+		int newViewRadius = std::max(3, _viewRadius);
 		this->VIEW_RADIUS = newViewRadius;
 		this->SIMULATION_RADIUS = std::min(9, newViewRadius);
 	}
 
-	void initWorldSeed(std::string pSeed) {
-		this->seed = hashCode(pSeed);
+	void initWorldSeed(std::string _pSeed) {
+		this->seed = hashCode(_pSeed);
 	}
 
-	void initWorldSeed(int64_t pSeed) {
-		this->seed = pSeed;
+	void initWorldSeed(int64_t _pSeed) {
+		this->seed = _pSeed;
 	}
 
-	void notifyNeighborsOfUpdate(Int3 globalPos) {
+	void notifyNeighborsOfUpdate(Int3 _globalPos) {
 		// Update our six neighbors
 		const int ndx[] = { -1, 1, 0, 0 };
 		const int ndz[] = { 0, 0, -1, 1 };
@@ -113,7 +113,7 @@ struct WorldManager {
 		for (int i = 0; i < 4; i++) {
 			auto dx = ndx[i];
 			auto dz = ndz[i];
-			Int3 newPos = { globalPos.x + dx, globalPos.y, globalPos.z + dz };
+			Int3 newPos = { _globalPos.x + dx, _globalPos.y, _globalPos.z + dz };
 			auto block = this->getBlockId(newPos);
 			auto updateFunction = Blocks::blockBehaviors[block].onNeighborBlockChange;
 			if (updateFunction)
@@ -123,7 +123,7 @@ struct WorldManager {
 		// Vertical neighbors
 		for (int i = 0; i < 2; i++) {
 			auto dy = ndx[i]; // we are using ndx because the first two items are -1, 1
-			Int3 newPos = { globalPos.x, globalPos.y + dy, globalPos.z };
+			Int3 newPos = { _globalPos.x, _globalPos.y + dy, _globalPos.z };
 			auto block = this->getBlockId(newPos);
 			auto updateFunction = Blocks::blockBehaviors[block].onNeighborBlockChange;
 			if (updateFunction)
@@ -132,33 +132,33 @@ struct WorldManager {
 	}
 
 	// For creating a fresh tile entity for generation etc
-	void createTileEntity(std::shared_ptr<TileEntity> tileEntity) {
-		Int32_2 cpos{ tileEntity->position.x >> 4, tileEntity->position.z >> 4 };
+	void createTileEntity(std::shared_ptr<TileEntity> _tileEntity) {
+		Int32_2 cpos{ _tileEntity->position.x >> 4, _tileEntity->position.z >> 4 };
 		Chunk* chunk = getChunkRaw(cpos);
 		if (!chunk)
 			return;
-		tileEntity->chunk = chunk;
-		tileEntityManager.initializeTileEntity(tileEntity);   // weak_ptr added if canTick
-		chunk->tileEntities.push_back(std::move(tileEntity)); // chunk takes ownership
+		_tileEntity->chunk = chunk;
+		tileEntityManager.initializeTileEntity(_tileEntity);   // weak_ptr added if canTick
+		chunk->tileEntities.push_back(std::move(_tileEntity)); // chunk takes ownership
 	}
 
 	// For registering a tile entity that already exists in the world (e.g. loaded from disk)
-	void registerChunkTileEntities(Chunk* chunk) {
-		for (auto& te : chunk->tileEntities) {
+	void registerChunkTileEntities(Chunk* _chunk) {
+		for (auto& te : _chunk->tileEntities) {
 			if (te) {
 				tileEntityManager.initializeTileEntity(te);
-				te->chunk = chunk;
+				te->chunk = _chunk;
 			}
 		}
 	}
 
 	// Returns the tile entity at world position `pos`, or nullptr if none.
-	TileEntity* getTileEntity(Int3 pos) {
-		Chunk* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });
+	TileEntity* getTileEntity(Int3 _pos) {
+		Chunk* chunk = getChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
 		if (!chunk)
 			return nullptr;
 		for (auto& te : chunk->tileEntities) {
-			if (te && te->position.x == pos.x && te->position.y == pos.y && te->position.z == pos.z)
+			if (te && te->position.x == _pos.x && te->position.y == _pos.y && te->position.z == _pos.z)
 				return te.get();
 		}
 		return nullptr;
@@ -166,90 +166,90 @@ struct WorldManager {
 
 	// Returns nullptr if not found or wrong type.
 	template <typename T>
-	T* getTileEntityAs(Int3 pos) {
-		return dynamic_cast<T*>(getTileEntity(pos));
+	T* getTileEntityAs(Int3 _pos) {
+		return dynamic_cast<T*>(getTileEntity(_pos));
 	}
 
 	template <typename T>
-	std::shared_ptr<T> getTileEntityShared(Int3 pos) {
-		Chunk* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });
+	std::shared_ptr<T> getTileEntityShared(Int3 _pos) {
+		Chunk* chunk = getChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
 		if (!chunk)
 			return nullptr;
 		for (auto& te : chunk->tileEntities) {
-			if (te && te->position.x == pos.x && te->position.y == pos.y && te->position.z == pos.z)
+			if (te && te->position.x == _pos.x && te->position.y == _pos.y && te->position.z == _pos.z)
 				return std::dynamic_pointer_cast<T>(te);
 		}
 		return nullptr;
 	}
 
 	// Remove the tile entity at world position `pos`.
-	void removeTileEntity(Int3 pos) {
-		Chunk* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });
+	void removeTileEntity(Int3 _pos) {
+		Chunk* chunk = getChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
 		if (!chunk)
 			return;
 		auto& tes = chunk->tileEntities;
 		tes.erase(std::remove_if(tes.begin(), tes.end(),
-		                         [&](const std::shared_ptr<TileEntity>& te) {
-			                         return te && te->position.x == pos.x && te->position.y == pos.y &&
-			                                te->position.z == pos.z;
+		                         [&](const std::shared_ptr<TileEntity>& _te) {
+			                         return _te && _te->position.x == _pos.x && _te->position.y == _pos.y &&
+			                                _te->position.z == _pos.z;
 		                         }),
 		          tes.end());
 	}
 
 	// Called from pool gen threads
-	void postGenResult(std::shared_ptr<Chunk> chunk) {
+	void postGenResult(std::shared_ptr<Chunk> _chunk) {
 		std::lock_guard lk(genDoneMutex);
-		genDoneQueue.push_back(std::move(chunk));
+		genDoneQueue.push_back(std::move(_chunk));
 	}
 
-	std::shared_ptr<Chunk> getChunk(Int32_2 pos) {
-		return getChunkShared(pos);
+	std::shared_ptr<Chunk> getChunk(Int32_2 _pos) {
+		return getChunkShared(_pos);
 	}
 
-	bool canPopulate(Int32_2 pos) {
-		return canPopulateDirect(pos);
+	bool canPopulate(Int32_2 _pos) {
+		return canPopulateDirect(_pos);
 	}
 
-	BlockType getBlockId(Int3 wpos) {
-		if (!inBounds(wpos.y))
+	BlockType getBlockId(Int3 _wpos) {
+		if (!inBounds(_wpos.y))
 			return BlockType::BLOCK_AIR;
-		auto* chunk = getChunkRaw({ wpos.x >> 4, wpos.z >> 4 });
+		auto* chunk = getChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return BlockType::BLOCK_AIR;
-		return chunk->getBlock({ wpos.x & 15, wpos.y, wpos.z & 15 });
+		return chunk->getBlock({ _wpos.x & 15, _wpos.y, _wpos.z & 15 });
 	}
 
-	uint8_t getMetadata(Int3 wpos) {
-		if (!inBounds(wpos.y))
+	uint8_t getMetadata(Int3 _wpos) {
+		if (!inBounds(_wpos.y))
 			return 0;
-		auto* chunk = getChunkRaw({ wpos.x >> 4, wpos.z >> 4 });
+		auto* chunk = getChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return 0;
-		return chunk->getMeta({ wpos.x & 15, wpos.y, wpos.z & 15 });
+		return chunk->getMeta({ _wpos.x & 15, _wpos.y, _wpos.z & 15 });
 	}
 
-	void setBlock(Int3 wpos, const Block& block) {
-		setBlock(wpos, block.type, block.data);
+	void setBlock(Int3 _wpos, const Block& _block) {
+		setBlock(_wpos, _block.type, _block.data);
 	}
 
-	bool isAirBlock(Int3 wpos) {
-		return getBlockId(wpos) == BlockType::BLOCK_AIR;
+	bool isAirBlock(Int3 _wpos) {
+		return getBlockId(_wpos) == BlockType::BLOCK_AIR;
 	}
 
-	Material getMaterial(Int3 wpos) {
-		return Blocks::blockProperties[getBlockId(wpos)].material;
+	Material getMaterial(Int3 _wpos) {
+		return Blocks::blockProperties[getBlockId(_wpos)].material;
 	}
 
-	bool isBlockNormalCube(Int3 wpos) {
-		BlockType block = getBlockId(wpos);
+	bool isBlockNormalCube(Int3 _wpos) {
+		BlockType block = getBlockId(_wpos);
 		if (block == BlockType::BLOCK_AIR)
 			return false;
 		const auto& props = Blocks::blockProperties[block];
 		return props.material.isSolid && props.isNormalCube;
 	}
 
-	Int3 getSpawnPoint(bool adjust) {
-		if (!adjust)
+	Int3 getSpawnPoint(bool _adjust) {
+		if (!_adjust)
 			return spawnPoint;
 		int sx = this->spawnPoint.x;
 		int sz = this->spawnPoint.z;
@@ -259,53 +259,53 @@ struct WorldManager {
 		return { sx, sy, sz };
 	}
 
-	int getHeightValue(int wx, int wz) {
-		auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
+	int getHeightValue(int _wx, int _wz) {
+		auto* chunk = getChunkRaw({ _wx >> 4, _wz >> 4 });
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return 0;
-		return chunk->getHeightValue({ wx & 15, wz & 15 });
+		return chunk->getHeightValue({ _wx & 15, _wz & 15 });
 	}
 
 	// Returns the baked temperature/humidity for a world column.
-	double getTemperatureAt(int wx, int wz) {
-		auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
+	double getTemperatureAt(int _wx, int _wz) {
+		auto* chunk = getChunkRaw({ _wx >> 4, _wz >> 4 });
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return 0.5;
-		return double(chunk->getTemperature({ wx & 15, wz & 15 }));
+		return double(chunk->getTemperature({ _wx & 15, _wz & 15 }));
 	}
 
-	double getHumidityAt(int wx, int wz) {
-		auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
+	double getHumidityAt(int _wx, int _wz) {
+		auto* chunk = getChunkRaw({ _wx >> 4, _wz >> 4 });
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return 0.5;
-		return double(chunk->getHumidity({ wx & 15, wz & 15 }));
+		return double(chunk->getHumidity({ _wx & 15, _wz & 15 }));
 	}
 
-	int getSkyLight(Int3 pos) {
-		if (!inBounds(pos.y))
+	int getSkyLight(Int3 _pos) {
+		if (!inBounds(_pos.y))
 			return 0;
-		auto* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });
+		auto* chunk = getChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return 0;
-		return chunk->getSkyLight({ pos.x & 15, pos.y, pos.z & 15 });
+		return chunk->getSkyLight({ _pos.x & 15, _pos.y, _pos.z & 15 });
 	}
 
-	int getBlockLight(Int3 pos) {
-		if (!inBounds(pos.y))
+	int getBlockLight(Int3 _pos) {
+		if (!inBounds(_pos.y))
 			return 0;
-		auto* chunk = getChunkRaw({ pos.x >> 4, pos.z >> 4 });
+		auto* chunk = getChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return 0;
-		return chunk->getBlockLight({ pos.x & 15, pos.y, pos.z & 15 });
+		return chunk->getBlockLight({ _pos.x & 15, _pos.y, _pos.z & 15 });
 	}
 
-	Chunk* getChunkRaw(Int32_2 pos) {
-		auto it = chunks.find(pos);
+	Chunk* getChunkRaw(Int32_2 _pos) {
+		auto it = chunks.find(_pos);
 		return (it != chunks.end()) ? it->second.get() : nullptr;
 	}
 
-	bool isChunkValid(Int32_2 pos) {
-		auto* chunk = getChunkRaw({ pos.x, pos.z });
+	bool isChunkValid(Int32_2 _pos) {
+		auto* chunk = getChunkRaw({ _pos.x, _pos.z });
 		if (!chunk)
 			return false;
 		if (chunk->state.load() >= ChunkState::Generated)
@@ -313,13 +313,13 @@ struct WorldManager {
 		return false;
 	}
 
-	bool AABBinValidChunks(AABB collider) {
-		if (collider.minY < 0.0 || collider.maxY >= 128.0)
+	bool AABBinValidChunks(AABB _collider) {
+		if (_collider.minY < 0.0 || _collider.maxY >= 128.0)
 			return false;
-		int minCX = MathHelper::floor_double(collider.minX) >> 4;
-		int maxCX = MathHelper::floor_double(collider.maxX + 1.0) >> 4;
-		int minCZ = MathHelper::floor_double(collider.minZ) >> 4;
-		int maxCZ = MathHelper::floor_double(collider.maxZ + 1.0) >> 4;
+		int minCX = MathHelper::floor_double(_collider.minX) >> 4;
+		int maxCX = MathHelper::floor_double(_collider.maxX + 1.0) >> 4;
+		int minCZ = MathHelper::floor_double(_collider.minZ) >> 4;
+		int maxCZ = MathHelper::floor_double(_collider.maxZ + 1.0) >> 4;
 
 		for (int cx = minCX; cx <= maxCX; cx++) {
 			for (int cz = minCZ; cz <= maxCZ; cz++) {
@@ -330,13 +330,13 @@ struct WorldManager {
 		return true;
 	}
 
-	Int32_2 blockToChunkPos(Int32_2 blockPos) {
-		return { blockPos.x >> 4, blockPos.z >> 4 };
+	Int32_2 blockToChunkPos(Int32_2 _blockPos) {
+		return { _blockPos.x >> 4, _blockPos.z >> 4 };
 	}
 
 	// Returns true when the world-space Y is within valid chunk bounds.
-	static constexpr bool inBounds(int y) {
-		return y >= 0 && y < CHUNK_HEIGHT;
+	static constexpr bool inBounds(int _y) {
+		return _y >= 0 && _y < CHUNK_HEIGHT;
 	}
 
 private:
@@ -346,25 +346,25 @@ private:
 
 	bool isHell = false; // for the nether
 
-	void seedChunkLighting(Int32_2 pos);
+	void seedChunkLighting(Int32_2 _pos);
 
-	std::shared_ptr<Chunk> getChunkShared(Int32_2 pos) {
-		auto it = chunks.find(pos);
+	std::shared_ptr<Chunk> getChunkShared(Int32_2 _pos) {
+		auto it = chunks.find(_pos);
 		return (it != chunks.end()) ? it->second : nullptr;
 	}
 
 	// Check if a chunk can be populated
-	bool canPopulateDirect(Int32_2 pos) {
-		auto* chunk = getChunkRaw(pos);
+	bool canPopulateDirect(Int32_2 _pos) {
+		auto* chunk = getChunkRaw(_pos);
 		if (!chunk)
 			return false;
 		if (chunk->isTerrainPopulated)
 			return false;
 		if (chunk->state.load() < ChunkState::Generated)
 			return false;
-		auto* a = getChunkRaw({ pos.x + 1, pos.z });
-		auto* b = getChunkRaw({ pos.x, pos.z + 1 });
-		auto* c = getChunkRaw({ pos.x + 1, pos.z + 1 });
+		auto* a = getChunkRaw({ _pos.x + 1, _pos.z });
+		auto* b = getChunkRaw({ _pos.x, _pos.z + 1 });
+		auto* c = getChunkRaw({ _pos.x + 1, _pos.z + 1 });
 		if (!a || !b || !c)
 			return false;
 		if (a->state.load() < ChunkState::Generated)

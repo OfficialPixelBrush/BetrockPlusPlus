@@ -19,7 +19,7 @@ struct InventoryInteraction {
 	ItemStack carried;
 	Inventory* inventory;
 
-	InventoryInteraction(Inventory* inv);
+	InventoryInteraction(Inventory* _inv);
 	virtual ~InventoryInteraction() = default;
 
 	virtual bool canExist();
@@ -31,9 +31,9 @@ struct InventoryInteraction {
 	// Returns a list of slots that are different
 	virtual std::vector<DeltaSlot> tickDiff();
 
-	virtual void onLeftClick(int slot);
+	virtual void onLeftClick(int _slot);
 
-	virtual void onRightClick(int slot);
+	virtual void onRightClick(int _slot);
 
-	virtual void onShiftClick(int slot);
+	virtual void onShiftClick(int _slot);
 };

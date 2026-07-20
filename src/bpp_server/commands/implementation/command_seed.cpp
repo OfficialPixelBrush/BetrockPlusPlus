@@ -10,10 +10,10 @@
 // Get the world seed
 // Usage:
 //   /seed
-std::string CommandSeed::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
-                                 std::function<void(PlayerSession&)> transferDimension, Server& server) {
+std::string CommandSeed::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
+                                 std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
 	Packet::ChatMessage reply;
-	reply.message = "§e" + std::to_string(world.seed);
-	reply.Serialize(session.stream);
+	reply.message = "§e" + std::to_string(_world.seed);
+	reply.Serialize(_session.stream);
 	return "";
 }

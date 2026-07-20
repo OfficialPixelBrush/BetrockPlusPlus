@@ -33,5 +33,5 @@
 
 #define STYLE_RESET "\033[0m"
 
-std::string FormatToStyle(int8_t format);
-std::string HandleFormattingCodes(const std::string& input);
+std::string FormatToStyle(int8_t _format);
+std::string HandleFormattingCodes(const std::string& _input);

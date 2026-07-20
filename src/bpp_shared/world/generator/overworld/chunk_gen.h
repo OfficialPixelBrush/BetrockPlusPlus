@@ -48,15 +48,15 @@ private:
 	// Cave Gen
 	CaveGenerator caver;
 
-	void GenerateTerrain(Chunk& chunk);
-	void GenerateTerrainNoise(Int3 cpos, Int3 max);
-	void ReplaceBlocksForBiome(Chunk& chunk);
-	Biome GetBiomeAt(Int2 worldPos);
-	void GenerateTreeForBiome(WorldWrapper& world, Java::Random& rand, Int3 pos, Biome biome);
+	void GenerateTerrain(Chunk& _chunk);
+	void GenerateTerrainNoise(Int3 _cpos, Int3 _max);
+	void ReplaceBlocksForBiome(Chunk& _chunk);
+	Biome GetBiomeAt(Int2 _worldPos);
+	void GenerateTreeForBiome(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, Biome _biome);
 
 public:
-	OverworldGenerator(int64_t seed);
+	OverworldGenerator(int64_t _seed);
 	~OverworldGenerator() = default;
-	void GenerateChunk(Chunk& chunk) override;
-	bool PopulateChunk(Chunk& chunk, WorldWrapper& world) override;
+	void GenerateChunk(Chunk& _chunk) override;
+	bool PopulateChunk(Chunk& _chunk, WorldWrapper& _world) override;
 };

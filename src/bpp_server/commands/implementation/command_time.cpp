@@ -10,28 +10,28 @@
 // Usage:
 //   /time
 //   /time <new_time>
-std::string CommandTime::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
-                                 std::function<void(PlayerSession&)> transferDimension, Server& server) {
+std::string CommandTime::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
+                                 std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
 	// Set the time
-	if (parameters.size() > 2) {
-		if (parameters[1] == "set") {
-			world.elapsed_ticks = std::stol(parameters[2]);
-		} else if (parameters[1] == "add") {
-			world.elapsed_ticks += std::stol(parameters[2]);
+	if (_parameters.size() > 2) {
+		if (_parameters[1] == "set") {
+			_world.elapsed_ticks = std::stol(_parameters[2]);
+		} else if (_parameters[1] == "add") {
+			_world.elapsed_ticks += std::stol(_parameters[2]);
 		} else {
-			return "Invalid argument " + parameters[1];
+			return "Invalid argument " + _parameters[1];
 		}
 		Packet::ChatMessage reply;
-		reply.message = "§eSet time to " + std::to_string(world.elapsed_ticks);
-		reply.Serialize(session.stream);
+		reply.message = "§eSet time to " + std::to_string(_world.elapsed_ticks);
+		reply.Serialize(_session.stream);
 		return "";
 	}
 
 	// Get the time
-	if (parameters.size() == 1) {
+	if (_parameters.size() == 1) {
 		Packet::ChatMessage reply;
-		reply.message = "§eCurrent Time is " + std::to_string(world.elapsed_ticks);
-		reply.Serialize(session.stream);
+		reply.message = "§eCurrent Time is " + std::to_string(_world.elapsed_ticks);
+		reply.Serialize(_session.stream);
 		return "";
 	}
 	return ERROR_REASON_SYNTAX;

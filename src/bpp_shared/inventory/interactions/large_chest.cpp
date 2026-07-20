@@ -5,11 +5,11 @@
 */
 #include "large_chest.h"
 
-LargeChestInventoryInteraction::LargeChestInventoryInteraction(InventoryPlayer* pinv,
-                                                               std::shared_ptr<TileEntityChest> upper,
-                                                               std::shared_ptr<TileEntityChest> lower)
-    : InventoryInteraction(&sharedInventory), playerInventory(pinv), upperChest(upper), lowerChest(lower),
-      chestInventory(&upper->inventory, &lower->inventory) {
+LargeChestInventoryInteraction::LargeChestInventoryInteraction(InventoryPlayer* _pinv,
+                                                               std::shared_ptr<TileEntityChest> _upper,
+                                                               std::shared_ptr<TileEntityChest> _lower)
+    : InventoryInteraction(&sharedInventory), playerInventory(_pinv), upperChest(_upper), lowerChest(_lower),
+      chestInventory(&_upper->inventory, &_lower->inventory) {
 	sharedInventory.owner = this;
 	mergeInventories();
 }
@@ -68,14 +68,14 @@ void LargeChestInventoryInteraction::writeBack() {
 		playerInventory->slots[i - 54 + 9] = sharedInventory.slots[i];
 }
 
-void LargeChestInventoryInteraction::onShiftClick(int slot) {
-	auto stack = sharedInventory.getStackInSlot(slot);
+void LargeChestInventoryInteraction::onShiftClick(int _slot) {
+	auto stack = sharedInventory.getStackInSlot(_slot);
 	if (!stack)
 		return;
 
 	ItemStack copy = *stack;
 
-	if (slot <= 53) {
+	if (_slot <= 53) {
 		// Chest -> inventory
 		[[maybe_unused]] bool success = playerInventory->mergeItemStackInInventory(copy, true, 9, 44);
 	} else {
@@ -84,11 +84,11 @@ void LargeChestInventoryInteraction::onShiftClick(int slot) {
 	}
 
 	// Update the source in the real inventory before re-merging
-	if (slot <= 53) {
+	if (_slot <= 53) {
 		ItemStack* ptr = copy.count == 0 ? nullptr : &copy;
-		chestInventory.setInventorySlotContents(slot, ptr);
+		chestInventory.setInventorySlotContents(_slot, ptr);
 	} else {
-		int playerSlot = slot - 54 + 9;
+		int playerSlot = _slot - 54 + 9;
 		playerInventory->slots[size_t(playerSlot)] = copy.count == 0 ? ItemStack{} : copy;
 	}
 

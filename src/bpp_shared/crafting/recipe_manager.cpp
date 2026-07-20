@@ -12,27 +12,27 @@
 #include "numeric_structs.h"
 #include <algorithm>
 
-void RecipeManager::addShapelessRecipe(std::span<const ItemKey> items, ItemStack output) {
-	auto [it, inserted] = shapelessRecipes.try_emplace(makeShapelessKey(items), output);
+void RecipeManager::addShapelessRecipe(std::span<const ItemKey> _items, ItemStack _output) {
+	auto [it, inserted] = shapelessRecipes.try_emplace(makeShapelessKey(_items), _output);
 
 	[[unlikely]]
 	if (!inserted) {
-		it->second = output;
-		GlobalLogger().warn << "Overwriting existing shapeless recipe for output item " << output;
+		it->second = _output;
+		GlobalLogger().warn << "Overwriting existing shapeless recipe for output item " << _output;
 	}
 }
 
 // The space character ' ' is reserved for empty slots
-void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> rows,
-                                    std::initializer_list<std::pair<char, ItemKey>> mapping, ItemStack output) {
+void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> _rows,
+                                    std::initializer_list<std::pair<char, ItemKey>> _mapping, ItemStack _output) {
 	std::array<ItemKey, 9> grid{};
 
 	std::unordered_map<char, ItemKey> table;
-	for (const auto& m : mapping)
+	for (const auto& m : _mapping)
 		table.emplace(m.first, m.second);
 
 	size_t y = 0;
-	for (auto row : rows) {
+	for (auto row : _rows) {
 		if (y >= 3) {
 			GlobalLogger().warn << "Recipe has more than 3 rows. Skipping extra rows.";
 			break;
@@ -51,7 +51,7 @@ void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> rows
 
 			ItemKey mappedItem;
 
-			for (const auto& [symbol, item] : mapping) {
+			for (const auto& [symbol, item] : _mapping) {
 				if (symbol == c)
 					mappedItem = item;
 			}
@@ -67,23 +67,23 @@ void RecipeManager::addShapedRecipe(std::initializer_list<std::string_view> rows
 		++y;
 	}
 
-	auto [it, inserted] = shapedRecipes.try_emplace(makeShapedKey(grid, { 3, 3 }), output);
+	auto [it, inserted] = shapedRecipes.try_emplace(makeShapedKey(grid, { 3, 3 }), _output);
 
 	if (!inserted) {
-		it->second = output;
-		GlobalLogger().warn << "Overwriting existing shaped recipe for output item " << output;
+		it->second = _output;
+		GlobalLogger().warn << "Overwriting existing shaped recipe for output item " << _output;
 	}
 }
 
-const ItemStack RecipeManager::matchGrid(std::span<const ItemStack> grid, UInt8_2 size) const {
+const ItemStack RecipeManager::matchGrid(std::span<const ItemStack> _grid, UInt8_2 _size) const {
 	std::array<ItemKey, 9> keyGrid{};
 
-	const size_t total_size = size_t(size.total());
+	const size_t total_size = size_t(_size.total());
 
 	for (size_t i = 0; i < total_size; ++i)
-		keyGrid[i] = { grid[i].id, grid[i].data };
+		keyGrid[i] = { _grid[i].id, _grid[i].data };
 
-	auto shaped = shapedRecipes.find(makeShapedKey(std::span<const ItemKey>(keyGrid.data(), total_size), size));
+	auto shaped = shapedRecipes.find(makeShapedKey(std::span<const ItemKey>(keyGrid.data(), total_size), _size));
 
 	if (shaped != shapedRecipes.end())
 		return shaped->second;
@@ -96,16 +96,16 @@ const ItemStack RecipeManager::matchGrid(std::span<const ItemStack> grid, UInt8_
 	return { .id = Items::Id::INVALID };
 }
 
-ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemKey> grid, UInt8_2 size) {
+ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemKey> _grid, UInt8_2 _size) {
 	int minX = 3;
 	int minY = 3;
 	int maxX = -1;
 	int maxY = -1;
 
 	// Find the bounding box of the recipe
-	for (int y = 0; y < size.y; ++y) {
-		for (int x = 0; x < size.x; ++x) {
-			const auto& item = grid[y * size.x + x];
+	for (int y = 0; y < _size.y; ++y) {
+		for (int x = 0; x < _size.x; ++x) {
+			const auto& item = _grid[y * _size.x + x];
 
 			if (item.id == Items::Id::INVALID)
 				continue;
@@ -129,17 +129,17 @@ ShapedRecipeKey RecipeManager::makeShapedKey(std::span<const ItemKey> grid, UInt
 	// Copy the actual recipe to top left
 	for (int y = 0; y < key.height; ++y) {
 		for (int x = 0; x < key.width; ++x) {
-			key.cells[y * 3 + x] = grid[(minY + y) * size.x + (minX + x)];
+			key.cells[y * 3 + x] = _grid[(minY + y) * _size.x + (minX + x)];
 		}
 	}
 
 	return key;
 }
 
-ShapelessRecipeKey RecipeManager::makeShapelessKey(std::span<const ItemKey> items) {
+ShapelessRecipeKey RecipeManager::makeShapelessKey(std::span<const ItemKey> _items) {
 	ShapelessRecipeKey key{};
 
-	for (const auto& item : items) {
+	for (const auto& item : _items) {
 		if (!Items::IsValid(item.id))
 			continue;
 		if (key.count >= key.items.size()) {

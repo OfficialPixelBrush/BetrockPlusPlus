@@ -12,11 +12,11 @@
 #include <vector>
 
 namespace ChunkSerializer {
-inline std::vector<uint8_t> serialize(const Chunk& chunk, int xmin = 0, int xmax = 16, int ymin = 0,
-                                      int ymax = CHUNK_HEIGHT, int zmin = 0, int zmax = 16) {
-	int sizeX = xmax - xmin;
-	int sizeY = ymax - ymin;
-	int sizeZ = zmax - zmin;
+inline std::vector<uint8_t> serialize(const Chunk& _chunk, int _xmin = 0, int _xmax = 16, int _ymin = 0,
+                                      int _ymax = CHUNK_HEIGHT, int _zmin = 0, int _zmax = 16) {
+	int sizeX = _xmax - _xmin;
+	int sizeY = _ymax - _ymin;
+	int sizeZ = _zmax - _zmin;
 
 	int blocks = sizeX * sizeY * sizeZ;
 	int nibbles = (blocks + 1) / 2;
@@ -28,22 +28,22 @@ inline std::vector<uint8_t> serialize(const Chunk& chunk, int xmin = 0, int xmax
 	uint8_t* blockLight = metaData + nibbles;
 	uint8_t* skyLight = blockLight + nibbles;
 
-	auto packNibble = [](uint8_t& byte, uint8_t val, bool high) {
-		if (high)
-			byte = uint8_t((byte & 0x0F) | ((val & 0x0F) << 4));
+	auto packNibble = [](uint8_t& _byte, uint8_t _val, bool _high) {
+		if (_high)
+			_byte = uint8_t((_byte & 0x0F) | ((_val & 0x0F) << 4));
 		else
-			byte = uint8_t((byte & 0xF0) | (val & 0x0F));
+			_byte = uint8_t((_byte & 0xF0) | (_val & 0x0F));
 	};
 
 	int i = 0;
-	for (int x = xmin; x < xmax; x++) {
-		for (int z = zmin; z < zmax; z++) {
-			for (int y = ymin; y < ymax; y++, i++) {
+	for (int x = _xmin; x < _xmax; x++) {
+		for (int z = _zmin; z < _zmax; z++) {
+			for (int y = _ymin; y < _ymax; y++, i++) {
 				Int3 pos{ x, y, z };
-				blockData[i] = uint8_t(chunk.getBlock(pos));
-				packNibble(metaData[i >> 1], chunk.getMeta(pos), i & 1);
-				packNibble(blockLight[i >> 1], chunk.getBlockLight(pos), i & 1);
-				packNibble(skyLight[i >> 1], chunk.getSkyLight(pos), i & 1);
+				blockData[i] = uint8_t(_chunk.getBlock(pos));
+				packNibble(metaData[i >> 1], _chunk.getMeta(pos), i & 1);
+				packNibble(blockLight[i >> 1], _chunk.getBlockLight(pos), i & 1);
+				packNibble(skyLight[i >> 1], _chunk.getSkyLight(pos), i & 1);
 			}
 		}
 	}

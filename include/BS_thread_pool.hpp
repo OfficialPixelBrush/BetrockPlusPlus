@@ -142,7 +142,7 @@ namespace BS {
  */
 struct [[nodiscard]] version
 {
-    constexpr version(const std::uint64_t major_, const std::uint64_t minor_, const std::uint64_t patch_) noexcept : m_major(major_), m_minor(minor_), m_patch(patch_) {}
+    constexpr version(const std::uint64_t _major, const std::uint64_t _minor, const std::uint64_t _patch) noexcept : m_major(_major), m_minor(_minor), m_patch(_patch) {}
 
 // In C++20 and later we can use the spaceship operator `<=>` to automatically generate comparison operators. In C++17 we have to define them manually.
 #ifdef __cpp_impl_three_way_comparison
@@ -184,10 +184,10 @@ struct [[nodiscard]] version
         return std::to_string(m_major) + '.' + std::to_string(m_minor) + '.' + std::to_string(m_patch);
     }
 
-    friend std::ostream& operator<<(std::ostream& stream, const version& ver)
+    friend std::ostream& operator<<(std::ostream& _stream, const version& _ver)
     {
-        stream << ver.to_string();
-        return stream;
+        _stream << _ver.to_string();
+        return _stream;
     }
 
     std::uint64_t m_major;
@@ -285,9 +285,9 @@ BS_THREAD_POOL_DEFINE_BITWISE_OPERATOR(tp, &)
 BS_THREAD_POOL_DEFINE_BITWISE_OPERATOR(tp, |)
 BS_THREAD_POOL_DEFINE_BITWISE_OPERATOR(tp, ^)
 
-constexpr tp operator~(const tp value) noexcept
+constexpr tp operator~(const tp _value) noexcept
 {
-    return static_cast<tp>(~static_cast<std::underlying_type_t<tp>>(value));
+    return static_cast<tp>(~static_cast<std::underlying_type_t<tp>>(_value));
 }
 
 template <tp>
@@ -414,7 +414,7 @@ struct [[nodiscard]] pr_task
      * @param task_ The task.
      * @param priority_ The desired priority.
      */
-    explicit pr_task(task_t&& task_, const priority_t priority_ = 0) noexcept(std::is_nothrow_move_constructible_v<task_t>) : m_task(std::move(task_)), m_priority(priority_) {}
+    explicit pr_task(task_t&& _task, const priority_t _priority = 0) noexcept(std::is_nothrow_move_constructible_v<task_t>) : m_task(std::move(_task)), m_priority(_priority) {}
 
     /**
      * @brief Compare the priority of two tasks.
@@ -423,9 +423,9 @@ struct [[nodiscard]] pr_task
      * @param rhs The second task.
      * @return `true` if the first task has a lower priority than the second task, `false` otherwise.
      */
-    [[nodiscard]] friend bool operator<(const pr_task& lhs, const pr_task& rhs) noexcept
+    [[nodiscard]] friend bool operator<(const pr_task& _lhs, const pr_task& _rhs) noexcept
     {
-        return lhs.m_priority < rhs.m_priority;
+        return _lhs.m_priority < _rhs.m_priority;
     }
 
     /**
@@ -532,13 +532,13 @@ public:
      * @return `true` if all futures have been waited for before the duration expired, `false` otherwise.
      */
     template <typename R, typename P>
-    bool wait_for(const std::chrono::duration<R, P>& duration) const
+    bool wait_for(const std::chrono::duration<R, P>& _duration) const
     {
         const std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::steady_clock::now();
         for (const std::future<T>& future : *this)
         {
-            future.wait_for(duration - (std::chrono::steady_clock::now() - start_time));
-            if (duration < std::chrono::steady_clock::now() - start_time)
+            future.wait_for(_duration - (std::chrono::steady_clock::now() - start_time));
+            if (_duration < std::chrono::steady_clock::now() - start_time)
                 return false;
         }
         return true;
@@ -553,12 +553,12 @@ public:
      * @return `true` if all futures have been waited for before the time point was reached, `false` otherwise.
      */
     template <typename C, typename D>
-    bool wait_until(const std::chrono::time_point<C, D>& timeout_time) const
+    bool wait_until(const std::chrono::time_point<C, D>& _timeout_time) const
     {
         for (const std::future<T>& future : *this)
         {
-            future.wait_until(timeout_time);
-            if (timeout_time < C::now())
+            future.wait_until(_timeout_time);
+            if (_timeout_time < C::now())
                 return false;
         }
         return true;
@@ -581,7 +581,7 @@ public:
      * @param index_after_last_ The index after the last index in the range.
      * @param num_blocks_ The desired number of blocks to divide the range into.
      */
-    blocks(const T first_index_, const T index_after_last_, const std::size_t num_blocks_) noexcept : num_blocks(num_blocks_), first_index(first_index_), index_after_last(index_after_last_)
+    blocks(const T _first_index, const T _index_after_last, const std::size_t _num_blocks) noexcept : num_blocks(_num_blocks), first_index(_first_index), index_after_last(_index_after_last)
     {
         if (index_after_last > first_index)
         {
@@ -607,9 +607,9 @@ public:
      * @param block The block number.
      * @return The index after the last index.
      */
-    [[nodiscard]] T end(const std::size_t block) const noexcept
+    [[nodiscard]] T end(const std::size_t _block) const noexcept
     {
-        return (block == num_blocks - 1) ? index_after_last : start(block + 1);
+        return (_block == num_blocks - 1) ? index_after_last : start(_block + 1);
     }
 
     /**
@@ -628,9 +628,9 @@ public:
      * @param block The block number.
      * @return The first index.
      */
-    [[nodiscard]] T start(const std::size_t block) const noexcept
+    [[nodiscard]] T start(const std::size_t _block) const noexcept
     {
-        return first_index + static_cast<T>(block * block_size) + static_cast<T>(block < remainder ? block : remainder);
+        return first_index + static_cast<T>(_block * block_size) + static_cast<T>(_block < remainder ? _block : remainder);
     }
 
 private:
@@ -728,11 +728,11 @@ template <typename R>
 struct task_and_future
 {
     template <typename F, typename = std::enable_if_t<!std::is_same_v<std::decay_t<F>, task_and_future<R>>>>
-    explicit task_and_future(F&& func)
+    explicit task_and_future(F&& _func)
     {
         std::promise<R> promise;
         m_future = promise.get_future();
-        m_task = [task = std::forward<F>(func), promise = std::move(promise)]() mutable
+        m_task = [task = std::forward<F>(_func), promise = std::move(promise)]() mutable
         {
 #ifdef __cpp_exceptions
             try
@@ -976,7 +976,7 @@ public:
      */
     [[nodiscard]] static std::optional<std::size_t> get_index() noexcept
     {
-        return my_index;
+        return m_my_index;
     }
 
     /**
@@ -986,7 +986,7 @@ public:
      */
     [[nodiscard]] static std::optional<void*> get_pool() noexcept
     {
-        return my_pool;
+        return m_my_pool;
     }
 
 #ifdef BS_THREAD_POOL_NATIVE_EXTENSIONS
@@ -1344,8 +1344,8 @@ public:
 #endif
 
 private:
-    inline static thread_local std::optional<std::size_t> my_index = std::nullopt;
-    inline static thread_local std::optional<void*> my_pool = std::nullopt;
+    inline static thread_local std::optional<std::size_t> m_my_index = std::nullopt;
+    inline static thread_local std::optional<void*> m_my_pool = std::nullopt;
 }; // class this_thread
 
 /**
@@ -1382,10 +1382,10 @@ struct common_index_type<T1, T2, std::enable_if_t<(std::is_signed_v<T1> && std::
 {
     using S = std::conditional_t<std::is_signed_v<T1>, T1, T2>;
     using U = std::conditional_t<std::is_unsigned_v<T1>, T1, T2>;
-    static constexpr std::size_t larger_size = (sizeof(S) > sizeof(U)) ? sizeof(S) : sizeof(U);
-    using type = std::conditional_t<larger_size <= 4,
+    static constexpr std::size_t m_larger_size = (sizeof(S) > sizeof(U)) ? sizeof(S) : sizeof(U);
+    using type = std::conditional_t<m_larger_size <= 4,
         // If both integers are 32 bits or less, the common type should be a signed type that can hold both of them. If both are 8 bits, or the signed type is 16 bits and the unsigned type is 8 bits, the common type is `std::int16_t`. Otherwise, if both are 16 bits, or the signed type is 32 bits and the unsigned type is smaller, the common type is `std::int32_t`. Otherwise, if both are 32 bits or less, the common type is `std::int64_t`.
-        std::conditional_t<larger_size == 1 || (sizeof(S) == 2 && sizeof(U) == 1), std::int16_t, std::conditional_t<larger_size == 2 || (sizeof(S) == 4 && sizeof(U) < 4), std::int32_t, std::int64_t>>,
+        std::conditional_t<m_larger_size == 1 || (sizeof(S) == 2 && sizeof(U) == 1), std::int16_t, std::conditional_t<m_larger_size == 2 || (sizeof(S) == 4 && sizeof(U) < 4), std::int32_t, std::int64_t>>,
         // If the unsigned integer is 64 bits, the common type should also be an unsigned 64-bit integer, that is, `std::uint64_t`. The reason is that the most common scenario where this might happen is where the indices go from 0 to `x` where `x` has been previously defined as `std::size_t`, e.g. the size of a vector. Note that this will fail if the first index is negative; in that case, the user must cast the indices explicitly to the desired common type. If the unsigned integer is not 64 bits, then the signed integer must be 64 bits, hence the common type is `std::int64_t`.
         std::conditional_t<sizeof(U) == 8, std::uint64_t, std::int64_t>>;
 };
@@ -1431,7 +1431,7 @@ public:
     /**
      * @brief A flag indicating whether task priority is enabled.
      */
-    static constexpr bool priority_enabled = (OptFlags & tp::priority) != tp::none;
+    static constexpr bool m_priority_enabled = (OptFlags & tp::priority) != tp::none;
 
     /**
      * @brief A flag indicating whether pausing is enabled.
@@ -1441,7 +1441,7 @@ public:
     /**
      * @brief A flag indicating whether wait deadlock checks are enabled.
      */
-    static constexpr bool wait_deadlock_checks_enabled = (OptFlags & tp::wait_deadlock_checks) != tp::none;
+    static constexpr bool m_wait_deadlock_checks_enabled = (OptFlags & tp::wait_deadlock_checks) != tp::none;
 
 #ifndef __cpp_exceptions
     static_assert(!wait_deadlock_checks_enabled, "Wait deadlock checks cannot be enabled if exception handling is disabled.");
@@ -1461,7 +1461,7 @@ public:
      *
      * @param num_threads The number of threads to use.
      */
-    explicit thread_pool(const std::size_t num_threads) : thread_pool(num_threads, [] {}) {}
+    explicit thread_pool(const std::size_t _num_threads) : thread_pool(_num_threads, [] {}) {}
 
     /**
      * @brief Construct a new thread pool with the specified initialization function and the default number of threads.
@@ -1469,7 +1469,7 @@ public:
      * @param init An initialization function to run in each thread before it starts executing any submitted tasks. The function must have no return value, and can either take one argument, the thread index of type `std::size_t`, or zero arguments. It will be executed exactly once per thread, when the thread is first constructed. The initialization function must not throw any exceptions, as that will result in program termination. Any exceptions must be handled explicitly within the function.
      */
     template <BS_THREAD_POOL_INIT_FUNC_CONCEPT(F)>
-    explicit thread_pool(F&& init) : thread_pool(0, std::forward<F>(init)) {}
+    explicit thread_pool(F&& _init) : thread_pool(0, std::forward<F>(_init)) {}
 
     /**
      * @brief Construct a new thread pool with the specified number of threads and initialization function.
@@ -1478,9 +1478,9 @@ public:
      * @param init An initialization function to run in each thread before it starts executing any submitted tasks. The function must have no return value, and can either take one argument, the thread index of type `std::size_t`, or zero arguments. It will be executed exactly once per thread, when the thread is first constructed. The initialization function must not throw any exceptions, as that will result in program termination. Any exceptions must be handled explicitly within the function.
      */
     template <BS_THREAD_POOL_INIT_FUNC_CONCEPT(F)>
-    thread_pool(const std::size_t num_threads, F&& init)
+    thread_pool(const std::size_t _num_threads, F&& _init)
     {
-        create_threads(num_threads, std::forward<F>(init));
+        create_threads(_num_threads, std::forward<F>(_init));
     }
 
     // The copy and move constructors and assignment operators are deleted. The thread pool cannot be copied or moved.
@@ -1528,9 +1528,9 @@ public:
      * @param priority The priority of the tasks. Should be between -128 and +127 (a signed 8-bit integer). The default is 0. Only taken into account if the flag `BS::tp::priority` is enabled in the template parameter, otherwise has no effect.
      */
     template <typename T1, typename T2, typename T = common_index_type_t<T1, T2>, typename F>
-    void detach_blocks(const T1 first_index, const T2 index_after_last, F&& block, const std::size_t num_blocks = 0, const priority_t priority = 0)
+    void detach_blocks(const T1 _first_index, const T2 _index_after_last, F&& _block, const std::size_t _num_blocks = 0, const priority_t _priority = 0)
     {
-        enqueue_blocks<T, F, void, false>(static_cast<T>(first_index), static_cast<T>(index_after_last), std::forward<F>(block), num_blocks, priority);
+        enqueue_blocks<T, F, void, false>(static_cast<T>(_first_index), static_cast<T>(_index_after_last), std::forward<F>(_block), _num_blocks, _priority);
     }
 
     /**
@@ -1542,9 +1542,9 @@ public:
      * @param priority The priority of the tasks. Should be between -128 and +127 (a signed 8-bit integer). The default is 0. Only taken into account if the flag `BS::tp::priority` is enabled in the template parameter, otherwise has no effect.
      */
     template <typename I>
-    void detach_bulk(const I first, const I last, const priority_t priority = 0)
+    void detach_bulk(const I _first, const I _last, const priority_t _priority = 0)
     {
-        if (first != last)
+        if (_first != _last)
         {
             bool notify = false;
             {
@@ -1553,10 +1553,10 @@ public:
                     notify = tasks.empty() && !paused;
                 else
                     notify = tasks.empty();
-                for (I it = first; it != last; ++it)
+                for (I it = _first; it != _last; ++it)
                 {
-                    if constexpr (priority_enabled)
-                        tasks.emplace(std::move(*it), priority);
+                    if constexpr (m_priority_enabled)
+                        tasks.emplace(std::move(*it), _priority);
                     else
                         tasks.emplace(std::move(*it));
                 }
@@ -1574,9 +1574,9 @@ public:
      * @param priority The priority of the tasks. Should be between -128 and +127 (a signed 8-bit integer). The default is 0. Only taken into account if the flag `BS::tp::priority` is enabled in the template parameter, otherwise has no effect.
      */
     template <typename C>
-    void detach_bulk(C& container, const priority_t priority = 0)
+    void detach_bulk(C& _container, const priority_t _priority = 0)
     {
-        detach_bulk(std::begin(container), std::end(container), priority);
+        detach_bulk(std::begin(_container), std::end(_container), _priority);
     }
 
     /**
@@ -1593,9 +1593,9 @@ public:
      * @param priority The priority of the tasks. Should be between -128 and +127 (a signed 8-bit integer). The default is 0. Only taken into account if the flag `BS::tp::priority` is enabled in the template parameter, otherwise has no effect.
      */
     template <typename T1, typename T2, typename T = common_index_type_t<T1, T2>, typename F>
-    void detach_loop(const T1 first_index, const T2 index_after_last, F&& loop, const std::size_t num_blocks = 0, const priority_t priority = 0)
+    void detach_loop(const T1 _first_index, const T2 _index_after_last, F&& _loop, const std::size_t _num_blocks = 0, const priority_t _priority = 0)
     {
-        enqueue_loop<T, F, false>(static_cast<T>(first_index), static_cast<T>(index_after_last), std::forward<F>(loop), num_blocks, priority);
+        enqueue_loop<T, F, false>(static_cast<T>(_first_index), static_cast<T>(_index_after_last), std::forward<F>(_loop), _num_blocks, _priority);
     }
 
     /**
@@ -1611,9 +1611,9 @@ public:
      * @param priority The priority of the tasks. Should be between -128 and +127 (a signed 8-bit integer). The default is 0. Only taken into account if the flag `BS::tp::priority` is enabled in the template parameter, otherwise has no effect.
      */
     template <typename T1, typename T2, typename T = common_index_type_t<T1, T2>, typename F>
-    void detach_sequence(const T1 first_index, const T2 index_after_last, F&& sequence, const priority_t priority = 0)
+    void detach_sequence(const T1 _first_index, const T2 _index_after_last, F&& _sequence, const priority_t _priority = 0)
     {
-        return enqueue_sequence<T, F, void, false>(static_cast<T>(first_index), static_cast<T>(index_after_last), std::forward<F>(sequence), priority);
+        return enqueue_sequence<T, F, void, false>(static_cast<T>(_first_index), static_cast<T>(_index_after_last), std::forward<F>(_sequence), _priority);
     }
 
     /**
@@ -1624,14 +1624,14 @@ public:
      * @param priority The priority of the task. Should be between -128 and +127 (a signed 8-bit integer). The default is 0. Only taken into account if the flag `BS::tp::priority` is enabled in the template parameter, otherwise has no effect.
      */
     template <typename F>
-    void detach_task(F&& task, const priority_t priority = 0)
+    void detach_task(F&& _task, const priority_t _priority = 0)
     {
         {
             const std::scoped_lock tasks_lock(tasks_mutex);
-            if constexpr (priority_enabled)
-                tasks.emplace(std::forward<F>(task), priority);
+            if constexpr (m_priority_enabled)
+                tasks.emplace(std::forward<F>(_task), _priority);
             else
-                tasks.emplace(std::forward<F>(task));
+                tasks.emplace(std::forward<F>(_task));
         }
         task_available_cv.notify_one();
     }
@@ -1751,9 +1751,9 @@ public:
      *
      * @param num_threads The number of threads to use.
      */
-    void reset(const std::size_t num_threads)
+    void reset(const std::size_t _num_threads)
     {
-        reset(num_threads, [](std::size_t) {});
+        reset(_num_threads, [](std::size_t) {});
     }
 
     /**
@@ -1762,9 +1762,9 @@ public:
      * @param init An initialization function to run in each thread before it starts executing any submitted tasks. The function must have no return value, and can either take one argument, the thread index of type `std::size_t`, or zero arguments. It will be executed exactly once per thread, when the thread is first constructed. The initialization function must not throw any exceptions, as that will result in program termination. Any exceptions must be handled explicitly within the function.
      */
     template <BS_THREAD_POOL_INIT_FUNC_CONCEPT(F)>
-    void reset(F&& init)
+    void reset(F&& _init)
     {
-        reset(0, std::forward<F>(init));
+        reset(0, std::forward<F>(_init));
     }
 
     /**
@@ -1774,7 +1774,7 @@ public:
      * @param init An initialization function to run in each thread before it starts executing any submitted tasks. The function must have no return value, and can either take one argument, the thread index of type `std::size_t`, or zero arguments. It will be executed exactly once per thread, when the thread is first constructed. The initialization function must not throw any exceptions, as that will result in program termination. Any exceptions must be handled explicitly within the function.
      */
     template <BS_THREAD_POOL_INIT_FUNC_CONCEPT(F)>
-    void reset(const std::size_t num_threads, F&& init)
+    void reset(const std::size_t _num_threads, F&& _init)
     {
         if constexpr (pause_enabled)
         {
@@ -1782,7 +1782,7 @@ public:
             const bool was_paused = paused;
             paused = true;
             tasks_lock.unlock();
-            reset_pool(num_threads, std::forward<F>(init));
+            reset_pool(_num_threads, std::forward<F>(_init));
             tasks_lock.lock();
             paused = was_paused;
             tasks_lock.unlock();
@@ -1791,7 +1791,7 @@ public:
         }
         else
         {
-            reset_pool(num_threads, std::forward<F>(init));
+            reset_pool(_num_threads, std::forward<F>(_init));
         }
     }
 
@@ -1801,15 +1801,15 @@ public:
      * @param cleanup A cleanup function to run in each thread right before it is destroyed, which will happen when the pool is destructed or reset. The function must have no return value, and can either take one argument, the thread index of type `std::size_t`, or zero arguments. The cleanup function must not throw any exceptions, as that will result in program termination. Any exceptions must be handled explicitly within the function.
      */
     template <BS_THREAD_POOL_INIT_FUNC_CONCEPT(F)>
-    void set_cleanup_func(F&& cleanup)
+    void set_cleanup_func(F&& _cleanup)
     {
         if constexpr (std::is_invocable_v<F, std::size_t>)
         {
-            cleanup_func = std::forward<F>(cleanup);
+            cleanup_func = std::forward<F>(_cleanup);
         }
         else
         {
-            cleanup_func = [cleanup = std::forward<F>(cleanup)](std::size_t)
+            cleanup_func = [cleanup = std::forward<F>(_cleanup)](std::size_t)
             {
                 cleanup();
             };
@@ -1832,9 +1832,9 @@ public:
      * @return A `BS::multi_future` that can be used to wait for all the tasks to finish. If the block function returns a value, the `BS::multi_future` can also be used to obtain the values returned by each block.
      */
     template <typename T1, typename T2, typename T = common_index_type_t<T1, T2>, typename F, typename R = std::invoke_result_t<std::decay_t<F>, T, T>>
-    [[nodiscard]] multi_future<R> submit_blocks(const T1 first_index, const T2 index_after_last, F&& block, const std::size_t num_blocks = 0, const priority_t priority = 0)
+    [[nodiscard]] multi_future<R> submit_blocks(const T1 _first_index, const T2 _index_after_last, F&& _block, const std::size_t _num_blocks = 0, const priority_t _priority = 0)
     {
-        return enqueue_blocks<T, F, R, true>(static_cast<T>(first_index), static_cast<T>(index_after_last), std::forward<F>(block), num_blocks, priority);
+        return enqueue_blocks<T, F, R, true>(static_cast<T>(_first_index), static_cast<T>(_index_after_last), std::forward<F>(_block), _num_blocks, _priority);
     }
 
     /**
@@ -1849,22 +1849,22 @@ public:
      * @return A `BS::multi_future` that can be used to wait for all the tasks to finish. If the functions return values, the `BS::multi_future` can also be used to obtain the values returned by each task.
      */
     template <typename I, typename F = decltype(*std::declval<I>()), typename R = std::invoke_result_t<std::decay_t<F>>>
-    [[nodiscard]] multi_future<R> submit_bulk(const I first, const I last, const priority_t priority = 0)
+    [[nodiscard]] multi_future<R> submit_bulk(const I _first, const I _last, const priority_t _priority = 0)
     {
-        if (first != last)
+        if (_first != _last)
         {
-            const std::size_t num_tasks = static_cast<std::size_t>(std::distance(first, last));
+            const std::size_t num_tasks = static_cast<std::size_t>(std::distance(_first, _last));
             multi_future<R> all_futures;
             all_futures.reserve(num_tasks);
             std::vector<task_t> all_tasks;
             all_tasks.reserve(num_tasks);
-            for (I it = first; it != last; ++it)
+            for (I it = _first; it != _last; ++it)
             {
                 task_and_future<R> ft(std::move(*it));
                 all_futures.emplace_back(std::move(ft.future));
                 all_tasks.emplace_back(std::move(ft.task));
             }
-            detach_bulk(all_tasks, priority);
+            detach_bulk(all_tasks, _priority);
             return all_futures;
         }
         return {};
@@ -1881,9 +1881,9 @@ public:
      * @return A `BS::multi_future` that can be used to wait for all the tasks to finish. If the functions return values, the `BS::multi_future` can also be used to obtain the values returned by each task.
      */
     template <typename C, typename F = decltype(*std::declval<C&>().begin()), typename R = std::invoke_result_t<std::decay_t<F>>>
-    [[nodiscard]] multi_future<R> submit_bulk(C& container, const priority_t priority = 0)
+    [[nodiscard]] multi_future<R> submit_bulk(C& _container, const priority_t _priority = 0)
     {
-        return submit_bulk(std::begin(container), std::end(container), priority);
+        return submit_bulk(std::begin(_container), std::end(_container), _priority);
     }
 
     /**
@@ -1901,9 +1901,9 @@ public:
      * @return A `BS::multi_future` that can be used to wait for all the tasks to finish.
      */
     template <typename T1, typename T2, typename T = common_index_type_t<T1, T2>, typename F>
-    [[nodiscard]] multi_future<void> submit_loop(const T1 first_index, const T2 index_after_last, F&& loop, const std::size_t num_blocks = 0, const priority_t priority = 0)
+    [[nodiscard]] multi_future<void> submit_loop(const T1 _first_index, const T2 _index_after_last, F&& _loop, const std::size_t _num_blocks = 0, const priority_t _priority = 0)
     {
-        return enqueue_loop<T, F, true>(static_cast<T>(first_index), static_cast<T>(index_after_last), std::forward<F>(loop), num_blocks, priority);
+        return enqueue_loop<T, F, true>(static_cast<T>(_first_index), static_cast<T>(_index_after_last), std::forward<F>(_loop), _num_blocks, _priority);
     }
 
     /**
@@ -1921,9 +1921,9 @@ public:
      * @return A `BS::multi_future` that can be used to wait for all the tasks to finish. If the sequence function returns a value, the `BS::multi_future` can also be used to obtain the values returned by each task.
      */
     template <typename T1, typename T2, typename T = common_index_type_t<T1, T2>, typename F, typename R = std::invoke_result_t<std::decay_t<F>, T>>
-    [[nodiscard]] multi_future<R> submit_sequence(const T1 first_index, const T2 index_after_last, F&& sequence, const priority_t priority = 0)
+    [[nodiscard]] multi_future<R> submit_sequence(const T1 _first_index, const T2 _index_after_last, F&& _sequence, const priority_t _priority = 0)
     {
-        return enqueue_sequence<T, F, R, true>(static_cast<T>(first_index), static_cast<T>(index_after_last), std::forward<F>(sequence), priority);
+        return enqueue_sequence<T, F, R, true>(static_cast<T>(_first_index), static_cast<T>(_index_after_last), std::forward<F>(_sequence), _priority);
     }
 
     /**
@@ -1936,10 +1936,10 @@ public:
      * @return A future to be used later to wait for the function to finish executing and/or obtain its returned value if it has one.
      */
     template <typename F, typename R = std::invoke_result_t<std::decay_t<F>>>
-    [[nodiscard]] std::future<R> submit_task(F&& task, const priority_t priority = 0)
+    [[nodiscard]] std::future<R> submit_task(F&& _task, const priority_t _priority = 0)
     {
-        task_and_future<R> ft(std::forward<F>(task));
-        detach_task(std::move(ft.m_task), priority);
+        task_and_future<R> ft(std::forward<F>(_task));
+        detach_task(std::move(ft.m_task), _priority);
         return std::move(ft.m_future);
     }
 
@@ -1964,7 +1964,7 @@ public:
     void wait()
     {
 #ifdef __cpp_exceptions
-        if constexpr (wait_deadlock_checks_enabled)
+        if constexpr (m_wait_deadlock_checks_enabled)
         {
             if (this_thread::get_pool() == this)
                 throw wait_deadlock();
@@ -1993,10 +1993,10 @@ public:
      * @throws `wait_deadlock` if called from within a thread of the same pool, which would result in a deadlock. Only enabled if the flag `BS::tp::wait_deadlock_checks` is enabled in the template parameter.
      */
     template <typename R, typename P>
-    bool wait_for(const std::chrono::duration<R, P>& duration)
+    bool wait_for(const std::chrono::duration<R, P>& _duration)
     {
 #ifdef __cpp_exceptions
-        if constexpr (wait_deadlock_checks_enabled)
+        if constexpr (m_wait_deadlock_checks_enabled)
         {
             if (this_thread::get_pool() == this)
                 throw wait_deadlock();
@@ -2004,7 +2004,7 @@ public:
 #endif
         std::unique_lock tasks_lock(tasks_mutex);
         waiting = true;
-        const bool status = tasks_done_cv.wait_for(tasks_lock, duration,
+        const bool status = tasks_done_cv.wait_for(tasks_lock, _duration,
             [this]
             {
                 if constexpr (pause_enabled)
@@ -2026,10 +2026,10 @@ public:
      * @throws `wait_deadlock` if called from within a thread of the same pool, which would result in a deadlock. Only enabled if the flag `BS::tp::wait_deadlock_checks` is enabled in the template parameter.
      */
     template <typename C, typename D>
-    bool wait_until(const std::chrono::time_point<C, D>& timeout_time)
+    bool wait_until(const std::chrono::time_point<C, D>& _timeout_time)
     {
 #ifdef __cpp_exceptions
-        if constexpr (wait_deadlock_checks_enabled)
+        if constexpr (m_wait_deadlock_checks_enabled)
         {
             if (this_thread::get_pool() == this)
                 throw wait_deadlock();
@@ -2037,7 +2037,7 @@ public:
 #endif
         std::unique_lock tasks_lock(tasks_mutex);
         waiting = true;
-        const bool status = tasks_done_cv.wait_until(tasks_lock, timeout_time,
+        const bool status = tasks_done_cv.wait_until(tasks_lock, _timeout_time,
             [this]
             {
                 if constexpr (pause_enabled)
@@ -2061,20 +2061,20 @@ private:
      * @param init An initialization function to run in each thread before it starts executing any submitted tasks.
      */
     template <typename F>
-    void create_threads(const std::size_t num_threads, F&& init)
+    void create_threads(const std::size_t _num_threads, F&& _init)
     {
         if constexpr (std::is_invocable_v<F, std::size_t>)
         {
-            init_func = std::forward<F>(init);
+            init_func = std::forward<F>(_init);
         }
         else
         {
-            init_func = [init = std::forward<F>(init)](std::size_t)
+            init_func = [init = std::forward<F>(_init)](std::size_t)
             {
                 init();
             };
         }
-        thread_count = determine_thread_count(num_threads);
+        thread_count = determine_thread_count(_num_threads);
         threads = std::make_unique<thread_t[]>(thread_count);
         {
             const std::scoped_lock tasks_lock(tasks_mutex);
@@ -2088,9 +2088,9 @@ private:
             threads[i] = thread_t(
                 [this, i]
 #ifdef __cpp_lib_jthread
-                (const std::stop_token& stop_token)
+                (const std::stop_token& _stop_token)
                 {
-                    worker(stop_token, i);
+                    worker(_stop_token, i);
                 }
 #else
                 {
@@ -2122,10 +2122,10 @@ private:
      *
      * @param num_threads The parameter passed to the constructor or `reset()`. If the parameter is a positive number, then the pool will be created with this number of threads. If the parameter is zero, or a parameter was not supplied (in which case it will have the default value of 0), then the pool will be created with the total number of hardware threads available, as obtained from `thread_t::hardware_concurrency()`. If the latter returns zero for some reason, then the pool will be created with just one thread. If the native extensions are enabled, the pool will instead use the number of threads available to the process, as obtained from `BS::get_os_process_affinity()`, which can be less than the number of hardware threads.
      */
-    [[nodiscard]] static std::size_t determine_thread_count(const std::size_t num_threads) noexcept(!thread_pool_native_extensions)
+    [[nodiscard]] static std::size_t determine_thread_count(const std::size_t _num_threads) noexcept(!thread_pool_native_extensions)
     {
-        if (num_threads > 0)
-            return num_threads;
+        if (_num_threads > 0)
+            return _num_threads;
 #ifdef BS_THREAD_POOL_NATIVE_EXTENSIONS
         const std::optional<std::vector<bool>> affinity = BS::get_os_process_affinity();
         if (affinity.has_value())
@@ -2155,22 +2155,22 @@ private:
      * @return A `BS::multi_future` if `submit` is `true`, or `void` if `submit` is `false`.
      */
     template <typename T, typename F, typename R, bool submit, typename N = std::conditional_t<submit, multi_future<R>, void>>
-    [[nodiscard]] N enqueue_blocks(const T first_index, const T index_after_last, F&& block, std::size_t num_blocks, const priority_t priority = 0)
+    [[nodiscard]] N enqueue_blocks(const T _first_index, const T _index_after_last, F&& _block, std::size_t _num_blocks, const priority_t _priority = 0)
     {
-        if (index_after_last > first_index)
+        if (_index_after_last > _first_index)
         {
             using block_task_t = block_task<T, F, R>;
-            const std::shared_ptr<std::decay_t<F>> block_ptr = std::make_shared<std::decay_t<F>>(std::forward<F>(block));
-            const blocks blks(first_index, index_after_last, num_blocks ? num_blocks : thread_count);
-            num_blocks = blks.get_num_blocks();
+            const std::shared_ptr<std::decay_t<F>> block_ptr = std::make_shared<std::decay_t<F>>(std::forward<F>(_block));
+            const blocks blks(_first_index, _index_after_last, _num_blocks ? _num_blocks : thread_count);
+            _num_blocks = blks.get_num_blocks();
             std::vector<std::conditional_t<submit, block_task_t, task_t>> all_tasks;
-            all_tasks.reserve(num_blocks);
-            for (std::size_t i = 0; i < num_blocks; ++i)
+            all_tasks.reserve(_num_blocks);
+            for (std::size_t i = 0; i < _num_blocks; ++i)
                 all_tasks.emplace_back(block_task_t{block_ptr, blks.start(i), blks.end(i)});
             if constexpr (submit)
-                return submit_bulk(all_tasks, priority);
+                return submit_bulk(all_tasks, _priority);
             else
-                detach_bulk(all_tasks, priority);
+                detach_bulk(all_tasks, _priority);
         }
         return N();
     }
@@ -2190,22 +2190,22 @@ private:
      * @return A `BS::multi_future` if `submit` is `true`, or `void` if `submit` is `false`.
      */
     template <typename T, typename F, bool submit, typename N = std::conditional_t<submit, multi_future<void>, void>>
-    [[nodiscard]] N enqueue_loop(const T first_index, const T index_after_last, F&& loop, std::size_t num_blocks, const priority_t priority = 0)
+    [[nodiscard]] N enqueue_loop(const T _first_index, const T _index_after_last, F&& _loop, std::size_t _num_blocks, const priority_t _priority = 0)
     {
-        if (index_after_last > first_index)
+        if (_index_after_last > _first_index)
         {
             using loop_task_t = loop_task<T, F>;
-            const std::shared_ptr<std::decay_t<F>> loop_ptr = std::make_shared<std::decay_t<F>>(std::forward<F>(loop));
-            const blocks blks(first_index, index_after_last, num_blocks ? num_blocks : thread_count);
-            num_blocks = blks.get_num_blocks();
+            const std::shared_ptr<std::decay_t<F>> loop_ptr = std::make_shared<std::decay_t<F>>(std::forward<F>(_loop));
+            const blocks blks(_first_index, _index_after_last, _num_blocks ? _num_blocks : thread_count);
+            _num_blocks = blks.get_num_blocks();
             std::vector<std::conditional_t<submit, loop_task_t, task_t>> all_tasks;
-            all_tasks.reserve(num_blocks);
-            for (std::size_t i = 0; i < num_blocks; ++i)
+            all_tasks.reserve(_num_blocks);
+            for (std::size_t i = 0; i < _num_blocks; ++i)
                 all_tasks.emplace_back(loop_task_t{loop_ptr, blks.start(i), blks.end(i)});
             if constexpr (submit)
-                return submit_bulk(all_tasks, priority);
+                return submit_bulk(all_tasks, _priority);
             else
-                detach_bulk(all_tasks, priority);
+                detach_bulk(all_tasks, _priority);
         }
         return N();
     }
@@ -2225,20 +2225,20 @@ private:
      * @return A `BS::multi_future` if `submit` is `true`, or `void` if `submit` is `false`.
      */
     template <typename T, typename F, typename R, bool submit, typename N = std::conditional_t<submit, multi_future<R>, void>>
-    [[nodiscard]] N enqueue_sequence(const T first_index, const T index_after_last, F&& sequence, const priority_t priority = 0)
+    [[nodiscard]] N enqueue_sequence(const T _first_index, const T _index_after_last, F&& _sequence, const priority_t _priority = 0)
     {
-        if (index_after_last > first_index)
+        if (_index_after_last > _first_index)
         {
             using sequence_task_t = sequence_task<T, F, R>;
-            const std::shared_ptr<std::decay_t<F>> sequence_ptr = std::make_shared<std::decay_t<F>>(std::forward<F>(sequence));
+            const std::shared_ptr<std::decay_t<F>> sequence_ptr = std::make_shared<std::decay_t<F>>(std::forward<F>(_sequence));
             std::vector<std::conditional_t<submit, sequence_task_t, task_t>> all_tasks;
-            all_tasks.reserve(static_cast<std::size_t>(index_after_last - first_index));
-            for (T i = first_index; i < index_after_last; ++i)
+            all_tasks.reserve(static_cast<std::size_t>(_index_after_last - _first_index));
+            for (T i = _first_index; i < _index_after_last; ++i)
                 all_tasks.emplace_back(sequence_task_t{sequence_ptr, i});
             if constexpr (submit)
-                return submit_bulk(all_tasks, priority);
+                return submit_bulk(all_tasks, _priority);
             else
-                detach_bulk(all_tasks, priority);
+                detach_bulk(all_tasks, _priority);
         }
         return N();
     }
@@ -2251,7 +2251,7 @@ private:
     [[nodiscard]] task_t pop_task()
     {
         task_t task;
-        if constexpr (priority_enabled)
+        if constexpr (m_priority_enabled)
             task = std::move(tasks.top().task);
         else
             task = std::move(tasks.front());
@@ -2266,13 +2266,13 @@ private:
      * @param init An initialization function to run in each thread before it starts executing any submitted tasks.
      */
     template <typename F>
-    void reset_pool(const std::size_t num_threads, F&& init)
+    void reset_pool(const std::size_t _num_threads, F&& _init)
     {
         wait();
 #ifndef __cpp_lib_jthread
         destroy_threads();
 #endif
-        create_threads(num_threads, std::forward<F>(init));
+        create_threads(_num_threads, std::forward<F>(_init));
     }
 
     /**
@@ -2280,11 +2280,11 @@ private:
      *
      * @param idx The index of this thread.
      */
-    void worker(BS_THREAD_POOL_WORKER_TOKEN const std::size_t idx)
+    void worker(BS_THREAD_POOL_WORKER_TOKEN const std::size_t _idx)
     {
-        this_thread::my_pool = this;
-        this_thread::my_index = idx;
-        init_func(idx);
+        this_thread::m_my_pool = this;
+        this_thread::m_my_index = _idx;
+        init_func(_idx);
         while (true)
         {
             std::unique_lock tasks_lock(tasks_mutex);
@@ -2326,9 +2326,9 @@ private:
 #endif
             }
         }
-        cleanup_func(idx);
-        this_thread::my_index = std::nullopt;
-        this_thread::my_pool = std::nullopt;
+        cleanup_func(_idx);
+        this_thread::m_my_index = std::nullopt;
+        this_thread::m_my_pool = std::nullopt;
     }
 
     // ============
@@ -2368,7 +2368,7 @@ private:
     /**
      * @brief A queue of tasks to be executed by the threads.
      */
-    std::conditional_t<priority_enabled, std::priority_queue<pr_task>, std::queue<task_t>> tasks;
+    std::conditional_t<m_priority_enabled, std::priority_queue<pr_task>, std::queue<task_t>> tasks;
 
     /**
      * @brief A counter for the total number of currently running tasks.
@@ -2424,9 +2424,9 @@ public:
      * @param streams The output streams to print to.
      */
     template <typename... T>
-    explicit synced_stream(T&... streams)
+    explicit synced_stream(T&... _streams)
     {
-        (add_stream(streams), ...);
+        (add_stream(_streams), ...);
     }
 
     /**
@@ -2434,9 +2434,9 @@ public:
      *
      * @param stream The stream.
      */
-    void add_stream(std::ostream& stream)
+    void add_stream(std::ostream& _stream)
     {
-        out_streams.push_back(&stream);
+        out_streams.push_back(&_stream);
     }
 
     /**
@@ -2456,11 +2456,11 @@ public:
      * @param items The items to print.
      */
     template <typename... T>
-    void print(const T&... items)
+    void print(const T&... _items)
     {
         const std::scoped_lock stream_lock(stream_mutex);
         for (std::ostream* const stream : out_streams)
-            (*stream << ... << items);
+            (*stream << ... << _items);
     }
 
     /**
@@ -2470,9 +2470,9 @@ public:
      * @param items The items to print.
      */
     template <typename... T>
-    void println(T&&... items)
+    void println(T&&... _items)
     {
-        print(std::forward<T>(items)..., '\n');
+        print(std::forward<T>(_items)..., '\n');
     }
 
     /**
@@ -2480,20 +2480,20 @@ public:
      *
      * @param stream The stream.
      */
-    void remove_stream(std::ostream& stream)
+    void remove_stream(std::ostream& _stream)
     {
-        out_streams.erase(std::remove(out_streams.begin(), out_streams.end(), &stream), out_streams.end());
+        out_streams.erase(std::remove(out_streams.begin(), out_streams.end(), &_stream), out_streams.end());
     }
 
     /**
      * @brief A stream manipulator to pass to a `BS::synced_stream` (an explicit cast of `std::endl`). Prints a newline character to the stream, and then flushes it. Should only be used if flushing is desired, otherwise a newline character should be used instead.
      */
-    inline static std::ostream& (&endl)(std::ostream&) = static_cast<std::ostream& (&)(std::ostream&)>(std::endl);
+    inline static std::ostream& (&m_endl)(std::ostream&) = static_cast<std::ostream& (&)(std::ostream&)>(std::endl);
 
     /**
      * @brief A stream manipulator to pass to a `BS::synced_stream` (an explicit cast of `std::flush`). Used to flush the stream.
      */
-    inline static std::ostream& (&flush)(std::ostream&) = static_cast<std::ostream& (&)(std::ostream&)>(std::flush);
+    inline static std::ostream& (&m_flush)(std::ostream&) = static_cast<std::ostream& (&)(std::ostream&)>(std::flush);
 
 private:
     /**

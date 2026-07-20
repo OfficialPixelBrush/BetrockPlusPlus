@@ -7,11 +7,11 @@
 #include "inventory/inventory_interaction.h"
 #include "numeric_structs.h"
 
-CraftingInventoryInteraction::CraftingInventoryInteraction(Inventory* sharedInventory, Inventory* craftingInventory,
-                                                           InventoryPlayer* playerInventory, Runtime& gameRuntime,
-                                                           UInt8_2 gridSize)
-    : InventoryInteraction(sharedInventory), craftInventory(craftingInventory), playerInventory(playerInventory),
-      runtime(gameRuntime), gridSize(gridSize) {}
+CraftingInventoryInteraction::CraftingInventoryInteraction(Inventory* _sharedInventory, Inventory* _craftingInventory,
+                                                           InventoryPlayer* _playerInventory, Runtime& _gameRuntime,
+                                                           UInt8_2 _gridSize)
+    : InventoryInteraction(_sharedInventory), craftInventory(_craftingInventory), playerInventory(_playerInventory),
+      runtime(_gameRuntime), gridSize(_gridSize) {}
 
 void CraftingInventoryInteraction::updateResult() {
 	auto grid = std::span<const ItemStack>(craftInventory->slots.data() + 1, gridSize.total());
@@ -51,33 +51,33 @@ void CraftingInventoryInteraction::takeResult() {
 	finishCraft();
 }
 
-void CraftingInventoryInteraction::handleCrafting(int slot) {
-	if (slot == 0 || slot > gridSize.total())
+void CraftingInventoryInteraction::handleCrafting(int _slot) {
+	if (_slot == 0 || _slot > gridSize.total())
 		return;
 
 	updateResult();
 }
 
-void CraftingInventoryInteraction::onLeftClick(int slot) {
-	if (slot == 0)
+void CraftingInventoryInteraction::onLeftClick(int _slot) {
+	if (_slot == 0)
 		takeResult();
 	else
-		InventoryInteraction::onLeftClick(slot);
-	handleCrafting(slot);
+		InventoryInteraction::onLeftClick(_slot);
+	handleCrafting(_slot);
 }
 
-void CraftingInventoryInteraction::onRightClick(int slot) {
-	if (slot == 0)
+void CraftingInventoryInteraction::onRightClick(int _slot) {
+	if (_slot == 0)
 		takeResult();
 	else
-		InventoryInteraction::onRightClick(slot);
-	handleCrafting(slot);
+		InventoryInteraction::onRightClick(_slot);
+	handleCrafting(_slot);
 }
 
-void CraftingInventoryInteraction::onShiftClick(int slot) {
-	if (slot == 0)
+void CraftingInventoryInteraction::onShiftClick(int _slot) {
+	if (_slot == 0)
 		shiftClickResult();
 	else
-		shiftClickOther(slot);
-	handleCrafting(slot);
+		shiftClickOther(_slot);
+	handleCrafting(_slot);
 }

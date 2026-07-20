@@ -19,9 +19,9 @@ protected:
 	int64_t seed = 0;
 
 public:
-	Generator(int64_t seed);
+	Generator(int64_t _seed);
 	Generator() = default;
 	virtual ~Generator() = default;
-	virtual void GenerateChunk(Chunk& chunk);
-	virtual bool PopulateChunk(Chunk& chunk, WorldWrapper& world);
+	virtual void GenerateChunk(Chunk& _chunk);
+	virtual bool PopulateChunk(Chunk& _chunk, WorldWrapper& _world);
 };

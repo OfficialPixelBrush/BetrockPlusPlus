@@ -12,9 +12,9 @@
 #include "misc.h"
 #include "window.h"
 
-void Window::sdlLogCallback(void* userdata, int category, SDL_LogPriority priority, const char* message) {
+void Window::sdlLogCallback(void* _userdata, int _category, SDL_LogPriority _priority, const char* _message) {
 	LogLevel level;
-	switch (priority) {
+	switch (_priority) {
 	case SDL_LOG_PRIORITY_INFO:
 		level = LOG_INFO;
 		break;
@@ -29,10 +29,10 @@ void Window::sdlLogCallback(void* userdata, int category, SDL_LogPriority priori
 		level = LOG_DEBUG;
 		break;
 	}
-	GlobalLogger().Log(message, level);
+	GlobalLogger().Log(_message, level);
 }
 
-Window::Window(Int2 screenSize, const std::string& title, const WindowOptions& options) : screenSize(screenSize) {
+Window::Window(Int2 _screenSize, const std::string& _title, const WindowOptions& _options) : screenSize(screenSize) {
 	SDL_SetLogOutputFunction(sdlLogCallback, nullptr);
 #ifndef NDEBUG
 	SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
@@ -42,7 +42,7 @@ Window::Window(Int2 screenSize, const std::string& title, const WindowOptions& o
 		THROW_SDL_ERROR("Failed to initialize SDL!");
 
 	SDL_WindowFlags windowFlags;
-	switch (options.windowMode) {
+	switch (_options.windowMode) {
 	case WindowMode::WINDOWED_RESIZABLE:
 		windowFlags = SDL_WINDOW_RESIZABLE;
 		break;

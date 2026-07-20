@@ -11,32 +11,32 @@
 #include <vector>
 
 namespace PacketUtilities {
-inline void sendInventory(PlayerSession& session, WindowId windowId, Inventory inventory) {
+inline void sendInventory(PlayerSession& _session, WindowId _windowId, Inventory _inventory) {
 	std::vector<ItemStack> items;
-	for (auto& item : inventory.slots) {
+	for (auto& item : _inventory.slots) {
 		items.emplace_back(item.id, item.count, item.data);
 	}
 	Packet::FillContainer fc;
-	fc.window_id = windowId;
+	fc.window_id = _windowId;
 	fc.items = std::move(items);
-	fc.Serialize(session.stream);
+	fc.Serialize(_session.stream);
 }
 
 // Sends a single slot update. windowId=-1 / slotId=-1 updates the cursor.
-inline void sendSlot(PlayerSession& session, WindowId windowId, NetworkSlotId slotId, ItemStack* stack) {
+inline void sendSlot(PlayerSession& _session, WindowId _windowId, NetworkSlotId _slotId, ItemStack* _stack) {
 	Packet::SetSlot pkt;
-	pkt.window_id = windowId;
-	pkt.slot_id = slotId;
-	pkt.item = stack ? ItemStack{ stack->id, stack->count, stack->data } : ItemStack{ Items::Id::INVALID };
-	pkt.Serialize(session.stream);
+	pkt.window_id = _windowId;
+	pkt.slot_id = _slotId;
+	pkt.item = _stack ? ItemStack{ _stack->id, _stack->count, _stack->data } : ItemStack{ Items::Id::INVALID };
+	pkt.Serialize(_session.stream);
 }
 
-inline void CloseContainer(PlayerSession& session) {
+inline void CloseContainer(PlayerSession& _session) {
 	// Get rid of our active interaction and reset the window id
 	Packet::CloseContainer cc;
-	cc.window_id = session.openWindowId;
-	cc.Serialize(session.stream);
-	session.activeInteraction = nullptr;
-	session.openWindowId = 0;
+	cc.window_id = _session.openWindowId;
+	cc.Serialize(_session.stream);
+	_session.activeInteraction = nullptr;
+	_session.openWindowId = 0;
 }
 }; // namespace PacketUtilities

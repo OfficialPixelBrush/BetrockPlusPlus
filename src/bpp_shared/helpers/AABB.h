@@ -12,90 +12,90 @@ struct AABB {
 	double minX, minY, minZ;
 	double maxX, maxY, maxZ;
 
-	bool intersects(const AABB& other) const {
-		return (other.maxX > minX && other.minX < maxX && other.maxY > minY && other.minY < maxY && other.maxZ > minZ &&
-		        other.minZ < maxZ);
+	bool intersects(const AABB& _other) const {
+		return (_other.maxX > minX && _other.minX < maxX && _other.maxY > minY && _other.minY < maxY && _other.maxZ > minZ &&
+		        _other.minZ < maxZ);
 	}
 
-	AABB offset(double dx, double dy, double dz) const {
-		return { minX + dx, minY + dy, minZ + dz, maxX + dx, maxY + dy, maxZ + dz };
+	AABB offset(double _dx, double _dy, double _dz) const {
+		return { minX + _dx, minY + _dy, minZ + _dz, maxX + _dx, maxY + _dy, maxZ + _dz };
 	}
 
-	AABB expand(double dx, double dy, double dz) const {
-		return { minX - dx, minY - dy, minZ - dz, maxX + dx, maxY + dy, maxZ + dz };
+	AABB expand(double _dx, double _dy, double _dz) const {
+		return { minX - _dx, minY - _dy, minZ - _dz, maxX + _dx, maxY + _dy, maxZ + _dz };
 	}
 
-	AABB addCoord(double dx, double dy, double dz) const {
+	AABB addCoord(double _dx, double _dy, double _dz) const {
 		double x0 = minX, y0 = minY, z0 = minZ;
 		double x1 = maxX, y1 = maxY, z1 = maxZ;
-		if (dx < 0)
-			x0 += dx;
+		if (_dx < 0)
+			x0 += _dx;
 		else
-			x1 += dx;
-		if (dy < 0)
-			y0 += dy;
+			x1 += _dx;
+		if (_dy < 0)
+			y0 += _dy;
 		else
-			y1 += dy;
-		if (dz < 0)
-			z0 += dz;
+			y1 += _dy;
+		if (_dz < 0)
+			z0 += _dz;
 		else
-			z1 += dz;
+			z1 += _dz;
 		return { x0, y0, z0, x1, y1, z1 };
 	}
 
 	// Checks YZ overlap first, then computes how far we can move in X
-	double calculateXOffset(const AABB& other, double dx) const {
-		if (other.maxY > minY && other.minY < maxY) {
-			if (other.maxZ > minZ && other.minZ < maxZ) {
-				if (dx > 0.0 && other.maxX <= minX) {
-					double d = minX - other.maxX;
-					if (d < dx)
-						dx = d;
+	double calculateXOffset(const AABB& _other, double _dx) const {
+		if (_other.maxY > minY && _other.minY < maxY) {
+			if (_other.maxZ > minZ && _other.minZ < maxZ) {
+				if (_dx > 0.0 && _other.maxX <= minX) {
+					double d = minX - _other.maxX;
+					if (d < _dx)
+						_dx = d;
 				}
-				if (dx < 0.0 && other.minX >= maxX) {
-					double d = maxX - other.minX;
-					if (d > dx)
-						dx = d;
+				if (_dx < 0.0 && _other.minX >= maxX) {
+					double d = maxX - _other.minX;
+					if (d > _dx)
+						_dx = d;
 				}
 			}
 		}
-		return dx;
+		return _dx;
 	}
 
-	double calculateYOffset(const AABB& other, double dy) const {
-		if (other.maxX > minX && other.minX < maxX) {
-			if (other.maxZ > minZ && other.minZ < maxZ) {
-				if (dy > 0.0 && other.maxY <= minY) {
-					double d = minY - other.maxY;
-					if (d < dy)
-						dy = d;
+	double calculateYOffset(const AABB& _other, double _dy) const {
+		if (_other.maxX > minX && _other.minX < maxX) {
+			if (_other.maxZ > minZ && _other.minZ < maxZ) {
+				if (_dy > 0.0 && _other.maxY <= minY) {
+					double d = minY - _other.maxY;
+					if (d < _dy)
+						_dy = d;
 				}
-				if (dy < 0.0 && other.minY >= maxY) {
-					double d = maxY - other.minY;
-					if (d > dy)
-						dy = d;
+				if (_dy < 0.0 && _other.minY >= maxY) {
+					double d = maxY - _other.minY;
+					if (d > _dy)
+						_dy = d;
 				}
 			}
 		}
-		return dy;
+		return _dy;
 	}
 
-	double calculateZOffset(const AABB& other, double dz) const {
-		if (other.maxX > minX && other.minX < maxX) {
-			if (other.maxY > minY && other.minY < maxY) {
-				if (dz > 0.0 && other.maxZ <= minZ) {
-					double d = minZ - other.maxZ;
-					if (d < dz)
-						dz = d;
+	double calculateZOffset(const AABB& _other, double _dz) const {
+		if (_other.maxX > minX && _other.minX < maxX) {
+			if (_other.maxY > minY && _other.minY < maxY) {
+				if (_dz > 0.0 && _other.maxZ <= minZ) {
+					double d = minZ - _other.maxZ;
+					if (d < _dz)
+						_dz = d;
 				}
-				if (dz < 0.0 && other.minZ >= maxZ) {
-					double d = maxZ - other.minZ;
-					if (d > dz)
-						dz = d;
+				if (_dz < 0.0 && _other.minZ >= maxZ) {
+					double d = maxZ - _other.minZ;
+					if (d > _dz)
+						_dz = d;
 				}
 			}
 		}
-		return dz;
+		return _dz;
 	}
 };
 
@@ -103,50 +103,50 @@ struct AABB {
 struct CollisionShape {
 	std::vector<AABB> boxes;
 
-	void add(const AABB& box) {
-		boxes.push_back(box);
+	void add(const AABB& _box) {
+		boxes.push_back(_box);
 	}
 
-	CollisionShape offset(double dx, double dy, double dz) const {
+	CollisionShape offset(double _dx, double _dy, double _dz) const {
 		CollisionShape result;
 		result.boxes.reserve(boxes.size());
 		for (const auto& box : boxes)
-			result.boxes.push_back(box.offset(dx, dy, dz));
+			result.boxes.push_back(box.offset(_dx, _dy, _dz));
 		return result;
 	}
 
-	bool intersects(const CollisionShape& other) const {
+	bool intersects(const CollisionShape& _other) const {
 		for (const auto& box1 : boxes)
-			for (const auto& box2 : other.boxes)
+			for (const auto& box2 : _other.boxes)
 				if (box1.intersects(box2))
 					return true;
 		return false;
 	}
 
-	CollisionShape expand(double dx, double dy, double dz) const {
+	CollisionShape expand(double _dx, double _dy, double _dz) const {
 		CollisionShape result;
 		result.boxes.reserve(boxes.size());
 		for (const auto& box : boxes)
-			result.boxes.push_back(box.expand(dx, dy, dz));
+			result.boxes.push_back(box.expand(_dx, _dy, _dz));
 		return result;
 	}
 
-	double calculateXOffset(const AABB& entity, double dx) const {
+	double calculateXOffset(const AABB& _entity, double _dx) const {
 		for (const auto& box : boxes)
-			dx = box.calculateXOffset(entity, dx);
-		return dx;
+			_dx = box.calculateXOffset(_entity, _dx);
+		return _dx;
 	}
 
-	double calculateYOffset(const AABB& entity, double dy) const {
+	double calculateYOffset(const AABB& _entity, double _dy) const {
 		for (const auto& box : boxes)
-			dy = box.calculateYOffset(entity, dy);
-		return dy;
+			_dy = box.calculateYOffset(_entity, _dy);
+		return _dy;
 	}
 
-	double calculateZOffset(const AABB& entity, double dz) const {
+	double calculateZOffset(const AABB& _entity, double _dz) const {
 		for (const auto& box : boxes)
-			dz = box.calculateZOffset(entity, dz);
-		return dz;
+			_dz = box.calculateZOffset(_entity, _dz);
+		return _dz;
 	}
 
 	bool isEmpty() const {

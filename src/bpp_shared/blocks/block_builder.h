@@ -117,11 +117,11 @@ enum class StairsDirection : uint8_t {
 };
 
 struct StairsBuilder {
-	constexpr explicit StairsBuilder(BlockType id) : id(id) {}
+	constexpr explicit StairsBuilder(BlockType _id) : id(_id) {}
 
-	StairsBuilder facing(StairsDirection direction) const {
+	StairsBuilder facing(StairsDirection _direction) const {
 		StairsBuilder b = *this;
-		b.direction = direction;
+		b.direction = _direction;
 		return b;
 	}
 
@@ -138,16 +138,16 @@ private:
 };
 
 struct FluidBuilder {
-	constexpr explicit FluidBuilder(BlockType id) : id(id) {}
+	constexpr explicit FluidBuilder(BlockType _id) : id(_id) {}
 
-	FluidBuilder level(uint8_t level) const {
+	FluidBuilder level(uint8_t _level) const {
 		FluidBuilder b = *this;
-		b.level = std::min<uint8_t>(level, 7);
+		b.level = std::min<uint8_t>(_level, 7);
 		return b;
 	}
-	FluidBuilder falling(bool falling) const {
+	FluidBuilder falling(bool _falling) const {
 		FluidBuilder b = *this;
-		b.falling = falling;
+		b.falling = _falling;
 		return b;
 	}
 
@@ -168,14 +168,14 @@ private:
 };
 
 struct SaplingBuilder {
-	SaplingBuilder type(WoodType type) const {
+	SaplingBuilder type(WoodType _type) const {
 		SaplingBuilder b = *this;
-		b.type = type;
+		b.type = _type;
 		return b;
 	}
-	SaplingBuilder readyToGrow(bool readyToGrow) const {
+	SaplingBuilder readyToGrow(bool _readyToGrow) const {
 		SaplingBuilder b = *this;
-		b.readyToGrow = readyToGrow;
+		b.readyToGrow = _readyToGrow;
 		return b;
 	}
 
@@ -196,9 +196,9 @@ private:
 };
 
 struct LogBuilder {
-	LogBuilder type(WoodType type) const {
+	LogBuilder type(WoodType _type) const {
 		LogBuilder b = *this;
-		b.type = type;
+		b.type = _type;
 		return b;
 	}
 
@@ -215,14 +215,14 @@ private:
 };
 
 struct LeavesBuilder {
-	LeavesBuilder type(WoodType type) const {
+	LeavesBuilder type(WoodType _type) const {
 		LeavesBuilder b = *this;
-		b.type = type;
+		b.type = _type;
 		return b;
 	}
-	LeavesBuilder decaying(bool decaying) const {
+	LeavesBuilder decaying(bool _decaying) const {
 		LeavesBuilder b = *this;
-		b.decaying = decaying;
+		b.decaying = _decaying;
 		return b;
 	}
 
@@ -243,9 +243,9 @@ private:
 };
 
 struct TallGrassBuilder {
-	TallGrassBuilder type(TallGrassType type) const {
+	TallGrassBuilder type(TallGrassType _type) const {
 		TallGrassBuilder b = *this;
-		b.type = type;
+		b.type = _type;
 		return b;
 	}
 
@@ -262,9 +262,9 @@ private:
 };
 
 struct WoolBuilder {
-	WoolBuilder color(WoolColor color) const {
+	WoolBuilder color(WoolColor _color) const {
 		WoolBuilder b = *this;
-		b.color = color;
+		b.color = _color;
 		return b;
 	}
 
@@ -281,11 +281,11 @@ private:
 };
 
 struct SlabBuilder {
-	constexpr explicit SlabBuilder(BlockType id) : id(id) {}
+	constexpr explicit SlabBuilder(BlockType _id) : id(_id) {}
 
-	SlabBuilder type(SlabType type) const {
+	SlabBuilder type(SlabType _type) const {
 		SlabBuilder b = *this;
-		b.type = type;
+		b.type = _type;
 		return b;
 	}
 
@@ -302,11 +302,11 @@ private:
 };
 
 struct TorchBuilder {
-	constexpr explicit TorchBuilder(BlockType id) : id(id) {}
+	constexpr explicit TorchBuilder(BlockType _id) : id(_id) {}
 
-	TorchBuilder attachment(TorchAttachment attachment) const {
+	TorchBuilder attachment(TorchAttachment _attachment) const {
 		TorchBuilder b = *this;
-		b.attachment = attachment;
+		b.attachment = _attachment;
 		return b;
 	}
 
@@ -323,11 +323,11 @@ private:
 };
 
 struct WallFacingBuilder {
-	constexpr explicit WallFacingBuilder(BlockType id) : id(id) {}
+	constexpr explicit WallFacingBuilder(BlockType _id) : id(_id) {}
 
-	WallFacingBuilder facing(WallFacing facing) const {
+	WallFacingBuilder facing(WallFacing _facing) const {
 		WallFacingBuilder b = *this;
-		b.facing = facing;
+		b.facing = _facing;
 		return b;
 	}
 
@@ -344,19 +344,19 @@ private:
 };
 
 struct BedBuilder {
-	BedBuilder facing(Direction direction) const {
+	BedBuilder facing(Direction _direction) const {
 		BedBuilder b = *this;
-		b.direction = direction;
+		b.direction = _direction;
 		return b;
 	}
-	BedBuilder occupied(bool occupied) const {
+	BedBuilder occupied(bool _occupied) const {
 		BedBuilder b = *this;
-		b.occupied = occupied;
+		b.occupied = _occupied;
 		return b;
 	}
-	BedBuilder head(bool head) const {
+	BedBuilder head(bool _head) const {
 		BedBuilder b = *this;
-		b.head = head;
+		b.head = _head;
 		return b;
 	}
 
@@ -394,16 +394,16 @@ private:
 };
 
 struct PoweredRailBuilder {
-	constexpr explicit PoweredRailBuilder(BlockType id) : id(id) {}
+	constexpr explicit PoweredRailBuilder(BlockType _id) : id(_id) {}
 
-	PoweredRailBuilder shape(RailShape shape) const {
+	PoweredRailBuilder shape(RailShape _shape) const {
 		PoweredRailBuilder b = *this;
-		b.shape = shape;
+		b.shape = _shape;
 		return b;
 	}
-	PoweredRailBuilder powered(bool powered) const {
+	PoweredRailBuilder powered(bool _powered) const {
 		PoweredRailBuilder b = *this;
-		b.powered = powered;
+		b.powered = _powered;
 		return b;
 	}
 
@@ -424,16 +424,16 @@ private:
 };
 
 struct PistonBuilder {
-	constexpr explicit PistonBuilder(BlockType id) : id(id) {}
+	constexpr explicit PistonBuilder(BlockType _id) : id(_id) {}
 
-	PistonBuilder facing(PistonFacing facing) const {
+	PistonBuilder facing(PistonFacing _facing) const {
 		PistonBuilder b = *this;
-		b.facing = facing;
+		b.facing = _facing;
 		return b;
 	}
-	PistonBuilder extended(bool extended) const {
+	PistonBuilder extended(bool _extended) const {
 		PistonBuilder b = *this;
-		b.extended = extended;
+		b.extended = _extended;
 		return b;
 	}
 
@@ -454,14 +454,14 @@ private:
 };
 
 struct PistonHeadBuilder {
-	PistonHeadBuilder facing(PistonFacing facing) const {
+	PistonHeadBuilder facing(PistonFacing _facing) const {
 		PistonHeadBuilder b = *this;
-		b.facing = facing;
+		b.facing = _facing;
 		return b;
 	}
-	PistonHeadBuilder sticky(bool sticky) const {
+	PistonHeadBuilder sticky(bool _sticky) const {
 		PistonHeadBuilder b = *this;
-		b.sticky = sticky;
+		b.sticky = _sticky;
 		return b;
 	}
 
@@ -482,21 +482,21 @@ private:
 };
 
 struct DoorBuilder {
-	constexpr explicit DoorBuilder(BlockType id) : id(id) {}
+	constexpr explicit DoorBuilder(BlockType _id) : id(_id) {}
 
-	DoorBuilder rotation(uint8_t rotation) const {
+	DoorBuilder rotation(uint8_t _rotation) const {
 		DoorBuilder b = *this;
-		b.rotation = rotation & 0x3;
+		b.rotation = _rotation & 0x3;
 		return b;
 	}
-	DoorBuilder open(bool open) const {
+	DoorBuilder open(bool _open) const {
 		DoorBuilder b = *this;
-		b.open = open;
+		b.open = _open;
 		return b;
 	}
-	DoorBuilder upperHalf(bool upperHalf) const {
+	DoorBuilder upperHalf(bool _upperHalf) const {
 		DoorBuilder b = *this;
-		b.upperHalf = upperHalf;
+		b.upperHalf = _upperHalf;
 		return b;
 	}
 
@@ -520,9 +520,9 @@ private:
 };
 
 struct SignBuilder {
-	SignBuilder rotation(uint8_t rotation) const {
+	SignBuilder rotation(uint8_t _rotation) const {
 		SignBuilder b = *this;
-		b.rotation = rotation & 0xF;
+		b.rotation = _rotation & 0xF;
 		return b;
 	}
 
@@ -539,9 +539,9 @@ private:
 };
 
 struct RailBuilder {
-	RailBuilder shape(RailShape shape) const {
+	RailBuilder shape(RailShape _shape) const {
 		RailBuilder b = *this;
-		b.shape = shape;
+		b.shape = _shape;
 		return b;
 	}
 
@@ -558,14 +558,14 @@ private:
 };
 
 struct LeverBuilder {
-	LeverBuilder mount(LeverMount mount) const {
+	LeverBuilder mount(LeverMount _mount) const {
 		LeverBuilder b = *this;
-		b.mount = mount;
+		b.mount = _mount;
 		return b;
 	}
-	LeverBuilder on(bool on) const {
+	LeverBuilder on(bool _on) const {
 		LeverBuilder b = *this;
-		b.on = on;
+		b.on = _on;
 		return b;
 	}
 
@@ -586,14 +586,14 @@ private:
 };
 
 struct ButtonBuilder {
-	ButtonBuilder mount(ButtonMount mount) const {
+	ButtonBuilder mount(ButtonMount _mount) const {
 		ButtonBuilder b = *this;
-		b.mount = mount;
+		b.mount = _mount;
 		return b;
 	}
-	ButtonBuilder pressed(bool pressed) const {
+	ButtonBuilder pressed(bool _pressed) const {
 		ButtonBuilder b = *this;
-		b.pressed = pressed;
+		b.pressed = _pressed;
 		return b;
 	}
 
@@ -614,9 +614,9 @@ private:
 };
 
 struct SnowLayerBuilder {
-	SnowLayerBuilder height(uint8_t height) const {
+	SnowLayerBuilder height(uint8_t _height) const {
 		SnowLayerBuilder b = *this;
-		b.height = std::min<uint8_t>(height, 7);
+		b.height = std::min<uint8_t>(_height, 7);
 		return b;
 	}
 
@@ -633,14 +633,14 @@ private:
 };
 
 struct TrapdoorBuilder {
-	TrapdoorBuilder facing(Direction direction) const {
+	TrapdoorBuilder facing(Direction _direction) const {
 		TrapdoorBuilder b = *this;
-		b.direction = direction;
+		b.direction = _direction;
 		return b;
 	}
-	TrapdoorBuilder open(bool open) const {
+	TrapdoorBuilder open(bool _open) const {
 		TrapdoorBuilder b = *this;
-		b.open = open;
+		b.open = _open;
 		return b;
 	}
 
@@ -675,11 +675,11 @@ private:
 };
 
 struct PumpkinBuilder {
-	constexpr explicit PumpkinBuilder(BlockType id) : id(id) {}
+	constexpr explicit PumpkinBuilder(BlockType _id) : id(_id) {}
 
-	PumpkinBuilder facing(Direction direction) const {
+	PumpkinBuilder facing(Direction _direction) const {
 		PumpkinBuilder b = *this;
-		b.direction = direction;
+		b.direction = _direction;
 		return b;
 	}
 
@@ -711,16 +711,16 @@ private:
 };
 
 struct RepeaterBuilder {
-	constexpr explicit RepeaterBuilder(BlockType id) : id(id) {}
+	constexpr explicit RepeaterBuilder(BlockType _id) : id(_id) {}
 
-	RepeaterBuilder facing(Direction direction) const {
+	RepeaterBuilder facing(Direction _direction) const {
 		RepeaterBuilder b = *this;
-		b.direction = direction;
+		b.direction = _direction;
 		return b;
 	}
-	RepeaterBuilder delay(uint8_t delay) const {
+	RepeaterBuilder delay(uint8_t _delay) const {
 		RepeaterBuilder b = *this;
-		b.delay = std::min<uint8_t>(delay, 3);
+		b.delay = std::min<uint8_t>(_delay, 3);
 		return b;
 	}
 

@@ -19,8 +19,8 @@ BlockProperties blockProperties[256] = {};
 BlockBehavior blockBehaviors[256] = {};
 
 // Behavior helper functions
-static bool canFallAt(WorldManager& world, Int3 position) {
-	auto block = world.getBlockId(position);
+static bool canFallAt(WorldManager& _world, Int3 _position) {
+	auto block = _world.getBlockId(_position);
 	if (block == BLOCK_AIR)
 		return true;
 	if (block == BLOCK_FIRE)
@@ -31,54 +31,54 @@ static bool canFallAt(WorldManager& world, Int3 position) {
 	return false;
 }
 
-void BreakAndDropBlock(WorldManager& world, Int3 pos) {
-	BlockType blockId = world.getBlockId({ pos.x, pos.y, pos.z });
-	uint8_t meta = world.getMetadata({ pos.x, pos.y, pos.z });
-	world.setBlock({ pos.x, pos.y, pos.z }, BLOCK_AIR);
+void BreakAndDropBlock(WorldManager& _world, Int3 _pos) {
+	BlockType blockId = _world.getBlockId({ _pos.x, _pos.y, _pos.z });
+	uint8_t meta = _world.getMetadata({ _pos.x, _pos.y, _pos.z });
+	_world.setBlock({ _pos.x, _pos.y, _pos.z }, BLOCK_AIR);
 
-	std::vector<ItemStack> drops = Blocks::getBlockDrops(blockId, meta, world.rand);
+	std::vector<ItemStack> drops = Blocks::getBlockDrops(blockId, meta, _world.rand);
 
 	for (ItemStack drop : drops) {
-		Vec3 dropPos = { double(pos.x), double(pos.y), double(pos.z) };
+		Vec3 dropPos = { double(_pos.x), double(_pos.y), double(_pos.z) };
 		float offset = 0.7f;
-		dropPos.x += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
-		dropPos.y += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
-		dropPos.z += (world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		dropPos.x += (_world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		dropPos.y += (_world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
+		dropPos.z += (_world.rand.nextFloat() * offset) + (1.0f - offset) * 0.5;
 		ItemEntity item(dropPos);
 		item.itemStack = drop;
-		world.entityManager.addEntity(std::make_shared<ItemEntity>(item));
+		_world.entityManager.addEntity(std::make_shared<ItemEntity>(item));
 	}
 	return;
 }
 
-Int3 getAdjacentBlockPos(Int3 pos, PacketData::FaceDirection face) {
-	switch (face) {
+Int3 getAdjacentBlockPos(Int3 _pos, PacketData::FaceDirection _face) {
+	switch (_face) {
 	case PacketData::FaceDirection::Y_MINUS:
-		--pos.y;
+		--_pos.y;
 		break;
 	case PacketData::FaceDirection::Y_PLUS:
-		++pos.y;
+		++_pos.y;
 		break;
 	case PacketData::FaceDirection::Z_MINUS:
-		--pos.z;
+		--_pos.z;
 		break;
 	case PacketData::FaceDirection::Z_PLUS:
-		++pos.z;
+		++_pos.z;
 		break;
 	case PacketData::FaceDirection::X_MINUS:
-		--pos.x;
+		--_pos.x;
 		break;
 	case PacketData::FaceDirection::X_PLUS:
-		++pos.x;
+		++_pos.x;
 		break;
 	default:
 		break;
 	}
-	return pos;
+	return _pos;
 }
 
-bool canSugarcaneSurviveAt(WorldManager& world, Int3 pos) {
-	auto belowBlock = world.getBlockId({ pos.x, pos.y - 1, pos.z });
+bool canSugarcaneSurviveAt(WorldManager& _world, Int3 _pos) {
+	auto belowBlock = _world.getBlockId({ _pos.x, _pos.y - 1, _pos.z });
 	if (belowBlock == BLOCK_SUGARCANE)
 		return true;
 	if (belowBlock != BLOCK_GRASS && belowBlock != BLOCK_DIRT)
@@ -88,7 +88,7 @@ bool canSugarcaneSurviveAt(WorldManager& world, Int3 pos) {
 	for (int i = 0; i < 4; i++) {
 		int dx = d[i];
 		int dz = d[3 - i];
-		auto adjacentBlock = world.getBlockId({ pos.x + dx, pos.y - 1, pos.z + dz });
+		auto adjacentBlock = _world.getBlockId({ _pos.x + dx, _pos.y - 1, _pos.z + dz });
 		if (adjacentBlock == BLOCK_WATER_FLOWING || adjacentBlock == BLOCK_WATER_STILL)
 			return true;
 	}
@@ -96,56 +96,56 @@ bool canSugarcaneSurviveAt(WorldManager& world, Int3 pos) {
 }
 
 // Some fluid specific stuff
-float getFluidPercentAir(uint8_t meta) {
-	if (meta >= 8)
-		meta = 0;
+float getFluidPercentAir(uint8_t _meta) {
+	if (_meta >= 8)
+		_meta = 0;
 
-	return float(meta + 1) / 9.0f;
+	return float(_meta + 1) / 9.0f;
 }
 
-static Vec3 getFluidFlowVector(WorldManager& world, Int3 pos) {
+static Vec3 getFluidFlowVector(WorldManager& _world, Int3 _pos) {
 	auto waterMaterial = Material::Water();
 	Vec3 flowVector{};
-	auto getEffectiveFlowDecay = [&](WorldManager& lWorld, Int3 lPos, Material lMaterial) {
-		if (lWorld.getMaterial(pos) != lMaterial)
+	auto getEffectiveFlowDecay = [&](WorldManager& _lWorld, Int3 _lPos, Material _lMaterial) {
+		if (_lWorld.getMaterial(_pos) != _lMaterial)
 			return -1;
-		int meta = lWorld.getMetadata(lPos);
+		int meta = _lWorld.getMetadata(_lPos);
 		if (meta >= 8)
 			meta = 0;
 
 		return meta;
 	};
 
-	int myFlowContribution = getEffectiveFlowDecay(world, pos, waterMaterial);
+	int myFlowContribution = getEffectiveFlowDecay(_world, _pos, waterMaterial);
 
 	// Get the contribution of our horizontal neighbors
 	int ndx[] = { -1, 1, 0, 0 };
 	int ndz[] = { 0, 0, -1, 1 };
 	for (int i = 0; i < 4; i++) {
-		int dx = pos.x + ndx[i];
-		int dz = pos.z + ndz[i];
-		int neighborFlowContribution = getEffectiveFlowDecay(world, { dx, pos.y, dz }, waterMaterial);
+		int dx = _pos.x + ndx[i];
+		int dz = _pos.z + ndz[i];
+		int neighborFlowContribution = getEffectiveFlowDecay(_world, { dx, _pos.y, dz }, waterMaterial);
 		int flowDifference = 0;
 		// Our neighbor block didn't have the same material
 		if (neighborFlowContribution < 0) {
-			if (!world.getMaterial({ dx, pos.y, dz }).isSolid) {
+			if (!_world.getMaterial({ dx, _pos.y, dz }).isSolid) {
 				// Check the block below us to see if its water, if it is, STRONGLY pull down
-				int belowFlowContribution = getEffectiveFlowDecay(world, { dx, pos.y - 1, dz }, waterMaterial);
+				int belowFlowContribution = getEffectiveFlowDecay(_world, { dx, _pos.y - 1, dz }, waterMaterial);
 				if (belowFlowContribution >= 0) {
 					flowDifference = belowFlowContribution - (myFlowContribution - 8);
-					flowVector.x += double((dx - pos.x) * flowDifference);
-					flowVector.z += double((dz - pos.z) * flowDifference);
+					flowVector.x += double((dx - _pos.x) * flowDifference);
+					flowVector.z += double((dz - _pos.z) * flowDifference);
 				}
 			}
 		} else {
 			flowDifference = neighborFlowContribution - myFlowContribution;
-			flowVector.x += double((dx - pos.x) * flowDifference);
-			flowVector.z += double((dz - pos.z) * flowDifference);
+			flowVector.x += double((dx - _pos.x) * flowDifference);
+			flowVector.z += double((dz - _pos.z) * flowDifference);
 		}
 	}
 
-	auto isFluidWall = [&](Int3 checkPos) {
-		Material neighborMaterial = world.getMaterial(checkPos);
+	auto isFluidWall = [&](Int3 _checkPos) {
+		Material neighborMaterial = _world.getMaterial(_checkPos);
 		if (neighborMaterial == waterMaterial)
 			return false;
 		if (neighborMaterial == Material::Ice())
@@ -154,24 +154,24 @@ static Vec3 getFluidFlowVector(WorldManager& world, Int3 pos) {
 	};
 
 	// If we're a falling fluid segment, check whether we're clinging to a wall
-	if (world.getMetadata(pos) >= 8) {
+	if (_world.getMetadata(_pos) >= 8) {
 		bool nearWall = false;
 
-		if (!nearWall && isFluidWall({ pos.x, pos.y, pos.z - 1 }))
+		if (!nearWall && isFluidWall({ _pos.x, _pos.y, _pos.z - 1 }))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ pos.x, pos.y, pos.z + 1 }))
+		if (!nearWall && isFluidWall({ _pos.x, _pos.y, _pos.z + 1 }))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ pos.x - 1, pos.y, pos.z }))
+		if (!nearWall && isFluidWall({ _pos.x - 1, _pos.y, _pos.z }))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ pos.x + 1, pos.y, pos.z }))
+		if (!nearWall && isFluidWall({ _pos.x + 1, _pos.y, _pos.z }))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ pos.x, pos.y + 1, pos.z - 1 }))
+		if (!nearWall && isFluidWall({ _pos.x, _pos.y + 1, _pos.z - 1 }))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ pos.x, pos.y + 1, pos.z + 1 }))
+		if (!nearWall && isFluidWall({ _pos.x, _pos.y + 1, _pos.z + 1 }))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ pos.x - 1, pos.y + 1, pos.z }))
+		if (!nearWall && isFluidWall({ _pos.x - 1, _pos.y + 1, _pos.z }))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ pos.x + 1, pos.y + 1, pos.z }))
+		if (!nearWall && isFluidWall({ _pos.x + 1, _pos.y + 1, _pos.z }))
 			nearWall = true;
 
 		if (nearWall) {
@@ -220,9 +220,9 @@ static CollisionShape slabCollider(uint8_t) {
 }
 
 // stairs
-static CollisionShape stairCollider(uint8_t meta) {
+static CollisionShape stairCollider(uint8_t _meta) {
 	CollisionShape s;
-	switch (meta & 3) {
+	switch (_meta & 3) {
 	case 0:
 		s.add({ 0.0, 0.0, 0.0, 0.5, 0.5, 1.0 });
 		s.add({ 0.5, 0.0, 0.0, 1.0, 1.0, 1.0 });
@@ -256,21 +256,21 @@ static CollisionShape cactusCollider(uint8_t) {
 }
 
 // snow layer
-static AABB snowLayerAABB(uint8_t meta) {
-	float h = (2.0f * (1 + (meta & 7))) / 16.0f;
+static AABB snowLayerAABB(uint8_t _meta) {
+	float h = (2.0f * (1 + (_meta & 7))) / 16.0f;
 	return { 0.0, 0.0, 0.0, 1.0, h, 1.0 };
 }
-static CollisionShape snowLayerCollider(uint8_t meta) {
+static CollisionShape snowLayerCollider(uint8_t _meta) {
 	CollisionShape s;
-	if ((meta & 7) >= 3)
+	if ((_meta & 7) >= 3)
 		s.add({ 0.0, 0.0, 0.0, 1.0, 0.5, 1.0 });
 	return s;
 }
 
 // ladder
-static AABB ladderAABB(uint8_t meta) {
+static AABB ladderAABB(uint8_t _meta) {
 	constexpr double T = 0.125;
-	switch (meta) {
+	switch (_meta) {
 	case 2:
 		return { 0.0, 0.0, 1.0 - T, 1.0, 1.0, 1.0 };
 	case 3:
@@ -283,10 +283,10 @@ static AABB ladderAABB(uint8_t meta) {
 		return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 	}
 }
-static CollisionShape ladderCollider(uint8_t meta) {
+static CollisionShape ladderCollider(uint8_t _meta) {
 	constexpr double T = 0.125;
 	CollisionShape s;
-	switch (meta) {
+	switch (_meta) {
 	case 2:
 		s.add({ 0.0, 0.0, 1.0 - T, 1.0, 1.0, 1.0 });
 		break;
@@ -305,12 +305,12 @@ static CollisionShape ladderCollider(uint8_t meta) {
 
 // door
 // bits 0-1 = facing when closed, bit 2 = open, bit 3 = top half
-static int doorState(uint8_t meta) {
-	return ((meta & 4) == 0) ? ((meta - 1) & 3) : (meta & 3);
+static int doorState(uint8_t _meta) {
+	return ((_meta & 4) == 0) ? ((_meta - 1) & 3) : (_meta & 3);
 }
-static AABB doorAABB(uint8_t meta) {
+static AABB doorAABB(uint8_t _meta) {
 	constexpr double T = 0.1875;
-	switch (doorState(meta)) {
+	switch (doorState(_meta)) {
 	case 0:
 		return { 0.0, 0.0, 0.0, 1.0, 1.0, T };
 	case 1:
@@ -323,10 +323,10 @@ static AABB doorAABB(uint8_t meta) {
 		return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 	}
 }
-static CollisionShape doorCollider(uint8_t meta) {
+static CollisionShape doorCollider(uint8_t _meta) {
 	constexpr double T = 0.1875;
 	CollisionShape s;
-	switch (doorState(meta)) {
+	switch (doorState(_meta)) {
 	case 0:
 		s.add({ 0.0, 0.0, 0.0, 1.0, 1.0, T });
 		break;
@@ -344,11 +344,11 @@ static CollisionShape doorCollider(uint8_t meta) {
 }
 
 // trapdoor
-static AABB trapdoorAABB(uint8_t meta) {
+static AABB trapdoorAABB(uint8_t _meta) {
 	constexpr double T = 0.1875;
-	if (!(meta & 4))
+	if (!(_meta & 4))
 		return { 0.0, 0.0, 0.0, 1.0, T, 1.0 };
-	switch (meta & 3) {
+	switch (_meta & 3) {
 	case 0:
 		return { 0.0, 0.0, 1.0 - T, 1.0, 1.0, 1.0 };
 	case 1:
@@ -368,14 +368,14 @@ static CollisionShape farmlandCollider(uint8_t) {
 	return s;
 }
 
-static CollisionShape trapdoorCollider(uint8_t meta) {
+static CollisionShape trapdoorCollider(uint8_t _meta) {
 	constexpr double T = 0.1875;
 	CollisionShape s;
-	if (!(meta & 4)) {
+	if (!(_meta & 4)) {
 		s.add({ 0.0, 0.0, 0.0, 1.0, T, 1.0 });
 		return s;
 	}
-	switch (meta & 3) {
+	switch (_meta & 3) {
 	case 0:
 		s.add({ 0.0, 0.0, 1.0 - T, 1.0, 1.0, 1.0 });
 		break;
@@ -410,12 +410,12 @@ static CollisionShape fenceCollider(uint8_t) {
 }
 
 // cake
-static AABB cakeAABB(uint8_t meta) {
-	double x0 = (1 + meta * 2) / 16.0;
+static AABB cakeAABB(uint8_t _meta) {
+	double x0 = (1 + _meta * 2) / 16.0;
 	return { x0, 0.0, 0.0625, 1.0 - 0.0625, 0.5 - 0.0625, 1.0 - 0.0625 };
 }
-static CollisionShape cakeCollider(uint8_t meta) {
-	double x0 = (1 + meta * 2) / 16.0;
+static CollisionShape cakeCollider(uint8_t _meta) {
+	double x0 = (1 + _meta * 2) / 16.0;
 	CollisionShape s;
 	s.add({ x0, 0.0, 0.0625, 1.0 - 0.0625, 0.5 - 0.0625, 1.0 - 0.0625 });
 	return s;
@@ -430,9 +430,9 @@ static CollisionShape emptyCollider(uint8_t) {
 }
 
 // button
-static AABB buttonAABB(uint8_t meta) {
-	const int face = meta & 7;
-	const bool pressed = (meta & 8) != 0;
+static AABB buttonAABB(uint8_t _meta) {
+	const int face = _meta & 7;
+	const bool pressed = (_meta & 8) != 0;
 	constexpr double lo = 0.375, hi = 0.625, hw = 0.1875;
 	const double depth = pressed ? 0.0625 : 0.125;
 	switch (face) {
@@ -450,9 +450,9 @@ static AABB buttonAABB(uint8_t meta) {
 }
 
 // lever
-static AABB leverAABB(uint8_t meta) {
+static AABB leverAABB(uint8_t _meta) {
 	constexpr double f = 0.1875;
-	switch (meta & 7) {
+	switch (_meta & 7) {
 	case 1:
 		return { 0.0, 0.2, 0.5 - f, f * 2.0, 0.8, 0.5 + f };
 	case 2:
@@ -469,15 +469,15 @@ static AABB leverAABB(uint8_t meta) {
 }
 
 // pressure plate
-static AABB pressurePlateAABB(uint8_t meta) {
+static AABB pressurePlateAABB(uint8_t _meta) {
 	constexpr double f = 0.0625;
-	return { f, 0.0, f, 1.0 - f, (meta == 1) ? 0.03125 : 0.0625, 1.0 - f };
+	return { f, 0.0, f, 1.0 - f, (_meta == 1) ? 0.03125 : 0.0625, 1.0 - f };
 }
 
 // torch (normal + redstone, same box)
-static AABB torchAABB(uint8_t meta) {
+static AABB torchAABB(uint8_t _meta) {
 	constexpr double f = 0.15;
-	switch (meta & 7) {
+	switch (_meta & 7) {
 	case 1:
 		return { 0.0, 0.2, 0.5 - f, f * 2.0, 0.8, 0.5 + f };
 	case 2:
@@ -550,8 +550,8 @@ static AABB liquidAABB(uint8_t) {
 }
 
 // piston head
-static AABB pistonHeadAABB(uint8_t meta) {
-	switch (meta & 7) {
+static AABB pistonHeadAABB(uint8_t _meta) {
+	switch (_meta & 7) {
 	case 0:
 		return { 0.0, 0.0, 0.0, 1.0, 0.25, 1.0 };
 	case 1:
@@ -568,9 +568,9 @@ static AABB pistonHeadAABB(uint8_t meta) {
 		return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 	}
 }
-static CollisionShape pistonHeadCollider(uint8_t meta) {
+static CollisionShape pistonHeadCollider(uint8_t _meta) {
 	CollisionShape s;
-	switch (meta & 7) {
+	switch (_meta & 7) {
 	case 0:
 		s.add({ 0.0, 0.0, 0.0, 1.0, 0.25, 1.0 });
 		s.add({ 0.375, 0.25, 0.375, 0.625, 1.0, 0.625 });
@@ -599,21 +599,21 @@ static CollisionShape pistonHeadCollider(uint8_t meta) {
 	return s;
 }
 
-std::vector<ItemStack> getBlockDrops(BlockType blockId, uint8_t meta, Java::Random& rng) {
+std::vector<ItemStack> getBlockDrops(BlockType _blockId, uint8_t _meta, Java::Random& _rng) {
 	std::vector<ItemStack> drops;
 
-	if (blockId == BLOCK_AIR) {
+	if (_blockId == BLOCK_AIR) {
 		return drops;
 	}
 
 	// headache: crops drop multiple items of different types (wheat + seeds)
-	if (blockId == BLOCK_CROP_WHEAT) {
-		if (meta == MAX_CROP_SIZE) {
+	if (_blockId == BLOCK_CROP_WHEAT) {
+		if (_meta == MAX_CROP_SIZE) {
 			drops.push_back(ItemStack{ Items::Id::WHEAT, 1, 0 });
 		}
 
 		for (int i = 0; i < 3; i++) {
-			if (rng.nextInt(15) <= static_cast<int>(meta)) {
+			if (_rng.nextInt(15) <= static_cast<int>(_meta)) {
 				drops.push_back(ItemStack{ Items::Id::SEEDS_WHEAT, 1, 0 });
 			}
 		}
@@ -621,12 +621,12 @@ std::vector<ItemStack> getBlockDrops(BlockType blockId, uint8_t meta, Java::Rand
 		return drops;
 	}
 
-	const BlockBehavior& behavior = blockBehaviors[static_cast<uint8_t>(blockId)];
-	int count = behavior.quantityDropped ? behavior.quantityDropped(rng) : 1;
-	int16_t damage = behavior.damageDropped ? behavior.damageDropped(meta) : 0;
+	const BlockBehavior& behavior = blockBehaviors[static_cast<uint8_t>(_blockId)];
+	int count = behavior.quantityDropped ? behavior.quantityDropped(_rng) : 1;
+	int16_t damage = behavior.damageDropped ? behavior.damageDropped(_meta) : 0;
 
 	for (int i = 0; i < count; i++) {
-		ItemId id = behavior.idDropped ? behavior.idDropped(meta, rng) : ItemId(blockId);
+		ItemId id = behavior.idDropped ? behavior.idDropped(_meta, _rng) : ItemId(_blockId);
 
 		if (id > 0) {
 			drops.push_back(ItemStack{ id, 1, damage });
@@ -1936,144 +1936,144 @@ void registerAll() {
 	};
 
 	// specific behavioral overrides
-	blockBehaviors[BLOCK_WATER_FLOWING].velocityToAddToEntity = [](WorldManager& world, Int3 pos,
-	                                                               Vec3& pushVector) -> void {
-		Vec3 flowVector = getFluidFlowVector(world, pos);
-		pushVector = pushVector + flowVector;
+	blockBehaviors[BLOCK_WATER_FLOWING].velocityToAddToEntity = [](WorldManager& _world, Int3 _pos,
+	                                                               Vec3& _pushVector) -> void {
+		Vec3 flowVector = getFluidFlowVector(_world, _pos);
+		_pushVector = _pushVector + flowVector;
 	};
-	blockBehaviors[BLOCK_WATER_STILL].velocityToAddToEntity = [](WorldManager& world, Int3 pos,
-	                                                             Vec3& pushVector) -> void {
-		Vec3 flowVector = getFluidFlowVector(world, pos);
-		pushVector = pushVector + flowVector;
+	blockBehaviors[BLOCK_WATER_STILL].velocityToAddToEntity = [](WorldManager& _world, Int3 _pos,
+	                                                             Vec3& _pushVector) -> void {
+		Vec3 flowVector = getFluidFlowVector(_world, _pos);
+		_pushVector = _pushVector + flowVector;
 	};
-	blockBehaviors[BLOCK_CACTUS].onEntityCollidedWithBlock = [](WorldManager& world, Int3 pos, Entity& entity) -> void {
-		entity.attackEntityFrom(nullptr, 1);
+	blockBehaviors[BLOCK_CACTUS].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos, Entity& _entity) -> void {
+		_entity.attackEntityFrom(nullptr, 1);
 	};
-	blockBehaviors[BLOCK_COBWEB].onEntityCollidedWithBlock = [](WorldManager& world, Int3 pos, Entity& entity) -> void {
-		entity.inWeb = true;
+	blockBehaviors[BLOCK_COBWEB].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos, Entity& _entity) -> void {
+		_entity.inWeb = true;
 	};
-	blockBehaviors[BLOCK_SOULSAND].onEntityCollidedWithBlock = [](WorldManager& world, Int3 pos,
-	                                                              Entity& entity) -> void {
-		entity.velocity.x *= 0.4;
-		entity.velocity.z *= 0.4;
+	blockBehaviors[BLOCK_SOULSAND].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos,
+	                                                              Entity& _entity) -> void {
+		_entity.velocity.x *= 0.4;
+		_entity.velocity.z *= 0.4;
 	};
-	blockBehaviors[BLOCK_SUGARCANE].onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
+	blockBehaviors[BLOCK_SUGARCANE].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
 		// Check to see if our placement is still valid
-		if (!canSugarcaneSurviveAt(world, pos))
-			BreakAndDropBlock(world, pos);
+		if (!canSugarcaneSurviveAt(_world, _pos))
+			BreakAndDropBlock(_world, _pos);
 	};
 
 	// placement overrides
-	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& world, Int3 pos, Entity& placer,
-	                                               PacketData::FaceDirection face) -> void {
-		auto meta = world.getMetadata(pos);
-		if (face == PacketData::FaceDirection::Y_PLUS && (world.isBlockNormalCube({ pos.x, pos.y - 1, pos.z }) ||
-		                                                  world.getBlockId({ pos.x, pos.y - 1, pos.z }) == BLOCK_FENCE))
+	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                               PacketData::FaceDirection _face) -> void {
+		auto meta = _world.getMetadata(_pos);
+		if (_face == PacketData::FaceDirection::Y_PLUS && (_world.isBlockNormalCube({ _pos.x, _pos.y - 1, _pos.z }) ||
+		                                                  _world.getBlockId({ _pos.x, _pos.y - 1, _pos.z }) == BLOCK_FENCE))
 			meta = 5;
-		if (face == PacketData::FaceDirection::Z_MINUS && world.isBlockNormalCube({ pos.x, pos.y, pos.z + 1 }))
+		if (_face == PacketData::FaceDirection::Z_MINUS && _world.isBlockNormalCube({ _pos.x, _pos.y, _pos.z + 1 }))
 			meta = 4;
-		if (face == PacketData::FaceDirection::Z_PLUS && world.isBlockNormalCube({ pos.x, pos.y, pos.z - 1 }))
+		if (_face == PacketData::FaceDirection::Z_PLUS && _world.isBlockNormalCube({ _pos.x, _pos.y, _pos.z - 1 }))
 			meta = 3;
-		if (face == PacketData::FaceDirection::X_MINUS && world.isBlockNormalCube({ pos.x + 1, pos.y, pos.z }))
+		if (_face == PacketData::FaceDirection::X_MINUS && _world.isBlockNormalCube({ _pos.x + 1, _pos.y, _pos.z }))
 			meta = 2;
-		if (face == PacketData::FaceDirection::X_PLUS && world.isBlockNormalCube({ pos.x - 1, pos.y, pos.z }))
+		if (_face == PacketData::FaceDirection::X_PLUS && _world.isBlockNormalCube({ _pos.x - 1, _pos.y, _pos.z }))
 			meta = 1;
-		world.setMeta(pos, meta);
+		_world.setMeta(_pos, meta);
 	};
 
 	// for when the block is interacted with!
-	blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated = [](WorldManager& world, Int3 pos) -> bool {
-		auto meta = world.getMetadata(pos);
+	blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated = [](WorldManager& _world, Int3 _pos) -> bool {
+		auto meta = _world.getMetadata(_pos);
 		if (meta & 8) {
 			// We are the top half of the door
-			if (world.getBlockId({ pos.x, pos.y - 1, pos.z }) != BLOCK_DOOR_WOOD)
+			if (_world.getBlockId({ _pos.x, _pos.y - 1, _pos.z }) != BLOCK_DOOR_WOOD)
 				// Below us is not the bottom of a door! This is bad!
 				return false;
 			// Recall this function on the bottom of the door
-			blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated(world, { pos.x, pos.y - 1, pos.z });
+			blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated(_world, { _pos.x, _pos.y - 1, _pos.z });
 			return false;
 		}
 		// We are the top half so lets open
-		Int3 top = { pos.x, pos.y + 1, pos.z };
-		if (world.getBlockId(top) == BLOCK_DOOR_WOOD && (world.getMetadata(top) & 8)) {
-			world.setMeta(top, uint8_t((meta ^ 4) + 8));
+		Int3 top = { _pos.x, _pos.y + 1, _pos.z };
+		if (_world.getBlockId(top) == BLOCK_DOOR_WOOD && (_world.getMetadata(top) & 8)) {
+			_world.setMeta(top, uint8_t((meta ^ 4) + 8));
 		}
-		world.setMeta(pos, uint8_t(meta ^ 4)); // XOR bit 2; flips open/closed
+		_world.setMeta(_pos, uint8_t(meta ^ 4)); // XOR bit 2; flips open/closed
 		return false;
 	};
 
 	// Falling blocks!
-	blockBehaviors[BLOCK_GRAVEL].onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
+	blockBehaviors[BLOCK_GRAVEL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
 		// Schedule a check to see if we can fall
-		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_GRAVEL, 3);
+		_world.tickScheduler.scheduleUpdateTick(_pos, BLOCK_GRAVEL, 3);
 	};
-	blockBehaviors[BLOCK_GRAVEL].onBlockAdded = [](WorldManager& world, Int3 pos) -> void {
-		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_GRAVEL, 3);
+	blockBehaviors[BLOCK_GRAVEL].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		_world.tickScheduler.scheduleUpdateTick(_pos, BLOCK_GRAVEL, 3);
 	};
-	blockBehaviors[BLOCK_GRAVEL].onTick = [](WorldManager& world, Int3 pos, uint8_t meta, Java::Random& random) -> void {
-		Int3 below = { pos.x, pos.y - 1, pos.z };
+	blockBehaviors[BLOCK_GRAVEL].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& _random) -> void {
+		Int3 below = { _pos.x, _pos.y - 1, _pos.z };
 
-		if (!Blocks::canFallAt(world, below) || pos.y < 0)
+		if (!Blocks::canFallAt(_world, below) || _pos.y < 0)
 			return;
 
 		constexpr int32_t checkRadius = 32; // Blocks
-		bool areaLoaded = world.AABBinValidChunks({ double(pos.x - checkRadius), double(pos.y - checkRadius),
-		                                            double(pos.z - checkRadius), double(pos.x + checkRadius),
-		                                            double(pos.y + checkRadius), double(pos.z + checkRadius) });
+		bool areaLoaded = _world.AABBinValidChunks({ double(_pos.x - checkRadius), double(_pos.y - checkRadius),
+		                                            double(_pos.z - checkRadius), double(_pos.x + checkRadius),
+		                                            double(_pos.y + checkRadius), double(_pos.z + checkRadius) });
 
 		if (areaLoaded) {
-			Vec3 spawnPos = { pos.x + 0.5, pos.y + 0.5, pos.z + 0.5 };
+			Vec3 spawnPos = { _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 };
 			auto entity = std::make_shared<FallingBlockEntity>(spawnPos, BLOCK_GRAVEL);
-			world.entityManager.addEntity(std::move(entity));
-			world.setBlock(pos, BLOCK_AIR, 0);
+			_world.entityManager.addEntity(std::move(entity));
+			_world.setBlock(_pos, BLOCK_AIR, 0);
 		} else {
-			world.setBlock(pos, BLOCK_AIR, 0);
+			_world.setBlock(_pos, BLOCK_AIR, 0);
 
-			Int3 landing = pos;
-			while (Blocks::canFallAt(world, { landing.x, landing.y - 1, landing.z }) && landing.y > 0)
+			Int3 landing = _pos;
+			while (Blocks::canFallAt(_world, { landing.x, landing.y - 1, landing.z }) && landing.y > 0)
 				landing.y--;
 
 			if (landing.y > 0)
-				world.setBlock(landing, BLOCK_GRAVEL, 0);
+				_world.setBlock(landing, BLOCK_GRAVEL, 0);
 		}
 	};
-	blockBehaviors[BLOCK_SAND].onNeighborBlockChange = [](WorldManager& world, Int3 pos) -> void {
+	blockBehaviors[BLOCK_SAND].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
 		// Schedule a check to see if we can fall
-		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_SAND, 3);
+		_world.tickScheduler.scheduleUpdateTick(_pos, BLOCK_SAND, 3);
 	};
-	blockBehaviors[BLOCK_SAND].onBlockAdded = [](WorldManager& world, Int3 pos) -> void {
-		world.tickScheduler.scheduleUpdateTick(pos, BLOCK_SAND, 3);
+	blockBehaviors[BLOCK_SAND].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		_world.tickScheduler.scheduleUpdateTick(_pos, BLOCK_SAND, 3);
 	};
-	blockBehaviors[BLOCK_SAND].onTick = [](WorldManager& world, Int3 pos, uint8_t meta, Java::Random& random) -> void {
-		Int3 below = { pos.x, pos.y - 1, pos.z };
+	blockBehaviors[BLOCK_SAND].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& _random) -> void {
+		Int3 below = { _pos.x, _pos.y - 1, _pos.z };
 
-		if (!Blocks::canFallAt(world, below) || pos.y < 0)
+		if (!Blocks::canFallAt(_world, below) || _pos.y < 0)
 			return;
 
 		constexpr int32_t checkRadius = 32; // Blocks
-		bool areaLoaded = world.AABBinValidChunks({ double(pos.x - checkRadius), double(pos.y - checkRadius),
-		                                            double(pos.z - checkRadius), double(pos.x + checkRadius),
-		                                            double(pos.y + checkRadius), double(pos.z + checkRadius) });
+		bool areaLoaded = _world.AABBinValidChunks({ double(_pos.x - checkRadius), double(_pos.y - checkRadius),
+		                                            double(_pos.z - checkRadius), double(_pos.x + checkRadius),
+		                                            double(_pos.y + checkRadius), double(_pos.z + checkRadius) });
 
 		if (areaLoaded) {
-			Vec3 spawnPos = { pos.x + 0.5, pos.y + 0.5, pos.z + 0.5 };
+			Vec3 spawnPos = { _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 };
 			auto entity = std::make_shared<FallingBlockEntity>(spawnPos, BLOCK_SAND);
-			world.entityManager.addEntity(std::move(entity));
-			world.setBlock(pos, BLOCK_AIR, 0);
+			_world.entityManager.addEntity(std::move(entity));
+			_world.setBlock(_pos, BLOCK_AIR, 0);
 		} else {
-			world.setBlock(pos, BLOCK_AIR, 0);
+			_world.setBlock(_pos, BLOCK_AIR, 0);
 
-			Int3 landing = pos;
-			while (Blocks::canFallAt(world, { landing.x, landing.y - 1, landing.z }) && landing.y > 0)
+			Int3 landing = _pos;
+			while (Blocks::canFallAt(_world, { landing.x, landing.y - 1, landing.z }) && landing.y > 0)
 				landing.y--;
 
 			if (landing.y > 0)
-				world.setBlock(landing, BLOCK_SAND, 0);
+				_world.setBlock(landing, BLOCK_SAND, 0);
 		}
 	};
-	blockBehaviors[BLOCK_CHEST].onBlockAdded = [](WorldManager& world, Int3 pos) -> void {
-		auto chest = std::make_shared<TileEntityChest>(pos);
-		world.createTileEntity(std::move(chest));
+	blockBehaviors[BLOCK_CHEST].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		auto chest = std::make_shared<TileEntityChest>(_pos);
+		_world.createTileEntity(std::move(chest));
 	};
 
 	// --------------- block drops, only exceptions are included (something that doesn't drop itself) ---------------
@@ -2131,14 +2131,14 @@ void registerAll() {
 	};
 
 	// --------------- drop themselves but pass their metadata onto the item ---------------
-	blockBehaviors[BLOCK_WOOL].damageDropped = [](uint8_t meta) -> ItemDamage {
-		return meta;
+	blockBehaviors[BLOCK_WOOL].damageDropped = [](uint8_t _meta) -> ItemDamage {
+		return _meta;
 	};
-	blockBehaviors[BLOCK_LOG].damageDropped = [](uint8_t meta) -> ItemDamage {
-		return meta;
+	blockBehaviors[BLOCK_LOG].damageDropped = [](uint8_t _meta) -> ItemDamage {
+		return _meta;
 	};
-	blockBehaviors[BLOCK_SAPLING].damageDropped = [](uint8_t meta) -> ItemDamage {
-		return meta & 3;
+	blockBehaviors[BLOCK_SAPLING].damageDropped = [](uint8_t _meta) -> ItemDamage {
+		return _meta & 3;
 	};
 
 	// --------------- don't drop anything ---------------
@@ -2174,8 +2174,8 @@ void registerAll() {
 	};
 
 	// --------------- drops influenced by RNG ---------------
-	blockBehaviors[BLOCK_GRAVEL].idDropped = [](uint8_t, Java::Random& rng) -> ItemId {
-		return rng.nextInt(10) == 0 ? static_cast<ItemId>(Items::Id::FLINT) : static_cast<ItemId>(BLOCK_GRAVEL);
+	blockBehaviors[BLOCK_GRAVEL].idDropped = [](uint8_t, Java::Random& _rng) -> ItemId {
+		return _rng.nextInt(10) == 0 ? static_cast<ItemId>(Items::Id::FLINT) : static_cast<ItemId>(BLOCK_GRAVEL);
 	};
 
 	blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].idDropped = [](uint8_t, Java::Random&) -> ItemId {
@@ -2184,56 +2184,56 @@ void registerAll() {
 	blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].damageDropped = [](uint8_t) -> ItemDamage {
 		return 4;
 	};
-	blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].quantityDropped = [](Java::Random& rng) -> ItemAmount {
-		return 4 + rng.nextInt(5);
+	blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].quantityDropped = [](Java::Random& _rng) -> ItemAmount {
+		return 4 + _rng.nextInt(5);
 	};
 
 	blockBehaviors[BLOCK_ORE_REDSTONE_OFF].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::REDSTONE;
 	};
-	blockBehaviors[BLOCK_ORE_REDSTONE_OFF].quantityDropped = [](Java::Random& rng) -> ItemAmount {
-		return 4 + rng.nextInt(2);
+	blockBehaviors[BLOCK_ORE_REDSTONE_OFF].quantityDropped = [](Java::Random& _rng) -> ItemAmount {
+		return 4 + _rng.nextInt(2);
 	};
 	blockBehaviors[BLOCK_ORE_REDSTONE_ON].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::REDSTONE;
 	};
-	blockBehaviors[BLOCK_ORE_REDSTONE_ON].quantityDropped = [](Java::Random& rng) -> ItemAmount {
-		return 4 + rng.nextInt(2);
+	blockBehaviors[BLOCK_ORE_REDSTONE_ON].quantityDropped = [](Java::Random& _rng) -> ItemAmount {
+		return 4 + _rng.nextInt(2);
 	};
 
 	blockBehaviors[BLOCK_GLOWSTONE].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::GLOWSTONE_DUST;
 	};
-	blockBehaviors[BLOCK_GLOWSTONE].quantityDropped = [](Java::Random& rng) -> ItemAmount {
-		return 2 + rng.nextInt(3);
+	blockBehaviors[BLOCK_GLOWSTONE].quantityDropped = [](Java::Random& _rng) -> ItemAmount {
+		return 2 + _rng.nextInt(3);
 	};
 
 	blockBehaviors[BLOCK_LEAVES].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return BLOCK_SAPLING;
 	};
-	blockBehaviors[BLOCK_LEAVES].damageDropped = [](uint8_t meta) -> ItemDamage {
-		return meta & 3;
+	blockBehaviors[BLOCK_LEAVES].damageDropped = [](uint8_t _meta) -> ItemDamage {
+		return _meta & 3;
 	};
-	blockBehaviors[BLOCK_LEAVES].quantityDropped = [](Java::Random& rng) -> ItemAmount {
-		return rng.nextInt(20) == 0 ? 1 : 0;
+	blockBehaviors[BLOCK_LEAVES].quantityDropped = [](Java::Random& _rng) -> ItemAmount {
+		return _rng.nextInt(20) == 0 ? 1 : 0;
 	};
 
-	blockBehaviors[BLOCK_TALLGRASS].idDropped = [](uint8_t, Java::Random& rng) -> ItemId {
-		return rng.nextInt(8) == 0 ? Items::Id::SEEDS_WHEAT : Items::Id::INVALID;
+	blockBehaviors[BLOCK_TALLGRASS].idDropped = [](uint8_t, Java::Random& _rng) -> ItemId {
+		return _rng.nextInt(8) == 0 ? Items::Id::SEEDS_WHEAT : Items::Id::INVALID;
 	};
 
 	// --------------- only drop if it's the correct half of the block being broken ---------------
 	// TODO: other half of the block should be removed automatically
-	blockBehaviors[BLOCK_DOOR_WOOD].idDropped = [](uint8_t meta, Java::Random&) -> ItemId {
-		return (meta & 8) != 0 ? Items::Id::INVALID : Items::Id::DOOR_WOOD;
+	blockBehaviors[BLOCK_DOOR_WOOD].idDropped = [](uint8_t _meta, Java::Random&) -> ItemId {
+		return (_meta & 8) != 0 ? Items::Id::INVALID : Items::Id::DOOR_WOOD;
 	};
 
-	blockBehaviors[BLOCK_DOOR_IRON].idDropped = [](uint8_t meta, Java::Random&) -> ItemId {
-		return (meta & 8) != 0 ? Items::Id::INVALID : Items::Id::DOOR_IRON;
+	blockBehaviors[BLOCK_DOOR_IRON].idDropped = [](uint8_t _meta, Java::Random&) -> ItemId {
+		return (_meta & 8) != 0 ? Items::Id::INVALID : Items::Id::DOOR_IRON;
 	};
 
-	blockBehaviors[BLOCK_BED].idDropped = [](uint8_t meta, Java::Random&) -> ItemId {
-		return (meta & 8) != 0 ? Items::Id::INVALID : Items::Id::BED;
+	blockBehaviors[BLOCK_BED].idDropped = [](uint8_t _meta, Java::Random&) -> ItemId {
+		return (_meta & 8) != 0 ? Items::Id::INVALID : Items::Id::BED;
 	};
 
 	blockBehaviors[BLOCK_CLAY].idDropped = [](uint8_t, Java::Random&) -> ItemId {
@@ -2243,15 +2243,15 @@ void registerAll() {
 		return 4;
 	};
 
-	blockBehaviors[BLOCK_SLAB].damageDropped = [](uint8_t meta) -> ItemDamage {
-		return meta;
+	blockBehaviors[BLOCK_SLAB].damageDropped = [](uint8_t _meta) -> ItemDamage {
+		return _meta;
 	};
 
 	blockBehaviors[BLOCK_DOUBLE_SLAB].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return BLOCK_SLAB;
 	};
-	blockBehaviors[BLOCK_DOUBLE_SLAB].damageDropped = [](uint8_t meta) -> ItemDamage {
-		return meta;
+	blockBehaviors[BLOCK_DOUBLE_SLAB].damageDropped = [](uint8_t _meta) -> ItemDamage {
+		return _meta;
 	};
 	blockBehaviors[BLOCK_DOUBLE_SLAB].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 2;

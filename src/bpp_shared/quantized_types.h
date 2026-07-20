@@ -19,7 +19,7 @@ struct Fixed {
 
 	using storage_type = Storage;
 
-	static constexpr Storage SCALE = Scale;
+	static constexpr Storage m_SCALE = Scale;
 
 	Storage m_value;
 
@@ -29,11 +29,11 @@ struct Fixed {
 	constexpr Fixed& operator=(const Fixed&) = default;
 
 	template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
-	constexpr Fixed(T m_value) : m_value(static_cast<Storage>(m_value * SCALE)) {}
+	constexpr Fixed(T _m_value) : m_value(static_cast<Storage>(_m_value * m_SCALE)) {}
 
-	static constexpr Fixed from_raw(Storage raw) {
+	static constexpr Fixed from_raw(Storage _raw) {
 		Fixed result;
-		result.m_value = raw;
+		result.m_value = _raw;
 		return result;
 	}
 
@@ -42,32 +42,32 @@ struct Fixed {
 	}
 
 	constexpr double value() const {
-		return static_cast<double>(m_value) / SCALE;
+		return static_cast<double>(m_value) / m_SCALE;
 	}
 
-	constexpr Fixed operator+(Fixed other) const {
-		return from_raw(m_value + other.m_value);
+	constexpr Fixed operator+(Fixed _other) const {
+		return from_raw(m_value + _other.m_value);
 	}
 
-	constexpr Fixed operator-(Fixed other) const {
-		return from_raw(m_value - other.m_value);
+	constexpr Fixed operator-(Fixed _other) const {
+		return from_raw(m_value - _other.m_value);
 	}
 
 	constexpr Fixed operator-() const {
 		return from_raw(-m_value);
 	}
 
-	constexpr Fixed& operator+=(Fixed other) {
-		m_value += other.m_value;
+	constexpr Fixed& operator+=(Fixed _other) {
+		m_value += _other.m_value;
 		return *this;
 	}
 
-	constexpr Fixed& operator-=(Fixed other) {
-		m_value -= other.m_value;
+	constexpr Fixed& operator-=(Fixed _other) {
+		m_value -= _other.m_value;
 		return *this;
 	}
 
-	constexpr Fixed operator*(Fixed other) const {
+	constexpr Fixed operator*(Fixed _other) const {
 		using Wide = std::conditional_t<sizeof(Storage) <= 4, int64_t,
 #ifdef __SIZEOF_INT128__
 		                                __int128_t
@@ -76,10 +76,10 @@ struct Fixed {
 #endif
 		                                >;
 
-		return from_raw(static_cast<Storage>((static_cast<Wide>(m_value) * static_cast<Wide>(other.m_value)) / SCALE));
+		return from_raw(static_cast<Storage>((static_cast<Wide>(m_value) * static_cast<Wide>(_other.m_value)) / m_SCALE));
 	}
 
-	constexpr Fixed operator/(Fixed other) const {
+	constexpr Fixed operator/(Fixed _other) const {
 		using Wide = std::conditional_t<sizeof(Storage) <= 4, int64_t,
 #ifdef __SIZEOF_INT128__
 		                                __int128_t
@@ -88,35 +88,35 @@ struct Fixed {
 #endif
 		                                >;
 
-		return from_raw(static_cast<Storage>((static_cast<Wide>(m_value) * SCALE) / static_cast<Wide>(other.m_value)));
+		return from_raw(static_cast<Storage>((static_cast<Wide>(m_value) * m_SCALE) / static_cast<Wide>(_other.m_value)));
 	}
 
-	constexpr bool operator==(Fixed other) const {
-		return m_value == other.m_value;
+	constexpr bool operator==(Fixed _other) const {
+		return m_value == _other.m_value;
 	}
 
-	constexpr bool operator!=(Fixed other) const {
-		return m_value != other.m_value;
+	constexpr bool operator!=(Fixed _other) const {
+		return m_value != _other.m_value;
 	}
 
-	constexpr bool operator<(Fixed other) const {
-		return m_value < other.m_value;
+	constexpr bool operator<(Fixed _other) const {
+		return m_value < _other.m_value;
 	}
 
-	constexpr bool operator>(Fixed other) const {
-		return m_value > other.m_value;
+	constexpr bool operator>(Fixed _other) const {
+		return m_value > _other.m_value;
 	}
 
-	constexpr bool operator<=(Fixed other) const {
-		return m_value <= other.m_value;
+	constexpr bool operator<=(Fixed _other) const {
+		return m_value <= _other.m_value;
 	}
 
-	constexpr bool operator>=(Fixed other) const {
-		return m_value >= other.m_value;
+	constexpr bool operator>=(Fixed _other) const {
+		return m_value >= _other.m_value;
 	}
 
-	friend std::ostream& operator<<(std::ostream& os, Fixed n) {
-		return os << n.m_value();
+	friend std::ostream& operator<<(std::ostream& _os, Fixed _n) {
+		return _os << _n.m_value();
 	}
 };
 

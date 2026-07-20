@@ -15,5 +15,5 @@ class Server;
 
 // Dispatches a single already-identified incoming packet to its handler.
 namespace PacketDispatcher {
-bool dispatch(PacketId packetId, PlayerSession& session, WorldManager& sessionWorld, Server& server);
+bool dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld, Server& _server);
 } // namespace PacketDispatcher

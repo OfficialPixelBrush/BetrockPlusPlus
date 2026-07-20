@@ -11,13 +11,13 @@ std::vector<std::string> command;
 std::string failureReason;
 
 // Base Command
-Command::Command(std::string pLabel, std::string pDescription, std::string pSyntax, bool pRequiresOp,
-                 bool pRequiresCreative) {
-	this->label = pLabel;
-	this->description = pDescription;
-	this->syntax = pSyntax;
-	this->requiresOp = pRequiresOp;
-	this->requiresCreative = pRequiresCreative;
+Command::Command(std::string _pLabel, std::string _pDescription, std::string _pSyntax, bool _pRequiresOp,
+                 bool _pRequiresCreative) {
+	this->label = _pLabel;
+	this->description = _pDescription;
+	this->syntax = _pSyntax;
+	this->requiresOp = _pRequiresOp;
+	this->requiresCreative = _pRequiresCreative;
 }
 
 // Check permissions for the command

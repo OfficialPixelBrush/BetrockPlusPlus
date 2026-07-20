@@ -21,15 +21,15 @@ void MobileEntity::onDeath() {
 	return;
 }
 
-void MobileEntity::setGoal(std::optional<Int3> goal) {
-	if (!goal) {
+void MobileEntity::setGoal(std::optional<Int3> _goal) {
+	if (!_goal) {
 		currentPath.clear();
 		currentPathIdx = 0;
 		return;
 	}
 	Int3 start = { MathHelper::floor_double(position.x), MathHelper::floor_double(position.y),
 		           MathHelper::floor_double(position.z) };
-	currentPath = pathFinder.findPath(start, *goal);
+	currentPath = pathFinder.findPath(start, *_goal);
 	currentPathIdx = 0;
 	std::cout << "Calculated path!" << std::endl;
 	for (auto& node : currentPath) {
@@ -87,11 +87,11 @@ void MobileEntity::followPath() {
 		jumping = true;
 }
 
-void MobileEntity::resolveEntityCollision(Entity& other) {
-	if (vehicle == &other || passenger == &other)
+void MobileEntity::resolveEntityCollision(Entity& _other) {
+	if (vehicle == &_other || passenger == &_other)
 		return;
 
-	Vec2 delta = { other.position.x - position.x, other.position.z - position.z };
+	Vec2 delta = { _other.position.x - position.x, _other.position.z - position.z };
 	double dist = MathHelper::abs_max(delta.x, delta.y);
 
 	if (dist >= 0.01) {
@@ -110,8 +110,8 @@ void MobileEntity::resolveEntityCollision(Entity& other) {
 
 		this->velocity.x -= delta.x;
 		this->velocity.z -= delta.y;
-		other.velocity.x += delta.x;
-		other.velocity.z += delta.y;
+		_other.velocity.x += delta.x;
+		_other.velocity.z += delta.y;
 	}
 }
 
@@ -194,11 +194,11 @@ void MobileEntity::tickPhysics() {
 	}
 }
 
-bool MobileEntity::AABBNotInLiquidOrObstructed(AABB& collider) {
-	auto collided = world->getCollidingBoundingBoxes(collider);
+bool MobileEntity::AABBNotInLiquidOrObstructed(AABB& _collider) {
+	auto collided = world->getCollidingBoundingBoxes(_collider);
 	if (collided.size() > 0)
 		return false;
-	return !world->isLiquidInAABB(collider);
+	return !world->isLiquidInAABB(_collider);
 }
 
 bool MobileEntity::headInOpaqueBlock() {
@@ -230,7 +230,7 @@ bool MobileEntity::headInWater() {
 	return false;
 }
 
-bool MobileEntity::attackEntityFrom(Entity* entity, int damage) {
+bool MobileEntity::attackEntityFrom(Entity* _entity, int _damage) {
 	age = 0;
 	if (health <= 0)
 		return false;
@@ -238,22 +238,22 @@ bool MobileEntity::attackEntityFrom(Entity* entity, int damage) {
 	bool freshHit = true;
 
 	if (hurtResistantTime > maxHurtTime / 2.0f) {
-		if (damage <= lastAttackDamage)
+		if (_damage <= lastAttackDamage)
 			return false;
 
-		health -= (damage - lastAttackDamage);
-		lastAttackDamage = damage;
+		health -= (_damage - lastAttackDamage);
+		lastAttackDamage = _damage;
 		freshHit = false;
 	} else {
-		lastAttackDamage = damage;
+		lastAttackDamage = _damage;
 		hurtResistantTime = maxHurtTime;
-		health -= damage;
+		health -= _damage;
 	}
 
 	if (freshHit) {
-		if (entity != nullptr) {
-			auto dx = entity->position.x - position.x;
-			auto dz = entity->position.z - position.z;
+		if (_entity != nullptr) {
+			auto dx = _entity->position.x - position.x;
+			auto dz = _entity->position.z - position.z;
 
 			// We are super close so just randomize
 			while (dx * dx + dz * dz < 0.0001) {

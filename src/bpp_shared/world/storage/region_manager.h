@@ -34,26 +34,26 @@ struct RegionManager {
 
 	~RegionManager();
 
-	bool initialize(const std::string& folderPath);
+	bool initialize(const std::string& _folderPath);
 	bool release();
 
 	// Does this region file exist on the disk?
-	bool regionExists(Int32_2 rpos);
+	bool regionExists(Int32_2 _rpos);
 
 	// Has this chunk been saved to a region file yet?
-	bool chunkExists(Int32_2 cpos);
+	bool chunkExists(Int32_2 _cpos);
 
 	// Creates a new region file
-	bool createRegion(Int32_2 rpos);
+	bool createRegion(Int32_2 _rpos);
 
 	// Serialize and save a chunk to a region
-	void saveChunk(std::shared_ptr<Chunk> chunk, bool unloadEntities = false);
+	void saveChunk(std::shared_ptr<Chunk> _chunk, bool _unloadEntities = false);
 
 	// Queue a chunk to be loaded from disk
-	void loadChunk(Int32_2 cpos);
+	void loadChunk(Int32_2 _cpos);
 
 	// Returns nullptr until chunk is done loading
-	std::shared_ptr<Chunk> getChunk(Int32_2 cpos);
+	std::shared_ptr<Chunk> getChunk(Int32_2 _cpos);
 
 	void pumpPipeline();
 
@@ -61,11 +61,11 @@ struct RegionManager {
 	void flushAll();
 
 	// Loads a region into cache, creating the file if needed
-	std::shared_ptr<Region> loadRegion(Int32_2 rpos);
+	std::shared_ptr<Region> loadRegion(Int32_2 _rpos);
 
 private:
-	bool tryMergePendingRegion(std::shared_ptr<Region>& region);
-	bool createRegionOnCache(Int2 rpos);
+	bool tryMergePendingRegion(std::shared_ptr<Region>& _region);
+	bool createRegionOnCache(Int2 _rpos);
 
 	std::vector<std::shared_ptr<Region>> pendingRegions;
 	std::shared_ptr<Region> regionCache[8];

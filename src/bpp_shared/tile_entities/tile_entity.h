@@ -26,7 +26,7 @@ struct TileEntity {
 	Chunk* chunk =
 	    nullptr; // The chunk this tile entity is in; may not be best practice to have this as a raw pointer but it should be fine since the chunk will always exist while the tile entity exists
 
-	TileEntity(TileType pType, Int3 pPosition) : type(pType), position(pPosition) {};
+	TileEntity(TileType _pType, Int3 _pPosition) : type(_pType), position(_pPosition) {};
 
 	virtual void tick() {};
 	virtual Tag serialize();
@@ -36,7 +36,7 @@ struct TileEntity {
 // Chest
 struct TileEntityChest : TileEntity {
 	InventoryChest inventory;
-	TileEntityChest(Int3 pPosition) : TileEntity(TileType::CHEST, pPosition) {};
+	TileEntityChest(Int3 _pPosition) : TileEntity(TileType::CHEST, _pPosition) {};
 
 	Tag serialize() override;
 	void tick() override;
@@ -45,7 +45,7 @@ struct TileEntityChest : TileEntity {
 // Furnace
 struct TileEntityFurnace : TileEntity {
 	InventoryFurnace inventory;
-	TileEntityFurnace(Int3 pPosition) : TileEntity(TileType::FURNACE, pPosition) {
+	TileEntityFurnace(Int3 _pPosition) : TileEntity(TileType::FURNACE, _pPosition) {
 		canTick = true;
 	};
 
@@ -56,7 +56,7 @@ struct TileEntityFurnace : TileEntity {
 // Dispenser (Trap)
 struct TileEntityDispenser : TileEntity {
 	InventoryDispenser inventory;
-	TileEntityDispenser(Int3 pPosition) : TileEntity(TileType::DISPENSER, pPosition) {};
+	TileEntityDispenser(Int3 _pPosition) : TileEntity(TileType::DISPENSER, _pPosition) {};
 
 	Tag serialize() override;
 	void tick() override;
@@ -68,7 +68,7 @@ struct TileEntitySign : TileEntity {
 	std::string text2 = "";
 	std::string text3 = "";
 	std::string text4 = "";
-	TileEntitySign(Int3 pPosition) : TileEntity(TileType::SIGN, pPosition) {};
+	TileEntitySign(Int3 _pPosition) : TileEntity(TileType::SIGN, _pPosition) {};
 
 	Tag serialize() override;
 };
@@ -77,7 +77,7 @@ struct TileEntitySign : TileEntity {
 struct TileEntityMobSpawner : TileEntity {
 	std::string entityId = "";
 	int16_t delay = 0;
-	TileEntityMobSpawner(Int3 pPosition) : TileEntity(TileType::SPAWNER, pPosition) {
+	TileEntityMobSpawner(Int3 _pPosition) : TileEntity(TileType::SPAWNER, _pPosition) {
 		canTick = true;
 	};
 

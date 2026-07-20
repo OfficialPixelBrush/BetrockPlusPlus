@@ -7,8 +7,8 @@
 #include "style.h"
 
 // Translate Minecraft-style colors into ASCII Escape sequence colors
-std::string FormatToStyle(int8_t format) {
-	switch (format) {
+std::string FormatToStyle(int8_t _format) {
+	switch (_format) {
 	// Colors
 	case '0':
 		return "\033[30m";
@@ -64,16 +64,16 @@ std::string FormatToStyle(int8_t format) {
 }
 
 // Translate the passed string with Minecraft-style formatters into ASCII Escape sequence colors
-std::string HandleFormattingCodes(const std::string& input) {
+std::string HandleFormattingCodes(const std::string& _input) {
 	std::string output;
-	for (size_t i = 0; i < input.size(); ++i) {
+	for (size_t i = 0; i < _input.size(); ++i) {
 		// Check if first character is §
-		if (input[i] == '\xC2' && input[i + 1] == '\xA7' && i + 2 < input.size()) {
-			output += FormatToStyle(input[i + 2]); // Replace § and the next character
+		if (_input[i] == '\xC2' && _input[i + 1] == '\xA7' && i + 2 < _input.size()) {
+			output += FormatToStyle(_input[i + 2]); // Replace § and the next character
 			++i;                                   // Skip the next character
 			++i;                                   // Skip the next character
 		} else {
-			output += input[i];
+			output += _input[i];
 		}
 	}
 	return output + std::string(STYLE_RESET);

@@ -11,13 +11,13 @@
 #include "generator/overworld/chunk_gen.h"
 #include <unordered_set>
 
-bool WorldManager::isMaterialInAABB(AABB collider, Material material) {
-	int minX = MathHelper::floor_double(collider.minX);
-	int maxX = MathHelper::floor_double(collider.maxX + 1.0);
-	int minY = MathHelper::floor_double(collider.minY);
-	int maxY = MathHelper::floor_double(collider.maxY + 1.0);
-	int minZ = MathHelper::floor_double(collider.minZ);
-	int maxZ = MathHelper::floor_double(collider.maxZ + 1.0);
+bool WorldManager::isMaterialInAABB(AABB _collider, Material _material) {
+	int minX = MathHelper::floor_double(_collider.minX);
+	int maxX = MathHelper::floor_double(_collider.maxX + 1.0);
+	int minY = MathHelper::floor_double(_collider.minY);
+	int maxY = MathHelper::floor_double(_collider.maxY + 1.0);
+	int minZ = MathHelper::floor_double(_collider.minZ);
+	int maxZ = MathHelper::floor_double(_collider.maxZ + 1.0);
 
 	// Check every block within the collider
 	// We are looking to see if the materials match
@@ -26,20 +26,20 @@ bool WorldManager::isMaterialInAABB(AABB collider, Material material) {
 			for (int z = minZ; z < maxZ; z++) {
 				auto blockId = this->getBlockId({ x, y, z });
 				auto block = Blocks::blockProperties[blockId];
-				if (block.material == material) {
+				if (block.material == _material) {
 					return true;
 				}
 			}
 	return false;
 }
 
-bool WorldManager::isLiquidInAABB(AABB collider) {
-	int minX = MathHelper::floor_double(collider.minX);
-	int maxX = MathHelper::floor_double(collider.maxX + 1.0);
-	int minY = MathHelper::floor_double(collider.minY);
-	int maxY = MathHelper::floor_double(collider.maxY + 1.0);
-	int minZ = MathHelper::floor_double(collider.minZ);
-	int maxZ = MathHelper::floor_double(collider.maxZ + 1.0);
+bool WorldManager::isLiquidInAABB(AABB _collider) {
+	int minX = MathHelper::floor_double(_collider.minX);
+	int maxX = MathHelper::floor_double(_collider.maxX + 1.0);
+	int minY = MathHelper::floor_double(_collider.minY);
+	int maxY = MathHelper::floor_double(_collider.maxY + 1.0);
+	int minZ = MathHelper::floor_double(_collider.minZ);
+	int maxZ = MathHelper::floor_double(_collider.maxZ + 1.0);
 
 	// Check every block within the collider
 	for (int x = minX; x < maxX; x++)
@@ -54,16 +54,16 @@ bool WorldManager::isLiquidInAABB(AABB collider) {
 	return false;
 }
 
-bool WorldManager::handleFluidAcceleration(AABB collider, Material material, Entity& entity) {
+bool WorldManager::handleFluidAcceleration(AABB _collider, Material _material, Entity& _entity) {
 	// Handles the fluid push physics, only counts fluids of the same material
 	// Returns whether the entity is in the material
 	// This is almost entirely used for water
-	int minX = MathHelper::floor_double(collider.minX);
-	int maxX = MathHelper::floor_double(collider.maxX + 1.0);
-	int minY = MathHelper::floor_double(collider.minY);
-	int maxY = MathHelper::floor_double(collider.maxY + 1.0);
-	int minZ = MathHelper::floor_double(collider.minZ);
-	int maxZ = MathHelper::floor_double(collider.maxZ + 1.0);
+	int minX = MathHelper::floor_double(_collider.minX);
+	int maxX = MathHelper::floor_double(_collider.maxX + 1.0);
+	int minY = MathHelper::floor_double(_collider.minY);
+	int maxY = MathHelper::floor_double(_collider.maxY + 1.0);
+	int minZ = MathHelper::floor_double(_collider.minZ);
+	int maxZ = MathHelper::floor_double(_collider.maxZ + 1.0);
 	if (!this->AABBinValidChunks({ double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ) }))
 		return false;
 
@@ -77,7 +77,7 @@ bool WorldManager::handleFluidAcceleration(AABB collider, Material material, Ent
 			for (int z = minZ; z < maxZ; z++) {
 				auto blockId = this->getBlockId({ x, y, z });
 				auto block = Blocks::blockProperties[blockId];
-				if (block.material == material) {
+				if (block.material == _material) {
 					double fluidHeight = double(float(y + 1) -
 					                            Blocks::getFluidPercentAir(this->getMetadata({ x, y, z })));
 					if (double(maxY) >= fluidHeight) {
@@ -100,22 +100,22 @@ bool WorldManager::handleFluidAcceleration(AABB collider, Material material, Ent
 
 		// Apply the vector
 		double pushForce = 0.014;
-		entity.velocity += pushVector * pushForce;
+		_entity.velocity += pushVector * pushForce;
 	}
 
 	return inMaterial;
 }
 
 // Get colliders for an area
-std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {
+std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& _area) {
 	std::vector<AABB> collidingBoxes;
 
-	int minX = Java::DoubleToInt32(std::floor(area.minX));
-	int maxX = Java::DoubleToInt32(std::floor(area.maxX + 1.0));
-	int minY = Java::DoubleToInt32(std::floor(area.minY));
-	int maxY = Java::DoubleToInt32(std::floor(area.maxY + 1.0));
-	int minZ = Java::DoubleToInt32(std::floor(area.minZ));
-	int maxZ = Java::DoubleToInt32(std::floor(area.maxZ + 1.0));
+	int minX = Java::DoubleToInt32(std::floor(_area.minX));
+	int maxX = Java::DoubleToInt32(std::floor(_area.maxX + 1.0));
+	int minY = Java::DoubleToInt32(std::floor(_area.minY));
+	int maxY = Java::DoubleToInt32(std::floor(_area.maxY + 1.0));
+	int minZ = Java::DoubleToInt32(std::floor(_area.minZ));
+	int maxZ = Java::DoubleToInt32(std::floor(_area.maxZ + 1.0));
 
 	// Java iterates Y from var5-1 to var6 (exclusive)
 	int startY = CrossPlatform::Math::max(0, minY - 1);
@@ -148,7 +148,7 @@ std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {
 				// Offset local collider to world coordinates
 				CollisionShape worldCollider = Blocks::blockBehaviors[block_id].getCollider(block_meta).offset(x, y, z);
 				for (auto& box : worldCollider.boxes)
-					if (box.intersects(area))
+					if (box.intersects(_area))
 						collidingBoxes.push_back(box);
 			}
 		}
@@ -157,7 +157,7 @@ std::vector<AABB> WorldManager::getCollidingBoundingBoxes(const AABB& area) {
 }
 
 // Tick
-void WorldManager::tick(const std::vector<ClientPosition>& players) {
+void WorldManager::tick(const std::vector<ClientPosition>& _players) {
 	elapsed_ticks++;
 	drainGenQueue();  // process generation results first
 	drainLoadQueue(); // integrate finished loads
@@ -201,7 +201,7 @@ void WorldManager::tick(const std::vector<ClientPosition>& players) {
 	}
 	regionManager->pumpPipeline();
 
-	updateLoadRadius(players);
+	updateLoadRadius(_players);
 	populateReady(); // population runs on main thread
 	lightManager.processLightQueue(*this, INT_MAX);
 
@@ -209,8 +209,8 @@ void WorldManager::tick(const std::vector<ClientPosition>& players) {
 	entityManager.tick();
 }
 
-void WorldManager::update(const std::vector<ClientPosition>& players) {
-	pumpPipeline(players);
+void WorldManager::update(const std::vector<ClientPosition>& _players) {
+	pumpPipeline(_players);
 }
 
 void WorldManager::shutdown() {
@@ -350,15 +350,15 @@ void WorldManager::drainLoadQueue() {
 	}
 }
 
-void WorldManager::seedChunkLighting(Int32_2 pos) {
-	auto* chunk = getChunkRaw(pos);
+void WorldManager::seedChunkLighting(Int32_2 _pos) {
+	auto* chunk = getChunkRaw(_pos);
 	if (!chunk)
 		return;
 
 	// We check each column in the chunk's height against its neighbors, if they differ then we schedule light updates for the vertical column between them.
 	// This works like 99% of the time but can miss some edge cases; its fast though!
-	int bx = pos.x * 16;
-	int bz = pos.z * 16;
+	int bx = _pos.x * 16;
+	int bz = _pos.z * 16;
 	for (int x = 0; x < 16; ++x) {
 		for (int z = 0; z < 16; ++z) {
 			int wx = bx + x, wz = bz + z;
@@ -385,12 +385,12 @@ void WorldManager::seedChunkLighting(Int32_2 pos) {
 				if (Blocks::blockProperties[id].lightEmission > 0)
 					lightManager.scheduleLightUpdate({ bx + x, y, bz + z }, LightType::Block);
 			}
-	propagateChunkLightBorders(pos);
+	propagateChunkLightBorders(_pos);
 }
 
-void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) {
+void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& _players) {
 	std::unordered_set<Int32_2> wanted;
-	for (const auto& player : players) {
+	for (const auto& player : _players) {
 		Int2 center = player.getChunkPos();
 		int viewDist = (player.viewDistanceOverride) ? player.viewDistanceOverride : VIEW_RADIUS;
 		for (int dx = -viewDist; dx <= viewDist; dx++)
@@ -433,7 +433,7 @@ void WorldManager::updateLoadRadius(const std::vector<ClientPosition>& players) 
 	}
 }
 
-void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
+void WorldManager::pumpPipeline(const std::vector<ClientPosition>& _players) {
 	// Take a snapshot of all the current chunk positions so we don't have to worry about threads
 	// This is technically a relic from when we had chunks put themselves into the world's chunk map but now the world does it all at the end of the tick
 	// Still good practice, though
@@ -442,7 +442,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 	for (auto& [pos, chunk] : chunks)
 		snapshot.push_back(pos);
 
-	const int playerCount = int(players.size());
+	const int playerCount = int(_players.size());
 	const int slicePerPlayer = 16;
 
 	std::vector<Int32_2> noPlayerCandidates;
@@ -457,14 +457,14 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 				continue;
 			noPlayerCandidates.push_back(p);
 		}
-		std::sort(noPlayerCandidates.begin(), noPlayerCandidates.end(), [](const Int32_2& a, const Int32_2& b) {
-			if (a.x != b.x)
-				return a.x < b.x;
-			return a.z < b.z;
+		std::sort(noPlayerCandidates.begin(), noPlayerCandidates.end(), [](const Int32_2& _a, const Int32_2& _b) {
+			if (_a.x != _b.x)
+				return _a.x < _b.x;
+			return _a.z < _b.z;
 		});
 	} else {
 		perPlayerQueues.reserve(size_t(playerCount));
-		for ([[maybe_unused]] const auto& player : players) {
+		for ([[maybe_unused]] const auto& player : _players) {
 			std::vector<Int32_2> candidates;
 			candidates.reserve(snapshot.size());
 			for (const Int32_2& p : snapshot) {
@@ -476,10 +476,10 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 				candidates.push_back(p);
 			}
 			// Sort by load order that beta 1.7.3 seems to use
-			std::sort(candidates.begin(), candidates.end(), [](const Int32_2& a, const Int32_2& b) {
-				if (a.x != b.x)
-					return a.x < b.x;
-				return a.z < b.z;
+			std::sort(candidates.begin(), candidates.end(), [](const Int32_2& _a, const Int32_2& _b) {
+				if (_a.x != _b.x)
+					return _a.x < _b.x;
+				return _a.z < _b.z;
 			});
 			perPlayerQueues.push_back(std::move(candidates));
 		}
@@ -487,25 +487,25 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 
 	std::unordered_set<Int32_2> startedThisTick;
 
-	auto startLoading = [&](const Int32_2& pos) -> bool {
-		if (startedThisTick.contains(pos))
+	auto startLoading = [&](const Int32_2& _pos) -> bool {
+		if (startedThisTick.contains(_pos))
 			return false;
-		auto it = chunks.find(pos);
+		auto it = chunks.find(_pos);
 		if (it == chunks.end())
 			return false;
 		if (it->second->state.load(std::memory_order_acquire) != ChunkState::Unloaded)
 			return false;
 		it->second->state.store(ChunkState::Loading, std::memory_order_release);
-		regionManager->loadChunk(pos);
-		startedThisTick.insert(pos);
+		regionManager->loadChunk(_pos);
+		startedThisTick.insert(_pos);
 		return true;
 	};
 
-	auto startGeneration = [&](const Int32_2& pos) -> bool {
+	auto startGeneration = [&](const Int32_2& _pos) -> bool {
 		// Check if already started this tick (can happen with multiple players), and if chunk is still Unloaded (can be changed by another thread).
-		if (startedThisTick.contains(pos))
+		if (startedThisTick.contains(_pos))
 			return false;
-		auto it = chunks.find(pos);
+		auto it = chunks.find(_pos);
 		if (it == chunks.end())
 			return false;
 		if (it->second->state.load(std::memory_order_acquire) != ChunkState::Unloaded)
@@ -513,11 +513,11 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 
 		// Actually generate this chunk
 		it->second->state.store(ChunkState::Generating, std::memory_order_release);
-		pool.detach_task([pos, this]() {
+		pool.detach_task([_pos, this]() {
 			// We make a new chunk here instead of modifying the existing chunk because multithreading is a pain
 			// The placeholder chunk in the map will be replaced by this one when we push to genDoneQueue
 			auto chunk = std::make_shared<Chunk>();
-			chunk->cpos = pos;
+			chunk->cpos = _pos;
 			if (isHell) {
 				thread_local NetherGenerator tl_gen(this->seed);
 				tl_gen.GenerateChunk(*chunk);
@@ -532,7 +532,7 @@ void WorldManager::pumpPipeline(const std::vector<ClientPosition>& players) {
 			// This just posts the result so we can start lighting and check for population
 			this->postGenResult(std::move(chunk));
 		});
-		startedThisTick.insert(pos);
+		startedThisTick.insert(_pos);
 		return true;
 	};
 
@@ -598,10 +598,10 @@ void WorldManager::populateReady() {
 	}
 
 	// Sort by population order that beta 1.7.3 seems to use
-	std::sort(ordered.begin(), ordered.end(), [](const Int32_2& a, const Int32_2& b) {
-		if (a.x != b.x)
-			return a.x < b.x;
-		return a.z < b.z;
+	std::sort(ordered.begin(), ordered.end(), [](const Int32_2& _a, const Int32_2& _b) {
+		if (_a.x != _b.x)
+			return _a.x < _b.x;
+		return _a.z < _b.z;
 	});
 
 	// Make sure we don't try to populate the same chunk multiple times in one tick (can happen with the weird population order and multiple players)
@@ -637,65 +637,65 @@ void WorldManager::populateReady() {
 	}
 }
 
-void WorldManager::setMeta(Int3 wpos, uint8_t metadata) {
-	if (!inBounds(wpos.y))
+void WorldManager::setMeta(Int3 _wpos, uint8_t _metadata) {
+	if (!inBounds(_wpos.y))
 		return;
-	Int32_2 cp{ wpos.x >> 4, wpos.z >> 4 };
+	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
 	auto* chunk = getChunkRaw(cp);
 	if (!isChunkValid(cp))
 		return;
-	Int3 local{ wpos.x & 15, wpos.y, wpos.z & 15 };
+	Int3 local{ _wpos.x & 15, _wpos.y, _wpos.z & 15 };
 	auto oldMeta = chunk->getMeta(local);
 	auto blockId = chunk->getBlock(local);
-	chunk->setMeta(local, metadata);
+	chunk->setMeta(local, _metadata);
 
 	// Update our neighbors
-	this->notifyNeighborsOfUpdate(wpos);
+	this->notifyNeighborsOfUpdate(_wpos);
 
 	// Callback for the client and server to know about this block update
-	if (onBlockUpdate && (oldMeta != metadata && Blocks::blockProperties[blockId].notifySelfOnMetaChange))
-		onBlockUpdate(PendingBlock{ .block{ chunk->getBlock(local), metadata },
-		                            .block_pos{ wpos.x, wpos.y, wpos.z },
+	if (onBlockUpdate && (oldMeta != _metadata && Blocks::blockProperties[blockId].notifySelfOnMetaChange))
+		onBlockUpdate(PendingBlock{ .block{ chunk->getBlock(local), _metadata },
+		                            .block_pos{ _wpos.x, _wpos.y, _wpos.z },
 		                            .light{ chunk->getBlockLight(local), chunk->getSkyLight(local) } },
 		              chunk->cpos);
 }
 
-void WorldManager::setBlock(Int3 wpos, BlockType block_type, uint8_t metadata) {
-	if (!inBounds(wpos.y))
+void WorldManager::setBlock(Int3 _wpos, BlockType _block_type, uint8_t _metadata) {
+	if (!inBounds(_wpos.y))
 		return;
-	Int32_2 cp{ wpos.x >> 4, wpos.z >> 4 };
+	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
 	auto* chunk = getChunkRaw(cp);
 	if (!isChunkValid(cp)) {
 		// Target chunk isn't ready; cache the write for replay
-		pendingBleedWrites[cp].push_back({ wpos, Block{ block_type, metadata } });
+		pendingBleedWrites[cp].push_back({ _wpos, Block{ _block_type, _metadata } });
 		return;
 	}
 
 	// Remove any tile entities that exist at this spot
 	auto& tes = chunk->tileEntities;
 	tes.erase(std::remove_if(tes.begin(), tes.end(),
-	                         [&](const std::shared_ptr<TileEntity>& te) { return te && te->position == wpos; }),
+	                         [&](const std::shared_ptr<TileEntity>& _te) { return _te && _te->position == _wpos; }),
 	          tes.end());
 
 	// Unlight before changing the block
-	lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Block, *this);
-	lightManager.unlightAt(wpos.x, wpos.y, wpos.z, LightType::Sky, *this);
+	lightManager.unlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Block, *this);
+	lightManager.unlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Sky, *this);
 
 	// Get the local coordinates of this block within the chunk and set it
-	int lx = wpos.x & 15;
-	int lz = wpos.z & 15;
-	Int3 local{ lx, wpos.y, lz };
+	int lx = _wpos.x & 15;
+	int lz = _wpos.z & 15;
+	Int3 local{ lx, _wpos.y, lz };
 	auto oldBlock = chunk->getBlock(local);
 	auto oldMeta = chunk->getMeta(local);
-	chunk->setBlock(local, block_type);
-	chunk->setMeta(local, metadata);
+	chunk->setBlock(local, _block_type);
+	chunk->setMeta(local, _metadata);
 
-	int y = wpos.y;
-	int x = wpos.x;
-	int z = wpos.z;
+	int y = _wpos.y;
+	int x = _wpos.x;
+	int z = _wpos.z;
 	int oldHeight = chunk->getHeightValue({ lx, lz });
 
-	if (Blocks::blockProperties[block_type].lightOpacity != 0) {
+	if (Blocks::blockProperties[_block_type].lightOpacity != 0) {
 		// Placing opaque block; heightmap may rise
 		if (y >= oldHeight) {
 			chunk->relightColumn({ lx, lz });
@@ -734,35 +734,35 @@ void WorldManager::setBlock(Int3 wpos, BlockType block_type, uint8_t metadata) {
 	lightManager.scheduleLightUpdate({ x, y, z }, LightType::Block);
 
 	// Update our neighbors
-	this->notifyNeighborsOfUpdate(wpos);
+	this->notifyNeighborsOfUpdate(_wpos);
 
-	if (block_type == BLOCK_AIR) {
+	if (_block_type == BLOCK_AIR) {
 		// We removed this block effectively
 		auto function = Blocks::blockBehaviors[oldBlock].onBlockRemoval;
 		if (function)
-			function(*this, wpos);
+			function(*this, _wpos);
 	} else {
 		// Java has this functionality in the chunk setters themselves, but
 		// in my opinion (Aidan here) that is stupid and redundant
-		auto function = Blocks::blockBehaviors[block_type].onBlockAdded;
+		auto function = Blocks::blockBehaviors[_block_type].onBlockAdded;
 		if (function)
-			function(*this, wpos);
+			function(*this, _wpos);
 	}
 
 	// Callback for the client and server to know about this block update
 	if (onBlockUpdate &&
-	    (oldBlock != block_type || (oldMeta != metadata && Blocks::blockProperties[block_type].notifySelfOnMetaChange)))
-		onBlockUpdate(PendingBlock{ .block{ block_type, metadata },
-		                            .block_pos{ wpos.x, wpos.y, wpos.z },
+	    (oldBlock != _block_type || (oldMeta != _metadata && Blocks::blockProperties[_block_type].notifySelfOnMetaChange)))
+		onBlockUpdate(PendingBlock{ .block{ _block_type, _metadata },
+		                            .block_pos{ _wpos.x, _wpos.y, _wpos.z },
 		                            .light{ chunk->getBlockLight(local), chunk->getSkyLight(local) } },
 		              chunk->cpos);
 }
 
-int WorldManager::findTopSolidBlock(int wx, int wz) {
-	auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
+int WorldManager::findTopSolidBlock(int _wx, int _wz) {
+	auto* chunk = getChunkRaw({ _wx >> 4, _wz >> 4 });
 	if (!chunk || chunk->state.load() < ChunkState::Generated)
 		return -1;
-	int lx = wx & 15, lz = wz & 15;
+	int lx = _wx & 15, lz = _wz & 15;
 	for (int y = 127; y > 0; --y) {
 		BlockType block = chunk->getBlock({ lx, y, lz });
 		if (block == BlockType::BLOCK_AIR)
@@ -774,11 +774,11 @@ int WorldManager::findTopSolidBlock(int wx, int wz) {
 	return -1;
 }
 
-BlockType WorldManager::getFirstUncoveredBlock(int wx, int wz) {
-	auto* chunk = getChunkRaw({ wx >> 4, wz >> 4 });
+BlockType WorldManager::getFirstUncoveredBlock(int _wx, int _wz) {
+	auto* chunk = getChunkRaw({ _wx >> 4, _wz >> 4 });
 	if (!chunk || chunk->state.load() < ChunkState::Generated)
 		return BlockType(-1);
-	int lx = wx & 15, lz = wz & 15;
+	int lx = _wx & 15, lz = _wz & 15;
 	int y = 63;
 	while (y < 127 && chunk->getBlock({ lx, y + 1, lz }) != BlockType::BLOCK_AIR) {
 		++y;
@@ -789,23 +789,23 @@ BlockType WorldManager::getFirstUncoveredBlock(int wx, int wz) {
 void WorldManager::initSpawn() {
 	int sx = 0;
 	int sz = 0;
-	auto canCoordinateBeSpawn = [&](int x, int z) -> bool {
-		auto b = getFirstUncoveredBlock(x, z);
+	auto canCoordinateBeSpawn = [&](int _x, int _z) -> bool {
+		auto b = getFirstUncoveredBlock(_x, _z);
 		if (b == BlockType::BLOCK_INVALID) {
 			// Force generate this chunk so we can check the block type.
-			auto pos = Int32_2{ x >> 4, z >> 4 };
+			auto pos = Int32_2{ _x >> 4, _z >> 4 };
 			auto chunk = std::make_shared<Chunk>();
 			chunk->cpos = pos;
 			chunks[pos] = std::move(chunk);
-			while (getFirstUncoveredBlock(x, z) == BlockType::BLOCK_INVALID) {
+			while (getFirstUncoveredBlock(_x, _z) == BlockType::BLOCK_INVALID) {
 				this->pumpPipeline({});
 				this->drainGenQueue();
 				this->drainLoadQueue();
 				this->pool.wait();
 			}
-			b = getFirstUncoveredBlock(x, z);
+			b = getFirstUncoveredBlock(_x, _z);
 		}
-		return getFirstUncoveredBlock(x, z) == BlockType::BLOCK_SAND;
+		return getFirstUncoveredBlock(_x, _z) == BlockType::BLOCK_SAND;
 	};
 	for (; !canCoordinateBeSpawn(sx, sz); sz += this->rand.nextInt(64) - this->rand.nextInt(64)) {
 		sx += this->rand.nextInt(64) - this->rand.nextInt(64);
@@ -814,14 +814,14 @@ void WorldManager::initSpawn() {
 	chunks.clear(); // Clear all chunks so we can start fresh from the spawn area
 }
 
-void WorldManager::propagateChunkLightBorders(Int32_2 cpos) {
+void WorldManager::propagateChunkLightBorders(Int32_2 _cpos) {
 	// Iterate through our chunk borders
 	const int ndx[] = { -1, 1, 0, 0 };
 	const int ndz[] = { 0, 0, -1, 1 };
-	int bx = cpos.x * 16;
-	int bz = cpos.z * 16;
+	int bx = _cpos.x * 16;
+	int bz = _cpos.z * 16;
 	for (int i = 0; i < 4; ++i) {
-		Chunk* neighborChunk = getChunkRaw({ cpos.x + ndx[i], cpos.z + ndz[i] });
+		Chunk* neighborChunk = getChunkRaw({ _cpos.x + ndx[i], _cpos.z + ndz[i] });
 		if (!neighborChunk)
 			continue;
 

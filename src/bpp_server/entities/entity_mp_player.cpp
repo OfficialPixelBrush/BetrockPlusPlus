@@ -12,11 +12,11 @@
 #include "networking/network_stream.h"
 #include "networking/packets.h"
 
-bool EntityMPPlayer::pickupItem(ItemStack& stack, EntityId entityId) {
-	if (this->session->inventory.pickupItem(stack)) {
+bool EntityMPPlayer::pickupItem(ItemStack& _stack, EntityId _entityId) {
+	if (this->session->inventory.pickupItem(_stack)) {
 		Packet::CollectItem pkt;
 		pkt.collector_entity_id = this->id;
-		pkt.item_entity_id = entityId;
+		pkt.item_entity_id = _entityId;
 		this->session->entityTracker->sendPacketToViewers(pkt, this->id);
 		pkt.Serialize(this->session->stream);
 		return true;
@@ -26,14 +26,14 @@ bool EntityMPPlayer::pickupItem(ItemStack& stack, EntityId entityId) {
 }
 
 // This works over a copy of your item, it doesn't remove or decrement it !!!
-bool EntityMPPlayer::dropItem(ItemStack stack) {
-	if (stack.id == Items::Id::INVALID || stack.count <= 0)
+bool EntityMPPlayer::dropItem(ItemStack _stack) {
+	if (_stack.id == Items::Id::INVALID || _stack.count <= 0)
 		return false;
 
 	// Create the item entity
 	Vec3 itemPos = { position.x, position.y - 0.3 + PLAYER_EYE_HEIGHT, position.z };
 	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(itemPos);
-	itemEntity->itemStack = stack;
+	itemEntity->itemStack = _stack;
 	itemEntity->pickupCooldown = 40; // So we don't pick it up instantly
 	itemEntity->dim = dim;
 

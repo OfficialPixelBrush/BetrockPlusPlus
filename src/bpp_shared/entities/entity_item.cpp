@@ -10,15 +10,15 @@
 #include <algorithm>
 #include <cmath>
 
-void ItemEntity::loadFromNBT(Tag& nbt) {
-	Entity::loadFromNBT(nbt);
+void ItemEntity::loadFromNBT(Tag& _nbt) {
+	Entity::loadFromNBT(_nbt);
 
 	// Load item specific stuff
-	this->health = nbt.compound["Health"].getShort();
-	this->ticksExisted = nbt.compound["Age"].getShort();
+	this->health = _nbt.compound["Health"].getShort();
+	this->ticksExisted = _nbt.compound["Age"].getShort();
 
 	// Load our item
-	const auto& itemCompound = nbt.compound["Item"].getCompound();
+	const auto& itemCompound = _nbt.compound["Item"].getCompound();
 	this->itemStack = { itemCompound.at("id").getShort(), itemCompound.at("Count").getByte(),
 		                itemCompound.at("Damage").getShort() };
 }
@@ -66,10 +66,10 @@ std::optional<Tag> ItemEntity::serializeToNBT() {
 	return tag;
 }
 
-void ItemEntity::onCollideWithPlayer(PlayerEntity& entity) {
+void ItemEntity::onCollideWithPlayer(PlayerEntity& _entity) {
 	if (pickupCooldown)
 		return;
-	entity.pickupItem(this->itemStack, this->id);
+	_entity.pickupItem(this->itemStack, this->id);
 	if (this->itemStack.count <= 0)
 		this->isDead = true;
 }

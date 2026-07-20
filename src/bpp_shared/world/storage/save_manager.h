@@ -44,14 +44,14 @@ struct SessionLock {
 	int fd = -1;
 #endif
 
-	bool acquire(const std::string& path) {
+	bool acquire(const std::string& _path) {
 #ifdef _WIN32
 		handle = CreateFileA(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
 		                     FILE_ATTRIBUTE_NORMAL, nullptr);
 		if (handle == INVALID_HANDLE_VALUE)
 			return false;
 #else
-		fd = open(path.c_str(), O_RDWR | O_CREAT, 0644);
+		fd = open(_path.c_str(), O_RDWR | O_CREAT, 0644);
 		if (fd < 0)
 			return false;
 		if (flock(fd, LOCK_EX | LOCK_NB) < 0) {
@@ -103,8 +103,8 @@ private:
 };
 
 struct SaveManager {
-	bool initialize(const std::string& pSaveName, [[maybe_unused]] bool isMultiplayerSave = false) {
-		SaveDirectory = pSaveName;
+	bool initialize(const std::string& _pSaveName, [[maybe_unused]] bool _isMultiplayerSave = false) {
+		SaveDirectory = _pSaveName;
 
 		// Make sure we have the necessary folders
 		int necessaryFolders = 0;
@@ -114,7 +114,7 @@ struct SaveManager {
 		necessaryFolders += std::filesystem::create_directories(SaveDirectory + "/data");
 		if (necessaryFolders)
 			GlobalLogger().warn << "Failed to load " << necessaryFolders
-			                    << " necessary folder(s) for level " + pSaveName + ".\n";
+			                    << " necessary folder(s) for level " + _pSaveName + ".\n";
 
 		if (!sessionLock.acquire(SaveDirectory + "/session.lock"))
 			return false;
@@ -177,16 +177,16 @@ struct SaveManager {
 		return currentLevelData;
 	}
 
-	bool createNewWorld(const levelData& data) {
+	bool createNewWorld(const levelData& _data) {
 		std::error_code ec;
 		std::filesystem::create_directories(SaveDirectory + "/players", ec);
 		std::filesystem::create_directories(SaveDirectory + "/region", ec);
 		std::filesystem::create_directories(SaveDirectory + "/DIM-1/region", ec);
 		std::filesystem::create_directories(SaveDirectory + "/data", ec);
-		return saveLevelFile(data);
+		return saveLevelFile(_data);
 	}
 
-	bool saveLevelFile(const levelData& levelData) {
+	bool saveLevelFile(const levelData& _levelData) {
 		// Back up existing level.dat if present
 		if (std::filesystem::exists(SaveDirectory + "/level.dat")) {
 			std::filesystem::copy_file(SaveDirectory + "/level.dat", SaveDirectory + "/level.dat_old",
@@ -204,55 +204,55 @@ struct SaveManager {
 		Tag RandomSeed;
 		RandomSeed.type = TAG_LONG;
 		RandomSeed.name = "RandomSeed";
-		RandomSeed.longValue = levelData.RandomSeed;
+		RandomSeed.longValue = _levelData.RandomSeed;
 		Tag SpawnX;
 		SpawnX.type = TAG_INT;
 		SpawnX.name = "SpawnX";
-		SpawnX.intValue = levelData.spawnPoint.x;
+		SpawnX.intValue = _levelData.spawnPoint.x;
 		Tag SpawnY;
 		SpawnY.type = TAG_INT;
 		SpawnY.name = "SpawnY";
-		SpawnY.intValue = levelData.spawnPoint.y;
+		SpawnY.intValue = _levelData.spawnPoint.y;
 		Tag SpawnZ;
 		SpawnZ.type = TAG_INT;
 		SpawnZ.name = "SpawnZ";
-		SpawnZ.intValue = levelData.spawnPoint.z;
+		SpawnZ.intValue = _levelData.spawnPoint.z;
 		Tag rainTime;
 		rainTime.type = TAG_INT;
 		rainTime.name = "rainTime";
-		rainTime.intValue = levelData.rainTime;
+		rainTime.intValue = _levelData.rainTime;
 		Tag thunderTime;
 		thunderTime.type = TAG_INT;
 		thunderTime.name = "thunderTime";
-		thunderTime.intValue = levelData.thunderTime;
+		thunderTime.intValue = _levelData.thunderTime;
 		Tag raining;
 		raining.type = TAG_BYTE;
 		raining.name = "raining";
-		raining.byteValue = levelData.raining;
+		raining.byteValue = _levelData.raining;
 		Tag Time;
 		Time.type = TAG_LONG;
 		Time.name = "Time";
-		Time.longValue = levelData.time;
+		Time.longValue = _levelData.time;
 		Tag thundering;
 		thundering.type = TAG_BYTE;
 		thundering.name = "thundering";
-		thundering.byteValue = levelData.thundering;
+		thundering.byteValue = _levelData.thundering;
 		Tag version;
 		version.type = TAG_INT;
 		version.name = "version";
-		version.intValue = levelData.version;
+		version.intValue = _levelData.version;
 		Tag LastPlayed;
 		LastPlayed.type = TAG_LONG;
 		LastPlayed.name = "LastPlayed";
-		LastPlayed.longValue = levelData.lastPlayed;
+		LastPlayed.longValue = _levelData.lastPlayed;
 		Tag LevelName;
 		LevelName.type = TAG_STRING;
 		LevelName.name = "LevelName";
-		LevelName.stringValue = levelData.LevelName;
+		LevelName.stringValue = _levelData.LevelName;
 		Tag sizeOnDisk;
 		sizeOnDisk.type = TAG_LONG;
 		sizeOnDisk.name = "SizeOnDisk";
-		sizeOnDisk.longValue = levelData.sizeOnDisk;
+		sizeOnDisk.longValue = _levelData.sizeOnDisk;
 
 		data.compound["RandomSeed"] = RandomSeed;
 		data.compound["SpawnX"] = SpawnX;
@@ -295,26 +295,26 @@ struct SaveManager {
 		return true;
 	}
 
-	static int64_t seedFromString(const std::string& input) {
+	static int64_t seedFromString(const std::string& _input) {
 		// If it's a plain number, use it directly
 		try {
 			size_t pos;
-			int64_t numeric = std::stoll(input, &pos);
-			if (pos == input.size())
+			int64_t numeric = std::stoll(_input, &pos);
+			if (pos == _input.size())
 				return numeric;
 		} catch (...) {
 		}
 
 		// Otherwise hash it
-		return hashCode(input);
+		return hashCode(_input);
 	}
 
-	Tag getPlayerNBT(const std::string& playerName) { // return by value
-		std::string playerPath = SaveDirectory + "/players/" + playerName + ".dat";
+	Tag getPlayerNBT(const std::string& _playerName) { // return by value
+		std::string playerPath = SaveDirectory + "/players/" + _playerName + ".dat";
 
 		if (!std::filesystem::exists(playerPath)) {
 			Tag fresh = getNewPlayerNBT();
-			savePlayerNBT(playerName, fresh);
+			savePlayerNBT(_playerName, fresh);
 			return fresh;
 		}
 
@@ -463,9 +463,9 @@ struct SaveManager {
 		return root;
 	}
 
-	bool savePlayerNBT(const std::string& playerName, Tag& playerData) const {
+	bool savePlayerNBT(const std::string& _playerName, Tag& _playerData) const {
 		std::vector<uint8_t> raw;
-		NBTwriter writer(raw, playerData);
+		NBTwriter writer(raw, _playerData);
 
 		libdeflate_compressor* compressor = libdeflate_alloc_compressor(6);
 		if (!compressor)
@@ -478,7 +478,7 @@ struct SaveManager {
 			return false;
 		compressed.resize(actualSize);
 
-		std::string finalPath = SaveDirectory + "/players/" + playerName + ".dat";
+		std::string finalPath = SaveDirectory + "/players/" + _playerName + ".dat";
 		std::string tmpPath = finalPath + ".tmp";
 
 		std::ofstream file(tmpPath, std::ios::binary);

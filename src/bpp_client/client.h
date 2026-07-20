@@ -17,11 +17,11 @@ public:
 	int run();
 
 private:
-	static constexpr float TICK_DELTA = 1.0f / 20.0f;
-	static constexpr int MAX_TICKS_PER_FRAME = 10;
+	static constexpr float m_TICK_DELTA = 1.0f / 20.0f;
+	static constexpr int m_MAX_TICKS_PER_FRAME = 10;
 
 	void tick();
-	void render([[maybe_unused]] float partial_tick);
+	void render([[maybe_unused]] float _partial_tick);
 
 	Window window;
 	Input input;

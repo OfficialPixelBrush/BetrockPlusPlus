@@ -14,14 +14,14 @@ namespace fs = std::filesystem;
 
 namespace Utilities {
 // Creates a temp directory and deletes it if it already exists. Returns false on failure.
-inline bool recreateTempDir(const fs::path& dir) {
+inline bool recreateTempDir(const fs::path& _dir) {
 	std::error_code ec;
-	fs::remove_all(dir, ec);
+	fs::remove_all(_dir, ec);
 	if (ec) {
 		GlobalLogger().error << "Failed to remove directory: " << ec.message() << '\n';
 		return false;
 	}
-	fs::create_directories(dir, ec);
+	fs::create_directories(_dir, ec);
 	if (ec) {
 		GlobalLogger().error << "Failed to create directory: " << ec.message() << '\n';
 		return false;
@@ -30,28 +30,28 @@ inline bool recreateTempDir(const fs::path& dir) {
 }
 
 // Cleans up level data since mcr files can become bloated
-inline bool cleanLevel(std::string relPath) {
+inline bool cleanLevel(std::string _relPath) {
 	SaveManager saveManager;
 	RegionManager regionManager;
 	RegionManager outRegionManager;
 
-	if (!saveManager.initialize(relPath)) {
+	if (!saveManager.initialize(_relPath)) {
 		GlobalLogger().error << "Failed to initialize save manager for cleaning!\n";
 		return false;
 	}
 
 	// Overworld first
 	{
-		if (!regionManager.initialize(relPath + "/region")) {
+		if (!regionManager.initialize(_relPath + "/region")) {
 			GlobalLogger().error << "Failed to initialize overworld region manager for cleaning! (Skipping)\n";
 		}
 
-		if (!recreateTempDir(relPath + "/tempRegion")) {
+		if (!recreateTempDir(_relPath + "/tempRegion")) {
 			GlobalLogger().error << "Failed to recreate temp directory!\n";
 			return false;
 		}
 
-		if (!outRegionManager.initialize(relPath + "/tempRegion")) {
+		if (!outRegionManager.initialize(_relPath + "/tempRegion")) {
 			GlobalLogger().error << "Failed to initialize output region manager for cleaning!\n";
 			return false;
 		}
@@ -59,7 +59,7 @@ inline bool cleanLevel(std::string relPath) {
 		// Check what regions exist
 		GlobalLogger().info << "Scanning for regions to clean...\n";
 		std::vector<Int32_2> regionCoords;
-		for (const auto& entry : fs::directory_iterator(relPath + "/region")) {
+		for (const auto& entry : fs::directory_iterator(_relPath + "/region")) {
 			const fs::path& regionPath = entry.path();
 			// Is this a valid region file?
 			if (regionPath.extension() == ".mcr") {
@@ -104,23 +104,23 @@ inline bool cleanLevel(std::string relPath) {
 		// Delete original, copy from temp, delete temp
 		regionManager.release();
 		outRegionManager.release();
-		fs::remove_all(relPath + "/region");
-		fs::copy(relPath + "/tempRegion", relPath + "/region");
-		fs::remove_all(relPath + "/tempRegion");
+		fs::remove_all(_relPath + "/region");
+		fs::copy(_relPath + "/tempRegion", _relPath + "/region");
+		fs::remove_all(_relPath + "/tempRegion");
 	}
 
 	// Nether
 	{
-		if (!regionManager.initialize(relPath + "/DIM-1/region")) {
+		if (!regionManager.initialize(_relPath + "/DIM-1/region")) {
 			GlobalLogger().error << "Failed to initialize nether region manager for cleaning! (Skipping)\n";
 		}
 
-		if (!recreateTempDir(relPath + "/tempRegionNether")) {
+		if (!recreateTempDir(_relPath + "/tempRegionNether")) {
 			GlobalLogger().error << "Failed to recreate temp directory!\n";
 			return false;
 		}
 
-		if (!outRegionManager.initialize(relPath + "/tempRegionNether")) {
+		if (!outRegionManager.initialize(_relPath + "/tempRegionNether")) {
 			GlobalLogger().error << "Failed to initialize output region manager for cleaning!\n";
 			return false;
 		}
@@ -128,7 +128,7 @@ inline bool cleanLevel(std::string relPath) {
 		// Check what regions exist
 		GlobalLogger().info << "Scanning for regions to clean...\n";
 		std::vector<Int32_2> regionCoords;
-		for (const auto& entry : fs::directory_iterator(relPath + "/DIM-1/region")) {
+		for (const auto& entry : fs::directory_iterator(_relPath + "/DIM-1/region")) {
 			const fs::path& regionPath = entry.path();
 			// Is this a valid region file?
 			if (regionPath.extension() == ".mcr") {
@@ -173,9 +173,9 @@ inline bool cleanLevel(std::string relPath) {
 		// Delete original, copy from temp, delete temp
 		regionManager.release();
 		outRegionManager.release();
-		fs::remove_all(relPath + "/DIM-1/region");
-		fs::copy(relPath + "/tempRegionNether", relPath + "/DIM-1/region");
-		fs::remove_all(relPath + "/tempRegionNether");
+		fs::remove_all(_relPath + "/DIM-1/region");
+		fs::copy(_relPath + "/tempRegionNether", _relPath + "/DIM-1/region");
+		fs::remove_all(_relPath + "/tempRegionNether");
 	}
 	return true; // yay we did it
 }

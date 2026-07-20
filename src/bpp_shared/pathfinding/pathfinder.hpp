@@ -31,8 +31,8 @@ public:
 	WorldManager* world = nullptr;
 
 	Pathfinder(){};
-	Pathfinder(WorldManager* world) : world(world) {};
-	[[nodiscard]] std::vector<Int3> findPath(Int3 start, Int3 goal);
+	Pathfinder(WorldManager* _world) : world(_world) {};
+	[[nodiscard]] std::vector<Int3> findPath(Int3 _start, Int3 _goal);
 
 private:
 
@@ -40,8 +40,8 @@ private:
 		int f;
 		Node* node;
 
-		bool operator>(const PQNode& rhs) const {
-			return f > rhs.f;
+		bool operator>(const PQNode& _rhs) const {
+			return f > _rhs.f;
 		}
 	};
 
@@ -49,8 +49,8 @@ private:
 
 	std::unordered_map<Int3, Node> nodes;
 
-	Node* openNode(Int3 pos);
-	bool posValid(Int3 pos);
-	std::optional<Int3> getNeighbour(Int3 from, Int2 dir);
+	Node* openNode(Int3 _pos);
+	bool posValid(Int3 _pos);
+	std::optional<Int3> getNeighbour(Int3 _from, Int2 _dir);
 	void reset();
 };

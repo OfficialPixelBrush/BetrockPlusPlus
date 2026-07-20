@@ -44,38 +44,38 @@ struct ChunkSender {
 
 	BS::thread_pool<> pool{ 2 };
 
-	size_t enqueue(PlayerSession& session, WorldManager& world, int batchSize = -1) {
-		if (batchSize < 0)
-			batchSize = static_cast<int>(pool.get_thread_count()) * 2;
-		int cx = int(std::floor(session.position.pos.x)) >> 4;
-		int cz = int(std::floor(session.position.pos.z)) >> 4;
+	size_t enqueue(PlayerSession& _session, WorldManager& _world, int _batchSize = -1) {
+		if (_batchSize < 0)
+			_batchSize = static_cast<int>(pool.get_thread_count()) * 2;
+		int cx = int(std::floor(_session.position.pos.x)) >> 4;
+		int cz = int(std::floor(_session.position.pos.z)) >> 4;
 
-		int radius = world.getViewRadius();
+		int radius = _world.getViewRadius();
 
 		std::vector<Int32_2> toSend;
 		for (int dx = -radius; dx <= radius; dx++) {
 			for (int dz = -radius; dz <= radius; dz++) {
 				Int32_2 p{ cx + dx, cz + dz };
-				if (!world.chunks.contains(p))
+				if (!_world.chunks.contains(p))
 					continue;
-				if (session.sentChunks.contains(p))
+				if (_session.sentChunks.contains(p))
 					continue;
-				if (world.chunks[p]->state.load() < ChunkState::Generated)
+				if (_world.chunks[p]->state.load() < ChunkState::Generated)
 					continue;
 				toSend.push_back(p);
 			}
 		}
 
 		// Sort closer chunks first
-		std::sort(toSend.begin(), toSend.end(), [&](const Int32_2& a, const Int32_2& b) {
-			int da = std::abs(a.x - cx) + std::abs(a.z - cz);
-			int db = std::abs(b.x - cx) + std::abs(b.z - cz);
+		std::sort(toSend.begin(), toSend.end(), [&](const Int32_2& _a, const Int32_2& _b) {
+			int da = std::abs(_a.x - cx) + std::abs(_a.z - cz);
+			int db = std::abs(_b.x - cx) + std::abs(_b.z - cz);
 			return da < db;
 		});
 
 		// Unload all out-of-range chunks immediately
 		std::vector<Int32_2> toUnload;
-		for (auto& p : session.sentChunks) {
+		for (auto& p : _session.sentChunks) {
 			if (std::abs(p.x - cx) > radius || std::abs(p.z - cz) > radius)
 				toUnload.push_back(p);
 		}
@@ -84,71 +84,71 @@ struct ChunkSender {
 			vis.pos.x = p.x;
 			vis.pos.z = p.z;
 			vis.visible = false;
-			vis.Serialize(session.stream);
-			session.sentChunks.erase(p);
-			session.flushedChunks.erase(p);
-			session.pendingBlockChanges.erase(p); // drop queued updates for unloaded chunk
-			session.newlyUnloaded.push_back(p);
+			vis.Serialize(_session.stream);
+			_session.sentChunks.erase(p);
+			_session.flushedChunks.erase(p);
+			_session.pendingBlockChanges.erase(p); // drop queued updates for unloaded chunk
+			_session.newlyUnloaded.push_back(p);
 		}
 
 		// Also cancel any in-flight jobs for chunks that are now out of range
-		auto& queue = inFlight[&session];
+		auto& queue = inFlight[&_session];
 		queue.erase(std::remove_if(queue.begin(), queue.end(),
-		                           [&](const PendingChunk& pc) {
-			                           return std::abs(pc.pos.x - cx) > radius || std::abs(pc.pos.z - cz) > radius;
+		                           [&](const PendingChunk& _pc) {
+			                           return std::abs(_pc.pos.x - cx) > radius || std::abs(_pc.pos.z - cz) > radius;
 		                           }),
 		            queue.end());
 
 		// Rebuild toSend, excluding chunks that already have an in-flight job.
 		int submitted = 0;
 		for (auto& p : toSend) {
-			if (batchSize > 0 && submitted >= batchSize)
+			if (_batchSize > 0 && submitted >= _batchSize)
 				break;
 			PendingChunk pc;
-			std::shared_ptr<Chunk> chunkRef = world.chunks.at(p);
+			std::shared_ptr<Chunk> chunkRef = _world.chunks.at(p);
 			pc.pos = p;
 			pc.chunkRef = chunkRef;
 			pc.data = pool.submit_task([chunkRef]() { return ChunkSerializer::serialize(*chunkRef); });
 			queue.push_back(std::move(pc));
-			session.sentChunks.insert(p);
+			_session.sentChunks.insert(p);
 			++submitted;
 		}
 		return static_cast<size_t>(submitted);
 	}
 
-	void sendBlockUpdates(PlayerSession& session, const Int32_2& chunk, const std::vector<PendingBlock>& changes,
-	                      std::shared_ptr<const Chunk> chunkRef = nullptr) {
-		if (changes.empty())
+	void sendBlockUpdates(PlayerSession& _session, const Int32_2& _chunk, const std::vector<PendingBlock>& _changes,
+	                      std::shared_ptr<const Chunk> _chunkRef = nullptr) {
+		if (_changes.empty())
 			return;
 
-		if (changes.size() == 1) {
-			const PendingBlock& pb = changes[0];
+		if (_changes.size() == 1) {
+			const PendingBlock& pb = _changes[0];
 			Packet::SetBlock sb;
 			sb.block = { pb.block.type, pb.block.data };
-			sb.position = { static_cast<int32_t>(pb.block_pos.x + (chunk.x * 16)), static_cast<int8_t>(pb.block_pos.y),
-				            static_cast<int32_t>(pb.block_pos.z + (chunk.z * 16)) };
-			sb.Serialize(session.stream);
-		} else if (changes.size() < 10) {
-			auto format_multi_block = [](int8_t x, int8_t y, int8_t z) {
-				return (((int16_t(x) & 0x0F) << 12) | ((int16_t(z) & 0x0F) << 8) | ((int16_t(y) & 0xFF)));
+			sb.position = { static_cast<int32_t>(pb.block_pos.x + (_chunk.x * 16)), static_cast<int8_t>(pb.block_pos.y),
+				            static_cast<int32_t>(pb.block_pos.z + (_chunk.z * 16)) };
+			sb.Serialize(_session.stream);
+		} else if (_changes.size() < 10) {
+			auto format_multi_block = [](int8_t _x, int8_t _y, int8_t _z) {
+				return (((int16_t(_x) & 0x0F) << 12) | ((int16_t(_z) & 0x0F) << 8) | ((int16_t(_y) & 0xFF)));
 			};
 			Packet::SetMultipleBlocks smb;
-			smb.chunk_position = { chunk.x, chunk.z };
-			for (const auto& pb : changes) {
+			smb.chunk_position = { _chunk.x, _chunk.z };
+			for (const auto& pb : _changes) {
 				smb.block_coordinates.push_back(static_cast<int16_t>(
 				    format_multi_block(int8_t(pb.block_pos.x), int8_t(pb.block_pos.y), int8_t(pb.block_pos.z))));
 				smb.block_metadata.push_back(int8_t(pb.block.data));
 				smb.block_types.push_back(pb.block.type);
 			}
 			smb.number_of_blocks = static_cast<int16_t>(smb.block_coordinates.size());
-			smb.Serialize(session.stream);
+			smb.Serialize(_session.stream);
 		} else {
 			// Find bounding box in chunk-local space
-			auto& p0 = changes[0].block_pos;
+			auto& p0 = _changes[0].block_pos;
 			int xmin = p0.x, xmax = p0.x;
 			int ymin = p0.y, ymax = p0.y;
 			int zmin = p0.z, zmax = p0.z;
-			for (const auto& pb : changes) {
+			for (const auto& pb : _changes) {
 				const auto& pos = pb.block_pos;
 				if (pos.x > xmax)
 					xmax = pos.x;
@@ -170,28 +170,28 @@ struct ChunkSender {
 			ymax = CrossPlatform::Math::min<int>(ymax, CHUNK_HEIGHT - 1);
 
 			PendingSubRegion psr;
-			psr.chunkPos = chunk;
-			psr.header.pos.x = chunk.x * CHUNK_WIDTH + xmin;
-			psr.header.pos.z = chunk.z * CHUNK_WIDTH + zmin;
+			psr.chunkPos = _chunk;
+			psr.header.pos.x = _chunk.x * CHUNK_WIDTH + xmin;
+			psr.header.pos.z = _chunk.z * CHUNK_WIDTH + zmin;
 			psr.header.pos.y = static_cast<int16_t>(ymin);
 			psr.header.size.x = static_cast<uint8_t>(xmax - xmin);
 			psr.header.size.y = static_cast<uint8_t>(ymax - ymin);
 			psr.header.size.z = static_cast<uint8_t>(zmax - zmin);
-			if (chunkRef) {
-				std::shared_ptr<const Chunk> ref = chunkRef;
+			if (_chunkRef) {
+				std::shared_ptr<const Chunk> ref = _chunkRef;
 				psr.data = pool.submit_task([ref, xmin, xmax, ymin, ymax, zmin, zmax]() {
 					return ChunkSerializer::serialize(*ref, xmin, xmax + 1, ymin, ymax + 1, zmin, zmax + 1);
 				});
 			}
-			subRegionFlight[&session].push_back(std::move(psr));
+			subRegionFlight[&_session].push_back(std::move(psr));
 		}
 	}
 
 	// Drains every job that is already done and writes the resulting
 	// SetChunkVisibility + ChunkData packets to the session stream.
 	// Jobs that aren't finished yet stay in the queue for the next tick.
-	void flush(PlayerSession& session) {
-		auto it = inFlight.find(&session);
+	void flush(PlayerSession& _session) {
+		auto it = inFlight.find(&_session);
 		if (it == inFlight.end())
 			return;
 
@@ -211,25 +211,25 @@ struct ChunkSender {
 			vis.pos.x = pc.pos.x;
 			vis.pos.z = pc.pos.z;
 			vis.visible = true;
-			vis.Serialize(session.stream);
+			vis.Serialize(_session.stream);
 
 			Packet::ChunkData data;
 			data.pos.x = pc.pos.x * 16;
 			data.pos.z = pc.pos.z * 16;
 			data.compressedData = std::move(compressed);
-			data.Serialize(session.stream);
+			data.Serialize(_session.stream);
 
-			session.flushedChunks.insert(pc.pos);
-			session.newlyFlushed.push_back(pc.pos);
+			_session.flushedChunks.insert(pc.pos);
+			_session.newlyFlushed.push_back(pc.pos);
 
 			// Drain any block updates that queued up while this chunk
 			// was in-flight. They go out immediately after the chunk
 			// data in the same tick, so the client receives them in
 			// order and applies them to freshly loaded terrain.
-			auto pending = session.pendingBlockChanges.find(pc.pos);
-			if (pending != session.pendingBlockChanges.end()) {
-				sendBlockUpdates(session, pc.pos, pending->second, std::shared_ptr<const Chunk>(pc.chunkRef));
-				session.pendingBlockChanges.erase(pending);
+			auto pending = _session.pendingBlockChanges.find(pc.pos);
+			if (pending != _session.pendingBlockChanges.end()) {
+				sendBlockUpdates(_session, pc.pos, pending->second, std::shared_ptr<const Chunk>(pc.chunkRef));
+				_session.pendingBlockChanges.erase(pending);
 			}
 
 			// Signs need to inform the client when they are loaded
@@ -246,14 +246,14 @@ struct ChunkSender {
 				pkt.lines[2] = sign->text3;
 				pkt.lines[3] = sign->text4;
 
-				pkt.Serialize(session.stream);
+				pkt.Serialize(_session.stream);
 			}
 		}
 
 		queue = std::move(stillPending);
 
 		// Drain in-flight sub-region compression jobs in submission order.
-		auto srIt = subRegionFlight.find(&session);
+		auto srIt = subRegionFlight.find(&_session);
 		if (srIt != subRegionFlight.end()) {
 			auto& srQueue = srIt->second;
 			while (!srQueue.empty()) {
@@ -261,15 +261,15 @@ struct ChunkSender {
 				if (!psr.data.valid() || psr.data.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
 					break;
 				psr.header.compressedData = psr.data.get();
-				psr.header.Serialize(session.stream);
+				psr.header.Serialize(_session.stream);
 				srQueue.erase(srQueue.begin());
 			}
 		}
 	}
 
 	// Remove all in-flight state for a disconnected session.
-	void remove(PlayerSession& session) {
-		inFlight.erase(&session);
-		subRegionFlight.erase(&session);
+	void remove(PlayerSession& _session) {
+		inFlight.erase(&_session);
+		subRegionFlight.erase(&_session);
 	}
 };

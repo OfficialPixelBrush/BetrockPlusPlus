@@ -24,8 +24,8 @@ struct CraftingTableInventoryInteraction : CraftingInventoryInteraction {
 		}
 	} sharedInventory;
 
-	CraftingTableInventoryInteraction(InventoryPlayer* pinv, WorldManager& worldMng, Runtime& gameRuntime,
-	                                  Int3 craftingTablePos);
+	CraftingTableInventoryInteraction(InventoryPlayer* _pinv, WorldManager& _worldMng, Runtime& _gameRuntime,
+	                                  Int3 _craftingTablePos);
 	~CraftingTableInventoryInteraction();
 
 	bool canExist() override;
@@ -37,5 +37,5 @@ protected:
 	void mergeInventories();
 	void updateResult() override;
 	void shiftClickResult() override;
-	void shiftClickOther(int slot) override;
+	void shiftClickOther(int _slot) override;
 };

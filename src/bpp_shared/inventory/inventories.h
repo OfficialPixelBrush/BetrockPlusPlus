@@ -51,72 +51,72 @@ public:
 		return getStackInSlot(activeHotbarSlot + 36);
 	}
 
-	InvMap getInventoryAreaFromSlot(int slot) {
-		if (slot == 0)
+	InvMap getInventoryAreaFromSlot(int _slot) {
+		if (_slot == 0)
 			return InvMap::CRAFTING_RESULT;
-		if (slot >= 1 && slot <= 4)
+		if (_slot >= 1 && _slot <= 4)
 			return InvMap::CRAFTING_AREA;
-		if (slot >= 5 && slot <= 8)
+		if (_slot >= 5 && _slot <= 8)
 			return InvMap::ARMOR;
-		if (slot >= 36 && slot <= 44)
+		if (_slot >= 36 && _slot <= 44)
 			return InvMap::HOTBAR;
-		if (slot >= 9 && slot <= 35)
+		if (_slot >= 9 && _slot <= 35)
 			return InvMap::INVENTORY;
-		GlobalLogger().error << "Invalid Inventory area slot! (" << slot << ")\n";
+		GlobalLogger().error << "Invalid Inventory area slot! (" << _slot << ")\n";
 		return InvMap::INVALID; // Fallback,
 	}
 
-	NbtSlotId getNbtSlotID(NetworkSlotId slot) {
-		if (slot >= 9 && slot <= 35)
-			return slot.value;
-		if (slot >= 5 && slot <= 8)
-			return (5 + (8 - slot)) + 95;
-		if (slot >= 36 && slot <= 44)
-			return slot - 36;
+	NbtSlotId getNbtSlotID(NetworkSlotId _slot) {
+		if (_slot >= 9 && _slot <= 35)
+			return _slot.value;
+		if (_slot >= 5 && _slot <= 8)
+			return (5 + (8 - _slot)) + 95;
+		if (_slot >= 36 && _slot <= 44)
+			return _slot - 36;
 		return -1;
 	}
 
-	NetworkSlotId getNetworkSlotId(NbtSlotId slot) const override {
-		if (slot >= 100 && slot <= 103)
-			return 5 + (8 - (slot - 95));
-		if (slot >= 9 && slot <= 35)
-			return slot.value;
-		if (slot >= 0 && slot <= 8)
-			return slot + 36;
+	NetworkSlotId getNetworkSlotId(NbtSlotId _slot) const override {
+		if (_slot >= 100 && _slot <= 103)
+			return 5 + (8 - (_slot - 95));
+		if (_slot >= 9 && _slot <= 35)
+			return _slot.value;
+		if (_slot >= 0 && _slot <= 8)
+			return _slot + 36;
 		return -1;
 	}
 
 	// Tries to "pickup" an item. Returns if it succeeded
 	// Not sure why vanilla does it in such a convoluted way
 	// but it is the way it is
-	bool pickupItem(ItemStack& stack) {
+	bool pickupItem(ItemStack& _stack) {
 		// Can we combine with anything in the inventory?
-		if (canMergeItemStackInInventory(stack, false, 9, 35)) {
-			mergeItemStackInInventory(stack, false, 9, 35);
+		if (canMergeItemStackInInventory(_stack, false, 9, 35)) {
+			mergeItemStackInInventory(_stack, false, 9, 35);
 			return true;
 		} else {
 			// We couldn't combine this stack with anything in the inventory
 			// so try the hotbar
-			if (mergeItemStackInInventory(stack, false, 36, 44)) {
+			if (mergeItemStackInInventory(_stack, false, 36, 44)) {
 				return true;
 			}
 			// Try to find an empty slot in the inventory as a last resort
-			return mergeItemStackInInventory(stack, false, 9, 35);
+			return mergeItemStackInInventory(_stack, false, 9, 35);
 		}
 	}
 
 	// Returns whether we could merge an item stack without changing the inventory.
-	bool canMergeItemStackInInventory(ItemStack& stack, bool reverse = false, int startSlot = 0, int endSlot = -1) {
-		auto start = startSlot;
-		auto end = endSlot == -1 ? getSizeInventory() - 1 : endSlot;
+	bool canMergeItemStackInInventory(ItemStack& _stack, bool _reverse = false, int _startSlot = 0, int _endSlot = -1) {
+		auto start = _startSlot;
+		auto end = _endSlot == -1 ? getSizeInventory() - 1 : _endSlot;
 
 		// Try and merge into an already existing stack of the same type if this item is stackable
-		if (Items::IsStackable(stack.id)) {
-			for (int i = reverse ? end : start; reverse ? i >= start : i <= end; reverse ? i-- : i++) {
+		if (Items::IsStackable(_stack.id)) {
+			for (int i = _reverse ? end : start; _reverse ? i >= start : i <= end; _reverse ? i-- : i++) {
 				auto slot = getStackInSlot(i);
 				if (!slot)
 					continue;
-				if (slot->id == stack.id && slot->data == stack.data) {
+				if (slot->id == _stack.id && slot->data == _stack.data) {
 					auto maxStack = Items::GetMaxStack(slot->id);
 					// Don't try and merge into an already maxed out stack
 					if (slot->count >= maxStack)
@@ -124,7 +124,7 @@ public:
 
 					// Add the stacks together and do some checks to make sure we don't overflow
 					int space = maxStack - slot->count;
-					int toMove = CrossPlatform::Math::min(space, (int)stack.count);
+					int toMove = CrossPlatform::Math::min(space, (int)_stack.count);
 
 					if (toMove > 0)
 						return true;
@@ -146,7 +146,7 @@ struct InventoryLargeChest : Inventory {
 	InventoryChest* upper;
 	InventoryChest* lower;
 
-	InventoryLargeChest(InventoryChest* upper, InventoryChest* lower) : Inventory(0), upper(upper), lower(lower) {
+	InventoryLargeChest(InventoryChest* _upper, InventoryChest* _lower) : Inventory(0), upper(_upper), lower(_lower) {
 		name = "Large Chest";
 	}
 
@@ -154,26 +154,26 @@ struct InventoryLargeChest : Inventory {
 		return upper->getSizeInventory() + lower->getSizeInventory();
 	}
 
-	ItemStack* getStackInSlot(int slot) override {
+	ItemStack* getStackInSlot(int _slot) override {
 		int upperSize = upper->getSizeInventory();
-		if (slot < upperSize)
-			return upper->getStackInSlot(slot);
-		return lower->getStackInSlot(slot - upperSize);
+		if (_slot < upperSize)
+			return upper->getStackInSlot(_slot);
+		return lower->getStackInSlot(_slot - upperSize);
 	}
 
-	ItemStack decreaseStackSize(int slot, int count) override {
+	ItemStack decreaseStackSize(int _slot, int _count) override {
 		int upperSize = upper->getSizeInventory();
-		if (slot < upperSize)
-			return upper->decreaseStackSize(slot, count);
-		return lower->decreaseStackSize(slot - upperSize, count);
+		if (_slot < upperSize)
+			return upper->decreaseStackSize(_slot, _count);
+		return lower->decreaseStackSize(_slot - upperSize, _count);
 	}
 
-	void setInventorySlotContents(int slot, ItemStack* stack) override {
+	void setInventorySlotContents(int _slot, ItemStack* _stack) override {
 		int upperSize = upper->getSizeInventory();
-		if (slot < upperSize)
-			upper->setInventorySlotContents(slot, stack);
+		if (_slot < upperSize)
+			upper->setInventorySlotContents(_slot, _stack);
 		else
-			lower->setInventorySlotContents(slot - upperSize, stack);
+			lower->setInventorySlotContents(_slot - upperSize, _stack);
 	}
 
 	void onInventoryChanged() override {
@@ -181,21 +181,21 @@ struct InventoryLargeChest : Inventory {
 		lower->onInventoryChanged();
 	}
 
-	bool mergeItemStackInInventory(ItemStack& stack, bool reverse = false, int startSlot = 0,
-	                               int endSlot = -1) override {
+	bool mergeItemStackInInventory(ItemStack& _stack, bool _reverse = false, int _startSlot = 0,
+	                               int _endSlot = -1) override {
 		int upperSize = upper->getSizeInventory();
 		int totalSize = upperSize + lower->getSizeInventory();
-		auto end = endSlot == -1 ? totalSize - 1 : endSlot;
+		auto end = _endSlot == -1 ? totalSize - 1 : _endSlot;
 
-		bool success = upper->mergeItemStackInInventory(stack, reverse, CrossPlatform::Math::max(0, startSlot),
+		bool success = upper->mergeItemStackInInventory(_stack, _reverse, CrossPlatform::Math::max(0, _startSlot),
 		                                                  CrossPlatform::Math::min(upperSize - 1, end));
 
-		if (!success || stack.count > 0) {
+		if (!success || _stack.count > 0) {
 			success = lower->mergeItemStackInInventory(
-			    stack, reverse, CrossPlatform::Math::max(0, startSlot - upperSize),
+			    _stack, _reverse, CrossPlatform::Math::max(0, _startSlot - upperSize),
 			    CrossPlatform::Math::min(lower->getSizeInventory() - 1, end - upperSize));
 		}
-		return success || stack.count == 0;
+		return success || _stack.count == 0;
 	}
 };
 

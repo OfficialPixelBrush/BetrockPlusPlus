@@ -19,8 +19,8 @@ class NoiseSimplex : public NoiseGenerator {
 protected:
 	int32_t permutations[512];
 	Vec3 coordinate;
-	double GenerateNoiseBase(Vec3 position);
-	void InitPermTable(Java::Random& rand);
+	double GenerateNoiseBase(Vec3 _position);
+	void InitPermTable(Java::Random& _rand);
 
 private:
 	int32_t gradients[12][3] = { { 1, 1, 0 },  { -1, 1, 0 },  { 1, -1, 0 }, { -1, -1, 0 }, { 1, 0, 1 },  { -1, 0, 1 },
@@ -30,15 +30,15 @@ private:
 
 public:
 	NoiseSimplex();
-	NoiseSimplex(Java::Random& rand);
+	NoiseSimplex(Java::Random& _rand);
 	~NoiseSimplex() override {}
-	void GenerateNoise(std::vector<double>& values, Vec2 p_coordinate, Int32_2 p_size, Vec2 p_scale, double amplitude);
+	void GenerateNoise(std::vector<double>& _values, Vec2 _p_coordinate, Int32_2 _p_size, Vec2 _p_scale, double _amplitude);
 };
 
-inline int32_t wrap(double grad) {
-	return grad > 0.0 ? Java::DoubleToInt32(grad) : Java::DoubleToInt32(grad) - 1;
+inline int32_t wrap(double _grad) {
+	return _grad > 0.0 ? Java::DoubleToInt32(_grad) : Java::DoubleToInt32(_grad) - 1;
 }
 
-inline double dotProd(int32_t grad[3], double x, double y) {
-	return double(grad[0]) * x + double(grad[1]) * y;
+inline double dotProd(int32_t _grad[3], double _x, double _y) {
+	return double(_grad[0]) * _x + double(_grad[1]) * _y;
 }

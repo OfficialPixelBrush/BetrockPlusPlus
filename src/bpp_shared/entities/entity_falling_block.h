@@ -11,18 +11,18 @@ struct FallingBlockEntity : public Entity {
 	BlockType block = BLOCK_AIR;
 	int ticksFallen = 0;
 
-	FallingBlockEntity(Vec3 spawnPosition, BlockType block) : Entity() {
-		this->block = block;
-		this->position = spawnPosition;
+	FallingBlockEntity(Vec3 _spawnPosition, BlockType _block) : Entity() {
+		this->block = _block;
+		this->position = _spawnPosition;
 		this->height = 0.98;
 		this->width = 0.98;
 		this->yOffset = height / 2.0f;
 		this->preventEntitySpawning = true;
 		rebuildCollider();
 
-		if (block == BLOCK_SAND)
+		if (_block == BLOCK_SAND)
 			type = EntityType::FALLING_SAND;
-		if (block == BLOCK_GRAVEL)
+		if (_block == BLOCK_GRAVEL)
 			type = EntityType::FALLING_GRAVEL;
 	}
 
@@ -38,8 +38,8 @@ struct FallingBlockEntity : public Entity {
 		root->compound["Tile"] = Tile;
 		return root;
 	}
-	void loadFromNBT(Tag& nbt) override {
-		Entity::loadFromNBT(nbt);
-		this->block = BlockType(nbt.compound["Tile"].getByte() & 255);
+	void loadFromNBT(Tag& _nbt) override {
+		Entity::loadFromNBT(_nbt);
+		this->block = BlockType(_nbt.compound["Tile"].getByte() & 255);
 	}
 };

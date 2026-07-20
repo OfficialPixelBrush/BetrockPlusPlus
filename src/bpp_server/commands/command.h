@@ -65,11 +65,11 @@ public:
 		return requiresCreative;
 	}
 
-	std::string CheckPermissions(PlayerSession& session);
-	Command(std::string label, std::string description, std::string syntax, bool requiresOp = true,
-	        bool requiresCreative = false);
-	virtual std::string Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
-	                            std::function<void(PlayerSession&)> transferDimension, Server& server) = 0;
+	std::string CheckPermissions(PlayerSession& _session);
+	Command(std::string _label, std::string _description, std::string _syntax, bool _requiresOp = true,
+	        bool _requiresCreative = false);
+	virtual std::string Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
+	                            std::function<void(PlayerSession&)> _transferDimension, Server& _server) = 0;
 	virtual ~Command() = default;
 };
 
@@ -119,69 +119,69 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 */
 
 // Helper: send a PlayerPositionAndRotation packet to move a session to new coords.
-[[maybe_unused]] static void SendTeleport(PlayerSession& target, Vec3 position, float yaw = 0.0f, float pitch = 0.0f) {
+[[maybe_unused]] static void SendTeleport(PlayerSession& _target, Vec3 _position, float _yaw = 0.0f, float _pitch = 0.0f) {
 	// Update our server-side entity position to match the teleport, so that movement broadcasts are correct.
-	target.entity->teleport(position, { yaw, pitch });
+	_target.entity->teleport(_position, { _yaw, _pitch });
 
 	// Keep server-side position in sync so movement broadcasts are correct.
-	target.pendingTeleport = position;
-	target.pendingPosition.reset();
+	_target.pendingTeleport = _position;
+	_target.pendingPosition.reset();
 
 	Packet::PlayerPositionAndRotation pkt;
-	pkt.position.x = position.x;
-	pkt.position.y = position.y;
-	pkt.camera_y = position.y + PLAYER_EYE_HEIGHT;
-	pkt.position.z = position.z;
-	pkt.yaw = yaw;
-	pkt.pitch = pitch;
+	pkt.position.x = _position.x;
+	pkt.position.y = _position.y;
+	pkt.camera_y = _position.y + PLAYER_EYE_HEIGHT;
+	pkt.position.z = _position.z;
+	pkt.yaw = _yaw;
+	pkt.pitch = _pitch;
 	pkt.onGround = false;
-	pkt.Serialize(target.stream);
+	pkt.Serialize(_target.stream);
 }
 
-inline Int3 ParseInt3(size_t& offset, std::vector<std::string>& parameters) {
+inline Int3 ParseInt3(size_t& _offset, std::vector<std::string>& _parameters) {
 	Int3 out{
-		std::stoi(parameters[offset]),
-		std::stoi(parameters[offset + 1]),
-		std::stoi(parameters[offset + 2]),
+		std::stoi(_parameters[_offset]),
+		std::stoi(_parameters[_offset + 1]),
+		std::stoi(_parameters[_offset + 2]),
 	};
-	offset += 3;
+	_offset += 3;
 	return out;
 }
 
-inline Float2 ParseFloat2(size_t& offset, std::vector<std::string>& parameters) {
+inline Float2 ParseFloat2(size_t& _offset, std::vector<std::string>& _parameters) {
 	Float2 out{
-		std::stof(parameters[offset]),
-		std::stof(parameters[offset + 1]),
+		std::stof(_parameters[_offset]),
+		std::stof(_parameters[_offset + 1]),
 	};
-	offset += 2;
+	_offset += 2;
 	return out;
 }
 
-inline Float3 ParseFloat3(size_t& offset, std::vector<std::string>& parameters) {
+inline Float3 ParseFloat3(size_t& _offset, std::vector<std::string>& _parameters) {
 	Float3 out{
-		std::stof(parameters[offset]),
-		std::stof(parameters[offset + 1]),
-		std::stof(parameters[offset + 2]),
+		std::stof(_parameters[_offset]),
+		std::stof(_parameters[_offset + 1]),
+		std::stof(_parameters[_offset + 2]),
 	};
-	offset += 3;
+	_offset += 3;
 	return out;
 }
 
-inline Double2 ParseDouble2(size_t& offset, std::vector<std::string>& parameters) {
+inline Double2 ParseDouble2(size_t& _offset, std::vector<std::string>& _parameters) {
 	Double2 out{
-		std::stod(parameters[offset]),
-		std::stod(parameters[offset + 1]),
+		std::stod(_parameters[_offset]),
+		std::stod(_parameters[_offset + 1]),
 	};
-	offset += 2;
+	_offset += 2;
 	return out;
 }
 
-inline Double3 ParseDouble3(size_t& offset, std::vector<std::string>& parameters) {
+inline Double3 ParseDouble3(size_t& _offset, std::vector<std::string>& _parameters) {
 	Double3 out{
-		std::stod(parameters[offset]),
-		std::stod(parameters[offset + 1]),
-		std::stod(parameters[offset + 2]),
+		std::stod(_parameters[_offset]),
+		std::stod(_parameters[_offset + 1]),
+		std::stod(_parameters[_offset + 2]),
 	};
-	offset += 3;
+	_offset += 3;
 	return out;
 }

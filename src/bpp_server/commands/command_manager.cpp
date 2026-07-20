@@ -12,8 +12,8 @@ std::vector<std::unique_ptr<Command>> CommandManager::registeredCommands;
 Server* CommandManager::server = nullptr;
 
 // Register all commands
-void CommandManager::Init(Server* server) {
-	server = server;
+void CommandManager::Init(Server* _server) {
+	_server = _server;
 	// Anyone can run these
 	registeredCommands.push_back(std::make_unique<CommandHelp>());
 	registeredCommands.push_back(std::make_unique<CommandTeleport>());
@@ -62,23 +62,23 @@ const std::vector<std::unique_ptr<Command>>& CommandManager::GetRegisteredComman
 }
 
 // Parses commands and executes them
-void CommandManager::Parse(std::string& cmd_string, PlayerSession& session, WorldManager& world,
-                           std::function<void(PlayerSession&)> transferDimension) noexcept {
+void CommandManager::Parse(std::string& _cmd_string, PlayerSession& _session, WorldManager& _world,
+                           std::function<void(PlayerSession&)> _transferDimension) noexcept {
 	// Remove initial /
-	cmd_string = cmd_string.substr(1);
+	_cmd_string = _cmd_string.substr(1);
 	// Set these up for command parsing
 	std::string failureReason = "Syntax";
 	std::vector<std::string> command;
 
 	std::string s;
-	std::stringstream ss(cmd_string);
+	std::stringstream ss(_cmd_string);
 
 	while (getline(ss, s, ' ')) {
 		// store token string in the vector
 		command.push_back(s);
 	}
 	// No arguments passed, exit early
-	if (command.empty() || cmd_string.empty()) {
+	if (command.empty() || _cmd_string.empty()) {
 		failureReason = ERROR_REASON_NO_CMD;
 	} else {
 		try {
@@ -86,22 +86,22 @@ void CommandManager::Parse(std::string& cmd_string, PlayerSession& session, Worl
 			for (size_t i = 0; i < registeredCommands.size(); i++) {
 				// This'll throw an out of bounds error
 				if (registeredCommands[i]->GetLabel() == command.at(0)) {
-					failureReason = registeredCommands[i]->Execute(command, session, world, transferDimension,
+					failureReason = registeredCommands[i]->Execute(command, _session, _world, _transferDimension,
 					                                               *server);
 					break;
 				}
 			}
 		} catch (const std::exception& e) {
-			GlobalLogger().info << e.what() << " on /" << cmd_string << "\n";
+			GlobalLogger().info << e.what() << " on /" << _cmd_string << "\n";
 		}
 	}
 
 	Packet::ChatMessage failPkt;
 	if (!failureReason.empty()) {
 		if (failureReason == "Syntax")
-			failPkt.message = "§cInvalid Syntax \"" + cmd_string + "\"";
+			failPkt.message = "§cInvalid Syntax \"" + _cmd_string + "\"";
 		else
 			failPkt.message = "§c" + failureReason;
-		failPkt.Serialize(session.stream);
+		failPkt.Serialize(_session.stream);
 	}
 }

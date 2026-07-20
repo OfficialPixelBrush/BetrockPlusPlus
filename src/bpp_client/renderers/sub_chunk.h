@@ -37,64 +37,64 @@ struct SubChunk {
 	bool dirty = true;
 
 	// since we handle gpu buffer objects we have to be very careful about copying!
-	SubChunk(SubChunk&& other) noexcept {
-		VAO = other.VAO;
-		VBO = other.VBO;
-		vertexCount = other.vertexCount;
-		transVAO = other.transVAO;
-		transVBO = other.transVBO;
-		transVertexCount = other.transVertexCount;
-		overlayVAO = other.overlayVAO;
-		overlayVBO = other.overlayVBO;
-		overlayVertexCount = other.overlayVertexCount;
-		dirty = other.dirty;
+	SubChunk(SubChunk&& _other) noexcept {
+		VAO = _other.VAO;
+		VBO = _other.VBO;
+		vertexCount = _other.vertexCount;
+		transVAO = _other.transVAO;
+		transVBO = _other.transVBO;
+		transVertexCount = _other.transVertexCount;
+		overlayVAO = _other.overlayVAO;
+		overlayVBO = _other.overlayVBO;
+		overlayVertexCount = _other.overlayVertexCount;
+		dirty = _other.dirty;
 		pos.x = other.pos.x;
 		pos.z = other.pos.z;
-		chunk_slice = other.chunk_slice;
-		offset_x = other.offset_x;
-		offset_z = other.offset_z;
-		parentChunk = other.parentChunk;
-		other.VAO = 0;
-		other.VBO = 0;
-		other.vertexCount = 0;
-		other.transVAO = 0;
-		other.transVBO = 0;
-		other.transVertexCount = 0;
-		other.overlayVAO = 0;
-		other.overlayVBO = 0;
-		other.overlayVertexCount = 0;
-		other.parentChunk = nullptr;
+		chunk_slice = _other.chunk_slice;
+		offset = _other.offset;
+		offset = _other.offset;
+		parentChunk = _other.parentChunk;
+		_other.VAO = 0;
+		_other.VBO = 0;
+		_other.vertexCount = 0;
+		_other.transVAO = 0;
+		_other.transVBO = 0;
+		_other.transVertexCount = 0;
+		_other.overlayVAO = 0;
+		_other.overlayVBO = 0;
+		_other.overlayVertexCount = 0;
+		_other.parentChunk = nullptr;
 	}
 
-	SubChunk& operator=(SubChunk&& other) noexcept {
-		if (this != &other) {
+	SubChunk& operator=(SubChunk&& _other) noexcept {
+		if (this != &_other) {
 			cleanup();
-			VAO = other.VAO;
-			VBO = other.VBO;
-			vertexCount = other.vertexCount;
-			transVAO = other.transVAO;
-			transVBO = other.transVBO;
-			transVertexCount = other.transVertexCount;
-			overlayVAO = other.overlayVAO;
-			overlayVBO = other.overlayVBO;
-			overlayVertexCount = other.overlayVertexCount;
-			dirty = other.dirty;
+			VAO = _other.VAO;
+			VBO = _other.VBO;
+			vertexCount = _other.vertexCount;
+			transVAO = _other.transVAO;
+			transVBO = _other.transVBO;
+			transVertexCount = _other.transVertexCount;
+			overlayVAO = _other.overlayVAO;
+			overlayVBO = _other.overlayVBO;
+			overlayVertexCount = _other.overlayVertexCount;
+			dirty = _other.dirty;
 			pos.x = other.pos.x;
 			pos.z = other.pos.z;
-			chunk_slice = other.chunk_slice;
-			offset_x = other.offset_x;
-			offset_z = other.offset_z;
-			parentChunk = other.parentChunk;
-			other.VAO = 0;
-			other.VBO = 0;
-			other.vertexCount = 0;
-			other.transVAO = 0;
-			other.transVBO = 0;
-			other.transVertexCount = 0;
-			other.overlayVAO = 0;
-			other.overlayVBO = 0;
-			other.overlayVertexCount = 0;
-			other.parentChunk = nullptr;
+			chunk_slice = _other.chunk_slice;
+			offset = _other.offset;
+			offset = _other.offset;
+			parentChunk = _other.parentChunk;
+			_other.VAO = 0;
+			_other.VBO = 0;
+			_other.vertexCount = 0;
+			_other.transVAO = 0;
+			_other.transVBO = 0;
+			_other.transVertexCount = 0;
+			_other.overlayVAO = 0;
+			_other.overlayVBO = 0;
+			_other.overlayVertexCount = 0;
+			_other.parentChunk = nullptr;
 		}
 		return *this;
 	}

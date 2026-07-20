@@ -18,9 +18,9 @@ class TreeGenerator {
 public:
 	TreeGenerator() {};
 	virtual ~TreeGenerator() = default;
-	virtual bool Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, bool birch = false);
-	virtual void Configure([[maybe_unused]] double treeHeight, [[maybe_unused]] double branchLength,
-	                       [[maybe_unused]] double trunkShape) {};
+	virtual bool Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch = false);
+	virtual void Configure([[maybe_unused]] double _treeHeight, [[maybe_unused]] double _branchLength,
+	                       [[maybe_unused]] double _trunkShape) {};
 };
 
 /**
@@ -68,19 +68,19 @@ private:
 	void GenerateLeafClusters();
 	void GenerateTrunk();
 	void GenerateBranches();
-	float GetCanopyRadius(int32_t y);
-	float GetTrunkLayerRadius(int32_t layerIndex);
-	void PlaceLeavesAroundPoint(Int3 base);
-	void DrawBlockLine(Int3 startPos, Int3 endPos, BlockType blockType);
-	int32_t CheckIfPathClear(Int3 startPos, Int3 endPos);
-	void PlaceCircularLayer(Int3 centerPos, float radius, BranchAxis axis, BlockType blockType);
-	bool CanGenerateBranchAtHeight(int32_t y);
+	float GetCanopyRadius(int32_t _y);
+	float GetTrunkLayerRadius(int32_t _layerIndex);
+	void PlaceLeavesAroundPoint(Int3 _base);
+	void DrawBlockLine(Int3 _startPos, Int3 _endPos, BlockType _blockType);
+	int32_t CheckIfPathClear(Int3 _startPos, Int3 _endPos);
+	void PlaceCircularLayer(Int3 _centerPos, float _radius, BranchAxis _axis, BlockType _blockType);
+	bool CanGenerateBranchAtHeight(int32_t _y);
 
 public:
 	BigTreeGenerator() {}
 	~BigTreeGenerator() = default;
-	bool Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, bool birch = false);
-	void Configure(double treeHeight, double branchLength, double trunkShape);
+	bool Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch = false);
+	void Configure(double _treeHeight, double _branchLength, double _trunkShape);
 };
 
 /**
@@ -91,7 +91,7 @@ class TaigaTreeGenerator : public TreeGenerator {
 public:
 	TaigaTreeGenerator() {};
 	~TaigaTreeGenerator() = default;
-	bool Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, bool birch = false);
+	bool Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch = false);
 };
 
 /**
@@ -102,5 +102,5 @@ class AltTaigaTreeGenerator : public TreeGenerator {
 public:
 	AltTaigaTreeGenerator() {};
 	~AltTaigaTreeGenerator() = default;
-	bool Generate(WorldWrapper& world, Java::Random& rand, Int3 pos, bool birch = false);
+	bool Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch = false);
 };

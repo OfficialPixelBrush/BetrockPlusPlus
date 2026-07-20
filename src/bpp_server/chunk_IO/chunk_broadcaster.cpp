@@ -9,25 +9,25 @@
 
 #include "../server.h"
 
-void ChunkBroadcaster::broadcastBlockChanges(Server& server,
-                                             std::unordered_map<Int32_2, std::vector<PendingBlock>>& changes,
-                                             int8_t dimension, WorldManager& dimWorld) {
-	for (auto& [chunk, blockChanges] : changes) {
+void ChunkBroadcaster::broadcastBlockChanges(Server& _server,
+                                             std::unordered_map<Int32_2, std::vector<PendingBlock>>& _changes,
+                                             int8_t _dimension, WorldManager& _dimWorld) {
+	for (auto& [chunk, blockChanges] : _changes) {
 		// Find which sessions care about this chunk
 		// Split into flushed (send immediately) and sentOnly (queue).
-		auto indexIt = server.chunkSessions.find(Server::chunkKey(chunk, dimension));
+		auto indexIt = _server.chunkSessions.find(Server::chunkKey(chunk, _dimension));
 		std::vector<PlayerSession*> flushedSessions;
 		std::vector<PlayerSession*> sentOnlySessions;
 
-		if (indexIt != server.chunkSessions.end())
+		if (indexIt != _server.chunkSessions.end())
 			flushedSessions = indexIt->second;
 
 		// Sessions that have the chunk in-flight (sentChunks but not flushedChunks) still need to queue the updates.
-		for (auto& session : server.players) {
+		for (auto& session : _server.players) {
 			if (session->connState != ConnectionState::Playing &&
 			    session->connState != ConnectionState::WaitingForSpawnChunks)
 				continue;
-			if (session->dimension != dimension)
+			if (session->dimension != _dimension)
 				continue;
 			if (session->flushedChunks.contains(chunk))
 				continue; // already in flushedSessions
@@ -45,7 +45,7 @@ void ChunkBroadcaster::broadcastBlockChanges(Server& server,
 			continue;
 
 		// Capture chunk ref once for sub-region jobs.
-		std::shared_ptr<Chunk> chunkRef = dimWorld.getChunk(chunk);
+		std::shared_ptr<Chunk> chunkRef = _dimWorld.getChunk(chunk);
 
 		if (blockChanges.size() == 1) {
 			// Single block change: serialise once, raw-copy to every session.
@@ -62,8 +62,8 @@ void ChunkBroadcaster::broadcastBlockChanges(Server& server,
 				session->stream.writeRaw(buf.data(), buf.size());
 		} else if (blockChanges.size() < 10) {
 			// Multi-block packet
-			auto format_multi_block = [](int8_t x, int8_t y, int8_t z) {
-				return (((int16_t(x) & 0x0F) << 12) | ((int16_t(z) & 0x0F) << 8) | ((int16_t(y) & 0xFF)));
+			auto format_multi_block = [](int8_t _x, int8_t _y, int8_t _z) {
+				return (((int16_t(_x) & 0x0F) << 12) | ((int16_t(_z) & 0x0F) << 8) | ((int16_t(_y) & 0xFF)));
 			};
 			Packet::SetMultipleBlocks smb;
 			smb.chunk_position = { chunk.x, chunk.z };
@@ -82,7 +82,7 @@ void ChunkBroadcaster::broadcastBlockChanges(Server& server,
 		} else {
 			// Sub-region: compression is async per-session via ChunkSender.
 			for (auto* session : flushedSessions)
-				server.chunkSender.sendBlockUpdates(*session, chunk, blockChanges, chunkRef);
+				_server.chunkSender.sendBlockUpdates(*session, chunk, blockChanges, chunkRef);
 		}
 	}
 }

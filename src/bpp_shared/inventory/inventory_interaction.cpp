@@ -5,7 +5,7 @@
 */
 #include "inventory_interaction.h"
 
-InventoryInteraction::InventoryInteraction(Inventory* inv) : inventory(inv) {}
+InventoryInteraction::InventoryInteraction(Inventory* _inv) : inventory(_inv) {}
 
 bool InventoryInteraction::canExist() {
 	return inventory != nullptr;
@@ -31,13 +31,13 @@ std::vector<DeltaSlot> InventoryInteraction::tickDiff() {
 	return differences;
 }
 
-void InventoryInteraction::onLeftClick(int slot) {
-	auto targetSlot = inventory->getStackInSlot(slot);
+void InventoryInteraction::onLeftClick(int _slot) {
+	auto targetSlot = inventory->getStackInSlot(_slot);
 
 	// Empty slot
 	if (!targetSlot) {
 		if (carried.id != Items::Id::INVALID) {
-			inventory->setInventorySlotContents(slot, &carried);
+			inventory->setInventorySlotContents(_slot, &carried);
 			carried = ItemStack{};
 		}
 		inventory->onInventoryChanged();
@@ -47,7 +47,7 @@ void InventoryInteraction::onLeftClick(int slot) {
 	// Not carrying anything
 	if (carried.id == Items::Id::INVALID) {
 		carried = *targetSlot;
-		inventory->clearSlot(slot);
+		inventory->clearSlot(_slot);
 		inventory->onInventoryChanged();
 		return;
 	}
@@ -72,13 +72,13 @@ void InventoryInteraction::onLeftClick(int slot) {
 	inventory->onInventoryChanged();
 }
 
-void InventoryInteraction::onRightClick(int slot) {
-	auto targetSlot = inventory->getStackInSlot(slot);
+void InventoryInteraction::onRightClick(int _slot) {
+	auto targetSlot = inventory->getStackInSlot(_slot);
 
 	if (carried.id != Items::Id::INVALID) {
 		if (!targetSlot) {
 			ItemStack single{ carried.id, 1, carried.data };
-			inventory->setInventorySlotContents(slot, &single);
+			inventory->setInventorySlotContents(_slot, &single);
 			carried.count -= 1;
 			if (carried.count == 0)
 				carried = ItemStack{};
@@ -124,13 +124,13 @@ void InventoryInteraction::onRightClick(int slot) {
 
 	// If its only one item we just pick it up
 	carried = *targetSlot;
-	inventory->clearSlot(slot);
+	inventory->clearSlot(_slot);
 	inventory->onInventoryChanged();
 	return;
 }
 
-void InventoryInteraction::onShiftClick(int slot) {
-	auto targetSlot = inventory->getStackInSlot(slot);
+void InventoryInteraction::onShiftClick(int _slot) {
+	auto targetSlot = inventory->getStackInSlot(_slot);
 	if (!targetSlot)
 		return;
 	inventory->mergeItemStackInInventory(*targetSlot);

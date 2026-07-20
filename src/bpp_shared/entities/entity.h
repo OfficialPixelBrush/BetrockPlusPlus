@@ -146,10 +146,10 @@ struct Entity {
 	virtual ~Entity() = default;
 
 	// Encode Entity info into relevant Metadata
-	virtual void encodeMetadata([[maybe_unused]] const std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {}
+	virtual void encodeMetadata([[maybe_unused]] const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {}
 
 	// Apply Metadata to Entity
-	virtual void decodeMetadata([[maybe_unused]] const std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {}
+	virtual void decodeMetadata([[maybe_unused]] const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {}
 
 	virtual void tick();
 
@@ -165,17 +165,17 @@ struct Entity {
 			         bottom + double(height), position.z + halfWidth };
 	}
 
-	void teleport(Vec3 newpos, Vec2 newrot = { 0, 0 }) {
-		position.x = newpos.x;
-		position.y = newpos.y;
-		position.z = newpos.z;
-		rotationYaw = newrot.x;
-		rotationPitch = newrot.y;
+	void teleport(Vec3 _newpos, Vec2 _newrot = { 0, 0 }) {
+		position.x = _newpos.x;
+		position.y = _newpos.y;
+		position.z = _newpos.z;
+		rotationYaw = _newrot.x;
+		rotationPitch = _newrot.y;
 		ySize = 0.0f;
 		rebuildCollider();
 	}
 
-	virtual bool attackEntityFrom(Entity* entity, int damage) {
+	virtual bool attackEntityFrom(Entity* _entity, int _damage) {
 		beenAttacked = true;
 		forceVelocityUpdate = true;
 		return false;
@@ -188,14 +188,14 @@ struct Entity {
 		// Returns the collider we use to detect if we are in lava
 		return collider.expand(-0.1, -0.4, -0.1);
 	}
-	virtual bool pushOutOfBlocks(Vec3 pos);
-	virtual void onCollideWithPlayer(PlayerEntity& entity);
-	virtual void applyKnockback(Vec3 direction);
-	virtual void applyInput(float acceleration);
-	virtual void move(Vec3& velocity);
+	virtual bool pushOutOfBlocks(Vec3 _pos);
+	virtual void onCollideWithPlayer(PlayerEntity& _entity);
+	virtual void applyKnockback(Vec3 _direction);
+	virtual void applyInput(float _acceleration);
+	virtual void move(Vec3& _velocity);
 	//TODO: Move to LivingEntity
-	virtual void dealDamage(int amount);
-	virtual void updateFallState(float movedY);
+	virtual void dealDamage(int _amount);
+	virtual void updateFallState(float _movedY);
 	virtual std::optional<Tag> serializeToNBT();
-	virtual void loadFromNBT(Tag& nbt);
+	virtual void loadFromNBT(Tag& _nbt);
 };

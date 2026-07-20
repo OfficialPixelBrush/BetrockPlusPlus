@@ -27,34 +27,34 @@
 #include <vector>
 
 template <typename T>
-inline T byteswap_any(T value) {
+inline T byteswap_any(T _value) {
 	static_assert(std::is_trivially_copyable_v<T>, "byteswap_any: only trivially copyable types allowed");
 	if constexpr (sizeof(T) == 1) {
-		return value;
+		return _value;
 	} else if constexpr (sizeof(T) == 2) {
 		uint16_t tmp;
-		std::memcpy(&tmp, &value, 2);
+		std::memcpy(&tmp, &_value, 2);
 		tmp = __builtin_bswap16(tmp);
-		std::memcpy(&value, &tmp, 2);
+		std::memcpy(&_value, &tmp, 2);
 	} else if constexpr (sizeof(T) == 4) {
 		uint32_t tmp;
-		std::memcpy(&tmp, &value, 4);
+		std::memcpy(&tmp, &_value, 4);
 		tmp = __builtin_bswap32(tmp);
-		std::memcpy(&value, &tmp, 4);
+		std::memcpy(&_value, &tmp, 4);
 	} else if constexpr (sizeof(T) == 8) {
 		uint64_t tmp;
-		std::memcpy(&tmp, &value, 8);
+		std::memcpy(&tmp, &_value, 8);
 		tmp = __builtin_bswap64(tmp);
-		std::memcpy(&value, &tmp, 8);
+		std::memcpy(&_value, &tmp, 8);
 	} else {
 		static_assert(sizeof(T) <= 8, "byteswap_any: unsupported type size");
 	}
-	return value;
+	return _value;
 }
 
 class NetworkStream {
 public:
-	NetworkStream(int client_socket);
+	NetworkStream(int _client_socket);
 	~NetworkStream();
 	bool NewClient();
 
@@ -68,18 +68,18 @@ public:
 	}
 
 	template <typename T = int>
-	void Write(const T& data) {
+	void Write(const T& _data) {
 		if constexpr (std::is_same_v<T, bool>) {
-			int8_t boolData = static_cast<int8_t>(data);
+			int8_t boolData = static_cast<int8_t>(_data);
 			WriteBytes(reinterpret_cast<const uint8_t*>(&boolData), sizeof(int8_t));
 		} else {
-			T networkData = byteswap_any(data);
+			T networkData = byteswap_any(_data);
 			WriteBytes(reinterpret_cast<const uint8_t*>(&networkData), sizeof(T));
 		}
 	}
 
-	void setConnected(bool val) {
-		connected = val;
+	void setConnected(bool _val) {
+		connected = _val;
 	}
 	bool isConnected() const {
 		return connected;
@@ -87,26 +87,26 @@ public:
 
 	// String-8 Read-Write
 	std::string ReadString8();
-	void WriteString8(const std::string& str);
+	void WriteString8(const std::string& _str);
 
 	// String-16 Read-Write
 	std::string ReadString16();
-	void WriteString16(const std::string& str);
+	void WriteString16(const std::string& _str);
 
 	// Raw byte buffer Read-Write (no endian conversion).
 	// On a short read (EAGAIN/EWOULDBLOCK mid-packet), all bytes fetched so far
 	// are pushed back into readBackBuffer so they are re-read next tick.
 	// shortRead is set; the caller does NOT need to unread anything manually.
-	size_t ReadBytes(uint8_t* buf, size_t len);
+	size_t ReadBytes(uint8_t* _buf, size_t _len);
 
 	// Append bytes to the per-session write buffer (no syscall).
-	void WriteBytes(const uint8_t* buf, size_t len);
+	void WriteBytes(const uint8_t* _buf, size_t _len);
 
 	// Handles Entity Metadata Interpreting
-	void ReadEntityMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& metadata);
+	void ReadEntityMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata);
 
 	// Handles Entity Metadata Conversion
-	void WriteEntityMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& metadata);
+	void WriteEntityMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata);
 
 	// Flush the write buffer to the socket once per tick.
 	// Returns false if the connection was lost.
@@ -117,8 +117,8 @@ public:
 
 	// Append pre-serialised bytes directly to the write buffer.
 	// Used for shared-packet broadcast: serialise once, copy to N sessions.
-	void writeRaw(const uint8_t* data, size_t len) {
-		WriteBytes(data, len);
+	void writeRaw(const uint8_t* _data, size_t _len) {
+		WriteBytes(_data, _len);
 	}
 
 	// Read-only view of the pending write buffer.

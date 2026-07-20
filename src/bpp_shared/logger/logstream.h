@@ -19,32 +19,32 @@ private:
 	std::stringstream buffer;
 
 public:
-	LogStream(Logger& logger, LogLevel level);
+	LogStream(Logger& _logger, LogLevel _level);
 
 	template <typename T>
-	LogStream& operator<<(const T& value) {
-		buffer << value;
+	LogStream& operator<<(const T& _value) {
+		buffer << _value;
 		return *this;
 	}
 
-	LogStream& operator<<(const std::string& value) {
-		return operator<<(value.c_str());
+	LogStream& operator<<(const std::string& _value) {
+		return operator<<(_value.c_str());
 	}
 
-	LogStream& operator<<(const char* value) {
-		std::string_view sv(value);
+	LogStream& operator<<(const char* _value) {
+		std::string_view sv(_value);
 		if (!sv.empty() && sv.back() == '\n') {
 			buffer << sv.substr(0, sv.size() - 1);
 			Flush();
 		} else {
-			buffer << value;
+			buffer << _value;
 		}
 		return *this;
 	}
 
 	using Manip = std::ostream& (*)(std::ostream&);
 
-	LogStream& operator<<(Manip manip);
+	LogStream& operator<<(Manip _manip);
 
 	void Flush();
 };

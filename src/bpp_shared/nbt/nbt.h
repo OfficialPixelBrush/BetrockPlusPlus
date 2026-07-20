@@ -101,139 +101,139 @@ struct Tag {
 	}
 
 	// Compound lookup helpers
-	bool has(const std::string& key) const {
-		return compound.count(key) > 0;
+	bool has(const std::string& _key) const {
+		return compound.count(_key) > 0;
 	}
 
-	const Tag& get(const std::string& key) const {
-		auto it = compound.find(key);
+	const Tag& get(const std::string& _key) const {
+		auto it = compound.find(_key);
 		if (it == compound.end())
-			throw std::runtime_error("NBT key not found: " + key);
+			throw std::runtime_error("NBT key not found: " + _key);
 		return it->second;
 	}
 
 private:
-	void expect(TagType t) const {
-		if (type != t)
+	void expect(TagType _t) const {
+		if (type != _t)
 			throw std::runtime_error("NBT type mismatch");
 	}
 };
 
 struct NBTwriter {
 	NBTwriter() = default;
-	NBTwriter(std::vector<uint8_t>& out, Tag& root) {
+	NBTwriter(std::vector<uint8_t>& _out, Tag& _root) {
 		// root should be a TAG_Compound with whatever name you want (usually "")
 		// writeTag handles type byte + name + payload + TAG_END automatically
-		writeTag(out, root);
+		writeTag(_out, _root);
 	}
 
-	int64_t writeTag(std::vector<uint8_t>& out, const Tag& tag, bool payload = false) {
-		if (!payload)
-			out.push_back(uint8_t(tag.type));
-		if (!payload && tag.type != TAG_END)
-			writeString(out, tag.name);
+	int64_t writeTag(std::vector<uint8_t>& _out, const Tag& _tag, bool _payload = false) {
+		if (!_payload)
+			_out.push_back(uint8_t(_tag.type));
+		if (!_payload && _tag.type != TAG_END)
+			writeString(_out, _tag.name);
 
-		switch (tag.type) {
+		switch (_tag.type) {
 		case TAG_END:
 			break;
 		case TAG_BYTE:
-			out.push_back(uint8_t(tag.byteValue));
+			_out.push_back(uint8_t(_tag.byteValue));
 			break;
 		case TAG_SHORT:
-			writeI16(out, tag.shortValue);
+			writeI16(_out, _tag.shortValue);
 			break;
 		case TAG_INT:
-			writeI32(out, tag.intValue);
+			writeI32(_out, _tag.intValue);
 			break;
 		case TAG_LONG:
-			writeI64(out, tag.longValue);
+			writeI64(_out, _tag.longValue);
 			break;
 		case TAG_FLOAT:
-			writeF32(out, tag.floatValue);
+			writeF32(_out, _tag.floatValue);
 			break;
 		case TAG_DOUBLE:
-			writeF64(out, tag.doubleValue);
+			writeF64(_out, _tag.doubleValue);
 			break;
 		case TAG_STRING:
-			writeString(out, tag.stringValue);
+			writeString(_out, _tag.stringValue);
 			break;
 
 		case TAG_BYTEARRAY: {
-			writeI32(out, int32_t(tag.byteArray.size()));
-			for (int8_t b : tag.byteArray)
-				out.push_back(uint8_t(b));
+			writeI32(_out, int32_t(_tag.byteArray.size()));
+			for (int8_t b : _tag.byteArray)
+				_out.push_back(uint8_t(b));
 			break;
 		}
 
 		case TAG_INTARRAY: {
-			writeI32(out, int32_t(tag.intArray.size()));
-			for (int32_t b : tag.intArray)
-				writeI32(out, b);
+			writeI32(_out, int32_t(_tag.intArray.size()));
+			for (int32_t b : _tag.intArray)
+				writeI32(_out, b);
 			break;
 		}
 
 		case TAG_LIST: {
-			writeI8(out, int8_t(tag.listType));
-			writeI32(out, int32_t(tag.list.size()));
-			for (const Tag& element : tag.list)
-				writeTag(out, element, true);
+			writeI8(_out, int8_t(_tag.listType));
+			writeI32(_out, int32_t(_tag.list.size()));
+			for (const Tag& element : _tag.list)
+				writeTag(_out, element, true);
 			break;
 		}
 
 		case TAG_COMPOUND: {
-			for (const auto& [key, child] : tag.compound)
-				writeTag(out, child);
+			for (const auto& [key, child] : _tag.compound)
+				writeTag(_out, child);
 			// TAG_END terminates the compound
-			out.push_back(uint8_t(TAG_END));
+			_out.push_back(uint8_t(TAG_END));
 			break;
 		}
 
 		default:
-			throw std::runtime_error("Unknown tag type: " + std::to_string(tag.type));
+			throw std::runtime_error("Unknown tag type: " + std::to_string(_tag.type));
 		}
 
 		return 0;
 	}
 
 	// Write helpers
-	void writeI32(std::vector<uint8_t>& out, int32_t v) {
-		uint32_t u = uint32_t(v);
-		out.push_back((u >> 24) & 0xFF);
-		out.push_back((u >> 16) & 0xFF);
-		out.push_back((u >> 8) & 0xFF);
-		out.push_back(u & 0xFF);
+	void writeI32(std::vector<uint8_t>& _out, int32_t _v) {
+		uint32_t u = uint32_t(_v);
+		_out.push_back((u >> 24) & 0xFF);
+		_out.push_back((u >> 16) & 0xFF);
+		_out.push_back((u >> 8) & 0xFF);
+		_out.push_back(u & 0xFF);
 	}
 
-	void writeI64(std::vector<uint8_t>& out, int64_t v) {
-		writeI32(out, int32_t((uint64_t(v) >> 32) & 0xFFFFFFFF));
-		writeI32(out, int32_t((uint64_t(v) & 0xFFFFFFFF)));
+	void writeI64(std::vector<uint8_t>& _out, int64_t _v) {
+		writeI32(_out, int32_t((uint64_t(_v) >> 32) & 0xFFFFFFFF));
+		writeI32(_out, int32_t((uint64_t(_v) & 0xFFFFFFFF)));
 	}
 
-	void writeI16(std::vector<uint8_t>& out, int16_t v) {
-		uint16_t u = uint16_t(v);
-		out.push_back((u >> 8) & 0xFF);
-		out.push_back(u & 0xFF);
+	void writeI16(std::vector<uint8_t>& _out, int16_t _v) {
+		uint16_t u = uint16_t(_v);
+		_out.push_back((u >> 8) & 0xFF);
+		_out.push_back(u & 0xFF);
 	}
 
-	void writeI8(std::vector<uint8_t>& out, int8_t v) {
-		out.push_back(uint8_t(v));
+	void writeI8(std::vector<uint8_t>& _out, int8_t _v) {
+		_out.push_back(uint8_t(_v));
 	}
 
-	void writeF32(std::vector<uint8_t>& out, float v) {
+	void writeF32(std::vector<uint8_t>& _out, float _v) {
 		uint32_t raw;
-		memcpy(&raw, &v, 4);
-		writeI32(out, int32_t(raw));
+		memcpy(&raw, &_v, 4);
+		writeI32(_out, int32_t(raw));
 	}
 
-	void writeF64(std::vector<uint8_t>& out, double v) {
+	void writeF64(std::vector<uint8_t>& _out, double _v) {
 		uint64_t raw;
-		memcpy(&raw, &v, 8);
-		writeI64(out, int64_t(raw));
+		memcpy(&raw, &_v, 8);
+		writeI64(_out, int64_t(raw));
 	}
 
-	void writeString(std::vector<uint8_t>& out, const std::string& s) {
-		writeI16(out, int16_t(s.size()));
-		out.insert(out.end(), s.begin(), s.end());
+	void writeString(std::vector<uint8_t>& _out, const std::string& _s) {
+		writeI16(_out, int16_t(_s.size()));
+		_out.insert(_out.end(), _s.begin(), _s.end());
 	}
 };
 
@@ -244,17 +244,17 @@ struct NBTParser {
 	Tag root;
 
 	NBTParser() = default;
-	NBTParser(uint8_t* pdata, int64_t plength) : data(pdata), length(plength), pos(0) {
+	NBTParser(uint8_t* _pdata, int64_t _plength) : data(_pdata), length(_plength), pos(0) {
 		root = parseTag();
 		if (root.type != TAG_COMPOUND)
 			throw std::runtime_error("NBT root tag is not a compound!");
 	}
 
 	// Parse a tag, either with type and name bytes (parseTag) or just a payload (parsePayload)
-	Tag parsePayload(TagType ptype, const std::string& pname = "") {
-		Tag tag{ ptype, pname, {} };
+	Tag parsePayload(TagType _ptype, const std::string& _pname = "") {
+		Tag tag{ _ptype, _pname, {} };
 
-		switch (ptype) {
+		switch (_ptype) {
 		case TAG_BYTE:
 			tag.byteValue = readI8();
 			break;

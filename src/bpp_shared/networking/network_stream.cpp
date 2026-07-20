@@ -13,8 +13,8 @@
 #include <string>
 #include <vector>
 
-NetworkStream::NetworkStream(int p_client_socket) {
-	client_socket = p_client_socket;
+NetworkStream::NetworkStream(int _p_client_socket) {
+	client_socket = _p_client_socket;
 }
 
 NetworkStream::~NetworkStream() {
@@ -67,12 +67,12 @@ void NetworkStream::flushWriteBufferBlocking() {
 }
 
 // String-8 Handling
-void NetworkStream::WriteString8(const std::string& str) {
-	uint16_t length = static_cast<uint16_t>(str.size());
+void NetworkStream::WriteString8(const std::string& _str) {
+	uint16_t length = static_cast<uint16_t>(_str.size());
 	Write(length);
 	std::vector<uint8_t> data;
-	data.reserve(str.size() * 2);
-	for (const char c : str) {
+	data.reserve(_str.size() * 2);
+	for (const char c : _str) {
 		data.push_back(static_cast<uint8_t>(c));
 	}
 	WriteBytes(data.data(), data.size());
@@ -86,8 +86,8 @@ std::string NetworkStream::ReadString8() {
 }
 
 // String-16 Handling
-void NetworkStream::WriteString16(const std::string& str) {
-	std::u16string str16 = ToUCS2(str);
+void NetworkStream::WriteString16(const std::string& _str) {
+	std::u16string str16 = ToUCS2(_str);
 	uint16_t length = static_cast<uint16_t>(str16.size());
 	Write(length);
 	std::vector<uint8_t> data;
@@ -114,18 +114,18 @@ std::string NetworkStream::ReadString16() {
 	return ToUTF8(result);
 }
 
-size_t NetworkStream::ReadBytes(uint8_t* buf, size_t len) {
+size_t NetworkStream::ReadBytes(uint8_t* _buf, size_t _len) {
 	size_t received = 0;
 
 	// 1. consume existing buffered data
-	while (!readBackBuffer.empty() && received < len) {
-		buf[received++] = readBackBuffer.front();
+	while (!readBackBuffer.empty() && received < _len) {
+		_buf[received++] = readBackBuffer.front();
 		readBackBuffer.pop_front();
 	}
 
 	// 2. try recv until we either fill or would block
-	while (received < len) {
-		int result = recv(client_socket, reinterpret_cast<char*>(buf + received), static_cast<int>(len - received), 0);
+	while (received < _len) {
+		int result = recv(client_socket, reinterpret_cast<char*>(_buf + received), static_cast<int>(_len - received), 0);
 
 		if (result > 0) {
 			received += result;
@@ -151,16 +151,16 @@ size_t NetworkStream::ReadBytes(uint8_t* buf, size_t len) {
 	return received;
 }
 
-void NetworkStream::WriteBytes(const uint8_t* buf, size_t len) {
+void NetworkStream::WriteBytes(const uint8_t* _buf, size_t _len) {
 	// Append to the write buffer -- no syscall here.
 	// The actual send() happens once per tick in flushWriteBuffer().
-	writeBuffer.insert(writeBuffer.end(), buf, buf + len);
+	writeBuffer.insert(writeBuffer.end(), _buf, _buf + _len);
 }
 
 // TODO: Due to how this system works, a concrete length is never supplied.
 // Data is read until 0x7F is hit. Ideally we should exit out if we're past
 // a certain number of bytes
-void NetworkStream::ReadEntityMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {
+void NetworkStream::ReadEntityMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {
 	uint8_t val = Read<uint8_t>();
 	while (val != PacketData::EntityMetadata::END) {
 		// What type the data has
@@ -170,27 +170,27 @@ void NetworkStream::ReadEntityMetadata(std::vector<PacketData::EntityMetadata::D
 		switch (type) {
 		case PacketData::EntityMetadata::Type::BYTE: {
 			int8_t num = Read<int8_t>();
-			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = num });
+			_metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = num });
 			break;
 		}
 		case PacketData::EntityMetadata::Type::SHORT: {
 			int16_t num = Read<int16_t>();
-			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = num });
+			_metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = num });
 			break;
 		}
 		case PacketData::EntityMetadata::Type::INTEGER: {
 			int32_t num = Read<int32_t>();
-			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = num });
+			_metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = num });
 			break;
 		}
 		case PacketData::EntityMetadata::Type::FLOAT: {
 			float num = Read<float>();
-			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = num });
+			_metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = num });
 			break;
 		}
 		case PacketData::EntityMetadata::Type::STRING: {
 			std::string str = ReadString16();
-			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = str });
+			_metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = str });
 			break;
 		}
 		case PacketData::EntityMetadata::Type::ITEM: {
@@ -202,12 +202,12 @@ void NetworkStream::ReadEntityMetadata(std::vector<PacketData::EntityMetadata::D
 				item.count = Read<ItemAmount>();
 				item.data = Read<ItemDamage>();
 			}
-			metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = item });
+			_metadata.push_back(PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = item });
 			break;
 		}
 		case PacketData::EntityMetadata::Type::COORDINATES: {
 			Int32_3 coordinate(Read<int32_t>(), Read<int32_t>(), Read<int32_t>());
-			metadata.push_back(
+			_metadata.push_back(
 			    PacketData::EntityMetadata::DataEntry{ .type = type, .index = index, .value = coordinate });
 			break;
 		}
@@ -223,8 +223,8 @@ void NetworkStream::ReadEntityMetadata(std::vector<PacketData::EntityMetadata::D
 
 // TODO: Implement this! Ideally we could just pass an entity into here
 // and it'd take care of things automatically
-void NetworkStream::WriteEntityMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& metadata) {
-	for (auto& entry : metadata) {
+void NetworkStream::WriteEntityMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {
+	for (auto& entry : _metadata) {
 		uint8_t val = (static_cast<uint8_t>(entry.type) << 5) | (entry.index & 0x1F);
 		Write(val);
 		switch (entry.type) {

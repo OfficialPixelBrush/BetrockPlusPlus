@@ -39,13 +39,13 @@ private:
 	// Cave Gen
 	CaveGenerator caver;
 
-	void GenerateTerrain(Chunk& chunk);
-	void GenerateTerrainNoise(Int3 cpos, Int3 max);
-	void ReplaceBlocksForBiome(Chunk& chunk);
+	void GenerateTerrain(Chunk& _chunk);
+	void GenerateTerrainNoise(Int3 _cpos, Int3 _max);
+	void ReplaceBlocksForBiome(Chunk& _chunk);
 
 public:
-	NetherGenerator(int64_t seed);
+	NetherGenerator(int64_t _seed);
 	~NetherGenerator() = default;
-	void GenerateChunk(Chunk& chunk) override;
-	bool PopulateChunk(Chunk& chunk, WorldWrapper& world) override;
+	void GenerateChunk(Chunk& _chunk) override;
+	bool PopulateChunk(Chunk& _chunk, WorldWrapper& _world) override;
 };

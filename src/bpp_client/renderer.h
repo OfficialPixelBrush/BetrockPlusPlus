@@ -12,10 +12,10 @@
 
 class Renderer {
 public:
-	explicit Renderer(Window& window);
+	explicit Renderer(Window& _window);
 	~Renderer();
 
-	void render(int partialTicks);
+	void render(int _partialTicks);
 
 private:
 	SDL_Window* window;

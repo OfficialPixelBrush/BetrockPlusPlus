@@ -31,7 +31,7 @@ private:
 	bool canBreatheUnderwater = false;
 
 	void followPath();
-	void resolveEntityCollision(Entity& other);
+	void resolveEntityCollision(Entity& _other);
 	void tickPhysics();
 
 public:
@@ -39,9 +39,9 @@ public:
 
 	virtual void onDeath();
 	virtual void tick() override;
-	virtual void setGoal(std::optional<Int3> goal);
-	bool attackEntityFrom(Entity* entity, int damage) override;
-	bool AABBNotInLiquidOrObstructed(AABB& collider);
+	virtual void setGoal(std::optional<Int3> _goal);
+	bool attackEntityFrom(Entity* _entity, int _damage) override;
+	bool AABBNotInLiquidOrObstructed(AABB& _collider);
 	bool headInOpaqueBlock();
 	bool headInWater();
 	bool entityAlive() {

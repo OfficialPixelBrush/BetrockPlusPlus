@@ -12,9 +12,9 @@
 class FileHandle {
 public:
 	FileHandle() = default;
-	FileHandle(const std::string& path) : stream(path, std::ios::in | std::ios::out | std::ios::binary) {
+	FileHandle(const std::string& _path) : stream(_path, std::ios::in | std::ios::out | std::ios::binary) {
 		if (!stream.is_open()) {
-			throw std::runtime_error("Failed to open file: " + path);
+			throw std::runtime_error("Failed to open file: " + _path);
 		}
 	}
 

@@ -21,10 +21,10 @@ struct ScheduledTick {
 	Int3 pos;
 	BlockType expectedBlock;
 
-	bool operator>(const ScheduledTick& rhs) const {
-		if (tickDue != rhs.tickDue)
-			return tickDue > rhs.tickDue;
-		return sequence > rhs.sequence;
+	bool operator>(const ScheduledTick& _rhs) const {
+		if (tickDue != _rhs.tickDue)
+			return tickDue > _rhs.tickDue;
+		return sequence > _rhs.sequence;
 	}
 };
 
@@ -37,13 +37,13 @@ struct TickScheduler {
 	TickTime currentTick = 0;
 	int64_t nextSequence = 0;
 
-	void scheduleUpdateTick(Int3 pos, BlockType block, int tickDelay) {
-		if (pending.contains(pos) && pending[pos] == currentTick + TickTime(tickDelay)) {
+	void scheduleUpdateTick(Int3 _pos, BlockType _block, int _tickDelay) {
+		if (pending.contains(_pos) && pending[_pos] == currentTick + TickTime(_tickDelay)) {
 			return;
 		}
 		auto sequence = nextSequence++;
-		scheduledTicks.push({ currentTick + tickDelay, sequence, pos, block });
-		pending[pos] = sequence;
+		scheduledTicks.push({ currentTick + _tickDelay, sequence, _pos, _block });
+		pending[_pos] = sequence;
 	}
 
 	void tick();

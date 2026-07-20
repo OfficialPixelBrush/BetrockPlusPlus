@@ -11,13 +11,13 @@
 #include <algorithm>
 #include <cmath>
 
-bool Entity::pushOutOfBlocks(Vec3 pos) {
-	int bx = MathHelper::floor_double(pos.x);
-	int by = MathHelper::floor_double(pos.y);
-	int bz = MathHelper::floor_double(pos.z);
-	double fracX = pos.x - double(bx);
-	double fracY = pos.y - double(by);
-	double fracZ = pos.z - double(bz);
+bool Entity::pushOutOfBlocks(Vec3 _pos) {
+	int bx = MathHelper::floor_double(_pos.x);
+	int by = MathHelper::floor_double(_pos.y);
+	int bz = MathHelper::floor_double(_pos.z);
+	double fracX = _pos.x - double(bx);
+	double fracY = _pos.y - double(by);
+	double fracZ = _pos.z - double(bz);
 
 	if (world->isBlockNormalCube({ bx, by, bz })) {
 		bool openNegX = !world->isBlockNormalCube({ bx - 1, by, bz });
@@ -72,7 +72,7 @@ bool Entity::pushOutOfBlocks(Vec3 pos) {
 
 	return false;
 }
-void Entity::onCollideWithPlayer(PlayerEntity& entity) {
+void Entity::onCollideWithPlayer(PlayerEntity& _entity) {
 	return;
 }
 
@@ -120,17 +120,17 @@ void Entity::tick() {
 	isFirstUpdate = false;
 }
 
-void Entity::applyKnockback(Vec3 direction) {
+void Entity::applyKnockback(Vec3 _direction) {
 	velocity.x *= KNOCKBACK_VELOCITY_DAMPENING;
 	velocity.y *= KNOCKBACK_VELOCITY_DAMPENING;
 	velocity.z *= KNOCKBACK_VELOCITY_DAMPENING;
-	velocity.x -= direction.x * HORIZONTAL_KNOCKBACK;
-	velocity.z -= direction.z * HORIZONTAL_KNOCKBACK;
+	velocity.x -= _direction.x * HORIZONTAL_KNOCKBACK;
+	velocity.z -= _direction.z * HORIZONTAL_KNOCKBACK;
 	velocity.y = std::min(float(velocity.y + VERTICAL_KNOCKBACK), VERTICAL_KNOCKBACK);
 	forceVelocityUpdate = true;
 }
 
-void Entity::applyInput(float acceleration) {
+void Entity::applyInput(float _acceleration) {
 	float length = std::sqrt((input.x * input.x) + (input.y * input.y));
 
 	if (length < 0.01f)
@@ -146,109 +146,109 @@ void Entity::applyInput(float acceleration) {
 	float sinYaw = std::sin(yaw);
 	float cosYaw = std::cos(yaw);
 
-	velocity.x += (input.x * cosYaw - input.y * sinYaw) * acceleration;
-	velocity.z += (input.y * cosYaw + input.x * sinYaw) * acceleration;
+	velocity.x += (input.x * cosYaw - input.y * sinYaw) * _acceleration;
+	velocity.z += (input.y * cosYaw + input.x * sinYaw) * _acceleration;
 }
 
-void Entity::move(Vec3& velocity) {
+void Entity::move(Vec3& _velocity) {
 	ySize *= 0.4f;
 
 	if (inWeb) {
 		inWeb = false;
-		velocity.x *= COBWEB_HORIZONTAL_DRAG;
-		velocity.y *= COBWEB_VERTICAL_DRAG;
-		velocity.z *= COBWEB_HORIZONTAL_DRAG;
-		velocity.x = 0.0;
-		velocity.y = 0.0;
-		velocity.z = 0.0;
+		_velocity.x *= COBWEB_HORIZONTAL_DRAG;
+		_velocity.y *= COBWEB_VERTICAL_DRAG;
+		_velocity.z *= COBWEB_HORIZONTAL_DRAG;
+		_velocity.x = 0.0;
+		_velocity.y = 0.0;
+		_velocity.z = 0.0;
 	}
 
-	Vec3 original = velocity;
+	Vec3 original = _velocity;
 	AABB originalCollider = collider;
 	bool clampSneak = onGround && sneaking;
 
 	if (clampSneak) {
 		const double step = 0.05;
 
-		auto groundBelow = [&](double dx, double dz) -> bool {
-			return !world->getCollidingBoundingBoxes(collider.offset(dx, -1.0, dz)).empty();
+		auto groundBelow = [&](double _dx, double _dz) -> bool {
+			return !world->getCollidingBoundingBoxes(collider.offset(_dx, -1.0, _dz)).empty();
 		};
 
 		// Clamp on the X and Z axes to avoid falling off edges while sneaking
-		while (velocity.x != 0.0 && !groundBelow(velocity.x, 0.0)) {
-			if (velocity.x < step && velocity.x >= -step)
-				velocity.x = 0.0;
-			else if (velocity.x > 0.0)
-				velocity.x -= step;
+		while (_velocity.x != 0.0 && !groundBelow(_velocity.x, 0.0)) {
+			if (_velocity.x < step && _velocity.x >= -step)
+				_velocity.x = 0.0;
+			else if (_velocity.x > 0.0)
+				_velocity.x -= step;
 			else
-				velocity.x += step;
+				_velocity.x += step;
 		}
-		while (velocity.z != 0.0 && !groundBelow(0.0, velocity.z)) {
-			if (velocity.z < step && velocity.z >= -step)
-				velocity.z = 0.0;
-			else if (velocity.z > 0.0)
-				velocity.z -= step;
+		while (_velocity.z != 0.0 && !groundBelow(0.0, _velocity.z)) {
+			if (_velocity.z < step && _velocity.z >= -step)
+				_velocity.z = 0.0;
+			else if (_velocity.z > 0.0)
+				_velocity.z -= step;
 			else
-				velocity.z += step;
+				_velocity.z += step;
 		}
 
 		// Update our og values so step up logic uses the correct position
-		original.x = velocity.x;
-		original.z = velocity.z;
+		original.x = _velocity.x;
+		original.z = _velocity.z;
 	}
 
-	auto sweptCollider = world->getCollidingBoundingBoxes(collider.addCoord(velocity.x, velocity.y, velocity.z));
+	auto sweptCollider = world->getCollidingBoundingBoxes(collider.addCoord(_velocity.x, _velocity.y, _velocity.z));
 
 	// Resolve Y first
 	for (auto& col : sweptCollider) {
-		velocity.y = col.calculateYOffset(collider, velocity.y);
+		_velocity.y = col.calculateYOffset(collider, _velocity.y);
 	}
-	collider = collider.offset(0.0, velocity.y, 0.0);
+	collider = collider.offset(0.0, _velocity.y, 0.0);
 
 	// Check if we are on ground or landed this tick
-	bool canStepUp = onGround || (original.y != velocity.y && original.y < 0.0);
+	bool canStepUp = onGround || (original.y != _velocity.y && original.y < 0.0);
 
 	// Resolve X
 	for (auto& col : sweptCollider) {
-		velocity.x = col.calculateXOffset(collider, velocity.x);
+		_velocity.x = col.calculateXOffset(collider, _velocity.x);
 	}
-	collider = collider.offset(velocity.x, 0.0, 0.0);
+	collider = collider.offset(_velocity.x, 0.0, 0.0);
 
 	// Resolve Z
 	for (auto& col : sweptCollider) {
-		velocity.z = col.calculateZOffset(collider, velocity.z);
+		_velocity.z = col.calculateZOffset(collider, _velocity.z);
 	}
-	collider = collider.offset(0.0, 0.0, velocity.z);
+	collider = collider.offset(0.0, 0.0, _velocity.z);
 
-	collidedHorizontally = original.x != velocity.x || original.z != velocity.z;
+	collidedHorizontally = original.x != _velocity.x || original.z != _velocity.z;
 
 	if (stepHeight > 0.0f && canStepUp && (clampSneak || ySize < 0.05f) && collidedHorizontally) {
-		auto stepUpMovement = velocity;
-		velocity = { original.x, stepHeight, original.z };
+		auto stepUpMovement = _velocity;
+		_velocity = { original.x, stepHeight, original.z };
 
 		AABB resolvedCollider = collider;
 		collider = originalCollider;
 
 		auto stepUpSweptCollider = world->getCollidingBoundingBoxes(
-		    collider.addCoord(velocity.x, velocity.y, velocity.z));
+		    collider.addCoord(_velocity.x, _velocity.y, _velocity.z));
 
 		// Resolve Y first
 		for (auto& col : stepUpSweptCollider) {
-			velocity.y = col.calculateYOffset(collider, velocity.y);
+			_velocity.y = col.calculateYOffset(collider, _velocity.y);
 		}
-		collider = collider.offset(0.0, velocity.y, 0.0);
+		collider = collider.offset(0.0, _velocity.y, 0.0);
 
 		// Resolve X
 		for (auto& col : stepUpSweptCollider) {
-			velocity.x = col.calculateXOffset(collider, velocity.x);
+			_velocity.x = col.calculateXOffset(collider, _velocity.x);
 		}
-		collider = collider.offset(velocity.x, 0.0, 0.0);
+		collider = collider.offset(_velocity.x, 0.0, 0.0);
 
 		// Resolve Z
 		for (auto& col : stepUpSweptCollider) {
-			velocity.z = col.calculateZOffset(collider, velocity.z);
+			_velocity.z = col.calculateZOffset(collider, _velocity.z);
 		}
-		collider = collider.offset(0.0, 0.0, velocity.z);
+		collider = collider.offset(0.0, 0.0, _velocity.z);
 
 		// Snap down
 		double downY = -stepHeight;
@@ -259,8 +259,8 @@ void Entity::move(Vec3& velocity) {
 
 		// Keep whichever collision path moved further horizontally
 		if (stepUpMovement.x * stepUpMovement.x + stepUpMovement.z * stepUpMovement.z >=
-		    velocity.x * velocity.x + velocity.z * velocity.z) {
-			velocity = stepUpMovement;
+		    _velocity.x * _velocity.x + _velocity.z * _velocity.z) {
+			_velocity = stepUpMovement;
 			collider = resolvedCollider;
 		} else {
 			double frac = collider.minY - std::trunc(collider.minY);
@@ -274,19 +274,19 @@ void Entity::move(Vec3& velocity) {
 	position.y = collider.minY + double(yOffset) - double(ySize);
 	position.z = (collider.minZ + collider.maxZ) / 2.0;
 
-	collidedHorizontally = original.x != velocity.x || original.z != velocity.z;
-	collidedVertically = original.y != velocity.y;
-	onGround = original.y != velocity.y && original.y < 0.0;
+	collidedHorizontally = original.x != _velocity.x || original.z != _velocity.z;
+	collidedVertically = original.y != _velocity.y;
+	onGround = original.y != _velocity.y && original.y < 0.0;
 	collided = collidedHorizontally || collidedVertically;
 
-	if (original.x != velocity.x)
-		velocity.x = 0.0;
-	if (original.y != velocity.y)
-		velocity.y = 0.0;
-	if (original.z != velocity.z)
-		velocity.z = 0.0;
+	if (original.x != _velocity.x)
+		_velocity.x = 0.0;
+	if (original.y != _velocity.y)
+		_velocity.y = 0.0;
+	if (original.z != _velocity.z)
+		_velocity.z = 0.0;
 
-	updateFallState(velocity.y);
+	updateFallState(_velocity.y);
 
 	// Scan each block this entity overlaps so we can trigger collided with code
 	auto minX = MathHelper::floor_double(collider.minX + 0.001);
@@ -311,23 +311,23 @@ void Entity::move(Vec3& velocity) {
 	}
 }
 
-void Entity::dealDamage([[maybe_unused]] int amount) {}
+void Entity::dealDamage([[maybe_unused]] int _amount) {}
 
-void Entity::updateFallState(float movedY) {
+void Entity::updateFallState(float _movedY) {
 	if (onGround) {
 		if (fallDistance > FALL_DAMAGE_FLOOR) {
 			dealDamage((int)std::ceil(fallDistance - FALL_DAMAGE_FLOOR));
 		}
 		fallDistance = 0;
-	} else if (movedY < 0) {
-		fallDistance -= movedY;
+	} else if (_movedY < 0) {
+		fallDistance -= _movedY;
 	}
 }
 
-void Entity::loadFromNBT(Tag& nbt) {
-	auto& motion = nbt.compound["Motion"].getList();
-	auto& pos = nbt.compound["Pos"].getList();
-	auto& rotation = nbt.compound["Rotation"].getList();
+void Entity::loadFromNBT(Tag& _nbt) {
+	auto& motion = _nbt.compound["Motion"].getList();
+	auto& pos = _nbt.compound["Pos"].getList();
+	auto& rotation = _nbt.compound["Rotation"].getList();
 
 	velocity.x = motion[0].getDouble();
 	velocity.y = motion[1].getDouble();
@@ -340,10 +340,10 @@ void Entity::loadFromNBT(Tag& nbt) {
 	rotationYaw = rotation[0].getFloat();
 	rotationPitch = rotation[1].getFloat();
 
-	air = nbt.compound["Air"].getShort();
-	onGround = nbt.compound["OnGround"].getByte();
-	fallDistance = nbt.compound["FallDistance"].getFloat();
-	fireTicks = nbt.compound["Fire"].getShort();
+	air = _nbt.compound["Air"].getShort();
+	onGround = _nbt.compound["OnGround"].getByte();
+	fallDistance = _nbt.compound["FallDistance"].getFloat();
+	fireTicks = _nbt.compound["Fire"].getShort();
 
 	rebuildCollider();
 }

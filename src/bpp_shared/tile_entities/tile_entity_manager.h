@@ -14,15 +14,15 @@ struct TileEntityManager {
 	std::vector<std::weak_ptr<TileEntity>> tickableTileEntities;
 
 	// Initialize a tile entity into the world
-	void initializeTileEntity(const std::shared_ptr<TileEntity>& tileEntity) {
-		if (tileEntity->canTick) {
-			tickableTileEntities.push_back(tileEntity);
+	void initializeTileEntity(const std::shared_ptr<TileEntity>& _tileEntity) {
+		if (_tileEntity->canTick) {
+			tickableTileEntities.push_back(_tileEntity);
 		}
 	}
 
 	void tickTileEntities() {
-		std::erase_if(tickableTileEntities, [](const std::weak_ptr<TileEntity>& wp) {
-			auto te = wp.lock();
+		std::erase_if(tickableTileEntities, [](const std::weak_ptr<TileEntity>& _wp) {
+			auto te = _wp.lock();
 			if (!te)
 				return true;
 			te->tick();

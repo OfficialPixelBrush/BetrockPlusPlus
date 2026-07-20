@@ -18,13 +18,13 @@ class NoisePerlin : public NoiseGenerator {
 protected:
 	int32_t permutations[512];
 	Vec3 coordinate;
-	double GenerateNoiseBase(Vec3 pos);
-	void InitPermTable(Java::Random& rand);
+	double GenerateNoiseBase(Vec3 _pos);
+	void InitPermTable(Java::Random& _rand);
 
 public:
 	NoisePerlin();
-	NoisePerlin(Java::Random& rand);
-	double GenerateNoise(Vec2 coord);
-	double GenerateNoise(Vec3 coord);
-	void GenerateNoise(std::vector<double>& noiseField, Vec3 offset, Int3 size, Vec3 scale, double amplitude);
+	NoisePerlin(Java::Random& _rand);
+	double GenerateNoise(Vec2 _coord);
+	double GenerateNoise(Vec3 _coord);
+	void GenerateNoise(std::vector<double>& _noiseField, Vec3 _offset, Int3 _size, Vec3 _scale, double _amplitude);
 };

@@ -30,8 +30,8 @@ void TileEntityDispenser::tick() {
 	}
 }
 
-constexpr std::string getTileNbtId(TileType type) {
-	switch (type) {
+constexpr std::string getTileNbtId(TileType _type) {
+	switch (_type) {
 	case TileType::CHEST:
 		return "Chest";
 	case TileType::DISPENSER:

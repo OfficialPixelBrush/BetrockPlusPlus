@@ -26,17 +26,17 @@ struct WindowOptions {
 
 class Window {
 public:
-	Window(Int2 screenSize, const std::string& title, const WindowOptions& options);
+	Window(Int2 _screenSize, const std::string& _title, const WindowOptions& _options);
 	~Window();
 
 	// Non-copyable
 	Window(const Window&) = delete;
 	Window& operator=(const Window&) = delete;
 
-	void setTitle(const std::string& title) {
+	void setTitle(const std::string& _title) {
 		SDL_SetWindowTitle(handle, title.c_str());
 	}
-	void setCursorCapture(bool enabled) {
+	void setCursorCapture(bool _enabled) {
 		SDL_SetWindowRelativeMouseMode(handle, enabled);
 	}
 	const Int2& getScreenSize() const {
@@ -54,5 +54,5 @@ private:
 	SDL_Window* handle = nullptr;
 	Int2 screenSize;
 
-	static void sdlLogCallback(void* userdata, int category, SDL_LogPriority priority, const char* message);
+	static void sdlLogCallback(void* _userdata, int _category, SDL_LogPriority _priority, const char* _message);
 };

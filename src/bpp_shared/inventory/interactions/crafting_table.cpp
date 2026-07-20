@@ -9,10 +9,10 @@
 #include "inventory/item_stack.h"
 #include "items.h"
 
-CraftingTableInventoryInteraction::CraftingTableInventoryInteraction(InventoryPlayer* pinv, WorldManager& worldMng,
-                                                                     Runtime& gameRuntime, Int3 craftingTablePos)
-    : CraftingInventoryInteraction(&sharedInventory, &craftInventory, pinv, gameRuntime, { 3, 3 }),
-      world(worldMng), blockPosition(craftingTablePos) {
+CraftingTableInventoryInteraction::CraftingTableInventoryInteraction(InventoryPlayer* _pinv, WorldManager& _worldMng,
+                                                                     Runtime& _gameRuntime, Int3 _craftingTablePos)
+    : CraftingInventoryInteraction(&sharedInventory, &craftInventory, _pinv, _gameRuntime, { 3, 3 }),
+      world(_worldMng), blockPosition(_craftingTablePos) {
 	sharedInventory.owner = this;
 	mergeInventories();
 }
@@ -85,14 +85,14 @@ void CraftingTableInventoryInteraction::shiftClickResult() {
 	}
 }
 
-void CraftingTableInventoryInteraction::shiftClickOther(int slot) {
-	auto stack = sharedInventory.getStackInSlot(slot);
+void CraftingTableInventoryInteraction::shiftClickOther(int _slot) {
+	auto stack = sharedInventory.getStackInSlot(_slot);
 	if (!stack)
 		return;
 
 	ItemStack copy = *stack;
 
-	if (slot < 10) {
+	if (_slot < 10) {
 		// Grid -> inventory
 		// Try the main inventory then the hotbar
 		bool success = playerInventory->mergeItemStackInInventory(copy, false, 9, 35);
@@ -101,7 +101,7 @@ void CraftingTableInventoryInteraction::shiftClickOther(int slot) {
 	} else {
 		// We can't shift click into the crafting grid itself, so just try the other area of the inventory
 		// We shift clicked in the inventory
-		if (slot > 9 && slot < 37) {
+		if (_slot > 9 && _slot < 37) {
 			playerInventory->mergeItemStackInInventory(copy, false, 36, 44);
 		} else {
 			playerInventory->mergeItemStackInInventory(copy, false, 9, 35);
@@ -109,10 +109,10 @@ void CraftingTableInventoryInteraction::shiftClickOther(int slot) {
 	}
 
 	// Update the source in the real inventory before re-merging
-	if (slot < 10) {
-		craftInventory.slots[slot] = copy.count == 0 ? ItemStack{} : copy;
+	if (_slot < 10) {
+		craftInventory.slots[_slot] = copy.count == 0 ? ItemStack{} : copy;
 	} else {
-		playerInventory->slots[slot - 1] = copy.count == 0 ? ItemStack{} : copy;
+		playerInventory->slots[_slot - 1] = copy.count == 0 ? ItemStack{} : copy;
 	}
 
 	// Re-sync sharedInventory from the real inventories

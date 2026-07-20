@@ -13,35 +13,35 @@ NoiseSimplex::NoiseSimplex() {
 	InitPermTable(rand);
 }
 
-NoiseSimplex::NoiseSimplex(Java::Random& rand) {
-	InitPermTable(rand);
+NoiseSimplex::NoiseSimplex(Java::Random& _rand) {
+	InitPermTable(_rand);
 }
 
-void NoiseSimplex::InitPermTable(Java::Random& rand) {
-	coordinate.x = rand.nextDouble() * 256.0;
-	coordinate.y = rand.nextDouble() * 256.0;
-	coordinate.z = rand.nextDouble() * 256.0;
+void NoiseSimplex::InitPermTable(Java::Random& _rand) {
+	coordinate.x = _rand.nextDouble() * 256.0;
+	coordinate.y = _rand.nextDouble() * 256.0;
+	coordinate.z = _rand.nextDouble() * 256.0;
 
 	for (int32_t i = 0; i < 256; ++i) {
 		permutations[i] = i;
 	}
 
 	for (int32_t i = 0; i < 256; ++i) {
-		int32_t j = rand.nextInt(256 - i) + i;
+		int32_t j = _rand.nextInt(256 - i) + i;
 		std::swap(permutations[i], permutations[j]);
 		permutations[i + 256] = permutations[i];
 	}
 }
 
-void NoiseSimplex::GenerateNoise(std::vector<double>& values, Vec2 p_offset, Int32_2 p_size, Vec2 p_scale,
-                                 double amplitude) {
+void NoiseSimplex::GenerateNoise(std::vector<double>& _values, Vec2 _p_offset, Int32_2 _p_size, Vec2 _p_scale,
+                                 double _amplitude) {
 	size_t index = 0;
 
-	for (int32_t xI = 0; xI < p_size.x; ++xI) {
-		double xPos = (p_offset.x + double(xI)) * p_scale.x + coordinate.x;
+	for (int32_t xI = 0; xI < _p_size.x; ++xI) {
+		double xPos = (_p_offset.x + double(xI)) * _p_scale.x + coordinate.x;
 
-		for (int32_t yI = 0; yI < p_size.y; ++yI) {
-			double yPos = (p_offset.y + double(yI)) * p_scale.y + coordinate.y;
+		for (int32_t yI = 0; yI < _p_size.y; ++yI) {
+			double yPos = (_p_offset.y + double(yI)) * _p_scale.y + coordinate.y;
 			double skew = (xPos + yPos) * skewing;
 			int32_t x0 = wrap(xPos + skew);
 			int32_t y0 = wrap(yPos + skew);
@@ -96,7 +96,7 @@ void NoiseSimplex::GenerateNoise(std::vector<double>& values, Vec2 p_offset, Int
 				contrib2 = term2 * term2 * dotProd(gradients[grad2], x1c, y1c);
 			}
 
-			values[index++] += 70.0 * (contrib0 + contrib1 + contrib2) * amplitude;
+			_values[index++] += 70.0 * (contrib0 + contrib1 + contrib2) * _amplitude;
 		}
 	}
 }

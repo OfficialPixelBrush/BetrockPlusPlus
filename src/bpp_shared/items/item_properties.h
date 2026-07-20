@@ -49,7 +49,7 @@ enum class ArmorType : int8_t {
 	Helmet = 3,
 };
 
-ItemDamage GetMaterialUses(ToolMaterial material);
+ItemDamage GetMaterialUses(ToolMaterial _material);
 
 struct ToolProperties {
 	ToolType type = ToolType::None;
@@ -62,13 +62,13 @@ struct ItemProperties {
 };
 
 struct ItemBehavior {
-	void (*onBlockStartMining)(WorldManager& world, ItemStack* stack, Int3 pos,
-	                           PacketData::FaceDirection face) = nullptr;
-	void (*onBlockFinishMining)(WorldManager& world, ItemStack* stack, Int3 pos,
-	                            PacketData::FaceDirection face) = nullptr;
-	void (*onBlockUse)(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) = nullptr;
-	void (*onEntityAttack)(Entity& attackedEntity, ItemStack* stack) = nullptr;
-	void (*onEntityUse)(Entity& usedEntity, ItemStack* stack) = nullptr;
+	void (*onBlockStartMining)(WorldManager& _world, ItemStack* _stack, Int3 _pos,
+	                           PacketData::FaceDirection _face) = nullptr;
+	void (*onBlockFinishMining)(WorldManager& _world, ItemStack* _stack, Int3 _pos,
+	                            PacketData::FaceDirection _face) = nullptr;
+	void (*onBlockUse)(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) = nullptr;
+	void (*onEntityAttack)(Entity& _attackedEntity, ItemStack* _stack) = nullptr;
+	void (*onEntityUse)(Entity& _usedEntity, ItemStack* _stack) = nullptr;
 };
 
 extern std::unordered_map<ItemId, ItemBehavior> itemBehavior;
@@ -76,26 +76,26 @@ extern std::unordered_map<ItemId, ItemProperties> itemProperties;
 extern std::unordered_map<ItemId, ToolProperties> toolProperties;
 void registerAll();
 
-bool IsValid(ItemId id);
+bool IsValid(ItemId _id);
 
-bool IsArmor(ItemId id);
-bool IsHoe(ItemId id);
-bool IsSword(ItemId id);
-bool IsPickaxe(ItemId id);
-bool IsAxe(ItemId id);
-bool IsShovel(ItemId id);
-bool IsWeapon(ItemId id);
-bool IsTool(ItemId id);
-bool IsThrowable(ItemId id);
-bool IsEdible(ItemId id);
-bool IsStackable(ItemId id); // max stack > 1
-bool IsBlock(ItemId id);
+bool IsArmor(ItemId _id);
+bool IsHoe(ItemId _id);
+bool IsSword(ItemId _id);
+bool IsPickaxe(ItemId _id);
+bool IsAxe(ItemId _id);
+bool IsShovel(ItemId _id);
+bool IsWeapon(ItemId _id);
+bool IsTool(ItemId _id);
+bool IsThrowable(ItemId _id);
+bool IsEdible(ItemId _id);
+bool IsStackable(ItemId _id); // max stack > 1
+bool IsBlock(ItemId _id);
 
-void harmTool(ItemStack* stack);
+void harmTool(ItemStack* _stack);
 
 // Returns max stack size for this item/block id
-int32_t GetMaxStack(ItemId id);
+int32_t GetMaxStack(ItemId _id);
 
 // Returns max durability (0 = not damageable)
-ItemDamage GetMaxDurability(ItemId id);
+ItemDamage GetMaxDurability(ItemId _id);
 }; // namespace Items

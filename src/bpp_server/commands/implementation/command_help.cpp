@@ -11,27 +11,27 @@
 // Usage:
 //   /help
 //   /help [command]
-std::string CommandHelp::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
-                                 [[maybe_unused]] std::function<void(PlayerSession&)> transferDimension,
-                                 [[maybe_unused]] Server& server) {
+std::string CommandHelp::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
+                                 [[maybe_unused]] std::function<void(PlayerSession&)> _transferDimension,
+                                 [[maybe_unused]] Server& _server) {
 	//DEFINE_PERMSCHECK(pClient)
 	const auto& registered_commands = CommandManager::GetRegisteredCommands();
 	Packet::ChatMessage pkt;
 	// Get help with specific command
-	if (parameters.size() > 1) {
+	if (_parameters.size() > 1) {
 		for (size_t i = 0; i < registered_commands.size(); i++) {
-			if (registered_commands[i]->GetLabel() == parameters[1]) {
+			if (registered_commands[i]->GetLabel() == _parameters[1]) {
 				pkt.message = "§7" + registered_commands[i]->GetLabel() + ": " +
 				              registered_commands[i]->GetDescription();
-				pkt.Serialize(session.stream);
+				pkt.Serialize(_session.stream);
 				// Only print syntax if it has a value
 				if (!registered_commands[i]->GetSyntax().empty()) {
 					pkt.message = "§7/" + registered_commands[i]->GetLabel() + " " + registered_commands[i]->GetSyntax();
-					pkt.Serialize(session.stream);
+					pkt.Serialize(_session.stream);
 				}
 				if (registered_commands[i]->GetRequiresOperator()) {
 					pkt.message = "§7(Requires operator)";
-					pkt.Serialize(session.stream);
+					pkt.Serialize(_session.stream);
 				}
 				return "";
 			}
@@ -40,7 +40,7 @@ std::string CommandHelp::Execute(std::vector<std::string>& parameters, PlayerSes
 	} else {
 		// List all commands
 		pkt.message = "§7-- All commands --";
-		pkt.Serialize(session.stream);
+		pkt.Serialize(_session.stream);
 		pkt.message = "§7";
 		for (size_t i = 0; i < registered_commands.size(); i++) {
 			pkt.message += registered_commands[i]->GetLabel();
@@ -48,7 +48,7 @@ std::string CommandHelp::Execute(std::vector<std::string>& parameters, PlayerSes
 				pkt.message += ", ";
 			}
 			if (pkt.message.size() > MAX_CHAT_LINE_SIZE || i == registered_commands.size() - 1) {
-				pkt.Serialize(session.stream);
+				pkt.Serialize(_session.stream);
 				pkt.message = "§7";
 			}
 		}

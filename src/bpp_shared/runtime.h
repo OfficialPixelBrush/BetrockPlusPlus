@@ -31,26 +31,26 @@ struct Runtime {
 		recipeManager.addVanillaRecipes();
 		GlobalLogger().info << "New game runtime created!\n";
 	}
-	Runtime(int renderDistance) : worldHell(true) {	
+	Runtime(int _renderDistance) : worldHell(true) {	
 		Blocks::registerAll();
 		Items::registerAll();
 		recipeManager.addVanillaRecipes();
 
 		// Override our view distance
-		world.setViewRadius(renderDistance);
-		worldHell.setViewRadius(renderDistance);
+		world.setViewRadius(_renderDistance);
+		worldHell.setViewRadius(_renderDistance);
 
-		GlobalLogger().info << "New game runtime created with view radius overriden to " << renderDistance << "!\n";
+		GlobalLogger().info << "New game runtime created with view radius overriden to " << _renderDistance << "!\n";
 	}
 
-	void init(std::string levelPath, std::string seedOverride = "") {
+	void init(std::string _levelPath, std::string _seedOverride = "") {
 		// Setup our save
 		bool newSave = false;
-		if (!saveManager.initialize(levelPath)) {
+		if (!saveManager.initialize(_levelPath)) {
 			GlobalLogger().warn << "**** FAILED TO LOAD WORLD DATA! Attempting to create new world... \n";
 			newSave = true;
-			if (!saveManager.createNewWorld({ .RandomSeed = (seedOverride != "")
-			                                                    ? saveManager.seedFromString(seedOverride)
+			if (!saveManager.createNewWorld({ .RandomSeed = (_seedOverride != "")
+			                                                    ? saveManager.seedFromString(_seedOverride)
 			                                                    : Java::Random().nextLong() })) {
 				GlobalLogger().error << "**** FAILED TO CREATE NEW WORLD! \n";
 				exit(1);
@@ -59,8 +59,8 @@ struct Runtime {
 		}
 
 		// Initialize our region managers
-		overworldRegionManager.initialize(levelPath + "/region");
-		hellRegionManager.initialize(levelPath + "/DIM-1/region");
+		overworldRegionManager.initialize(_levelPath + "/region");
+		hellRegionManager.initialize(_levelPath + "/DIM-1/region");
 
 		// Bind our pointers
 		overworldRegionManager.world = &world;

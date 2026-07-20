@@ -12,6 +12,6 @@
 // as it's needed by Minecraft for various things,
 // such as NBT and Packet data
 
-std::string ToUTF8(std::u16string str);
-char32_t DecodeUTF8Char(const std::string& s, size_t& i);
-std::u16string ToUCS2(std::string str);
+std::string ToUTF8(std::u16string _str);
+char32_t DecodeUTF8Char(const std::string& _s, size_t& _i);
+std::u16string ToUCS2(std::string _str);

@@ -17,10 +17,10 @@
 #include <memory>
 #include <string>
 
-void Region::AddChunk(std::shared_ptr<Chunk> chunk, int64_t timestamp,
-                      std::shared_ptr<const std::vector<Tag>> entities) {
+void Region::AddChunk(std::shared_ptr<Chunk> _chunk, int64_t _timestamp,
+                      std::shared_ptr<const std::vector<Tag>> _entities) {
 	std::lock_guard<std::mutex> lock(mutex);
-	auto compressed = EncodeNbtData(chunk, timestamp, entities);
+	auto compressed = EncodeNbtData(_chunk, _timestamp, _entities);
 	if (compressed.empty())
 		return;
 
@@ -81,7 +81,7 @@ void Region::AddChunk(std::shared_ptr<Chunk> chunk, int64_t timestamp,
 	}
 
 	// Update header entry
-	Int2 local{ chunk->cpos.x & 31, chunk->cpos.z & 31 };
+	Int2 local{ _chunk->cpos.x & 31, _chunk->cpos.z & 31 };
 	int index = local.x + local.z * 32;
 	regionHeader[index].offset = chosenOffset;
 	regionHeader[index].numberOfSectors = uint8_t(sectorsNeeded);
@@ -94,9 +94,9 @@ void Region::AddChunk(std::shared_ptr<Chunk> chunk, int64_t timestamp,
 	file.flush();
 }
 
-std::shared_ptr<Chunk> Region::GetChunk(Int32_2 cpos) {
+std::shared_ptr<Chunk> Region::GetChunk(Int32_2 _cpos) {
 	std::lock_guard<std::mutex> lock(mutex);
-	Int2 local{ cpos.x & 31, cpos.z & 31 };
+	Int2 local{ _cpos.x & 31, _cpos.z & 31 };
 	int index = local.x + local.z * 32;
 
 	if (!chunkExists(local))
@@ -142,8 +142,8 @@ std::shared_ptr<Chunk> Region::GetChunk(Int32_2 cpos) {
 	return DecodeNbtData(compressed);
 }
 
-std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk, int64_t timestamp,
-                                           std::shared_ptr<const std::vector<Tag>> entities) {
+std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& _chunk, int64_t _timestamp,
+                                           std::shared_ptr<const std::vector<Tag>> _entities) {
 	// Build a compound tag representing a chunk level entry
 	Tag root;
 	root.type = TAG_COMPOUND;
@@ -157,19 +157,19 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk, 
 	Tag xPos;
 	xPos.type = TAG_INT;
 	xPos.name = "xPos";
-	xPos.intValue = chunk->cpos.x;
+	xPos.intValue = _chunk->cpos.x;
 	Tag zPos;
 	zPos.type = TAG_INT;
 	zPos.name = "zPos";
-	zPos.intValue = chunk->cpos.z;
+	zPos.intValue = _chunk->cpos.z;
 	Tag populated;
 	populated.type = TAG_BYTE;
 	populated.name = "TerrainPopulated";
-	populated.byteValue = chunk->isTerrainPopulated;
+	populated.byteValue = _chunk->isTerrainPopulated;
 	Tag lastUpdate;
 	lastUpdate.type = TAG_LONG;
 	lastUpdate.name = "LastUpdate";
-	lastUpdate.longValue = timestamp;
+	lastUpdate.longValue = _timestamp;
 
 	// Byte array, blocks
 	Tag blocks;
@@ -198,22 +198,22 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk, 
 	heightMap.type = TAG_BYTEARRAY;
 	heightMap.name = "HeightMap";
 	heightMap.byteArray.resize(CHUNK_WIDTH * CHUNK_WIDTH, 0);
-	std::copy(std::begin(chunk->heightMap), std::end(chunk->heightMap), heightMap.byteArray.data());
+	std::copy(std::begin(_chunk->heightMap), std::end(_chunk->heightMap), heightMap.byteArray.data());
 
 	// Put blocks in there
 	for (int x = 0; x < CHUNK_WIDTH; x++) {
 		for (int z = 0; z < CHUNK_WIDTH; z++) {
 			for (int y = 0; y < CHUNK_HEIGHT; y++) {
 				size_t idx = size_t(y + (z * CHUNK_HEIGHT) + (x * CHUNK_HEIGHT * CHUNK_WIDTH));
-				blocks.byteArray[idx] = chunk->getBlock({ x, y, z });
+				blocks.byteArray[idx] = _chunk->getBlock({ x, y, z });
 				if (y % 2 == 0) {
-					data.byteArray[idx / 2] |= (chunk->getMeta({ x, y, z }));
-					skyLight.byteArray[idx / 2] |= chunk->getSkyLight({ x, y, z });
-					blockLight.byteArray[idx / 2] |= chunk->getBlockLight({ x, y, z });
+					data.byteArray[idx / 2] |= (_chunk->getMeta({ x, y, z }));
+					skyLight.byteArray[idx / 2] |= _chunk->getSkyLight({ x, y, z });
+					blockLight.byteArray[idx / 2] |= _chunk->getBlockLight({ x, y, z });
 				} else {
-					data.byteArray[idx / 2] |= (chunk->getMeta({ x, y, z }) << 4);
-					skyLight.byteArray[idx / 2] |= (chunk->getSkyLight({ x, y, z }) << 4);
-					blockLight.byteArray[idx / 2] |= (chunk->getBlockLight({ x, y, z }) << 4);
+					data.byteArray[idx / 2] |= (_chunk->getMeta({ x, y, z }) << 4);
+					skyLight.byteArray[idx / 2] |= (_chunk->getSkyLight({ x, y, z }) << 4);
+					blockLight.byteArray[idx / 2] |= (_chunk->getBlockLight({ x, y, z }) << 4);
 				}
 			}
 		}
@@ -224,8 +224,8 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk, 
 	entitiesTag.type = TAG_LIST;
 	entitiesTag.name = "Entities";
 	entitiesTag.listType = TAG_COMPOUND;
-	if (entities) {
-		entitiesTag.list.insert(entitiesTag.list.end(), entities->begin(), entities->end());
+	if (_entities) {
+		entitiesTag.list.insert(entitiesTag.list.end(), _entities->begin(), _entities->end());
 	}
 
 	// Nested compound inside a list for tile entities
@@ -233,7 +233,7 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk, 
 	tileEntities.type = TAG_LIST;
 	tileEntities.name = "TileEntities";
 	tileEntities.listType = TAG_COMPOUND;
-	for (auto& te : chunk->tileEntities) {
+	for (auto& te : _chunk->tileEntities) {
 		if (te)
 			tileEntities.list.push_back(te->serialize());
 	}
@@ -269,7 +269,7 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& chunk, 
 	return compressed;
 }
 
-std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& raw_data) {
+std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& _raw_data) {
 	libdeflate_decompressor* decompressor = libdeflate_alloc_decompressor();
 	if (!decompressor)
 		return std::make_shared<Chunk>();
@@ -278,7 +278,7 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& raw_dat
 	while (true) {
 		decompressed.resize(decompressedSize);
 		size_t actualOutSize = 0;
-		libdeflate_result result = libdeflate_zlib_decompress(decompressor, raw_data.data(), raw_data.size(),
+		libdeflate_result result = libdeflate_zlib_decompress(decompressor, _raw_data.data(), _raw_data.size(),
 		                                                      decompressed.data(), decompressed.size(), &actualOutSize);
 
 		if (result == LIBDEFLATE_SUCCESS) {
@@ -348,7 +348,7 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& raw_dat
 		Int3 pos{ tx, ty, tz };
 
 		// load a standard slot-based inventory from an Items list tag
-		auto loadSlots = [&](auto& slots) {
+		auto loadSlots = [&](auto& _slots) {
 			if (!te.has("Items"))
 				return;
 			for (auto& item : te.get("Items").getList()) {
@@ -356,8 +356,8 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& raw_dat
 				int16_t itemId = item.get("id").getShort();
 				int8_t count = item.get("Count").getByte();
 				int16_t damage = item.get("Damage").getShort();
-				if (slot >= 0 && slot < (int8_t)slots.size()) {
-					slots[size_t(slot)] = ItemStack{ itemId, count, damage };
+				if (slot >= 0 && slot < (int8_t)_slots.size()) {
+					_slots[size_t(slot)] = ItemStack{ itemId, count, damage };
 				}
 			}
 		};

@@ -21,7 +21,7 @@ struct Branded {
 	UnderlyingT value;
 
 	constexpr Branded() = default;
-	constexpr Branded(UnderlyingT value) : value(value) {}
+	constexpr Branded(UnderlyingT _value) : value(_value) {}
 
 	template <typename OtherUnderlyingT, typename OtherTagT>
 	    requires(!std::is_same_v<TagT, OtherTagT>)
@@ -53,8 +53,8 @@ struct Branded {
 
 template <typename UnderlyingT, typename TagT>
 struct std::hash<Branded<UnderlyingT, TagT>> {
-	size_t operator()(Branded<UnderlyingT, TagT> branded) const noexcept {
-		return std::hash<UnderlyingT>{}(branded.value);
+	size_t operator()(Branded<UnderlyingT, TagT> _branded) const noexcept {
+		return std::hash<UnderlyingT>{}(_branded.value);
 	}
 };
 

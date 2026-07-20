@@ -27,29 +27,29 @@
 
 struct EntityTracker;
 namespace HandlePacket {
-void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& session);
-void ChatMessage(Packet::ChatMessage& pkt, PlayerSession& session, std::vector<std::shared_ptr<PlayerSession>>& players,
-                 WorldManager& world, CommandManager& cmd_mgr, std::function<void(PlayerSession&)> transferDimension);
+void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& _session);
+void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session, std::vector<std::shared_ptr<PlayerSession>>& _players,
+                 WorldManager& _world, CommandManager& _cmd_mgr, std::function<void(PlayerSession&)> _transferDimension);
 void PlayerMovement(Packet::PlayerMovement& /*pkt*/, PlayerSession& /*session*/);
-void PlayerPosition(Packet::PlayerPosition& pkt, PlayerSession& session);
-void PlayerRotation(Packet::PlayerRotation& pkt, PlayerSession& session);
-void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& pkt, PlayerSession& session);
-void MineBlock(Packet::MineBlock& pkt, PlayerSession& session, WorldManager& world,
+void PlayerPosition(Packet::PlayerPosition& _pkt, PlayerSession& _session);
+void PlayerRotation(Packet::PlayerRotation& _pkt, PlayerSession& _session);
+void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& _pkt, PlayerSession& _session);
+void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _world,
                std::vector<std::shared_ptr<PlayerSession>>& /*players*/);
-void PlaceBlock(Packet::PlaceBlock& pkt, PlayerSession& session, WorldManager& world, Runtime& gameRuntime);
-void SetHotbarSlot(Packet::SetHotbarSlot& pkt, PlayerSession& session);
+void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager& _world, Runtime& _gameRuntime);
+void SetHotbarSlot(Packet::SetHotbarSlot& _pkt, PlayerSession& _session);
 // Click handler
-void ClickSlot(Packet::ClickSlot& pkt, PlayerSession& session);
-void CloseContainer(Packet::CloseContainer& /*pkt*/, PlayerSession& session);
+void ClickSlot(Packet::ClickSlot& _pkt, PlayerSession& _session);
+void CloseContainer(Packet::CloseContainer& /*pkt*/, PlayerSession& _session);
 // Client acknowledges a rejected transaction
-void ContainerTransaction(Packet::ContainerTransaction& pkt, PlayerSession& session);
+void ContainerTransaction(Packet::ContainerTransaction& _pkt, PlayerSession& _session);
 // Other handlers
-void InteractWithEntity(Packet::InteractWithEntity& pkt, PlayerSession& session, WorldManager& world);
-void InteractWithBlock(Packet::InteractWithBlock& pkt, PlayerSession& session, WorldManager& world);
-void Animation(Packet::Animation& pkt, PlayerSession& session, EntityTracker& entityTracker);
-void PlayerAction(Packet::PlayerAction& pkt, PlayerSession& session, EntityTracker& entityTracker);
+void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _session, WorldManager& _world);
+void InteractWithBlock(Packet::InteractWithBlock& _pkt, PlayerSession& _session, WorldManager& _world);
+void Animation(Packet::Animation& _pkt, PlayerSession& _session, EntityTracker& _entityTracker);
+void PlayerAction(Packet::PlayerAction& _pkt, PlayerSession& _session, EntityTracker& _entityTracker);
 void Respawn(Packet::Respawn& /*pkt*/, PlayerSession& /*session*/);
-void UpdateSign(Packet::UpdateSign& pkt, PlayerSession& session, WorldManager& world,
-                std::vector<std::shared_ptr<PlayerSession>>& players);
-void Disconnect(Packet::Disconnect& /*pkt*/, PlayerSession& session);
+void UpdateSign(Packet::UpdateSign& _pkt, PlayerSession& _session, WorldManager& _world,
+                std::vector<std::shared_ptr<PlayerSession>>& _players);
+void Disconnect(Packet::Disconnect& /*pkt*/, PlayerSession& _session);
 } // namespace HandlePacket

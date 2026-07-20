@@ -64,63 +64,63 @@ std::unordered_map<ItemId, ItemBehavior> itemBehavior = {};
 std::unordered_map<ItemId, ItemProperties> itemProperties = {};
 std::unordered_map<ItemId, ToolProperties> toolProperties = {};
 
-bool IsValid(ItemId id) {
-	return ((id >= Items::Id::SHOVEL_IRON && id < Items::Id::MAX) ||
-	        (id >= Items::Id::RECORD_13 && id < Items::Id::RECORD_MAX));
+bool IsValid(ItemId _id) {
+	return ((_id >= Items::Id::SHOVEL_IRON && _id < Items::Id::MAX) ||
+	        (_id >= Items::Id::RECORD_13 && _id < Items::Id::RECORD_MAX));
 }
 
-bool IsArmor(ItemId id) {
-	return (id >= Items::HELMET_LEATHER && id <= Items::BOOTS_GOLD);
+bool IsArmor(ItemId _id) {
+	return (_id >= Items::HELMET_LEATHER && _id <= Items::BOOTS_GOLD);
 }
 
-bool IsHoe(ItemId id) {
-	return (id >= Items::HOE_WOOD && id <= Items::HOE_GOLD);
+bool IsHoe(ItemId _id) {
+	return (_id >= Items::HOE_WOOD && _id <= Items::HOE_GOLD);
 }
 
-bool IsSword(ItemId id) {
-	return (id == Items::SWORD_IRON || id == Items::SWORD_WOOD || id == Items::SWORD_STONE ||
-	        id == Items::SWORD_DIAMOND || id == Items::SWORD_GOLD);
+bool IsSword(ItemId _id) {
+	return (_id == Items::SWORD_IRON || _id == Items::SWORD_WOOD || _id == Items::SWORD_STONE ||
+	        _id == Items::SWORD_DIAMOND || _id == Items::SWORD_GOLD);
 }
 
-bool IsPickaxe(ItemId id) {
-	return (id == Items::PICKAXE_IRON || id == Items::PICKAXE_WOOD || id == Items::PICKAXE_STONE ||
-	        id == Items::PICKAXE_DIAMOND || id == Items::PICKAXE_GOLD);
+bool IsPickaxe(ItemId _id) {
+	return (_id == Items::PICKAXE_IRON || _id == Items::PICKAXE_WOOD || _id == Items::PICKAXE_STONE ||
+	        _id == Items::PICKAXE_DIAMOND || _id == Items::PICKAXE_GOLD);
 }
 
-bool IsAxe(ItemId id) {
-	return (id == Items::AXE_IRON || id == Items::AXE_WOOD || id == Items::AXE_STONE || id == Items::AXE_DIAMOND ||
-	        id == Items::AXE_GOLD);
+bool IsAxe(ItemId _id) {
+	return (_id == Items::AXE_IRON || _id == Items::AXE_WOOD || _id == Items::AXE_STONE || _id == Items::AXE_DIAMOND ||
+	        _id == Items::AXE_GOLD);
 }
 
-bool IsShovel(ItemId id) {
-	return (id == Items::SHOVEL_IRON || id == Items::SHOVEL_WOOD || id == Items::SHOVEL_STONE ||
-	        id == Items::SHOVEL_DIAMOND || id == Items::SHOVEL_GOLD);
+bool IsShovel(ItemId _id) {
+	return (_id == Items::SHOVEL_IRON || _id == Items::SHOVEL_WOOD || _id == Items::SHOVEL_STONE ||
+	        _id == Items::SHOVEL_DIAMOND || _id == Items::SHOVEL_GOLD);
 }
 
-bool IsWeapon(ItemId id) {
-	return IsSword(id) || id == Items::BOW;
+bool IsWeapon(ItemId _id) {
+	return IsSword(_id) || _id == Items::BOW;
 }
 
-bool IsTool(ItemId id) {
-	return IsShovel(id) || IsAxe(id) || IsPickaxe(id) || IsHoe(id) || id == Items::FLINT_AND_STEEL ||
-	       id == Items::FISHING_ROD || id == Items::SHEARS;
+bool IsTool(ItemId _id) {
+	return IsShovel(_id) || IsAxe(_id) || IsPickaxe(_id) || IsHoe(_id) || _id == Items::FLINT_AND_STEEL ||
+	       _id == Items::FISHING_ROD || _id == Items::SHEARS;
 }
 
-bool IsThrowable(ItemId id) {
-	return (id == Items::SNOWBALL || id == Items::EGG);
+bool IsThrowable(ItemId _id) {
+	return (_id == Items::SNOWBALL || _id == Items::EGG);
 }
 
-bool IsBlock(ItemId id) {
-	return (id > 0 && id <= Items::THRESHOLD);
+bool IsBlock(ItemId _id) {
+	return (_id > 0 && _id <= Items::THRESHOLD);
 }
 
-bool IsStackable(ItemId id) {
-	return Items::GetMaxStack(id) > 1;
+bool IsStackable(ItemId _id) {
+	return Items::GetMaxStack(_id) > 1;
 }
 
-int32_t GetMaxStack(ItemId id) {
+int32_t GetMaxStack(ItemId _id) {
 	// Stack size 1
-	switch (id) {
+	switch (_id) {
 		// Food (ItemFood sets maxStackSize=1 in constructor)
 	case Items::APPLE:
 	case Items::APPLE_GOLDEN:
@@ -156,14 +156,14 @@ int32_t GetMaxStack(ItemId id) {
 	}
 
 	// Tools, weapons, armor all set maxStackSize=1 in their constructors
-	if (IsTool(id) || IsWeapon(id) || IsArmor(id))
+	if (IsTool(_id) || IsWeapon(_id) || IsArmor(_id))
 		return 1;
 
 	// Stack size 16
-	if (id == Items::SNOWBALL || id == Items::EGG)
+	if (_id == Items::SNOWBALL || _id == Items::EGG)
 		return 16;
 
-	if (id == Items::COOKIE)
+	if (_id == Items::COOKIE)
 		return 8;
 
 	// Item, ItemCoal, ItemSeeds, ItemRedstone, ItemDye, ItemPainting,
@@ -172,8 +172,8 @@ int32_t GetMaxStack(ItemId id) {
 	return Items::STACK_MAX;
 }
 
-ItemDamage GetMaterialUses(ToolMaterial material) {
-	switch (material) {
+ItemDamage GetMaterialUses(ToolMaterial _material) {
+	switch (_material) {
 	case ToolMaterial::Wooden:
 		return DURABILITY_WOOD;
 	case ToolMaterial::Gold:
@@ -189,33 +189,33 @@ ItemDamage GetMaterialUses(ToolMaterial material) {
 	}
 }
 
-void harmTool(ItemStack* stack) {
-	stack->data++;
-	if (stack->data >= toolProperties[stack->id].max_uses) {
-		stack->decrementCount(1);
+void harmTool(ItemStack* _stack) {
+	_stack->data++;
+	if (_stack->data >= toolProperties[_stack->id].max_uses) {
+		_stack->decrementCount(1);
 	}
 }
 
-void useHoe(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) {
-	BlockType b = world.getBlockId(pos);
+void useHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
+	BlockType b = _world.getBlockId(_pos);
 	if (b == BLOCK_GRASS || b == BLOCK_DIRT) {
-		world.setBlock(pos, BLOCK_FARMLAND);
+		_world.setBlock(_pos, BLOCK_FARMLAND);
 	}
-	harmTool(stack);
+	harmTool(_stack);
 }
 
-void useFlintAndSteel(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) {
-	pos = Blocks::getAdjacentBlockPos(pos, face);
-	world.setBlock(pos, BLOCK_FIRE);
-	harmTool(stack);
+void useFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
+	_pos = Blocks::getAdjacentBlockPos(_pos, _face);
+	_world.setBlock(_pos, BLOCK_FIRE);
+	harmTool(_stack);
 }
 
-void testSetGoal(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) {
-	Int3 topPos = pos;
+void testSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
+	Int3 topPos = _pos;
 	topPos.y += 1;
-	world.setBlock(topPos, BLOCK_AIR);
+	_world.setBlock(topPos, BLOCK_AIR);
 	std::cout << "lol!!" << std::endl;
-	for (auto entity : world.entityManager.entities) {
+	for (auto entity : _world.entityManager.entities) {
 		std::cout << (int)entity->type << std::endl;
 		if (entity->type == EntityType::CREEPER) {
 			auto finder = std::static_pointer_cast<MobileEntity>(entity);
@@ -225,8 +225,8 @@ void testSetGoal(WorldManager& world, ItemStack* stack, Int3 pos, PacketData::Fa
 	}
 }
 
-ToolLevel materialToLevel(ToolMaterial material) {
-	switch (material) {
+ToolLevel materialToLevel(ToolMaterial _material) {
+	switch (_material) {
 	case ToolMaterial::None:
 		return ToolLevel::None;
 	case ToolMaterial::Wooden:
@@ -243,8 +243,8 @@ ToolLevel materialToLevel(ToolMaterial material) {
 	return ToolLevel::None;
 }
 
-int baseToolDamage(ToolType type) {
-	switch (type) {
+int baseToolDamage(ToolType _type) {
+	switch (_type) {
 	case ToolType::Sword:
 		return 4;
 	case ToolType::Axe:
@@ -261,22 +261,22 @@ int baseToolDamage(ToolType type) {
 	return 0;
 }
 
-EntityHealth calculateDamage(ToolType type, ToolLevel level) {
-	return baseToolDamage(type) + (int(level) * 2);
+EntityHealth calculateDamage(ToolType _type, ToolLevel _level) {
+	return baseToolDamage(_type) + (int(_level) * 2);
 }
 
-void inflictDamage(Entity& target_entity, EntityHealth damage) {
+void inflictDamage(Entity& _target_entity, EntityHealth _damage) {
 	//target_entity.health -= damage;
 	return;
 }
 
-void attackWithItem(Entity& target_entity, ItemStack* stack) {
+void attackWithItem(Entity& _target_entity, ItemStack* _stack) {
 	EntityHealth damage = 1;
-	if (toolProperties.contains(stack->id))
-		damage = calculateDamage(toolProperties[stack->id].type, materialToLevel(toolProperties[stack->id].material));
-	inflictDamage(target_entity, damage);
-	GlobalLogger().info << "Dealt " << damage << " damage to " << target_entity.id << "!\n";
-	harmTool(stack);
+	if (toolProperties.contains(_stack->id))
+		damage = calculateDamage(toolProperties[_stack->id].type, materialToLevel(toolProperties[_stack->id].material));
+	inflictDamage(_target_entity, damage);
+	GlobalLogger().info << "Dealt " << damage << " damage to " << _target_entity.id << "!\n";
+	harmTool(_stack);
 }
 
 void registerAll() {
@@ -433,24 +433,24 @@ void registerAll() {
 		}
 	}
 
-	itemBehavior[SUGARCANE].onBlockUse = [](WorldManager& world, ItemStack* stack, Int3 pos,
-	                                        PacketData::FaceDirection face) {
-		Int3 placePos = Blocks::getAdjacentBlockPos(pos, face);
-		if (!Blocks::canSugarcaneSurviveAt(world, placePos))
+	itemBehavior[SUGARCANE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos,
+	                                        PacketData::FaceDirection _face) {
+		Int3 placePos = Blocks::getAdjacentBlockPos(_pos, _face);
+		if (!Blocks::canSugarcaneSurviveAt(_world, placePos))
 			return;
 
-		world.setBlock(placePos, BLOCK_SUGARCANE);
-		stack->decrementCount(1);
+		_world.setBlock(placePos, BLOCK_SUGARCANE);
+		_stack->decrementCount(1);
 	};
 
-	itemBehavior[SIGN].onBlockUse = [](WorldManager& world, ItemStack* stack, Int3 pos, PacketData::FaceDirection face) {
-		Int3 placePos = Blocks::getAdjacentBlockPos(pos, face);
-		if (face == PacketData::FaceDirection::Y_PLUS)
-			world.setBlock(placePos, BLOCK_SIGN); //TODO: facing meta
+	itemBehavior[SIGN].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
+		Int3 placePos = Blocks::getAdjacentBlockPos(_pos, _face);
+		if (_face == PacketData::FaceDirection::Y_PLUS)
+			_world.setBlock(placePos, BLOCK_SIGN); //TODO: facing meta
 		else
-			world.setBlock(placePos, BLOCK_SIGN_WALL, face);
+			_world.setBlock(placePos, BLOCK_SIGN_WALL, _face);
 
-		stack->decrementCount(1);
+		_stack->decrementCount(1);
 	};
 };
 }; // namespace Items

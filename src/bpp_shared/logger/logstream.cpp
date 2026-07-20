@@ -7,13 +7,13 @@
 #include "logstream.h"
 #include "logger.h"
 
-LogStream::LogStream(Logger& logger, LogLevel level) : logger(logger), level(level) {}
+LogStream::LogStream(Logger& _logger, LogLevel _level) : logger(_logger), level(_level) {}
 
-LogStream& LogStream::operator<<(Manip manip) {
-	if (manip == static_cast<Manip>(std::endl)) {
+LogStream& LogStream::operator<<(Manip _manip) {
+	if (_manip == static_cast<Manip>(std::endl)) {
 		Flush();
 	} else {
-		manip(buffer);
+		_manip(buffer);
 	}
 
 	return *this;

@@ -18,16 +18,16 @@
 #endif
 
 namespace ServerSocketManager {
-inline void closeSocket(int socket) {
+inline void closeSocket(int _socket) {
 #if defined(_WIN32) || defined(_WIN64)
 	closesocket(socket);
 	WSACleanup();
 #else
-	close(socket);
+	close(_socket);
 #endif
 }
 
-inline int createServerSocket(int port) {
+inline int createServerSocket(int _port) {
 	int serverSocket = -1;
 #if defined(_WIN32) || defined(_WIN64)
 	WSADATA wsaData;
@@ -43,7 +43,7 @@ inline int createServerSocket(int port) {
 
 	sockaddr_in addr{};
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
+	addr.sin_port = htons(_port);
 	addr.sin_addr.s_addr = INADDR_ANY;
 	if (bind(serverSocket, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
 		GlobalLogger().error << "**** FAILED TO BIND SOCKET! ****" << "\n";
@@ -61,7 +61,7 @@ inline int createServerSocket(int port) {
 	return serverSocket;
 }
 
-inline int createClientSocket(int socket = -1) {
+inline int createClientSocket(int _socket = -1) {
 #if defined(_WIN32) || defined(_WIN64)
 	SOCKET rawSocket = accept(socket, nullptr, nullptr);
 	if (rawSocket == INVALID_SOCKET)
@@ -72,7 +72,7 @@ inline int createClientSocket(int socket = -1) {
 	setsockopt(rawSocket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
 	int clientSocket = static_cast<int>(rawSocket);
 #else
-	int clientSocket = accept(socket, nullptr, nullptr);
+	int clientSocket = accept(_socket, nullptr, nullptr);
 	if (clientSocket < 0)
 		return -1;
 	fcntl(clientSocket, F_SETFL, O_NONBLOCK);

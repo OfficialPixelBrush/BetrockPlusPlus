@@ -19,9 +19,9 @@ class Config {
 private:
 	struct TransparentHasher {
 		using is_transparent = void;
-		size_t operator()(std::string_view sv) const {
+		size_t operator()(std::string_view _sv) const {
 			std::hash<std::string_view> hasher;
-			return hasher(sv);
+			return hasher(_sv);
 		}
 	};
 
@@ -29,21 +29,21 @@ private:
 
 public:
 	// get the value at key or a the default mapped_type if key doesn't exist
-	std::string_view Get(const std::string& key) noexcept;
+	std::string_view Get(const std::string& _key) noexcept;
 
-	std::string GetAsString(const std::string& key) {
-		return std::string(this->Get(key));
+	std::string GetAsString(const std::string& _key) {
+		return std::string(this->Get(_key));
 	}
 
 	// get the value at key as number
 	template <std::integral num_type>
-	num_type GetAsNumber(const std::string& key) {
-		return std::stoll(std::string(this->Get(key)));
+	num_type GetAsNumber(const std::string& _key) {
+		return std::stoll(std::string(this->Get(_key)));
 	}
 
 	// get the value at key as boolean
-	bool GetAsBoolean(const std::string& key) {
-		std::string val = std::string(this->Get(key));
+	bool GetAsBoolean(const std::string& _key) {
+		std::string val = std::string(this->Get(_key));
 		try {
 			if (val == "true" || val == "1")
 				return true;
@@ -60,10 +60,10 @@ public:
 
 	// set value at key.
 	// will create key if it doesn't exist.
-	void Set(const std::string& key, std::string_view value) noexcept;
+	void Set(const std::string& _key, std::string_view _value) noexcept;
 
 	// overwrite the properties in memory
-	void Overwrite(const ConfType& config) noexcept;
+	void Overwrite(const ConfType& _config) noexcept;
 
 	// read a properties file from disk into memory.
 	// returns false on error.
@@ -74,12 +74,12 @@ public:
 	bool SaveToDisk() const noexcept;
 
 	// set a new path to the properties file
-	void SetPath(std::string_view path) noexcept;
+	void SetPath(std::string_view _path) noexcept;
 
 	// get the current properties path
 	std::string_view GetPath() const noexcept;
 
-	Config(const std::string& path);
+	Config(const std::string& _path);
 	~Config() = default;
 
 private:

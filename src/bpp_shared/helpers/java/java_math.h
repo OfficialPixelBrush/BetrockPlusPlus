@@ -21,8 +21,8 @@
  * @param b End value (t = 1.0)
  * @return Interpolated value between a and b
  */
-inline double lerp(double t, double a, double b) {
-	return a + t * (b - a);
+inline double lerp(double _t, double _a, double _b) {
+	return _a + _t * (_b - _a);
 }
 
 /**
@@ -34,11 +34,11 @@ inline double lerp(double t, double a, double b) {
  * @param z Z of Distance Vector
  * @return double 
  */
-inline double grad3d(int32_t hash, double x, double y, double z) {
-	hash &= 15;
-	double u = hash < 8 ? x : y;
-	double v = hash < 4 ? y : (hash != 12 && hash != 14 ? z : x);
-	return ((hash & 1) == 0 ? u : -u) + ((hash & 2) == 0 ? v : -v);
+inline double grad3d(int32_t _hash, double _x, double _y, double _z) {
+	_hash &= 15;
+	double u = _hash < 8 ? _x : _y;
+	double v = _hash < 4 ? _y : (_hash != 12 && _hash != 14 ? _z : _x);
+	return ((_hash & 1) == 0 ? u : -u) + ((_hash & 2) == 0 ? v : -v);
 }
 
 /**
@@ -49,11 +49,11 @@ inline double grad3d(int32_t hash, double x, double y, double z) {
  * @param y Y of Distance Vector
  * @return double 
  */
-inline double grad2d(int32_t hash, double x, double y) {
-	hash &= 15;
-	double u = double(1 - ((hash & 8) >> 3)) * x;
-	double v = hash < 4 ? 0.0 : (hash != 12 && hash != 14 ? y : x);
-	return ((hash & 1) == 0 ? u : -u) + ((hash & 2) == 0 ? v : -v);
+inline double grad2d(int32_t _hash, double _x, double _y) {
+	_hash &= 15;
+	double u = double(1 - ((_hash & 8) >> 3)) * _x;
+	double v = _hash < 4 ? 0.0 : (_hash != 12 && _hash != 14 ? _y : _x);
+	return ((_hash & 1) == 0 ? u : -u) + ((_hash & 2) == 0 ? v : -v);
 }
 
 /**
@@ -62,8 +62,8 @@ inline double grad2d(int32_t hash, double x, double y) {
  * @param value Input value
  * @return Eased output value 
  */
-inline double fade(double value) {
-	return value * value * value * (value * (value * 6.0 - 15.0) + 10.0);
+inline double fade(double _value) {
+	return _value * _value * _value * (_value * (_value * 6.0 - 15.0) + 10.0);
 }
 
 /**
@@ -77,65 +77,65 @@ namespace Java {
 /**
 	 * @brief Casts a double to a 64-bit integer
 	 */
-inline int64_t DoubleToInt64(double value) {
-	if (std::isnan(value))
+inline int64_t DoubleToInt64(double _value) {
+	if (std::isnan(_value))
 		return 0;
-	if (value > double(INT64_MAX))
+	if (_value > double(INT64_MAX))
 		return INT64_MAX;
-	if (value < double(INT64_MIN))
+	if (_value < double(INT64_MIN))
 		return INT64_MIN;
-	if (value > 0)
-		return int64_t(std::floor(value));
-	if (value < 0)
-		return int64_t(std::ceil(value));
+	if (_value > 0)
+		return int64_t(std::floor(_value));
+	if (_value < 0)
+		return int64_t(std::ceil(_value));
 	return 0;
 }
 /**
 	 * @brief Casts a double to a 32-bit integer
 	 */
-inline int32_t DoubleToInt32(double value) {
-	if (std::isnan(value))
+inline int32_t DoubleToInt32(double _value) {
+	if (std::isnan(_value))
 		return 0;
-	if (value > double(INT32_MAX))
+	if (_value > double(INT32_MAX))
 		return INT32_MAX;
-	if (value < double(INT32_MIN))
+	if (_value < double(INT32_MIN))
 		return INT32_MIN;
-	if (value > 0)
-		return int32_t(std::floor(value));
-	if (value < 0)
-		return int32_t(std::ceil(value));
+	if (_value > 0)
+		return int32_t(std::floor(_value));
+	if (_value < 0)
+		return int32_t(std::ceil(_value));
 	return 0;
 }
 /**
 	 * @brief Casts a float to a 64-bit integer
 	 */
-inline int64_t FloatToInt64(float value) {
-	if (std::isnan(value))
+inline int64_t FloatToInt64(float _value) {
+	if (std::isnan(_value))
 		return 0;
-	if (value > float(INT64_MAX))
+	if (_value > float(INT64_MAX))
 		return INT64_MAX;
-	if (value < float(INT64_MIN))
+	if (_value < float(INT64_MIN))
 		return INT64_MIN;
-	if (value > 0)
-		return int64_t(std::floor(value));
-	if (value < 0)
-		return int64_t(std::ceil(value));
+	if (_value > 0)
+		return int64_t(std::floor(_value));
+	if (_value < 0)
+		return int64_t(std::ceil(_value));
 	return 0;
 }
 /**
 	 * @brief Casts a float to a 32-bit integer
 	 */
-inline int32_t FloatToInt32(float value) {
-	if (std::isnan(value))
+inline int32_t FloatToInt32(float _value) {
+	if (std::isnan(_value))
 		return 0;
-	if (value > float(INT32_MAX))
+	if (_value > float(INT32_MAX))
 		return INT32_MAX;
-	if (value < float(INT32_MIN))
+	if (_value < float(INT32_MIN))
 		return INT32_MIN;
-	if (value > 0)
-		return int32_t(std::floor(value));
-	if (value < 0)
-		return int32_t(std::ceil(value));
+	if (_value > 0)
+		return int32_t(std::floor(_value));
+	if (_value < 0)
+		return int32_t(std::ceil(_value));
 	return 0;
 }
 }; // namespace Java
@@ -146,11 +146,11 @@ inline int32_t FloatToInt32(float value) {
 * @param value The input string
 * @return Hashed string expressed as an integer
 */
-inline int32_t hashCode(std::string value) {
+inline int32_t hashCode(std::string _value) {
 	int32_t h = 0;
-	if (h == 0 && value.size() > 0) {
-		for (size_t i = 0; i < value.size(); i++) {
-			h = 31 * h + value[i];
+	if (h == 0 && _value.size() > 0) {
+		for (size_t i = 0; i < _value.size(); i++) {
+			h = 31 * h + _value[i];
 		}
 	}
 	return h;
@@ -163,8 +163,8 @@ inline int32_t hashCode(std::string value) {
 struct JavaMath {
 	static constexpr double PI = 3.141592653589793;
 	static constexpr float PI_FLOAT = float(PI);
-	static int32_t abs(int32_t a) {
-		return (a < 0) ? -a : a;
+	static int32_t abs(int32_t _a) {
+		return (_a < 0) ? -_a : _a;
 	}
 };
 
@@ -177,42 +177,42 @@ struct MathHelper {
 	// Requires C++17
 	inline static std::array<float, TABLE_SIZE> SIN_TABLE{};
 
-	static float sin(float x) {
-		return SIN_TABLE[Java::FloatToInt32(x * 10430.378f) & 0xFFFF];
+	static float sin(float _x) {
+		return SIN_TABLE[Java::FloatToInt32(_x * 10430.378f) & 0xFFFF];
 	}
 
-	static float cos(float x) {
-		return SIN_TABLE[(Java::FloatToInt32(x * 10430.378f + 16384.0f)) & 0xFFFF];
+	static float cos(float _x) {
+		return SIN_TABLE[(Java::FloatToInt32(_x * 10430.378f + 16384.0f)) & 0xFFFF];
 	}
 
-	static float sqrt_float(float x) {
-		return std::sqrt(x);
+	static float sqrt_float(float _x) {
+		return std::sqrt(_x);
 	}
 
-	static float sqrt_double(double x) {
-		return static_cast<float>(std::sqrt(x));
+	static float sqrt_double(double _x) {
+		return static_cast<float>(std::sqrt(_x));
 	}
 
-	static int32_t floor_float(float x) {
-		int32_t i = Java::FloatToInt32(x);
-		return x < static_cast<float>(i) ? i - 1 : i;
+	static int32_t floor_float(float _x) {
+		int32_t i = Java::FloatToInt32(_x);
+		return _x < static_cast<float>(i) ? i - 1 : i;
 	}
 
-	static int32_t floor_double(double x) {
-		int32_t i = Java::DoubleToInt32(x);
-		return x < static_cast<double>(i) ? i - 1 : i;
+	static int32_t floor_double(double _x) {
+		int32_t i = Java::DoubleToInt32(_x);
+		return _x < static_cast<double>(i) ? i - 1 : i;
 	}
 
-	static float abs(float x) {
-		return x >= 0.0f ? x : -x;
+	static float abs(float _x) {
+		return _x >= 0.0f ? _x : -_x;
 	}
 
-	static double abs_max(double a, double b) {
-		if (a < 0.0)
-			a = -a;
-		if (b < 0.0)
-			b = -b;
-		return a > b ? a : b;
+	static double abs_max(double _a, double _b) {
+		if (_a < 0.0)
+			_a = -_a;
+		if (_b < 0.0)
+			_b = -_b;
+		return _a > _b ? _a : _b;
 	}
 
 	static inline void InitSinTable() {

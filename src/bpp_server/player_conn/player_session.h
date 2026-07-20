@@ -85,8 +85,8 @@ struct PlayerSession {
 	BlockType lastTargetedBlock = BLOCK_AIR;
 	TickTime startedMiningAtTick = 0;
 
-	explicit PlayerSession(int socket, Runtime& gameRuntime)
-	    : stream(socket), inventoryInteraction(&inventory, gameRuntime) {}
+	explicit PlayerSession(int _socket, Runtime& _gameRuntime)
+	    : stream(_socket), inventoryInteraction(&inventory, _gameRuntime) {}
 	~PlayerSession() {
 		// So our player entity despawns from the world
 		if (entity) {
@@ -97,20 +97,20 @@ struct PlayerSession {
 	}
 
 	// Load our player data from file
-	void loadPlayerNBT(Tag& nbt) {
+	void loadPlayerNBT(Tag& _nbt) {
 		// Very basic but just stuff we care about for now
-		auto& it = nbt.get("Pos").getList();
+		auto& it = _nbt.get("Pos").getList();
 		position.pos.x = it[0].getDouble();
 		position.pos.y = it[1].getDouble();
 		position.pos.z = it[2].getDouble();
 
-		auto& it2 = nbt.get("Rotation").getList();
+		auto& it2 = _nbt.get("Rotation").getList();
 		rotation.x = it2[0].getFloat();
 		rotation.y = it2[1].getFloat();
 
-		dimension = static_cast<int8_t>(nbt.get("Dimension").getInt());
+		dimension = static_cast<int8_t>(_nbt.get("Dimension").getInt());
 
-		auto& it3 = nbt.get("Inventory").getList();
+		auto& it3 = _nbt.get("Inventory").getList();
 		for (auto& item : it3) {
 			NbtSlotId nbtSlot = item.get("Slot").getByte();
 			NetworkSlotId networkSlot = inventory.getNetworkSlotId(nbtSlot);

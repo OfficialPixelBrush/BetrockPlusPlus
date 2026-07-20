@@ -9,15 +9,15 @@
 #include <memory>
 #include <utility>
 
-std::string CommandSummon::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
-                                   std::function<void(PlayerSession&)> transferDimension, Server& server) {
+std::string CommandSummon::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
+                                   std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
 	auto entity = std::make_shared<MobileEntity>();
-	Vec3 spawnPos = session.position.pos;
+	Vec3 spawnPos = _session.position.pos;
 	entity->teleport(spawnPos);
-	world.entityManager.addEntity(std::move(entity));
+	_world.entityManager.addEntity(std::move(entity));
 
 	Packet::ChatMessage pkt;
 	pkt.message = "§eSpawned smart entity at " + spawnPos.str();
-	pkt.Serialize(session.stream);
+	pkt.Serialize(_session.stream);
 	return "";
 }

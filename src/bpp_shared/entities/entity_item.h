@@ -14,7 +14,7 @@ struct ItemEntity : public Entity {
 	ItemStack itemStack;
 	int8_t health = 5;
 	int8_t pickupCooldown = 10;
-	ItemEntity(Vec3 position) : Entity() {
+	ItemEntity(Vec3 _position) : Entity() {
 		type = EntityType::ITEM;
 		width = 0.25f;
 		height = 0.25f;
@@ -22,7 +22,7 @@ struct ItemEntity : public Entity {
 		stepHeight = 0.0f;
 
 		// Set the initial position of the item entity
-		this->teleport(position);
+		this->teleport(_position);
 
 		// This stuff is mostly randomized
 		rotationYaw = rand.nextDouble() * 360.0;
@@ -39,13 +39,13 @@ struct ItemEntity : public Entity {
 		// Returns the collider we use to detect if we are in lava
 		return collider;
 	}
-	void onCollideWithPlayer(PlayerEntity& entity) override;
+	void onCollideWithPlayer(PlayerEntity& _entity) override;
 	void tick() override;
 	std::optional<Tag> serializeToNBT() override;
-	void loadFromNBT(Tag& nbt) override;
-	bool attackEntityFrom(Entity* entity, int damage) override {
-		Entity::attackEntityFrom(entity, damage);
-		health -= damage;
+	void loadFromNBT(Tag& _nbt) override;
+	bool attackEntityFrom(Entity* _entity, int _damage) override {
+		Entity::attackEntityFrom(_entity, _damage);
+		health -= _damage;
 		if (health <= 0)
 			isDead = true;
 		return false;

@@ -48,49 +48,49 @@ struct EntityTracker {
 
 	void tick();
 
-	int16_t quantizeVelocityComponent(double v) {
-		v = std::clamp(v, -3.9, 3.9);
-		return int16_t(v * 8000.0);
+	int16_t quantizeVelocityComponent(double _v) {
+		_v = std::clamp(_v, -3.9, 3.9);
+		return int16_t(_v * 8000.0);
 	}
-	int32_t quantizePositionComponent(double p) {
-		return MathHelper::floor_double(p * 32.0);
-	}
-
-	Int16_3 quantizeVelocity(Vec3 v) {
-		return { quantizeVelocityComponent(v.x), quantizeVelocityComponent(v.y), quantizeVelocityComponent(v.z) };
+	int32_t quantizePositionComponent(double _p) {
+		return MathHelper::floor_double(_p * 32.0);
 	}
 
-	Int32_3 quantizePosition(Vec3 p) {
-		return { quantizePositionComponent(p.x), quantizePositionComponent(p.y), quantizePositionComponent(p.z) };
+	Int16_3 quantizeVelocity(Vec3 _v) {
+		return { quantizeVelocityComponent(_v.x), quantizeVelocityComponent(_v.y), quantizeVelocityComponent(_v.z) };
 	}
 
-	int32_t quantizeRotation(float r) {
-		return MathHelper::floor_float(r * 256.0f / 360.0f);
+	Int32_3 quantizePosition(Vec3 _p) {
+		return { quantizePositionComponent(_p.x), quantizePositionComponent(_p.y), quantizePositionComponent(_p.z) };
 	}
 
-	void trackEntity(Entity* entity) {
+	int32_t quantizeRotation(float _r) {
+		return MathHelper::floor_float(_r * 256.0f / 360.0f);
+	}
+
+	void trackEntity(Entity* _entity) {
 		TrackedEntry entry;
-		entry.entity = entity;
-		entry.profile = getTrackingProfile(*entity);
+		entry.entity = _entity;
+		entry.profile = getTrackingProfile(*_entity);
 
-		entry.lastEncodedPos = quantizePosition(entity->position);
-		entry.lastBroadcastMotion = entity->velocity;
-		entry.lastEncodedPitch = quantizeRotation(entity->rotationPitch);
-		entry.lastEncodedYaw = quantizeRotation(entity->rotationYaw);
+		entry.lastEncodedPos = quantizePosition(_entity->position);
+		entry.lastBroadcastMotion = _entity->velocity;
+		entry.lastEncodedPitch = quantizeRotation(_entity->rotationPitch);
+		entry.lastEncodedYaw = quantizeRotation(_entity->rotationYaw);
 
-		trackedEntities[entity->id] = std::move(entry);
+		trackedEntities[_entity->id] = std::move(entry);
 
 		// Let any player already in range see this entity right away
-		auto& newEntry = trackedEntities.at(entity->id);
+		auto& newEntry = trackedEntities.at(_entity->id);
 		for (EntityId playerId : playerIds) {
-			if (playerId == entity->id)
+			if (playerId == _entity->id)
 				continue;
 			auto playerIt = trackedEntities.find(playerId);
 			if (playerIt == trackedEntities.end())
 				continue;
 			auto& player = playerIt->second;
-			auto distanceTo = std::abs(std::max(std::abs(entity->position.x - player.entity->position.x),
-			                                    std::abs(entity->position.z - player.entity->position.z)));
+			auto distanceTo = std::abs(std::max(std::abs(_entity->position.x - player.entity->position.x),
+			                                    std::abs(_entity->position.z - player.entity->position.z)));
 			if (distanceTo > newEntry.profile.range)
 				continue;
 			spawnEntityForPlayer(playerId, newEntry);
@@ -100,53 +100,53 @@ struct EntityTracker {
 		update(entry);
 	}
 
-	void untrackEntity(Entity* entity) {
-		auto it = trackedEntities.find(entity->id);
+	void untrackEntity(Entity* _entity) {
+		auto it = trackedEntities.find(_entity->id);
 		if (it == trackedEntities.end())
 			return;
 
-		despawnEntityForViewers(entity->id, it->second);
+		despawnEntityForViewers(_entity->id, it->second);
 
 		for (auto& [id, otherEntry] : trackedEntities)
-			otherEntry.visibleTo.erase(entity->id);
+			otherEntry.visibleTo.erase(_entity->id);
 
 		trackedEntities.erase(it);
-		playerIds.erase(entity->id);
+		playerIds.erase(_entity->id);
 	}
 
-	void addPlayer(Entity* player) {
+	void addPlayer(Entity* _player) {
 		TrackedEntry entry;
-		entry.entity = player;
-		entry.profile = getTrackingProfile(*player);
+		entry.entity = _player;
+		entry.profile = getTrackingProfile(*_player);
 
-		entry.lastEncodedPos = quantizePosition(player->position);
-		entry.lastBroadcastMotion = player->velocity;
-		entry.lastEncodedPitch = quantizeRotation(player->rotationPitch);
-		entry.lastEncodedYaw = quantizeRotation(player->rotationYaw);
+		entry.lastEncodedPos = quantizePosition(_player->position);
+		entry.lastBroadcastMotion = _player->velocity;
+		entry.lastEncodedPitch = quantizeRotation(_player->rotationPitch);
+		entry.lastEncodedYaw = quantizeRotation(_player->rotationYaw);
 
-		trackedEntities[player->id] = std::move(entry);
-		playerIds.insert(player->id);
-		auto& newPlayerEntry = trackedEntities.at(player->id);
+		trackedEntities[_player->id] = std::move(entry);
+		playerIds.insert(_player->id);
+		auto& newPlayerEntry = trackedEntities.at(_player->id);
 
 		// This new player should immediately see anything already in range
 		for (auto& [entityId, entityEntry] : trackedEntities) {
-			if (entityId == player->id)
+			if (entityId == _player->id)
 				continue;
-			auto distanceTo = std::abs(std::max(std::abs(entityEntry.entity->position.x - player->position.x),
-			                                    std::abs(entityEntry.entity->position.z - player->position.z)));
+			auto distanceTo = std::abs(std::max(std::abs(entityEntry.entity->position.x - _player->position.x),
+			                                    std::abs(entityEntry.entity->position.z - _player->position.z)));
 			if (distanceTo > entityEntry.profile.range)
 				continue;
-			spawnEntityForPlayer(player->id, entityEntry);
+			spawnEntityForPlayer(_player->id, entityEntry);
 		}
 
 		for (EntityId otherPlayerId : playerIds) {
-			if (otherPlayerId == player->id)
+			if (otherPlayerId == _player->id)
 				continue;
 			auto otherIt = trackedEntities.find(otherPlayerId);
 			if (otherIt == trackedEntities.end())
 				continue;
-			auto distanceTo = std::abs(std::max(std::abs(player->position.x - otherIt->second.entity->position.x),
-			                                    std::abs(player->position.z - otherIt->second.entity->position.z)));
+			auto distanceTo = std::abs(std::max(std::abs(_player->position.x - otherIt->second.entity->position.x),
+			                                    std::abs(_player->position.z - otherIt->second.entity->position.z)));
 			if (distanceTo > newPlayerEntry.profile.range)
 				continue;
 			spawnEntityForPlayer(otherPlayerId, newPlayerEntry);
@@ -156,21 +156,21 @@ struct EntityTracker {
 		update(entry);
 	}
 
-	void removePlayer(Entity* player) {
-		untrackEntity(player);
+	void removePlayer(Entity* _player) {
+		untrackEntity(_player);
 	}
 
-	void spawnEntityForPlayer(EntityId playerId, TrackedEntry& entityEntry);
-	void despawnEntityForViewers(EntityId entityId, TrackedEntry& entry);
+	void spawnEntityForPlayer(EntityId _playerId, TrackedEntry& _entityEntry);
+	void despawnEntityForViewers(EntityId _entityId, TrackedEntry& _entry);
 
-	void sendPacketToPlayersInTrackedEntry(Packet::BasePacket& pkt, TrackedEntry& trackedEntry);
-	void sendPacketToViewers(Packet::BasePacket& pkt, EntityId id);
-	TrackedEntry& getTrackerForEntityId(EntityId id);
-	void update(TrackedEntry& trackedEntry);
+	void sendPacketToPlayersInTrackedEntry(Packet::BasePacket& _pkt, TrackedEntry& _trackedEntry);
+	void sendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id);
+	TrackedEntry& getTrackerForEntityId(EntityId _id);
+	void update(TrackedEntry& _trackedEntry);
 
 	// With my strict goal of keeping strict separation we cannot put this as a virtual in the actual entity class itself
-	TrackingProfile getTrackingProfile(Entity& entity) {
-		const EntityType& type = entity.type;
+	TrackingProfile getTrackingProfile(Entity& _entity) {
+		const EntityType& type = _entity.type;
 		switch (type) {
 		case EntityType::NONE:
 			return { 0, 0, false };

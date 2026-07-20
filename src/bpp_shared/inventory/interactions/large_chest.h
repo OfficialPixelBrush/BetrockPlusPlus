@@ -23,8 +23,8 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
 		}
 	} sharedInventory;
 
-	LargeChestInventoryInteraction(InventoryPlayer* pinv, std::shared_ptr<TileEntityChest> upper,
-	                               std::shared_ptr<TileEntityChest> lower);
+	LargeChestInventoryInteraction(InventoryPlayer* _pinv, std::shared_ptr<TileEntityChest> _upper,
+	                               std::shared_ptr<TileEntityChest> _lower);
 	virtual ~LargeChestInventoryInteraction();
 
 	bool canExist() override;
@@ -32,5 +32,5 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
 	std::vector<DeltaSlot> tickDiff() override;
 	void mergeInventories();
 	void writeBack();
-	void onShiftClick(int slot) override;
+	void onShiftClick(int _slot) override;
 };

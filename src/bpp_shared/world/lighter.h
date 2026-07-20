@@ -30,20 +30,20 @@ struct LightRegion {
 	// Returns true if [x1,y1,z1]->[x2,y2,z2] is contained within (or close
 	// enough to merge into) this region, expanding it in-place when the volume
 	// grows by <=2
-	bool tryMerge(int x1, int y1, int z1, int x2, int y2, int z2) {
-		if (x1 >= min.x && y1 >= min.y && z1 >= min.z && x2 <= max.x && y2 <= max.y && z2 <= max.z)
+	bool tryMerge(int _x1, int _y1, int _z1, int _x2, int _y2, int _z2) {
+		if (_x1 >= min.x && _y1 >= min.y && _z1 >= min.z && _x2 <= max.x && _y2 <= max.y && _z2 <= max.z)
 			return true;
 
-		if (x1 < min.x - 1 || y1 < min.y - 1 || z1 < min.z - 1)
+		if (_x1 < min.x - 1 || _y1 < min.y - 1 || _z1 < min.z - 1)
 			return false;
-		if (x2 > max.x + 1 || y2 > max.y + 1 || z2 > max.z + 1)
+		if (_x2 > max.x + 1 || _y2 > max.y + 1 || _z2 > max.z + 1)
 			return false;
 
 		int oldVol = (max.x - min.x + 1) * (max.y - min.y + 1) * (max.z - min.z + 1);
-		int nx1 = CrossPlatform::Math::min(min.x, x1), ny1 = CrossPlatform::Math::min(min.y, y1),
-		    nz1 = CrossPlatform::Math::min(min.z, z1);
-		int nx2 = CrossPlatform::Math::max(max.x, x2), ny2 = CrossPlatform::Math::max(max.y, y2),
-		    nz2 = CrossPlatform::Math::max(max.z, z2);
+		int nx1 = CrossPlatform::Math::min(min.x, _x1), ny1 = CrossPlatform::Math::min(min.y, _y1),
+		    nz1 = CrossPlatform::Math::min(min.z, _z1);
+		int nx2 = CrossPlatform::Math::max(max.x, _x2), ny2 = CrossPlatform::Math::max(max.y, _y2),
+		    nz2 = CrossPlatform::Math::max(max.z, _z2);
 		int newVol = (nx2 - nx1 + 1) * (ny2 - ny1 + 1) * (nz2 - nz1 + 1);
 		if (newVol - oldVol > 2)
 			return false;
@@ -66,52 +66,52 @@ struct ChunkCache {
 	int cx = INT_MIN, cz = INT_MIN; // chunk coords of center (grid[1][1])
 
 	// Fetch chunk at chunk-coord (tcx, tcz) from the grid.
-	Chunk* get(int tcx, int tcz) const {
-		int dx = tcx - cx, dz = tcz - cz;
+	Chunk* get(int _tcx, int _tcz) const {
+		int dx = _tcx - cx, dz = _tcz - cz;
 		if (dx < -1 || dx > 1 || dz < -1 || dz > 1)
 			return nullptr;
 		return grid[dx + 1][dz + 1];
 	}
 
 	// Refresh the entire 3x3 grid around (ncx, ncz) if the center has changed.
-	void refresh(int ncx, int ncz, WorldManager& world);
+	void refresh(int _ncx, int _ncz, WorldManager& _world);
 };
 
 struct Lighter {
 public:
-	void propagateLightAt(int x, int y, int z, LightType type, WorldManager& world, ChunkCache& cache);
-	void unlightAt(int x, int y, int z, LightType type, WorldManager& world);
+	void propagateLightAt(int _x, int _y, int _z, LightType _type, WorldManager& _world, ChunkCache& _cache);
+	void unlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _world);
 
 	// Process up to `maxIterations` light-queue entries this call.
-	bool processLightQueue(WorldManager& world, int maxIterations = INT_MAX);
+	bool processLightQueue(WorldManager& _world, int _maxIterations = INT_MAX);
 
 	// Schedule a single-block update; bypasses merge (used for BFS fan-out).
-	void scheduleLightUpdate(Int3 pos, LightType type) {
-		if (pos.y < 0 || pos.y >= CHUNK_HEIGHT)
+	void scheduleLightUpdate(Int3 _pos, LightType _type) {
+		if (_pos.y < 0 || _pos.y >= CHUNK_HEIGHT)
 			return;
 		if (lightQueue.size() < 1000000)
-			lightQueue.push_back({ pos, pos, type });
+			lightQueue.push_back({ _pos, _pos, _type });
 	}
 
 	// Schedule a region [mn, mx] update with merge/dedup
-	void scheduleLightRegion(Int3 mn, Int3 mx, LightType type) {
-		mn.y = CrossPlatform::Math::max(mn.y, 0);
-		mx.y = CrossPlatform::Math::min(mx.y, CHUNK_HEIGHT - 1);
-		if (mn.y > mx.y)
+	void scheduleLightRegion(Int3 _mn, Int3 _mx, LightType _type) {
+		_mn.y = CrossPlatform::Math::max(_mn.y, 0);
+		_mx.y = CrossPlatform::Math::min(_mx.y, CHUNK_HEIGHT - 1);
+		if (_mn.y > _mx.y)
 			return;
 
 		size_t checkCount = CrossPlatform::Math::min(lightQueue.size(), size_t(5));
 		for (size_t i = 0; i < checkCount; ++i) {
 			LightRegion& r = lightQueue[size_t(lightQueue.size() - 1 - i)];
-			if (r.type != type)
+			if (r.type != _type)
 				continue;
-			if (r.tryMerge(mn.x, mn.y, mn.z, mx.x, mx.y, mx.z))
+			if (r.tryMerge(_mn.x, _mn.y, _mn.z, _mx.x, _mx.y, _mx.z))
 				return;
 		}
 
 		if (lightQueue.size() >= 1000000)
 			return;
-		lightQueue.push_back({ mn, mx, type });
+		lightQueue.push_back({ _mn, _mx, _type });
 	}
 
 private:

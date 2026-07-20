@@ -12,9 +12,9 @@
 //   /tp <x> <y> <z>
 //   /tp <player> <x> <y> <z>
 //   /tp <source_player> <target_player>
-std::string CommandTeleport::Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,
-                                     std::function<void(PlayerSession&)> transferDimension, Server& server) {
-	if (parameters.size() < 2)
+std::string CommandTeleport::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
+                                     std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
+	if (_parameters.size() < 2)
 		return ERROR_REASON_SYNTAX;
 
 	PlayerSession* source = nullptr;
@@ -24,29 +24,29 @@ std::string CommandTeleport::Execute(std::vector<std::string>& parameters, Playe
 	// Inspired by https://stackoverflow.com/a/16575564
 	{
 		std::stringstream ss;
-		ss << parameters[offset];
+		ss << _parameters[offset];
 		double num = 0.0;
 		ss >> num;
 		if (!ss.fail() && ss.eof())
-			source = &session;
+			source = &_session;
 		else {
-			source = server.getSessionByUsername(parameters[offset++]).get();
+			source = _server.getSessionByUsername(_parameters[offset++]).get();
 		}
 	}
 
 	// TODO Should prolly report if a non-existent player runs this
 	if (!source)
-		return parameters[offset - 1] + " does not exist!";
+		return _parameters[offset - 1] + " does not exist!";
 
 	// /tp <player> <x> <y> <z>
-	if (parameters.size() - offset >= 3) {
+	if (_parameters.size() - offset >= 3) {
 		try {
-			Vec3 pos = ParseDouble3(offset, parameters);
+			Vec3 pos = ParseDouble3(offset, _parameters);
 			SendTeleport(*source, pos);
 
 			Packet::ChatMessage reply;
 			reply.message = "§eTeleported " + source->username + " to " + pos.str();
-			reply.Serialize(session.stream);
+			reply.Serialize(_session.stream);
 			return "";
 		} catch (...) {
 			return ERROR_REASON_PARAMETERS;
@@ -54,14 +54,14 @@ std::string CommandTeleport::Execute(std::vector<std::string>& parameters, Playe
 	}
 
 	// /tp <player> <target_player>
-	if (parameters.size() - offset == 1) { // offset=1→params[1], offset=2→params[2]
-		PlayerSession* dest = server.getSessionByUsername(parameters[offset]).get();
+	if (_parameters.size() - offset == 1) { // offset=1→params[1], offset=2→params[2]
+		PlayerSession* dest = _server.getSessionByUsername(_parameters[offset]).get();
 		if (!dest)
-			return parameters[offset] + " does not exist!";
+			return _parameters[offset] + " does not exist!";
 		SendTeleport(*source, dest->position.pos, dest->rotation.x, dest->rotation.y);
 		Packet::ChatMessage reply;
-		reply.message = "§eTeleported " + source->username + " to " + session.username;
-		reply.Serialize(session.stream);
+		reply.message = "§eTeleported " + source->username + " to " + _session.username;
+		reply.Serialize(_session.stream);
 		return "";
 	}
 

@@ -15,44 +15,44 @@ BlockBehavior blockBehaviors[256] = {};
 
 void ServerBlock::initialize() {
 	// Register unique behaviors here
-	blockBehaviors[BLOCK_CRAFTING_TABLE].onBlockActivated = [](WorldManager& world, Int3 position,
-	                                                           PlayerSession& session, Runtime& gameRuntime) -> bool {
+	blockBehaviors[BLOCK_CRAFTING_TABLE].onBlockActivated = [](WorldManager& _world, Int3 _position,
+	                                                           PlayerSession& _session, Runtime& _gameRuntime) -> bool {
 		Packet::OpenContainer ow;
-		ow.window_id = session.getNextWindowId();
+		ow.window_id = _session.getNextWindowId();
 		ow.slot_count = 9;
 		ow.title = "Crafting";
 		ow.window_type = PacketData::WindowType::CRAFTING_TABLE;
-		ow.Serialize(session.stream);
+		ow.Serialize(_session.stream);
 
-		session.activeInteraction = std::make_unique<CraftingTableInventoryInteraction>(&session.inventory, world,
-		                                                                                gameRuntime, position);
-		session.activeInteraction->initSnapshot();
+		_session.activeInteraction = std::make_unique<CraftingTableInventoryInteraction>(&_session.inventory, _world,
+		                                                                                _gameRuntime, _position);
+		_session.activeInteraction->initSnapshot();
 		return false;
 	};
-	blockBehaviors[BLOCK_CHEST].onBlockActivated = [](WorldManager& world, Int3 position, PlayerSession& session,
-	                                                  Runtime& gameRuntime) -> bool {
-		auto chest = world.getTileEntityShared<TileEntityChest>(position);
+	blockBehaviors[BLOCK_CHEST].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
+	                                                  Runtime& _gameRuntime) -> bool {
+		auto chest = _world.getTileEntityShared<TileEntityChest>(_position);
 		if (!chest) {
 			return false;
 		}
 
 		// Are we a double chest?
-		auto l = world.getBlockId({ position.x - 1, position.y, position.z });
-		auto r = world.getBlockId({ position.x + 1, position.y, position.z });
-		auto f = world.getBlockId({ position.x, position.y, position.z - 1 });
-		auto b = world.getBlockId({ position.x, position.y, position.z + 1 });
+		auto l = _world.getBlockId({ _position.x - 1, _position.y, _position.z });
+		auto r = _world.getBlockId({ _position.x + 1, _position.y, _position.z });
+		auto f = _world.getBlockId({ _position.x, _position.y, _position.z - 1 });
+		auto b = _world.getBlockId({ _position.x, _position.y, _position.z + 1 });
 		bool doubleChest = (l == BLOCK_CHEST || r == BLOCK_CHEST || f == BLOCK_CHEST || b == BLOCK_CHEST);
 
 		if (doubleChest) {
 			std::shared_ptr<TileEntityChest> partnerChest = nullptr;
 			if (l == BLOCK_CHEST)
-				partnerChest = world.getTileEntityShared<TileEntityChest>({ position.x - 1, position.y, position.z });
+				partnerChest = _world.getTileEntityShared<TileEntityChest>({ _position.x - 1, _position.y, _position.z });
 			else if (r == BLOCK_CHEST)
-				partnerChest = world.getTileEntityShared<TileEntityChest>({ position.x + 1, position.y, position.z });
+				partnerChest = _world.getTileEntityShared<TileEntityChest>({ _position.x + 1, _position.y, _position.z });
 			else if (f == BLOCK_CHEST)
-				partnerChest = world.getTileEntityShared<TileEntityChest>({ position.x, position.y, position.z - 1 });
+				partnerChest = _world.getTileEntityShared<TileEntityChest>({ _position.x, _position.y, _position.z - 1 });
 			else
-				partnerChest = world.getTileEntityShared<TileEntityChest>({ position.x, position.y, position.z + 1 });
+				partnerChest = _world.getTileEntityShared<TileEntityChest>({ _position.x, _position.y, _position.z + 1 });
 			if (!partnerChest)
 				return false;
 
@@ -61,35 +61,35 @@ void ServerBlock::initialize() {
 				std::swap(chest, partnerChest);
 
 			Packet::OpenContainer ow;
-			ow.window_id = session.getNextWindowId();
+			ow.window_id = _session.getNextWindowId();
 			ow.slot_count = 54;
 			ow.title = "Large Chest";
 			ow.window_type = PacketData::WindowType::CHEST;
-			ow.Serialize(session.stream);
+			ow.Serialize(_session.stream);
 
-			session.activeInteraction = std::make_unique<LargeChestInventoryInteraction>(&session.inventory, chest,
+			_session.activeInteraction = std::make_unique<LargeChestInventoryInteraction>(&_session.inventory, chest,
 			                                                                             partnerChest);
-			session.activeInteraction->initSnapshot();
+			_session.activeInteraction->initSnapshot();
 
-			PacketUtilities::sendInventory(session, session.openWindowId, *session.activeInteraction->inventory);
+			PacketUtilities::sendInventory(_session, _session.openWindowId, *_session.activeInteraction->inventory);
 			return false;
 		}
 
 		// Setup interaction
-		session.activeInteraction = std::make_unique<ChestInventoryInteraction>(&session.inventory, chest);
-		session.activeInteraction->initSnapshot();
+		_session.activeInteraction = std::make_unique<ChestInventoryInteraction>(&_session.inventory, chest);
+		_session.activeInteraction->initSnapshot();
 
 		// Single chest
 		// Open the chest window
 		Packet::OpenContainer ow;
-		ow.window_id = session.getNextWindowId();
+		ow.window_id = _session.getNextWindowId();
 		ow.slot_count = 27;
 		ow.title = "Chest";
 		ow.window_type = PacketData::WindowType::CHEST;
-		ow.Serialize(session.stream);
+		ow.Serialize(_session.stream);
 
 		// Send inventory
-		PacketUtilities::sendInventory(session, session.openWindowId, *session.activeInteraction->inventory);
+		PacketUtilities::sendInventory(_session, _session.openWindowId, *_session.activeInteraction->inventory);
 		return false;
 	};
 }

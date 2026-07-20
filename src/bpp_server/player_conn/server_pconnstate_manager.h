@@ -9,9 +9,9 @@
 class Server;
 // For managing the player's connection state
 struct PlayerConnStateManager {
-	void handleConnectionState(PlayerSession& session, Server& server);
-	void handleHandshake(PlayerSession& session, Server& server);
-	void handleLogin(PlayerSession& session, Server& server);
-	void waitForSpawnChunks(PlayerSession& session, Server& server);
-	void disconnectPlayer(PlayerSession& session, const std::string& reason, Server& server);
+	void handleConnectionState(PlayerSession& _session, Server& _server);
+	void handleHandshake(PlayerSession& _session, Server& _server);
+	void handleLogin(PlayerSession& _session, Server& _server);
+	void waitForSpawnChunks(PlayerSession& _session, Server& _server);
+	void disconnectPlayer(PlayerSession& _session, const std::string& _reason, Server& _server);
 };

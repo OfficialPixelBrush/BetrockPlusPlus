@@ -13,6 +13,6 @@
 // TODO: There might be a better alternative worth testing:
 // https://stackoverflow.com/questions/35985960/c-why-is-boosthash-combine-the-best-way-to-combine-hash-values
 template <typename T>
-inline void hash_combine(std::size_t& h, T v) {
-	h ^= std::hash<T>{}(v) + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
+inline void hash_combine(std::size_t& _h, T _v) {
+	_h ^= std::hash<T>{}(_v) + 0x9e3779b97f4a7c15ULL + (_h << 6) + (_h >> 2);
 }

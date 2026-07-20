@@ -13,24 +13,24 @@
 #include <mutex>
 
 // TODO: Replace std::string_view with std::filesystem::path
-Config::Config(const std::string& pPath) {
-	this->path = pPath;
+Config::Config(const std::string& _pPath) {
+	this->path = _pPath;
 }
 
-std::string_view Config::Get(const std::string& key) noexcept {
+std::string_view Config::Get(const std::string& _key) noexcept {
 	std::shared_lock read_lock{ this->properties_mutex };
-	return this->properties.contains(key) ? this->properties.at(key) : std::string_view();
+	return this->properties.contains(_key) ? this->properties.at(_key) : std::string_view();
 }
 
-void Config::Set(const std::string& key, std::string_view value) noexcept {
+void Config::Set(const std::string& _key, std::string_view _value) noexcept {
 	std::unique_lock write_lock{ this->properties_mutex };
-	this->properties[key] = value;
+	this->properties[_key] = _value;
 }
 
 // overwrite the properties in memory
-void Config::Overwrite(const ConfType& config) noexcept {
+void Config::Overwrite(const ConfType& _config) noexcept {
 	std::unique_lock write_lock{ this->properties_mutex };
-	this->properties = config;
+	this->properties = _config;
 }
 
 bool Config::LoadFromDisk() noexcept {
@@ -91,8 +91,8 @@ bool Config::SaveToDisk() const noexcept {
 	return true;
 }
 
-void Config::SetPath(std::string_view pPath) noexcept {
-	this->path = pPath;
+void Config::SetPath(std::string_view _pPath) noexcept {
+	this->path = _pPath;
 }
 
 std::string_view Config::GetPath() const noexcept {
