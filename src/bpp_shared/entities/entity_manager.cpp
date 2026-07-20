@@ -21,11 +21,11 @@ void EntityManager::RemoveEntity(EntityId _id) {
 	auto& container = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
 	auto& bucket = container.buckets[entity->bucketPos.z];
 	bucket.entities.erase(std::remove_if(bucket.entities.begin(), bucket.entities.end(),
-	                                       [&entity](const std::weak_ptr<Entity>& _weak) {
-		                                       auto locked = _weak.lock();
-		                                       return !locked || locked == entity;
-	                                       }),
-	                        bucket.entities.end());
+	                                     [&entity](const std::weak_ptr<Entity>& _weak) {
+		                                     auto locked = _weak.lock();
+		                                     return !locked || locked == entity;
+	                                     }),
+	                      bucket.entities.end());
 
 	// Remove from the master list
 	entities.erase(it);
@@ -45,7 +45,7 @@ void EntityManager::AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEn
 		return;
 	}
 	_entity->id = _forceEntityId == -1 ? GetNextEntityId()
-	                                 : _forceEntityId; // Assign an ID if we weren't forced to use one
+	                                   : _forceEntityId; // Assign an ID if we weren't forced to use one
 	_entity->world = world; // Bind the world pointer so the entity can interact with the world
 	_entity->entityManager = this;
 	_entity->dim = world->thisDimension;
@@ -73,12 +73,12 @@ void EntityManager::Tick() {
 			auto& container = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
 			auto& b = container.buckets[entity->bucketPos.z];
 			b.entities.erase(std::remove_if(b.entities.begin(), b.entities.end(),
-			                                  [&entity](const std::weak_ptr<Entity>& _weak) {
-				                                  auto locked = _weak.lock();
-				                                  return !locked ||
-				                                         locked == entity; // Remove if expired or matches our entity
-			                                  }),
-			                   b.entities.end());
+			                                [&entity](const std::weak_ptr<Entity>& _weak) {
+				                                auto locked = _weak.lock();
+				                                return !locked ||
+				                                       locked == entity; // Remove if expired or matches our entity
+			                                }),
+			                 b.entities.end());
 
 			if (onEntityDespawn)
 				onEntityDespawn(entity);
@@ -94,12 +94,12 @@ void EntityManager::Tick() {
 			auto& oldContainer = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
 			auto& b = oldContainer.buckets[entity->bucketPos.z];
 			b.entities.erase(std::remove_if(b.entities.begin(), b.entities.end(),
-			                                  [&entity](const std::weak_ptr<Entity>& _weak) {
-				                                  auto locked = _weak.lock();
-				                                  return !locked ||
-				                                         locked == entity; // Remove if expired or matches our entity
-			                                  }),
-			                   b.entities.end());
+			                                [&entity](const std::weak_ptr<Entity>& _weak) {
+				                                auto locked = _weak.lock();
+				                                return !locked ||
+				                                       locked == entity; // Remove if expired or matches our entity
+			                                }),
+			                 b.entities.end());
 
 			// Put in the new bucket
 			auto& newContainer = entityContainers[{ newBucketPos.x, newBucketPos.y }];
@@ -111,13 +111,14 @@ void EntityManager::Tick() {
 	copy.clear(); // Clear the copy to free memory
 }
 
-std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbExcluding(const AABB& _box, EntityId _entityId) {
+std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbExcluding(const AABB& _box,
+                                                                                   EntityId _entityId) {
 	// Get all entities within an AABB excluding this entity id
-	auto entities = GetEntitiesWithinAabb(_box);
-	entities.erase(std::remove_if(entities.begin(), entities.end(),
-	                              [_entityId](std::shared_ptr<Entity> _entity) { return _entity->id == _entityId; }),
-	               entities.end());
-	return entities;
+	auto _entities = GetEntitiesWithinAabb(_box);
+	_entities.erase(std::remove_if(_entities.begin(), _entities.end(),
+	                               [_entityId](std::shared_ptr<Entity> _entity) { return _entity->id == _entityId; }),
+	                _entities.end());
+	return _entities;
 }
 
 std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabb(const AABB& _box) {

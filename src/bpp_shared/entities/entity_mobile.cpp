@@ -138,11 +138,12 @@ void MobileEntity::TickPhysics() {
 
 		if (onGround) {
 			friction = 0.546f;
-			auto belowBlock = world->GetBlockId({ MathHelper::FloorDouble(position.x),
-			                                      MathHelper::FloorDouble(position.y) - 1,
-			                                      MathHelper::FloorDouble(position.z) });
-			if (belowBlock > BLOCK_AIR) {
-				friction = Blocks::blockProperties[belowBlock < BLOCK_MAX ? belowBlock : BLOCK_MAX].slipperiness * 0.91f;
+			auto _belowBlock = world->GetBlockId({ MathHelper::FloorDouble(position.x),
+			                                       MathHelper::FloorDouble(position.y) - 1,
+			                                       MathHelper::FloorDouble(position.z) });
+			if (_belowBlock > BLOCK_AIR) {
+				friction = Blocks::blockProperties[_belowBlock < BLOCK_MAX ? _belowBlock : BLOCK_MAX].slipperiness *
+				           0.91f;
 			}
 		}
 
@@ -195,8 +196,8 @@ void MobileEntity::TickPhysics() {
 }
 
 bool MobileEntity::AABBNotInLiquidOrObstructed(AABB& _collider) {
-	auto collided = world->GetCollidingBoundingBoxes(_collider);
-	if (collided.size() > 0)
+	auto _collided = world->GetCollidingBoundingBoxes(_collider);
+	if (_collided.size() > 0)
 		return false;
 	return !world->IsLiquidInAabb(_collider);
 }
@@ -204,12 +205,13 @@ bool MobileEntity::AABBNotInLiquidOrObstructed(AABB& _collider) {
 bool MobileEntity::HeadInOpaqueBlock() {
 	// Check 8 corners of a slightly shrunk hitbox
 	for (int corner = 0; corner < 8; corner++) {
-		float xOffset = (float((corner >> 0) % 2) - 0.5f) * width * 0.9f;
-		float yOffset = (float((corner >> 1) % 2) - 0.5f) * 0.1f;
-		float zOffset = (float((corner >> 2) % 2) - 0.5f) * width * 0.9f;
+		Float3 offset;
+		offset.x = (float((corner >> 0) % 2) - 0.5f) * width * 0.9f;
+		offset.y = (float((corner >> 1) % 2) - 0.5f) * 0.1f;
+		offset.z = (float((corner >> 2) % 2) - 0.5f) * width * 0.9f;
 		auto fd = MathHelper::FloorDouble;
-		Int3 cornerBlockPos = { fd(position.x + xOffset), fd(position.y + eyeHeight + yOffset),
-			                    fd(position.z + zOffset) };
+		Int3 cornerBlockPos = { fd(position.x + offset.x), fd(position.y + eyeHeight + offset.y),
+			                    fd(position.z + offset.z) };
 		if (world->IsBlockNormalCube(cornerBlockPos))
 			return true;
 	}
