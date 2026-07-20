@@ -123,16 +123,14 @@ void MobileEntity::tickPhysics() {
 		applyInput(0.02f);
 		move(this->m_velocity);
 		m_velocity *= friction;
-		if (m_hasPhysics)
-			m_velocity.m_y -= 0.2; // Sink
+		m_velocity.m_y -= 0.2; // Sink
 
 		AABB offsetCollider = m_collider.offset(m_velocity.m_x, m_velocity.m_y + 0.6 - m_position.m_y + oldY, m_velocity.m_z);
 
 		// Check if we are colliding with a block and we are
 		// Moving up and unobstructed, if so, apply a nudge
 		if (m_collidedHorizontally && AABBNotInLiquidOrObstructed(offsetCollider)) {
-			if (m_hasPhysics)
-				m_velocity.m_y += 0.3;
+			m_velocity.m_y += 0.3;
 		}
 	} else {
 		// Normal ground/air movement
@@ -184,7 +182,7 @@ void MobileEntity::tickPhysics() {
 		m_velocity.m_z *= friction;
 
 		// Gravity
-		if (m_hasPhysics) m_velocity.m_y -= 0.08;
+		m_velocity.m_y -= 0.08;
 
 		auto collidingEntities = m_world->m_entityManager.getEntitiesWithinAABBExcluding(m_collider.expand(0.2, 0.0, 0.2), m_id);
 
