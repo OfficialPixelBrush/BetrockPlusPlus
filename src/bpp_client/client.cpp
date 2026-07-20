@@ -16,14 +16,14 @@ extern std::atomic<bool> shutdownRequested;
 
 // This window size seems really random but its the size beta uses
 Client::Client() : window({ 854, 480 }, "Betrock++", { WindowMode::WINDOWED_RESIZABLE }), renderer(window) {
-	window.setCursorCapture(true);
+	window.SetCursorCapture(true);
 
 	GlobalLogger().info << "Client initialized\n";
 }
 
 void Client::Tick() {}
 
-int Client::run() {
+int Client::Run() {
 	const uint64_t freq = SDL_GetPerformanceFrequency();
 	uint64_t lastTime = SDL_GetPerformanceCounter();
 
@@ -34,14 +34,14 @@ int Client::run() {
 		lastTime = now;
 		accumulator += delta;
 
-		input.newFrame();
+		input.NewFrame();
 
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			if (event.type == SDL_EVENT_QUIT)
 				shutdownRequested.store(true);
 
-			input.handleEvent(event);
+			input.HandleEvent(event);
 		}
 
 		// Run ticks until caught up, but cap to avoid spiraling on slow frames
@@ -55,7 +55,7 @@ int Client::run() {
 		if (ticksRan == MAX_TICKS_PER_FRAME)
 			accumulator = 0.0f;
 
-		renderer.render(accumulator / TICK_DELTA);
+		renderer.Render(accumulator / TICK_DELTA);
 	}
 	return 0;
 }

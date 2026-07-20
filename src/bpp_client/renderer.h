@@ -15,7 +15,7 @@ public:
 	explicit Renderer(Window& _window);
 	~Renderer();
 
-	void render(int _partialTicks);
+	void Render(int _partialTicks);
 
 private:
 	SDL_Window* window;

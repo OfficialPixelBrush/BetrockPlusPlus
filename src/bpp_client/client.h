@@ -14,14 +14,14 @@
 class Client {
 public:
 	Client();
-	int run();
+	int Run();
 
 private:
 	static constexpr float TICK_DELTA = 1.0f / 20.0f;
 	static constexpr int MAX_TICKS_PER_FRAME = 10;
 
 	void Tick();
-	void render([[maybe_unused]] float _partial_tick);
+	void Render([[maybe_unused]] float _partialTick);
 
 	Window window;
 	Input input;

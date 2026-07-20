@@ -29,39 +29,39 @@ std::optional<Tag> ItemEntity::SerializeToNbt() {
 		return std::nullopt;
 
 	// Our additions
-	Tag health;
-	health.name = "Health";
-	health.type = TAG_SHORT;
-	health.shortValue = this->health;
-	Tag age;
-	age.name = "Age";
-	age.type = TAG_SHORT;
-	age.shortValue = this->ticksExisted;
+	Tag healthTag;
+	healthTag.name = "Health";
+	healthTag.type = TAG_SHORT;
+	healthTag.shortValue = this->health;
+	Tag ageTag;
+	ageTag.name = "Age";
+	ageTag.type = TAG_SHORT;
+	ageTag.shortValue = this->ticksExisted;
 
 	// Construct the item nbt
-	Tag item;
-	item.name = "Item";
-	item.type = TAG_COMPOUND;
-	Tag id;
-	id.name = "id";
-	id.type = TAG_SHORT;
-	id.shortValue = this->itemStack.id;
-	Tag count;
-	count.name = "Count";
-	count.type = TAG_BYTE;
-	count.byteValue = this->itemStack.count;
-	Tag damage;
-	damage.name = "Damage";
-	damage.type = TAG_SHORT;
-	damage.shortValue = this->itemStack.data;
-	item.compound["id"] = id;
-	item.compound["Count"] = count;
-	item.compound["Damage"] = damage;
+	Tag itemTag;
+	itemTag.name = "Item";
+	itemTag.type = TAG_COMPOUND;
+	Tag idTag;
+	idTag.name = "id";
+	idTag.type = TAG_SHORT;
+	idTag.shortValue = this->itemStack.id;
+	Tag countTag;
+	countTag.name = "Count";
+	countTag.type = TAG_BYTE;
+	countTag.byteValue = this->itemStack.count;
+	Tag damageTag;
+	damageTag.name = "Damage";
+	damageTag.type = TAG_SHORT;
+	damageTag.shortValue = this->itemStack.data;
+	itemTag.compound["id"] = idTag;
+	itemTag.compound["Count"] = countTag;
+	itemTag.compound["Damage"] = damageTag;
 
 	// Add our additions to the base tag
-	tag->compound["Health"] = health;
-	tag->compound["Age"] = age;
-	tag->compound["Item"] = item;
+	tag->compound["Health"] = healthTag;
+	tag->compound["Age"] = ageTag;
+	tag->compound["Item"] = itemTag;
 
 	return tag;
 }

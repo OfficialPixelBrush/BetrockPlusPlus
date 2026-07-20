@@ -15,7 +15,7 @@
 class Input {
 public:
 	// Call at frame start
-	void newFrame() {
+	void NewFrame() {
 		mouseDelta = {};
 		mouseWheel = {};
 
@@ -23,37 +23,37 @@ public:
 		prevDownMouseButtons = downMouseButtons;
 	}
 
-	void handleEvent(const SDL_Event& _ev);
+	void HandleEvent(const SDL_Event& _ev);
 
-	[[nodiscard]] Vec2 getMouseDelta() const {
+	[[nodiscard]] Vec2 GetMouseDelta() const {
 		return mouseDelta;
 	}
 
-	[[nodiscard]] Vec2 getMouseWheel() const {
+	[[nodiscard]] Vec2 GetMouseWheel() const {
 		return mouseWheel;
 	}
 
-	[[nodiscard]] bool isKeyDown(SDL_Scancode _key) const {
+	[[nodiscard]] bool IsKeyDown(SDL_Scancode _key) const {
 		return downKeys[_key];
 	}
 
-	[[nodiscard]] bool isKeyPressed(SDL_Scancode _key) const {
+	[[nodiscard]] bool IsKeyPressed(SDL_Scancode _key) const {
 		return downKeys[_key] && !prevDownKeys[_key];
 	}
 
-	[[nodiscard]] bool isKeyReleased(SDL_Scancode _key) const {
+	[[nodiscard]] bool IsKeyReleased(SDL_Scancode _key) const {
 		return prevDownKeys[_key] && !downKeys[_key];
 	}
 
-	[[nodiscard]] bool isMouseButtonDown(uint8_t _button) const {
+	[[nodiscard]] bool IsMouseButtonDown(uint8_t _button) const {
 		return downMouseButtons & SDL_BUTTON_MASK(_button);
 	}
 
-	[[nodiscard]] bool isMouseButtonPressed(uint8_t _button) const {
+	[[nodiscard]] bool IsMouseButtonPressed(uint8_t _button) const {
 		return (downMouseButtons & SDL_BUTTON_MASK(_button)) && !(prevDownMouseButtons & SDL_BUTTON_MASK(_button));
 	}
 
-	[[nodiscard]] bool isMouseButtonReleased(uint8_t _button) const {
+	[[nodiscard]] bool IsMouseButtonReleased(uint8_t _button) const {
 		return (prevDownMouseButtons & SDL_BUTTON_MASK(_button)) && !(downMouseButtons & SDL_BUTTON_MASK(_button));
 	}
 

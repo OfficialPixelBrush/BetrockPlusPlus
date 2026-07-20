@@ -33,20 +33,20 @@ public:
 	Window(const Window&) = delete;
 	Window& operator=(const Window&) = delete;
 
-	void setTitle(const std::string& _title) {
+	void SetTitle(const std::string& _title) {
 		SDL_SetWindowTitle(handle, _title.c_str());
 	}
-	void setCursorCapture(bool _enabled) {
+	void SetCursorCapture(bool _enabled) {
 		SDL_SetWindowRelativeMouseMode(handle, _enabled);
 	}
-	const Int2& getScreenSize() const {
+	const Int2& GetScreenSize() const {
 		return screenSize;
 	}
-	float getAspect() const {
+	float GetAspect() const {
 		return float(screenSize.x) / float(screenSize.y);
 	}
 
-	SDL_Window* getHandle() const {
+	SDL_Window* GetHandle() const {
 		return handle;
 	}
 
@@ -54,5 +54,5 @@ private:
 	SDL_Window* handle = nullptr;
 	Int2 screenSize;
 
-	static void sdlLogCallback(void* _userdata, int _category, SDL_LogPriority _priority, const char* _message);
+	static void SdlLogCallback(void* _userdata, int _category, SDL_LogPriority _priority, const char* _message);
 };

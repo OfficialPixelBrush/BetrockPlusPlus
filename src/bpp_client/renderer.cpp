@@ -9,7 +9,7 @@
 #include "misc.h"
 #include "window.h"
 
-Renderer::Renderer(Window& _window) : window(_window.getHandle()) {
+Renderer::Renderer(Window& _window) : window(_window.GetHandle()) {
 #ifndef NDEBUG
 	const bool debug = true;
 #else
@@ -30,7 +30,7 @@ Renderer::~Renderer() {
 	SDL_DestroyGPUDevice(gpu);
 }
 
-void Renderer::render(int _partialTicks) {
+void Renderer::Render(int _partialTicks) {
 	SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(gpu);
 	if (!cmd)
 		return;

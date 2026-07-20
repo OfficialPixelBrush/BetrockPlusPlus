@@ -349,74 +349,74 @@ void Entity::LoadFromNbt(Tag& _nbt) {
 }
 
 std::optional<Tag> Entity::SerializeToNbt() {
-	Tag root;
-	root.type = TAG_COMPOUND;
-	root.name = "";
+	Tag rootTag;
+	rootTag.type = TAG_COMPOUND;
+	rootTag.name = "";
 
-	Tag motion;
-	motion.type = TAG_LIST;
-	motion.name = "Motion";
-	motion.listType = TAG_DOUBLE;
-	Tag air;
-	air.type = TAG_SHORT;
-	air.name = "Air";
-	air.shortValue = this->air;
-	Tag onGround;
-	onGround.type = TAG_BYTE;
-	onGround.name = "OnGround";
-	onGround.byteValue = this->onGround;
-	Tag fallDistance;
-	fallDistance.type = TAG_FLOAT;
-	fallDistance.name = "FallDistance";
-	fallDistance.floatValue = this->fallDistance;
-	Tag pos;
-	pos.type = TAG_LIST;
-	pos.name = "Pos";
-	pos.listType = TAG_DOUBLE;
-	Tag rotation;
-	rotation.type = TAG_LIST;
-	rotation.name = "Rotation";
-	rotation.listType = TAG_FLOAT;
-	Tag fire;
-	fire.type = TAG_SHORT;
-	fire.name = "Fire";
-	fire.shortValue = this->fireTicks;
+	Tag motionTag;
+	motionTag.type = TAG_LIST;
+	motionTag.name = "Motion";
+	motionTag.listType = TAG_DOUBLE;
+	Tag airTag;
+	airTag.type = TAG_SHORT;
+	airTag.name = "Air";
+	airTag.shortValue = this->air;
+	Tag onGroundTag;
+	onGroundTag.type = TAG_BYTE;
+	onGroundTag.name = "OnGround";
+	onGroundTag.byteValue = this->onGround;
+	Tag fallDistanceTag;
+	fallDistanceTag.type = TAG_FLOAT;
+	fallDistanceTag.name = "FallDistance";
+	fallDistanceTag.floatValue = this->fallDistance;
+	Tag posTag;
+	posTag.type = TAG_LIST;
+	posTag.name = "Pos";
+	posTag.listType = TAG_DOUBLE;
+	Tag rotationTag;
+	rotationTag.type = TAG_LIST;
+	rotationTag.name = "Rotation";
+	rotationTag.listType = TAG_FLOAT;
+	Tag fireTag;
+	fireTag.type = TAG_SHORT;
+	fireTag.name = "Fire";
+	fireTag.shortValue = this->fireTicks;
 
 	// Save position and rotation / velocity
-	Tag posX;
-	posX.type = TAG_DOUBLE;
-	posX.doubleValue = this->position.x;
-	Tag posY;
-	posY.type = TAG_DOUBLE;
-	posY.doubleValue = this->position.y;
-	Tag posZ;
-	posZ.type = TAG_DOUBLE;
-	posZ.doubleValue = this->position.z;
-	pos.list.push_back(posX);
-	pos.list.push_back(posY);
-	pos.list.push_back(posZ);
+	Tag posXTag;
+	posXTag.type = TAG_DOUBLE;
+	posXTag.doubleValue = this->position.x;
+	Tag posYTag;
+	posYTag.type = TAG_DOUBLE;
+	posYTag.doubleValue = this->position.y;
+	Tag posZTag;
+	posZTag.type = TAG_DOUBLE;
+	posZTag.doubleValue = this->position.z;
+	posTag.list.push_back(posXTag);
+	posTag.list.push_back(posYTag);
+	posTag.list.push_back(posZTag);
 
-	Tag movX;
-	movX.type = TAG_DOUBLE;
-	movX.doubleValue = this->velocity.x;
-	Tag movY;
-	movY.type = TAG_DOUBLE;
-	movY.doubleValue = this->velocity.y;
-	Tag movZ;
-	movZ.type = TAG_DOUBLE;
-	movZ.doubleValue = this->velocity.z;
-	motion.list.push_back(movX);
-	motion.list.push_back(movY);
-	motion.list.push_back(movZ);
+	Tag movXTag;
+	movXTag.type = TAG_DOUBLE;
+	movXTag.doubleValue = this->velocity.x;
+	Tag movYTag;
+	movYTag.type = TAG_DOUBLE;
+	movYTag.doubleValue = this->velocity.y;
+	Tag movZTag;
+	movZTag.type = TAG_DOUBLE;
+	movZTag.doubleValue = this->velocity.z;
+	motionTag.list.push_back(movXTag);
+	motionTag.list.push_back(movYTag);
+	motionTag.list.push_back(movZTag);
 
-	Tag rotYaw;
-	rotYaw.type = TAG_FLOAT;
-	rotYaw.floatValue = this->rotationYaw;
-	Tag rotPitch;
-	rotPitch.type = TAG_FLOAT;
-	rotPitch.floatValue = this->rotationPitch;
-	rotation.list.push_back(rotYaw);
-	rotation.list.push_back(rotPitch);
+	Tag rotYawTag;
+	rotYawTag.type = TAG_FLOAT;
+	rotYawTag.floatValue = this->rotationYaw;
+	Tag rotPitchTag;
+	rotPitchTag.type = TAG_FLOAT;
+	rotPitchTag.floatValue = this->rotationPitch;
+	rotationTag.list.push_back(rotYawTag);
+	rotationTag.list.push_back(rotPitchTag);
 
 	// Get our string ID
 	auto stringId = this->entityManager->GetEntityNbtId(type);
@@ -425,20 +425,20 @@ std::optional<Tag> Entity::SerializeToNbt() {
 	if (!stringId)
 		return std::nullopt;
 
-	Tag id;
-	id.type = TAG_STRING;
-	id.name = "id";
-	id.stringValue = *stringId;
+	Tag idTag;
+	idTag.type = TAG_STRING;
+	idTag.name = "id";
+	idTag.stringValue = *stringId;
 
 	// Link together our compound
-	root.compound["Pos"] = pos;
-	root.compound["Motion"] = motion;
-	root.compound["Rotation"] = rotation;
-	root.compound["FallDistance"] = fallDistance;
-	root.compound["Fire"] = fire;
-	root.compound["Air"] = air;
-	root.compound["OnGround"] = onGround;
-	root.compound["id"] = id;
+	rootTag.compound["Pos"] = posTag;
+	rootTag.compound["Motion"] = motionTag;
+	rootTag.compound["Rotation"] = rotationTag;
+	rootTag.compound["FallDistance"] = fallDistanceTag;
+	rootTag.compound["Fire"] = fireTag;
+	rootTag.compound["Air"] = airTag;
+	rootTag.compound["OnGround"] = onGroundTag;
+	rootTag.compound["id"] = idTag;
 
-	return root;
+	return rootTag;
 }

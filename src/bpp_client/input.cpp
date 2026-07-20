@@ -7,7 +7,7 @@
 
 #include "input.h"
 
-void Input::handleEvent(const SDL_Event& _ev) {
+void Input::HandleEvent(const SDL_Event& _ev) {
 	switch (_ev.type) {
 	case SDL_EVENT_KEY_DOWN:
 		downKeys[_ev.key.scancode] = true;

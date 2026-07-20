@@ -102,7 +102,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 #endif
 #ifdef BUILD_CLIENT
 	Client client;
-	client.run();
+	client.Run();
 #endif
 
 	return 0;

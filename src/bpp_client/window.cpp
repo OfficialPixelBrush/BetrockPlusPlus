@@ -12,7 +12,7 @@
 #include "misc.h"
 #include "window.h"
 
-void Window::sdlLogCallback(void* _userdata, int _category, SDL_LogPriority _priority, const char* _message) {
+void Window::SdlLogCallback(void* _userdata, int _category, SDL_LogPriority _priority, const char* _message) {
 	LogLevel level;
 	switch (_priority) {
 	case SDL_LOG_PRIORITY_INFO:
@@ -33,7 +33,7 @@ void Window::sdlLogCallback(void* _userdata, int _category, SDL_LogPriority _pri
 }
 
 Window::Window(Int2 _screenSize, const std::string& _title, const WindowOptions& _options) : screenSize(_screenSize) {
-	SDL_SetLogOutputFunction(sdlLogCallback, nullptr);
+	SDL_SetLogOutputFunction(SdlLogCallback, nullptr);
 #ifndef NDEBUG
 	SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
 #endif
