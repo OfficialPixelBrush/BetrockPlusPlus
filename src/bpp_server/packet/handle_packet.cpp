@@ -26,8 +26,9 @@ void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& _session) {
 	ka.Serialize(_session.stream);
 }
 
-void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session, std::vector<std::shared_ptr<PlayerSession>>& _players,
-                 WorldManager& _world, CommandManager& _cmdMgr, std::function<void(PlayerSession&)> _transferDimension) {
+void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
+                 std::vector<std::shared_ptr<PlayerSession>>& _players, WorldManager& _world, CommandManager& _cmdMgr,
+                 std::function<void(PlayerSession&)> _transferDimension) {
 	if (_pkt.message.size() > 0 && _pkt.message[0] == '/') {
 		_cmdMgr.Parse(_pkt.message, _session, _world, _transferDimension);
 		return;
@@ -157,15 +158,22 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		auto blockId = BlockType(heldItem->id.value);
 
 		// Can we place this block here?
-		auto entitiesInBlock = _world.entityManager.GetEntitiesWithinAabb({ double(placePosition.x), double(placePosition.y), double(placePosition.z), double(placePosition.x) + 1.0, double(placePosition.y) + 1.0, double(placePosition.z) + 1.0});
+		auto entitiesInBlock = _world.entityManager.GetEntitiesWithinAabb(
+		    { double(placePosition.x), double(placePosition.y), double(placePosition.z), double(placePosition.x) + 1.0,
+		      double(placePosition.y) + 1.0, double(placePosition.z) + 1.0 });
 
 		// Check to see if any entities overlap our block's collider
 		bool collided = false;
 		if (Blocks::blockProperties[blockId].isCollidable) {
-			auto blockCollider = Blocks::blockBehaviors[blockId].getCollider(/*meta=*/0).Offset(placePosition.x, placePosition.y, placePosition.z); // Block colliders are at the origin so shift to world space
+			auto blockCollider = Blocks::blockBehaviors[blockId]
+			                         .getCollider(/*meta=*/0)
+			                         .Offset(
+			                             placePosition.x, placePosition.y,
+			                             placePosition.z); // Block colliders are at the origin so shift to world space
 			for (auto& entity : entitiesInBlock) {
 				collided = blockCollider.Intersects(entity->collider) && entity->preventEntitySpawning;
-				if (collided) break;
+				if (collided)
+					break;
 			}
 		}
 
@@ -191,7 +199,17 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 void SetHotbarSlot(Packet::SetHotbarSlot& _pkt, PlayerSession& _session) {
 	if (_pkt.slot < 0 || _pkt.slot >= 9)
 		return;
+	// Update previously held item
+	auto previousHeldItem = _session.inventory.GetHeldItem();
+	if (previousHeldItem)
+		Items::itemBehavior[previousHeldItem->id].onStopHolding(previousHeldItem);
+	// Move to new slot
 	_session.inventory.activeHotbarSlot = _pkt.slot;
+	// Update held item start holding
+	// TODO: This doesn't update when an item is given or picked up!!!!
+	auto heldItem = _session.inventory.GetHeldItem();
+	if (heldItem)
+		Items::itemBehavior[heldItem->id].onStartHolding(heldItem);
 }
 
 // Click handler

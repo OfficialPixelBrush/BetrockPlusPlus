@@ -15,6 +15,8 @@
 #include "inventory/item_stack.h"
 #include "logger.h"
 #include "packet_data.h"
+#include "packet_ids.h"
+#include "player_conn/player_session.h"
 #include "world/world.h"
 
 namespace Items {
@@ -443,7 +445,8 @@ void RegisterAll() {
 		_stack->DecrementCount(1);
 	};
 
-	itemBehavior[SIGN].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
+	itemBehavior[SIGN].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos,
+	                                   PacketData::FaceDirection _face) {
 		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
 		if (_face == PacketData::FaceDirection::Y_PLUS)
 			_world.SetBlock(placePos, BLOCK_SIGN); //TODO: facing meta
@@ -451,6 +454,26 @@ void RegisterAll() {
 			_world.SetBlock(placePos, BLOCK_SIGN_WALL, _face);
 
 		_stack->DecrementCount(1);
+	};
+
+	itemBehavior[MAP].onStartHolding = [](ItemStack* _stack) {
+		GlobalLogger().debug << "Started holding a map!\n";
+	};
+
+	// TODO: Dunno if doing this is best :p
+	itemBehavior[MAP].whileHeld = [](ItemStack* _stack, PlayerSession& _session) {
+		GlobalLogger().debug << "Holding a map!\n";
+		std::vector<uint8_t> mapData{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+			                          0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+		Packet::ItemData pkt;
+		pkt.itemId = MAP;
+		pkt.mapId = 0;
+		pkt.data = mapData;
+		pkt.Serialize(_session.stream);
+	};
+
+	itemBehavior[MAP].onStopHolding = [](ItemStack* _stack) {
+		GlobalLogger().debug << "No longer holding a map!\n";
 	};
 };
 }; // namespace Items
