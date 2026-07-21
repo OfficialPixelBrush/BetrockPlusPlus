@@ -322,12 +322,10 @@ void Entity::Move(Vec3& _velocity) {
 	}
 }
 
-void Entity::DealDamage([[maybe_unused]] int _amount) {}
-
 void Entity::UpdateFallState(float _movedY) {
 	if (onGround) {
 		if (fallDistance > FALL_DAMAGE_FLOOR) {
-			DealDamage((int)std::ceil(fallDistance - FALL_DAMAGE_FLOOR));
+			AttackEntityFrom(nullptr, (int)std::ceil(fallDistance - FALL_DAMAGE_FLOOR));
 		}
 		fallDistance = 0;
 	} else if (_movedY < 0) {

@@ -21,8 +21,8 @@ private:
 	size_t currentPathIdx = 0;
 
 	int64_t age = 0;
-	int health = 10;
-	int maxHurtTime = 10;
+	int health = 20;
+	int maxHurtTime = 20;
 	int lastAttackDamage = 0;
 	float attackedAtYaw = 0.0f;
 	int deathTime = 0;
@@ -37,6 +37,9 @@ private:
 public:
 	MobileEntity();
 
+	const int getHeartsHealth() {
+		return this->health;
+	}
 	virtual void OnDeath();
 	virtual void Tick() override;
 	virtual void SetGoal(std::optional<Int3> _goal);

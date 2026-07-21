@@ -196,8 +196,6 @@ struct Entity {
 	virtual void ApplyKnockback(Vec3 _direction);
 	virtual void ApplyInput(float _acceleration);
 	virtual void Move(Vec3& _velocity);
-	//TODO: Move to LivingEntity
-	virtual void DealDamage(int _amount);
 	virtual void UpdateFallState(float _movedY);
 	virtual std::optional<Tag> SerializeToNbt();
 	virtual void LoadFromNbt(Tag& _nbt);

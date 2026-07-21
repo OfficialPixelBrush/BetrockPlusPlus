@@ -35,7 +35,6 @@ bool EntityMPPlayer::DropItem(ItemStack _stack) {
 	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(itemPos);
 	itemEntity->itemStack = _stack;
 	itemEntity->pickupCooldown = 40; // So we don't pick it up instantly
-	itemEntity->dim = dim;
 
 	// Give ourselves some random velocity based on look direction
 	float _velocity = 0.3f;
@@ -91,6 +90,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 	// If we recieved a movement packet this Tick do our server side checks
 	if (session->pendingPosition) {
 		// Re-simulate our move
+		bool savedOnGround = onGround;
 		bool residualTooLarge = false;
 		bool movedWrong = false;
 		bool wasClearBefore = world->GetCollidingBoundingBoxes(collider.Expand(-0.0625, -0.0625, -0.0625)).empty();
@@ -103,13 +103,29 @@ void EntityMPPlayer::HandlePositionChecks() {
 		}
 		Move(delta);
 
+		// Reset on ground to what the client last claimed
+		onGround = savedOnGround;
+
+		// Deal fall damage
+		if (onGround) {
+			if (fallDistance > FALL_DAMAGE_FLOOR) {
+				AttackEntityFrom(nullptr, (int)std::ceil(fallDistance - FALL_DAMAGE_FLOOR));
+			}
+			fallDistance = 0;
+		}
+		else if (delta.y < 0) {
+			fallDistance -= delta.y;
+		}
+
+		auto resolvedDelta = delta;
+
 		// How far is our simulated move vs what the client says?
 		delta = claimed - this->position;
 		double residual = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
 		if (residual < 0.0625) {
 			this->position = claimed; // Trust it
 			session->position.pos = claimed;
-			this->velocity = delta;
+			this->velocity = resolvedDelta;
 			RebuildCollider();
 		} else {
 			// Send a correction
@@ -140,19 +156,79 @@ void EntityMPPlayer::HandlePositionChecks() {
 	}
 }
 
+void EntityMPPlayer::UpdateFallState(float _movedY) {
+	return; // no-op
+}
+
+void EntityMPPlayer::DropInventory() {
+	for (int i = 0; i < session->inventory.slots.size(); i++) {
+		auto stack = session->inventory.GetStackInSlot(i);
+		if (stack != nullptr) {
+			// Create the item entity
+			Vec3 itemPos = { position.x, position.y - 0.3 + PLAYER_EYE_HEIGHT, position.z };
+			std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(itemPos);
+
+			ItemStack newStack{ .id = stack->id, .count = stack->count, .data = stack->data };
+			itemEntity->itemStack = std::move(newStack);
+			itemEntity->pickupCooldown = 40; // So we don't pick it up instantly
+
+			// Give ourselves some random velocity
+			float _velocity = 0.3f;
+			float _angle = this->rand.NextFloat() * float(JavaMath::PI) * 2.0f;
+			itemEntity->velocity.x = double(-std::sin(_angle) * _velocity);
+			itemEntity->velocity.z = double(std::cos(_angle) * _velocity);
+			itemEntity->velocity.y = 0.2;
+
+			// Register our item with the world
+			this->world->entityManager.AddEntity(std::move(itemEntity));
+
+			// Erase this item from the inventory
+			stack->count = 0;
+			stack->data = 0;
+			stack->id = Items::Id::INVALID;
+		}
+	}
+}
+
+void EntityMPPlayer::OnDeath() {
+	MobileEntity::OnDeath();
+	this->DropInventory();
+}
+
 void EntityMPPlayer::Tick() {
 	if (!session)
 		return;
 
-	hasPhysics = true;
 	if (session->pendingTeleport || session->pendingPosition) {
 		// Handle reported vs server side position
 		this->HandlePositionChecks();
-		hasPhysics = false; // Disable physics this tick if the client sent an update
+	} else {
+		// Just so stuff like the collision with blocks triggers
+		Vec3 vel = { 0, 0, 0 };
+		Move(vel);
 	}
 
 	// Do living entity stuff
 	MobileEntity::Tick();
+
+	// Our health changed
+	if (this->lastHealth != getHeartsHealth()) {
+		Packet::SetHealth pkt;
+		pkt.health = getHeartsHealth();
+		pkt.Serialize(session->stream);
+
+		if (getHeartsHealth() - lastHealth < 0) {
+			Packet::EntityEvent pkt;
+			pkt.entityId = this->id;
+			pkt.action = PacketData::EntityEvent::HURT;
+			pkt.Serialize(session->stream);
+
+			// Let other players know
+			session->entityTracker->SendPacketToViewers(pkt, this->id);
+		}
+
+		this->lastHealth = getHeartsHealth();
+	}
 
 	// Tell entities we collided with a player
 	if (entityManager) {

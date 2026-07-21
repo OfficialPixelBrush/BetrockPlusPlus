@@ -15,10 +15,11 @@
 MobileEntity::MobileEntity() {
 	type = EntityType::CREEPER;
 	stepHeight = 0.5;
+	preventEntitySpawning = true;
 }
 
 void MobileEntity::OnDeath() {
-	return;
+	isDead = true;
 }
 
 void MobileEntity::SetGoal(std::optional<Int3> _goal) {
@@ -303,11 +304,7 @@ void MobileEntity::Tick() {
 
 	// Timer for the death animation
 	if (health <= 0) {
-		deathTime++;
-		if (deathTime > 20) {
-			OnDeath();
-			isDead = true;
-		}
+		OnDeath();
 	}
 
 	// Jump code
