@@ -37,20 +37,20 @@ bool EntityMPPlayer::DropItem(ItemStack _stack) {
 	itemEntity->pickupCooldown = 40; // So we don't pick it up instantly
 
 	// Give ourselves some random velocity based on look direction
-	float _velocity = 0.3f;
+	float velocity = 0.3f;
 	itemEntity->velocity.x = double(-std::sin(this->rotationYaw / 180.0F * JavaMath::PI_FLOAT) *
-	                                std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * _velocity);
+	                                std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity);
 	itemEntity->velocity.z = double(std::cos(this->rotationYaw / 180.0F * JavaMath::PI_FLOAT) *
-	                                std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * _velocity);
-	itemEntity->velocity.y = double(-std::sin(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * _velocity + 0.1F);
+	                                std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity);
+	itemEntity->velocity.y = double(-std::sin(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * velocity + 0.1F);
 
 	// Add a little bit of randomness
-	_velocity = 0.02f;
+	velocity = 0.02f;
 	float angle = rand.NextFloat() * JavaMath::PI_FLOAT * 2.0f;
-	_velocity *= rand.NextFloat();
-	itemEntity->velocity.x += std::cos(angle) * _velocity;
+	velocity *= rand.NextFloat();
+	itemEntity->velocity.x += std::cos(angle) * velocity;
 	itemEntity->velocity.y += (rand.NextFloat() - rand.NextFloat()) * 0.1f;
-	itemEntity->velocity.z += std::sin(angle) * _velocity;
+	itemEntity->velocity.z += std::sin(angle) * velocity;
 
 	// Register our item with the world
 	this->world->entityManager.AddEntity(std::move(itemEntity));
@@ -173,10 +173,10 @@ void EntityMPPlayer::DropInventory() {
 			itemEntity->pickupCooldown = 40; // So we don't pick it up instantly
 
 			// Give ourselves some random velocity
-			float _velocity = 0.3f;
-			float _angle = this->rand.NextFloat() * float(JavaMath::PI) * 2.0f;
-			itemEntity->velocity.x = double(-std::sin(_angle) * _velocity);
-			itemEntity->velocity.z = double(std::cos(_angle) * _velocity);
+			float velocity = 0.3f;
+			float angle = this->rand.NextFloat() * float(JavaMath::PI) * 2.0f;
+			itemEntity->velocity.x = double(-std::sin(angle) * velocity);
+			itemEntity->velocity.z = double(std::cos(angle) * velocity);
 			itemEntity->velocity.y = 0.2;
 
 			// Register our item with the world
