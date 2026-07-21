@@ -30,9 +30,10 @@ Renderer::Renderer(Window& _window) : window(_window.GetHandle()) {
 
 	gpu = SDL_CreateGPUDeviceWithProperties(props);
 	SDL_DestroyProperties(props);
-	if (SDL_GetError()[0] != '\0') {
+	auto sdlError = SDL_GetError();
+	if (sdlError[0] != '\0') {
 		GlobalLogger().error << "Critical error during initialization, aborting.\n";
-		GlobalLogger().error << SDL_GetError() << "\n";
+		GlobalLogger().error << sdlError << "\n";
 		throw std::runtime_error("Couldn't initialize SDL!");
 		return;
 	}

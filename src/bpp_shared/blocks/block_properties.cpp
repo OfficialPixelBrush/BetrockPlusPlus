@@ -549,6 +549,13 @@ static AABB LiquidAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 }
 
+// Soul sand is indented 1 block
+static CollisionShape SoulSandCollider(uint8_t) {
+	CollisionShape collider;
+	collider.Add({ 0.0, 0.0, 0.0, 1.0, 0.875, 1.0 });
+	return collider;
+}
+
 // piston head
 static AABB PistonHeadAabb(uint8_t _meta) {
 	switch (_meta & 7) {
@@ -1821,7 +1828,7 @@ void RegisterAll() {
 
 	blockBehaviors[BlockType::BLOCK_STAIRS_WOOD] = {
 		.getCollider = StairCollider,
-		// ray/selection stay as defaultAABB (full cube is correct)
+		// ray/selection stay as defaultAABB
 	};
 	blockBehaviors[BlockType::BLOCK_STAIRS_COBBLESTONE] = {
 		.getCollider = StairCollider,
@@ -1933,6 +1940,10 @@ void RegisterAll() {
 		.getSelectionBox = PistonHeadAabb,
 		.getRayBounds = PistonHeadAabb,
 		.getCollider = PistonHeadCollider,
+	};
+
+	blockBehaviors[BLOCK_SOULSAND] = {
+		.getCollider = SoulSandCollider,
 	};
 
 	// specific behavioral overrides

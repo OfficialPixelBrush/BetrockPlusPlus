@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
+#include "handle_client_packet.h"
 
-#pragma once
-#include <numeric_structs.h>
+namespace HandlePacket {
+
+}

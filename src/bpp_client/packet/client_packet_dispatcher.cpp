@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
+#include "client_packet_dispatcher.h"
 
-#pragma once
-#include <numeric_structs.h>
+namespace PacketDispatcher {
+
+}

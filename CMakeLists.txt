@@ -170,6 +170,8 @@ set(CLIENT_SOURCES
     src/bpp_client/input.cpp
     src/bpp_client/renderer.cpp
     src/bpp_client/assets.cpp
+    src/bpp_client/packet/handle_client_packet.cpp
+    src/bpp_client/packet/client_packet_dispatcher.cpp
 
     src/bpp_client/renderers/world_renderer.cpp
     src/bpp_client/renderers/sub_chunk_mesher.cpp
