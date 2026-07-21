@@ -229,6 +229,10 @@ void EntityMPPlayer::Tick() {
 		this->lastHealth = getHeartsHealth();
 	}
 
+	// If we fell out of the world then die
+	if (position.y < -64.0)
+		OnDeath();
+
 	// Tell entities we collided with a player
 	if (entityManager) {
 		auto entitiesCollidingWith = entityManager->GetEntitiesWithinAabbExcluding(collider.Expand(1.0, 0.0, 1.0),

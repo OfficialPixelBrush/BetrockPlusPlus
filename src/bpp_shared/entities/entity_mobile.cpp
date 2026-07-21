@@ -20,7 +20,7 @@ MobileEntity::MobileEntity() {
 }
 
 void MobileEntity::OnDeath() {
-	return; // no-op
+	health = 0;
 }
 
 bool MobileEntity::onLadder() {

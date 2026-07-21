@@ -30,7 +30,11 @@ struct ItemEntity : public Entity {
 		velocity.y = 0.2;
 		velocity.z = rand.NextDouble() * 0.2 - 0.1;
 	}
-
+	void OnCollideWithPlayer(PlayerEntity& _entity) override;
+	void Tick() override;
+	std::optional<Tag> SerializeToNbt() override;
+	void LoadFromNbt(Tag& _nbt) override;
+	void UpdateFallState(float _movedY) override;
 	AABB GetFluidCollider() override {
 		// Returns the collider we use to compare if we are in a fluid
 		return collider;
@@ -39,10 +43,6 @@ struct ItemEntity : public Entity {
 		// Returns the collider we use to detect if we are in lava
 		return collider;
 	}
-	void OnCollideWithPlayer(PlayerEntity& _entity) override;
-	void Tick() override;
-	std::optional<Tag> SerializeToNbt() override;
-	void LoadFromNbt(Tag& _nbt) override;
 	bool AttackEntityFrom(Entity* _entity, int _damage) override {
 		Entity::AttackEntityFrom(_entity, _damage);
 		health -= _damage;

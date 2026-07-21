@@ -74,6 +74,14 @@ void ItemEntity::OnCollideWithPlayer(PlayerEntity& _entity) {
 		this->isDead = true;
 }
 
+void ItemEntity::UpdateFallState(float _movedY) {
+	if (onGround) {
+		fallDistance = 0;
+	} else if (_movedY < 0) {
+		fallDistance -= _movedY;
+	}
+}
+
 void ItemEntity::Tick() {
 	// Item entities have differing physics
 	Entity::Tick();
