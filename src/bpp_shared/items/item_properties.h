@@ -10,7 +10,6 @@
 #include "items.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
-#include "player_conn/player_session.h"
 #include <cstdint>
 #include <unordered_map>
 

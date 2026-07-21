@@ -8,6 +8,7 @@
 #include "entity_mobile.h"
 #include "entities/entity.h"
 #include "java_math.h"
+#include "world.h"
 #include <algorithm>
 #include <cmath>
 #include <optional>
@@ -19,7 +20,12 @@ MobileEntity::MobileEntity() {
 }
 
 void MobileEntity::OnDeath() {
-	isDead = true;
+	return; // no-op
+}
+
+bool MobileEntity::onLadder() {
+	auto fd = MathHelper::FloorDouble;
+	return world->GetBlockId({ fd(position.x), fd(collider.minY), fd(position.z) }) == BLOCK_LADDER;
 }
 
 void MobileEntity::SetGoal(std::optional<Int3> _goal) {
@@ -269,9 +275,12 @@ bool MobileEntity::AttackEntityFrom(Entity* _entity, int _damage) {
 		} else {
 			attackedAtYaw = float(int(double(rand.NextInt() / INT_MAX * 2.0) * 180));
 		}
-		// TODO: callback here for the server / client?
 	}
-	// TODO: hurt sound?
+
+	if (health <= 0) {
+		OnDeath();
+	}
+
 	return true;
 }
 
@@ -304,7 +313,8 @@ void MobileEntity::Tick() {
 
 	// Timer for the death animation
 	if (health <= 0) {
-		OnDeath();
+		this->deathTime++;
+		isDead = deathTime >= 20;
 	}
 
 	// Jump code

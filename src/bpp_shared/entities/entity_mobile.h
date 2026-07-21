@@ -9,7 +9,6 @@
 #include "entity.h"
 #include "numeric_structs.h"
 #include "pathfinding/pathfinder.hpp"
-#include "world.h"
 #include <optional>
 #include <vector>
 
@@ -50,10 +49,7 @@ public:
 	bool EntityAlive() {
 		return !isDead && health > 0;
 	}
-	bool onLadder() {
-		auto fd = MathHelper::FloorDouble;
-		return world->GetBlockId({ fd(position.x), fd(collider.minY), fd(position.z) }) == BLOCK_LADDER;
-	}
+	bool onLadder();
 	bool CanBePushed() override {
 		return true;
 	}
