@@ -305,6 +305,8 @@ void MobileEntity::Tick() {
 			air = 0;
 			AttackEntityFrom(nullptr, 2);
 		}
+	} else {
+		air = maxAir;
 	}
 
 	// Reset timers

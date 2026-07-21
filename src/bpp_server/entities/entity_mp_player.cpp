@@ -58,10 +58,10 @@ bool EntityMPPlayer::DropItem(ItemStack _stack) {
 }
 
 void EntityMPPlayer::HandlePositionChecks() {
-	if (session->pendingTeleport) {
+	if (isDead || !world)
+		return;
+	if (session->pendingTeleport && session->pendingPosition) {
 		// We have a pending teleport. Check to see if the player caught up
-		if (!session->pendingPosition)
-			return;
 		auto& pending = *session->pendingPosition;
 		Vec3 claimed = { pending.x, pending.y + PLAYER_EYE_HEIGHT, pending.z };
 		Vec3 delta = claimed - *session->pendingTeleport;
@@ -77,6 +77,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 			pkt.position = { position.x, position.y, position.z };
 			pkt.cameraY = position.y; // This is backwards, thanks notch
 			pkt.Serialize(session->stream);
+			GlobalLogger().info << "Sucessfully TP'd player " << session->username << "\n";
 			return;
 		}
 		// Client acknowledged our tp

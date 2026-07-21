@@ -89,6 +89,10 @@ public:
 		return players;
 	}
 
+	WorldManager* GetWorldForDimension(Dimension _dim) {
+		return _dim == Dimension::Nether ? &this->gameRuntime.worldHell : &this->gameRuntime.world;
+	}
+
 	void SendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _entity);
 	void SendPlayerToDimension(Dimension _dim, PlayerSession& _session);
 
@@ -106,7 +110,6 @@ private:
 	void Tick();
 	void Startup();
 	void AcceptNewPlayers();
-	void TransferPlayerDimension(PlayerSession& _session);
 	void DisconnectClients();
 
 	// Config file stuff
@@ -116,10 +119,6 @@ private:
 	void IndexAddChunk(PlayerSession& _session, const Int32_2& _pos);
 	void IndexRemoveChunk(PlayerSession& _session, const Int32_2& _pos);
 	void IndexRemoveSession(PlayerSession& _session);
-
-	WorldManager* GetWorldForDimension(Dimension _dim) {
-		return _dim == Dimension::Nether ? &this->gameRuntime.worldHell : &this->gameRuntime.world;
-	}
 
 	// Encodes chunk position + dimension into a single key for chunkSessions.
 	// x = chunk X, y = chunk Z, z = dimension id

@@ -120,7 +120,7 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	}
 
 	// Convert the feet-based respawn height into our posY convention (eye level)
-	_session.position.pos.y += (PLAYER_EYE_HEIGHT + 0.00001);
+	_session.position.pos.y += (PLAYER_EYE_HEIGHT + 1 / 64);
 
 	// Log that we logged in!
 	GlobalLogger().info << "Player " << _session.username << " logged in with entity ID " << _session.entity->id
@@ -187,7 +187,7 @@ void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server&
 
 	GlobalLogger().info << "Spawn chunks sent. Setting player position\n";
 
-	_session.position.pos.y += 0.0625;
+	_session.position.pos.y += 1 / 64;
 	Packet::PlayerPositionAndRotation pos;
 	pos.position = _session.position.pos;
 	pos.cameraY = _session.position.pos.y + PLAYER_EYE_HEIGHT;

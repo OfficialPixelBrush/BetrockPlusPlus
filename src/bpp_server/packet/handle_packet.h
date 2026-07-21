@@ -48,7 +48,7 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 void InteractWithBlock(Packet::InteractWithBlock& _pkt, PlayerSession& _session, WorldManager& _world);
 void Animation(Packet::Animation& _pkt, PlayerSession& _session, EntityTracker& _entityTracker);
 void PlayerAction(Packet::PlayerAction& _pkt, PlayerSession& _session, EntityTracker& _entityTracker);
-void Respawn(Packet::Respawn& /*pkt*/, PlayerSession& /*session*/);
+void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server);
 void UpdateSign(Packet::UpdateSign& _pkt, PlayerSession& _session, WorldManager& _world,
                 std::vector<std::shared_ptr<PlayerSession>>& _players);
 void Disconnect(Packet::Disconnect& /*pkt*/, PlayerSession& _session);

@@ -20,14 +20,7 @@ private:
 	size_t currentPathIdx = 0;
 
 	int64_t age = 0;
-	int health = 20;
-	int maxHurtTime = 20;
-	int lastAttackDamage = 0;
-	float attackedAtYaw = 0.0f;
-	int deathTime = 0;
-	int attackTime = 0;
-	float eyeHeight = height * 0.85f;
-	bool canBreatheUnderwater = false;
+
 
 	void FollowPath();
 	void ResolveEntityCollision(Entity& _other);
@@ -35,6 +28,16 @@ private:
 
 public:
 	MobileEntity();
+
+	int health = 20;
+	int maxHealth = 20;
+	int maxHurtTime = 20;
+	int lastAttackDamage = 0;
+	float attackedAtYaw = 0.0f;
+	int deathTime = 0;
+	int attackTime = 0;
+	float eyeHeight = height * 0.85f;
+	bool canBreatheUnderwater = false;
 
 	const int getHeartsHealth() {
 		return this->health;

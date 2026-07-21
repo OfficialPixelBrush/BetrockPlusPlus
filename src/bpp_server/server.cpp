@@ -507,8 +507,6 @@ void Server::DisconnectClients() {
 	              players.end());
 };
 
-void Server::TransferPlayerDimension([[maybe_unused]] PlayerSession& _session) {}
-
 void Server::ProcessIncoming(PlayerSession& _session) {
 	WorldManager& sessionWorld = _session.dimension == -1 ? gameRuntime.worldHell : gameRuntime.world;
 

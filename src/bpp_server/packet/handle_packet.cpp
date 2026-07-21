@@ -17,6 +17,7 @@
 #include "items/item_properties.h"
 #include "packet_utils.h"
 #include "tile_entities/tile_entity.h"
+#include "server.h"
 #include <cstring>
 #include <memory>
 
@@ -47,34 +48,38 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
 
 void PlayerMovement(Packet::PlayerMovement& _pkt, PlayerSession& _session) {
 	// On ground flag from client
-	_session.entity->onGround = _pkt.onGround;
-	if (_session.entity) 
+	if (_session.entity) {
+		_session.entity->onGround = _pkt.onGround;
 		_session.entity->HandlePositionChecks();
+	}
 }
 
 void PlayerPosition(Packet::PlayerPosition& _pkt, PlayerSession& _session) {
 	_session.pendingPosition = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
-	_session.entity->onGround = _pkt.onGround;
-	if (_session.entity)
+	if (_session.entity) {
+		_session.entity->onGround = _pkt.onGround;
 		_session.entity->HandlePositionChecks();
+	}
 }
 
 void PlayerRotation(Packet::PlayerRotation& _pkt, PlayerSession& _session) {
 	_session.rotation.x = _pkt.yaw;
 	_session.rotation.y = _pkt.pitch;
 	_session.pendingPosition = _session.position.pos;
-	_session.entity->onGround = _pkt.onGround;
-	if (_session.entity)
+	if (_session.entity) {
+		_session.entity->onGround = _pkt.onGround;
 		_session.entity->HandlePositionChecks();
+	}
 }
 
 void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& _pkt, PlayerSession& _session) {
 	_session.pendingPosition = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
 	_session.rotation.x = _pkt.yaw;
 	_session.rotation.y = _pkt.pitch;
-	_session.entity->onGround = _pkt.onGround;
-	if (_session.entity)
+	if (_session.entity) {
+		_session.entity->onGround = _pkt.onGround;
 		_session.entity->HandlePositionChecks();
+	}
 }
 
 void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _world,
@@ -163,6 +168,11 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 	if (!Items::IsValid(heldItem->id)) {
 		// It's a block
 		Int3 placePosition = Blocks::GetAdjacentBlockPos(position, _pkt.face);
+		if (heldItem->id.value < 0 || heldItem->id.value >= 256) {
+			// invalid
+			return;
+		}
+
 		auto blockId = BlockType(heldItem->id.value);
 
 		// Can we place this block here?
@@ -368,8 +378,56 @@ void PlayerAction([[maybe_unused]] Packet::PlayerAction& _pkt, [[maybe_unused]] 
 	// Broadcast what we were sent to players who can see this player
 }
 
-void Respawn(Packet::Respawn& /*pkt*/, PlayerSession& /*session*/) {
-	// TODO: reset position, health, send spawn chunks
+void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
+	auto targetDim = _pkt.dimension;
+
+	// Send a respawn packet to confirm
+	Packet::Respawn pkt;
+	pkt.dimension = targetDim;
+	pkt.Serialize(_session.stream);
+
+	// Reset the existing entity
+	_session.entity->health = _session.entity->maxHealth;
+	_session.entity->deathTime = 0; // clear the death timer too, or the next hit re-triggers OnDeath oddly
+	_session.entity->fallDistance = 0;
+	_session.entity->lastHealth = _session.entity->health;
+
+	// Force a refresh
+	_session.dimension = targetDim;
+	_session.entity->dim = targetDim;
+	_session.entityTracker = targetDim == 0 ? &_server.overworldEntityTracker : &_server.hellEntityTracker;
+
+	// Get our spawn point
+	auto world = _server.GetWorldForDimension(targetDim);
+	auto spawn = world->GetSpawnPoint(/*Random Adjust=*/true);
+	Vec3 spawnLocation = { double(spawn.x) + 0.5, double(spawn.y) + PLAYER_EYE_HEIGHT + 1 / 64,
+		                   double(spawn.z) + 0.5 };
+
+	// Unregister / re-register
+	_session.entity->isDead = false;
+	world->entityManager.RemoveEntity(_session.entity->id);
+	world->entityManager.AddEntity(_session.entity, _session.entity->id);
+
+	// Tp our entity and update our session position
+	_session.entity->Teleport(spawnLocation);
+	_session.position.pos = spawnLocation;
+	_session.pendingTeleport = spawnLocation;
+	_session.pendingPosition.reset();
+
+	// Tell our client to tp
+	Packet::PlayerPositionAndRotation tpPkt;
+	tpPkt.position.x = spawnLocation.x;
+	tpPkt.position.y = spawnLocation.y;
+	tpPkt.cameraY = spawnLocation.y + PLAYER_EYE_HEIGHT;
+	tpPkt.position.z = spawnLocation.z;
+	tpPkt.yaw = 0;
+	tpPkt.pitch = 0;
+	tpPkt.onGround = false;
+	tpPkt.Serialize(_session.stream);
+
+	// Refresh entities
+	_session.entityTracker->RemovePlayer(_session.entity.get());
+	_session.entityTracker->AddPlayer(_session.entity.get());
 }
 
 void UpdateSign(Packet::UpdateSign& _pkt, PlayerSession& _session, WorldManager& _world,

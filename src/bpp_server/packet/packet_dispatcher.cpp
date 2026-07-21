@@ -23,7 +23,9 @@ bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, Wor
 		Packet::ChatMessage pkt;
 		pkt.Deserialize(_session.stream);
 		HandlePacket::ChatMessage(pkt, _session, _server.players, _sessionWorld, _server.commandManager,
-		                          [&_server](PlayerSession& _s) { _server.TransferPlayerDimension(_s); });
+		                          [&_server](PlayerSession& _s) {
+			                          nullptr; /* this is awful and needs to be cleaned up!*/
+		                          });
 		break;
 	}
 	case PacketId::SetTime: {
@@ -40,7 +42,7 @@ bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, Wor
 	case PacketId::Respawn: {
 		Packet::Respawn pkt;
 		pkt.Deserialize(_session.stream);
-		HandlePacket::Respawn(pkt, _session);
+		HandlePacket::Respawn(pkt, _session, _server);
 		break;
 	}
 	case PacketId::PlayerMovement: {
