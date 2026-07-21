@@ -112,8 +112,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 				AttackEntityFrom(nullptr, (int)std::ceil(fallDistance - FALL_DAMAGE_FLOOR));
 			}
 			fallDistance = 0;
-		}
-		else if (delta.y < 0) {
+		} else if (delta.y < 0) {
 			fallDistance -= delta.y;
 		}
 
@@ -161,7 +160,7 @@ void EntityMPPlayer::UpdateFallState(float _movedY) {
 }
 
 void EntityMPPlayer::DropInventory() {
-	for (int i = 0; i < session->inventory.slots.size(); i++) {
+	for (size_t i = 0; i < session->inventory.slots.size(); i++) {
 		auto stack = session->inventory.GetStackInSlot(i);
 		if (stack != nullptr) {
 			// Create the item entity
@@ -213,9 +212,9 @@ void EntityMPPlayer::Tick() {
 
 	// Our health changed
 	if (this->lastHealth != getHeartsHealth()) {
-		Packet::SetHealth pkt;
-		pkt.health = getHeartsHealth();
-		pkt.Serialize(session->stream);
+		Packet::SetHealth healthPkt;
+		healthPkt.health = getHeartsHealth();
+		healthPkt.Serialize(session->stream);
 
 		if (getHeartsHealth() - lastHealth < 0) {
 			Packet::EntityEvent pkt;
