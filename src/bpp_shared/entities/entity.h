@@ -97,7 +97,7 @@ struct Entity {
 	float stepHeight = 0.0f;
 
 	// Collision state
-	bool onGround = false;
+	bool onGround = true;
 	bool collided = false;
 	bool collidedHorizontally = false;
 	bool collidedVertically = false;

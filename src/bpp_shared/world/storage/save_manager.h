@@ -118,8 +118,14 @@ struct SaveManager {
 
 		if (!sessionLock.Acquire(saveDirectory + "/session.lock"))
 			return false;
-		if (!std::filesystem::exists(saveDirectory + "/level.dat"))
-			return false;
+		if (!std::filesystem::exists(saveDirectory + "/level.dat")) {
+			GlobalLogger().warn << "level.dat couldn't be found!\n";
+			if (!std::filesystem::exists(saveDirectory + "/level.dat_old")) {
+				GlobalLogger().warn << "level.dat_old couldn't be found!\n";
+				return false;
+			}
+			std::filesystem::copy_file(saveDirectory + "/level.dat_old", saveDirectory + "/level.dat");
+		}
 		worldFile = std::make_unique<FileHandle>(saveDirectory + "/level.dat");
 		if (!worldFile->Get().is_open())
 			return false;
