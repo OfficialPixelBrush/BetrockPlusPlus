@@ -160,7 +160,7 @@ void EntityMPPlayer::UpdateFallState(float _movedY) {
 }
 
 void EntityMPPlayer::DropInventory() {
-	for (int i = 0; i < session->inventory.slots.size(); i++) {
+	for (size_t i = 0; i < session->inventory.slots.size(); i++) {
 		auto stack = session->inventory.GetStackInSlot(i);
 		if (stack != nullptr) {
 			// Create the item entity
