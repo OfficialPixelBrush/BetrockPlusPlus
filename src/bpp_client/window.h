@@ -9,6 +9,7 @@
 #pragma once
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_error.h>
+#include <SDL3/SDL_video.h>
 #include <cassert>
 #include <string>
 
@@ -36,12 +37,25 @@ public:
 	void SetTitle(const std::string& _title) {
 		SDL_SetWindowTitle(handle, _title.c_str());
 	}
+
 	void SetCursorCapture(bool _enabled) {
 		SDL_SetWindowRelativeMouseMode(handle, _enabled);
 	}
+
+	void SwapBuffers() {
+		SDL_GL_SwapWindow(handle);
+	}
+
 	const Int2& GetScreenSize() const {
 		return screenSize;
 	}
+
+	const Int2 GetFramebufferSize() const {
+		Int2 size;
+		SDL_GetWindowSizeInPixels(handle, &size.x, &size.y);
+		return size;
+	}
+
 	float GetAspect() const {
 		return float(screenSize.x) / float(screenSize.y);
 	}

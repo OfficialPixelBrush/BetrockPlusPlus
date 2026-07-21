@@ -47,6 +47,7 @@ else()
 find_package(SDL3 CONFIG REQUIRED)
 endif()
 
+find_package(OpenGL REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 endif()
@@ -222,6 +223,7 @@ else()
     target_link_libraries(BetrockPlusPlus PRIVATE
         SDL3::SDL3
         glm::glm
+        OpenGL::GL
         Threads::Threads
     )
 endif()

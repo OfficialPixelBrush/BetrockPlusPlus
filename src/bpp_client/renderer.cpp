@@ -7,64 +7,77 @@
 
 #include "renderer.h"
 #include "logger.h"
-#include "misc.h"
 #include "window.h"
+#include <SDL3/SDL_video.h>
+// This is should be defined only once
+#define SOKOL_GFX_IMPL
+#define SOKOL_GLCORE
+#include "sokol_gfx.h"
 
-Renderer::Renderer(Window& _window) : window(_window.GetHandle()) {
-#ifndef NDEBUG
-	const bool debug = true;
-#else
-	const bool debug = false;
-#endif
+Renderer::Renderer(Window& _window) : window(_window) {
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Required for macOS
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+	glContext = SDL_GL_CreateContext(window.GetHandle());
 
-	int numDrivers = SDL_GetNumGPUDrivers();
-	GlobalLogger().info << "GPU drivers found: " << numDrivers << "\n";
-	for (int i = 0; i < numDrivers; i++) {
-		GlobalLogger().info << "  [" << i << "] " << SDL_GetGPUDriver(i) << "\n";
-	}
-
-	SDL_PropertiesID props = SDL_CreateProperties();
-	SDL_SetStringProperty(props, SDL_PROP_GPU_DEVICE_CREATE_NAME_STRING, "vulkan");
-	SDL_SetNumberProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_SPIRV_BOOLEAN, true);
-	SDL_SetNumberProperty(props, SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOLEAN, debug);
-
-	gpu = SDL_CreateGPUDeviceWithProperties(props);
-	SDL_DestroyProperties(props);
-	auto sdlError = SDL_GetError();
-	if (sdlError[0] != '\0') {
-		GlobalLogger().error << "Critical error during initialization, aborting.\n";
-		GlobalLogger().error << sdlError << "\n";
-		throw std::runtime_error("Couldn't initialize SDL!");
-		return;
-	}
-
-	SDL_ClaimWindowForGPUDevice(gpu, window);
+	// We don't need anything extra for OpenGL
+	sg_setup(sg_desc{ .logger = sg_logger{ .func = SokolLogCallback } });
 }
 
 Renderer::~Renderer() {
-	SDL_ReleaseWindowFromGPUDevice(gpu, window);
-	SDL_DestroyGPUDevice(gpu);
+	sg_shutdown();
+	SDL_GL_DestroyContext(glContext);
+}
+
+sg_swapchain Renderer::GetSwapchain() {
+	Int2 framebufferSize = window.GetFramebufferSize();
+	return { .invalid = false,
+		     .width = framebufferSize.x,
+		     .height = framebufferSize.y,
+		     .sample_count = 4,
+		     .color_format = SG_PIXELFORMAT_RGBA8,
+		     .depth_format = SG_PIXELFORMAT_DEPTH_STENCIL,
+		     .gl = { .framebuffer = 0 } }; // 0 is our window
 }
 
 void Renderer::Render(int _partialTicks) {
-	SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(gpu);
-	if (!cmd)
+	sg_pass_action passAction{};
+	passAction.colors[0].load_action = SG_LOADACTION_CLEAR;
+	passAction.colors[0].clear_value = { 1, 0, 0, 1 };
+
+	sg_begin_pass(sg_pass{ .action = passAction, .swapchain = GetSwapchain() });
+
+	//TODO: Render stuff
+
+	sg_end_pass();
+
+	// Frame end
+	sg_commit();
+	window.SwapBuffers();
+}
+
+void Renderer::SokolLogCallback(const char* _tag, uint32_t _logLevel, uint32_t _logItemId, const char* _messageOrNull,
+                                uint32_t _lineNr, const char* _filenameOrNull, void* _userData) {
+	if (!_messageOrNull)
 		return;
 
-	SDL_GPUTexture* swapchainTex;
-	uint32_t width, height;
-
-	if (SDL_WaitAndAcquireGPUSwapchainTexture(cmd, window, &swapchainTex, &width, &height)) {
-		SDL_GPUColorTargetInfo target{};
-		target.texture = swapchainTex;
-		target.clear_color = { 0.1f, 0.2f, 0.4f, 1.0f };
-		target.load_op = SDL_GPU_LOADOP_CLEAR;
-		target.store_op = SDL_GPU_STOREOP_STORE;
-
-		SDL_GPURenderPass* pass = SDL_BeginGPURenderPass(cmd, &target, 1, nullptr);
-		//TODO: Render stuff
-		SDL_EndGPURenderPass(pass);
+	LogLevel level;
+	switch (_logLevel) {
+	case 0: // panic
+	case 1: // error
+		level = LOG_ERROR;
+		break;
+	case 2: // warning
+		level = LOG_WARNING;
+		break;
+	case 3: // info
+		level = LOG_INFO;
+		break;
+	default:
+		level = LOG_DEBUG;
+		break;
 	}
 
-	SDL_SubmitGPUCommandBuffer(cmd);
+	GlobalLogger().Log(_messageOrNull, level);
 }

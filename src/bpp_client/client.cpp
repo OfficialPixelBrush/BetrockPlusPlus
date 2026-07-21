@@ -46,22 +46,22 @@ int Client::Run() {
 	const uint64_t freq = SDL_GetPerformanceFrequency();
 	uint64_t lastTime = SDL_GetPerformanceCounter();
 
-	// Try to connect to the server
-	clientSocket = ClientSocketManager::Connect(this->targetIP, this->targetPort);
-	if (clientSocket < 0) {
-		GlobalLogger().error << "Failed to connect\n";
-		return -1;
-	}
+	// // Try to connect to the server
+	// clientSocket = ClientSocketManager::Connect(this->targetIP, this->targetPort);
+	// if (clientSocket < 0) {
+	// 	GlobalLogger().error << "Failed to connect\n";
+	// 	return -1;
+	// }
 
-	// Setup our stream so we can talk to the server
-	this->stream.emplace(this->clientSocket);
+	// // Setup our stream so we can talk to the server
+	// this->stream.emplace(this->clientSocket);
 
-	GlobalLogger().info << "Connected to " << this->targetIP << ":" << this->targetPort << "!\n";
+	// GlobalLogger().info << "Connected to " << this->targetIP << ":" << this->targetPort << "!\n";
 
-	// Send our prelogin
-	Packet::PreLogin pkt;
-	pkt.username = "BetrockClient";
-	pkt.Serialize(*this->stream);
+	// // Send our prelogin
+	// Packet::PreLogin pkt;
+	// pkt.username = "BetrockClient";
+	// pkt.Serialize(*this->stream);
 
 	while (!shutdownRequested.load()) {
 		uint64_t ticksRan = 0;
