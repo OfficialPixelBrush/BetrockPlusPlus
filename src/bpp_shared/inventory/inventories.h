@@ -7,6 +7,7 @@
 
 #pragma once
 #include "enums/items.h"
+#include "events.h"
 #include "inventory.h"
 #include "item_stack.h"
 #include "logger.h"
@@ -33,10 +34,15 @@ enum InvMap {
 struct InventoryPlayer : Inventory {
 public:
 	int activeHotbarSlot = 0;
+	Event<ItemStack*> heldItemUpdate;
 	int currentItem = 0;
 
 	InventoryPlayer() : Inventory(45) {
 		name = "Inventory";
+	}
+
+	void SetHeldItem(ItemStack* _stack) {
+		heldItemUpdate.Call(_stack);
 	}
 
 	ItemStack* GetCurrentItem() {
@@ -188,7 +194,7 @@ struct InventoryLargeChest : Inventory {
 		auto end = _endSlot == -1 ? totalSize - 1 : _endSlot;
 
 		bool success = upper->MergeItemStackInInventory(_stack, _reverse, CrossPlatform::Math::Max(0, _startSlot),
-		                                                  CrossPlatform::Math::Min(upperSize - 1, end));
+		                                                CrossPlatform::Math::Min(upperSize - 1, end));
 
 		if (!success || _stack.count > 0) {
 			success = lower->MergeItemStackInInventory(
