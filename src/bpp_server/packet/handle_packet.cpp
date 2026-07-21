@@ -202,7 +202,9 @@ void SetHotbarSlot(Packet::SetHotbarSlot& _pkt, PlayerSession& _session) {
 	// Update previously held item
 	auto previousHeldItem = _session.inventory.GetHeldItem();
 	if (previousHeldItem)
-		Items::itemBehavior[previousHeldItem->id].onStopHolding(previousHeldItem);
+		if (auto fn = Items::itemBehavior[previousHeldItem->id].onStopHolding) {
+			fn(previousHeldItem);
+		}
 	// Move to new slot
 	_session.inventory.activeHotbarSlot = _pkt.slot;
 	// Update held item start holding
