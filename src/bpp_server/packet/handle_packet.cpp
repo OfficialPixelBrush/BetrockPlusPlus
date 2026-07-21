@@ -48,11 +48,15 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
 void PlayerMovement(Packet::PlayerMovement& _pkt, PlayerSession& _session) {
 	// On ground flag from client
 	_session.entity->onGround = _pkt.onGround;
+	if (_session.entity) 
+		_session.entity->HandlePositionChecks();
 }
 
 void PlayerPosition(Packet::PlayerPosition& _pkt, PlayerSession& _session) {
 	_session.pendingPosition = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
 	_session.entity->onGround = _pkt.onGround;
+	if (_session.entity)
+		_session.entity->HandlePositionChecks();
 }
 
 void PlayerRotation(Packet::PlayerRotation& _pkt, PlayerSession& _session) {
@@ -60,6 +64,8 @@ void PlayerRotation(Packet::PlayerRotation& _pkt, PlayerSession& _session) {
 	_session.rotation.y = _pkt.pitch;
 	_session.pendingPosition = _session.position.pos;
 	_session.entity->onGround = _pkt.onGround;
+	if (_session.entity)
+		_session.entity->HandlePositionChecks();
 }
 
 void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& _pkt, PlayerSession& _session) {
@@ -67,6 +73,8 @@ void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& _pkt, PlayerSe
 	_session.rotation.x = _pkt.yaw;
 	_session.rotation.y = _pkt.pitch;
 	_session.entity->onGround = _pkt.onGround;
+	if (_session.entity)
+		_session.entity->HandlePositionChecks();
 }
 
 void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _world,

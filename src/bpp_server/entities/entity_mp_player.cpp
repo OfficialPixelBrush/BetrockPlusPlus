@@ -102,6 +102,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 			movedWrong = true;
 		}
 		Move(delta);
+		movedThisTick = true;
 
 		// Reset on ground to what the client last claimed
 		onGround = savedOnGround;
@@ -198,13 +199,9 @@ void EntityMPPlayer::Tick() {
 	if (!session)
 		return;
 
-	if (session->pendingTeleport || session->pendingPosition) {
-		// Handle reported vs server side position
-		this->HandlePositionChecks();
-	} else {
-		// Just so stuff like the collision with blocks triggers
-		Vec3 vel = { 0, 0, 0 };
-		Move(vel);
+	if (!movedThisTick) {
+		Vec3 none = { 0.0, 0.0, 0.0 };
+		Move(none);
 	}
 
 	// Do living entity stuff

@@ -20,7 +20,7 @@ struct EntityMPPlayer : public PlayerEntity {
 		session = nullptr;
 	}
 	int lastHealth = 0;
-	bool playerOnGround = false;
+	bool movedThisTick = false;
 
 	void Tick() override;
 	bool PickupItem(ItemStack& _stack, EntityId _entityId) override;
