@@ -13,7 +13,7 @@ Server* CommandManager::m_server = nullptr;
 
 // Register all commands
 void CommandManager::Init(Server* _server) {
-	_server = _server;
+	m_server = _server;
 	// Anyone can run these
 	m_registeredCommands.push_back(std::make_unique<CommandHelp>());
 	m_registeredCommands.push_back(std::make_unique<CommandTeleport>());
