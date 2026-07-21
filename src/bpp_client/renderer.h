@@ -25,11 +25,11 @@ private:
 
 	sg_swapchain GetSwapchain();
 
-	static void SokolLogCallback(const char* tag,              // always "sg"
-	                             uint32_t log_level,           // 0=panic, 1=error, 2=warning, 3=info
-	                             uint32_t log_item_id,         // SG_LOGITEM_*
-	                             const char* message_or_null,  // a message string, may be nullptr in release mode
-	                             uint32_t line_nr,             // line number in sokol_gfx.h
-	                             const char* filename_or_null, // source filename, may be nullptr in release mode
-	                             void* user_data);
+	static void SokolLogCallback(const char* _tag,              // always "sg"
+	                             uint32_t _logLevel,           // 0=panic, 1=error, 2=warning, 3=info
+	                             uint32_t _logItemId,         // SG_LOGITEM_*
+	                             const char* _messageOrNull,  // a message string, may be nullptr in release mode
+	                             uint32_t _lineNr,             // line number in sokol_gfx.h
+	                             const char* _filenameOrNull, // source filename, may be nullptr in release mode
+	                             void* _userData);
 };

@@ -7,7 +7,6 @@
 
 #include "renderer.h"
 #include "logger.h"
-#include "misc.h"
 #include "window.h"
 #include <SDL3/SDL_video.h>
 // This is should be defined only once
@@ -58,13 +57,13 @@ void Renderer::Render(int _partialTicks) {
 	window.SwapBuffers();
 }
 
-void Renderer::SokolLogCallback(const char* tag, uint32_t log_level, uint32_t log_item_id, const char* message_or_null,
-                                uint32_t line_nr, const char* filename_or_null, void* user_data) {
-	if (!message_or_null)
+void Renderer::SokolLogCallback(const char* _tag, uint32_t _logLevel, uint32_t _logItemId, const char* _messageOrNull,
+                                uint32_t _lineNr, const char* _filenameOrNull, void* _userData) {
+	if (!_messageOrNull)
 		return;
 
 	LogLevel level;
-	switch (log_level) {
+	switch (_logLevel) {
 	case 0: // panic
 	case 1: // error
 		level = LOG_ERROR;
@@ -80,5 +79,5 @@ void Renderer::SokolLogCallback(const char* tag, uint32_t log_level, uint32_t lo
 		break;
 	}
 
-	GlobalLogger().Log(message_or_null, level);
+	GlobalLogger().Log(_messageOrNull, level);
 }
