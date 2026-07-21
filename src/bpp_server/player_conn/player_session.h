@@ -72,6 +72,9 @@ struct PlayerSession {
 	WindowId openWindowId = 0;
 	WindowId GetNextWindowId() {
 		openWindowId = (openWindowId + 1) % 128;
+		if (openWindowId == 0)
+			// ID 0 is reserved
+			openWindowId++;
 		return openWindowId;
 	}
 
