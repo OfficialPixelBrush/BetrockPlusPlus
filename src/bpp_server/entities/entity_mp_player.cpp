@@ -239,4 +239,7 @@ void EntityMPPlayer::Tick() {
 				entity->OnCollideWithPlayer(*this);
 		}
 	}
+
+	// Reset movement flag
+	movedThisTick = false;
 }
