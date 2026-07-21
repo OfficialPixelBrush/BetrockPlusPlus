@@ -137,6 +137,7 @@ struct EntityTracker {
 			if (distanceTo > entityEntry.profile.range)
 				continue;
 			SpawnEntityForPlayer(_player->id, entityEntry);
+			entityEntry.visibleTo.insert(_player->id);
 		}
 
 		for (EntityId otherPlayerId : playerIds) {
@@ -150,10 +151,11 @@ struct EntityTracker {
 			if (distanceTo > newPlayerEntry.profile.range)
 				continue;
 			SpawnEntityForPlayer(otherPlayerId, newPlayerEntry);
+			newPlayerEntry.visibleTo.insert(otherPlayerId);
 		}
 
 		// Force an update
-		Update(entry);
+		Update(newPlayerEntry);
 	}
 
 	void RemovePlayer(Entity* _player) {
