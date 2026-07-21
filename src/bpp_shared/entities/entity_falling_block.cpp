@@ -26,19 +26,16 @@ void FallingBlockEntity::Tick() {
 	if (onGround) {
 		velocity *= { 0.7, -0.5, 0.7 };
 		isDead = true;
-		// TODO: check if we can actually fall here properly
+		if (!Blocks::CanFallAt(*this->world, blockPosition)) {
+			this->dropItemAtEntity(this->block, 1);
+			return;
+		}
 		this->world->SetBlock(blockPosition, this->block, 0);
 		return;
 	}
 	if (ticksFallen > 100) {
 		// Create the item entity
-		Vec3 itemPos = position;
-		std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(itemPos);
-		itemEntity->itemStack = { this->block, 1 };
-		itemEntity->dim = dim;
-
-		// Register our item with the world
-		this->world->entityManager.AddEntity(std::move(itemEntity));
+		this->dropItemAtEntity(this->block, 1);
 		isDead = true;
 	}
 }

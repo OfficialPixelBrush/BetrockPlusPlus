@@ -173,8 +173,7 @@ void MobileEntity::TickPhysics() {
 		// Our entity is pushing itself into the wall the ladder is on
 		// So apply an upwards nudge
 		if (collidedHorizontally && isOnLadder) {
-			if (hasPhysics)
-				velocity.y = 0.2;
+			velocity.y = 0.2;
 		}
 
 		// Apply friction
@@ -324,5 +323,5 @@ void MobileEntity::Tick() {
 	input.x *= 0.98f;
 	input.y *= 0.98f;
 
-	TickPhysics();
+	if (hasPhysics) TickPhysics();
 }

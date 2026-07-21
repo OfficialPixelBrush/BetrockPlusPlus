@@ -42,6 +42,14 @@ std::string CommandTeleport::Execute(std::vector<std::string>& _parameters, Play
 	if (_parameters.size() - offset >= 3) {
 		try {
 			Vec3 pos = ParseDouble3(offset, _parameters);
+			// Thank you for crashing my server 8 trillion times,
+			// very cool
+			pos.x = std::min(32000000.0, pos.x);
+			pos.z = std::min(32000000.0, pos.z);
+			pos.y = std::min(32000000.0, pos.y);
+			pos.x = std::max(-32000000.0, pos.x);
+			pos.z = std::max(-32000000.0, pos.z);
+			pos.y = std::max(-32000000.0, pos.y);
 			SendTeleport(*source, pos);
 
 			Packet::ChatMessage reply;

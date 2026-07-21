@@ -210,15 +210,14 @@ struct EntityTracker {
 			return { 160, 10, true };
 		case EntityType::FALLING_SAND:
 		case EntityType::FALLING_GRAVEL:
-			return { 160, 20, false };
+			return { 160, 20, true };
 		case EntityType::PAINTING:
 			// Paintings never move so there's nothing to resync
 			return { 160, INT_MAX, false };
 		default:
 			return { 0, 0, false };
 
-			GlobalLogger().warn << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) +
-			                           "'\n";
+			GlobalLogger().warn << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) + "'\n";
 		}
 	}
 };

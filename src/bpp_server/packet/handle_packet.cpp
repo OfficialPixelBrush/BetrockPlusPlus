@@ -149,13 +149,29 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 	if (!Items::IsValid(heldItem->id)) {
 		// It's a block
 		Int3 placePosition = Blocks::GetAdjacentBlockPos(position, _pkt.face);
-
 		auto blockId = BlockType(heldItem->id.value);
-		_world.SetBlock(placePosition, blockId, heldItem->data);
-		auto function = Blocks::blockBehaviors[blockId].onBlockPlaced;
-		if (function)
-			function(_world, placePosition, *_session.entity, _pkt.face);
-		heldItem->DecrementCount(1);
+
+		// Can we place this block here?
+		auto entitiesInBlock = _world.entityManager.GetEntitiesWithinAabb({ double(placePosition.x), double(placePosition.y), double(placePosition.z), double(placePosition.x) + 1.0, double(placePosition.y) + 1.0, double(placePosition.z) + 1.0});
+
+		// Check to see if any entities overlap our block's collider
+		bool collided = false;
+		if (Blocks::blockProperties[blockId].isCollidable) {
+			auto blockCollider = Blocks::blockBehaviors[blockId].getCollider(/*meta=*/0).Offset(placePosition.x, placePosition.y, placePosition.z); // Block colliders are at the origin so shift to world space
+			for (auto& entity : entitiesInBlock) {
+				collided = blockCollider.Intersects(entity->collider) && entity->preventEntitySpawning;
+				if (collided) break;
+			}
+		}
+
+		// We can place the block here
+		if (!collided) {
+			_world.SetBlock(placePosition, blockId, heldItem->data);
+			auto function = Blocks::blockBehaviors[blockId].onBlockPlaced;
+			if (function)
+				function(_world, placePosition, *_session.entity, _pkt.face);
+			heldItem->DecrementCount(1);
+		}
 	} else {
 		// It's an item
 		GlobalLogger().info << "Tried to use item\n";

@@ -24,6 +24,7 @@ Int3 GetAdjacentBlockPos(Int3 _pos, PacketData::FaceDirection _face);
 bool CanSugarcaneSurviveAt(WorldManager& _world, Int3 _pos);
 float GetFluidPercentAir(uint8_t _meta);
 void BreakAndDropBlock(WorldManager& _world, Int3 _pos);
+bool CanFallAt(WorldManager& _world, Int3 _position);
 
 enum class StepSound : uint8_t {
 	Stone, // default, also metal (different pitch)

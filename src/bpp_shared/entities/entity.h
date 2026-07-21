@@ -172,6 +172,9 @@ struct Entity {
 		rotationYaw = _newrot.x;
 		rotationPitch = _newrot.y;
 		ySize = 0.0f;
+		velocity.x = 0.0;
+		velocity.y = 0.0;
+		velocity.z = 0.0;
 		RebuildCollider();
 	}
 
@@ -198,4 +201,5 @@ struct Entity {
 	virtual void UpdateFallState(float _movedY);
 	virtual std::optional<Tag> SerializeToNbt();
 	virtual void LoadFromNbt(Tag& _nbt);
+	virtual void dropItemAtEntity(ItemId itemId, ItemAmount count);
 };

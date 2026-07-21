@@ -109,6 +109,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 		if (residual < 0.0625) {
 			this->position = claimed; // Trust it
 			session->position.pos = claimed;
+			this->velocity = delta;
 			RebuildCollider();
 		} else {
 			// Send a correction
@@ -143,8 +144,12 @@ void EntityMPPlayer::Tick() {
 	if (!session)
 		return;
 
-	// Handle reported vs server side position
-	this->HandlePositionChecks();
+	hasPhysics = true;
+	if (session->pendingTeleport || session->pendingPosition) {
+		// Handle reported vs server side position
+		this->HandlePositionChecks();
+		hasPhysics = false; // Disable physics this tick if the client sent an update
+	}
 
 	// Do living entity stuff
 	MobileEntity::Tick();

@@ -121,6 +121,18 @@ std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbExcludi
 	return _entities;
 }
 
+std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbExcludingTypes(
+    const AABB& _box, std::vector<EntityType>& _excludedTypes) {
+	std::vector<std::shared_ptr<Entity>> entities;
+	auto entitiesInAABB = GetEntitiesWithinAabb(_box);
+	for (auto& entity : entitiesInAABB) {
+		if (std::find(_excludedTypes.begin(), _excludedTypes.end(), entity->type) == _excludedTypes.end()) {
+			entities.push_back(entity);
+		}
+	}
+	return entities;
+}
+
 std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabb(const AABB& _box) {
 	// Get all entities within an AABB
 	std::vector<std::shared_ptr<Entity>> collidingEntities;

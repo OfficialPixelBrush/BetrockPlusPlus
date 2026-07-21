@@ -123,6 +123,15 @@ struct CollisionShape {
 		return false;
 	}
 
+	bool Intersects(const AABB& _other) const {
+		for (const auto& box1 : boxes) {
+			if (box1.Intersects(_other)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	CollisionShape Expand(double _dx, double _dy, double _dz) const {
 		CollisionShape result;
 		result.boxes.reserve(boxes.size());

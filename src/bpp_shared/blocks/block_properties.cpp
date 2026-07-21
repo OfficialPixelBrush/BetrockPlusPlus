@@ -19,7 +19,7 @@ BlockProperties blockProperties[256] = {};
 BlockBehavior blockBehaviors[256] = {};
 
 // Behavior helper functions
-static bool CanFallAt(WorldManager& _world, Int3 _position) {
+bool CanFallAt(WorldManager& _world, Int3 _position) {
 	auto block = _world.GetBlockId(_position);
 	if (block == BLOCK_AIR)
 		return true;
