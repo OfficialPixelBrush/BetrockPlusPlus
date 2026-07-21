@@ -6,7 +6,7 @@
 */
 
 #pragma once
-#include "nbt.h"
+#include "logger.h"
 #include <cstdint>
 #include <cstring>
 #include <stdexcept>
@@ -53,6 +53,41 @@ struct Tag {
 	TagType listType = TAG_END; // element type for TAG_LIST
 	std::vector<Tag> list = {};
 	std::unordered_map<std::string, Tag> compound = {};
+
+	// Typed setter
+	template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+	void Set(T _value) {
+		switch (type) {
+		case TAG_BYTE:
+			byteValue = _value;
+			break;
+		case TAG_SHORT:
+			shortValue = _value;
+			break;
+		case TAG_INT:
+			intValue = _value;
+			break;
+		case TAG_LONG:
+			longValue = _value;
+			break;
+		case TAG_FLOAT:
+			floatValue = _value;
+			break;
+		case TAG_DOUBLE:
+			doubleValue = _value;
+			break;
+		default:
+			GlobalLogger().warn << "Tried to use numeric setter on non-numeric NBT type " << type << "!\n";
+			break;
+		}
+	}
+
+	void Set(const std::string& _value) {
+		if (type == TAG_STRING)
+			stringValue = _value;
+		else
+			GlobalLogger().warn << "Tried to use string setter on non-string NBT type " << type << "!\n";
+	}
 
 	// Typed getters; throw if wrong type
 	int8_t GetByte() const {

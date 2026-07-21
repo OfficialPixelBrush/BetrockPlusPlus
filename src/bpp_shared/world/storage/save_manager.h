@@ -154,7 +154,31 @@ struct SaveManager {
 
 		// Parse NBT
 		NBTParser parser(raw.data(), raw.size());
-		const Tag& data = parser.root.Get("Data");
+		Tag data = parser.root.Get("Data");
+
+		auto CheckAndAssignDefault = [&](std::string tagName, TagType type, auto defaultValue) {
+			if (!data.compound.count(tagName)) {
+				GlobalLogger().warn << "Tag " << tagName << " not found in level.dat!\n";
+				Tag tag{ .type = type, .name = tagName };
+				tag.Set(defaultValue);
+				data.compound[tagName] = tag;
+			}
+		};
+
+		// Check to make sure we have valid tags
+		CheckAndAssignDefault("RandomSeed", TAG_LONG, 0);
+		CheckAndAssignDefault("SpawnX", TAG_INT, 0);
+		CheckAndAssignDefault("SpawnY", TAG_INT, 64);
+		CheckAndAssignDefault("SpawnZ", TAG_INT, 0);
+		CheckAndAssignDefault("rainTime", TAG_INT, 0);
+		CheckAndAssignDefault("thunderTime", TAG_INT, 0);
+		CheckAndAssignDefault("raining", TAG_BYTE, 0);
+		CheckAndAssignDefault("Time", TAG_LONG, 0);
+		CheckAndAssignDefault("thundering", TAG_BYTE, 0);
+		CheckAndAssignDefault("version", TAG_INT, 19132);
+		CheckAndAssignDefault("LastPlayed", TAG_LONG, 0);
+		CheckAndAssignDefault("LevelName", TAG_STRING, "world");
+		CheckAndAssignDefault("SizeOnDisk", TAG_LONG, 0);
 
 		currentLevelData.randomSeed = data.Get("RandomSeed").longValue;
 		currentLevelData.spawnPoint.x = data.Get("SpawnX").intValue;
