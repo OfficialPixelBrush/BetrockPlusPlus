@@ -209,7 +209,9 @@ void SetHotbarSlot(Packet::SetHotbarSlot& _pkt, PlayerSession& _session) {
 	// TODO: This doesn't update when an item is given or picked up!!!!
 	auto heldItem = _session.inventory.GetHeldItem();
 	if (heldItem)
-		Items::itemBehavior[heldItem->id].onStartHolding(heldItem);
+		if (auto fn = Items::itemBehavior[heldItem->id].onStartHolding) {
+			fn(heldItem);
+		}
 }
 
 // Click handler
