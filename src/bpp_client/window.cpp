@@ -5,8 +5,8 @@
  *
 */
 
-#include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_init.h>
+#include <SDL3/SDL_video.h>
 
 #include "logger.h"
 #include "misc.h"
@@ -41,16 +41,15 @@ Window::Window(Int2 _screenSize, const std::string& _title, const WindowOptions&
 	if (!SDL_Init(SDL_INIT_VIDEO))
 		THROW_SDL_ERROR("Failed to initialize SDL!");
 
-	SDL_WindowFlags windowFlags;
+	SDL_WindowFlags windowFlags = SDL_WINDOW_OPENGL;
 	switch (_options.windowMode) {
 	case WindowMode::WINDOWED_RESIZABLE:
-		windowFlags = SDL_WINDOW_RESIZABLE;
+		windowFlags |= SDL_WINDOW_RESIZABLE;
 		break;
 	case WindowMode::FULLSCREEN:
-		windowFlags = SDL_WINDOW_FULLSCREEN;
+		windowFlags |= SDL_WINDOW_FULLSCREEN;
 		break;
 	default:
-		windowFlags = 0;
 		break;
 	}
 
