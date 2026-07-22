@@ -463,6 +463,18 @@ void RegisterAll() {
 	itemBehavior[MAP].whileHeld = [](ItemStack* _stack, PlayerSession& _session) {
 		auto pos = _session.position.GetBlockPos();
 		uint8_t rot = static_cast<uint8_t>(std::round((std::fmod(_session.rotation.x, 360.0f) / 360.0f) * 16.0f));
+		uint8_t v = (12 << 2) | 2; // Water (Full-brightness)
+		for (uint8_t x = 0; x < 128; x++) {
+			std::vector<uint8_t> mapData{ PacketData::MapDataType::GRAPHICS, x, 0 };
+			for (int y = 0; y < 128; y++) {
+				mapData.push_back(v);
+			}
+			Packet::ItemData pkt;
+			pkt.itemId = MAP;
+			pkt.mapId = 0;
+			pkt.data = mapData;
+			pkt.Serialize(_session.stream);
+		}
 		std::vector<uint8_t> mapData{ PacketData::MapDataType::ICON, static_cast<uint8_t>((0x00 | (rot << 4))),
 			                          static_cast<uint8_t>(pos.x), static_cast<uint8_t>(pos.z) };
 		Packet::ItemData pkt;
