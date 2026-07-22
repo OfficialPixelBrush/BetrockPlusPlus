@@ -231,4 +231,9 @@ enum ContainerDataType : int16_t {
 	FUEL_REMAINING = 1,
 	FUEL_DURATION = 2
 };
+
+enum MapDataType : int8_t {
+	GRAPHICS = 0x00,
+	ICON = 0x01
+};
 }; // namespace PacketData

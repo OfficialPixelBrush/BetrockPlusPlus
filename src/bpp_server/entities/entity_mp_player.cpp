@@ -211,12 +211,12 @@ void EntityMPPlayer::Tick() {
 	MobileEntity::Tick();
 
 	// Our health changed
-	if (this->lastHealth != getHeartsHealth()) {
+	if (this->lastHealth != GetHeartsHealth()) {
 		Packet::SetHealth healthPkt;
-		healthPkt.health = getHeartsHealth();
+		healthPkt.health = GetHeartsHealth();
 		healthPkt.Serialize(session->stream);
 
-		if (getHeartsHealth() - lastHealth < 0) {
+		if (GetHeartsHealth() - lastHealth < 0) {
 			Packet::EntityEvent pkt;
 			pkt.entityId = this->id;
 			pkt.action = PacketData::EntityEvent::HURT;
@@ -226,7 +226,7 @@ void EntityMPPlayer::Tick() {
 			session->entityTracker->SendPacketToViewers(pkt, this->id);
 		}
 
-		this->lastHealth = getHeartsHealth();
+		this->lastHealth = GetHeartsHealth();
 	}
 
 	// If we fell out of the world then die

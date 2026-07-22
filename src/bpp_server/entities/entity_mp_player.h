@@ -14,7 +14,7 @@ struct EntityMPPlayer : public PlayerEntity {
 	PlayerSession* session = nullptr;
 	EntityMPPlayer() : PlayerEntity() {
 		hasPhysics = false;
-		lastHealth = this->getHeartsHealth();
+		lastHealth = this->GetHeartsHealth();
 	}
 	~EntityMPPlayer() {
 		session = nullptr;

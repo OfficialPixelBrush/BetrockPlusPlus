@@ -7,6 +7,7 @@
 
 #include "entity_mobile.h"
 #include "entities/entity.h"
+#include "inventory/item_stack.h"
 #include "java_math.h"
 #include "world.h"
 #include <algorithm>
@@ -332,5 +333,14 @@ void MobileEntity::Tick() {
 	input.x *= 0.98f;
 	input.y *= 0.98f;
 
-	if (hasPhysics) TickPhysics();
+	if (hasPhysics)
+		TickPhysics();
+}
+
+ItemStack* MobileEntity::GetHeldItem() {
+	return &heldItem;
+}
+
+void MobileEntity::SetHeldItem(ItemStack _stack) {
+	heldItem = _stack;
 }

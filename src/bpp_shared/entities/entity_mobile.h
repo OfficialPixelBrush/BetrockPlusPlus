@@ -7,6 +7,7 @@
 #pragma once
 
 #include "entity.h"
+#include "inventory/item_stack.h"
 #include "numeric_structs.h"
 #include "pathfinding/pathfinder.hpp"
 #include <optional>
@@ -20,7 +21,6 @@ private:
 	size_t currentPathIdx = 0;
 
 	int64_t age = 0;
-
 
 	void FollowPath();
 	void ResolveEntityCollision(Entity& _other);
@@ -38,8 +38,9 @@ public:
 	int attackTime = 0;
 	float eyeHeight = height * 0.85f;
 	bool canBreatheUnderwater = false;
+	ItemStack heldItem;
 
-	const int getHeartsHealth() {
+	const int GetHeartsHealth() {
 		return this->health;
 	}
 	virtual void OnDeath();
@@ -52,6 +53,8 @@ public:
 	bool EntityAlive() {
 		return !isDead && health > 0;
 	}
+	ItemStack* GetHeldItem();
+	void SetHeldItem(ItemStack _stack);
 	bool onLadder();
 	bool CanBePushed() override {
 		return true;

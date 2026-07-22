@@ -422,6 +422,16 @@ void Server::Tick() {
 			PacketUtilities::SendInventory(*session, 0, *session->inventoryInteraction.inventory);
 		}
 
+		// Held item updates (i.e. maps)
+		{
+			auto heldItem = session->inventory.GetHeldItem();
+			if (heldItem) {
+				if (auto fn = Items::itemBehavior[heldItem->id].whileHeld) {
+					fn(heldItem, *session);
+				}
+			}
+		}
+
 		if (!session->activeInteraction)
 			continue;
 
