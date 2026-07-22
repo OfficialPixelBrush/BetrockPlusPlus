@@ -81,7 +81,9 @@ void EntityManager::Tick() {
 		Int3 newBucketPos = ComputeBucketPos(entity->position);
 
 		if (newBucketPos != entity->bucketPos) {
-			// Remove from the old bucket
+			// Remove from the old bucket and mark the old chunk as modified
+			if (auto chunk = world->GetChunk({ entity->bucketPos.x, entity->bucketPos.y }))
+				chunk->isModified = true;
 			auto& oldContainer = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
 			auto& b = oldContainer.buckets[entity->bucketPos.z];
 			b.entities.erase(std::remove_if(b.entities.begin(), b.entities.end(),
