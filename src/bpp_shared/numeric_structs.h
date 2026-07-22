@@ -10,6 +10,13 @@
 #include <ostream>
 #include <sstream>
 
+#if defined(__has_include)
+#if __has_include(<glm/glm.hpp>)
+#include <glm/glm.hpp>
+#define TRINUM_HAS_GLM 1
+#endif
+#endif
+
 /**
  * @brief A struct that contains three numbers (x,y,z)
  * 
@@ -140,9 +147,22 @@ struct TriNumber {
 		return *this;
 	}
 
+#ifdef TRINUM_HAS_GLM
+	// Construct from any glm::vec3-shaped type (vec3, dvec3, ivec3, ...)
+	template <typename U, glm::qualifier Q>
+	constexpr TriNumber(const glm::vec<3, U, Q>& _v)
+	    : x(static_cast<T>(_v.x)), y(static_cast<T>(_v.y)), z(static_cast<T>(_v.z)) {}
+
+	// Convert to any glm::vec3-shaped type (deduced from assignment target)
+	template <typename U, glm::qualifier Q>
+	operator glm::vec<3, U, Q>() const {
+		return glm::vec<3, U, Q>(static_cast<U>(x), static_cast<U>(y), static_cast<U>(z));
+	}
+#endif
+
 	friend std::ostream& operator<<(std::ostream& _os, const TriNumber& _val) {
 		_os << "(" << static_cast<int64_t>(_val.x) << ", " << static_cast<int64_t>(_val.y) << ", "
-		   << static_cast<int64_t>(_val.z) << ")";
+		    << static_cast<int64_t>(_val.z) << ")";
 		return _os;
 	}
 
@@ -296,6 +316,16 @@ struct BiNumber {
 		return *this;
 	}
 
+#ifdef TRINUM_HAS_GLM
+	template <typename U, glm::qualifier Q>
+	constexpr BiNumber(const glm::vec<2, U, Q>& _v) : x(static_cast<T>(_v.x)), y(static_cast<T>(_v.y)) {}
+
+	template <typename U, glm::qualifier Q>
+	operator glm::vec<2, U, Q>() const {
+		return glm::vec<2, U, Q>(static_cast<U>(x), static_cast<U>(y));
+	}
+#endif
+
 	friend std::ostream& operator<<(std::ostream& _os, const BiNumber& _val) {
 		_os << "(" << static_cast<int64_t>(_val.x) << ", " << static_cast<int64_t>(_val.y) << ")";
 		return _os;
@@ -378,7 +408,7 @@ struct SlimInt3 {
 
 	friend std::ostream& operator<<(std::ostream& _os, const SlimInt3& _val) {
 		_os << "(" << static_cast<int64_t>(_val.x) << ", " << static_cast<int64_t>(_val.y) << ", "
-		   << static_cast<int64_t>(_val.z) << ")";
+		    << static_cast<int64_t>(_val.z) << ")";
 		return _os;
 	}
 
