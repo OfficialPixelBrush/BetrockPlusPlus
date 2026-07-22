@@ -194,6 +194,8 @@ void EntityMPPlayer::DropInventory() {
 void EntityMPPlayer::OnDeath() {
 	MobileEntity::OnDeath();
 	this->DropInventory();
+	if (session->entityTracker)
+		session->entityTracker->RemovePlayer(this);
 }
 
 void EntityMPPlayer::Tick() {

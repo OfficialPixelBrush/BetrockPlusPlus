@@ -201,12 +201,12 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 	}
 	regionManager->PumpPipeline();
 
+	// Update our entities
+	entityManager.Tick();
+
 	UpdateLoadRadius(_players);
 	PopulateReady(); // population runs on main thread
 	lightManager.ProcessLightQueue(*this, INT_MAX);
-
-	// Update our entities
-	entityManager.Tick();
 }
 
 void WorldManager::Update(const std::vector<ClientPosition>& _players) {

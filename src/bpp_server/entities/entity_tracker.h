@@ -68,103 +68,12 @@ struct EntityTracker {
 		return MathHelper::FloorFloat(_r * 256.0f / 360.0f);
 	}
 
-	void TrackEntity(Entity* _entity) {
-		TrackedEntry entry;
-		entry.entity = _entity;
-		entry.profile = GetTrackingProfile(*_entity);
-
-		entry.lastEncodedPos = QuantizePosition(_entity->position);
-		entry.lastBroadcastMotion = _entity->velocity;
-		entry.lastEncodedPitch = QuantizeRotation(_entity->rotationPitch);
-		entry.lastEncodedYaw = QuantizeRotation(_entity->rotationYaw);
-
-		trackedEntities[_entity->id] = std::move(entry);
-
-		// Let any player already in range see this entity right away
-		auto& newEntry = trackedEntities.at(_entity->id);
-		for (EntityId playerId : playerIds) {
-			if (playerId == _entity->id)
-				continue;
-			auto playerIt = trackedEntities.find(playerId);
-			if (playerIt == trackedEntities.end())
-				continue;
-			auto& player = playerIt->second;
-			auto distanceTo = std::abs(std::max(std::abs(_entity->position.x - player.entity->position.x),
-			                                    std::abs(_entity->position.z - player.entity->position.z)));
-			if (distanceTo > newEntry.profile.range)
-				continue;
-			SpawnEntityForPlayer(playerId, newEntry);
-		}
-
-		// Force an update
-		Update(entry);
-	}
-
-	void UntrackEntity(Entity* _entity) {
-		auto it = trackedEntities.find(_entity->id);
-		if (it == trackedEntities.end())
-			return;
-
-		DespawnEntityForViewers(_entity->id, it->second);
-
-		for (auto& [id, otherEntry] : trackedEntities)
-			otherEntry.visibleTo.erase(_entity->id);
-
-		trackedEntities.erase(it);
-		playerIds.erase(_entity->id);
-	}
-
-	void AddPlayer(Entity* _player) {
-		TrackedEntry entry;
-		entry.entity = _player;
-		entry.profile = GetTrackingProfile(*_player);
-
-		entry.lastEncodedPos = QuantizePosition(_player->position);
-		entry.lastBroadcastMotion = _player->velocity;
-		entry.lastEncodedPitch = QuantizeRotation(_player->rotationPitch);
-		entry.lastEncodedYaw = QuantizeRotation(_player->rotationYaw);
-
-		trackedEntities[_player->id] = std::move(entry);
-		playerIds.insert(_player->id);
-		auto& newPlayerEntry = trackedEntities.at(_player->id);
-
-		// This new player should immediately see anything already in range
-		for (auto& [entityId, entityEntry] : trackedEntities) {
-			if (entityId == _player->id)
-				continue;
-			auto distanceTo = std::abs(std::max(std::abs(entityEntry.entity->position.x - _player->position.x),
-			                                    std::abs(entityEntry.entity->position.z - _player->position.z)));
-			if (distanceTo > entityEntry.profile.range)
-				continue;
-			SpawnEntityForPlayer(_player->id, entityEntry);
-			entityEntry.visibleTo.insert(_player->id);
-		}
-
-		for (EntityId otherPlayerId : playerIds) {
-			if (otherPlayerId == _player->id)
-				continue;
-			auto otherIt = trackedEntities.find(otherPlayerId);
-			if (otherIt == trackedEntities.end())
-				continue;
-			auto distanceTo = std::abs(std::max(std::abs(_player->position.x - otherIt->second.entity->position.x),
-			                                    std::abs(_player->position.z - otherIt->second.entity->position.z)));
-			if (distanceTo > newPlayerEntry.profile.range)
-				continue;
-			SpawnEntityForPlayer(otherPlayerId, newPlayerEntry);
-			newPlayerEntry.visibleTo.insert(otherPlayerId);
-		}
-
-		// Force an update
-		Update(newPlayerEntry);
-	}
-
-	void RemovePlayer(Entity* _player) {
-		UntrackEntity(_player);
-	}
-
+	void TrackEntity(Entity* _entity);
+	void UntrackEntity(Entity* _entity);
+	void AddPlayer(Entity* _player);
+	void RemovePlayer(Entity* _player);
 	void SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _entityEntry);
 	void DespawnEntityForViewers(EntityId _entityId, TrackedEntry& _entry);
-
 	void SendPacketToPlayersInTrackedEntry(Packet::BasePacket& _pkt, TrackedEntry& _trackedEntry);
 	void SendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id);
 	TrackedEntry& GetTrackerForEntityId(EntityId _id);

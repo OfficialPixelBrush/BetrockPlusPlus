@@ -33,6 +33,10 @@ void EntityManager::RemoveEntity(EntityId _id) {
 	// Unbind ourselves
 	entity->entityManager = nullptr;
 
+	// Mark the chunk we died in as dirty
+	if (auto chunk = world->GetChunk({ entity->bucketPos.x, entity->bucketPos.y }))
+		chunk->isModified = true;
+
 	// Set as dead for cleanup
 	entity->isDead = true;
 	if (onEntityDespawn)
@@ -68,20 +72,7 @@ void EntityManager::Tick() {
 	for (std::shared_ptr<Entity> entity : copy) {
 		// Remove dead entities from the system
 		if (entity->isDead) {
-			entity->world = nullptr;
-			entities.erase(std::remove(entities.begin(), entities.end(), entity), entities.end());
-			auto& container = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
-			auto& b = container.buckets[entity->bucketPos.z];
-			b.entities.erase(std::remove_if(b.entities.begin(), b.entities.end(),
-			                                [&entity](const std::weak_ptr<Entity>& _weak) {
-				                                auto locked = _weak.lock();
-				                                return !locked ||
-				                                       locked == entity; // Remove if expired or matches our entity
-			                                }),
-			                 b.entities.end());
-
-			if (onEntityDespawn)
-				onEntityDespawn(entity);
+			RemoveEntity(entity->id);
 			continue;
 		}
 		entity->Tick();

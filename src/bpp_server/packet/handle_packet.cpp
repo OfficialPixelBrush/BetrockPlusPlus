@@ -16,8 +16,8 @@
 #include "inventory/item_stack.h"
 #include "items/item_properties.h"
 #include "packet_utils.h"
-#include "tile_entities/tile_entity.h"
 #include "server.h"
+#include "tile_entities/tile_entity.h"
 #include <cstring>
 #include <memory>
 
@@ -386,30 +386,35 @@ void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
 	pkt.dimension = targetDim;
 	pkt.Serialize(_session.stream);
 
-	// Reset the existing entity
-	_session.entity->health = _session.entity->maxHealth;
-	_session.entity->deathTime = 0; // clear the death timer too, or the next hit re-triggers OnDeath oddly
-	_session.entity->fallDistance = 0;
-	_session.entity->lastHealth = _session.entity->health;
+	// Detach the old entity from whatever dimension it died in
+	auto& oldEntity = _session.entity;
+	auto oldWorld = _server.GetWorldForDimension(Dimension(_session.dimension));
+
+	// unregister the old entity
+	oldEntity->session = nullptr; // fully detach
+
+	// Build the replacement entity
+	auto newEntity = std::make_shared<EntityMPPlayer>();
+	newEntity->session = &_session;
+	newEntity->id = oldEntity->id;
+	newEntity->dim = targetDim;
+
+	_session.entity = newEntity;
 
 	// Force a refresh
 	_session.dimension = targetDim;
-	_session.entity->dim = targetDim;
 	_session.entityTracker = targetDim == 0 ? &_server.overworldEntityTracker : &_server.hellEntityTracker;
 
 	// Get our spawn point
 	auto world = _server.GetWorldForDimension(targetDim);
 	auto spawn = world->GetSpawnPoint(/*Random Adjust=*/true);
-	Vec3 spawnLocation = { double(spawn.x) + 0.5, double(spawn.y) + PLAYER_EYE_HEIGHT + 1 / 64,
-		                   double(spawn.z) + 0.5 };
+	Vec3 spawnLocation = { double(spawn.x) + 0.5, double(spawn.y) + PLAYER_EYE_HEIGHT + 1 / 64, double(spawn.z) + 0.5 };
 
-	// Unregister / re-register
-	_session.entity->isDead = false;
-	world->entityManager.RemoveEntity(_session.entity->id);
-	world->entityManager.AddEntity(_session.entity, _session.entity->id);
+	// Position the new entity then register it
+	newEntity->Teleport(spawnLocation);
+	world->entityManager.AddEntity(_session.entity, newEntity->id);
 
-	// Tp our entity and update our session position
-	_session.entity->Teleport(spawnLocation);
+	// Update our session position
 	_session.position.pos = spawnLocation;
 	_session.pendingTeleport = spawnLocation;
 	_session.pendingPosition.reset();
@@ -424,10 +429,6 @@ void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
 	tpPkt.pitch = 0;
 	tpPkt.onGround = false;
 	tpPkt.Serialize(_session.stream);
-
-	// Refresh entities
-	_session.entityTracker->RemovePlayer(_session.entity.get());
-	_session.entityTracker->AddPlayer(_session.entity.get());
 }
 
 void UpdateSign(Packet::UpdateSign& _pkt, PlayerSession& _session, WorldManager& _world,
