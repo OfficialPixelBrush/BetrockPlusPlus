@@ -47,7 +47,7 @@ We recommend anything with GCC 13 and newer. Here're the commands for acquiring 
 # Server + Client dependencies
 sudo apt install git cmake clang build-essential libdeflate-dev libasan8
 # Client-exclusive dependencies
-sudo apt install libglfw3-dev libglm-dev libopenal-dev libsdl3-dev libgl1-mesa-dev
+sudo apt install libglm-dev libsdl3-dev libgl1-mesa-dev
 ```
 
 > Note: `libsdl3-dev` is only packaged on Debian 13 (trixie) and newer, and Ubuntu 25.10 and newer. On Ubuntu 24.04/22.04 LTS it is not in `apt`, so you'll need a newer release or to build SDL3 from source.
@@ -58,7 +58,7 @@ sudo apt install libglfw3-dev libglm-dev libopenal-dev libsdl3-dev libgl1-mesa-d
 # Server + Client dependencies
 sudo dnf install git cmake clang gcc gcc-c++ make libasan libdeflate-devel
 # Client-exclusive dependencies
-sudo dnf install glfw-devel glm-devel openal-soft-devel SDL3-devel mesa-libGL-devel
+sudo dnf install glm-devel SDL3-devel mesa-libGL-devel
 ```
 
 ##### Arch Linux / SteamOS / CachyOS
@@ -67,7 +67,7 @@ sudo dnf install glfw-devel glm-devel openal-soft-devel SDL3-devel mesa-libGL-de
 # Server + Client dependencies
 sudo pacman -S git cmake clang base-devel libdeflate libasan
 # Client-exclusive dependencies
-sudo pacman -S glfw glm openal sdl3
+sudo pacman -S glm sdl3
 ```
 
 ##### openSUSE (Leap / Tumbleweed)
@@ -76,7 +76,7 @@ sudo pacman -S glfw glm openal sdl3
 # Server + Client dependencies
 sudo zypper install git cmake clang gcc gcc-c++ make libdeflate-devel
 # Client-exclusive dependencies
-sudo zypper install glfw-devel glm-devel openal-soft-devel SDL3-devel Mesa-libGL-devel libasan8
+sudo zypper install glm-devel SDL3-devel Mesa-libGL-devel libasan8
 ```
 
 ##### Alpine Linux
@@ -85,7 +85,7 @@ sudo zypper install glfw-devel glm-devel openal-soft-devel SDL3-devel Mesa-libGL
 # Server + Client dependencies
 sudo apk add git cmake clang gcc g++ make libdeflate-dev
 # Client-exclusive dependencies
-sudo apk add glfw-dev glm-dev openal-soft-dev sdl3-dev mesa-dev compiler-rt
+sudo apk add glm-dev sdl3-dev mesa-dev compiler-rt
 ```
 
 > Note: `sdl3-dev` is currently only in the **edge** branch's `community` repo. Also, Alpine ships no `libasan` and GCC's AddressSanitizer is broken on musl, so for Debug builds (which use `-fsanitize=address`) compile with **clang**, which uses the ASan runtime from `compiler-rt`.
@@ -96,7 +96,7 @@ sudo apk add glfw-dev glm-dev openal-soft-dev sdl3-dev mesa-dev compiler-rt
 # Server + Client dependencies
 sudo xbps-install -S base-devel git cmake clang libdeflate-devel
 # Client-exclusive dependencies
-sudo xbps-install -S glfw-devel glm libopenal-devel SDL3-devel MesaLib-devel libsanitizer-devel
+sudo xbps-install -S glm SDL3-devel MesaLib-devel libsanitizer-devel
 ```
 
 ##### Gentoo
@@ -105,7 +105,7 @@ sudo xbps-install -S glfw-devel glm libopenal-devel SDL3-devel MesaLib-devel lib
 # Server + Client dependencies
 sudo emerge dev-vcs/git dev-build/cmake llvm-core/clang sys-devel/gcc dev-build/make app-arch/libdeflate
 # Client-exclusive dependencies
-sudo emerge media-libs/glfw media-libs/glm media-libs/openal media-libs/libsdl3 media-libs/mesa
+sudo emerge media-libs/glm media-libs/libsdl3 media-libs/mesa
 ```
 
 Then move onto the [building step](#3-building).
