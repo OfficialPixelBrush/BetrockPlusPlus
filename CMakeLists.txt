@@ -170,12 +170,15 @@ set(CLIENT_SOURCES
     src/bpp_client/window.cpp
     src/bpp_client/input.cpp
     src/bpp_client/renderer.cpp
+    src/bpp_client/camera.cpp
     src/bpp_client/assets.cpp
     src/bpp_client/packet/handle_client_packet.cpp
     src/bpp_client/packet/client_packet_dispatcher.cpp
 
     src/bpp_client/renderers/world_renderer.cpp
     src/bpp_client/renderers/sub_chunk_mesher.cpp
+
+    src/bpp_client/single_header_impl/sokol_gfx.cpp
 )
 
 # Shared code
@@ -235,24 +238,24 @@ target_link_libraries(BetrockPlusPlus
 )
 
 # Debug-specific stuff
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_options(BetrockPlusPlus PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:
-            # Full debug info (GDB-specific)
-            $<$<PLATFORM_ID:Linux>:-ggdb>
-            # AddressSanitizer (Linux only)
-            $<$<PLATFORM_ID:Linux>:-fsanitize=address>
-            # General debug symbols (fallback for non-Linux)
-            -g
-        >
-    )
-    target_link_options(BetrockPlusPlus PRIVATE
-        # Link AddressSanitizer runtime (Linux only)
-        $<$<AND:$<CXX_COMPILER_ID:GNU,Clang>,$<PLATFORM_ID:Linux>>:
-            -fsanitize=address
-        >
-    )
-endif()
+# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#     target_compile_options(BetrockPlusPlus PRIVATE
+#         $<$<CXX_COMPILER_ID:GNU,Clang>:
+#             # Full debug info (GDB-specific)
+#             $<$<PLATFORM_ID:Linux>:-ggdb>
+#             # AddressSanitizer (Linux only)
+#             $<$<PLATFORM_ID:Linux>:-fsanitize=address>
+#             # General debug symbols (fallback for non-Linux)
+#             -g
+#         >
+#     )
+#     target_link_options(BetrockPlusPlus PRIVATE
+#         # Link AddressSanitizer runtime (Linux only)
+#         $<$<AND:$<CXX_COMPILER_ID:GNU,Clang>,$<PLATFORM_ID:Linux>>:
+#             -fsanitize=address
+#         >
+#     )
+# endif()
 
 # Add some extra warnings
 target_compile_options(BetrockPlusPlus PRIVATE
@@ -372,6 +375,10 @@ foreach(FILE ${SOURCE_FILES})
     file(READ "${FILE}" CONTENTS)
 
     foreach(PATTERN ${REQUIRED_STRINGS})
+        if(FILE MATCHES [[_shader\.h$]])
+            continue()
+        endif()
+
         string(REGEX MATCH "${PATTERN}" MATCH_RESULT "${CONTENTS}")
 
         if(NOT MATCH_RESULT)

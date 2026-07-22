@@ -56,8 +56,9 @@ public:
 		return size;
 	}
 
-	float GetAspect() const {
-		return float(screenSize.x) / float(screenSize.y);
+	float GetFramebufferAspect() const {
+		Int2 fbSize = GetFramebufferSize();
+		return static_cast<float>(fbSize.x) / static_cast<float>(fbSize.y);
 	}
 
 	SDL_Window* GetHandle() const {

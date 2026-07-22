@@ -6,18 +6,19 @@
 */
 
 #pragma once
-#include "client_pos.h"
-#include "input.h"
-#include "renderer.h"
-#include "window.h"
-#include "logger.h"
-#include "assets.h"
 #include "BS_thread_pool.hpp"
-#include "server.h"
+#include "assets.h"
+#include "camera.h"
+#include "client_pos.h"
 #include "client_socket.h"
+#include "input.h"
+#include "logger.h"
 #include "networking/network_stream.h"
-#include "packet/handle_client_packet.h"
 #include "packet/client_packet_dispatcher.h"
+#include "packet/handle_client_packet.h"
+#include "renderer.h"
+#include "server.h"
+#include "window.h"
 
 class Client {
 public:
@@ -35,6 +36,7 @@ private:
 	Window window;
 	Input input;
 	Renderer renderer;
+	Camera camera;
 	AssetManager assetManager;
 	float accumulator = 0.0f;
 

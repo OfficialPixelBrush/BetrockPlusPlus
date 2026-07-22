@@ -25,11 +25,11 @@ public:
 
 	void HandleEvent(const SDL_Event& _ev);
 
-	[[nodiscard]] Vec2 GetMouseDelta() const {
+	[[nodiscard]] Float2 GetMouseDelta() const {
 		return mouseDelta;
 	}
 
-	[[nodiscard]] Vec2 GetMouseWheel() const {
+	[[nodiscard]] Float2 GetMouseWheel() const {
 		return mouseWheel;
 	}
 
@@ -64,6 +64,6 @@ private:
 	uint32_t downMouseButtons = 0;
 	uint32_t prevDownMouseButtons = 0;
 
-	Vec2 mouseDelta{};
-	Vec2 mouseWheel{};
+	Float2 mouseDelta{};
+	Float2 mouseWheel{};
 };

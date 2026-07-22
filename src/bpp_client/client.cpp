@@ -9,8 +9,8 @@
 #include <atomic>
 extern std::atomic<bool> shutdownRequested;
 
-#include <SDL3/SDL_events.h>
 #include "client.h"
+#include <SDL3/SDL_events.h>
 
 // This window size seems really random but its the size beta uses
 Client::Client() : window({ 854, 480 }, "Betrock++", { WindowMode::WINDOWED_RESIZABLE }), renderer(window), stream(-1) {
@@ -91,7 +91,13 @@ int Client::Run() {
 		if (ticksRan == MAX_TICKS_PER_FRAME)
 			accumulator = 0.0f;
 
-		renderer.Render(accumulator / TICK_DELTA);
+		glm::vec2 cameraInput{};
+		cameraInput.y = input.IsKeyDown(SDL_SCANCODE_W) - input.IsKeyDown(SDL_SCANCODE_S);
+		cameraInput.x = input.IsKeyDown(SDL_SCANCODE_D) - input.IsKeyDown(SDL_SCANCODE_A);
+		camera.Move(cameraInput, delta);
+		constexpr float SENSITIVITY = 0.6f;
+		camera.UpdateLook(input.GetMouseDelta() * SENSITIVITY);
+		renderer.Render(camera, accumulator / TICK_DELTA);
 	}
 	return 0;
 }
