@@ -90,11 +90,10 @@ void NetworkStream::WriteString16(const std::string& _str) {
 	std::u16string str16 = ToUCS2(_str);
 	uint16_t length = static_cast<uint16_t>(str16.size());
 	Write(length);
-	std::vector<uint8_t> data;
-	data.reserve(str16.size());
-	for (const char16_t c : str16) {
-		data.push_back(static_cast<uint8_t>((c >> 8) & 0xFF));
-		data.push_back(static_cast<uint8_t>(c & 0xFF));
+	std::vector<uint8_t> data(length*2);
+	for (size_t i = 0; i < str16.size(); i++) {
+		data[i*2] = (static_cast<uint8_t>((str16[i] >> 8) & 0xFF));
+		data[i*2+1] = (static_cast<uint8_t>(str16[i] & 0xFF));
 	}
 	WriteBytes(data.data(), data.size());
 }

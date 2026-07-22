@@ -28,22 +28,25 @@ private:
 	NoiseOctavesPerlin treeDensityNoiseGen;
 
 	// Stored noise Fields
-	double terrainNoiseField[(CHUNK_WIDTH / 4 + 1) * (CHUNK_HEIGHT / 8 + 1) * (CHUNK_WIDTH / 4 + 1)];
-	std::vector<double> lowNoiseField;
-	std::vector<double> highNoiseField;
-	std::vector<double> selectorNoiseField;
-	std::vector<double> continentalnessNoiseField;
-	std::vector<double> depthNoiseField;
+	static constexpr Int3 MAX{ CHUNK_WIDTH / 4 + 1, CHUNK_HEIGHT / 8 + 1, CHUNK_WIDTH / 4 + 1 };
+	static constexpr size_t MAX_AREA = (MAX.x * MAX.z);
+	static constexpr size_t MAX_VOLUME = (MAX.x * MAX.y * MAX.z);
+	double terrainNoiseField[MAX_VOLUME];
+	std::vector<double> lowNoiseField = std::vector<double>(MAX_VOLUME);
+	std::vector<double> highNoiseField = std::vector<double>(MAX_VOLUME);
+	std::vector<double> selectorNoiseField = std::vector<double>(MAX_VOLUME);
+	std::vector<double> continentalnessNoiseField = std::vector<double>(MAX_AREA);
+	std::vector<double> depthNoiseField = std::vector<double>(MAX_AREA);
 
-	std::vector<double> sandNoise;
-	std::vector<double> gravelNoise;
-	std::vector<double> stoneNoise;
+	std::vector<double> sandNoise = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
+	std::vector<double> gravelNoise = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
+	std::vector<double> stoneNoise = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
 
 	// Biome Vectors
 	Biome biomeMap[CHUNK_AREA];
-	std::vector<double> temperature;
-	std::vector<double> humidity;
-	std::vector<double> weirdness;
+	std::vector<double> temperature = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
+	std::vector<double> humidity = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
+	std::vector<double> weirdness = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
 
 	// Cave Gen
 	CaveGenerator caver;

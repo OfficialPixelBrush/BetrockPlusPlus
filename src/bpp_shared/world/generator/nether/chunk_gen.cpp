@@ -59,9 +59,9 @@ void NetherGenerator::GenerateChunk(Chunk& _chunk) {
 void NetherGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 	const double oneThirtySecond = 1.0 / 32.0;
 	// Init noise maps
-	sandNoise.resize(256, 0.0);
-	gravelNoise.resize(256, 0.0);
-	stoneNoise.resize(256, 0.0);
+	//sandNoise.resize(256, 0.0);
+	//gravelNoise.resize(256, 0.0);
+	//stoneNoise.resize(256, 0.0);
 
 	// Populate noise maps
 	sandGravelNoiseGen.GenerateOctaves(
@@ -155,10 +155,8 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
  * @param c The chunk that should get its terrain generated
  */
 void NetherGenerator::GenerateTerrain(Chunk& _chunk) {
-	const Int3 max{ CHUNK_WIDTH / 4 + 1, CHUNK_HEIGHT / 8 + 1, CHUNK_WIDTH / 4 + 1 };
-
 	// Generate 4x16x4 low resolution noise map
-	GenerateTerrainNoise(Int3{ _chunk.cpos.x * 4, 0, _chunk.cpos.z * 4 }, max);
+	GenerateTerrainNoise(Int3{ _chunk.cpos.x * 4, 0, _chunk.cpos.z * 4 }, MAX);
 
 	// Terrain noise is interpolated and only sampled every 4 blocks
 	for (int32_t sampleX = 0; sampleX < 4; ++sampleX) {
@@ -168,27 +166,27 @@ void NetherGenerator::GenerateTerrain(Chunk& _chunk) {
 
 				// Get noise cube corners
 				double corner000 =
-				    terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 0) * max.y + sampleY + 0)];
+				    terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 0)];
 				double corner010 =
-				    terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 1) * max.y + sampleY + 0)];
+				    terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 0)];
 				double corner100 =
-				    terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 0) * max.y + sampleY + 0)];
+				    terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 0)];
 				double corner110 =
-				    terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 1) * max.y + sampleY + 0)];
+				    terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 0)];
 				double corner001 =
-				    (terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 0) * max.y + sampleY + 1)] -
+				    (terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 1)] -
 				     corner000) *
 				    verticalLerpStep;
 				double corner011 =
-				    (terrainNoiseField[size_t(((sampleX + 0) * max.z + sampleZ + 1) * max.y + sampleY + 1)] -
+				    (terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 1)] -
 				     corner010) *
 				    verticalLerpStep;
 				double corner101 =
-				    (terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 0) * max.y + sampleY + 1)] -
+				    (terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 1)] -
 				     corner100) *
 				    verticalLerpStep;
 				double corner111 =
-				    (terrainNoiseField[size_t(((sampleX + 1) * max.z + sampleZ + 1) * max.y + sampleY + 1)] -
+				    (terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 1)] -
 				     corner110) *
 				    verticalLerpStep;
 
