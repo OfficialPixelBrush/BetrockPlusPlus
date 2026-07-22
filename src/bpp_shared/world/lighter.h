@@ -79,6 +79,15 @@ struct ChunkCache {
 
 struct Lighter {
 public:
+	Lighter() {
+		// Avoid repeated vector growth/reallocation during propagation bursts
+		// (explosions, mass sky-column removal, etc). Small enough to not
+		// matter at steady-state, big enough to absorb most normal bursts
+		// before the vector has to double.
+		lightQueue.reserve(4096);
+		unlightQueue.reserve(256);
+	}
+
 	void PropagateLightAt(int _x, int _y, int _z, LightType _type, WorldManager& _world, ChunkCache& _cache);
 	void UnlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _world);
 

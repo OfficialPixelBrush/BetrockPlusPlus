@@ -8,6 +8,7 @@
 #include "blocks.h"
 #include "constants.h"
 #include "world.h"
+#include <cassert>
 #include <cstring>
 
 // ChunkCache so we don't have to do map lookups for every neighbor access during light propagation.
@@ -78,20 +79,38 @@ void Lighter::PropagateLightAt(int _x, int _y, int _z, LightType _type, WorldMan
 	int lzn = (lz == 0) ? 15 : lz - 1;
 	int lzp = (lz == 15) ? 0 : lz + 1;
 
+	// Cache each neighbor's light value the first time it's read so the later
+	// propagation check below doesn't have to re-query the same cell.
+	// Order: -x, +x, -y, +y, -z, +z
+	int neighborLight[6];
+	bool haveNeighbor[6] = { false, false, false, false, false, false };
+
+	auto neighbor = [&](int _i, Chunk* _nc, int _nlx, int _ny, int _nlz) -> int {
+		if (!haveNeighbor[_i]) {
+			neighborLight[_i] = GetLightDirect(_nc, _nlx, _ny, _nlz, _type);
+			haveNeighbor[_i] = true;
+		}
+		return neighborLight[_i];
+	};
+
+	auto scanBest = [&]() -> int {
+		int best = 0;
+		best = CrossPlatform::Math::Max(best, neighbor(0, cxn, lxn, _y, lz));
+		best = CrossPlatform::Math::Max(best, neighbor(1, cxp, lxp, _y, lz));
+		best = CrossPlatform::Math::Max(best, neighbor(2, chunk, lx, _y - 1, lz));
+		best = CrossPlatform::Math::Max(best, neighbor(3, chunk, lx, _y + 1, lz));
+		best = CrossPlatform::Math::Max(best, neighbor(4, czn, lx, _y, lzn));
+		best = CrossPlatform::Math::Max(best, neighbor(5, czp, lx, _y, lzp));
+		return best;
+	};
+
 	int newVal = 0;
 
 	if (_type == LightType::Sky) {
 		if (chunk->CanBlockSeeSky({ lx, _y, lz })) {
 			newVal = 15;
 		} else if (opacity < 15) {
-			int best = 0;
-			best = CrossPlatform::Math::Max(best, GetLightDirect(cxn, lxn, _y, lz, _type));
-			best = CrossPlatform::Math::Max(best, GetLightDirect(cxp, lxp, _y, lz, _type));
-			best = CrossPlatform::Math::Max(best, GetLightDirect(chunk, lx, _y - 1, lz, _type));
-			best = CrossPlatform::Math::Max(best, GetLightDirect(chunk, lx, _y + 1, lz, _type));
-			best = CrossPlatform::Math::Max(best, GetLightDirect(czn, lx, _y, lzn, _type));
-			best = CrossPlatform::Math::Max(best, GetLightDirect(czp, lx, _y, lzp, _type));
-			newVal = CrossPlatform::Math::Max(0, best - opacity);
+			newVal = CrossPlatform::Math::Max(0, scanBest() - opacity);
 		}
 		int oldVal = chunk->GetSkyLight({ lx, _y, lz });
 		if (oldVal == newVal)
@@ -109,14 +128,7 @@ void Lighter::PropagateLightAt(int _x, int _y, int _z, LightType _type, WorldMan
 	} else {
 		int emitted = Blocks::blockProperties[blockId].lightEmission;
 		if (opacity < 15) {
-			int best = 0;
-			best = CrossPlatform::Math::Max(best, GetLightDirect(cxn, lxn, _y, lz, _type));
-			best = CrossPlatform::Math::Max(best, GetLightDirect(cxp, lxp, _y, lz, _type));
-			best = CrossPlatform::Math::Max(best, GetLightDirect(chunk, lx, _y - 1, lz, _type));
-			best = CrossPlatform::Math::Max(best, GetLightDirect(chunk, lx, _y + 1, lz, _type));
-			best = CrossPlatform::Math::Max(best, GetLightDirect(czn, lx, _y, lzn, _type));
-			best = CrossPlatform::Math::Max(best, GetLightDirect(czp, lx, _y, lzp, _type));
-			newVal = CrossPlatform::Math::Max(emitted, best - opacity);
+			newVal = CrossPlatform::Math::Max(emitted, scanBest() - opacity);
 		} else {
 			newVal = emitted;
 		}
@@ -134,21 +146,23 @@ void Lighter::PropagateLightAt(int _x, int _y, int _z, LightType _type, WorldMan
 			    chunk->cpos);
 	}
 
-	// Propagate to neighbors
-	auto maybeQueue = [&](int _nx, int _ny, int _nz, Chunk* _nc, int _nlx, int _nlz) {
+	// Propagate to neighbors. Reuses the cached reads from scanBest() above
+	// when it ran (the common opacity < 15 case), so most neighbors here cost
+	// zero extra chunk-array lookups instead of a second GetLightDirect call.
+	auto maybeQueue = [&](int _nx, int _ny, int _nz, Chunk* _nc, int _nlx, int _nlz, int _i) {
 		if (_ny < 0 || _ny >= CHUNK_HEIGHT || !_nc)
 			return;
 		int expected = CrossPlatform::Math::Max(0, newVal - 1);
-		if (GetLightDirect(_nc, _nlx, _ny, _nlz, _type) < expected && lightQueue.size() < 1000000)
+		if (neighbor(_i, _nc, _nlx, _ny, _nlz) < expected && lightQueue.size() < 1000000)
 			lightQueue.push_back({ { _nx, _ny, _nz }, { _nx, _ny, _nz }, _type });
 	};
 
-	maybeQueue(_x - 1, _y, _z, cxn, lxn, lz);
-	maybeQueue(_x + 1, _y, _z, cxp, lxp, lz);
-	maybeQueue(_x, _y - 1, _z, chunk, lx, lz);
-	maybeQueue(_x, _y + 1, _z, chunk, lx, lz);
-	maybeQueue(_x, _y, _z - 1, czn, lx, lzn);
-	maybeQueue(_x, _y, _z + 1, czp, lx, lzp);
+	maybeQueue(_x - 1, _y, _z, cxn, lxn, lz, 0);
+	maybeQueue(_x + 1, _y, _z, cxp, lxp, lz, 1);
+	maybeQueue(_x, _y - 1, _z, chunk, lx, lz, 2);
+	maybeQueue(_x, _y + 1, _z, chunk, lx, lz, 3);
+	maybeQueue(_x, _y, _z - 1, czn, lx, lzn, 4);
+	maybeQueue(_x, _y, _z + 1, czp, lx, lzp, 5);
 }
 
 void Lighter::UnlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _world) {
@@ -166,6 +180,12 @@ void Lighter::UnlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _
 	if (oldVal == 0)
 		return;
 
+	// Block/meta and the untouched light channel aren't affected by the light
+	// write below, so grab them once now instead of re-reading after.
+	BlockType blockId = BlockType(chunk->GetBlock({ lx, _y, lz }));
+	uint8_t meta = chunk->GetMeta({ lx, _y, lz });
+	uint8_t otherLight = (_type == LightType::Sky) ? chunk->GetBlockLight({ lx, _y, lz }) : chunk->GetSkyLight({ lx, _y, lz });
+
 	if (_type == LightType::Sky)
 		chunk->SetSkyLight({ lx, _y, lz }, 0);
 	else
@@ -173,11 +193,11 @@ void Lighter::UnlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _
 	if (_world.onBlockUpdate)
 		_world.onBlockUpdate(
 		    PendingBlock{
-		        .block{ BlockType(chunk->GetBlock({ lx, _y, lz })), chunk->GetMeta({ lx, _y, lz }) },
+		        .block{ blockId, meta },
 		        .blockPos{ _x, _y, _z },
 		        // Whichever type we just unlit was just set to 0 above
-		        .light{ (_type == LightType::Block) ? uint8_t(0) : chunk->GetBlockLight({ lx, _y, lz }),
-		                (_type == LightType::Sky) ? uint8_t(0) : chunk->GetSkyLight({ lx, _y, lz }) },
+		        .light{ (_type == LightType::Block) ? uint8_t(0) : otherLight,
+		                (_type == LightType::Sky) ? uint8_t(0) : otherLight },
 		    },
 		    chunk->cpos);
 
@@ -203,8 +223,11 @@ void Lighter::UnlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _
 			int ncx = nx >> 4, ncz = nz >> 4;
 			int nlx = nx & 15, nlz = nz & 15;
 			int dx = ncx - unlightCache.cx, dz = ncz - unlightCache.cz;
-			Chunk* nc = (dx >= -1 && dx <= 1 && dz >= -1 && dz <= 1) ? unlightCache.grid[dx + 1][dz + 1]
-			                                                         : _world.GetChunkRaw({ ncx, ncz });
+			// unlightCache was just refreshed to pos's chunk, and (nx,ny,nz) is
+			// only one block away from pos, so the neighbor chunk is always
+			// within the refreshed 3x3 grid; no map-lookup fallback needed.
+			assert(dx >= -1 && dx <= 1 && dz >= -1 && dz <= 1);
+			Chunk* nc = unlightCache.grid[dx + 1][dz + 1];
 			if (!nc)
 				continue;
 
@@ -213,6 +236,12 @@ void Lighter::UnlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _
 				continue;
 
 			if (nVal < val) {
+				// Block/meta aren't affected by the light write; grab them first.
+				BlockType nBlockId = BlockType(nc->GetBlock({ nlx, ny, nlz }));
+				uint8_t nMeta = nc->GetMeta({ nlx, ny, nlz });
+				uint8_t nOtherLight =
+				    (t == LightType::Sky) ? nc->GetBlockLight({ nlx, ny, nlz }) : nc->GetSkyLight({ nlx, ny, nlz });
+
 				if (t == LightType::Sky)
 					nc->SetSkyLight({ nlx, ny, nlz }, 0);
 				else
@@ -220,9 +249,10 @@ void Lighter::UnlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _
 				if (_world.onBlockUpdate)
 					_world.onBlockUpdate(
 					    PendingBlock{
-					        .block{ BlockType(nc->GetBlock({ nlx, ny, nlz })), nc->GetMeta({ nlx, ny, nlz }) },
+					        .block{ nBlockId, nMeta },
 					        .blockPos{ nx, ny, nz },
-					        .light{ nc->GetBlockLight({ nlx, ny, nlz }), nc->GetSkyLight({ nlx, ny, nlz }) },
+					        .light{ (t == LightType::Block) ? uint8_t(0) : nOtherLight,
+					                (t == LightType::Sky) ? uint8_t(0) : nOtherLight },
 					    },
 					    nc->cpos);
 				unlightQueue.push_back({ { nx, ny, nz }, t, nVal });
