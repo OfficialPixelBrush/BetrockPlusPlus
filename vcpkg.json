@@ -1,0 +1,10 @@
+{
+  "name": "betrockplusplus",
+  "version-string": "0.0.1",
+  "dependencies": [
+    "libdeflate",
+    "glfw3",
+    "glm",
+    "openal-soft"
+  ]
+}

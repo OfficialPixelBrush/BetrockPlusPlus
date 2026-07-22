@@ -28,13 +28,10 @@ Prerequisites:
 - vcpkg
 
 After those are all installed and set up, you can
-install the remaining dependencies with **vcpkg**.
+install the dependencies with **vcpkg**.
 
 ```powershell
-# Server + Client dependencies
-.\vcpkg install libdeflate
-# Client-exclusive dependencies
-.\vcpkg install glfw3 glm openal-soft
+vcpkg install
 ```
 
 Then move onto the [building step](#3-building).
@@ -106,7 +103,7 @@ sudo xbps-install -S glfw-devel glm libopenal-devel SDL3-devel MesaLib-devel lib
 
 ```bash
 # Server + Client dependencies
-sudo emerge dev-vcs/git dev-util/cmake sys-devel/clang sys-devel/gcc sys-devel/make dev-libs/libdeflate
+sudo emerge dev-vcs/git dev-build/cmake llvm-core/clang sys-devel/gcc dev-build/make app-arch/libdeflate
 # Client-exclusive dependencies
 sudo emerge media-libs/glfw media-libs/glm media-libs/openal media-libs/libsdl3 media-libs/mesa
 ```
