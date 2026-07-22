@@ -465,15 +465,15 @@ void RegisterAll() {
 	itemBehavior[MAP].whileHeld = [](ItemStack* _stack, PlayerSession& _session, Server& _server) {
 		auto pos = _session.position.GetBlockPos();
 		uint8_t rot = static_cast<uint8_t>(std::round((std::fmod(_session.rotation.x, 360.0f) / 360.0f) * 16.0f));
-		uint8_t v = (12 << 2) | 2; // Water (Full-brightness)
 		auto world = _server.GetWorldForDimension(_session.dimension);
-		for (uint8_t x = 0; x < 128; x++) {
-			std::vector<uint8_t> mapData{ PacketData::MapDataType::GRAPHICS, x, 0 };
-			for (int z = 0; z < 128; z++) {
+		for (int8_t x = 0; x < 64; x++) {
+			std::vector<uint8_t> mapData;
+			InitGraphics{ PacketData::MapDataType::GRAPHICS, x, 0 };
+			for (int z = 0; z < 64; z++) {
 				int8_t y = world->GetHeightValue(x, z);
 				Int3 bpos = Int3{ x, y - 1, z };
 				BlockType block = world->GetBlockId(bpos);
-				mapData.push_back((Blocks::blockProperties[block].material.mapColor.index << 2) | 2);
+				AppendPixel(mapData, (Blocks::blockProperties[block].material.mapColor.index << 2) | 2)
 			}
 			Packet::ItemData pkt;
 			pkt.itemId = MAP;
