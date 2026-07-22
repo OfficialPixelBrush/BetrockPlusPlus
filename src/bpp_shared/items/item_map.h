@@ -8,8 +8,11 @@
 #include <cstdint>
 #include <vector>
 #include "../numeric_structs.h"
+#include "../logger/logger.h"
+#include "../enums/network/packet_data.h"
 
-enum class MapIcon : uint8_t {
+namespace Map {
+enum class Icon : uint8_t {
     WhiteArrow,
     GreenArrow,
     RedArrow,
@@ -18,12 +21,12 @@ enum class MapIcon : uint8_t {
 };
 
 struct MarkerPlacement {
-    MapIcon icon;
+    Icon icon;
     uint8_t rotation;
     Byte2 position;
 };
 
-MarkerPlacement MakeMarker(MapIcon _icon, float _rotation, Byte2 _position) {
+MarkerPlacement MakeMarker(const Icon _icon, const float _rotation, const Byte2 _position) {
     uint8_t rot = static_cast<uint8_t>(std::round((std::fmod(_rotation, 360.0f) / 360.0f) * 16.0f));
     return MarkerPlacement {
         .icon = _icon,
@@ -32,25 +35,28 @@ MarkerPlacement MakeMarker(MapIcon _icon, float _rotation, Byte2 _position) {
     };
 }
 
-void AppendPixel(std::vector<uint8_t>& _mapData, uint8_t _value) {
+void AppendPixel(std::vector<uint8_t>& _mapData, const uint8_t _value) {
     if (_mapData.size() > INT8_MAX) {
-        GlobalLogger().warn << "Attempted to write too much map data in a single packet! Rejected!"
+        GlobalLogger().warn << "Attempted to write too much map data in a single packet! Rejected! (" << _mapData.size() << "/" << INT8_MAX << ")\n";
         return;
     }
-    _mapData.push_back(value);
+    _mapData.push_back(_value);
 }
 
-void InitGraphics(std::vector<uint8_t>& _mapData, Byte2 _offset) {
-    _mapData = { PacketData::MapDataType::GRAPHICS, _offset.x , _offset.z };
+void InitGraphics(std::vector<uint8_t>& _mapData, const Byte2 _offset) {
+    _mapData = { PacketData::MapDataType::GRAPHICS, static_cast<uint8_t>(_offset.x) , static_cast<uint8_t>(_offset.z) };
 }
 
-void PlaceMarker(std::vector<uint8_t>& _mapData, std::vector<MarkerPlacement> _markers) {
+void PlaceMarkers(std::vector<uint8_t>& _mapData, const std::vector<MarkerPlacement> _markers) {
     _mapData.clear();
-    _mapData.reserve(1 + _markers.size() * sizeof(MarkerPlacement));
+    _mapData.reserve(1 + (_markers.size() * 3));
     _mapData.push_back(PacketData::MapDataType::ICON);
-    for (auto& m : _markers) {
-        _mapData.push_back(m.rotation << 4 | static_cast<uint8_t>(m.icon));
+    for (const auto& m : _markers) {
+        _mapData.push_back(
+            static_cast<uint8_t>((m.rotation << 4) | static_cast<uint8_t>(m.icon))
+        );
         _mapData.push_back(m.position.x);
         _mapData.push_back(m.position.z);
     }
 }
+};

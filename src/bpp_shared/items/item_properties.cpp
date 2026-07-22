@@ -19,6 +19,7 @@
 #include "player_conn/player_session.h"
 #include "server.h"
 #include "world/world.h"
+#include "item_map.h"
 #include <cstdint>
 
 namespace Items {
@@ -464,30 +465,42 @@ void RegisterAll() {
 
 	itemBehavior[MAP].whileHeld = [](ItemStack* _stack, PlayerSession& _session, Server& _server) {
 		auto pos = _session.position.GetBlockPos();
-		uint8_t rot = static_cast<uint8_t>(std::round((std::fmod(_session.rotation.x, 360.0f) / 360.0f) * 16.0f));
-		auto world = _server.GetWorldForDimension(_session.dimension);
-		for (int8_t x = 0; x < 64; x++) {
-			std::vector<uint8_t> mapData;
-			InitGraphics{ PacketData::MapDataType::GRAPHICS, x, 0 };
-			for (int z = 0; z < 64; z++) {
-				int8_t y = world->GetHeightValue(x, z);
-				Int3 bpos = Int3{ x, y - 1, z };
-				BlockType block = world->GetBlockId(bpos);
-				AppendPixel(mapData, (Blocks::blockProperties[block].material.mapColor.index << 2) | 2)
-			}
-			Packet::ItemData pkt;
-			pkt.itemId = MAP;
-			pkt.mapId = 0;
-			pkt.data = mapData;
-			pkt.Serialize(_session.stream);
-		}
-		std::vector<uint8_t> mapData{ PacketData::MapDataType::ICON, static_cast<uint8_t>((0x00 | (rot << 4))),
-			                          static_cast<uint8_t>(pos.x), static_cast<uint8_t>(pos.z) };
+		std::vector<Map::MarkerPlacement> markers = {
+			// TODO: Evil fuck-ass offset magic???
+			Map::MakeMarker(Map::Icon::WhiteArrow, _session.rotation.x, Byte2{static_cast<int8_t>(pos.x), static_cast<int8_t>(pos.z)})
+		};
+		std::vector<uint8_t> mapIcons;
+		PlaceMarkers(mapIcons, markers);
 		Packet::ItemData pkt;
 		pkt.itemId = MAP;
 		pkt.mapId = 0;
-		pkt.data = mapData;
+		pkt.data = mapIcons;
 		pkt.Serialize(_session.stream);
+		
+		static int8_t x = 0;
+		if (x >= INT8_MAX-1)
+			return;
+
+		// TODO: Maps are 1:8 in B1.7.3
+		// TODO: Maps were centered on the point they were crafted in B1.7.3
+		auto world = _server.GetWorldForDimension(_session.dimension);
+		std::vector<uint8_t> mapData;
+		Map::InitGraphics(mapData, Byte2{x, 0});
+
+		for (int z = 0; z < INT8_MAX; z++) {
+			int8_t y = world->GetHeightValue(x, z);
+			Int3 bpos{x, y - 1, z};
+			BlockType block = world->GetBlockId(bpos);
+			Map::AppendPixel(mapData,
+				(Blocks::blockProperties[block].material.mapColor.index << 2) | 2);
+		}
+
+		Packet::ItemData gfxPkt;
+		gfxPkt.itemId = MAP;
+		gfxPkt.mapId = 0;
+		gfxPkt.data = mapData;
+		gfxPkt.Serialize(_session.stream);
+		x++;
 	};
 
 	itemBehavior[MAP].onStopHolding = [](ItemStack* _stack) {
