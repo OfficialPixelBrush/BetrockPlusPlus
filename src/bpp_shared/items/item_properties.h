@@ -15,6 +15,7 @@
 
 struct WorldManager;
 struct PlayerSession;
+struct Server;
 struct Entity;
 
 namespace Items {
@@ -72,7 +73,7 @@ struct ItemBehavior {
 	void (*onEntityAttack)(Entity& _attackedEntity, ItemStack* _stack) = nullptr;
 	void (*onEntityUse)(Entity& _usedEntity, ItemStack* _stack) = nullptr;
 	void (*onStartHolding)(ItemStack* _stack, PlayerSession& _session) = nullptr;
-	void (*whileHeld)(ItemStack* _stack, PlayerSession& _session) = nullptr;
+	void (*whileHeld)(ItemStack* _stack, PlayerSession& _session, Server& _server) = nullptr;
 	void (*onStopHolding)(ItemStack* _stack) = nullptr;
 };
 

@@ -9,6 +9,7 @@
 #pragma once
 #include "../entities/entity_mp_player.h"
 #include "../entities/entity_tracker.h"
+#include "dimensions.h"
 #include "inventory/interactions/player.h"
 #include "inventory/inventory_interaction.h"
 #include "items.h"
@@ -84,7 +85,7 @@ struct PlayerSession {
 	TransactionId pendingTransactionId = 0;
 	WindowId pendingWindowId = 0;
 
-	int8_t dimension = 0; // 0 = overworld, -1 = nether
+	Dimension dimension = Dimension::Overworld; // 0 = overworld, -1 = nether
 
 	BlockType lastTargetedBlock = BLOCK_AIR;
 	TickTime startedMiningAtTick = 0;
@@ -112,7 +113,7 @@ struct PlayerSession {
 		rotation.x = it2[0].GetFloat();
 		rotation.y = it2[1].GetFloat();
 
-		dimension = static_cast<int8_t>(_nbt.Get("Dimension").GetInt());
+		dimension = static_cast<Dimension>(_nbt.Get("Dimension").GetInt());
 
 		auto& it3 = _nbt.Get("Inventory").GetList();
 		for (auto& item : it3) {

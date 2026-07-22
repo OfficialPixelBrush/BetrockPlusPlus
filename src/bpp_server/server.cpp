@@ -427,7 +427,7 @@ void Server::Tick() {
 			auto heldItem = session->inventory.GetHeldItem();
 			if (heldItem) {
 				if (auto fn = Items::itemBehavior[heldItem->id].whileHeld) {
-					fn(heldItem, *session);
+					fn(heldItem, *session, *this);
 				}
 			}
 		}
