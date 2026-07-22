@@ -230,7 +230,7 @@ void SetHotbarSlot(Packet::SetHotbarSlot& _pkt, PlayerSession& _session) {
 	auto heldItem = _session.inventory.GetHeldItem();
 	if (heldItem)
 		if (auto fn = Items::itemBehavior[heldItem->id].onStartHolding) {
-			fn(heldItem);
+			fn(heldItem, _session);
 		}
 }
 

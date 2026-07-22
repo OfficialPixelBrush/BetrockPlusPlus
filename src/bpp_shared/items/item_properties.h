@@ -71,7 +71,7 @@ struct ItemBehavior {
 	void (*onBlockUse)(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) = nullptr;
 	void (*onEntityAttack)(Entity& _attackedEntity, ItemStack* _stack) = nullptr;
 	void (*onEntityUse)(Entity& _usedEntity, ItemStack* _stack) = nullptr;
-	void (*onStartHolding)(ItemStack* _stack) = nullptr;
+	void (*onStartHolding)(ItemStack* _stack, PlayerSession& _session) = nullptr;
 	void (*whileHeld)(ItemStack* _stack, PlayerSession& _session) = nullptr;
 	void (*onStopHolding)(ItemStack* _stack) = nullptr;
 };
