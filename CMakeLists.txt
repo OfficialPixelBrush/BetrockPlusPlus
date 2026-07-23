@@ -204,10 +204,11 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/helpers"
 )
 
-
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+# Only do -rdynamic for specific conditions
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_BUILD_TYPE MATCHES "^(Debug|RelWithDebInfo)$")
     target_link_options(BetrockPlusPlus PRIVATE -rdynamic)
 endif()
+
 if(BUILD_SERVER)
 # Server mode
     target_compile_definitions(BetrockPlusPlus PRIVATE
