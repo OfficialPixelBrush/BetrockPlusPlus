@@ -99,6 +99,8 @@ public:
 	// Entity trackers are so we can send entity updates to players and vice versa.
 	EntityTracker overworldEntityTracker;
 	EntityTracker hellEntityTracker;
+	// Performance metric
+	double averageTickMs = 0.0;
 
 private:
 	friend bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld,

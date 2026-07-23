@@ -308,9 +308,8 @@ void Server::Run() {
 		++avgTickCount;
 
 		if (ticks % (TICKS_PER_SECOND * 2) == 0) {
-			double avgMs = std::chrono::duration<double, std::milli>(avgTotalTickDuration).count() /
-			               double(avgTickCount);
-			GlobalLogger().info << "Avg MSPT: " << avgMs << " ms\n";
+			averageTickMs = std::chrono::duration<double, std::milli>(avgTotalTickDuration).count() /
+			                double(avgTickCount);
 			avgTotalTickDuration = std::chrono::nanoseconds{ 0 };
 			avgTickCount = 0;
 		}
@@ -325,7 +324,7 @@ void Server::Run() {
 		if (Clock::now() > nextTickTime + MAX_TICK_CATCH_UP * TICK_DURATION) {
 			baseTime = Clock::now();
 			ticks = 0;
-			GlobalLogger().warn << "Can't keep up with ticks!\n";
+			GlobalLogger().warn << "Can't keep up with ticks! (" << averageTickMs << "/" << TICK_DURATION << " ms\n";
 		}
 	}
 
