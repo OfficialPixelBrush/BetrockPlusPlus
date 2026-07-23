@@ -127,7 +127,7 @@ void Logger::Error(std::string _message) {
 	std::string time = GetCurrentTimeString();
 	std::string header = "[ERROR]";
 	if (logLevelTerminal & LOG_ERROR) {
-		std::cerr << time << " \x1b[1;30;101m" << header << " " << _message << "\x1b[0m" << "\n";
+		std::cerr << time << " \x1b[1;30;101m" << header << "\x1b[0;31m " << _message << "\x1b[0m" << "\n";
 	}
 	if (logLevelText & LOG_ERROR) {
 		logFile << time << " " << header << " " << _message << "\n";

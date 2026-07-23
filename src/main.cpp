@@ -5,16 +5,20 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
+#include "CrashCatch.hpp"
+#include "bpp_server/server.h"
 #include "bpp_shared/helpers/java/java_math.h"
+#include "logger.h"
 #include "platforms.h"
+#include "quick_arg_parser.hpp"
 #include "version.h"
 #include <atomic>
 #include <csignal>
 #include <numeric_structs.h>
+
 #ifndef BUILD_SERVER
 #include "bpp_client/client.h"
 #endif
-#include "bpp_server/server.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #define WIN32_LEAN_AND_MEAN
@@ -44,7 +48,14 @@ BOOL WINAPI consoleCtrlHandler(DWORD dwCtrlType) {
 }
 #endif
 
-#include "quick_arg_parser.hpp"
+// Fall back to being a server if neither are defined
+#if !defined(BUILD_SERVER) && !defined(BUILD_CLIENT)
+#define BUILD_SERVER
+#endif
+
+static void SignalHandler(int /*sig*/) {
+	shutdownRequested.store(true);
+}
 
 struct Args : MainArguments<Args> {
 	[[maybe_unused]] inline static const std::string Version() noexcept {
@@ -68,16 +79,44 @@ struct Args : MainArguments<Args> {
 	uint32_t entityTickRadius = option("entity_tick_radius", '\0', "Radius within which entities are ticked") = 5;
 };
 
-static void SignalHandler(int /*sig*/) {
-	shutdownRequested.store(true);
+void InitCrashHandler(std::string _platformString) {
+	CrashCatch::Config config{ .enableTextLog = true,
+		                       .autoTimestamp = true,
+#if defined(BUILD_SERVER)
+		                       .showCrashDialog = false,
+#else
+		                       .showCrashDialog = true,
+#endif
+		                       .appVersion = std::string(PROJECT_VERSION_FULL_STRING),
+		                       .buildConfig = _platformString };
+	config.onCrash = [](const CrashCatch::CrashContext& _ctx) {
+		auto& log = GlobalLogger();
+
+		log.error << "========== CRASH ==========\n";
+		log.error << "Signal/Code: " << _ctx.signalOrCode << "\n";
+
+		if (!_ctx.logFilePath.empty()) {
+			log.error << "Crash report: " << _ctx.logFilePath << "\n";
+
+			std::ifstream file(_ctx.logFilePath);
+			if (!file) {
+				GlobalLogger().error << "Failed to open crash report file!\n";
+				return;
+			}
+
+			std::string line;
+
+			while (std::getline(file, line)) {
+				GlobalLogger().error << line << "\n";
+			}
+		}
+	};
+	CrashCatch::initialize(config);
 }
 
-// Fall back to being a server if neither are defined
-#if !defined(BUILD_SERVER) && !defined(BUILD_CLIENT)
-#define BUILD_SERVER
-#endif
-
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
+	std::string platformString = std::format("{} ({}, {})", PLATFORM_NAME, BUILD_MODE, ARCH_NAME);
+	InitCrashHandler(platformString);
 	// Hook up signals
 	std::signal(SIGINT, SignalHandler);
 	std::signal(SIGTERM, SignalHandler);
@@ -90,7 +129,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 	// Init the sine table
 	MathHelper::InitSinTable();
 	// We're ready to roll
-	GlobalLogger().info << "Running on " << PLATFORM_NAME << " (" << BUILD_MODE << ", " << ARCH_NAME << ")\n";
+	GlobalLogger().info << "Running on " << platformString << "\n";
 #if defined(_WIN32) || defined(_WIN64)
 	SetConsoleCtrlHandler(consoleCtrlHandler, TRUE);
 #endif
