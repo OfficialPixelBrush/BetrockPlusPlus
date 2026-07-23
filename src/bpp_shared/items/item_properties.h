@@ -15,8 +15,8 @@
 
 struct WorldManager;
 struct PlayerSession;
-struct Server;
 struct Entity;
+class Server;
 
 namespace Items {
 

@@ -87,7 +87,7 @@ void CommandManager::Parse(std::string& _cmdString, PlayerSession& _session, Wor
 				// This'll throw an out of bounds error
 				if (m_registeredCommands[i]->GetLabel() == command.at(0)) {
 					failureReason = m_registeredCommands[i]->Execute(command, _session, _world, _transferDimension,
-					                                               *m_server);
+					                                                 *m_server);
 					break;
 				}
 			}

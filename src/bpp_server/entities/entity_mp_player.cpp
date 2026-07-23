@@ -109,6 +109,8 @@ void EntityMPPlayer::HandlePositionChecks() {
 		onGround = savedOnGround;
 
 		// Deal fall damage
+		if (inWater)
+			fallDistance = 0;
 		if (onGround) {
 			if (fallDistance > FALL_DAMAGE_FLOOR) {
 				AttackEntityFrom(nullptr, (int)std::ceil(fallDistance - FALL_DAMAGE_FLOOR));
