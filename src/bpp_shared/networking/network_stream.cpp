@@ -70,11 +70,7 @@ void NetworkStream::FlushWriteBufferBlocking() {
 void NetworkStream::WriteString8(const std::string& _str) {
 	uint16_t length = static_cast<uint16_t>(_str.size());
 	Write(length);
-	std::vector<uint8_t> data;
-	data.reserve(_str.size() * 2);
-	for (const char c : _str) {
-		data.push_back(static_cast<uint8_t>(c));
-	}
+	std::vector<uint8_t> data(_str.begin(), _str.end());
 	WriteBytes(data.data(), data.size());
 }
 
@@ -90,10 +86,10 @@ void NetworkStream::WriteString16(const std::string& _str) {
 	std::u16string str16 = ToUCS2(_str);
 	uint16_t length = static_cast<uint16_t>(str16.size());
 	Write(length);
-	std::vector<uint8_t> data(length*2);
+	std::vector<uint8_t> data(length * 2);
 	for (size_t i = 0; i < str16.size(); i++) {
-		data[i*2] = (static_cast<uint8_t>((str16[i] >> 8) & 0xFF));
-		data[i*2+1] = (static_cast<uint8_t>(str16[i] & 0xFF));
+		data[i * 2] = (static_cast<uint8_t>((str16[i] >> 8) & 0xFF));
+		data[i * 2 + 1] = (static_cast<uint8_t>(str16[i] & 0xFF));
 	}
 	WriteBytes(data.data(), data.size());
 }
