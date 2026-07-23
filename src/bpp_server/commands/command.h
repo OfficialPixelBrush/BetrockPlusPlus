@@ -81,13 +81,15 @@ DEFINE_COMMAND(CommandTeleport, "tp", "Teleports player to coordinates or anothe
 DEFINE_COMMAND(CommandTime, "time", "Gets or sets the current world time", "<new_time>", false, false);
 DEFINE_COMMAND(CommandSpawn, "spawn", "Teleport to spawn", "", false, false);
 DEFINE_COMMAND(CommandSeed, "seed", "Get the world seed", "", false, false);
-DEFINE_COMMAND(CommandGive, "give", "Give yourself a block or item", "<id>:[meta] [amount]", false, false);
+DEFINE_COMMAND(CommandGive, "give", "Give yourself a block or item", "<id>[:meta] [amount]", false, false);
 DEFINE_COMMAND(CommandList, "list", "List all currently online players", "", false, false);
 DEFINE_COMMAND(CommandLoaded, "loaded", "Shows the number of loaded chunks", "", false, false);
 DEFINE_COMMAND(CommandDimension, "dim", "Swap to the other dimension", "", false, false);
 DEFINE_COMMAND(CommandVersion, "version", "Shows the current Server version", "", false, false);
 DEFINE_COMMAND(CommandSummon, "summon", "Summons a smart entity", "", false, false);
 DEFINE_COMMAND(CommandStats, "stats", "Shows usage statistics", "", false, false);
+DEFINE_COMMAND(CommandFill, "fill", "Fills an area with the desired block",
+               "<id>[:meta] <x0> <y0> <z0> <x1> <y1> <z1> [tick]", false, false);
 /*
 DEFINE_COMMAND(CommandPose, "pose", "Set the current players' pose", "<crouch/fire/sit>", false, false);
 DEFINE_COMMAND(CommandInterface, "interface", "Open the desired interface", "<id>", false, false);
@@ -119,7 +121,8 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 */
 
 // Helper: send a PlayerPositionAndRotation packet to move a session to new coords.
-[[maybe_unused]] static void SendTeleport(PlayerSession& _target, Vec3 _position, float _yaw = 0.0f, float _pitch = 0.0f) {
+[[maybe_unused]] static void SendTeleport(PlayerSession& _target, Vec3 _position, float _yaw = 0.0f,
+                                          float _pitch = 0.0f) {
 	// Update our server-side entity position to match the teleport, so that movement broadcasts are correct.
 	_target.entity->Teleport(_position, { _yaw, _pitch });
 
