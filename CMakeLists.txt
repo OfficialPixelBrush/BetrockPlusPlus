@@ -204,6 +204,10 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/src/bpp_shared/helpers"
 )
 
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_options(BetrockPlusPlus PRIVATE -rdynamic)
+endif()
 if(BUILD_SERVER)
 # Server mode
     target_compile_definitions(BetrockPlusPlus PRIVATE

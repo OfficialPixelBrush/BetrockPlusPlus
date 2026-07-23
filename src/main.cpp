@@ -80,7 +80,9 @@ struct Args : MainArguments<Args> {
 };
 
 void InitCrashHandler(std::string _platformString) {
-	CrashCatch::Config config{ .enableTextLog = true,
+	CrashCatch::Config config{ .dumpFolder = "./",
+		                       // TODO: Apparently enableTextLog only affects stuff on Windows? TEST!!!
+		                       .enableTextLog = false,
 		                       .autoTimestamp = true,
 #if defined(BUILD_SERVER)
 		                       .showCrashDialog = false,
