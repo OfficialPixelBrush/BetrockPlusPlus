@@ -9,7 +9,6 @@
 #if defined(__linux__)
 #include <fcntl.h>
 #include <netinet/in.h>
-#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #elif defined(_WIN32) || defined(_WIN64)
@@ -20,7 +19,6 @@
 #include "packet_data.h"
 #include <cstdint>
 #include <cstring>
-#include <deque>
 #include <packet_ids.h>
 #include <string>
 #include <type_traits>
@@ -58,6 +56,10 @@ public:
 	~NetworkStream();
 	bool NewClient();
 
+	// NOTE: if CheckAndClearShortRead()/IsShortRead() ends up true after this
+	// call, the returned value is not meaningful, it was built from a
+	// truncated buffer. The caller must Rollback() to the packet's Mark()
+	// and retry once more data has arrived (next tick's FillBuffer()).
 	template <typename T>
 	T Read() {
 		static_assert(std::is_trivially_copyable_v<T>,
@@ -93,10 +95,7 @@ public:
 	std::string ReadString16();
 	void WriteString16(const std::string& _str);
 
-	// Raw byte buffer Read-Write (no endian conversion).
-	// On a short read (EAGAIN/EWOULDBLOCK mid-packet), all bytes fetched so far
-	// are pushed back into readBackBuffer so they are re-read next Tick.
-	// shortRead is set; the caller does NOT need to unread anything manually.
+	// Copies up to _len bytes out of the internal read buffer.
 	size_t ReadBytes(uint8_t* _buf, size_t _len);
 
 	// Append bytes to the per-session write buffer (no syscall).
@@ -113,7 +112,30 @@ public:
 	bool FlushWriteBuffer();
 	// Blocking flush for use SHUTDOWN ONLY
 	void FlushWriteBufferBlocking();
+
+	// Check if there is unconsumed buffer data.
 	bool HasData();
+
+	// Drains everything currently available on the socket (non-blocking,
+	// looping until EWOULDBLOCK/EAGAIN) into the internal read buffer.
+	//
+	// Call this exactly once per tick, per client, before anything else
+	void DrainToBuffer();
+
+	// Snapshot the read cursor. Call this right before reading a packet's
+	// ID, for example before you start parsing a new packet.
+	size_t Mark() const {
+		return readPos;
+	}
+
+	// Rewind the read cursor back to a Mark(). Use this when
+	// CheckAndClearShortRead() is true after attempting to parse a packet.
+	// it rollbacks the whole packet (including fields already read this
+	// attempt) to be reparsed next time once the rest of the bytes are received.
+	void Rollback(size_t _mark) {
+		readPos = _mark;
+		shortRead = false;
+	}
 
 	// Append pre-serialised bytes directly to the write buffer.
 	// Used for shared-packet broadcast: serialise once, copy to N sessions.
@@ -127,21 +149,29 @@ public:
 		return writeBuffer;
 	}
 
-	// Returns true if the last ReadBytes call hit a receive timeout (packet split
-	// across ticks). All bytes that had already been read are held in readBackBuffer
-	// and will be replayed automatically on the next ReadBytes call.
+	// Returns true if the *most recent* ReadBytes()-family call came up
+	// short (not enough buffered data), AND CLEARS the flag.
+	//
+	// You probably want to use IsShortRead() instead.
 	bool CheckAndClearShortRead() {
 		bool val = shortRead;
 		shortRead = false;
 		return val;
 	}
 
+	// Check if the read is short. Useful when doing multiple reads.
+	bool IsShortRead() const {
+		return shortRead;
+	}
+
 private:
 	int clientSocket = INVALID_SOCKET;
 	bool connected = true;
 	bool shortRead = false;
-	// Bytes that were fetched from the socket but belong to a packet that could
-	// not be fully read this Tick. Drained before touching the socket again.
-	std::deque<uint8_t> readBackBuffer;
+
+	// All un-consumed bytes recevied from the socket.
+	std::vector<uint8_t> readBuffer;
+	size_t readPos = 0;
+
 	std::vector<uint8_t> writeBuffer;
 };

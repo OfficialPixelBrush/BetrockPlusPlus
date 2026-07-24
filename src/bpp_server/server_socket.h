@@ -10,6 +10,7 @@
 #if defined(__linux__) || defined(__APPLE__)
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #elif defined(_WIN32) || defined(_WIN64)
@@ -41,6 +42,9 @@ inline int CreateServerSocket(int _port) {
 	int reuse = 1;
 	setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuse), sizeof(reuse));
 
+	int nodelay = 1;
+	setsockopt(serverSocket, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>(&nodelay), sizeof(nodelay));
+
 	sockaddr_in addr{};
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(_port);
@@ -70,6 +74,8 @@ inline int CreateClientSocket(int _socket = -1) {
 	ioctlsocket(rawSocket, FIONBIO, &clientMode);
 	DWORD recvTimeout = 45;
 	setsockopt(rawSocket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
+	int nodelay = 1;
+	setsockopt(rawSocket, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>(&nodelay), sizeof(nodelay));
 	int clientSocket = static_cast<int>(rawSocket);
 #else
 	int clientSocket = accept(_socket, nullptr, nullptr);
@@ -78,6 +84,8 @@ inline int CreateClientSocket(int _socket = -1) {
 	fcntl(clientSocket, F_SETFL, O_NONBLOCK);
 	struct timeval recvTimeout{ 0, 45000 };
 	setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
+	int nodelay = 1;
+	setsockopt(clientSocket, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
 #endif
 
 	return clientSocket;

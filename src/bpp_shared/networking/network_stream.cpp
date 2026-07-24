@@ -110,45 +110,22 @@ std::string NetworkStream::ReadString16() {
 }
 
 size_t NetworkStream::ReadBytes(uint8_t* _buf, size_t _len) {
-	size_t received = 0;
+	size_t available = readBuffer.size() - readPos;
 
-	// 1. consume existing buffered data
-	while (!readBackBuffer.empty() && received < _len) {
-		_buf[received++] = readBackBuffer.front();
-		readBackBuffer.pop_front();
+	if (available < _len) {
+		// Not enough data has arrived yet. Copy what we have and flag it.
+		if (available > 0)
+			std::memcpy(_buf, readBuffer.data() + readPos, available);
+		shortRead = true;
+		return available;
 	}
 
-	// 2. try recv until we either fill or would block
-	while (received < _len) {
-		int result = recv(clientSocket, reinterpret_cast<char*>(_buf + received), static_cast<int>(_len - received), 0);
-
-		if (result > 0) {
-			received += result;
-		} else if (result == 0) {
-			connected = false;
-			return received;
-		} else {
-#ifdef _WIN32
-			int err = WSAGetLastError();
-			if (err == WSAEWOULDBLOCK) {
-				break;
-			}
-#else
-			if (errno == EWOULDBLOCK || errno == EAGAIN) {
-				break;
-			}
-#endif
-			connected = false;
-			return received;
-		}
-	}
-
-	return received;
+	std::memcpy(_buf, readBuffer.data() + readPos, _len);
+	readPos += _len;
+	return _len;
 }
 
 void NetworkStream::WriteBytes(const uint8_t* _buf, size_t _len) {
-	// Append to the write buffer -- no syscall here.
-	// The actual send() happens once per Tick in flushWriteBuffer().
 	writeBuffer.insert(writeBuffer.end(), _buf, _buf + _len);
 }
 
@@ -157,7 +134,7 @@ void NetworkStream::WriteBytes(const uint8_t* _buf, size_t _len) {
 // a certain number of bytes
 void NetworkStream::ReadEntityMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {
 	uint8_t val = Read<uint8_t>();
-	while (val != PacketData::EntityMetadata::END) {
+	while (!IsShortRead() && val != PacketData::EntityMetadata::END) {
 		// What type the data has
 		PacketData::EntityMetadata::Type type = PacketData::EntityMetadata::Type(val >> 5);
 		// Where the data goes for the relevant entity
@@ -291,26 +268,44 @@ bool NetworkStream::FlushWriteBuffer() {
 	return connected;
 }
 
-bool NetworkStream::HasData() {
+void NetworkStream::DrainToBuffer() {
+	if (clientSocket == INVALID_SOCKET || !connected)
+		return;
+
+	// Compact away bytes that were consumed (and NOT rolled back) last
+	// Tick, so the buffer doesn't grow unbounded.
+	if (readPos > 0) {
+		readBuffer.erase(readBuffer.begin(),
+		                 readBuffer.begin() + static_cast<std::vector<uint8_t>::difference_type>(readPos));
+		readPos = 0;
+	}
+
+	uint8_t chunk[4096];
+	for (;;) {
+		int result = recv(clientSocket, reinterpret_cast<char*>(chunk), sizeof(chunk), 0);
+		if (result > 0) {
+			readBuffer.insert(readBuffer.end(), chunk, chunk + result);
+			if (static_cast<size_t>(result) < sizeof(chunk))
+				break; // almost certainly drained the socket for now
+			continue;  // full chunk -- there could be more queued, keep going
+		}
+		if (result == 0) {
+			connected = false;
+			break;
+		}
 #if defined(_WIN32) || defined(_WIN64)
-	// Check rollback buffer first, then the socket.
-	if (!readBackBuffer.empty())
-		return true;
-	u_long bytesAvailable = 0;
-	if (ioctlsocket(clientSocket, FIONREAD, &bytesAvailable) == SOCKET_ERROR) {
-		connected = false;
-		return false;
-	}
-	return bytesAvailable > 0;
+		int err = WSAGetLastError();
+		if (err == WSAEWOULDBLOCK)
+			break;
 #else
-	// Check rollback buffer first, then the socket.
-	if (!readBackBuffer.empty())
-		return true;
-	int bytesAvailable = 0;
-	if (ioctl(clientSocket, FIONREAD, &bytesAvailable) < 0) {
-		connected = false;
-		return false;
-	}
-	return bytesAvailable > 0;
+		if (errno == EWOULDBLOCK || errno == EAGAIN)
+			break;
 #endif
+		connected = false;
+		break;
+	}
+}
+
+bool NetworkStream::HasData() {
+	return readBuffer.size() > readPos;
 }

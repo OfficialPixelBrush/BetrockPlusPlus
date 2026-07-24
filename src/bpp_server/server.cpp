@@ -368,6 +368,7 @@ void Server::Tick() {
 	[[maybe_unused]] const int playerCount = int(players.size());
 
 	for (auto& session : players) {
+		session->stream.DrainToBuffer();
 		if (session->connState == ConnectionState::Playing)
 			ProcessIncoming(*session);
 	}
@@ -520,15 +521,26 @@ void Server::ProcessIncoming(PlayerSession& _session) {
 	WorldManager& sessionWorld = _session.dimension == -1 ? gameRuntime.worldHell : gameRuntime.world;
 
 	while (_session.stream.HasData()) {
+		size_t packetMark = _session.stream.Mark();
+
 		PacketId packetId = _session.stream.Read<PacketId>();
+
+		if (_session.stream.CheckAndClearShortRead()) {
+			// Not even the ID has fully arrived yet.
+			_session.stream.Rollback(packetMark);
+			break;
+		}
 
 		if (!PacketDispatcher::Dispatch(packetId, _session, sessionWorld, *this))
 			return; // session is dead, or sent an unknown packet
 
 		if (_session.stream.CheckAndClearShortRead()) {
+			// The packet wasn't full.
+			_session.stream.Rollback(packetMark);
 			break;
 		}
 	}
+
 	// Update our last packet time for the timeout code
 	_session.lastPacketTime = std::chrono::steady_clock::now();
 }

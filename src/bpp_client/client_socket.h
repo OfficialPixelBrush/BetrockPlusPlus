@@ -8,6 +8,7 @@
 #pragma once
 #include "logger.h"
 #if defined(__linux__) || defined(__APPLE__)
+#include "netinet/tcp.h"
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -56,8 +57,11 @@ inline int Connect(const std::string& _host, uint16_t _port) {
 			continue;
 
 		// Blocking connect (we only need this once, at startup)
-		if (connect(clientSocket, p->ai_addr, static_cast<int>(p->ai_addrlen)) == 0)
+		if (connect(clientSocket, p->ai_addr, static_cast<int>(p->ai_addrlen)) == 0) {
+			int nodelay = 1;
+			setsockopt(clientSocket, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>(&nodelay), sizeof(nodelay));
 			break; // connected
+		}
 
 		CloseSocket(clientSocket);
 		clientSocket = -1;
@@ -84,4 +88,4 @@ inline int Connect(const std::string& _host, uint16_t _port) {
 
 	return clientSocket;
 }
-}
+} // namespace ClientSocketManager
