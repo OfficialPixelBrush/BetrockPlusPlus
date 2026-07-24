@@ -20,11 +20,37 @@ struct PlayerSession;
 
 namespace Blocks {
 
-Int3 GetAdjacentBlockPos(Int3 _pos, PacketData::FaceDirection _face);
 bool CanSugarcaneSurviveAt(WorldManager& _world, Int3 _pos);
+bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, PacketData::FaceDirection _face);
 float GetFluidPercentAir(uint8_t _meta);
 void BreakAndDropBlock(WorldManager& _world, Int3 _pos);
 bool CanFallAt(WorldManager& _world, Int3 _position);
+
+constexpr inline Int3 GetAdjacentBlockPos(Int3 _pos, PacketData::FaceDirection _face) {
+	switch (_face) {
+	case PacketData::FaceDirection::Y_MINUS:
+		--_pos.y;
+		break;
+	case PacketData::FaceDirection::Y_PLUS:
+		++_pos.y;
+		break;
+	case PacketData::FaceDirection::Z_MINUS:
+		--_pos.z;
+		break;
+	case PacketData::FaceDirection::Z_PLUS:
+		++_pos.z;
+		break;
+	case PacketData::FaceDirection::X_MINUS:
+		--_pos.x;
+		break;
+	case PacketData::FaceDirection::X_PLUS:
+		++_pos.x;
+		break;
+	default:
+		break;
+	}
+	return _pos;
+}
 
 enum class StepSound : uint8_t {
 	Stone, // default, also metal (different pitch)
