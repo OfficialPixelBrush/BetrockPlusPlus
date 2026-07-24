@@ -1,0 +1,123 @@
+/*
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+*/
+
+#pragma once
+
+#include "base_types.h"
+#include "inventory/item_stack.h"
+#include "packet_data.h"
+#include "world.h"
+
+namespace Items {
+// Tool material durability
+static constexpr ItemDamage DURABILITY_WOOD = 59;
+static constexpr ItemDamage DURABILITY_STONE = 131;
+static constexpr ItemDamage DURABILITY_IRON = 250;
+static constexpr ItemDamage DURABILITY_DIAMOND = 1561;
+static constexpr ItemDamage DURABILITY_GOLD = 32;
+
+// Armor max damage = maxDamageArray[slot] * 3 << material
+// material: leather=0, chain/gold=1, iron=2, diamond=3
+// slot: helmet=0(x11), chest=1(x16), legs=2(x15), boots=3(x13)
+static constexpr ItemDamage DURABILITY_HELMET_LEATHER = 11 * 3 * 1; // 33
+static constexpr ItemDamage DURABILITY_CHEST_LEATHER = 16 * 3 * 1;  // 48
+static constexpr ItemDamage DURABILITY_LEGS_LEATHER = 15 * 3 * 1;   // 45
+static constexpr ItemDamage DURABILITY_BOOTS_LEATHER = 13 * 3 * 1;  // 39
+
+static constexpr ItemDamage DURABILITY_HELMET_CHAINMAIL = 11 * 3 * 2; // 66
+static constexpr ItemDamage DURABILITY_CHEST_CHAINMAIL = 16 * 3 * 2;  // 96
+static constexpr ItemDamage DURABILITY_LEGS_CHAINMAIL = 15 * 3 * 2;   // 90
+static constexpr ItemDamage DURABILITY_BOOTS_CHAINMAIL = 13 * 3 * 2;  // 78
+
+static constexpr ItemDamage DURABILITY_HELMET_IRON = 11 * 3 * 4; // 132
+static constexpr ItemDamage DURABILITY_CHEST_IRON = 16 * 3 * 4;  // 192
+static constexpr ItemDamage DURABILITY_LEGS_IRON = 15 * 3 * 4;   // 180
+static constexpr ItemDamage DURABILITY_BOOTS_IRON = 13 * 3 * 4;  // 156
+
+static constexpr ItemDamage DURABILITY_HELMET_DIAMOND = 11 * 3 * 8; // 264
+static constexpr ItemDamage DURABILITY_CHEST_DIAMOND = 16 * 3 * 8;  // 384
+static constexpr ItemDamage DURABILITY_LEGS_DIAMOND = 15 * 3 * 8;   // 360
+static constexpr ItemDamage DURABILITY_BOOTS_DIAMOND = 13 * 3 * 8;  // 312
+
+static constexpr ItemDamage DURABILITY_HELMET_GOLD = 11 * 3 * 2; // 66
+static constexpr ItemDamage DURABILITY_CHEST_GOLD = 16 * 3 * 2;  // 96
+static constexpr ItemDamage DURABILITY_LEGS_GOLD = 15 * 3 * 2;   // 90
+static constexpr ItemDamage DURABILITY_BOOTS_GOLD = 13 * 3 * 2;  // 78
+
+static constexpr ItemDamage DURABILITY_FISHING_ROD = 64;
+static constexpr ItemDamage DURABILITY_FLINT_AND_STEEL = 64;
+static constexpr ItemDamage DURABILITY_SHEARS = 238;
+static constexpr ItemDamage DURABILITY_BOW = 384;
+
+enum class ToolLevel : int8_t {
+	None = -1,
+	WoodenOrGold = 0,
+	Stone = 1,
+	Iron = 2,
+	Diamond = 3
+};
+enum class ToolMaterial : int8_t {
+	None = -1,
+	Wooden = 0,
+	Gold = 1,
+	Stone = 2,
+	Iron = 3,
+	Diamond = 4
+};
+enum class ToolType : int8_t {
+	None = -1,
+	Hoe = 0,
+	Shovel = 1,
+	Pickaxe = 2,
+	Axe = 3,
+	Sword = 4,
+};
+enum class ArmorType : int8_t {
+	None = -1,
+	Boots = 0,
+	Leggings = 1,
+	Chestplate = 2,
+	Helmet = 3,
+};
+
+ItemDamage GetMaterialUses(ToolMaterial _material);
+
+constexpr bool IsHoe(ItemId _id);
+constexpr bool IsSword(ItemId _id);
+constexpr bool IsPickaxe(ItemId _id);
+constexpr bool IsAxe(ItemId _id);
+constexpr bool IsShovel(ItemId _id);
+constexpr bool IsEffective(ToolType _type, BlockType _block);
+bool IsWeapon(ItemId _id);
+bool IsTool(ItemId _id);
+
+// Get damage this tick
+float BlockDamagePerTick(ItemStack* _stack, BlockType _targetBlock, bool _reducedSpeed);
+
+// CanHarvest
+bool CanPickaxeHarvest(ToolLevel _level, BlockType _block);
+bool CanShovelHarvest(ToolLevel _level, BlockType _block);
+bool CanShearsOrSwordHarvest(ToolLevel _level, BlockType _block);
+
+// Usage
+void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face);
+void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face);
+
+// Attack
+void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face);
+void AttackWithItem(Entity& _targetEntity, ItemStack* _stack);
+
+struct ToolProperties {
+	ToolType type = ToolType::None;
+	ToolMaterial material = ToolMaterial::None;
+	ItemDamage maxUses = -1;
+	TickTime predictedBreakTick = 0;
+	bool (*canHarvest)(ToolLevel _level, BlockType _targetBlock) = nullptr;
+	bool (*howEffectiveAgainstBlock)(ItemStack* _stack, BlockType _targetBlock) = nullptr;
+};
+extern std::unordered_map<ItemId, ToolProperties> toolProperties;
+}; // namespace Items

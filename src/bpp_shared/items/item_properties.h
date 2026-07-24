@@ -20,46 +20,6 @@ class Server;
 
 namespace Items {
 
-enum class ToolLevel : int8_t {
-	None = -1,
-	WoodenOrGold = 0,
-	Stone = 1,
-	Iron = 2,
-	Diamond = 3
-};
-enum class ToolMaterial : int8_t {
-	None = -1,
-	Wooden = 0,
-	Gold = 1,
-	Stone = 2,
-	Iron = 3,
-	Diamond = 4
-};
-enum class ToolType : int8_t {
-	None = -1,
-	Hoe = 0,
-	Shovel = 1,
-	Pickaxe = 2,
-	Axe = 3,
-	Sword = 4,
-};
-enum class ArmorType : int8_t {
-	None = -1,
-	Boots = 0,
-	Leggings = 1,
-	Chestplate = 2,
-	Helmet = 3,
-};
-
-ItemDamage GetMaterialUses(ToolMaterial _material);
-
-struct ToolProperties {
-	ToolType type = ToolType::None;
-	ToolMaterial material = ToolMaterial::None;
-	ItemDamage maxUses = -1;
-	TickTime predictedBreakTick = 0;
-};
-
 struct ItemProperties {
 	ItemAmount maxStack = STACK_MAX;
 };
@@ -79,23 +39,14 @@ struct ItemBehavior {
 
 extern std::unordered_map<ItemId, ItemBehavior> itemBehavior;
 extern std::unordered_map<ItemId, ItemProperties> itemProperties;
-extern std::unordered_map<ItemId, ToolProperties> toolProperties;
 void RegisterAll();
 
+constexpr bool IsArmor(ItemId _id);
+constexpr bool IsThrowable(ItemId _id);
+constexpr bool IsEdible(ItemId _id);
+constexpr bool IsBlock(ItemId _id);
 bool IsValid(ItemId _id);
-
-bool IsArmor(ItemId _id);
-bool IsHoe(ItemId _id);
-bool IsSword(ItemId _id);
-bool IsPickaxe(ItemId _id);
-bool IsAxe(ItemId _id);
-bool IsShovel(ItemId _id);
-bool IsWeapon(ItemId _id);
-bool IsTool(ItemId _id);
-bool IsThrowable(ItemId _id);
-bool IsEdible(ItemId _id);
 bool IsStackable(ItemId _id); // max stack > 1
-bool IsBlock(ItemId _id);
 
 void HarmTool(ItemStack* _stack);
 
