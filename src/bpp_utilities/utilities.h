@@ -5,10 +5,10 @@
  *
 */
 #pragma once
-#include "world/storage/region_manager.h"
-#include "world/storage/save_manager.h"
 #include "helpers/file_handle.h"
 #include "nbt/nbt.h"
+#include "world/storage/region_manager.h"
+#include "world/storage/save_manager.h"
 #include <cstdio>
 #include <filesystem>
 
@@ -112,7 +112,8 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 
 		auto chunkData = decompressChunk(compressedChunk, compressedSize, decompressedSize);
 
-		if (!chunkData) return nullptr;
+		if (!chunkData)
+			return nullptr;
 
 		std::shared_ptr<Chunk> c = std::make_shared<Chunk>();
 		size_t blockDataSize = CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT;
@@ -146,7 +147,7 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 
 	auto loadV2Format = [&](FileHandle& cFile) -> std::shared_ptr<Chunk> {
 		auto& chunkFile = cFile.Get();
-		
+
 		// Get the length of the file
 		chunkFile.seekg(0, std::ios::end);
 		std::streamsize size = chunkFile.tellg();
@@ -160,9 +161,9 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 		size_t decompressedSize = 81920 * 2;
 
 		auto chunkData = decompressChunk(compressedChunk, compressedSize, decompressedSize);
-		uint8_t* _pdata = reinterpret_cast<uint8_t*>(chunkData.get());
+		uint8_t* pdata = reinterpret_cast<uint8_t*>(chunkData.get());
 
-		auto nbt = NBTParser(_pdata, decompressedSize);
+		auto nbt = NBTParser(pdata, decompressedSize);
 
 		const size_t blockDataSize = (CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT);
 		const size_t nibbleDataSize = (CHUNK_WIDTH * CHUNK_WIDTH * (CHUNK_HEIGHT / 2));
@@ -176,12 +177,12 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 		auto& metaData = metaTag.byteArray;
 
 		// Block ids
-		for (int i = 0; i < blockDataSize; i++) {
+		for (size_t i = 0; i < blockDataSize; i++) {
 			c->SetBlock(BlockIndexToPosition(i), BlockType(blocksTag.byteArray[i]));
 		}
 
 		// Metadata
-		for (int i = 0; i < nibbleDataSize; i++) {
+		for (size_t i = 0; i < nibbleDataSize; i++) {
 			c->SetMeta(BlockIndexToPosition(i * 2), (metaData[i]) & 0xF);
 			c->SetMeta(BlockIndexToPosition(i * 2 + 1), (metaData[i] >> 4) & 0xF);
 		}
@@ -203,7 +204,7 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 
 			// Does this have a valid name?
 			if (std::sscanf(filename.c_str(), "%d,%d.cnk", &rx, &rz) == 2) {
- 				chunkCoords.push_back({ rx, rz });
+				chunkCoords.push_back({ rx, rz });
 			}
 		}
 	}

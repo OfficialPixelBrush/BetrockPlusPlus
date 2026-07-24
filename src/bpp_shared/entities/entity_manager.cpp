@@ -105,25 +105,27 @@ void EntityManager::Tick() {
 }
 
 std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbExcluding(const AABB& _box,
-                                                                                   EntityId _entityId) {
+                                                                                   const EntityId _entityId) {
 	// Get all entities within an AABB excluding this entity id
-	auto _entities = GetEntitiesWithinAabb(_box);
-	_entities.erase(std::remove_if(_entities.begin(), _entities.end(),
-	                               [_entityId](std::shared_ptr<Entity> _entity) { return _entity->id == _entityId; }),
-	                _entities.end());
-	return _entities;
+	auto entitiesInAABB = GetEntitiesWithinAabb(_box);
+	entitiesInAABB.erase(std::remove_if(entitiesInAABB.begin(), entitiesInAABB.end(),
+	                                    [_entityId](std::shared_ptr<Entity> _entity) {
+		                                    return _entity->id == _entityId;
+	                                    }),
+	                     entitiesInAABB.end());
+	return entitiesInAABB;
 }
 
 std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbExcludingTypes(
-    const AABB& _box, std::vector<EntityType>& _excludedTypes) {
-	std::vector<std::shared_ptr<Entity>> entities;
+    const AABB& _box, const std::vector<EntityType>& _excludedTypes) {
+	std::vector<std::shared_ptr<Entity>> exclusiveEntities;
 	auto entitiesInAABB = GetEntitiesWithinAabb(_box);
 	for (auto& entity : entitiesInAABB) {
 		if (std::find(_excludedTypes.begin(), _excludedTypes.end(), entity->type) == _excludedTypes.end()) {
-			entities.push_back(entity);
+			exclusiveEntities.push_back(entity);
 		}
 	}
-	return entities;
+	return exclusiveEntities;
 }
 
 std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabb(const AABB& _box) {

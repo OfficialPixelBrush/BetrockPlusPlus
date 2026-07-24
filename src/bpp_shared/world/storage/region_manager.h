@@ -47,10 +47,10 @@ struct RegionManager {
 	bool CreateRegion(Int32_2 _rpos);
 
 	// Serialize and save a chunk to a region
-	void SaveChunk(std::shared_ptr<Chunk> _chunk, bool _unloadEntities = false);
+	void SaveChunk(const std::shared_ptr<Chunk> _chunk, bool _unloadEntities = false);
 
 	// Queue a chunk to be loaded from disk
-	void LoadChunk(Int32_2 _cpos);
+	void LoadChunk(const Int32_2 _cpos);
 
 	// Returns nullptr until chunk is done loading
 	std::shared_ptr<Chunk> GetChunk(Int32_2 _cpos);

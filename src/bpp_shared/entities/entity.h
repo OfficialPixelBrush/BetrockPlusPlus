@@ -52,6 +52,9 @@ const float SNEAK_SPEED_MODIFIER = 0.3f;
 
 struct PlayerEntity;
 struct EntityManager;
+
+// TODO: Reorder some of these. Having a bunch of bools
+// like this between bigger types is bad for alignment
 struct Entity {
 	// For randomness
 	Java::Random rand;
@@ -199,5 +202,5 @@ struct Entity {
 	virtual void UpdateFallState(float _movedY);
 	virtual std::optional<Tag> SerializeToNbt();
 	virtual void LoadFromNbt(Tag& _nbt);
-	virtual void dropItemAtEntity(ItemId itemId, ItemAmount count);
+	virtual void DropItemAtEntity(ItemId _itemId, ItemAmount _count);
 };

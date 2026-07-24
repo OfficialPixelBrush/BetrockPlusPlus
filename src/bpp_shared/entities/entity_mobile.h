@@ -33,7 +33,7 @@ public:
 	int maxHealth = 20;
 	int maxHurtTime = 20;
 	int lastAttackDamage = 0;
-	float attackedAtYaw = 0.0f;
+	//float attackedAtYaw = 0.0f; // Already exist in base entity
 	int deathTime = 0;
 	int attackTime = 0;
 	float eyeHeight = height * 0.85f;

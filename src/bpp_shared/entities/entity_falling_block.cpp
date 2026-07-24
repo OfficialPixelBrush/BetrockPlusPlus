@@ -27,7 +27,7 @@ void FallingBlockEntity::Tick() {
 		velocity *= { 0.7, -0.5, 0.7 };
 		isDead = true;
 		if (!Blocks::CanFallAt(*this->world, blockPosition)) {
-			this->dropItemAtEntity(this->block, 1);
+			this->DropItemAtEntity(this->block, 1);
 			return;
 		}
 		this->world->SetBlock(blockPosition, this->block, 0);
@@ -35,7 +35,7 @@ void FallingBlockEntity::Tick() {
 	}
 	if (ticksFallen > 100) {
 		// Create the item entity
-		this->dropItemAtEntity(this->block, 1);
+		this->DropItemAtEntity(this->block, 1);
 		isDead = true;
 	}
 }

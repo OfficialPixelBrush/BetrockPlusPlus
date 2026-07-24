@@ -70,7 +70,7 @@ public:
 	}
 
 private:
-	std::array<std::shared_ptr<Chunk>, REGION_AREA> chunks;
+	//std::array<std::shared_ptr<Chunk>, REGION_AREA> chunks;
 	std::vector<uint8_t> EncodeNbtData(const std::shared_ptr<Chunk>& _chunk, int64_t _timestamp,
 	                                   std::shared_ptr<const std::vector<Tag>> _entities);
 	std::shared_ptr<Chunk> DecodeNbtData(const std::vector<uint8_t>& _rawData);

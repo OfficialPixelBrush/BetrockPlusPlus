@@ -76,7 +76,7 @@ bool RegionManager::CreateRegion(Int32_2 _rpos) {
 	return file.good(); // catch write failures too
 }
 
-void RegionManager::SaveChunk(std::shared_ptr<Chunk> _chunk, bool _unloadEntities) {
+void RegionManager::SaveChunk(const std::shared_ptr<Chunk> _chunk, bool _unloadEntities) {
 	{
 		std::lock_guard lk(outChunksMutex);
 		outChunks.erase(_chunk->cpos);
@@ -101,14 +101,15 @@ void RegionManager::SaveChunk(std::shared_ptr<Chunk> _chunk, bool _unloadEntitie
 	// Entities are wrapped in a shared_ptr<const vector>
 	std::shared_ptr<const std::vector<Tag>> entities = {};
 	if (world)
-		entities = std::make_shared<const std::vector<Tag>>(world->entityManager.CollectEntitiesForSave(snapshot->cpos, _unloadEntities));
+		entities = std::make_shared<const std::vector<Tag>>(
+		    world->entityManager.CollectEntitiesForSave(snapshot->cpos, _unloadEntities));
 	SnapshotContainer container{ std::move(snapshot), std::move(entities) };
 
 	std::lock_guard lk(saveQueueMutex);
 	saveQueue.push_back(std::move(container));
 }
 
-void RegionManager::LoadChunk(Int32_2 _cpos) {
+void RegionManager::LoadChunk(const Int32_2 _cpos) {
 	Int32_2 rpos{ _cpos.x >> 5, _cpos.z >> 5 };
 	if (!RegionExists(rpos))
 		return;
@@ -156,7 +157,8 @@ void RegionManager::PumpPipeline() {
 			continue;
 		}
 		auto currentTime = 0;
-		if (world) currentTime = world->elapsedTicks;
+		if (world)
+			currentTime = world->elapsedTicks;
 		iopool.detach_task([chunk, region, currentTime, entitySnapshot]() {
 			region->AddChunk(chunk, currentTime, entitySnapshot); // Region stays alive via shared_ptr capture
 		});

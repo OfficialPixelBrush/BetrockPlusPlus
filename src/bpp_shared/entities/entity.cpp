@@ -5,14 +5,15 @@
  *
  */
 #include "entity.h"
+#include "entity_item.h"
 #include "entity_manager.h"
 #include "entity_player.h"
-#include "entity_item.h"
 #include "world/world.h"
 #include <algorithm>
 #include <cmath>
 
-void Entity::dropItemAtEntity(ItemId itemId, ItemAmount count) {
+
+void Entity::DropItemAtEntity(ItemId itemId, ItemAmount count) {
 	Vec3 itemPos = position;
 	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(itemPos);
 	itemEntity->itemStack = { itemId, count };
