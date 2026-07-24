@@ -15,10 +15,13 @@
 #include "inventory/inventory_interaction.h"
 #include "inventory/item_stack.h"
 #include "items/item_properties.h"
+#include "items/tool_properties.h"
+#include "logger.h"
 #include "packet_utils.h"
 #include "server.h"
 #include "tile_entities/tile_entity.h"
 #include <cstring>
+#include <iomanip>
 #include <memory>
 
 namespace HandlePacket {
@@ -96,16 +99,22 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 			return;
 		}
 
-		if (Blocks::blockBehaviors[_session.lastTargetedBlock].onBlockClicked) {
-			Blocks::blockBehaviors[_session.lastTargetedBlock].onBlockClicked(_world, packetPos);
+		if (auto fn = Blocks::blockBehaviors[_session.lastTargetedBlock].onBlockClicked) {
+			fn(_world, packetPos);
 		}
 
 		ItemStack* heldItem = _session.inventory.GetHeldItem();
 		if (!heldItem)
 			return;
-		if (!Items::itemBehavior[heldItem->id].onBlockStartMining)
-			return;
-		Items::itemBehavior[heldItem->id].onBlockStartMining(_world, heldItem, packetPos, _pkt.face);
+		// TODO: Check if we're in water or not on ground
+		float damagePerTick = Items::BlockDamagePerTick(heldItem, _session.lastTargetedBlock, false);
+
+		float secondsToBreak = (damagePerTick > 0.0f) ? 1.0f / (damagePerTick * 20.0f) : INFINITY;
+
+		GlobalLogger().debug << std::setprecision(2) << damagePerTick << "dps (Will be mined in " << secondsToBreak
+		                     << " s)\n";
+		if (auto fn = Items::itemBehavior[heldItem->id].onBlockStartMining)
+			fn(_world, heldItem, packetPos, _pkt.face);
 		return;
 	}
 	case PacketData::MineStatus::DIGGING_FINISHED: {
