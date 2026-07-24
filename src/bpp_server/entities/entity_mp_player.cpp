@@ -62,6 +62,9 @@ void EntityMPPlayer::HandlePositionChecks() {
 		return;
 	if (session->pendingTeleport && session->pendingPosition) {
 		// We have a pending teleport. Check to see if the player caught up
+		// Also reset fall state
+		fallDistance = 0;
+		onGround = true;
 		auto& pending = *session->pendingPosition;
 		Vec3 claimed = { pending.x, pending.y + PLAYER_EYE_HEIGHT, pending.z };
 		Vec3 delta = claimed - *session->pendingTeleport;
