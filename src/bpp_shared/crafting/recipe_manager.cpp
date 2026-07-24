@@ -142,7 +142,8 @@ ShapelessRecipeKey RecipeManager::MakeShapelessKey(std::span<const ItemKey> _ite
 
 	for (const auto& item : _items) {
 		if (!Items::IsValidId(item.id)) {
-			GlobalLogger().warn << "Item with invalid ID (" << item << ") in shapeless recipe! Skipping.";
+			GlobalLogger().warn << "Item with invalid ID (" << static_cast<int>(item.id)
+			                    << ") in shapeless recipe! Skipping.";
 			continue;
 		}
 		if (key.count >= key.items.size()) {
