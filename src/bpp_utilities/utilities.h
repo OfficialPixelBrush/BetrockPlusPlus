@@ -217,8 +217,8 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 		auto path = srcRegion / (std::to_string(cpos.x) + "," + std::to_string(cpos.z) + ".cnk");
 		FileHandle fileHandle(path);
 		auto chunk = loadOldFormat(fileHandle);
-		chunk->cpos = { cpos.x, cpos.z };
-		world.chunks[chunk->cpos] = chunk;
+		if (chunk) chunk->cpos = { cpos.x, cpos.z };
+		if (chunk) world.chunks[chunk->cpos] = chunk;
 	}
 
 	GlobalLogger().info << "Converted! Now converting V2 format chunks..\n";
@@ -247,8 +247,8 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 		auto path = srcRegion / (std::to_string(cpos.x) + "," + std::to_string(cpos.z) + ".ncnk");
 		FileHandle fileHandle(path);
 		auto chunk = loadV2Format(fileHandle);
-		chunk->cpos = { cpos.x, cpos.z };
-		world.chunks[chunk->cpos] = chunk;
+		if (chunk) chunk->cpos = { cpos.x, cpos.z };
+		if (chunk) world.chunks[chunk->cpos] = chunk;
 	}
 	GlobalLogger().info << "Finishing up..\n";
 
