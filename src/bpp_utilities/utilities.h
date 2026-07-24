@@ -141,6 +141,7 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 		}
 		c->isTerrainPopulated = true;
 		c->isModified = true;
+		c->GenerateSkylightMap();
 
 		return std::move(c);
 	};
