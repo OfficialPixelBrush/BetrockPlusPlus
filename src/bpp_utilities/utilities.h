@@ -46,7 +46,7 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 	fs::path srcPlayers = fs::path(_dir) / "players";
 	fs::path srcRegion = fs::path(_dir) / "region";
 
-	if (!fs::exists(srcPlayers) || !fs::exists(srcRegion)) {
+	if (!fs::exists(srcRegion)) {
 		GlobalLogger().error << "Invalid Betrock level file!\n";
 		return false;
 	}
@@ -56,7 +56,12 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 		return false;
 	}
 
-	fs::copy(srcPlayers, "ConvertedWorld/players", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+
+	if (fs::exists(srcPlayers)) {
+		fs::copy(srcPlayers, "ConvertedWorld/players", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+	} else {
+		GlobalLogger().warn << "No Betrock player files found!\n";
+	}
 
 	auto BlockIndexToPosition = [](int32_t index) -> Int3 {
 		Int3 pos;
