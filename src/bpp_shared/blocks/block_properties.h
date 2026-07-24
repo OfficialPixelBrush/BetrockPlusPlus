@@ -26,7 +26,7 @@ float GetFluidPercentAir(uint8_t _meta);
 void BreakAndDropBlock(WorldManager& _world, Int3 _pos);
 bool CanFallAt(WorldManager& _world, Int3 _position);
 
-constexpr inline Int3 GetAdjacentBlockPos(Int3 _pos, PacketData::FaceDirection _face) {
+constexpr Int3 GetAdjacentBlockPos(Int3 _pos, PacketData::FaceDirection _face) {
 	switch (_face) {
 	case PacketData::FaceDirection::Y_MINUS:
 		--_pos.y;

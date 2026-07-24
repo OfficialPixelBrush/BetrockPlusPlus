@@ -42,7 +42,7 @@ std::string CommandGive::Execute(std::vector<std::string>& _parameters, PlayerSe
 	}
 
 	// Check if its even a valid item
-	if ((item.id > BLOCK_AIR && item.id < BLOCK_MAX) || Items::IsValid(item.id)) {
+	if (Items::IsValidId(item.id)) {
 		Packet::ChatMessage reply;
 		reply.message = "§eGave " + WIdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
 		                std::to_string(item.data) + ") x" + std::to_string(item.count) + " to " + _session.username;

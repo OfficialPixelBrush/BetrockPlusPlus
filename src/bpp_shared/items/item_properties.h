@@ -41,13 +41,6 @@ extern std::unordered_map<ItemId, ItemBehavior> itemBehavior;
 extern std::unordered_map<ItemId, ItemProperties> itemProperties;
 void RegisterAll();
 
-constexpr bool IsArmor(ItemId _id);
-constexpr bool IsThrowable(ItemId _id);
-constexpr bool IsEdible(ItemId _id);
-constexpr bool IsBlock(ItemId _id);
-bool IsValid(ItemId _id);
-bool IsStackable(ItemId _id); // max stack > 1
-
 void HarmTool(ItemStack* _stack);
 
 // Returns max stack size for this item/block id
@@ -55,4 +48,28 @@ int32_t GetMaxStack(ItemId _id);
 
 // Returns max durability (0 = not damageable)
 ItemDamage GetMaxDurability(ItemId _id);
+
+constexpr bool IsItem(ItemId _id) {
+	return (_id >= Id::SHOVEL_IRON && _id < Id::MAX) || (_id >= Id::RECORD_13 && _id < Id::RECORD_MAX);
+}
+
+constexpr bool IsBlock(ItemId _id) {
+	return _id > BLOCK_INVALID && _id < BLOCK_MAX;
+}
+
+constexpr bool IsValidId(ItemId _id) {
+	return IsBlock(_id) || IsItem(_id);
+}
+
+constexpr bool IsArmor(ItemId _id) {
+	return (_id >= Items::HELMET_LEATHER && _id <= Items::BOOTS_GOLD);
+}
+
+constexpr bool IsThrowable(ItemId _id) {
+	return (_id == Items::SNOWBALL || _id == Items::EGG);
+}
+
+constexpr bool IsStackable(ItemId _id) {
+	return Items::GetMaxStack(_id) > 1;
+}
 }; // namespace Items

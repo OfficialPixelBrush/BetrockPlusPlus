@@ -27,27 +27,6 @@ namespace Items {
 std::unordered_map<ItemId, ItemBehavior> itemBehavior = {};
 std::unordered_map<ItemId, ItemProperties> itemProperties = {};
 
-bool IsValid(ItemId _id) {
-	return ((_id >= Items::Id::SHOVEL_IRON && _id < Items::Id::MAX) ||
-	        (_id >= Items::Id::RECORD_13 && _id < Items::Id::RECORD_MAX));
-}
-
-constexpr bool IsArmor(ItemId _id) {
-	return (_id >= Items::HELMET_LEATHER && _id <= Items::BOOTS_GOLD);
-}
-
-constexpr bool IsThrowable(ItemId _id) {
-	return (_id == Items::SNOWBALL || _id == Items::EGG);
-}
-
-constexpr bool IsBlock(ItemId _id) {
-	return (_id > 0 && _id <= Items::THRESHOLD);
-}
-
-bool IsStackable(ItemId _id) {
-	return Items::GetMaxStack(_id) > 1;
-}
-
 int32_t GetMaxStack(ItemId _id) {
 	// Stack size 1
 	switch (_id) {

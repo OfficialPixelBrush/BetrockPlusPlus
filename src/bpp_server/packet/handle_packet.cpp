@@ -174,8 +174,7 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		return;
 	}
 
-	if (!Items::IsValid(heldItem->id)) {
-		// It's a block
+	if (Items::IsBlock(heldItem->id)) {
 		Int3 placePosition = Blocks::GetAdjacentBlockPos(position, _pkt.face);
 		if (heldItem->id.value < 0 || heldItem->id.value >= 256) {
 			// invalid
@@ -212,8 +211,7 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 				function(_world, placePosition, *_session.entity, _pkt.face);
 			heldItem->DecrementCount(1);
 		}
-	} else {
-		// It's an item
+	} else if (Items::IsItem(heldItem->id)) {
 		GlobalLogger().info << "Tried to use item\n";
 		GlobalLogger().info << position << "\n";
 		if (Items::itemBehavior[heldItem->id].onBlockUse) {

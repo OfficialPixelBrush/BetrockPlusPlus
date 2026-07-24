@@ -69,6 +69,7 @@ void RecipeManager::AddShapedRecipe(std::initializer_list<std::string_view> _row
 
 	auto [it, inserted] = shapedRecipes.try_emplace(MakeShapedKey(grid, { 3, 3 }), _output);
 
+	[[unlikely]]
 	if (!inserted) {
 		it->second = _output;
 		GlobalLogger().warn << "Overwriting existing shaped recipe for output item " << _output << "\n";
@@ -140,7 +141,7 @@ ShapelessRecipeKey RecipeManager::MakeShapelessKey(std::span<const ItemKey> _ite
 	ShapelessRecipeKey key{};
 
 	for (const auto& item : _items) {
-		if (!Items::IsValid(item.id))
+		if (!Items::IsValidId(item.id))
 			continue;
 		if (key.count >= key.items.size()) {
 			GlobalLogger().error << "Shapeless recipe has more than 9 valid items!\n";
