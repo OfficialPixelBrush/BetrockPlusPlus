@@ -1970,6 +1970,15 @@ void RegisterAll() {
 			_world.SetMeta(_pos, 6 - _face);
 	};
 
+	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face) -> void {
+		int direction = MathHelper::FloorDouble((_placer.rotationYaw * 4.0f / 360.0f) + 0.5) & 3;
+		int meta[] = { 2, 1, 3, 0 };
+		_world.SetMeta(_pos, meta[direction]);
+	};
+
+	blockBehaviors[BLOCK_STAIRS_COBBLESTONE].onBlockPlaced = onStairPlace;
+	blockBehaviors[BLOCK_STAIRS_WOOD].onBlockPlaced = onStairPlace;
+
 	blockBehaviors[BLOCK_TORCH].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		// This prevents floating torches from existing
 
