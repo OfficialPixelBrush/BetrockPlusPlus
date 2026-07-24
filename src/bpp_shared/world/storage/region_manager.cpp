@@ -99,9 +99,9 @@ void RegionManager::SaveChunk(std::shared_ptr<Chunk> _chunk, bool _unloadEntitie
 	snapshot->tileEntities = _chunk->tileEntities;
 
 	// Entities are wrapped in a shared_ptr<const vector>
-	auto entities = std::make_shared<const std::vector<Tag>>(
-	    world->entityManager.CollectEntitiesForSave(snapshot->cpos, _unloadEntities));
-
+	std::shared_ptr<const std::vector<Tag>> entities = {};
+	if (world)
+		entities = std::make_shared<const std::vector<Tag>>(world->entityManager.CollectEntitiesForSave(snapshot->cpos, _unloadEntities));
 	SnapshotContainer container{ std::move(snapshot), std::move(entities) };
 
 	std::lock_guard lk(saveQueueMutex);
@@ -155,7 +155,8 @@ void RegionManager::PumpPipeline() {
 			requeue.push_back(std::move(snapshot)); // keep chunk + entities together
 			continue;
 		}
-		auto currentTime = world->elapsedTicks;
+		auto currentTime = 0;
+		if (world) currentTime = world->elapsedTicks;
 		iopool.detach_task([chunk, region, currentTime, entitySnapshot]() {
 			region->AddChunk(chunk, currentTime, entitySnapshot); // Region stays alive via shared_ptr capture
 		});

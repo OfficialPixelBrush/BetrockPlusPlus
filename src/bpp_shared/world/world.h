@@ -67,6 +67,7 @@ struct WorldManager {
 	void Tick(const std::vector<ClientPosition>& _players);
 	void Update(const std::vector<ClientPosition>& _players);
 	void Shutdown();
+	void SeedChunkLighting(Int32_2 _pos);
 	std::vector<AABB> GetCollidingBoundingBoxes(const AABB& _area);
 	void FlushBleedWrites();
 	void PropagateChunkLightBorders(Int32_2 _cpos);
@@ -345,8 +346,6 @@ private:
 	int simulationRadius = 9;
 
 	bool isHell = false; // for the nether
-
-	void SeedChunkLighting(Int32_2 _pos);
 
 	std::shared_ptr<Chunk> GetChunkShared(Int32_2 _pos) {
 		auto it = chunks.find(_pos);

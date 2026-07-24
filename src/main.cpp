@@ -26,6 +26,8 @@
 #include <winsock2.h>
 #endif
 
+#include "bpp_utilities/utilities.h"
+
 Server* server;
 std::atomic<bool> shutdownRequested{ false };
 
@@ -137,6 +139,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 #endif
 
 #ifdef BUILD_SERVER
+	// For testing REMOVE LATER!
+	// std::string path = "";
+	// Utilities::convertBetrockServerLevel(/*path=*/path);
 	Server serv;
 	server = &serv;
 	server->Run();
