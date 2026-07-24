@@ -34,8 +34,8 @@ void RecipeManager::AddVanillaRecipes() {
 	AddShapedRecipe({ "##", "##" }, { { '#', { BLOCK_SAND } } }, { BLOCK_SANDSTONE, 1 });
 	AddShapedRecipe({ "X#X", "#X#", "X#X" }, { { '#', { BLOCK_SAND } }, { 'X', { Items::Id::GUNPOWDER } } },
 	                { BLOCK_TNT, 1 });
-	AddShapedRecipe({ "#  ", "## ", "###" }, { { '#', { BLOCK_PLANKS } } }, { BLOCK_STAIRS_WOOD, 1 });
-	AddShapedRecipe({ "#  ", "## ", "###" }, { { '#', { BLOCK_COBBLESTONE } } }, { BLOCK_STAIRS_COBBLESTONE, 1 });
+	AddShapedRecipe({ "#  ", "## ", "###" }, { { '#', { BLOCK_PLANKS } } }, { BLOCK_STAIRS_WOOD, 4 });
+	AddShapedRecipe({ "#  ", "## ", "###" }, { { '#', { BLOCK_COBBLESTONE } } }, { BLOCK_STAIRS_COBBLESTONE, 4 });
 	AddShapedRecipe({ "###" }, { { '#', { BLOCK_PLANKS } } }, { BLOCK_SLAB, 3, 2 });
 	AddShapedRecipe({ "###" }, { { '#', { BLOCK_COBBLESTONE } } }, { BLOCK_SLAB, 3, 3 });
 	AddShapedRecipe({ "###" }, { { '#', { BLOCK_STONE } } }, { BLOCK_SLAB, 3, 0 });
