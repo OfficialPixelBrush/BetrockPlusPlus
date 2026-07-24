@@ -178,6 +178,8 @@ struct Entity {
 		velocity.x = 0.0;
 		velocity.y = 0.0;
 		velocity.z = 0.0;
+		fallDistance = 0.0;
+		onGround = true;
 		RebuildCollider();
 	}
 
