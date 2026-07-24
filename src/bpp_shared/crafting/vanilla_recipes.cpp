@@ -40,6 +40,7 @@ void RecipeManager::AddVanillaRecipes() {
 	AddShapedRecipe({ "###" }, { { '#', { BLOCK_COBBLESTONE } } }, { BLOCK_SLAB, 3, 3 });
 	AddShapedRecipe({ "###" }, { { '#', { BLOCK_STONE } } }, { BLOCK_SLAB, 3, 0 });
 	AddShapedRecipe({ "###" }, { { '#', { BLOCK_SANDSTONE } } }, { BLOCK_SLAB, 3, 1 });
+	AddShapedRecipe({ "###", "###" }, { { '#', { Items::Id::STICK } } }, { BLOCK_FENCE, 2 });
 	AddShapedRecipe({ "# #", "###", "# #" }, { { '#', { Items::Id::STICK } } }, { BLOCK_LADDER, 2 });
 	AddShapedRecipe({ "##", "##", "##" }, { { '#', { BLOCK_PLANKS } } }, { Items::Id::DOOR_WOOD, 1 });
 	AddShapedRecipe({ "##", "##", "##" }, { { '#', { Items::Id::IRON } } }, { Items::Id::DOOR_IRON, 1 });
@@ -112,7 +113,8 @@ void RecipeManager::AddVanillaRecipes() {
 	AddShapedRecipe({ "###", "XXX" }, { { '#', { BLOCK_WOOL } }, { 'X', { BLOCK_PLANKS } } }, { Items::Id::BED, 1 });
 
 	// Armor
-	auto addArmor = [this](ItemId _material, ItemId _helmetId, ItemId _chestId, ItemId _leggingsId, ItemId _bootsId) -> void {
+	auto addArmor = [this](ItemId _material, ItemId _helmetId, ItemId _chestId, ItemId _leggingsId,
+	                       ItemId _bootsId) -> void {
 		AddShapedRecipe({ "###", "# #" }, { { '#', { _material } } }, { _helmetId, 1 });
 		AddShapedRecipe({ "# #", "###", "###" }, { { '#', { _material } } }, { _chestId, 1 });
 		AddShapedRecipe({ "###", "# #", "# #" }, { { '#', { _material } } }, { _leggingsId, 1 });
@@ -135,7 +137,8 @@ void RecipeManager::AddVanillaRecipes() {
 	                       ItemId _hoeId) -> void {
 		AddShapedRecipe({ "###", " A ", " A " }, { { '#', { _toolMaterial } }, { 'A', { Items::Id::STICK } } },
 		                { _pickId, 1 });
-		AddShapedRecipe({ "#", "#", "A" }, { { '#', { _toolMaterial } }, { 'A', { Items::Id::STICK } } }, { _swordId, 1 });
+		AddShapedRecipe({ "#", "#", "A" }, { { '#', { _toolMaterial } }, { 'A', { Items::Id::STICK } } },
+		                { _swordId, 1 });
 		AddShapedRecipe({ "## ", "#A ", " A " }, { { '#', { _toolMaterial } }, { 'A', { Items::Id::STICK } } },
 		                { _axeId, 1 });
 		AddShapedRecipe({ " ##", " A#", " A " }, { { '#', { _toolMaterial } }, { 'A', { Items::Id::STICK } } },

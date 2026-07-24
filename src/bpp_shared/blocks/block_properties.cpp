@@ -6,11 +6,14 @@
 */
 
 #include "block_properties.h"
+#include "blocks.h"
 #include "entities/entity_falling_block.h"
 #include "entities/entity_item.h"
 #include "enums/items.h"
+#include "packet_data.h"
 #include "tile_entities/tile_entity.h"
 #include "world/world.h"
+#include <cstdint>
 
 namespace Blocks {
 
@@ -51,32 +54,6 @@ void BreakAndDropBlock(WorldManager& _world, Int3 _pos) {
 	return;
 }
 
-Int3 GetAdjacentBlockPos(Int3 _pos, PacketData::FaceDirection _face) {
-	switch (_face) {
-	case PacketData::FaceDirection::Y_MINUS:
-		--_pos.y;
-		break;
-	case PacketData::FaceDirection::Y_PLUS:
-		++_pos.y;
-		break;
-	case PacketData::FaceDirection::Z_MINUS:
-		--_pos.z;
-		break;
-	case PacketData::FaceDirection::Z_PLUS:
-		++_pos.z;
-		break;
-	case PacketData::FaceDirection::X_MINUS:
-		--_pos.x;
-		break;
-	case PacketData::FaceDirection::X_PLUS:
-		++_pos.x;
-		break;
-	default:
-		break;
-	}
-	return _pos;
-}
-
 bool CanSugarcaneSurviveAt(WorldManager& _world, Int3 _pos) {
 	auto belowBlock = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
 	if (belowBlock == BLOCK_SUGARCANE)
@@ -93,6 +70,16 @@ bool CanSugarcaneSurviveAt(WorldManager& _world, Int3 _pos) {
 			return true;
 	}
 	return false;
+}
+
+bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, PacketData::FaceDirection _face) {
+	if (_face == PacketData::FaceDirection::Y_MINUS)
+		return false;
+
+	Int3 support = GetAdjacentBlockPos(_pos, OppositeFace(_face));
+
+	return _world.IsBlockNormalCube(support) ||
+	       (_face == PacketData::FaceDirection::Y_PLUS && _world.GetBlockId(support) == BLOCK_FENCE);
 }
 
 // Some fluid specific stuff
@@ -1957,10 +1944,12 @@ void RegisterAll() {
 		Vec3 flowVector = GetFluidFlowVector(_world, _pos);
 		_pushVector = _pushVector + flowVector;
 	};
-	blockBehaviors[BLOCK_CACTUS].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos, Entity& _entity) -> void {
+	blockBehaviors[BLOCK_CACTUS].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos,
+	                                                            Entity& _entity) -> void {
 		_entity.AttackEntityFrom(nullptr, 1);
 	};
-	blockBehaviors[BLOCK_COBWEB].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos, Entity& _entity) -> void {
+	blockBehaviors[BLOCK_COBWEB].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos,
+	                                                            Entity& _entity) -> void {
 		_entity.inWeb = true;
 	};
 	blockBehaviors[BLOCK_SOULSAND].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos,
@@ -1977,19 +1966,34 @@ void RegisterAll() {
 	// placement overrides
 	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                               PacketData::FaceDirection _face) -> void {
-		auto meta = _world.GetMetadata(_pos);
-		if (_face == PacketData::FaceDirection::Y_PLUS && (_world.IsBlockNormalCube({ _pos.x, _pos.y - 1, _pos.z }) ||
-		                                                  _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z }) == BLOCK_FENCE))
-			meta = 5;
-		if (_face == PacketData::FaceDirection::Z_MINUS && _world.IsBlockNormalCube({ _pos.x, _pos.y, _pos.z + 1 }))
-			meta = 4;
-		if (_face == PacketData::FaceDirection::Z_PLUS && _world.IsBlockNormalCube({ _pos.x, _pos.y, _pos.z - 1 }))
-			meta = 3;
-		if (_face == PacketData::FaceDirection::X_MINUS && _world.IsBlockNormalCube({ _pos.x + 1, _pos.y, _pos.z }))
-			meta = 2;
-		if (_face == PacketData::FaceDirection::X_PLUS && _world.IsBlockNormalCube({ _pos.x - 1, _pos.y, _pos.z }))
-			meta = 1;
-		_world.SetMeta(_pos, meta);
+		if (CanTorchAttachTo(_world, _pos, _face))
+			_world.SetMeta(_pos, 6 - _face);
+	};
+
+	blockBehaviors[BLOCK_TORCH].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		// This prevents floating torches from existing
+
+		// Matches vanilla order
+		static constexpr std::array<PacketData::FaceDirection, 5> CHECK_ORDER = {
+			PacketData::FaceDirection::X_MINUS, PacketData::FaceDirection::X_PLUS, PacketData::FaceDirection::Z_MINUS,
+			PacketData::FaceDirection::Z_PLUS, PacketData::FaceDirection::Y_PLUS
+		};
+
+		for (PacketData::FaceDirection face : CHECK_ORDER) {
+			if (CanTorchAttachTo(_world, _pos, face)) {
+				_world.SetMeta(_pos, 6 - face);
+				return;
+			}
+		}
+
+		BreakAndDropBlock(_world, _pos);
+	};
+
+	blockBehaviors[BLOCK_TORCH].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+		uint8_t meta = _world.GetMetadata(_pos);
+		auto supportFace = static_cast<PacketData::FaceDirection>(6 - meta);
+		if (!CanTorchAttachTo(_world, _pos, supportFace))
+			BreakAndDropBlock(_world, _pos);
 	};
 
 	// for when the block is interacted with!
@@ -2021,7 +2025,8 @@ void RegisterAll() {
 	blockBehaviors[BLOCK_GRAVEL].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_GRAVEL, 3);
 	};
-	blockBehaviors[BLOCK_GRAVEL].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& _random) -> void {
+	blockBehaviors[BLOCK_GRAVEL].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                         Java::Random& _random) -> void {
 		Int3 below = { _pos.x, _pos.y - 1, _pos.z };
 
 		if (!Blocks::CanFallAt(_world, below) || _pos.y < 0)
@@ -2029,8 +2034,8 @@ void RegisterAll() {
 
 		constexpr int32_t CHECK_RADIUS = 32; // Blocks
 		bool areaLoaded = _world.AABBinValidChunks({ double(_pos.x - CHECK_RADIUS), double(_pos.y - CHECK_RADIUS),
-		                                            double(_pos.z - CHECK_RADIUS), double(_pos.x + CHECK_RADIUS),
-		                                            double(_pos.y + CHECK_RADIUS), double(_pos.z + CHECK_RADIUS) });
+		                                             double(_pos.z - CHECK_RADIUS), double(_pos.x + CHECK_RADIUS),
+		                                             double(_pos.y + CHECK_RADIUS), double(_pos.z + CHECK_RADIUS) });
 
 		if (areaLoaded) {
 			Vec3 spawnPos = { _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 };
@@ -2055,7 +2060,8 @@ void RegisterAll() {
 	blockBehaviors[BLOCK_SAND].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_SAND, 3);
 	};
-	blockBehaviors[BLOCK_SAND].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& _random) -> void {
+	blockBehaviors[BLOCK_SAND].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                       Java::Random& _random) -> void {
 		Int3 below = { _pos.x, _pos.y - 1, _pos.z };
 
 		if (!Blocks::CanFallAt(_world, below) || _pos.y < 0)
@@ -2063,8 +2069,8 @@ void RegisterAll() {
 
 		constexpr int32_t CHECK_RADIUS = 32; // Blocks
 		bool areaLoaded = _world.AABBinValidChunks({ double(_pos.x - CHECK_RADIUS), double(_pos.y - CHECK_RADIUS),
-		                                            double(_pos.z - CHECK_RADIUS), double(_pos.x + CHECK_RADIUS),
-		                                            double(_pos.y + CHECK_RADIUS), double(_pos.z + CHECK_RADIUS) });
+		                                             double(_pos.z - CHECK_RADIUS), double(_pos.x + CHECK_RADIUS),
+		                                             double(_pos.y + CHECK_RADIUS), double(_pos.z + CHECK_RADIUS) });
 
 		if (areaLoaded) {
 			Vec3 spawnPos = { _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 };
