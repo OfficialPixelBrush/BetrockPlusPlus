@@ -235,7 +235,7 @@ void Entity::Move(Vec3& _velocity) {
 	collidedHorizontally = original.x != _velocity.x || original.z != _velocity.z;
 
 	if (stepHeight > 0.0f && canStepUp && (clampSneak || ySize < 0.05f) && collidedHorizontally) {
-		auto stepUpMovement = _velocity;
+		Vec3 stepUpMovement = _velocity;
 		_velocity = { original.x, stepHeight, original.z };
 
 		AABB resolvedCollider = collider;
