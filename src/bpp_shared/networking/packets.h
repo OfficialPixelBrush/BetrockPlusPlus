@@ -1056,7 +1056,7 @@ public:
 			numberOfDestroyedBlocks = _stream.Read<int32_t>();
 			destroyedBlocks.resize(static_cast<size_t>(numberOfDestroyedBlocks));
 			_stream.ReadBytes(reinterpret_cast<uint8_t*>(destroyedBlocks.data()),
-			                 static_cast<size_t>(numberOfDestroyedBlocks));
+			                  static_cast<size_t>(numberOfDestroyedBlocks));
 		}
 	};
 
@@ -1168,10 +1168,10 @@ public:
 		ClickSlot() : BasePacket{ PacketId::ClickSlot } {}
 		WindowId windowId;
 		NetworkSlotId slotId;
-		bool rightClick;
 		TransactionId transactionId;
-		bool shift;
 		ItemStack item;
+		bool rightClick;
+		bool shift;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
