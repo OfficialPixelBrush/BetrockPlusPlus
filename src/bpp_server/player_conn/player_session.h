@@ -115,6 +115,9 @@ struct PlayerSession {
 
 		dimension = static_cast<Dimension>(_nbt.Get("Dimension").GetInt());
 
+		entity->health = _nbt.Get("Health").GetShort();
+		entity->lastHealth = entity->health;
+
 		auto& it3 = _nbt.Get("Inventory").GetList();
 		for (auto& item : it3) {
 			NbtSlotId nbtSlot = item.Get("Slot").GetByte();
@@ -142,7 +145,7 @@ struct PlayerSession {
 		Tag healthTag;
 		healthTag.type = TAG_SHORT;
 		healthTag.name = "Health";
-		healthTag.shortValue = 20;
+		healthTag.shortValue = entity->health;
 		Tag airTag;
 		airTag.type = TAG_SHORT;
 		airTag.name = "Air";
