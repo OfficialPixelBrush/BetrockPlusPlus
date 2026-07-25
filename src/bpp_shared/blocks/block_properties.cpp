@@ -2077,9 +2077,9 @@ void RegisterAll() {
 			return;
 
 		constexpr int32_t CHECK_RADIUS = 32; // Blocks
-		bool areaLoaded = _world.AABBinValidChunks({ double(_pos.x - CHECK_RADIUS), double(_pos.y - CHECK_RADIUS),
+		bool areaLoaded = _world.AABBinValidChunks({ double(_pos.x - CHECK_RADIUS), double(_pos.y),
 		                                             double(_pos.z - CHECK_RADIUS), double(_pos.x + CHECK_RADIUS),
-		                                             double(_pos.y + CHECK_RADIUS), double(_pos.z + CHECK_RADIUS) });
+		                                             double(_pos.y), double(_pos.z + CHECK_RADIUS) });
 
 		if (areaLoaded) {
 			Vec3 spawnPos = { _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 };
