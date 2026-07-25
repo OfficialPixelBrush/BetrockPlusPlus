@@ -695,25 +695,22 @@ void WorldManager::SetBlock(Int3 _wpos, BlockType _blockType, uint8_t _metadata)
 	int z = _wpos.z;
 	int oldHeight = chunk->GetHeightValue({ lx, lz });
 
-	if (Blocks::blockProperties[_blockType].lightOpacity != 0) {
-		// Placing opaque block; heightmap may rise
-		if (y >= oldHeight) {
-			chunk->RelightColumn({ lx, lz });
-
-			// The column below the new top was zeroed out by relightColumn.
-			// Notify the BFS that all blocks from y down to oldHeight need updating
-			for (int sy = oldHeight; sy <= y; ++sy)
-				lightManager.UnlightAt(x, sy, z, LightType::Sky, *this);
-		}
-	} else if (y == oldHeight - 1) {
-		// Removing top opaque block; heightmap may fall
-		chunk->RelightColumn({ lx, lz });
-	}
-
+	// Get our new height
+	chunk->GenerateHeightMapColumn({ lx, lz });
 	int newHeight = chunk->GetHeightValue({ lx, lz });
-	if (newHeight > oldHeight)
+
+	// Placing opaque block; heightmap may rise
+	chunk->RelightColumn({ lx, lz });
+	if (newHeight > oldHeight) {
+		// Notify the BFS that all blocks from y down to oldHeight need updating
+		for (int sy = oldHeight; sy <= newHeight; ++sy)
+			lightManager.UnlightAt(x, sy, z, LightType::Sky, *this);
+	} 
+	else if (newHeight < oldHeight) {
+		// Height fell
 		for (int sy = newHeight; sy < oldHeight; ++sy)
 			lightManager.ScheduleLightUpdate({ x, sy, z }, LightType::Sky);
+	}
 
 	// Always re-evaluate the edited block and its 4 horizontal neighbours
 	lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Sky);
