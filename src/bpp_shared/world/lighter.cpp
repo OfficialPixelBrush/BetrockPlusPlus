@@ -14,8 +14,11 @@
 // ChunkCache so we don't have to do map lookups for every neighbor access during light propagation.
 // Reuses chunks from the previous window whenever they overlap the new one.
 void ChunkCache::Refresh(int _ncx, int _ncz, WorldManager& _world) {
-	if (_ncx == cx && _ncz == cz)
-		return;
+	if (_ncx == cx && _ncz == cz) {
+		Chunk* fresh = _world.GetChunkRaw({ cx, cz });
+		if (fresh == grid[1][1])
+			return;
+	}
 
 	Chunk* oldGrid[3][3];
 	std::memcpy(oldGrid, grid, sizeof(grid));
@@ -27,17 +30,9 @@ void ChunkCache::Refresh(int _ncx, int _ncz, WorldManager& _world) {
 	for (int dx = -1; dx <= 1; ++dx) {
 		for (int dz = -1; dz <= 1; ++dz) {
 			int tcx = _ncx + dx, tcz = _ncz + dz;
-			int odx = tcx - oldCx, odz = tcz - oldCz;
-
-			// Already held from the previous window? Reuse it as-is.
-			Chunk* c = (odx >= -1 && odx <= 1 && odz >= -1 && odz <= 1) ? oldGrid[odx + 1][odz + 1] : nullptr;
-
-			if (!c) {
-				Chunk* fetched = _world.GetChunkRaw({ tcx, tcz });
-				c = (fetched && fetched->state.load(std::memory_order_acquire) >= ChunkState::Generated) ? fetched
-				                                                                                         : nullptr;
-			}
-
+			Chunk* fetched = _world.GetChunkRaw({ tcx, tcz });
+			Chunk* c = (fetched && fetched->state.load(std::memory_order_acquire) >= ChunkState::Generated) ? fetched
+			                                                                                                : nullptr;
 			grid[dx + 1][dz + 1] = c;
 		}
 	}

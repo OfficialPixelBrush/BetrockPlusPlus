@@ -711,10 +711,9 @@ void WorldManager::SetBlock(Int3 _wpos, BlockType _blockType, uint8_t _metadata)
 	}
 
 	int newHeight = chunk->GetHeightValue({ lx, lz });
-	if (newHeight < oldHeight) {
+	if (newHeight > oldHeight)
 		for (int sy = newHeight; sy < oldHeight; ++sy)
 			lightManager.ScheduleLightUpdate({ x, sy, z }, LightType::Sky);
-	}
 
 	// Always re-evaluate the edited block and its 4 horizontal neighbours
 	lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Sky);

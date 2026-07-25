@@ -125,17 +125,6 @@ struct Chunk {
 
 		for (int y = CHUNK_HEIGHT - 1; y >= height; y--)
 			SetSkyLight({ _pos.x, y, _pos.z }, 15);
-
-		// only pull values up
-		int skyLight = 15;
-		for (int y = height - 1; y >= 0; y--) {
-			skyLight -= CrossPlatform::Math::Max(
-			    1, int(Blocks::blockProperties[GetBlock({ _pos.x, y, _pos.z })].lightOpacity));
-			skyLight = CrossPlatform::Math::Max(0, skyLight);
-			uint8_t current = GetSkyLight({ _pos.x, y, _pos.z });
-			if (current < skyLight)
-				SetSkyLight({ _pos.x, y, _pos.z }, uint8_t(skyLight));
-		}
 	}
 
 	inline BlockType GetBlock(Int3 _pos) const {
