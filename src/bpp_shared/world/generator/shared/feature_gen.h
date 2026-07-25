@@ -131,13 +131,15 @@ struct WorldWrapper {
 		          tes.end());
 
 		// Unlight before changing the block
-		manager.lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Block, manager);
-		manager.lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Sky, manager);
+		this->manager.lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Block, *this);
+		this->manager.lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Sky, *this);
 
 		// Get the local coordinates of this block within the chunk and set it
 		int lx = _wpos.x & 15;
 		int lz = _wpos.z & 15;
 		Int3 local{ lx, _wpos.y, lz };
+		auto oldBlock = chunk->GetBlock(local);
+		auto oldMeta = chunk->GetMeta(local);
 		chunk->SetBlock(local, _type);
 		chunk->SetMeta(local, _meta);
 
@@ -146,30 +148,24 @@ struct WorldWrapper {
 		int z = _wpos.z;
 		int oldHeight = chunk->GetHeightValue({ lx, lz });
 
-		if (Blocks::blockProperties[_type].lightOpacity != 0) {
-			// Placing opaque block; heightmap may rise
-			if (y >= oldHeight) {
-				chunk->RelightColumn({ lx, lz });
-
-				// The column below the new top was zeroed out by relightColumn.
-				// Notify the BFS that all blocks from y down to oldHeight need updating
-				for (int sy = oldHeight; sy <= y; ++sy)
-					manager.lightManager.UnlightAt(x, sy, z, LightType::Sky, manager);
-			}
-		} else if (y == oldHeight - 1) {
-			// Removing top opaque block; heightmap may fall
-			chunk->RelightColumn({ lx, lz });
-		}
-
+		// Get our new height
+		chunk->GenerateHeightMapColumn({ lx, lz });
 		int newHeight = chunk->GetHeightValue({ lx, lz });
-		if (newHeight < oldHeight) {
+
+		// Placing opaque block; heightmap may rise
+		chunk->RelightColumn({ lx, lz });
+		if (newHeight > oldHeight) {
+			// Notify the BFS that all blocks from y down to oldHeight need updating
+			for (int sy = oldHeight; sy <= newHeight; ++sy)
+				this->manager.lightManager.UnlightAt(x, sy, z, LightType::Sky, *this);
+		} else if (newHeight < oldHeight) {
+			// Height fell
 			for (int sy = newHeight; sy < oldHeight; ++sy)
-				manager.lightManager.ScheduleLightUpdate({ x, sy, z }, LightType::Sky);
+				this->manager.lightManager.ScheduleLightUpdate({ x, sy, z }, LightType::Sky);
 		}
 
 		// Always re-evaluate the edited block and its 4 horizontal neighbours
-		// across the height transition band.
-		manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Sky);
+		this->manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Sky);
 		const int ndx[] = { -1, 1, 0, 0 };
 		const int ndz[] = { 0, 0, -1, 1 };
 		for (int i = 0; i < 4; ++i) {
@@ -180,10 +176,10 @@ struct WorldWrapper {
 				continue;
 			int minY = CrossPlatform::Math::Min(thisHeight, neighborHeight);
 			int maxY = CrossPlatform::Math::Max(thisHeight, neighborHeight);
-			manager.lightManager.ScheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
+			this->manager.lightManager.ScheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
 		}
 		// Schedule a block light update for the position itself
-		manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Block);
+		this->manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Block);
 
 		// Callback for the client and server to know about this block update
 		if (manager.onBlockUpdate)
