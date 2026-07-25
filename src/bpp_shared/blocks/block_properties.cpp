@@ -2103,6 +2103,8 @@ void RegisterAll() {
 		_world.CreateTileEntity(std::move(chest));
 	};
 
+	//TODO: Add another portal creation function matching with b1.7.3's limitations, that is toggleable via a config entry,
+	// for a more authentic experience
 	blockBehaviors[BLOCK_FIRE].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		bool isXAligned = (_world.GetBlockId(_pos + Int3{ 1, -1, 0 }) == BLOCK_OBSIDIAN ||
 		                   _world.GetBlockId(_pos + Int3{ -1, -1, 0 }) == BLOCK_OBSIDIAN);
