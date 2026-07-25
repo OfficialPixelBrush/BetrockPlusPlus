@@ -695,39 +695,35 @@ void WorldManager::SetBlock(Int3 _wpos, BlockType _blockType, uint8_t _metadata)
 	int z = _wpos.z;
 	int oldHeight = chunk->GetHeightValue({ lx, lz });
 
-	// Get our new height
-	chunk->GenerateHeightMapColumn({ lx, lz });
-	int newHeight = chunk->GetHeightValue({ lx, lz });
-
 	// Placing opaque block; heightmap may rise
 	chunk->RelightColumn({ lx, lz });
+	int newHeight = chunk->GetHeightValue({ lx, lz });
 	if (newHeight > oldHeight) {
 		// Notify the BFS that all blocks from y down to oldHeight need updating
-		for (int sy = oldHeight; sy <= newHeight; ++sy)
+		for (int sy = oldHeight; sy <= newHeight; ++sy) {
 			lightManager.UnlightAt(x, sy, z, LightType::Sky, *this);
+		}
 	} 
 	else if (newHeight < oldHeight) {
 		// Height fell
-		for (int sy = newHeight; sy < oldHeight; ++sy)
+		for (int sy = newHeight; sy < oldHeight; ++sy) {
 			lightManager.ScheduleLightUpdate({ x, sy, z }, LightType::Sky);
+		}
 	}
 
 	// Always re-evaluate the edited block and its 4 horizontal neighbours
 	lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Sky);
-	const int ndx[] = { -1, 1, 0, 0 };
-	const int ndz[] = { 0, 0, -1, 1 };
-	for (int i = 0; i < 4; ++i) {
-		int nx = x + ndx[i], nz = z + ndz[i];
-		int neighborHeight = GetHeightValue(nx, nz);
-		int thisHeight = chunk->GetHeightValue({ lx, lz });
-		if (neighborHeight == thisHeight)
-			continue;
-		int minY = CrossPlatform::Math::Min(thisHeight, neighborHeight);
-		int maxY = CrossPlatform::Math::Max(thisHeight, neighborHeight);
-		lightManager.ScheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
-	}
-	// Schedule a block light update for the position itself
 	lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Block);
+	int extendedBottom = CrossPlatform::Math::Min(newHeight, oldHeight);
+	while (extendedBottom > 0 &&
+	       Blocks::blockProperties[chunk->GetBlock({ lx, extendedBottom - 1, lz })].lightOpacity == 0)
+		--extendedBottom;
+
+	if (newHeight != oldHeight) {
+		lightManager.ScheduleLightRegion({ x - 1, extendedBottom, z - 1 },
+		                                 { x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), z + 1 },
+		                                 LightType::Sky);
+	}
 
 	// Update our neighbors
 	this->NotifyNeighborsOfUpdate(_wpos);
