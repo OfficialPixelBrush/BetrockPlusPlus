@@ -132,8 +132,8 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 
 	Packet::PlayerPositionAndRotation pkt;
 	pkt.position.x = _position.x;
-	pkt.position.y = _position.y;
-	pkt.cameraY = _position.y + PLAYER_EYE_HEIGHT;
+	pkt.position.y = _position.y + PLAYER_EYE_HEIGHT;
+	pkt.cameraY = _position.y;
 	pkt.position.z = _position.z;
 	pkt.yaw = _yaw;
 	pkt.pitch = _pitch;

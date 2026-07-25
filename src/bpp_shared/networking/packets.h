@@ -232,10 +232,18 @@ public:
 
 	// Defines the players position
 	struct PlayerPosition : BasePacket {
+		// NOTE: notch is a silly billy!
+		// When sending packets from Server -> Client, cameraY and position.y are FLIPPED!
+		// This means cameraY becomes the foot position and position.y becomes the eye height.
+		// HOWEVER, when recieving this packet (Client -> Server), it is correctly interpreted as position.y
+		// being foot height and cameraY being eye height.
+
+		// Why did I leave such a long comment explaining this explicitly?
+		// Because this has caused me much pain.
 		PlayerPosition() : BasePacket{ PacketId::PlayerPosition } {}
-		Vec3 position;
-		double cameraY;
-		bool onGround;
+		Vec3 position = {0, 0, 0};
+		double cameraY = 0;
+		bool onGround = false;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
@@ -258,10 +266,10 @@ public:
 	// Defines the players rotation
 	struct PlayerRotation : BasePacket {
 		PlayerRotation() : BasePacket{ PacketId::PlayerRotation } {}
-		Float2 rotation;
+		Float2 rotation = { 0, 0 };
 		float& yaw = rotation.x; // wire order: yaw first
 		float& pitch = rotation.y;
-		bool onGround;
+		bool onGround = false;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
@@ -280,9 +288,9 @@ public:
 	// Defines the players position and rotation
 	struct PlayerPositionAndRotation : BasePacket {
 		PlayerPositionAndRotation() : BasePacket{ PacketId::PlayerPositionAndRotation } {}
-		Vec3 position;
-		double cameraY;
-		Float2 rotation;
+		Vec3 position = { 0, 0, 0 };
+		double cameraY = position.y + 1.62;
+		Float2 rotation = { 0.0f, 0.0f };
 		float& yaw = rotation.x; // wire order: yaw first
 		float& pitch = rotation.y;
 		bool onGround = false;

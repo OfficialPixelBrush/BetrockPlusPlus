@@ -65,19 +65,16 @@ void EntityMPPlayer::HandlePositionChecks() {
 		// Also reset fall state
 		fallDistance = 0;
 		onGround = true;
-		auto& pending = *session->pendingPosition;
-		Vec3 claimed = { pending.x, pending.y + PLAYER_EYE_HEIGHT, pending.z };
-		Vec3 delta = claimed - *session->pendingTeleport;
+		Vec3 delta = *session->pendingPosition - *session->pendingTeleport;
 		auto dist = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
 		if (dist > 0.0625) {
 			// Player isn't at the teleported position so send another tp packet
 			// Also reset our position
-			auto& ptp = *session->pendingTeleport;
-			this->Teleport({ ptp.x, ptp.y, ptp.z }, { rotationYaw, rotationPitch });
+			this->Teleport(*session->pendingTeleport, { rotationYaw, rotationPitch });
 			session->position.pos = *session->pendingTeleport;
 			Packet::PlayerPosition pkt;
 			pkt.onGround = onGround;
-			pkt.position = { position.x, position.y, position.z };
+			pkt.position = { position.x, position.y + PLAYER_EYE_HEIGHT, position.z };
 			pkt.cameraY = position.y; // This is backwards, thanks notch
 			pkt.Serialize(session->stream);
 			GlobalLogger().info << "Sucessfully TP'd player " << session->username << "\n";
@@ -153,7 +150,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 			session->position.pos = lastPosition;
 			Packet::PlayerPosition pkt;
 			pkt.onGround = onGround;
-			pkt.position = { position.x, position.y + PLAYER_EYE_HEIGHT + 0.0625, position.z };
+			pkt.position = { position.x, position.y + PLAYER_EYE_HEIGHT, position.z };
 			pkt.cameraY = position.y; // This is backwards, thanks notch
 			pkt.Serialize(session->stream);
 		}

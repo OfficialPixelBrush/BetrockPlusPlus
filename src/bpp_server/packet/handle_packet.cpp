@@ -415,7 +415,7 @@ void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
 	// Get our spawn point
 	auto world = _server.GetWorldForDimension(targetDim);
 	auto spawn = world->GetSpawnPoint(/*Random Adjust=*/true);
-	Vec3 spawnLocation = { double(spawn.x) + 0.5, double(spawn.y) + PLAYER_EYE_HEIGHT + 1 / 64, double(spawn.z) + 0.5 };
+	Vec3 spawnLocation = { double(spawn.x) + 0.5, double(spawn.y) + 0.01, double(spawn.z) + 0.5 };
 
 	// Position the new entity then register it
 	newEntity->Teleport(spawnLocation);

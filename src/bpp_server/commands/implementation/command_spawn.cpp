@@ -17,6 +17,6 @@ std::string CommandSpawn::Execute(std::vector<std::string>& _parameters, PlayerS
 	    ipos.z); // So we don't clip in the ground since get spawn point gives the raw data which defaults to y=64
 
 	SendTeleport(_session,
-	             Vec3{ double(ipos.x) + 0.5, double(ipos.y) + PLAYER_EYE_HEIGHT + 0.0625, double(ipos.z) + 0.5 });
+	             Vec3{ double(ipos.x) + 0.5, double(ipos.y) + 0.01, double(ipos.z) + 0.5 });
 	return "";
 }
