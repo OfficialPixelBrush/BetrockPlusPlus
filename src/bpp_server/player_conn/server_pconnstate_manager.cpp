@@ -77,6 +77,10 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 		return;
 	}
 
+	// Initialize our entity first as the player session depends on it
+	if (!_session.entity)
+		_session.entity = std::make_shared<EntityMPPlayer>();
+
 	// Load player data before building the Login response so we know which dimension they're in
 	auto playerNbt = _server.gameRuntime.saveManager.GetPlayerNbt(
 	    std::string(_session.username.begin(), _session.username.end()));
@@ -85,9 +89,6 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	// Get the right world pointer
 	WorldManager& sessionWorld = _session.dimension == -1 ? _server.gameRuntime.worldHell : _server.gameRuntime.world;
 
-	// Initialize our entity
-	if (!_session.entity)
-		_session.entity = std::make_shared<EntityMPPlayer>();
 	_session.entity->session = &_session;
 	_session.entity->id = sessionWorld.entityManager.GetNextEntityId();
 	_session.entity->dim = _session.dimension == -1 ? Dimension::Nether : Dimension::Overworld;
@@ -104,7 +105,7 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	spawn.Serialize(_session.stream);
 
 	Packet::SetHealth health;
-	health.health = 20;
+	health.health = _session.entity->health;
 	health.Serialize(_session.stream);
 
 	Packet::SetTime time;
