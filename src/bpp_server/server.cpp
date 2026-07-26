@@ -324,7 +324,7 @@ void Server::Run() {
 		if (Clock::now() > nextTickTime + MAX_TICK_CATCH_UP * TICK_DURATION) {
 			baseTime = Clock::now();
 			ticks = 0;
-			GlobalLogger().warn << "Can't keep up with ticks! (" << averageTickMs << "/" << TICK_DURATION << " ms\n";
+			GlobalLogger().warn << "Can't keep up with ticks! (" << std::setprecision(2) << averageTickMs << "/" << std::chrono::duration<double, std::milli>(TICK_DURATION) << " ms\n";
 		}
 	}
 
