@@ -159,67 +159,74 @@ struct NBTwriter {
 	NBTwriter(std::vector<uint8_t>& _out, Tag& _root) {
 		// root should be a TAG_Compound with whatever name you want (usually "")
 		// writeTag handles type byte + name + payload + TAG_END automatically
-		WriteTag(_out, _root);
+		_out.reserve(WriteTag(_out, _root, false, true));
+		WriteTag(_out, _root, false, false);
 	}
 
-	int64_t WriteTag(std::vector<uint8_t>& _out, const Tag& _tag, bool _payload = false) {
+	size_t WriteTag(std::vector<uint8_t>& _out, const Tag& _tag, const bool _payload = false, const bool _dryRun = false) {
+		size_t size = 0;
+
 		if (!_payload)
-			_out.push_back(uint8_t(_tag.type));
+			if (!_dryRun) _out.push_back(uint8_t(_tag.type));
 		if (!_payload && _tag.type != TAG_END)
-			WriteString(_out, _tag.name);
+			size += WriteString(_out, _tag.name, _dryRun);
 
 		switch (_tag.type) {
 		case TAG_END:
 			break;
 		case TAG_BYTE:
-			_out.push_back(uint8_t(_tag.byteValue));
+			size += WriteI8(_out, _tag.byteValue, _dryRun);
 			break;
 		case TAG_SHORT:
-			WriteI16(_out, _tag.shortValue);
+			size += WriteI16(_out, _tag.shortValue, _dryRun);
 			break;
 		case TAG_INT:
-			WriteI32(_out, _tag.intValue);
+			size += WriteI32(_out, _tag.intValue, _dryRun);
 			break;
 		case TAG_LONG:
-			WriteI64(_out, _tag.longValue);
+			size += WriteI64(_out, _tag.longValue, _dryRun);
 			break;
 		case TAG_FLOAT:
-			WriteF32(_out, _tag.floatValue);
+			size += WriteF32(_out, _tag.floatValue, _dryRun);
 			break;
 		case TAG_DOUBLE:
-			WriteF64(_out, _tag.doubleValue);
+			size += WriteF64(_out, _tag.doubleValue, _dryRun);
 			break;
 		case TAG_STRING:
-			WriteString(_out, _tag.stringValue);
+			size += WriteString(_out, _tag.stringValue, _dryRun);
 			break;
 
 		case TAG_BYTEARRAY: {
-			WriteI32(_out, int32_t(_tag.byteArray.size()));
+			size += WriteI32(_out, int32_t(_tag.byteArray.size()), _dryRun);
+			size += _tag.byteArray.size();
+			if (_dryRun) break;
 			for (int8_t b : _tag.byteArray)
 				_out.push_back(uint8_t(b));
 			break;
 		}
 
 		case TAG_INTARRAY: {
-			WriteI32(_out, int32_t(_tag.intArray.size()));
+			size += WriteI32(_out, int32_t(_tag.intArray.size()), _dryRun);
+			size += _tag.intArray.size();
+			if (_dryRun) break;
 			for (int32_t b : _tag.intArray)
 				WriteI32(_out, b);
 			break;
 		}
 
 		case TAG_LIST: {
-			WriteI8(_out, int8_t(_tag.listType));
-			WriteI32(_out, int32_t(_tag.list.size()));
+			size += WriteI8(_out, int8_t(_tag.listType), _dryRun);
+			size += WriteI32(_out, int32_t(_tag.list.size()), _dryRun);
 			for (const Tag& element : _tag.list)
-				WriteTag(_out, element, true);
+				size += WriteTag(_out, element, true, _dryRun);
 			break;
 		}
 
 		case TAG_COMPOUND: {
 			for (const auto& [key, child] : _tag.compound)
-				WriteTag(_out, child);
+				size += WriteTag(_out, child, false, _dryRun);
 			// TAG_END terminates the compound
-			_out.push_back(uint8_t(TAG_END));
+			size += WriteI8(_out, uint8_t(TAG_END), _dryRun);
 			break;
 		}
 
@@ -227,48 +234,75 @@ struct NBTwriter {
 			throw std::runtime_error("Unknown tag type: " + std::to_string(_tag.type));
 		}
 
-		return 0;
+		return size;
 	}
 
 	// Write helpers
-	void WriteI32(std::vector<uint8_t>& _out, int32_t _v) {
-		uint32_t u = uint32_t(_v);
-		_out.push_back((u >> 24) & 0xFF);
-		_out.push_back((u >> 16) & 0xFF);
-		_out.push_back((u >> 8) & 0xFF);
-		_out.push_back(u & 0xFF);
+	size_t WriteI8(std::vector<uint8_t>& _out, const int8_t _v, const bool _dryRun = false) {
+		if (!_dryRun)
+			_out.push_back(uint8_t(_v));
+		return sizeof(int8_t);
 	}
 
-	void WriteI64(std::vector<uint8_t>& _out, int64_t _v) {
-		WriteI32(_out, int32_t((uint64_t(_v) >> 32) & 0xFFFFFFFF));
-		WriteI32(_out, int32_t((uint64_t(_v) & 0xFFFFFFFF)));
+	size_t WriteI16(std::vector<uint8_t>& _out, const int16_t _v, const bool _dryRun = false) {
+		if (!_dryRun) {
+			uint16_t u = uint16_t(_v);
+			_out.push_back((u >> 8) & 0xFF);
+			_out.push_back(u & 0xFF);
+		}
+		return sizeof(int16_t);
 	}
 
-	void WriteI16(std::vector<uint8_t>& _out, int16_t _v) {
-		uint16_t u = uint16_t(_v);
-		_out.push_back((u >> 8) & 0xFF);
-		_out.push_back(u & 0xFF);
+	size_t WriteI32(std::vector<uint8_t>& _out, const int32_t _v, const bool _dryRun = false) {
+		if (!_dryRun) {
+			uint32_t u = uint32_t(_v);
+			_out.push_back((u >> 24) & 0xFF);
+			_out.push_back((u >> 16) & 0xFF);
+			_out.push_back((u >> 8) & 0xFF);
+			_out.push_back(u & 0xFF);
+		}
+		return sizeof(int32_t);
 	}
 
-	void WriteI8(std::vector<uint8_t>& _out, int8_t _v) {
-		_out.push_back(uint8_t(_v));
+	size_t WriteI64(std::vector<uint8_t>& _out, const int64_t _v, const bool _dryRun = false) {
+		if (!_dryRun) {
+			uint64_t u = uint64_t(_v);
+			_out.push_back((u >> 56) & 0xFF);
+			_out.push_back((u >> 48) & 0xFF);
+			_out.push_back((u >> 40) & 0xFF);
+			_out.push_back((u >> 32) & 0xFF);
+			_out.push_back((u >> 24) & 0xFF);
+			_out.push_back((u >> 16) & 0xFF);
+			_out.push_back((u >> 8) & 0xFF);
+			_out.push_back(u & 0xFF);
+		}
+		return sizeof(int64_t);
 	}
 
-	void WriteF32(std::vector<uint8_t>& _out, float _v) {
-		uint32_t raw;
-		memcpy(&raw, &_v, 4);
-		WriteI32(_out, int32_t(raw));
+	size_t WriteF32(std::vector<uint8_t>& _out, const float _v, const bool _dryRun = false) {
+		if (!_dryRun) {
+			uint32_t raw;
+			memcpy(&raw, &_v, 4);
+			WriteI32(_out, int32_t(raw));
+		}
+		return sizeof(float);
 	}
 
-	void WriteF64(std::vector<uint8_t>& _out, double _v) {
-		uint64_t raw;
-		memcpy(&raw, &_v, 8);
-		WriteI64(_out, int64_t(raw));
+	size_t WriteF64(std::vector<uint8_t>& _out, const double _v, const bool _dryRun = false) {
+		if (!_dryRun) {
+			uint64_t raw;
+			memcpy(&raw, &_v, 8);
+			WriteI64(_out, int64_t(raw));
+		}
+		return sizeof(double);
 	}
 
-	void WriteString(std::vector<uint8_t>& _out, const std::string& _s) {
-		WriteI16(_out, int16_t(_s.size()));
-		_out.insert(_out.end(), _s.begin(), _s.end());
+	size_t WriteString(std::vector<uint8_t>& _out, const std::string& _s, const bool _dryRun = false) {
+		if (!_dryRun) {
+			WriteI16(_out, int16_t(_s.size()));
+			_out.insert(_out.end(), _s.begin(), _s.end());
+		}
+		return 2 + (_s.size() * 2);
 	}
 };
 
