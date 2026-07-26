@@ -637,7 +637,7 @@ void WorldManager::PopulateReady() {
 	}
 }
 
-void WorldManager::SetMeta(Int3 _wpos, uint8_t _metadata) {
+void WorldManager::SetMeta(const Int3 _wpos, const uint8_t _metadata) {
 	if (!InBounds(_wpos.y))
 		return;
 	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
@@ -660,7 +660,7 @@ void WorldManager::SetMeta(Int3 _wpos, uint8_t _metadata) {
 		              chunk->cpos);
 }
 
-void WorldManager::SetBlock(Int3 _wpos, BlockType _blockType, uint8_t _metadata) {
+void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata) {
 	if (!InBounds(_wpos.y))
 		return;
 	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
@@ -676,17 +676,26 @@ void WorldManager::SetBlock(Int3 _wpos, BlockType _blockType, uint8_t _metadata)
 	tes.erase(std::remove_if(tes.begin(), tes.end(),
 	                         [&](const std::shared_ptr<TileEntity>& _te) { return _te && _te->position == _wpos; }),
 	          tes.end());
-
-	// Unlight before changing the block
-	lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Block, *this);
-	lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Sky, *this);
-
-	// Get the local coordinates of this block within the chunk and set it
+	
+	// Get the local coordinates of this block within the chunk, and check what block we're replacing
 	int lx = _wpos.x & 15;
 	int lz = _wpos.z & 15;
 	Int3 local{ lx, _wpos.y, lz };
 	auto oldBlock = chunk->GetBlock(local);
 	auto oldMeta = chunk->GetMeta(local);
+
+	// Making the assumption here that certain metadatas of
+	// blocks don't have differing light properties
+	bool changesLighting = (Blocks::blockProperties[_blockType].lightOpacity != Blocks::blockProperties[oldBlock].lightOpacity) ||
+		(Blocks::blockProperties[_blockType].lightEmission != Blocks::blockProperties[oldBlock].lightEmission);
+
+	// Unlight before changing the block
+	if (changesLighting) {
+		lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Block, *this);
+		lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Sky, *this);
+	}
+
+	// Then finally set the new block
 	chunk->SetBlock(local, _blockType);
 	chunk->SetMeta(local, _metadata);
 
@@ -696,33 +705,35 @@ void WorldManager::SetBlock(Int3 _wpos, BlockType _blockType, uint8_t _metadata)
 	int oldHeight = chunk->GetHeightValue({ lx, lz });
 
 	// Placing opaque block; heightmap may rise
-	chunk->RelightColumn({ lx, lz });
-	int newHeight = chunk->GetHeightValue({ lx, lz });
-	if (newHeight > oldHeight) {
-		// Notify the BFS that all blocks from y down to oldHeight need updating
-		for (int sy = oldHeight; sy <= newHeight; ++sy) {
-			lightManager.UnlightAt(x, sy, z, LightType::Sky, *this);
+	if (changesLighting) {
+		chunk->RelightColumn({ lx, lz });
+		int newHeight = chunk->GetHeightValue({ lx, lz });
+		if (newHeight > oldHeight) {
+			// Notify the BFS that all blocks from y down to oldHeight need updating
+			for (int sy = oldHeight; sy <= newHeight; ++sy) {
+				lightManager.UnlightAt(x, sy, z, LightType::Sky, *this);
+			}
+		} 
+		else if (newHeight < oldHeight) {
+			// Height fell
+			for (int sy = newHeight; sy < oldHeight; ++sy) {
+				lightManager.ScheduleLightUpdate({ x, sy, z }, LightType::Sky);
+			}
 		}
-	} 
-	else if (newHeight < oldHeight) {
-		// Height fell
-		for (int sy = newHeight; sy < oldHeight; ++sy) {
-			lightManager.ScheduleLightUpdate({ x, sy, z }, LightType::Sky);
+
+		// Always re-evaluate the edited block and its 4 horizontal neighbours
+		lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Sky);
+		lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Block);
+		int extendedBottom = CrossPlatform::Math::Min(newHeight, oldHeight);
+		while (extendedBottom > 0 &&
+			Blocks::blockProperties[chunk->GetBlock({ lx, extendedBottom - 1, lz })].lightOpacity == 0)
+			--extendedBottom;
+
+		if (newHeight != oldHeight) {
+			lightManager.ScheduleLightRegion({ x - 1, extendedBottom, z - 1 },
+											{ x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), z + 1 },
+											LightType::Sky);
 		}
-	}
-
-	// Always re-evaluate the edited block and its 4 horizontal neighbours
-	lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Sky);
-	lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Block);
-	int extendedBottom = CrossPlatform::Math::Min(newHeight, oldHeight);
-	while (extendedBottom > 0 &&
-	       Blocks::blockProperties[chunk->GetBlock({ lx, extendedBottom - 1, lz })].lightOpacity == 0)
-		--extendedBottom;
-
-	if (newHeight != oldHeight) {
-		lightManager.ScheduleLightRegion({ x - 1, extendedBottom, z - 1 },
-		                                 { x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), z + 1 },
-		                                 LightType::Sky);
 	}
 
 	// Update our neighbors

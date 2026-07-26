@@ -61,11 +61,11 @@ struct WorldWrapper {
 	}
 
 	// Convert a world-space position to a region-local chunk offset (-1..1, -1..1)
-	Int2 GetRegionChunkPos(Int3 _wPos) const {
+	Int2 GetRegionChunkPos(const Int3 _wPos) const {
 		return { (_wPos.x >> 4) - centerChunkPos.x, (_wPos.z >> 4) - centerChunkPos.z };
 	}
 
-	int FindTopSolidBlock(int _wx, int _wz) {
+	int FindTopSolidBlock(const int _wx, const int _wz) {
 		auto chunk = chunkRegion.GetChunk(GetRegionChunkPos({ _wx, 0, _wz }));
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return -1;
@@ -81,28 +81,28 @@ struct WorldWrapper {
 		return -1;
 	}
 
-	int GetHeightValue(int _wx, int _wz) {
+	int GetHeightValue(const int _wx, const int _wz) {
 		auto chunk = chunkRegion.GetChunk(GetRegionChunkPos({ _wx, 0, _wz }));
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return 0;
 		return chunk->GetHeightValue({ _wx & 15, _wz & 15 });
 	}
 
-	double GetTemperatureAt(int _wx, int _wz) {
+	double GetTemperatureAt(const int _wx, const int _wz) {
 		auto chunk = chunkRegion.GetChunk(GetRegionChunkPos({ _wx, 0, _wz }));
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return 0.5;
 		return double(chunk->GetTemperature({ _wx & 15, _wz & 15 }));
 	}
 
-	double GetHumidityAt(int _wx, int _wz) {
+	double GetHumidityAt(const int _wx, const int _wz) {
 		auto chunk = chunkRegion.GetChunk(GetRegionChunkPos({ _wx, 0, _wz }));
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return 0.5;
 		return double(chunk->GetHumidity({ _wx & 15, _wz & 15 }));
 	}
 
-	BlockType GetBlockId(Int3 _wpos) const {
+	BlockType GetBlockId(const Int3 _wpos) const {
 		if (!InBounds(_wpos.y))
 			return BlockType::BLOCK_AIR;
 		auto chunk = chunkRegion.GetChunk(GetRegionChunkPos(_wpos));
@@ -114,7 +114,7 @@ struct WorldWrapper {
 		return chunk->GetBlock({ _wpos.x & 15, _wpos.y, _wpos.z & 15 });
 	}
 
-	void SetBlock(Int3 _wpos, BlockType _type, uint8_t _meta = 0) {
+	void SetBlock(const Int3 _wpos, const BlockType _type, const uint8_t _meta = 0) {
 		if (!InBounds(_wpos.y))
 			return;
 		auto chunk = chunkRegion.GetChunk(GetRegionChunkPos(_wpos));
@@ -130,16 +130,25 @@ struct WorldWrapper {
 		                         [&](const std::shared_ptr<TileEntity>& _te) { return _te && _te->position == _wpos; }),
 		          tes.end());
 
-		// Unlight before changing the block
-		manager.lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Block, manager);
-		manager.lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Sky, manager);
-
 		// Get the local coordinates of this block within the chunk and set it
 		int lx = _wpos.x & 15;
 		int lz = _wpos.z & 15;
 		Int3 local{ lx, _wpos.y, lz };
 		auto oldBlock = chunk->GetBlock(local);
-		auto oldMeta = chunk->GetMeta(local);
+		//auto oldMeta = chunk->GetMeta(local);
+
+		// Making the assumption here that certain metadatas of
+		// blocks don't have differing light properties
+		bool changesLighting = (Blocks::blockProperties[_type].lightOpacity != Blocks::blockProperties[oldBlock].lightOpacity) ||
+			(Blocks::blockProperties[_type].lightEmission != Blocks::blockProperties[oldBlock].lightEmission);
+
+		// Unlight before changing the block
+		if (changesLighting) {
+			manager.lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Block, manager);
+			manager.lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Sky, manager);
+		}
+
+		// Then finally set the new block
 		chunk->SetBlock(local, _type);
 		chunk->SetMeta(local, _meta);
 
@@ -149,32 +158,34 @@ struct WorldWrapper {
 		int oldHeight = chunk->GetHeightValue({ lx, lz });
 
 		// Placing opaque block; heightmap may rise
-		chunk->RelightColumn({ lx, lz });
-		int newHeight = chunk->GetHeightValue({ lx, lz });
-		if (newHeight > oldHeight) {
-			// Notify the BFS that all blocks from y down to oldHeight need updating
-			for (int sy = oldHeight; sy <= newHeight; ++sy) {
-				manager.lightManager.UnlightAt(x, sy, z, LightType::Sky, manager);
+		if (changesLighting) {
+			chunk->RelightColumn({ lx, lz });
+			int newHeight = chunk->GetHeightValue({ lx, lz });
+			if (newHeight > oldHeight) {
+				// Notify the BFS that all blocks from y down to oldHeight need updating
+				for (int sy = oldHeight; sy <= newHeight; ++sy) {
+					manager.lightManager.UnlightAt(x, sy, z, LightType::Sky, manager);
+				}
+			} else if (newHeight < oldHeight) {
+				// Height fell
+				for (int sy = newHeight; sy < oldHeight; ++sy) {
+					manager.lightManager.ScheduleLightUpdate({ x, sy, z }, LightType::Sky);
+				}
 			}
-		} else if (newHeight < oldHeight) {
-			// Height fell
-			for (int sy = newHeight; sy < oldHeight; ++sy) {
-				manager.lightManager.ScheduleLightUpdate({ x, sy, z }, LightType::Sky);
+
+			// Always re-evaluate the edited block and its 4 horizontal neighbours
+			manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Sky);
+			manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Block);
+			int extendedBottom = CrossPlatform::Math::Min(newHeight, oldHeight);
+			while (extendedBottom > 0 &&
+				Blocks::blockProperties[chunk->GetBlock({ lx, extendedBottom - 1, lz })].lightOpacity == 0)
+				--extendedBottom;
+
+			if (newHeight != oldHeight) {
+				manager.lightManager.ScheduleLightRegion({ x - 1, extendedBottom, z - 1 },
+												{ x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), z + 1 },
+												LightType::Sky);
 			}
-		}
-
-		// Always re-evaluate the edited block and its 4 horizontal neighbours
-		manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Sky);
-		manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Block);
-		int extendedBottom = CrossPlatform::Math::Min(newHeight, oldHeight);
-		while (extendedBottom > 0 &&
-		       Blocks::blockProperties[chunk->GetBlock({ lx, extendedBottom - 1, lz })].lightOpacity == 0)
-			--extendedBottom;
-
-		if (newHeight != oldHeight) {
-			manager.lightManager.ScheduleLightRegion({ x - 1, extendedBottom, z - 1 },
-			                                 { x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), z + 1 },
-			                                 LightType::Sky);
 		}
 
 		// Callback for the client and server to know about this block update
@@ -186,7 +197,7 @@ struct WorldWrapper {
 			                        chunk->cpos);
 	}
 
-	uint8_t GetSkyLight(Int3 _wpos) const {
+	uint8_t GetSkyLight(const Int3 _wpos) const {
 		if (!InBounds(_wpos.y))
 			return 0;
 		auto chunk = chunkRegion.GetChunk(GetRegionChunkPos(_wpos));

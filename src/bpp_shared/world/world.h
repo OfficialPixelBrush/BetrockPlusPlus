@@ -73,8 +73,8 @@ struct WorldManager {
 	void PropagateChunkLightBorders(Int32_2 _cpos);
 	BlockType GetFirstUncoveredBlock(int _wx, int _wz);
 	int FindTopSolidBlock(int _wx, int _wz);
-	void SetMeta(Int3 _wpos, uint8_t _metadata = 0);
-	void SetBlock(Int3 _wpos, BlockType _blockType, uint8_t _metadata = 0);
+	void SetMeta(const Int3 _wpos, const uint8_t _metadata = 0);
+	void SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata = 0);
 	void DrainGenQueue();
 	bool IsLiquidInAabb(AABB _collider);
 	void InitSpawn();
