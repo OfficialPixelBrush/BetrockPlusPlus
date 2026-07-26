@@ -15,7 +15,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "chunk_IO/chunk_sender.h"
 #include "commands/command_manager.h"
 #include "config/config.h"
-#include "entities/entity_tracker.h"
+#include "trackers/entity_tracker.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
 #include "packet/handle_packet.h"

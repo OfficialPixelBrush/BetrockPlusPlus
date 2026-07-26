@@ -236,14 +236,7 @@ struct InventoryDispenser : Inventory {
 // TODO: Maybe make an enum for this?
 // Slots: 0 = input, 1 = fuel, 2 = output.
 struct InventoryFurnace : Inventory {
-	int burnTime = 0;
-	int maxBurnTime = 0;
-	int cookTime = 0;
-
 	InventoryFurnace() : Inventory(3) {
 		name = "Furnace";
-	}
-	bool IsBurning() const {
-		return burnTime > 0;
 	}
 };

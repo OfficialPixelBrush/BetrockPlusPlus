@@ -2103,6 +2103,12 @@ void RegisterAll() {
 		_world.CreateTileEntity(std::move(chest));
 	};
 
+	// Do we need to handle lit furnace placement too?
+	blockBehaviors[BLOCK_FURNACE].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		auto furnace = std::make_shared<TileEntityFurnace>(_pos);
+		_world.CreateTileEntity(std::move(furnace));
+	};
+
 	//TODO: Add another portal creation function matching with b1.7.3's limitations, that is toggleable via a config entry,
 	// for a more authentic experience
 	blockBehaviors[BLOCK_FIRE].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {

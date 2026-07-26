@@ -8,7 +8,7 @@
 */
 #include "handle_packet.h"
 #include "../blocks/serverBlockBehaviors.h"
-#include "../entities/entity_tracker.h"
+#include "../trackers/entity_tracker.h"
 #include "blocks.h"
 #include "blocks/block_properties.h"
 #include "entities/entity_item.h"

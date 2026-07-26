@@ -9,6 +9,7 @@
 
 #include "logger.h"
 #include "packet/packet_utils.h"
+#include "trackers/inventory_tracker.h"
 #include "world.h"
 #include <string>
 #include <thread>
@@ -324,7 +325,8 @@ void Server::Run() {
 		if (Clock::now() > nextTickTime + MAX_TICK_CATCH_UP * TICK_DURATION) {
 			baseTime = Clock::now();
 			ticks = 0;
-			GlobalLogger().warn << "Can't keep up with ticks! (" << std::setprecision(2) << averageTickMs << "/" << std::chrono::duration<double, std::milli>(TICK_DURATION) << " ms\n";
+			GlobalLogger().warn << "Can't keep up with ticks! (" << std::setprecision(2) << averageTickMs << "/"
+			                    << std::chrono::duration<double, std::milli>(TICK_DURATION) << " ms\n";
 		}
 	}
 
@@ -395,9 +397,14 @@ void Server::Tick() {
 	localBlockChanges.swap(chunkBlockChanges);
 	localBlockChangesHell.swap(chunkBlockChangesHell);
 
-	// Update the entity trackers
+	// Update the trackers
+
+	// Entity trackers
 	overworldEntityTracker.Tick();
 	hellEntityTracker.Tick();
+
+	// Inventory tracker
+	InventoryTracker::Tick(*this);
 
 	// Handle connection state for each player
 	for (auto& session : players) {
@@ -410,54 +417,6 @@ void Server::Tick() {
 		for (const auto& pos : session->newlyUnloaded)
 			IndexRemoveChunk(*session, pos);
 		session->newlyUnloaded.clear();
-
-		// Check inventory diffs
-		auto diffs2 = session->inventoryInteraction.TickDiff();
-		if (diffs2.size() <= 5) {
-			for (auto difference : diffs2) {
-				PacketUtilities::SendSlot(*session, 0, difference.slot, &difference.stack);
-			}
-		} else {
-			// Too many changes, just resend the whole inventory
-			PacketUtilities::SendInventory(*session, 0, *session->inventoryInteraction.inventory);
-		}
-
-		// Held item updates (i.e. maps)
-		{
-			auto heldItem = session->inventory.GetHeldItem();
-			if (heldItem) {
-				if (auto fn = Items::itemBehavior[heldItem->id].whileHeld) {
-					fn(heldItem, *session, *this);
-				}
-			}
-		}
-
-		if (!session->activeInteraction)
-			continue;
-
-		// Force close windows that reference tile entities that have been deleted
-		if (!session->activeInteraction->CanExist()) {
-			PacketUtilities::CloseContainer(*session);
-			continue;
-		}
-
-		// Send each differing slot
-		auto diffs = session->activeInteraction->TickDiff();
-		if (diffs.size() <= 5) {
-			for (auto difference : diffs) {
-				PacketUtilities::SendSlot(*session, session->openWindowId, difference.slot, &difference.stack);
-			}
-		} else {
-			// Too many changes, just resend the whole inventory
-			PacketUtilities::SendInventory(*session, session->openWindowId, *session->activeInteraction->inventory);
-		}
-
-		if (this->gameRuntime.world.elapsedTicks % 40 == 0) {
-			// Save periodically
-			auto savedNbt = session->SerializeToNbt();
-			gameRuntime.saveManager.SavePlayerNbt(std::string(session->username.begin(), session->username.end()),
-			                                      savedNbt);
-		}
 	}
 
 	// Dispatch block changes.

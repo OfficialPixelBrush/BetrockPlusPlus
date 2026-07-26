@@ -5,9 +5,12 @@
  *
 */
 #include "serverBlockBehaviors.h"
+#include "blocks.h"
 #include "inventory/interactions/chest.h"
 #include "inventory/interactions/crafting_table.h"
+#include "inventory/interactions/furnace.h"
 #include "inventory/interactions/large_chest.h"
+#include "tile_entities/tile_entity.h"
 
 namespace ServerBlock {
 BlockBehavior blockBehaviors[256] = {};
@@ -25,10 +28,35 @@ void ServerBlock::Initialize() {
 		ow.Serialize(_session.stream);
 
 		_session.activeInteraction = std::make_unique<CraftingTableInventoryInteraction>(&_session.inventory, _world,
-		                                                                                _gameRuntime, _position);
+		                                                                                 _gameRuntime, _position);
 		_session.activeInteraction->InitSnapshot();
 		return false;
 	};
+
+	auto furnaceActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
+	                           Runtime& _gameRuntime) -> bool {
+		auto furnace = _world.GetTileEntityShared<TileEntityFurnace>(_position);
+		if (!furnace)
+			return false;
+
+		Packet::OpenContainer ow;
+		ow.windowId = _session.GetNextWindowId();
+		ow.slotCount = 3;
+		ow.title = "Furnace";
+		ow.windowType = PacketData::WindowType::FURNACE;
+		ow.Serialize(_session.stream);
+
+		_session.activeInteraction = std::make_unique<FurnaceInventoryInteraction>(&_session.inventory, furnace);
+		_session.activeInteraction->InitSnapshot();
+
+		PacketUtilities::SendInventory(_session, _session.openWindowId, *_session.activeInteraction->inventory);
+
+		return false;
+	};
+
+	blockBehaviors[BLOCK_FURNACE].onBlockActivated = furnaceActivated;
+	blockBehaviors[BLOCK_FURNACE_LIT].onBlockActivated = furnaceActivated;
+
 	blockBehaviors[BLOCK_CHEST].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
 	                                                  Runtime& _gameRuntime) -> bool {
 		auto chest = _world.GetTileEntityShared<TileEntityChest>(_position);
@@ -46,13 +74,17 @@ void ServerBlock::Initialize() {
 		if (doubleChest) {
 			std::shared_ptr<TileEntityChest> partnerChest = nullptr;
 			if (l == BLOCK_CHEST)
-				partnerChest = _world.GetTileEntityShared<TileEntityChest>({ _position.x - 1, _position.y, _position.z });
+				partnerChest = _world.GetTileEntityShared<TileEntityChest>(
+				    { _position.x - 1, _position.y, _position.z });
 			else if (r == BLOCK_CHEST)
-				partnerChest = _world.GetTileEntityShared<TileEntityChest>({ _position.x + 1, _position.y, _position.z });
+				partnerChest = _world.GetTileEntityShared<TileEntityChest>(
+				    { _position.x + 1, _position.y, _position.z });
 			else if (f == BLOCK_CHEST)
-				partnerChest = _world.GetTileEntityShared<TileEntityChest>({ _position.x, _position.y, _position.z - 1 });
+				partnerChest = _world.GetTileEntityShared<TileEntityChest>(
+				    { _position.x, _position.y, _position.z - 1 });
 			else
-				partnerChest = _world.GetTileEntityShared<TileEntityChest>({ _position.x, _position.y, _position.z + 1 });
+				partnerChest = _world.GetTileEntityShared<TileEntityChest>(
+				    { _position.x, _position.y, _position.z + 1 });
 			if (!partnerChest)
 				return false;
 
@@ -68,7 +100,7 @@ void ServerBlock::Initialize() {
 			ow.Serialize(_session.stream);
 
 			_session.activeInteraction = std::make_unique<LargeChestInventoryInteraction>(&_session.inventory, chest,
-			                                                                             partnerChest);
+			                                                                              partnerChest);
 			_session.activeInteraction->InitSnapshot();
 
 			PacketUtilities::SendInventory(_session, _session.openWindowId, *_session.activeInteraction->inventory);

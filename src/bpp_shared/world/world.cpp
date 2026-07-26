@@ -204,6 +204,8 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 	// Update our entities
 	entityManager.Tick();
 
+	tileEntityManager.TickTileEntities();
+
 	UpdateLoadRadius(_players);
 	PopulateReady(); // population runs on main thread
 	lightManager.ProcessLightQueue(*this, INT_MAX);

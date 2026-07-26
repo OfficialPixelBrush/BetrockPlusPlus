@@ -119,6 +119,7 @@ set(SHARED_SOURCES
     src/bpp_shared/inventory/interactions/chest.cpp
     src/bpp_shared/inventory/interactions/large_chest.cpp
     src/bpp_shared/inventory/interactions/crafting.cpp
+    src/bpp_shared/inventory/interactions/furnace.cpp
     src/bpp_shared/inventory/interactions/player.cpp
     src/bpp_shared/inventory/interactions/crafting_table.cpp
     src/bpp_shared/crafting/recipe_manager.cpp
@@ -155,7 +156,8 @@ set(SERVER_SOURCES
     src/bpp_server/player_conn/server_pconnstate_manager.cpp
     src/bpp_server/packet/packet_dispatcher.cpp
     src/bpp_server/chunk_IO/chunk_broadcaster.cpp
-    src/bpp_server/entities/entity_tracker.cpp
+    src/bpp_server/trackers/entity_tracker.cpp
+    src/bpp_server/trackers/inventory_tracker.cpp
     src/bpp_server/entities/entity_mp_player.cpp
     src/bpp_server/blocks/serverBlockBehaviors.cpp
 

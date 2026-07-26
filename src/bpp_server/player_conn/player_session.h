@@ -8,7 +8,7 @@
 
 #pragma once
 #include "../entities/entity_mp_player.h"
-#include "../entities/entity_tracker.h"
+#include "../trackers/entity_tracker.h"
 #include "dimensions.h"
 #include "inventory/interactions/player.h"
 #include "inventory/inventory_interaction.h"

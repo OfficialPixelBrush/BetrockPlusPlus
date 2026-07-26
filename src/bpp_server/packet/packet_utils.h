@@ -11,7 +11,7 @@
 #include <vector>
 
 namespace PacketUtilities {
-inline void SendInventory(PlayerSession& _session, WindowId _windowId, Inventory _inventory) {
+inline void SendInventory(PlayerSession& _session, WindowId _windowId, Inventory& _inventory) {
 	std::vector<ItemStack> items;
 	for (auto& item : _inventory.slots) {
 		items.emplace_back(item.id, item.count, item.data);
