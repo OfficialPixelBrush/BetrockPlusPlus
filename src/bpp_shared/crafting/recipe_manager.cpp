@@ -27,10 +27,6 @@ void RecipeManager::AddShapedRecipe(std::initializer_list<std::string_view> _row
                                     std::initializer_list<std::pair<char, ItemKey>> _mapping, ItemStack _output) {
 	std::array<ItemKey, 9> grid{};
 
-	std::unordered_map<char, ItemKey> table;
-	for (const auto& m : _mapping)
-		table.emplace(m.first, m.second);
-
 	size_t y = 0;
 	for (auto row : _rows) {
 		if (y >= 3) {
@@ -76,6 +72,14 @@ void RecipeManager::AddShapedRecipe(std::initializer_list<std::string_view> _row
 	}
 }
 
+static void MirrorGrid(std::span<ItemKey> _grid, UInt8_2 _size) {
+	for (int row = 0; row < _size.y; ++row) {
+		for (int col = 0; col < _size.x / 2; ++col) {
+			std::swap(_grid[row * _size.x + col], _grid[row * _size.x + (_size.x - col - 1)]);
+		}
+	}
+}
+
 const ItemStack RecipeManager::MatchGrid(std::span<const ItemStack> _grid, UInt8_2 _size) const {
 	std::array<ItemKey, 9> keyGrid{};
 
@@ -84,15 +88,33 @@ const ItemStack RecipeManager::MatchGrid(std::span<const ItemStack> _grid, UInt8
 	for (size_t i = 0; i < totalSize; ++i)
 		keyGrid[i] = { _grid[i].id, _grid[i].data };
 
-	auto shaped = shapedRecipes.find(MakeShapedKey(std::span<const ItemKey>(keyGrid.data(), totalSize), _size));
+	{
+		auto shaped = shapedRecipes.find(MakeShapedKey(std::span<const ItemKey>(keyGrid.data(), totalSize), _size));
 
-	if (shaped != shapedRecipes.end())
-		return shaped->second;
+		if (shaped != shapedRecipes.end())
+			return shaped->second;
+	}
 
-	auto shapeless = shapelessRecipes.find(MakeShapelessKey(std::span<const ItemKey>(keyGrid.data(), totalSize)));
+	{
+		//TODO: Maybe instead of doing a second lookup for the mirrored version
+		// Make mirroring part of normalization in MakeShapedKey()
+		// So based on comparison using ShapedRecipeKey < operator (lexicographical compare),
+		// choose either the mirrored version or the plain version as the key
+		// This way we would only require 1 hashmap lookup for shaped recipes
+		MirrorGrid(std::span<ItemKey>(keyGrid.data(), totalSize), _size);
 
-	if (shapeless != shapelessRecipes.end())
-		return shapeless->second;
+		auto shaped = shapedRecipes.find(MakeShapedKey(std::span<const ItemKey>(keyGrid.data(), totalSize), _size));
+
+		if (shaped != shapedRecipes.end())
+			return shaped->second;
+	}
+
+	{
+		auto shapeless = shapelessRecipes.find(MakeShapelessKey(std::span<const ItemKey>(keyGrid.data(), totalSize)));
+
+		if (shapeless != shapelessRecipes.end())
+			return shapeless->second;
+	}
 
 	return { .id = Items::Id::INVALID };
 }
