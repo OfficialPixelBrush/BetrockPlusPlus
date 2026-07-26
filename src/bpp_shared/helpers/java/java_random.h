@@ -34,7 +34,7 @@ private:
 		* 
 		* @return Pseudorandom 32-bit integer value
 		*/
-	int32_t Next(int32_t _bits) {
+	const int32_t Next(const int32_t _bits) noexcept {
 		seed = (seed * M_MULTIPLIER + M_ADDEND) & M_MASK;
 		return static_cast<int32_t>(seed >> (48 - _bits));
 	}
@@ -45,7 +45,7 @@ public:
 		* 
 		* @param initialSeed The initial seed value (defaults to current time)
 		*/
-	Random(int64_t _initialSeed) {
+	Random(const int64_t _initialSeed) {
 		SetSeed(_initialSeed);
 	}
 
@@ -63,7 +63,7 @@ public:
 		* 
 		* @param s Seed value
 		*/
-	void SetSeed(int64_t _s) {
+	const void SetSeed(const int64_t _s) noexcept {
 		seed = (static_cast<uint64_t>(_s) ^ M_MULTIPLIER) & M_MASK;
 	}
 
@@ -72,7 +72,7 @@ public:
 		* 
 		* @return Pseudorandom 32-bit integer value
 		*/
-	int32_t NextInt() {
+	const int32_t NextInt() noexcept {
 		return Next(32);
 	}
 
@@ -81,7 +81,7 @@ public:
 		* 
 		* @return Pseudorandom 32-bit integer value
 		*/
-	int32_t NextInt(int32_t _bound) {
+	const int32_t NextInt(const int32_t _bound) {
 		if (_bound <= 0)
 			throw std::invalid_argument("bound must be positive");
 
@@ -102,7 +102,7 @@ public:
 		* 
 		* @return Pseudorandom 64-bit long value
 		*/
-	int64_t NextLong() {
+	const int64_t NextLong() noexcept {
 		return (int64_t(Next(32)) << 32) + Next(32);
 	}
 
@@ -111,7 +111,7 @@ public:
 		* 
 		* @return Pseudorandom double value between 0.0 (inclusive) and 1.0 (exclusive)
 		*/
-	double NextDouble() {
+	const double NextDouble() noexcept {
 		return double((int64_t(Next(26)) << 27) + Next(27)) / double(1LL << 53);
 	}
 
@@ -120,7 +120,7 @@ public:
 		* 
 		* @return Pseudorandom boolean
 		*/
-	bool NextBoolean() {
+	const bool NextBoolean() noexcept {
 		return Next(1) != 0;
 	}
 
@@ -129,7 +129,7 @@ public:
 		* 
 		* @return Pseudorandom float value between 0.0 (inclusive) and 1.0 (exclusive)
 		*/
-	float NextFloat() {
+	const float NextFloat() noexcept {
 		return float(Next(24)) / float(1 << 24);
 	}
 };

@@ -23,10 +23,10 @@ protected:
 	void InitPermTable(Java::Random& _rand);
 
 private:
-	int32_t gradients[12][3] = { { 1, 1, 0 },  { -1, 1, 0 },  { 1, -1, 0 }, { -1, -1, 0 }, { 1, 0, 1 },  { -1, 0, 1 },
+	const int32_t gradients[12][3] = { { 1, 1, 0 },  { -1, 1, 0 },  { 1, -1, 0 }, { -1, -1, 0 }, { 1, 0, 1 },  { -1, 0, 1 },
 		                         { 1, 0, -1 }, { -1, 0, -1 }, { 0, 1, 1 },  { 0, -1, 1 },  { 0, 1, -1 }, { 0, -1, -1 } };
-	double skewing = 0.5 * (sqrt(3.0) - 1.0);
-	double unskewing = (3.0 - sqrt(3.0)) / 6.0;
+	const double skewing = 0.5 * (sqrt(3.0) - 1.0);
+	const double unskewing = (3.0 - sqrt(3.0)) / 6.0;
 
 public:
 	NoiseSimplex();
@@ -35,10 +35,10 @@ public:
 	void GenerateNoise(std::vector<double>& _values, Vec2 _pCoordinate, Int32_2 _pSize, Vec2 _pScale, double _amplitude);
 };
 
-inline int32_t Wrap(double _grad) {
+constexpr inline int32_t Wrap(const double _grad) {
 	return _grad > 0.0 ? Java::DoubleToInt32(_grad) : Java::DoubleToInt32(_grad) - 1;
 }
 
-inline double DotProd(int32_t _grad[3], double _x, double _y) {
+constexpr inline double DotProd(const int32_t _grad[3], const double _x, const double _y) {
 	return double(_grad[0]) * _x + double(_grad[1]) * _y;
 }
