@@ -1984,8 +1984,8 @@ void RegisterAll() {
 
 		// Matches vanilla order
 		static constexpr std::array<PacketData::FaceDirection, 5> CHECK_ORDER = {
-			PacketData::FaceDirection::X_MINUS, PacketData::FaceDirection::X_PLUS, PacketData::FaceDirection::Z_MINUS,
-			PacketData::FaceDirection::Z_PLUS, PacketData::FaceDirection::Y_PLUS
+			PacketData::FaceDirection::X_PLUS, PacketData::FaceDirection::X_MINUS, PacketData::FaceDirection::Z_PLUS,
+			PacketData::FaceDirection::Z_MINUS, PacketData::FaceDirection::Y_PLUS
 		};
 
 		for (PacketData::FaceDirection face : CHECK_ORDER) {
