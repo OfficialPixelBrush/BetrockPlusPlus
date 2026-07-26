@@ -48,6 +48,9 @@ private:
 	bool requiresOp;
 	bool requiresCreative;
 
+protected:
+	ItemStack ParseItemStack(std::vector<std::string>& _parameters, size_t& _offset, bool _parseCount);
+
 public:
 	std::string GetLabel() {
 		return label;
@@ -73,6 +76,7 @@ public:
 	virtual ~Command() = default;
 };
 
+
 // Commands
 // Anyone can run these
 DEFINE_COMMAND(CommandHelp, "help", "Lists commands or helps with command", "[command]", false, false);
@@ -89,7 +93,7 @@ DEFINE_COMMAND(CommandVersion, "version", "Shows the current Server version", ""
 DEFINE_COMMAND(CommandSummon, "summon", "Summons a smart entity", "", false, false);
 DEFINE_COMMAND(CommandStats, "stats", "Shows usage statistics", "", false, false);
 DEFINE_COMMAND(CommandFill, "fill", "Fills an area with the desired block",
-               "<id>[:meta] <x0> <y0> <z0> <x1> <y1> <z1> [tick]", false, false);
+               "<block:meta> <x0> <y0> <z0> <x1> <y1> <z1>", false, false);
 /*
 DEFINE_COMMAND(CommandPose, "pose", "Set the current players' pose", "<crouch/fire/sit>", false, false);
 DEFINE_COMMAND(CommandInterface, "interface", "Open the desired interface", "<id>", false, false);

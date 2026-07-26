@@ -20,6 +20,28 @@ Command::Command(std::string _pLabel, std::string _pDescription, std::string _pS
 	this->requiresCreative = _pRequiresCreative;
 }
 
+ItemStack Command::ParseItemStack(std::vector<std::string>& _parameters, size_t& _offset, bool _parseCount) {
+	ItemStack item;
+	const std::string& itemArg = _parameters[_offset++];
+	size_t colonPos = itemArg.find(':');
+	std::string idString = itemArg.substr(0, colonPos);
+	std::string metaString = "";
+	if (colonPos != std::string::npos) {
+		metaString = itemArg.substr(colonPos + 1);
+	}
+	item.id = static_cast<int16_t>(std::stoi(idString));
+	if (!metaString.empty()) {
+		item.data = static_cast<int16_t>(std::stoi(metaString));
+	}
+	item.count = Items::GetMaxStack(item.id); // I don't want 64 pickaxes anymore!!
+	if (_parseCount) {
+		if (_parameters.size() > 2) {
+			item.count = static_cast<int8_t>(std::stoi(_parameters[_offset++]));
+		}
+	}
+	return item;
+}
+
 // Check permissions for the command
 /*
 std::string Command::CheckPermissions(Client *client) {

@@ -10,6 +10,7 @@
 #include "inventory/item_stack.h"
 #include "items.h"
 #include "strings/labels.h"
+#include <cstddef>
 #include <string>
 
 // Give yourself a block or item
@@ -23,23 +24,9 @@ std::string CommandGive::Execute(std::vector<std::string>& _parameters, PlayerSe
 	if (_parameters.size() <= 1)
 
 		return "Missing item id!";
-
-	ItemStack item;
-	const std::string& itemArg = _parameters[1];
-	size_t colonPos = itemArg.find(':');
-	std::string idString = itemArg.substr(0, colonPos);
-	std::string metaString = "";
-	if (colonPos != std::string::npos) {
-		metaString = itemArg.substr(colonPos + 1);
-	}
-	item.id = static_cast<int16_t>(std::stoi(idString));
-	if (!metaString.empty()) {
-		item.data = static_cast<int16_t>(std::stoi(metaString));
-	}
-	item.count = Items::GetMaxStack(item.id); // I don't want 64 pickaxes anymore!!
-	if (_parameters.size() > 2) {
-		item.count = static_cast<int8_t>(std::stoi(_parameters[2]));
-	}
+	
+	size_t paramOffset = 1;
+	ItemStack item = ParseItemStack(_parameters, paramOffset, true);
 
 	// Check if its even a valid item
 	if (Items::IsValidId(item.id)) {
