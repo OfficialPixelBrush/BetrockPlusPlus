@@ -66,7 +66,8 @@ std::string CommandTeleport::Execute(std::vector<std::string>& _parameters, Play
 		PlayerSession* dest = _server.GetSessionByUsername(_parameters[offset]).get();
 		if (!dest)
 			return _parameters[offset] + " does not exist!";
-		SendTeleport(*source, dest->position.pos, dest->rotation.x, dest->rotation.y);
+		SendTeleport(*source, { dest->position.pos.x, dest->position.pos.y + 0.01, dest->position.pos.z },
+		              dest->rotation.x, dest->rotation.y);
 		Packet::ChatMessage reply;
 		reply.message = "§eTeleported " + source->username + " to " + _session.username;
 		reply.Serialize(_session.stream);
