@@ -21,9 +21,11 @@ private:
 	NoiseOctavesSimplex weirdnessNoiseGen;
 
 public:
+	BiomeGenerator();
 	BiomeGenerator(int64_t _seed);
 	Biome GetBiomeAtPoint(Int2 _worldPos);
 	void GenerateBiomeMap(Biome _biomeMap[], std::vector<double>& _temperature, std::vector<double>& _humidity,
 	                      std::vector<double>& _weirdness, Int2 _blockPos);
-	void GenerateTemperature(std::vector<double>& _temperature, std::vector<double>& _weirdness, Int2 _chunkPos, Int2 _max);
+	void GenerateTemperature(std::vector<double>& _temperature, std::vector<double>& _weirdness, Int2 _chunkPos,
+	                         Int2 _max);
 };

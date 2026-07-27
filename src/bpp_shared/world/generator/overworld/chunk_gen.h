@@ -10,6 +10,7 @@
 #include "../shared/cave_gen.h"
 #include "../shared/feature_gen.h"
 #include "biomes.h"
+#include "generator/overworld/biome_gen.h"
 
 /**
  * @brief A faithful reimplementation of the Beta 1.7.3 Overworld Generator
@@ -38,18 +39,21 @@ private:
 	std::vector<double> continentalnessNoiseField = std::vector<double>(MAX_AREA);
 	std::vector<double> depthNoiseField = std::vector<double>(MAX_AREA);
 
-	std::vector<double> sandNoise = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
-	std::vector<double> gravelNoise = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
-	std::vector<double> stoneNoise = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
+	std::vector<double> sandNoise = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
+	std::vector<double> gravelNoise = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
+	std::vector<double> stoneNoise = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
 
 	// Biome Vectors
 	Biome biomeMap[CHUNK_AREA];
-	std::vector<double> temperature = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
-	std::vector<double> humidity = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
-	std::vector<double> weirdness = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
+	std::vector<double> temperature = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
+	std::vector<double> humidity = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
+	std::vector<double> weirdness = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
 
 	// Cave Gen
 	CaveGenerator caver;
+
+	// Reused biome generator
+	BiomeGenerator biomeGen;
 
 	void GenerateTerrain(Chunk& _chunk);
 	void GenerateTerrainNoise(Int3 _cpos, Int3 _max);

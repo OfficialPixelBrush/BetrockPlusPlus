@@ -27,6 +27,7 @@ OverworldGenerator::OverworldGenerator(int64_t _pSeed) : Generator(_pSeed) {
 	continentalnessNoiseGen = NoiseOctavesPerlin(rand, 10);
 	depthNoiseGen = NoiseOctavesPerlin(rand, 16);
 	treeDensityNoiseGen = NoiseOctavesPerlin(rand, 8);
+	biomeGen = BiomeGenerator(seed);
 }
 
 /**
@@ -42,8 +43,8 @@ void OverworldGenerator::GenerateChunk(Chunk& _chunk) {
 	_chunk.Clear();
 
 	// Generate Biomes
-	BiomeGenerator(seed).GenerateBiomeMap(biomeMap, temperature, humidity, weirdness,
-	                                        Int2{ _chunk.cpos.x * CHUNK_WIDTH, _chunk.cpos.z * CHUNK_WIDTH });
+	biomeGen.GenerateBiomeMap(biomeMap, temperature, humidity, weirdness,
+	                          Int2{ _chunk.cpos.x * CHUNK_WIDTH, _chunk.cpos.z * CHUNK_WIDTH });
 
 	// Store the final temperature and humidity in the chunk so PopulateChunk
 	// (which runs on a different thread_local OverworldGenerator) can reconstruct the
@@ -86,9 +87,9 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 	    gravelNoise, Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), 109.0134, double(_chunk.cpos.z * CHUNK_WIDTH) },
 	    Int32_3{ 16, 1, 16 }, Vec3{ oneThirtySecond, 1.0, oneThirtySecond });
 	stoneNoiseGen.GenerateOctaves(stoneNoise,
-	                                Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), double(_chunk.cpos.z * CHUNK_WIDTH), 0.0 },
-	                                Int32_3{ 16, 16, 1 },
-	                                Vec3{ oneThirtySecond * 2.0, oneThirtySecond * 2.0, oneThirtySecond * 2.0 });
+	                              Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), double(_chunk.cpos.z * CHUNK_WIDTH), 0.0 },
+	                              Int32_3{ 16, 16, 1 },
+	                              Vec3{ oneThirtySecond * 2.0, oneThirtySecond * 2.0, oneThirtySecond * 2.0 });
 
 	// Iterate through entire chunk
 	for (int32_t x = 0; x < CHUNK_WIDTH; ++x) {
@@ -182,14 +183,10 @@ void OverworldGenerator::GenerateTerrain(Chunk& _chunk) {
 				double verticalLerpStep = 0.125;
 
 				// Get noise cube corners
-				double corner000 =
-				    terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 0)];
-				double corner010 =
-				    terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 0)];
-				double corner100 =
-				    terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 0)];
-				double corner110 =
-				    terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 0)];
+				double corner000 = terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 0)];
+				double corner010 = terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 0)];
+				double corner100 = terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 0)];
+				double corner110 = terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 0)];
 				double corner001 =
 				    (terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 1)] -
 				     corner000) *
@@ -275,15 +272,15 @@ void OverworldGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
 
 	// We do this to need to generate noise as often
 	continentalnessNoiseGen.GenerateOctaves(continentalnessNoiseField, Int32_2{ _cpos.x, _cpos.z },
-	                                          Int32_2{ _max.x, _max.z }, Vec2{ 1.121, 1.121 }, 0.5);
+	                                        Int32_2{ _max.x, _max.z }, Vec2{ 1.121, 1.121 }, 0.5);
 	depthNoiseGen.GenerateOctaves(depthNoiseField, Int32_2{ _cpos.x, _cpos.z }, Int32_2{ _max.x, _max.z },
-	                                Vec2{ 200.0, 200.0 }, 0.5);
+	                              Vec2{ 200.0, 200.0 }, 0.5);
 	selectorNoiseGen.GenerateOctaves(selectorNoiseField, Vec3{ double(_cpos.x), double(_cpos.y), double(_cpos.z) },
-	                                   _max, Vec3{ horiScale / 80.0, vertScale / 160.0, horiScale / 80.0 });
+	                                 _max, Vec3{ horiScale / 80.0, vertScale / 160.0, horiScale / 80.0 });
 	lowNoiseGen.GenerateOctaves(lowNoiseField, Vec3{ double(_cpos.x), double(_cpos.y), double(_cpos.z) }, _max,
-	                              Vec3{ horiScale, vertScale, horiScale });
+	                            Vec3{ horiScale, vertScale, horiScale });
 	highNoiseGen.GenerateOctaves(highNoiseField, Vec3{ double(_cpos.x), double(_cpos.y), double(_cpos.z) }, _max,
-	                               Vec3{ horiScale, vertScale, horiScale });
+	                             Vec3{ horiScale, vertScale, horiScale });
 	// Used to iterate 3D noise maps (low, high, selector)
 	size_t xyzIndex = 0;
 	// Used to iterate 2D Noise maps (depth, continentalness)
@@ -434,7 +431,7 @@ void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& _world, Java::Random
 bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 	const int32_t blockX = _chunk.cpos.x * CHUNK_WIDTH;
 	const int32_t blockZ = _chunk.cpos.z * CHUNK_WIDTH;
-	Biome biome = BiomeGenerator(seed).GetBiomeAtPoint(Int2{ blockX + CHUNK_WIDTH, blockZ + CHUNK_WIDTH });
+	Biome biome = biomeGen.GetBiomeAtPoint(Int2{ blockX + CHUNK_WIDTH, blockZ + CHUNK_WIDTH });
 	// Java RNG seeding sequence
 	rand.SetSeed(_world.GetSeed());
 	int64_t xSalt = rand.NextLong() / 2L * 2L + 1L;

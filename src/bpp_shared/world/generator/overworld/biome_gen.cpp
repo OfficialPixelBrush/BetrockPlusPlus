@@ -8,6 +8,9 @@
 #include "biome_gen.h"
 #include "chunk.h"
 
+// This one does nothing. DO NOT USE!
+BiomeGenerator::BiomeGenerator() {}
+
 /**
  * @brief Construct a new Beta 1.7.3 Biome
  * 
@@ -33,14 +36,14 @@ BiomeGenerator::BiomeGenerator(int64_t _seed) {
  * @param blockPos The x,z block-space coordindate of the chunk
  * @param max The size of the area that'll be generated (16x16 by default)
  */
-void BiomeGenerator::GenerateBiomeMap(Biome _biomeMap[], std::vector<double>& _temperature, std::vector<double>& _humidity,
-                                      std::vector<double>& _weirdness, Int2 _blockPos) {
+void BiomeGenerator::GenerateBiomeMap(Biome _biomeMap[], std::vector<double>& _temperature,
+                                      std::vector<double>& _humidity, std::vector<double>& _weirdness, Int2 _blockPos) {
 	// Get noise values
 	static constexpr Int32_2 maxArea{ CHUNK_WIDTH, CHUNK_WIDTH };
 	this->temperatureNoiseGen.GenerateOctaves(_temperature, _blockPos, maxArea, Vec2{ double(0.025f), double(0.025f) },
-	                                            0.25);
+	                                          0.25);
 	this->humidityNoiseGen.GenerateOctaves(_humidity, _blockPos, maxArea, Vec2{ double(0.05f), double(0.05f) },
-	                                         1.0 / 3.0);
+	                                       1.0 / 3.0);
 	this->weirdnessNoiseGen.GenerateOctaves(_weirdness, _blockPos, maxArea, Vec2{ 0.25, 0.25 }, 0.5882352941176471);
 	size_t index = 0;
 
@@ -78,11 +81,11 @@ Biome BiomeGenerator::GetBiomeAtPoint(Int2 _worldPos) {
 	std::vector<double> temp(1), humi(1), weird(1);
 
 	this->temperatureNoiseGen.GenerateOctaves(temp, Int2{ _worldPos.x, _worldPos.y }, Int32_2{ 1, 1 },
-	                                            Vec2{ double(0.025f), double(0.025f) }, 0.25);
+	                                          Vec2{ double(0.025f), double(0.025f) }, 0.25);
 	this->humidityNoiseGen.GenerateOctaves(humi, Int2{ _worldPos.x, _worldPos.y }, Int32_2{ 1, 1 },
-	                                         Vec2{ double(0.05f), double(0.05f) }, 1.0 / 3.0);
+	                                       Vec2{ double(0.05f), double(0.05f) }, 1.0 / 3.0);
 	this->weirdnessNoiseGen.GenerateOctaves(weird, Int2{ _worldPos.x, _worldPos.y }, Int32_2{ 1, 1 },
-	                                          Vec2{ 0.25, 0.25 }, 0.5882352941176471);
+	                                        Vec2{ 0.25, 0.25 }, 0.5882352941176471);
 
 	double w = weird[0] * 1.1 + 0.5;
 	double t = (temp[0] * 0.15 + 0.7) * 0.99 + w * 0.01;
@@ -115,7 +118,7 @@ void BiomeGenerator::GenerateTemperature(std::vector<double>& _temperature, std:
 	}
 
 	this->temperatureNoiseGen.GenerateOctaves(_temperature, _blockPos, _max, Vec2{ double(0.025f), double(0.025f) },
-	                                            0.25);
+	                                          0.25);
 	this->weirdnessNoiseGen.GenerateOctaves(_weirdness, _blockPos, _max, Vec2{ 0.25, 0.25 }, 0.5882352941176471);
 	size_t index = 0;
 
