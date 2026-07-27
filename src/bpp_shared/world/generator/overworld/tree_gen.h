@@ -53,12 +53,11 @@ private:
 	Int3 basePos = INT3_ZERO;
 	int32_t totalHeight = 0;
 	int32_t height;
-	double heightFactor = 0.618;
-	double field753H = 1.0;
-	double trunkSlopeFactor = 0.381;
+	static constexpr double heightFactor = 0.618;
+	static constexpr double trunkSlopeFactor = 0.381;
 	double branchLength = 1.0;
 	double trunkShape = 1.0;
-	int32_t branchDensity = 1;
+	static constexpr int32_t branchDensity = 1;
 	int32_t maximumTreeHeight = 12;
 	int32_t trunkThickness = 4;
 	std::vector<BranchPos> branchStartEnd;

@@ -381,6 +381,7 @@ Biome OverworldGenerator::GetBiomeAt(Int2 _worldPos) {
 
 // Exact port of BiomeGenBase.getRandomWorldGenForTrees() and per-biome overrides.
 void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& _world, Java::Random& _pRand, Int3 _pos, Biome _biome) {
+	thread_local BigTreeGenerator big;
 	switch (_biome) {
 	case BIOME_TAIGA:
 		if (_pRand.NextInt(3) == 0)
@@ -392,7 +393,6 @@ void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& _world, Java::Random
 		if (_pRand.NextInt(5) == 0) {
 			TreeGenerator().Generate(_world, _pRand, _pos, true);
 		} else if (_pRand.NextInt(3) == 0) {
-			BigTreeGenerator big;
 			big.Configure(1.0, 1.0, 1.0);
 			big.Generate(_world, _pRand, _pos);
 		} else {
@@ -401,7 +401,6 @@ void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& _world, Java::Random
 		break;
 	case BIOME_RAINFOREST:
 		if (_pRand.NextInt(3) == 0) {
-			BigTreeGenerator big;
 			big.Configure(1.0, 1.0, 1.0);
 			big.Generate(_world, _pRand, _pos);
 		} else {
@@ -410,7 +409,6 @@ void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& _world, Java::Random
 		break;
 	default:
 		if (_pRand.NextInt(10) == 0) {
-			BigTreeGenerator big;
 			big.Configure(1.0, 1.0, 1.0);
 			big.Generate(_world, _pRand, _pos);
 		} else {

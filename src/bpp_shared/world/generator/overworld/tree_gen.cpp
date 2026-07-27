@@ -104,6 +104,9 @@ bool TreeGenerator::Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _po
  * @param pTrunkShape Determines the trunk shape
  */
 void BigTreeGenerator::Configure(double _pTreeHeight, double _pBranchLength, double _pTrunkShape) {
+	branchStartEnd.clear();
+	totalHeight = 0;
+	// Default Java
 	maximumTreeHeight = Java::DoubleToInt32(_pTreeHeight * 12.0);
 	if (_pTreeHeight > 0.5) {
 		trunkThickness = 5;
