@@ -6,9 +6,13 @@
 */
 
 #include "blocks/block_behaviors.h"
+#include "blocks.h"
+#include "blocks/block_properties.h"
 #include "entities/entity_falling_block.h"
 #include "enums/items.h"
 #include "items/item_properties.h"
+#include "logger.h"
+#include "packet_data.h"
 #include "tile_entities/tile_entity.h"
 #include "world.h"
 
@@ -381,10 +385,15 @@ void RegisterBlockBehaviors() {
 	};
 
 	// placement overrides
-	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                               PacketData::FaceDirection _face) -> void {
-		if (CanTorchAttachTo(_world, _pos, _face))
-			_world.SetMeta(_pos, 6 - _face);
+	blockBehaviors[BLOCK_LADDER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                                PacketData::FaceDirection _face) -> void {
+		// Check if it's a horizontal side
+		if (_face < 2)
+			return;
+
+		// Check if there's a support block
+		if (_world.IsBlockNormalCube(GetAdjacentBlockPos(_pos, PacketData::OppositeFace(_face))))
+			_world.SetMeta(_pos, _face);
 	};
 
 	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face) -> void {
@@ -395,6 +404,12 @@ void RegisterBlockBehaviors() {
 
 	blockBehaviors[BLOCK_STAIRS_COBBLESTONE].onBlockPlaced = onStairPlace;
 	blockBehaviors[BLOCK_STAIRS_WOOD].onBlockPlaced = onStairPlace;
+
+	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                               PacketData::FaceDirection _face) -> void {
+		if (CanTorchAttachTo(_world, _pos, _face))
+			_world.SetMeta(_pos, 6 - _face);
+	};
 
 	blockBehaviors[BLOCK_TORCH].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		// This prevents floating torches from existing
