@@ -18,7 +18,7 @@
 void InventoryTracker::Tick(Server& _server) {
 	std::vector<TileEntityFurnace*> syncedFurnaces;
 
-	for (auto session : _server.GetPlayers()) {
+	for (auto& session : _server.GetPlayers()) {
 		// Check inventory diffs
 		auto diffs2 = session->inventoryInteraction.TickDiff();
 		if (diffs2.size() <= 5) {
@@ -44,7 +44,8 @@ void InventoryTracker::Tick(Server& _server) {
 			continue;
 
 		// Force close windows that reference tile entities that have been deleted
-		if (!session->activeInteraction->CanExist()) {
+		if (!session->activeInteraction->CanExist(*session->entity)) {
+			session->activeInteraction->OnInteractionClosed(*session->entity);
 			PacketUtilities::CloseContainer(*session);
 			continue;
 		}

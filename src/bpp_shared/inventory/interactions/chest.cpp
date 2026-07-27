@@ -13,12 +13,15 @@ ChestInventoryInteraction::ChestInventoryInteraction(InventoryPlayer* _pinv, std
 }
 
 ChestInventoryInteraction::~ChestInventoryInteraction() {
-	if (CanExist())
+	if (!chestHandle.expired())
 		WriteBack();
 }
 
-bool ChestInventoryInteraction::CanExist() {
-	return !chestHandle.expired();
+bool ChestInventoryInteraction::CanExist(PlayerEntity& player) {
+	if (chestHandle.expired())
+		return false;
+	auto pos = chestHandle.lock()->position;
+	return (GetDistSquared(player.position, { pos.x + 0.5, pos.y + 0.5, pos.z + 0.5 }) < 64.0);
 }
 
 void ChestInventoryInteraction::InitSnapshot() {

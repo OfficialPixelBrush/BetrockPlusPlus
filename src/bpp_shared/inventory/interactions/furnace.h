@@ -25,7 +25,7 @@ struct FurnaceInventoryInteraction : InventoryInteraction {
 	FurnaceInventoryInteraction(InventoryPlayer* _pinv, std::shared_ptr<TileEntityFurnace> _tile);
 	virtual ~FurnaceInventoryInteraction();
 
-	virtual bool CanExist() override;
+	virtual bool CanExist(PlayerEntity& player) override;
 	void InitSnapshot() override;
 	std::vector<DeltaSlot> TickDiff() override;
 	void MergeInventories();

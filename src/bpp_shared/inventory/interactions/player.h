@@ -13,7 +13,7 @@ struct PlayerInventoryInteraction : CraftingInventoryInteraction {
 
 	PlayerInventoryInteraction(InventoryPlayer* _inv, Runtime& _gameRuntime);
 	void OnClose();
-	bool CanExist() override;
+	bool CanExist(PlayerEntity& player) override;
 
 protected:
 	void ShiftClickResult() override;

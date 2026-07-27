@@ -10,6 +10,7 @@
 #include <vector>
 
 // Simple wrapper so we don't have to manually add
+struct WorldManager;
 struct TileEntityManager {
 	std::vector<std::weak_ptr<TileEntity>> tickableTileEntities;
 
@@ -20,13 +21,5 @@ struct TileEntityManager {
 		}
 	}
 
-	void TickTileEntities() {
-		std::erase_if(tickableTileEntities, [](const std::weak_ptr<TileEntity>& _wp) {
-			auto te = _wp.lock();
-			if (!te)
-				return true;
-			te->Tick();
-			return false;
-		});
-	}
+	void TickTileEntities(WorldManager& _world);
 };

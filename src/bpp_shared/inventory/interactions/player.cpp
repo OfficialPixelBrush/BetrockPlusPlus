@@ -11,7 +11,7 @@
 PlayerInventoryInteraction::PlayerInventoryInteraction(InventoryPlayer* _inv, Runtime& _gameRuntime)
     : CraftingInventoryInteraction(_inv, _inv, _inv, _gameRuntime, { 2, 2 }), playerInventory(_inv) {}
 
-bool PlayerInventoryInteraction::CanExist() {
+bool PlayerInventoryInteraction::CanExist(PlayerEntity& player) {
 	return playerInventory != nullptr;
 }
 

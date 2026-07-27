@@ -7,6 +7,7 @@
 #pragma once
 #include "inventory.h"
 #include "inventory/item_stack.h"
+#include "entities/entity_player.h"
 
 struct DeltaSlot {
 	ItemStack stack;
@@ -20,9 +21,13 @@ struct InventoryInteraction {
 	Inventory* inventory;
 
 	InventoryInteraction(Inventory* _inv);
+	double GetDistSquared(Vec3 p1, Vec3 p2) {
+		Vec3 delta = p1 - p2;
+		return (delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
+	}
 	virtual ~InventoryInteraction() = default;
 
-	virtual bool CanExist();
+	virtual bool CanExist(PlayerEntity& player);
 
 	// Take a snapshot of this inventory
 	virtual void InitSnapshot();
@@ -36,4 +41,6 @@ struct InventoryInteraction {
 	virtual void OnRightClick(int _slot);
 
 	virtual void OnShiftClick(int _slot);
+
+	virtual void OnInteractionClosed(PlayerEntity& player);
 };

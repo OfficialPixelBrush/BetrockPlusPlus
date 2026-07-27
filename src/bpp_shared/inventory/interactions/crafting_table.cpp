@@ -19,13 +19,6 @@ CraftingTableInventoryInteraction::CraftingTableInventoryInteraction(InventoryPl
 
 CraftingTableInventoryInteraction::~CraftingTableInventoryInteraction() {
 	WriteBack();
-
-	for (size_t i = 1; i <= gridSize.Total(); i++) {
-		ItemStack& stack = craftInventory.slots[i];
-		if (stack.id == Items::Id::INVALID)
-			continue;
-		playerInventory->MergeItemStackInInventory(stack, true, 9, 44);
-	}
 }
 
 void CraftingTableInventoryInteraction::WriteBack() {
@@ -36,8 +29,20 @@ void CraftingTableInventoryInteraction::WriteBack() {
 		playerInventory->slots[i] = sharedInventory.slots[slotCount++];
 }
 
-bool CraftingTableInventoryInteraction::CanExist() {
-	return world.GetBlockId(blockPosition) == BLOCK_CRAFTING_TABLE;
+bool CraftingTableInventoryInteraction::CanExist(PlayerEntity& player) {
+	return world.GetBlockId(blockPosition) == BLOCK_CRAFTING_TABLE && (GetDistSquared(player.position, {blockPosition.x + 0.5, blockPosition.y + 0.5, blockPosition.z + 0.5}) < 64.0);
+}
+
+void CraftingTableInventoryInteraction::OnInteractionClosed(PlayerEntity& player) {
+	// Drop cursor
+	player.DropItem(this->carried);
+	this->carried = {};
+
+	// Drop our inventory
+	for (auto& stack : craftInventory.slots) {
+		player.DropItem(stack);
+		stack = {};
+	}
 }
 
 void CraftingTableInventoryInteraction::InitSnapshot() {

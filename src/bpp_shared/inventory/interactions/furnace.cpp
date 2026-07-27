@@ -17,12 +17,15 @@ FurnaceInventoryInteraction::FurnaceInventoryInteraction(InventoryPlayer* _pinv,
 }
 
 FurnaceInventoryInteraction::~FurnaceInventoryInteraction() {
-	if (CanExist())
+	if (!tile.expired())
 		WriteBack();
 }
 
-bool FurnaceInventoryInteraction::CanExist() {
-	return !tile.expired();
+bool FurnaceInventoryInteraction::CanExist(PlayerEntity& player) {
+	if (tile.expired())
+		return false;
+	auto pos = tile.lock()->position;
+	return (GetDistSquared(player.position, {pos.x + 0.5, pos.y + 0.5, pos.z + 0.5}) < 64.0);
 }
 
 void FurnaceInventoryInteraction::InitSnapshot() {

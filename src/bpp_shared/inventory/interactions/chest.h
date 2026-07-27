@@ -25,7 +25,7 @@ struct ChestInventoryInteraction : InventoryInteraction {
 	ChestInventoryInteraction(InventoryPlayer* _pinv, std::shared_ptr<TileEntityChest> _chest);
 	virtual ~ChestInventoryInteraction();
 
-	virtual bool CanExist() override;
+	virtual bool CanExist(PlayerEntity& player) override;
 	void InitSnapshot() override;
 	std::vector<DeltaSlot> TickDiff() override;
 	void MergeInventories();

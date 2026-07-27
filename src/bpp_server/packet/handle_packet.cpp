@@ -181,32 +181,9 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 
 		auto blockId = BlockType(heldItem->id.value);
 
-		// Can we place this block here?
-		auto entitiesInBlock = _world.entityManager.GetEntitiesWithinAabb(
-		    { double(placePosition.x), double(placePosition.y), double(placePosition.z), double(placePosition.x) + 1.0,
-		      double(placePosition.y) + 1.0, double(placePosition.z) + 1.0 });
-
-		// Check to see if any entities overlap our block's collider
-		bool collided = false;
-		if (Blocks::blockProperties[blockId].isCollidable) {
-			auto blockCollider = Blocks::blockBehaviors[blockId]
-			                         .getCollider(/*meta=*/0)
-			                         .Offset(
-			                             placePosition.x, placePosition.y,
-			                             placePosition.z); // Block colliders are at the origin so shift to world space
-			for (auto& entity : entitiesInBlock) {
-				collided = blockCollider.Intersects(entity->collider) && entity->preventEntitySpawning;
-				if (collided)
-					break;
-			}
-		}
-
 		// We can place the block here
-		if (!collided) {
-			_world.SetBlock(placePosition, blockId, heldItem->data);
-			auto function = Blocks::blockBehaviors[blockId].onBlockPlaced;
-			if (function)
-				function(_world, placePosition, *_session.entity, _pkt.face);
+		auto function = Blocks::blockBehaviors[blockId].onBlockPlaced;
+		if (function && function(_world, placePosition, *_session.entity, _pkt.face, blockId, heldItem->data)) {
 			heldItem->DecrementCount(1);
 		}
 	} else if (Items::IsItem(heldItem->id)) {
@@ -246,12 +223,38 @@ void ClickSlot(Packet::ClickSlot& _pkt, PlayerSession& _session) {
 	_session.pendingWindowId = _pkt.windowId;
 	_session.pendingTransactionId = _pkt.transactionId;
 
+	// Clicked outside the window
+	if (_pkt.slotId == -999) {
+		InventoryInteraction& interaction = _pkt.windowId == 0 ? _session.inventoryInteraction
+		                                                       : *_session.activeInteraction;
+
+		if (interaction.carried.id != Items::Id::INVALID) {
+			if (_pkt.rightClick) {
+				// Drop just one item, keep the rest held
+				ItemStack dropped = interaction.carried;
+				dropped.count = 1;
+				interaction.carried.DecrementCount(1);
+				if (interaction.carried.count <= 0)
+					interaction.carried = ItemStack{ Items::Id::INVALID };
+				_session.entity->DropItem(dropped);
+			} else {
+				// Drop the entire held stack
+				_session.entity->DropItem(interaction.carried);
+				interaction.carried = ItemStack{ Items::Id::INVALID };
+			}
+			PacketUtilities::SendSlot(_session, -1, -1, &interaction.carried);
+		}
+		return;
+	}
+
 	// The player's inventory is handled seperate
 	if (_pkt.windowId == 0) {
 		// Make sure what the client thinks and what we have line up
 		ItemStack empty{ Items::Id::INVALID };
 		auto expected = _session.inventory.GetStackInSlot(_pkt.slotId);
 		ItemStack& slotItem = expected ? *expected : empty;
+
+		// Clicked inside the window
 		if (slotItem.id != _pkt.item.id || slotItem.data != _pkt.item.data || slotItem.count != _pkt.item.count) {
 			Packet::ContainerTransaction ct;
 			ct.accepted = false;
@@ -317,7 +320,14 @@ void CloseContainer(Packet::CloseContainer& _pkt, PlayerSession& _session) {
 			_session.entity->DropItem(_session.inventory.slots[i]);
 			stack = ItemStack{};
 		}
+		// Drop the cursor
+		if (_session.inventoryInteraction.carried.id != Items::INVALID)
+			_session.entity->DropItem(_session.inventoryInteraction.carried);
 	}
+
+	// Trigger the close interaction
+	if (_session.activeInteraction)
+		_session.activeInteraction->OnInteractionClosed(*_session.entity);
 
 	// Get rid of our active interaction and reset the window id
 	_session.activeInteraction = nullptr;

@@ -37,8 +37,9 @@ static constexpr double BytesPerUnit(MemoryUnit unit) noexcept {
 // PSAPI_VERSION 2 redirects GetProcessMemoryInfo to the K32* variant that
 // lives in kernel32.dll, so we don't need to link against Psapi.lib.
 #define PSAPI_VERSION 2
-#include <psapi.h>
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <psapi.h>
 
 static double GetMemoryUsage(MemoryUnit _unit) {
 	PROCESS_MEMORY_COUNTERS pmc{};

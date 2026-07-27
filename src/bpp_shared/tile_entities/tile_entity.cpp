@@ -10,12 +10,16 @@
 #include "inventory/item_stack.h"
 #include "items.h"
 #include "items/item_properties.h"
-#include "world/chunk.h"
+#include "world/world.h"
 #include <string>
 
 //TODO: Move all these into seperate files just like InventoryInteraction
+void TileEntity::Tick(WorldManager& _world) {
+	// no-op
+	return;
+}
 
-void TileEntityChest::Tick() {
+void TileEntityChest::Tick(WorldManager& _world) {
 	if (chunk && inventory.isModified) {
 		chunk->isModified = true;
 		inventory.isModified = false;
@@ -42,15 +46,26 @@ static ItemStack GetSmeltingResult(ItemId& _input) {
 		return { Items::BRICK, 1, 0 };
 	case BLOCK_CACTUS:
 		return { Items::DYE, 1, 2 }; // Green dye
-	}
-
-	if (Items::IsBlock(_input) && Blocks::blockProperties[_input].material == Material::Wood())
+	case BLOCK_LOG:
 		return { Items::COAL, 1, 1 }; // Charcoal
+	}
 
 	return ItemStack{};
 }
 
-void TileEntityFurnace::Tick() {
+static bool CanAcceptSmeltResult(Inventory& _inventory, const ItemStack& _result) {
+	ItemStack& output = _inventory.slots[2];
+
+	if (output.id == Items::INVALID)
+		return true;
+	if (output.id != _result.id || output.data != _result.data)
+		return false;
+
+	int maxStack = Items::itemProperties[_result.id].maxStack;
+	return output.count < maxStack;
+}
+
+void TileEntityFurnace::Tick(WorldManager& _world) {
 	dirtyFlags = FLAG_NONE;
 
 	const int maxBurnTime = GetMaxBurnTime();
@@ -59,15 +74,22 @@ void TileEntityFurnace::Tick() {
 		lastMaxBurnTime = maxBurnTime;
 	}
 
-	ItemStack result = GetSmeltingResult(inventory.slots[0].id);
+	bool hasInput = inventory.slots[0].id != Items::INVALID && inventory.slots[0].count > 0;
+	ItemStack result = hasInput ? GetSmeltingResult(inventory.slots[0].id) : ItemStack{ Items::INVALID };
+	bool canSmelt = hasInput && result.id != Items::INVALID && CanAcceptSmeltResult(inventory, result);
+
+	bool wasBurning = burnTime > 0;
+
 	{
 		const int oldBurnTime = burnTime;
-		if (--burnTime < 0) {
-			if (result.id != Items::INVALID) {
+
+		if (burnTime > 0)
+			--burnTime;
+
+		if (burnTime == 0 && hasInput && result.id != Items::INVALID) {
+			burnTime = maxBurnTime; // 0 if slot 1 is empty or not a valid fuel
+			if (burnTime > 0) {
 				inventory.slots[1].DecrementCount(1);
-				burnTime = inventory.slots[1].count > 0 ? maxBurnTime : 0;
-			} else {
-				burnTime = 0;
 			}
 		}
 
@@ -75,20 +97,24 @@ void TileEntityFurnace::Tick() {
 			dirtyFlags |= FLAG_BURN_TIME;
 	}
 
+	if (wasBurning != (burnTime > 0)) {
+		// Flip furnace block ID
+		auto oldMeta = _world.GetMetadata(this->position);
+		_world.SetBlockRaw(this->position, BlockType(61 + (burnTime > 0)));
+		_world.SetMeta(this->position, oldMeta);
+	}
+
 	{
 		const int oldCookTime = cookTime;
 
-		if (burnTime > 0) {
-			if (result.id != Items::INVALID && ++cookTime >= 200) {
-				if (inventory.MergeItemStackInInventory(result, false, 2, 2)) {
-					inventory.slots[0].DecrementCount(1);
-					cookTime = 0;
-				} else {
-					cookTime = 200;
-				}
+		if (burnTime > 0 && canSmelt) {
+			if (++cookTime >= 200) {
+				inventory.MergeItemStackInInventory(result, false, 2, 2);
+				inventory.slots[0].DecrementCount(1);
+				cookTime = 0;
 			}
-		} else if (cookTime > 0) {
-			--cookTime;
+		} else {
+			cookTime = 0;
 		}
 
 		if (cookTime != oldCookTime)
@@ -129,7 +155,7 @@ int TileEntityFurnace::GetCookTime() const {
 	return cookTime;
 }
 
-void TileEntityDispenser::Tick() {
+void TileEntityDispenser::Tick(WorldManager& _world) {
 	if (chunk && inventory.isModified) {
 		chunk->isModified = true;
 		inventory.isModified = false;

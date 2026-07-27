@@ -15,12 +15,15 @@ LargeChestInventoryInteraction::LargeChestInventoryInteraction(InventoryPlayer* 
 }
 
 LargeChestInventoryInteraction::~LargeChestInventoryInteraction() {
-	if (CanExist())
+	if (!upperChest.expired() && !lowerChest.expired())
 		WriteBack();
 }
 
-bool LargeChestInventoryInteraction::CanExist() {
-	return !upperChest.expired() && !lowerChest.expired();
+bool LargeChestInventoryInteraction::CanExist(PlayerEntity& player) {
+	if (upperChest.expired() || lowerChest.expired())
+		return false;
+	auto avgPos = upperChest.lock()->position + lowerChest.lock()->position;
+	return (GetDistSquared(player.position, { avgPos.x / 2.0, avgPos.y / 2.0, avgPos.z / 2.0 }) < 64.0);
 }
 
 void LargeChestInventoryInteraction::InitSnapshot() {

@@ -20,6 +20,7 @@ enum class TileType {
 
 // I hate doing inheritance but its simple to do for this
 struct Chunk;
+struct WorldManager;
 struct TileEntity {
 	TileType type;
 	Int3 position{ 0, 0, 0 }; // Global coordinates
@@ -29,7 +30,7 @@ struct TileEntity {
 
 	TileEntity(TileType _pType, Int3 _pPosition) : type(_pType), position(_pPosition) {};
 
-	virtual void Tick() {};
+	virtual void Tick(WorldManager& _world);
 	virtual Tag Serialize();
 	virtual ~TileEntity() = default;
 };
@@ -40,7 +41,7 @@ struct TileEntityChest : TileEntity {
 	TileEntityChest(Int3 _pPosition) : TileEntity(TileType::CHEST, _pPosition) {};
 
 	Tag Serialize() override;
-	void Tick() override;
+	void Tick(WorldManager& _world) override;
 };
 
 // Furnace
@@ -66,7 +67,7 @@ public:
 	};
 
 	Tag Serialize() override;
-	void Tick() override;
+	void Tick(WorldManager& _world) override;
 
 	int GetCookTime() const;
 	int GetBurnTime() const;
@@ -79,7 +80,7 @@ struct TileEntityDispenser : TileEntity {
 	TileEntityDispenser(Int3 _pPosition) : TileEntity(TileType::DISPENSER, _pPosition) {};
 
 	Tag Serialize() override;
-	void Tick() override;
+	void Tick(WorldManager& _world) override;
 };
 
 // Sign

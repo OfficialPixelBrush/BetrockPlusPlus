@@ -77,6 +77,7 @@ struct WorldManager {
 	int FindTopSolidBlock(int _wx, int _wz);
 	void SetMeta(const Int3 _wpos, const uint8_t _metadata = 0);
 	void SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata = 0);
+	void SetBlockRaw(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata = 0);
 	void DrainGenQueue();
 	bool IsLiquidInAabb(AABB _collider);
 	void InitSpawn();
@@ -86,6 +87,7 @@ struct WorldManager {
 	void PumpPipeline(const std::vector<ClientPosition>& _players);
 	void PopulateReady();
 	void DrainLoadQueue();
+	void DropInventory(Inventory& inventory, Int3 _wpos);
 
 	const int GetViewRadius() {
 		return viewRadius;

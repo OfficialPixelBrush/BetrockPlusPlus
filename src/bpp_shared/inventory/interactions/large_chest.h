@@ -27,7 +27,7 @@ struct LargeChestInventoryInteraction : InventoryInteraction {
 	                               std::shared_ptr<TileEntityChest> _lower);
 	virtual ~LargeChestInventoryInteraction();
 
-	bool CanExist() override;
+	bool CanExist(PlayerEntity& player) override;
 	void InitSnapshot() override;
 	std::vector<DeltaSlot> TickDiff() override;
 	void MergeInventories();

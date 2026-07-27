@@ -74,8 +74,7 @@ bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, PacketData::FaceDirection
 
 	Int3 support = GetAdjacentBlockPos(_pos, OppositeFace(_face));
 
-	return _world.IsBlockNormalCube(support) ||
-	       (_face == PacketData::FaceDirection::Y_PLUS && _world.GetBlockId(support) == BLOCK_FENCE);
+	return _world.IsBlockNormalCube(support) || (_face == PacketData::FaceDirection::Y_PLUS && _world.GetBlockId(support) == BLOCK_FENCE);
 }
 
 // Some fluid specific stuff

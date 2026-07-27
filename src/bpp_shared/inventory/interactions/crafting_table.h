@@ -28,10 +28,11 @@ struct CraftingTableInventoryInteraction : CraftingInventoryInteraction {
 	                                  Int3 _craftingTablePos);
 	~CraftingTableInventoryInteraction();
 
-	bool CanExist() override;
+	bool CanExist(PlayerEntity& player) override;
 	void InitSnapshot() override;
 	std::vector<DeltaSlot> TickDiff() override;
 	void WriteBack();
+	void OnInteractionClosed(PlayerEntity& player) override;
 
 protected:
 	void MergeInventories();

@@ -9,6 +9,7 @@
 #include "generator/nether/chunk_gen.h"
 #include "generator/overworld/biome_gen.h"
 #include "generator/overworld/chunk_gen.h"
+#include "entities/entity_item.h"
 #include <unordered_set>
 
 bool WorldManager::IsMaterialInAabb(AABB _collider, Material _material) {
@@ -204,7 +205,7 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 	// Update our entities
 	entityManager.Tick();
 
-	tileEntityManager.TickTileEntities();
+	tileEntityManager.TickTileEntities(*this);
 
 	UpdateLoadRadius(_players);
 	PopulateReady(); // population runs on main thread
@@ -214,6 +215,39 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 void WorldManager::Update(const std::vector<ClientPosition>& _players) {
 	PumpPipeline(_players);
 }
+
+void WorldManager::DropInventory(Inventory& inventory, Int3 _wpos) {
+	// Drop an inventory at a given block coordinate
+	for (auto& stack : inventory.slots) {
+		if (stack.id != Items::INVALID) {
+			float offsetX = rand.NextFloat() * 0.8f + 0.1f;
+			float offsetY = rand.NextFloat() * 0.8f + 0.1f;
+			float offsetZ = rand.NextFloat() * 0.8f + 0.1f;
+
+			while (stack.count > 0) {
+				int countDecrement = rand.NextInt(21) + 10;
+				countDecrement = std::min(countDecrement, int(stack.count));
+				stack.count -= countDecrement;
+
+				Vec3 spawnPos = { _wpos.x + offsetX, _wpos.y + offsetY, _wpos.z + offsetZ };
+
+				std::shared_ptr<ItemEntity> newItem = std::make_shared<ItemEntity>(spawnPos);
+				newItem->itemStack = { .id = stack.id, .count = ItemAmount(countDecrement), .data = stack.data };
+				
+				// Random velocity
+				float velocity = 0.05f;
+				newItem->velocity.x = rand.NextDouble() * velocity;
+				newItem->velocity.y = rand.NextDouble() * velocity + 0.2f;
+				newItem->velocity.z = rand.NextDouble() * velocity;
+				this->entityManager.AddEntity(newItem);
+			}
+
+			// Clear this stack
+			stack = {};
+		}
+	}
+}
+
 
 void WorldManager::Shutdown() {
 	if (!regionManager)
@@ -662,6 +696,22 @@ void WorldManager::SetMeta(const Int3 _wpos, const uint8_t _metadata) {
 		              chunk->cpos);
 }
 
+void WorldManager::SetBlockRaw(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata) {
+	// Don't trigger any of the fancy stuff normal set block does, just replace this blocks id in the chunk array
+	if (!InBounds(_wpos.y))
+		return;
+	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
+	auto* chunk = GetChunkRaw(cp);
+	if (!IsChunkValid(cp)) {
+		// Target chunk isn't valid
+		return;
+	}
+	Int3 local{ _wpos.x & 15, _wpos.y, _wpos.z & 15 };
+
+	chunk->SetBlock(local, _blockType);
+	chunk->SetMeta(local, _metadata);
+}
+
 void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata) {
 	if (!InBounds(_wpos.y))
 		return;
@@ -672,12 +722,6 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 		pendingBleedWrites[cp].push_back({ _wpos, Block{ _blockType, _metadata } });
 		return;
 	}
-
-	// Remove any tile entities that exist at this spot
-	auto& tes = chunk->tileEntities;
-	tes.erase(std::remove_if(tes.begin(), tes.end(),
-	                         [&](const std::shared_ptr<TileEntity>& _te) { return _te && _te->position == _wpos; }),
-	          tes.end());
 
 	// Get the local coordinates of this block within the chunk, and check what block we're replacing
 	int lx = _wpos.x & 15;
@@ -747,7 +791,16 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 		auto function = Blocks::blockBehaviors[oldBlock].onBlockRemoval;
 		if (function)
 			function(*this, _wpos);
-	} else {
+	}
+
+	// Remove any tile entities that exist at this spot
+	auto& tes = chunk->tileEntities;
+	tes.erase(std::remove_if(tes.begin(), tes.end(),
+	                         [&](const std::shared_ptr<TileEntity>& _te) { return _te && _te->position == _wpos; }),
+	          tes.end());
+
+	// Call our on placed function
+	if (_blockType != BLOCK_AIR) {
 		// Java has this functionality in the chunk setters themselves, but
 		// in my opinion (Aidan here) that is stupid and redundant
 		auto function = Blocks::blockBehaviors[_blockType].onBlockAdded;

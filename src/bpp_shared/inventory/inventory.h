@@ -122,4 +122,33 @@ struct Inventory {
 		}
 		return false; // Give up
 	}
+
+	// Returns whether we could merge an item stack without changing the inventory.
+	virtual bool CanMergeItemStackInInventory(ItemStack& _stack, bool _reverse = false, int _startSlot = 0, int _endSlot = -1) {
+		auto start = _startSlot;
+		auto end = _endSlot == -1 ? GetSizeInventory() - 1 : _endSlot;
+
+		// Try and merge into an already existing stack of the same type if this item is stackable
+		if (Items::IsStackable(_stack.id)) {
+			for (int i = _reverse ? end : start; _reverse ? i >= start : i <= end; _reverse ? i-- : i++) {
+				auto slot = GetStackInSlot(i);
+				if (!slot)
+					continue;
+				if (slot->id == _stack.id && slot->data == _stack.data) {
+					auto maxStack = Items::GetMaxStack(slot->id);
+					// Don't try and merge into an already maxed out stack
+					if (slot->count >= maxStack)
+						continue;
+
+					// Add the stacks together and do some checks to make sure we don't overflow
+					int space = maxStack - slot->count;
+					int toMove = CrossPlatform::Math::Min(space, (int)_stack.count);
+
+					if (toMove > 0)
+						return true;
+				}
+			}
+		}
+		return false; // Give up
+	}
 };

@@ -119,7 +119,51 @@ static int GetDirectionFromYaw(float _yaw, int _directionCount) {
 	return MathHelper::FloorDouble((_yaw * _directionCount / 360.0f) + 0.5f) & 3;
 }
 
+static bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer,
+                         PacketData::FaceDirection _face, BlockType _blockId, uint8_t _meta) {
+	BlockType existing = _world.GetBlockId(_pos);
+	Int3 sourceBlock = Blocks::GetSourceBlockFromFace(_pos, _face);
+
+	// Check if we can replace snow
+	Int3 targetPos = _pos;
+	if (_world.GetBlockId(sourceBlock) == BLOCK_SNOW_LAYER) {
+		targetPos = sourceBlock;
+	} else {
+		// Check if this block is replaceable
+		// Should match vanilla?
+		bool replaceable = existing == BLOCK_AIR || existing == BLOCK_WATER_FLOWING || existing == BLOCK_WATER_STILL ||
+		                   existing == BLOCK_LAVA_FLOWING || existing == BLOCK_LAVA_STILL || existing == BLOCK_FIRE ||
+		                   existing == BLOCK_SNOW_LAYER;
+		if (!replaceable)
+			return false;
+	}
+
+	// Can we place this block here?
+	auto entitiesInBlock = _world.entityManager.GetEntitiesWithinAabb(
+	    { double(targetPos.x), double(targetPos.y), double(targetPos.z), double(targetPos.x) + 1.0,
+	      double(targetPos.y) + 1.0, double(targetPos.z) + 1.0 });
+
+	// Check to see if any entities overlap our block's collider
+	if (Blocks::blockProperties[_blockId].isCollidable) {
+		auto blockCollider = Blocks::blockBehaviors[_blockId].getCollider(_meta).Offset(
+		    targetPos.x, targetPos.y,
+		    targetPos.z); // Block colliders are at the origin so shift to world space
+		for (auto& entity : entitiesInBlock) {
+			if (blockCollider.Intersects(entity->collider) && entity->preventEntitySpawning)
+				return false;
+		}
+	}
+
+	_world.SetBlock(targetPos, _blockId, _meta);
+	return true;
+}
+
 void RegisterBlockBehaviors() {
+	// Initialize the default block placed behavior
+	for (int i = 0; i < 256; i++) {
+		blockBehaviors[i].onBlockPlaced = GenericPlace;
+	}
+
 	// Liquids/zero-size AABBs
 	blockBehaviors[BlockType::BLOCK_WATER_FLOWING] = {
 		.getSelectionBox = LiquidAabb,
@@ -389,39 +433,63 @@ void RegisterBlockBehaviors() {
 	};
 
 	// placement overrides
-	auto onFurnaceDispenserPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                  PacketData::FaceDirection _face) -> void {
+	auto onFurnaceDispenserPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+	                                  BlockType _blockId, uint8_t _meta) -> bool {
 		int meta[] = { 2, 5, 3, 4 };
-		_world.SetMeta(_pos, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
+		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
+	};
+
+	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+	                       BlockType _blockId, uint8_t _meta) -> bool {
+		int meta[] = { 2, 1, 3, 0 };
+		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
 	};
 
 	blockBehaviors[BLOCK_FURNACE].onBlockPlaced = onFurnaceDispenserPlace;
 	blockBehaviors[BLOCK_FURNACE_LIT].onBlockPlaced = onFurnaceDispenserPlace;
 	blockBehaviors[BLOCK_DISPENSER].onBlockPlaced = onFurnaceDispenserPlace;
 
-	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face) -> void {
-		int meta[] = { 2, 1, 3, 0 };
-		_world.SetMeta(_pos, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
-	};
-
 	blockBehaviors[BLOCK_STAIRS_COBBLESTONE].onBlockPlaced = onStairPlace;
 	blockBehaviors[BLOCK_STAIRS_WOOD].onBlockPlaced = onStairPlace;
-
 	blockBehaviors[BLOCK_LADDER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                PacketData::FaceDirection _face) -> void {
-		// Check if it's a horizontal side
-		if (_face < 2)
-			return;
+	                                                PacketData::FaceDirection _face, BlockType _blockId,
+	                                                uint8_t _meta) -> bool {
+		Int3 targetPos = _pos;
+		Int3 sourceBlock = Blocks::GetSourceBlockFromFace(_pos, _face);
+		if (_world.GetBlockId(sourceBlock) == BLOCK_SNOW_LAYER)
+			targetPos = sourceBlock;
 
-		// Check if there's a support block
-		if (_world.IsBlockNormalCube(GetAdjacentBlockPos(_pos, PacketData::OppositeFace(_face))))
-			_world.SetMeta(_pos, _face);
+		auto hasSupport = [&](PacketData::FaceDirection _dir) {
+			Int3 support = GetAdjacentBlockPos(targetPos, PacketData::OppositeFace(_dir));
+			return _world.IsBlockNormalCube(support);
+		};
+
+		static constexpr std::array<PacketData::FaceDirection, 4> CHECK_ORDER = { PacketData::FaceDirection::Z_MINUS,
+			                                                                      PacketData::FaceDirection::Z_PLUS,
+			                                                                      PacketData::FaceDirection::X_MINUS,
+			                                                                      PacketData::FaceDirection::X_PLUS };
+
+		if (_face >= 2 && hasSupport(_face)) {
+			return GenericPlace(_world, _pos, _placer, _face, _blockId, uint8_t(_face));
+		}
+
+		for (PacketData::FaceDirection dir : CHECK_ORDER) {
+			if (hasSupport(dir)) {
+				return GenericPlace(_world, _pos, _placer, _face, _blockId, uint8_t(dir));
+			}
+		}
+		return false;
 	};
 
 	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                               PacketData::FaceDirection _face) -> void {
-		if (CanTorchAttachTo(_world, _pos, _face))
-			_world.SetMeta(_pos, 6 - _face);
+	                                               PacketData::FaceDirection _face, BlockType _blockId,
+	                                               uint8_t _meta) -> bool {
+		if (_world.GetBlockId(Blocks::GetSourceBlockFromFace(_pos, _face)) == BLOCK_SNOW_LAYER)
+			_pos = Blocks::GetSourceBlockFromFace(_pos, _face);
+		if (CanTorchAttachTo(_world, _pos, _face)) {
+			return GenericPlace(_world, _pos, _placer, _face, _blockId, 6 - _face);
+		}
+		return false;
 	};
 
 	blockBehaviors[BLOCK_TORCH].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
@@ -547,11 +615,25 @@ void RegisterBlockBehaviors() {
 		auto chest = std::make_shared<TileEntityChest>(_pos);
 		_world.CreateTileEntity(std::move(chest));
 	};
+	blockBehaviors[BLOCK_CHEST].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		auto* ChestTE = _world.GetTileEntityAs<TileEntityChest>(_pos);
+		if (!ChestTE) return;
+
+		_world.DropInventory(ChestTE->inventory, _pos);
+	};
 
 	// Do we need to handle lit furnace placement too?
+	// ^^ probably not lol
 	blockBehaviors[BLOCK_FURNACE].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		auto furnace = std::make_shared<TileEntityFurnace>(_pos);
 		_world.CreateTileEntity(std::move(furnace));
+	};
+	blockBehaviors[BLOCK_FURNACE].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		auto* FurnaceTE = _world.GetTileEntityAs<TileEntityFurnace>(_pos);
+		if (!FurnaceTE)
+			return;
+
+		_world.DropInventory(FurnaceTE->inventory, _pos);
 	};
 
 	//TODO: Add another portal creation function matching with b1.7.3's limitations, that is toggleable via a config entry,
