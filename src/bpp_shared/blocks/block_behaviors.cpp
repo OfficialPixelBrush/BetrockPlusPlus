@@ -115,6 +115,10 @@ static Vec3 GetFluidFlowVector(WorldManager& _world, Int3 _pos) {
 	return flowVector;
 }
 
+static int GetDirectionFromYaw(float _yaw, int _directionCount) {
+	return MathHelper::FloorDouble((_yaw * _directionCount / 360.0f) + 0.5f) & 3;
+}
+
 void RegisterBlockBehaviors() {
 	// Liquids/zero-size AABBs
 	blockBehaviors[BlockType::BLOCK_WATER_FLOWING] = {
@@ -385,6 +389,24 @@ void RegisterBlockBehaviors() {
 	};
 
 	// placement overrides
+	auto onFurnaceDispenserPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                  PacketData::FaceDirection _face) -> void {
+		int meta[] = { 2, 5, 3, 4 };
+		_world.SetMeta(_pos, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
+	};
+
+	blockBehaviors[BLOCK_FURNACE].onBlockPlaced = onFurnaceDispenserPlace;
+	blockBehaviors[BLOCK_FURNACE_LIT].onBlockPlaced = onFurnaceDispenserPlace;
+	blockBehaviors[BLOCK_DISPENSER].onBlockPlaced = onFurnaceDispenserPlace;
+
+	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face) -> void {
+		int meta[] = { 2, 1, 3, 0 };
+		_world.SetMeta(_pos, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
+	};
+
+	blockBehaviors[BLOCK_STAIRS_COBBLESTONE].onBlockPlaced = onStairPlace;
+	blockBehaviors[BLOCK_STAIRS_WOOD].onBlockPlaced = onStairPlace;
+
 	blockBehaviors[BLOCK_LADDER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                                PacketData::FaceDirection _face) -> void {
 		// Check if it's a horizontal side
@@ -395,15 +417,6 @@ void RegisterBlockBehaviors() {
 		if (_world.IsBlockNormalCube(GetAdjacentBlockPos(_pos, PacketData::OppositeFace(_face))))
 			_world.SetMeta(_pos, _face);
 	};
-
-	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face) -> void {
-		int direction = MathHelper::FloorDouble((_placer.rotationYaw * 4.0f / 360.0f) + 0.5) & 3;
-		int meta[] = { 2, 1, 3, 0 };
-		_world.SetMeta(_pos, meta[direction]);
-	};
-
-	blockBehaviors[BLOCK_STAIRS_COBBLESTONE].onBlockPlaced = onStairPlace;
-	blockBehaviors[BLOCK_STAIRS_WOOD].onBlockPlaced = onStairPlace;
 
 	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                               PacketData::FaceDirection _face) -> void {
