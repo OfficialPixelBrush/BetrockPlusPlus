@@ -126,9 +126,13 @@ struct WorldWrapper {
 
 		// Remove any tile entities that exist at this spot
 		auto& tes = chunk->tileEntities;
-		tes.erase(std::remove_if(tes.begin(), tes.end(),
-		                         [&](const std::shared_ptr<TileEntity>& _te) { return _te && _te->position == _wpos; }),
-		          tes.end());
+		if (!tes.empty()) {
+			tes.erase(std::remove_if(tes.begin(), tes.end(),
+			                         [&](const std::shared_ptr<TileEntity>& _te) {
+				                         return _te && _te->position == _wpos;
+			                         }),
+			          tes.end());
+		}
 
 		// Get the local coordinates of this block within the chunk and set it
 		int lx = _wpos.x & 15;
@@ -139,8 +143,10 @@ struct WorldWrapper {
 
 		// Making the assumption here that certain metadatas of
 		// blocks don't have differing light properties
-		bool changesLighting = (Blocks::blockProperties[_type].lightOpacity != Blocks::blockProperties[oldBlock].lightOpacity) ||
-			(Blocks::blockProperties[_type].lightEmission != Blocks::blockProperties[oldBlock].lightEmission);
+		bool changesLighting = (Blocks::blockProperties[_type].lightOpacity !=
+		                        Blocks::blockProperties[oldBlock].lightOpacity) ||
+		                       (Blocks::blockProperties[_type].lightEmission !=
+		                        Blocks::blockProperties[oldBlock].lightEmission);
 
 		// Unlight before changing the block
 		if (changesLighting) {
@@ -178,23 +184,23 @@ struct WorldWrapper {
 			manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Block);
 			int extendedBottom = CrossPlatform::Math::Min(newHeight, oldHeight);
 			while (extendedBottom > 0 &&
-				Blocks::blockProperties[chunk->GetBlock({ lx, extendedBottom - 1, lz })].lightOpacity == 0)
+			       Blocks::blockProperties[chunk->GetBlock({ lx, extendedBottom - 1, lz })].lightOpacity == 0)
 				--extendedBottom;
 
 			if (newHeight != oldHeight) {
-				manager.lightManager.ScheduleLightRegion({ x - 1, extendedBottom, z - 1 },
-												{ x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), z + 1 },
-												LightType::Sky);
+				manager.lightManager.ScheduleLightRegion(
+				    { x - 1, extendedBottom, z - 1 }, { x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), z + 1 },
+				    LightType::Sky);
 			}
 		}
 
 		// Callback for the client and server to know about this block update
 		if (manager.onBlockUpdate)
 			manager.onBlockUpdate(PendingBlock{ .block{ _type, _meta },
-			                                      .blockPos{ _wpos.x, _wpos.y, _wpos.z },
-			                                      .light{ chunk->GetBlockLight({ _wpos.x & 15, _wpos.y, _wpos.z & 15 }),
-			                                              chunk->GetSkyLight({ _wpos.x & 15, _wpos.y, _wpos.z & 15 }) } },
-			                        chunk->cpos);
+			                                    .blockPos{ _wpos.x, _wpos.y, _wpos.z },
+			                                    .light{ chunk->GetBlockLight({ _wpos.x & 15, _wpos.y, _wpos.z & 15 }),
+			                                            chunk->GetSkyLight({ _wpos.x & 15, _wpos.y, _wpos.z & 15 }) } },
+			                      chunk->cpos);
 	}
 
 	uint8_t GetSkyLight(const Int3 _wpos) const {

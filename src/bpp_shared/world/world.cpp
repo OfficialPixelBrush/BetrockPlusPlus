@@ -324,7 +324,7 @@ void WorldManager::DrainLoadQueue() {
 			tlBiomeGen = BiomeGenerator(this->seed);
 			tlBiomeGenInit = true;
 		}
-		std::vector<double> temp, humi, weird;
+		thread_local std::vector<double> temp, humi, weird;
 		Biome ignored[CHUNK_AREA];
 		tlBiomeGen.GenerateBiomeMap(ignored, temp, humi, weird, Int2{ pos.x * CHUNK_WIDTH, pos.z * CHUNK_WIDTH });
 		for (int i = 0; i < CHUNK_AREA; ++i) {
@@ -678,7 +678,7 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	tes.erase(std::remove_if(tes.begin(), tes.end(),
 	                         [&](const std::shared_ptr<TileEntity>& _te) { return _te && _te->position == _wpos; }),
 	          tes.end());
-	
+
 	// Get the local coordinates of this block within the chunk, and check what block we're replacing
 	int lx = _wpos.x & 15;
 	int lz = _wpos.z & 15;
@@ -688,8 +688,10 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 
 	// Making the assumption here that certain metadatas of
 	// blocks don't have differing light properties
-	bool changesLighting = (Blocks::blockProperties[_blockType].lightOpacity != Blocks::blockProperties[oldBlock].lightOpacity) ||
-		(Blocks::blockProperties[_blockType].lightEmission != Blocks::blockProperties[oldBlock].lightEmission);
+	bool changesLighting = (Blocks::blockProperties[_blockType].lightOpacity !=
+	                        Blocks::blockProperties[oldBlock].lightOpacity) ||
+	                       (Blocks::blockProperties[_blockType].lightEmission !=
+	                        Blocks::blockProperties[oldBlock].lightEmission);
 
 	// Unlight before changing the block
 	if (changesLighting) {
@@ -715,8 +717,7 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 			for (int sy = oldHeight; sy <= newHeight; ++sy) {
 				lightManager.UnlightAt(x, sy, z, LightType::Sky, *this);
 			}
-		} 
-		else if (newHeight < oldHeight) {
+		} else if (newHeight < oldHeight) {
 			// Height fell
 			for (int sy = newHeight; sy < oldHeight; ++sy) {
 				lightManager.ScheduleLightUpdate({ x, sy, z }, LightType::Sky);
@@ -728,13 +729,13 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 		lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Block);
 		int extendedBottom = CrossPlatform::Math::Min(newHeight, oldHeight);
 		while (extendedBottom > 0 &&
-			Blocks::blockProperties[chunk->GetBlock({ lx, extendedBottom - 1, lz })].lightOpacity == 0)
+		       Blocks::blockProperties[chunk->GetBlock({ lx, extendedBottom - 1, lz })].lightOpacity == 0)
 			--extendedBottom;
 
 		if (newHeight != oldHeight) {
 			lightManager.ScheduleLightRegion({ x - 1, extendedBottom, z - 1 },
-											{ x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), z + 1 },
-											LightType::Sky);
+			                                 { x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), z + 1 },
+			                                 LightType::Sky);
 		}
 	}
 
