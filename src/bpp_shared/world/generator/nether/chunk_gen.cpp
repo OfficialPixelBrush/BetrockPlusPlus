@@ -373,7 +373,7 @@ bool NetherGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		coord.y = rand.NextInt(CHUNK_HEIGHT - 8) + 4; // 120
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		FeatureGenerator(BLOCK_LAVA_FLOWING).GenerateNetherLiquid(_world, rand, coord);
+		FeatureGenerator::GenerateNetherLiquid(_world, rand, coord);
 	}
 
 	// Generate fire patch
@@ -382,7 +382,7 @@ bool NetherGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		coord.y = rand.NextInt(CHUNK_HEIGHT - 8) + 4; // 120
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		FeatureGenerator().GenerateNetherFire(_world, rand, coord);
+		FeatureGenerator::GenerateNetherFire(_world, rand, coord);
 	}
 
 	// Generate Glowstone Blob
@@ -391,7 +391,7 @@ bool NetherGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		coord.y = rand.NextInt(CHUNK_HEIGHT - 8) + 4; // 120
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		FeatureGenerator().GenerateNetherGlowstone(_world, rand, coord);
+		FeatureGenerator::GenerateNetherGlowstone(_world, rand, coord);
 	}
 
 	// Generate secondary Glowstone Blob
@@ -399,7 +399,7 @@ bool NetherGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		FeatureGenerator().GenerateNetherGlowstone(_world, rand, coord);
+		FeatureGenerator::GenerateNetherGlowstone(_world, rand, coord);
 	}
 
 	// Generate Brown Mushrooms
@@ -407,7 +407,7 @@ bool NetherGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		FeatureGenerator(BLOCK_MUSHROOM_BROWN).GenerateFlowers(_world, rand, coord);
+		FeatureGenerator::GenerateFlowers(BLOCK_MUSHROOM_BROWN, _world, rand, coord);
 	}
 
 	// Generate Red Mushrooms
@@ -415,7 +415,7 @@ bool NetherGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		FeatureGenerator(BLOCK_MUSHROOM_RED).GenerateFlowers(_world, rand, coord);
+		FeatureGenerator::GenerateFlowers(BLOCK_MUSHROOM_RED, _world, rand, coord);
 	}
 
 	return true;

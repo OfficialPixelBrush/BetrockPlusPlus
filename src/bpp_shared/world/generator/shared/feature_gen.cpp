@@ -8,8 +8,10 @@
 #include "feature_gen.h"
 #include "tile_entities/tile_entity.h"
 
+namespace FeatureGenerator {
+
 //  GenerateLake
-bool FeatureGenerator::GenerateLake(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
+bool GenerateLake(BlockType _type, WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 	_pos.x -= 8;
 	_pos.z -= 8;
 
@@ -56,7 +58,7 @@ bool FeatureGenerator::GenerateLake(WorldWrapper& _world, Java::Random& _rand, I
 				BlockType bt = _world.GetBlockId({ _pos.x + x, _pos.y + y, _pos.z + z });
 				if (y >= 4 && IsLiquid(bt))
 					return false;
-				if (y < 4 && !IsSolid(bt) && bt != this->type)
+				if (y < 4 && !IsSolid(bt) && bt != _type)
 					return false;
 			}
 
@@ -65,7 +67,7 @@ bool FeatureGenerator::GenerateLake(WorldWrapper& _world, Java::Random& _rand, I
 		for (int32_t z = 0; z < 16; ++z)
 			for (int32_t y = 0; y < 8; ++y)
 				if (shapeMask[(x * 16 + z) * 8 + y])
-					_world.SetBlock({ _pos.x + x, _pos.y + y, _pos.z + z }, y >= 4 ? BLOCK_AIR : this->type);
+					_world.SetBlock({ _pos.x + x, _pos.y + y, _pos.z + z }, y >= 4 ? BLOCK_AIR : _type);
 
 	// Exposed dirt -> grass
 	for (int32_t x = 0; x < 16; ++x)
@@ -77,7 +79,7 @@ bool FeatureGenerator::GenerateLake(WorldWrapper& _world, Java::Random& _rand, I
 					_world.SetBlock({ _pos.x + x, _pos.y + y - 1, _pos.z + z }, BLOCK_GRASS);
 
 	// Lava: solidify exposed edges
-	if (this->type == BLOCK_LAVA_STILL || this->type == BLOCK_LAVA_FLOWING) {
+	if (_type == BLOCK_LAVA_STILL || _type == BLOCK_LAVA_FLOWING) {
 		for (int32_t x = 0; x < 16; ++x)
 			for (int32_t z = 0; z < 16; ++z)
 				for (int32_t y = 0; y < 8; ++y) {
@@ -96,7 +98,7 @@ bool FeatureGenerator::GenerateLake(WorldWrapper& _world, Java::Random& _rand, I
 }
 
 //  GenerateDungeon
-bool FeatureGenerator::GenerateDungeon(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
+bool GenerateDungeon(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 	const int8_t dungeonHeight = 3;
 	int32_t dungeonWidthX = _rand.NextInt(2) + 2;
 	int32_t dungeonWidthZ = _rand.NextInt(2) + 2;
@@ -176,7 +178,7 @@ bool FeatureGenerator::GenerateDungeon(WorldWrapper& _world, Java::Random& _rand
 }
 
 // Creates Dungeon Chest loot
-ItemStack FeatureGenerator::GenerateDungeonChestLoot(Java::Random& _rand) {
+ItemStack GenerateDungeonChestLoot(Java::Random& _rand) {
 	int32_t roll = _rand.NextInt(11);
 	switch (roll) {
 	case 0:
@@ -224,7 +226,7 @@ ItemStack FeatureGenerator::GenerateDungeonChestLoot(Java::Random& _rand) {
 	}
 }
 
-std::string FeatureGenerator::PickMobToSpawn(Java::Random& _rand) {
+std::string PickMobToSpawn(Java::Random& _rand) {
 	switch (_rand.NextInt(4)) {
 	case 0:
 		return "Skeleton";
@@ -239,7 +241,7 @@ std::string FeatureGenerator::PickMobToSpawn(Java::Random& _rand) {
 }
 
 //  GenerateClay
-bool FeatureGenerator::GenerateClay(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, int32_t _blobSize) {
+bool GenerateClay(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, int32_t _blobSize) {
 	BlockType at = _world.GetBlockId(_pos);
 	if (at != BLOCK_WATER_STILL && at != BLOCK_WATER_FLOWING)
 		return false;
@@ -280,7 +282,7 @@ bool FeatureGenerator::GenerateClay(WorldWrapper& _world, Java::Random& _rand, I
 }
 
 //  GenerateMinable
-bool FeatureGenerator::GenerateMinable(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, int32_t _blobSize) {
+bool GenerateMinable(BlockType _type, WorldWrapper& _world, Java::Random& _rand, Int3 _pos, int32_t _blobSize) {
 	float angle = _rand.NextFloat() * JavaMath::PI_FLOAT;
 	double xStart = double(float(_pos.x + 8) + MathHelper::Sin(angle) * float(_blobSize) / 8.0F);
 	double xEnd = double(float(_pos.x + 8) - MathHelper::Sin(angle) * float(_blobSize) / 8.0F);
@@ -314,7 +316,7 @@ bool FeatureGenerator::GenerateMinable(WorldWrapper& _world, Java::Random& _rand
 				for (int32_t z = minZ; z <= maxZ; ++z) {
 					double dz = (double(z) + 0.5 - zC) / (radXZ / 2.0);
 					if (dx * dx + dy * dy + dz * dz < 1.0 && _world.GetBlockId({ x, y, z }) == BLOCK_STONE)
-						_world.SetBlock({ x, y, z }, this->type);
+						_world.SetBlock({ x, y, z }, _type);
 				}
 			}
 		}
@@ -323,8 +325,8 @@ bool FeatureGenerator::GenerateMinable(WorldWrapper& _world, Java::Random& _rand
 }
 
 //  Attempts to generate flower/mushroom patches
-bool FeatureGenerator::GenerateFlowers(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
-	bool isMushroom = (this->type == BLOCK_MUSHROOM_BROWN || this->type == BLOCK_MUSHROOM_RED);
+bool GenerateFlowers(BlockType _type, WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
+	bool isMushroom = (_type == BLOCK_MUSHROOM_BROWN || _type == BLOCK_MUSHROOM_RED);
 
 	for (int32_t i = 0; i < 64; ++i) {
 		int32_t x = _pos.x + _rand.NextInt(8) - _rand.NextInt(8);
@@ -337,18 +339,18 @@ bool FeatureGenerator::GenerateFlowers(WorldWrapper& _world, Java::Random& _rand
 
 		if (isMushroom) {
 			if (IsSolid(_world.GetBlockId({ x, y - 1, z })) && _world.GetSkyLight({ x, y, z }) == 0)
-				_world.SetBlock({ x, y, z }, this->type);
+				_world.SetBlock({ x, y, z }, _type);
 		} else {
 			BlockType below = _world.GetBlockId({ x, y - 1, z });
 			if (below == BLOCK_GRASS)
-				_world.SetBlock({ x, y, z }, this->type);
+				_world.SetBlock({ x, y, z }, _type);
 		}
 	}
 	return true;
 }
 
 //  Attempts to generate tallgrass patches
-bool FeatureGenerator::GenerateTallgrass(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
+bool GenerateTallgrass(uint8_t _meta, WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 	while (_pos.y > 0) {
 		BlockType b = _world.GetBlockId({ _pos.x, _pos.y, _pos.z });
 		if (b != BLOCK_AIR && b != BLOCK_LEAVES)
@@ -366,13 +368,13 @@ bool FeatureGenerator::GenerateTallgrass(WorldWrapper& _world, Java::Random& _ra
 			continue;
 		BlockType below = _world.GetBlockId({ x, y - 1, z });
 		if (below == BLOCK_GRASS || below == BLOCK_DIRT)
-			_world.SetBlock({ x, y, z }, this->type, uint8_t(this->meta));
+			_world.SetBlock({ x, y, z }, BLOCK_TALLGRASS, _meta);
 	}
 	return true;
 }
 
 //  Attempts to generate deadbush patches
-bool FeatureGenerator::GenerateDeadbush(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
+bool GenerateDeadbush(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 	while (_pos.y > 0) {
 		BlockType b = _world.GetBlockId({ _pos.x, _pos.y, _pos.z });
 		if (b != BLOCK_AIR && b != BLOCK_LEAVES)
@@ -393,7 +395,7 @@ bool FeatureGenerator::GenerateDeadbush(WorldWrapper& _world, Java::Random& _ran
 }
 
 //  Attempts to generate sugarcane patches
-bool FeatureGenerator::GenerateSugarcane(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
+bool GenerateSugarcane(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 	for (int32_t i = 0; i < 20; ++i) {
 		int32_t x = _pos.x + _rand.NextInt(4) - _rand.NextInt(4);
 		int32_t y = _pos.y; // Y is fixed across all attempts
@@ -423,7 +425,7 @@ bool FeatureGenerator::GenerateSugarcane(WorldWrapper& _world, Java::Random& _ra
 }
 
 //  Attempts to generate pumpkin patches
-bool FeatureGenerator::GeneratePumpkins(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
+bool GeneratePumpkins(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 	for (int32_t i = 0; i < 64; ++i) {
 		int32_t x = _pos.x + _rand.NextInt(8) - _rand.NextInt(8);
 		int32_t y = _pos.y + _rand.NextInt(4) - _rand.NextInt(4);
@@ -449,7 +451,7 @@ bool FeatureGenerator::GeneratePumpkins(WorldWrapper& _world, Java::Random& _ran
 }
 
 //  Attempts to generate cacti patches
-bool FeatureGenerator::GenerateCacti(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
+bool GenerateCacti(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 	for (int32_t i = 0; i < 10; ++i) {
 		int32_t x = _pos.x + _rand.NextInt(8) - _rand.NextInt(8);
 		int32_t y = _pos.y + _rand.NextInt(4) - _rand.NextInt(4);
@@ -476,7 +478,7 @@ bool FeatureGenerator::GenerateCacti(WorldWrapper& _world, Java::Random& _rand, 
 }
 
 //  Attempts to generate a singular liquid source block
-bool FeatureGenerator::GenerateLiquid(WorldWrapper& _world, [[maybe_unused]] Java::Random& _rand, Int3 _pos) {
+bool GenerateLiquid(BlockType _type, WorldWrapper& _world, [[maybe_unused]] Java::Random& _rand, Int3 _pos) {
 	if (_world.GetBlockId({ _pos.x, _pos.y + 1, _pos.z }) != BLOCK_STONE)
 		return false;
 	if (_world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z }) != BLOCK_STONE)
@@ -504,7 +506,7 @@ bool FeatureGenerator::GenerateLiquid(WorldWrapper& _world, [[maybe_unused]] Jav
 		++air;
 
 	if (stone == 3 && air == 1) {
-		_world.SetBlock(_pos, this->type);
+		_world.SetBlock(_pos, _type);
 	}
 	return true;
 }
@@ -513,7 +515,7 @@ bool FeatureGenerator::GenerateLiquid(WorldWrapper& _world, [[maybe_unused]] Jav
 
 // TODO: Merge with GenerateLiquid?
 //  GenerateNetherLiquid
-bool FeatureGenerator::GenerateNetherLiquid(WorldWrapper& _world, [[maybe_unused]] Java::Random& _rand, Int3 _pos) {
+bool GenerateNetherLiquid(WorldWrapper& _world, [[maybe_unused]] Java::Random& _rand, Int3 _pos) {
 	if (_world.GetBlockId({ _pos.x, _pos.y + 1, _pos.z }) != BLOCK_NETHERRACK)
 		return false;
 	if (_world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z }) != BLOCK_NETHERRACK)
@@ -541,13 +543,13 @@ bool FeatureGenerator::GenerateNetherLiquid(WorldWrapper& _world, [[maybe_unused
 		++air;
 
 	if (netherrack == 3 && air == 1) {
-		_world.SetBlock(_pos, this->type);
+		_world.SetBlock(_pos, BLOCK_LAVA_FLOWING);
 	}
 	return true;
 }
 
 //  GenerateNetherFire
-bool FeatureGenerator::GenerateNetherFire(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
+bool GenerateNetherFire(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 	for (int i = 0; i < 64; ++i) {
 		Int3 testPos{
 			_pos.x + _rand.NextInt(8) - _rand.NextInt(8),
@@ -562,7 +564,7 @@ bool FeatureGenerator::GenerateNetherFire(WorldWrapper& _world, Java::Random& _r
 }
 
 //  GenerateNetherGlowstone
-bool FeatureGenerator::GenerateNetherGlowstone(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
+bool GenerateNetherGlowstone(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 	// Exit if tested block isn't air
 	if (_world.GetBlockId(_pos) != BLOCK_AIR)
 		return false;
@@ -614,3 +616,5 @@ bool FeatureGenerator::GenerateNetherGlowstone(WorldWrapper& _world, Java::Rando
 	}
 	return true;
 }
+
+};

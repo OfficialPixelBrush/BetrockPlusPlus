@@ -448,7 +448,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator(BLOCK_WATER_STILL).GenerateLake(_world, rand, coord);
+		FeatureGenerator::GenerateLake(BLOCK_WATER_STILL, _world, rand, coord);
 	}
 
 	// Lava lakes
@@ -457,7 +457,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.y = rand.NextInt(rand.NextInt(120) + 8);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
 		if (coord.y < WATER_LEVEL || rand.NextInt(10) == 0)
-			FeatureGenerator(BLOCK_LAVA_STILL).GenerateLake(_world, rand, coord);
+			FeatureGenerator::GenerateLake(BLOCK_LAVA_STILL, _world, rand, coord);
 	}
 
 	// Dungeons
@@ -465,7 +465,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator().GenerateDungeon(_world, rand, coord);
+		FeatureGenerator::GenerateDungeon(_world, rand, coord);
 	}
 
 	// Clay
@@ -473,7 +473,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator().GenerateClay(_world, rand, coord, 32);
+		FeatureGenerator::GenerateClay(_world, rand, coord, 32);
 	}
 
 	// Dirt blobs
@@ -481,7 +481,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_DIRT).GenerateMinable(_world, rand, coord, 32);
+		FeatureGenerator::GenerateMinable(BLOCK_DIRT, _world, rand, coord, 32);
 	}
 
 	// Gravel blobs
@@ -489,7 +489,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_GRAVEL).GenerateMinable(_world, rand, coord, 32);
+		FeatureGenerator::GenerateMinable(BLOCK_GRAVEL, _world, rand, coord, 32);
 	}
 
 	// Coal Ore blobs
@@ -497,7 +497,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_ORE_COAL).GenerateMinable(_world, rand, coord, 16);
+		FeatureGenerator::GenerateMinable(BLOCK_ORE_COAL, _world, rand, coord, 16);
 	}
 
 	// Iron Ore blobs
@@ -505,7 +505,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT / 2);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_ORE_IRON).GenerateMinable(_world, rand, coord, 8);
+		FeatureGenerator::GenerateMinable(BLOCK_ORE_IRON, _world, rand, coord, 8);
 	}
 
 	// Gold Ore blobs
@@ -513,7 +513,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT / 4);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_ORE_GOLD).GenerateMinable(_world, rand, coord, 8);
+		FeatureGenerator::GenerateMinable(BLOCK_ORE_GOLD, _world, rand, coord, 8);
 	}
 
 	// Redstone Ore blobs
@@ -521,7 +521,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT / 8);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_ORE_REDSTONE_OFF).GenerateMinable(_world, rand, coord, 7);
+		FeatureGenerator::GenerateMinable(BLOCK_ORE_REDSTONE_OFF, _world, rand, coord, 7);
 	}
 
 	// Diamond Ore blobs
@@ -529,7 +529,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT / 8);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_ORE_DIAMOND).GenerateMinable(_world, rand, coord, 7);
+		FeatureGenerator::GenerateMinable(BLOCK_ORE_DIAMOND, _world, rand, coord, 7);
 	}
 
 	// Lapis lazuli Ore blobs
@@ -537,7 +537,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT / 8) + rand.NextInt(CHUNK_HEIGHT / 8);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator(BLOCK_ORE_LAPIS_LAZULI).GenerateMinable(_world, rand, coord, 6);
+		FeatureGenerator::GenerateMinable(BLOCK_ORE_LAPIS_LAZULI, _world, rand, coord, 6);
 	}
 
 	// Tree count
@@ -604,7 +604,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 			coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 			coord.y = rand.NextInt(CHUNK_HEIGHT);
 			coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-			FeatureGenerator(BLOCK_DANDELION).GenerateFlowers(_world, rand, coord);
+			FeatureGenerator::GenerateFlowers(BLOCK_DANDELION, _world, rand, coord);
 		}
 	}
 
@@ -632,13 +632,13 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 			break;
 		}
 		for (int32_t i = 0; i < count; ++i) {
-			int8_t grassMeta = 1;
+			uint8_t grassMeta = 1;
 			if (biome == BIOME_RAINFOREST && rand.NextInt(3) != 0)
 				grassMeta = 2; // fern
 			coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 			coord.y = rand.NextInt(CHUNK_HEIGHT);
 			coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-			FeatureGenerator(BLOCK_TALLGRASS, grassMeta).GenerateTallgrass(_world, rand, coord);
+			FeatureGenerator::GenerateTallgrass(grassMeta, _world, rand, coord);
 		}
 	}
 
@@ -649,7 +649,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 			coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 			coord.y = rand.NextInt(CHUNK_HEIGHT);
 			coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-			FeatureGenerator(BLOCK_DEADBUSH).GenerateDeadbush(_world, rand, coord);
+			FeatureGenerator::GenerateDeadbush(_world, rand, coord);
 		}
 	}
 
@@ -658,7 +658,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator(BLOCK_ROSE).GenerateFlowers(_world, rand, coord);
+		FeatureGenerator::GenerateFlowers(BLOCK_ROSE, _world, rand, coord);
 	}
 
 	// Brown mushroom patches
@@ -666,7 +666,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator(BLOCK_MUSHROOM_BROWN).GenerateFlowers(_world, rand, coord);
+		FeatureGenerator::GenerateFlowers(BLOCK_MUSHROOM_BROWN, _world, rand, coord);
 	}
 
 	// Red mushroom patches
@@ -674,7 +674,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator(BLOCK_MUSHROOM_RED).GenerateFlowers(_world, rand, coord);
+		FeatureGenerator::GenerateFlowers(BLOCK_MUSHROOM_RED, _world, rand, coord);
 	}
 
 	// Sugar cane
@@ -682,7 +682,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator().GenerateSugarcane(_world, rand, coord);
+		FeatureGenerator::GenerateSugarcane(_world, rand, coord);
 	}
 
 	// Pumpkin patches
@@ -690,7 +690,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator().GeneratePumpkins(_world, rand, coord);
+		FeatureGenerator::GeneratePumpkins(_world, rand, coord);
 	}
 
 	// Cacti
@@ -700,7 +700,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 			coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 			coord.y = rand.NextInt(CHUNK_HEIGHT);
 			coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-			FeatureGenerator().GenerateCacti(_world, rand, coord);
+			FeatureGenerator::GenerateCacti(_world, rand, coord);
 		}
 	}
 
@@ -709,7 +709,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 		coord.y = rand.NextInt(rand.NextInt(120) + 8);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator(BLOCK_WATER_FLOWING).GenerateLiquid(_world, rand, coord);
+		FeatureGenerator::GenerateLiquid(BLOCK_WATER_FLOWING, _world, rand, coord);
 	}
 
 	// Lava springs
@@ -717,7 +717,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 		coord.y = rand.NextInt(rand.NextInt(rand.NextInt(112) + 8) + 8);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator(BLOCK_LAVA_FLOWING).GenerateLiquid(_world, rand, coord);
+		FeatureGenerator::GenerateLiquid(BLOCK_LAVA_FLOWING, _world, rand, coord);
 	}
 
 	// Snow/ice placement for cold biomes
