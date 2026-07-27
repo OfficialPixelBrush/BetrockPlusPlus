@@ -31,8 +31,8 @@ Grab the `main` branch for the most up-to-date, albeit unstable, repository.
   - i.e. instead of `int32_t posX, int32_t posY, int32_t posZ`, just use `Int3 pos`
 - Run `run-clang-tidy` and `clang-format` over the files you changed
   ```bash
-  run-clang-tidy -fix
-  clang-format -i $(find . -name "*.cpp" -o -name "*.h")
+run-clang-tidy -fix
+clang-format -i $(find . -name "*.cpp" -o -name "*.h")
   ```
 - Unless this is already obvious via its name or usage, provide a short description what a file is for the relevant file, why it exists and what its used for
 - Avoid keeping unsued `include`s. If an included thing is used inside of a `.cpp` file instead of the `.h` file it's included in, please move it out of the `.h` file and into the `.cpp` file

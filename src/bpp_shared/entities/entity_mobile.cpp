@@ -146,11 +146,11 @@ void MobileEntity::TickPhysics() {
 
 		if (onGround) {
 			friction = 0.546f;
-			auto _belowBlock = world->GetBlockId({ MathHelper::FloorDouble(position.x),
-			                                       MathHelper::FloorDouble(position.y) - 1,
-			                                       MathHelper::FloorDouble(position.z) });
-			if (_belowBlock > BLOCK_AIR) {
-				friction = Blocks::blockProperties[_belowBlock < BLOCK_MAX ? _belowBlock : BLOCK_MAX].slipperiness *
+			auto newBelowBlock = world->GetBlockId({ MathHelper::FloorDouble(position.x),
+			                                         MathHelper::FloorDouble(position.y) - 1,
+			                                         MathHelper::FloorDouble(position.z) });
+			if (newBelowBlock > BLOCK_AIR) {
+				friction = Blocks::blockProperties[newBelowBlock < BLOCK_MAX ? newBelowBlock : BLOCK_MAX].slipperiness *
 				           0.91f;
 			}
 		}
@@ -203,8 +203,8 @@ void MobileEntity::TickPhysics() {
 }
 
 bool MobileEntity::AABBNotInLiquidOrObstructed(AABB& _collider) {
-	auto _collided = world->GetCollidingBoundingBoxes(_collider);
-	if (_collided.size() > 0)
+	auto collidedWith = world->GetCollidingBoundingBoxes(_collider);
+	if (collidedWith.size() > 0)
 		return false;
 	return !world->IsLiquidInAabb(_collider);
 }

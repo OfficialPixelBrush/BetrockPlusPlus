@@ -26,7 +26,7 @@ public:
 	void GenerateCavesForChunk(Chunk& _chunk, int64_t _seed);
 	void GenerateCaves(Chunk& _chunk, Int2 _chunkOffset);
 	void CarveCave(Chunk& _chunk, Vec3 _offset);
-	void CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, float _carveYaw, float _carvePitch, int32_t _tunnelStep,
-	               int32_t _tunnelLength, double _verticalScale);
+	void CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, float _carveYaw, float _carvePitch,
+	               int32_t _tunnelStep, int32_t _tunnelLength, double _verticalScale);
 	bool isNetherCave = false;
 };

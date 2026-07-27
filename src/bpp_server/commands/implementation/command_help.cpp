@@ -21,8 +21,7 @@ std::string CommandHelp::Execute(std::vector<std::string>& _parameters, PlayerSe
 	if (_parameters.size() > 1) {
 		for (size_t i = 0; i < registeredCommands.size(); i++) {
 			if (registeredCommands[i]->GetLabel() == _parameters[1]) {
-				pkt.message = "§7" + registeredCommands[i]->GetLabel() + ": " +
-				              registeredCommands[i]->GetDescription();
+				pkt.message = "§7" + registeredCommands[i]->GetLabel() + ": " + registeredCommands[i]->GetDescription();
 				pkt.Serialize(_session.stream);
 				// Only print syntax if it has a value
 				if (!registeredCommands[i]->GetSyntax().empty()) {

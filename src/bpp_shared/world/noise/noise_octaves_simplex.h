@@ -19,7 +19,8 @@ public:
 
 	// func_4112_a
 	void GenerateOctaves(std::vector<double>& _noiseField, Vec2 _offset, Int32_2 _size, Vec2 _scale, double _lacunarity);
-	void GenerateOctaves(std::vector<double>& _noiseField, Int32_2 _offset, Int32_2 _size, Vec2 _scale, double _lacunarity);
+	void GenerateOctaves(std::vector<double>& _noiseField, Int32_2 _offset, Int32_2 _size, Vec2 _scale,
+	                     double _lacunarity);
 	// func_4111_a
 	void GenerateOctaves(std::vector<double>& _noiseField, Vec2 _offset, Int32_2 _size, Vec2 _scale, double _lacunarity,
 	                     double _persistence);
@@ -44,13 +45,13 @@ inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& _noiseFiel
 	this->GenerateOctaves(_noiseField, Vec2{ double(_offset.x), double(_offset.y) }, _size, _scale, _lacunarity);
 }
 
-inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& _noiseField, Vec2 _offset, Int32_2 _size, Vec2 _scale,
-                                                 double _lacunarity) {
+inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& _noiseField, Vec2 _offset, Int32_2 _size,
+                                                 Vec2 _scale, double _lacunarity) {
 	this->GenerateOctaves(_noiseField, _offset, _size, _scale, _lacunarity, 0.5);
 }
 
-inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& _noiseField, Vec2 _offset, Int32_2 _size, Vec2 _scale,
-                                                 double _lacunarity, double _persistence) {
+inline void NoiseOctavesSimplex::GenerateOctaves(std::vector<double>& _noiseField, Vec2 _offset, Int32_2 _size,
+                                                 Vec2 _scale, double _lacunarity, double _persistence) {
 	_scale.x /= 1.5;
 	_scale.y /= 1.5;
 	if (!_noiseField.empty() && int32_t(_noiseField.size()) >= _size.x * _size.y) {

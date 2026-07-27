@@ -50,7 +50,8 @@ char32_t DecodeUTF8Char(const std::string& _s, size_t& _i) {
 	}
 	// Try to parse as a four-byte character
 	if ((c & 0xF8) == 0xF0) {
-		char32_t cp = ((_s[_i] & 0x07) << 18) | ((_s[_i + 1] & 0x3F) << 12) | ((_s[_i + 2] & 0x3F) << 6) | (_s[_i + 3] & 0x3F);
+		char32_t cp = ((_s[_i] & 0x07) << 18) | ((_s[_i + 1] & 0x3F) << 12) | ((_s[_i + 2] & 0x3F) << 6) |
+		              (_s[_i + 3] & 0x3F);
 		_i += 4;
 		return cp;
 	}

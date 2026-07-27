@@ -11,7 +11,8 @@
 #include "logger/logger.h"
 #include <iomanip>
 
-bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld, Server& _server) {
+bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld,
+                                Server& _server) {
 	switch (_packetId) {
 	case PacketId::KeepAlive: {
 		Packet::KeepAlive pkt;

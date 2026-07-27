@@ -18,7 +18,8 @@
 // If its nullptr here, use the base block overrides. Else, use what is here.
 namespace ServerBlock {
 struct BlockBehavior {
-	bool (*onBlockActivated)(WorldManager& _world, Int3 _position, PlayerSession& _session, Runtime& _gameRuntime) = nullptr;
+	bool (*onBlockActivated)(WorldManager& _world, Int3 _position, PlayerSession& _session,
+	                         Runtime& _gameRuntime) = nullptr;
 };
 extern BlockBehavior blockBehaviors[256];
 

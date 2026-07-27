@@ -6,8 +6,8 @@
 
 #include "../command.h"
 #include "blocks.h"
-#include "server.h"
 #include "logger.h"
+#include "server.h"
 #include <string>
 
 // Fills an area with the desired block
@@ -38,9 +38,9 @@ std::string CommandFill::Execute(std::vector<std::string>& _parameters, PlayerSe
 		return ERROR_REASON_PARAMETERS;
 
 	// Calculate volume
-	int64_t width  = std::abs(pos1.x - pos0.x) + 1;
+	int64_t width = std::abs(pos1.x - pos0.x) + 1;
 	int64_t height = std::abs(pos1.y - pos0.y) + 1;
-	int64_t depth  = std::abs(pos1.z - pos0.z) + 1;
+	int64_t depth = std::abs(pos1.z - pos0.z) + 1;
 
 	int64_t volume = width * height * depth;
 
@@ -50,15 +50,13 @@ std::string CommandFill::Execute(std::vector<std::string>& _parameters, PlayerSe
 
 	// Perform fill
 	const Int3 start = pos0;
-	
+
 	auto fillStart = std::chrono::steady_clock::now();
 	for (pos0.x = start.x; pos0.x <= pos1.x; ++pos0.x) {
 		for (pos0.y = start.y; pos0.y <= pos1.y; ++pos0.y) {
 			for (pos0.z = start.z; pos0.z <= pos1.z; ++pos0.z) {
 				// TODO: Probably not the ideal approach, but this works
-				_world.SetBlock(pos0,
-								static_cast<BlockType>(item.id.value),
-								static_cast<uint8_t>(item.data));
+				_world.SetBlock(pos0, static_cast<BlockType>(item.id.value), static_cast<uint8_t>(item.data));
 			}
 		}
 	}

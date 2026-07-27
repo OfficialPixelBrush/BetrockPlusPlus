@@ -13,8 +13,8 @@ struct AABB {
 	double maxX, maxY, maxZ;
 
 	bool Intersects(const AABB& _other) const {
-		return (_other.maxX > minX && _other.minX < maxX && _other.maxY > minY && _other.minY < maxY && _other.maxZ > minZ &&
-		        _other.minZ < maxZ);
+		return (_other.maxX > minX && _other.minX < maxX && _other.maxY > minY && _other.minY < maxY &&
+		        _other.maxZ > minZ && _other.minZ < maxZ);
 	}
 
 	AABB Offset(double _dx, double _dy, double _dz) const {

@@ -24,7 +24,7 @@ std::string CommandGive::Execute(std::vector<std::string>& _parameters, PlayerSe
 	if (_parameters.size() <= 1)
 
 		return "Missing item id!";
-	
+
 	size_t paramOffset = 1;
 	ItemStack item = ParseItemStack(_parameters, paramOffset, true);
 

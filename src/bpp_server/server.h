@@ -15,7 +15,6 @@ extern std::atomic<bool> shutdownRequested;
 #include "chunk_IO/chunk_sender.h"
 #include "commands/command_manager.h"
 #include "config/config.h"
-#include "trackers/entity_tracker.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
 #include "packet/handle_packet.h"
@@ -24,6 +23,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "player_conn/server_pconnstate_manager.h"
 #include "runtime.h"
 #include "server_socket.h"
+#include "trackers/entity_tracker.h"
 #include <chrono>
 #include <memory>
 #include <thread>

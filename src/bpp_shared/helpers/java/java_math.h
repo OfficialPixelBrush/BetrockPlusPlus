@@ -217,6 +217,7 @@ struct MathHelper {
 
 	static inline void InitSinTable() {
 		for (size_t i = 0; i < MathHelper::TABLE_SIZE; ++i)
-			MathHelper::m_SIN_TABLE[i] = float(std::sin(double(i) * JavaMath::PI * 2.0 / double(MathHelper::TABLE_SIZE)));
+			MathHelper::m_SIN_TABLE[i] = float(
+			    std::sin(double(i) * JavaMath::PI * 2.0 / double(MathHelper::TABLE_SIZE)));
 	}
 };

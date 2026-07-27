@@ -71,9 +71,9 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 	    gravelNoise, Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), 109.0134, double(_chunk.cpos.z * CHUNK_WIDTH) },
 	    Int32_3{ 16, 1, 16 }, Vec3{ oneThirtySecond, 1.0, oneThirtySecond });
 	stoneNoiseGen.GenerateOctaves(stoneNoise,
-	                                Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), double(_chunk.cpos.z * CHUNK_WIDTH), 0.0 },
-	                                Int32_3{ 16, 16, 1 },
-	                                Vec3{ oneThirtySecond * 2.0, oneThirtySecond * 2.0, oneThirtySecond * 2.0 });
+	                              Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), double(_chunk.cpos.z * CHUNK_WIDTH), 0.0 },
+	                              Int32_3{ 16, 16, 1 },
+	                              Vec3{ oneThirtySecond * 2.0, oneThirtySecond * 2.0, oneThirtySecond * 2.0 });
 
 	// Iterate through entire chunk
 	for (int32_t x = 0; x < CHUNK_WIDTH; ++x) {
@@ -165,14 +165,10 @@ void NetherGenerator::GenerateTerrain(Chunk& _chunk) {
 				double verticalLerpStep = 0.125;
 
 				// Get noise cube corners
-				double corner000 =
-				    terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 0)];
-				double corner010 =
-				    terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 0)];
-				double corner100 =
-				    terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 0)];
-				double corner110 =
-				    terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 0)];
+				double corner000 = terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 0)];
+				double corner010 = terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 0)];
+				double corner100 = terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 0)];
+				double corner110 = terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 0)];
 				double corner001 =
 				    (terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 1)] -
 				     corner000) *
@@ -253,11 +249,10 @@ void NetherGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
 		Vec3 vecCpos = Vec3{ double(_cpos.x), double(_cpos.y), double(_cpos.z) };
 		// We do this to need to generate noise as often
 		continentalnessNoiseGen.GenerateOctaves(continentalnessNoiseField, vecCpos, Int32_3{ _max.x, 1, _max.z },
-		                                          Vec3{ 1.0, 0.0, 1.0 });
-		depthNoiseGen.GenerateOctaves(depthNoiseField, vecCpos, Int32_3{ _max.x, 1, _max.z },
-		                                Vec3{ 100.0, 0.0, 100.0 });
+		                                        Vec3{ 1.0, 0.0, 1.0 });
+		depthNoiseGen.GenerateOctaves(depthNoiseField, vecCpos, Int32_3{ _max.x, 1, _max.z }, Vec3{ 100.0, 0.0, 100.0 });
 		selectorNoiseGen.GenerateOctaves(selectorNoiseField, vecCpos, _max,
-		                                   Vec3{ horiScale / 80.0, vertScale / 60.0, horiScale / 80.0 });
+		                                 Vec3{ horiScale / 80.0, vertScale / 60.0, horiScale / 80.0 });
 		lowNoiseGen.GenerateOctaves(lowNoiseField, vecCpos, _max, Vec3{ horiScale, vertScale, horiScale });
 		highNoiseGen.GenerateOctaves(highNoiseField, vecCpos, _max, Vec3{ horiScale, vertScale, horiScale });
 	}

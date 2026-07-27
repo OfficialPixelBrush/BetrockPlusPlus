@@ -76,7 +76,6 @@ public:
 	virtual ~Command() = default;
 };
 
-
 // Commands
 // Anyone can run these
 DEFINE_COMMAND(CommandHelp, "help", "Lists commands or helps with command", "[command]", false, false);

@@ -35,9 +35,9 @@ private:
 	std::vector<double> continentalnessNoiseField = std::vector<double>(MAX_AREA);
 	std::vector<double> depthNoiseField = std::vector<double>(MAX_AREA);
 
-	std::vector<double> sandNoise = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
-	std::vector<double> gravelNoise = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
-	std::vector<double> stoneNoise = std::vector<double>(CHUNK_WIDTH*CHUNK_WIDTH);
+	std::vector<double> sandNoise = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
+	std::vector<double> gravelNoise = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
+	std::vector<double> stoneNoise = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
 
 	// Cave Gen
 	CaveGenerator caver;

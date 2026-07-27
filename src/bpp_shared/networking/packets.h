@@ -241,7 +241,7 @@ public:
 		// Why did I leave such a long comment explaining this explicitly?
 		// Because this has caused me much pain.
 		PlayerPosition() : BasePacket{ PacketId::PlayerPosition } {}
-		Vec3 position = {0, 0, 0};
+		Vec3 position = { 0, 0, 0 };
 		double cameraY = 0;
 		bool onGround = false;
 

@@ -70,8 +70,8 @@ std::string HandleFormattingCodes(const std::string& _input) {
 		// Check if first character is §
 		if (_input[i] == '\xC2' && _input[i + 1] == '\xA7' && i + 2 < _input.size()) {
 			output += FormatToStyle(_input[i + 2]); // Replace § and the next character
-			++i;                                   // Skip the next character
-			++i;                                   // Skip the next character
+			++i;                                    // Skip the next character
+			++i;                                    // Skip the next character
 		} else {
 			output += _input[i];
 		}

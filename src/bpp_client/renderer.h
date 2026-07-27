@@ -7,12 +7,12 @@
 
 #pragma once
 
+#include "camera.h"
 #include "sokol_gfx.h"
 #include "window.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_video.h>
 #include <vector>
-#include "camera.h"
 
 struct Vertex {
 	Float3 position;
@@ -28,7 +28,6 @@ struct Mesh {
 	sg_buffer vertexBuffer, indexBufffer;
 	uint16_t indexCount;
 };
-
 
 class Renderer {
 public:

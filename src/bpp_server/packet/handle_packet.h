@@ -28,8 +28,9 @@
 struct EntityTracker;
 namespace HandlePacket {
 void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& _session);
-void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session, std::vector<std::shared_ptr<PlayerSession>>& _players,
-                 WorldManager& _world, CommandManager& _cmdMgr, std::function<void(PlayerSession&)> _transferDimension);
+void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
+                 std::vector<std::shared_ptr<PlayerSession>>& _players, WorldManager& _world, CommandManager& _cmdMgr,
+                 std::function<void(PlayerSession&)> _transferDimension);
 void PlayerMovement(Packet::PlayerMovement& /*pkt*/, PlayerSession& /*session*/);
 void PlayerPosition(Packet::PlayerPosition& _pkt, PlayerSession& _session);
 void PlayerRotation(Packet::PlayerRotation& _pkt, PlayerSession& _session);

@@ -12,8 +12,9 @@
 //   /tp <x> <y> <z>
 //   /tp <player> <x> <y> <z>
 //   /tp <source_player> <target_player>
-std::string CommandTeleport::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
-                                     std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
+std::string CommandTeleport::Execute(std::vector<std::string>& _parameters, PlayerSession& _session,
+                                     WorldManager& _world, std::function<void(PlayerSession&)> _transferDimension,
+                                     Server& _server) {
 	if (_parameters.size() < 2)
 		return ERROR_REASON_SYNTAX;
 
@@ -67,7 +68,7 @@ std::string CommandTeleport::Execute(std::vector<std::string>& _parameters, Play
 		if (!dest)
 			return _parameters[offset] + " does not exist!";
 		SendTeleport(*source, { dest->position.pos.x, dest->position.pos.y + 0.01, dest->position.pos.z },
-		              dest->rotation.x, dest->rotation.y);
+		             dest->rotation.x, dest->rotation.y);
 		Packet::ChatMessage reply;
 		reply.message = "§eTeleported " + source->username + " to " + _session.username;
 		reply.Serialize(_session.stream);

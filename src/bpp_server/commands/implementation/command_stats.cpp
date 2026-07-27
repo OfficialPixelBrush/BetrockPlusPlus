@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: AGPL-3.0-only
 */
 
-#include "../command.h"
 #include "../../../bpp_shared/helpers/hardware.h"
-#include "server.h"
-#include <string>
-#include <format>
+#include "../command.h"
 #include "chunk.h"
+#include "server.h"
+#include <format>
+#include <string>
 
 // Shows usage statistics
 // Usage:
@@ -17,7 +17,7 @@
 std::string CommandStats::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
                                   std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
 	const auto& players = _server.GetPlayers();
-	double chunksMb = static_cast<double>(_world.chunks.size()*sizeof(Chunk))/1024.0/1024.0;
+	double chunksMb = static_cast<double>(_world.chunks.size() * sizeof(Chunk)) / 1024.0 / 1024.0;
 	std::array<std::string, 4> lines = {
 		std::format("§7Mem: {:.2f} MB", GetMemoryUsage(MemoryUnit::Megabyte)),
 		std::format("§7{} Chunks (Aprox. {:.2f} MB)", _world.chunks.size(), chunksMb),

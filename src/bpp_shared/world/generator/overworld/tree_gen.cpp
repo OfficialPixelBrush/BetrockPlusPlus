@@ -182,9 +182,9 @@ void BigTreeGenerator::GenerateBranchPositions() {
 					// Oh hey, look! An approximation of pi!
 					double angle = double(rand.NextFloat()) * 2.0 * 3.14159;
 					int32_t branchX = MathHelper::FloorDouble(radialDistance * double(std::sin(angle)) +
-					                                           double(basePos.x) + 0.5);
+					                                          double(basePos.x) + 0.5);
 					int32_t branchZ = MathHelper::FloorDouble(radialDistance * double(std::cos(angle)) +
-					                                           double(basePos.z) + 0.5);
+					                                          double(basePos.z) + 0.5);
 					Int3 branchBase = Int3{ branchX, currentY, branchZ };
 					Int3 branchTop = Int3{ branchX, currentY + trunkThickness, branchZ };
 					if (CheckIfPathClear(branchBase, branchTop) == -1) {
@@ -350,9 +350,9 @@ void BigTreeGenerator::DrawBlockLine(Int3 _startPos, Int3 _endPos, BlockType _bl
 	for (int32_t totalSteps = delta[dominantAxis] + step; distanceAlongAxis != totalSteps; distanceAlongAxis += step) {
 		blockPos[dominantAxis] = MathHelper::FloorDouble(double(_startPos[dominantAxis] + distanceAlongAxis) + 0.5);
 		blockPos[secondaryA] = MathHelper::FloorDouble(double(_startPos[secondaryA]) +
-		                                                double(distanceAlongAxis) * secondaryRatioA + 0.5);
+		                                               double(distanceAlongAxis) * secondaryRatioA + 0.5);
 		blockPos[secondaryB] = MathHelper::FloorDouble(double(_startPos[secondaryB]) +
-		                                                double(distanceAlongAxis) * secondaryRatioB + 0.5);
+		                                               double(distanceAlongAxis) * secondaryRatioB + 0.5);
 		wm->SetBlock(blockPos, _blockType);
 	}
 }
@@ -439,9 +439,9 @@ int32_t BigTreeGenerator::CheckIfPathClear(Int3 _startPos, Int3 _endPos) {
 	for (; distanceAlongAxis != totalSteps; distanceAlongAxis += step) {
 		currentPos[dominantAxis] = _startPos[dominantAxis] + distanceAlongAxis;
 		currentPos[secondaryA] = MathHelper::FloorDouble(double(_startPos[secondaryA]) +
-		                                                  double(distanceAlongAxis) * secondaryRatioA);
+		                                                 double(distanceAlongAxis) * secondaryRatioA);
 		currentPos[secondaryB] = MathHelper::FloorDouble(double(_startPos[secondaryB]) +
-		                                                  double(distanceAlongAxis) * secondaryRatioB);
+		                                                 double(distanceAlongAxis) * secondaryRatioB);
 		BlockType blockType = wm->GetBlockId(currentPos);
 		if (blockType != BLOCK_AIR && blockType != BLOCK_LEAVES) {
 			break;

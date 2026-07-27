@@ -6,6 +6,4 @@
 */
 #include "client_packet_dispatcher.h"
 
-namespace PacketDispatcher {
-
-}
+namespace PacketDispatcher {}

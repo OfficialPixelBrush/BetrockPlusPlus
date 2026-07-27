@@ -163,11 +163,13 @@ struct NBTwriter {
 		WriteTag(_out, _root, false, false);
 	}
 
-	size_t WriteTag(std::vector<uint8_t>& _out, const Tag& _tag, const bool _payload = false, const bool _dryRun = false) {
+	size_t WriteTag(std::vector<uint8_t>& _out, const Tag& _tag, const bool _payload = false,
+	                const bool _dryRun = false) {
 		size_t size = 0;
 
 		if (!_payload)
-			if (!_dryRun) _out.push_back(uint8_t(_tag.type));
+			if (!_dryRun)
+				_out.push_back(uint8_t(_tag.type));
 		if (!_payload && _tag.type != TAG_END)
 			size += WriteString(_out, _tag.name, _dryRun);
 
@@ -199,7 +201,8 @@ struct NBTwriter {
 		case TAG_BYTEARRAY: {
 			size += WriteI32(_out, int32_t(_tag.byteArray.size()), _dryRun);
 			size += _tag.byteArray.size();
-			if (_dryRun) break;
+			if (_dryRun)
+				break;
 			for (int8_t b : _tag.byteArray)
 				_out.push_back(uint8_t(b));
 			break;
@@ -208,7 +211,8 @@ struct NBTwriter {
 		case TAG_INTARRAY: {
 			size += WriteI32(_out, int32_t(_tag.intArray.size()), _dryRun);
 			size += _tag.intArray.size();
-			if (_dryRun) break;
+			if (_dryRun)
+				break;
 			for (int32_t b : _tag.intArray)
 				WriteI32(_out, b);
 			break;

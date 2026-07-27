@@ -131,7 +131,7 @@ bool FeatureGenerator::GenerateDungeon(WorldWrapper& _world, Java::Random& _rand
 					_world.SetBlock({ xi, yi, zi }, BLOCK_AIR);
 				} else if (IsSolid(_world.GetBlockId({ xi, yi, zi }))) {
 					BlockType wall = (yi == _pos.y - 1 && _rand.NextInt(4) != 0) ? BLOCK_COBBLESTONE_MOSSY
-					                                                           : BLOCK_COBBLESTONE;
+					                                                             : BLOCK_COBBLESTONE;
 					_world.SetBlock({ xi, yi, zi }, wall);
 				}
 			}
@@ -257,7 +257,8 @@ bool FeatureGenerator::GenerateClay(WorldWrapper& _world, Java::Random& _rand, I
 		double yC = yStart + (yEnd - yStart) * double(i) / double(_blobSize);
 		double zC = zStart + (zEnd - zStart) * double(i) / double(_blobSize);
 		double blobScale = _rand.NextDouble() * double(_blobSize) / 16.0;
-		double radXZ = double(MathHelper::Sin(float(i) * JavaMath::PI_FLOAT / float(_blobSize)) + 1.0F) * blobScale + 1.0;
+		double radXZ = double(MathHelper::Sin(float(i) * JavaMath::PI_FLOAT / float(_blobSize)) + 1.0F) * blobScale +
+		               1.0;
 		double radY = double(MathHelper::Sin(float(i) * JavaMath::PI_FLOAT / float(_blobSize)) + 1.0F) * blobScale + 1.0;
 		int32_t minX = MathHelper::FloorDouble(xC - radXZ / 2.0);
 		int32_t maxX = MathHelper::FloorDouble(xC + radXZ / 2.0);
@@ -293,7 +294,8 @@ bool FeatureGenerator::GenerateMinable(WorldWrapper& _world, Java::Random& _rand
 		double yC = yStart + (yEnd - yStart) * double(i) / double(_blobSize);
 		double zC = zStart + (zEnd - zStart) * double(i) / double(_blobSize);
 		double blobScale = _rand.NextDouble() * double(_blobSize) / 16.0;
-		double radXZ = double(MathHelper::Sin(float(i) * JavaMath::PI_FLOAT / float(_blobSize)) + 1.0F) * blobScale + 1.0;
+		double radXZ = double(MathHelper::Sin(float(i) * JavaMath::PI_FLOAT / float(_blobSize)) + 1.0F) * blobScale +
+		               1.0;
 		double radY = double(MathHelper::Sin(float(i) * JavaMath::PI_FLOAT / float(_blobSize)) + 1.0F) * blobScale + 1.0;
 		int32_t minX = MathHelper::FloorDouble(xC - radXZ / 2.0);
 		int32_t maxX = MathHelper::FloorDouble(xC + radXZ / 2.0);

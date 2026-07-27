@@ -14,7 +14,6 @@
 #include "world/storage/save_manager.h"
 #include "world/world.h"
 
-
 // General game runtime that the client and server can use so that way we don't reuse a bunch of code and have to maintain it in two places.
 struct Runtime {
 	// Storage

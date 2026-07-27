@@ -113,7 +113,8 @@ double NoisePerlin::GenerateNoise(Vec3 _coord) {
  * @param scale The scale of the perlin noise equation
  * @param amplitude The amplitude multiplier of the perlin noise function
  */
-void NoisePerlin::GenerateNoise(std::vector<double>& _noiseField, Vec3 _offset, Int3 _size, Vec3 _scale, double _amplitude) {
+void NoisePerlin::GenerateNoise(std::vector<double>& _noiseField, Vec3 _offset, Int3 _size, Vec3 _scale,
+                                double _amplitude) {
 	if (_size.y == 1) {
 		size_t index = 0;
 		double invAmp = 1.0 / _amplitude;

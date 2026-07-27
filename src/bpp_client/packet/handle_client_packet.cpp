@@ -6,6 +6,4 @@
 */
 #include "handle_client_packet.h"
 
-namespace HandlePacket {
-
-}
+namespace HandlePacket {}

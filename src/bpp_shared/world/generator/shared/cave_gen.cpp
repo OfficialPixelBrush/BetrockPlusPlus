@@ -91,7 +91,7 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 	bool tunnelSteepness = rand2.NextInt(6) == 0;
 	for (; _tunnelStep < _tunnelLength; ++_tunnelStep) {
 		double radiusXz = 1.5 + double(MathHelper::Sin(float(_tunnelStep) * JavaMath::PI_FLOAT / float(_tunnelLength)) *
-		                                _tunnelRadius * 1.0f);
+		                               _tunnelRadius * 1.0f);
 		double radiusY = radiusXz * _verticalScale;
 		float pCos = MathHelper::Cos(_carvePitch);
 		float pSin = MathHelper::Sin(_carvePitch);
@@ -124,10 +124,8 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 			if ((dx * dx + dz * dz - dist * dist) > (limit * limit))
 				return;
 
-			if (_offset.x >= chunkCenterX - 16.0 - radiusXz * 2.0 &&
-			    _offset.z >= chunkCenterZ - 16.0 - radiusXz * 2.0 &&
-			    _offset.x <= chunkCenterX + 16.0 + radiusXz * 2.0 &&
-			    _offset.z <= chunkCenterZ + 16.0 + radiusXz * 2.0) {
+			if (_offset.x >= chunkCenterX - 16.0 - radiusXz * 2.0 && _offset.z >= chunkCenterZ - 16.0 - radiusXz * 2.0 &&
+			    _offset.x <= chunkCenterX + 16.0 + radiusXz * 2.0 && _offset.z <= chunkCenterZ + 16.0 + radiusXz * 2.0) {
 				int32_t xMin = MathHelper::FloorDouble(_offset.x - radiusXz) - _chunk.cpos.x * 16 - 1;
 				int32_t xMax = MathHelper::FloorDouble(_offset.x + radiusXz) - _chunk.cpos.x * 16 + 1;
 				int32_t yMin = MathHelper::FloorDouble(_offset.y - radiusY) - 1;
