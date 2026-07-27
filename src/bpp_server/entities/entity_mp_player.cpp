@@ -77,10 +77,10 @@ void EntityMPPlayer::HandlePositionChecks() {
 			pkt.position = { position.x, position.y + PLAYER_EYE_HEIGHT, position.z };
 			pkt.cameraY = position.y; // This is backwards, thanks notch
 			pkt.Serialize(session->stream);
-			GlobalLogger().info << "Sucessfully TP'd player " << session->username << "\n";
 			return;
 		}
 		// Client acknowledged our tp
+		GlobalLogger().info << "Sucessfully TP'd player " << session->username << "\n";
 		session->pendingTeleport.reset();
 	}
 
