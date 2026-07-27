@@ -5,13 +5,16 @@
  *
 */
 #include "tool_properties.h"
+#include "blocks.h"
 #include "blocks/block_properties.h"
 #include "entities/entity.h"
 #include "entities/entity_mobile.h"
+#include "items.h"
 #include "logger.h"
 
 namespace Items {
 std::unordered_map<ItemId, ToolProperties> toolProperties = {};
+std::unordered_map<ItemId, ToolBehavior> toolBehavior = {};
 
 constexpr bool IsHoe(ItemId _id) {
 	return (_id >= Items::HOE_WOOD && _id <= Items::HOE_GOLD);
@@ -202,6 +205,7 @@ void AttackWithItem(Entity& _targetEntity, ItemStack* _stack) {
 	GlobalLogger().info << "Dealt " << damage << " damage to " << _targetEntity.id << "!\n";
 	HarmTool(_stack);
 }
+
 ItemDamage GetMaterialUses(ToolMaterial _material) {
 	switch (_material) {
 	case ToolMaterial::Wooden:
@@ -219,7 +223,10 @@ ItemDamage GetMaterialUses(ToolMaterial _material) {
 	}
 }
 
-void HarmTool(ItemStack* _stack) {
+ToolMaterial GetToolMaterial(ItemId _id);
+
+// Can be used as generic placeholder for tools that don't yet have a full implementation
+void HarmTool(ItemStack* _stack, BlockType _targetBlock) {
 	_stack->data++;
 	if (_stack->data >= toolProperties[_stack->id].maxUses) {
 		_stack->DecrementCount(1);
@@ -231,7 +238,7 @@ void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::Face
 	if (b == BLOCK_GRASS || b == BLOCK_DIRT) {
 		_world.SetBlock(_pos, BLOCK_FARMLAND);
 	}
-	HarmTool(_stack);
+	HarmTool(_stack, b);
 }
 
 void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {

@@ -8,6 +8,8 @@
 #include "entity.h"
 #include "helpers/java/java_math.h"
 #include "logger/logger.h"
+#include <functional>
+#include <memory>
 
 struct EntityBucket {
 	// 16 blocks tall

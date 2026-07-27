@@ -22,7 +22,7 @@ void ChunkCache::Refresh(int _ncx, int _ncz, WorldManager& _world) {
 
 	Chunk* oldGrid[3][3];
 	std::memcpy(oldGrid, grid, sizeof(grid));
-	int oldCx = cx, oldCz = cz;
+	//int oldCx = cx, oldCz = cz;
 
 	cx = _ncx;
 	cz = _ncz;
@@ -117,9 +117,9 @@ void Lighter::PropagateLightAt(int _x, int _y, int _z, LightType _type, WorldMan
 		// Technically, this doesn't work for any light update that doesn't change more than 9 blocks but its good enough
 		if (_world.onBlockUpdate)
 			_world.onBlockUpdate(PendingBlock{ .block{ BlockType(blockId), chunk->GetMeta({ lx, _y, lz }) },
-			                                  .blockPos{ _x, _y, _z },
-			                                  .light{ chunk->GetBlockLight({ lx, _y, lz }), uint8_t(newVal) } },
-			                    chunk->cpos);
+			                                   .blockPos{ _x, _y, _z },
+			                                   .light{ chunk->GetBlockLight({ lx, _y, lz }), uint8_t(newVal) } },
+			                     chunk->cpos);
 	} else {
 		int emitted = Blocks::blockProperties[blockId].lightEmission;
 		if (opacity < 15) {
@@ -179,7 +179,8 @@ void Lighter::UnlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _
 	// write below, so grab them once now instead of re-reading after.
 	BlockType blockId = BlockType(chunk->GetBlock({ lx, _y, lz }));
 	uint8_t meta = chunk->GetMeta({ lx, _y, lz });
-	uint8_t otherLight = (_type == LightType::Sky) ? chunk->GetBlockLight({ lx, _y, lz }) : chunk->GetSkyLight({ lx, _y, lz });
+	uint8_t otherLight = (_type == LightType::Sky) ? chunk->GetBlockLight({ lx, _y, lz })
+	                                               : chunk->GetSkyLight({ lx, _y, lz });
 
 	if (_type == LightType::Sky)
 		chunk->SetSkyLight({ lx, _y, lz }, 0);
@@ -234,8 +235,8 @@ void Lighter::UnlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _
 				// Block/meta aren't affected by the light write; grab them first.
 				BlockType nBlockId = BlockType(nc->GetBlock({ nlx, ny, nlz }));
 				uint8_t nMeta = nc->GetMeta({ nlx, ny, nlz });
-				uint8_t nOtherLight =
-				    (t == LightType::Sky) ? nc->GetBlockLight({ nlx, ny, nlz }) : nc->GetSkyLight({ nlx, ny, nlz });
+				uint8_t nOtherLight = (t == LightType::Sky) ? nc->GetBlockLight({ nlx, ny, nlz })
+				                                            : nc->GetSkyLight({ nlx, ny, nlz });
 
 				if (t == LightType::Sky)
 					nc->SetSkyLight({ nlx, ny, nlz }, 0);

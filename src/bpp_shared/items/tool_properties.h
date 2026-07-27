@@ -8,6 +8,7 @@
 #pragma once
 
 #include "base_types.h"
+#include "blocks.h"
 #include "inventory/item_stack.h"
 #include "packet_data.h"
 #include "world.h"
@@ -104,6 +105,7 @@ bool CanShovelHarvest(ToolLevel _level, BlockType _block);
 bool CanShearsOrSwordHarvest(ToolLevel _level, BlockType _block);
 
 // Usage
+void HarmTool(ItemStack* _stack, BlockType _targetBlock = BLOCK_INVALID);
 void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face);
 void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face);
 
@@ -115,9 +117,17 @@ struct ToolProperties {
 	ToolType type = ToolType::None;
 	ToolMaterial material = ToolMaterial::None;
 	ItemDamage maxUses = -1;
-	TickTime predictedBreakTick = 0;
 	bool (*canHarvest)(ToolLevel _level, BlockType _targetBlock) = nullptr;
 	bool (*howEffectiveAgainstBlock)(ItemStack* _stack, BlockType _targetBlock) = nullptr;
 };
+
+struct ToolBehavior {
+	void (*onBlockStartMining)(ItemStack* _stack, BlockType _targetBlock) = nullptr;
+	void (*onBlockFinishMining)(ItemStack* _stack, BlockType _targetBlock) = nullptr;
+	void (*onEntityAttack)(Entity& _attackedEntity, ItemStack* _stack) = nullptr;
+	void (*onEntityUse)(Entity& _usedEntity, ItemStack* _stack) = nullptr;
+};
+
 extern std::unordered_map<ItemId, ToolProperties> toolProperties;
+extern std::unordered_map<ItemId, ToolBehavior> toolBehavior;
 }; // namespace Items

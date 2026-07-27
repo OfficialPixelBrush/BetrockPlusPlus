@@ -12,6 +12,8 @@
 #include "BS_thread_pool.hpp"
 #include "base_structs.h"
 #include "blocks.h"
+#include "blocks/block_behaviors.h"
+#include "blocks/block_properties_behaviors.h"
 #include "chunk.h"
 #include "client_pos.h"
 #include "entities/entity_manager.h"

@@ -56,9 +56,9 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 		return false;
 	}
 
-
 	if (fs::exists(srcPlayers)) {
-		fs::copy(srcPlayers, "ConvertedWorld/players", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+		fs::copy(srcPlayers, "ConvertedWorld/players",
+		         fs::copy_options::recursive | fs::copy_options::overwrite_existing);
 	} else {
 		GlobalLogger().warn << "No Betrock player files found!\n";
 	}
@@ -148,7 +148,7 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 		c->isModified = true;
 		c->GenerateSkylightMap();
 
-		return std::move(c);
+		return c;
 	};
 
 	auto loadV2Format = [&](FileHandle& cFile) -> std::shared_ptr<Chunk> {
@@ -197,7 +197,7 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 		c->isModified = true;
 		c->GenerateSkylightMap();
 
-		return std::move(c);
+		return c;
 	};
 
 	std::vector<Int32_2> chunkCoords;
@@ -222,8 +222,10 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 		auto path = srcRegion / (std::to_string(cpos.x) + "," + std::to_string(cpos.z) + ".cnk");
 		FileHandle fileHandle(path);
 		auto chunk = loadOldFormat(fileHandle);
-		if (chunk) chunk->cpos = { cpos.x, cpos.z };
-		if (chunk) world.chunks[chunk->cpos] = chunk;
+		if (chunk)
+			chunk->cpos = { cpos.x, cpos.z };
+		if (chunk)
+			world.chunks[chunk->cpos] = chunk;
 	}
 
 	GlobalLogger().info << "Converted! Now converting V2 format chunks..\n";
@@ -247,13 +249,14 @@ inline bool convertBetrockServerLevel(std::string& _dir) {
 	GlobalLogger().info << "Found " << chunkCoords.size() << " V2 format chunks to convert.\n";
 
 	// Save all our V2 format chunks
-	int i = 0;
 	for (auto& cpos : chunkCoords) {
 		auto path = srcRegion / (std::to_string(cpos.x) + "," + std::to_string(cpos.z) + ".ncnk");
 		FileHandle fileHandle(path);
 		auto chunk = loadV2Format(fileHandle);
-		if (chunk) chunk->cpos = { cpos.x, cpos.z };
-		if (chunk) world.chunks[chunk->cpos] = chunk;
+		if (chunk)
+			chunk->cpos = { cpos.x, cpos.z };
+		if (chunk)
+			world.chunks[chunk->cpos] = chunk;
 	}
 	GlobalLogger().info << "Finishing up..\n";
 

@@ -8,10 +8,12 @@
 
 #pragma once
 #include "crafting/recipe_manager.h"
+#include "items/tool_item_properties.h"
 #include "logger.h"
 #include "world/storage/region_manager.h"
 #include "world/storage/save_manager.h"
 #include "world/world.h"
+
 
 // General game runtime that the client and server can use so that way we don't reuse a bunch of code and have to maintain it in two places.
 struct Runtime {
@@ -31,7 +33,7 @@ struct Runtime {
 		recipeManager.AddVanillaRecipes();
 		GlobalLogger().info << "New game runtime created!\n";
 	}
-	Runtime(int _renderDistance) : worldHell(true) {	
+	Runtime(int _renderDistance) : worldHell(true) {
 		Blocks::RegisterAll();
 		Items::RegisterAll();
 		recipeManager.AddVanillaRecipes();

@@ -111,10 +111,9 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 
 		float secondsToBreak = (damagePerTick > 0.0f) ? 1.0f / (damagePerTick * 20.0f) : INFINITY;
 
-		GlobalLogger().debug << std::setprecision(2) << damagePerTick << "dps (Will be mined in " << secondsToBreak
-		                     << " s)\n";
-		if (auto fn = Items::itemBehavior[heldItem->id].onBlockStartMining)
-			fn(_world, heldItem, packetPos, _pkt.face);
+		// GlobalLogger().debug << std::setprecision(2) << damagePerTick << "dps (Will be mined in " << secondsToBreak << " s)\n";
+		if (auto fn = Items::toolBehavior[heldItem->id].onBlockStartMining)
+			fn(heldItem, blockId);
 		return;
 	}
 	case PacketData::MineStatus::DIGGING_FINISHED: {
@@ -126,9 +125,8 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 		ItemStack* heldItem = _session.inventory.GetHeldItem();
 		if (!heldItem)
 			return;
-		if (!Items::itemBehavior[heldItem->id].onBlockFinishMining)
-			return;
-		Items::itemBehavior[heldItem->id].onBlockFinishMining(_world, heldItem, packetPos, _pkt.face);
+		if (auto fn = Items::toolBehavior[heldItem->id].onBlockFinishMining)
+			fn(heldItem, _session.lastTargetedBlock);
 		return;
 	}
 	case PacketData::MineStatus::DROPPED_ITEM: {
@@ -353,9 +351,9 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 	if (!heldItem)
 		return;
 
-	// Get item behavior
-	auto iter = Items::itemBehavior.find(heldItem->id);
-	if (iter == Items::itemBehavior.end())
+	// Get tool behavior
+	auto iter = Items::toolBehavior.find(heldItem->id);
+	if (iter == Items::toolBehavior.end())
 		return;
 
 	const auto& behavior = iter->second;

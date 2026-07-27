@@ -25,13 +25,7 @@ struct ItemProperties {
 };
 
 struct ItemBehavior {
-	void (*onBlockStartMining)(WorldManager& _world, ItemStack* _stack, Int3 _pos,
-	                           PacketData::FaceDirection _face) = nullptr;
-	void (*onBlockFinishMining)(WorldManager& _world, ItemStack* _stack, Int3 _pos,
-	                            PacketData::FaceDirection _face) = nullptr;
 	void (*onBlockUse)(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) = nullptr;
-	void (*onEntityAttack)(Entity& _attackedEntity, ItemStack* _stack) = nullptr;
-	void (*onEntityUse)(Entity& _usedEntity, ItemStack* _stack) = nullptr;
 	void (*onStartHolding)(ItemStack* _stack, PlayerSession& _session) = nullptr;
 	void (*whileHeld)(ItemStack* _stack, PlayerSession& _session, Server& _server) = nullptr;
 	void (*onStopHolding)(ItemStack* _stack) = nullptr;
@@ -39,9 +33,6 @@ struct ItemBehavior {
 
 extern std::unordered_map<ItemId, ItemBehavior> itemBehavior;
 extern std::unordered_map<ItemId, ItemProperties> itemProperties;
-void RegisterAll();
-
-void HarmTool(ItemStack* _stack);
 
 // Returns max stack size for this item/block id
 int32_t GetMaxStack(ItemId _id);

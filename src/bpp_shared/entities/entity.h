@@ -11,6 +11,8 @@
 #include "dimensions.h"
 #include "entities.h"
 #include "helpers/AABB.h"
+#include "helpers/java/java_random.h"
+#include "java/java_random.h"
 #include "nbt/nbt.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
