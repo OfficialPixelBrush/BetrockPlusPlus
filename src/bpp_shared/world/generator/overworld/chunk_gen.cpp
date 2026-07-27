@@ -9,6 +9,7 @@
 #include "chunk.h"
 #include "generator/overworld/biome_gen.h"
 #include "generator/overworld/tree_gen.h"
+#include "tree_gen.h"
 
 /**
  * @brief Construct a new Beta 1.7.3 Overworld Generator
@@ -381,38 +382,35 @@ Biome OverworldGenerator::GetBiomeAt(Int2 _worldPos) {
 
 // Exact port of BiomeGenBase.getRandomWorldGenForTrees() and per-biome overrides.
 void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& _world, Java::Random& _pRand, Int3 _pos, Biome _biome) {
-	thread_local BigTreeGenerator big;
+	thread_local TreeGenerator::BigTree big;
 	switch (_biome) {
 	case BIOME_TAIGA:
 		if (_pRand.NextInt(3) == 0)
-			TaigaTreeGenerator().Generate(_world, _pRand, _pos);
+			TreeGenerator::GenerateTaiga(_world, _pRand, _pos);
 		else
-			AltTaigaTreeGenerator().Generate(_world, _pRand, _pos);
+			TreeGenerator::GenerateAltTaiga(_world, _pRand, _pos);
 		break;
 	case BIOME_FOREST:
 		if (_pRand.NextInt(5) == 0) {
-			TreeGenerator().Generate(_world, _pRand, _pos, true);
+			TreeGenerator::GenerateTree(_world, _pRand, _pos, true);
 		} else if (_pRand.NextInt(3) == 0) {
-			big.Configure(1.0, 1.0, 1.0);
 			big.Generate(_world, _pRand, _pos);
 		} else {
-			TreeGenerator().Generate(_world, _pRand, _pos);
+			TreeGenerator::GenerateTree(_world, _pRand, _pos);
 		}
 		break;
 	case BIOME_RAINFOREST:
 		if (_pRand.NextInt(3) == 0) {
-			big.Configure(1.0, 1.0, 1.0);
 			big.Generate(_world, _pRand, _pos);
 		} else {
-			TreeGenerator().Generate(_world, _pRand, _pos);
+			TreeGenerator::GenerateTree(_world, _pRand, _pos);
 		}
 		break;
 	default:
 		if (_pRand.NextInt(10) == 0) {
-			big.Configure(1.0, 1.0, 1.0);
 			big.Generate(_world, _pRand, _pos);
 		} else {
-			TreeGenerator().Generate(_world, _pRand, _pos);
+			TreeGenerator::GenerateTree(_world, _pRand, _pos);
 		}
 		break;
 	}

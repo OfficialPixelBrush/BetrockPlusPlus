@@ -8,8 +8,8 @@
 #include "tree_gen.h"
 #include <cassert>
 #include <cstdint>
-#include <exception>
 
+namespace  TreeGenerator {
 /**
  * @brief Attempts to generate an oak or birch tree.
  * 
@@ -19,7 +19,7 @@
  * @param birch If the tree should be birch or oak
  * @return If tree successfully generated
  */
-bool TreeGenerator::Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch) {
+bool GenerateTree(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch) {
 	// Decide on the tree height (birches are one block taller)
 	int32_t treeHeight = _rand.NextInt(3) + 4;
 	if (_birch)
@@ -103,7 +103,7 @@ bool TreeGenerator::Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _po
  * @param pBranchLength Sets the maximum branch length
  * @param pTrunkShape Determines the trunk shape
  */
-void BigTreeGenerator::Configure(double _pTreeHeight, double _pBranchLength, double _pTrunkShape) {
+void BigTree::Configure(double _pTreeHeight, double _pBranchLength, double _pTrunkShape) {
 	branchStartEnd.clear();
 	totalHeight = 0;
 	// Default Java
@@ -125,8 +125,8 @@ void BigTreeGenerator::Configure(double _pTreeHeight, double _pBranchLength, dou
  * @param pBirch If the tree should be birch or oak (not used for big trees)
  * @return If tree successfully generated
  */
-bool BigTreeGenerator::Generate(WorldWrapper& _pWorld, Java::Random& _pRand, [[maybe_unused]] Int3 _pPos,
-                                [[maybe_unused]] bool _pBirch) {
+bool BigTree::Generate(WorldWrapper& _pWorld, Java::Random& _pRand, [[maybe_unused]] Int3 _pPos) {
+	Configure(1.0, 1.0, 1.0);
 	wm = &_pWorld;
 	int64_t seed = _pRand.NextLong();
 	rand.SetSeed(seed);
@@ -150,7 +150,7 @@ bool BigTreeGenerator::Generate(WorldWrapper& _pWorld, Java::Random& _pRand, [[m
  * @brief Determine where branches will go
  * 
  */
-void BigTreeGenerator::GenerateBranchPositions() {
+void BigTree::GenerateBranchPositions() {
 	height = Java::DoubleToInt32(double(totalHeight) * heightFactor);
 	if (height >= totalHeight) {
 		height = totalHeight - 1;
@@ -231,7 +231,7 @@ void BigTreeGenerator::GenerateBranchPositions() {
  * @param axis Axis along which the circle will grow
  * @param blockType Blocktype of the circle
  */
-void BigTreeGenerator::PlaceCircularLayer(Int3 _centerPos, float _radius, BranchAxis _axis, BlockType _blockType) {
+void BigTree::PlaceCircularLayer(Int3 _centerPos, float _radius, BranchAxis _axis, BlockType _blockType) {
 	int32_t intRadius = Java::DoubleToInt32(double(_radius) + 0.618);
 	BranchAxis axisU = BRANCH_ORIENTATION[_axis];
 	BranchAxis axisV = BRANCH_ORIENTATION[_axis + AXIS_OFFSET];
@@ -264,7 +264,7 @@ void BigTreeGenerator::PlaceCircularLayer(Int3 _centerPos, float _radius, Branch
  * @param y Height to check
  * @return Radius in blocks
  */
-float BigTreeGenerator::GetCanopyRadius(int32_t _y) {
+float BigTree::GetCanopyRadius(int32_t _y) {
 	if ((double)_y < double((float)totalHeight) * 0.3) {
 		return -1.618F;
 	} else {
@@ -291,7 +291,7 @@ float BigTreeGenerator::GetCanopyRadius(int32_t _y) {
  * @param layerIndex The index of the layer
  * @return float Trunk layer radius
  */
-float BigTreeGenerator::GetTrunkLayerRadius(int32_t _layerIndex) {
+float BigTree::GetTrunkLayerRadius(int32_t _layerIndex) {
 	if (_layerIndex < 0 || _layerIndex >= trunkThickness)
 		return -1.0f;
 	// Top and bottom of trunk are thinner
@@ -306,7 +306,7 @@ float BigTreeGenerator::GetTrunkLayerRadius(int32_t _layerIndex) {
  * 
  * @param base 
  */
-void BigTreeGenerator::PlaceLeavesAroundPoint(Int3 _base) {
+void BigTree::PlaceLeavesAroundPoint(Int3 _base) {
 	int32_t baseHeight = _base.y + trunkThickness;
 
 	for (int32_t y = _base.y; y < baseHeight; ++y) {
@@ -322,7 +322,7 @@ void BigTreeGenerator::PlaceLeavesAroundPoint(Int3 _base) {
  * @param endPos The end position
  * @param blockType The block that should be drawn along this line
  */
-void BigTreeGenerator::DrawBlockLine(Int3 _startPos, Int3 _endPos, BlockType _blockType) {
+void BigTree::DrawBlockLine(Int3 _startPos, Int3 _endPos, BlockType _blockType) {
 	Int3 delta = INT3_ZERO;
 	BranchAxis dominantAxis = AXIS_X;
 	delta = _endPos - _startPos;
@@ -364,7 +364,7 @@ void BigTreeGenerator::DrawBlockLine(Int3 _startPos, Int3 _endPos, BlockType _bl
  * @brief Iterate through the branches and generate the leaves
  * 
  */
-void BigTreeGenerator::GenerateLeafClusters() {
+void BigTree::GenerateLeafClusters() {
 	size_t maxBranchNodes = branchStartEnd.size();
 	for (size_t i = 0; i < maxBranchNodes; ++i) {
 		Int3 pos = branchStartEnd[i].pos;
@@ -372,11 +372,11 @@ void BigTreeGenerator::GenerateLeafClusters() {
 	}
 }
 
-bool BigTreeGenerator::CanGenerateBranchAtHeight(int32_t _y) {
+bool BigTree::CanGenerateBranchAtHeight(int32_t _y) {
 	return double(_y) >= (double(totalHeight) * 0.2);
 }
 
-void BigTreeGenerator::GenerateTrunk() {
+void BigTree::GenerateTrunk() {
 	Int3 startPos = basePos;
 	Int3 endPos = basePos + Int3{ 0, height, 0 };
 	DrawBlockLine(startPos, endPos, BLOCK_LOG);
@@ -393,7 +393,7 @@ void BigTreeGenerator::GenerateTrunk() {
 	}
 }
 
-void BigTreeGenerator::GenerateBranches() {
+void BigTree::GenerateBranches() {
 	Int3 base = basePos;
 	for (size_t branchIndex = 0; branchIndex < branchStartEnd.size(); ++branchIndex) {
 		Int3 branchPos = branchStartEnd[branchIndex].pos;
@@ -413,7 +413,7 @@ void BigTreeGenerator::GenerateBranches() {
  * @param endPos The end position
  * @return int32_t 
  */
-int32_t BigTreeGenerator::CheckIfPathClear(Int3 _startPos, Int3 _endPos) {
+int32_t BigTree::CheckIfPathClear(Int3 _startPos, Int3 _endPos) {
 	Int3 delta = INT3_ZERO;
 
 	BranchAxis dominantAxis = AXIS_X;
@@ -461,7 +461,7 @@ int32_t BigTreeGenerator::CheckIfPathClear(Int3 _startPos, Int3 _endPos) {
  * 
  * @return If the placement is valid
  */
-bool BigTreeGenerator::ValidPlacement() {
+bool BigTree::ValidPlacement() {
 	Int3 endPos = Int3{ basePos.x, basePos.y + totalHeight - 1, basePos.z };
 	// Check if ground block is valid
 	BlockType soilType = wm->GetBlockId(Int3{ basePos.x, basePos.y - 1, basePos.z });
@@ -485,10 +485,9 @@ bool BigTreeGenerator::ValidPlacement() {
  * @param pWorld Pointer to the world where it'll generate
  * @param pRand Pointer to the Java::Random that'll be utilized
  * @param pPos Position of the lowest trunk-block
- * @param pBirch If the tree should be birch or oak (not used for taiga trees)
  * @return If tree successfully generated
  */
-bool TaigaTreeGenerator::Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, [[maybe_unused]] bool _birch) {
+bool GenerateTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 	int32_t height = _rand.NextInt(5) + 7;
 	int32_t trunkHeight = height - _rand.NextInt(2) - 3;
 	int32_t leavesHeight = height - trunkHeight;
@@ -565,11 +564,9 @@ bool TaigaTreeGenerator::Generate(WorldWrapper& _world, Java::Random& _rand, Int
  * @param pWorld Pointer to the world where it'll generate
  * @param pRand Pointer to the Java::Random that'll be utilized
  * @param pPos Position of the lowest trunk-block
- * @param pBirch If the tree should be birch or oak (not used for alt taiga trees)
  * @return If tree successfully generated
  */
-bool AltTaigaTreeGenerator::Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _pos,
-                                     [[maybe_unused]] bool _birch) {
+bool GenerateAltTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 	int32_t height = _rand.NextInt(4) + 6;
 	int32_t trunkHeight = 1 + _rand.NextInt(2);
 	int32_t leavesHeight = height - trunkHeight;
@@ -646,3 +643,4 @@ bool AltTaigaTreeGenerator::Generate(WorldWrapper& _world, Java::Random& _rand, 
 	}
 	return false;
 }
+};

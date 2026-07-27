@@ -14,20 +14,12 @@
  * @brief Used for generating Oak or Birch Trees
  * 
  */
-class TreeGenerator {
-public:
-	TreeGenerator() {};
-	virtual ~TreeGenerator() = default;
-	virtual bool Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch = false);
-	virtual void Configure([[maybe_unused]] double _treeHeight, [[maybe_unused]] double _branchLength,
-	                       [[maybe_unused]] double _trunkShape) {};
-};
+namespace TreeGenerator {
+	bool GenerateTree(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch = false);
+	bool GenerateTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
+	bool GenerateAltTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 
-/**
- * @brief Used for generating Big Oak Trees
- * 
- */
-class BigTreeGenerator : public TreeGenerator {
+class BigTree {
 private:
 	struct BranchPos {
 		Int3 pos;
@@ -74,32 +66,8 @@ private:
 	int32_t CheckIfPathClear(Int3 _startPos, Int3 _endPos);
 	void PlaceCircularLayer(Int3 _centerPos, float _radius, BranchAxis _axis, BlockType _blockType);
 	bool CanGenerateBranchAtHeight(int32_t _y);
-
-public:
-	BigTreeGenerator() {}
-	~BigTreeGenerator() = default;
-	bool Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch = false);
 	void Configure(double _treeHeight, double _branchLength, double _trunkShape);
-};
-
-/**
- * @brief Used for generating Taiga Trees
- * 
- */
-class TaigaTreeGenerator : public TreeGenerator {
 public:
-	TaigaTreeGenerator() {};
-	~TaigaTreeGenerator() = default;
-	bool Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch = false);
+	bool Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 };
-
-/**
- * @brief Used for generating Alternative Taiga Trees
- * 
- */
-class AltTaigaTreeGenerator : public TreeGenerator {
-public:
-	AltTaigaTreeGenerator() {};
-	~AltTaigaTreeGenerator() = default;
-	bool Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch = false);
 };
