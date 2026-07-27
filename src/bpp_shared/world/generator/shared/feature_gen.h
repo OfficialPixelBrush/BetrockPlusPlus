@@ -223,43 +223,35 @@ struct WorldWrapper {
 };
 
 // Inline block-property helpers
-inline bool IsSolid(BlockType _t) {
+inline constexpr bool IsSolid(BlockType _t) {
 	return Blocks::blockProperties[_t].material.isSolid;
 }
-inline bool IsLiquid(BlockType _t) {
+inline constexpr bool IsLiquid(BlockType _t) {
 	return Blocks::blockProperties[_t].material.isLiquid;
 }
-inline bool IsOpaque(BlockType _t) {
+inline constexpr bool IsOpaque(BlockType _t) {
 	return Blocks::blockProperties[_t].lightOpacity > 0;
 }
 
 // Used for generating features in the world
-class FeatureGenerator {
-public:
-	BlockType type = BLOCK_AIR;
-	int8_t meta = 0;
-
-	FeatureGenerator() {}
-	explicit FeatureGenerator(BlockType _pType) : type(_pType) {}
-	FeatureGenerator(BlockType _pType, int8_t _pMeta) : type(_pType), meta(_pMeta) {}
-
+namespace FeatureGenerator {
 	// Overworld features
-	bool GenerateLake(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
+	bool GenerateLake(BlockType _type, WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 	bool GenerateDungeon(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 	bool GenerateClay(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, int32_t _blobSize = 0);
-	bool GenerateMinable(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, int32_t _blobSize = 0);
-	bool GenerateFlowers(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
-	bool GenerateTallgrass(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
+	bool GenerateMinable(BlockType _type, WorldWrapper& _world, Java::Random& _rand, Int3 _pos, int32_t _blobSize = 0);
+	bool GenerateFlowers(BlockType _type, WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
+	bool GenerateTallgrass(uint8_t _meta, WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 	bool GenerateDeadbush(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 	bool GenerateSugarcane(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 	bool GeneratePumpkins(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 	bool GenerateCacti(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
-	bool GenerateLiquid(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
+	bool GenerateLiquid(BlockType _type, WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 	// Nether Features
 	bool GenerateNetherLiquid(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 	bool GenerateNetherFire(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 	bool GenerateNetherGlowstone(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 
-	static ItemStack GenerateDungeonChestLoot(Java::Random& _rand);
-	static std::string PickMobToSpawn(Java::Random& _rand);
+	ItemStack GenerateDungeonChestLoot(Java::Random& _rand);
+	std::string PickMobToSpawn(Java::Random& _rand);
 };

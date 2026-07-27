@@ -37,9 +37,13 @@ To find out what's needed to run the project, please see the [minimum confirmed 
 - Beta++ by JcbbcEnjoyer (Minecraft Beta 1.7.3 Client written in C++)
 - [LibreProg](https://github.com/OfficialPixelBrush/LibreProg) (fully FOSS Minecraft Beta 1.7.3 textures, sounds, etc.)
 - [Technical Beta Wiki](https://officialpixelbrush.github.io/beta-wiki) (technical protocol and implementation reference)
-- [Betrock](https://github.com/OfficialPixelBrush/Betrock) (McRegion world explorer)
+- [BetrockViewer](https://github.com/OfficialPixelBrush/BetrockViewer) (McRegion world explorer)
 - [BetrockServer](https://github.com/OfficialPixelBrush/BetrockServer) (Minecraft Beta 1.7.3 Server written in C++)
 
 # Credits
 
+- Markus "Notch" Persson & Mojang, for creating Minecraft. https://www.minecraft.net/
 - Barak Shoshany. Licensed under the MIT license. BS::thread_pool. https://github.com/bshoshany/thread-pool
+- Keith Potz. Licensed under the MIT license. CrashCatch. https://github.com/keithpotz/CrashCatch
+- Dugy. Licensed under the MIT license. quick_arg_parser. https://github.com/Dugy/quick_arg_parser
+- Andre Weissflog. Licensed under the Zlib license. quick_arg_parser. https://github.com/floooh/sokol
