@@ -397,14 +397,12 @@ void Server::Tick() {
 	localBlockChanges.swap(chunkBlockChanges);
 	localBlockChangesHell.swap(chunkBlockChangesHell);
 
-	// Update the trackers
+	// Inventory tracker
+	InventoryTracker::Tick(*this);
 
 	// Entity trackers
 	overworldEntityTracker.Tick();
 	hellEntityTracker.Tick();
-
-	// Inventory tracker
-	InventoryTracker::Tick(*this);
 
 	// Handle connection state for each player
 	for (auto& session : players) {

@@ -712,7 +712,7 @@ void WorldManager::SetBlockRaw(const Int3 _wpos, const BlockType _blockType, con
 	chunk->SetMeta(local, _metadata);
 }
 
-void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata) {
+void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata, const bool keepTileEntity) {
 	if (!InBounds(_wpos.y))
 		return;
 	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
@@ -794,10 +794,12 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	}
 
 	// Remove any tile entities that exist at this spot
-	auto& tes = chunk->tileEntities;
-	tes.erase(std::remove_if(tes.begin(), tes.end(),
-	                         [&](const std::shared_ptr<TileEntity>& _te) { return _te && _te->position == _wpos; }),
-	          tes.end());
+	if (!keepTileEntity) {
+		auto& tes = chunk->tileEntities;
+		tes.erase(std::remove_if(tes.begin(), tes.end(),
+		                         [&](const std::shared_ptr<TileEntity>& _te) { return _te && _te->position == _wpos; }),
+		          tes.end());
+	}
 
 	// Call our on placed function
 	if (_blockType != BLOCK_AIR) {

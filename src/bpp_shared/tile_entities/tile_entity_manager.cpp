@@ -8,11 +8,14 @@
 #include "world/world.h"
 
 void TileEntityManager::TickTileEntities(WorldManager& _world) {
-	std::erase_if(tickableTileEntities, [&](const std::weak_ptr<TileEntity>& _wp) {
-		auto te = _wp.lock();
-		if (!te)
-			return true;
-		te->Tick(_world);
-		return false;
-	});
+	// Snapshot for iteration so Tick() can safely mutate tickableTileEntities
+	std::vector<std::weak_ptr<TileEntity>> tickableTileEntitiesCopy = tickableTileEntities;
+
+	for (const std::weak_ptr<TileEntity>& wp : tickableTileEntitiesCopy) {
+		if (auto te = wp.lock()) {
+			te->Tick(_world);
+		}
+	}
+
+	std::erase_if(tickableTileEntities, [](const std::weak_ptr<TileEntity>& _wp) { return _wp.expired(); });
 }

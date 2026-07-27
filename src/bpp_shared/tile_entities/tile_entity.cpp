@@ -89,7 +89,7 @@ void TileEntityFurnace::Tick(WorldManager& _world) {
 		if (burnTime == 0 && hasInput && result.id != Items::INVALID) {
 			burnTime = maxBurnTime; // 0 if slot 1 is empty or not a valid fuel
 			if (burnTime > 0) {
-				inventory.slots[1].DecrementCount(1);
+				inventory.DecreaseStackSize(1, 1);
 			}
 		}
 
@@ -100,8 +100,7 @@ void TileEntityFurnace::Tick(WorldManager& _world) {
 	if (wasBurning != (burnTime > 0)) {
 		// Flip furnace block ID
 		auto oldMeta = _world.GetMetadata(this->position);
-		_world.SetBlockRaw(this->position, BlockType(61 + (burnTime > 0)));
-		_world.SetMeta(this->position, oldMeta);
+		_world.SetBlock(this->position, BlockType(61 + (burnTime > 0)), oldMeta, /*Keep Tile Entity=*/ true);
 	}
 
 	{
@@ -110,7 +109,7 @@ void TileEntityFurnace::Tick(WorldManager& _world) {
 		if (burnTime > 0 && canSmelt) {
 			if (++cookTime >= 200) {
 				inventory.MergeItemStackInInventory(result, false, 2, 2);
-				inventory.slots[0].DecrementCount(1);
+				inventory.DecreaseStackSize(0, 1);
 				cookTime = 0;
 			}
 		} else {
