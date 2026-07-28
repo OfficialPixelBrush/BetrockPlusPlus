@@ -214,7 +214,7 @@ Renderer::Renderer(Window& _window) : window(_window) {
 	auto surface = SDL_LoadSurface("terrain.png");
 	if (!surface) {
 		GlobalLogger().error << "Please add terrain.png to the current working directory!\n";
-		abort();
+		exit(1);
 	}
 
 	sg_image_desc imgDesc{};
