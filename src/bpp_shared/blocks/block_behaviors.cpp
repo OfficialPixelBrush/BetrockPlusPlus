@@ -158,6 +158,26 @@ static bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entit
 	return true;
 }
 
+static void ToggleDoor(WorldManager& _world, Int3 _pos) {
+	auto meta = _world.GetMetadata(_pos);
+	if (meta & 8) {
+		// We are the top half of the door
+		if (_world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z }) != BLOCK_DOOR_WOOD)
+			// Below us is not the bottom of a door! This is bad!
+			return;
+		// Recall this function on the bottom of the door
+		blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated(_world, { _pos.x, _pos.y - 1, _pos.z });
+		return;
+	}
+	// We are the top half so lets open
+	Int3 top = { _pos.x, _pos.y + 1, _pos.z };
+	if (_world.GetBlockId(top) == BLOCK_DOOR_WOOD && (_world.GetMetadata(top) & 8)) {
+		_world.SetMeta(top, uint8_t((meta ^ 4) + 8));
+	}
+	_world.SetMeta(_pos, uint8_t(meta ^ 4)); // XOR bit 2; flips open/closed
+	return;
+}
+
 void RegisterBlockBehaviors() {
 	// Initialize the default block placed behavior
 	for (int i = 0; i < 256; i++) {
@@ -520,24 +540,10 @@ void RegisterBlockBehaviors() {
 
 	// for when the block is interacted with!
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated = [](WorldManager& _world, Int3 _pos) -> bool {
-		auto meta = _world.GetMetadata(_pos);
-		if (meta & 8) {
-			// We are the top half of the door
-			if (_world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z }) != BLOCK_DOOR_WOOD)
-				// Below us is not the bottom of a door! This is bad!
-				return false;
-			// Recall this function on the bottom of the door
-			blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated(_world, { _pos.x, _pos.y - 1, _pos.z });
-			return false;
-		}
-		// We are the top half so lets open
-		Int3 top = { _pos.x, _pos.y + 1, _pos.z };
-		if (_world.GetBlockId(top) == BLOCK_DOOR_WOOD && (_world.GetMetadata(top) & 8)) {
-			_world.SetMeta(top, uint8_t((meta ^ 4) + 8));
-		}
-		_world.SetMeta(_pos, uint8_t(meta ^ 4)); // XOR bit 2; flips open/closed
+		ToggleDoor(_world, _pos);
 		return false;
 	};
+	blockBehaviors[BLOCK_DOOR_WOOD].onBlockClicked = ToggleDoor;
 
 	// Falling blocks!
 	blockBehaviors[BLOCK_GRAVEL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
