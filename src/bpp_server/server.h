@@ -36,11 +36,14 @@ public:
 	~Server();
 	void Run();
 	void Stop();
+	void StopTimeout(float _secondsUntilShutdown);
+	void ResetTimeout();
 	void ProcessIncoming(PlayerSession& _session);
 
 private:
 	int serverViewRadius = 8;
 	int spawnChunkRadius = 5;
+	uint16_t shutdownTimer = 0;
 
 public:
 	Runtime gameRuntime;
@@ -101,6 +104,7 @@ public:
 	EntityTracker hellEntityTracker;
 	// Performance metric
 	double averageTickMs = 0.0;
+	static constexpr int TICKS_PER_SECOND = 20;
 
 private:
 	friend bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld,
@@ -127,8 +131,6 @@ private:
 	static Int32_3 ChunkKey(const Int32_2& _pos, int8_t _dimension) {
 		return Int32_3{ _pos.x, _pos.z, int32_t(_dimension) };
 	}
-
-	static constexpr int TICKS_PER_SECOND = 20;
 	static constexpr int MAX_TICK_CATCH_UP = 5;
 
 	PlayerConnStateManager connStateManager;

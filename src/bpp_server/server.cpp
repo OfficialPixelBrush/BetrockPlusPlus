@@ -7,6 +7,7 @@
  *
 */
 
+#include "base_types.h"
 #include "logger.h"
 #include "packet/packet_utils.h"
 #include "trackers/inventory_tracker.h"
@@ -365,6 +366,14 @@ void Server::AcceptNewPlayers() {
 	players.push_back(std::make_shared<PlayerSession>(clientSocket, gameRuntime));
 }
 
+void Server::StopTimeout(float _secondsUntilShutdown) {
+	shutdownTimer = static_cast<uint16_t>(_secondsUntilShutdown * static_cast<float>(TICKS_PER_SECOND));
+}
+
+void Server::ResetTimeout() {
+	shutdownTimer = 0;
+}
+
 void Server::Tick() {
 	AcceptNewPlayers();
 	[[maybe_unused]] const int playerCount = int(players.size());
@@ -427,6 +436,12 @@ void Server::Tick() {
 		session->stream.FlushWriteBuffer();
 	}
 	this->DisconnectClients();
+	// TODO: This is rather fragile!
+	// Countdown
+	if (shutdownTimer > 1)
+		shutdownTimer--;
+	if (shutdownTimer == 1)
+		shutdownRequested.store(true);
 }
 
 void Server::DisconnectClients() {

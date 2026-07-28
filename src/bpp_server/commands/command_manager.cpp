@@ -28,6 +28,7 @@ void CommandManager::Init(Server* _server) {
 	m_registeredCommands.push_back(std::make_unique<CommandSummon>());
 	m_registeredCommands.push_back(std::make_unique<CommandStats>());
 	m_registeredCommands.push_back(std::make_unique<CommandFill>());
+	m_registeredCommands.push_back(std::make_unique<CommandStop>());
 	/*
 	registeredCommands.push_back(CommandPose());
 	// Needs at least creative mode to run
@@ -43,7 +44,6 @@ void CommandManager::Init(Server* _server) {
 	registeredCommands.push_back(CommandKill());
 	registeredCommands.push_back(CommandGamerule());
 	registeredCommands.push_back(CommandSave());
-	registeredCommands.push_back(CommandStop());
 	registeredCommands.push_back(CommandFree());
 	registeredCommands.push_back(CommandUsage());
 	registeredCommands.push_back(CommandSummon());

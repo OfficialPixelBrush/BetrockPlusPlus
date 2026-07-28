@@ -48,14 +48,18 @@ inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _x
 		}
 	}
 
-	libdeflate_compressor* compressor = libdeflate_alloc_compressor(6);
+	thread_local std::unique_ptr<libdeflate_compressor, decltype(&libdeflate_free_compressor)> compressor(
+	    nullptr, libdeflate_free_compressor);
+	if (!compressor)
+		compressor.reset(libdeflate_alloc_compressor(6));
 	if (!compressor)
 		return {};
-	size_t maxSize = libdeflate_zlib_compress_bound(compressor, static_cast<size_t>(total));
+	size_t maxSize = libdeflate_zlib_compress_bound(compressor.get(), static_cast<size_t>(total));
 	std::vector<uint8_t> compressed(maxSize);
-	size_t actualSize = libdeflate_zlib_compress(compressor, raw.data(), static_cast<size_t>(total), compressed.data(),
-	                                             maxSize);
-	libdeflate_free_compressor(compressor);
+	size_t actualSize = libdeflate_zlib_compress(compressor.get(), raw.data(), static_cast<size_t>(total),
+	                                             compressed.data(), maxSize);
+	if (actualSize == 0)
+		return {};
 	compressed.resize(actualSize);
 	return compressed;
 }

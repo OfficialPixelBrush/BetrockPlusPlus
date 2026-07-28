@@ -93,6 +93,7 @@ DEFINE_COMMAND(CommandSummon, "summon", "Summons a smart entity", "", false, fal
 DEFINE_COMMAND(CommandStats, "stats", "Shows usage statistics", "", false, false);
 DEFINE_COMMAND(CommandFill, "fill", "Fills an area with the desired block",
                "<block:meta> <x0> <y0> <z0> <x1> <y1> <z1>", false, false);
+DEFINE_COMMAND(CommandStop, "stop", "Forces the server to stop", "[time]/cancel", true, false);
 /*
 DEFINE_COMMAND(CommandPose, "pose", "Set the current players' pose", "<crouch/fire/sit>", false, false);
 DEFINE_COMMAND(CommandInterface, "interface", "Open the desired interface", "<id>", false, false);
@@ -111,7 +112,6 @@ DEFINE_COMMAND(CommandSound, "sound", "Play a specified sound", "<id> [meta]", t
 DEFINE_COMMAND(CommandKill, "kil", "Kill the specified player", "[player]", true, false);
 DEFINE_COMMAND(CommandGamerule, "gamerule", "Configure gamerules", "<rule> <state>", true, false);
 DEFINE_COMMAND(CommandSave, "save", "Forces the server to save all loaded chunks", "", true, false);
-DEFINE_COMMAND(CommandStop, "stop", "Forces the server to stop", "", true, false);
 DEFINE_COMMAND(CommandFree, "free", "Forces the server to unload chunks nobody can see", "", true, false);
 DEFINE_COMMAND(CommandLoaded, "loaded", "Shows the number of loaded chunks", "", true, false);
 DEFINE_COMMAND(CommandUsage, "usage", "Shows the current memory usage in megabytes", "", true, false);
