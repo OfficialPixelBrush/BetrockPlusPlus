@@ -78,11 +78,11 @@ namespace Java {
 	 * @brief Casts a double to a 64-bit integer
 	 */
 constexpr inline int64_t DoubleToInt64(const double _value) {
-	if (std::isnan(_value))
+	if (std::isnan(_value)) [[unlikely]]
 		return 0;
-	if (_value > double(INT64_MAX))
+	if (_value > double(INT64_MAX)) [[unlikely]]
 		return INT64_MAX;
-	if (_value < double(INT64_MIN))
+	if (_value < double(INT64_MIN)) [[unlikely]]
 		return INT64_MIN;
 	if (_value > 0)
 		return int64_t(std::floor(_value));
@@ -94,11 +94,11 @@ constexpr inline int64_t DoubleToInt64(const double _value) {
 	 * @brief Casts a double to a 32-bit integer
 	 */
 constexpr inline int32_t DoubleToInt32(const double _value) {
-	if (std::isnan(_value))
+	if ((std::isnan(_value))) [[unlikely]]
 		return 0;
-	if (_value > double(INT32_MAX))
+	if (_value > double(INT32_MAX)) [[unlikely]]
 		return INT32_MAX;
-	if (_value < double(INT32_MIN))
+	if (_value < double(INT32_MIN)) [[unlikely]]
 		return INT32_MIN;
 	if (_value > 0)
 		return int32_t(std::floor(_value));
@@ -110,11 +110,11 @@ constexpr inline int32_t DoubleToInt32(const double _value) {
 	 * @brief Casts a float to a 64-bit integer
 	 */
 constexpr inline int64_t FloatToInt64(const float _value) {
-	if (std::isnan(_value))
+	if (std::isnan(_value)) [[unlikely]]
 		return 0;
-	if (_value > float(INT64_MAX))
+	if (_value > float(INT64_MAX)) [[unlikely]]
 		return INT64_MAX;
-	if (_value < float(INT64_MIN))
+	if (_value < float(INT64_MIN)) [[unlikely]]
 		return INT64_MIN;
 	if (_value > 0)
 		return int64_t(std::floor(_value));
@@ -126,11 +126,11 @@ constexpr inline int64_t FloatToInt64(const float _value) {
 	 * @brief Casts a float to a 32-bit integer
 	 */
 constexpr inline int32_t FloatToInt32(const float _value) {
-	if (std::isnan(_value))
+	if (std::isnan(_value)) [[unlikely]]
 		return 0;
-	if (_value > float(INT32_MAX))
+	if (_value > float(INT32_MAX)) [[unlikely]]
 		return INT32_MAX;
-	if (_value < float(INT32_MIN))
+	if (_value < float(INT32_MIN)) [[unlikely]]
 		return INT32_MIN;
 	if (_value > 0)
 		return int32_t(std::floor(_value));
