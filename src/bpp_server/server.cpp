@@ -386,6 +386,10 @@ void Server::Tick() {
 				overworldPositions.push_back(session->position);
 		}
 	}
+	// Inventory tracker
+	InventoryTracker::Tick(*this);
+
+	// Worlds
 	gameRuntime.world.Tick(overworldPositions);
 	gameRuntime.world.Update(overworldPositions);
 	gameRuntime.worldHell.Tick(netherPositions);
@@ -396,9 +400,6 @@ void Server::Tick() {
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChangesHell;
 	localBlockChanges.swap(chunkBlockChanges);
 	localBlockChangesHell.swap(chunkBlockChangesHell);
-
-	// Inventory tracker
-	InventoryTracker::Tick(*this);
 
 	// Entity trackers
 	overworldEntityTracker.Tick();
