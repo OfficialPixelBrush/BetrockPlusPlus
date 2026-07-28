@@ -513,7 +513,9 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_TORCH].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
-		// This prevents floating torches from existing
+		auto currentFace = static_cast<PacketData::FaceDirection>(6 - _world.GetMetadata(_pos));
+		if (CanTorchAttachTo(_world, _pos, currentFace))
+			return; // Already valid
 
 		// Matches vanilla order
 		static constexpr std::array<PacketData::FaceDirection, 5> CHECK_ORDER = {
@@ -521,6 +523,7 @@ void RegisterBlockBehaviors() {
 			PacketData::FaceDirection::Z_MINUS, PacketData::FaceDirection::Y_PLUS
 		};
 
+		// Attach to the first support block we find
 		for (PacketData::FaceDirection face : CHECK_ORDER) {
 			if (CanTorchAttachTo(_world, _pos, face)) {
 				_world.SetMeta(_pos, 6 - face);
