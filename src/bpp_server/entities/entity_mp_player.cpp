@@ -163,6 +163,7 @@ void EntityMPPlayer::UpdateFallState(float _movedY) {
 	return; // no-op
 }
 
+//TODO: IMPORTANT: Don't drop crafting table result slot
 void EntityMPPlayer::DropInventory() {
 	for (size_t i = 0; i < session->inventory.slots.size(); i++) {
 		auto stack = session->inventory.GetStackInSlot(i);
