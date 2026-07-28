@@ -324,11 +324,12 @@ void Server::Run() {
 		// if it gets too far behind, reset the ticks & baseTime
 		// to avoid running too many ticks at once
 		if (Clock::now() > nextTickTime + MAX_TICK_CATCH_UP * TICK_DURATION) {
+			baseTime = Clock::now();
+			ticks = 0;
 			auto overshoot = std::chrono::duration<double, std::milli>(Clock::now() - nextTickTime).count();
 			GlobalLogger().warn << "Can't keep up with ticks! (tick avg " << averageTickMs << "ms, overshoot "
 			                    << overshoot << "ms, budget "
 			                    << std::chrono::duration<double, std::milli>(TICK_DURATION).count() << "ms)\n";
-			ticks = 0;
 		}
 	}
 
