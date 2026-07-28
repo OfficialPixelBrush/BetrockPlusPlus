@@ -106,8 +106,9 @@ bool CanShearsOrSwordHarvest(ToolLevel _level, BlockType _block);
 
 // Usage
 void HarmTool(ItemStack* _stack, BlockType _targetBlock = BLOCK_INVALID);
-void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face);
-void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face);
+void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
+void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+                      PacketData::FaceDirection _face);
 
 // Attack
 void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face);

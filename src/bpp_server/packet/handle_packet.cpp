@@ -191,7 +191,7 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		GlobalLogger().info << position << "\n";
 		if (Items::itemBehavior[heldItem->id].onBlockUse) {
 			GlobalLogger().info << "Used on " << position << "\n";
-			Items::itemBehavior[heldItem->id].onBlockUse(_world, heldItem, position, _pkt.face);
+			Items::itemBehavior[heldItem->id].onBlockUse(_world, heldItem, position, *_session.entity, _pkt.face);
 		}
 	}
 }

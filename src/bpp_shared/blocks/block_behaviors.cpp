@@ -616,24 +616,24 @@ void RegisterBlockBehaviors() {
 		_world.CreateTileEntity(std::move(chest));
 	};
 	blockBehaviors[BLOCK_CHEST].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
-		auto* ChestTE = _world.GetTileEntityAs<TileEntityChest>(_pos);
-		if (!ChestTE) return;
+		auto* te = _world.GetTileEntityAs<TileEntityChest>(_pos);
+		if (!te)
+			return;
 
-		_world.DropInventory(ChestTE->inventory, _pos);
+		_world.DropInventory(te->inventory, _pos);
 	};
 
-	// Do we need to handle lit furnace placement too?
-	// ^^ probably not lol
+
 	blockBehaviors[BLOCK_FURNACE].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		auto furnace = std::make_shared<TileEntityFurnace>(_pos);
 		_world.CreateTileEntity(std::move(furnace));
 	};
 	blockBehaviors[BLOCK_FURNACE].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
-		auto* FurnaceTE = _world.GetTileEntityAs<TileEntityFurnace>(_pos);
-		if (!FurnaceTE)
+		auto* te = _world.GetTileEntityAs<TileEntityFurnace>(_pos);
+		if (!te)
 			return;
 
-		_world.DropInventory(FurnaceTE->inventory, _pos);
+		_world.DropInventory(te->inventory, _pos);
 	};
 
 	//TODO: Add another portal creation function matching with b1.7.3's limitations, that is toggleable via a config entry,

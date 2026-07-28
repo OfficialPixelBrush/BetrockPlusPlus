@@ -233,7 +233,7 @@ void HarmTool(ItemStack* _stack, BlockType _targetBlock) {
 	}
 }
 
-void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
+void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face) {
 	BlockType b = _world.GetBlockId(_pos);
 	if (b == BLOCK_GRASS || b == BLOCK_DIRT) {
 		_world.SetBlock(_pos, BLOCK_FARMLAND);
@@ -241,7 +241,8 @@ void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::Face
 	HarmTool(_stack, b);
 }
 
-void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
+void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+                      PacketData::FaceDirection _face) {
 	_pos = Blocks::GetAdjacentBlockPos(_pos, _face);
 	_world.SetBlock(_pos, BLOCK_FIRE);
 	HarmTool(_stack);
