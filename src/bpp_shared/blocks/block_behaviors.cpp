@@ -119,6 +119,10 @@ static int GetDirectionFromYaw(float _yaw, int _directionCount) {
 	return MathHelper::FloorDouble((_yaw * _directionCount / 360.0f) + 0.5f) & 3;
 }
 
+static void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer) {
+	BreakAndDropBlock(_world, _pos);
+}
+
 static bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer,
                          PacketData::FaceDirection _face, BlockType _blockId, uint8_t _meta) {
 	BlockType existing = _world.GetBlockId(_pos);
@@ -178,10 +182,30 @@ static void ToggleDoor(WorldManager& _world, Int3 _pos) {
 	return;
 }
 
+static void BreakDoor(WorldManager& _world, Int3 _pos, BlockType _doorType) {
+	auto meta = _world.GetMetadata(_pos);
+	if (meta & 8) {
+		// We are the top of the door
+		if (_world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z }) != _doorType)
+			// Below us is not the bottom of a door! This is bad!
+			return;
+
+		// Tell the bottom of the door to break
+		BreakDoor(_world, { _pos.x, _pos.y - 1, _pos.z }, _doorType);
+		return;
+	}
+	Int3 top = { _pos.x, _pos.y + 1, _pos.z };
+	if (_world.GetBlockId(top) == _doorType && (_world.GetMetadata(top) & 8)) {
+		_world.SetBlock(top, BLOCK_AIR);
+	}
+	BreakAndDropBlock(_world, _pos);
+}
+
 void RegisterBlockBehaviors() {
-	// Initialize the default block placed behavior
+	// Initialize the default behaviors
 	for (int i = 0; i < 256; i++) {
 		blockBehaviors[i].onBlockPlaced = GenericPlace;
+		blockBehaviors[i].onBlockDestroyedByPlayer = GenericBreak;
 	}
 
 	// Liquids/zero-size AABBs
@@ -541,12 +565,101 @@ void RegisterBlockBehaviors() {
 			BreakAndDropBlock(_world, _pos);
 	};
 
+	auto onDoorPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+	                      BlockType _blockId, uint8_t _meta) -> bool {
+		// Doors can only be placed by clicking the top face of a block
+		if (_face != PacketData::FaceDirection::Y_PLUS)
+			return false;
+
+		// _pos is already the target cell
+		Int3 placePos = _pos;
+		Int3 abovePos = { placePos.x, placePos.y + 1, placePos.z };
+
+		// Is this placement valid?
+		if (!_world.InBounds(abovePos.y))
+			return false;
+		if (!_world.IsBlockNormalCube({ placePos.x, placePos.y - 1, placePos.z }))
+			return false;
+
+		auto isReplaceable = [&](Int3 _p) {
+			BlockType existing = _world.GetBlockId(_p);
+			return existing == BLOCK_AIR || existing == BLOCK_WATER_FLOWING || existing == BLOCK_WATER_STILL ||
+			       existing == BLOCK_LAVA_FLOWING || existing == BLOCK_LAVA_STILL || existing == BLOCK_FIRE ||
+			       existing == BLOCK_SNOW_LAYER;
+		};
+		if (!isReplaceable(placePos) || !isReplaceable(abovePos))
+			return false;
+
+		int facing = MathHelper::FloorDouble((_placer.rotationYaw + 180.0F) * 4.0F / 360.0F - 0.5f) & 3;
+
+		Int3 leftOffset{};
+		Int3 rightOffset{};
+
+		switch (facing) {
+		case 0:
+			leftOffset = { 0, 0, -1 };
+			rightOffset = { 0, 0, 1 };
+			break;
+		case 1:
+			leftOffset = { 1, 0, 0 };
+			rightOffset = { -1, 0, 0 };
+			break;
+		case 2:
+			leftOffset = { 0, 0, 1 };
+			rightOffset = { 0, 0, -1 };
+			break;
+		case 3:
+			leftOffset = { -1, 0, 0 };
+			rightOffset = { 1, 0, 0 };
+			break;
+		}
+
+		Int3 left = placePos + leftOffset;
+		Int3 leftTop = { left.x, left.y + 1, left.z };
+
+		Int3 right = placePos + rightOffset;
+		Int3 rightTop = { right.x, right.y + 1, right.z };
+
+		int leftSolidBlocks = (_world.IsBlockNormalCube(left) ? 1 : 0) + (_world.IsBlockNormalCube(leftTop) ? 1 : 0);
+		int rightSolidBlocks = (_world.IsBlockNormalCube(right) ? 1 : 0) + (_world.IsBlockNormalCube(rightTop) ? 1 : 0);
+
+		bool leftHasDoor = _world.GetBlockId(left) == _blockId || _world.GetBlockId(leftTop) == _blockId;
+		bool rightHasDoor = _world.GetBlockId(right) == _blockId || _world.GetBlockId(rightTop) == _blockId;
+
+		bool hingeOnRight = false;
+		if (leftHasDoor && !rightHasDoor) {
+			hingeOnRight = true;
+		} else if (rightSolidBlocks > leftSolidBlocks) {
+			hingeOnRight = true;
+		}
+
+		if (hingeOnRight) {
+			facing = (facing - 1) & 3;
+			facing |= 4;
+		}
+
+		_world.SetBlock(placePos, _blockId, uint8_t(facing));
+		_world.SetBlock(abovePos, _blockId, uint8_t(facing | 8));
+
+		// heldItem->DecrementCount(1) is handled by the caller when this returns true.
+		return true;
+	};
+
+	blockBehaviors[BLOCK_DOOR_WOOD].onBlockPlaced = onDoorPlace;
+	blockBehaviors[BLOCK_DOOR_IRON].onBlockPlaced = onDoorPlace;
+
 	// for when the block is interacted with!
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated = [](WorldManager& _world, Int3 _pos) -> bool {
 		ToggleDoor(_world, _pos);
 		return false;
 	};
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockClicked = ToggleDoor;
+	blockBehaviors[BLOCK_DOOR_WOOD].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
+		BreakDoor(_world, _pos, BLOCK_DOOR_WOOD);		
+	};
+	blockBehaviors[BLOCK_DOOR_IRON].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
+		BreakDoor(_world, _pos, BLOCK_DOOR_IRON);
+	};
 
 	// Falling blocks!
 	blockBehaviors[BLOCK_GRAVEL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
@@ -648,7 +761,7 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_FURNACE].onBlockRemoval = dropFurnaceInventory;
 	blockBehaviors[BLOCK_FURNACE_LIT].onBlockRemoval = dropFurnaceInventory;
 
-	//TODO: Add another portal creation function matching with b1.7.3's limitations, that is toggleable via a config entry,
+	// TODO: Add another portal creation function matching with b1.7.3's limitations, that is toggleable via a config entry,
 	// for a more authentic experience
 	blockBehaviors[BLOCK_FIRE].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		bool isXAligned = (_world.GetBlockId(_pos + Int3{ 1, -1, 0 }) == BLOCK_OBSIDIAN ||

@@ -117,10 +117,13 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 		return;
 	}
 	case PacketData::MineStatus::DIGGING_FINISHED: {
-		if (_session.lastTargetedBlock != _world.GetBlockId({ _pkt.position.x, _pkt.position.y, _pkt.position.z })) {
+		auto newBlockId = _world.GetBlockId({ _pkt.position.x, _pkt.position.y, _pkt.position.z });
+		if (_session.lastTargetedBlock != newBlockId) {
 			return; // block changed while mining so we don't drop it
 		}
-		Blocks::BreakAndDropBlock(_world, packetPos);
+		if (auto func = Blocks::blockBehaviors[newBlockId].onBlockDestroyedByPlayer) {
+			func(_world, { _pkt.position.x, _pkt.position.y, _pkt.position.z }, *_session.entity);
+		}
 
 		ItemStack* heldItem = _session.inventory.GetHeldItem();
 		if (!heldItem)

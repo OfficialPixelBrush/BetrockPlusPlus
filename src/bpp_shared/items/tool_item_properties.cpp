@@ -184,66 +184,11 @@ void RegisterAll() {
 
 	auto onDoorPlace = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
 	                      PacketData::FaceDirection _face) {
-		if (_face != PacketData::FaceDirection::Y_PLUS)
-			return;
-
-		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
-
-		BlockType doorBlock = _stack->id == DOOR_WOOD ? BLOCK_DOOR_WOOD : BLOCK_DOOR_IRON;
-
-		int facing = MathHelper::FloorDouble((_user.rotationYaw + 180.0F) * 4.0F / 360.0F - 0.5f) & 3;
-
-		Int3 leftOffset{};
-		Int3 rightOffset{};
-
-		switch (facing) {
-		case 0:
-			leftOffset = { -1, 0, 0 };
-			rightOffset = { 1, 0, 0 };
-			break;
-		case 1:
-			leftOffset = { 0, 0, -1 };
-			rightOffset = { 0, 0, 1 };
-			break;
-		case 2:
-			leftOffset = { 1, 0, 0 };
-			rightOffset = { -1, 0, 0 };
-			break;
-		case 3:
-			leftOffset = { 0, 0, 1 };
-			rightOffset = { 0, 0, -1 };
-			break;
-		}
-
-		Int3 left = placePos + leftOffset;
-		Int3 leftTop = { left.x, left.y + 1, left.z };
-
-		Int3 right = placePos + rightOffset;
-		Int3 rightTop = { right.x, right.y + 1, right.z };
-
-		int leftSolidBlocks = (_world.IsBlockNormalCube(left) ? 1 : 0) + (_world.IsBlockNormalCube(leftTop) ? 1 : 0);
-
-		int rightSolidBlocks = (_world.IsBlockNormalCube(right) ? 1 : 0) + (_world.IsBlockNormalCube(rightTop) ? 1 : 0);
-
-		bool leftHasDoor = _world.GetBlockId(left) == doorBlock || _world.GetBlockId(leftTop) == doorBlock;
-
-		bool rightHasDoor = _world.GetBlockId(right) == doorBlock || _world.GetBlockId(rightTop) == doorBlock;
-
-		bool hingeOnRight = false;
-
-		if (leftHasDoor && !rightHasDoor) {
-			hingeOnRight = true;
-		} else if (rightSolidBlocks > leftSolidBlocks) {
-			hingeOnRight = true;
-		}
-
-		if (hingeOnRight)
-			facing |= 4;
-
-		_world.SetBlock(placePos, doorBlock, facing);
-		_world.SetBlock({ placePos.x, placePos.y + 1, placePos.z }, doorBlock, facing | 8);
-
-		_stack->DecrementCount(1);
+		BlockType targetBlockType;
+		targetBlockType = _stack->id == DOOR_WOOD ? BLOCK_DOOR_WOOD : BLOCK_DOOR_IRON;
+		Int3 placePosition = Blocks::GetAdjacentBlockPos(_pos, _face);
+		if (Blocks::blockBehaviors[targetBlockType].onBlockPlaced(_world, placePosition, _user, _face, targetBlockType, 0))
+			_stack->DecrementCount(1);
 	};
 
 	itemBehavior[DOOR_WOOD].onBlockUse = onDoorPlace;
