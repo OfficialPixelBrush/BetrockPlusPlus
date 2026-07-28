@@ -40,7 +40,7 @@ void CraftingTableInventoryInteraction::OnInteractionClosed(PlayerEntity& player
 
 	// Drop our inventory
 	// Don't drop the result slot
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 9; i++) {
 		auto& stack = this->craftInventory.slots[i];
 		player.DropItem(stack);
 		stack = {};
