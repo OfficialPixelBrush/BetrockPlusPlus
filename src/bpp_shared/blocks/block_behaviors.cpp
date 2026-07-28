@@ -623,18 +623,21 @@ void RegisterBlockBehaviors() {
 		_world.DropInventory(te->inventory, _pos);
 	};
 
-
 	blockBehaviors[BLOCK_FURNACE].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		auto furnace = std::make_shared<TileEntityFurnace>(_pos);
 		_world.CreateTileEntity(std::move(furnace));
 	};
-	blockBehaviors[BLOCK_FURNACE].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+
+	auto dropFurnaceInventory = [](WorldManager& _world, Int3 _pos) -> void {
 		auto* te = _world.GetTileEntityAs<TileEntityFurnace>(_pos);
 		if (!te)
 			return;
 
 		_world.DropInventory(te->inventory, _pos);
 	};
+
+	blockBehaviors[BLOCK_FURNACE].onBlockRemoval = dropFurnaceInventory;
+	blockBehaviors[BLOCK_FURNACE_LIT].onBlockRemoval = dropFurnaceInventory;
 
 	//TODO: Add another portal creation function matching with b1.7.3's limitations, that is toggleable via a config entry,
 	// for a more authentic experience
