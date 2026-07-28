@@ -23,7 +23,7 @@ static Vec3 GetFluidFlowVector(WorldManager& _world, Int3 _pos) {
 	auto waterMaterial = Material::Water();
 	Vec3 flowVector{};
 	auto getEffectiveFlowDecay = [&](WorldManager& _lWorld, Int3 _lPos, Material _lMaterial) {
-		if (_lWorld.GetMaterial(_pos) != _lMaterial)
+		if (_lWorld.GetMaterial(_lPos) != _lMaterial)
 			return -1;
 		int meta = _lWorld.GetMetadata(_lPos);
 		if (meta >= 8)
@@ -91,7 +91,6 @@ static Vec3 GetFluidFlowVector(WorldManager& _world, Int3 _pos) {
 			nearWall = true;
 
 		if (nearWall) {
-			// Normalize what we have so far, then let the huge -6 dominate the normalization after this
 			double lenSq = flowVector.x * flowVector.x + flowVector.y * flowVector.y + flowVector.z * flowVector.z;
 			if (lenSq > 0.0) {
 				double invLen = 1.0 / std::sqrt(lenSq);
@@ -103,7 +102,6 @@ static Vec3 GetFluidFlowVector(WorldManager& _world, Int3 _pos) {
 		}
 	}
 
-	// Final normalize
 	double lenSq = flowVector.x * flowVector.x + flowVector.y * flowVector.y + flowVector.z * flowVector.z;
 	if (lenSq > 0.0) {
 		double invLen = 1.0 / std::sqrt(lenSq);
