@@ -13,6 +13,8 @@
 
 // ChunkCache so we don't have to do map lookups for every neighbor access during light propagation.
 void ChunkCache::Refresh(int _ncx, int _ncz, WorldManager& _world) {
+	if (_ncx == cx && _ncz == cz)
+		return;
 	cx = _ncx;
 	cz = _ncz;
 	for (int dx = -1; dx <= 1; ++dx) {

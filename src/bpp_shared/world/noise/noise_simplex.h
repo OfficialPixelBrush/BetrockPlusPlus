@@ -25,10 +25,10 @@ protected:
 
 private:
 	static constexpr int32_t gradients[12][3] = { { 1, 1, 0 }, { -1, 1, 0 }, { 1, -1, 0 }, { -1, -1, 0 },
-		                               { 1, 0, 1 }, { -1, 0, 1 }, { 1, 0, -1 }, { -1, 0, -1 },
-		                               { 0, 1, 1 }, { 0, -1, 1 }, { 0, 1, -1 }, { 0, -1, -1 } };
-	static constexpr double skewing = 0.5 * (sqrt(3.0) - 1.0);
-	static constexpr double unskewing = (3.0 - sqrt(3.0)) / 6.0;
+												  { 1, 0, 1 }, { -1, 0, 1 }, { 1, 0, -1 }, { -1, 0, -1 },
+		                                          { 0, 1, 1 }, { 0, -1, 1 }, { 0, 1, -1 }, { 0, -1, -1 } };
+	static constexpr double skewing = 0.36602540378;
+	static constexpr double unskewing = 0.2113248654;
 
 public:
 	NoiseSimplex();
