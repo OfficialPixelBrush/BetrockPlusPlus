@@ -12,6 +12,8 @@ std::string ToUTF8(std::u16string _str) {
 	// in UTF-16 land, 0xDC00–0xDFFF have a special purpose,
 	// which we will ignore
 	std::string out;
+	// Optimistically assume most of these are just ASCII
+	out.reserve(_str.size());
 	for (size_t i = 0; i < _str.size(); i++) {
 		const char16_t c = _str[i];
 		if (c <= 0x7F) {
@@ -25,6 +27,7 @@ std::string ToUTF8(std::u16string _str) {
 			out.push_back(static_cast<char>(0x80 | (c & 0x3F)));
 		}
 	}
+	out.shrink_to_fit();
 	return out;
 }
 
@@ -64,7 +67,7 @@ char32_t DecodeUTF8Char(const std::string& _s, size_t& _i) {
 // Turn a UTF-8 String into a UCS-2 String
 std::u16string ToUCS2(std::string _str) {
 	std::u16string out;
-
+	out.reserve(_str.size());
 	for (size_t i = 0; i < _str.size();) {
 		char32_t cp = DecodeUTF8Char(_str, i);
 
