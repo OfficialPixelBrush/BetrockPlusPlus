@@ -137,7 +137,7 @@ struct Tag {
 
 	// Compound lookup helpers
 	bool Has(const std::string& _key) const {
-		return compound.count(_key) > 0;
+		return compound.contains(_key);
 	}
 
 	const Tag& Get(const std::string& _key) const {
@@ -155,11 +155,12 @@ private:
 };
 
 struct NBTwriter {
+	size_t pos;
 	NBTwriter() = default;
-	NBTwriter(std::vector<uint8_t>& _out, Tag& _root) {
+	NBTwriter(std::vector<uint8_t>& _out, Tag& _root) : pos(0) {
 		// root should be a TAG_Compound with whatever name you want (usually "")
 		// writeTag handles type byte + name + payload + TAG_END automatically
-		_out.reserve(WriteTag(_out, _root, false, true));
+		_out.resize(WriteTag(_out, _root, false, true));
 		WriteTag(_out, _root, false, false);
 	}
 
@@ -167,9 +168,11 @@ struct NBTwriter {
 	                const bool _dryRun = false) {
 		size_t size = 0;
 
-		if (!_payload)
+		if (!_payload) {
+			size += sizeof(uint8_t);
 			if (!_dryRun)
-				_out.push_back(uint8_t(_tag.type));
+				_out[pos++] = (uint8_t(_tag.type));
+		}
 		if (!_payload && _tag.type != TAG_END)
 			size += WriteString(_out, _tag.name, _dryRun);
 
@@ -203,18 +206,30 @@ struct NBTwriter {
 			size += _tag.byteArray.size();
 			if (_dryRun)
 				break;
-			for (int8_t b : _tag.byteArray)
-				_out.push_back(uint8_t(b));
+			// TODO: Assume we got the size
+			memcpy(_out.data() + pos,
+				_tag.byteArray.data(),
+				_tag.byteArray.size());
+
+			pos += _tag.byteArray.size();
 			break;
 		}
 
 		case TAG_INTARRAY: {
 			size += WriteI32(_out, int32_t(_tag.intArray.size()), _dryRun);
-			size += _tag.intArray.size();
+			size += _tag.intArray.size() * sizeof(int32_t);
 			if (_dryRun)
 				break;
-			for (int32_t b : _tag.intArray)
-				WriteI32(_out, b);
+			for (const int32_t b : _tag.intArray) {
+				uint32_t u = uint32_t(b);
+
+				_out[pos+0] = u >> 24;
+				_out[pos+1] = u >> 16;
+				_out[pos+2] = u >> 8;
+				_out[pos+3] = u;
+
+				pos += 4;
+			}
 			break;
 		}
 
@@ -242,82 +257,84 @@ struct NBTwriter {
 	}
 
 	// Write helpers
-	size_t WriteI8(std::vector<uint8_t>& _out, const int8_t _v, const bool _dryRun = false) {
+	inline size_t WriteI8(std::vector<uint8_t>& _out, const int8_t _v, const bool _dryRun = false) {
 		if (!_dryRun)
-			_out.push_back(uint8_t(_v));
+			_out[pos++] = (uint8_t(_v));
 		return sizeof(int8_t);
 	}
 
-	size_t WriteI16(std::vector<uint8_t>& _out, const int16_t _v, const bool _dryRun = false) {
+	inline size_t WriteI16(std::vector<uint8_t>& _out, const int16_t _v, const bool _dryRun = false) {
 		if (!_dryRun) {
 			uint16_t u = uint16_t(_v);
-			_out.push_back((u >> 8) & 0xFF);
-			_out.push_back(u & 0xFF);
+			_out[pos] = ((u >> 8) & 0xFF);
+			_out[pos + 1] = (u & 0xFF);
+			pos += sizeof(int16_t);
 		}
 		return sizeof(int16_t);
 	}
 
-	size_t WriteI32(std::vector<uint8_t>& _out, const int32_t _v, const bool _dryRun = false) {
+	inline size_t WriteI32(std::vector<uint8_t>& _out, const int32_t _v, const bool _dryRun = false) {
 		if (!_dryRun) {
 			uint32_t u = uint32_t(_v);
-			_out.push_back((u >> 24) & 0xFF);
-			_out.push_back((u >> 16) & 0xFF);
-			_out.push_back((u >> 8) & 0xFF);
-			_out.push_back(u & 0xFF);
+			_out[pos] = ((u >> 24) & 0xFF);
+			_out[pos + 1] = ((u >> 16) & 0xFF);
+			_out[pos + 2] = ((u >> 8) & 0xFF);
+			_out[pos + 3] = (u & 0xFF);
+			pos += sizeof(int32_t);
 		}
 		return sizeof(int32_t);
 	}
 
-	size_t WriteI64(std::vector<uint8_t>& _out, const int64_t _v, const bool _dryRun = false) {
+	inline size_t WriteI64(std::vector<uint8_t>& _out, const int64_t _v, const bool _dryRun = false) {
 		if (!_dryRun) {
 			uint64_t u = uint64_t(_v);
-			_out.push_back((u >> 56) & 0xFF);
-			_out.push_back((u >> 48) & 0xFF);
-			_out.push_back((u >> 40) & 0xFF);
-			_out.push_back((u >> 32) & 0xFF);
-			_out.push_back((u >> 24) & 0xFF);
-			_out.push_back((u >> 16) & 0xFF);
-			_out.push_back((u >> 8) & 0xFF);
-			_out.push_back(u & 0xFF);
+			_out[pos] = ((u >> 56) & 0xFF);
+			_out[pos + 1] = ((u >> 48) & 0xFF);
+			_out[pos + 2] = ((u >> 40) & 0xFF);
+			_out[pos + 3] = ((u >> 32) & 0xFF);
+			_out[pos + 4] = ((u >> 24) & 0xFF);
+			_out[pos + 5] = ((u >> 16) & 0xFF);
+			_out[pos + 6] = ((u >> 8) & 0xFF);
+			_out[pos + 7] = (u & 0xFF);
+			pos += sizeof(int64_t);
 		}
 		return sizeof(int64_t);
 	}
 
-	size_t WriteF32(std::vector<uint8_t>& _out, const float _v, const bool _dryRun = false) {
+	inline size_t WriteF32(std::vector<uint8_t>& _out, const float _v, const bool _dryRun = false) {
 		if (!_dryRun) {
-			uint32_t raw;
-			memcpy(&raw, &_v, 4);
+			uint32_t raw = std::bit_cast<uint32_t>(_v);
 			WriteI32(_out, int32_t(raw));
 		}
 		return sizeof(float);
 	}
 
-	size_t WriteF64(std::vector<uint8_t>& _out, const double _v, const bool _dryRun = false) {
+	inline size_t WriteF64(std::vector<uint8_t>& _out, const double _v, const bool _dryRun = false) {
 		if (!_dryRun) {
-			uint64_t raw;
-			memcpy(&raw, &_v, 8);
+			uint64_t raw = std::bit_cast<uint64_t>(_v);
 			WriteI64(_out, int64_t(raw));
 		}
 		return sizeof(double);
 	}
 
-	size_t WriteString(std::vector<uint8_t>& _out, const std::string& _s, const bool _dryRun = false) {
+	inline size_t WriteString(std::vector<uint8_t>& _out, const std::string& _s, const bool _dryRun = false) {
 		if (!_dryRun) {
 			WriteI16(_out, int16_t(_s.size()));
-			_out.insert(_out.end(), _s.begin(), _s.end());
+			memcpy(_out.data() + pos, _s.data(), _s.size());
+			pos += _s.size();
 		}
-		return 2 + (_s.size() * 2);
+		return sizeof(int16_t) + _s.size();
 	}
 };
 
 struct NBTParser {
 	uint8_t* data;
-	int64_t length;
-	int64_t pos;
+	size_t length;
+	size_t pos;
 	Tag root;
 
 	NBTParser() = default;
-	NBTParser(uint8_t* _pdata, int64_t _plength) : data(_pdata), length(_plength), pos(0) {
+	NBTParser(uint8_t* _pdata, size_t _plength) : data(_pdata), length(_plength), pos(0) {
 		root = ParseTag();
 		if (root.type != TAG_COMPOUND)
 			throw std::runtime_error("NBT root tag is not a compound!");
@@ -352,17 +369,19 @@ struct NBTParser {
 
 		case TAG_BYTEARRAY: {
 			int32_t count = ReadI32();
-			tag.byteArray.reserve(size_t(count));
-			for (int i = 0; i < count; i++)
-				tag.byteArray.push_back(ReadI8());
+			tag.byteArray.resize(count);
+			if (count < 0 || pos + size_t(count) > length) [[unlikely]]
+    			throw std::runtime_error("NBT: byte array out of bounds");
+			std::memcpy(tag.byteArray.data(), data + pos, count);
+			pos += count;
 			break;
 		}
 
 		case TAG_INTARRAY: {
 			int32_t count = ReadI32();
-			tag.intArray.reserve(size_t(count));
-			for (int i = 0; i < count; i++)
-				tag.intArray.push_back(ReadI32());
+			tag.intArray.resize(count);
+			for (auto &v : tag.intArray)
+				v = ReadI32();
 			break;
 		}
 
@@ -375,7 +394,7 @@ struct NBTParser {
 
 			tag.list.reserve(size_t(count));
 			for (int i = 0; i < count; i++)
-				tag.list.push_back(ParsePayload(TagType(innerType)));
+				tag.list.emplace_back(ParsePayload(TagType(innerType)));
 
 			tag.listType = TagType(innerType);
 			break;
@@ -386,7 +405,7 @@ struct NBTParser {
 				Tag child = ParseTag();
 				if (child.type == TAG_END)
 					break;
-				tag.compound[child.name] = std::move(child);
+				tag.compound.try_emplace(child.name, std::move(child));
 			}
 			break;
 		}
@@ -422,9 +441,8 @@ struct NBTParser {
 	}
 
 	int64_t ReadI64() {
-		uint32_t hi = uint32_t(ReadI32());
-		uint32_t lo = uint32_t(ReadI32());
-		return int64_t((uint64_t(hi) << 32) | lo);
+		uint64_t hi = uint32_t(ReadI32());
+		return (hi << 32) | uint32_t(ReadI32());
 	}
 
 	int16_t ReadI16() {
@@ -444,22 +462,18 @@ struct NBTParser {
 
 	float ReadF32() {
 		uint32_t raw = uint32_t(ReadI32());
-		float f;
-		memcpy(&f, &raw, 4);
-		return f;
+		return std::bit_cast<float>(raw);
 	}
 
 	double ReadF64() {
 		uint64_t raw = uint64_t(ReadI64());
-		double d;
-		memcpy(&d, &raw, 8);
-		return d;
+		return std::bit_cast<double>(raw);
 	}
 
 	std::string ReadString() {
 		uint16_t len = uint16_t(ReadI16());
 		if (pos + len > length)
-			throw std::runtime_error("NBT: string out of bounds");
+			throw std::runtime_error(std::format("NBT: string out of bounds ({}+{}/{})", pos,len,length));
 		std::string s(reinterpret_cast<const char*>(data) + pos, len);
 		pos += len;
 		return s;
