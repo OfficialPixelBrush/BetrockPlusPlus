@@ -194,6 +194,14 @@ struct WorldWrapper {
 			}
 		}
 
+		// Call our on placed function
+		if (_type != BLOCK_AIR) {
+			// So water and lava flow
+			auto function = Blocks::blockBehaviors[_type].onBlockAdded;
+			if (function)
+				function(manager, _wpos);
+		}
+
 		// Callback for the client and server to know about this block update
 		if (manager.onBlockUpdate)
 			manager.onBlockUpdate(PendingBlock{ .block{ _type, _meta },
