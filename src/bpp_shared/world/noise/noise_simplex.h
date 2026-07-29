@@ -18,16 +18,17 @@
 class NoiseSimplex : public NoiseGenerator {
 protected:
 	int32_t permutations[512];
+    int32_t permMod12[512];
 	Vec3 coordinate;
 	double GenerateNoiseBase(Vec3 _position);
 	void InitPermTable(Java::Random& _rand);
 
 private:
-	const int32_t gradients[12][3] = { { 1, 1, 0 }, { -1, 1, 0 }, { 1, -1, 0 }, { -1, -1, 0 },
+	static constexpr int32_t gradients[12][3] = { { 1, 1, 0 }, { -1, 1, 0 }, { 1, -1, 0 }, { -1, -1, 0 },
 		                               { 1, 0, 1 }, { -1, 0, 1 }, { 1, 0, -1 }, { -1, 0, -1 },
 		                               { 0, 1, 1 }, { 0, -1, 1 }, { 0, 1, -1 }, { 0, -1, -1 } };
-	const double skewing = 0.5 * (sqrt(3.0) - 1.0);
-	const double unskewing = (3.0 - sqrt(3.0)) / 6.0;
+	static constexpr double skewing = 0.5 * (sqrt(3.0) - 1.0);
+	static constexpr double unskewing = (3.0 - sqrt(3.0)) / 6.0;
 
 public:
 	NoiseSimplex();

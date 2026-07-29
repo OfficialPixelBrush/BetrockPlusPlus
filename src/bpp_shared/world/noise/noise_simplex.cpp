@@ -31,17 +31,27 @@ void NoiseSimplex::InitPermTable(Java::Random& _rand) {
 		std::swap(permutations[i], permutations[j]);
 		permutations[i + 256] = permutations[i];
 	}
+	
+    // Precompute the modulo once, at init time, instead of every sample.
+    for (int32_t i = 0; i < 512; ++i) {
+        permMod12[i] = permutations[i] % 12;
+    }
 }
 
 void NoiseSimplex::GenerateNoise(std::vector<double>& _values, Vec2 _pOffset, Int32_2 _pSize, Vec2 _pScale,
                                  double _amplitude) {
 	size_t index = 0;
 
+    std::vector<double> yPositions(_pSize.y);
+    for (int32_t yI = 0; yI < _pSize.y; ++yI) {
+        yPositions[yI] = (_pOffset.y + double(yI)) * _pScale.y + coordinate.y;
+    }
+
 	for (int32_t xI = 0; xI < _pSize.x; ++xI) {
 		double xPos = (_pOffset.x + double(xI)) * _pScale.x + coordinate.x;
 
 		for (int32_t yI = 0; yI < _pSize.y; ++yI) {
-			double yPos = (_pOffset.y + double(yI)) * _pScale.y + coordinate.y;
+			double yPos = yPositions[yI];
 			double skew = (xPos + yPos) * skewing;
 			int32_t x0 = Wrap(xPos + skew);
 			int32_t y0 = Wrap(yPos + skew);
@@ -66,9 +76,9 @@ void NoiseSimplex::GenerateNoise(std::vector<double>& _values, Vec2 _pOffset, In
 			double y1c = y0b - 1.0 + 2.0 * unskewing;
 			int32_t xInt = x0 & 255;
 			int32_t yInt = y0 & 255;
-			int32_t grad0 = permutations[xInt + permutations[yInt]] % 12;
-			int32_t grad1 = permutations[xInt + i + permutations[yInt + j]] % 12;
-			int32_t grad2 = permutations[xInt + 1 + permutations[yInt + 1]] % 12;
+			int32_t grad0 = permMod12[xInt + permutations[yInt]];
+			int32_t grad1 = permMod12[xInt + i + permutations[yInt + j]];
+			int32_t grad2 = permMod12[xInt + 1 + permutations[yInt + 1]];
 			double term0 = 0.5 - x0b * x0b - y0b * y0b;
 			double contrib0;
 			if (term0 < 0.0) {
