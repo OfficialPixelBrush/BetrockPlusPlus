@@ -76,7 +76,8 @@ struct WorldManager {
 	BlockType GetFirstUncoveredBlock(int _wx, int _wz);
 	int FindTopSolidBlock(int _wx, int _wz);
 	void SetMeta(const Int3 _wpos, const uint8_t _metadata = 0);
-	void SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata = 0, const bool keepTileEntity = false);
+	void SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata = 0,
+	              const bool keepTileEntity = false, const bool updateNeighbors = true);
 	void SetBlockRaw(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata = 0);
 	void DrainGenQueue();
 	bool IsLiquidInAabb(AABB _collider);

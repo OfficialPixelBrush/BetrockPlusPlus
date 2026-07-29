@@ -32,6 +32,8 @@ bool CanFallAt(WorldManager& _world, Int3 _position) {
 
 void BreakAndDropBlock(WorldManager& _world, Int3 _pos) {
 	BlockType blockId = _world.GetBlockId({ _pos.x, _pos.y, _pos.z });
+	if (blockId == BLOCK_AIR)
+		return;
 	uint8_t meta = _world.GetMetadata({ _pos.x, _pos.y, _pos.z });
 	_world.SetBlock({ _pos.x, _pos.y, _pos.z }, BLOCK_AIR);
 

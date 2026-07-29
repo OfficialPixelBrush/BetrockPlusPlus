@@ -28,22 +28,29 @@ struct ScheduledTick {
 	}
 };
 
+struct PendingEntry {
+	TickTime dueTick;
+	int64_t sequence;
+};
+
 struct WorldManager;
 struct TickScheduler {
 	WorldManager* world = nullptr;
 	std::priority_queue<ScheduledTick, std::vector<ScheduledTick>, std::greater<ScheduledTick>> scheduledTicks;
-	std::unordered_map<Int3, TickTime> pending;
+	std::unordered_map<Int3, PendingEntry> pending;
 
 	TickTime currentTick = 0;
 	int64_t nextSequence = 0;
 
 	void ScheduleUpdateTick(Int3 _pos, BlockType _block, int _tickDelay) {
-		if (pending.contains(_pos) && pending[_pos] == currentTick + TickTime(_tickDelay)) {
-			return;
+		TickTime dueTick = currentTick + TickTime(_tickDelay);
+		auto it = pending.find(_pos);
+		if (it != pending.end() && it->second.dueTick == dueTick) {
+			return; // already scheduled for exactly this tick
 		}
 		auto sequence = nextSequence++;
-		scheduledTicks.push({ currentTick + _tickDelay, sequence, _pos, _block });
-		pending[_pos] = sequence;
+		scheduledTicks.push({ dueTick, sequence, _pos, _block });
+		pending[_pos] = { dueTick, sequence };
 	}
 
 	void Tick();

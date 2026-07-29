@@ -712,7 +712,7 @@ void WorldManager::SetBlockRaw(const Int3 _wpos, const BlockType _blockType, con
 	chunk->SetMeta(local, _metadata);
 }
 
-void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata, const bool keepTileEntity) {
+void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata, const bool keepTileEntity, const bool updateNeighbors) {
 	if (!InBounds(_wpos.y))
 		return;
 	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
@@ -784,7 +784,7 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	}
 
 	// Update our neighbors
-	this->NotifyNeighborsOfUpdate(_wpos);
+	if (updateNeighbors) this->NotifyNeighborsOfUpdate(_wpos);
 
 	if (_blockType == BLOCK_AIR) {
 		// We removed this block effectively

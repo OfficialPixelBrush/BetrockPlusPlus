@@ -17,13 +17,13 @@ void TickScheduler::Tick() {
 
 		// Did we reschedule this position?
 		auto it = pending.find(entry.pos);
-		if (it != pending.end() && it->second == entry.sequence)
+		if (it != pending.end() && it->second.sequence == entry.sequence)
 			pending.erase(it);
 
 		// Has the block changed since we scheduled this Tick?
 		if (world->GetBlockId(entry.pos) == entry.expectedBlock) {
 			if (auto fn = Blocks::blockBehaviors[entry.expectedBlock].onTick)
-				fn(*world, entry.pos, 0, world->rand);
+				fn(*world, entry.pos, world->GetMetadata(entry.pos), world->rand);
 		}
 	}
 	currentTick++;
