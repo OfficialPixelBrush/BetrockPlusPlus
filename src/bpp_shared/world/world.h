@@ -96,6 +96,9 @@ struct WorldManager {
 	const int GetSimulationDistance() {
 		return simulationRadius;
 	}
+	const int GetDimension() {
+		return this->thisDimension;
+	}
 	void SetViewRadius(int _viewRadius) {
 		int newViewRadius = std::max(3, _viewRadius);
 		this->viewRadius = newViewRadius;

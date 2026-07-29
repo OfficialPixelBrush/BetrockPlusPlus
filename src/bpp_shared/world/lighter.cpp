@@ -12,21 +12,9 @@
 #include <cstring>
 
 // ChunkCache so we don't have to do map lookups for every neighbor access during light propagation.
-// Reuses chunks from the previous window whenever they overlap the new one.
 void ChunkCache::Refresh(int _ncx, int _ncz, WorldManager& _world) {
-	if (_ncx == cx && _ncz == cz) {
-		Chunk* fresh = _world.GetChunkRaw({ cx, cz });
-		if (fresh == grid[1][1])
-			return;
-	}
-
-	Chunk* oldGrid[3][3];
-	std::memcpy(oldGrid, grid, sizeof(grid));
-	//int oldCx = cx, oldCz = cz;
-
 	cx = _ncx;
 	cz = _ncz;
-
 	for (int dx = -1; dx <= 1; ++dx) {
 		for (int dz = -1; dz <= 1; ++dz) {
 			int tcx = _ncx + dx, tcz = _ncz + dz;
@@ -217,7 +205,7 @@ void Lighter::UnlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _
 				continue;
 
 			int ncx = nx >> 4, ncz = nz >> 4;
-			int nlx = nx & 15, nlz = nz & 15;
+ 			int nlx = nx & 15, nlz = nz & 15;
 			int dx = ncx - unlightCache.cx, dz = ncz - unlightCache.cz;
 			// unlightCache was just refreshed to pos's chunk, and (nx,ny,nz) is
 			// only one block away from pos, so the neighbor chunk is always

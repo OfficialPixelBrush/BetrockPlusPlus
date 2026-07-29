@@ -194,9 +194,8 @@ struct WorldWrapper {
 			}
 		}
 
-		// Call our on placed function
-		if (_type != BLOCK_AIR) {
-			// So water and lava flow
+		// So water and lava flow
+		if (_type == BLOCK_WATER_FLOWING || _type == BLOCK_LAVA_FLOWING) {
 			auto function = Blocks::blockBehaviors[_type].onBlockAdded;
 			if (function)
 				function(manager, _wpos);
