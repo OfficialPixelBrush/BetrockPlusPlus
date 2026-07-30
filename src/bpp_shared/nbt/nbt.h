@@ -431,7 +431,23 @@ struct NBTParser {
 	}
 
 	// Read helpers
-	int32_t ReadI32() {
+
+	inline int8_t ReadI8() {
+		if (pos >= length)
+			throw std::runtime_error("NBT: i8 out of bounds");
+		return int8_t(data[pos++]);
+	}
+
+	inline int16_t ReadI16() {
+		if (pos + 2 > length)
+			throw std::runtime_error("NBT: i16 out of bounds");
+		uint16_t v = static_cast<uint16_t>((static_cast<uint16_t>(data[pos]) << 8) |
+		                                   static_cast<uint16_t>(data[pos + 1]));
+		pos += 2;
+		return int16_t(v);
+	}
+	
+	inline int32_t ReadI32() {
 		if (pos + 4 > length)
 			throw std::runtime_error("NBT: unexpected end");
 		uint32_t v = (uint32_t(data[pos]) << 24) | (uint32_t(data[pos + 1]) << 16) | (uint32_t(data[pos + 2]) << 8) |
@@ -440,37 +456,22 @@ struct NBTParser {
 		return int32_t(v);
 	}
 
-	int64_t ReadI64() {
+	inline int64_t ReadI64() {
 		uint64_t hi = uint32_t(ReadI32());
 		return (hi << 32) | uint32_t(ReadI32());
 	}
 
-	int16_t ReadI16() {
-		if (pos + 2 > length)
-			throw std::runtime_error("NBT: i16 out of bounds");
-		uint16_t v = static_cast<uint16_t>((static_cast<uint16_t>(data[pos]) << 8) |
-		                                   static_cast<uint16_t>(data[pos + 1]));
-		pos += 2;
-		return int16_t(v);
-	}
-
-	int8_t ReadI8() {
-		if (pos >= length)
-			throw std::runtime_error("NBT: i8 out of bounds");
-		return int8_t(data[pos++]);
-	}
-
-	float ReadF32() {
+	inline float ReadF32() {
 		uint32_t raw = uint32_t(ReadI32());
 		return std::bit_cast<float>(raw);
 	}
 
-	double ReadF64() {
+	inline double ReadF64() {
 		uint64_t raw = uint64_t(ReadI64());
 		return std::bit_cast<double>(raw);
 	}
 
-	std::string ReadString() {
+	inline std::string ReadString() {
 		uint16_t len = uint16_t(ReadI16());
 		if (pos + len > length)
 			throw std::runtime_error(std::format("NBT: string out of bounds ({}+{}/{})", pos,len,length));
