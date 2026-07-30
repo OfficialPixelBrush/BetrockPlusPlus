@@ -51,7 +51,7 @@ inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _x
 	thread_local std::unique_ptr<libdeflate_compressor, decltype(&libdeflate_free_compressor)> compressor(
 	    nullptr, libdeflate_free_compressor);
 	if (!compressor)
-		compressor.reset(libdeflate_alloc_compressor(6));
+		compressor.reset(libdeflate_alloc_compressor(3));
 	if (!compressor)
 		return {};
 	size_t maxSize = libdeflate_zlib_compress_bound(compressor.get(), static_cast<size_t>(total));

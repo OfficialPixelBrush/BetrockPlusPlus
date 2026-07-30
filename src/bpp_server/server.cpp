@@ -25,6 +25,8 @@
 #pragma comment(lib, "ws2_32.lib")
 #endif
 
+#include "../bpp_utilities/compression_test.h"
+
 #include "server.h"
 #include "version.h"
 #include <chrono>
@@ -273,6 +275,15 @@ void Server::Startup() {
 
 	GlobalLogger().info << "Loading spawn chunks for Overworld: (" << totalSpawnChunks << ")\n";
 	loadSpawnChunks(gameRuntime.world);
+
+	/*
+	std::vector<Chunk*> chunks;
+	for (auto& c : gameRuntime.world.chunks) {
+		chunks.push_back(c.second.get());
+	}
+	auto result = ChunkBenchmark::Benchmark(chunks, 100);
+	ChunkBenchmark::Print(result);
+	*/
 
 	GlobalLogger().info << "Loading spawn chunks for Hell: (" << totalSpawnChunks << ")\n";
 	loadSpawnChunks(gameRuntime.worldHell);
