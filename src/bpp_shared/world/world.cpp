@@ -454,7 +454,7 @@ void WorldManager::UpdateLoadRadius(const std::vector<ClientPosition>& _players)
 			continue;
 		}
 		ChunkState s = it->second->state.load();
-		if (s == ChunkState::Generating || s == ChunkState::Loading) {
+		if (s < ChunkState::Generated) {
 			++it;
 			continue;
 		}
