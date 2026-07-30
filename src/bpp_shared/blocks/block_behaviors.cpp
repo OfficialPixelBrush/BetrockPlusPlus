@@ -32,13 +32,14 @@ static void tryLavaHarden(WorldManager& _world, Int3 _pos) {
 		int dx = _pos.x + d[i];
 		int dz = _pos.z + d[3 - i];
 		canHarden = _world.GetMaterial({ dx, _pos.y, dz }).type == MaterialType::Water;
-		if (canHarden) break;
+		if (canHarden)
+			break;
 	}
 
 	// Check above
 	if (!canHarden)
 		canHarden = _world.GetMaterial({ _pos.x, _pos.y + 1, _pos.z }).type == MaterialType::Water;
-	
+
 	// We can harden
 	if (canHarden) {
 		auto myLevel = _world.GetMetadata(_pos);
@@ -734,7 +735,7 @@ void RegisterBlockBehaviors() {
 	};
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockClicked = ToggleDoor;
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
-		BreakDoor(_world, _pos, BLOCK_DOOR_WOOD);		
+		BreakDoor(_world, _pos, BLOCK_DOOR_WOOD);
 	};
 	blockBehaviors[BLOCK_DOOR_IRON].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
 		BreakDoor(_world, _pos, BLOCK_DOOR_IRON);
@@ -917,7 +918,6 @@ void RegisterBlockBehaviors() {
 			_world.SetBlock(innerPos, BLOCK_NETHER_PORTAL);
 	};
 
-
 	// Lava physics
 	blockBehaviors[BLOCK_LAVA_FLOWING].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		// Schedule ourselves for an update
@@ -939,7 +939,7 @@ void RegisterBlockBehaviors() {
 		tryLavaHarden(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LAVA_FLOWING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                                Java::Random& _random) -> void {
+	                                               Java::Random& _random) -> void {
 		auto level = _meta % 8;
 		bool isFalling = _meta >= 8;
 		bool isSource = _meta == 0;
@@ -1012,7 +1012,6 @@ void RegisterBlockBehaviors() {
 
 		auto belowBlock = _world.GetBlockId(belowPos);
 		if (IsDisplaceable(belowBlock, MaterialType::Lava)) {
-			BreakAndDropBlock(_world, belowPos);
 			_world.SetBlock(belowPos, BLOCK_LAVA_FLOWING, (level >= 8) ? level : level + 8);
 			return;
 		}
@@ -1061,7 +1060,7 @@ void RegisterBlockBehaviors() {
 			auto dz = _pos.z + directions[3 - i];
 			Int3 newPos = { dx, _pos.y, dz };
 			if (IsDisplaceable(_world.GetBlockId(newPos), MaterialType::Lava)) {
-				BreakAndDropBlock(_world, newPos);
+				// Lava never drops what it displaces
 				_world.SetBlock(newPos, BLOCK_LAVA_FLOWING, outLevel);
 			}
 		}
@@ -1083,9 +1082,9 @@ void RegisterBlockBehaviors() {
 	};
 	blockBehaviors[BLOCK_WATER_FLOWING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                                Java::Random& _random) -> void {
-		auto level     = _meta % 8;
+		auto level = _meta % 8;
 		bool isFalling = _meta >= 8;
-		bool isSource  = _meta == 0;
+		bool isSource = _meta == 0;
 		auto candidateLevel = -1;
 		Int3 belowPos = { _pos.x, _pos.y - 1, _pos.z };
 
@@ -1106,15 +1105,18 @@ void RegisterBlockBehaviors() {
 					auto neighborLevel = _world.GetMetadata({ dx, _pos.y, dz });
 					auto effectiveLevel = neighborLevel >= 8 ? 0 : neighborLevel;
 					// Yes !neighborLevel would work here but this is more explicit
-					if (neighborLevel == 0) adjacentSourceCount++;
-					if (effectiveLevel < lowestNeighborLevel) lowestNeighborLevel = effectiveLevel;
+					if (neighborLevel == 0)
+						adjacentSourceCount++;
+					if (effectiveLevel < lowestNeighborLevel)
+						lowestNeighborLevel = effectiveLevel;
 				}
 
 				// If lowestNeighborLevel is 999, then no neighbors were liquids
 				// If we are level 8 or higher we are fully exhausted, so remove ourselves
 				candidateLevel = lowestNeighborLevel + stepDecay;
 				bool invalid = lowestNeighborLevel == 999 || candidateLevel >= 8;
-				if (invalid) candidateLevel = -1;
+				if (invalid)
+					candidateLevel = -1;
 			}
 
 			// Check for vertical feed
@@ -1136,8 +1138,7 @@ void RegisterBlockBehaviors() {
 			if (candidateLevel == -1) {
 				_world.SetBlock(_pos, BLOCK_AIR);
 				return;
-			} 
-			else if (candidateLevel != _meta) {
+			} else if (candidateLevel != _meta) {
 				_world.SetMeta(_pos, candidateLevel);
 				level = candidateLevel;
 			} else {
@@ -1150,7 +1151,6 @@ void RegisterBlockBehaviors() {
 
 		auto belowBlock = _world.GetBlockId(belowPos);
 		if (IsDisplaceable(belowBlock, MaterialType::Water)) {
-			BreakAndDropBlock(_world, belowPos);
 			_world.SetBlock(belowPos, BLOCK_WATER_FLOWING, (level >= 8) ? level : level + 8);
 			return;
 		}
@@ -1179,7 +1179,8 @@ void RegisterBlockBehaviors() {
 					directionalCosts[i] = 0; // Immediate drop off
 				} else {
 					int initialStep = 1;
-					directionalCosts[i] = CalculateFlowCost(_world, neighborPos, {dx, dz}, initialStep, MaterialType::Water);
+					directionalCosts[i] = CalculateFlowCost(_world, neighborPos, { dx, dz }, initialStep,
+					                                        MaterialType::Water);
 				}
 				if (directionalCosts[i] < minDirectionalCost)
 					minDirectionalCost = directionalCosts[i];
@@ -1203,7 +1204,6 @@ void RegisterBlockBehaviors() {
 			}
 		}
 	};
-
 
 	// --------------- block drops, only exceptions are included (something that doesn't drop itself) ---------------
 	blockBehaviors[BLOCK_STONE].idDropped = [](uint8_t, Java::Random&) -> ItemId {
@@ -1299,6 +1299,18 @@ void RegisterBlockBehaviors() {
 		return 0;
 	};
 	blockBehaviors[BLOCK_SNOW_LAYER].quantityDropped = [](Java::Random&) -> ItemAmount {
+		return 0;
+	};
+	blockBehaviors[BLOCK_WATER_FLOWING].quantityDropped = [](Java::Random&) -> ItemAmount {
+		return 0;
+	};
+	blockBehaviors[BLOCK_WATER_STILL].quantityDropped = [](Java::Random&) -> ItemAmount {
+		return 0;
+	};
+	blockBehaviors[BLOCK_LAVA_FLOWING].quantityDropped = [](Java::Random&) -> ItemAmount {
+		return 0;
+	};
+	blockBehaviors[BLOCK_LAVA_STILL].quantityDropped = [](Java::Random&) -> ItemAmount {
 		return 0;
 	};
 
