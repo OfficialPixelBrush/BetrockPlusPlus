@@ -397,6 +397,7 @@ void PlayerAction([[maybe_unused]] Packet::PlayerAction& _pkt, [[maybe_unused]] 
 }
 
 void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
+	GlobalLogger().info << "Respawned Player " << _session.username << "!\n";
 	auto targetDim = _pkt.dimension;
 
 	// Send a respawn packet to confirm
@@ -409,7 +410,8 @@ void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
 	auto oldWorld = _server.GetWorldForDimension(Dimension(_session.dimension));
 
 	// unregister the old entity
-	oldEntity->session = nullptr; // fully detach
+	oldWorld->entityManager.RemoveEntity(oldEntity->id);
+	oldEntity->session = nullptr;
 
 	// Build the replacement entity
 	auto newEntity = std::make_shared<EntityMPPlayer>();

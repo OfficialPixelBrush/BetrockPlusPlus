@@ -48,27 +48,18 @@ Server::~Server() {
 void Server::SendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _entity) {
 	// Remove our entity from our watcher
 	Dimension oldDim = _entity->dim;
+	EntityId oldId = _entity->id;
 	if (oldDim == _dim)
 		return;
 
 	// Remove the entity from the world's entity managers
 	WorldManager* world = GetWorldForDimension(oldDim);
 	WorldManager* newWorld = GetWorldForDimension(_dim);
-	if (!world) {
-		GlobalLogger().info << "Something went seriously wrong! Couldn't find world object for dimension " << oldDim
-		                    << "\n";
-		return;
-	}
-	if (!newWorld) {
-		GlobalLogger().info << "Something went seriously wrong! Couldn't find world object for dimension " << _dim
-		                    << "\n";
-		return;
-	}
 	world->entityManager.RemoveEntity(_entity->id);
 
 	// Rebind entity
 	_entity->isDead = false;
-	newWorld->entityManager.AddEntity(_entity);
+	newWorld->entityManager.AddEntity(_entity, oldId);
 }
 
 void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
@@ -88,15 +79,20 @@ void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
 	chunkSender.inFlight.erase(&_session);
 	chunkSender.subRegionFlight.erase(&_session);
 
+	// Transfer our entity
+	SendEntityToDimension(_dim, _session.entity);
+
 	// Send a respawn packet
 	Packet::Respawn pkt;
 	pkt.dimension = _dim;
 	pkt.Serialize(_session.stream);
 	_session.connState = ConnectionState::WaitingForSpawnChunks;
-	PacketUtilities::SendInventory(_session, 0, _session.inventory);
 
-	// Transfer our entity
-	SendEntityToDimension(_dim, _session.entity);
+	// Update our state
+	Packet::SetHealth sh;
+	sh.health = _session.entity->health;
+	sh.Serialize(_session.stream);
+	PacketUtilities::SendInventory(_session, 0, _session.inventory);
 }
 
 void Server::IndexAddChunk(PlayerSession& _session, const Int32_2& _pos) {

@@ -26,16 +26,23 @@ struct Runtime {
 	// Gameplay
 	RecipeManager recipeManager;
 
+	// Each world shares an entity id counter
+	EntityId sharedEntityId = 2;
+
 	Runtime() : worldHell(true) {
 		Blocks::RegisterAll();
 		Items::RegisterAll();
 		recipeManager.AddVanillaRecipes();
+		world.entityManager.nextEntityId = &sharedEntityId;
+		worldHell.entityManager.nextEntityId = &sharedEntityId;
 		GlobalLogger().info << "New game runtime created!\n";
 	}
 	Runtime(int _renderDistance) : worldHell(true) {
 		Blocks::RegisterAll();
 		Items::RegisterAll();
 		recipeManager.AddVanillaRecipes();
+		world.entityManager.nextEntityId = &sharedEntityId;
+		worldHell.entityManager.nextEntityId = &sharedEntityId;
 
 		// Override our view distance
 		world.SetViewRadius(_renderDistance);

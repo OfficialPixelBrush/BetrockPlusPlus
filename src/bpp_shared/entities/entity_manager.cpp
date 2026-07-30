@@ -10,10 +10,10 @@
 
 void EntityManager::RemoveEntity(EntityId _id) {
 	// Find the entity for this ID
-	auto it = std::find_if(entities.begin(), entities.end(),
-	                       [_id](const std::shared_ptr<Entity>& _e) { return _e->id == _id; });
-	if (it == entities.end())
+	auto it = std::find_if(entities.begin(), entities.end(), [_id](const std::shared_ptr<Entity>& _e) { return _e->id == _id; });
+	if (it == entities.end()) {
 		return; // Not found, nothing to do
+	}
 
 	std::shared_ptr<Entity> entity = *it;
 
@@ -52,7 +52,7 @@ void EntityManager::AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEn
 	                                   : _forceEntityId; // Assign an ID if we weren't forced to use one
 	_entity->world = world; // Bind the world pointer so the entity can interact with the world
 	_entity->entityManager = this;
-	_entity->dim = world->thisDimension;
+	_entity->dim = (Dimension) world->GetDimension();
 
 	// Register the entity into its initial bucket
 	_entity->bucketPos = ComputeBucketPos(_entity->position);

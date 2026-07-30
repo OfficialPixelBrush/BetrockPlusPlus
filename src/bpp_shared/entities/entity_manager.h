@@ -24,7 +24,7 @@ struct EntityContainer {
 
 // For ticking all entities and keeping track of them in the world
 struct EntityManager {
-	EntityId nextEntityId = 2; // Minecraft seems to reserve 0 and 1
+	EntityId* nextEntityId = nullptr; // Minecraft seems to reserve 0 and 1
 	std::vector<std::shared_ptr<Entity>> entities;
 	std::unordered_map<Int2, EntityContainer> entityContainers;
 	WorldManager* world = nullptr; // we need to bind a pointer to this later
@@ -33,24 +33,26 @@ struct EntityManager {
 	std::function<void(std::shared_ptr<Entity>)> onEntitySpawn;
 	std::function<void(std::shared_ptr<Entity>)> onEntityDespawn;
 
+	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbExcluding(const AABB& _box, const EntityId _entityId);
+	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabb(const AABB& _box);
+	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbExcludingTypes(const AABB& _box, const std::vector<EntityType>& _excludedTypes);
+	std::vector<Tag> CollectEntitiesForSave(Int2 _cpos, bool _clearCollectedEntities = false);
+	std::optional<std::string> GetEntityNbtId(EntityType _type);
+	void Tick();
+	void AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEntityId = -1);
+	void RemoveEntity(EntityId _id);
+	void CreateEntityFromNbt(Tag& _nbt);
+
 	static Int3 ComputeBucketPos(Vec3 _position) {
-		Int3 bucketPos = { int(MathHelper::FloorDouble(_position.x / 16.0)),
-			               int(MathHelper::FloorDouble(_position.z / 16.0)),
-			               int(MathHelper::FloorDouble(_position.y / 16.0)) };
+		Int3 bucketPos = { MathHelper::FloorDouble(_position.x / 16.0),
+			               MathHelper::FloorDouble(_position.z / 16.0),
+			               MathHelper::FloorDouble(_position.y / 16.0) };
 
 		// Entity collisions below and above the world are just gonna be inefficient
 		bucketPos.z = std::max(0, bucketPos.z);
 		bucketPos.z = std::min(9, bucketPos.z);
 		return bucketPos;
 	}
-
-	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbExcluding(const AABB& _box, const EntityId _entityId);
-	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabb(const AABB& _box);
-	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbExcludingTypes(
-	    const AABB& _box, const std::vector<EntityType>& _excludedTypes);
-	void Tick();
-	void AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEntityId = -1);
-	void RemoveEntity(EntityId _id);
 	bool ChunkHasEntities(Int2 _cpos) {
 		auto& container = this->entityContainers[_cpos];
 		for (size_t i = 0; i < container.buckets.size(); i++) {
@@ -60,7 +62,6 @@ struct EntityManager {
 		}
 		return false;
 	}
-	std::vector<Tag> CollectEntitiesForSave(Int2 _cpos, bool _clearCollectedEntities = false);
 	std::shared_ptr<Entity> GetEntityByIdShared(EntityId _id) {
 		for (auto& entity : entities) {
 			if (entity->id == _id)
@@ -68,11 +69,10 @@ struct EntityManager {
 		}
 		return nullptr;
 	}
-	void CreateEntityFromNbt(Tag& _nbt);
 
 	EntityId GetNextEntityId() {
-		return nextEntityId++;
+		if (!nextEntityId)
+			return -1;
+		return (*nextEntityId)++;
 	}
-
-	std::optional<std::string> GetEntityNbtId(EntityType _type);
 };
