@@ -187,7 +187,8 @@ void RegisterAll() {
 		BlockType targetBlockType;
 		targetBlockType = _stack->id == DOOR_WOOD ? BLOCK_DOOR_WOOD : BLOCK_DOOR_IRON;
 		Int3 placePosition = Blocks::GetAdjacentBlockPos(_pos, _face);
-		if (Blocks::blockBehaviors[targetBlockType].onBlockPlaced(_world, placePosition, _user, _face, targetBlockType, 0))
+		if (Blocks::blockBehaviors[targetBlockType].onBlockPlaced(_world, placePosition, _user, _face, targetBlockType,
+		                                                          0))
 			_stack->DecrementCount(1);
 	};
 
@@ -224,10 +225,16 @@ void RegisterAll() {
 		Map::InitGraphics(mapData, Byte2{ x, 0 });
 
 		for (int z = 0; z < INT8_MAX; z++) {
+			int8_t north_y = world->GetHeightValue(x, z - 1);
 			int8_t y = world->GetHeightValue(x, z);
 			Int3 bpos{ x, y - 1, z };
 			BlockType block = world->GetBlockId(bpos);
-			Map::AppendPixel(mapData, (Blocks::blockProperties[block].material.mapColor.index << 2) | 2);
+			int8_t brightness = 1;
+			if (north_y > y)
+				brightness--;
+			if (north_y < y)
+				brightness++;
+			Map::AppendPixel(mapData, (Blocks::blockProperties[block].material.mapColor.index << 2) | brightness);
 		}
 
 		Packet::ItemData gfxPkt;
