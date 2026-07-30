@@ -81,9 +81,6 @@ void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
 	chunkSender.inFlight.erase(&_session);
 	chunkSender.subRegionFlight.erase(&_session);
 
-	// Transfer our entity
-	SendEntityToDimension(_dim, _session.entity);
-
 	// Send a respawn packet
 	Packet::Respawn pkt;
 	pkt.dimension = _dim;
@@ -95,6 +92,9 @@ void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
 	sh.health = _session.entity->health;
 	sh.Serialize(_session.stream);
 	PacketUtilities::SendInventory(_session, 0, _session.inventory);
+
+	// Transfer our entity
+	SendEntityToDimension(_dim, _session.entity);
 }
 
 void Server::IndexAddChunk(PlayerSession& _session, const Int32_2& _pos) {
