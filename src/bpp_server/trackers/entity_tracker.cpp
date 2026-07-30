@@ -299,11 +299,7 @@ void EntityTracker::SendPacketToPlayersInTrackedEntry(Packet::BasePacket& _pkt, 
 }
 
 TrackedEntry& EntityTracker::GetTrackerForEntityId(EntityId _id) {
-	for (auto& [entityId, entityEntry] : trackedEntities) {
-		if (entityId == _id)
-			return entityEntry;
-	}
-	throw std::out_of_range("Entity not found");
+	return trackedEntities.at(_id);
 }
 
 void EntityTracker::SendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id) {
