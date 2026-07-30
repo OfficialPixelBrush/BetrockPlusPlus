@@ -42,7 +42,7 @@ public:
 
 private:
 	int serverViewRadius = 8;
-	int spawnChunkRadius = 20;
+	int spawnChunkRadius = 5;
 	uint16_t shutdownTimer = 0;
 
 public:
