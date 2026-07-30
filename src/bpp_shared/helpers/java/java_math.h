@@ -25,6 +25,14 @@ constexpr inline double Lerp(const double _t, const double _a, const double _b) 
 	return _a + _t * (_b - _a);
 }
 
+// Precomputed tables for easier Gradient functions
+static constexpr std::array<int8_t, 16> K_GRAD3_U = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 };
+static constexpr std::array<int8_t, 16> K_GRAD3_V = { 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 0, 2, 0, 2 };
+static constexpr std::array<int8_t, 16> K_GRAD2_U = { 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2 };
+static constexpr std::array<int8_t, 16> K_GRAD2_V = { 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1 };
+static constexpr std::array<double, 16> K_SIGN_BIT0 = { 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1 };
+static constexpr std::array<double, 16> K_SIGN_BIT1 = { 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1 };
+
 /**
  * @brief 3D Perlin noise gradient function
  * 
@@ -35,12 +43,12 @@ constexpr inline double Lerp(const double _t, const double _a, const double _b) 
  * @return double 
  */
 constexpr inline double Grad3d(int32_t _hash, const double _x, const double _y, const double _z) {
-	_hash &= 15;
-	double u = _hash < 8 ? _x : _y;
-	double v = _hash < 4 ? _y : (_hash != 12 && _hash != 14 ? _z : _x);
-	return ((_hash & 1) == 0 ? u : -u) + ((_hash & 2) == 0 ? v : -v);
+	const uint32_t h = static_cast<uint32_t>(_hash) & 15u;
+	const double comp[3] = { _x, _y, _z };
+	const double u = comp[K_GRAD3_U[h]];
+	const double v = comp[K_GRAD3_V[h]];
+	return u * K_SIGN_BIT0[h] + v * K_SIGN_BIT1[h];
 }
-
 /**
  * @brief 2D Perlin noise gradient function
  * 
@@ -50,10 +58,11 @@ constexpr inline double Grad3d(int32_t _hash, const double _x, const double _y, 
  * @return double 
  */
 constexpr inline double Grad2d(int32_t _hash, const double _x, const double _y) {
-	_hash &= 15;
-	double u = double(1 - ((_hash & 8) >> 3)) * _x;
-	double v = _hash < 4 ? 0.0 : (_hash != 12 && _hash != 14 ? _y : _x);
-	return ((_hash & 1) == 0 ? u : -u) + ((_hash & 2) == 0 ? v : -v);
+	const uint32_t h = static_cast<uint32_t>(_hash) & 15u;
+	const double comp[3] = { _x, _y, 0.0 }; // index 2 = "zero" slot
+	const double u = comp[K_GRAD2_U[h]];
+	const double v = comp[K_GRAD2_V[h]];
+	return u * K_SIGN_BIT0[h] + v * K_SIGN_BIT1[h];
 }
 
 /**
