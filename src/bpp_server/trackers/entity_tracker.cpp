@@ -48,8 +48,10 @@ void EntityTracker::Tick() {
 			                                    std::abs(entry.entity->position.z - player.entity->position.z)));
 			if (distanceTo > entry.profile.range) {
 				auto pSession = server->GetSessionById(playerId);
-				if (!pSession)
+				if (!pSession) {
+					it = entry.visibleTo.erase(it);
 					continue;
+				}
 				Packet::DespawnEntity pkt;
 				pkt.entityId = entry.entity->id;
 				pkt.Serialize(pSession->stream);
@@ -110,7 +112,7 @@ void EntityTracker::TrackEntity(Entity* _entity) {
 	}
 
 	// Force an update
-	Update(entry);
+	Update(newEntry);
 }
 
 void EntityTracker::UntrackEntity(Entity* _entity) {
