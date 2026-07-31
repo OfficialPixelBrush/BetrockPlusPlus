@@ -160,20 +160,23 @@ std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area) {
 // Tick
 void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 	elapsedTicks++;
-	DrainGenQueue();  // process generation results first
-	DrainLoadQueue(); // integrate finished loads
-
-	// Queue any modified chunks for saving
 	if (!regionManager) {
 		GlobalLogger().error << "No region manager while trying to Tick!\n";
 		return;
 	}
 
-	// Update our Tick scheduler
+	DrainGenQueue();  // process generation results first
+	DrainLoadQueue(); // integrate finished loads
+
+	// So chunks that just loaded get lit before they are saved
+	lightManager.ProcessLightQueue(*this, INT_MAX);
+
 	tickScheduler.Tick();
+	entityManager.Tick();
+	tileEntityManager.TickTileEntities(*this);
 
 	// Saving
-	if (this->elapsedTicks % 40 == 0) {
+	if (this->tickScheduler.currentTick % 40 == 0) {
 		// Save periodically
 		for (auto& [pos, chunk] : chunks) {
 			if (!chunk->isModified)
@@ -188,7 +191,7 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 		}
 	}
 	// Save entities in a chunk every 30 seconds
-	if (this->elapsedTicks % 600 == 0) {
+	if (this->tickScheduler.currentTick % 600 == 0) {
 		for (auto& [pos, chunk] : chunks) {
 			ChunkState s = chunk->state.load();
 			if (s < ChunkState::Generated)
@@ -200,16 +203,9 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 			chunk->isModified = false;
 		}
 	}
+	PopulateReady();
 	regionManager->PumpPipeline();
-
-	// Update our entities
-	entityManager.Tick();
-
-	tileEntityManager.TickTileEntities(*this);
-
 	UpdateLoadRadius(_players);
-	PopulateReady(); // population runs on main thread
-	lightManager.ProcessLightQueue(*this, INT_MAX);
 }
 
 void WorldManager::Update(const std::vector<ClientPosition>& _players) {
