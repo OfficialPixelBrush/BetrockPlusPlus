@@ -243,6 +243,10 @@ void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, P
 
 void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
                       PacketData::FaceDirection _face) {
+	if (_user.sneaking) {
+		TestSetGoal(_world,_stack,_pos,_face);
+		return;
+	}
 	_pos = Blocks::GetAdjacentBlockPos(_pos, _face);
 	_world.SetBlock(_pos, BLOCK_FIRE);
 	HarmTool(_stack);

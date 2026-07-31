@@ -54,7 +54,7 @@ struct WorldManager {
 	Int3 spawnPoint{ 0, 0, 0 };
 	Dimension thisDimension = Dimension::Overworld;
 	BS::thread_pool<> pool{ 2 };
-	BS::thread_pool<> populationPool{ 1 }; // unused
+	//BS::thread_pool<> populationPool{ 1 }; // unused
 	Java::Random rand;
 
 	WorldManager(bool _pIsHell = false) : isHell(_pIsHell) {

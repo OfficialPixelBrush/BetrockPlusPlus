@@ -260,7 +260,7 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& _chunk,
 	thread_local std::unique_ptr<libdeflate_compressor, decltype(&libdeflate_free_compressor)> compressor(
 	    nullptr, libdeflate_free_compressor);
 	if (!compressor)
-		compressor.reset(libdeflate_alloc_compressor(3));
+		compressor.reset(libdeflate_alloc_compressor(1));
 	// If still no compressor, give up
 	if (!compressor)
 		return {};

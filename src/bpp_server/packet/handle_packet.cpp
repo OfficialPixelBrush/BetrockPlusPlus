@@ -393,6 +393,17 @@ void Animation(Packet::Animation& _pkt, PlayerSession& _session, EntityTracker& 
 
 void PlayerAction([[maybe_unused]] Packet::PlayerAction& _pkt, [[maybe_unused]] PlayerSession& _session,
                   [[maybe_unused]] EntityTracker& _entityTracker) {
+	auto& trackedEntry = _entityTracker.GetTrackerForEntityId(_pkt.entityId);
+	if (!trackedEntry.entity)
+		return;
+	switch(_pkt.action) {
+		case PacketData::PlayerAction::START_SNEAKING:
+			trackedEntry.entity->sneaking = true; break;
+		case PacketData::PlayerAction::STOP_SNEAKING:
+			trackedEntry.entity->sneaking = false; break;
+		default:
+			break;
+	}
 	// Broadcast what we were sent to players who can see this player
 }
 
