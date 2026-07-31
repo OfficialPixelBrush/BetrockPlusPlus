@@ -177,35 +177,25 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 
 	// Saving
 	if (this->tickScheduler.currentTick % 40 == 0) {
-		// Save periodically
-		for (auto& [pos, chunk] : chunks) {
-			if (!chunk->isModified)
-				continue;
-			ChunkState s = chunk->state.load();
-			if (s < ChunkState::Generated)
-				continue;
-			if (s == ChunkState::Generating || s == ChunkState::Loading)
-				continue;
-			regionManager->SaveChunk(chunk);
-			chunk->isModified = false;
-		}
+		SaveChunks(/*SaveIfEntities=*/this->tickScheduler.currentTick % 600 == 0);
 	}
-	// Save entities in a chunk every 30 seconds
-	if (this->tickScheduler.currentTick % 600 == 0) {
-		for (auto& [pos, chunk] : chunks) {
-			ChunkState s = chunk->state.load();
-			if (s < ChunkState::Generated)
-				continue;
-			if (s == ChunkState::Generating || s == ChunkState::Loading)
-				continue;
-			if (entityManager.ChunkHasEntities(pos))
-				regionManager->SaveChunk(chunk);
-			chunk->isModified = false;
-		}
-	}
-	PopulateReady();
-	regionManager->PumpPipeline();
+
 	UpdateLoadRadius(_players);
+	regionManager->PumpPipeline();
+	PopulateReady();
+}
+
+void WorldManager::SaveChunks(const bool _saveIfEntities, const bool _deleteEntities) {
+	for (auto& [pos, chunk] : chunks) {
+		ChunkState s = chunk->state.load();
+		if (s < ChunkState::Generated)
+			continue;
+		if (s == ChunkState::Generating || s == ChunkState::Loading)
+			continue;
+		if (chunk->isModified || (entityManager.ChunkHasEntities(pos) && _saveIfEntities))
+			regionManager->SaveChunk(chunk, _deleteEntities);
+		chunk->isModified = false;
+	}
 }
 
 void WorldManager::Update(const std::vector<ClientPosition>& _players) {
@@ -254,18 +244,11 @@ void WorldManager::Shutdown() {
 		GlobalLogger().info << "Saving chunks for level 0\n";
 	}
 
-	// Save all currently loaded modified chunks
-	for (auto& [pos, chunk] : chunks) {
-		if (!chunk->isModified && !entityManager.ChunkHasEntities(pos))
-			continue;
-		ChunkState s = chunk->state.load();
-		if (s < ChunkState::Generated)
-			continue;
-		if (s == ChunkState::Generating || s == ChunkState::Loading)
-			continue;
-		regionManager->SaveChunk(chunk, /*unload entities = */ true);
-		chunk->isModified = false;
-	}
+	// Make sure lighting is up to date
+	lightManager.ProcessLightQueue(*this);
+
+	// Save
+	SaveChunks(/*SaveIfEntities=*/true, /*Delete Entities On Save=*/true);
 
 	// For every position that still has pending bleed writes, forceload or forcegenerate the chunk, apply the writes, then save it.
 	while (!pendingBleedWrites.empty()) {
@@ -290,6 +273,9 @@ void WorldManager::Shutdown() {
 
 		// Apply the pending writes
 		FlushBleedWrites();
+
+		// Make sure lighting is up to date
+		lightManager.ProcessLightQueue(*this);
 
 		// Save it
 		auto& chunk = chunks[cpos];

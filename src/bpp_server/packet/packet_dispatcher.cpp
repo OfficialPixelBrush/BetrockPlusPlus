@@ -140,7 +140,7 @@ bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, Wor
 	case PacketId::Disconnect: {
 		Packet::Disconnect pkt;
 		pkt.Deserialize(_session.stream);
-		HandlePacket::Disconnect(pkt, _session);
+		HandlePacket::Disconnect(pkt, _session, _server);
 		return false; // session is dead; stop processing
 	}
 	default:

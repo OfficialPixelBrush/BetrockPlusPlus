@@ -52,5 +52,5 @@ void PlayerAction(Packet::PlayerAction& _pkt, PlayerSession& _session, EntityTra
 void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server);
 void UpdateSign(Packet::UpdateSign& _pkt, PlayerSession& _session, WorldManager& _world,
                 std::vector<std::shared_ptr<PlayerSession>>& _players);
-void Disconnect(Packet::Disconnect& /*pkt*/, PlayerSession& _session);
+void Disconnect(Packet::Disconnect& _pkt, PlayerSession& _session, Server& _server);
 } // namespace HandlePacket

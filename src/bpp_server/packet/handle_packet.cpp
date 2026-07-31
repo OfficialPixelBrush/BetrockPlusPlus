@@ -479,8 +479,8 @@ void UpdateSign(Packet::UpdateSign& _pkt, PlayerSession& _session, WorldManager&
 	}
 }
 
-void Disconnect(Packet::Disconnect& /*pkt*/, PlayerSession& _session) {
-	_session.stream.SetConnected(false);
+void Disconnect(Packet::Disconnect& _pkt, PlayerSession& _session, Server& _server) {
+	_server.DisconnectPlayer(_pkt.reason, _session);
 }
 
 } // namespace HandlePacket

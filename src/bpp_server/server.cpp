@@ -69,6 +69,7 @@ void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
 		return;
 
 	// Flush all of our dimension dependent data
+	IndexRemoveSession(_session);
 	_session.dimension = _dim;
 	_session.flushedChunks.clear();
 	_session.sentChunks.clear();
@@ -353,8 +354,6 @@ void Server::Stop() {
 	for (auto& session : players) {
 		connStateManager.DisconnectPlayer(*session, "Server Closed", *this);
 		session->stream.FlushWriteBufferBlocking();
-		auto savedNbt = session->SerializeToNbt();
-		gameRuntime.saveManager.SavePlayerNbt(std::string(session->username.begin(), session->username.end()), savedNbt);
 	}
 	ServerSocketManager::CloseSocket(serverSocket);
 	gameRuntime.world.Shutdown();
@@ -387,22 +386,36 @@ void Server::Tick() {
 	AcceptNewPlayers();
 	[[maybe_unused]] const int playerCount = int(players.size());
 
-	for (auto& session : players) {
-		session->stream.DrainToBuffer();
-		if (session->connState == ConnectionState::Playing)
-			ProcessIncoming(*session);
-	}
-
 	std::vector<ClientPosition> overworldPositions;
 	std::vector<ClientPosition> netherPositions;
 	for (auto& session : players) {
+		session->stream.DrainToBuffer();
 		if (session->connState == ConnectionState::WaitingForSpawnChunks ||
 		    session->connState == ConnectionState::Playing) {
+			// Process our packets
+			ProcessIncoming(*session);
+
+			// Register with the correct dimension
 			if (session->dimension == -1)
 				netherPositions.push_back(session->position);
 			else
 				overworldPositions.push_back(session->position);
+
+			// Autosave every 2 seconds
+			if (gameRuntime.world.tickScheduler.currentTick % 40 == 0) {
+				SavePlayer(session->username);
+			}
 		}
+
+		connStateManager.HandleConnectionState(*session, *this);
+
+		// Drain chunk-session index updates that ChunkSender recorded
+		for (const auto& pos : session->newlyFlushed)
+			IndexAddChunk(*session, pos);
+		session->newlyFlushed.clear();
+		for (const auto& pos : session->newlyUnloaded)
+			IndexRemoveChunk(*session, pos);
+		session->newlyUnloaded.clear();
 	}
 	// Inventory tracker
 	InventoryTracker::Tick(*this);
@@ -423,28 +436,16 @@ void Server::Tick() {
 	overworldEntityTracker.Tick();
 	hellEntityTracker.Tick();
 
-	// Handle connection state for each player
-	for (auto& session : players) {
-		connStateManager.HandleConnectionState(*session, *this);
-
-		// Drain chunk-session index updates that ChunkSender recorded.
-		for (const auto& pos : session->newlyFlushed)
-			IndexAddChunk(*session, pos);
-		session->newlyFlushed.clear();
-		for (const auto& pos : session->newlyUnloaded)
-			IndexRemoveChunk(*session, pos);
-		session->newlyUnloaded.clear();
-	}
-
-	// Dispatch block changes.
+	// Dispatch block changes
 	ChunkBroadcaster::BroadcastBlockChanges(*this, localBlockChanges, 0, gameRuntime.world);
 	ChunkBroadcaster::BroadcastBlockChanges(*this, localBlockChangesHell, -1, gameRuntime.worldHell);
 
-	// Flush all pending outgoing data to the socket once per Tick.
+	// Flush all pending outgoing data to the socket at the end of the tick
 	for (auto& session : players) {
 		session->stream.FlushWriteBuffer();
 	}
 	this->DisconnectClients();
+
 	// TODO: This is rather fragile!
 	// Countdown
 	if (shutdownTimer > 1)
@@ -462,7 +463,6 @@ void Server::DisconnectClients() {
 			if (elapsed > timeoutSeconds) {
 				GlobalLogger().info << "Player " << session->username << " timed out\n";
 				connStateManager.DisconnectPlayer(*session, "Connection timed out.", *this);
-				SendGlobalChatMessage("§e" + session->username + " left the game.");
 			}
 		} else {
 			// Kill stuck handshakers
@@ -478,20 +478,12 @@ void Server::DisconnectClients() {
 	players.erase(std::remove_if(players.begin(), players.end(),
 	                             [&](const auto& _s) {
 		                             if (!_s->stream.IsConnected()) {
-			                             if (_s->entity)
-				                             GlobalLogger().info << "Disconnected client " << _s->username
-				                                                 << " with entity id " << _s->entity->id << "\n";
-
-			                             if (_s->connState == ConnectionState::Playing ||
-			                                 _s->connState == ConnectionState::WaitingForSpawnChunks) {
-				                             auto savedNbt = _s->SerializeToNbt();
-				                             gameRuntime.saveManager.SavePlayerNbt(
-				                                 std::string(_s->username.begin(), _s->username.end()), savedNbt);
+			                             if (_s->entity) {
+				                             GlobalLogger().info << "Disconnected client " << _s->username << " with entity id " << _s->entity->id << "\n";
+				                             SendGlobalChatMessage("§e" + _s->username + " left the game.");
 			                             }
-
 			                             IndexRemoveSession(*_s);
 			                             chunkSender.Remove(*_s);
-			                             SendGlobalChatMessage("§e" + _s->username + " left the game.");
 			                             return true;
 		                             }
 		                             return false;

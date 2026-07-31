@@ -50,6 +50,19 @@ public:
 	ChunkSender chunkSender;
 	int flushChunkCount = 10;
 
+	void SavePlayer(const std::string& _username) {
+		auto PlayerSession = GetSessionByUsername(_username);
+		if (!PlayerSession)
+			GlobalLogger().error << "Failed to save player data for " << _username << "!\n";
+
+		auto savedNbt = PlayerSession->SerializeToNbt();
+		gameRuntime.saveManager.SavePlayerNbt(std::string(PlayerSession->username.begin(), PlayerSession->username.end()), savedNbt);
+	}
+
+	void DisconnectPlayer(const std::string& _reason, PlayerSession& _session) {
+		this->connStateManager.DisconnectPlayer(_session, _reason, *this);
+	}
+
 	std::shared_ptr<PlayerSession> GetSessionById(EntityId _entityId) {
 		for (auto player : players) {
 			if (player->entity && player->entity->id == _entityId) {

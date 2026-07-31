@@ -152,7 +152,8 @@ void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std
 	Packet::Disconnect kick;
 	kick.reason = _reason;
 	kick.Serialize(_session.stream);
-	_session.stream.SetConnected(false); // This should force an NBT save
+	_session.stream.SetConnected(false);
+	_server.SavePlayer(_session.username);
 	GlobalLogger().info << "Player " << _session.username << " disconnected: " << _reason << "\n";
 }
 
