@@ -193,6 +193,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 	auto pSession = server->GetSessionById(_playerId);
 	if (!pSession)
 		return;
+	GlobalLogger().info << "Spawning entity " << _entityEntry.entity->id << " for player " << _playerId << ": TYPE " << int(_entityEntry.entity->type) << "\n";
 	switch (_entityEntry.entity->type) {
 	case EntityType::ITEM: {
 		ItemEntity& ie = dynamic_cast<ItemEntity&>(*_entityEntry.entity);
@@ -266,7 +267,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		break;
 	}
 	default:
-		// TODO: Implement other types
+		GlobalLogger().warn << "Unhandled entity type: " << int(_entityEntry.entity->type) << "\n";
 		return;
 	}
 	_entityEntry.visibleTo.insert(_playerId);
@@ -288,6 +289,7 @@ void EntityTracker::DespawnEntityForViewers(EntityId _entityId, TrackedEntry& _e
 		Packet::DespawnEntity pkt;
 		pkt.entityId = _entityId;
 		pkt.Serialize(pSession->stream);
+		GlobalLogger().info << "Despawned entity " << _entityId << " for viewer " << viewerId << "\n";
 	}
 }
 

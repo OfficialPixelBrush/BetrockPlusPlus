@@ -797,10 +797,10 @@ void RegisterBlockBehaviors() {
 		                                             double(_pos.y), double(_pos.z + CHECK_RADIUS) });
 
 		if (areaLoaded) {
+			_world.SetBlock(_pos, BLOCK_AIR, 0);
 			Vec3 spawnPos = { _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 };
 			auto entity = std::make_shared<FallingBlockEntity>(spawnPos, BLOCK_SAND);
 			_world.entityManager.AddEntity(std::move(entity));
-			_world.SetBlock(_pos, BLOCK_AIR, 0);
 		} else {
 			_world.SetBlock(_pos, BLOCK_AIR, 0);
 
