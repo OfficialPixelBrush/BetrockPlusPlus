@@ -240,6 +240,50 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.Serialize(pSession->stream);
 		break;
 	}
+	case EntityType::PIG: {
+		Packet::SpawnMob pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.mobType = PacketData::MobType::PIG;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
+			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
+		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		pkt.Serialize(pSession->stream);
+		break;
+	}
+	case EntityType::COW: {
+		Packet::SpawnMob pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.mobType = PacketData::MobType::COW;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
+			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
+		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		pkt.Serialize(pSession->stream);
+		break;
+	}
+	case EntityType::SHEEP: {
+		Packet::SpawnMob pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.mobType = PacketData::MobType::SHEEP;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
+			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
+		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		pkt.Serialize(pSession->stream);
+		break;
+	}
+	case EntityType::CHICKEN: {
+		Packet::SpawnMob pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.mobType = PacketData::MobType::CHICKEN;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
+			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
+		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		pkt.Serialize(pSession->stream);
+		break;
+	}
 	case EntityType::BOAT: {
 		Packet::SpawnObject pkt;
 		pkt.entityId = _entityEntry.entity->id;

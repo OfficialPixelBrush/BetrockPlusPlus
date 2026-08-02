@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
  * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
@@ -9,17 +10,17 @@
 #include "numeric_structs.h"
 #include "world.h"
 #include <cstdint>
+#include <limits>
+#include <optional>
 #include <queue>
 #include <unordered_map>
 #include <vector>
 
-typedef int(heuristic_fn)(const Int3&, const Int3&);
-
 struct Node {
 	Int3 pos;
 
-	int g = INT32_MAX;
-	int f = INT32_MAX;
+	float g = std::numeric_limits<float>::max();
+	float f = std::numeric_limits<float>::max();
 
 	bool closed = false;
 
@@ -32,12 +33,20 @@ public:
 
 	Pathfinder(){};
 	Pathfinder(WorldManager* _world) : world(_world) {};
-	[[nodiscard]] std::vector<Int3> FindPath(Int3 _start, Int3 _goal);
+
+	[[nodiscard]] std::vector<Int3> FindPath(Int3 _start, Int3 _goal, float _width = 0.6f,
+	                                          float _height = 1.8f, float _maxDistance = 16.0f);
 
 private:
+	enum class ColumnResult {
+		Blocked = 0,
+		Open = 1,
+		Water = -1,
+		Lava = -2,
+	};
 
 	struct PQNode {
-		int f;
+		float f;
 		Node* node;
 
 		bool operator>(const PQNode& _rhs) const {
@@ -49,8 +58,14 @@ private:
 
 	std::unordered_map<Int3, Node> nodes;
 
+	Int3 footprint{ 1, 2, 1 };
+
 	Node* OpenNode(Int3 _pos);
-	bool PosValid(Int3 _pos);
-	std::optional<Int3> GetNeighbour(Int3 _from, Int2 _dir);
 	void Reset();
+
+	ColumnResult GetVerticalOffset(Int3 _origin);
+
+	std::optional<Int3> GetSafePoint(Int3 _pos, int _stepUp);
+
+	int FindPathOptions(Int3 _current, Int3 _goal, float _maxDistance, Int3* _options);
 };

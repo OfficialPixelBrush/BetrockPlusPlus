@@ -1,14 +1,17 @@
 /*
+ * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
  * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  * 
 */
 #include <algorithm>
+#include <cmath>
 #include <optional>
 #include <queue>
 #include <vector>
 
+#include "blocks/block_properties.h"
 #include "numeric_structs.h"
 #include "pathfinder.hpp"
 
@@ -29,62 +32,137 @@ void Pathfinder::Reset() {
 	nodes.clear();
 }
 
-bool Pathfinder::PosValid(Int3 _pos) {
-	Int3 bottomPos = _pos;
-	bottomPos.y -= 1;
-	bool isAir = world->IsAirBlock(_pos);
-	bool isNormal = world->IsBlockNormalCube(bottomPos);
-	return isAir && isNormal;
+inline float Distance(const Int3& _a, const Int3& _b) noexcept {
+	float dx = float(_a.x - _b.x);
+	float dy = float(_a.y - _b.y);
+	float dz = float(_a.z - _b.z);
+	return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-std::optional<Int3> Pathfinder::GetNeighbour(Int3 _from, Int2 _dir) {
-	Int3 pos = _from;
-	pos.x += _dir.x;
-	pos.z += _dir.y;
+Pathfinder::ColumnResult Pathfinder::GetVerticalOffset(Int3 _origin) {
+	for (int x = _origin.x; x < _origin.x + footprint.x; x++) {
+		for (int y = _origin.y; y < _origin.y + footprint.y; y++) {
+			for (int z = _origin.z; z < _origin.z + footprint.z; z++) {
+				Int3 pos{ x, y, z };
+				BlockType block = world->GetBlockId(pos);
+				if (block == BlockType::BLOCK_AIR)
+					continue;
 
-	// Step up one block if blocked.
-	if (!world->IsAirBlock(pos)) {
-		pos.y++;
+				if (block == BlockType::BLOCK_DOOR_WOOD || block == BlockType::BLOCK_DOOR_IRON) {
+					// Bit 0x4 is the open/closed flag on either half of the door.
+					// An open door doesn't block movement; a closed one does.
+					if (!(world->GetMetadata(pos) & 4))
+						return ColumnResult::Blocked;
+					continue;
+				}
 
-		if (!world->IsAirBlock(pos))
-			return std::nullopt;
+				const Material& mat = Blocks::blockProperties[block].material;
+				if (mat.isSolid)
+					return ColumnResult::Blocked;
+				if (mat.type == MaterialType::Water)
+					return ColumnResult::Water;
+				if (mat.type == MaterialType::Lava)
+					return ColumnResult::Lava;
+			}
+		}
 	}
 
-	constexpr int MAX_FALL_DISTANCE = 3;
-	int fallDistance = 0;
-	while (world->IsAirBlock({ pos.x, pos.y - 1, pos.z })) {
-		pos.y--;
-		fallDistance++;
+	return ColumnResult::Open;
+}
 
-		if (fallDistance > MAX_FALL_DISTANCE)
-			return std::nullopt;
+std::optional<Int3> Pathfinder::GetSafePoint(Int3 _pos, int _stepUp) {
+	std::optional<Int3> found;
+
+	if (GetVerticalOffset(_pos) == ColumnResult::Open) {
+		found = _pos;
+	} else if (_stepUp > 0) {
+		Int3 stepped = _pos;
+		stepped.y += _stepUp;
+		if (GetVerticalOffset(stepped) == ColumnResult::Open)
+			found = stepped;
 	}
 
-	if (!PosValid(pos))
+	if (!found)
 		return std::nullopt;
 
-	return pos;
+	// Let the entity fall through open space below
+	Int3 p = *found;
+	ColumnResult below = ColumnResult::Blocked;
+	int fallSteps = 0;
+
+	while (p.y > 0) {
+		Int3 belowPos = p;
+		belowPos.y -= 1;
+		below = GetVerticalOffset(belowPos);
+		if (below != ColumnResult::Open)
+			break;
+
+		p.y -= 1;
+		if (++fallSteps >= 4)
+			return std::nullopt;
+	}
+
+	if (below == ColumnResult::Lava)
+		return std::nullopt;
+
+	return p;
 }
 
-inline int Manhattan(const Int3& _a, const Int3& _b) noexcept {
-	return std::abs(_a.x - _b.x) + std::abs(_a.y - _b.y) + std::abs(_a.z - _b.z);
+// z+1, x-1, x+1, z-1
+const Int2 CARDINAL_DIRS[4] = { { 0, 1 }, { -1, 0 }, { 1, 0 }, { 0, -1 } };
+
+int Pathfinder::FindPathOptions(Int3 _current, Int3 _goal, float _maxDistance, Int3* _options) {
+	int count = 0;
+
+	// Stepping up a block is only allowed at all if there's headroom
+	int stepUp = 0;
+	Int3 headroom = _current;
+	headroom.y += 1;
+	if (GetVerticalOffset(headroom) == ColumnResult::Open)
+		stepUp = 1;
+
+	for (const auto& dir : CARDINAL_DIRS) {
+		Int3 candidatePos = _current;
+		candidatePos.x += dir.x;
+		candidatePos.z += dir.y;
+
+		auto safe = GetSafePoint(candidatePos, stepUp);
+		if (!safe)
+			continue;
+
+		auto it = nodes.find(*safe);
+		if (it != nodes.end() && it->second.closed)
+			continue;
+
+		if (Distance(*safe, _goal) >= _maxDistance)
+			continue;
+
+		_options[count++] = *safe;
+	}
+
+	return count;
 }
 
-const Int2 CARDINAL_DIRS[4] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
-
-std::vector<Int3> Pathfinder::FindPath(Int3 _start, Int3 _goal) {
+std::vector<Int3> Pathfinder::FindPath(Int3 _start, Int3 _goal, float _width, float _height, float _maxDistance) {
 	Reset();
 
-	if (!PosValid(_start) || !PosValid(_goal))
+	footprint = { std::max(1, int(std::floor(_width + 1.0f))), std::max(1, int(std::floor(_height + 1.0f))),
+		          std::max(1, int(std::floor(_width + 1.0f))) };
+
+	if (GetVerticalOffset(_start) == ColumnResult::Blocked)
 		return {};
 
 	Node* startNode = OpenNode(_start);
-	Node* goalNode = OpenNode(_goal);
-
-	startNode->g = 0;
-	startNode->f = Manhattan(_start, _goal);
+	startNode->g = 0.0f;
+	startNode->f = Distance(_start, _goal);
 
 	open.push({ startNode->f, startNode });
+
+	// Tracks the closest to goal node seen so far
+	Node* bestNode = startNode;
+	float bestDistance = Distance(_start, _goal);
+
+	Int3 options[4];
 
 	while (!open.empty()) {
 		Node* current = open.top().node;
@@ -95,24 +173,25 @@ std::vector<Int3> Pathfinder::FindPath(Int3 _start, Int3 _goal) {
 
 		current->closed = true;
 
-		if (current == goalNode)
+		float distToGoal = Distance(current->pos, _goal);
+		if (distToGoal < bestDistance) {
+			bestDistance = distToGoal;
+			bestNode = current;
+		}
+
+		if (current->pos == _goal)
 			break;
 
-		for (const auto& dir : CARDINAL_DIRS) {
-			std::optional<Int3> nextPos = GetNeighbour(current->pos, dir);
-			if (!nextPos)
-				continue;
-
-			Node* next = OpenNode(*nextPos);
-
+		int optionCount = FindPathOptions(current->pos, _goal, _maxDistance, options);
+		for (int i = 0; i < optionCount; i++) {
+			Node* next = OpenNode(options[i]);
 			if (next->closed)
 				continue;
 
-			int g = current->g + 1;
-
+			float g = current->g + Distance(current->pos, options[i]);
 			if (g < next->g) {
 				next->g = g;
-				next->f = g + Manhattan(*nextPos, _goal);
+				next->f = g + Distance(options[i], _goal);
 				next->parent = current;
 
 				open.push({ next->f, next });
@@ -120,12 +199,12 @@ std::vector<Int3> Pathfinder::FindPath(Int3 _start, Int3 _goal) {
 		}
 	}
 
-	if (!goalNode->closed)
+	if (bestNode == startNode)
 		return {};
 
 	std::vector<Int3> path;
 
-	for (Node* n = goalNode; n != startNode; n = n->parent)
+	for (Node* n = bestNode; n != startNode; n = n->parent)
 		path.push_back(n->pos);
 
 	std::reverse(path.begin(), path.end());

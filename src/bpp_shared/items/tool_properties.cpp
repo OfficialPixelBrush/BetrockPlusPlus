@@ -257,9 +257,9 @@ void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData:
 	topPos.y += 1;
 	_world.SetBlock(topPos, BLOCK_AIR);
 	std::cout << "lol!!" << std::endl;
-	for (auto entity : _world.entityManager.entities) {
+	for (auto& entity : _world.entityManager.entities) {
 		std::cout << (int)entity->type << std::endl;
-		if (entity->type == EntityType::CREEPER) {
+		if (entity->type == EntityType::PIG) {
 			auto finder = std::static_pointer_cast<MobileEntity>(entity);
 			std::cout << "Setting goal to" << topPos << std::endl;
 			finder->SetGoal(topPos);

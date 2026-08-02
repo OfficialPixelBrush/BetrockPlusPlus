@@ -14,6 +14,7 @@
 #include <vector>
 
 //TODO: Refactor specific parts into LivingEntity, and other classes
+struct PlayerEntity;
 struct MobileEntity : public Entity {
 private:
 	Pathfinder pathFinder;
@@ -33,30 +34,33 @@ public:
 	int maxHealth = 20;
 	int maxHurtTime = 20;
 	int lastAttackDamage = 0;
-	//float attackedAtYaw = 0.0f; // Already exist in base entity
 	int deathTime = 0;
 	int attackTime = 0;
+	float movementSpeed = 0.7f;
 	float eyeHeight = height * 0.85f;
 	bool canBreatheUnderwater = false;
 	ItemStack heldItem;
+	PlayerEntity* targetPlayer = nullptr;
 
-	const int GetHeartsHealth() {
-		return this->health;
-	}
-	virtual void OnDeath();
 	virtual void Tick() override;
+	virtual void OnDeath();
+	virtual void Wonder();
+	virtual float GetWanderWeight(Int3 _pos);
 	virtual void SetGoal(std::optional<Int3> _goal);
 	bool AttackEntityFrom(Entity* _entity, int _damage) override;
 	bool AABBNotInLiquidOrObstructed(AABB& _collider);
 	bool HeadInOpaqueBlock();
 	bool HeadInWater();
-	bool EntityAlive() {
-		return !isDead && health > 0;
-	}
 	ItemStack* GetHeldItem();
 	void SetHeldItem(ItemStack _stack);
 	bool onLadder();
 	bool CanBePushed() override {
 		return true;
+	}
+	const int GetHeartsHealth() {
+		return this->health;
+	}
+	bool EntityAlive() {
+		return !isDead && health > 0;
 	}
 };

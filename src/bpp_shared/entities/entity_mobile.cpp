@@ -7,6 +7,7 @@
 
 #include "entity_mobile.h"
 #include "entities/entity.h"
+#include "entities/entity_player.h"
 #include "inventory/item_stack.h"
 #include "java_math.h"
 #include "world.h"
@@ -15,7 +16,6 @@
 #include <optional>
 
 MobileEntity::MobileEntity() {
-	type = EntityType::CREEPER;
 	stepHeight = 0.5;
 	preventEntitySpawning = true;
 }
@@ -37,62 +37,79 @@ void MobileEntity::SetGoal(std::optional<Int3> _goal) {
 	}
 	Int3 start = { MathHelper::FloorDouble(position.x), MathHelper::FloorDouble(position.y),
 		           MathHelper::FloorDouble(position.z) };
-	currentPath = pathFinder.FindPath(start, *_goal);
+	currentPath = pathFinder.FindPath(start, *_goal, width, height);
 	currentPathIdx = 0;
-	std::cout << "Calculated path!" << std::endl;
-	for (auto& node : currentPath) {
-		std::cout << node << std::endl;
-	}
 }
 
 void MobileEntity::FollowPath() {
 	input.y = 0.0f;
 	jumping = false;
+	rotationPitch = 0.0f;
+
+	// Mobs bob/hop while in water or lava
+	if ((inWater || inLava) && rand.NextFloat() < 0.8f) {
+		jumping = true;
+	}
 
 	if (currentPath.empty())
 		return;
 
+	if (rand.NextInt(100) == 0) {
+		currentPath.clear();
+		currentPathIdx = 0;
+		return;
+	}
+
+	int footprintSpan = int(width + 1.0f);
+	double halfSpan = footprintSpan * 0.5;
+
+	bool justFinished = false;
+
 	while (currentPathIdx < currentPath.size()) {
 		Int3 p = currentPath[currentPathIdx];
-		double dx = p.x + 0.5 - position.x;
-		double dz = p.z + 0.5 - position.z;
+		double dx = p.x + halfSpan - position.x;
+		double dz = p.z + halfSpan - position.z;
 
 		double threshold = width * 2.0;
 		if (dx * dx + dz * dz > threshold * threshold)
 			break;
 
 		currentPathIdx++;
+		if (currentPathIdx >= currentPath.size())
+			justFinished = true;
 	}
 
-	// Finished path
 	if (currentPathIdx >= currentPath.size()) {
 		currentPath.clear();
 		currentPathIdx = 0;
-		return;
+
+		// If the path ran out on this exact tick while pressed against something, jump!
+		if (justFinished && collidedHorizontally)
+			jumping = true;
+	} else {
+		Int3 target = currentPath[currentPathIdx];
+		double dx = target.x + halfSpan - position.x;
+		double dz = target.z + halfSpan - position.z;
+
+		float targetYaw = std::atan2(dz, dx) * 180.0 / JavaMath::PI - 90.0;
+		float yawDelta = targetYaw - rotationYaw;
+
+		while (yawDelta < -180.0F)
+			yawDelta += 360.0F;
+		while (yawDelta >= 180.0F)
+			yawDelta -= 360.0F;
+		yawDelta = std::clamp(yawDelta, -30.0F, 30.0F);
+
+		rotationYaw += yawDelta;
+
+		input.y = movementSpeed;
+
+		int floorY = MathHelper::FloorDouble(collider.minY + 0.5);
+		double dy = target.y - floorY;
+
+		if (dy > 0.0)
+			jumping = true;
 	}
-
-	Int3 target = currentPath[currentPathIdx];
-	double dx = target.x + 0.5 - position.x;
-	double dz = target.z + 0.5 - position.z;
-
-	float targetYaw = std::atan2(dz, dx) * 180.0 / JavaMath::PI - 90.0;
-	float yawDelta = targetYaw - rotationYaw;
-
-	while (yawDelta < -180.0F)
-		yawDelta += 360.0F;
-	while (yawDelta >= 180.0F)
-		yawDelta -= 360.0F;
-	yawDelta = std::clamp(yawDelta, -30.0F, 30.0F);
-
-	rotationYaw += yawDelta;
-
-	input.y = 0.7f;
-
-	int floorY = MathHelper::FloorDouble(collider.minY + 0.5);
-	double dy = target.y - floorY;
-
-	if (dy > 0.0)
-		jumping = true;
 }
 
 void MobileEntity::ResolveEntityCollision(Entity& _other) {
@@ -123,6 +140,49 @@ void MobileEntity::ResolveEntityCollision(Entity& _other) {
 	}
 }
 
+void MobileEntity::Wonder() {
+	bool hasPath = !currentPath.empty();
+
+	bool shouldWander = (!hasPath && rand.NextInt(80) == 0) || rand.NextInt(80) == 0;
+	if (!shouldWander)
+		return;
+
+	Int3 origin = { MathHelper::FloorDouble(position.x), MathHelper::FloorDouble(position.y),
+		            MathHelper::FloorDouble(position.z) };
+
+	bool found = false;
+	Int3 best{};
+	float bestWeight = -99999.0f;
+
+	// Sample 10 random points
+	for (int i = 0; i < 10; i++) {
+		Int3 candidate = { origin.x + rand.NextInt(13) - 6, origin.y + rand.NextInt(7) - 3,
+			               origin.z + rand.NextInt(13) - 6 };
+
+		float weight = GetWanderWeight(candidate);
+		if (weight > bestWeight) {
+			bestWeight = weight;
+			best = candidate;
+			found = true;
+		}
+	}
+
+	if (found)
+		SetGoal(best);
+}
+
+float MobileEntity::GetWanderWeight(Int3 _pos) {
+	// Grass underfoot always wins
+	Int3 below = _pos;
+	below.y -= 1;
+	if (world->GetBlockId(below) == BlockType::BLOCK_GRASS)
+		return 10.0f;
+
+	// Otherwise score by how lit the spot is
+	int light = std::max(world->GetSkyLight(_pos), world->GetBlockLight(_pos));
+	return (float(light) / 15.0f) - 0.5f;
+}
+
 void MobileEntity::TickPhysics() {
 	if (inWater || inLava) {
 		// Water and lava movement
@@ -131,14 +191,14 @@ void MobileEntity::TickPhysics() {
 		ApplyInput(0.02f);
 		Move(this->velocity);
 		velocity *= friction;
-		velocity.y -= 0.2; // Sink
+		velocity.y -= 0.02; // Sink
 
 		AABB offsetCollider = collider.Offset(velocity.x, velocity.y + 0.6 - position.y + oldY, velocity.z);
 
 		// Check if we are colliding with a block and we are
 		// Moving up and unobstructed, if so, apply a nudge
 		if (collidedHorizontally && AABBNotInLiquidOrObstructed(offsetCollider)) {
-			velocity.y += 0.3;
+			velocity.y = 0.3;
 		}
 	} else {
 		// Normal ground/air movement
@@ -286,11 +346,13 @@ bool MobileEntity::AttackEntityFrom(Entity* _entity, int _damage) {
 }
 
 void MobileEntity::Tick() {
+	age++;
+
 	if (pathFinder.world == nullptr) {
 		pathFinder.world = world;
 	}
 
-	age++;
+	Wonder();
 	Entity::Tick();
 	FollowPath();
 
