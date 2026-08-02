@@ -481,7 +481,8 @@ void Server::DisconnectClients() {
 			                             if (_s->entity) {
 				                             GlobalLogger().info << "Disconnected client " << _s->username << " with entity id " << _s->entity->id << "\n";
 				                             SendGlobalChatMessage("§e" + _s->username + " left the game.");
-				                             _s->entity->entityManager->RemoveEntity(_s->entity->id);
+				                             if (_s->entity->entityManager)
+												_s->entity->entityManager->RemoveEntity(_s->entity->id);
 			                             }
 			                             IndexRemoveSession(*_s);
 			                             chunkSender.Remove(*_s);
