@@ -256,6 +256,10 @@ bool MobileEntity::HeadInWater() {
 	return false;
 }
 
+void MobileEntity::Heal(int _health) {
+	health = std::min(health + _health, maxHealth);
+}
+
 bool MobileEntity::AttackEntityFrom(Entity* _entity, int _damage) {
 	age = 0;
 	if (health <= 0)

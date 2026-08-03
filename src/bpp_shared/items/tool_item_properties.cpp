@@ -169,6 +169,16 @@ void RegisterAll() {
 	}
 
 	// Item behaviors
+	itemBehavior[APPLE].onUse = EatFood;
+	itemBehavior[BREAD].onUse = EatFood;
+	itemBehavior[PORKCHOP].onUse = EatFood;
+	itemBehavior[PORKCHOP_COOKED].onUse = EatFood;
+	itemBehavior[APPLE_GOLDEN].onUse = EatFood;
+	itemBehavior[COOKIE].onUse = EatFood;
+	itemBehavior[FISH].onUse = EatFood;
+	itemBehavior[FISH_COOKED].onUse = EatFood;
+	itemBehavior[MUSHROOM_STEW].onUse = EatFood;
+
 	itemBehavior[SUGARCANE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
 	                                        PacketData::FaceDirection _face) {
 		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);

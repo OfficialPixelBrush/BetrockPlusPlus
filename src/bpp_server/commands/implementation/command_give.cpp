@@ -35,14 +35,8 @@ std::string CommandGive::Execute(std::vector<std::string>& _parameters, PlayerSe
 
 		reply.Serialize(_session.stream);
 
-		// Try the hotbar
-		if (_session.inventory.MergeItemStackInInventory(item, false, 36, 44)) {
-			PacketUtilities::SendInventory(_session, _session.openWindowId, _session.inventory);
-			return "";
-		}
-
-		// Try the main inventory
-		if (_session.inventory.MergeItemStackInInventory(item, false, 9, 35)) {
+		// Try to give
+		if (_session.inventory.PickupItem(item)) {
 			PacketUtilities::SendInventory(_session, _session.openWindowId, _session.inventory);
 			return "";
 		}
