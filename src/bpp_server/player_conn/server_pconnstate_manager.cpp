@@ -141,8 +141,10 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	                    << " at (" << _session.position.pos.x << ", " << _session.position.pos.y << ", "
 	                    << _session.position.pos.z << ")\n";
 
-	// Update our last trusted position
+	// Update our last trusted position and rotation
 	_session.entity->position = _session.position.pos;
+	_session.entity->rotationYaw = _session.rotation.x;
+	_session.entity->rotationPitch = _session.rotation.y;
 	_session.pendingTeleport = _session.position.pos;
 	_session.entity->RebuildCollider();
 
