@@ -197,7 +197,9 @@ void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server&
 		}
 	}
 
-	GlobalLogger().info << "Spawn chunks: " << loadedChunks << " / " << totalSpawnChunks << "\n";
+	int percent = std::ceil(loadedChunks / totalSpawnChunks);
+
+	if (loadedChunks % (totalSpawnChunks / 4) == 0) GlobalLogger().info << "Spawn chunks: " << percent << "%\n";
 
 	if (loadedChunks < totalSpawnChunks)
 		return;

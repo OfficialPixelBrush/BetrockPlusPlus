@@ -85,7 +85,6 @@ void EntityMPPlayer::HandlePositionChecks() {
 			return;
 		}
 		// Client acknowledged our tp
-		GlobalLogger().info << "Sucessfully TP'd player " << session->username << "\n";
 		session->pendingTeleport.reset();
 	}
 
@@ -140,13 +139,6 @@ void EntityMPPlayer::HandlePositionChecks() {
 
 		if ((wasClearBefore && (residualTooLarge || !clearNow)) || movedWrong) {
 			// TP our player back
-			GlobalLogger().info << "Residual from move was: " << residual << "\n";
-			GlobalLogger().info << "Rubberbanded player! wasClear=" << wasClearBefore
-			                    << " residual=" << residualTooLarge << " clearNow=" << clearNow
-			                    << " movedWrong=" << movedWrong << " pos=(" << this->position.x << ","
-			                    << this->position.y << "," << this->position.z << ")"
-			                    << " colliderY=[" << collider.minY << "," << collider.maxY << "]"
-			                    << "\n";
 			this->Teleport(lastPosition, { rotationYaw, rotationPitch });
 			session->position.pos = lastPosition;
 			Packet::PlayerPosition pkt;

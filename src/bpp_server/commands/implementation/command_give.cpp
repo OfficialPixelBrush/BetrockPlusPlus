@@ -22,7 +22,6 @@ std::string CommandGive::Execute(std::vector<std::string>& _parameters, PlayerSe
                                  [[maybe_unused]] Server& _server) {
 	// TODO: Let player specify another player to give to
 	if (_parameters.size() <= 1)
-
 		return "Missing item id!";
 
 	size_t paramOffset = 1;
