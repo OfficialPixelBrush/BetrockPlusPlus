@@ -36,7 +36,8 @@ struct EntityManager {
 
 	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbExcluding(const AABB& _box, const EntityId _entityId);
 	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabb(const AABB& _box);
-	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbExcludingTypes(const AABB& _box, const std::vector<EntityType>& _excludedTypes);
+	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbExcludingTypes(
+	    const AABB& _box, const std::vector<EntityType>& _excludedTypes);
 	std::vector<Tag> CollectEntitiesForSave(Int2 _cpos, bool _clearCollectedEntities = false);
 	std::optional<std::string> GetEntityNbtId(EntityType _type);
 	void Tick();
@@ -45,8 +46,7 @@ struct EntityManager {
 	void CreateEntityFromNbt(Tag& _nbt);
 
 	static Int3 ComputeBucketPos(Vec3 _position) {
-		Int3 bucketPos = { MathHelper::FloorDouble(_position.x / 16.0),
-			               MathHelper::FloorDouble(_position.z / 16.0),
+		Int3 bucketPos = { MathHelper::FloorDouble(_position.x / 16.0), MathHelper::FloorDouble(_position.z / 16.0),
 			               MathHelper::FloorDouble(_position.y / 16.0) };
 
 		// Entity collisions below and above the world are just gonna be inefficient
@@ -54,14 +54,30 @@ struct EntityManager {
 		bucketPos.z = std::min(9, bucketPos.z);
 		return bucketPos;
 	}
-	bool ChunkHasEntities(Int2 _cpos) {
-		auto& container = this->entityContainers[_cpos];
-		for (size_t i = 0; i < container.buckets.size(); i++) {
-			auto& bucket = container.buckets[i];
-			if (bucket.entities.size() > 0)
-				return true;
+	static bool IsContainerEmpty(const EntityContainer& _container) {
+		for (const auto& bucket : _container.buckets) {
+			if (!bucket.entities.empty())
+				return false;
 		}
-		return false;
+		return true;
+	}
+
+	bool ChunkHasEntities(Int2 _cpos) const {
+		auto it = entityContainers.find(_cpos);
+		if (it == entityContainers.end())
+			return false;
+		return !IsContainerEmpty(it->second);
+	}
+
+	// Drop empty containers so lookups never permanently inflate the map.
+	void PruneEmptyContainer(Int2 _cpos) {
+		auto it = entityContainers.find(_cpos);
+		if (it != entityContainers.end() && IsContainerEmpty(it->second))
+			entityContainers.erase(it);
+	}
+
+	void EraseContainer(Int2 _cpos) {
+		entityContainers.erase(_cpos);
 	}
 	std::shared_ptr<Entity> GetEntityByIdShared(EntityId _id) {
 		for (auto& entity : entities) {

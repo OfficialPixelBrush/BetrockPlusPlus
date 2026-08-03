@@ -138,7 +138,7 @@ void Lighter::PropagateLightAt(int _x, int _y, int _z, LightType _type, WorldMan
 		if (_ny < 0 || _ny >= CHUNK_HEIGHT || !_nc)
 			return;
 		int expected = CrossPlatform::Math::Max(0, newVal - 1);
-		if (neighbor(_i, _nc, _nlx, _ny, _nlz) < expected && lightQueue.size() < 1000000)
+		if (neighbor(_i, _nc, _nlx, _ny, _nlz) < expected && lightQueue.size() < MAX_LIGHT_QUEUE)
 			lightQueue.push_back({ { _nx, _ny, _nz }, { _nx, _ny, _nz }, _type });
 	};
 

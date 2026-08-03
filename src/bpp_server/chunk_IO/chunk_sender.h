@@ -25,7 +25,7 @@ struct ChunkSender {
 	struct PendingChunk {
 		Int32_2 pos;
 		std::future<std::vector<uint8_t>> data; // async compression result
-		std::shared_ptr<Chunk> chunkRef;        // kept alive until flush drains pending updates
+		std::weak_ptr<Chunk> chunkRef;          // world may unload; lock only when flushing
 	};
 
 	// One result slot per in-flight sub-region block update (>= 10 changes).
@@ -108,6 +108,7 @@ struct ChunkSender {
 			std::shared_ptr<Chunk> chunkRef = _world.chunks.at(p);
 			pc.pos = p;
 			pc.chunkRef = chunkRef;
+			// Task owns a shared_ptr for the duration of serialization only.
 			pc.data = pool.submit_task([chunkRef]() { return ChunkSerializer::Serialize(*chunkRef); });
 			queue.push_back(std::move(pc));
 			_session.sentChunks.insert(p);
@@ -222,31 +223,36 @@ struct ChunkSender {
 			_session.flushedChunks.insert(pc.pos);
 			_session.newlyFlushed.push_back(pc.pos);
 
+			auto chunkLocked = pc.chunkRef.lock();
+
 			// Drain any block updates that queued up while this chunk
 			// was in-flight. They go out immediately after the chunk
 			// data in the same Tick, so the client receives them in
 			// order and applies them to freshly loaded terrain.
 			auto pending = _session.pendingBlockChanges.find(pc.pos);
 			if (pending != _session.pendingBlockChanges.end()) {
-				SendBlockUpdates(_session, pc.pos, pending->second, std::shared_ptr<const Chunk>(pc.chunkRef));
+				SendBlockUpdates(_session, pc.pos, pending->second,
+				                 chunkLocked ? std::shared_ptr<const Chunk>(chunkLocked) : nullptr);
 				_session.pendingBlockChanges.erase(pending);
 			}
 
 			// Signs need to inform the client when they are loaded
-			for (auto te : pc.chunkRef->tileEntities) {
-				if (te->type != TileType::SIGN)
-					continue;
-				auto sign = std::static_pointer_cast<TileEntitySign>(te);
+			if (chunkLocked) {
+				for (auto te : chunkLocked->tileEntities) {
+					if (te->type != TileType::SIGN)
+						continue;
+					auto sign = std::static_pointer_cast<TileEntitySign>(te);
 
-				Packet::UpdateSign pkt;
-				pkt.position = SlimInt3<int16_t>{ sign->position.x, static_cast<short>(sign->position.y),
-					                              sign->position.z };
-				pkt.lines[0] = sign->text1;
-				pkt.lines[1] = sign->text2;
-				pkt.lines[2] = sign->text3;
-				pkt.lines[3] = sign->text4;
+					Packet::UpdateSign pkt;
+					pkt.position = SlimInt3<int16_t>{ sign->position.x, static_cast<short>(sign->position.y),
+						                              sign->position.z };
+					pkt.lines[0] = sign->text1;
+					pkt.lines[1] = sign->text2;
+					pkt.lines[2] = sign->text3;
+					pkt.lines[3] = sign->text4;
 
-				pkt.Serialize(_session.stream);
+					pkt.Serialize(_session.stream);
+				}
 			}
 		}
 

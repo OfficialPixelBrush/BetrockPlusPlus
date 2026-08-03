@@ -11,6 +11,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 struct SnapshotContainer {
@@ -23,11 +24,18 @@ struct WorldManager;
 struct RegionManager {
 	BS::thread_pool<> iopool{ 2 };
 
+	static constexpr size_t MAX_SAVE_QUEUE = 512;
+	static constexpr size_t MAX_PENDING_REGIONS = 32;
+
 	std::mutex saveQueueMutex;
 	std::vector<SnapshotContainer> saveQueue;
 
 	std::mutex outChunksMutex;
 	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> outChunks;
+
+	// Positions whose async/sync load could not produce a chunk (retry as Unloaded).
+	std::mutex failedLoadsMutex;
+	std::unordered_set<Int32_2> failedLoads;
 
 	// As much as I hate to do this it makes my job easier
 	WorldManager* world = nullptr;
@@ -55,6 +63,12 @@ struct RegionManager {
 	// Returns nullptr until chunk is done loading
 	std::shared_ptr<Chunk> GetChunk(Int32_2 _cpos);
 
+	// Drop a pending/finished load result (e.g. chunk left the load radius).
+	void DiscardChunk(Int32_2 _cpos);
+
+	// Pop and clear any load failures since the last call.
+	std::vector<Int32_2> TakeFailedLoads();
+
 	void PumpPipeline();
 
 	// Flush all pending saves synchronously
@@ -66,6 +80,7 @@ struct RegionManager {
 private:
 	bool TryMergePendingRegion(std::shared_ptr<Region>& _region);
 	bool CreateRegionOnCache(Int2 _rpos);
+	void MarkLoadFailed(Int32_2 _cpos);
 
 	std::vector<std::shared_ptr<Region>> pendingRegions;
 	std::shared_ptr<Region> regionCache[8];

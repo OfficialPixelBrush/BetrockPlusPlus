@@ -10,22 +10,27 @@
 
 void EntityManager::RemoveEntity(EntityId _id) {
 	// Find the entity for this ID
-	auto it = std::find_if(entities.begin(), entities.end(), [_id](const std::shared_ptr<Entity>& _e) { return _e->id == _id; });
+	auto it = std::find_if(entities.begin(), entities.end(),
+	                       [_id](const std::shared_ptr<Entity>& _e) { return _e->id == _id; });
 	if (it == entities.end()) {
 		return; // Not found, nothing to do
 	}
 
 	std::shared_ptr<Entity> entity = *it;
 
-	// Remove from its bucket
-	auto& container = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
-	auto& bucket = container.buckets[entity->bucketPos.z];
-	bucket.entities.erase(std::remove_if(bucket.entities.begin(), bucket.entities.end(),
-	                                     [&entity](const std::weak_ptr<Entity>& _weak) {
-		                                     auto locked = _weak.lock();
-		                                     return !locked || locked == entity;
-	                                     }),
-	                      bucket.entities.end());
+	// Remove from its bucket (if the container still exists — unload may have erased it)
+	Int2 cpos{ entity->bucketPos.x, entity->bucketPos.y };
+	auto containerIt = entityContainers.find(cpos);
+	if (containerIt != entityContainers.end()) {
+		auto& bucket = containerIt->second.buckets[entity->bucketPos.z];
+		bucket.entities.erase(std::remove_if(bucket.entities.begin(), bucket.entities.end(),
+		                                     [&entity](const std::weak_ptr<Entity>& _weak) {
+			                                     auto locked = _weak.lock();
+			                                     return !locked || locked == entity;
+		                                     }),
+		                      bucket.entities.end());
+		PruneEmptyContainer(cpos);
+	}
 
 	// Remove from the master list
 	entities.erase(it);
@@ -52,7 +57,7 @@ void EntityManager::AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEn
 	                                   : _forceEntityId; // Assign an ID if we weren't forced to use one
 	_entity->world = world; // Bind the world pointer so the entity can interact with the world
 	_entity->entityManager = this;
-	_entity->dim = (Dimension) world->GetDimension();
+	_entity->dim = (Dimension)world->GetDimension();
 
 	// Register the entity into its initial bucket
 	_entity->bucketPos = ComputeBucketPos(_entity->position);
@@ -71,26 +76,29 @@ void EntityManager::AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEn
 }
 
 void EntityManager::Tick() {
-	// Make a copy so we aren't modifying the vector while iterating over it
-	std::vector<std::shared_ptr<Entity>> copy = entities;
+	// Snapshot weak refs so mid-tick spawn/despawn cannot invalidate iteration,
+	// without the full shared_ptr vector copy every tick.
+	std::vector<std::weak_ptr<Entity>> toTick;
+	toTick.reserve(entities.size());
+	for (const auto& entity : entities)
+		toTick.emplace_back(entity);
 
-	// Tick EVERY entity
-	for (std::shared_ptr<Entity> entity : copy) {
-		// Remove dead entities from the system
-		if (entity->isDead) {
-			RemoveEntity(entity->id);
+	for (const auto& weak : toTick) {
+		std::shared_ptr<Entity> entity = weak.lock();
+		if (!entity || entity->isDead)
 			continue;
-		}
+
 		entity->Tick();
 
 		// Check to see if this entity went into another container or bucket
 		Int3 newBucketPos = ComputeBucketPos(entity->position);
 
 		if (newBucketPos != entity->bucketPos) {
+			Int2 oldCpos{ entity->bucketPos.x, entity->bucketPos.y };
 			// Remove from the old bucket and mark the old chunk as modified
-			if (auto chunk = world->GetChunk({ entity->bucketPos.x, entity->bucketPos.y }))
+			if (auto chunk = world->GetChunk(oldCpos))
 				chunk->isModified = true;
-			auto& oldContainer = entityContainers[{ entity->bucketPos.x, entity->bucketPos.y }];
+			auto& oldContainer = entityContainers[oldCpos];
 			auto& b = oldContainer.buckets[entity->bucketPos.z];
 			b.entities.erase(std::remove_if(b.entities.begin(), b.entities.end(),
 			                                [&entity](const std::weak_ptr<Entity>& _weak) {
@@ -99,6 +107,7 @@ void EntityManager::Tick() {
 				                                       locked == entity; // Remove if expired or matches our entity
 			                                }),
 			                 b.entities.end());
+			PruneEmptyContainer(oldCpos);
 
 			// Put in the new bucket
 			auto& newContainer = entityContainers[{ newBucketPos.x, newBucketPos.y }];
@@ -107,7 +116,14 @@ void EntityManager::Tick() {
 			entity->bucketPos = newBucketPos;
 		}
 	}
-	copy.clear(); // Clear the copy to free memory
+
+	// Remove dead entities after ticking so iteration stays stable
+	for (size_t i = 0; i < entities.size();) {
+		if (entities[i]->isDead)
+			RemoveEntity(entities[i]->id);
+		else
+			++i;
+	}
 
 	// Clear players that have expired
 	for (auto it = players.begin(); it != players.end();) {
@@ -161,10 +177,13 @@ std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabb(const 
 	bucketMaxY = std::max(0, bucketMaxY);
 	bucketMaxY = std::min(9, bucketMaxY);
 
-	// Go through each block position
+	// Go through each block position (find-only: never insert empty containers)
 	for (int x = blockMinX; x <= blockMaxX; x++) {
 		for (int z = blockMinZ; z <= blockMaxZ; z++) {
-			auto& container = entityContainers[{ x, z }];
+			auto it = entityContainers.find({ x, z });
+			if (it == entityContainers.end())
+				continue;
+			auto& container = it->second;
 			for (int by = bucketMinY; by <= bucketMaxY; by++) {
 				// Get every entity within every bucket
 				for (size_t i = 0; i < container.buckets[by].entities.size(); i++) {
@@ -199,8 +218,11 @@ std::vector<Tag> EntityManager::CollectEntitiesForSave(Int2 _cpos, bool _clearCo
 	// We mark the entities as dead for cleanup afterwards
 	std::vector<Tag> collectedEntities;
 
-	auto& container = entityContainers[_cpos];
+	auto it = entityContainers.find(_cpos);
+	if (it == entityContainers.end())
+		return collectedEntities;
 
+	auto& container = it->second;
 	for (size_t i = 0; i < container.buckets.size(); i++) {
 		auto& bucket = container.buckets[i];
 		for (auto& entityPtrWeak : bucket.entities) {
@@ -219,6 +241,12 @@ std::vector<Tag> EntityManager::CollectEntitiesForSave(Int2 _cpos, bool _clearCo
 			}
 		}
 	}
+
+	if (_clearCollectedEntities)
+		EraseContainer(_cpos);
+	else
+		PruneEmptyContainer(_cpos);
+
 	return collectedEntities;
 }
 

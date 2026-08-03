@@ -15,10 +15,12 @@ void TickScheduler::Tick() {
 		ScheduledTick entry = scheduledTicks.top();
 		scheduledTicks.pop();
 
-		// Did we reschedule this position?
+		// Reschedule overwrites pending but leaves the old PQ entry behind.
+		// Skip superseded entries so they neither grow work nor double-fire.
 		auto it = pending.find(entry.pos);
-		if (it != pending.end() && it->second.sequence == entry.sequence)
-			pending.erase(it);
+		if (it == pending.end() || it->second.sequence != entry.sequence)
+			continue;
+		pending.erase(it);
 
 		// Has the block changed since we scheduled this Tick?
 		if (world->GetBlockId(entry.pos) == entry.expectedBlock) {

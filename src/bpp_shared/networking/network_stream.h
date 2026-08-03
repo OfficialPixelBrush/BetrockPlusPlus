@@ -174,4 +174,7 @@ private:
 	size_t readPos = 0;
 
 	std::vector<uint8_t> writeBuffer;
+
+	static constexpr size_t MAX_READ_BUFFER = 1u << 20;       // 1 MiB
+	static constexpr size_t MAX_METADATA_ENTRIES = 256;
 };

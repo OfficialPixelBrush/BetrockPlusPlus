@@ -79,6 +79,8 @@ struct ChunkCache {
 
 struct Lighter {
 public:
+	static constexpr size_t MAX_LIGHT_QUEUE = 65536;
+
 	Lighter() {
 		// Avoid repeated vector growth/reallocation during propagation bursts
 		// (explosions, mass sky-column removal, etc). Small enough to not
@@ -98,7 +100,7 @@ public:
 	void ScheduleLightUpdate(Int3 _pos, LightType _type) {
 		if (_pos.y < 0 || _pos.y >= CHUNK_HEIGHT)
 			return;
-		if (lightQueue.size() < 1000000)
+		if (lightQueue.size() < MAX_LIGHT_QUEUE)
 			lightQueue.push_back({ _pos, _pos, _type });
 	}
 
@@ -118,7 +120,7 @@ public:
 				return;
 		}
 
-		if (lightQueue.size() >= 1000000)
+		if (lightQueue.size() >= MAX_LIGHT_QUEUE)
 			return;
 		lightQueue.push_back({ _mn, _mx, _type });
 	}

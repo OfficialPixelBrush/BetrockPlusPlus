@@ -129,12 +129,16 @@ void NetworkStream::WriteBytes(const uint8_t* _buf, size_t _len) {
 	writeBuffer.insert(writeBuffer.end(), _buf, _buf + _len);
 }
 
-// TODO: Due to how this system works, a concrete length is never supplied.
-// Data is read until 0x7F is hit. Ideally we should exit out if we're past
-// a certain number of bytes
+// Caps metadata fan-out so a malicious/broken stream cannot grow forever.
+// Data is still read until 0x7F (or short-read / entry cap).
 void NetworkStream::ReadEntityMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {
 	uint8_t val = Read<uint8_t>();
+	size_t entries = 0;
 	while (!IsShortRead() && val != PacketData::EntityMetadata::END) {
+		if (++entries > MAX_METADATA_ENTRIES) {
+			connected = false;
+			break;
+		}
 		// What type the data has
 		PacketData::EntityMetadata::Type type = PacketData::EntityMetadata::Type(val >> 5);
 		// Where the data goes for the relevant entity
@@ -280,10 +284,19 @@ void NetworkStream::DrainToBuffer() {
 		readPos = 0;
 	}
 
+	if (readBuffer.size() > MAX_READ_BUFFER) {
+		connected = false;
+		return;
+	}
+
 	uint8_t chunk[4096];
 	for (;;) {
 		int result = recv(clientSocket, reinterpret_cast<char*>(chunk), sizeof(chunk), 0);
 		if (result > 0) {
+			if (readBuffer.size() + static_cast<size_t>(result) > MAX_READ_BUFFER) {
+				connected = false;
+				return;
+			}
 			readBuffer.insert(readBuffer.end(), chunk, chunk + result);
 			if (static_cast<size_t>(result) < sizeof(chunk))
 				break; // almost certainly drained the socket for now

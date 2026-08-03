@@ -6,7 +6,6 @@
 */
 
 #pragma once
-#include "BS_thread_pool.hpp"
 #include "assets.h"
 #include "camera.h"
 #include "client_pos.h"
@@ -46,7 +45,4 @@ private:
 	int clientSocket = -1;
 	std::optional<NetworkStream> stream;
 	std::chrono::steady_clock::time_point lastPacketTime = std::chrono::steady_clock::now();
-
-	// Not used currently
-	BS::thread_pool<> serverThread{ 1 };
 };

@@ -394,6 +394,15 @@ void WorldManager::DrainGenQueue() {
 }
 
 void WorldManager::DrainLoadQueue() {
+	// Recover chunks whose load never produced a result (stuck Loading).
+	for (const Int32_2& pos : regionManager->TakeFailedLoads()) {
+		auto it = chunks.find(pos);
+		if (it == chunks.end())
+			continue;
+		if (it->second->state.load(std::memory_order_acquire) == ChunkState::Loading)
+			it->second->state.store(ChunkState::Unloaded, std::memory_order_release);
+	}
+
 	for (auto& [pos, chunk] : chunks) {
 		if (chunk->state.load(std::memory_order_acquire) != ChunkState::Loading)
 			continue;
@@ -510,9 +519,18 @@ void WorldManager::UpdateLoadRadius(const std::vector<ClientPosition>& _players)
 			++it;
 			continue;
 		}
+
 		ChunkState s = it->second->state.load();
 		if (s < ChunkState::Generated) {
-			++it;
+			// Cancel incomplete work: late gen/load results are discarded when
+			// the position is no longer in the chunk map.
+			if (regionManager)
+				regionManager->DiscardChunk(it->first);
+			pendingBleedWrites.erase(it->first);
+			// Do not erase entity containers here — entities may still occupy
+			// this position while the chunk placeholder is incomplete.
+			entityManager.PruneEmptyContainer(it->first);
+			it = chunks.erase(it);
 			continue;
 		}
 
@@ -522,7 +540,17 @@ void WorldManager::UpdateLoadRadius(const std::vector<ClientPosition>& _players)
 			it->second->isModified = false;
 		}
 
+		entityManager.EraseContainer(it->first);
+		pendingBleedWrites.erase(it->first);
 		it = chunks.erase(it);
+	}
+
+	// Drop bleed writes for coordinates that are no longer in the load set.
+	for (auto it = pendingBleedWrites.begin(); it != pendingBleedWrites.end();) {
+		if (!wanted.contains(it->first) && !chunks.contains(it->first))
+			it = pendingBleedWrites.erase(it);
+		else
+			++it;
 	}
 }
 
@@ -775,8 +803,12 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
 	auto* chunk = GetChunkRaw(cp);
 	if (!IsChunkValid(cp)) {
-		// Target chunk isn't ready; cache the write for replay
-		pendingBleedWrites[cp].push_back({ _wpos, Block{ _blockType, _metadata } });
+		// Target chunk isn't ready; cache the write for replay (bounded).
+		constexpr size_t MAX_BLEED_WRITES_PER_CHUNK = 1024;
+		auto& queue = pendingBleedWrites[cp];
+		if (queue.size() >= MAX_BLEED_WRITES_PER_CHUNK)
+			queue.erase(queue.begin());
+		queue.push_back({ _wpos, Block{ _blockType, _metadata } });
 		return;
 	}
 

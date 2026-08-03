@@ -43,12 +43,48 @@ bool RegionManager::Release() {
 	// Drop any regions that couldn't fit in cache
 	pendingRegions.clear();
 
+	{
+		std::lock_guard lk(outChunksMutex);
+		outChunks.clear();
+	}
+	{
+		std::lock_guard lk(failedLoadsMutex);
+		failedLoads.clear();
+	}
+	{
+		std::lock_guard lk(saveQueueMutex);
+		saveQueue.clear();
+	}
+
 	// Clear the folder path so the manager can't be accidentally reused
 	mFolderPath.clear();
 
 	world = nullptr;
 
 	return true;
+}
+
+void RegionManager::MarkLoadFailed(Int32_2 _cpos) {
+	std::lock_guard lk(failedLoadsMutex);
+	failedLoads.insert(_cpos);
+}
+
+std::vector<Int32_2> RegionManager::TakeFailedLoads() {
+	std::lock_guard lk(failedLoadsMutex);
+	std::vector<Int32_2> out(failedLoads.begin(), failedLoads.end());
+	failedLoads.clear();
+	return out;
+}
+
+void RegionManager::DiscardChunk(Int32_2 _cpos) {
+	{
+		std::lock_guard lk(outChunksMutex);
+		outChunks.erase(_cpos);
+	}
+	{
+		std::lock_guard lk(failedLoadsMutex);
+		failedLoads.erase(_cpos);
+	}
 }
 
 bool RegionManager::RegionExists(Int32_2 _rpos) {
@@ -106,20 +142,37 @@ void RegionManager::SaveChunk(const std::shared_ptr<Chunk> _chunk, bool _unloadE
 	SnapshotContainer container{ std::move(snapshot), std::move(entities) };
 
 	std::lock_guard lk(saveQueueMutex);
+	// Coalesce: keep at most one pending snapshot per chunk position.
+	for (auto& existing : saveQueue) {
+		if (existing.chunkSnapshot && existing.chunkSnapshot->cpos == container.chunkSnapshot->cpos) {
+			existing = std::move(container);
+			return;
+		}
+	}
+	if (saveQueue.size() >= MAX_SAVE_QUEUE) {
+		// Under sustained IO backlog, drop the oldest snapshot to bound RAM.
+		saveQueue.erase(saveQueue.begin());
+	}
 	saveQueue.push_back(std::move(container));
 }
 
 void RegionManager::LoadChunk(const Int32_2 _cpos) {
 	Int32_2 rpos{ _cpos.x >> 5, _cpos.z >> 5 };
-	if (!RegionExists(rpos))
+	if (!RegionExists(rpos)) {
+		MarkLoadFailed(_cpos);
 		return;
+	}
 	auto region = LoadRegion(rpos); // shared_ptr keeps Region alive for the task
-	if (!region)
+	if (!region) {
+		MarkLoadFailed(_cpos);
 		return;
+	}
 	iopool.detach_task([_cpos, region, this]() {
 		auto chunk = region->GetChunk(_cpos); // blocks until region is free
-		if (!chunk)
+		if (!chunk) {
+			MarkLoadFailed(_cpos);
 			return;
+		}
 		std::lock_guard lk(outChunksMutex);
 		outChunks[_cpos] = std::move(chunk);
 	});
@@ -236,6 +289,8 @@ bool RegionManager::TryMergePendingRegion(std::shared_ptr<Region>& _region) {
 bool RegionManager::CreateRegionOnCache(Int2 _rpos) {
 	auto region = std::make_shared<Region>(_rpos, mFolderPath);
 	if (!TryMergePendingRegion(region)) {
+		if (pendingRegions.size() >= MAX_PENDING_REGIONS)
+			return false; // all cache slots busy and pending is full — caller retries later
 		pendingRegions.push_back(std::move(region));
 		return false;
 	}
