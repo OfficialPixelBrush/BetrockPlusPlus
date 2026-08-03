@@ -198,6 +198,10 @@ struct Entity {
 		// Returns the collider we use to detect if we are in lava
 		return collider.Expand(-0.1, -0.4, -0.1);
 	}
+	virtual AABB GetFireCollider() {
+		// Returns the collider we use to detect if we are in something flammable
+		return collider.Expand(-0.001, -0.001, -0.001);
+	}
 	virtual bool PushOutOfBlocks(Vec3 _pos);
 	virtual void OnCollideWithPlayer(PlayerEntity& _entity);
 	virtual void ApplyKnockback(Vec3 _direction);
@@ -206,5 +210,5 @@ struct Entity {
 	virtual void UpdateFallState(float _movedY);
 	virtual std::optional<Tag> SerializeToNbt();
 	virtual void LoadFromNbt(Tag& _nbt);
-	virtual void DropItemAtEntity(ItemId _itemId, ItemAmount _count);
+	virtual void DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data = 0);
 };

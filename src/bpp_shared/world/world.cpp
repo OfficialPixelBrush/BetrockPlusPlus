@@ -12,6 +12,80 @@
 #include "entities/entity_item.h"
 #include <unordered_set>
 
+int WorldManager::getBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
+	if (_offsetNonFullBlocks) {
+		auto blockId = this->GetBlockId(_wpos);
+		if (blockId == BLOCK_SLAB || blockId == BLOCK_FARMLAND || blockId == BLOCK_STAIRS_WOOD || blockId == BLOCK_STAIRS_WOOD){
+			int yP = getBlockLightValue({ _wpos.x, _wpos.y + 1, _wpos.z }, false);
+			int xP = getBlockLightValue({ _wpos.x + 1, _wpos.y, _wpos.z }, false);
+			int xM = getBlockLightValue({ _wpos.x - 1, _wpos.y, _wpos.z }, false);
+			int zP = getBlockLightValue({ _wpos.x, _wpos.y, _wpos.z + 1 }, false);
+			int zM = getBlockLightValue({ _wpos.x, _wpos.y, _wpos.z - 1 }, false);
+
+			if (xP > yP)
+				yP = xP;
+			if (xM > yP)
+				yP = xM;
+			if (zP > yP)
+				yP = zP;
+			if (zM > yP)
+				yP = zM;
+
+			return yP;
+		}
+	}
+
+	if (_wpos.y < 0) {
+		return 0;
+	} else {
+		if (_wpos.y >= 128)
+			_wpos.y = 127;
+		auto chunk = this->GetChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
+		if (!chunk)
+			return 15;
+
+		Int3 localPos = { _wpos.x & 15, _wpos.y, _wpos.z & 15 };
+		int skylight = chunk->GetSkyLight(localPos) - this->skylightOffset;
+		int blockLight = chunk->GetBlockLight(localPos);
+		if (blockLight > skylight)
+			return blockLight;
+		else
+			return skylight;
+	}
+}
+	
+void WorldManager::updateSkylightOffset(){
+	float celestialAngle = getCelestialAngle();
+	float transformedAngle = 1.0f - (std::cos(celestialAngle * JavaMath::PI * 2.0f) * 2.0f + 0.5f);
+	if (transformedAngle < 0.0f)
+		transformedAngle++;
+	if (transformedAngle > 1.0f)
+		transformedAngle--;
+
+	transformedAngle = 1.0f - transformedAngle;
+	// TODO: Weather?
+	transformedAngle = 1.0f - transformedAngle;
+	
+	this->skylightOffset = int(transformedAngle * 11.0f);
+}
+
+float WorldManager::getCelestialAngle(){
+	int normalizedTime = int(this->elapsedTicks % 24000);
+
+	// Subtract 1/4 of a day so sunrise = 0
+	float timePercent = float(normalizedTime + 1.0f) / 24000.0f - 0.25f;
+	if (timePercent < 0.0f)
+		timePercent++;
+	if (timePercent > 1.0f)
+		timePercent--;
+
+	// Merge linear time with cosine time
+	float linearAngle = timePercent;
+	timePercent = 1.0f - (std::cos(timePercent * JavaMath::PI) + 1.0f) / 2.0f;
+	timePercent = linearAngle + (timePercent - linearAngle) / 3.0f;
+	return timePercent;
+}
+
 bool WorldManager::IsMaterialInAabb(AABB _collider, Material _material) {
 	int minX = MathHelper::FloorDouble(_collider.minX);
 	int maxX = MathHelper::FloorDouble(_collider.maxX + 1.0);
@@ -172,6 +246,7 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 	lightManager.ProcessLightQueue(*this, INT_MAX);
 
 	tickScheduler.Tick();
+	entitySpawner.TrySpawnEntities(*this, _players);
 	entityManager.Tick();
 	tileEntityManager.TickTileEntities(*this);
 

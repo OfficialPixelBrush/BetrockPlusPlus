@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
  */
-#include "entity_pig.h"
+#include "entity_cow.h"
 
-void PigEntity::OnDeath() {
-	// Drop 0-2 porkchops, cooked if the pig was on fire
-	auto targetItem = this->fireTicks > 0 ? Items::Id::PORKCHOP_COOKED : Items::Id::PORKCHOP;
+void CowEntity::OnDeath() {
+	// Drop 0-2 leather
+	auto targetItem = Items::Id::LEATHER;
 	int itemCount = this->rand.NextInt(3);
 
 	for (int i = 0; i < itemCount; i++) {

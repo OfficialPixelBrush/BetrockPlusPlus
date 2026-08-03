@@ -75,11 +75,7 @@ void ItemEntity::OnCollideWithPlayer(PlayerEntity& _entity) {
 }
 
 void ItemEntity::UpdateFallState(float _movedY) {
-	if (onGround) {
-		fallDistance = 0;
-	} else if (_movedY < 0) {
-		fallDistance -= _movedY;
-	}
+	fallDistance = 0;
 }
 
 void ItemEntity::Tick() {

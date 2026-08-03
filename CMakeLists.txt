@@ -103,13 +103,18 @@ set(SHARED_SOURCES
     src/bpp_shared/entities/entity_mobile.cpp
     src/bpp_shared/entities/entity_manager.cpp
     src/bpp_shared/entities/entity_pig.cpp
+    src/bpp_shared/entities/entity_cow.cpp
+    src/bpp_shared/entities/entity_sheep.cpp
+    src/bpp_shared/entities/entity_chicken.cpp
     src/bpp_shared/entities/entity_falling_block.cpp
+    src/bpp_shared/entities/entity_animal.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/strings/ucs2.cpp
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
     src/bpp_shared/networking/server_manager.cpp
     src/bpp_shared/world/world.cpp
+    src/bpp_shared/world/spawner.cpp
     src/bpp_shared/world/lighter.cpp
     src/bpp_shared/world/storage/region.cpp
     src/bpp_shared/world/storage/region_manager.cpp

@@ -38,11 +38,13 @@ struct TrackedEntry {
 };
 
 class Server;
+struct MobileEntity;
 struct EntityTracker {
 	Server* server = nullptr;
 
 	std::unordered_map<EntityId, TrackedEntry> trackedEntities;
 	std::unordered_set<EntityId> playerIds;
+	std::vector<EntityType> mobileEntities = {EntityType::CHICKEN, EntityType::COW, EntityType::PIG, EntityType::SHEEP, EntityType::WOLF, EntityType::ZOMBIE, EntityType::ZOMBIE_PIGMAN, EntityType::SKELETON, EntityType::CREEPER, EntityType::SPIDER, EntityType::GHAST, EntityType::SLIME, EntityType::GIANT_ZOMBIE, EntityType::PLAYER};
 
 	TickTime forceTeleportTicks = 400; // 20 seconds
 
@@ -78,6 +80,7 @@ struct EntityTracker {
 	void SendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id);
 	TrackedEntry& GetTrackerForEntityId(EntityId _id);
 	void Update(TrackedEntry& _trackedEntry);
+	void UpdateDamageState(TrackedEntry& _trackedEntry);
 
 	// With my strict goal of keeping strict separation we cannot put this as a virtual in the actual entity class itself
 	TrackingProfile GetTrackingProfile(Entity& _entity) {
@@ -116,7 +119,7 @@ struct EntityTracker {
 		case EntityType::GHAST:
 		case EntityType::SLIME:
 		case EntityType::GIANT_ZOMBIE:
-			return { 160, 3, true };
+			return { 160, 2, true };
 		case EntityType::LIT_TNT:
 			return { 160, 10, true };
 		case EntityType::FALLING_SAND:
@@ -128,8 +131,7 @@ struct EntityTracker {
 		default:
 			return { 0, 0, false };
 
-			GlobalLogger().warn << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) +
-			                           "'\n";
+			GlobalLogger().warn << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) + "'\n";
 		}
 	}
 };

@@ -6,6 +6,7 @@
 */
 
 #pragma once
+#include <cmath>
 #include <cstdint>
 #include <ostream>
 #include <sstream>
@@ -181,6 +182,17 @@ struct TriNumber {
 
 	T Total() const {
 		return x * y * z;
+	}
+
+	double DistanceSquared(const TriNumber& _other) const {
+		double dx = double(x) - double(_other.x);
+		double dy = double(y) - double(_other.y);
+		double dz = double(z) - double(_other.z);
+		return dx * dx + dy * dy + dz * dz;
+	}
+
+	double Distance(const TriNumber& _other) const {
+		return std::sqrt(DistanceSquared(_other));
 	}
 };
 

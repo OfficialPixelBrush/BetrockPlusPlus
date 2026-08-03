@@ -14,12 +14,10 @@ struct EntityMPPlayer : public PlayerEntity {
 	PlayerSession* session = nullptr;
 	EntityMPPlayer() : PlayerEntity() {
 		hasPhysics = false;
-		lastHealth = this->GetHeartsHealth();
 	}
 	~EntityMPPlayer() {
 		session = nullptr;
 	}
-	int lastHealth = 0;
 	bool movedThisTick = false;
 
 	void Tick() override;

@@ -8,6 +8,7 @@
 #include "../server.h"
 #include "entities.h"
 #include "entities/entity_item.h"
+#include "entities/entity_mobile.h"
 #include "logger.h"
 #include "packet_data.h"
 #include <algorithm>
@@ -362,8 +363,48 @@ void EntityTracker::SendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id) 
 	}
 }
 
+void EntityTracker::UpdateDamageState(TrackedEntry& _trackedEntry) {
+	MobileEntity& entity = dynamic_cast<MobileEntity&>(*_trackedEntry.entity);
+
+	// Send the death animation packet when the entity starts its death timer
+	if (entity.deathTime == 1) {
+		Packet::EntityEvent deathPkt;
+		deathPkt.entityId = entity.id;
+		deathPkt.action = PacketData::EntityEvent::DEATH;
+
+		SendPacketToPlayersInTrackedEntry(deathPkt, _trackedEntry);
+		return;
+	}
+
+	// Send the hurt animation packet / death animation packet whenever that happens.
+	if (entity.lastHealth != entity.GetHeartsHealth()) {
+		if (entity.GetHeartsHealth() - entity.lastHealth < 0) {			
+			Packet::EntityEvent pkt;
+			pkt.entityId = entity.id;
+			pkt.action = PacketData::EntityEvent::HURT;
+
+			SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
+
+			// If we are a player play the damage sound for ourselves too
+			if (entity.type == EntityType::PLAYER) {
+				auto session = server->GetSessionById(entity.id);
+				if (session) {
+					pkt.Serialize(session->stream);
+				}
+			}
+		}
+
+		entity.lastHealth = entity.GetHeartsHealth();
+	}
+}
+
 void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 	auto& entity = _trackedEntry.entity;
+
+	// If we are a mobile entity then send the damage state
+	if (std::find(this->mobileEntities.begin(), this->mobileEntities.end(), entity->type) != this->mobileEntities.end()) {
+		UpdateDamageState(_trackedEntry);
+	}
 
 	// Dirty flag gets checked every Tick
 	if (entity->forceVelocityUpdate) {

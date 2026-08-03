@@ -7,12 +7,12 @@
 #pragma once
 #include "entity_animal.h"
 
-struct PigEntity : public AnimalEntity {
-	PigEntity() : AnimalEntity() {
-		type = EntityType::PIG;
+struct CowEntity : public AnimalEntity {
+	CowEntity() : AnimalEntity() {
+		type = EntityType::COW;
 		width = 0.9f;
-		height = 0.9f;
+		height = 1.3f;
 	}
-	~PigEntity() = default;
+	~CowEntity() = default;
 	void OnDeath() override;
 };

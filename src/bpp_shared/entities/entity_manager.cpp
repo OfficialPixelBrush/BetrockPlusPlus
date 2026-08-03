@@ -59,6 +59,12 @@ void EntityManager::AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEn
 	auto& container = entityContainers[{ _entity->bucketPos.x, _entity->bucketPos.y }];
 	container.buckets[_entity->bucketPos.z].entities.push_back(_entity);
 
+	// If we are a player register for easy lookup
+	if (_entity->type == EntityType::PLAYER) {
+		std::weak_ptr<Entity> weakEntity = _entity;
+		players.push_back(weakEntity);
+	}
+
 	entities.push_back(std::move(_entity));
 	if (onEntitySpawn)
 		onEntitySpawn(entities.back());
@@ -102,6 +108,15 @@ void EntityManager::Tick() {
 		}
 	}
 	copy.clear(); // Clear the copy to free memory
+
+	// Clear players that have expired
+	for (auto it = players.begin(); it != players.end();) {
+		if (it->expired()) {
+			it = players.erase(it);
+		} else {
+			++it;
+		}
+	}
 }
 
 std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbExcluding(const AABB& _box,

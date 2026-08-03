@@ -32,13 +32,6 @@ void Pathfinder::Reset() {
 	nodes.clear();
 }
 
-inline float Distance(const Int3& _a, const Int3& _b) noexcept {
-	float dx = float(_a.x - _b.x);
-	float dy = float(_a.y - _b.y);
-	float dz = float(_a.z - _b.z);
-	return std::sqrt(dx * dx + dy * dy + dz * dz);
-}
-
 Pathfinder::ColumnResult Pathfinder::GetVerticalOffset(Int3 _origin) {
 	for (int x = _origin.x; x < _origin.x + footprint.x; x++) {
 		for (int y = _origin.y; y < _origin.y + footprint.y; y++) {
@@ -134,7 +127,7 @@ int Pathfinder::FindPathOptions(Int3 _current, Int3 _goal, float _maxDistance, I
 		if (it != nodes.end() && it->second.closed)
 			continue;
 
-		if (Distance(*safe, _goal) >= _maxDistance)
+		if (safe->Distance(_goal) >= _maxDistance)
 			continue;
 
 		_options[count++] = *safe;
@@ -154,13 +147,13 @@ std::vector<Int3> Pathfinder::FindPath(Int3 _start, Int3 _goal, float _width, fl
 
 	Node* startNode = OpenNode(_start);
 	startNode->g = 0.0f;
-	startNode->f = Distance(_start, _goal);
+	startNode->f = _start.Distance(_goal);
 
 	open.push({ startNode->f, startNode });
 
 	// Tracks the closest to goal node seen so far
 	Node* bestNode = startNode;
-	float bestDistance = Distance(_start, _goal);
+	float bestDistance = _start.Distance(_goal);
 
 	Int3 options[4];
 
@@ -173,7 +166,7 @@ std::vector<Int3> Pathfinder::FindPath(Int3 _start, Int3 _goal, float _width, fl
 
 		current->closed = true;
 
-		float distToGoal = Distance(current->pos, _goal);
+		float distToGoal = current->pos.Distance(_goal);
 		if (distToGoal < bestDistance) {
 			bestDistance = distToGoal;
 			bestNode = current;
@@ -188,10 +181,10 @@ std::vector<Int3> Pathfinder::FindPath(Int3 _start, Int3 _goal, float _width, fl
 			if (next->closed)
 				continue;
 
-			float g = current->g + Distance(current->pos, options[i]);
+			float g = current->g + current->pos.Distance(options[i]);
 			if (g < next->g) {
 				next->g = g;
-				next->f = g + Distance(options[i], _goal);
+				next->f = g + options[i].Distance(_goal);
 				next->parent = current;
 
 				open.push({ next->f, next });

@@ -12,10 +12,10 @@
 #include <algorithm>
 #include <cmath>
 
-void Entity::DropItemAtEntity(ItemId _itemId, ItemAmount _count) {
+void Entity::DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data) {
 	Vec3 itemPos = position;
 	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(itemPos);
-	itemEntity->itemStack = { _itemId, _count };
+	itemEntity->itemStack = { _itemId, _count, _data };
 	itemEntity->dim = dim;
 
 	// Register our item with the world
@@ -121,6 +121,15 @@ void Entity::Tick() {
 		if (!isImmuneToFire) {
 			AttackEntityFrom(nullptr, 4);
 			fireTicks = 600;
+		}
+	}
+
+	inFire = inLava || world->IsMaterialInAabb(GetFireCollider(), Material::Fire());
+	if (inFire) {
+		// 1 damage per tick while actually touching
+		AttackEntityFrom(nullptr, 1); 
+		if (!isImmuneToFire && fireTicks == 0) {
+			fireTicks = 300;
 		}
 	}
 

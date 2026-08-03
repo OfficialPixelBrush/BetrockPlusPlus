@@ -14,23 +14,21 @@
 #include <vector>
 
 //TODO: Refactor specific parts into LivingEntity, and other classes
-struct PlayerEntity;
 struct MobileEntity : public Entity {
-private:
+public:
 	Pathfinder pathFinder;
 	std::vector<Int3> currentPath;
 	size_t currentPathIdx = 0;
 
 	int64_t age = 0;
 
-	void FollowPath();
 	void ResolveEntityCollision(Entity& _other);
 	void TickPhysics();
 
-public:
 	MobileEntity();
 
 	int health = 20;
+	int lastHealth = this->GetHeartsHealth();
 	int maxHealth = 20;
 	int maxHurtTime = 20;
 	int lastAttackDamage = 0;
@@ -40,12 +38,9 @@ public:
 	float eyeHeight = height * 0.85f;
 	bool canBreatheUnderwater = false;
 	ItemStack heldItem;
-	PlayerEntity* targetPlayer = nullptr;
 
 	virtual void Tick() override;
 	virtual void OnDeath();
-	virtual void Wonder();
-	virtual float GetWanderWeight(Int3 _pos);
 	virtual void SetGoal(std::optional<Int3> _goal);
 	bool AttackEntityFrom(Entity* _entity, int _damage) override;
 	bool AABBNotInLiquidOrObstructed(AABB& _collider);
@@ -53,7 +48,13 @@ public:
 	bool HeadInWater();
 	ItemStack* GetHeldItem();
 	void SetHeldItem(ItemStack _stack);
+	void FollowPath();
 	bool onLadder();
+	void SetMaxHealth(int _health) {
+		this->health = _health;
+		this->maxHealth = _health;
+		this->lastHealth = _health;
+	}
 	bool CanBePushed() override {
 		return true;
 	}
@@ -62,5 +63,13 @@ public:
 	}
 	bool EntityAlive() {
 		return !isDead && health > 0;
+	}
+	virtual bool CanSpawnAt(Int3 _pos) {
+		if (!world)
+			return false;
+		bool clearOfEntities = entityManager->GetEntitiesWithinAabb(this->collider).size() == 0;
+		bool clearOfBlocks = world->GetCollidingBoundingBoxes(this->collider).size() == 0;
+		bool clearOfLiquid = !world->IsLiquidInAabb(this->collider);
+		return clearOfBlocks && clearOfEntities && clearOfLiquid;
 	}
 };

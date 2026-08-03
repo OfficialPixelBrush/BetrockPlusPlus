@@ -23,6 +23,7 @@
 #include "tick_scheduler.h"
 #include "tile_entities/tile_entity_manager.h"
 #include "world/storage/region_manager.h"
+#include "world/spawner.h"
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
@@ -54,9 +55,10 @@ struct WorldManager {
 	Int3 spawnPoint{ 0, 0, 0 };
 	Dimension thisDimension = Dimension::Overworld;
 	BS::thread_pool<> pool{ 2 };
-	//BS::thread_pool<> populationPool{ 1 }; // unused
 	Java::Random rand;
-
+	EntitySpawner entitySpawner;
+	int skylightOffset = 0;
+	
 	WorldManager(bool _pIsHell = false) : isHell(_pIsHell) {
 		entityManager.world = this; // Bind the world pointer in EntityManager
 		tickScheduler.world = this;
@@ -90,6 +92,27 @@ struct WorldManager {
 	void PopulateReady();
 	void DrainLoadQueue();
 	void DropInventory(Inventory& inventory, Int3 _wpos);
+	void updateSkylightOffset();
+	float getCelestialAngle();
+	int getBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks = true);
+
+	int getBlockLightFull(Int3 _wpos) {
+		auto chunk = GetChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
+		if (!chunk)
+			return 15;
+
+		Int3 localPos = { _wpos.x & 15, _wpos.y, _wpos.z & 15 };
+		int skylight = chunk->GetSkyLight(localPos) - this->skylightOffset;
+		int blockLight = chunk->GetBlockLight(localPos);
+		if (blockLight > skylight)
+			return blockLight;
+		else
+			return skylight;
+	}
+
+	const bool IsDay() {
+		return skylightOffset < 4;
+	}
 
 	const int GetViewRadius() {
 		return viewRadius;

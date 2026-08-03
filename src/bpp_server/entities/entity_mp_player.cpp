@@ -60,9 +60,14 @@ bool EntityMPPlayer::DropItem(ItemStack _stack) {
 void EntityMPPlayer::HandlePositionChecks() {
 	if (isDead || !world)
 		return;
+
+	// Always trust rotations
+	this->rotationYaw = session->rotation.x;
+	this->rotationPitch = session->rotation.y;
+
+	// We have a pending teleport. Check to see if the player caught up
 	if (session->pendingTeleport && session->pendingPosition) {
-		// We have a pending teleport. Check to see if the player caught up
-		// Also reset fall state
+		// Reset fall state
 		fallDistance = 0;
 		onGround = true;
 		Vec3 delta = *session->pendingPosition - *session->pendingTeleport;
@@ -83,10 +88,6 @@ void EntityMPPlayer::HandlePositionChecks() {
 		GlobalLogger().info << "Sucessfully TP'd player " << session->username << "\n";
 		session->pendingTeleport.reset();
 	}
-
-	// Always trust rotations
-	this->rotationYaw = session->rotation.x;
-	this->rotationPitch = session->rotation.y;
 
 	// If we recieved a movement packet this Tick do our server side checks
 	if (session->pendingPosition) {
@@ -217,18 +218,6 @@ void EntityMPPlayer::Tick() {
 		Packet::SetHealth healthPkt;
 		healthPkt.health = GetHeartsHealth();
 		healthPkt.Serialize(session->stream);
-
-		if (GetHeartsHealth() - lastHealth < 0) {
-			Packet::EntityEvent pkt;
-			pkt.entityId = this->id;
-			pkt.action = PacketData::EntityEvent::HURT;
-			pkt.Serialize(session->stream);
-
-			// Let other players know
-			session->entityTracker->SendPacketToViewers(pkt, this->id);
-		}
-
-		this->lastHealth = GetHeartsHealth();
 	}
 
 	// If we fell out of the world then die

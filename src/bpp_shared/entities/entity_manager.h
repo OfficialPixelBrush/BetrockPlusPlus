@@ -26,6 +26,7 @@ struct EntityContainer {
 struct EntityManager {
 	EntityId* nextEntityId = nullptr; // Minecraft seems to reserve 0 and 1
 	std::vector<std::shared_ptr<Entity>> entities;
+	std::vector<std::weak_ptr<Entity>> players;
 	std::unordered_map<Int2, EntityContainer> entityContainers;
 	WorldManager* world = nullptr; // we need to bind a pointer to this later
 
@@ -69,10 +70,36 @@ struct EntityManager {
 		}
 		return nullptr;
 	}
-
 	EntityId GetNextEntityId() {
 		if (!nextEntityId)
 			return -1;
 		return (*nextEntityId)++;
+	}
+	int CountEntitiesOfType(EntityType _type) {
+		int count = 0;
+		for (auto& entity : entities) {
+			if (entity->type == _type)
+				count++;
+		}
+		return count;
+	}
+	template <typename T>
+	std::shared_ptr<Entity> GetClosestPlayerWithin(T _pos, int _distance) {
+		double minDist = 0;
+		std::shared_ptr<Entity> closestPlayer = nullptr;
+
+		for (const auto& playerWeak : players) {
+			if (auto player = playerWeak.lock()) {
+				double dist = Vec3{ double(_pos.x), double(_pos.y), double(_pos.z) }.Distance(player->position);
+				if ((_distance < 0 || dist <= _distance) && (minDist == 0 || dist < minDist)) {
+					minDist = dist;
+					closestPlayer = player;
+					if (dist == 0)
+						break;
+				}
+			}
+		}
+
+		return closestPlayer;
 	}
 };
