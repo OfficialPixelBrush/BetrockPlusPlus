@@ -1035,7 +1035,7 @@ void RegisterBlockBehaviors() {
 			Int3 neighborPos = { dx, _pos.y, dz };
 			if (IsOpenForFlow(_world, neighborPos, MaterialType::Lava)) {
 				Int3 belowNeighborPos = { dx, _pos.y - 1, dz };
-				auto below = _world.GetBlockId(belowNeighborPos);
+				//auto below = _world.GetBlockId(belowNeighborPos);
 				if (IsOpenForFlow(_world, belowNeighborPos, MaterialType::Lava)) {
 					directionalCosts[i] = 0; // Immediate drop off
 				} else {

@@ -7,6 +7,7 @@
 #include "../packet/packet_utils.h"
 #include "../server.h"
 #include "version.h"
+#include <regex>
 
 void PlayerConnStateManager::HandleConnectionState(PlayerSession& _session, Server& _server) {
 	switch (_session.connState) {
@@ -35,6 +36,13 @@ void PlayerConnStateManager::HandleConnectionState(PlayerSession& _session, Serv
 	}
 }
 
+bool PlayerConnStateManager::IsValidUsername(const std::string& username) {
+	if (username.size() < 3 || username.size() > 16)
+		return false;
+	static const std::regex pattern(R"(^[A-Za-z0-9_]{3,16}$)");
+	return std::regex_match(username, pattern);
+}
+
 void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, [[maybe_unused]] Server& _server) {
 	if (!_session.stream.HasData())
 		return;
@@ -50,8 +58,11 @@ void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, [[maybe_un
 	if (_session.stream.CheckAndClearShortRead()) {
 		return;
 	}
+	if (!IsValidUsername(incoming.username))
+		return;
 	_session.username = incoming.username;
 
+	// TODO: Authentication!!
 	Packet::PreLogin response;
 	response.username = "-";
 	response.Serialize(_session.stream);
@@ -76,6 +87,8 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	if (_session.stream.CheckAndClearShortRead()) {
 		return;
 	}
+	if (!IsValidUsername(incoming.username))
+		return;
 
 	// Initialize our entity first as the player session depends on it
 	if (!_session.entity)
