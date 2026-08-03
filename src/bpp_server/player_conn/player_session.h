@@ -130,6 +130,8 @@ struct PlayerSession {
 	}
 
 	Tag SerializeToNbt() {
+		if (!entity)
+			return {};
 		Tag rootTag;
 		rootTag.type = TAG_COMPOUND;
 		rootTag.name = "";
@@ -149,11 +151,11 @@ struct PlayerSession {
 		Tag airTag;
 		airTag.type = TAG_SHORT;
 		airTag.name = "Air";
-		airTag.shortValue = 300;
+		airTag.shortValue = entity->air;
 		Tag onGroundTag;
 		onGroundTag.type = TAG_BYTE;
 		onGroundTag.name = "OnGround";
-		onGroundTag.byteValue = 0;
+		onGroundTag.byteValue = entity->onGround;
 		Tag dimensionTag;
 		dimensionTag.type = TAG_INT;
 		dimensionTag.name = "Dimension";
@@ -165,7 +167,7 @@ struct PlayerSession {
 		Tag fallDistanceTag;
 		fallDistanceTag.type = TAG_FLOAT;
 		fallDistanceTag.name = "FallDistance";
-		fallDistanceTag.floatValue = 0.0f;
+		fallDistanceTag.floatValue = entity->fallDistance;
 		Tag sleepingTag;
 		sleepingTag.type = TAG_BYTE;
 		sleepingTag.name = "Sleeping";
@@ -177,19 +179,19 @@ struct PlayerSession {
 		Tag deathTimeTag;
 		deathTimeTag.type = TAG_SHORT;
 		deathTimeTag.name = "DeathTime";
-		deathTimeTag.shortValue = 0;
+		deathTimeTag.shortValue = entity->deathTime;
 		Tag fireTag;
 		fireTag.type = TAG_SHORT;
 		fireTag.name = "Fire";
-		fireTag.shortValue = -20;
+		fireTag.shortValue = entity->fireTicks;
 		Tag hurtTimeTag;
 		hurtTimeTag.type = TAG_SHORT;
 		hurtTimeTag.name = "HurtTime";
-		hurtTimeTag.shortValue = 0;
+		hurtTimeTag.shortValue = entity->hurtResistantTime;
 		Tag attackTimeTag;
 		attackTimeTag.type = TAG_SHORT;
 		attackTimeTag.name = "AttackTime";
-		attackTimeTag.shortValue = 0;
+		attackTimeTag.shortValue = entity->attackTime;
 		Tag inventoryTag;
 		inventoryTag.type = TAG_LIST;
 		inventoryTag.name = "Inventory";
@@ -211,10 +213,10 @@ struct PlayerSession {
 
 		Tag rotX;
 		rotX.type = TAG_FLOAT;
-		rotX.floatValue = rotation.x;
+		rotX.floatValue = entity->rotationYaw;
 		Tag rotY;
 		rotY.type = TAG_FLOAT;
-		rotY.floatValue = rotation.y;
+		rotY.floatValue = entity->rotationPitch;
 		rotationTag.list.push_back(rotX);
 		rotationTag.list.push_back(rotY);
 

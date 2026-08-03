@@ -34,6 +34,7 @@ void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& _session) {
 void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
                  std::vector<std::shared_ptr<PlayerSession>>& _players, WorldManager& _world, CommandManager& _cmdMgr,
                  std::function<void(PlayerSession&)> _transferDimension) {
+	GlobalLogger().chat << "<" << _session.username << "> " << _pkt.message << "\n";
 	if (_pkt.message.size() > 0 && _pkt.message[0] == '/') {
 		_cmdMgr.Parse(_pkt.message, _session, _world, _transferDimension);
 		return;

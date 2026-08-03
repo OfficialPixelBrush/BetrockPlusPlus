@@ -13,6 +13,8 @@
 
 bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld,
                                 Server& _server) {
+	if (_session.connState != ConnectionState::Playing)
+		return true; 
 	switch (_packetId) {
 	case PacketId::KeepAlive: {
 		Packet::KeepAlive pkt;

@@ -24,6 +24,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "runtime.h"
 #include "server_socket.h"
 #include "trackers/entity_tracker.h"
+#include "strings/ucs2.h"
 #include <chrono>
 #include <memory>
 #include <thread>
@@ -99,6 +100,7 @@ public:
 			reply.message = _message;
 			reply.Serialize(other->stream);
 		}
+		GlobalLogger().msg << StripFormatting(_message) << "\n";
 	}
 
 	const std::vector<std::shared_ptr<PlayerSession>>& GetPlayers() noexcept {
