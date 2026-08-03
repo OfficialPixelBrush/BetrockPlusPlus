@@ -101,7 +101,7 @@ bool IsTool(ItemId _id);
 bool CanPlayerHarvest(ItemStack* _stack, BlockType _targetBlock);
 
 // Item strength vs block (tool efficiency, else 1.0). Does not apply water/air penalties.
-float GetStrVsBlock(ItemStack* _stack, BlockType _targetBlock);
+float GetStrengthAgainstBlock(ItemStack* _stack, BlockType _targetBlock);
 
 // Block damage dealt this tick (0..1+). Instant break when >= 1.0.
 // Water and airborne each divide efficiency by 5 (stacking), matching beta EntityPlayer.
@@ -112,13 +112,13 @@ bool CanPickaxeHarvest(ToolLevel _level, BlockType _block);
 bool CanShovelHarvest(ToolLevel _level, BlockType _block);
 bool CanShearsOrSwordHarvest(ToolLevel _level, BlockType _block);
 
-// Effectiveness (getStrVsBlock) callbacks
+// Effectiveness (GetStrengthAgainstBlock) callbacks
 float ToolEffectiveness(ItemStack* _stack, BlockType _block);
 float SwordEffectiveness(ItemStack* _stack, BlockType _block);
 float ShearsEffectiveness(ItemStack* _stack, BlockType _block);
 
 // Usage
-void HarmTool(ItemStack* _stack, int _amount = 1);
+void HarmTool(ItemStack* _stack, const int _amount = 1);
 void OnToolFinishMining(ItemStack* _stack, BlockType _targetBlock);
 void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
 void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
