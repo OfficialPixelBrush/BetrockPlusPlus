@@ -71,4 +71,11 @@ int32_t GetMaxStack(ItemId _id) {
 	// all blocks, and any resource item not listed above.
 	return Items::STACK_MAX;
 }
+
+ItemDamage GetMaxDurability(ItemId _id) {
+	auto toolIt = toolProperties.find(_id);
+	if (toolIt != toolProperties.end() && toolIt->second.maxUses > 0)
+		return toolIt->second.maxUses;
+	return 0;
+}
 }; // namespace Items
