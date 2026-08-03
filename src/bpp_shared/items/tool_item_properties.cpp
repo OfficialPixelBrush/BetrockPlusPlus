@@ -26,77 +26,82 @@ void RegisterAll() {
 	// Sword
 	toolProperties[Items::Id::SWORD_WOOD] = ToolProperties{ .type = ToolType::Sword,
 		                                                    .material = ToolMaterial::Wooden,
-		                                                    .canHarvest = CanShearsOrSwordHarvest };
+		                                                    .canHarvest = CanShearsOrSwordHarvest,
+		                                                    .howEffectiveAgainstBlock = SwordEffectiveness };
 	toolProperties[Items::Id::SWORD_STONE] = ToolProperties{ .type = ToolType::Sword,
 		                                                     .material = ToolMaterial::Stone,
-		                                                     .canHarvest = CanShearsOrSwordHarvest };
+		                                                     .canHarvest = CanShearsOrSwordHarvest,
+		                                                     .howEffectiveAgainstBlock = SwordEffectiveness };
 	toolProperties[Items::Id::SWORD_IRON] = ToolProperties{ .type = ToolType::Sword,
 		                                                    .material = ToolMaterial::Iron,
-		                                                    .canHarvest = CanShearsOrSwordHarvest };
+		                                                    .canHarvest = CanShearsOrSwordHarvest,
+		                                                    .howEffectiveAgainstBlock = SwordEffectiveness };
 	toolProperties[Items::Id::SWORD_GOLD] = ToolProperties{ .type = ToolType::Sword,
 		                                                    .material = ToolMaterial::Gold,
-		                                                    .canHarvest = CanShearsOrSwordHarvest };
+		                                                    .canHarvest = CanShearsOrSwordHarvest,
+		                                                    .howEffectiveAgainstBlock = SwordEffectiveness };
 	toolProperties[Items::Id::SWORD_DIAMOND] = ToolProperties{ .type = ToolType::Sword,
 		                                                       .material = ToolMaterial::Diamond,
-		                                                       .canHarvest = CanShearsOrSwordHarvest };
+		                                                       .canHarvest = CanShearsOrSwordHarvest,
+		                                                       .howEffectiveAgainstBlock = SwordEffectiveness };
 	// Pickaxe
-	toolProperties[Items::Id::PICKAXE_WOOD] = ToolProperties{
-		.type = ToolType::Pickaxe,
-		.material = ToolMaterial::Wooden,
-	};
-	toolProperties[Items::Id::PICKAXE_STONE] = ToolProperties{
-		.type = ToolType::Pickaxe,
-		.material = ToolMaterial::Stone,
-	};
-	toolProperties[Items::Id::PICKAXE_IRON] = ToolProperties{
-		.type = ToolType::Pickaxe,
-		.material = ToolMaterial::Iron,
-	};
-	toolProperties[Items::Id::PICKAXE_GOLD] = ToolProperties{
-		.type = ToolType::Pickaxe,
-		.material = ToolMaterial::Gold,
-	};
-	toolProperties[Items::Id::PICKAXE_DIAMOND] = ToolProperties{
-		.type = ToolType::Pickaxe,
-		.material = ToolMaterial::Diamond,
-	};
+	toolProperties[Items::Id::PICKAXE_WOOD] = ToolProperties{ .type = ToolType::Pickaxe,
+		                                                      .material = ToolMaterial::Wooden,
+		                                                      .canHarvest = CanPickaxeHarvest,
+		                                                      .howEffectiveAgainstBlock = ToolEffectiveness };
+	toolProperties[Items::Id::PICKAXE_STONE] = ToolProperties{ .type = ToolType::Pickaxe,
+		                                                       .material = ToolMaterial::Stone,
+		                                                       .canHarvest = CanPickaxeHarvest,
+		                                                       .howEffectiveAgainstBlock = ToolEffectiveness };
+	toolProperties[Items::Id::PICKAXE_IRON] = ToolProperties{ .type = ToolType::Pickaxe,
+		                                                      .material = ToolMaterial::Iron,
+		                                                      .canHarvest = CanPickaxeHarvest,
+		                                                      .howEffectiveAgainstBlock = ToolEffectiveness };
+	toolProperties[Items::Id::PICKAXE_GOLD] = ToolProperties{ .type = ToolType::Pickaxe,
+		                                                      .material = ToolMaterial::Gold,
+		                                                      .canHarvest = CanPickaxeHarvest,
+		                                                      .howEffectiveAgainstBlock = ToolEffectiveness };
+	toolProperties[Items::Id::PICKAXE_DIAMOND] = ToolProperties{ .type = ToolType::Pickaxe,
+		                                                         .material = ToolMaterial::Diamond,
+		                                                         .canHarvest = CanPickaxeHarvest,
+		                                                         .howEffectiveAgainstBlock = ToolEffectiveness };
 	// Axe
-	toolProperties[Items::Id::AXE_WOOD] = ToolProperties{
-		.type = ToolType::Axe,
-		.material = ToolMaterial::Wooden,
-	};
-	toolProperties[Items::Id::AXE_STONE] = ToolProperties{
-		.type = ToolType::Axe,
-		.material = ToolMaterial::Stone,
-	};
-	toolProperties[Items::Id::AXE_IRON] = ToolProperties{
-		.type = ToolType::Axe,
-		.material = ToolMaterial::Iron,
-	};
-	toolProperties[Items::Id::AXE_GOLD] = ToolProperties{
-		.type = ToolType::Axe,
-		.material = ToolMaterial::Gold,
-	};
-	toolProperties[Items::Id::AXE_DIAMOND] = ToolProperties{
-		.type = ToolType::Axe,
-		.material = ToolMaterial::Diamond,
-	};
+	toolProperties[Items::Id::AXE_WOOD] = ToolProperties{ .type = ToolType::Axe,
+		                                                  .material = ToolMaterial::Wooden,
+		                                                  .howEffectiveAgainstBlock = ToolEffectiveness };
+	toolProperties[Items::Id::AXE_STONE] = ToolProperties{ .type = ToolType::Axe,
+		                                                   .material = ToolMaterial::Stone,
+		                                                   .howEffectiveAgainstBlock = ToolEffectiveness };
+	toolProperties[Items::Id::AXE_IRON] = ToolProperties{ .type = ToolType::Axe,
+		                                                  .material = ToolMaterial::Iron,
+		                                                  .howEffectiveAgainstBlock = ToolEffectiveness };
+	toolProperties[Items::Id::AXE_GOLD] = ToolProperties{ .type = ToolType::Axe,
+		                                                  .material = ToolMaterial::Gold,
+		                                                  .howEffectiveAgainstBlock = ToolEffectiveness };
+	toolProperties[Items::Id::AXE_DIAMOND] = ToolProperties{ .type = ToolType::Axe,
+		                                                     .material = ToolMaterial::Diamond,
+		                                                     .howEffectiveAgainstBlock = ToolEffectiveness };
 	// Shovel
 	toolProperties[Items::Id::SHOVEL_WOOD] = ToolProperties{ .type = ToolType::Shovel,
 		                                                     .material = ToolMaterial::Wooden,
-		                                                     .canHarvest = CanShovelHarvest };
+		                                                     .canHarvest = CanShovelHarvest,
+		                                                     .howEffectiveAgainstBlock = ToolEffectiveness };
 	toolProperties[Items::Id::SHOVEL_STONE] = ToolProperties{ .type = ToolType::Shovel,
 		                                                      .material = ToolMaterial::Stone,
-		                                                      .canHarvest = CanShovelHarvest };
+		                                                      .canHarvest = CanShovelHarvest,
+		                                                      .howEffectiveAgainstBlock = ToolEffectiveness };
 	toolProperties[Items::Id::SHOVEL_IRON] = ToolProperties{ .type = ToolType::Shovel,
 		                                                     .material = ToolMaterial::Iron,
-		                                                     .canHarvest = CanShovelHarvest };
+		                                                     .canHarvest = CanShovelHarvest,
+		                                                     .howEffectiveAgainstBlock = ToolEffectiveness };
 	toolProperties[Items::Id::SHOVEL_GOLD] = ToolProperties{ .type = ToolType::Shovel,
 		                                                     .material = ToolMaterial::Gold,
-		                                                     .canHarvest = CanShovelHarvest };
+		                                                     .canHarvest = CanShovelHarvest,
+		                                                     .howEffectiveAgainstBlock = ToolEffectiveness };
 	toolProperties[Items::Id::SHOVEL_DIAMOND] = ToolProperties{ .type = ToolType::Shovel,
 		                                                        .material = ToolMaterial::Diamond,
-		                                                        .canHarvest = CanShovelHarvest };
+		                                                        .canHarvest = CanShovelHarvest,
+		                                                        .howEffectiveAgainstBlock = ToolEffectiveness };
 	// Hoe
 	toolProperties[Items::Id::HOE_WOOD] = ToolProperties{
 		.type = ToolType::Hoe,
@@ -129,7 +134,8 @@ void RegisterAll() {
 	toolProperties[Items::Id::SHEARS] = ToolProperties{ .type = ToolType::None,
 		                                                .material = ToolMaterial::None,
 		                                                .maxUses = DURABILITY_SHEARS,
-		                                                .canHarvest = CanShearsOrSwordHarvest };
+		                                                .canHarvest = CanShearsOrSwordHarvest,
+		                                                .howEffectiveAgainstBlock = ShearsEffectiveness };
 	toolProperties[Items::Id::BOW] = ToolProperties{ .type = ToolType::None,
 		                                             .material = ToolMaterial::None,
 		                                             .maxUses = DURABILITY_BOW };
@@ -137,27 +143,29 @@ void RegisterAll() {
 		                                                     .material = ToolMaterial::None,
 		                                                     .maxUses = DURABILITY_FISHING_ROD };
 
-	// Tool behaviors
-	for (auto& tb : toolBehavior) {
-		// Default fallback behavior
-		tb.second.onBlockFinishMining = HarmTool;
-		// Apply sword behavior to all swords
-		switch (toolProperties[tb.first].type) {
+	// Tool behaviors — iterate registered tools (toolBehavior starts empty)
+	for (const auto& [itemId, props] : toolProperties) {
+		ToolBehavior behavior{};
+		switch (props.type) {
 		case ToolType::Sword:
-			tb.second.onEntityAttack = AttackWithItem;
-			continue;
+			behavior.onBlockFinishMining = OnToolFinishMining;
+			behavior.onEntityAttack = AttackWithItem;
+			break;
 		case ToolType::Pickaxe:
-			continue;
 		case ToolType::Axe:
-			continue;
 		case ToolType::Shovel:
-			continue;
+			behavior.onBlockFinishMining = OnToolFinishMining;
+			behavior.onEntityAttack = AttackWithItem;
+			break;
 		case ToolType::Hoe:
-			itemBehavior[tb.first] = ItemBehavior{ .onBlockUse = UseHoe };
-			continue;
-		default:
-			continue;
+			itemBehavior[itemId] = ItemBehavior{ .onBlockUse = UseHoe };
+			break;
+		case ToolType::None:
+			if (itemId == Items::Id::SHEARS)
+				behavior.onBlockFinishMining = OnToolFinishMining;
+			break;
 		}
+		toolBehavior[itemId] = behavior;
 	}
 
 	// Item behaviors
