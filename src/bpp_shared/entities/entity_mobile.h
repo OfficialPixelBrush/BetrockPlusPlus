@@ -42,6 +42,7 @@ public:
 	virtual void Tick() override;
 	virtual void OnDeath();
 	virtual void SetGoal(std::optional<Int3> _goal);
+	void Heal(int _health);
 	bool AttackEntityFrom(Entity* _entity, int _damage) override;
 	bool AABBNotInLiquidOrObstructed(AABB& _collider);
 	bool HeadInOpaqueBlock();

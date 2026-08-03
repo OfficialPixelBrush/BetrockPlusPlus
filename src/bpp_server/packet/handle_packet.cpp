@@ -230,8 +230,13 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 	if (!heldItem)
 		return;
 
-	if (_pkt.face == PacketData::FaceDirection::INVALID_USE) {
-		// Custom behaviour can be here if needed.
+	if (_pkt.face == PacketData::FaceDirection::INVALID_USE && Items::IsFood(heldItem->id)) {
+		// On player use
+		if (auto& fn = Items::itemBehavior[heldItem->id].onUse) {
+			GlobalLogger().info << "Managed to use item\n";
+			fn(_session, heldItem, *_session.entity);
+		}
+		// TODO: Add on animal (wolf) use
 		return;
 	}
 

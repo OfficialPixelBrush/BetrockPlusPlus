@@ -25,6 +25,7 @@ struct ItemProperties {
 };
 
 struct ItemBehavior {
+	void (*onUse)(PlayerSession& _session, ItemStack* _stack, Entity& _target) = nullptr;
 	void (*onBlockUse)(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
 	                   PacketData::FaceDirection _face) = nullptr;
 	void (*onStartHolding)(ItemStack* _stack, PlayerSession& _session) = nullptr;
@@ -35,11 +36,16 @@ struct ItemBehavior {
 extern std::unordered_map<ItemId, ItemBehavior> itemBehavior;
 extern std::unordered_map<ItemId, ItemProperties> itemProperties;
 
+void EatFood(PlayerSession& _session, ItemStack* _stack, Entity& _target);
+
 // Returns max stack size for this item/block id
-int32_t GetMaxStack(ItemId _id);
+ItemAmount GetMaxStack(const ItemId _id);
 
 // Returns max durability (0 = not damageable)
-ItemDamage GetMaxDurability(ItemId _id);
+ItemDamage GetMaxDurability(const ItemId _id);
+
+// Returns regen amount
+EntityHealth GetRegenerationAmount(const ItemId _id);
 
 constexpr bool IsItem(ItemId _id) {
 	return (_id >= Id::SHOVEL_IRON && _id < Id::MAX) || (_id >= Id::RECORD_13 && _id < Id::RECORD_MAX);
@@ -63,5 +69,9 @@ constexpr bool IsThrowable(ItemId _id) {
 
 constexpr bool IsStackable(ItemId _id) {
 	return Items::GetMaxStack(_id) > 1;
+}
+
+constexpr bool IsFood(ItemId _id) {
+	return Items::GetRegenerationAmount(_id) > 1;
 }
 }; // namespace Items
