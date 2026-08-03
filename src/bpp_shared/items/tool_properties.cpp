@@ -112,17 +112,24 @@ void InflictDamage(Entity& _targetEntity, EntityHealth _damage) {
 	return;
 }
 
-constexpr bool IsEffective(ToolType _type, BlockType _block) {
+bool IsEffective(ToolType _type, BlockType _block) {
 	switch (_type) {
 	case ToolType::Pickaxe:
+		// ItemPickaxe.blocksEffectiveAgainst (b1.7.3)
 		return (_block == BLOCK_COBBLESTONE || _block == BLOCK_DOUBLE_SLAB || _block == BLOCK_SLAB ||
 		        _block == BLOCK_STONE || _block == BLOCK_SANDSTONE || _block == BLOCK_COBBLESTONE_MOSSY ||
 		        _block == BLOCK_ORE_IRON || _block == BLOCK_IRON || _block == BLOCK_ORE_COAL ||
-		        _block == BLOCK_ORE_GOLD || _block == BLOCK_ORE_DIAMOND || _block == BLOCK_DIAMOND ||
-		        _block == BLOCK_ICE || _block == BLOCK_NETHERRACK || _block == BLOCK_ORE_LAPIS_LAZULI ||
-		        _block == BLOCK_LAPIS_LAZULI);
+		        _block == BLOCK_ORE_GOLD || _block == BLOCK_GOLD || _block == BLOCK_ORE_DIAMOND ||
+		        _block == BLOCK_DIAMOND || _block == BLOCK_ICE || _block == BLOCK_NETHERRACK ||
+		        _block == BLOCK_ORE_LAPIS_LAZULI || _block == BLOCK_LAPIS_LAZULI);
 	case ToolType::Axe:
+		// ItemAxe.blocksEffectiveAgainst
 		return (_block == BLOCK_PLANKS || _block == BLOCK_BOOKSHELF || _block == BLOCK_LOG || _block == BLOCK_CHEST);
+	case ToolType::Shovel:
+		// ItemSpade.blocksEffectiveAgainst
+		return (_block == BLOCK_GRASS || _block == BLOCK_DIRT || _block == BLOCK_SAND || _block == BLOCK_GRAVEL ||
+		        _block == BLOCK_SNOW_LAYER || _block == BLOCK_SNOW || _block == BLOCK_CLAY ||
+		        _block == BLOCK_FARMLAND);
 	default:
 		return false;
 	}
@@ -156,7 +163,21 @@ bool CanShearsOrSwordHarvest(ToolLevel _level, BlockType _block) {
 	return (_block == BLOCK_COBWEB);
 }
 
-float ShearsEffectiveness(ItemStack* _stack, BlockType _block) {
+float ToolEffectiveness(ItemStack* _stack, BlockType _block) {
+	if (!_stack || !toolProperties.contains(_stack->id))
+		return 1.0f;
+	const auto& props = toolProperties[_stack->id];
+	if (IsEffective(props.type, _block))
+		return MaterialToEfficiency(props.material);
+	return 1.0f;
+}
+
+float SwordEffectiveness(ItemStack* /*_stack*/, BlockType _block) {
+	// ItemSword.getStrVsBlock: cobweb 15, everything else 1.5
+	return (_block == BLOCK_COBWEB) ? 15.0f : 1.5f;
+}
+
+float ShearsEffectiveness(ItemStack* /*_stack*/, BlockType _block) {
 	switch (_block) {
 	case BLOCK_COBWEB:
 	case BLOCK_LEAVES:
@@ -168,33 +189,49 @@ float ShearsEffectiveness(ItemStack* _stack, BlockType _block) {
 	}
 }
 
-float BlockDamagePerTickWithTool(ItemStack* _stack, BlockType _targetBlock, bool _reducedSpeed) {
-	auto fn = Items::toolProperties[_stack->id].howEffectiveAgainstBlock;
-	// Non-tool or tool without defined effectiveness
-	if (!fn)
-		return 1.0f;
-	float efficiency = fn(_stack, _targetBlock);
-	// Used if in water or not on ground
-	if (_reducedSpeed)
-		efficiency /= 5.0f;
-	// Check if tool is effective against block
-	return efficiency;
+bool CanPlayerHarvest(ItemStack* _stack, BlockType _targetBlock) {
+	// InventoryPlayer.canHarvestBlock: material.isHarvestable OR held.canHarvestBlock
+	if (Blocks::blockProperties[_targetBlock].material.isHarvestable)
+		return true;
+	if (!_stack || !toolProperties.contains(_stack->id))
+		return false;
+	const auto& props = toolProperties[_stack->id];
+	if (!props.canHarvest)
+		return false;
+	return props.canHarvest(MaterialToLevel(props.material), _targetBlock);
 }
 
-// Block "damage" is between 0.0 and 1.0
-// A block is broken when it hits 1.0
-float BlockDamagePerTick(ItemStack* _stack, BlockType _targetBlock, bool _reducedSpeed) {
+float GetStrVsBlock(ItemStack* _stack, BlockType _targetBlock) {
+	if (!_stack || !toolProperties.contains(_stack->id))
+		return 1.0f;
+	const auto& props = toolProperties[_stack->id];
+	if (props.howEffectiveAgainstBlock)
+		return props.howEffectiveAgainstBlock(_stack, _targetBlock);
+	return 1.0f;
+}
+
+// Dig speed formula from decompiled b1.7.3 (Block.blockStrength + EntityPlayer.getCurrentPlayerStrVsBlock).
+// Not documented on the Technical Beta Wiki items page — see docs/wiki-gaps-tools-mining.md.
+//   hardness < 0           -> 0
+//   !canHarvest            -> 1 / hardness / 100   (no water/air penalty)
+//   canHarvest             -> strVsBlock / hardness / 30
+// Water and !onGround each divide strVsBlock by 5 (stacking).
+float BlockDamagePerTick(ItemStack* _stack, BlockType _targetBlock, bool _inWater, bool _onGround) {
 	float hardness = Blocks::blockProperties[_targetBlock].hardness;
 	if (hardness < 0.0f)
 		return 0.0f;
-	ToolLevel level = MaterialToLevel(toolProperties[_stack->id].material);
-	// Using the right tool
-	if (Items::toolProperties[_stack->id].canHarvest &&
-	    Items::toolProperties[_stack->id].canHarvest(level, _targetBlock)) {
-		return BlockDamagePerTickWithTool(_stack, _targetBlock, _reducedSpeed);
-	}
-	// Using an ineffective tool
-	return 1.0f / hardness / 100.0f;
+	if (hardness == 0.0f)
+		return 1.0f;
+
+	if (!CanPlayerHarvest(_stack, _targetBlock))
+		return 1.0f / hardness / 100.0f;
+
+	float efficiency = GetStrVsBlock(_stack, _targetBlock);
+	if (_inWater)
+		efficiency /= 5.0f;
+	if (!_onGround)
+		efficiency /= 5.0f;
+	return efficiency / hardness / 30.0f;
 }
 
 void AttackWithItem(Entity& _targetEntity, ItemStack* _stack) {
@@ -203,7 +240,20 @@ void AttackWithItem(Entity& _targetEntity, ItemStack* _stack) {
 		damage = CalculateDamage(toolProperties[_stack->id].type, MaterialToLevel(toolProperties[_stack->id].material));
 	InflictDamage(_targetEntity, damage);
 	GlobalLogger().info << "Dealt " << damage << " damage to " << _targetEntity.id << "!\n";
-	HarmTool(_stack);
+	// ItemSword.hitEntity damages 1; ItemTool.hitEntity damages 2
+	int durabilityLoss = 1;
+	if (toolProperties.contains(_stack->id)) {
+		switch (toolProperties[_stack->id].type) {
+		case ToolType::Pickaxe:
+		case ToolType::Axe:
+		case ToolType::Shovel:
+			durabilityLoss = 2;
+			break;
+		default:
+			break;
+		}
+	}
+	HarmTool(_stack, durabilityLoss);
 }
 
 ItemDamage GetMaterialUses(ToolMaterial _material) {
@@ -223,13 +273,38 @@ ItemDamage GetMaterialUses(ToolMaterial _material) {
 	}
 }
 
-ToolMaterial GetToolMaterial(ItemId _id);
-
-// Can be used as generic placeholder for tools that don't yet have a full implementation
-void HarmTool(ItemStack* _stack, BlockType _targetBlock) {
-	_stack->data++;
+void HarmTool(ItemStack* _stack, int _amount) {
+	if (!_stack || _amount <= 0 || !toolProperties.contains(_stack->id))
+		return;
+	_stack->data = static_cast<ItemDamage>(_stack->data + _amount);
 	if (_stack->data >= toolProperties[_stack->id].maxUses) {
 		_stack->DecrementCount(1);
+	}
+}
+
+// Durability loss on mining from decompiled b1.7.3 ItemTool/ItemSword/ItemShears.onBlockDestroyed.
+// See docs/wiki-gaps-tools-mining.md.
+void OnToolFinishMining(ItemStack* _stack, BlockType _targetBlock) {
+	if (!_stack || !toolProperties.contains(_stack->id))
+		return;
+	const auto& props = toolProperties[_stack->id];
+	switch (props.type) {
+	case ToolType::Sword:
+		HarmTool(_stack, 2);
+		return;
+	case ToolType::Pickaxe:
+	case ToolType::Axe:
+	case ToolType::Shovel:
+		HarmTool(_stack, 1);
+		return;
+	case ToolType::Hoe:
+		return;
+	case ToolType::None:
+		if (_stack->id == Items::SHEARS &&
+		    (_targetBlock == BLOCK_LEAVES || _targetBlock == BLOCK_COBWEB)) {
+			HarmTool(_stack, 1);
+		}
+		return;
 	}
 }
 
@@ -238,7 +313,7 @@ void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, P
 	if (b == BLOCK_GRASS || b == BLOCK_DIRT) {
 		_world.SetBlock(_pos, BLOCK_FARMLAND);
 	}
-	HarmTool(_stack, b);
+	HarmTool(_stack, 1);
 }
 
 void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
@@ -249,7 +324,7 @@ void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity
 	}
 	_pos = Blocks::GetAdjacentBlockPos(_pos, _face);
 	_world.SetBlock(_pos, BLOCK_FIRE);
-	HarmTool(_stack);
+	HarmTool(_stack, 1);
 }
 
 void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {

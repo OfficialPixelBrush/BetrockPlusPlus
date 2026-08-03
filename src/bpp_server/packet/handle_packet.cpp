@@ -20,6 +20,7 @@
 #include "packet_utils.h"
 #include "server.h"
 #include "tile_entities/tile_entity.h"
+#include <cmath>
 #include <cstring>
 #include <iomanip>
 #include <memory>
@@ -88,48 +89,107 @@ void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& _pkt, PlayerSe
 void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _world,
                std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
 	Int3 packetPos = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
+
+	auto miningConditions = [&]() -> std::pair<bool, bool> {
+		bool inWater = _session.entity && _session.entity->inWater;
+		bool onGround = !_session.entity || _session.entity->onGround;
+		return { inWater, onGround };
+	};
+
+	auto resyncBlock = [&](Int3 _pos) {
+		if (!_world.onBlockUpdate)
+			return;
+		auto* chunk = _world.GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
+		if (!chunk)
+			return;
+		Int3 local{ _pos.x & 15, _pos.y, _pos.z & 15 };
+		_world.onBlockUpdate(PendingBlock{ .block{ chunk->GetBlock(local), chunk->GetMeta(local) },
+		                                   .blockPos{ _pos.x, _pos.y, _pos.z },
+		                                   .light{ chunk->GetBlockLight(local), chunk->GetSkyLight(local) } },
+		                     chunk->cpos);
+	};
+
+	auto finishMiningWithTool = [&](ItemStack* _held, BlockType _block) {
+		if (!_held)
+			return;
+		auto it = Items::toolBehavior.find(_held->id);
+		if (it != Items::toolBehavior.end() && it->second.onBlockFinishMining)
+			it->second.onBlockFinishMining(_held, _block);
+	};
+
 	switch (_pkt.status) {
 	case PacketData::MineStatus::DIGGING_STARTED: {
 		_session.startedMiningAtTick = _world.elapsedTicks;
 		BlockType blockId = _world.GetBlockId(packetPos);
 		_session.lastTargetedBlock = blockId;
 
-		if (Blocks::blockProperties[_session.lastTargetedBlock].hardness == 0.0f) {
-			Blocks::BreakAndDropBlock(_world, packetPos);
+		float hardness = Blocks::blockProperties[blockId].hardness;
+		if (hardness < 0.0f) {
+			resyncBlock(packetPos);
 			return;
 		}
 
-		if (auto fn = Blocks::blockBehaviors[_session.lastTargetedBlock].onBlockClicked) {
+		if (auto fn = Blocks::blockBehaviors[blockId].onBlockClicked) {
 			fn(_world, packetPos);
 		}
 
 		ItemStack* heldItem = _session.inventory.GetHeldItem();
-		if (!heldItem)
+		auto [inWater, onGround] = miningConditions();
+		float damagePerTick = Items::BlockDamagePerTick(heldItem, blockId, inWater, onGround);
+
+		// Client breaks immediately when blockStrength >= 1 and does not send DIGGING_FINISHED
+		if (damagePerTick >= 1.0f) {
+			if (_session.entity) {
+				if (auto func = Blocks::blockBehaviors[blockId].onBlockDestroyedByPlayer) {
+					func(_world, packetPos, *_session.entity);
+				} else {
+					Blocks::BreakAndDropBlock(_world, packetPos);
+				}
+			} else {
+				Blocks::BreakAndDropBlock(_world, packetPos);
+			}
+			finishMiningWithTool(heldItem, blockId);
 			return;
-		// TODO: Check if we're in water or not on ground
-		float damagePerTick = Items::BlockDamagePerTick(heldItem, _session.lastTargetedBlock, false);
+		}
 
-		float secondsToBreak = (damagePerTick > 0.0f) ? 1.0f / (damagePerTick * 20.0f) : INFINITY;
-
-		// GlobalLogger().debug << std::setprecision(2) << damagePerTick << "dps (Will be mined in " << secondsToBreak << " s)\n";
-		if (auto fn = Items::toolBehavior[heldItem->id].onBlockStartMining)
-			fn(heldItem, blockId);
+		if (heldItem) {
+			auto it = Items::toolBehavior.find(heldItem->id);
+			if (it != Items::toolBehavior.end() && it->second.onBlockStartMining)
+				it->second.onBlockStartMining(heldItem, blockId);
+		}
 		return;
 	}
 	case PacketData::MineStatus::DIGGING_FINISHED: {
-		auto newBlockId = _world.GetBlockId({ _pkt.position.x, _pkt.position.y, _pkt.position.z });
+		auto newBlockId = _world.GetBlockId(packetPos);
 		if (_session.lastTargetedBlock != newBlockId) {
-			return; // block changed while mining so we don't drop it
-		}
-		if (auto func = Blocks::blockBehaviors[newBlockId].onBlockDestroyedByPlayer) {
-			func(_world, { _pkt.position.x, _pkt.position.y, _pkt.position.z }, *_session.entity);
+			resyncBlock(packetPos);
+			return;
 		}
 
 		ItemStack* heldItem = _session.inventory.GetHeldItem();
-		if (!heldItem)
+		auto [inWater, onGround] = miningConditions();
+		float damagePerTick = Items::BlockDamagePerTick(heldItem, newBlockId, inWater, onGround);
+		if (damagePerTick <= 0.0f) {
+			resyncBlock(packetPos);
 			return;
-		if (auto fn = Items::toolBehavior[heldItem->id].onBlockFinishMining)
-			fn(heldItem, _session.lastTargetedBlock);
+		}
+
+		// Client accumulates damage until >= 1.0. Allow 2 ticks of latency slack.
+		constexpr TickTime kDigLatencySlackTicks = 2;
+		TickTime elapsed = _world.elapsedTicks - _session.startedMiningAtTick;
+		TickTime requiredTicks = static_cast<TickTime>(std::ceil(1.0f / damagePerTick));
+		if (elapsed + kDigLatencySlackTicks < requiredTicks) {
+			resyncBlock(packetPos);
+			return;
+		}
+
+		if (_session.entity) {
+			if (auto func = Blocks::blockBehaviors[newBlockId].onBlockDestroyedByPlayer) {
+				func(_world, packetPos, *_session.entity);
+			}
+		}
+
+		finishMiningWithTool(heldItem, _session.lastTargetedBlock);
 		return;
 	}
 	case PacketData::MineStatus::DROPPED_ITEM: {
@@ -147,7 +207,6 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 	default:
 		return;
 	}
-	return;
 }
 
 void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager& _world, Runtime& _gameRuntime) {

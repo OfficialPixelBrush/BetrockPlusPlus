@@ -92,20 +92,34 @@ constexpr bool IsSword(ItemId _id);
 constexpr bool IsPickaxe(ItemId _id);
 constexpr bool IsAxe(ItemId _id);
 constexpr bool IsShovel(ItemId _id);
-constexpr bool IsEffective(ToolType _type, BlockType _block);
+bool IsEffective(ToolType _type, BlockType _block);
 bool IsWeapon(ItemId _id);
 bool IsTool(ItemId _id);
 
-// Get damage this tick
-float BlockDamagePerTick(ItemStack* _stack, BlockType _targetBlock, bool _reducedSpeed);
+// True if the held item (or bare hand via material.isHarvestable) can harvest the block.
+// Determines whether dig speed uses /30 (harvest) or /100 (cannot harvest).
+bool CanPlayerHarvest(ItemStack* _stack, BlockType _targetBlock);
 
-// CanHarvest
+// Item strength vs block (tool efficiency, else 1.0). Does not apply water/air penalties.
+float GetStrVsBlock(ItemStack* _stack, BlockType _targetBlock);
+
+// Block damage dealt this tick (0..1+). Instant break when >= 1.0.
+// Water and airborne each divide efficiency by 5 (stacking), matching beta EntityPlayer.
+float BlockDamagePerTick(ItemStack* _stack, BlockType _targetBlock, bool _inWater, bool _onGround);
+
+// CanHarvest callbacks used by tools that override Item.canHarvestBlock
 bool CanPickaxeHarvest(ToolLevel _level, BlockType _block);
 bool CanShovelHarvest(ToolLevel _level, BlockType _block);
 bool CanShearsOrSwordHarvest(ToolLevel _level, BlockType _block);
 
+// Effectiveness (getStrVsBlock) callbacks
+float ToolEffectiveness(ItemStack* _stack, BlockType _block);
+float SwordEffectiveness(ItemStack* _stack, BlockType _block);
+float ShearsEffectiveness(ItemStack* _stack, BlockType _block);
+
 // Usage
-void HarmTool(ItemStack* _stack, BlockType _targetBlock = BLOCK_INVALID);
+void HarmTool(ItemStack* _stack, int _amount = 1);
+void OnToolFinishMining(ItemStack* _stack, BlockType _targetBlock);
 void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
 void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
                       PacketData::FaceDirection _face);
@@ -119,7 +133,7 @@ struct ToolProperties {
 	ToolMaterial material = ToolMaterial::None;
 	ItemDamage maxUses = -1;
 	bool (*canHarvest)(ToolLevel _level, BlockType _targetBlock) = nullptr;
-	bool (*howEffectiveAgainstBlock)(ItemStack* _stack, BlockType _targetBlock) = nullptr;
+	float (*howEffectiveAgainstBlock)(ItemStack* _stack, BlockType _targetBlock) = nullptr;
 };
 
 struct ToolBehavior {
