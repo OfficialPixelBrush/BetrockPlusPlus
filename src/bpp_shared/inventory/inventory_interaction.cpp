@@ -75,7 +75,7 @@ void InventoryInteraction::OnLeftClick(int _slot) {
 void InventoryInteraction::OnRightClick(int _slot) {
 	auto targetSlot = inventory->GetStackInSlot(_slot);
 
-	if (carried.id != Items::Id::INVALID) {
+	if (carried.id != Items::Id::INVALID && carried.count > 0) {
 		if (!targetSlot) {
 			ItemStack single{ carried.id, 1, carried.data };
 			inventory->SetInventorySlotContents(_slot, &single);
