@@ -16,9 +16,14 @@ BiomeGenerator WorldManager::biomeGenerator;
 Biome WorldManager::GetBiome(Int2 _wpos) {
 	if (isHell)
 		return Biome::BIOME_HELL;
-	// TODO: This is VERY expensive, since it needs to do all the noise stuff from scratch
-	// Ideally we read this data directly from chunks, as opposed to doing this bs
-	return biomeGenerator.GetBiomeAtPoint(_wpos);
+	const Int32_2 cpos = Int32_2{ _wpos.x >> 4, _wpos.z >> 4 };
+	const auto chunk = GetChunkShared(cpos);
+	// This is rather expensive, so we want to avoid
+	// getting biome points outside of the loaded chunks
+	if (!chunk || chunk->state != ChunkState::Generated)
+		return biomeGenerator.GetBiomeAtPoint(_wpos);
+	// TODO: Dunno if this is the right index formula, please test!
+	return chunk->biomes[_wpos.x % 0xF + _wpos.z % 0xF * 16];
 }
 
 int WorldManager::getBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
