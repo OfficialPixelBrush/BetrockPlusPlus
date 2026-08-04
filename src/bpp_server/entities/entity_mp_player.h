@@ -20,7 +20,7 @@ struct EntityMPPlayer : public PlayerEntity {
 	}
 	bool movedThisTick = false;
 
-	void Tick() override;
+	virtual void Tick() override;
 	bool PickupItem(ItemStack& _stack, EntityId _entityId) override;
 	bool DropItem(ItemStack _stack) override;
 	void UpdateFallState(float _movedY) override;
