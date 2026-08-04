@@ -15,6 +15,7 @@ struct SheepEntity : public AnimalEntity {
 		type = EntityType::SHEEP;
 		width = 0.9f;
 		height = 1.3f;
+		SetMaxHealth(/*Health=*/8);
 	}
 	~SheepEntity() = default;
 	void OnDeath() override;
