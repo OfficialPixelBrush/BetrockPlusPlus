@@ -186,13 +186,15 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 	if (!heldItem)
 		return;
 
-	if (_pkt.face == PacketData::FaceDirection::INVALID_USE && Items::IsFood(heldItem->id)) {
-		// On player use
-		if (auto& fn = Items::itemBehavior[heldItem->id].onUse) {
-			GlobalLogger().info << "Managed to use item\n";
-			fn(_session, heldItem, *_session.entity);
+	if (_pkt.face == PacketData::FaceDirection::INVALID_USE) {
+		if (Items::IsFood(heldItem->id)) {
+			// On player use
+			if (auto& fn = Items::itemBehavior[heldItem->id].onUse) {
+				GlobalLogger().info << "Managed to use item\n";
+				fn(_session, heldItem, *_session.entity);
+			}
+			// TODO: Add on animal (wolf) use
 		}
-		// TODO: Add on animal (wolf) use
 		return;
 	}
 
@@ -207,7 +209,10 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 
 		// We can place the block here
 		auto function = Blocks::blockBehaviors[blockId].onBlockPlaced;
-		if (function && function(_world, placePosition, *_session.entity, _pkt.face, blockId, heldItem->data)) {
+		if (!function)
+			return;
+		bool result = function(_world, placePosition, *_session.entity, _pkt.face, blockId, heldItem->data);
+		if (result) {
 			heldItem->DecrementCount(1);
 		}
 	} else if (Items::IsItem(heldItem->id)) {

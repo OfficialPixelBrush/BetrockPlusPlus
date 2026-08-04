@@ -227,6 +227,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		}
 		pkt.username = username;
 		pkt.Serialize(pSession->stream);
+		SendEquipmentState(_entityEntry);
 		break;
 	}
 	case EntityType::CREEPER: {
@@ -361,6 +362,64 @@ void EntityTracker::SendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id) 
 	}
 }
 
+// Used when we first spawn an entity
+void EntityTracker::SendEquipmentState(TrackedEntry& _trackedEntry) {
+	auto updateEquipmentSlot = [&](int _slot, ItemStack& _stack) -> void {
+		if (_stack.id == -1)
+			return;
+		Packet::SetEquipment pkt;
+		pkt.entityId = _trackedEntry.entity->id;
+		pkt.inventorySlot = _slot;
+		pkt.itemId = _stack.id;
+		pkt.itemMetadata = _stack.data;
+
+		SendPacketToViewers(pkt, _trackedEntry.entity->id);
+	};
+
+	MobileEntity& entity = dynamic_cast<MobileEntity&>(*_trackedEntry.entity);
+	updateEquipmentSlot(4, entity.armor[0]);
+	updateEquipmentSlot(3, entity.armor[1]);
+	updateEquipmentSlot(2, entity.armor[2]);
+	updateEquipmentSlot(1, entity.armor[3]);
+	updateEquipmentSlot(0, entity.heldItem);
+}
+
+// Update our equipment
+void EntityTracker::UpdateEquipmentState(TrackedEntry& _trackedEntry) {
+	auto updateEquipmentSlot = [&](int _slot, ItemStack& _stack) -> void {
+		Packet::SetEquipment pkt;
+		pkt.entityId = _trackedEntry.entity->id;
+		pkt.inventorySlot = _slot;
+		pkt.itemId = _stack.id;
+		pkt.itemMetadata = _stack.data;
+
+		SendPacketToViewers(pkt, _trackedEntry.entity->id);
+	};
+
+	auto& equipment = _trackedEntry.equipmentProfile;
+	MobileEntity& entity = dynamic_cast<MobileEntity&>(*_trackedEntry.entity);
+	if (equipment.helmet != entity.armor[0]) {
+		updateEquipmentSlot(4, entity.armor[0]);
+		equipment.helmet = entity.armor[0];
+	}
+	if (equipment.chestplate != entity.armor[1]) {
+		updateEquipmentSlot(3, entity.armor[1]);
+		equipment.chestplate = entity.armor[1];
+	}
+	if (equipment.legging != entity.armor[2]) {
+		updateEquipmentSlot(2, entity.armor[2]);
+		equipment.legging = entity.armor[2];
+	}
+	if (equipment.boot != entity.armor[3]) {
+		updateEquipmentSlot(1, entity.armor[3]);
+		equipment.boot = entity.armor[3];
+	}
+	if (equipment.heldItem != entity.heldItem) {
+		updateEquipmentSlot(0, entity.heldItem);
+		equipment.heldItem = entity.heldItem;
+	}
+}
+
 void EntityTracker::UpdateDamageState(TrackedEntry& _trackedEntry) {
 	MobileEntity& entity = dynamic_cast<MobileEntity&>(*_trackedEntry.entity);
 
@@ -399,9 +458,10 @@ void EntityTracker::UpdateDamageState(TrackedEntry& _trackedEntry) {
 void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 	auto& entity = _trackedEntry.entity;
 
-	// If we are a mobile entity then send the damage state
+	// If we are a mobile entity then send the damage state and update our equipment
 	if (std::find(this->mobileEntities.begin(), this->mobileEntities.end(), entity->type) != this->mobileEntities.end()) {
 		UpdateDamageState(_trackedEntry);
+		UpdateEquipmentState(_trackedEntry);
 	}
 
 	// Dirty flag gets checked every Tick

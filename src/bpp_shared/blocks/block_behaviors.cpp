@@ -222,19 +222,18 @@ static bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entit
 			return false;
 	}
 
-	// Can we place this block here?
-	auto entitiesInBlock = _world.entityManager.GetEntitiesWithinAabb(
-	    { double(targetPos.x), double(targetPos.y), double(targetPos.z), double(targetPos.x) + 1.0,
-	      double(targetPos.y) + 1.0, double(targetPos.z) + 1.0 });
-
 	// Check to see if any entities overlap our block's collider
 	if (Blocks::blockProperties[_blockId].isCollidable) {
 		auto blockCollider = Blocks::blockBehaviors[_blockId].getCollider(_meta).Offset(
 		    targetPos.x, targetPos.y,
 		    targetPos.z); // Block colliders are at the origin so shift to world space
+		auto entitiesInBlock = _world.entityManager.GetEntitiesWithinAabb(
+		    { double(targetPos.x), double(targetPos.y), double(targetPos.z), double(targetPos.x) + 1.0,
+		      double(targetPos.y) + 1.0, double(targetPos.z) + 1.0 });
 		for (auto& entity : entitiesInBlock) {
-			if (blockCollider.Intersects(entity->collider) && entity->preventEntitySpawning)
+			if (blockCollider.Intersects(entity->collider) && entity->preventEntitySpawning) {
 				return false;
+			}
 		}
 	}
 

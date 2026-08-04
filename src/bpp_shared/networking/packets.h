@@ -1077,18 +1077,18 @@ public:
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(position.x);
-			_stream.Write(position.z);
-			_stream.Write(position.y);
 			_stream.Write(eventId);
+			_stream.Write(position.x);
+			_stream.Write(position.y);
+			_stream.Write(position.z);
 			_stream.Write(data);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			position.x = _stream.Read<int32_t>();
-			position.z = _stream.Read<int32_t>();
-			position.y = _stream.Read<int8_t>();
 			eventId = _stream.Read<PacketData::WorldEvent>();
+			position.x = _stream.Read<int32_t>();
+			position.y = _stream.Read<int8_t>();
+			position.z = _stream.Read<int32_t>();
 			data = _stream.Read<int32_t>();
 		}
 	};
