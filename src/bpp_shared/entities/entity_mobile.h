@@ -38,6 +38,7 @@ public:
 	float eyeHeight = height * 0.85f;
 	bool canBreatheUnderwater = false;
 	ItemStack heldItem;
+	ItemStack armor[4] = {}; // Helmet, chestplate, leggings, boots
 
 	virtual void Tick() override;
 	virtual void OnDeath();

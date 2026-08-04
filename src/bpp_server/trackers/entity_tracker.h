@@ -25,8 +25,18 @@ struct TrackingProfile {
 	bool sendVelocity = false;
 };
 
+struct EquipmentProfile {
+	// Track the item ids of our equipment, we dont care about metadata here
+	ItemStack helmet{};
+	ItemStack chestplate{};
+	ItemStack legging{};
+	ItemStack boot{};
+	ItemStack heldItem{};
+};
+
 struct TrackedEntry {
 	Entity* entity = nullptr;
+	EquipmentProfile equipmentProfile{};
 	TrackingProfile profile{};
 	Int32_3 lastEncodedPos{};
 	Vec3 lastBroadcastMotion{};
@@ -81,6 +91,8 @@ struct EntityTracker {
 	TrackedEntry& GetTrackerForEntityId(EntityId _id);
 	void Update(TrackedEntry& _trackedEntry);
 	void UpdateDamageState(TrackedEntry& _trackedEntry);
+	void UpdateEquipmentState(TrackedEntry& _trackedEntry);
+	void SendEquipmentState(TrackedEntry& _trackedEntry);
 
 	// With my strict goal of keeping strict separation we cannot put this as a virtual in the actual entity class itself
 	TrackingProfile GetTrackingProfile(Entity& _entity) {

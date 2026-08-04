@@ -477,24 +477,7 @@ void Server::TryForceBreak(PlayerSession& _session, WorldManager& _world) {
 	};
 
 	// Success!
-	auto blockId = _session.pendingBlockBreak->lastBlock;
-	auto blockPos = _session.pendingBlockBreak->lastBlockPos;
-	ItemStack* heldItem = _session.inventory.GetHeldItem();
-
-	// If we cant harvest then replace with air and abort here
-	_session.pendingBlockBreak.reset();
-	if (!Items::CanPlayerHarvest(heldItem, blockId)) {
-		_world.SetBlock(blockPos, BLOCK_AIR);
-		return;
-	}
-
-	if (_session.entity) {
-		if (auto func = Blocks::blockBehaviors[blockId].onBlockDestroyedByPlayer) {
-			func(_world, blockPos, *_session.entity);
-		}
-	}
-
-	finishMiningWithTool(heldItem, blockId);
+	OnPlayerBlockBreak(_session, _world);
 }
 
 void Server::UpdateBlockBreaking(PlayerSession& _session, WorldManager& _world) {
@@ -550,21 +533,7 @@ void Server::UpdateBlockBreaking(PlayerSession& _session, WorldManager& _world) 
 		return;
 	}
 
-	// If we cant harvest then replace with air and abort here
-	if (!Items::CanPlayerHarvest(heldItem, blockId)) {
-		_world.SetBlock(blockPos, BLOCK_AIR);
-		_session.pendingBlockBreak.reset();
-		return;
-	}
-
-	if (_session.entity) {
-		if (auto func = Blocks::blockBehaviors[blockId].onBlockDestroyedByPlayer) {
-			func(_world, blockPos, *_session.entity);
-		}
-	}
-
-	finishMiningWithTool(heldItem, blockId);
-	_session.pendingBlockBreak.reset();
+	OnPlayerBlockBreak(_session, _world);
 }
 
 void Server::DisconnectClients() {

@@ -205,6 +205,16 @@ void EntityMPPlayer::Tick() {
 		onGround = savedOnGround;
 	}
 
+	// Set our held item and armor
+	// Slots 5 -> 8 are for armor
+	ItemStack none = {};
+	auto heldItemPtr = session->inventory.GetHeldItem();
+	this->heldItem = session->inventory.GetHeldItem() ? *heldItemPtr : none;
+	for (int i = 0; i < 4; i++) {
+		auto armorSlotPtr = session->inventory.GetStackInSlot(5 + i);
+		this->armor[i] = armorSlotPtr ? *armorSlotPtr : none;
+	}
+
 	// Do living entity stuff
 	MobileEntity::Tick();
 
