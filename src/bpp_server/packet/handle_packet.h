@@ -35,8 +35,7 @@ void PlayerMovement(Packet::PlayerMovement& /*pkt*/, PlayerSession& /*session*/)
 void PlayerPosition(Packet::PlayerPosition& _pkt, PlayerSession& _session);
 void PlayerRotation(Packet::PlayerRotation& _pkt, PlayerSession& _session);
 void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& _pkt, PlayerSession& _session);
-void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _world,
-               std::vector<std::shared_ptr<PlayerSession>>& /*players*/);
+void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _world, Server& _server);
 void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager& _world, Runtime& _gameRuntime);
 void SetHotbarSlot(Packet::SetHotbarSlot& _pkt, PlayerSession& _session);
 // Click handler

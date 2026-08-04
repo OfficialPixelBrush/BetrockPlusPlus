@@ -75,7 +75,7 @@ bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, Wor
 	case PacketId::MineBlock: {
 		Packet::MineBlock pkt;
 		pkt.Deserialize(_session.stream);
-		HandlePacket::MineBlock(pkt, _session, _sessionWorld, _server.players);
+		HandlePacket::MineBlock(pkt, _session, _sessionWorld, _server);
 		break;
 	}
 	case PacketId::PlaceBlock: {

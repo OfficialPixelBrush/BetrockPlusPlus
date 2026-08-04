@@ -401,10 +401,14 @@ void Server::Tick() {
 			else
 				overworldPositions.push_back(session->position);
 
+			// Update our break state
+			this->UpdateBlockBreaking(*session, *GetWorldForDimension(session->dimension));
+
 			// Autosave every 2 seconds
 			if (gameRuntime.world.tickScheduler.currentTick % 40 == 0) {
 				SavePlayer(session->username);
 			}
+
 		}
 
 		connStateManager.HandleConnectionState(*session, *this);
@@ -452,6 +456,115 @@ void Server::Tick() {
 		shutdownTimer--;
 	if (shutdownTimer == 1)
 		shutdownRequested.store(true);
+}
+
+void Server::TryForceBreak(PlayerSession& _session, WorldManager& _world) {
+	if (!_session.pendingBlockBreak.has_value())
+		return;
+
+	if (_session.pendingBlockBreak->damage < 0.7f) {
+		// We missed the client break, so we need to force it to break on the server side
+		_session.pendingBlockBreak->clientBreakMissed = true;
+		return;
+	}
+
+	auto finishMiningWithTool = [&](ItemStack* _held, BlockType _block) {
+		if (!_held)
+			return;
+		auto it = Items::toolBehavior.find(_held->id);
+		if (it != Items::toolBehavior.end() && it->second.onBlockFinishMining)
+			it->second.onBlockFinishMining(_held, _block);
+	};
+
+	// Success!
+	auto blockId = _session.pendingBlockBreak->lastBlock;
+	auto blockPos = _session.pendingBlockBreak->lastBlockPos;
+	ItemStack* heldItem = _session.inventory.GetHeldItem();
+
+	// If we cant harvest then replace with air and abort here
+	_session.pendingBlockBreak.reset();
+	if (!Items::CanPlayerHarvest(heldItem, blockId)) {
+		_world.SetBlock(blockPos, BLOCK_AIR);
+		return;
+	}
+
+	if (_session.entity) {
+		if (auto func = Blocks::blockBehaviors[blockId].onBlockDestroyedByPlayer) {
+			func(_world, blockPos, *_session.entity);
+		}
+	}
+
+	finishMiningWithTool(heldItem, blockId);
+}
+
+void Server::UpdateBlockBreaking(PlayerSession& _session, WorldManager& _world) {
+	if (!_session.pendingBlockBreak.has_value())
+		return;
+
+	auto miningConditions = [&]() -> std::pair<bool, bool> {
+		bool inWater = _session.entity && _session.entity->HeadInWater();
+		bool onGround = !_session.entity || _session.entity->onGround;
+		return { inWater, onGround };
+	};
+
+	auto finishMiningWithTool = [&](ItemStack* _held, BlockType _block) {
+		if (!_held)
+			return;
+		auto it = Items::toolBehavior.find(_held->id);
+		if (it != Items::toolBehavior.end() && it->second.onBlockFinishMining)
+			it->second.onBlockFinishMining(_held, _block);
+	};
+
+	auto [inWater, onGround] = miningConditions();
+	auto blockId = _session.pendingBlockBreak->lastBlock;
+	auto blockPos = _session.pendingBlockBreak->lastBlockPos;
+	ItemStack* heldItem = _session.inventory.GetHeldItem();
+
+	auto damagePerTick = Items::BlockDamagePerTick(heldItem, blockId, inWater, onGround);
+
+	// Client breaks immediately when blockStrength >= 1
+	if (damagePerTick >= 1.0f) {
+		if (_session.entity) {
+			if (auto func = Blocks::blockBehaviors[blockId].onBlockDestroyedByPlayer) {
+				func(_world, blockPos, *_session.entity);
+			} else {
+				Blocks::BreakAndDropBlock(_world, blockPos);
+			}
+		} else {
+			Blocks::BreakAndDropBlock(_world, blockPos);
+		}
+		finishMiningWithTool(heldItem, blockId);
+		_session.pendingBlockBreak.reset();
+		return;
+	}
+
+	// Dont break if our damage per tick is too low
+	if (damagePerTick <= 0.0f) {
+		_session.pendingBlockBreak.reset();
+		return;
+	}
+
+	// See if we can actually break this block
+	if (_session.pendingBlockBreak->damage < 1.0f || !_session.pendingBlockBreak->clientBreakMissed) {
+		_session.pendingBlockBreak->damage = std::min(1.0f, _session.pendingBlockBreak->damage + damagePerTick);
+		return;
+	}
+
+	// If we cant harvest then replace with air and abort here
+	if (!Items::CanPlayerHarvest(heldItem, blockId)) {
+		_world.SetBlock(blockPos, BLOCK_AIR);
+		_session.pendingBlockBreak.reset();
+		return;
+	}
+
+	if (_session.entity) {
+		if (auto func = Blocks::blockBehaviors[blockId].onBlockDestroyedByPlayer) {
+			func(_world, blockPos, *_session.entity);
+		}
+	}
+
+	finishMiningWithTool(heldItem, blockId);
+	_session.pendingBlockBreak.reset();
 }
 
 void Server::DisconnectClients() {

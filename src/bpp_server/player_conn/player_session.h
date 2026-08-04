@@ -30,9 +30,20 @@ enum class ConnectionState : uint8_t {
 	Playing
 };
 
+// Used to track when we are breaking a block
+struct PendingBlockBreak {
+	float damage = 0;
+	BlockType lastBlock = BLOCK_AIR;
+	Int3 lastBlockPos = { 0, 0, 0 };
+	bool clientBreakMissed = false;
+};
+
 struct PlayerSession {
 	NetworkStream stream;
 	ClientPosition position;
+
+	// What block we are currently breaking, if any
+	std::optional<PendingBlockBreak> pendingBlockBreak = std::nullopt;
 
 	// What our client is claiming this Tick
 	std::optional<Vec3> pendingPosition = std::nullopt;
@@ -86,9 +97,6 @@ struct PlayerSession {
 	WindowId pendingWindowId = 0;
 
 	Dimension dimension = Dimension::Overworld; // 0 = overworld, -1 = nether
-
-	BlockType lastTargetedBlock = BLOCK_AIR;
-	TickTime startedMiningAtTick = 0;
 
 	explicit PlayerSession(int _socket, Runtime& _gameRuntime)
 	    : stream(_socket), inventoryInteraction(&inventory, _gameRuntime) {}
