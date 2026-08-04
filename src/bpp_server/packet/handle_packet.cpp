@@ -175,12 +175,18 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 			return;
 		}
 
-		// Client accumulates damage until >= 1.0. Allow 2 ticks of latency slack.
-		constexpr TickTime kDigLatencySlackTicks = 2;
+		// Client accumulates damage until >= 1.0
+		// We let the client break the block if it has accumulated at least 70% of the required damage, otherwise we resync
 		TickTime elapsed = _world.elapsedTicks - _session.startedMiningAtTick;
-		TickTime requiredTicks = static_cast<TickTime>(std::ceil(1.0f / damagePerTick));
-		if (elapsed + kDigLatencySlackTicks < requiredTicks) {
+		TickTime requiredTicks = std::ceil(1.0f / damagePerTick);
+		if ((float(elapsed) / float(requiredTicks)) < 0.7f) {
 			resyncBlock(packetPos);
+			return;
+		}
+
+		// If we cant harvest then replace with air and abort here
+		if (!Items::CanPlayerHarvest(heldItem, newBlockId)) {
+			_world.SetBlock(packetPos, BLOCK_AIR);
 			return;
 		}
 
@@ -422,23 +428,29 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 	if (!entity || !sourceEntity)
 		return;
 
-	if (_pkt.attack) // For funsies hehe
-		entity->AttackEntityFrom(sourceEntity.get(), 1);
-
 	ItemStack* heldItem = _session.inventory.GetHeldItem();
-	if (!heldItem)
+	if (!heldItem) {
+		ItemStack emptyStack{};
+		Items::AttackWithItem(*entity, *sourceEntity, &emptyStack);
 		return;
+	}
 
 	// Get tool behavior
 	auto iter = Items::toolBehavior.find(heldItem->id);
-	if (iter == Items::toolBehavior.end())
+	if (iter == Items::toolBehavior.end()) {
+		if (_pkt.attack) {
+			ItemStack emptyStack{};
+			Items::AttackWithItem(*entity, *sourceEntity, &emptyStack);
+		}
 		return;
+	}
 
 	const auto& behavior = iter->second;
 
+	// Attack properly!
 	if (_pkt.attack) {
 		if (behavior.onEntityAttack)
-			behavior.onEntityAttack(*entity, heldItem);
+			behavior.onEntityAttack(*entity, *sourceEntity, heldItem);
 	} else {
 		if (behavior.onEntityUse)
 			behavior.onEntityUse(*entity, heldItem);

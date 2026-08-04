@@ -79,7 +79,7 @@ struct ChunkCache {
 
 struct Lighter {
 public:
-	static constexpr size_t MAX_LIGHT_QUEUE = 65536;
+	static constexpr size_t MAX_LIGHT_QUEUE = 1000000;
 
 	Lighter() {
 		// Avoid repeated vector growth/reallocation during propagation bursts

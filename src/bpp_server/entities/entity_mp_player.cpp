@@ -198,8 +198,11 @@ void EntityMPPlayer::Tick() {
 		return;
 
 	if (!movedThisTick) {
+		// We have to save our ground state here because move will reset it!
 		Vec3 none = { 0.0, 0.0, 0.0 };
+		bool savedOnGround = onGround;
 		Move(none);
+		onGround = savedOnGround;
 	}
 
 	// Do living entity stuff
