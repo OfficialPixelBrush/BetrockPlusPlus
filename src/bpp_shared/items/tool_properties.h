@@ -126,7 +126,7 @@ void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity
 
 // Attack
 void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face);
-void AttackWithItem(Entity& _targetEntity, ItemStack* _stack);
+void AttackWithItem(Entity& _targetEntity, Entity& _sourceEntity, ItemStack* _stack);
 
 struct ToolProperties {
 	ToolType type = ToolType::None;
@@ -139,7 +139,7 @@ struct ToolProperties {
 struct ToolBehavior {
 	void (*onBlockStartMining)(ItemStack* _stack, BlockType _targetBlock) = nullptr;
 	void (*onBlockFinishMining)(ItemStack* _stack, BlockType _targetBlock) = nullptr;
-	void (*onEntityAttack)(Entity& _attackedEntity, ItemStack* _stack) = nullptr;
+	void (*onEntityAttack)(Entity& _attackedEntity, Entity& _sourceEntity, ItemStack* _stack) = nullptr;
 	void (*onEntityUse)(Entity& _usedEntity, ItemStack* _stack) = nullptr;
 };
 

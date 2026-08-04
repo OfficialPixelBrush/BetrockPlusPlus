@@ -107,9 +107,8 @@ EntityHealth CalculateDamage(ToolType _type, ToolLevel _level) {
 	return BaseToolDamage(_type) + (int(_level) * 2);
 }
 
-void InflictDamage(Entity& _targetEntity, EntityHealth _damage) {
-	//target_entity.health -= damage;
-	return;
+static bool InflictDamage(Entity& _targetEntity, Entity& _sourceEntity, EntityHealth _damage) {
+	return _targetEntity.AttackEntityFrom(&_sourceEntity, _damage);
 }
 
 bool IsEffective(ToolType _type, BlockType _block) {
@@ -222,19 +221,28 @@ float BlockDamagePerTick(ItemStack* _stack, BlockType _targetBlock, bool _inWate
 		return 1.0f / hardness / 100.0f;
 
 	float efficiency = GetStrengthAgainstBlock(_stack, _targetBlock);
-	if (_inWater)
+	if (_inWater) {
 		efficiency /= 5.0f;
-	if (!_onGround)
+	}
+	if (!_onGround) {
 		efficiency /= 5.0f;
+	}
 	return efficiency / hardness / 30.0f;
 }
 
-void AttackWithItem(Entity& _targetEntity, ItemStack* _stack) {
+void AttackWithItem(Entity& _targetEntity, Entity& _sourceEntity, ItemStack* _stack) {
 	EntityHealth damage = 1;
 	if (toolProperties.contains(_stack->id))
 		damage = CalculateDamage(toolProperties[_stack->id].type, MaterialToLevel(toolProperties[_stack->id].material));
-	InflictDamage(_targetEntity, damage);
-	GlobalLogger().info << "Dealt " << damage << " damage to " << _targetEntity.id << "!\n";
+	bool canInflictDamage = InflictDamage(_targetEntity, _sourceEntity, damage);
+	
+	// Apparently vanilla doesn't do this for some reason
+	/*
+	if (!canInflictDamage) {
+		return;
+	}
+	*/
+
 	// ItemSword.hitEntity damages 1; ItemTool.hitEntity damages 2
 	int durabilityLoss = 1;
 	if (toolProperties.contains(_stack->id)) {
