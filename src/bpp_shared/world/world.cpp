@@ -6,16 +6,26 @@
 */
 #include "world.h"
 #include "blocks.h"
-#include "generator/nether/chunk_gen.h"
-#include "generator/overworld/biome_gen.h"
-#include "generator/overworld/chunk_gen.h"
 #include "entities/entity_item.h"
+#include "generator/nether/chunk_gen.h"
+#include "generator/overworld/chunk_gen.h"
 #include <unordered_set>
+
+BiomeGenerator WorldManager::biomeGenerator;
+
+Biome WorldManager::GetBiome(Int2 _wpos) {
+	if (isHell)
+		return Biome::BIOME_HELL;
+	// TODO: This is VERY expensive, since it needs to do all the noise stuff from scratch
+	// Ideally we read this data directly from chunks, as opposed to doing this bs
+	return biomeGenerator.GetBiomeAtPoint(_wpos);
+}
 
 int WorldManager::getBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
 	if (_offsetNonFullBlocks) {
 		auto blockId = this->GetBlockId(_wpos);
-		if (blockId == BLOCK_SLAB || blockId == BLOCK_FARMLAND || blockId == BLOCK_STAIRS_WOOD || blockId == BLOCK_STAIRS_WOOD){
+		if (blockId == BLOCK_SLAB || blockId == BLOCK_FARMLAND || blockId == BLOCK_STAIRS_WOOD ||
+		    blockId == BLOCK_STAIRS_WOOD) {
 			int yP = getBlockLightValue({ _wpos.x, _wpos.y + 1, _wpos.z }, false);
 			int xP = getBlockLightValue({ _wpos.x + 1, _wpos.y, _wpos.z }, false);
 			int xM = getBlockLightValue({ _wpos.x - 1, _wpos.y, _wpos.z }, false);
@@ -53,8 +63,8 @@ int WorldManager::getBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
 			return skylight;
 	}
 }
-	
-void WorldManager::updateSkylightOffset(){
+
+void WorldManager::updateSkylightOffset() {
 	float celestialAngle = getCelestialAngle();
 	float transformedAngle = 1.0f - (std::cos(celestialAngle * JavaMath::PI * 2.0f) * 2.0f + 0.5f);
 	if (transformedAngle < 0.0f)
@@ -65,11 +75,11 @@ void WorldManager::updateSkylightOffset(){
 	transformedAngle = 1.0f - transformedAngle;
 	// TODO: Weather?
 	transformedAngle = 1.0f - transformedAngle;
-	
+
 	this->skylightOffset = int(transformedAngle * 11.0f);
 }
 
-float WorldManager::getCelestialAngle(){
+float WorldManager::getCelestialAngle() {
 	int normalizedTime = int(this->elapsedTicks % 24000);
 
 	// Subtract 1/4 of a day so sunrise = 0
@@ -294,7 +304,7 @@ void WorldManager::DropInventory(Inventory& inventory, Int3 _wpos) {
 
 				std::shared_ptr<ItemEntity> newItem = std::make_shared<ItemEntity>(spawnPos);
 				newItem->itemStack = { .id = stack.id, .count = ItemAmount(countDecrement), .data = stack.data };
-				
+
 				// Random velocity
 				float velocity = 0.05f;
 				newItem->velocity.x = rand.NextDouble() * velocity;
@@ -308,7 +318,6 @@ void WorldManager::DropInventory(Inventory& inventory, Int3 _wpos) {
 		}
 	}
 }
-
 
 void WorldManager::Shutdown() {
 	if (!regionManager)
@@ -797,7 +806,8 @@ void WorldManager::SetBlockRaw(const Int3 _wpos, const BlockType _blockType, con
 	chunk->SetMeta(local, _metadata);
 }
 
-void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata, const bool keepTileEntity, const bool updateNeighbors) {
+void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata,
+                            const bool keepTileEntity, const bool updateNeighbors) {
 	if (!InBounds(_wpos.y))
 		return;
 	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
@@ -873,7 +883,8 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	}
 
 	// Update our neighbors
-	if (updateNeighbors) this->NotifyNeighborsOfUpdate(_wpos);
+	if (updateNeighbors)
+		this->NotifyNeighborsOfUpdate(_wpos);
 
 	if (_blockType == BLOCK_AIR) {
 		// We removed this block effectively
