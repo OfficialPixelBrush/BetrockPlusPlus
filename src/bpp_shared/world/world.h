@@ -17,13 +17,14 @@
 #include "chunk.h"
 #include "client_pos.h"
 #include "entities/entity_manager.h"
+#include "generator/overworld/biome_gen.h"
 #include "helpers/AABB.h"
 #include "java_math.h"
 #include "lighter.h"
 #include "tick_scheduler.h"
 #include "tile_entities/tile_entity_manager.h"
-#include "world/storage/region_manager.h"
 #include "world/spawner.h"
+#include "world/storage/region_manager.h"
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
@@ -58,7 +59,8 @@ struct WorldManager {
 	Java::Random rand;
 	EntitySpawner entitySpawner;
 	int skylightOffset = 0;
-	
+	static BiomeGenerator biomeGenerator;
+
 	WorldManager(bool _pIsHell = false) : isHell(_pIsHell) {
 		entityManager.world = this; // Bind the world pointer in EntityManager
 		tickScheduler.world = this;
@@ -95,7 +97,7 @@ struct WorldManager {
 	void updateSkylightOffset();
 	float getCelestialAngle();
 	int getBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks = true);
-
+	Biome GetBiome(Int2 _wpos);
 	int getBlockLightFull(Int3 _wpos) {
 		auto chunk = GetChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
 		if (!chunk)
@@ -121,20 +123,23 @@ struct WorldManager {
 		return simulationRadius;
 	}
 	const int GetDimension() {
-		return this->thisDimension;
+		return thisDimension;
 	}
 	void SetViewRadius(int _viewRadius) {
 		int newViewRadius = std::max(3, _viewRadius);
-		this->viewRadius = newViewRadius;
-		this->simulationRadius = std::min(9, newViewRadius);
+		viewRadius = newViewRadius;
+		simulationRadius = std::min(9, newViewRadius);
 	}
 
 	void InitWorldSeed(std::string _pSeed) {
-		this->seed = HashCode(_pSeed);
+		InitWorldSeed(HashCode(_pSeed));
 	}
 
 	void InitWorldSeed(int64_t _pSeed) {
-		this->seed = _pSeed;
+		seed = _pSeed;
+		// Update the biome generator with this seed
+		if (!isHell)
+			biomeGenerator = BiomeGenerator(seed);
 	}
 
 	void NotifyNeighborsOfUpdate(Int3 _globalPos) {
