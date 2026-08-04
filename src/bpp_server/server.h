@@ -25,6 +25,8 @@ extern std::atomic<bool> shutdownRequested;
 #include "server_socket.h"
 #include "trackers/entity_tracker.h"
 #include "strings/ucs2.h"
+#include "items/item_properties.h"
+#include "items/tool_properties.h"
 #include <chrono>
 #include <memory>
 #include <thread>
@@ -111,6 +113,8 @@ public:
 		return _dim == Dimension::Nether ? &this->gameRuntime.worldHell : &this->gameRuntime.world;
 	}
 
+	void TryForceBreak(PlayerSession& _session, WorldManager& _world);
+
 	void SendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _entity);
 	void SendPlayerToDimension(Dimension _dim, PlayerSession& _session);
 
@@ -140,6 +144,9 @@ private:
 	void IndexAddChunk(PlayerSession& _session, const Int32_2& _pos);
 	void IndexRemoveChunk(PlayerSession& _session, const Int32_2& _pos);
 	void IndexRemoveSession(PlayerSession& _session);
+
+	// Update our block breaking state
+	void UpdateBlockBreaking(PlayerSession& _session, WorldManager& _world);
 
 	// Encodes chunk position + dimension into a single key for chunkSessions.
 	// x = chunk X, y = chunk Z, z = dimension id

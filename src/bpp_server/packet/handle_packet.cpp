@@ -87,15 +87,8 @@ void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& _pkt, PlayerSe
 	}
 }
 
-void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _world,
-               std::vector<std::shared_ptr<PlayerSession>>& /*players*/) {
+void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _world, Server& _server) {
 	Int3 packetPos = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
-
-	auto miningConditions = [&]() -> std::pair<bool, bool> {
-		bool inWater = _session.entity && _session.entity->inWater;
-		bool onGround = !_session.entity || _session.entity->onGround;
-		return { inWater, onGround };
-	};
 
 	auto resyncBlock = [&](Int3 _pos) {
 		if (!_world.onBlockUpdate)
@@ -110,23 +103,18 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 		                     chunk->cpos);
 	};
 
-	auto finishMiningWithTool = [&](ItemStack* _held, BlockType _block) {
-		if (!_held)
-			return;
-		auto it = Items::toolBehavior.find(_held->id);
-		if (it != Items::toolBehavior.end() && it->second.onBlockFinishMining)
-			it->second.onBlockFinishMining(_held, _block);
-	};
-
 	switch (_pkt.status) {
 	case PacketData::MineStatus::DIGGING_STARTED: {
-		_session.startedMiningAtTick = _world.elapsedTicks;
 		BlockType blockId = _world.GetBlockId(packetPos);
-		_session.lastTargetedBlock = blockId;
+		_session.pendingBlockBreak = {
+			.lastBlock = blockId,
+			.lastBlockPos = packetPos
+		};
 
 		float hardness = Blocks::blockProperties[blockId].hardness;
 		if (hardness < 0.0f) {
 			resyncBlock(packetPos);
+			_session.pendingBlockBreak.reset();
 			return;
 		}
 
@@ -135,23 +123,6 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 		}
 
 		ItemStack* heldItem = _session.inventory.GetHeldItem();
-		auto [inWater, onGround] = miningConditions();
-		float damagePerTick = Items::BlockDamagePerTick(heldItem, blockId, inWater, onGround);
-
-		// Client breaks immediately when blockStrength >= 1 and does not send DIGGING_FINISHED
-		if (damagePerTick >= 1.0f) {
-			if (_session.entity) {
-				if (auto func = Blocks::blockBehaviors[blockId].onBlockDestroyedByPlayer) {
-					func(_world, packetPos, *_session.entity);
-				} else {
-					Blocks::BreakAndDropBlock(_world, packetPos);
-				}
-			} else {
-				Blocks::BreakAndDropBlock(_world, packetPos);
-			}
-			finishMiningWithTool(heldItem, blockId);
-			return;
-		}
 
 		if (heldItem) {
 			auto it = Items::toolBehavior.find(heldItem->id);
@@ -162,41 +133,20 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 	}
 	case PacketData::MineStatus::DIGGING_FINISHED: {
 		auto newBlockId = _world.GetBlockId(packetPos);
-		if (_session.lastTargetedBlock != newBlockId) {
+
+		if (!_session.pendingBlockBreak.has_value() || _session.pendingBlockBreak->lastBlockPos != packetPos) {
 			resyncBlock(packetPos);
+			_session.pendingBlockBreak.reset();
 			return;
 		}
 
-		ItemStack* heldItem = _session.inventory.GetHeldItem();
-		auto [inWater, onGround] = miningConditions();
-		float damagePerTick = Items::BlockDamagePerTick(heldItem, newBlockId, inWater, onGround);
-		if (damagePerTick <= 0.0f) {
+		if (_session.pendingBlockBreak->lastBlock != newBlockId) {
 			resyncBlock(packetPos);
+			_session.pendingBlockBreak.reset();
 			return;
 		}
 
-		// Client accumulates damage until >= 1.0
-		// We let the client break the block if it has accumulated at least 70% of the required damage, otherwise we resync
-		TickTime elapsed = _world.elapsedTicks - _session.startedMiningAtTick;
-		TickTime requiredTicks = std::ceil(1.0f / damagePerTick);
-		if ((float(elapsed) / float(requiredTicks)) < 0.7f) {
-			resyncBlock(packetPos);
-			return;
-		}
-
-		// If we cant harvest then replace with air and abort here
-		if (!Items::CanPlayerHarvest(heldItem, newBlockId)) {
-			_world.SetBlock(packetPos, BLOCK_AIR);
-			return;
-		}
-
-		if (_session.entity) {
-			if (auto func = Blocks::blockBehaviors[newBlockId].onBlockDestroyedByPlayer) {
-				func(_world, packetPos, *_session.entity);
-			}
-		}
-
-		finishMiningWithTool(heldItem, _session.lastTargetedBlock);
+		_server.TryForceBreak(_session, _world);
 		return;
 	}
 	case PacketData::MineStatus::DROPPED_ITEM: {
