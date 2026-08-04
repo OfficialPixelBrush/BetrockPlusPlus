@@ -186,6 +186,8 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 	if (!heldItem)
 		return;
 
+	// NOTE:
+	// Invalid Use packet is sent ANYTIME the client predicts a placement will fail (like placing a block inside of yourself)
 	if (_pkt.face == PacketData::FaceDirection::INVALID_USE) {
 		if (Items::IsFood(heldItem->id)) {
 			// On player use
