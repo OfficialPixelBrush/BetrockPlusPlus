@@ -53,6 +53,8 @@ void OverworldGenerator::GenerateChunk(Chunk& _chunk) {
 	for (size_t i = 0; i < CHUNK_AREA; ++i) {
 		_chunk.temperature[i] = float(temperature[i]);
 		_chunk.humidity[i] = float(humidity[i]);
+		// TODO: Check if this is the right spot
+		_chunk.biomes[i] = biomeMap[i];
 	}
 
 	// Generate the Terrain, minus any caves, as just stone

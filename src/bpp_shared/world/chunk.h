@@ -9,6 +9,7 @@
 #pragma once
 #include "blocks/block_properties.h"
 #include "constants.h"
+#include "enums/biomes.h"
 #include "helpers/cross_platform.h"
 #include "nbt/nbt.h"
 #include "tile_entities/tile_entity.h"
@@ -16,6 +17,7 @@
 #include <cstdint>
 #include <cstring>
 #include <numeric_structs.h>
+
 
 enum class ChunkState : uint8_t {
 	Unloaded,
@@ -43,6 +45,7 @@ struct Chunk {
 	uint8_t heightMap[CHUNK_WIDTH * CHUNK_WIDTH] = {};
 	float temperature[CHUNK_WIDTH * CHUNK_WIDTH] = {};
 	float humidity[CHUNK_WIDTH * CHUNK_WIDTH] = {};
+	Biome biomes[CHUNK_WIDTH * CHUNK_WIDTH] = {};
 
 	bool isTerrainPopulated = false;
 	bool isModified = false;
