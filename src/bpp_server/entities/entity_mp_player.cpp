@@ -17,7 +17,8 @@ bool EntityMPPlayer::PickupItem(ItemStack& _stack, EntityId _entityId) {
 		Packet::CollectItem pkt;
 		pkt.collectorEntityId = this->id;
 		pkt.itemEntityId = _entityId;
-		this->session->entityTracker->SendPacketToViewers(pkt, this->id);
+		if (this->session->entityTracker)
+			this->session->entityTracker->SendPacketToViewers(pkt, this->id);
 		pkt.Serialize(this->session->stream);
 		return true;
 	}

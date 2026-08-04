@@ -113,6 +113,10 @@ public:
 		return _dim == Dimension::Nether ? &this->gameRuntime.worldHell : &this->gameRuntime.world;
 	}
 
+	EntityTracker* GetEntityTrackerForDimension(Dimension _dim) {
+		return _dim == Dimension::Nether ? &this->hellEntityTracker : &this->overworldEntityTracker;
+	}
+
 	void TryForceBreak(PlayerSession& _session, WorldManager& _world);
 
 	void SendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _entity);

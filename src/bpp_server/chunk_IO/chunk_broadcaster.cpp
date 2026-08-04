@@ -60,7 +60,7 @@ void ChunkBroadcaster::BroadcastBlockChanges(Server& _server,
 			const auto& buf = tmpStream.GetRawWriteBuffer();
 			for (auto* session : flushedSessions)
 				session->stream.WriteRaw(buf.data(), buf.size());
-		} else if (blockChanges.size() < 4096) {
+		} else if (blockChanges.size() < 10) {
 			// Multi-block packet
 			auto formatMultiBlock = [](int8_t _x, int8_t _y, int8_t _z) {
 				return (((int16_t(_x) & 0x0F) << 12) | ((int16_t(_z) & 0x0F) << 8) | ((int16_t(_y) & 0xFF)));

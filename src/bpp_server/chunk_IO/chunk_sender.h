@@ -122,70 +122,47 @@ struct ChunkSender {
 		if (_changes.empty())
 			return;
 
-		if (_changes.size() == 1) {
-			const PendingBlock& pb = _changes[0];
-			Packet::SetBlock sb;
-			sb.block = { pb.block.type, pb.block.data };
-			sb.position = { static_cast<int32_t>(pb.blockPos.x + (_chunk.x * 16)), static_cast<int8_t>(pb.blockPos.y),
-				            static_cast<int32_t>(pb.blockPos.z + (_chunk.z * 16)) };
-			sb.Serialize(_session.stream);
-		} else if (_changes.size() < 10) {
-			auto formatMultiBlock = [](int8_t _x, int8_t _y, int8_t _z) {
-				return (((int16_t(_x) & 0x0F) << 12) | ((int16_t(_z) & 0x0F) << 8) | ((int16_t(_y) & 0xFF)));
-			};
-			Packet::SetMultipleBlocks smb;
-			smb.chunkPosition = { _chunk.x, _chunk.z };
-			for (const auto& pb : _changes) {
-				smb.blockCoordinates.push_back(static_cast<int16_t>(
-				    formatMultiBlock(int8_t(pb.blockPos.x), int8_t(pb.blockPos.y), int8_t(pb.blockPos.z))));
-				smb.blockMetadata.push_back(int8_t(pb.block.data));
-				smb.blockTypes.push_back(pb.block.type);
-			}
-			smb.numberOfBlocks = static_cast<int16_t>(smb.blockCoordinates.size());
-			smb.Serialize(_session.stream);
-		} else {
-			// Find bounding box in chunk-local space
-			auto& p0 = _changes[0].blockPos;
-			int xmin = p0.x, xmax = p0.x;
-			int ymin = p0.y, ymax = p0.y;
-			int zmin = p0.z, zmax = p0.z;
-			for (const auto& pb : _changes) {
-				const auto& pos = pb.blockPos;
-				if (pos.x > xmax)
-					xmax = pos.x;
-				if (pos.x < xmin)
-					xmin = pos.x;
-				if (pos.y > ymax)
-					ymax = pos.y;
-				if (pos.y < ymin)
-					ymin = pos.y;
-				if (pos.z > zmax)
-					zmax = pos.z;
-				if (pos.z < zmin)
-					zmin = pos.z;
-			}
-			// Force even ySize so the client's nibble copy doesn't desync
-			ymin = (ymin / 2) * 2;
-			ymax = (ymax / 2 + 1) * 2 - 1;
-			ymin = CrossPlatform::Math::Max<int>(ymin, 0);
-			ymax = CrossPlatform::Math::Min<int>(ymax, CHUNK_HEIGHT - 1);
-
-			PendingSubRegion psr;
-			psr.chunkPos = _chunk;
-			psr.header.pos.x = _chunk.x * CHUNK_WIDTH + xmin;
-			psr.header.pos.z = _chunk.z * CHUNK_WIDTH + zmin;
-			psr.header.pos.y = static_cast<int16_t>(ymin);
-			psr.header.size.x = static_cast<uint8_t>(xmax - xmin);
-			psr.header.size.y = static_cast<uint8_t>(ymax - ymin);
-			psr.header.size.z = static_cast<uint8_t>(zmax - zmin);
-			if (_chunkRef) {
-				std::shared_ptr<const Chunk> ref = _chunkRef;
-				psr.data = pool.submit_task([ref, xmin, xmax, ymin, ymax, zmin, zmax]() {
-					return ChunkSerializer::Serialize(*ref, xmin, xmax + 1, ymin, ymax + 1, zmin, zmax + 1);
-				});
-			}
-			subRegionFlight[&_session].push_back(std::move(psr));
+		// Find bounding box in chunk-local space
+		auto& p0 = _changes[0].blockPos;
+		int xmin = p0.x, xmax = p0.x;
+		int ymin = p0.y, ymax = p0.y;
+		int zmin = p0.z, zmax = p0.z;
+		for (const auto& pb : _changes) {
+			const auto& pos = pb.blockPos;
+			if (pos.x > xmax)
+				xmax = pos.x;
+			if (pos.x < xmin)
+				xmin = pos.x;
+			if (pos.y > ymax)
+				ymax = pos.y;
+			if (pos.y < ymin)
+				ymin = pos.y;
+			if (pos.z > zmax)
+				zmax = pos.z;
+			if (pos.z < zmin)
+				zmin = pos.z;
 		}
+		// Force even ySize so the client's nibble copy doesn't desync
+		ymin = (ymin / 2) * 2;
+		ymax = (ymax / 2 + 1) * 2 - 1;
+		ymin = CrossPlatform::Math::Max<int>(ymin, 0);
+		ymax = CrossPlatform::Math::Min<int>(ymax, CHUNK_HEIGHT - 1);
+
+		PendingSubRegion psr;
+		psr.chunkPos = _chunk;
+		psr.header.pos.x = _chunk.x * CHUNK_WIDTH + xmin;
+		psr.header.pos.z = _chunk.z * CHUNK_WIDTH + zmin;
+		psr.header.pos.y = static_cast<int16_t>(ymin);
+		psr.header.size.x = static_cast<uint8_t>(xmax - xmin);
+		psr.header.size.y = static_cast<uint8_t>(ymax - ymin);
+		psr.header.size.z = static_cast<uint8_t>(zmax - zmin);
+		if (_chunkRef) {
+			std::shared_ptr<const Chunk> ref = _chunkRef;
+			psr.data = pool.submit_task([ref, xmin, xmax, ymin, ymax, zmin, zmax]() {
+				return ChunkSerializer::Serialize(*ref, xmin, xmax + 1, ymin, ymax + 1, zmin, zmax + 1);
+			});
+		}
+		subRegionFlight[&_session].push_back(std::move(psr));
 	}
 
 	// Drains every job that is already done and writes the resulting

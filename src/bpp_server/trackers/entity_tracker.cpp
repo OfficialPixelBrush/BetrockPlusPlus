@@ -222,8 +222,9 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		// To prevent bad behavior when we share a name with another entity
 		auto username = server->GetUsernameByEntityId(_entityEntry.entity->id);
 		if (username.empty()) {
-			GlobalLogger().warn << "Refused to spawn player entity, as no username was found!\n";
-			return;
+			// Fallback
+			auto& playerEntity = dynamic_cast<EntityMPPlayer&>(*_entityEntry.entity);
+			username = playerEntity.session ? playerEntity.session->username : "missingno";
 		}
 		pkt.username = username;
 		pkt.Serialize(pSession->stream);
