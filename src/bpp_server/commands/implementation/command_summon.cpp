@@ -21,7 +21,7 @@ std::string CommandSummon::Execute(std::vector<std::string>& _parameters, Player
 
 	entity->dummySession.dimension = entity->dim;
 	entity->dummySession.entityTracker = _server.GetEntityTrackerForDimension(entity->dim);
-	entity->dummySession.username = "Billy";
+	entity->dummySession.username = " ";
 
 	_world.entityManager.AddEntity(std::move(entity));
 
