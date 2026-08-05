@@ -123,12 +123,14 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 			double dx = _offset.x - chunkCenterX;
 			double dz = _offset.z - chunkCenterZ;
 			double dist = double(_tunnelLength - _tunnelStep);
-			double limit = double(_tunnelRadius + 2.0f + 16.0f);
+			double limit = double(_tunnelRadius + 2.0f + float(CHUNK_WIDTH));
 			if ((dx * dx + dz * dz - dist * dist) > (limit * limit))
 				return;
 
-			if (_offset.x >= chunkCenterX - 16.0 - radiusXz * 2.0 && _offset.z >= chunkCenterZ - 16.0 - radiusXz * 2.0 &&
-			    _offset.x <= chunkCenterX + 16.0 + radiusXz * 2.0 && _offset.z <= chunkCenterZ + 16.0 + radiusXz * 2.0) {
+			if (_offset.x >= chunkCenterX - double(CHUNK_WIDTH) - radiusXz * 2.0 &&
+			    _offset.z >= chunkCenterZ - double(CHUNK_WIDTH) - radiusXz * 2.0 &&
+			    _offset.x <= chunkCenterX + double(CHUNK_WIDTH) + radiusXz * 2.0 &&
+			    _offset.z <= chunkCenterZ + double(CHUNK_WIDTH) + radiusXz * 2.0) {
 				int32_t xMin = MathHelper::FloorDouble(_offset.x - radiusXz) - chunkBlockX - 1;
 				int32_t xMax = MathHelper::FloorDouble(_offset.x + radiusXz) - chunkBlockX + 1;
 				int32_t yMin = MathHelper::FloorDouble(_offset.y - radiusY) - 1;
@@ -136,18 +138,12 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 				int32_t zMin = MathHelper::FloorDouble(_offset.z - radiusXz) - chunkBlockZ - 1;
 				int32_t zMax = MathHelper::FloorDouble(_offset.z + radiusXz) - chunkBlockZ + 1;
 
-				if (xMin < 0)
-					xMin = 0;
-				if (xMax > 16)
-					xMax = 16;
-				if (yMin < 1)
-					yMin = 1;
-				if (yMax > 120)
-					yMax = 120;
-				if (zMin < 0)
-					zMin = 0;
-				if (zMax > 16)
-					zMax = 16;
+				xMin = std::max(xMin, 0);
+				xMax = std::min(xMax, CHUNK_WIDTH);
+				yMin = std::max(yMin, 1);
+				yMax = std::min(yMax, 120);
+				zMin = std::max(zMin, 0);
+				zMax = std::min(zMax, CHUNK_WIDTH);
 
 				bool fluidIsPresent = false;
 				for (int32_t blockX = xMin; !fluidIsPresent && blockX < xMax; ++blockX) {
