@@ -15,7 +15,7 @@ struct AnimalEntity : public MobileEntity {
 		SetMaxHealth(/*Health=*/10);
 	}
 	~AnimalEntity() = default;
-	virtual void Wonder();
+	virtual void Wander();
 	virtual float GetWanderWeight(Int3 _pos);
 
 	void OnDeath() override;
@@ -23,7 +23,7 @@ struct AnimalEntity : public MobileEntity {
 		MobileEntity::Tick();
 		
 		if (EntityAlive()) {
-			Wonder();
+			Wander();
 			FollowPath();
 		}
 

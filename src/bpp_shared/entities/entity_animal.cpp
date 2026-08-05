@@ -11,7 +11,7 @@ void AnimalEntity::OnDeath() {
 	return;
 }
 
-void AnimalEntity::Wonder() {
+void AnimalEntity::Wander() {
 	bool hasPath = !currentPath.empty();
 
 	bool shouldWander = (!hasPath && rand.NextInt(80) == 0) || rand.NextInt(80) == 0;
