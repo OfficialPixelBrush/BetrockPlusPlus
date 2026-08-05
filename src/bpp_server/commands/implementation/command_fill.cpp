@@ -8,6 +8,7 @@
 #include "blocks.h"
 #include "logger.h"
 #include "server.h"
+#include <format>
 #include <string>
 
 // Fills an area with the desired block

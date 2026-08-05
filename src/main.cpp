@@ -27,6 +27,7 @@
 #endif
 
 #include "bpp_utilities/utilities.h"
+#include <format>
 
 Server* server;
 std::atomic<bool> shutdownRequested{ false };

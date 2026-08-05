@@ -9,6 +9,7 @@
 #include "logger.h"
 #include <cstdint>
 #include <cstring>
+#include <format>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>

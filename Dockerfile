@@ -6,10 +6,21 @@ FROM ubuntu:24.04 AS builder
 ARG BUILD_TARGET=server
 ARG BUILD_TYPE=Release
 ARG COMPILER=clang
+ARG LIBDEFLATE_VERSION=1.23
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Base toolchain + every dependency listed in the project's README for
-# Debian/Ubuntu, covering both the server and client build.
+# Mitigate intermittent "Hash Sum mismatch" errors common with Docker Desktop
+# / flaky mirrors (disable pipelining, retry, avoid broken proxies).
+RUN printf '%s\n' \
+    'Acquire::Retries "5";' \
+    'Acquire::http::Pipeline-Depth "0";' \
+    'Acquire::http::No-Cache "true";' \
+    'Acquire::BrokenProxy "true";' \
+    > /etc/apt/apt.conf.d/99docker-apt-fix
+
+# Base toolchain. Server needs libdeflate (built from source below for CMake
+# CONFIG packages). Client also needs glm + OpenGL headers; SDL3 is fetched
+# by CMake (SDL_VENDORED=ON) at configure time.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ca-certificates \
@@ -18,37 +29,31 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     clang \
     pkg-config \
-    python3 \
-    python3-pip \
-    libdeflate-dev \
-    libglfw3-dev \
+    && if [ "$BUILD_TARGET" = "client" ]; then \
+    apt-get install -y --no-install-recommends \
     libglm-dev \
-    libopenal-dev \
-    libgl1-mesa-dev \
+    libgl1-mesa-dev ; \
+    fi \
     && rm -rf /var/lib/apt/lists/*
 
-# Used only to generate the GLAD OpenGL loader for client builds, offline
-# and reproducibly (no network access needed, no git submodule required).
-RUN pip install --break-system-packages --no-cache-dir glad
+# Ubuntu's libdeflate-dev does not ship libdeflate-config.cmake, but
+# CMakeLists.txt requires `find_package(libdeflate CONFIG)`. Build+install
+# from source (static only) so the CONFIG package exists and the runtime
+# image does not need a separate libdeflate package.
+RUN git clone --depth 1 --branch "v${LIBDEFLATE_VERSION}" \
+    https://github.com/ebiggers/libdeflate.git /tmp/libdeflate \
+    && cmake -S /tmp/libdeflate -B /tmp/libdeflate/build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DLIBDEFLATE_BUILD_STATIC_LIB=ON \
+    -DLIBDEFLATE_BUILD_SHARED_LIB=OFF \
+    -DLIBDEFLATE_BUILD_GZIP=OFF \
+    && cmake --build /tmp/libdeflate/build -j"$(nproc)" \
+    && cmake --install /tmp/libdeflate/build \
+    && rm -rf /tmp/libdeflate
 
 WORKDIR /src
 COPY . .
-
-# The upstream repo ships GLAD as a git submodule (src+headers) at
-# external/glad. This zip export doesn't include submodule content, so we
-# (re)generate the exact same classic-GLAD OpenGL 3.3 core loader locally
-# whenever a client build is requested. This is a no-op for server builds.
-RUN if [ "$BUILD_TARGET" = "client" ]; then \
-    mkdir -p external/glad && \
-    python3 -m glad \
-    --profile core \
-    --api "gl=3.3" \
-    --generator c \
-    --spec gl \
-    --reproducible \
-    --quiet \
-    --out-path external/glad ; \
-    fi
 
 RUN if [ "$COMPILER" = "gcc" ]; then \
     export CC=gcc CXX=g++ ; \
@@ -60,6 +65,7 @@ RUN if [ "$COMPILER" = "gcc" ]; then \
     cmake -S . -B build -G Ninja \
     -DBUILD_SERVER=${BUILD_SERVER} \
     -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+    -DCMAKE_PREFIX_PATH=/usr/local \
     && cmake --build build -j"$(nproc)"
 
 # ---------------------------------------------------------------------------
@@ -70,16 +76,21 @@ FROM ubuntu:24.04 AS runtime
 ARG BUILD_TARGET=server
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Runtime-only dependency: libdeflate is dynamically linked by both targets.
-# (The client also needs libglfw3/libopenal/libgl at runtime; installed
-# below only when a client image is built.)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libdeflate0 \
-    && if [ "$BUILD_TARGET" = "client" ]; then \
-    apt-get install -y --no-install-recommends \
-    libglfw3 libopenal1 libgl1 libglx0 ; \
-    fi \
-    && rm -rf /var/lib/apt/lists/*
+RUN printf '%s\n' \
+    'Acquire::Retries "5";' \
+    'Acquire::http::Pipeline-Depth "0";' \
+    'Acquire::http::No-Cache "true";' \
+    'Acquire::BrokenProxy "true";' \
+    > /etc/apt/apt.conf.d/99docker-apt-fix
+
+# libdeflate is statically linked from the builder stage. Client runtime
+# still needs OpenGL/SDL display libs if you actually run the GUI in-container
+# (unusual; see DOCKER.md).
+RUN if [ "$BUILD_TARGET" = "client" ]; then \
+    apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libglx0 \
+    && rm -rf /var/lib/apt/lists/* ; \
+    fi
 
 WORKDIR /data
 COPY --from=builder /src/build/BetrockPlusPlus /usr/local/bin/BetrockPlusPlus

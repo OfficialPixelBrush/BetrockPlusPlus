@@ -7,6 +7,7 @@
 #include "../command.h"
 #include "server.h"
 #include <cstdint>
+#include <format>
 #include <string>
 
 // Fills an area with the desired block
@@ -34,7 +35,7 @@ std::string CommandStop::Execute(std::vector<std::string>& _parameters, PlayerSe
 	} catch (...) {
 		return ERROR_REASON_PARAMETERS;
 	}
-	static constexpr float MAX_TIMEOUT = UINT16_MAX / _server.TICKS_PER_SECOND;
+	static constexpr float MAX_TIMEOUT = UINT16_MAX / Server::TICKS_PER_SECOND;
 	if (timeout > MAX_TIMEOUT)
 		return std::format("Exceeds max timeout! ({} seconds)", MAX_TIMEOUT);
 
