@@ -9,6 +9,8 @@
 
 #include "java_random.h"
 #include "noise_perlin.h"
+#include <algorithm>
+#include <span>
 #include <vector>
 
 class NoiseOctavesPerlin {
@@ -20,22 +22,24 @@ public:
 	// func_647_a
 	double GenerateOctaves(Vec2 _offset);
 	// generateNoiseOctaves
-	void GenerateOctaves(std::vector<double>& _noiseField, Vec3 _coordinate, Int32_3 _size, Vec3 _pScale);
+	void GenerateOctaves(std::span<double> _noiseField, Vec3 _coordinate, Int32_3 _size, Vec3 _pScale);
 	// func_4103_a
-	void GenerateOctaves(std::vector<double>& _noiseField, Int32_2 _offset, Int32_2 _size, Vec2 _scale,
+	void GenerateOctaves(std::span<double> _noiseField, Int32_2 _offset, Int32_2 _size, Vec2 _scale,
 	                     [[maybe_unused]] double _unused);
 
 private:
-	int32_t octaves;
+	int32_t octaves = 0;
 	std::vector<NoisePerlin> generatorCollection;
 };
 
 inline NoiseOctavesPerlin::NoiseOctavesPerlin(int32_t _poctaves) : octaves(_poctaves) {
+	generatorCollection.reserve(size_t(octaves));
 	for (size_t i = 0; i < size_t(octaves); ++i)
 		generatorCollection.push_back(NoisePerlin());
 }
 
 inline NoiseOctavesPerlin::NoiseOctavesPerlin(Java::Random& _rand, int32_t _poctaves) : octaves(_poctaves) {
+	generatorCollection.reserve(size_t(octaves));
 	for (size_t i = 0; i < size_t(octaves); ++i)
 		generatorCollection.push_back(NoisePerlin(_rand));
 }
@@ -50,23 +54,23 @@ inline double NoiseOctavesPerlin::GenerateOctaves(Vec2 _offset) {
 	return value;
 }
 
-inline void NoiseOctavesPerlin::GenerateOctaves(std::vector<double>& _noiseField, Vec3 _coordinate, Int32_3 _size,
+inline void NoiseOctavesPerlin::GenerateOctaves(std::span<double> _noiseField, Vec3 _coordinate, Int32_3 _size,
                                                 Vec3 _pScale) {
-	if (_noiseField.empty()) {
-		_noiseField.resize(size_t(_size.x * _size.y * _size.z), 0.0);
-	} else {
-		for (size_t i = 0; i < _noiseField.size(); ++i)
-			_noiseField[i] = 0.0;
-	}
+	const size_t count = size_t(_size.x) * size_t(_size.y) * size_t(_size.z);
+	if (_noiseField.size() < count)
+		return;
+
+	std::fill_n(_noiseField.data(), count, 0.0);
 
 	double multiplier = 1.0;
 	for (size_t octave = 0; octave < size_t(octaves); ++octave) {
-		generatorCollection[octave].GenerateNoise(_noiseField, _coordinate, _size, _pScale * multiplier, multiplier);
+		generatorCollection[octave].GenerateNoise(_noiseField.first(count), _coordinate, _size, _pScale * multiplier,
+		                                          multiplier);
 		multiplier /= 2.0;
 	}
 }
 
-inline void NoiseOctavesPerlin::GenerateOctaves(std::vector<double>& _noiseField, Int32_2 _offset, Int32_2 _size,
+inline void NoiseOctavesPerlin::GenerateOctaves(std::span<double> _noiseField, Int32_2 _offset, Int32_2 _size,
                                                 Vec2 _scale, [[maybe_unused]] double _unused) {
 	this->GenerateOctaves(_noiseField, Vec3{ double(_offset.x), 10.0, double(_offset.z) },
 	                      Int32_3{ _size.x, 1, _size.z }, Vec3{ _scale.x, 1.0, _scale.z });

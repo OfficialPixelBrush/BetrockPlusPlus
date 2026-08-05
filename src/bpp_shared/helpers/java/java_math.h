@@ -49,6 +49,7 @@ constexpr inline double Grad3d(int32_t _hash, const double _x, const double _y, 
 	const double v = comp[K_GRAD3_V[h]];
 	return u * K_SIGN_BIT0[h] + v * K_SIGN_BIT1[h];
 }
+
 /**
  * @brief 2D Perlin noise gradient function
  * 
@@ -59,7 +60,7 @@ constexpr inline double Grad3d(int32_t _hash, const double _x, const double _y, 
  */
 constexpr inline double Grad2d(int32_t _hash, const double _x, const double _y) {
 	const uint32_t h = static_cast<uint32_t>(_hash) & 15u;
-	const double comp[3] = { _x, _y, 0.0 }; // index 2 = "zero" slot
+	const double comp[3] = { _x, _y, 0.0 };
 	const double u = comp[K_GRAD2_U[h]];
 	const double v = comp[K_GRAD2_V[h]];
 	return u * K_SIGN_BIT0[h] + v * K_SIGN_BIT1[h];

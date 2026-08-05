@@ -7,6 +7,7 @@
 
 #include "noise_perlin.h"
 #include "java_math.h"
+#include <utility>
 
 NoisePerlin::NoisePerlin() {
 	Java::Random rand = Java::Random();
@@ -41,7 +42,7 @@ void NoisePerlin::InitPermTable(Java::Random& _rand) {
 /**
  * @brief This is a rather standard implementation of "Improved Perlin Noise",
  *        as described by Ken Perlin in 2002
- *        This version is mainly used by the infdev generator
+ *        This version is mainly used by the Infdev generator
  *        but Beta still implements and uses it for some things,
  *        namely the nether
  * 
@@ -107,18 +108,22 @@ double NoisePerlin::GenerateNoise(Vec3 _coord) {
 /**
  * @brief The main noise generator employed by the Beta 1.7.3 world generator
  * 
- * @param noiseField the vector the noise will be written to
+ * @param noiseField the buffer the noise will be written to (must hold size.x*y*z samples)
  * @param offset The positional offset within the perlin noise that'll be rendered
  * @param size The size of the volume that'll be saved the noise field
  * @param scale The scale of the perlin noise equation
  * @param amplitude The amplitude multiplier of the perlin noise function
  */
-void NoisePerlin::GenerateNoise(std::vector<double>& _noiseField, Vec3 _offset, Int3 _size, Vec3 _scale,
+void NoisePerlin::GenerateNoise(std::span<double> _noiseField, Vec3 _offset, Int3 _size, Vec3 _scale,
                                 double _amplitude) {
-	if (_size.y == 1) {
-		size_t index = 0;
-		double invAmp = 1.0 / _amplitude;
+	const size_t count = size_t(_size.x) * size_t(_size.y) * size_t(_size.z);
+	if (_noiseField.size() < count)
+		return;
 
+	double* out = _noiseField.data();
+	const double invAmp = 1.0 / _amplitude;
+
+	if (_size.y == 1) {
 		for (int32_t x = 0; x < _size.x; ++x) {
 			double fx = (_offset.x + x) * _scale.x + coordinate.x;
 			int32_t ix = Java::DoubleToInt32(fx);
@@ -147,13 +152,10 @@ void NoisePerlin::GenerateNoise(std::vector<double>& _noiseField, Vec3 _offset, 
 				double x2 = Lerp(u, Grad3d(permutations[aa + 1], fx, 0.0, fz - 1.0),
 				                 Grad3d(permutations[ba + 1], fx - 1.0, 0.0, fz - 1.0));
 
-				double result = Lerp(w, x1, x2);
-				_noiseField[index++] += result * invAmp;
+				*out++ += Lerp(w, x1, x2) * invAmp;
 			}
 		}
 	} else {
-		size_t index = 0;
-		double invAmp = 1.0 / _amplitude;
 		int32_t lastPermY = -1;
 
 		double lerpAX = 0.0, lerpBX = 0.0;
@@ -186,6 +188,8 @@ void NoisePerlin::GenerateNoise(std::vector<double>& _noiseField, Vec3 _offset, 
 					fy -= iy;
 					double v = Fade(fy);
 
+					// Beta caches corner grads when the lattice Y index is unchanged.
+					// Keep that reuse (including stale fractional fy) for terrain fidelity.
 					if (y == 0 || py != lastPermY) {
 						lastPermY = py;
 
@@ -211,9 +215,7 @@ void NoisePerlin::GenerateNoise(std::vector<double>& _noiseField, Vec3 _offset, 
 
 					double i1 = Lerp(v, lerpAX, lerpBX);
 					double i2 = Lerp(v, lerpAY, lerpBY);
-					double result = Lerp(w, i1, i2);
-
-					_noiseField[index++] += result * invAmp;
+					*out++ += Lerp(w, i1, i2) * invAmp;
 				}
 			}
 		}

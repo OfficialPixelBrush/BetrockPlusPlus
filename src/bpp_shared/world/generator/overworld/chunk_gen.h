@@ -11,6 +11,7 @@
 #include "../shared/feature_gen.h"
 #include "biomes.h"
 #include "generator/overworld/biome_gen.h"
+#include <vector>
 
 /**
  * @brief A faithful reimplementation of the Beta 1.7.3 Overworld Generator
@@ -33,15 +34,15 @@ private:
 	static constexpr size_t MAX_AREA = (MAX.x * MAX.z);
 	static constexpr size_t MAX_VOLUME = (MAX.x * MAX.y * MAX.z);
 	double terrainNoiseField[MAX_VOLUME];
-	std::vector<double> lowNoiseField = std::vector<double>(MAX_VOLUME);
-	std::vector<double> highNoiseField = std::vector<double>(MAX_VOLUME);
-	std::vector<double> selectorNoiseField = std::vector<double>(MAX_VOLUME);
-	std::vector<double> continentalnessNoiseField = std::vector<double>(MAX_AREA);
-	std::vector<double> depthNoiseField = std::vector<double>(MAX_AREA);
+	double lowNoiseField[MAX_VOLUME];
+	double highNoiseField[MAX_VOLUME];
+	double selectorNoiseField[MAX_VOLUME];
+	double continentalnessNoiseField[MAX_AREA];
+	double depthNoiseField[MAX_AREA];
 
-	std::vector<double> sandNoise = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
-	std::vector<double> gravelNoise = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
-	std::vector<double> stoneNoise = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
+	double sandNoise[CHUNK_WIDTH * CHUNK_WIDTH];
+	double gravelNoise[CHUNK_WIDTH * CHUNK_WIDTH];
+	double stoneNoise[CHUNK_WIDTH * CHUNK_WIDTH];
 
 	// Biome Vectors
 	Biome biomeMap[CHUNK_AREA];
