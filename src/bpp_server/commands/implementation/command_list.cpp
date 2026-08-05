@@ -7,6 +7,7 @@
 #include "../../server.h"
 #include "../command.h"
 #include "../command_manager.h"
+#include <format>
 
 // List all currently online players
 // Usage:

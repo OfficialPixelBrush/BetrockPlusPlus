@@ -40,20 +40,13 @@ docker compose build
 > [!NOTE]
 > The client is currently unfinished and not really usable. We apologize for the inconvenience!!
 
-The client needs OpenGL/GLFW/GLM/OpenAL, which the image installs
-automatically:
+The client needs OpenGL + GLM headers (installed via apt) and SDL3
+(fetched and built by CMake via `SDL_VENDORED=ON` during the image build):
 
 ```bash
 docker build --build-arg BUILD_TARGET=client -t betrockpp:client .
 ```
 
-> **Note on GLAD**: the upstream repository includes the `external/glad`
-> OpenGL loader as a git submodule, which isn't present in a plain source
-> export/zip (submodule content is never included in a zip download). The
-> Dockerfile regenerates the identical OpenGL 3.3 core loader at build time
-> using the offline, reproducible `glad` Python generator - no internet
-> access or `git submodule` step required.
->
 > Running a GUI client _inside_ a container still needs a display (X11/Wayland
 > forwarding or a VNC-in-container setup), which this Dockerfile doesn't set
 > up, since it's rarely worth the complexity. Use this target to confirm the
