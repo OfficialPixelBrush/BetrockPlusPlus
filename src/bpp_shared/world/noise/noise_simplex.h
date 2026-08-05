@@ -18,23 +18,25 @@
 class NoiseSimplex : public NoiseGenerator {
 protected:
 	int32_t permutations[512];
-    int32_t permMod12[512];
+	int32_t permMod12[512];
 	Vec3 coordinate;
 	double GenerateNoiseBase(Vec3 _position);
 	void InitPermTable(Java::Random& _rand);
 
 private:
-	static constexpr int32_t gradients[12][3] = { { 1, 1, 0 }, { -1, 1, 0 }, { 1, -1, 0 }, { -1, -1, 0 },
-												  { 1, 0, 1 }, { -1, 0, 1 }, { 1, 0, -1 }, { -1, 0, -1 },
+	static constexpr int32_t GRADIENTS[12][3] = { { 1, 1, 0 }, { -1, 1, 0 }, { 1, -1, 0 }, { -1, -1, 0 },
+		                                          { 1, 0, 1 }, { -1, 0, 1 }, { 1, 0, -1 }, { -1, 0, -1 },
 		                                          { 0, 1, 1 }, { 0, -1, 1 }, { 0, 1, -1 }, { 0, -1, -1 } };
-	static constexpr double skewing = 0.36602540378;
-	static constexpr double unskewing = 0.2113248654;
+	// Note: MSVC and older versions GCC do not support
+	// "sqrt" being used in constexpr, reason we do this instead
+	static constexpr double SKEWING = 0.36602540378443860;   // 0.5 * (sqrt(3.0) - 1.0)
+	static constexpr double UNSKEWING = 0.21132486540518713; // (3.0 - sqrt(3.0)) / 6.0
 
 public:
 	NoiseSimplex();
 	NoiseSimplex(Java::Random& _rand);
 	~NoiseSimplex() override {}
-	void GenerateNoise(std::vector<double>& _values, Vec2 _pCoordinate, Int32_2 _pSize, Vec2 _pScale, double _amplitude);
+	void GenerateNoise(std::span<double> _noiseField, Vec2 _offset, Int32_2 _size, Vec2 _scale, double _amplitude);
 };
 
 constexpr inline int32_t Wrap(const double _grad) {

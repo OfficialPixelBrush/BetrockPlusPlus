@@ -11,7 +11,6 @@
 #include "../shared/feature_gen.h"
 #include "biomes.h"
 #include "generator/overworld/biome_gen.h"
-#include <vector>
 
 /**
  * @brief A faithful reimplementation of the Beta 1.7.3 Overworld Generator
@@ -44,11 +43,10 @@ private:
 	double gravelNoise[CHUNK_WIDTH * CHUNK_WIDTH];
 	double stoneNoise[CHUNK_WIDTH * CHUNK_WIDTH];
 
-	// Biome Vectors
 	Biome biomeMap[CHUNK_AREA];
-	std::vector<double> temperature = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
-	std::vector<double> humidity = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
-	std::vector<double> weirdness = std::vector<double>(CHUNK_WIDTH * CHUNK_WIDTH);
+	double temperature[CHUNK_AREA];
+	double humidity[CHUNK_AREA];
+	double weirdness[CHUNK_AREA];
 
 	// Cave Gen
 	CaveGenerator caver;

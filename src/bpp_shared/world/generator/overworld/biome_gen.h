@@ -8,6 +8,7 @@
 #pragma once
 #include "biomes.h"
 #include "noise_octaves_simplex.h"
+#include <span>
 
 /**
  * @brief A faithful reimplementation of the Beta 1.7.3 biome generator
@@ -24,8 +25,7 @@ public:
 	BiomeGenerator();
 	BiomeGenerator(int64_t _seed);
 	Biome GetBiomeAtPoint(Int2 _worldPos);
-	void GenerateBiomeMap(Biome _biomeMap[], std::vector<double>& _temperature, std::vector<double>& _humidity,
-	                      std::vector<double>& _weirdness, Int2 _blockPos);
-	void GenerateTemperature(std::vector<double>& _temperature, std::vector<double>& _weirdness, Int2 _chunkPos,
-	                         Int2 _max);
+	void GenerateBiomeMap(Biome _biomeMap[], std::span<double> _temperature, std::span<double> _humidity,
+	                      std::span<double> _weirdness, Int2 _blockPos);
+	void GenerateTemperature(std::span<double> _temperature, std::span<double> _weirdness, Int2 _chunkPos, Int2 _max);
 };

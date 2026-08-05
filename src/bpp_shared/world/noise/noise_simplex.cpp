@@ -31,31 +31,31 @@ void NoiseSimplex::InitPermTable(Java::Random& _rand) {
 		std::swap(permutations[i], permutations[j]);
 		permutations[i + 256] = permutations[i];
 	}
-	
-    // Precompute the modulo once, at init time, instead of every sample.
-    for (int32_t i = 0; i < 512; ++i) {
-        permMod12[i] = permutations[i] % 12;
-    }
+
+	// Precompute the modulo once, at init time, instead of every sample.
+	for (int32_t i = 0; i < 512; ++i) {
+		permMod12[i] = permutations[i] % 12;
+	}
 }
 
-void NoiseSimplex::GenerateNoise(std::vector<double>& _values, Vec2 _pOffset, Int32_2 _pSize, Vec2 _pScale,
+void NoiseSimplex::GenerateNoise(std::span<double> _noiseField, Vec2 _offset, Int32_2 _size, Vec2 _scale,
                                  double _amplitude) {
-	size_t index = 0;
+	double* out = _noiseField.data();
 
-    std::vector<double> yPositions(_pSize.y);
-    for (int32_t yI = 0; yI < _pSize.y; ++yI) {
-        yPositions[yI] = (_pOffset.y + double(yI)) * _pScale.y + coordinate.y;
-    }
+	std::vector<double> yPositions(_size.y);
+	for (int32_t yI = 0; yI < _size.y; ++yI) {
+		yPositions[yI] = (_offset.y + double(yI)) * _scale.y + coordinate.y;
+	}
 
-	for (int32_t xI = 0; xI < _pSize.x; ++xI) {
-		double xPos = (_pOffset.x + double(xI)) * _pScale.x + coordinate.x;
+	for (int32_t xI = 0; xI < _size.x; ++xI) {
+		double xPos = (_offset.x + double(xI)) * _scale.x + coordinate.x;
 
-		for (int32_t yI = 0; yI < _pSize.y; ++yI) {
+		for (int32_t yI = 0; yI < _size.y; ++yI) {
 			double yPos = yPositions[yI];
-			double skew = (xPos + yPos) * skewing;
+			double skew = (xPos + yPos) * SKEWING;
 			int32_t x0 = Wrap(xPos + skew);
 			int32_t y0 = Wrap(yPos + skew);
-			double unskewed = double(x0 + y0) * unskewing;
+			double unskewed = double(x0 + y0) * UNSKEWING;
 			double x0a = double(x0) - unskewed;
 			double y0a = double(y0) - unskewed;
 			double x0b = xPos - x0a;
@@ -70,10 +70,10 @@ void NoiseSimplex::GenerateNoise(std::vector<double>& _values, Vec2 _pOffset, In
 				j = 1;
 			}
 
-			double x0c = x0b - double(i) + unskewing;
-			double y0c = y0b - double(j) + unskewing;
-			double x1c = x0b - 1.0 + 2.0 * unskewing;
-			double y1c = y0b - 1.0 + 2.0 * unskewing;
+			double x0c = x0b - double(i) + UNSKEWING;
+			double y0c = y0b - double(j) + UNSKEWING;
+			double x1c = x0b - 1.0 + 2.0 * UNSKEWING;
+			double y1c = y0b - 1.0 + 2.0 * UNSKEWING;
 			int32_t xInt = x0 & 255;
 			int32_t yInt = y0 & 255;
 			int32_t grad0 = permMod12[xInt + permutations[yInt]];
@@ -85,7 +85,7 @@ void NoiseSimplex::GenerateNoise(std::vector<double>& _values, Vec2 _pOffset, In
 				contrib0 = 0.0;
 			} else {
 				term0 *= term0;
-				contrib0 = term0 * term0 * DotProd(gradients[grad0], x0b, y0b);
+				contrib0 = term0 * term0 * DotProd(GRADIENTS[grad0], x0b, y0b);
 			}
 
 			double term1 = 0.5 - x0c * x0c - y0c * y0c;
@@ -94,7 +94,7 @@ void NoiseSimplex::GenerateNoise(std::vector<double>& _values, Vec2 _pOffset, In
 				contrib1 = 0.0;
 			} else {
 				term1 *= term1;
-				contrib1 = term1 * term1 * DotProd(gradients[grad1], x0c, y0c);
+				contrib1 = term1 * term1 * DotProd(GRADIENTS[grad1], x0c, y0c);
 			}
 
 			double term2 = 0.5 - x1c * x1c - y1c * y1c;
@@ -103,10 +103,10 @@ void NoiseSimplex::GenerateNoise(std::vector<double>& _values, Vec2 _pOffset, In
 				contrib2 = 0.0;
 			} else {
 				term2 *= term2;
-				contrib2 = term2 * term2 * DotProd(gradients[grad2], x1c, y1c);
+				contrib2 = term2 * term2 * DotProd(GRADIENTS[grad2], x1c, y1c);
 			}
 
-			_values[index++] += 70.0 * (contrib0 + contrib1 + contrib2) * _amplitude;
+			*out++ += 70.0 * (contrib0 + contrib1 + contrib2) * _amplitude;
 		}
 	}
 }
