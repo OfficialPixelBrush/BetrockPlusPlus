@@ -439,12 +439,14 @@ void WorldManager::DrainLoadQueue() {
 
 		// Regenerate temp and humidity data
 		thread_local BiomeGenerator tlBiomeGen(0);
-		thread_local bool tlBiomeGenInit = false;
-		if (!tlBiomeGenInit) {
+		thread_local int64_t tlBiomeSeed = std::numeric_limits<int64_t>::min();
+		if (tlBiomeSeed != this->seed) {
 			tlBiomeGen = BiomeGenerator(this->seed);
-			tlBiomeGenInit = true;
+			tlBiomeSeed = this->seed;
 		}
-		thread_local std::vector<double> temp, humi, weird;
+		thread_local double temp[CHUNK_AREA];
+		thread_local double humi[CHUNK_AREA];
+		thread_local double weird[CHUNK_AREA];
 		Biome ignored[CHUNK_AREA];
 		tlBiomeGen.GenerateBiomeMap(ignored, temp, humi, weird, Int2{ pos.x * CHUNK_WIDTH, pos.z * CHUNK_WIDTH });
 		for (int i = 0; i < CHUNK_AREA; ++i) {
