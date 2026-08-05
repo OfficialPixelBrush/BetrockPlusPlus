@@ -13,7 +13,7 @@
 std::string CommandSummon::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
                                    std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
 	// Make a dummy player
-	auto entity = std::make_shared<DummyMPPlayer>(_server.gameRuntime);
+	auto entity = std::make_shared<DummyMPPlayer>(_server.gameRuntime, _server);
 
 	Vec3 spawnPos = _session.position.pos + Vec3(_world.rand.NextFloat() * 4 + 0.5, 0, _world.rand.NextFloat() * 4 + 0.5);
 	spawnPos.y = _world.GetHeightValue(spawnPos.x, spawnPos.z) + 0.1;
@@ -21,6 +21,7 @@ std::string CommandSummon::Execute(std::vector<std::string>& _parameters, Player
 
 	entity->dummySession.dimension = entity->dim;
 	entity->dummySession.entityTracker = _server.GetEntityTrackerForDimension(entity->dim);
+	entity->dummySession.username = "Billy";
 
 	_world.entityManager.AddEntity(std::move(entity));
 
