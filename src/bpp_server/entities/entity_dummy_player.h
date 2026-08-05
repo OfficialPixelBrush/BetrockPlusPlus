@@ -25,8 +25,8 @@ struct DummyMPPlayer : public EntityMPPlayer {
 	int chatCooldown = 0;
 
 	void Tick() override;
-	virtual void Wander();
-	virtual float GetWanderWeight(Int3 _pos);
+	//void Wander() override;
+	//float GetWanderWeight(Int3 _pos) override;
 	bool SeekFood();
 	void MaybeSayThing();
 };
