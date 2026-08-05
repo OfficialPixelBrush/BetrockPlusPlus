@@ -69,11 +69,14 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset) {
 
 void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, float _carveYaw, float _carvePitch,
                               int32_t _tunnelStep, int32_t _tunnelLength, double _verticalScale) {
-	double chunkCenterX = double(_chunk.cpos.x * CHUNK_WIDTH + (CHUNK_WIDTH * 0.5));
-	double chunkCenterZ = double(_chunk.cpos.z * CHUNK_WIDTH + (CHUNK_WIDTH * 0.5));
+	const int32_t chunkBlockX = _chunk.cpos.x * CHUNK_WIDTH;
+	const int32_t chunkBlockZ = _chunk.cpos.z * CHUNK_WIDTH;
+	const double chunkCenterX = double(chunkBlockX) + (CHUNK_WIDTH * 0.5);
+	const double chunkCenterZ = double(chunkBlockZ) + (CHUNK_WIDTH * 0.5);
 	float pitchVel = 0.0f;
 	float yawVel = 0.0f;
 	Java::Random rand2(rand.NextLong());
+	BlockType* blocks = _chunk.blocks;
 
 	if (_tunnelLength <= 0) {
 		int32_t maxTunnelLength = this->M_CARVE_EXTENT_LIMIT * CHUNK_WIDTH - CHUNK_WIDTH;
@@ -126,12 +129,12 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 
 			if (_offset.x >= chunkCenterX - 16.0 - radiusXz * 2.0 && _offset.z >= chunkCenterZ - 16.0 - radiusXz * 2.0 &&
 			    _offset.x <= chunkCenterX + 16.0 + radiusXz * 2.0 && _offset.z <= chunkCenterZ + 16.0 + radiusXz * 2.0) {
-				int32_t xMin = MathHelper::FloorDouble(_offset.x - radiusXz) - _chunk.cpos.x * 16 - 1;
-				int32_t xMax = MathHelper::FloorDouble(_offset.x + radiusXz) - _chunk.cpos.x * 16 + 1;
+				int32_t xMin = MathHelper::FloorDouble(_offset.x - radiusXz) - chunkBlockX - 1;
+				int32_t xMax = MathHelper::FloorDouble(_offset.x + radiusXz) - chunkBlockX + 1;
 				int32_t yMin = MathHelper::FloorDouble(_offset.y - radiusY) - 1;
 				int32_t yMax = MathHelper::FloorDouble(_offset.y + radiusY) + 1;
-				int32_t zMin = MathHelper::FloorDouble(_offset.z - radiusXz) - _chunk.cpos.z * 16 - 1;
-				int32_t zMax = MathHelper::FloorDouble(_offset.z + radiusXz) - _chunk.cpos.z * 16 + 1;
+				int32_t zMin = MathHelper::FloorDouble(_offset.z - radiusXz) - chunkBlockZ - 1;
+				int32_t zMax = MathHelper::FloorDouble(_offset.z + radiusXz) - chunkBlockZ + 1;
 
 				if (xMin < 0)
 					xMin = 0;
@@ -146,21 +149,18 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 				if (zMax > 16)
 					zMax = 16;
 
-				// Check for water before carving
 				bool fluidIsPresent = false;
 				for (int32_t blockX = xMin; !fluidIsPresent && blockX < xMax; ++blockX) {
 					for (int32_t blockZ = zMin; !fluidIsPresent && blockZ < zMax; ++blockZ) {
 						for (int32_t blockY = yMax + 1; !fluidIsPresent && blockY >= yMin - 1; --blockY) {
 							if (blockY >= 0 && blockY < CHUNK_HEIGHT) {
-								BlockType blockType = _chunk.GetBlock({ blockX, blockY, blockZ });
-								// Overworld caver check
+								BlockType blockType =
+								    blocks[(blockY * CHUNK_WIDTH * CHUNK_WIDTH) + (blockZ * CHUNK_WIDTH) + blockX];
 								if (!isNetherCave &&
 								    (blockType == BLOCK_WATER_FLOWING || blockType == BLOCK_WATER_STILL))
 									fluidIsPresent = true;
-								// Nether caver check
 								if (isNetherCave && (blockType == BLOCK_LAVA_FLOWING || blockType == BLOCK_LAVA_STILL))
 									fluidIsPresent = true;
-								// Skip interior, only check the shell
 								if (blockY != yMin - 1 && blockX != xMin && blockX != xMax - 1 && blockZ != zMin &&
 								    blockZ != zMax - 1) {
 									blockY = yMin;
@@ -172,29 +172,27 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 
 				if (!fluidIsPresent) {
 					for (int32_t blockX = xMin; blockX < xMax; ++blockX) {
-						double centerDx = (double(blockX + _chunk.cpos.x * 16) + 0.5 - _offset.x) / radiusXz;
+						double centerDx = (double(blockX + chunkBlockX) + 0.5 - _offset.x) / radiusXz;
+						double dx2 = centerDx * centerDx;
+						if (dx2 >= 1.0)
+							continue;
 
 						for (int32_t blockZ = zMin; blockZ < zMax; ++blockZ) {
-							double centerDz = (double(blockZ + _chunk.cpos.z * 16) + 0.5 - _offset.z) / radiusXz;
+							double centerDz = (double(blockZ + chunkBlockZ) + 0.5 - _offset.z) / radiusXz;
 
-							if (centerDx * centerDx + centerDz * centerDz < 1.0) {
-								// Doesn't exist in nether caver
+							if (dx2 + centerDz * centerDz < 1.0) {
 								bool isGrass = false;
+								const int32_t xzIndex = (blockZ * CHUNK_WIDTH) + blockX;
 								for (int32_t blockY = yMax - 1; blockY >= yMin; --blockY) {
-									Int3 bpos{ blockX, blockY + 1, blockZ };
 									double centerDy = (double(blockY) + 0.5 - _offset.y) / radiusY;
-									if (centerDy > -0.7 &&
-									    centerDx * centerDx + centerDy * centerDy + centerDz * centerDz < 1.0) {
-										BlockType blockType = _chunk.GetBlock(bpos);
-										// Nether caver behavior
-										// Dirt and grass check is most likely irrelevant,
-										// but it still exists in the Vanilla Nether caver
+									if (centerDy > -0.7 && dx2 + centerDy * centerDy + centerDz * centerDz < 1.0) {
+										const int32_t bIndex = ((blockY + 1) * CHUNK_WIDTH * CHUNK_WIDTH) + xzIndex;
+										BlockType blockType = blocks[bIndex];
 										if (isNetherCave && (blockType == BLOCK_NETHERRACK || blockType == BLOCK_DIRT ||
 										                     blockType == BLOCK_GRASS)) {
-											_chunk.SetBlock(bpos, BLOCK_AIR);
+											blocks[bIndex] = BLOCK_AIR;
 											continue;
 										}
-										// Overworld caver behavior
 										if (blockType == BLOCK_GRASS)
 											isGrass = true;
 										if (blockType != BLOCK_STONE && blockType != BLOCK_DIRT &&
@@ -202,15 +200,15 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 											continue;
 										}
 										if (blockY < 10) {
-											_chunk.SetBlock(bpos, BLOCK_LAVA_FLOWING);
+											blocks[bIndex] = BLOCK_LAVA_FLOWING;
 											continue;
 										}
-										_chunk.SetBlock(bpos, BLOCK_AIR);
+										blocks[bIndex] = BLOCK_AIR;
 										if (!isGrass)
 											continue;
-										Int3 below{ bpos.x, blockY, bpos.z };
-										if (_chunk.GetBlock(below) == BLOCK_DIRT) {
-											_chunk.SetBlock(below, BLOCK_GRASS);
+										const int32_t belowIndex = (blockY * CHUNK_WIDTH * CHUNK_WIDTH) + xzIndex;
+										if (blocks[belowIndex] == BLOCK_DIRT) {
+											blocks[belowIndex] = BLOCK_GRASS;
 										}
 									}
 								}
