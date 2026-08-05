@@ -264,9 +264,7 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 	DrainGenQueue();  // process generation results first
 	DrainLoadQueue(); // integrate finished loads
 
-	// Budget lighting so gen bursts cannot monopolize the 50ms tick.
-	// Remaining work drains over subsequent ticks; Shutdown still flushes fully.
-	lightManager.ProcessLightQueue(*this, kLightRegionsPerTick);
+	lightManager.ProcessLightQueue(*this, INT_MAX);
 
 	tickScheduler.Tick();
 	entitySpawner.TrySpawnEntities(*this, _players);
@@ -281,9 +279,6 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 	UpdateLoadRadius(_players);
 	regionManager->PumpPipeline();
 	PopulateReady();
-
-	// Drain light scheduled by feature population without unbounded stall.
-	lightManager.ProcessLightQueue(*this, kLightRegionsPerTick);
 }
 
 void WorldManager::SaveChunks(const bool _saveIfEntities, const bool _deleteEntities) {
