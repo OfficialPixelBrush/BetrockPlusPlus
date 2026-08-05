@@ -91,7 +91,7 @@ struct WorldManager {
 	bool IsMaterialInAabb(AABB _collider, Material _material);
 	void UpdateLoadRadius(const std::vector<ClientPosition>& _players);
 	void PumpPipeline(const std::vector<ClientPosition>& _players);
-	void PopulateReady();
+	void PopulateReady(int _maxPopulates = 2);
 	void DrainLoadQueue();
 	void DropInventory(Inventory& inventory, Int3 _wpos);
 	void updateSkylightOffset();

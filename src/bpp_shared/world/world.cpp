@@ -9,7 +9,14 @@
 #include "entities/entity_item.h"
 #include "generator/nether/chunk_gen.h"
 #include "generator/overworld/chunk_gen.h"
+#include <limits>
 #include <unordered_set>
+
+namespace {
+// Region entries drained from the light queue per tick. Each entry may expand to a
+// large voxel scan, so this is intentionally modest to protect the 50ms budget.
+constexpr int kLightRegionsPerTick = 256;
+} // namespace
 
 BiomeGenerator WorldManager::biomeGenerator;
 
@@ -257,8 +264,9 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 	DrainGenQueue();  // process generation results first
 	DrainLoadQueue(); // integrate finished loads
 
-	// So chunks that just loaded get lit before they are saved
-	lightManager.ProcessLightQueue(*this, INT_MAX);
+	// Budget lighting so gen bursts cannot monopolize the 50ms tick.
+	// Remaining work drains over subsequent ticks; Shutdown still flushes fully.
+	lightManager.ProcessLightQueue(*this, kLightRegionsPerTick);
 
 	tickScheduler.Tick();
 	entitySpawner.TrySpawnEntities(*this, _players);
@@ -273,6 +281,9 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 	UpdateLoadRadius(_players);
 	regionManager->PumpPipeline();
 	PopulateReady();
+
+	// Drain light scheduled by feature population without unbounded stall.
+	lightManager.ProcessLightQueue(*this, kLightRegionsPerTick);
 }
 
 void WorldManager::SaveChunks(const bool _saveIfEntities, const bool _deleteEntities) {
@@ -717,7 +728,7 @@ void WorldManager::PumpPipeline(const std::vector<ClientPosition>& _players) {
 	}
 }
 
-void WorldManager::PopulateReady() {
+void WorldManager::PopulateReady(int _maxPopulates) {
 	// Try and match beta's population order its finicky lol
 	std::vector<Int32_2> ordered;
 	ordered.reserve(chunks.size());
@@ -739,11 +750,29 @@ void WorldManager::PopulateReady() {
 		return _a.z < _b.z;
 	});
 
+	// Reuse generators across chunks: PopulateChunk resets its RNG from the world seed,
+	// so perm tables only need rebuilding when the world seed changes.
+	thread_local OverworldGenerator tlOverworld(0);
+	thread_local NetherGenerator tlNether(0);
+	thread_local int64_t tlOverworldSeed = std::numeric_limits<int64_t>::min();
+	thread_local int64_t tlNetherSeed = std::numeric_limits<int64_t>::min();
+	if (!isHell && tlOverworldSeed != this->seed) {
+		tlOverworld = OverworldGenerator(this->seed);
+		tlOverworldSeed = this->seed;
+	} else if (isHell && tlNetherSeed != this->seed) {
+		tlNether = NetherGenerator(this->seed);
+		tlNetherSeed = this->seed;
+	}
+
+	// Cap populates so feature placement + light scheduling cannot stall a single tick.
 	// Make sure we don't try to populate the same chunk multiple times in one Tick (can happen with the weird population order and multiple players)
 	// Also make sure we populate in the right order!
 	// We break if the target chunk isn't ready yet so population order is guaranteed
 	std::unordered_set<Int32_2> populatedThisTick;
+	int populatedCount = 0;
 	for (const Int32_2& pos : ordered) {
+		if (populatedCount >= _maxPopulates)
+			break;
 		if (!CanPopulateDirect(pos))
 			break;
 		if (populatedThisTick.contains(pos))
@@ -755,18 +784,16 @@ void WorldManager::PopulateReady() {
 		WorldWrapper wrapper{ .manager = *this, .centerChunkPos = pos };
 		wrapper.centerChunkPos = pos;
 		wrapper.GetChunkRegion();
-		if (isHell) {
-			NetherGenerator tlGen(this->seed);
-			tlGen.PopulateChunk(*cit->second, wrapper);
-		} else {
-			OverworldGenerator tlGen(this->seed);
-			tlGen.PopulateChunk(*cit->second, wrapper);
-		}
+		if (isHell)
+			tlNether.PopulateChunk(*cit->second, wrapper);
+		else
+			tlOverworld.PopulateChunk(*cit->second, wrapper);
 		auto& chunk = cit->second;
 		chunk->isTerrainPopulated = true;
 		chunk->isModified = true;
 		chunk->state.store(ChunkState::Populated, std::memory_order_release);
 		populatedThisTick.insert(pos);
+		++populatedCount;
 		wrapper.FreeChunkRegion();
 		FlushBleedWrites();
 	}

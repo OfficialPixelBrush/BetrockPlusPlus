@@ -248,7 +248,7 @@ void Server::Startup() {
 			_world.DrainGenQueue();
 			_world.regionManager->iopool.wait();
 			_world.DrainLoadQueue();
-			_world.PopulateReady();
+			_world.PopulateReady(INT_MAX);
 			_world.lightManager.ProcessLightQueue(_world);
 
 			for (int dx = -spawnChunkDistance; dx <= spawnChunkDistance; dx++) {
