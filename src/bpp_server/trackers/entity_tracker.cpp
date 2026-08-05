@@ -224,7 +224,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		if (username.empty()) {
 			// Fallback
 			auto& playerEntity = dynamic_cast<EntityMPPlayer&>(*_entityEntry.entity);
-			username = playerEntity.session ? playerEntity.session->username : "Billy";
+			username = playerEntity.session ? playerEntity.session->username : "Dave";
 		}
 		pkt.username = username;
 		pkt.Serialize(pSession->stream);
