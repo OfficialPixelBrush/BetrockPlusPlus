@@ -90,9 +90,11 @@ void Entity::OnCollideWithPlayer(PlayerEntity& _entity) {
 void Entity::Tick() {
 	ticksExisted++;
 
-	if (this->vehicle != nullptr && this->vehicle->isDead) {
-		this->vehicle = nullptr;
-	}
+	if (this->vehicle.expired())
+		this->vehicle.reset();
+
+	if (this->passenger.expired())
+		this->passenger.reset();
 
 	// Returns if we are in water and applies a push to our entity
 	if (world->HandleFluidAcceleration(GetFluidCollider(), Material::Water(), *this)) {

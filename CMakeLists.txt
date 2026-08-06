@@ -108,6 +108,7 @@ set(SHARED_SOURCES
     src/bpp_shared/entities/entity_chicken.cpp
     src/bpp_shared/entities/entity_falling_block.cpp
     src/bpp_shared/entities/entity_animal.cpp
+    src/bpp_shared/entities/entity_mob.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/strings/ucs2.cpp
     src/bpp_shared/strings/labels.cpp
