@@ -531,12 +531,6 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 		if (needsTP) {
 			_trackedEntry.ticksSinceTeleport = 0;
 
-			// resyncs the entity position
-			entity->position.x = double(qx) / 32.0;
-			entity->position.y = double(qy) / 32.0;
-			entity->position.z = double(qz) / 32.0;
-			entity->RebuildCollider();
-
 			Packet::TeleportEntity pkt;
 			pkt.entityId = entity->id;
 			pkt.position = { qx, qy, qz };
