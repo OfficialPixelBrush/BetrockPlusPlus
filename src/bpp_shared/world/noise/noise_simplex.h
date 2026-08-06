@@ -10,6 +10,7 @@
 #include "java_math.h"
 #include "noise_generator.h"
 #include <cmath>
+#include <span>
 
 /**
  * @brief A faithful reimplementation of the Beta-era simplex noise generator, often used for Biome generation
