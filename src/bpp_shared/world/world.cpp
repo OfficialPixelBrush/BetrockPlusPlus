@@ -12,12 +12,6 @@
 #include <limits>
 #include <unordered_set>
 
-namespace {
-// Region entries drained from the light queue per tick. Each entry may expand to a
-// large voxel scan, so this is intentionally modest to protect the 50ms budget.
-constexpr int kLightRegionsPerTick = 256;
-} // namespace
-
 BiomeGenerator WorldManager::biomeGenerator;
 
 Biome WorldManager::GetBiome(Int2 _wpos) {
