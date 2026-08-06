@@ -113,7 +113,7 @@ void MobileEntity::FollowPath() {
 }
 
 void MobileEntity::ResolveEntityCollision(Entity& _other) {
-	if (vehicle == &_other || passenger == &_other)
+	if (vehicle.lock().get() == &_other || passenger.lock().get() == &_other)
 		return;
 
 	Vec2 delta = { _other.position.x - position.x, _other.position.z - position.z };

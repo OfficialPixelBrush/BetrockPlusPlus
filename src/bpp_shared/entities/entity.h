@@ -74,9 +74,9 @@ struct Entity {
 	TickTime ticksExisted = 0;
 	Dimension dim = Dimension::Overworld;
 
-	// Riding
-	Entity* vehicle = nullptr;
-	Entity* passenger = nullptr;
+	// Mob links
+	std::weak_ptr<Entity> vehicle;
+	std::weak_ptr<Entity> passenger;
 
 	Vec3 position;
 	Vec3 velocity;
@@ -122,7 +122,7 @@ struct Entity {
 	float ySize = 0.0f;
 
 	// Inputs
-	Float2 input; // Think of this like a 2D joystick (up/down Y -> forward/backward, right/left X -> strafe)
+	Float2 input;
 	bool sneaking = false;
 	bool jumping = false;
 

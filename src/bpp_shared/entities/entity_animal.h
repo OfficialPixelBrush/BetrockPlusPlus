@@ -5,20 +5,15 @@
  *
  */
 #pragma once
-#include "entity_mobile.h"
+#include "entity_mob.h"
 
-struct AnimalEntity : public MobileEntity {
-	AnimalEntity() : MobileEntity() {
-		width = 0.9f;
-		height = 0.9f;
-		stepHeight = 0.5f;
-		SetMaxHealth(/*Health=*/10);
-	}
+struct AnimalEntity : public MobEntity {
+	AnimalEntity() : MobEntity() {}
 	~AnimalEntity() = default;
-	virtual void Wander();
-	virtual float GetWanderWeight(Int3 _pos);
 
 	void OnDeath() override;
+	void Wander() override;
+	float GetWanderWeight(Int3 _pos) override;
 	void Tick() override {
 		MobileEntity::Tick();
 		
@@ -29,36 +24,12 @@ struct AnimalEntity : public MobileEntity {
 
 		TryDespawn();
 	}
-	bool CanSpawnAt(Int3 _pos) {
+	bool CanSpawnAt(Int3 _pos) override {
 		if (!world)
 			return false;
 		auto fd = MathHelper::FloorDouble;
 		Int3 footPos = { fd(position.x), fd(collider.minY), fd(position.z) };
 		return world->GetBlockId({ footPos.x, footPos.y - 1, footPos.z }) == BLOCK_GRASS &&
 		       world->getBlockLightFull(footPos) > 8 && MobileEntity::CanSpawnAt(_pos); 
-	}
-	virtual bool TryDespawn() {
-		auto player = entityManager->GetClosestPlayerWithin(position, -1);
-		if (this->EntityAlive() && player) {
-			double distance = position.DistanceSquared(player->position);
-
-			// > 128 blocks away, despawn
-			if (distance > 16384.0) {
-				isDead = true;
-				return true;
-			}
-
-			// > 32 blocks away? Try to despawn with a 1/800 chance
-			if (this->age > 600 && rand.NextInt(800) == 0) {
-				if (distance < 1024.0) {
-					// We are 32 blocks or closer to a player
-					age = 0;
-					return false;
-				}
-				isDead = true;
-				return true;
-			}
-		}
-		return false;
 	}
 };
