@@ -144,7 +144,6 @@ void RegisterBlockProperties() {
 		.lightOpacity = 255,
 		.hardness = 2.0f,
 		.resistance = 5.0f,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Sapling
@@ -158,7 +157,6 @@ void RegisterBlockProperties() {
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
 		.ticksOnLoad = true,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Bedrock
@@ -178,7 +176,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -190,7 +187,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -203,7 +199,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -216,7 +211,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -269,7 +263,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Wood,
 		.lightOpacity = 255,
 		.hardness = 2.0f,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Leaves
@@ -281,7 +274,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.ticksOnLoad = true,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -328,7 +320,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Stone,
 		.lightOpacity = 255,
 		.hardness = 3.5f,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Sandstone
@@ -345,7 +336,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Wood,
 		.lightOpacity = 255,
 		.hardness = 0.8f,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Bed
@@ -357,7 +347,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -371,7 +360,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Detector Rail
@@ -384,7 +372,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Sticky Piston Base
@@ -394,7 +381,6 @@ void RegisterBlockProperties() {
 		.lightOpacity = 255,
 		.hardness = 0.5f,
 		.isOpaqueCube = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Cobweb
@@ -439,7 +425,6 @@ void RegisterBlockProperties() {
 		.lightOpacity = 255,
 		.hardness = 0.5f,
 		.isOpaqueCube = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Piston Extension (head)
@@ -451,7 +436,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Wool (Cloth)
@@ -460,7 +444,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Cloth,
 		.lightOpacity = 255,
 		.hardness = 0.8f,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Piston Moving (tile entity placeholder)
@@ -616,7 +599,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Fire
@@ -630,7 +612,6 @@ void RegisterBlockProperties() {
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
 		.canBlockGrass = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -653,7 +634,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Chest
@@ -664,7 +644,6 @@ void RegisterBlockProperties() {
 		.hardness = 2.5f,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Redstone Wire
@@ -677,7 +656,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -718,7 +696,6 @@ void RegisterBlockProperties() {
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
 		.ticksOnLoad = true,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -739,7 +716,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Stone,
 		.lightOpacity = 255,
 		.hardness = 3.5f,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Furnace (active/lit)
@@ -749,7 +725,6 @@ void RegisterBlockProperties() {
 		.lightEmission = 13,
 		.lightOpacity = 255,
 		.hardness = 3.5f,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Sign (standing)
@@ -762,7 +737,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -776,7 +750,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -790,7 +763,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Rail (normal)
@@ -803,7 +775,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Cobblestone Stairs
@@ -816,7 +787,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Wall Sign
@@ -829,7 +799,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -843,7 +812,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Stone Pressure Plate
@@ -856,7 +824,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Iron Door
@@ -868,7 +835,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -882,7 +848,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Redstone Ore
@@ -892,7 +857,6 @@ void RegisterBlockProperties() {
 		.lightOpacity = 255,
 		.hardness = 3.0f,
 		.resistance = 5.0f,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Redstone Ore (glowing/lit)
@@ -903,7 +867,6 @@ void RegisterBlockProperties() {
 		.lightOpacity = 255,
 		.hardness = 3.0f,
 		.resistance = 5.0f,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Redstone Torch (off)
@@ -916,7 +879,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Redstone Torch (on)
@@ -930,7 +892,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Stone Button
@@ -943,7 +904,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Snow (layer)
@@ -1016,7 +976,6 @@ void RegisterBlockProperties() {
 		.lightOpacity = 255,
 		.hardness = 2.0f,
 		.resistance = 10.0f,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Fence
@@ -1029,7 +988,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Pumpkin
@@ -1038,7 +996,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Wood,
 		.lightOpacity = 255,
 		.hardness = 1.0f,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Netherrack
@@ -1086,7 +1043,6 @@ void RegisterBlockProperties() {
 		.lightEmission = 15,
 		.lightOpacity = 255,
 		.hardness = 1.0f,
-		.notifyNeighborsOnMetaChange = false,
 	};
 
 	// Cake
@@ -1098,7 +1054,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -1111,7 +1066,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -1125,7 +1079,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 
@@ -1138,7 +1091,6 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
-		.notifyNeighborsOnMetaChange = false,
 		.enableStats = false,
 	};
 }
