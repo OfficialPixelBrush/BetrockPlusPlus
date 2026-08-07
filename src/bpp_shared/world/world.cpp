@@ -991,8 +991,15 @@ void WorldManager::InitSpawn() {
 		}
 		return GetFirstUncoveredBlock(_x, _z) == BlockType::BLOCK_SAND;
 	};
+	int tries = 0;
 	for (; !canCoordinateBeSpawn(sx, sz); sz += this->rand.NextInt(64) - this->rand.NextInt(64)) {
 		sx += this->rand.NextInt(64) - this->rand.NextInt(64);
+		if (tries > 1000) {
+			sx = 0;
+			sz = 0;
+			break;
+		}
+		tries++;
 	}
 	this->spawnPoint = { sx, 64, sz };
 	chunks.clear(); // Clear all chunks so we can start fresh from the spawn area
