@@ -45,12 +45,10 @@ std::string CommandTeleport::Execute(std::vector<std::string>& _parameters, Play
 			Vec3 pos = ParseDouble3(offset, _parameters);
 			// Thank you for crashing my server 8 trillion times,
 			// very cool
-			pos.x = std::min(32000000.0, pos.x);
-			pos.z = std::min(32000000.0, pos.z);
-			pos.y = std::min(32000000.0, pos.y);
-			pos.x = std::max(-32000000.0, pos.x);
-			pos.z = std::max(-32000000.0, pos.z);
-			pos.y = std::max(-32000000.0, pos.y);
+			int limit = 2147482000;
+			pos.x = std::clamp(int(pos.x), -limit, limit);
+			pos.z = std::clamp(int(pos.z), -limit, limit);
+			pos.y = std::clamp(int(pos.y), -limit, limit);
 			SendTeleport(*source, pos);
 
 			Packet::ChatMessage reply;
