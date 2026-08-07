@@ -35,7 +35,6 @@ public:
 	int deathTime = 0;
 	int attackTime = 0;
 	float movementSpeed = 0.7f;
-	float eyeHeight = height * 0.85f;
 	bool canBreatheUnderwater = false;
 	ItemStack heldItem;
 	ItemStack armor[4] = {}; // Helmet, chestplate, leggings, boots
@@ -52,6 +51,9 @@ public:
 	void SetHeldItem(ItemStack _stack);
 	void FollowPath();
 	bool onLadder();
+	float GetEyeHeight() {
+		return height * 0.85f;
+	}
 	void SetMaxHealth(int _health) {
 		this->health = _health;
 		this->maxHealth = _health;
