@@ -12,11 +12,12 @@
 #include <algorithm>
 #include <cmath>
 
-void Entity::DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data) {
+void Entity::DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data, int _pickupTime) {
 	Vec3 itemPos = position;
 	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(itemPos);
 	itemEntity->itemStack = { _itemId, _count, _data };
 	itemEntity->dim = dim;
+	itemEntity->pickupCooldown = _pickupTime;
 
 	// Register our item with the world
 	this->world->entityManager.AddEntity(std::move(itemEntity));

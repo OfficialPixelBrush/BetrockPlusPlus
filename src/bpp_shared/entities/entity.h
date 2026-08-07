@@ -210,5 +210,5 @@ struct Entity {
 	virtual void UpdateFallState(float _movedY);
 	virtual std::optional<Tag> SerializeToNbt();
 	virtual void LoadFromNbt(Tag& _nbt);
-	virtual void DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data = 0);
+	virtual void DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data = 0, int _pickupTime = 10);
 };

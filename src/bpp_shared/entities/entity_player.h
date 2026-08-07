@@ -17,4 +17,6 @@ struct PlayerEntity : public MobileEntity {
 	~PlayerEntity() = default;
 	virtual bool PickupItem(ItemStack& _stack, EntityId _entityId);
 	virtual bool DropItem(ItemStack _stack);
+	virtual void DropInventory();
+	virtual void OnDeath() override;
 };

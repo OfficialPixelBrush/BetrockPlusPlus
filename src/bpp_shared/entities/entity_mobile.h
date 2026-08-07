@@ -43,7 +43,6 @@ public:
 	virtual void OnDeath();
 	virtual void SetGoal(std::optional<Int3> _goal);
 	void Heal(int _health);
-	bool AttackEntityFrom(Entity* _entity, int _damage) override;
 	bool AABBNotInLiquidOrObstructed(AABB& _collider);
 	bool HeadInOpaqueBlock();
 	bool HeadInWater();
@@ -51,6 +50,9 @@ public:
 	void SetHeldItem(ItemStack _stack);
 	void FollowPath();
 	bool onLadder();
+	bool AttackEntityFrom(Entity* _entity, int _damage) override;
+	std::optional<Tag> SerializeToNbt() override;
+	void LoadFromNbt(Tag& _nbt) override;
 	float GetEyeHeight() {
 		return height * 0.85f;
 	}

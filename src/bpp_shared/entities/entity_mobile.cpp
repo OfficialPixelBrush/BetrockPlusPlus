@@ -24,6 +24,47 @@ void MobileEntity::OnDeath() {
 	health = 0;
 }
 
+void MobileEntity::LoadFromNbt(Tag& _nbt) {
+	Entity::LoadFromNbt(_nbt);
+
+	this->health = _nbt.Has("Health") ? _nbt.compound["Health"].GetShort() : maxHealth;
+	this->hurtResistantTime = _nbt.Has("HurtTime") ? _nbt.compound["HurtTime"].GetShort() : 0;
+	this->deathTime = _nbt.Has("DeathTime") ? _nbt.compound["DeathTime"].GetShort() : 0;
+	this->attackTime = _nbt.Has("AttackTime") ? _nbt.compound["AttackTime"].GetShort() : 0;
+}
+
+std::optional<Tag> MobileEntity::SerializeToNbt() {
+	auto tag = Entity::SerializeToNbt();
+	if (!tag)
+		return std::nullopt;
+
+	// Our additions
+	Tag healthTag;
+	healthTag.name = "Health";
+	healthTag.type = TAG_SHORT;
+	healthTag.shortValue = this->health;
+	Tag hurtTimeTag;
+	hurtTimeTag.name = "HurtTime";
+	hurtTimeTag.type = TAG_SHORT;
+	hurtTimeTag.shortValue = this->hurtResistantTime;
+	Tag deathTimeTag;
+	deathTimeTag.name = "DeathTime";
+	deathTimeTag.type = TAG_SHORT;
+	deathTimeTag.shortValue = this->deathTime;
+	Tag attackTimeTag;
+	attackTimeTag.name = "AttackTime";
+	attackTimeTag.type = TAG_SHORT;
+	attackTimeTag.shortValue = this->attackTime;
+
+	// Add our additions to the base tag
+	tag->compound["Health"] = healthTag;
+	tag->compound["HurtTime"] = hurtTimeTag;
+	tag->compound["DeathTime"] = deathTimeTag;
+	tag->compound["AttackTime"] = attackTimeTag;
+
+	return tag;
+}
+
 bool MobileEntity::onLadder() {
 	auto fd = MathHelper::FloorDouble;
 	return world->GetBlockId({ fd(position.x), fd(collider.minY), fd(position.z) }) == BLOCK_LADDER;
