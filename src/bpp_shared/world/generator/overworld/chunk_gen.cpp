@@ -42,7 +42,78 @@ void OverworldGenerator::GenerateChunk(Chunk& _chunk) {
 
 	// Allocate empty chunk
 	_chunk.Clear();
+	for (int x = 0; x < CHUNK_WIDTH; x++) {
+	for (int z = 0; z < CHUNK_WIDTH; z++) {
+	for (int y = CHUNK_HEIGHT - 1; y >= 0; y--) {
+		switch (y) {
+		case WATER_LEVEL+4:
+			_chunk.SetBlock(Int3{x,y,z}, BLOCK_PLANKS); continue; // ceiling tile
+		case WATER_LEVEL+3:
+		case WATER_LEVEL+2:
+		case WATER_LEVEL+1:
+			continue; // dead air between floor and ceiling
+		case WATER_LEVEL:
+			_chunk.SetBlock(Int3{x,y,z}, BLOCK_PLANKS); continue; // floor tile
+		default:
+			_chunk.SetBlock(Int3{x,y,z}, BLOCK_BEDROCK); continue;
+		}
+	}
+	}
+	}
 
+	static constexpr int half = CHUNK_WIDTH / 4;
+	static constexpr BlockType WALL_BLOCK = BLOCK_LOG;
+
+	// --- Recessed ceiling lights, one centered in each half-chunk quadrant ---
+	for (int segX = 0; segX < 2; segX++) {
+	for (int segZ = 0; segZ < 2; segZ++) {
+		int lightX = segX * half + half / 2;
+		int lightZ = segZ * half + half / 2;
+		// ~1 in 10 lights is dead — leave the ceiling plank in place, no glow
+		if (rand.NextInt() % 20 == 0) {
+			_chunk.SetBlock(Int3{lightX, WATER_LEVEL+4, lightZ}, BLOCK_COBBLESTONE);
+		} else {
+			_chunk.SetBlock(Int3{lightX, WATER_LEVEL+4, lightZ}, BLOCK_GLOWSTONE);
+		}
+	}
+	}
+
+	// --- Maze-ish: random wall segments on a grid of cells, each with a gap ---
+	static constexpr int CELL = 4; // wall segment length; must evenly divide CHUNK_WIDTH
+	static_assert(CHUNK_WIDTH % CELL == 0, "CELL must evenly divide CHUNK_WIDTH");
+	const int gridDim = CHUNK_WIDTH / CELL;
+
+	// Walls running along X, at each Z grid line
+	for (int seg = 0; seg <= gridDim; seg++) {
+		int z = seg * CELL;
+		if (z == 0 || z >= CHUNK_WIDTH) continue; // skip chunk edges
+		if (rand.NextInt() % 2 == 0) continue;     // ~1/3 chance to skip this wall entirely
+
+		int gapPos = rand.NextInt() % CHUNK_WIDTH;
+		for (int x = 0; x < CHUNK_WIDTH; x++) {
+			if (x == gapPos) continue; // guaranteed gap
+			for (int y = WATER_LEVEL+1; y <= WATER_LEVEL+3; y++) {
+				_chunk.SetBlock(Int3{x,y,z}, WALL_BLOCK);
+			}
+		}
+	}
+
+	// Walls running along Z, at each X grid line
+	for (int seg = 0; seg <= gridDim; seg++) {
+		int x = seg * CELL;
+		if (x == 0 || x >= CHUNK_WIDTH) continue;
+		if (rand.NextInt() % 3 == 0) continue;
+
+		int gapPos = rand.NextInt() % CHUNK_WIDTH;
+		for (int z = 0; z < CHUNK_WIDTH; z++) {
+			if (z == gapPos) continue;
+			for (int y = WATER_LEVEL+1; y <= WATER_LEVEL+3; y++) {
+				_chunk.SetBlock(Int3{x,y,z}, WALL_BLOCK);
+			}
+		}
+	}
+
+	/*
 	// Generate Biomes
 	biomeGen.GenerateBiomeMap(biomeMap, temperature, humidity, weirdness,
 	                          Int2{ _chunk.cpos.x * CHUNK_WIDTH, _chunk.cpos.z * CHUNK_WIDTH });
@@ -64,7 +135,7 @@ void OverworldGenerator::GenerateChunk(Chunk& _chunk) {
 	// Carve caves
 	caver.GenerateCavesForChunk(_chunk, seed);
 	// Generate heightmap
-	_chunk.GenerateHeightMap();
+	_chunk.GenerateHeightMap();*/
 
 	_chunk.isModified = true;
 }
@@ -427,6 +498,7 @@ void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& _world, Java::Random
  * match the Java source exactly.
  */
 bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
+	/*
 	const int32_t blockX = _chunk.cpos.x * CHUNK_WIDTH;
 	const int32_t blockZ = _chunk.cpos.z * CHUNK_WIDTH;
 	Biome biome = biomeGen.GetBiomeAtPoint(Int2{ blockX + CHUNK_WIDTH, blockZ + CHUNK_WIDTH });
@@ -732,6 +804,6 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 				_world.SetBlock({ x, topY, z }, BLOCK_SNOW_LAYER);
 			}
 		}
-	}
+	}*/
 	return true;
 }
