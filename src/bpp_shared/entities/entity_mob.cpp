@@ -11,7 +11,45 @@ void MobEntity::OnDeath() {
 	return;
 }
 
-Vec2 MobEntity::FaceEntity(MobileEntity& _entity, float _maxYaw, float _maxPitch) {
+bool MobEntity::TryDespawn() {
+	auto player = entityManager->GetClosestPlayerWithin(position, -1);
+	if (this->EntityAlive() && player) {
+		double distance = position.DistanceSquared(player->position);
+
+		// > 128 blocks away, despawn
+		if (distance > 16384.0) {
+			isDead = true;
+			return true;
+		}
+
+		// > 32 blocks away? Try to despawn with a 1/800 chance
+		if (this->age > 600 && rand.NextInt(800) == 0) {
+			if (distance < 1024.0) {
+				// We are 32 blocks or closer to a player
+				age = 0;
+				return false;
+			}
+			isDead = true;
+			return true;
+		}
+	}
+	return false;
+}
+
+void MobEntity::Tick() {
+	MobileEntity::Tick();
+
+	if (EntityAlive()) {
+		Wander();
+		FollowPath();
+		UpdateState();
+		randomYawVelocity *= 0.9f;
+	}
+
+	TryDespawn();
+}
+
+void MobEntity::FaceEntity(MobileEntity& _entity, float _maxYaw, float _maxPitch) {
 	auto dx = _entity.position.x - position.x;
 	auto dz = _entity.position.z - position.z;
 
@@ -23,11 +61,15 @@ Vec2 MobEntity::FaceEntity(MobileEntity& _entity, float _maxYaw, float _maxPitch
 
 	auto dy = thisEyeHeight - targetEyeHeight;
 	auto desiredPitch = (std::atan2(dy, horizontalDistance) * (180 / JavaMath::PI)) * -1.0;
+
+	rotationPitch = -GetDesiredRotation(rotationPitch, desiredPitch, _maxPitch);
+	rotationYaw = GetDesiredRotation(rotationYaw, desiredYaw, _maxYaw);
 }
 
 void MobEntity::UpdateState() {
 	// Try and look at a player
-	if (rand.NextFloat() <= 0.02f) {
+	// 2 percent chance
+	if (rand.NextFloat() < 0.02f) {
 		auto nearestPlayer = this->entityManager->GetClosestPlayerWithin(this->position, 8);
 		if (nearestPlayer) {
 			ticksToFollowTarget = 10 + rand.NextInt(20);
@@ -40,7 +82,20 @@ void MobEntity::UpdateState() {
 	auto thisTarget = target.lock();
 	if (thisTarget) {
 		// Turns towards our target
+		FaceEntity(dynamic_cast<MobileEntity&>(*thisTarget), 10.0, 40.0);
+
+		// If our ticks to look at this target expired, stop looking
+		// If our target is dead or too far, stop looking
+		ticksToFollowTarget = std::max(ticksToFollowTarget - 1.0, 0.0);
+		if (ticksToFollowTarget == 0.0 || thisTarget->isDead || (position.DistanceSquared(thisTarget->position) > 64.0))
+			target.reset();
+		return;
 	}
+
+	if (rand.NextFloat() < 0.05f)
+		randomYawVelocity = (rand.NextFloat() - 0.5) * 20.0f;
+	rotationYaw += randomYawVelocity;
+	rotationPitch = defaultPitch;
 }
 
 void MobEntity::Wander() {
