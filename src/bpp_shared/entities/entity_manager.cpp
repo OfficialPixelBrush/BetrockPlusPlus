@@ -6,6 +6,10 @@
 */
 #include "entity_manager.h"
 #include "entity_item.h"
+#include "entity_chicken.h"
+#include "entity_cow.h"
+#include "entity_pig.h"
+#include "entity_sheep.h"
 #include "world.h"
 
 void EntityManager::RemoveEntity(EntityId _id) {
@@ -206,9 +210,29 @@ void EntityManager::CreateEntityFromNbt(Tag& _nbt) {
 
 	// TODO: load other entity types
 	if (id == "Item") {
-		ItemEntity item({});
-		item.LoadFromNbt(_nbt);
-		AddEntity(std::make_shared<ItemEntity>(item));
+		ItemEntity entity({});
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<ItemEntity>(entity));
+	}
+	if (id == "Cow") {
+		CowEntity entity;
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<CowEntity>(entity));
+	}
+	if (id == "Pig") {
+		PigEntity entity;
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<PigEntity>(entity));
+	}
+	if (id == "Sheep") {
+		SheepEntity entity;
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<SheepEntity>(entity));
+	}
+	if (id == "Chicken") {
+		ChickenEntity entity;
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<ChickenEntity>(entity));
 	}
 }
 

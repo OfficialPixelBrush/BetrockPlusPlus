@@ -70,14 +70,20 @@ struct Chunk {
 	inline uint8_t GetNibbleHigh(uint8_t _byte) const {
 		return (_byte >> 4) & 0x0Fu;
 	}
-
 	inline float GetTemperature(Int2 _pos) const {
 		return temperature[(_pos.x << 4) | _pos.y];
 	}
 	inline float GetHumidity(Int2 _pos) const {
 		return humidity[(_pos.x << 4) | _pos.y];
 	}
-
+	inline int GetHighestPoint() const {
+		int highestPoint = 0;
+		for (auto& i : heightMap) {
+			if (i > highestPoint)
+				highestPoint = i;
+		}
+		return highestPoint;
+	}
 	inline uint8_t GetHeightValue(Int2 _pos) const {
 		return heightMap[(_pos.y << 4) | _pos.x];
 	}

@@ -26,38 +26,6 @@ bool EntityMPPlayer::PickupItem(ItemStack& _stack, EntityId _entityId) {
 	return false;
 }
 
-// This works over a copy of your item, it doesn't remove or decrement it !!!
-bool EntityMPPlayer::DropItem(ItemStack _stack) {
-	if (_stack.id == Items::Id::INVALID || _stack.count <= 0)
-		return false;
-
-	// Create the item entity
-	Vec3 itemPos = { position.x, position.y - 0.3 + PLAYER_EYE_HEIGHT, position.z };
-	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(itemPos);
-	itemEntity->itemStack = _stack;
-	itemEntity->pickupCooldown = 40; // So we don't pick it up instantly
-
-	// Give ourselves some random velocity based on look direction
-	float initVelocity = 0.3f;
-	itemEntity->velocity.x = double(-std::sin(this->rotationYaw / 180.0F * JavaMath::PI_FLOAT) *
-	                                std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * initVelocity);
-	itemEntity->velocity.z = double(std::cos(this->rotationYaw / 180.0F * JavaMath::PI_FLOAT) *
-	                                std::cos(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * initVelocity);
-	itemEntity->velocity.y = double(-std::sin(this->rotationPitch / 180.0F * JavaMath::PI_FLOAT) * initVelocity + 0.1F);
-
-	// Add a little bit of randomness
-	initVelocity = 0.02f;
-	float angle = rand.NextFloat() * JavaMath::PI_FLOAT * 2.0f;
-	initVelocity *= rand.NextFloat();
-	itemEntity->velocity.x += std::cos(angle) * initVelocity;
-	itemEntity->velocity.y += (rand.NextFloat() - rand.NextFloat()) * 0.1f;
-	itemEntity->velocity.z += std::sin(angle) * initVelocity;
-
-	// Register our item with the world
-	this->world->entityManager.AddEntity(std::move(itemEntity));
-	return true;
-}
-
 void EntityMPPlayer::HandlePositionChecks() {
 	if (isDead || !world)
 		return;
@@ -188,9 +156,14 @@ void EntityMPPlayer::DropInventory() {
 }
 
 void EntityMPPlayer::OnDeath() {
-	MobileEntity::OnDeath();
-	this->DropInventory();
-	if (session->entityTracker)
+	PlayerEntity::OnDeath();
+
+	// Hehe
+	if (session && (session->username == "wAidanJC" || session->username == "PixelBrushArt")) {
+		DropItemAtEntity(Items::APPLE, /*Quantity=*/1, /*Data=*/0, /*PickupTime=*/40);
+	}
+
+	if (session && session->entityTracker)
 		session->entityTracker->RemovePlayer(this);
 }
 
