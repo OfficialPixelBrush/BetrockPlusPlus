@@ -11,25 +11,5 @@ struct AnimalEntity : public MobEntity {
 	AnimalEntity() : MobEntity() {}
 	~AnimalEntity() = default;
 
-	void OnDeath() override;
-	void Wander() override;
-	float GetWanderWeight(Int3 _pos) override;
-	void Tick() override {
-		MobileEntity::Tick();
-		
-		if (EntityAlive()) {
-			Wander();
-			FollowPath();
-		}
-
-		TryDespawn();
-	}
-	bool CanSpawnAt(Int3 _pos) override {
-		if (!world)
-			return false;
-		auto fd = MathHelper::FloorDouble;
-		Int3 footPos = { fd(position.x), fd(collider.minY), fd(position.z) };
-		return world->GetBlockId({ footPos.x, footPos.y - 1, footPos.z }) == BLOCK_GRASS &&
-		       world->getBlockLightFull(footPos) > 8 && MobileEntity::CanSpawnAt(_pos); 
-	}
+	bool CanSpawnAt(Int3 _pos) override;
 };

@@ -11,6 +11,7 @@ struct MobEntity : public MobileEntity {
 	std::weak_ptr<Entity> target;
 	TickTime ticksToFollowTarget = 0;
 	float randomYawVelocity = 0.0f;
+	double defaultPitch = 0.0;
 
 	MobEntity() : MobileEntity() {
 		width = 0.9f;
@@ -19,50 +20,24 @@ struct MobEntity : public MobileEntity {
 		SetMaxHealth(/*Health=*/10);
 	}
 	~MobEntity() = default;
-	Vec2 FaceEntity(MobileEntity& _entity, float _maxYaw, float _maxPitch);
+	void FaceEntity(MobileEntity& _entity, float _maxYaw, float _maxPitch);
 	virtual void Wander();
 	virtual float GetWanderWeight(Int3 _pos);
 	virtual void UpdateState();
+	virtual bool TryDespawn();
 	virtual void OnDeath() override;
-	virtual void Tick() override {
-		MobileEntity::Tick();
-
-		randomYawVelocity *= 0.9f;
-
-		if (EntityAlive()) {
-			Wander();
-			FollowPath();
-		}
-
-		TryDespawn();
-	}
+	virtual void Tick() override;
 	virtual bool CanSpawnAt(Int3 _pos) {
 		if (!world)
 			return false;
 		return MobileEntity::CanSpawnAt(_pos);
 	}
-	virtual bool TryDespawn() {
-		auto player = entityManager->GetClosestPlayerWithin(position, -1);
-		if (this->EntityAlive() && player) {
-			double distance = position.DistanceSquared(player->position);
-
-			// > 128 blocks away, despawn
-			if (distance > 16384.0) {
-				isDead = true;
-				return true;
-			}
-
-			// > 32 blocks away? Try to despawn with a 1/800 chance
-			if (this->age > 600 && rand.NextInt(800) == 0) {
-				if (distance < 1024.0) {
-					// We are 32 blocks or closer to a player
-					age = 0;
-					return false;
-				}
-				isDead = true;
-				return true;
-			}
-		}
-		return false;
+	double GetDesiredRotation(double _rotation, double _desired, double _max) {
+		auto delta = _desired - _rotation;
+		while (delta < -180.0F)
+			delta += 360.0F;
+		while (delta >= 180.0F)
+			delta -= 360.0F;
+		return _rotation + std::clamp(delta, -_max, _max);
 	}
 };
