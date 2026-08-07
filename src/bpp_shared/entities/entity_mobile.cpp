@@ -44,7 +44,6 @@ void MobileEntity::SetGoal(std::optional<Int3> _goal) {
 void MobileEntity::FollowPath() {
 	input.y = 0.0f;
 	jumping = false;
-	rotationPitch = 0.0f;
 
 	// Mobs bob/hop while in water or lava
 	if ((inWater || inLava) && rand.NextFloat() < 0.8f) {
@@ -234,7 +233,7 @@ bool MobileEntity::HeadInOpaqueBlock() {
 		offset.y = (float((corner >> 1) % 2) - 0.5f) * 0.1f;
 		offset.z = (float((corner >> 2) % 2) - 0.5f) * width * 0.9f;
 		auto fd = MathHelper::FloorDouble;
-		Int3 cornerBlockPos = { fd(position.x + offset.x), fd(position.y + eyeHeight + offset.y),
+		Int3 cornerBlockPos = { fd(position.x + offset.x), fd(position.y + GetEyeHeight() + offset.y),
 			                    fd(position.z + offset.z) };
 		if (world->IsBlockNormalCube(cornerBlockPos))
 			return true;
@@ -243,7 +242,7 @@ bool MobileEntity::HeadInOpaqueBlock() {
 }
 
 bool MobileEntity::HeadInWater() {
-	auto eyePosY = position.y + eyeHeight;
+	auto eyePosY = position.y + GetEyeHeight();
 	auto fd = MathHelper::FloorDouble;
 	Int3 headBlockPos = { fd(position.x), fd(eyePosY), fd(position.z) };
 	auto headBlock = world->GetBlockId(headBlockPos);

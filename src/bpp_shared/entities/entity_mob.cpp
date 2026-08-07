@@ -42,7 +42,8 @@ void MobEntity::Tick() {
 	if (EntityAlive()) {
 		Wander();
 		FollowPath();
-		UpdateState();
+		if (currentPath.empty())
+			UpdateState();
 		randomYawVelocity *= 0.9f;
 	}
 
@@ -56,8 +57,8 @@ void MobEntity::FaceEntity(MobileEntity& _entity, float _maxYaw, float _maxPitch
 	auto desiredYaw = (std::atan2(dz, dx) * (180 / JavaMath::PI)) - 90.0;
 
 	auto horizontalDistance = std::sqrt((dx * dx) + (dz * dz));
-	auto targetEyeHeight = _entity.position.y + _entity.eyeHeight;
-	auto thisEyeHeight = position.y + eyeHeight;
+	auto targetEyeHeight = _entity.position.y + _entity.GetEyeHeight();
+	auto thisEyeHeight = position.y + GetEyeHeight();
 
 	auto dy = thisEyeHeight - targetEyeHeight;
 	auto desiredPitch = (std::atan2(dy, horizontalDistance) * (180 / JavaMath::PI)) * -1.0;
