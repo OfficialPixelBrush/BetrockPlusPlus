@@ -21,59 +21,11 @@
  * @param b End value (t = 1.0)
  * @return Interpolated value between a and b
  */
-constexpr inline float Lerp(const float _t, const float _a, const float _b) {
+constexpr inline double Lerp(const double _t, const double _a, const double _b) {
 	return _a + _t * (_b - _a);
 }
-
-// Precomputed tables for easier Gradient functions
-static constexpr std::array<int8_t, 16> K_GRAD3_U = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 };
-static constexpr std::array<int8_t, 16> K_GRAD3_V = { 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 0, 2, 0, 2 };
-static constexpr std::array<int8_t, 16> K_GRAD2_U = { 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2 };
-static constexpr std::array<int8_t, 16> K_GRAD2_V = { 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1 };
-static constexpr std::array<float, 16> K_SIGN_BIT0 = { 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1 };
-static constexpr std::array<float, 16> K_SIGN_BIT1 = { 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1 };
-
-/**
- * @brief 3D Perlin noise gradient function
- * 
- * @param hash Hashed lattice value
- * @param x X of Distance Vector
- * @param y Y of Distance Vector
- * @param z Z of Distance Vector
- * @return double 
- */
-constexpr inline double Grad3d(int32_t _hash, const float _x, const float _y, const float _z) {
-	const uint32_t h = static_cast<uint32_t>(_hash) & 15u;
-	const float comp[3] = { _x, _y, _z };
-	const float u = comp[K_GRAD3_U[h]];
-	const float v = comp[K_GRAD3_V[h]];
-	return u * K_SIGN_BIT0[h] + v * K_SIGN_BIT1[h];
-}
-
-/**
- * @brief 2D Perlin noise gradient function
- * 
- * @param hash Hashed lattice value
- * @param x X of Distance Vector
- * @param y Y of Distance Vector
- * @return double 
- */
-constexpr inline float Grad2d(int32_t _hash, const float _x, const float _y) {
-	const uint32_t h = static_cast<uint32_t>(_hash) & 15u;
-	const float comp[3] = { _x, _y, 0.0 };
-	const float u = comp[K_GRAD2_U[h]];
-	const float v = comp[K_GRAD2_V[h]];
-	return u * K_SIGN_BIT0[h] + v * K_SIGN_BIT1[h];
-}
-
-/**
- * @brief Perlin-noise easing function
- * 
- * @param value Input value
- * @return Eased output value 
- */
-constexpr inline float Fade(const float _value) {
-	return _value * _value * _value * (_value * (_value * 6.0 - 15.0) + 10.0);
+constexpr inline float Lerp(const float _t, const float _a, const float _b) {
+	return _a + _t * (_b - _a);
 }
 
 /**
