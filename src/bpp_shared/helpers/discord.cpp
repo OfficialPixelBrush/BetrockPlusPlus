@@ -2,125 +2,244 @@
  * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
- * 
-*/
+ */
 
 #include "discord.h"
+#include "logger.h"
 
 #ifdef DISCORD_INTEGRATION
 
-void Discord::Init(const std::string& _token, const std::string& _channelId) {
-    token = _token;
-    channelId = _channelId;
+Discord::Discord() {
+    thread = std::thread(&Discord::Worker, this);
+}
 
-    if (token.empty() || channelId.empty()) {
-        std::cerr << "Discord integration is enabled but discord-token or discord-channel-id "
-                      "is missing/empty in server.properties; Discord messages will not be sent.\n";
-        initialized = false;
-        return;
+Discord::~Discord() {
+    {
+        std::lock_guard lock(mutex);
+        stopping = true;
     }
 
-    initialized = true;
+    condition.notify_one();
+
+    if (thread.joinable())
+        thread.join();
 }
 
-bool Discord::SendMessage(const std::string& _message) {
-    if (!initialized)
-        return false;
+void Discord::Enqueue(std::function<void()> _task) {
+    {
+        std::lock_guard lock(mutex);
 
-    CURL* curl = curl_easy_init();
-    if (!curl)
-        return false;
+        if (stopping)
+            return;
 
-    std::string url = "https://discord.com/api/v10/channels/" + channelId + "/messages";
+        queue.push(std::move(_task));
+    }
 
-    std::string deformatted = RemoveMinecraftFormatting(_message);
-    std::string json = "{\"content\":\"" + EscapeJson(deformatted) + "\"}";
-
-    struct curl_slist* headers = nullptr;
-    headers = curl_slist_append(
-        headers,
-        ("Authorization: Bot " + token).c_str()
-    );
-    headers = curl_slist_append(
-        headers,
-        "Content-Type: application/json"
-    );
-
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_POST, 1L);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json.c_str());
-
-    CURLcode result = curl_easy_perform(curl);
-    if (result != CURLE_OK)
-        std::cerr << "Discord: failed to send message: " << curl_easy_strerror(result) << "\n";
-
-    curl_slist_free_all(headers);
-    curl_easy_cleanup(curl);
-
-    return result == CURLE_OK;
+    condition.notify_one();
 }
 
-bool Discord::SendFile(const std::string& _filename, const std::string& _message) {
-    if (!initialized)
-        return false;
+void Discord::Worker() {
+    while (true) {
+        std::function<void()> task;
 
-    CURL* curl = curl_easy_init();
-    if (!curl)
-        return false;
+        {
+            std::unique_lock lock(mutex);
 
-    std::string url = "https://discord.com/api/v10/channels/" + channelId + "/messages";
+            condition.wait(lock, [this] {
+                return stopping || !queue.empty();
+            });
 
-    struct curl_slist* headers = nullptr;
-    headers = curl_slist_append(
-        headers,
-        ("Authorization: Bot " + token).c_str()
-    );
+            if (stopping && queue.empty())
+                break;
 
-    curl_mime* mime = curl_mime_init(curl);
+            task = std::move(queue.front());
+            queue.pop();
+        }
 
-    // Message content
-    curl_mimepart* content = curl_mime_addpart(mime);
-    curl_mime_name(content, "payload_json");
+        task();
+    }
 
-    std::string json =
-        "{\"content\":\"" + EscapeJson(_message) + "\"}";
-
-    curl_mime_data(content, json.c_str(), CURL_ZERO_TERMINATED);
-
-    // File
-    curl_mimepart* file = curl_mime_addpart(mime);
-    curl_mime_name(file, "files[0]");
-    curl_mime_filedata(file, _filename.c_str());
-
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
-
-    CURLcode result = curl_easy_perform(curl);
-    if (result != CURLE_OK)
-        std::cerr << "Discord: failed to send file '" << _filename << "': " << curl_easy_strerror(result) << "\n";
-
-    curl_mime_free(mime);
-    curl_slist_free_all(headers);
-    curl_easy_cleanup(curl);
-
-    return result == CURLE_OK;
+    if (curl) {
+        curl_easy_cleanup(curl);
+        curl = nullptr;
+    }
 }
 
-std::string Discord::RemoveMinecraftFormatting(const std::string& message) {
+void Discord::Init(const std::string& _token, const std::string& _channelId) {
+    Enqueue([this, token = _token, channelId = _channelId] {
+        this->token = token;
+        this->channelId = channelId;
+
+        if (token.empty() || channelId.empty()) {
+            GlobalLogger().warn
+                << "Discord integration is enabled but discord-token or discord-channel-id "
+                   "is missing/empty in server.properties; Discord messages will not be sent.\n";
+
+            initialized = false;
+            return;
+        }
+
+        if (!curl) {
+            curl = curl_easy_init();
+
+            if (!curl) {
+                GlobalLogger().error
+                    << "Discord: failed to initialize CURL\n";
+
+                initialized = false;
+                return;
+            }
+        }
+
+        initialized = true;
+    });
+}
+
+void Discord::SendMessage(const std::string& _message) {
+    Enqueue([this, message = _message] {
+        if (!initialized || !curl)
+            return;
+
+        std::string url =
+            "https://discord.com/api/v10/channels/" +
+            channelId +
+            "/messages";
+
+        std::string deformatted =
+            RemoveMinecraftFormatting(message);
+
+        std::string json =
+            "{\"content\":\"" +
+            EscapeJson(deformatted) +
+            "\"}";
+
+        struct curl_slist* headers = nullptr;
+
+        std::string authorization = "Authorization: Bot " + token;
+
+        headers = curl_slist_append(
+            headers,
+            authorization.c_str()
+        );
+
+        headers = curl_slist_append(
+            headers,
+            "Content-Type: application/json"
+        );
+
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json.c_str());
+
+        CURLcode result = curl_easy_perform(curl);
+
+        if (result != CURLE_OK) {
+            GlobalLogger().warn
+                << "Discord: failed to send message: "
+                << curl_easy_strerror(result)
+                << "\n";
+        }
+
+        curl_slist_free_all(headers);
+    });
+}
+
+void Discord::SendFile(
+    const std::string& _filename,
+    const std::string& _message
+) {
+    Enqueue([this, filename = _filename, message = _message] {
+        if (!initialized || !curl)
+            return;
+
+        std::string url =
+            "https://discord.com/api/v10/channels/" +
+            channelId +
+            "/messages";
+
+        struct curl_slist* headers = nullptr;
+
+        std::string authorization = "Authorization: Bot " + token;
+
+        headers = curl_slist_append(
+            headers,
+            authorization.c_str()
+        );
+
+        curl_mime* mime = curl_mime_init(curl);
+
+        // Message content
+        curl_mimepart* content =
+            curl_mime_addpart(mime);
+
+        curl_mime_name(content, "payload_json");
+
+        std::string json =
+            "{\"content\":\"" +
+            EscapeJson(message) +
+            "\"}";
+
+        curl_mime_data(
+            content,
+            json.c_str(),
+            CURL_ZERO_TERMINATED
+        );
+
+        // File
+        curl_mimepart* file =
+            curl_mime_addpart(mime);
+
+        curl_mime_name(file, "files[0]");
+        curl_mime_filedata(file, filename.c_str());
+
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
+
+        CURLcode result = curl_easy_perform(curl);
+
+        if (result != CURLE_OK) {
+            GlobalLogger().warn
+                << "Discord: failed to send file '"
+                << filename
+                << "': "
+                << curl_easy_strerror(result)
+                << "\n";
+        }
+
+        curl_mime_free(mime);
+        curl_slist_free_all(headers);
+    });
+}
+
+std::string Discord::RemoveMinecraftFormatting(
+    const std::string& _input
+) {
     std::string result;
-    result.reserve(message.size()); for (size_t i = 0; i < message.size(); ++i) {
+    result.reserve(_input.size());
+
+    for (size_t i = 0; i < _input.size(); ++i) {
         // UTF-8 encoding of § is C2 A7
-        if (static_cast<unsigned char>(message[i]) == 0xC2 && i + 1 < message.size() && static_cast<unsigned char>(message[i + 1]) == 0xA7) {
-            i += 1;
+        if (
+            static_cast<unsigned char>(_input[i]) == 0xC2 &&
+            i + 1 < _input.size() &&
+            static_cast<unsigned char>(_input[i + 1]) == 0xA7
+        ) {
             // Skip §
-            // Skip the Minecraft formatting code
-            if (i + 1 < message.size())
+            i += 1;
+
+            // Skip Minecraft formatting code
+            if (i + 1 < _input.size())
                 i += 1;
+
             continue;
-        } result += message[i];
-    } return result;
+        }
+
+        result += _input[i];
+    }
+
+    return result;
 }
 
 std::string Discord::EscapeJson(const std::string& _input) {
@@ -128,12 +247,24 @@ std::string Discord::EscapeJson(const std::string& _input) {
 
     for (char c : _input) {
         switch (c) {
-            case '"':  result += "\\\""; break;
-            case '\\': result += "\\\\"; break;
-            case '\n': result += "\\n";  break;
-            case '\r': result += "\\r";  break;
-            case '\t': result += "\\t";  break;
-            default:   result += c;
+        case '"':
+            result += "\\\"";
+            break;
+        case '\\':
+            result += "\\\\";
+            break;
+        case '\n':
+            result += "\\n";
+            break;
+        case '\r':
+            result += "\\r";
+            break;
+        case '\t':
+            result += "\\t";
+            break;
+        default:
+            result += c;
+            break;
         }
     }
 
@@ -141,8 +272,8 @@ std::string Discord::EscapeJson(const std::string& _input) {
 }
 
 Discord& GlobalDiscord() {
-	static Discord discord;
-	return discord;
+    static Discord discord;
+    return discord;
 }
 
 #endif
