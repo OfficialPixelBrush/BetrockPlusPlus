@@ -109,6 +109,8 @@ void EntityTracker::TrackEntity(Entity* _entity) {
 		                                    std::abs(_entity->position.z - player.entity->position.z)));
 		if (distanceTo > newEntry.profile.range)
 			continue;
+		// Register the viewer before spawning
+		newEntry.visibleTo.insert(playerId);
 		SpawnEntityForPlayer(playerId, newEntry);
 	}
 
@@ -152,8 +154,9 @@ void EntityTracker::AddPlayer(Entity* _player) {
 		                                    std::abs(entityEntry.entity->position.z - _player->position.z)));
 		if (distanceTo > entityEntry.profile.range)
 			continue;
-		SpawnEntityForPlayer(_player->id, entityEntry);
+		// Register the viewer before spawning
 		entityEntry.visibleTo.insert(_player->id);
+		SpawnEntityForPlayer(_player->id, entityEntry);
 	}
 
 	for (EntityId otherPlayerId : playerIds) {
@@ -166,8 +169,8 @@ void EntityTracker::AddPlayer(Entity* _player) {
 		                                    std::abs(_player->position.z - otherIt->second.entity->position.z)));
 		if (distanceTo > newPlayerEntry.profile.range)
 			continue;
-		SpawnEntityForPlayer(otherPlayerId, newPlayerEntry);
 		newPlayerEntry.visibleTo.insert(otherPlayerId);
+		SpawnEntityForPlayer(otherPlayerId, newPlayerEntry);
 	}
 
 	// Force an update
@@ -228,7 +231,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		}
 		pkt.username = username;
 		pkt.Serialize(pSession->stream);
-		SendEquipmentState(_entityEntry);
+		SendEquipmentState(_entityEntry, pSession);
 		break;
 	}
 	case EntityType::CREEPER: {
@@ -352,21 +355,19 @@ TrackedEntry& EntityTracker::GetTrackerForEntityId(EntityId _id) {
 }
 
 void EntityTracker::SendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id) {
-	for (auto& playerId : playerIds) {
-		auto& playerEntry = GetTrackerForEntityId(playerId);
-		if (playerEntry.visibleTo.contains(_id)) {
-			auto session = server->GetSessionById(playerId);
-			if (!session)
-				continue;
-			_pkt.Serialize(session->stream);
-		}
+	auto& entry = GetTrackerForEntityId(_id);
+	for (EntityId viewerId : entry.visibleTo) {
+		auto session = server->GetSessionById(viewerId);
+		if (!session)
+			continue;
+		_pkt.Serialize(session->stream);
 	}
 }
 
-// Used when we first spawn an entity
-void EntityTracker::SendEquipmentState(TrackedEntry& _trackedEntry) {
+// Used when we first spawn an entity for a specific player
+void EntityTracker::SendEquipmentState(TrackedEntry& _trackedEntry, std::shared_ptr<PlayerSession> _targetSession) {
 	auto updateEquipmentSlot = [&](int _slot, ItemStack* _stack) -> void {
-		if (!_stack)
+		if (!_stack || !_targetSession)
 			return;
 		Packet::SetEquipment pkt;
 		pkt.entityId = _trackedEntry.entity->id;
@@ -374,7 +375,7 @@ void EntityTracker::SendEquipmentState(TrackedEntry& _trackedEntry) {
 		pkt.itemId = _stack->id;
 		pkt.itemMetadata = _stack->data;
 
-		SendPacketToViewers(pkt, _trackedEntry.entity->id);
+		pkt.Serialize(_targetSession->stream);
 	};
 
 	MobileEntity& entity = dynamic_cast<MobileEntity&>(*_trackedEntry.entity);
@@ -443,7 +444,7 @@ void EntityTracker::UpdateDamageState(TrackedEntry& _trackedEntry) {
 
 	// Send the hurt animation packet / death animation packet whenever that happens.
 	if (entity.lastHealth != entity.GetHeartsHealth() || entity.beenAttacked) {
-		if (entity.GetHeartsHealth() - entity.lastHealth < 0 || entity.beenAttacked) {			
+		if (entity.GetHeartsHealth() - entity.lastHealth < 0 || entity.beenAttacked) {
 			Packet::EntityEvent pkt;
 			pkt.entityId = entity.id;
 			pkt.action = PacketData::EntityEvent::HURT;
@@ -469,7 +470,8 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 	auto& entity = _trackedEntry.entity;
 
 	// If we are a mobile entity then send the damage state and update our equipment
-	if (std::find(this->mobileEntities.begin(), this->mobileEntities.end(), entity->type) != this->mobileEntities.end()) {
+	if (std::find(this->mobileEntities.begin(), this->mobileEntities.end(), entity->type) !=
+	    this->mobileEntities.end()) {
 		UpdateDamageState(_trackedEntry);
 		UpdateEquipmentState(_trackedEntry);
 	}
