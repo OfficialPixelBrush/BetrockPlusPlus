@@ -258,12 +258,12 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 	DrainGenQueue();  // process generation results first
 	DrainLoadQueue(); // integrate finished loads
 
-	lightManager.ProcessLightQueue(*this, INT_MAX);
-
 	tickScheduler.Tick();
 	entitySpawner.TrySpawnEntities(*this, _players);
 	entityManager.Tick();
 	tileEntityManager.TickTileEntities(*this);
+
+	lightManager.ProcessLightQueue(*this, INT_MAX);
 
 	// Saving
 	if (this->tickScheduler.currentTick % 40 == 0) {
