@@ -29,20 +29,22 @@ void CraftingTableInventoryInteraction::WriteBack() {
 		playerInventory->slots[i] = sharedInventory.slots[slotCount++];
 }
 
-bool CraftingTableInventoryInteraction::CanExist(PlayerEntity& player) {
-	return world.GetBlockId(blockPosition) == BLOCK_CRAFTING_TABLE && (GetDistSquared(player.position, {blockPosition.x + 0.5, blockPosition.y + 0.5, blockPosition.z + 0.5}) < 64.0);
+bool CraftingTableInventoryInteraction::CanExist(PlayerEntity& _player) {
+	return world.GetBlockId(blockPosition) == BLOCK_CRAFTING_TABLE &&
+	       (GetDistSquared(_player.position, { blockPosition.x + 0.5, blockPosition.y + 0.5, blockPosition.z + 0.5 }) <
+	        64.0);
 }
 
-void CraftingTableInventoryInteraction::OnInteractionClosed(PlayerEntity& player) {
+void CraftingTableInventoryInteraction::OnInteractionClosed(PlayerEntity& _player) {
 	// Drop cursor
-	player.DropItem(this->carried);
+	_player.DropItem(this->carried);
 	this->carried = {};
 
 	// Drop our inventory
 	// Don't drop the result slot
 	for (int i = 1; i < 10; i++) {
 		auto& stack = this->craftInventory.slots[i];
-		player.DropItem(stack);
+		_player.DropItem(stack);
 		stack = {};
 	}
 }

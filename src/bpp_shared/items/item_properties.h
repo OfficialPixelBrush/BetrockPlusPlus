@@ -8,9 +8,9 @@
 #pragma once
 #include "base_types.h"
 #include "items.h"
+#include "logger.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
-#include "logger.h"
 #include <cstdint>
 #include <unordered_map>
 

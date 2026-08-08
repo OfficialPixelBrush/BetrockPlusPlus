@@ -124,8 +124,7 @@ bool IsEffective(ToolType _type, BlockType _block) {
 		return (_block == BLOCK_PLANKS || _block == BLOCK_BOOKSHELF || _block == BLOCK_LOG || _block == BLOCK_CHEST);
 	case ToolType::Shovel:
 		return (_block == BLOCK_GRASS || _block == BLOCK_DIRT || _block == BLOCK_SAND || _block == BLOCK_GRAVEL ||
-		        _block == BLOCK_SNOW_LAYER || _block == BLOCK_SNOW || _block == BLOCK_CLAY ||
-		        _block == BLOCK_FARMLAND);
+		        _block == BLOCK_SNOW_LAYER || _block == BLOCK_SNOW || _block == BLOCK_CLAY || _block == BLOCK_FARMLAND);
 	default:
 		return false;
 	}
@@ -235,7 +234,7 @@ void AttackWithItem(Entity& _targetEntity, Entity& _sourceEntity, ItemStack* _st
 	if (toolProperties.contains(_stack->id))
 		damage = CalculateDamage(toolProperties[_stack->id].type, MaterialToLevel(toolProperties[_stack->id].material));
 	bool canInflictDamage = InflictDamage(_targetEntity, _sourceEntity, damage);
-	
+
 	// Apparently vanilla doesn't do this for some reason
 	/*
 	if (!canInflictDamage) {
@@ -301,8 +300,7 @@ void OnToolFinishMining(ItemStack* _stack, BlockType _targetBlock) {
 	case ToolType::Hoe:
 		return;
 	case ToolType::None:
-		if (_stack->id == Items::SHEARS &&
-		    (_targetBlock == BLOCK_LEAVES || _targetBlock == BLOCK_COBWEB)) {
+		if (_stack->id == Items::SHEARS && (_targetBlock == BLOCK_LEAVES || _targetBlock == BLOCK_COBWEB)) {
 			HarmTool(_stack, 1);
 		}
 		return;
@@ -320,7 +318,7 @@ void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, P
 void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
                       PacketData::FaceDirection _face) {
 	if (_user.sneaking) {
-		TestSetGoal(_world,_stack,_pos,_face);
+		TestSetGoal(_world, _stack, _pos, _face);
 		return;
 	}
 	_pos = Blocks::GetAdjacentBlockPos(_pos, _face);

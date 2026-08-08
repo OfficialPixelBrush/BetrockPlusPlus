@@ -10,7 +10,7 @@
 struct SheepEntity : public AnimalEntity {
 	int8_t color = 0;
 	bool sheared = false;
-	
+
 	SheepEntity() : AnimalEntity() {
 		type = EntityType::SHEEP;
 		width = 0.9f;

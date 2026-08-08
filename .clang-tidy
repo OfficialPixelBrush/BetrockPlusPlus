@@ -1,3 +1,5 @@
+HeaderFilterRegex: '^(?!.*(/include/)).*$'
+
 Checks: '-*,readability-identifier-naming'
 
 CheckOptions:

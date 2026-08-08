@@ -5,9 +5,9 @@
  *
 */
 #include "entity_manager.h"
-#include "entity_item.h"
 #include "entity_chicken.h"
 #include "entity_cow.h"
+#include "entity_item.h"
 #include "entity_pig.h"
 #include "entity_sheep.h"
 #include "world.h"

@@ -10,7 +10,6 @@
 #include <atomic>
 extern std::atomic<bool> shutdownRequested;
 
-
 #ifdef DISCORD_INTEGRATION
 #include "discord.h"
 #endif
@@ -20,6 +19,8 @@ extern std::atomic<bool> shutdownRequested;
 #include "chunk_IO/chunk_sender.h"
 #include "commands/command_manager.h"
 #include "config/config.h"
+#include "items/item_properties.h"
+#include "items/tool_properties.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
 #include "packet/handle_packet.h"
@@ -28,10 +29,8 @@ extern std::atomic<bool> shutdownRequested;
 #include "player_conn/server_pconnstate_manager.h"
 #include "runtime.h"
 #include "server_socket.h"
-#include "trackers/entity_tracker.h"
 #include "strings/ucs2.h"
-#include "items/item_properties.h"
-#include "items/tool_properties.h"
+#include "trackers/entity_tracker.h"
 #include <chrono>
 #include <memory>
 #include <thread>
@@ -64,7 +63,8 @@ public:
 			GlobalLogger().error << "Failed to save player data for " << _username << "!\n";
 
 		auto savedNbt = PlayerSession->SerializeToNbt();
-		gameRuntime.saveManager.SavePlayerNbt(std::string(PlayerSession->username.begin(), PlayerSession->username.end()), savedNbt);
+		gameRuntime.saveManager.SavePlayerNbt(
+		    std::string(PlayerSession->username.begin(), PlayerSession->username.end()), savedNbt);
 	}
 
 	void DisconnectPlayer(const std::string& _reason, PlayerSession& _session) {
@@ -108,9 +108,9 @@ public:
 			reply.Serialize(other->stream);
 		}
 		GlobalLogger().msg << StripFormatting(_message) << "\n";
-		#ifdef DISCORD_INTEGRATION
+#ifdef DISCORD_INTEGRATION
 		GlobalDiscord().SendMessage(_message);
-		#endif
+#endif
 	}
 
 	const std::vector<std::shared_ptr<PlayerSession>>& GetPlayers() noexcept {

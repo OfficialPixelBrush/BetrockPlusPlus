@@ -100,7 +100,7 @@ void TileEntityFurnace::Tick(WorldManager& _world) {
 	if (wasBurning != (burnTime > 0)) {
 		// Flip furnace block ID
 		auto oldMeta = _world.GetMetadata(this->position);
-		_world.SetBlock(this->position, BlockType(61 + (burnTime > 0)), oldMeta, /*Keep Tile Entity=*/ true);
+		_world.SetBlock(this->position, BlockType(61 + (burnTime > 0)), oldMeta, /*Keep Tile Entity=*/true);
 	}
 
 	{

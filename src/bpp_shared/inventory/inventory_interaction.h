@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: AGPL-3.0-only
 */
 #pragma once
+#include "entities/entity_player.h"
 #include "inventory.h"
 #include "inventory/item_stack.h"
-#include "entities/entity_player.h"
 
 struct DeltaSlot {
 	ItemStack stack;

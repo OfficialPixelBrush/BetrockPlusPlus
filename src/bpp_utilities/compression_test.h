@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "world/chunk.h"
 #include "../bpp_server/chunk_IO/chunk_serializer.h"
+#include "world/chunk.h"
 
 #include <chrono>
 #include <cstdint>
@@ -30,9 +30,7 @@ struct Result {
 	}
 
 	double MBPerSecond() const {
-		return seconds > 0.0
-		           ? double(rawBytes) / (1024.0 * 1024.0) / seconds
-		           : 0.0;
+		return seconds > 0.0 ? double(rawBytes) / (1024.0 * 1024.0) / seconds : 0.0;
 	}
 };
 
@@ -48,9 +46,7 @@ inline Result Benchmark(const std::vector<Chunk*>& chunks, int iterations = 1) {
 	for (int i = 0; i < iterations; i++) {
 		for (Chunk* chunk : chunks) {
 			// This is the uncompressed size produced by Serialize internally:
-			constexpr size_t rawChunkSize =
-			    (16 * CHUNK_HEIGHT * 16) +
-			    (((16 * CHUNK_HEIGHT * 16) + 1) / 2) * 3;
+			constexpr size_t rawChunkSize = (16 * CHUNK_HEIGHT * 16) + (((16 * CHUNK_HEIGHT * 16) + 1) / 2) * 3;
 
 			auto compressed = ChunkSerializer::Serialize(*chunk);
 
@@ -61,33 +57,21 @@ inline Result Benchmark(const std::vector<Chunk*>& chunks, int iterations = 1) {
 
 	auto end = std::chrono::steady_clock::now();
 
-	result.seconds =
-	    std::chrono::duration<double>(end - start).count();
+	result.seconds = std::chrono::duration<double>(end - start).count();
 
 	return result;
 }
 
 inline void Print(const Result& result) {
-	std::cout
-	    << "Raw:          "
-	    << result.rawBytes / (1024.0 * 1024.0)
-	    << " MB\n"
+	std::cout << "Raw:          " << result.rawBytes / (1024.0 * 1024.0) << " MB\n"
 
-	    << "Compressed:   "
-	    << result.compressedBytes / (1024.0 * 1024.0)
-	    << " MB\n"
+	          << "Compressed:   " << result.compressedBytes / (1024.0 * 1024.0) << " MB\n"
 
-	    << "Ratio:        "
-	    << result.Ratio() * 100.0
-	    << "%\n"
+	          << "Ratio:        " << result.Ratio() * 100.0 << "%\n"
 
-	    << "Saved:        "
-	    << result.Savings() * 100.0
-	    << "%\n"
+	          << "Saved:        " << result.Savings() * 100.0 << "%\n"
 
-	    << "Speed:        "
-	    << result.MBPerSecond()
-	    << " MB/s\n";
+	          << "Speed:        " << result.MBPerSecond() << " MB/s\n";
 }
 
 } // namespace ChunkBenchmark

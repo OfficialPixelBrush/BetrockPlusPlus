@@ -39,7 +39,7 @@ public:
 	bool canBreatheUnderwater = false;
 	bool beenAttacked = false;
 	ItemStack heldItem;
-	ItemStack* armor[4] = {nullptr, nullptr, nullptr, nullptr}; // Helmet, chestplate, leggings, boots
+	ItemStack* armor[4] = { nullptr, nullptr, nullptr, nullptr }; // Helmet, chestplate, leggings, boots
 
 	virtual void Tick() override;
 	virtual void OnDeath();

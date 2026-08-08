@@ -274,14 +274,14 @@ void RegisterAll() {
 		Map::InitGraphics(mapData, Byte2{ x, 0 });
 
 		for (int z = 0; z < INT8_MAX; z++) {
-			int8_t north_y = world->GetHeightValue(x, z - 1);
+			int8_t northY = world->GetHeightValue(x, z - 1);
 			int8_t y = world->GetHeightValue(x, z);
 			Int3 bpos{ x, y - 1, z };
 			BlockType block = world->GetBlockId(bpos);
 			int8_t brightness = 1;
-			if (north_y > y)
+			if (northY > y)
 				brightness--;
-			if (north_y < y)
+			if (northY < y)
 				brightness++;
 			Map::AppendPixel(mapData, (Blocks::blockProperties[block].material.mapColor.index << 2) | brightness);
 		}

@@ -36,11 +36,11 @@ void PlayerConnStateManager::HandleConnectionState(PlayerSession& _session, Serv
 	}
 }
 
-bool PlayerConnStateManager::IsValidUsername(const std::string& username) {
-	if (username.size() < 3 || username.size() > 16)
+bool PlayerConnStateManager::IsValidUsername(const std::string& _username) {
+	if (_username.size() < 3 || _username.size() > 16)
 		return false;
-	static const std::regex pattern(R"(^[A-Za-z0-9_]{3,16}$)");
-	return std::regex_match(username, pattern);
+	static const std::regex PATTERN(R"(^[A-Za-z0-9_]{3,16}$)");
+	return std::regex_match(_username, PATTERN);
 }
 
 void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, [[maybe_unused]] Server& _server) {
@@ -199,7 +199,8 @@ void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server&
 
 	int percent = std::ceil((float(loadedChunks) / float(totalSpawnChunks)) * 100.0f);
 
-	if (loadedChunks % (totalSpawnChunks / 4) == 0) GlobalLogger().info << "Spawn chunks: " << percent << "%\n";
+	if (loadedChunks % (totalSpawnChunks / 4) == 0)
+		GlobalLogger().info << "Spawn chunks: " << percent << "%\n";
 
 	if (loadedChunks < totalSpawnChunks)
 		return;
