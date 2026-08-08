@@ -365,14 +365,14 @@ void EntityTracker::SendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id) 
 
 // Used when we first spawn an entity
 void EntityTracker::SendEquipmentState(TrackedEntry& _trackedEntry) {
-	auto updateEquipmentSlot = [&](int _slot, ItemStack& _stack) -> void {
-		if (_stack.id == -1)
+	auto updateEquipmentSlot = [&](int _slot, ItemStack* _stack) -> void {
+		if (!_stack)
 			return;
 		Packet::SetEquipment pkt;
 		pkt.entityId = _trackedEntry.entity->id;
 		pkt.inventorySlot = _slot;
-		pkt.itemId = _stack.id;
-		pkt.itemMetadata = _stack.data;
+		pkt.itemId = _stack->id;
+		pkt.itemMetadata = _stack->data;
 
 		SendPacketToViewers(pkt, _trackedEntry.entity->id);
 	};
@@ -382,41 +382,48 @@ void EntityTracker::SendEquipmentState(TrackedEntry& _trackedEntry) {
 	updateEquipmentSlot(3, entity.armor[1]);
 	updateEquipmentSlot(2, entity.armor[2]);
 	updateEquipmentSlot(1, entity.armor[3]);
-	updateEquipmentSlot(0, entity.heldItem);
+	updateEquipmentSlot(0, &entity.heldItem);
 }
 
 // Update our equipment
 void EntityTracker::UpdateEquipmentState(TrackedEntry& _trackedEntry) {
-	auto updateEquipmentSlot = [&](int _slot, ItemStack& _stack) -> void {
+	auto updateEquipmentSlot = [&](int _slot, ItemStack* _stack) -> void {
+		if (!_stack)
+			return;
 		Packet::SetEquipment pkt;
 		pkt.entityId = _trackedEntry.entity->id;
 		pkt.inventorySlot = _slot;
-		pkt.itemId = _stack.id;
-		pkt.itemMetadata = _stack.data;
+		pkt.itemId = _stack->id;
+		pkt.itemMetadata = _stack->data;
 
 		SendPacketToViewers(pkt, _trackedEntry.entity->id);
 	};
 
 	auto& equipment = _trackedEntry.equipmentProfile;
 	MobileEntity& entity = dynamic_cast<MobileEntity&>(*_trackedEntry.entity);
-	if (equipment.helmet != entity.armor[0]) {
-		updateEquipmentSlot(4, entity.armor[0]);
-		equipment.helmet = entity.armor[0];
+	ItemStack none = {};
+	auto helmet = entity.armor[0] ? entity.armor[0] : &none;
+	auto chest = entity.armor[1] ? entity.armor[1] : &none;
+	auto leg = entity.armor[2] ? entity.armor[2] : &none;
+	auto boot = entity.armor[3] ? entity.armor[3] : &none;
+	if (equipment.helmet.id != helmet->id) {
+		updateEquipmentSlot(4, helmet);
+		equipment.helmet = *helmet;
 	}
-	if (equipment.chestplate != entity.armor[1]) {
-		updateEquipmentSlot(3, entity.armor[1]);
-		equipment.chestplate = entity.armor[1];
+	if (equipment.chestplate.id != chest->id) {
+		updateEquipmentSlot(3, chest);
+		equipment.chestplate = *chest;
 	}
-	if (equipment.legging != entity.armor[2]) {
-		updateEquipmentSlot(2, entity.armor[2]);
-		equipment.legging = entity.armor[2];
+	if (equipment.legging.id != leg->id) {
+		updateEquipmentSlot(2, leg);
+		equipment.legging = *leg;
 	}
-	if (equipment.boot != entity.armor[3]) {
-		updateEquipmentSlot(1, entity.armor[3]);
-		equipment.boot = entity.armor[3];
+	if (equipment.boot.id != boot->id) {
+		updateEquipmentSlot(1, boot);
+		equipment.boot = *boot;
 	}
 	if (equipment.heldItem != entity.heldItem) {
-		updateEquipmentSlot(0, entity.heldItem);
+		updateEquipmentSlot(0, &entity.heldItem);
 		equipment.heldItem = entity.heldItem;
 	}
 }
@@ -435,8 +442,8 @@ void EntityTracker::UpdateDamageState(TrackedEntry& _trackedEntry) {
 	}
 
 	// Send the hurt animation packet / death animation packet whenever that happens.
-	if (entity.lastHealth != entity.GetHeartsHealth()) {
-		if (entity.GetHeartsHealth() - entity.lastHealth < 0) {			
+	if (entity.lastHealth != entity.GetHeartsHealth() || entity.beenAttacked) {
+		if (entity.GetHeartsHealth() - entity.lastHealth < 0 || entity.beenAttacked) {			
 			Packet::EntityEvent pkt;
 			pkt.entityId = entity.id;
 			pkt.action = PacketData::EntityEvent::HURT;
@@ -450,6 +457,8 @@ void EntityTracker::UpdateDamageState(TrackedEntry& _trackedEntry) {
 					pkt.Serialize(session->stream);
 				}
 			}
+
+			entity.beenAttacked = false;
 		}
 
 		entity.lastHealth = entity.GetHeartsHealth();

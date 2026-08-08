@@ -186,7 +186,7 @@ void EntityMPPlayer::Tick() {
 	this->heldItem = session->inventory.GetHeldItem() ? *heldItemPtr : none;
 	for (int i = 0; i < 4; i++) {
 		auto armorSlotPtr = session->inventory.GetStackInSlot(5 + i);
-		this->armor[i] = armorSlotPtr ? *armorSlotPtr : none;
+		this->armor[i] = armorSlotPtr ? armorSlotPtr : nullptr;
 	}
 
 	// Do living entity stuff
