@@ -9,7 +9,7 @@
 #include "java_random.h"
 #include "numeric_structs.h"
 
-#ifndef REDUCED_GENERATION_PRECISION
+#ifdef REDUCED_GENERATION_PRECISION
 typedef float gen_float;
 #define GenFloatToInt32 Java::FloatToInt32
 #else
