@@ -7,7 +7,7 @@
 
 InventoryInteraction::InventoryInteraction(Inventory* _inv) : inventory(_inv) {}
 
-bool InventoryInteraction::CanExist(PlayerEntity& player) {
+bool InventoryInteraction::CanExist(PlayerEntity& _player) {
 	return inventory != nullptr;
 }
 
@@ -136,7 +136,7 @@ void InventoryInteraction::OnShiftClick(int _slot) {
 	inventory->MergeItemStackInInventory(*targetSlot);
 }
 
-void InventoryInteraction::OnInteractionClosed(PlayerEntity& player) {
-	player.DropItem(this->carried);
+void InventoryInteraction::OnInteractionClosed(PlayerEntity& _player) {
+	_player.DropItem(this->carried);
 	this->carried = {};
 }

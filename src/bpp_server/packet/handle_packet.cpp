@@ -49,6 +49,9 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
 			continue;
 		reply.Serialize(receiver->stream);
 	}
+#ifdef DISCORD_INTEGRATION
+	GlobalDiscord().SendMessage(reply.message);
+#endif
 }
 
 void PlayerMovement(Packet::PlayerMovement& _pkt, PlayerSession& _session) {
@@ -106,10 +109,7 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 	switch (_pkt.status) {
 	case PacketData::MineStatus::DIGGING_STARTED: {
 		BlockType blockId = _world.GetBlockId(packetPos);
-		_session.pendingBlockBreak = {
-			.lastBlock = blockId,
-			.lastBlockPos = packetPos
-		};
+		_session.pendingBlockBreak = { .lastBlock = blockId, .lastBlockPos = packetPos };
 
 		float hardness = Blocks::blockProperties[blockId].hardness;
 		if (hardness < 0.0f) {
@@ -427,16 +427,18 @@ void Animation(Packet::Animation& _pkt, PlayerSession& _session, EntityTracker& 
 
 void PlayerAction([[maybe_unused]] Packet::PlayerAction& _pkt, [[maybe_unused]] PlayerSession& _session,
                   [[maybe_unused]] EntityTracker& _entityTracker) {
-	auto& trackedEntry = _entityTracker.GetTrackerForEntityId(_pkt.entityId);
-	if (!trackedEntry.entity)
+	auto& entity = _session.entity;
+	if (!entity)
 		return;
-	switch(_pkt.action) {
-		case PacketData::PlayerAction::START_SNEAKING:
-			trackedEntry.entity->sneaking = true; break;
-		case PacketData::PlayerAction::STOP_SNEAKING:
-			trackedEntry.entity->sneaking = false; break;
-		default:
-			break;
+	switch (_pkt.action) {
+	case PacketData::PlayerAction::START_SNEAKING:
+		entity->sneaking = true;
+		break;
+	case PacketData::PlayerAction::STOP_SNEAKING:
+		entity->sneaking = false;
+		break;
+	default:
+		break;
 	}
 	// Broadcast what we were sent to players who can see this player
 }

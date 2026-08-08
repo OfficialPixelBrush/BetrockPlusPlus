@@ -124,7 +124,8 @@ struct Inventory {
 	}
 
 	// Returns whether we could merge an item stack without changing the inventory.
-	virtual bool CanMergeItemStackInInventory(ItemStack& _stack, bool _reverse = false, int _startSlot = 0, int _endSlot = -1) {
+	virtual bool CanMergeItemStackInInventory(ItemStack& _stack, bool _reverse = false, int _startSlot = 0,
+	                                          int _endSlot = -1) {
 		auto start = _startSlot;
 		auto end = _endSlot == -1 ? GetSizeInventory() - 1 : _endSlot;
 

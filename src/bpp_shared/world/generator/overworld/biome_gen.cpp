@@ -39,15 +39,15 @@ BiomeGenerator::BiomeGenerator(int64_t _seed) {
 void BiomeGenerator::GenerateBiomeMap(Biome _biomeMap[], std::span<double> _temperature, std::span<double> _humidity,
                                       std::span<double> _weirdness, Int2 _blockPos) {
 	static constexpr Int32_2 MAX_AREA{ CHUNK_WIDTH, CHUNK_WIDTH };
-	static constexpr size_t kCount = size_t(CHUNK_WIDTH) * size_t(CHUNK_WIDTH);
-	if (_temperature.size() < kCount || _humidity.size() < kCount || _weirdness.size() < kCount)
+	static constexpr size_t K_COUNT = size_t(CHUNK_WIDTH) * size_t(CHUNK_WIDTH);
+	if (_temperature.size() < K_COUNT || _humidity.size() < K_COUNT || _weirdness.size() < K_COUNT)
 		return;
 
-	this->temperatureNoiseGen.GenerateOctaves(_temperature.first(kCount), _blockPos, MAX_AREA,
+	this->temperatureNoiseGen.GenerateOctaves(_temperature.first(K_COUNT), _blockPos, MAX_AREA,
 	                                          Vec2{ double(0.025f), double(0.025f) }, 0.25);
-	this->humidityNoiseGen.GenerateOctaves(_humidity.first(kCount), _blockPos, MAX_AREA,
+	this->humidityNoiseGen.GenerateOctaves(_humidity.first(K_COUNT), _blockPos, MAX_AREA,
 	                                       Vec2{ double(0.05f), double(0.05f) }, 1.0 / 3.0);
-	this->weirdnessNoiseGen.GenerateOctaves(_weirdness.first(kCount), _blockPos, MAX_AREA, Vec2{ 0.25, 0.25 },
+	this->weirdnessNoiseGen.GenerateOctaves(_weirdness.first(K_COUNT), _blockPos, MAX_AREA, Vec2{ 0.25, 0.25 },
 	                                        0.5882352941176471);
 	size_t index = 0;
 

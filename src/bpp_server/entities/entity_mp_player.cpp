@@ -160,7 +160,9 @@ void EntityMPPlayer::OnDeath() {
 
 	// Hehe
 	if (session && (session->username == "wAidanJC" || session->username == "PixelBrushArt")) {
-		DropItemAtEntity(Items::APPLE, /*Quantity=*/1, /*Data=*/0, /*PickupTime=*/40);
+		session->username == "PixelBrushArt"
+		    ? DropItemAtEntity(BLOCK_WOOL, /*Quantity=*/1, /*Data=*/1, /*PickupTime=*/40)
+		    : DropItemAtEntity(BLOCK_WOOL, /*Quantity=*/1, /*Data=*/14, /*PickupTime=*/40);
 	}
 
 	if (session && session->entityTracker)

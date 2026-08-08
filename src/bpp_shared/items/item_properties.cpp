@@ -6,13 +6,13 @@
 */
 
 #include "item_properties.h"
+#include "../entities/entity_mobile.h"
 #include "base_types.h"
 #include "enums/items.h"
 #include "item_map.h"
+#include "server.h"
 #include "tool_properties.h"
 #include <cstdint>
-#include "../entities/entity_mobile.h"
-#include "server.h"
 
 namespace Items {
 
@@ -76,7 +76,7 @@ ItemAmount GetMaxStack(const ItemId _id) {
 
 void EatFood(PlayerSession& _session, ItemStack* _stack, Entity& _target) {
 	// If it's not a mobile entity, we can't heal it, since it doesn't have health
-    auto* mobile = dynamic_cast<MobileEntity*>(&_target);
+	auto* mobile = dynamic_cast<MobileEntity*>(&_target);
 	if (!mobile || !_stack || !IsFood(_stack->id))
 		return;
 	mobile->Heal(GetRegenerationAmount(_stack->id));
@@ -88,7 +88,7 @@ void EatFood(PlayerSession& _session, ItemStack* _stack, Entity& _target) {
 		giveBowlBack = true;
 	_stack->DecrementCount(1);
 	if (giveBowlBack) {
-		ItemStack itemStack = ItemStack{Items::Id::BOWL,0,1};
+		ItemStack itemStack = ItemStack{ Items::Id::BOWL, 0, 1 };
 		_session.inventory.PickupItem(itemStack);
 	}
 }
@@ -101,27 +101,27 @@ ItemDamage GetMaxDurability(const ItemId _id) {
 }
 
 EntityHealth GetRegenerationAmount(const ItemId _id) {
-	switch(_id) {
-		case Items::Id::APPLE:
-			return 4;
-		case Items::Id::BREAD:
-			return 5;
-		case Items::Id::PORKCHOP:
-			return 3;
-		case Items::Id::PORKCHOP_COOKED:
-			return 8;
-		case Items::Id::APPLE_GOLDEN:
-			return 42;
-		case Items::Id::FISH:
-			return 2;
-		case Items::Id::FISH_COOKED:
-			return 5;
-		case Items::Id::MUSHROOM_STEW:
-			return 10;
-		case Items::Id::COOKIE:
-			return 1;
-		default:
-			return 0;
+	switch (_id) {
+	case Items::Id::APPLE:
+		return 4;
+	case Items::Id::BREAD:
+		return 5;
+	case Items::Id::PORKCHOP:
+		return 3;
+	case Items::Id::PORKCHOP_COOKED:
+		return 8;
+	case Items::Id::APPLE_GOLDEN:
+		return 42;
+	case Items::Id::FISH:
+		return 2;
+	case Items::Id::FISH_COOKED:
+		return 5;
+	case Items::Id::MUSHROOM_STEW:
+		return 10;
+	case Items::Id::COOKIE:
+		return 1;
+	default:
+		return 0;
 	}
 }
 }; // namespace Items

@@ -18,7 +18,6 @@
 #include <cstring>
 #include <numeric_structs.h>
 
-
 enum class ChunkState : uint8_t {
 	Unloaded,
 	Generating,

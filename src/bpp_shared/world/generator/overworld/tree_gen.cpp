@@ -9,7 +9,7 @@
 #include <cassert>
 #include <cstdint>
 
-namespace  TreeGenerator {
+namespace TreeGenerator {
 /**
  * @brief Attempts to generate an oak or birch tree.
  * 
@@ -643,4 +643,4 @@ bool GenerateAltTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 	}
 	return false;
 }
-};
+}; // namespace TreeGenerator

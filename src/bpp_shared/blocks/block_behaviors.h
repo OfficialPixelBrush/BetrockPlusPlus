@@ -53,7 +53,8 @@ struct BlockBehavior {
 
 	// Called when block is placed by a player
 	// Returns if the placement was successful
-	bool (*onBlockPlaced)(WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face, BlockType _blockId, uint8_t _meta) = nullptr;
+	bool (*onBlockPlaced)(WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+	                      BlockType _blockId, uint8_t _meta) = nullptr;
 
 	// Called when player breaks the block
 	void (*onBlockDestroyedByPlayer)(WorldManager& _world, Int3 _pos, Entity& _destroyer) = nullptr;

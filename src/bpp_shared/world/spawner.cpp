@@ -19,7 +19,7 @@ struct AnimalSpawnEntry {
 };
 
 // TODO: This should be base on biome!
-static const std::vector<AnimalSpawnEntry> passiveSpawnList = {
+static const std::vector<AnimalSpawnEntry> PASSIVE_SPAWN_LIST = {
 	{ []() { return std::make_shared<PigEntity>(); }, 10 },
 	{ []() { return std::make_shared<CowEntity>(); }, 8 },
 	{ []() { return std::make_shared<ChickenEntity>(); }, 10 },
@@ -29,16 +29,16 @@ static const std::vector<AnimalSpawnEntry> passiveSpawnList = {
 // Picks one entry from the weighted list
 static const AnimalSpawnEntry& PickWeighted(Java::Random& _rand) {
 	int total = 0;
-	for (auto& entry : passiveSpawnList)
+	for (auto& entry : PASSIVE_SPAWN_LIST)
 		total += entry.weight;
 
 	int roll = _rand.NextInt(total);
-	for (auto& entry : passiveSpawnList) {
+	for (auto& entry : PASSIVE_SPAWN_LIST) {
 		roll -= entry.weight;
 		if (roll < 0)
 			return entry;
 	}
-	return passiveSpawnList.back(); // unreachable in practice
+	return PASSIVE_SPAWN_LIST.back(); // unreachable in practice
 }
 
 int EntitySpawner::GetPassiveCount(WorldManager& _world) {

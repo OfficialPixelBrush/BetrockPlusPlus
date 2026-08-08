@@ -89,7 +89,7 @@ struct BlockProperties {
 
 	uint8_t lightEmission = 0;  // 0-15
 	uint8_t lightOpacity = 255; // 0 = transparent, 255 = fully opaque
-	int tickRate = 10; // Used for self scheduling blocks
+	int tickRate = 10;          // Used for self scheduling blocks
 
 	float hardness = 1.0f;        // -1 = unbreakable (bedrock)
 	float resistance = 5.0f;      // blast resistance
@@ -102,7 +102,7 @@ struct BlockProperties {
 	bool renderAsNormalBlock = true;
 	bool ticksOnLoad = false; // Can we random tick?
 	bool canBlockGrass = true;
-	bool enableStats = true; // false = breaking doesn't count for achievements
+	bool enableStats = true;            // false = breaking doesn't count for achievements
 	bool notifySelfOnMetaChange = true; // Whether to send an update to the client when meta changes
 };
 

@@ -49,12 +49,17 @@ struct TrackedEntry {
 
 class Server;
 struct MobileEntity;
+struct PlayerSession;
 struct EntityTracker {
 	Server* server = nullptr;
 
 	std::unordered_map<EntityId, TrackedEntry> trackedEntities;
 	std::unordered_set<EntityId> playerIds;
-	std::vector<EntityType> mobileEntities = {EntityType::CHICKEN, EntityType::COW, EntityType::PIG, EntityType::SHEEP, EntityType::WOLF, EntityType::ZOMBIE, EntityType::ZOMBIE_PIGMAN, EntityType::SKELETON, EntityType::CREEPER, EntityType::SPIDER, EntityType::GHAST, EntityType::SLIME, EntityType::GIANT_ZOMBIE, EntityType::PLAYER};
+	std::vector<EntityType> mobileEntities = { EntityType::CHICKEN,       EntityType::COW,      EntityType::PIG,
+		                                       EntityType::SHEEP,         EntityType::WOLF,     EntityType::ZOMBIE,
+		                                       EntityType::ZOMBIE_PIGMAN, EntityType::SKELETON, EntityType::CREEPER,
+		                                       EntityType::SPIDER,        EntityType::GHAST,    EntityType::SLIME,
+		                                       EntityType::GIANT_ZOMBIE,  EntityType::PLAYER };
 
 	TickTime forceTeleportTicks = 400; // 20 seconds
 
@@ -92,7 +97,7 @@ struct EntityTracker {
 	void Update(TrackedEntry& _trackedEntry);
 	void UpdateDamageState(TrackedEntry& _trackedEntry);
 	void UpdateEquipmentState(TrackedEntry& _trackedEntry);
-	void SendEquipmentState(TrackedEntry& _trackedEntry);
+	void SendEquipmentState(TrackedEntry& _trackedEntry, std::shared_ptr<PlayerSession> _targetSession);
 
 	// With my strict goal of keeping strict separation we cannot put this as a virtual in the actual entity class itself
 	TrackingProfile GetTrackingProfile(Entity& _entity) {
@@ -143,7 +148,8 @@ struct EntityTracker {
 		default:
 			return { 0, 0, false };
 
-			GlobalLogger().warn << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) + "'\n";
+			GlobalLogger().warn << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) +
+			                           "'\n";
 		}
 	}
 };
