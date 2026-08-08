@@ -55,26 +55,26 @@ double NoisePerlin::GenerateNoiseBase(Vec3 _pos) {
 	_pos.z += coordinate.z;
 	// The farlands are caused by this getting cast to a 32-Bit Integer.
 	// Change these int32_t to int64_t to fix the farlands in Infdev
-	int32_t xInt = Java::DoubleToInt32(_pos.x);
-	int32_t yInt = Java::DoubleToInt32(_pos.y);
-	int32_t zInt = Java::DoubleToInt32(_pos.z);
-	if (_pos.x < double(xInt))
+	int32_t xInt = Java::FloatToInt32(_pos.x);
+	int32_t yInt = Java::FloatToInt32(_pos.y);
+	int32_t zInt = Java::FloatToInt32(_pos.z);
+	if (_pos.x < float(xInt))
 		--xInt;
-	if (_pos.y < double(yInt))
+	if (_pos.y < float(yInt))
 		--yInt;
-	if (_pos.z < double(zInt))
+	if (_pos.z < float(zInt))
 		--zInt;
 
 	int32_t xIndex = xInt & 255;
 	int32_t yIndex = yInt & 255;
 	int32_t zIndex = zInt & 255;
 
-	_pos.x -= double(xInt);
-	_pos.y -= double(yInt);
-	_pos.z -= double(zInt);
-	double w = Fade(_pos.x);
-	double v = Fade(_pos.y);
-	double u = Fade(_pos.z);
+	_pos.x -= float(xInt);
+	_pos.y -= float(yInt);
+	_pos.z -= float(zInt);
+	float w = Fade(_pos.x);
+	float v = Fade(_pos.y);
+	float u = Fade(_pos.z);
 	int32_t permXY = permutations[xIndex] + yIndex;
 	int32_t permXYZ = permutations[permXY] + zIndex;
 	// Some of the following code is weird,
@@ -121,35 +121,35 @@ void NoisePerlin::GenerateNoise(std::span<double> _noiseField, Vec3 _offset, Int
 		return;
 
 	double* out = _noiseField.data();
-	const double invAmp = 1.0 / _amplitude;
+	const float invAmp = 1.0 / _amplitude;
 
 	if (_size.y == 1) {
 		for (int32_t x = 0; x < _size.x; ++x) {
-			double fx = (_offset.x + x) * _scale.x + coordinate.x;
-			int32_t ix = Java::DoubleToInt32(fx);
+			float fx = (_offset.x + x) * _scale.x + coordinate.x;
+			int32_t ix = Java::FloatToInt32(fx);
 			if (fx < ix)
 				--ix;
 			int32_t px = ix & 255;
 			fx -= ix;
-			double u = Fade(fx);
+			float u = Fade(fx);
 
 			for (int32_t z = 0; z < _size.z; ++z) {
-				double fz = (_offset.z + z) * _scale.z + coordinate.z;
-				int32_t iz = Java::DoubleToInt32(fz);
+				float fz = (_offset.z + z) * _scale.z + coordinate.z;
+				int32_t iz = Java::FloatToInt32(fz);
 				if (fz < iz)
 					--iz;
 				int32_t pz = iz & 255;
 				fz -= iz;
-				double w = Fade(fz);
+				float w = Fade(fz);
 
 				int32_t a = permutations[px] + 0;
 				int32_t aa = permutations[a] + pz;
 				int32_t b = permutations[px + 1] + 0;
 				int32_t ba = permutations[b] + pz;
 
-				double x1 = Lerp(u, Grad2d(permutations[aa], fx, fz), Grad3d(permutations[ba], fx - 1.0, 0.0, fz));
+				float x1 = Lerp(u, Grad2d(permutations[aa], fx, fz), Grad3d(permutations[ba], fx - 1.0, 0.0, fz));
 
-				double x2 = Lerp(u, Grad3d(permutations[aa + 1], fx, 0.0, fz - 1.0),
+				float x2 = Lerp(u, Grad3d(permutations[aa + 1], fx, 0.0, fz - 1.0),
 				                 Grad3d(permutations[ba + 1], fx - 1.0, 0.0, fz - 1.0));
 
 				*out++ += Lerp(w, x1, x2) * invAmp;
@@ -158,35 +158,35 @@ void NoisePerlin::GenerateNoise(std::span<double> _noiseField, Vec3 _offset, Int
 	} else {
 		int32_t lastPermY = -1;
 
-		double lerpAX = 0.0, lerpBX = 0.0;
-		double lerpAY = 0.0, lerpBY = 0.0;
+		float lerpAX = 0.0, lerpBX = 0.0;
+		float lerpAY = 0.0, lerpBY = 0.0;
 
 		for (int32_t x = 0; x < _size.x; ++x) {
-			double fx = (_offset.x + x) * _scale.x + coordinate.x;
-			int32_t ix = Java::DoubleToInt32(fx);
+			float fx = (_offset.x + x) * _scale.x + coordinate.x;
+			int32_t ix = Java::FloatToInt32(fx);
 			if (fx < ix)
 				--ix;
 			int32_t px = ix & 255;
 			fx -= ix;
-			double u = Fade(fx);
+			float u = Fade(fx);
 
 			for (int32_t z = 0; z < _size.z; ++z) {
-				double fz = (_offset.z + z) * _scale.z + coordinate.z;
-				int32_t iz = Java::DoubleToInt32(fz);
+				float fz = (_offset.z + z) * _scale.z + coordinate.z;
+				int32_t iz = Java::FloatToInt32(fz);
 				if (fz < iz)
 					--iz;
 				int32_t pz = iz & 255;
 				fz -= iz;
-				double w = Fade(fz);
+				float w = Fade(fz);
 
 				for (int32_t y = 0; y < _size.y; ++y) {
-					double fy = (_offset.y + y) * _scale.y + coordinate.y;
-					int32_t iy = Java::DoubleToInt32(fy);
+					float fy = (_offset.y + y) * _scale.y + coordinate.y;
+					int32_t iy = Java::FloatToInt32(fy);
 					if (fy < iy)
 						--iy;
 					int32_t py = iy & 255;
 					fy -= iy;
-					double v = Fade(fy);
+					float v = Fade(fy);
 
 					// Beta caches corner grads when the lattice Y index is unchanged.
 					// Keep that reuse (including stale fractional fy) for terrain fidelity.
@@ -213,9 +213,9 @@ void NoisePerlin::GenerateNoise(std::span<double> _noiseField, Vec3 _offset, Int
 						              Grad3d(permutations[bb + 1], fx - 1.0, fy - 1.0, fz - 1.0));
 					}
 
-					double i1 = Lerp(v, lerpAX, lerpBX);
-					double i2 = Lerp(v, lerpAY, lerpBY);
-					*out++ += Lerp(w, i1, i2) * invAmp;
+					float i1 = Lerp(v, lerpAX, lerpBX);
+					float i2 = Lerp(v, lerpAY, lerpBY);
+					*out++ += double(Lerp(w, i1, i2) * invAmp);
 				}
 			}
 		}
