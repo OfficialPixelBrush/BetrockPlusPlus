@@ -31,9 +31,18 @@
 #include "version.h"
 #include <chrono>
 
+#ifdef DISCORD_INTEGRATION
+#include "discord.h"
+#endif
+
 Server::Server() : gameRuntime(serverViewRadius), config("server.properties") {
 	ServerBlock::Initialize();
 	LoadConfig();
+
+#ifdef DISCORD_INTEGRATION
+	GlobalDiscord().Init(config.GetAsString("discord-token"), config.GetAsString("discord-channel-id"));
+#endif
+
 	serverSocket = ServerSocketManager::CreateServerSocket(serverPort);
 	if (serverSocket < 0) {
 		GlobalLogger().error << "**** FAILED TO CREATE SERVER SOCKET!" << "\n";
@@ -135,6 +144,10 @@ void Server::LoadConfig() {
 		    { "level-seed", std::to_string(std::mt19937(std::random_device()())()) },
 		    //{"spawn-animals",true}
 		    { "server-port", "25565" },
+#ifdef DISCORD_INTEGRATION
+		    { "discord-token", "" },
+		    { "discord-channel-id", "" },
+#endif
 		    //{"allow-nether",true},
 		    //{"spawn-monsters","true"},
 		    //{"max-players", "-1"},
@@ -291,6 +304,9 @@ void Server::Startup() {
 
 	float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
 	GlobalLogger().info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";
+	#ifdef DISCORD_INTEGRATION
+	GlobalDiscord().SendMessage("Server started!");
+	#endif
 }
 
 void Server::Run() {
@@ -350,6 +366,9 @@ void Server::Stop() {
 	if (stopped)
 		return;
 	stopped = true;
+	#ifdef DISCORD_INTEGRATION
+	GlobalDiscord().SendMessage("Server stopped!");
+	#endif
 	GlobalLogger().info << "Server shutting down...\n";
 	for (auto& session : players) {
 		connStateManager.DisconnectPlayer(*session, "Server Closed", *this);

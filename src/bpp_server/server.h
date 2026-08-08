@@ -10,6 +10,11 @@
 #include <atomic>
 extern std::atomic<bool> shutdownRequested;
 
+
+#ifdef DISCORD_INTEGRATION
+#include "discord.h"
+#endif
+
 #include "blocks/serverBlockBehaviors.h"
 #include "chunk_IO/chunk_broadcaster.h"
 #include "chunk_IO/chunk_sender.h"
@@ -103,6 +108,9 @@ public:
 			reply.Serialize(other->stream);
 		}
 		GlobalLogger().msg << StripFormatting(_message) << "\n";
+		#ifdef DISCORD_INTEGRATION
+		GlobalDiscord().SendMessage(_message);
+		#endif
 	}
 
 	const std::vector<std::shared_ptr<PlayerSession>>& GetPlayers() noexcept {

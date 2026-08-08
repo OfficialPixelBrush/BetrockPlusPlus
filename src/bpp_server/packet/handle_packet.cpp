@@ -49,6 +49,9 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
 			continue;
 		reply.Serialize(receiver->stream);
 	}
+	#ifdef DISCORD_INTEGRATION
+	GlobalDiscord().SendMessage(reply.message);
+	#endif
 }
 
 void PlayerMovement(Packet::PlayerMovement& _pkt, PlayerSession& _session) {
@@ -167,6 +170,9 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 }
 
 void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager& _world, Runtime& _gameRuntime) {
+
+	int *p = NULL;
+	*p = 1;
 	Int3 position = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
 	// Block interactions
 	auto block = _world.GetBlockId(position);
