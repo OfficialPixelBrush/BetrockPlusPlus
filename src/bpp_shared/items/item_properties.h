@@ -10,6 +10,7 @@
 #include "items.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
+#include "logger.h"
 #include <cstdint>
 #include <unordered_map>
 
@@ -73,5 +74,28 @@ constexpr bool IsStackable(ItemId _id) {
 
 constexpr bool IsFood(ItemId _id) {
 	return Items::GetRegenerationAmount(_id) > 1;
+}
+
+constexpr int GetArmorDamageReduction(ItemId _id) {
+	if (!IsArmor(_id))
+		return 0;
+
+	int damageReduceAmounts[4] = { 3, 8, 6, 3 };
+	// ok ok I wanted to explain this because it is a bit convoluted.
+	// Armor starts at id 298, and from there it goes helmet, chestplate, leggings boots
+	// Each of the following tiers of armor follow this pattern from then on
+	int pieceIndex = (_id - 298) % 4;
+	return damageReduceAmounts[pieceIndex];
+}
+
+inline void DamageItem(ItemStack& _stack, int _damage) {
+	int max = GetMaxDurability(_stack.id);
+	if (!max)
+		return;
+
+	_stack.data += _damage;
+	if (_stack.data >= max) {
+		_stack = {};
+	}
 }
 }; // namespace Items

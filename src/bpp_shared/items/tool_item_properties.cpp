@@ -102,6 +102,7 @@ void RegisterAll() {
 		                                                        .material = ToolMaterial::Diamond,
 		                                                        .canHarvest = CanShovelHarvest,
 		                                                        .howEffectiveAgainstBlock = ToolEffectiveness };
+
 	// Hoe
 	toolProperties[Items::Id::HOE_WOOD] = ToolProperties{
 		.type = ToolType::Hoe,
@@ -142,6 +143,36 @@ void RegisterAll() {
 	toolProperties[Items::Id::FISHING_ROD] = ToolProperties{ .type = ToolType::None,
 		                                                     .material = ToolMaterial::None,
 		                                                     .maxUses = DURABILITY_FISHING_ROD };
+
+	// Armor Leather
+	toolProperties[Items::Id::HELMET_LEATHER] = ToolProperties{ .maxUses = DURABILITY_HELMET_LEATHER };
+	toolProperties[Items::Id::CHESTPLATE_LEATHER] = ToolProperties{ .maxUses = DURABILITY_CHEST_LEATHER };
+	toolProperties[Items::Id::LEGGINGS_LEATHER] = ToolProperties{ .maxUses = DURABILITY_LEGS_LEATHER };
+	toolProperties[Items::Id::BOOTS_LEATHER] = ToolProperties{ .maxUses = DURABILITY_BOOTS_LEATHER };
+
+	// Armor Chainmail
+	toolProperties[Items::Id::HELMET_CHAINMAIL] = ToolProperties{ .maxUses = DURABILITY_HELMET_CHAINMAIL };
+	toolProperties[Items::Id::CHESTPLATE_CHAINMAIL] = ToolProperties{ .maxUses = DURABILITY_CHEST_CHAINMAIL };
+	toolProperties[Items::Id::LEGGINGS_CHAINMAIL] = ToolProperties{ .maxUses = DURABILITY_LEGS_CHAINMAIL };
+	toolProperties[Items::Id::BOOTS_CHAINMAIL] = ToolProperties{ .maxUses = DURABILITY_BOOTS_CHAINMAIL };
+
+	// Armor Iron
+	toolProperties[Items::Id::HELMET_IRON] = ToolProperties{ .maxUses = DURABILITY_HELMET_IRON };
+	toolProperties[Items::Id::CHESTPLATE_IRON] = ToolProperties{ .maxUses = DURABILITY_CHEST_IRON };
+	toolProperties[Items::Id::LEGGINGS_IRON] = ToolProperties{ .maxUses = DURABILITY_LEGS_IRON };
+	toolProperties[Items::Id::BOOTS_IRON] = ToolProperties{ .maxUses = DURABILITY_BOOTS_IRON };
+
+	// Armor Diamond
+	toolProperties[Items::Id::HELMET_DIAMOND] = ToolProperties{ .maxUses = DURABILITY_HELMET_DIAMOND };
+	toolProperties[Items::Id::CHESTPLATE_DIAMOND] = ToolProperties{ .maxUses = DURABILITY_CHEST_DIAMOND };
+	toolProperties[Items::Id::LEGGINGS_DIAMOND] = ToolProperties{ .maxUses = DURABILITY_LEGS_DIAMOND };
+	toolProperties[Items::Id::BOOTS_DIAMOND] = ToolProperties{ .maxUses = DURABILITY_BOOTS_DIAMOND };
+
+	// Armor Gold
+	toolProperties[Items::Id::HELMET_GOLD] = ToolProperties{ .maxUses = DURABILITY_HELMET_GOLD };
+	toolProperties[Items::Id::CHESTPLATE_GOLD] = ToolProperties{ .maxUses = DURABILITY_CHEST_GOLD };
+	toolProperties[Items::Id::LEGGINGS_GOLD] = ToolProperties{ .maxUses = DURABILITY_LEGS_GOLD };
+	toolProperties[Items::Id::BOOTS_GOLD] = ToolProperties{ .maxUses = DURABILITY_BOOTS_GOLD };
 
 	// Tool behaviors — iterate registered tools (toolBehavior starts empty)
 	for (const auto& [itemId, props] : toolProperties) {

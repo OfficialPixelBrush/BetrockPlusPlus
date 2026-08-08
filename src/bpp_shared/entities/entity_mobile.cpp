@@ -300,6 +300,48 @@ void MobileEntity::Heal(int _health) {
 	health = std::min(health + _health, maxHealth);
 }
 
+void MobileEntity::DealDamage(int _damage) {
+	// Mark we have been attacked
+	beenAttacked = true;
+
+	// Damage our armor with the raw damage
+	for (int i = 0; i < 4; i++) {
+		auto thisPiece = armor[i];
+		if (thisPiece && Items::IsArmor(thisPiece->id))
+			Items::DamageItem(*thisPiece, _damage);
+	}
+
+	// Calculate damage with armor
+	// Idk why armor uses a 25 point scale but it is what it is
+	// It only ever goes up to 20, so a full set of armor blocks 80% of damage
+	// Anything leftover damage wise gets accumulated until its enough to do a hit point
+	int unmitigated = 25 - GetArmorValue();
+	int scaledWithCarry = (_damage * unmitigated) + this->accumulatedFractionalDamage;
+	int reducedDamage = scaledWithCarry / 25;
+	accumulatedFractionalDamage = scaledWithCarry % 25;
+	health -= reducedDamage;
+}
+
+int MobileEntity::GetArmorValue() {
+	int totalProtection = 0;
+	int totalRemainingDurability = 0;
+	int totalMaxDurability = 0;
+
+	for (int i = 0; i < 4; i++) {
+		auto thisPiece = armor[i];
+		if (thisPiece && Items::IsArmor(thisPiece->id)) {
+			int maxDurability = Items::GetMaxDurability(thisPiece->id);
+			int remainingDurability = maxDurability - thisPiece->data;
+
+			totalRemainingDurability += remainingDurability;
+			totalMaxDurability += maxDurability;
+			totalProtection += Items::GetArmorDamageReduction(thisPiece->id);
+		}
+	}
+
+	return totalMaxDurability == 0 ? 0 : (totalProtection - 1) * totalRemainingDurability / totalMaxDurability + 1;
+}
+
 bool MobileEntity::AttackEntityFrom(Entity* _entity, int _damage) {
 	age = 0;
 	if (health <= 0)
@@ -311,13 +353,13 @@ bool MobileEntity::AttackEntityFrom(Entity* _entity, int _damage) {
 		if (_damage <= lastAttackDamage)
 			return false;
 
-		health -= (_damage - lastAttackDamage);
+		DealDamage(_damage - lastAttackDamage);
 		lastAttackDamage = _damage;
 		freshHit = false;
 	} else {
 		lastAttackDamage = _damage;
 		hurtResistantTime = maxHurtTime;
-		health -= _damage;
+		DealDamage(_damage);
 	}
 
 	if (freshHit) {

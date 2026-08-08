@@ -34,10 +34,12 @@ public:
 	int lastAttackDamage = 0;
 	int deathTime = 0;
 	int attackTime = 0;
+	float accumulatedFractionalDamage = 0.0f;
 	float movementSpeed = 0.7f;
 	bool canBreatheUnderwater = false;
+	bool beenAttacked = false;
 	ItemStack heldItem;
-	ItemStack armor[4] = {}; // Helmet, chestplate, leggings, boots
+	ItemStack* armor[4] = {nullptr, nullptr, nullptr, nullptr}; // Helmet, chestplate, leggings, boots
 
 	virtual void Tick() override;
 	virtual void OnDeath();
@@ -50,6 +52,8 @@ public:
 	void SetHeldItem(ItemStack _stack);
 	void FollowPath();
 	bool onLadder();
+	void DealDamage(int _damage);
+	int GetArmorValue();
 	bool AttackEntityFrom(Entity* _entity, int _damage) override;
 	std::optional<Tag> SerializeToNbt() override;
 	void LoadFromNbt(Tag& _nbt) override;
