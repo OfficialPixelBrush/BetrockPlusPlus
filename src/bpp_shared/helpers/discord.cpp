@@ -114,6 +114,11 @@ void Discord::SendMessage(const std::string& _message) {
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json.c_str());
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
+			[](char*, size_t size, size_t nmemb, void*) {
+				return size * nmemb;
+		});
+
 
 		CURLcode result = curl_easy_perform(curl);
 
@@ -158,7 +163,11 @@ void Discord::SendFile(const std::string& _filename, const std::string& _message
 		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
-
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
+			[](char*, size_t size, size_t nmemb, void*) {
+				return size * nmemb;
+		});
+		
 		CURLcode result = curl_easy_perform(curl);
 
 		if (result != CURLE_OK) {
