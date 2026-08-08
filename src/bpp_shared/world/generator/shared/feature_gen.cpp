@@ -617,4 +617,4 @@ bool GenerateNetherGlowstone(WorldWrapper& _world, Java::Random& _rand, Int3 _po
 	return true;
 }
 
-};
+}; // namespace FeatureGenerator

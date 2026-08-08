@@ -165,7 +165,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 	SetConsoleCtrlHandler(consoleCtrlHandler, TRUE);
 #endif
 
-
 #ifdef BUILD_SERVER
 	// For testing REMOVE LATER!
 	// std::string path = "";

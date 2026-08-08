@@ -130,7 +130,7 @@ void Entity::Tick() {
 	inFire = inLava || world->IsMaterialInAabb(GetFireCollider(), Material::Fire());
 	if (inFire) {
 		// 1 damage per tick while actually touching
-		AttackEntityFrom(nullptr, 1); 
+		AttackEntityFrom(nullptr, 1);
 		if (!isImmuneToFire && fireTicks == 0) {
 			fireTicks = 300;
 		}

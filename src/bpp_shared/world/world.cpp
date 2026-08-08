@@ -292,9 +292,9 @@ void WorldManager::Update(const std::vector<ClientPosition>& _players) {
 	PumpPipeline(_players);
 }
 
-void WorldManager::DropInventory(Inventory& inventory, Int3 _wpos) {
+void WorldManager::DropInventory(Inventory& _inventory, Int3 _wpos) {
 	// Drop an inventory at a given block coordinate
-	for (auto& stack : inventory.slots) {
+	for (auto& stack : _inventory.slots) {
 		if (stack.id != Items::INVALID) {
 			float offsetX = rand.NextFloat() * 0.8f + 0.1f;
 			float offsetY = rand.NextFloat() * 0.8f + 0.1f;
@@ -830,7 +830,7 @@ void WorldManager::SetBlockRaw(const Int3 _wpos, const BlockType _blockType, con
 }
 
 void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata,
-                            const bool keepTileEntity, const bool updateNeighbors) {
+                            const bool _keepTileEntity, const bool _updateNeighbors) {
 	if (!InBounds(_wpos.y))
 		return;
 	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
@@ -906,7 +906,7 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	}
 
 	// Update our neighbors
-	if (updateNeighbors)
+	if (_updateNeighbors)
 		this->NotifyNeighborsOfUpdate(_wpos);
 
 	if (_blockType == BLOCK_AIR) {
@@ -917,7 +917,7 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	}
 
 	// Remove any tile entities that exist at this spot
-	if (!keepTileEntity) {
+	if (!_keepTileEntity) {
 		auto& tes = chunk->tileEntities;
 		tes.erase(std::remove_if(tes.begin(), tes.end(),
 		                         [&](const std::shared_ptr<TileEntity>& _te) { return _te && _te->position == _wpos; }),

@@ -207,7 +207,7 @@ void Lighter::UnlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _
 				continue;
 
 			int ncx = nx >> 4, ncz = nz >> 4;
- 			int nlx = nx & 15, nlz = nz & 15;
+			int nlx = nx & 15, nlz = nz & 15;
 			int dx = ncx - unlightCache.cx, dz = ncz - unlightCache.cz;
 			// unlightCache was just refreshed to pos's chunk, and (nx,ny,nz) is
 			// only one block away from pos, so the neighbor chunk is always

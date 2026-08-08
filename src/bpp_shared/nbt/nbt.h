@@ -208,9 +208,7 @@ struct NBTwriter {
 			if (_dryRun)
 				break;
 			// TODO: Assume we got the size
-			memcpy(_out.data() + pos,
-				_tag.byteArray.data(),
-				_tag.byteArray.size());
+			memcpy(_out.data() + pos, _tag.byteArray.data(), _tag.byteArray.size());
 
 			pos += _tag.byteArray.size();
 			break;
@@ -224,10 +222,10 @@ struct NBTwriter {
 			for (const int32_t b : _tag.intArray) {
 				uint32_t u = uint32_t(b);
 
-				_out[pos+0] = u >> 24;
-				_out[pos+1] = u >> 16;
-				_out[pos+2] = u >> 8;
-				_out[pos+3] = u;
+				_out[pos + 0] = u >> 24;
+				_out[pos + 1] = u >> 16;
+				_out[pos + 2] = u >> 8;
+				_out[pos + 3] = u;
 
 				pos += 4;
 			}
@@ -372,7 +370,7 @@ struct NBTParser {
 			int32_t count = ReadI32();
 			tag.byteArray.resize(count);
 			if (count < 0 || pos + size_t(count) > length) [[unlikely]]
-    			throw std::runtime_error("NBT: byte array out of bounds");
+				throw std::runtime_error("NBT: byte array out of bounds");
 			std::memcpy(tag.byteArray.data(), data + pos, count);
 			pos += count;
 			break;
@@ -381,7 +379,7 @@ struct NBTParser {
 		case TAG_INTARRAY: {
 			int32_t count = ReadI32();
 			tag.intArray.resize(count);
-			for (auto &v : tag.intArray)
+			for (auto& v : tag.intArray)
 				v = ReadI32();
 			break;
 		}
@@ -447,7 +445,7 @@ struct NBTParser {
 		pos += 2;
 		return int16_t(v);
 	}
-	
+
 	inline int32_t ReadI32() {
 		if (pos + 4 > length)
 			throw std::runtime_error("NBT: unexpected end");
@@ -475,7 +473,7 @@ struct NBTParser {
 	inline std::string ReadString() {
 		uint16_t len = uint16_t(ReadI16());
 		if (pos + len > length)
-			throw std::runtime_error(std::format("NBT: string out of bounds ({}+{}/{})", pos,len,length));
+			throw std::runtime_error(std::format("NBT: string out of bounds ({}+{}/{})", pos, len, length));
 		std::string s(reinterpret_cast<const char*>(data) + pos, len);
 		pos += len;
 		return s;

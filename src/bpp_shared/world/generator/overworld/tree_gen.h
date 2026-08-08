@@ -15,9 +15,9 @@
  * 
  */
 namespace TreeGenerator {
-	bool GenerateTree(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch = false);
-	bool GenerateTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
-	bool GenerateAltTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
+bool GenerateTree(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch = false);
+bool GenerateTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
+bool GenerateAltTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 
 class BigTree {
 private:
@@ -67,7 +67,8 @@ private:
 	void PlaceCircularLayer(Int3 _centerPos, float _radius, BranchAxis _axis, BlockType _blockType);
 	bool CanGenerateBranchAtHeight(int32_t _y);
 	void Configure(double _treeHeight, double _branchLength, double _trunkShape);
+
 public:
 	bool Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 };
-};
+}; // namespace TreeGenerator

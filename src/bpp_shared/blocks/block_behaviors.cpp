@@ -19,7 +19,7 @@
 namespace Blocks {
 BlockBehavior blockBehaviors[256] = {};
 
-static void tryLavaHarden(WorldManager& _world, Int3 _pos) {
+static void TryLavaHarden(WorldManager& _world, Int3 _pos) {
 	// Make sure we are lava
 	if (_world.GetMaterial(_pos).type != MaterialType::Lava)
 		return;
@@ -921,21 +921,21 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_LAVA_FLOWING].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		// Schedule ourselves for an update
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == -1 ? 10 : 30);
-		tryLavaHarden(_world, _pos);
+		TryLavaHarden(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LAVA_FLOWING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
 		// Stack overflow if this was regular set block!
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == -1 ? 10 : 30);
-		tryLavaHarden(_world, _pos);
+		TryLavaHarden(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LAVA_STILL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
 		// Stack overflow if this was regular set block!
 		_world.SetBlockRaw(_pos, BLOCK_LAVA_FLOWING, _world.GetMetadata(_pos));
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == -1 ? 10 : 30);
-		tryLavaHarden(_world, _pos);
+		TryLavaHarden(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LAVA_STILL].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
-		tryLavaHarden(_world, _pos);
+		TryLavaHarden(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LAVA_FLOWING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                               Java::Random& _random) -> void {
