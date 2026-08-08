@@ -37,13 +37,13 @@ public:
 
 // Java Math functions that're only used by the generator
 
-// Precomputed tables for easier Gradient functions
+// Precomputed tables for faster Gradient functions
 static constexpr std::array<int8_t, 16> K_GRAD3_U = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 };
 static constexpr std::array<int8_t, 16> K_GRAD3_V = { 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 0, 2, 0, 2 };
 static constexpr std::array<int8_t, 16> K_GRAD2_U = { 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2 };
 static constexpr std::array<int8_t, 16> K_GRAD2_V = { 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1 };
-static constexpr std::array<float, 16> K_SIGN_BIT0 = { 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1 };
-static constexpr std::array<float, 16> K_SIGN_BIT1 = { 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1 };
+static constexpr std::array<gen_float, 16> K_SIGN_BIT0 = { 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1 };
+static constexpr std::array<gen_float, 16> K_SIGN_BIT1 = { 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1 };
 
 /**
  * @brief 3D Perlin noise gradient function
@@ -85,5 +85,5 @@ constexpr inline gen_float Grad2d(int32_t _hash, const gen_float _x, const gen_f
  * @return Eased output value 
  */
 constexpr inline gen_float Fade(const gen_float _value) {
-	return _value * _value * _value * (_value * (_value * 6.0 - 15.0) + 10.0);
+	return _value * _value * _value * (_value * (_value * gen_float(6.0) - gen_float(15.0)) + gen_float(10.0));
 }
