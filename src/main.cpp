@@ -14,7 +14,13 @@
 #include "version.h"
 #include <atomic>
 #include <csignal>
+#include <fstream>
 #include <numeric_structs.h>
+#include <sstream>
+
+#ifdef DISCORD_INTEGRATION
+#include "discord.h"
+#endif
 
 #ifndef BUILD_SERVER
 #include "bpp_client/client.h"
@@ -106,6 +112,12 @@ void InitCrashHandler(std::string _platformString) {
 			std::ifstream file(_ctx.logFilePath);
 			if (!file) {
 				GlobalLogger().error << "Failed to open crash report file!\n";
+#ifdef DISCORD_INTEGRATION
+				std::ostringstream summary;
+				summary << "**Server crashed!** Signal/Code: " << _ctx.signalOrCode
+				        << "\n(crash report file could not be opened for upload)";
+				GlobalDiscord().SendMessage(summary.str());
+#endif
 				return;
 			}
 
@@ -114,7 +126,21 @@ void InitCrashHandler(std::string _platformString) {
 			while (std::getline(file, line)) {
 				GlobalLogger().error << line << "\n";
 			}
+
+#ifdef DISCORD_INTEGRATION
+			std::ostringstream summary;
+			summary << "**Server crashed!** Signal/Code: " << _ctx.signalOrCode;
+			GlobalDiscord().SendFile(std::string(_ctx.logFilePath), summary.str());
+#endif
 		}
+#ifdef DISCORD_INTEGRATION
+		else {
+			std::ostringstream summary;
+			summary << "**Server crashed!** Signal/Code: " << _ctx.signalOrCode
+			        << "\n(no crash report file was produced)";
+			GlobalDiscord().SendMessage(summary.str());
+		}
+#endif
 	};
 	CrashCatch::initialize(config);
 }
@@ -138,6 +164,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 #if defined(_WIN32) || defined(_WIN64)
 	SetConsoleCtrlHandler(consoleCtrlHandler, TRUE);
 #endif
+
 
 #ifdef BUILD_SERVER
 	// For testing REMOVE LATER!

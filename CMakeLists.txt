@@ -22,6 +22,10 @@ endif()
 
 # Build as server by default
 option(BUILD_SERVER "Build as server" ON)
+
+# Discord chat-relay / crash-log-upload integration (server only, requires libcurl)
+option(DISCORD_INTEGRATION "Enable Discord integration (requires libcurl)" OFF)
+
 find_package(libdeflate CONFIG REQUIRED)
 
 # Building as a client, we need this extra stuff
@@ -234,7 +238,18 @@ if(BUILD_SERVER)
     target_sources(BetrockPlusPlus PRIVATE
         ${SERVER_SOURCES}
     )
+    if (DISCORD_INTEGRATION)
+    find_package(CURL REQUIRED)
+    target_compile_definitions(BetrockPlusPlus PRIVATE DISCORD_INTEGRATION)
+    target_link_libraries(BetrockPlusPlus PRIVATE CURL::libcurl)
+    target_sources(BetrockPlusPlus PRIVATE
+        src/bpp_shared/helpers/discord.cpp
+    )
+    endif()
 else()
+    if (DISCORD_INTEGRATION)
+        message(WARNING "DISCORD_INTEGRATION has no effect when BUILD_SERVER is OFF; ignoring it")
+    endif()
 #Client mode
     target_compile_definitions(BetrockPlusPlus PRIVATE
         BUILD_CLIENT
