@@ -41,6 +41,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 		onGround = true;
 		Vec3 delta = *session->pendingPosition - *session->pendingTeleport;
 		auto dist = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+
 		if (dist > 0.0625) {
 			// Player isn't at the teleported position so send another tp packet
 			// Also reset our position
@@ -67,7 +68,9 @@ void EntityMPPlayer::HandlePositionChecks() {
 		Vec3 lastPosition = this->position;
 		Vec3 claimed = *session->pendingPosition;
 		Vec3 delta = claimed - lastPosition;
-		if (delta.x * delta.x + delta.y * delta.y + delta.z * delta.z > 100.0) {
+		// How far the client claims to have moved this tick
+		double claimedTravelDistSq = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+		if (claimedTravelDistSq > 100.0) {
 			GlobalLogger().warn << "Client " << session->username << " moved wrongly!\n";
 			movedWrong = true;
 		}
@@ -92,12 +95,17 @@ void EntityMPPlayer::HandlePositionChecks() {
 		auto resolvedDelta = delta;
 
 		// How far is our simulated move vs what the client says?
+		// Vanilla ignores Y here
 		delta = claimed - this->position;
+		delta.y = 0.0;
 		double residual = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+
 		if (residual < 0.0625) {
 			this->position = claimed; // Trust it
 			session->position.pos = claimed;
 			this->velocity = resolvedDelta;
+			// Reset ySize so step up works right
+			ySize = 0.0f;
 			RebuildCollider();
 		} else {
 			// Send a correction
@@ -106,10 +114,18 @@ void EntityMPPlayer::HandlePositionChecks() {
 
 		bool clearNow = world->GetCollidingBoundingBoxes(collider.Expand(-0.0625, -0.0625, -0.0625)).empty();
 
-		if ((wasClearBefore && (residualTooLarge || !clearNow)) || movedWrong) {
+		// Only check if we have clipped if we are moving fast enough
+		constexpr double CLEARNOW_FAST_MOVE_DIST_SQ = 0.36;
+		bool fastEnoughToClip = claimedTravelDistSq > CLEARNOW_FAST_MOVE_DIST_SQ;
+
+		bool willCorrect = (wasClearBefore && (residualTooLarge || (!clearNow && fastEnoughToClip))) || movedWrong;
+
+		if (willCorrect) {
 			// TP our player back
 			this->Teleport(lastPosition, { rotationYaw, rotationPitch });
 			session->position.pos = lastPosition;
+			// Wait until our client catches up
+			session->pendingTeleport = lastPosition;
 			Packet::PlayerPosition pkt;
 			pkt.onGround = onGround;
 			pkt.position = { position.x, position.y + PLAYER_EYE_HEIGHT, position.z };

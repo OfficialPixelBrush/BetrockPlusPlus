@@ -58,7 +58,6 @@ void PlayerMovement(Packet::PlayerMovement& _pkt, PlayerSession& _session) {
 	// On ground flag from client
 	if (_session.entity) {
 		_session.entity->onGround = _pkt.onGround;
-		_session.entity->HandlePositionChecks();
 	}
 }
 
@@ -73,10 +72,8 @@ void PlayerPosition(Packet::PlayerPosition& _pkt, PlayerSession& _session) {
 void PlayerRotation(Packet::PlayerRotation& _pkt, PlayerSession& _session) {
 	_session.rotation.x = _pkt.yaw;
 	_session.rotation.y = _pkt.pitch;
-	_session.pendingPosition = _session.position.pos;
 	if (_session.entity) {
 		_session.entity->onGround = _pkt.onGround;
-		_session.entity->HandlePositionChecks();
 	}
 }
 
