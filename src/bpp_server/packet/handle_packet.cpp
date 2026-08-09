@@ -292,7 +292,7 @@ void ClickSlot(Packet::ClickSlot& _pkt, PlayerSession& _session) {
 			_session.inventoryLocked = true;
 
 			// Reset the held cursor
-			PacketUtilities::SendSlot(_session, -1, -1, &empty);
+			PacketUtilities::SendSlot(_session, -1, -1, &_session.inventoryInteraction.carried);
 
 			PacketUtilities::SendInventory(_session, _pkt.windowId, _session.inventory);
 			return;
@@ -322,7 +322,7 @@ void ClickSlot(Packet::ClickSlot& _pkt, PlayerSession& _session) {
 		_session.inventoryLocked = true;
 
 		// Reset the held cursor
-		PacketUtilities::SendSlot(_session, -1, -1, &empty);
+		PacketUtilities::SendSlot(_session, -1, -1, &_session.activeInteraction->carried);
 		PacketUtilities::SendInventory(_session, _pkt.windowId, *_session.activeInteraction->inventory);
 		return;
 	}
