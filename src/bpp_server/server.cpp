@@ -40,7 +40,12 @@ Server::Server() : gameRuntime(serverViewRadius), config("server.properties") {
 	LoadConfig();
 
 #ifdef DISCORD_INTEGRATION
-	GlobalDiscord().Init(config.GetAsString("discord-token"), config.GetAsString("discord-channel-id"));
+	extern std::string g_discordToken;
+	extern std::string g_discordChannelId;
+	g_discordToken = config.GetAsString("discord-token");
+	g_discordChannelId = config.GetAsString("discord-channel-id");
+
+	GlobalDiscord().Init(g_discordToken, g_discordChannelId);
 #endif
 
 	serverSocket = ServerSocketManager::CreateServerSocket(serverPort);

@@ -176,10 +176,20 @@ void Discord::SendFile(const std::string& _filename, const std::string& _message
 }
 
 void Discord::SendMessageSync(const std::string& _message) {
-	if (token.empty() || channelId.empty())
+	SendMessageSyncStatic(token, channelId, _message);
+}
+
+void Discord::SendFileSync(const std::string& _filename, const std::string& _message) {
+	SendFileSyncStatic(token, channelId, _filename, _message);
+}
+
+void Discord::SendMessageSyncStatic(const std::string& _token, const std::string& _channelId,
+                                     const std::string& _message) {
+	if (_token.empty() || _channelId.empty())
 		return;
 
-	// Do not trust whatever the parent process's worker thread left behind in libcurl's global state
+	// curl_global_init/cleanup are only safe to call here because this function must only
+	// ever run in a fresh, single-threaded process (see the warning on the declaration).
 	curl_global_cleanup();
 	if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK)
 		return;
@@ -190,12 +200,12 @@ void Discord::SendMessageSync(const std::string& _message) {
 		return;
 	}
 
-	std::string url = "https://discord.com/api/v10/channels/" + channelId + "/messages";
+	std::string url = "https://discord.com/api/v10/channels/" + _channelId + "/messages";
 	std::string deformatted = RemoveMinecraftFormatting(_message);
 	std::string json = "{\"content\":\"" + EscapeJson(deformatted) + "\"}";
 
 	struct curl_slist* headers = nullptr;
-	std::string authorization = "Authorization: Bot " + token;
+	std::string authorization = "Authorization: Bot " + _token;
 	headers = curl_slist_append(headers, authorization.c_str());
 	headers = curl_slist_append(headers, "Content-Type: application/json");
 
@@ -215,8 +225,9 @@ void Discord::SendMessageSync(const std::string& _message) {
 	curl_global_cleanup();
 }
 
-void Discord::SendFileSync(const std::string& _filename, const std::string& _message) {
-	if (token.empty() || channelId.empty())
+void Discord::SendFileSyncStatic(const std::string& _token, const std::string& _channelId,
+                                  const std::string& _filename, const std::string& _message) {
+	if (_token.empty() || _channelId.empty())
 		return;
 
 	curl_global_cleanup();
@@ -229,10 +240,10 @@ void Discord::SendFileSync(const std::string& _filename, const std::string& _mes
 		return;
 	}
 
-	std::string url = "https://discord.com/api/v10/channels/" + channelId + "/messages";
+	std::string url = "https://discord.com/api/v10/channels/" + _channelId + "/messages";
 
 	struct curl_slist* headers = nullptr;
-	std::string authorization = "Authorization: Bot " + token;
+	std::string authorization = "Authorization: Bot " + _token;
 	headers = curl_slist_append(headers, authorization.c_str());
 
 	curl_mime* mime = curl_mime_init(localCurl);
