@@ -299,12 +299,12 @@ void ClickSlot(Packet::ClickSlot& _pkt, PlayerSession& _session) {
 		}
 
 		// Everything lined up so go as normal
-		if (_pkt.rightClick) {
-			_session.inventoryInteraction.OnRightClick(_pkt.slotId);
+		if (_pkt.shift) {
+			_session.activeInteraction->OnShiftClick(_pkt.slotId);
 			return;
 		}
-		if (_pkt.shift) {
-			_session.inventoryInteraction.OnShiftClick(_pkt.slotId);
+		if (_pkt.rightClick) {
+			_session.activeInteraction->OnRightClick(_pkt.slotId);
 			return;
 		}
 		_session.inventoryInteraction.OnLeftClick(_pkt.slotId);
@@ -328,12 +328,12 @@ void ClickSlot(Packet::ClickSlot& _pkt, PlayerSession& _session) {
 	}
 
 	// Everything lined up so go as normal
-	if (_pkt.rightClick) {
-		_session.activeInteraction->OnRightClick(_pkt.slotId);
-		return;
-	}
 	if (_pkt.shift) {
 		_session.activeInteraction->OnShiftClick(_pkt.slotId);
+		return;
+	}
+	if (_pkt.rightClick) {
+		_session.activeInteraction->OnRightClick(_pkt.slotId);
 		return;
 	}
 	_session.activeInteraction->OnLeftClick(_pkt.slotId);
