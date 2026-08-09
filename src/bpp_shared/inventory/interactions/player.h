@@ -10,6 +10,7 @@
 
 struct PlayerInventoryInteraction : CraftingInventoryInteraction {
 	InventoryPlayer* playerInventory;
+	bool needsDiff = false;
 
 	PlayerInventoryInteraction(InventoryPlayer* _inv, Runtime& _gameRuntime);
 	void OnClose();

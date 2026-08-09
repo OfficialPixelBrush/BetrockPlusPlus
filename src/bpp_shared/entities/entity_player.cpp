@@ -17,7 +17,7 @@ void PlayerEntity::DropInventory() {
 void PlayerEntity::OnDeath() {
 	MobileEntity::OnDeath();
 
-	// Shrink to the "squished corpse" hitbox
+	// Shrink to the "squished corpse" hitbox 
 	width = 0.2f;
 	height = 0.2f;
 	RebuildCollider();
