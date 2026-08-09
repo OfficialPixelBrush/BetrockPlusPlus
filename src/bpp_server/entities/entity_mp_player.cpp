@@ -14,6 +14,7 @@
 
 bool EntityMPPlayer::PickupItem(ItemStack& _stack, EntityId _entityId) {
 	if (this->session->inventory.PickupItem(_stack)) {
+		session->inventoryInteraction.needsDiff = true;
 		Packet::CollectItem pkt;
 		pkt.collectorEntityId = this->id;
 		pkt.itemEntityId = _entityId;
@@ -161,6 +162,7 @@ void EntityMPPlayer::DropInventory() {
 			stack->id = Items::Id::INVALID;
 		}
 	}
+	session->inventoryInteraction.needsDiff = true;
 }
 
 void EntityMPPlayer::OnDeath() {

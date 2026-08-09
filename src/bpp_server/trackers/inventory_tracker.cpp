@@ -20,14 +20,16 @@ void InventoryTracker::Tick(Server& _server) {
 
 	for (auto& session : _server.GetPlayers()) {
 		// Check inventory diffs
-		auto diffs2 = session->inventoryInteraction.TickDiff();
-		if (diffs2.size() <= 5) {
-			for (auto difference : diffs2) {
-				PacketUtilities::SendSlot(*session, 0, difference.slot, &difference.stack);
+		if (session->inventoryInteraction.needsDiff) {
+			auto diffs2 = session->inventoryInteraction.TickDiff();
+			if (diffs2.size() <= 5) {
+				for (auto difference : diffs2) {
+					PacketUtilities::SendSlot(*session, 0, difference.slot, &difference.stack);
+				}
+			} else {
+				// Too many changes, just resend the whole inventory
+				PacketUtilities::SendInventory(*session, 0, *session->inventoryInteraction.inventory);
 			}
-		} else {
-			// Too many changes, just resend the whole inventory
-			PacketUtilities::SendInventory(*session, 0, *session->inventoryInteraction.inventory);
 		}
 
 		// Held item updates (i.e. maps)
