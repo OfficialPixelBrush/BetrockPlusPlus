@@ -106,6 +106,11 @@ void InitCrashHandler(std::string _platformString) {
 		log.error << "========== CRASH ==========\n";
 		log.error << "Signal/Code: " << _ctx.signalOrCode << "\n";
 
+		// NOTE: on Linux this callback runs inside CrashCatch's forked child process
+		// (see linuxSignalHandler in CrashCatch.hpp), not the original crashed process
+		// or thread. GlobalDiscord()'s async worker thread does not exist here, and its
+		// shared CURL handle may be inherited mid-use from the parent - reusing either
+		// is unsafe. Always use the *Sync variants here, never SendMessage/SendFile.
 		if (!_ctx.logFilePath.empty()) {
 			log.error << "Crash report: " << _ctx.logFilePath << "\n";
 
@@ -116,7 +121,7 @@ void InitCrashHandler(std::string _platformString) {
 				std::ostringstream summary;
 				summary << "**Server crashed!** Signal/Code: " << _ctx.signalOrCode
 				        << "\n(crash report file could not be opened for upload)";
-				GlobalDiscord().SendMessage(summary.str());
+				GlobalDiscord().SendMessageSync(summary.str());
 #endif
 				return;
 			}
@@ -130,7 +135,7 @@ void InitCrashHandler(std::string _platformString) {
 #ifdef DISCORD_INTEGRATION
 			std::ostringstream summary;
 			summary << "**Server crashed!** Signal/Code: " << _ctx.signalOrCode;
-			GlobalDiscord().SendFile(std::string(_ctx.logFilePath), summary.str());
+			GlobalDiscord().SendFileSync(std::string(_ctx.logFilePath), summary.str());
 #endif
 		}
 #ifdef DISCORD_INTEGRATION
@@ -138,7 +143,7 @@ void InitCrashHandler(std::string _platformString) {
 			std::ostringstream summary;
 			summary << "**Server crashed!** Signal/Code: " << _ctx.signalOrCode
 			        << "\n(no crash report file was produced)";
-			GlobalDiscord().SendMessage(summary.str());
+			GlobalDiscord().SendMessageSync(summary.str());
 		}
 #endif
 	};
