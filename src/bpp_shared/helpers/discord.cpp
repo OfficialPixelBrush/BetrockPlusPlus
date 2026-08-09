@@ -115,10 +115,7 @@ void Discord::SendMessage(const std::string& _message) {
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json.c_str());
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
-			[](char*, size_t size, size_t nmemb, void*) {
-				return size * nmemb;
-		});
-
+		                 [](char*, size_t size, size_t nmemb, void*) { return size * nmemb; });
 
 		CURLcode result = curl_easy_perform(curl);
 
@@ -164,10 +161,8 @@ void Discord::SendFile(const std::string& _filename, const std::string& _message
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
-			[](char*, size_t size, size_t nmemb, void*) {
-				return size * nmemb;
-		});
-		
+		                 [](char*, size_t size, size_t nmemb, void*) { return size * nmemb; });
+
 		CURLcode result = curl_easy_perform(curl);
 
 		if (result != CURLE_OK) {
@@ -178,6 +173,95 @@ void Discord::SendFile(const std::string& _filename, const std::string& _message
 		curl_mime_free(mime);
 		curl_slist_free_all(headers);
 	});
+}
+
+void Discord::SendMessageSync(const std::string& _message) {
+	if (token.empty() || channelId.empty())
+		return;
+
+	// Do not trust whatever the parent process's worker thread left behind in libcurl's global state
+	curl_global_cleanup();
+	if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK)
+		return;
+
+	CURL* localCurl = curl_easy_init();
+	if (!localCurl) {
+		curl_global_cleanup();
+		return;
+	}
+
+	std::string url = "https://discord.com/api/v10/channels/" + channelId + "/messages";
+	std::string deformatted = RemoveMinecraftFormatting(_message);
+	std::string json = "{\"content\":\"" + EscapeJson(deformatted) + "\"}";
+
+	struct curl_slist* headers = nullptr;
+	std::string authorization = "Authorization: Bot " + token;
+	headers = curl_slist_append(headers, authorization.c_str());
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+
+	curl_easy_setopt(localCurl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(localCurl, CURLOPT_HTTPHEADER, headers);
+	curl_easy_setopt(localCurl, CURLOPT_POST, 1L);
+	curl_easy_setopt(localCurl, CURLOPT_POSTFIELDS, json.c_str());
+	curl_easy_setopt(localCurl, CURLOPT_NOSIGNAL, 1L);
+	curl_easy_setopt(localCurl, CURLOPT_TIMEOUT, 10L); // Don't hang the crashing process forever
+	curl_easy_setopt(localCurl, CURLOPT_WRITEFUNCTION,
+	                 [](char*, size_t size, size_t nmemb, void*) { return size * nmemb; });
+
+	curl_easy_perform(localCurl);
+
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(localCurl);
+	curl_global_cleanup();
+}
+
+void Discord::SendFileSync(const std::string& _filename, const std::string& _message) {
+	if (token.empty() || channelId.empty())
+		return;
+
+	curl_global_cleanup();
+	if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK)
+		return;
+
+	CURL* localCurl = curl_easy_init();
+	if (!localCurl) {
+		curl_global_cleanup();
+		return;
+	}
+
+	std::string url = "https://discord.com/api/v10/channels/" + channelId + "/messages";
+
+	struct curl_slist* headers = nullptr;
+	std::string authorization = "Authorization: Bot " + token;
+	headers = curl_slist_append(headers, authorization.c_str());
+
+	curl_mime* mime = curl_mime_init(localCurl);
+
+	// Message content
+	curl_mimepart* content = curl_mime_addpart(mime);
+	curl_mime_name(content, "payload_json");
+	std::string json = "{\"content\":\"" + EscapeJson(_message) + "\"}";
+	curl_mime_data(content, json.c_str(), CURL_ZERO_TERMINATED);
+
+	// File
+	curl_mimepart* file = curl_mime_addpart(mime);
+	curl_mime_name(file, "files[0]");
+	curl_mime_filedata(file, _filename.c_str());
+
+	curl_easy_setopt(localCurl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(localCurl, CURLOPT_HTTPHEADER, headers);
+	curl_easy_setopt(localCurl, CURLOPT_MIMEPOST, mime);
+	curl_easy_setopt(localCurl, CURLOPT_NOSIGNAL, 1L);
+	curl_easy_setopt(localCurl, CURLOPT_TIMEOUT, 15L);
+	curl_easy_setopt(localCurl, CURLOPT_WRITEFUNCTION,
+	                 [](char*, size_t size, size_t nmemb, void*) { return size * nmemb; });
+
+	curl_easy_perform(localCurl);
+
+	curl_mime_free(mime);
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(localCurl);
+	curl_global_cleanup();
 }
 
 std::string Discord::RemoveMinecraftFormatting(const std::string& _input) {

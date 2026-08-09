@@ -35,6 +35,11 @@ public:
 	void SendMessage(const std::string& _message);
 	void SendFile(const std::string& _filename, const std::string& _message = "");
 
+	// Synchronous, self-contained equivalents safe to call from CrashCatch's post-fork
+	// crash handler (see linuxSignalHandler in CrashCatch.hpp).
+	void SendMessageSync(const std::string& _message);
+	void SendFileSync(const std::string& _filename, const std::string& _message = "");
+
 private:
 	void Worker();
 	void Enqueue(std::function<void()> _task);
