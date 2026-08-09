@@ -30,10 +30,6 @@ void EntityMPPlayer::HandlePositionChecks() {
 	if (isDead || !world)
 		return;
 
-	// Always trust rotations
-	this->rotationYaw = session->rotation.x;
-	this->rotationPitch = session->rotation.y;
-
 	// We have a pending teleport. Check to see if the player caught up
 	if (session->pendingTeleport && session->pendingPosition) {
 		// Reset fall state
@@ -114,11 +110,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 
 		bool clearNow = world->GetCollidingBoundingBoxes(collider.Expand(-0.0625, -0.0625, -0.0625)).empty();
 
-		// Only check if we have clipped if we are moving fast enough
-		constexpr double CLEARNOW_FAST_MOVE_DIST_SQ = 0.36;
-		bool fastEnoughToClip = claimedTravelDistSq > CLEARNOW_FAST_MOVE_DIST_SQ;
-
-		bool willCorrect = (wasClearBefore && (residualTooLarge || (!clearNow && fastEnoughToClip))) || movedWrong;
+		bool willCorrect = (wasClearBefore && (residualTooLarge || !clearNow)) || movedWrong;
 
 		if (willCorrect) {
 			// TP our player back
@@ -196,6 +188,10 @@ void EntityMPPlayer::Tick() {
 		Move(none);
 		onGround = savedOnGround;
 	}
+
+	// Always trust rotations
+	this->rotationYaw = session->rotation.x;
+	this->rotationPitch = session->rotation.y;
 
 	// Set our held item and armor
 	// Slots 5 -> 8 are for armor
