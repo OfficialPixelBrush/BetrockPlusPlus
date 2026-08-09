@@ -111,8 +111,10 @@ struct Inventory {
 
 		// We couldn't merge into existing items so just try and find an empty slot
 		for (int i = _reverse ? end : start; _reverse ? i >= start : i <= end; _reverse ? i-- : i++) {
-			if (slots[size_t(i)].id == Items::Id::INVALID) {
-				slots[size_t(i)] = ItemStack{ _stack.id, _stack.count, _stack.data };
+			auto slot = GetStackInSlot(i);
+			if (!slot) {
+				ItemStack newStack = _stack;
+				this->SetInventorySlotContents(i, &newStack);
 				_stack.id = Items::Id::INVALID;
 				_stack.data = 0;
 				_stack.count = 0;

@@ -157,39 +157,6 @@ struct InventoryLargeChest : Inventory {
 		upper->OnInventoryChanged();
 		lower->OnInventoryChanged();
 	}
-
-	bool MergeItemStackInInventory(ItemStack& _stack, bool _reverse = false, int _startSlot = 0,
-	                               int _endSlot = -1) override {
-		int upperSize = upper->GetSizeInventory();
-		int totalSize = upperSize + lower->GetSizeInventory();
-		auto end = _endSlot == -1 ? totalSize - 1 : _endSlot;
-
-		bool canMergeLower = lower->CanMergeItemStackInInventory(_stack, _reverse,
-		                                                         CrossPlatform::Math::Max(0, _startSlot),
-		                                                         CrossPlatform::Math::Min(upperSize - 1, end));
-		bool canMergeHigher = upper->CanMergeItemStackInInventory(_stack, _reverse,
-		                                                          CrossPlatform::Math::Max(0, _startSlot),
-		                                                          CrossPlatform::Math::Min(upperSize - 1, end));
-		bool success = false;
-
-		if (canMergeLower && !canMergeHigher) {
-			success = lower->MergeItemStackInInventory(
-			    _stack, _reverse, CrossPlatform::Math::Max(0, _startSlot - upperSize),
-			    CrossPlatform::Math::Min(lower->GetSizeInventory() - 1, end - upperSize));
-			if (_stack.count == 0)
-				return success;
-		}
-
-		success = upper->MergeItemStackInInventory(_stack, _reverse, CrossPlatform::Math::Max(0, _startSlot),
-		                                           CrossPlatform::Math::Min(upperSize - 1, end));
-
-		if (!success || _stack.count > 0) {
-			success = lower->MergeItemStackInInventory(
-			    _stack, _reverse, CrossPlatform::Math::Max(0, _startSlot - upperSize),
-			    CrossPlatform::Math::Min(lower->GetSizeInventory() - 1, end - upperSize));
-		}
-		return success || _stack.count == 0;
-	}
 };
 
 struct InventoryCraftingTable : Inventory {
