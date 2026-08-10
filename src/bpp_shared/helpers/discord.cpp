@@ -9,6 +9,10 @@
 
 #ifdef DISCORD_INTEGRATION
 
+static size_t DiscardWrite(char*, size_t size, size_t nmemb, void*) {
+	return size * nmemb;
+}
+
 Discord::Discord() {
 	thread = std::thread(&Discord::Worker, this);
 }
@@ -64,7 +68,7 @@ void Discord::Worker() {
 }
 
 void Discord::Init(const std::string& _token, const std::string& _channelId) {
-	if (initialized || curl)
+	if (initialized && curl)
 		return;
 	Enqueue([this, token = _token, channelId = _channelId] {
 		this->token = token;
@@ -95,9 +99,10 @@ void Discord::Init(const std::string& _token, const std::string& _channelId) {
 
 void Discord::SendMessage(const std::string& _message) {
 	Enqueue([this, message = _message] {
-		if (!initialized || !curl)
+		if (!initialized || !curl) {
+			GlobalLogger().warn << "Discord: message dropped, integration not initialized\n";
 			return;
-
+		}
 		std::string url = "https://discord.com/api/v10/channels/" + channelId + "/messages";
 
 		std::string deformatted = RemoveMinecraftFormatting(message);
@@ -116,8 +121,7 @@ void Discord::SendMessage(const std::string& _message) {
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json.c_str());
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
-		                 [](char*, size_t size, size_t nmemb, void*) { return size * nmemb; });
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, DiscardWrite);
 
 		CURLcode result = curl_easy_perform(curl);
 
@@ -131,9 +135,10 @@ void Discord::SendMessage(const std::string& _message) {
 
 void Discord::SendFile(const std::string& _filename, const std::string& _message) {
 	Enqueue([this, filename = _filename, message = _message] {
-		if (!initialized || !curl)
+		if (!initialized || !curl) {
+			GlobalLogger().warn << "Discord: file upload dropped, integration not initialized\n";
 			return;
-
+		}
 		std::string url = "https://discord.com/api/v10/channels/" + channelId + "/messages";
 
 		struct curl_slist* headers = nullptr;
@@ -162,8 +167,7 @@ void Discord::SendFile(const std::string& _filename, const std::string& _message
 		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
-		                 [](char*, size_t size, size_t nmemb, void*) { return size * nmemb; });
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, DiscardWrite);
 
 		CURLcode result = curl_easy_perform(curl);
 
@@ -206,8 +210,7 @@ void Discord::SendMessageSync(const std::string& _message) {
 	curl_easy_setopt(localCurl, CURLOPT_POSTFIELDS, json.c_str());
 	curl_easy_setopt(localCurl, CURLOPT_NOSIGNAL, 1L);
 	curl_easy_setopt(localCurl, CURLOPT_TIMEOUT, 10L); // Don't hang the crashing process forever
-	curl_easy_setopt(localCurl, CURLOPT_WRITEFUNCTION,
-	                 [](char*, size_t size, size_t nmemb, void*) { return size * nmemb; });
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, DiscardWrite);
 
 	curl_easy_perform(localCurl);
 
@@ -248,8 +251,7 @@ void Discord::SendFileSync(const std::string& _filename, const std::string& _mes
 	curl_easy_setopt(localCurl, CURLOPT_MIMEPOST, mime);
 	curl_easy_setopt(localCurl, CURLOPT_NOSIGNAL, 1L);
 	curl_easy_setopt(localCurl, CURLOPT_TIMEOUT, 15L);
-	curl_easy_setopt(localCurl, CURLOPT_WRITEFUNCTION,
-	                 [](char*, size_t size, size_t nmemb, void*) { return size * nmemb; });
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, DiscardWrite);
 
 	curl_easy_perform(localCurl);
 
