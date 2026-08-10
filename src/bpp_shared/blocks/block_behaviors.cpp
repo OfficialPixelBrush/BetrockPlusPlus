@@ -90,7 +90,11 @@ static int CalculateFlowCost(WorldManager& _world, Int3 _pos, Int2 _cameFrom, in
 		if (IsOpenForFlow(_world, neighborPos, _fluidMaterialType)) {
 			Int3 belowNeighbor = neighborPos;
 			belowNeighbor.y--;
-			if (IsOpenForFlow(_world, belowNeighbor, _fluidMaterialType)) {
+			// "Is there a hole below to fall into" is a pure solidity check in vanilla
+			// (func_309_k) - it does NOT exclude an existing same-material source the
+			// way IsOpenForFlow does for lateral step candidates. A source sitting
+			// below counts as a valid, immediate drop-off.
+			if (!BlocksFlow(_world.GetBlockId(belowNeighbor))) {
 				return _depth;
 			} else if (_depth < 4) {
 				lowest = std::min(lowest,
@@ -1034,8 +1038,7 @@ void RegisterBlockBehaviors() {
 			Int3 neighborPos = { dx, _pos.y, dz };
 			if (IsOpenForFlow(_world, neighborPos, MaterialType::Lava)) {
 				Int3 belowNeighborPos = { dx, _pos.y - 1, dz };
-				//auto below = _world.GetBlockId(belowNeighborPos);
-				if (IsOpenForFlow(_world, belowNeighborPos, MaterialType::Lava)) {
+				if (!BlocksFlow(_world.GetBlockId(belowNeighborPos))) {
 					directionalCosts[i] = 0; // Immediate drop off
 				} else {
 					int initialStep = 1;
@@ -1174,7 +1177,7 @@ void RegisterBlockBehaviors() {
 			if (IsOpenForFlow(_world, neighborPos, MaterialType::Water)) {
 				Int3 belowNeighborPos = { dx, _pos.y - 1, dz };
 				auto below = _world.GetBlockId(belowNeighborPos);
-				if (IsOpenForFlow(_world, belowNeighborPos, MaterialType::Water)) {
+				if (!BlocksFlow(below)) {
 					directionalCosts[i] = 0; // Immediate drop off
 				} else {
 					int initialStep = 1;
