@@ -66,6 +66,15 @@
       }
     },
     {
+      "name": "server-release-with-debug-info-discord",
+      "inherits": "base",
+      "cacheVariables": {
+        "BUILD_SERVER": "ON",
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "DISCORD_INTEGRATION": "ON"
+      }
+    },
+    {
       "name": "server-minsize",
       "inherits": "base",
       "cacheVariables": {
