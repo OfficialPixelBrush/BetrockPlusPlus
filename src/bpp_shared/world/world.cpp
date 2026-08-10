@@ -124,9 +124,9 @@ void WorldManager::updateSkylightOffset() {
 	float celestialAngle = getCelestialAngle();
 	float transformedAngle = 1.0f - (std::cos(celestialAngle * JavaMath::PI * 2.0f) * 2.0f + 0.5f);
 	if (transformedAngle < 0.0f)
-		transformedAngle++;
+		transformedAngle = 0.0f;
 	if (transformedAngle > 1.0f)
-		transformedAngle--;
+		transformedAngle = 1.0f;
 
 	transformedAngle = 1.0f - transformedAngle;
 	// TODO: Weather?
