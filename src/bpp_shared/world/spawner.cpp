@@ -51,6 +51,11 @@ static const SpawnEntry& PickWeighted(Java::Random& _rand, SpawnCategory& _categ
 	return _category.spawnList.back(); // unreachable in practice
 }
 
+static bool IsValidSpawnBlock(WorldManager& _world, Int3 _pos) {
+	return _world.IsBlockNormalCube({ _pos.x, _pos.y - 1, _pos.z }) && !_world.IsBlockNormalCube(_pos) &&
+	       !_world.GetMaterial(_pos).isLiquid && !_world.IsBlockNormalCube({ _pos.x, _pos.y + 1, _pos.z });
+}
+
 int EntitySpawner::GetCategoryCount(WorldManager& _world, SpawnCategory& _category) {
 	int count = 0;
 	for (auto& spawnType : _category.spawnList) {
@@ -88,6 +93,8 @@ void EntitySpawner::TrySpawnEntities(WorldManager& _world, const std::vector<Cli
 					pos.x += _world.rand.NextInt(6) - _world.rand.NextInt(6);
 					pos.z += _world.rand.NextInt(6) - _world.rand.NextInt(6);
 
+					if (!IsValidSpawnBlock(_world, pos))
+						continue;
 					if (_world.entityManager.GetClosestPlayerWithin(pos, 24.0) != nullptr)
 						continue;
 					if (pos.Distance(_world.GetSpawnPoint(false)) < 24.0)
