@@ -316,16 +316,7 @@ void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, P
 }
 
 void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face) {
-	Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
-	auto m = _world.GetMaterial(placePos);
-	if (m.type == MaterialType::Water) {
-		_stack->id = Items::BUCKET_WATER;
-		_world.SetBlock(placePos, BLOCK_AIR);
-	}
-	if (m.type == MaterialType::Lava) {
-		_stack->id = Items::BUCKET_LAVA;
-		_world.SetBlock(placePos, BLOCK_AIR);
-	}
+	// TODO - raycast!!
 }
 
 void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face) {
