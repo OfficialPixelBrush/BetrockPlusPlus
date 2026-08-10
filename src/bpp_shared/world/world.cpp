@@ -304,7 +304,7 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 		GlobalLogger().error << "No region manager while trying to Tick!\n";
 		return;
 	}
-
+	updateSkylightOffset();
 	DrainGenQueue();  // process generation results first
 	DrainLoadQueue(); // integrate finished loads
 
