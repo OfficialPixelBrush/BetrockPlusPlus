@@ -21,6 +21,8 @@ void RegisterAll() {
 	itemBehavior[Items::Id::HOE_GOLD] = ItemBehavior{ .onBlockUse = UseHoe };
 	itemBehavior[Items::Id::HOE_DIAMOND] = ItemBehavior{ .onBlockUse = UseHoe };
 	itemBehavior[Items::Id::FLINT_AND_STEEL] = ItemBehavior{ .onBlockUse = UseFlintAndSteel };
+	itemBehavior[Items::Id::BUCKET_WATER] = ItemBehavior{ .onBlockUse = UseWaterBucket };
+	itemBehavior[Items::Id::BUCKET] = ItemBehavior{ .onBlockUse = UseBucket };
 
 	// Tool Properties
 	// Sword

@@ -123,6 +123,8 @@ void OnToolFinishMining(ItemStack* _stack, BlockType _targetBlock);
 void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
 void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
                       PacketData::FaceDirection _face);
+void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
+void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
 
 // Attack
 void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face);
