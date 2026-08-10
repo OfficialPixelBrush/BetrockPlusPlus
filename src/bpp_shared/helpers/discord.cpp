@@ -64,6 +64,8 @@ void Discord::Worker() {
 }
 
 void Discord::Init(const std::string& _token, const std::string& _channelId) {
+	if (initialized || curl)
+		return;
 	Enqueue([this, token = _token, channelId = _channelId] {
 		this->token = token;
 		this->channelId = channelId;
@@ -179,16 +181,15 @@ void Discord::SendMessageSync(const std::string& _message) {
 	if (token.empty() || channelId.empty())
 		return;
 
-	// Do not trust whatever the parent process's worker thread left behind in libcurl's global state
-	curl_global_cleanup();
-	if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK)
-		return;
-
+	// NOTE: libcurl's global state (curl_global_init/curl_global_cleanup) is process-wide
+	// and is NOT safe to tear down/reinit here - the async Worker thread may be mid
+	// curl_easy_perform() on its own handle at this exact moment (e.g. if this crash
+	// happened while a chat message was being forwarded to Discord). Global init/cleanup
+	// is handled once at process startup/shutdown (see main()); only a fresh easy handle
+	// is created here.
 	CURL* localCurl = curl_easy_init();
-	if (!localCurl) {
-		curl_global_cleanup();
+	if (!localCurl)
 		return;
-	}
 
 	std::string url = "https://discord.com/api/v10/channels/" + channelId + "/messages";
 	std::string deformatted = RemoveMinecraftFormatting(_message);
@@ -212,22 +213,16 @@ void Discord::SendMessageSync(const std::string& _message) {
 
 	curl_slist_free_all(headers);
 	curl_easy_cleanup(localCurl);
-	curl_global_cleanup();
 }
 
 void Discord::SendFileSync(const std::string& _filename, const std::string& _message) {
 	if (token.empty() || channelId.empty())
 		return;
 
-	curl_global_cleanup();
-	if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK)
-		return;
-
+	// See note in SendMessageSync above - no global init/cleanup here, only a fresh easy handle.
 	CURL* localCurl = curl_easy_init();
-	if (!localCurl) {
-		curl_global_cleanup();
+	if (!localCurl)
 		return;
-	}
 
 	std::string url = "https://discord.com/api/v10/channels/" + channelId + "/messages";
 
@@ -261,7 +256,6 @@ void Discord::SendFileSync(const std::string& _filename, const std::string& _mes
 	curl_mime_free(mime);
 	curl_slist_free_all(headers);
 	curl_easy_cleanup(localCurl);
-	curl_global_cleanup();
 }
 
 std::string Discord::RemoveMinecraftFormatting(const std::string& _input) {
