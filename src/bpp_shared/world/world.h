@@ -98,6 +98,7 @@ struct WorldManager {
 	float getCelestialAngle();
 	int getBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks = true);
 	Biome GetBiome(Int2 _wpos);
+	bool HasLineOfSight(Vec3 _from, Vec3 _to);
 	int getBlockLightFull(Int3 _wpos) {
 		auto chunk = GetChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
 		if (!chunk)

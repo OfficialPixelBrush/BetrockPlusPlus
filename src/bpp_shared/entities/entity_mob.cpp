@@ -41,8 +41,7 @@ void MobEntity::Tick() {
 
 	if (EntityAlive()) {
 		Wander();
-		FollowPath();
-		if (currentPath.empty())
+		if (!FollowPath())
 			UpdateState();
 		randomYawVelocity *= 0.9f;
 	}

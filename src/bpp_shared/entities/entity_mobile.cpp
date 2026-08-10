@@ -82,7 +82,7 @@ void MobileEntity::SetGoal(std::optional<Int3> _goal) {
 	currentPathIdx = 0;
 }
 
-void MobileEntity::FollowPath() {
+bool MobileEntity::FollowPath() {
 	input.y = 0.0f;
 	jumping = false;
 
@@ -92,12 +92,13 @@ void MobileEntity::FollowPath() {
 	}
 
 	if (currentPath.empty())
-		return;
+		return false;
 
+	// 1% chance to abandon our path
 	if (rand.NextInt(100) == 0) {
 		currentPath.clear();
 		currentPathIdx = 0;
-		return;
+		return false;
 	}
 
 	int footprintSpan = int(width + 1.0f);
@@ -123,7 +124,6 @@ void MobileEntity::FollowPath() {
 		currentPath.clear();
 		currentPathIdx = 0;
 
-		// If the path ran out on this exact tick while pressed against something, jump!
 		if (justFinished && collidedHorizontally)
 			jumping = true;
 	} else {
@@ -150,6 +150,8 @@ void MobileEntity::FollowPath() {
 		if (dy > 0.0)
 			jumping = true;
 	}
+
+	return true;          
 }
 
 void MobileEntity::ResolveEntityCollision(Entity& _other) {

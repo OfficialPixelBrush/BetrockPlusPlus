@@ -245,6 +245,39 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.Serialize(pSession->stream);
 		break;
 	}
+	case EntityType::SPIDER: {
+		Packet::SpawnMob pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.mobType = PacketData::MobType::SPIDER;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
+			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
+		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		pkt.Serialize(pSession->stream);
+		break;
+	}
+	case EntityType::ZOMBIE: {
+		Packet::SpawnMob pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.mobType = PacketData::MobType::ZOMBIE;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
+			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
+		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		pkt.Serialize(pSession->stream);
+		break;
+	}
+	case EntityType::SKELETON: {
+		Packet::SpawnMob pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.mobType = PacketData::MobType::SKELETON;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
+			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
+		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		pkt.Serialize(pSession->stream);
+		break;
+	}
 	case EntityType::PIG: {
 		Packet::SpawnMob pkt;
 		pkt.entityId = _entityEntry.entity->id;
@@ -350,13 +383,16 @@ void EntityTracker::SendPacketToPlayersInTrackedEntry(Packet::BasePacket& _pkt, 
 	}
 }
 
-TrackedEntry& EntityTracker::GetTrackerForEntityId(EntityId _id) {
-	return trackedEntities.at(_id);
+TrackedEntry* EntityTracker::GetTrackerForEntityId(EntityId _id) {
+	auto it = trackedEntities.find(_id);
+	return it != trackedEntities.end() ? &it->second : nullptr;
 }
 
 void EntityTracker::SendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id) {
-	auto& entry = GetTrackerForEntityId(_id);
-	for (EntityId viewerId : entry.visibleTo) {
+	auto* entry = GetTrackerForEntityId(_id);
+	if (!entry)
+		return; // entity isn't tracked
+	for (EntityId viewerId : entry->visibleTo) {
 		auto session = server->GetSessionById(viewerId);
 		if (!session)
 			continue;
