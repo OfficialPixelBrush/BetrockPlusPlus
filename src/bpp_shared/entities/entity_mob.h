@@ -12,6 +12,7 @@ struct MobEntity : public MobileEntity {
 	TickTime ticksToFollowTarget = 0;
 	float randomYawVelocity = 0.0f;
 	double defaultPitch = 0.0;
+	bool isHostile = false;
 
 	MobEntity() : MobileEntity() {
 		width = 0.9f;

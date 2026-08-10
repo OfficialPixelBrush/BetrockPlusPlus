@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+ */
+#pragma once
+#include "entity_mob.h"
+
+struct HostileEntity : public MobEntity {
+	std::weak_ptr<Entity> attackTarget;
+	bool hasAttacked = false;
+	bool burnInDaylight = false;
+	int attackStrength = 2;
+
+	HostileEntity() : MobEntity() {
+		SetMaxHealth(20);
+		this->isHostile = true;
+	}
+	~HostileEntity() = default;
+
+	bool CanSpawnAt(Int3 _pos) override;
+	float GetWanderWeight(Int3 _pos) override;
+	virtual void Tick() override;
+	virtual std::shared_ptr<Entity> FindPlayerToAttack();
+	virtual void TryAttackEntity(Entity& _target, float _distance);
+	virtual void OnTargetLostSight(Entity& _target, float _distance) {}
+};

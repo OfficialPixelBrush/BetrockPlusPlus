@@ -10,6 +10,7 @@
 #include "entity_item.h"
 #include "entity_pig.h"
 #include "entity_sheep.h"
+#include "entity_zombie.h"
 #include "world.h"
 
 void EntityManager::RemoveEntity(EntityId _id) {
@@ -213,6 +214,11 @@ void EntityManager::CreateEntityFromNbt(Tag& _nbt) {
 		ItemEntity entity({});
 		entity.LoadFromNbt(_nbt);
 		AddEntity(std::make_shared<ItemEntity>(entity));
+	}
+	if (id == "Zombie") {
+		ZombieEntity entity;
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<ZombieEntity>(entity));
 	}
 	if (id == "Cow") {
 		CowEntity entity;

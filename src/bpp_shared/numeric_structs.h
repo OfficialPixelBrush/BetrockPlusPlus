@@ -194,6 +194,10 @@ struct TriNumber {
 	double Distance(const TriNumber& _other) const {
 		return std::sqrt(DistanceSquared(_other));
 	}
+
+	double Length() const {
+		return std::sqrt(x * x + y * y + z * z);
+	}
 };
 
 /**

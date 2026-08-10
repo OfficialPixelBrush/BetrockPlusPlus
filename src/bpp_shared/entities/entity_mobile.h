@@ -50,7 +50,7 @@ public:
 	bool HeadInWater();
 	ItemStack* GetHeldItem();
 	void SetHeldItem(ItemStack _stack);
-	void FollowPath();
+	bool FollowPath();
 	bool onLadder();
 	void DealDamage(int _damage);
 	int GetArmorValue();

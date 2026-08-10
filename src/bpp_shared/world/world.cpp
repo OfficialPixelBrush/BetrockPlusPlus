@@ -27,6 +27,56 @@ Biome WorldManager::GetBiome(Int2 _wpos) {
 	return chunk->biomes[_wpos.x % 0xF + _wpos.z % 0xF * 16];
 }
 
+// Returns true if nothing collidable blocks the ray from start to end
+bool WorldManager::HasLineOfSight(Vec3 _from, Vec3 _to) {
+	Vec3 dir = _to - _from;
+	double dist = dir.Length();
+	if (dist < 0.000001)
+		return true;
+	dir = dir / dist;
+
+	int x = MathHelper::FloorDouble(_from.x);
+	int y = MathHelper::FloorDouble(_from.y);
+	int z = MathHelper::FloorDouble(_from.z);
+
+	int stepX = dir.x > 0 ? 1 : -1, stepY = dir.y > 0 ? 1 : -1, stepZ = dir.z > 0 ? 1 : -1;
+
+	auto tMaxFor = [](double origin, int cell, int step, double dirComp) {
+		if (dirComp == 0)
+			return std::numeric_limits<double>::infinity();
+		double boundary = (step > 0) ? (cell + 1) : cell;
+		return (boundary - origin) / dirComp;
+	};
+	double tMaxX = tMaxFor(_from.x, x, stepX, dir.x);
+	double tMaxY = tMaxFor(_from.y, y, stepY, dir.y);
+	double tMaxZ = tMaxFor(_from.z, z, stepZ, dir.z);
+	double tDeltaX = (dir.x != 0) ? std::abs(1.0 / dir.x) : std::numeric_limits<double>::infinity();
+	double tDeltaY = (dir.y != 0) ? std::abs(1.0 / dir.y) : std::numeric_limits<double>::infinity();
+	double tDeltaZ = (dir.z != 0) ? std::abs(1.0 / dir.z) : std::numeric_limits<double>::infinity();
+
+	double t = 0.0;
+	while (t < dist) {
+		BlockType id = GetBlockId({ x, y, z });
+		if (Blocks::blockProperties[id].isCollidable)
+			return false;
+
+		if (tMaxX < tMaxY && tMaxX < tMaxZ) {
+			x += stepX;
+			t = tMaxX;
+			tMaxX += tDeltaX;
+		} else if (tMaxY < tMaxZ) {
+			y += stepY;
+			t = tMaxY;
+			tMaxY += tDeltaY;
+		} else {
+			z += stepZ;
+			t = tMaxZ;
+			tMaxZ += tDeltaZ;
+		}
+	}
+	return true;
+}
+
 int WorldManager::getBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
 	if (_offsetNonFullBlocks) {
 		auto blockId = this->GetBlockId(_wpos);

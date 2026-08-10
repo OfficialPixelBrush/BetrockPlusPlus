@@ -93,7 +93,7 @@ struct EntityTracker {
 	void DespawnEntityForViewers(EntityId _entityId, TrackedEntry& _entry);
 	void SendPacketToPlayersInTrackedEntry(Packet::BasePacket& _pkt, TrackedEntry& _trackedEntry);
 	void SendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id);
-	TrackedEntry& GetTrackerForEntityId(EntityId _id);
+	TrackedEntry* GetTrackerForEntityId(EntityId _id);
 	void Update(TrackedEntry& _trackedEntry);
 	void UpdateDamageState(TrackedEntry& _trackedEntry);
 	void UpdateEquipmentState(TrackedEntry& _trackedEntry);
