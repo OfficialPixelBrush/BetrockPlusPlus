@@ -6,9 +6,12 @@
 */
 #include "world.h"
 #include "blocks.h"
+#include "blocks/block_behaviors.h"
+#include "chunk.h"
 #include "entities/entity_item.h"
 #include "generator/nether/chunk_gen.h"
 #include "generator/overworld/chunk_gen.h"
+#include "generator/shared/cave_gen.h"
 #include <limits>
 #include <unordered_set>
 
@@ -310,6 +313,7 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 
 	tickScheduler.Tick();
 	entitySpawner.TrySpawnEntities(*this, _players);
+	PerformRandomTicks();
 	entityManager.Tick();
 	tileEntityManager.TickTileEntities(*this);
 
@@ -323,6 +327,27 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 	UpdateLoadRadius(_players);
 	regionManager->PumpPipeline();
 	PopulateReady();
+}
+
+void WorldManager::PerformRandomTicks() {
+	// TODO: Ideally this'd act on its own distance
+	// TODO: Ideally these would be chosen at random
+	// TODO: In modern MC this is done on a sub-chunk level. Will have to check how it operates in this version.
+	Int3 position;
+	for (auto& [pos, chunk] : chunks) {
+		if (chunk->state >= ChunkState::Populated)
+			continue;
+		position = {
+			(rand.NextInt() % CHUNK_WIDTH + CHUNK_WIDTH) % CHUNK_WIDTH,
+			(rand.NextInt() % CHUNK_HEIGHT + CHUNK_HEIGHT) % CHUNK_HEIGHT,
+			(rand.NextInt() % CHUNK_WIDTH + CHUNK_WIDTH) % CHUNK_WIDTH
+		};
+		BlockType b = chunk->GetBlock(position);
+		uint8_t m = chunk->GetMeta(position);
+		Int3 globalPos = { pos.x * CHUNK_WIDTH + position.x, position.y, pos.z * CHUNK_WIDTH + position.z};
+		if (auto fn = Blocks::blockBehaviors[b].onTick)
+			fn(*this, globalPos, m, rand);
+	}
 }
 
 void WorldManager::SaveChunks(const bool _saveIfEntities, const bool _deleteEntities) {

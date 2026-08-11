@@ -75,6 +75,7 @@ struct WorldManager {
 	void SaveChunks(const bool _saveIfEntities = false, const bool _deleteEntities = false);
 	void Shutdown();
 	void SeedChunkLighting(Int32_2 _pos);
+	void PerformRandomTicks();
 	std::vector<AABB> GetCollidingBoundingBoxes(const AABB& _area);
 	void FlushBleedWrites();
 	void PropagateChunkLightBorders(Int32_2 _cpos);
