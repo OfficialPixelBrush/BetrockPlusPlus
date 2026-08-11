@@ -1351,6 +1351,13 @@ void RegisterBlockBehaviors() {
 		return 2 + _rng.NextInt(3);
 	};
 
+	blockBehaviors[BLOCK_LEAVES].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& _random) -> void {
+		// Player-placed leaves don't despawn
+		if (_meta & 0x8)
+			return;
+		//GlobalLogger().debug << "Non-permanent leaf ticked at " << _pos << "\n";
+		//_world.SetBlock(_pos, BLOCK_LAVA_FLOWING);
+	};
 	blockBehaviors[BLOCK_LEAVES].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return BLOCK_SAPLING;
 	};
