@@ -110,6 +110,37 @@ sudo emerge media-libs/glm media-libs/libsdl3 media-libs/mesa
 
 Then move onto the [building step](#3-building).
 
+### Optional: Discord bot integration
+
+Discord support is **off by default**. Enabling it pulls in [D++](https://dpp.dev/) (Gateway WebSocket bot) via vcpkg or FetchContent, and requires OpenSSL.
+
+```bash
+# Needs OpenSSL headers (e.g. libssl-dev) available
+cmake -S . -B build-discord -DDISCORD_INTEGRATION=ON
+cmake --build build-discord -j$(nproc)
+```
+
+Or use the preset (also enables the vcpkg `discord` feature when a vcpkg toolchain is configured):
+
+```bash
+cmake --preset server-release-with-debug-info-discord
+cmake --build --preset server-release-with-debug-info-discord
+```
+
+In `server.properties`:
+
+| Key | Purpose |
+| --- | --- |
+| `discord-token` | Bot token |
+| `discord-channel-id` | Channel used for chat bridge + crash uploads |
+| `discord-guild-id` | Optional. When set, slash commands register to that guild instantly |
+
+In the [Discord Developer Portal](https://discord.com/developers/applications), enable the **Message Content Intent**, invite the bot with `applications.commands` + `bot` scopes, and grant read/send message permissions in the bridge channel.
+
+Slash commands: `/status`, `/list`, `/version`, `/say`, `/stop`.
+
+> **Windows note:** if installing D++ through vcpkg, use a non-static triplet (`x64-windows`, not `x64-windows-static`).
+
 ### 3. Building
 
 #### Option #1: Command-line

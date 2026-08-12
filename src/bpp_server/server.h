@@ -98,8 +98,9 @@ public:
 		return "";
 	}
 
-	// Send a message to all players
-	void SendGlobalChatMessage(std::string _message) {
+	// Send a message to all players. Set _relayToDiscord false for Discord→Minecraft
+	// traffic to avoid echo loops.
+	void SendGlobalChatMessage(std::string _message, bool _relayToDiscord = true) {
 		for (auto& other : players) {
 			if (other && other->connState != ConnectionState::Playing)
 				continue;
@@ -109,7 +110,10 @@ public:
 		}
 		GlobalLogger().msg << StripFormatting(_message) << "\n";
 #ifdef DISCORD_INTEGRATION
-		GlobalDiscord().SendMessage(_message);
+		if (_relayToDiscord)
+			GlobalDiscord().SendMessage(_message);
+#else
+		(void)_relayToDiscord;
 #endif
 	}
 

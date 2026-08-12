@@ -40,7 +40,8 @@ Server::Server() : gameRuntime(serverViewRadius), config("server.properties") {
 	LoadConfig();
 
 #ifdef DISCORD_INTEGRATION
-	GlobalDiscord().Init(config.GetAsString("discord-token"), config.GetAsString("discord-channel-id"));
+	GlobalDiscord().Init(config.GetAsString("discord-token"), config.GetAsString("discord-channel-id"),
+	                     config.GetAsString("discord-guild-id"));
 #endif
 
 	serverSocket = ServerSocketManager::CreateServerSocket(serverPort);
@@ -147,6 +148,8 @@ void Server::LoadConfig() {
 #ifdef DISCORD_INTEGRATION
 		    { "discord-token", "" },
 		    { "discord-channel-id", "" },
+		    // Optional: register slash commands to one guild instantly. Leave empty for global.
+		    { "discord-guild-id", "" },
 #endif
 		    //{"allow-nether",true},
 		    //{"spawn-monsters","true"},
@@ -402,6 +405,9 @@ void Server::ResetTimeout() {
 }
 
 void Server::Tick() {
+#ifdef DISCORD_INTEGRATION
+	GlobalDiscord().Drain(*this);
+#endif
 	AcceptNewPlayers();
 	[[maybe_unused]] const int playerCount = int(players.size());
 

@@ -71,7 +71,8 @@
       "cacheVariables": {
         "BUILD_SERVER": "ON",
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "DISCORD_INTEGRATION": "ON"
+        "DISCORD_INTEGRATION": "ON",
+        "VCPKG_MANIFEST_FEATURES": "discord"
       }
     },
     {
