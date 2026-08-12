@@ -7,6 +7,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Must be set before project() so vcpkg can install the optional feature.
+option(DISCORD_INTEGRATION "Enable Discord bot integration via D++ (server only)" OFF)
+if(DISCORD_INTEGRATION)
+    list(APPEND VCPKG_MANIFEST_FEATURES "discord")
+endif()
+
 project(Betrock++ VERSION 0.0.1)
 
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
@@ -22,9 +28,6 @@ endif()
 
 # Build as server by default
 option(BUILD_SERVER "Build as server" ON)
-
-# Discord chat-relay / crash-log-upload integration (server only, requires libcurl)
-option(DISCORD_INTEGRATION "Enable Discord integration (requires libcurl)" OFF)
 
 find_package(libdeflate CONFIG REQUIRED)
 
@@ -241,12 +244,30 @@ if(BUILD_SERVER)
         ${SERVER_SOURCES}
     )
     if (DISCORD_INTEGRATION)
-    find_package(CURL REQUIRED)
-    target_compile_definitions(BetrockPlusPlus PRIVATE DISCORD_INTEGRATION)
-    target_link_libraries(BetrockPlusPlus PRIVATE CURL::libcurl)
-    target_sources(BetrockPlusPlus PRIVATE
-        src/bpp_shared/helpers/discord.cpp
-    )
+        # Prefer a preinstalled D++ (e.g. vcpkg feature "discord"); otherwise fetch it.
+        find_package(dpp CONFIG QUIET)
+        if(NOT dpp_FOUND)
+            message(STATUS "dpp package not found; fetching D++ via FetchContent (requires OpenSSL)")
+            find_package(OpenSSL REQUIRED)
+            include(FetchContent)
+            FetchContent_Declare(
+                dpp
+                GIT_REPOSITORY https://github.com/brainboxdotcc/DPP.git
+                GIT_TAG        v10.1.3
+                GIT_SHALLOW    TRUE
+            )
+            set(DPP_BUILD_TEST OFF CACHE BOOL "" FORCE)
+            FetchContent_MakeAvailable(dpp)
+        endif()
+        target_compile_definitions(BetrockPlusPlus PRIVATE DISCORD_INTEGRATION)
+        if(TARGET dpp::dpp)
+            target_link_libraries(BetrockPlusPlus PRIVATE dpp::dpp)
+        else()
+            target_link_libraries(BetrockPlusPlus PRIVATE dpp)
+        endif()
+        target_sources(BetrockPlusPlus PRIVATE
+            src/bpp_shared/helpers/discord.cpp
+        )
     endif()
 else()
     if (DISCORD_INTEGRATION)

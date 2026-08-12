@@ -22,7 +22,6 @@
 #include "bpp_client/client.h"
 #else
 #ifdef DISCORD_INTEGRATION
-#include <curl/curl.h>
 #include "discord.h"
 #endif
 #endif
@@ -107,11 +106,6 @@ void InitCrashHandler(std::string _platformString) {
 		log.error << "========== CRASH ==========\n";
 		log.error << "Signal/Code: " << _ctx.signalOrCode << "\n";
 
-		// NOTE: on Linux this callback runs inside CrashCatch's forked child process
-		// (see linuxSignalHandler in CrashCatch.hpp), not the original crashed process
-		// or thread. GlobalDiscord()'s async worker thread does not exist here, and its
-		// shared CURL handle may be inherited mid-use from the parent - reusing either
-		// is unsafe. Always use the *Sync variants here, never SendMessage/SendFile.
 		if (!_ctx.logFilePath.empty()) {
 			log.error << "Crash report: " << _ctx.logFilePath << "\n";
 
@@ -161,16 +155,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 	// Ignore broken pipes caused by early disconnecting client
 	std::signal(SIGPIPE, SIG_IGN);
 #endif
-#ifdef DISCORD_INTEGRATION
-	// Must happen exactly once, before any threads exist (including GlobalDiscord()'s
-	// Worker thread, which is spawned lazily on first use). curl_global_init/cleanup are
-	// not safe to call repeatedly or from multiple threads - see discord.cpp for details.
-	// This is also why it's called before InitCrashHandler(): nothing before this point
-	// may touch curl.
-	if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK) {
-		GlobalLogger().error << "Failed to initialize libcurl; Discord integration will be unavailable.\n";
-	}
-#endif
 	// Parse CLI Args
 	Args args{ { argc, argv } };
 	// Init the sine table
@@ -192,10 +176,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 #ifdef BUILD_CLIENT
 	Client client;
 	client.Run();
-#endif
-
-#ifdef DISCORD_INTEGRATION
-	curl_global_cleanup();
 #endif
 
 	return 0;

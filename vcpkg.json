@@ -4,7 +4,14 @@
   "dependencies": [
     "libdeflate",
     "glm",
-    "sdl3",
-    "curl"
-  ]
+    "sdl3"
+  ],
+  "features": {
+    "discord": {
+      "description": "Optional Discord Gateway bot integration via D++",
+      "dependencies": [
+        "dpp"
+      ]
+    }
+  }
 }
