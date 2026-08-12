@@ -125,6 +125,7 @@ set(SHARED_SOURCES
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
     src/bpp_shared/networking/server_manager.cpp
+    src/bpp_shared/world/world_wrapper.cpp
     src/bpp_shared/world/world.cpp
     src/bpp_shared/world/spawner.cpp
     src/bpp_shared/world/lighter.cpp

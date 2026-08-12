@@ -19,7 +19,7 @@ struct SnapshotContainer {
 	std::shared_ptr<const std::vector<Tag>> entitySnapshot;
 };
 
-struct WorldManager;
+class WorldManager;
 
 struct RegionManager {
 	BS::thread_pool<> iopool{ 2 };

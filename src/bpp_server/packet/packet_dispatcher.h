@@ -10,7 +10,7 @@
 
 enum class PacketId : uint8_t;
 struct PlayerSession;
-struct WorldManager;
+class WorldManager;
 class Server;
 
 // Dispatches a single already-identified incoming packet to its handler.

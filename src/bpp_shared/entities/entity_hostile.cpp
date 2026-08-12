@@ -34,7 +34,7 @@ void HostileEntity::Tick() {
 			              MathHelper::FloorDouble(position.z) };
 
 		// TODO BRIGHTNESS CURVE!!
-		float brightness = float(world->getBlockLightFull(blockPos)) / 15.0f;
+		float brightness = float(world->GetBlockLightFull(blockPos)) / 15.0f;
 
 		Chunk* chunk = world->GetChunkRaw({ blockPos.x >> 4, blockPos.z >> 4 });
 		bool seesSky = chunk && chunk->CanBlockSeeSky({ blockPos.x & 15, blockPos.y, blockPos.z & 15 });
@@ -119,7 +119,7 @@ float HostileEntity::GetWanderWeight(Int3 _pos) {
 	if (!world)
 		return -99999.0f;
 
-	int combinedLight = world->getBlockLightFull(_pos);
+	int combinedLight = world->GetBlockLightFull(_pos);
 	float brightness = float(combinedLight) / 15.0f;
 
 	// TODO: needs brightness curve!
@@ -139,7 +139,7 @@ bool HostileEntity::CanSpawnAt(Int3 _pos) {
 		return false;
 
 	// This checks the ACTUAL light level given the time of day
-	int combinedLight = world->getBlockLightFull(footPos);
+	int combinedLight = world->GetBlockLightFull(footPos);
 	if (combinedLight > rand.NextInt(8))
 		return false;
 

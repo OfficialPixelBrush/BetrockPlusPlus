@@ -14,7 +14,7 @@
 #include <cstdint>
 #include <unordered_map>
 
-struct WorldManager;
+class WorldManager;
 struct PlayerSession;
 struct Entity;
 class Server;
