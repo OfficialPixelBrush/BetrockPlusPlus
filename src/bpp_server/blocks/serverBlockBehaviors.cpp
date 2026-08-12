@@ -13,7 +13,7 @@
 #include "tile_entities/tile_entity.h"
 
 namespace ServerBlock {
-BlockBehavior blockBehaviors[256] = {};
+BlockBehavior blockBehaviors[BLOCK_MAX] = {};
 } // namespace ServerBlock
 
 void ServerBlock::Initialize() {

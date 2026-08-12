@@ -10,11 +10,6 @@
 namespace Blocks {
 void RegisterAll() {
 	// Default all behavior slots to full-cube before per-block overrides
-	for (int i = 0; i < 256; i++) {
-		blockBehaviors[i].getSelectionBox = DefaultAabb;
-		blockBehaviors[i].getRayBounds = DefaultAabb;
-		blockBehaviors[i].getCollider = DefaultCollider;
-	}
 	RegisterBlockProperties();
 	RegisterBlockBehaviors();
 }
