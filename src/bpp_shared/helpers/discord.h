@@ -5,23 +5,24 @@
  */
 
 /**
- * @brief Forwards Minecraft chat messages to Discord.
- * Also supports uploading crash logs directly to Discord.
+ * @brief Discord Gateway bot: chat bridge, slash commands, crash uploads.
  *
- * Requires libcurl.
+ * Requires D++ (dpp). Enable with -DDISCORD_INTEGRATION=ON and the vcpkg
+ * "discord" feature. Bot needs Message Content Intent in the Developer Portal.
  */
 
 #ifdef DISCORD_INTEGRATION
 #pragma once
 
-#include <curl/curl.h>
-
-#include <condition_variable>
+#include <atomic>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <string>
-#include <thread>
+#include <vector>
+
+class Server;
 
 class Discord {
 public:
@@ -31,32 +32,46 @@ public:
 	Discord(const Discord&) = delete;
 	Discord& operator=(const Discord&) = delete;
 
-	void Init(const std::string& _token, const std::string& _channelId);
+	// guildId is optional; when set, slash commands register to that guild (instant).
+	void Init(const std::string& _token, const std::string& _channelId, const std::string& _guildId = "");
+	void Shutdown(const std::string& _finalMessage = "");
+
 	void SendMessage(const std::string& _message);
 	void SendFile(const std::string& _filename, const std::string& _message = "");
 
-	// Synchronous, self-contained equivalents safe to call from CrashCatch's post-fork
-	// crash handler (see linuxSignalHandler in CrashCatch.hpp).
 	void SendMessageSync(const std::string& _message);
 	void SendFileSync(const std::string& _filename, const std::string& _message = "");
 
+	// Drain inbound Discord chat / slash-command work onto the server tick thread.
+	void Drain(Server& _server);
+
 private:
-	void Worker();
-	void Enqueue(std::function<void()> _task);
+	struct InboundChat {
+		std::string author;
+		std::string content;
+	};
+
+	using ServerTask = std::function<void(Server&)>;
+
+	void EnqueueServerTask(ServerTask _task);
 
 	static std::string RemoveMinecraftFormatting(const std::string& _input);
-	static std::string EscapeJson(const std::string& _input);
+	// Builds §9[name] §f… lines, each at most 119 bytes (prefix included).
+	static std::vector<std::string> FormatDiscordChatLines(const std::string& _author, const std::string& _content);
+	static void BroadcastDiscordChat(Server& _server, const std::string& _author, const std::string& _content);
 
-	std::thread thread;
+	struct Impl;
+	std::unique_ptr<Impl> impl;
+
 	std::mutex mutex;
-	std::condition_variable condition;
-	std::queue<std::function<void()>> queue;
-	bool stopping = false;
+	std::queue<InboundChat> inboundChat;
+	std::queue<ServerTask> serverTasks;
 
-	CURL* curl = nullptr;
 	std::string token;
 	std::string channelId;
-	bool initialized = false;
+	std::string guildId;
+	std::atomic<bool> initialized{ false };
+	std::atomic<bool> shuttingDown{ false };
 };
 
 Discord& GlobalDiscord();
