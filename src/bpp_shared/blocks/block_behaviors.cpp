@@ -1380,13 +1380,13 @@ void RegisterBlockBehaviors() {
 		// TODO: Grow tree
 		switch (TreeType(_meta & 0b11)) {
 		case TreeType::Oak: // Oak or Large Oak
-			//TreeGenerator::GenerateTree(_world, _random, _pos);
+			TreeGenerator::GenerateTree(_world, _random, _pos);
 			return;
 		case TreeType::Spruce: // Spruce (Taiga or Alt Taiga)
-			// TreeGenerator::GenerateTaiga(_world, _random, _pos);
+			TreeGenerator::GenerateTaiga(_world, _random, _pos);
 			return;
 		case TreeType::Birch: // Birch
-			//TreeGenerator::GenerateTree(_world, _random, _pos, true);
+			TreeGenerator::GenerateTree(_world, _random, _pos, true);
 			return;
 		default:
 			return;
