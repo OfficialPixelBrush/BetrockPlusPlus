@@ -1371,28 +1371,29 @@ void RegisterBlockBehaviors() {
 			_world.SetMeta(_pos, _meta);
 			return;
 		}
-		// TODO: This is a hack. If a tree fails to grow, this'll just remove the sapling
+		// Remove the sapling so it doesn't interfere with the tree
 		_world.SetBlock(_pos, BLOCK_AIR);
 		// Remove sapling so the tree can grow in its place
+		bool successfullyGrew = false;
 		switch (TreeType(_meta & 0b11)) {
 		case TreeType::Oak: // Oak or Large Oak
 			if (_random.NextInt(10) == 0)
-				TreeGenerator::BigTree().Generate(_world, _random, _pos);
+				successfullyGrew = TreeGenerator::BigTree().Generate(_world, _random, _pos);
 			else
-				TreeGenerator::GenerateTree(_world, _random, _pos);
-			return;
-		case TreeType::Spruce: // Spruce (Taiga or Alt Taiga)
-			if (_random.NextInt(3) == 0)
-				TreeGenerator::GenerateTaiga(_world, _random, _pos);
-			else
-				TreeGenerator::GenerateAltTaiga(_world, _random, _pos);
-			return;
+				successfullyGrew = TreeGenerator::GenerateTree(_world, _random, _pos);
+			break;
+		case TreeType::Spruce: // Spruce (lt Taiga)
+			successfullyGrew = TreeGenerator::GenerateAltTaiga(_world, _random, _pos);
+			break;
 		case TreeType::Birch: // Birch
-			TreeGenerator::GenerateTree(_world, _random, _pos, true);
-			return;
+			successfullyGrew = TreeGenerator::GenerateTree(_world, _random, _pos, true);
+			break;
 		default:
-			return;
+			break;
 		}
+		// If the tree placement failed, just place the sapling back
+		if (!successfullyGrew)
+			_world.SetBlock(_pos, BLOCK_SAPLING, _meta);
 	};
 	blockBehaviors[BLOCK_SAPLING].damageDropped = [](uint8_t _meta) -> ItemDamage {
 		return _meta & 3;
