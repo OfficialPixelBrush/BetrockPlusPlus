@@ -33,7 +33,9 @@ public:
 	Discord& operator=(const Discord&) = delete;
 
 	// guildId is optional; when set, slash commands register to that guild (instant).
-	void Init(const std::string& _token, const std::string& _channelId, const std::string& _guildId = "");
+	// adminRoleId gates privileged slash commands (e.g. /stop). Empty = deny those commands.
+	void Init(const std::string& _token, const std::string& _channelId, const std::string& _guildId = "",
+	          const std::string& _adminRoleId = "");
 	void Shutdown(const std::string& _finalMessage = "");
 
 	void SendMessage(const std::string& _message);
@@ -70,6 +72,7 @@ private:
 	std::string token;
 	std::string channelId;
 	std::string guildId;
+	std::string adminRoleId;
 	std::atomic<bool> initialized{ false };
 	std::atomic<bool> shuttingDown{ false };
 };

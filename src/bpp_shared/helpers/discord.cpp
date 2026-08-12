@@ -25,6 +25,71 @@
 #include <utility>
 #include <vector>
 
+namespace {
+
+void ReplaceAll(std::string& _haystack, const std::string& _from, const std::string& _to) {
+	if (_from.empty())
+		return;
+	size_t pos = 0;
+	while ((pos = _haystack.find(_from, pos)) != std::string::npos) {
+		_haystack.replace(pos, _from.size(), _to);
+		pos += _to.size();
+	}
+}
+
+std::string DisplayNameForMention(const dpp::user& _user, const dpp::guild_member& _member) {
+	const std::string nick = _member.get_nickname();
+	if (!nick.empty())
+		return nick;
+	if (!_user.global_name.empty())
+		return _user.global_name;
+	return _user.username;
+}
+
+// Discord stores mentions as <@id> / <@!id> / <#id> / <@&id>; Minecraft has no Discord
+// mention renderer, so resolve them to readable @name / #name before broadcasting.
+std::string ResolveDiscordMentions(const dpp::message& _msg) {
+	std::string content = _msg.content;
+
+	for (const auto& [user, member] : _msg.mentions) {
+		const std::string idStr = std::to_string(static_cast<uint64_t>(user.id));
+		const std::string label = "@" + DisplayNameForMention(user, member);
+		ReplaceAll(content, "<@!" + idStr + ">", label);
+		ReplaceAll(content, "<@" + idStr + ">", label);
+	}
+
+	for (const dpp::snowflake roleId : _msg.mention_roles) {
+		const std::string idStr = std::to_string(static_cast<uint64_t>(roleId));
+		std::string label = "@role";
+		if (const dpp::role* role = dpp::find_role(roleId); role && !role->name.empty())
+			label = "@" + role->name;
+		ReplaceAll(content, "<@&" + idStr + ">", label);
+	}
+
+	for (const dpp::channel& channel : _msg.mention_channels) {
+		const std::string idStr = std::to_string(static_cast<uint64_t>(channel.id));
+		const std::string label = channel.name.empty() ? "#channel" : ("#" + channel.name);
+		ReplaceAll(content, "<#" + idStr + ">", label);
+	}
+
+	return content;
+}
+
+bool MemberHasRole(const dpp::guild_member& _member, const std::string& _roleId) {
+	if (_roleId.empty())
+		return false;
+	const dpp::snowflake want{ _roleId };
+	if (want == 0)
+		return false;
+	for (const dpp::snowflake role : _member.get_roles()) {
+		if (role == want)
+			return true;
+	}
+	return false;
+}
+
+} // namespace
+
 struct Discord::Impl {
 	std::unique_ptr<dpp::cluster> cluster;
 };
@@ -124,13 +189,15 @@ void Discord::Shutdown(const std::string& _finalMessage) {
 	}
 }
 
-void Discord::Init(const std::string& _token, const std::string& _channelId, const std::string& _guildId) {
+void Discord::Init(const std::string& _token, const std::string& _channelId, const std::string& _guildId,
+                   const std::string& _adminRoleId) {
 	if (initialized.load() || shuttingDown.load())
 		return;
 
 	token = _token;
 	channelId = _channelId;
 	guildId = _guildId;
+	adminRoleId = _adminRoleId;
 
 	if (token.empty() || channelId.empty()) {
 		GlobalLogger().warn << "Discord integration is enabled but discord-token or discord-channel-id "
@@ -150,6 +217,18 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 			GlobalLogger().warn << "Discord: discord-guild-id is invalid; registering slash commands globally "
 			                       "(can take up to an hour to appear).\n";
 			guildId.clear();
+		}
+	}
+
+	if (adminRoleId.empty()) {
+		GlobalLogger().warn << "Discord: discord-admin-role-id is empty; privileged slash commands "
+		                       "(/stop) will be denied until it is set.\n";
+	} else {
+		const dpp::snowflake adminRoleSnowflake{ adminRoleId };
+		if (adminRoleSnowflake == 0) {
+			GlobalLogger().warn << "Discord: discord-admin-role-id is invalid; privileged slash commands "
+			                       "(/stop) will be denied.\n";
+			adminRoleId.clear();
 		}
 	}
 
@@ -177,12 +256,11 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 			dpp::slashcommand status("status", "Show Minecraft server status", impl->cluster->me.id);
 			dpp::slashcommand list("list", "List online Minecraft players", impl->cluster->me.id);
 			dpp::slashcommand version("version", "Show Betrock++ version", impl->cluster->me.id);
-			dpp::slashcommand say("say", "Broadcast a message to Minecraft chat", impl->cluster->me.id);
-			say.add_option(dpp::command_option(dpp::co_string, "message", "Message to broadcast", true));
 			dpp::slashcommand stop("stop", "Stop the Minecraft server", impl->cluster->me.id);
 			stop.add_option(dpp::command_option(dpp::co_number, "seconds", "Optional countdown in seconds", false));
 
-			const std::vector<dpp::slashcommand> commands{ status, list, version, say, stop };
+			// Bulk create replaces the guild/global command set — omitting /say removes it from Discord.
+			const std::vector<dpp::slashcommand> commands{ status, list, version, stop };
 
 			if (!guildId.empty()) {
 				impl->cluster->guild_bulk_command_create(commands, dpp::snowflake{ guildId });
@@ -206,7 +284,7 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 			InboundChat chat;
 			const std::string nick = event.msg.member.get_nickname();
 			chat.author = !nick.empty() ? nick : event.msg.author.username;
-			chat.content = event.msg.content;
+			chat.content = ResolveDiscordMentions(event.msg);
 
 			std::lock_guard lock(mutex);
 			inboundChat.push(std::move(chat));
@@ -268,31 +346,13 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 				return;
 			}
 
-			if (name == "say") {
-				std::string message;
-				try {
-					message = std::get<std::string>(event.get_parameter("message"));
-				} catch (...) {
-					event.reply(dpp::message("Missing message.").set_flags(dpp::m_ephemeral));
-					return;
-				}
-				if (message.empty()) {
-					event.reply(dpp::message("Message cannot be empty.").set_flags(dpp::m_ephemeral));
-					return;
-				}
-
-				const std::string nick = event.command.member.get_nickname();
-				const std::string author = !nick.empty() ? nick : event.command.usr.username;
-
-				// Ack first, then broadcast on the tick thread (no deferred edit race).
-				event.reply("Sent.");
-				EnqueueServerTask([author, message](Server& server) {
-					BroadcastDiscordChat(server, author, message);
-				});
-				return;
-			}
-
 			if (name == "stop") {
+				if (!MemberHasRole(event.command.member, adminRoleId)) {
+					event.reply(dpp::message("You need the configured admin role to run /stop.")
+					                .set_flags(dpp::m_ephemeral));
+					return;
+				}
+
 				double seconds = 0.0;
 				try {
 					seconds = std::get<double>(event.get_parameter("seconds"));
