@@ -351,18 +351,19 @@ void WorldManager::PerformRandomTicks(const std::vector<ClientPosition>& _player
 	int hashCounter = rand.NextInt();
 	for (auto& it : wanted) {
 		int attempts = 80;
+		Int2 chunkOrigin = { it.first.x * 16, it.first.z * 16 };
 		for (int i = 0; i < attempts; i++) {
-			// We love notch magic numbers
 			hashCounter = hashCounter * 3 + 1013904223;
 			int randomBlockPos = hashCounter >> 2;
 			int posX = randomBlockPos & 15;
 			int posZ = randomBlockPos >> 8 & 15;
 			int posY = randomBlockPos >> 16 & 127;
 			auto block = it.second->GetBlock({ posX, posY, posZ });
-			auto meta = it.second->GetMeta({ posX, posY, posZ });
+			auto meta = it.second->GetMeta({ posX, posY, posZ });  
 			if (Blocks::blockProperties[block].ticksOnLoad) {
 				if (auto func = Blocks::blockBehaviors[block].onTick) {
-					func(*this, { posX, posY, posZ }, meta, this->rand);
+					Int3 worldPos = { chunkOrigin.x + posX, posY, chunkOrigin.z + posZ };
+					func(*this, worldPos, meta, this->rand);
 				}
 			}
 		}
