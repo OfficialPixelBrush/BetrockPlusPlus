@@ -28,9 +28,10 @@ Please read the [CONTRIBUTING](./CONTRIBUTING.md) page.
 
 Please read the [BUILDING](./BUILDING.md) page.
 
-## Minimum Requirements
+## Hardware Requirements
 
-To find out what's needed to run the project, please see the [minimum confirmed requirements on the hardware page](./HARDWARE.md#minimum-requirements).
+To find out what's needed to run the project, please see the [recommended hardware requirements on the hardware page](./HARDWARE.md#recommended-specs-server).
+The server can be run on lesser hardware, though the experience may not be ideal.
 
 # Related projects
 

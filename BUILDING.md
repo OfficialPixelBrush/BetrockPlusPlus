@@ -23,7 +23,7 @@ Docker will take care of all of this stuff automatically, so skip to the [buildi
 
 Prerequisites:
 
-- CMake 3.16.0 (or later)
+- CMake 3.25 (or later)
 - MSVC 19.32 (or later)
 - vcpkg
 
@@ -42,9 +42,9 @@ Betrock++ also works on Linux! Theoretically, any Distro should be supported, so
 
 Prerequisites:
 
-- CMake 3.16 (or later)
-- GCC 13+ or Clang
-- Glibc or Musl
+- CMake 3.25 (or later)
+- GCC 13+ or Clang 17+
+- Glibc 2.35+ or Musl 1.2.4+
 
 **GCC 13+** is recommended, though Clang should work too, same goes for **glibc** and **musl**. The install instructions below assume `gcc`/`g++` though.
 
