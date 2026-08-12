@@ -10,6 +10,7 @@
 #include "blocks/block_properties.h"
 #include "entities/entity_falling_block.h"
 #include "enums/items.h"
+#include "generator/overworld/tree_gen.h"
 #include "items/item_properties.h"
 #include "logger.h"
 #include "packet_data.h"
@@ -1339,6 +1340,29 @@ void RegisterBlockBehaviors() {
 	};
 	blockBehaviors[BLOCK_LOG].damageDropped = [](uint8_t _meta) -> ItemDamage {
 		return _meta;
+	};
+	blockBehaviors[BLOCK_SAPLING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                          Java::Random& _random) -> void {
+		// Add onto age
+		if ((_meta & 0b1100) < 0b1100) {
+			_meta += 0b100;
+			_world.SetMeta(_pos, _meta);
+			return;
+		}
+		// TODO: Grow tree
+		switch (TreeType(_meta & 0b11)) {
+		case TreeType::Oak: // Oak or Large Oak
+			//TreeGenerator::GenerateTree(_world, _random, _pos);
+			return;
+		case TreeType::Spruce: // Spruce (Taiga or Alt Taiga)
+			// TreeGenerator::GenerateTaiga(_world, _random, _pos);
+			return;
+		case TreeType::Birch: // Birch
+			//TreeGenerator::GenerateTree(_world, _random, _pos, true);
+			return;
+		default:
+			return;
+		}
 	};
 	blockBehaviors[BLOCK_SAPLING].damageDropped = [](uint8_t _meta) -> ItemDamage {
 		return _meta & 3;

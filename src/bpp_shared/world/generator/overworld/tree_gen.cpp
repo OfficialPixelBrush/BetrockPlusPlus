@@ -75,7 +75,7 @@ bool GenerateTree(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _bi
 						if (((JavaMath::Abs(xLeaf) != treeWidth || JavaMath::Abs(zLeaf) != treeWidth ||
 						      (_rand.NextInt(2) != 0 && widthBase != 0))) &&
 						    !IsOpaque(_world.GetBlockId(offset))) {
-							_world.SetBlock(offset, BLOCK_LEAVES, uint8_t(_birch ? 2 : 0));
+							_world.SetBlock(offset, BLOCK_LEAVES, uint8_t(_birch ? TreeType::Birch : TreeType::Oak));
 						}
 					}
 				}
@@ -85,7 +85,8 @@ bool GenerateTree(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _bi
 			for (int32_t h = 0; h < treeHeight; ++h) {
 				BlockType futureLog = _world.GetBlockId(Int3{ _pos.x, _pos.y + h, _pos.z });
 				if (futureLog == BLOCK_AIR || futureLog == BLOCK_LEAVES) {
-					_world.SetBlock(Int3{ _pos.x, _pos.y + h, _pos.z }, BLOCK_LOG, uint8_t(_birch ? 2 : 0));
+					_world.SetBlock(Int3{ _pos.x, _pos.y + h, _pos.z }, BLOCK_LOG,
+					                uint8_t(_birch ? TreeType::Birch : TreeType::Oak));
 				}
 			}
 
@@ -532,7 +533,7 @@ bool GenerateTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 						     JavaMath::Abs(zOffset) != currentLeafRadius || currentLeafRadius <= 0) &&
 						    !IsOpaque(_world.GetBlockId(Int3{ x, y, z }))) {
 							// Spruce leaves
-							_world.SetBlock(Int3{ x, y, z }, BLOCK_LEAVES, uint8_t(1));
+							_world.SetBlock(Int3{ x, y, z }, BLOCK_LEAVES, uint8_t(TreeType::Spruce));
 						}
 					}
 				}
@@ -547,7 +548,7 @@ bool GenerateTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 			for (int32_t logY = 0; logY < height - 1; ++logY) {
 				BlockType type = _world.GetBlockId(Int3{ _pos.x, _pos.y + logY, _pos.z });
 				if (type == BLOCK_AIR || type == BLOCK_LEAVES) {
-					_world.SetBlock(Int3{ _pos.x, _pos.y + logY, _pos.z }, BLOCK_LOG, uint8_t(1));
+					_world.SetBlock(Int3{ _pos.x, _pos.y + logY, _pos.z }, BLOCK_LOG, uint8_t(TreeType::Spruce));
 				}
 			}
 
@@ -612,7 +613,7 @@ bool GenerateAltTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 						if ((JavaMath::Abs(xOffset) != currentLeafRadius ||
 						     JavaMath::Abs(zOffset) != currentLeafRadius || currentLeafRadius <= 0) &&
 						    !IsOpaque(_world.GetBlockId(Int3{ x, yLevel, z }))) {
-							_world.SetBlock(Int3{ x, yLevel, z }, BLOCK_LEAVES, uint8_t(1));
+							_world.SetBlock(Int3{ x, yLevel, z }, BLOCK_LEAVES, uint8_t(TreeType::Spruce));
 						}
 					}
 				}
@@ -633,7 +634,7 @@ bool GenerateAltTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 			for (int32_t logY = 0; logY < height - logOffset; ++logY) {
 				BlockType type = _world.GetBlockId(Int3{ _pos.x, _pos.y + logY, _pos.z });
 				if (type == BLOCK_AIR || type == BLOCK_LEAVES) {
-					_world.SetBlock(Int3{ _pos.x, _pos.y + logY, _pos.z }, BLOCK_LOG, uint8_t(1));
+					_world.SetBlock(Int3{ _pos.x, _pos.y + logY, _pos.z }, BLOCK_LOG, uint8_t(TreeType::Spruce));
 				}
 			}
 
