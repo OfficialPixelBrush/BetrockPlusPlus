@@ -383,6 +383,9 @@ void RegisterBlockBehaviors() {
 		.getSelectionBox = SaplingAabb,
 		.getRayBounds = SaplingAabb,
 		.getCollider = EmptyCollider,
+		// TODO: This should already be set, but for some reason it's a nullptr?
+		.onBlockPlaced = GenericPlace,
+		.onBlockDestroyedByPlayer = GenericBreak
 	};
 
 	// Tall grass
@@ -1377,7 +1380,9 @@ void RegisterBlockBehaviors() {
 			_world.SetMeta(_pos, _meta);
 			return;
 		}
-		// TODO: Grow tree
+		// TODO: This is a hack. If a tree fails to grow, this'll just remove the sapling
+		_world.SetBlock(_pos, BLOCK_AIR);
+		// Remove sapling so the tree can grow in its place
 		switch (TreeType(_meta & 0b11)) {
 		case TreeType::Oak: // Oak or Large Oak
 			TreeGenerator::GenerateTree(_world, _random, _pos);
