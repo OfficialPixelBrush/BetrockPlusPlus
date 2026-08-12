@@ -41,7 +41,7 @@ Server::Server() : gameRuntime(serverViewRadius), config("server.properties") {
 
 #ifdef DISCORD_INTEGRATION
 	GlobalDiscord().Init(config.GetAsString("discord-token"), config.GetAsString("discord-channel-id"),
-	                     config.GetAsString("discord-guild-id"));
+	                     config.GetAsString("discord-guild-id"), config.GetAsString("discord-admin-role-id"));
 #endif
 
 	serverSocket = ServerSocketManager::CreateServerSocket(serverPort);
@@ -150,6 +150,8 @@ void Server::LoadConfig() {
 		    { "discord-channel-id", "" },
 		    // Optional: register slash commands to one guild instantly. Leave empty for global.
 		    { "discord-guild-id", "" },
+		    // Role required for privileged slash commands (e.g. /stop). Empty denies them.
+		    { "discord-admin-role-id", "" },
 #endif
 		    //{"allow-nether",true},
 		    //{"spawn-monsters","true"},
