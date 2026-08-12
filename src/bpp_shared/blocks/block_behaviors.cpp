@@ -1376,10 +1376,16 @@ void RegisterBlockBehaviors() {
 		// Remove sapling so the tree can grow in its place
 		switch (TreeType(_meta & 0b11)) {
 		case TreeType::Oak: // Oak or Large Oak
-			TreeGenerator::GenerateTree(_world, _random, _pos);
+			if (_random.NextInt(10) == 0)
+				TreeGenerator::BigTree().Generate(_world, _random, _pos);
+			else
+				TreeGenerator::GenerateTree(_world, _random, _pos);
 			return;
 		case TreeType::Spruce: // Spruce (Taiga or Alt Taiga)
-			TreeGenerator::GenerateTaiga(_world, _random, _pos);
+			if (_random.NextInt(3) == 0)
+				TreeGenerator::GenerateTaiga(_world, _random, _pos);
+			else
+				TreeGenerator::GenerateAltTaiga(_world, _random, _pos);
 			return;
 		case TreeType::Birch: // Birch
 			TreeGenerator::GenerateTree(_world, _random, _pos, true);
