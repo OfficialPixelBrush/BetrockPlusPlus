@@ -10,6 +10,12 @@
 #include "../shared/feature_gen.h" // brings in GenView, IsSolid, IsOpaque
 #include "java_random.h"
 
+enum class TreeType : int8_t {
+	Oak = 0,
+	Spruce = 1,
+	Birch = 2,
+};
+
 /**
  * @brief Used for generating Oak or Birch Trees
  * 
