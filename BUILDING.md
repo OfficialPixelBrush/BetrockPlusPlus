@@ -39,13 +39,20 @@ Then move onto the [building step](#3-building).
 #### Linux
 
 Betrock++ also works on Linux! Theoretically, any Distro should be supported, so long as it has the required dependencies.
-We recommend anything with GCC 13 and newer. Here're the commands for acquiring those on various Distros.
+
+Prerequisites:
+
+- CMake 3.16 (or later)
+- GCC 13+ or Clang
+- Glibc or Musl
+
+**GCC 13+** is recommended, though Clang should work too, same goes for **glibc** and **musl**. The install instructions below assume `gcc`/`g++` though.
 
 ##### Debian / Ubuntu / Linux Mint
 
 ```bash
 # Server + Client dependencies
-sudo apt install git cmake clang build-essential libdeflate-dev libasan8
+sudo apt install git cmake build-essential libdeflate-dev libasan8
 # Client-exclusive dependencies
 sudo apt install libglm-dev libsdl3-dev libgl1-mesa-dev
 ```
@@ -56,7 +63,7 @@ sudo apt install libglm-dev libsdl3-dev libgl1-mesa-dev
 
 ```bash
 # Server + Client dependencies
-sudo dnf install git cmake clang gcc gcc-c++ make libasan libdeflate-devel
+sudo dnf install git cmake gcc gcc-c++ make libasan libdeflate-devel
 # Client-exclusive dependencies
 sudo dnf install glm-devel SDL3-devel mesa-libGL-devel
 ```
@@ -65,7 +72,7 @@ sudo dnf install glm-devel SDL3-devel mesa-libGL-devel
 
 ```bash
 # Server + Client dependencies
-sudo pacman -S git cmake clang base-devel libdeflate libasan
+sudo pacman -S git cmake base-devel libdeflate libasan
 # Client-exclusive dependencies
 sudo pacman -S glm sdl3
 ```
@@ -74,7 +81,7 @@ sudo pacman -S glm sdl3
 
 ```bash
 # Server + Client dependencies
-sudo zypper install git cmake clang gcc gcc-c++ make libdeflate-devel
+sudo zypper install git cmake gcc gcc-c++ make libdeflate-devel
 # Client-exclusive dependencies
 sudo zypper install glm-devel SDL3-devel Mesa-libGL-devel libasan8
 ```
@@ -83,7 +90,7 @@ sudo zypper install glm-devel SDL3-devel Mesa-libGL-devel libasan8
 
 ```bash
 # Server + Client dependencies
-sudo apk add git cmake clang gcc g++ make libdeflate-dev
+sudo apk add git cmake gcc g++ make libdeflate-dev
 # Client-exclusive dependencies
 sudo apk add glm-dev sdl3-dev mesa-dev compiler-rt
 ```
@@ -94,7 +101,7 @@ sudo apk add glm-dev sdl3-dev mesa-dev compiler-rt
 
 ```bash
 # Server + Client dependencies
-sudo xbps-install -S base-devel git cmake clang libdeflate-devel
+sudo xbps-install -S base-devel git cmake libdeflate-devel
 # Client-exclusive dependencies
 sudo xbps-install -S glm SDL3-devel MesaLib-devel libsanitizer-devel
 ```
@@ -103,30 +110,36 @@ sudo xbps-install -S glm SDL3-devel MesaLib-devel libsanitizer-devel
 
 ```bash
 # Server + Client dependencies
-sudo emerge dev-vcs/git dev-build/cmake llvm-core/clang sys-devel/gcc dev-build/make app-arch/libdeflate
+sudo emerge dev-vcs/git dev-build/cmake sys-devel/gcc dev-build/make app-arch/libdeflate
 # Client-exclusive dependencies
 sudo emerge media-libs/glm media-libs/libsdl3 media-libs/mesa
 ```
 
 Then move onto the [building step](#3-building).
 
+### Optional: Reduced Terrain Precision
+
+Reduced Terrain Precision is **off by default**. Enabling it reduces the floating-point precision of the Perlin and Simplex noise generators from 64-bit to 32-bit floats. This shouldn't do much on systems with a dedicated floating-point co-processor, such as an Intel 8087, or integrated floating-point functionality, like most x86 CPUs made after ~1987, as they use the same 80-Bit registers for 32-bit and 64-bit floating-point math, the only difference being potential memory bandwidth usage.
+
+The main benefits are for some microcontrollers or cost-reduced x86 chips that don't have integrated floating-point support, and thus need to emulate it all in software. Examples for such include RISC-V cores that lack the F (float) and D (double) extensions (e.g. RV32I, RV64IM) or the i486SX.
+
+Simply add `-DREDUCED_GENERATION_PRECISION=ON` to the first build command, then resume as normal.
+
+The only major difference this option introduces is that the farlands do not generate, and they just become an infinite ocean with a bedrock floor along the X-Axis, and the same but with a grid of blocks along the Z-Axis.
+
 ### Optional: Discord Integration
 
 Discord support is **off by default**. Enabling it pulls in [D++](https://dpp.dev/) (Gateway WebSocket bot) via vcpkg or FetchContent, and requires OpenSSL.
 
-```bash
-# Needs OpenSSL headers (e.g. libssl-dev) available
-cmake -S . -B build-discord -DDISCORD_INTEGRATION=ON
-cmake --build build-discord -j$(nproc)
-```
+Simply add `-DDISCORD_INTEGRATION=ON` to the first build command, then resume as normal.
 
 In `server.properties`:
 
-| Key | Purpose |
-| --- | --- |
-| `discord-token` | Bot token |
-| `discord-channel-id` | Channel used for chat bridge + crash uploads |
-| `discord-guild-id` | Optional. When set, slash commands register to that guild instantly |
+| Key                  | Purpose                                                             |
+| -------------------- | ------------------------------------------------------------------- |
+| `discord-token`      | Bot token                                                           |
+| `discord-channel-id` | Channel used for chat bridge + crash uploads                        |
+| `discord-guild-id`   | Optional. When set, slash commands register to that guild instantly |
 
 In the [Discord Developer Portal](https://discord.com/developers/applications), enable the **Message Content Intent**, invite the bot with `applications.commands` + `bot` scopes, and grant read/send message permissions in the bridge channel.
 

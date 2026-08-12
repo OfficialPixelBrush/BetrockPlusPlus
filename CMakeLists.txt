@@ -8,6 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Must be set before project() so vcpkg can install the optional feature.
+option(REDUCED_GENERATION_PRECISION "Reduces perlin and simplex noise precision from 64-bit to 32-bit floats" OFF)
+
 option(DISCORD_INTEGRATION "Enable Discord bot integration via D++ (server only)" OFF)
 if(DISCORD_INTEGRATION)
     list(APPEND VCPKG_MANIFEST_FEATURES "discord")
