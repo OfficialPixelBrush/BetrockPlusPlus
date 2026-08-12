@@ -30,8 +30,8 @@ private:
 		                                          { 0, 1, 1 }, { 0, -1, 1 }, { 0, 1, -1 }, { 0, -1, -1 } };
 	// Note: MSVC and older versions GCC do not support
 	// "sqrt" being used in constexpr, reason we do this instead
-	static constexpr double SKEWING = 0.36602540378443860;   // 0.5 * (sqrt(3.0) - 1.0)
-	static constexpr double UNSKEWING = 0.21132486540518713; // (3.0 - sqrt(3.0)) / 6.0
+	static constexpr gen_float SKEWING = 0.36602540378443860;   // 0.5 * (sqrt(3.0) - 1.0)
+	static constexpr gen_float UNSKEWING = 0.21132486540518713; // (3.0 - sqrt(3.0)) / 6.0
 
 public:
 	NoiseSimplex();
@@ -40,10 +40,10 @@ public:
 	void GenerateNoise(std::span<double> _noiseField, Vec2 _offset, Int32_2 _size, Vec2 _scale, double _amplitude);
 };
 
-constexpr inline int32_t Wrap(const double _grad) {
-	return _grad > 0.0 ? Java::DoubleToInt32(_grad) : Java::DoubleToInt32(_grad) - 1;
+constexpr inline int32_t Wrap(const gen_float _grad) {
+	return _grad > 0.0 ? GenFloatToInt32(_grad) : GenFloatToInt32(_grad) - 1;
 }
 
-constexpr inline double DotProd(const int32_t _grad[3], const double _x, const double _y) {
-	return double(_grad[0]) * _x + double(_grad[1]) * _y;
+constexpr inline gen_float DotProd(const int32_t _grad[3], const gen_float _x, const gen_float _y) {
+	return gen_float(_grad[0]) * _x + gen_float(_grad[1]) * _y;
 }
