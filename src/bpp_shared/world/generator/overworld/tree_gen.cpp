@@ -19,7 +19,7 @@ namespace TreeGenerator {
  * @param birch If the tree should be birch or oak
  * @return If tree successfully generated
  */
-bool GenerateTree(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch) {
+bool GenerateTree(WorldAccess& _world, Java::Random& _rand, Int3 _pos, bool _birch) {
 	// Decide on the tree height (birches are one block taller)
 	int32_t treeHeight = _rand.NextInt(3) + 4;
 	if (_birch)
@@ -126,7 +126,7 @@ void BigTree::Configure(double _pTreeHeight, double _pBranchLength, double _pTru
  * @param pBirch If the tree should be birch or oak (not used for big trees)
  * @return If tree successfully generated
  */
-bool BigTree::Generate(WorldWrapper& _pWorld, Java::Random& _pRand, [[maybe_unused]] Int3 _pPos) {
+bool BigTree::Generate(WorldAccess& _pWorld, Java::Random& _pRand, [[maybe_unused]] Int3 _pPos) {
 	Configure(1.0, 1.0, 1.0);
 	wm = &_pWorld;
 	int64_t seed = _pRand.NextLong();
@@ -488,7 +488,7 @@ bool BigTree::ValidPlacement() {
  * @param pPos Position of the lowest trunk-block
  * @return If tree successfully generated
  */
-bool GenerateTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
+bool GenerateTaiga(WorldAccess& _world, Java::Random& _rand, Int3 _pos) {
 	int32_t height = _rand.NextInt(5) + 7;
 	int32_t trunkHeight = height - _rand.NextInt(2) - 3;
 	int32_t leavesHeight = height - trunkHeight;
@@ -567,7 +567,7 @@ bool GenerateTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
  * @param pPos Position of the lowest trunk-block
  * @return If tree successfully generated
  */
-bool GenerateAltTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
+bool GenerateAltTaiga(WorldAccess& _world, Java::Random& _rand, Int3 _pos) {
 	int32_t height = _rand.NextInt(4) + 6;
 	int32_t trunkHeight = 1 + _rand.NextInt(2);
 	int32_t leavesHeight = height - trunkHeight;
