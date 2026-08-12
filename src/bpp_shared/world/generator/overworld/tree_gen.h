@@ -9,6 +9,7 @@
 
 #include "../shared/feature_gen.h" // brings in GenView, IsSolid, IsOpaque
 #include "java_random.h"
+#include "world_access.h"
 
 enum class TreeType : int8_t {
 	Oak = 0,
@@ -21,9 +22,9 @@ enum class TreeType : int8_t {
  * 
  */
 namespace TreeGenerator {
-bool GenerateTree(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _birch = false);
-bool GenerateTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
-bool GenerateAltTaiga(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
+bool GenerateTree(WorldAccess& _world, Java::Random& _rand, Int3 _pos, bool _birch = false);
+bool GenerateTaiga(WorldAccess& _world, Java::Random& _rand, Int3 _pos);
+bool GenerateAltTaiga(WorldAccess& _world, Java::Random& _rand, Int3 _pos);
 
 class BigTree {
 private:
@@ -47,7 +48,7 @@ private:
 		AXIS_Y  // Z to Y
 	};
 	Java::Random rand = Java::Random();
-	WorldWrapper* wm = nullptr;
+	WorldAccess* wm = nullptr;
 	Int3 basePos = INT3_ZERO;
 	int32_t totalHeight = 0;
 	int32_t height;
@@ -75,6 +76,6 @@ private:
 	void Configure(double _treeHeight, double _branchLength, double _trunkShape);
 
 public:
-	bool Generate(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
+	bool Generate(WorldAccess& _world, Java::Random& _rand, Int3 _pos);
 };
 }; // namespace TreeGenerator
