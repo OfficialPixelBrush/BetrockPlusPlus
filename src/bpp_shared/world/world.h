@@ -48,16 +48,16 @@ class WorldManager : public WorldAccess {
 	std::mutex genDoneMutex;
 	std::deque<std::shared_ptr<Chunk>> genDoneQueue;
 	TileEntityManager tileEntityManager;
-	EntityManager entityManager;
-	TickScheduler tickScheduler;
-	RegionManager* regionManager = nullptr;
-	TickTime elapsedTicks = 0;
-	BS::thread_pool<> pool{ 2 };
 	EntitySpawner entitySpawner;
 	int skylightOffset = 0;
 	static BiomeGenerator biomeGenerator;
 
 	public:
+	BS::thread_pool<> pool{ 2 };
+	RegionManager* regionManager = nullptr;
+	TickTime elapsedTicks = 0;
+	EntityManager entityManager;
+	TickScheduler tickScheduler;
 	Lighter lightManager;
 	std::function<void(PendingBlock, Int32_2)> onBlockUpdate;
 	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> chunks;
@@ -73,7 +73,7 @@ class WorldManager : public WorldAccess {
 			thisDimension = Dimension::Nether;
 	}
 
-	~WorldManager() {}
+	~WorldManager() override {}
 
 	void Tick(const std::vector<ClientPosition>& _players);
 	void Update(const std::vector<ClientPosition>& _players);
@@ -185,11 +185,11 @@ class WorldManager : public WorldAccess {
 		return CanPopulateDirect(_pos);
 	}
 
-	BlockType GetBlockId(Int3 _wpos) const override;
+	BlockType GetBlockId(Int3 _wpos) override;
 
 	uint8_t GetMetadata(Int3 _wpos);
 
-	void SetBlock(Int3 _wpos, const Block& _block) const {
+	void SetBlock(Int3 _wpos, const Block& _block) {
 		SetBlock(_wpos, _block.type, _block.data);
 	}
 
@@ -242,7 +242,7 @@ class WorldManager : public WorldAccess {
 		return double(chunk->GetHumidity({ _wx & 15, _wz & 15 }));
 	}
 
-	int GetSkyLight(Int3 _pos) {
+	uint8_t GetSkyLight(const Int3 _pos) override {
 		if (!InBounds(_pos.y))
 			return 0;
 		auto* chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
@@ -251,7 +251,7 @@ class WorldManager : public WorldAccess {
 		return chunk->GetSkyLight({ _pos.x & 15, _pos.y, _pos.z & 15 });
 	}
 
-	int GetBlockLight(Int3 _pos) {
+	uint8_t GetBlockLight(const Int3 _pos) {
 		if (!InBounds(_pos.y))
 			return 0;
 		auto* chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });

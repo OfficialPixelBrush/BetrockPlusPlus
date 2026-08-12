@@ -79,7 +79,7 @@ double WorldWrapper::GetHumidityAt(const int _wx, const int _wz) {
     return double(chunk->GetHumidity({ _wx & 15, _wz & 15 }));
 }
 
-BlockType WorldWrapper::GetBlockId(const Int3 _wpos) const {
+BlockType WorldWrapper::GetBlockId(const Int3 _wpos) {
     if (!InBounds(_wpos.y))
         return BlockType::BLOCK_AIR;
     auto chunk = chunkRegion.GetChunk(GetRegionChunkPos(_wpos));
@@ -187,7 +187,7 @@ void WorldWrapper::SetBlock(const Int3 _wpos, const BlockType _type, const uint8
                                 chunk->cpos);
 }
 
-uint8_t WorldWrapper::GetSkyLight(const Int3 _wpos) const {
+uint8_t WorldWrapper::GetSkyLight(const Int3 _wpos) {
     if (!InBounds(_wpos.y))
         return 0;
     auto chunk = chunkRegion.GetChunk(GetRegionChunkPos(_wpos));

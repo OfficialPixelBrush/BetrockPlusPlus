@@ -10,6 +10,7 @@
 #include "blocks/block_properties.h"
 #include "constants.h"
 #include "java_random.h"
+#include "../world_wrapper.h"
 
 // Inline block-property helpers
 inline constexpr bool IsSolid(BlockType _t) {
