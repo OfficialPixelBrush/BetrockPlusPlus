@@ -8,6 +8,7 @@
 #pragma once
 #include "java_random.h"
 #include "numeric_structs.h"
+#include <array>
 
 #ifdef REDUCED_GENERATION_PRECISION
 typedef float gen_float;

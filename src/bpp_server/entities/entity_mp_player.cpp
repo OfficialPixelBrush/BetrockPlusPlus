@@ -208,16 +208,16 @@ void EntityMPPlayer::Tick() {
 	// Do living entity stuff
 	MobileEntity::Tick();
 
-	// Our health changed
-	if (this->lastHealth != GetHeartsHealth()) {
-		Packet::SetHealth healthPkt;
-		healthPkt.health = GetHeartsHealth();
-		healthPkt.Serialize(session->stream);
-	}
-
 	// If we fell out of the world then die
 	if (position.y < -64.0)
 		OnDeath();
+
+	if (this->lastNotifiedHealth != GetHeartsHealth()) {
+		Packet::SetHealth healthPkt;
+		healthPkt.health = GetHeartsHealth();
+		healthPkt.Serialize(session->stream);
+		this->lastNotifiedHealth = GetHeartsHealth();
+	}
 
 	// Tell entities we collided with a player
 	if (entityManager) {
