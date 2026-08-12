@@ -230,11 +230,11 @@ static int GetDirectionFromYaw(float _yaw, int _directionCount) {
 	return MathHelper::FloorDouble((_yaw * _directionCount / 360.0f) + 0.5f) & 3;
 }
 
-static void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer) {
+void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer) {
 	BreakAndDropBlock(_world, _pos);
 }
 
-static bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer,
+bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer,
                          PacketData::FaceDirection _face, BlockType _blockId, uint8_t _meta) {
 	BlockType existing = _world.GetBlockId(_pos);
 	Int3 sourceBlock = Blocks::GetSourceBlockFromFace(_pos, _face);
@@ -312,12 +312,6 @@ static void BreakDoor(WorldManager& _world, Int3 _pos, BlockType _doorType) {
 }
 
 void RegisterBlockBehaviors() {
-	// Initialize the default behaviors
-	for (int i = 0; i < 256; i++) {
-		blockBehaviors[i].onBlockPlaced = GenericPlace;
-		blockBehaviors[i].onBlockDestroyedByPlayer = GenericBreak;
-	}
-
 	// Liquids/zero-size AABBs
 	blockBehaviors[BlockType::BLOCK_WATER_FLOWING] = {
 		.getSelectionBox = LiquidAabb,
@@ -383,9 +377,6 @@ void RegisterBlockBehaviors() {
 		.getSelectionBox = SaplingAabb,
 		.getRayBounds = SaplingAabb,
 		.getCollider = EmptyCollider,
-		// TODO: This should already be set, but for some reason it's a nullptr?
-		.onBlockPlaced = GenericPlace,
-		.onBlockDestroyedByPlayer = GenericBreak
 	};
 
 	// Tall grass
