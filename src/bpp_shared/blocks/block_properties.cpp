@@ -15,7 +15,7 @@
 namespace Blocks {
 
 // Global table definitions; declared extern in the header
-BlockProperties blockProperties[256] = {};
+BlockProperties blockProperties[BLOCK_MAX] = {};
 
 // Behavior helper functions
 bool CanFallAt(WorldManager& _world, Int3 _position) {

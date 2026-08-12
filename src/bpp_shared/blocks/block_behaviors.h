@@ -26,13 +26,13 @@ void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer);
 
 struct BlockBehavior {
 	// Called when we need to get the AABB for the selection box
-	AABB (*getSelectionBox)(uint8_t _metadata) = nullptr;
+	AABB (*getSelectionBox)(uint8_t _metadata) = DefaultAabb;
 
 	// Called when we need to check for ray intersections for selection
-	AABB (*getRayBounds)(uint8_t _metadata) = nullptr;
+	AABB (*getRayBounds)(uint8_t _metadata) = DefaultAabb;
 
 	// Called when we need to check the collision of this block
-	CollisionShape (*getCollider)(uint8_t _metadata) = nullptr;
+	CollisionShape (*getCollider)(uint8_t _metadata) = DefaultCollider;
 
 	// Called each random Tick if ticksOnLoad = true
 	// Also called for scheduled ticks
@@ -89,5 +89,5 @@ void RegisterBlockBehaviors();
 
 std::vector<ItemStack> GetBlockDrops(BlockType _blockId, uint8_t _meta, Java::Random& _rng);
 
-extern BlockBehavior blockBehaviors[256];
+extern BlockBehavior blockBehaviors[BLOCK_MAX];
 }; // namespace Blocks

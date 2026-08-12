@@ -18,7 +18,7 @@
 #include "world.h"
 
 namespace Blocks {
-BlockBehavior blockBehaviors[256] = {};
+BlockBehavior blockBehaviors[BLOCK_MAX] = {};
 
 static bool SearchForLog(int _sLength, Int3 _pos, Int3 _cameFrom, WorldManager& _world) {
 	auto thisBlock = _world.GetBlockId(_pos);

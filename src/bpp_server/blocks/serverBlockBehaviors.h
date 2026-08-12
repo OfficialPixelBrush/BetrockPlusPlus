@@ -21,7 +21,7 @@ struct BlockBehavior {
 	bool (*onBlockActivated)(WorldManager& _world, Int3 _position, PlayerSession& _session,
 	                         Runtime& _gameRuntime) = nullptr;
 };
-extern BlockBehavior blockBehaviors[256];
+extern BlockBehavior blockBehaviors[BLOCK_MAX];
 
 void Initialize();
 } // namespace ServerBlock

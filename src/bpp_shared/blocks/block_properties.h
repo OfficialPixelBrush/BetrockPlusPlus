@@ -107,7 +107,7 @@ struct BlockProperties {
 };
 
 // Indexed by block ID, populated by registerAll()
-extern BlockProperties blockProperties[256];
+extern BlockProperties blockProperties[BLOCK_MAX];
 
 void RegisterBlockProperties();
 } // namespace Blocks
