@@ -313,7 +313,7 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 
 	tickScheduler.Tick();
 	entitySpawner.TrySpawnEntities(*this, _players);
-	PerformRandomTicks();
+	PerformRandomTicks(_players);
 	entityManager.Tick();
 	tileEntityManager.TickTileEntities(*this);
 
@@ -329,24 +329,43 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 	PopulateReady();
 }
 
-void WorldManager::PerformRandomTicks() {
-	// TODO: Ideally this'd act on its own distance
-	// TODO: Ideally these would be chosen at random
-	// TODO: In modern MC this is done on a sub-chunk level. Will have to check how it operates in this version.
-	Int3 position;
-	for (auto& [pos, chunk] : chunks) {
-		if (chunk->state >= ChunkState::Populated)
-			continue;
-		position = {
-			(rand.NextInt() % CHUNK_WIDTH + CHUNK_WIDTH) % CHUNK_WIDTH,
-			(rand.NextInt() % CHUNK_HEIGHT + CHUNK_HEIGHT) % CHUNK_HEIGHT,
-			(rand.NextInt() % CHUNK_WIDTH + CHUNK_WIDTH) % CHUNK_WIDTH
-		};
-		BlockType b = chunk->GetBlock(position);
-		uint8_t m = chunk->GetMeta(position);
-		Int3 globalPos = { pos.x * CHUNK_WIDTH + position.x, position.y, pos.z * CHUNK_WIDTH + position.z};
-		if (auto fn = Blocks::blockBehaviors[b].onTick)
-			fn(*this, globalPos, m, rand);
+void WorldManager::PerformRandomTicks(const std::vector<ClientPosition>& _players) {
+	// Build our active set here
+	// Adjusted base on the simulation distance
+	int simulationDist = this->GetSimulationDistance();
+	int simulationWidth = (simulationDist * 2) + 1;
+	std::unordered_map<Int2, Chunk*> wanted;
+	wanted.reserve(_players.size() * int64_t(simulationWidth * simulationWidth));
+	for (auto& player : _players) {
+		auto anchor = player.GetChunkPos();
+		for (int dx = -simulationDist; dx <= simulationDist; dx++) {
+			for (int dz = -simulationDist; dz <= simulationDist; dz++) {
+				Int2 chunkPos = { dx + anchor.x, dz + anchor.z };
+				auto chunk = GetChunkRaw(chunkPos);
+				if (chunk && chunk->state.load() == ChunkState::Populated)
+					wanted[chunkPos] = chunk;
+			}
+		}
+	}
+
+	int hashCounter = rand.NextInt();
+	for (auto& it : wanted) {
+		int attempts = 80;
+		for (int i = 0; i < attempts; i++) {
+			// We love notch magic numbers
+			hashCounter = hashCounter * 3 + 1013904223;
+			int randomBlockPos = hashCounter >> 2;
+			int posX = randomBlockPos & 15;
+			int posZ = randomBlockPos >> 8 & 15;
+			int posY = randomBlockPos >> 16 & 127;
+			auto block = it.second->GetBlock({ posX, posY, posZ });
+			auto meta = it.second->GetMeta({ posX, posY, posZ });
+			if (Blocks::blockProperties[block].ticksOnLoad) {
+				if (auto func = Blocks::blockBehaviors[block].onTick) {
+					func(*this, { posX, posY, posZ }, meta, this->rand);
+				}
+			}
+		}
 	}
 }
 

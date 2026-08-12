@@ -19,6 +19,36 @@
 namespace Blocks {
 BlockBehavior blockBehaviors[256] = {};
 
+static bool SearchForLog(int _sLength, Int3 _pos, Int3 _cameFrom, WorldManager& _world) {
+	auto thisBlock = _world.GetBlockId(_pos);
+	if (thisBlock == BLOCK_LOG)
+		return true;
+	if (_sLength >= 4 || thisBlock != BLOCK_LEAVES)
+		return false;
+
+	int d[4] = { -1, 1, 0, 0 };
+	for (int i = 0; i < 4; i++) {
+		int dx = _pos.x + d[i];
+		int dz = _pos.z + d[3 - i];
+		Int3 newPos = { dx, _pos.y, dz };
+		if (newPos == _cameFrom)
+			continue;
+		if (SearchForLog(_sLength + 1, newPos, _pos, _world))
+			return true;
+	}
+
+	for (int i = 0; i < 2; i++) {
+		int dy = _pos.y + d[i];
+		Int3 newPos = { _pos.x, dy, _pos.z };
+		if (newPos == _cameFrom)
+			continue;
+		if (SearchForLog(_sLength + 1, newPos, _pos, _world))
+			return true;
+	}
+
+	return false;
+}
+
 static void TryLavaHarden(WorldManager& _world, Int3 _pos) {
 	// Make sure we are lava
 	if (_world.GetMaterial(_pos).type != MaterialType::Lava)
@@ -90,10 +120,6 @@ static int CalculateFlowCost(WorldManager& _world, Int3 _pos, Int2 _cameFrom, in
 		if (IsOpenForFlow(_world, neighborPos, _fluidMaterialType)) {
 			Int3 belowNeighbor = neighborPos;
 			belowNeighbor.y--;
-			// "Is there a hole below to fall into" is a pure solidity check in vanilla
-			// (func_309_k) - it does NOT exclude an existing same-material source the
-			// way IsOpenForFlow does for lateral step candidates. A source sitting
-			// below counts as a valid, immediate drop-off.
 			if (!BlocksFlow(_world.GetBlockId(belowNeighbor))) {
 				return _depth;
 			} else if (_depth < 4) {
@@ -744,6 +770,52 @@ void RegisterBlockBehaviors() {
 		BreakDoor(_world, _pos, BLOCK_DOOR_IRON);
 	};
 
+	// Leaf decay!
+	blockBehaviors[BLOCK_LEAVES].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                         Java::Random& _random) -> void {
+		// Are we marked to check for despawn?
+		if ((_meta & 8) != 0) {
+			if (!SearchForLog(0, _pos, _pos, _world)) {
+				BreakAndDropBlock(_world, _pos);
+				return;
+			}
+			_world.SetMeta(_pos, _meta & ~8);
+		}
+	};
+	// Leaves and logs flag leaves to check for removal
+	blockBehaviors[BLOCK_LOG].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		// Mark a 9x9 area dirty if they are leaves
+		int dist = 4;
+		for (int x = -dist; x <= dist; x++) {
+			for (int z = -dist; z <= dist; z++) {
+				for (int y = -dist; y <= dist; y++) {
+					auto dpos = _pos + Int3{ x, y, z };
+					if (_world.GetBlockId(dpos) == BLOCK_LEAVES) {
+						auto meta = _world.GetMetadata(dpos);
+						if (!(meta & 8))
+							_world.SetMeta(dpos, meta |= 8);
+					}
+				}
+			}
+		}
+	};
+	blockBehaviors[BLOCK_LEAVES].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		// Mark a 3x3 area dirty if they are leaves
+		int dist = 1;
+		for (int x = -dist; x <= dist; x++) {
+			for (int z = -dist; z <= dist; z++) {
+				for (int y = -dist; y <= dist; y++) {
+					auto dpos = _pos + Int3{ x, y, z };
+					if (_world.GetBlockId(dpos) == BLOCK_LEAVES) {
+						auto meta = _world.GetMetadata(dpos);
+						if (!(meta & 8))
+							_world.SetMeta(dpos, meta |= 8);
+					}
+				}
+			}
+		}
+	};
+
 	// Falling blocks!
 	blockBehaviors[BLOCK_GRAVEL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
 		// Schedule a check to see if we can fall
@@ -1349,14 +1421,6 @@ void RegisterBlockBehaviors() {
 	};
 	blockBehaviors[BLOCK_GLOWSTONE].quantityDropped = [](Java::Random& _rng) -> ItemAmount {
 		return 2 + _rng.NextInt(3);
-	};
-
-	blockBehaviors[BLOCK_LEAVES].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& _random) -> void {
-		// Player-placed leaves don't despawn
-		if (_meta & 0x8)
-			return;
-		//GlobalLogger().debug << "Non-permanent leaf ticked at " << _pos << "\n";
-		//_world.SetBlock(_pos, BLOCK_LAVA_FLOWING);
 	};
 	blockBehaviors[BLOCK_LEAVES].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return BLOCK_SAPLING;
