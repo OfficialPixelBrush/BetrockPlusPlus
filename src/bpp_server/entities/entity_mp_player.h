@@ -12,14 +12,14 @@
 struct PlayerSession;
 struct EntityMPPlayer : public PlayerEntity {
 	PlayerSession* session = nullptr;
+	bool movedThisTick = false;
+	int lastNotifiedHealth = health;
 	EntityMPPlayer() : PlayerEntity() {
 		hasPhysics = false;
 	}
 	~EntityMPPlayer() {
 		session = nullptr;
 	}
-	bool movedThisTick = false;
-
 	virtual void Tick() override;
 	bool PickupItem(ItemStack& _stack, EntityId _entityId) override;
 	void UpdateFallState(float _movedY) override;
