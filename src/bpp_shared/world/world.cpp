@@ -16,6 +16,7 @@
 #include "generator/shared/cave_gen.h"
 #include <limits>
 #include <unordered_set>
+#include "world_wrapper.h"
 
 BiomeGenerator WorldManager::biomeGenerator;
 
@@ -869,7 +870,7 @@ void WorldManager::PopulateReady(int _maxPopulates) {
 		if (cit == chunks.end())
 			break;
 		cit->second->state.store(ChunkState::Populating, std::memory_order_release);
-		WorldWrapper wrapper{ .manager = *this, .centerChunkPos = pos };
+		WorldWrapper wrapper(*this, pos);
 		wrapper.centerChunkPos = pos;
 		wrapper.GetChunkRegion();
 		if (isHell)

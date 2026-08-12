@@ -5,20 +5,21 @@
  *
 */
 
+#pragma once
 #include "blocks.h"
 #include "numeric_structs.h"
+
 class WorldAccess {
     public:
-    WorldAccess();
+    WorldAccess() = default;
     virtual ~WorldAccess() = default;
 	// Convert a world-space position to a region-local chunk offset (-1..1, -1..1)
-	virtual Int2 GetRegionChunkPos(const Int3 _wPos) const;
-	virtual int FindTopSolidBlock(const int _wx, const int _wz);
-	virtual int GetHeightValue(const int _wx, const int _wz);
-	virtual double GetTemperatureAt(const int _wx, const int _wz);
-	virtual double GetHumidityAt(const int _wx, const int _wz);
-	virtual BlockType GetBlockId(const Int3 _wpos) const;
+	virtual int FindTopSolidBlock(const int _wx, const int _wz) = 0;
+	virtual int GetHeightValue(const int _wx, const int _wz) = 0;
+	virtual double GetTemperatureAt(const int _wx, const int _wz) = 0;
+	virtual double GetHumidityAt(const int _wx, const int _wz) = 0;
+	virtual BlockType GetBlockId(const Int3 _wpos) = 0;
 	virtual void SetBlock(const Int3 _wpos, const BlockType _type, const uint8_t _meta = 0,
-	              const bool _keepTileEntity = false, const bool _updateNeighbors = true);
-	virtual uint8_t GetSkyLight(const Int3 _wpos) const;
+	              const bool _keepTileEntity = false, const bool _updateNeighbors = true) = 0;
+	virtual uint8_t GetSkyLight(const Int3 _wpos) = 0;
 };
