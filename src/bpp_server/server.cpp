@@ -370,7 +370,7 @@ void Server::Stop() {
 		return;
 	stopped = true;
 #ifdef DISCORD_INTEGRATION
-	GlobalDiscord().SendMessage("Server stopped!");
+	GlobalDiscord().Shutdown("Server stopped!");
 #endif
 	GlobalLogger().info << "Server shutting down...\n";
 	for (auto& session : players) {

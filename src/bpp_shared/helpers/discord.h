@@ -34,13 +34,11 @@ public:
 
 	// guildId is optional; when set, slash commands register to that guild (instant).
 	void Init(const std::string& _token, const std::string& _channelId, const std::string& _guildId = "");
-	void Shutdown();
+	void Shutdown(const std::string& _finalMessage = "");
 
 	void SendMessage(const std::string& _message);
 	void SendFile(const std::string& _filename, const std::string& _message = "");
 
-	// Synchronous, self-contained equivalents safe to call from CrashCatch's post-fork
-	// crash handler (see linuxSignalHandler in CrashCatch.hpp).
 	void SendMessageSync(const std::string& _message);
 	void SendFileSync(const std::string& _filename, const std::string& _message = "");
 
@@ -73,6 +71,7 @@ private:
 	std::string channelId;
 	std::string guildId;
 	std::atomic<bool> initialized{ false };
+	std::atomic<bool> shuttingDown{ false };
 };
 
 Discord& GlobalDiscord();

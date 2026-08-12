@@ -14,12 +14,14 @@
 
 #include <dpp/dpp.h>
 
+#include <atomic>
 #include <chrono>
-#include <condition_variable>
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <memory>
 #include <sstream>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -35,31 +37,95 @@ Discord::~Discord() {
 
 void Discord::EnqueueServerTask(ServerTask _task) {
 	std::lock_guard lock(mutex);
-	if (!initialized.load())
+	if (!initialized.load() || shuttingDown.load())
 		return;
 	serverTasks.push(std::move(_task));
 }
 
-void Discord::Shutdown() {
+void Discord::Shutdown(const std::string& _finalMessage) {
+	if (shuttingDown.exchange(true)) {
+		std::unique_ptr<dpp::cluster> leftover;
+		{
+			std::lock_guard lock(mutex);
+			initialized.store(false);
+			if (impl && impl->cluster)
+				leftover = std::move(impl->cluster);
+		}
+		// Best-effort; do not block the destructor path if Discord is wedged.
+		if (leftover) {
+			auto done = std::make_shared<std::atomic<bool>>(false);
+			std::thread([cluster = std::move(leftover), done]() mutable {
+				try {
+					cluster->shutdown();
+					cluster.reset();
+				} catch (...) {
+				}
+				done->store(true);
+			}).detach();
+			const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+			while (!done->load() && std::chrono::steady_clock::now() < deadline)
+				std::this_thread::sleep_for(std::chrono::milliseconds(25));
+		}
+		return;
+	}
+
 	std::unique_ptr<dpp::cluster> cluster;
 	{
 		std::lock_guard lock(mutex);
 		initialized.store(false);
+		while (!inboundChat.empty())
+			inboundChat.pop();
+		while (!serverTasks.empty())
+			serverTasks.pop();
 		if (impl && impl->cluster)
 			cluster = std::move(impl->cluster);
 	}
 
-	if (cluster) {
+	if (!cluster)
+		return;
+
+	GlobalLogger().info << "Discord: shutting down...\n";
+
+	const std::string goodbye =
+	    _finalMessage.empty() ? std::string{} : RemoveMinecraftFormatting(_finalMessage);
+
+	// Ownership moves into a worker so a stuck SSL/event-loop join cannot freeze Ctrl+C.
+	// DPP's cluster::shutdown() joins the engine thread; if that thread is blocked inside
+	// OpenSSL (common when Discord HTTP is unhealthy), join never returns.
+	auto done = std::make_shared<std::atomic<bool>>(false);
+	std::thread worker([cluster = std::move(cluster), goodbye, channel = channelId, done]() mutable {
 		try {
+			if (!goodbye.empty() && !channel.empty()) {
+				// Fire-and-forget goodbye — never wait on Discord here.
+				cluster->message_create(dpp::message(dpp::snowflake{ channel }, goodbye),
+				                        [](const dpp::confirmation_callback_t&) {});
+				std::this_thread::sleep_for(std::chrono::milliseconds(150));
+			}
 			cluster->shutdown();
+			cluster.reset();
 		} catch (const std::exception& e) {
 			GlobalLogger().warn << "Discord: error during shutdown: " << e.what() << "\n";
+		} catch (...) {
 		}
+		done->store(true);
+	});
+
+	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+	while (!done->load() && std::chrono::steady_clock::now() < deadline)
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+	if (done->load()) {
+		worker.join();
+		GlobalLogger().info << "Discord: shut down\n";
+	} else {
+		GlobalLogger().warn << "Discord: shutdown timed out; abandoning Gateway threads so the "
+		                       "server can exit\n";
+		worker.detach();
 	}
 }
 
 void Discord::Init(const std::string& _token, const std::string& _channelId, const std::string& _guildId) {
-	if (initialized.load())
+	if (initialized.load() || shuttingDown.load())
 		return;
 
 	token = _token;
@@ -92,6 +158,9 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 		auto cluster = std::make_unique<dpp::cluster>(token, intents);
 
 		cluster->on_log([](const dpp::log_t& event) {
+			// 10062 = Unknown interaction (acked too late / raced). Noise once we reply properly.
+			if (event.message.find("10062") != std::string::npos)
+				return;
 			if (event.severity >= dpp::ll_error) {
 				GlobalLogger().error << "Discord: " << event.message << "\n";
 			} else if (event.severity == dpp::ll_warning) {
@@ -125,7 +194,7 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 		});
 
 		cluster->on_message_create([this, channelSnowflake](const dpp::message_create_t& event) {
-			if (!initialized.load())
+			if (!initialized.load() || shuttingDown.load())
 				return;
 			if (event.msg.channel_id != channelSnowflake)
 				return;
@@ -144,39 +213,52 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 		});
 
 		cluster->on_slashcommand([this](const dpp::slashcommand_t& event) {
+			if (!initialized.load() || shuttingDown.load())
+				return;
+
 			const std::string name = event.command.get_command_name();
 
+			// Reply/ack immediately on the DPP thread. Never edit before thinking/reply
+			// completes — that races and yields Discord error 10062 (Unknown interaction),
+			// and during /stop it coincided with cluster teardown (OpenSSL segfault).
+
 			if (name == "status") {
-				event.thinking(true);
-				EnqueueServerTask([event](Server& server) mutable {
-					size_t online = 0;
-					for (const auto& player : server.GetPlayers()) {
-						if (player && player->connState == ConnectionState::Playing)
-							++online;
-					}
-					event.edit_original_response(dpp::message(
-					    std::format("{} {} — {} player(s) online, avg tick {:.2f} ms", PROJECT_NAME,
-					                PROJECT_VERSION_FULL_STRING, online, server.averageTickMs)));
+				event.thinking(true, [this, event](const dpp::confirmation_callback_t& result) {
+					if (result.is_error())
+						return;
+					EnqueueServerTask([event](Server& server) mutable {
+						size_t online = 0;
+						for (const auto& player : server.GetPlayers()) {
+							if (player && player->connState == ConnectionState::Playing)
+								++online;
+						}
+						event.edit_original_response(dpp::message(
+						    std::format("{} {} — {} player(s) online, avg tick {:.2f} ms", PROJECT_NAME,
+						                PROJECT_VERSION_FULL_STRING, online, server.averageTickMs)));
+					});
 				});
 				return;
 			}
 
 			if (name == "list") {
-				event.thinking(true);
-				EnqueueServerTask([event](Server& server) mutable {
-					std::ostringstream oss;
-					size_t online = 0;
-					for (const auto& player : server.GetPlayers()) {
-						if (!player || player->connState != ConnectionState::Playing)
-							continue;
-						if (online > 0)
-							oss << ", ";
-						oss << player->username;
-						++online;
-					}
-					const std::string reply =
-					    online == 0 ? "No players online." : std::format("{} player(s): {}", online, oss.str());
-					event.edit_original_response(dpp::message(reply));
+				event.thinking(true, [this, event](const dpp::confirmation_callback_t& result) {
+					if (result.is_error())
+						return;
+					EnqueueServerTask([event](Server& server) mutable {
+						std::ostringstream oss;
+						size_t online = 0;
+						for (const auto& player : server.GetPlayers()) {
+							if (!player || player->connState != ConnectionState::Playing)
+								continue;
+							if (online > 0)
+								oss << ", ";
+							oss << player->username;
+							++online;
+						}
+						const std::string reply =
+						    online == 0 ? "No players online." : std::format("{} player(s): {}", online, oss.str());
+						event.edit_original_response(dpp::message(reply));
+					});
 				});
 				return;
 			}
@@ -201,10 +283,11 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 
 				const std::string nick = event.command.member.get_nickname();
 				const std::string author = !nick.empty() ? nick : event.command.usr.username;
-				event.thinking(true);
-				EnqueueServerTask([event, author, message](Server& server) mutable {
+
+				// Ack first, then broadcast on the tick thread (no deferred edit race).
+				event.reply("Sent.");
+				EnqueueServerTask([author, message](Server& server) {
 					BroadcastDiscordChat(server, author, message);
-					event.edit_original_response(dpp::message("Sent."));
 				});
 				return;
 			}
@@ -217,26 +300,26 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 					seconds = 0.0;
 				}
 
-				event.thinking(true);
-				EnqueueServerTask([event, seconds](Server& server) mutable {
-					if (seconds > 0.0) {
-						static constexpr float MAX_TIMEOUT =
-						    UINT16_MAX / static_cast<float>(Server::TICKS_PER_SECOND);
-						if (seconds > MAX_TIMEOUT) {
-							event.edit_original_response(
-							    dpp::message(std::format("Exceeds max timeout ({} seconds).", MAX_TIMEOUT)));
-							return;
-						}
+				if (seconds > 0.0) {
+					static constexpr float MAX_TIMEOUT = UINT16_MAX / static_cast<float>(Server::TICKS_PER_SECOND);
+					if (seconds > MAX_TIMEOUT) {
+						event.reply(std::format("Exceeds max timeout ({} seconds).", MAX_TIMEOUT));
+						return;
+					}
+					event.reply(std::format("Stopping in {:.1f} seconds.", seconds));
+					EnqueueServerTask([seconds](Server& server) {
 						server.SendGlobalChatMessage(std::format("§eStopping in {:.1f} seconds...", seconds), false);
 						server.StopTimeout(static_cast<float>(seconds));
-						event.edit_original_response(
-						    dpp::message(std::format("Stopping in {:.1f} seconds.", seconds)));
-					} else {
+					});
+				} else {
+					// Immediate reply BEFORE requesting shutdown so the interaction is
+					// finished while the cluster is still healthy.
+					event.reply("Stop requested.");
+					EnqueueServerTask([](Server& server) {
 						server.SendGlobalChatMessage("§eStopping...", false);
 						shutdownRequested.store(true);
-						event.edit_original_response(dpp::message("Stop requested."));
-					}
-				});
+					});
+				}
 				return;
 			}
 
@@ -258,7 +341,7 @@ void Discord::SendMessage(const std::string& _message) {
 	dpp::cluster* cluster = nullptr;
 	{
 		std::lock_guard lock(mutex);
-		if (!initialized.load() || !impl || !impl->cluster) {
+		if (!initialized.load() || shuttingDown.load() || !impl || !impl->cluster) {
 			GlobalLogger().warn << "Discord: message dropped, integration not initialized\n";
 			return;
 		}
@@ -278,7 +361,7 @@ void Discord::SendFile(const std::string& _filename, const std::string& _message
 	dpp::cluster* cluster = nullptr;
 	{
 		std::lock_guard lock(mutex);
-		if (!initialized.load() || !impl || !impl->cluster) {
+		if (!initialized.load() || shuttingDown.load() || !impl || !impl->cluster) {
 			GlobalLogger().warn << "Discord: file upload dropped, integration not initialized\n";
 			return;
 		}
@@ -300,72 +383,22 @@ void Discord::SendFile(const std::string& _filename, const std::string& _message
 }
 
 void Discord::SendMessageSync(const std::string& _message) {
-	if (token.empty() || channelId.empty())
-		return;
-
-	// Fresh cluster: CrashCatch may run this in a forked child where the live bot threads
-	// do not exist. REST-only calls avoid shared Gateway state.
-	try {
-		dpp::cluster bot(token, 0);
-		bot.start(dpp::st_return);
-
-		std::mutex doneMutex;
-		std::condition_variable doneCv;
-		bool done = false;
-
-		const std::string deformatted = RemoveMinecraftFormatting(_message);
-		bot.message_create(dpp::message(dpp::snowflake{ channelId }, deformatted),
-		                   [&](const dpp::confirmation_callback_t&) {
-			                   {
-				                   std::lock_guard lock(doneMutex);
-				                   done = true;
-			                   }
-			                   doneCv.notify_one();
-		                   });
-
-		{
-			std::unique_lock lock(doneMutex);
-			doneCv.wait_for(lock, std::chrono::seconds(10), [&] { return done; });
-		}
-		bot.shutdown();
-	} catch (const std::exception& e) {
-		GlobalLogger().warn << "Discord: sync message failed: " << e.what() << "\n";
-	}
+	(void)_message;
+	// Post-fork CrashCatch callbacks must not touch OpenSSL/DPP: other threads'
+	// locks are not inherited, which is exactly the segfault class in the crash log.
+	GlobalLogger().warn << "Discord: skipping crash upload (OpenSSL/DPP is not fork-safe); see crash file on disk\n";
 }
 
 void Discord::SendFileSync(const std::string& _filename, const std::string& _message) {
-	if (token.empty() || channelId.empty())
-		return;
-
-	try {
-		dpp::cluster bot(token, 0);
-		bot.start(dpp::st_return);
-
-		std::mutex doneMutex;
-		std::condition_variable doneCv;
-		bool done = false;
-
-		dpp::message msg(dpp::snowflake{ channelId }, _message);
-		msg.add_file(std::filesystem::path(_filename).filename().string(), dpp::utility::read_file(_filename));
-		bot.message_create(msg, [&](const dpp::confirmation_callback_t&) {
-			{
-				std::lock_guard lock(doneMutex);
-				done = true;
-			}
-			doneCv.notify_one();
-		});
-
-		{
-			std::unique_lock lock(doneMutex);
-			doneCv.wait_for(lock, std::chrono::seconds(15), [&] { return done; });
-		}
-		bot.shutdown();
-	} catch (const std::exception& e) {
-		GlobalLogger().warn << "Discord: sync file upload failed: " << e.what() << "\n";
-	}
+	(void)_filename;
+	(void)_message;
+	GlobalLogger().warn << "Discord: skipping crash file upload (OpenSSL/DPP is not fork-safe); see crash file on disk\n";
 }
 
 void Discord::Drain(Server& _server) {
+	if (shuttingDown.load())
+		return;
+
 	std::queue<InboundChat> chats;
 	std::queue<ServerTask> tasks;
 	{
@@ -412,12 +445,11 @@ std::vector<std::string> Discord::FormatDiscordChatLines(const std::string& _aut
 	std::string author = RemoveMinecraftFormatting(_author);
 	std::string content = RemoveMinecraftFormatting(_content);
 
-	// §9[…] §f  — leave room for brackets/colors even if the name is huge
 	auto makePrefix = [](const std::string& name) { return "§9[" + name + "] §f"; };
 
 	std::string prefix = makePrefix(author);
 	if (prefix.size() >= MAX_LINE) {
-		const size_t overhead = makePrefix("").size(); // §9[] §f
+		const size_t overhead = makePrefix("").size();
 		const size_t maxName = overhead < MAX_LINE ? MAX_LINE - overhead : 0;
 		if (author.size() > maxName)
 			author = author.substr(0, maxName);
@@ -437,9 +469,9 @@ std::vector<std::string> Discord::FormatDiscordChatLines(const std::string& _aut
 		return lines;
 	}
 
-	for (size_t offset = 0; offset < content.size(); offset += contentBudget) {
+	for (size_t offset = 0; offset < content.size(); offset += contentBudget)
 		lines.push_back(prefix + content.substr(offset, contentBudget));
-	}
+
 	return lines;
 }
 

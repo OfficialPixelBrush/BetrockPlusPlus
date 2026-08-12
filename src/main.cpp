@@ -106,10 +106,6 @@ void InitCrashHandler(std::string _platformString) {
 		log.error << "========== CRASH ==========\n";
 		log.error << "Signal/Code: " << _ctx.signalOrCode << "\n";
 
-		// NOTE: on Linux this callback runs inside CrashCatch's forked child process
-		// (see linuxSignalHandler in CrashCatch.hpp), not the original crashed process
-		// or thread. GlobalDiscord()'s Gateway cluster does not exist here. Always use
-		// the *Sync variants here, never SendMessage/SendFile.
 		if (!_ctx.logFilePath.empty()) {
 			log.error << "Crash report: " << _ctx.logFilePath << "\n";
 
