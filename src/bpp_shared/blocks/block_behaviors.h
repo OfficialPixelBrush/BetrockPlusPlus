@@ -20,6 +20,10 @@ struct PlayerSession;
 
 namespace Blocks {
 
+bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer,
+                         PacketData::FaceDirection _face, BlockType _blockId, uint8_t _meta);
+void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer);
+
 struct BlockBehavior {
 	// Called when we need to get the AABB for the selection box
 	AABB (*getSelectionBox)(uint8_t _metadata) = nullptr;
@@ -54,10 +58,10 @@ struct BlockBehavior {
 	// Called when block is placed by a player
 	// Returns if the placement was successful
 	bool (*onBlockPlaced)(WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
-	                      BlockType _blockId, uint8_t _meta) = nullptr;
+	                      BlockType _blockId, uint8_t _meta) = GenericPlace;
 
 	// Called when player breaks the block
-	void (*onBlockDestroyedByPlayer)(WorldManager& _world, Int3 _pos, Entity& _destroyer) = nullptr;
+	void (*onBlockDestroyedByPlayer)(WorldManager& _world, Int3 _pos, Entity& _destroyer) = GenericBreak;
 
 	// Called when an explosion destroys the block
 	void (*onBlockDestroyedByExplosion)(WorldManager& _world, Int3 _pos) = nullptr;
