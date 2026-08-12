@@ -14,7 +14,7 @@
 #include <numeric_structs.h>
 #include <vector>
 
-struct WorldManager;
+class WorldManager;
 
 enum class LightType : uint8_t {
 	Sky,

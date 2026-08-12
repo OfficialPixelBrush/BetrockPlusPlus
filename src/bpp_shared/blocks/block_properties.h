@@ -9,7 +9,7 @@
 #include "packet_data.h"
 #include <numeric_structs.h>
 
-struct WorldManager;
+class WorldManager;
 struct Entity;
 struct PlayerSession;
 

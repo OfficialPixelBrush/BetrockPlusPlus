@@ -14,7 +14,7 @@
 #include "numeric_structs.h"
 #include "packet_data.h"
 
-struct WorldManager;
+class WorldManager;
 struct Entity;
 struct PlayerSession;
 

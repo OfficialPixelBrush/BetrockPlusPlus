@@ -1,9 +1,11 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
+
 #include "world.h"
 #include "blocks.h"
 #include "blocks/block_behaviors.h"
@@ -80,16 +82,16 @@ bool WorldManager::HasLineOfSight(Vec3 _from, Vec3 _to) {
 	return true;
 }
 
-int WorldManager::getBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
+int WorldManager::GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
 	if (_offsetNonFullBlocks) {
 		auto blockId = this->GetBlockId(_wpos);
 		if (blockId == BLOCK_SLAB || blockId == BLOCK_FARMLAND || blockId == BLOCK_STAIRS_WOOD ||
 		    blockId == BLOCK_STAIRS_WOOD) {
-			int yP = getBlockLightValue({ _wpos.x, _wpos.y + 1, _wpos.z }, false);
-			int xP = getBlockLightValue({ _wpos.x + 1, _wpos.y, _wpos.z }, false);
-			int xM = getBlockLightValue({ _wpos.x - 1, _wpos.y, _wpos.z }, false);
-			int zP = getBlockLightValue({ _wpos.x, _wpos.y, _wpos.z + 1 }, false);
-			int zM = getBlockLightValue({ _wpos.x, _wpos.y, _wpos.z - 1 }, false);
+			int yP = GetBlockLightValue({ _wpos.x, _wpos.y + 1, _wpos.z }, false);
+			int xP = GetBlockLightValue({ _wpos.x + 1, _wpos.y, _wpos.z }, false);
+			int xM = GetBlockLightValue({ _wpos.x - 1, _wpos.y, _wpos.z }, false);
+			int zP = GetBlockLightValue({ _wpos.x, _wpos.y, _wpos.z + 1 }, false);
+			int zM = GetBlockLightValue({ _wpos.x, _wpos.y, _wpos.z - 1 }, false);
 
 			if (xP > yP)
 				yP = xP;
@@ -123,8 +125,8 @@ int WorldManager::getBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
 	}
 }
 
-void WorldManager::updateSkylightOffset() {
-	float celestialAngle = getCelestialAngle();
+void WorldManager::UpdateSkylightOffset() {
+	float celestialAngle = GetCelestialAngle();
 	float transformedAngle = 1.0f - (std::cos(celestialAngle * JavaMath::PI * 2.0f) * 2.0f + 0.5f);
 	if (transformedAngle < 0.0f)
 		transformedAngle = 0.0f;
@@ -138,7 +140,7 @@ void WorldManager::updateSkylightOffset() {
 	this->skylightOffset = int(transformedAngle * 11.0f);
 }
 
-float WorldManager::getCelestialAngle() {
+float WorldManager::GetCelestialAngle() {
 	int normalizedTime = int(this->elapsedTicks % 24000);
 
 	// Subtract 1/4 of a day so sunrise = 0
@@ -307,7 +309,7 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 		GlobalLogger().error << "No region manager while trying to Tick!\n";
 		return;
 	}
-	updateSkylightOffset();
+	UpdateSkylightOffset();
 	DrainGenQueue();  // process generation results first
 	DrainLoadQueue(); // integrate finished loads
 
@@ -1161,4 +1163,99 @@ void WorldManager::FlushBleedWrites() {
 			++it;
 		}
 	}
+}
+
+void WorldManager::SetViewRadius(int _viewRadius) {
+	int newViewRadius = std::max(3, _viewRadius);
+	viewRadius = newViewRadius;
+	simulationRadius = std::min(9, newViewRadius);
+}
+
+void WorldManager::NotifyNeighborsOfUpdate(Int3 _globalPos) {
+	// Update our six neighbors
+	const int ndx[] = { -1, 1, 0, 0 };
+	const int ndz[] = { 0, 0, -1, 1 };
+
+	// Notify horizontal neighbors
+	for (int i = 0; i < 4; i++) {
+		auto dx = ndx[i];
+		auto dz = ndz[i];
+		Int3 newPos = { _globalPos.x + dx, _globalPos.y, _globalPos.z + dz };
+		auto block = this->GetBlockId(newPos);
+		auto updateFunction = Blocks::blockBehaviors[block].onNeighborBlockChange;
+		if (updateFunction)
+			updateFunction(*this, newPos);
+	}
+
+	// Vertical neighbors
+	for (int i = 0; i < 2; i++) {
+		auto dy = ndx[i]; // we are using ndx because the first two items are -1, 1
+		Int3 newPos = { _globalPos.x, _globalPos.y + dy, _globalPos.z };
+		auto block = this->GetBlockId(newPos);
+		auto updateFunction = Blocks::blockBehaviors[block].onNeighborBlockChange;
+		if (updateFunction)
+			updateFunction(*this, newPos);
+	}
+}
+
+void WorldManager::CreateTileEntity(std::shared_ptr<TileEntity> _tileEntity) {
+	Int32_2 cpos{ _tileEntity->position.x >> 4, _tileEntity->position.z >> 4 };
+	Chunk* chunk = GetChunkRaw(cpos);
+	if (!chunk)
+		return;
+	_tileEntity->chunk = chunk;
+	tileEntityManager.InitializeTileEntity(_tileEntity);   // weak_ptr added if canTick
+	chunk->tileEntities.push_back(std::move(_tileEntity)); // chunk takes ownership
+}
+
+void WorldManager::RegisterChunkTileEntities(Chunk* _chunk) {
+	for (auto& te : _chunk->tileEntities) {
+		if (te) {
+			tileEntityManager.InitializeTileEntity(te);
+			te->chunk = _chunk;
+		}
+	}
+}
+
+
+TileEntity* WorldManager::GetTileEntity(Int3 _pos) {
+	Chunk* chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
+	if (!chunk)
+		return nullptr;
+	for (auto& te : chunk->tileEntities) {
+		if (te && te->position.x == _pos.x && te->position.y == _pos.y && te->position.z == _pos.z)
+			return te.get();
+	}
+	return nullptr;
+}
+
+void WorldManager::RemoveTileEntity(Int3 _pos) {
+	Chunk* chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
+	if (!chunk)
+		return;
+	auto& tes = chunk->tileEntities;
+	tes.erase(std::remove_if(tes.begin(), tes.end(),
+								[&](const std::shared_ptr<TileEntity>& _te) {
+									return _te && _te->position.x == _pos.x && _te->position.y == _pos.y &&
+										_te->position.z == _pos.z;
+								}),
+				tes.end());
+}
+
+BlockType WorldManager::GetBlockId(Int3 _wpos) {
+	if (!InBounds(_wpos.y))
+		return BlockType::BLOCK_AIR;
+	auto* chunk = GetChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
+	if (!chunk || chunk->state.load() < ChunkState::Generated)
+		return BlockType::BLOCK_AIR;
+	return chunk->GetBlock({ _wpos.x & 15, _wpos.y, _wpos.z & 15 });
+}
+
+uint8_t WorldManager::GetMetadata(Int3 _wpos) {
+	if (!InBounds(_wpos.y))
+		return 0;
+	auto* chunk = GetChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
+	if (!chunk || chunk->state.load() < ChunkState::Generated)
+		return 0;
+	return chunk->GetMeta({ _wpos.x & 15, _wpos.y, _wpos.z & 15 });
 }

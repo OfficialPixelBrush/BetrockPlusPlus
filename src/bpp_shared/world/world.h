@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -33,6 +34,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <vector>
+#include "world_access.h"
 
 struct PendingBlock {
 	Block block{ BLOCK_AIR, 0 };
@@ -40,26 +42,29 @@ struct PendingBlock {
 	Int2 light{ 0, 15 }; // block light, sky light
 };
 
-struct WorldManager {
-	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> chunks;
-	std::function<void(PendingBlock, Int32_2)> onBlockUpdate;
+class WorldManager : public WorldAccess {
+	private:
 	std::unordered_map<Int32_2, std::vector<std::pair<Int3, Block>>> pendingBleedWrites;
 	std::mutex genDoneMutex;
 	std::deque<std::shared_ptr<Chunk>> genDoneQueue;
-	Lighter lightManager;
 	TileEntityManager tileEntityManager;
 	EntityManager entityManager;
 	TickScheduler tickScheduler;
 	RegionManager* regionManager = nullptr;
-	int64_t seed = 0;
 	TickTime elapsedTicks = 0;
-	Int3 spawnPoint{ 0, 0, 0 };
-	Dimension thisDimension = Dimension::Overworld;
 	BS::thread_pool<> pool{ 2 };
-	Java::Random rand;
 	EntitySpawner entitySpawner;
 	int skylightOffset = 0;
 	static BiomeGenerator biomeGenerator;
+
+	public:
+	Lighter lightManager;
+	std::function<void(PendingBlock, Int32_2)> onBlockUpdate;
+	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> chunks;
+	Java::Random rand;
+	int64_t seed = 0;
+	Int3 spawnPoint{ 0, 0, 0 };
+	Dimension thisDimension = Dimension::Overworld;
 
 	WorldManager(bool _pIsHell = false) : isHell(_pIsHell) {
 		entityManager.world = this; // Bind the world pointer in EntityManager
@@ -80,10 +85,10 @@ struct WorldManager {
 	void FlushBleedWrites();
 	void PropagateChunkLightBorders(Int32_2 _cpos);
 	BlockType GetFirstUncoveredBlock(int _wx, int _wz);
-	int FindTopSolidBlock(int _wx, int _wz);
+	int FindTopSolidBlock(int _wx, int _wz) override;
 	void SetMeta(const Int3 _wpos, const uint8_t _metadata = 0);
 	void SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata = 0,
-	              const bool keepTileEntity = false, const bool updateNeighbors = true);
+	              const bool _keepTileEntity = false, const bool _updateNeighbors = true) override;
 	void SetBlockRaw(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata = 0);
 	void DrainGenQueue();
 	bool IsLiquidInAabb(AABB _collider);
@@ -95,12 +100,12 @@ struct WorldManager {
 	void PopulateReady(int _maxPopulates = 2);
 	void DrainLoadQueue();
 	void DropInventory(Inventory& inventory, Int3 _wpos);
-	void updateSkylightOffset();
-	float getCelestialAngle();
-	int getBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks = true);
+	void UpdateSkylightOffset();
+	float GetCelestialAngle();
+	int GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks = true);
 	Biome GetBiome(Int2 _wpos);
 	bool HasLineOfSight(Vec3 _from, Vec3 _to);
-	int getBlockLightFull(Int3 _wpos) {
+	int GetBlockLightFull(Int3 _wpos) {
 		auto chunk = GetChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
 		if (!chunk)
 			return 15;
@@ -127,82 +132,23 @@ struct WorldManager {
 	const int GetDimension() {
 		return thisDimension;
 	}
-	void SetViewRadius(int _viewRadius) {
-		int newViewRadius = std::max(3, _viewRadius);
-		viewRadius = newViewRadius;
-		simulationRadius = std::min(9, newViewRadius);
-	}
-
+	void SetViewRadius(int _viewRadius);
 	void InitWorldSeed(std::string _pSeed) {
 		InitWorldSeed(HashCode(_pSeed));
 	}
-
 	void InitWorldSeed(int64_t _pSeed) {
 		seed = _pSeed;
 		// Update the biome generator with this seed
 		if (!isHell)
 			biomeGenerator = BiomeGenerator(seed);
 	}
-
-	void NotifyNeighborsOfUpdate(Int3 _globalPos) {
-		// Update our six neighbors
-		const int ndx[] = { -1, 1, 0, 0 };
-		const int ndz[] = { 0, 0, -1, 1 };
-
-		// Notify horizontal neighbors
-		for (int i = 0; i < 4; i++) {
-			auto dx = ndx[i];
-			auto dz = ndz[i];
-			Int3 newPos = { _globalPos.x + dx, _globalPos.y, _globalPos.z + dz };
-			auto block = this->GetBlockId(newPos);
-			auto updateFunction = Blocks::blockBehaviors[block].onNeighborBlockChange;
-			if (updateFunction)
-				updateFunction(*this, newPos);
-		}
-
-		// Vertical neighbors
-		for (int i = 0; i < 2; i++) {
-			auto dy = ndx[i]; // we are using ndx because the first two items are -1, 1
-			Int3 newPos = { _globalPos.x, _globalPos.y + dy, _globalPos.z };
-			auto block = this->GetBlockId(newPos);
-			auto updateFunction = Blocks::blockBehaviors[block].onNeighborBlockChange;
-			if (updateFunction)
-				updateFunction(*this, newPos);
-		}
-	}
-
+	void NotifyNeighborsOfUpdate(Int3 _globalPos);
 	// For creating a fresh tile entity for generation etc
-	void CreateTileEntity(std::shared_ptr<TileEntity> _tileEntity) {
-		Int32_2 cpos{ _tileEntity->position.x >> 4, _tileEntity->position.z >> 4 };
-		Chunk* chunk = GetChunkRaw(cpos);
-		if (!chunk)
-			return;
-		_tileEntity->chunk = chunk;
-		tileEntityManager.InitializeTileEntity(_tileEntity);   // weak_ptr added if canTick
-		chunk->tileEntities.push_back(std::move(_tileEntity)); // chunk takes ownership
-	}
-
+	void CreateTileEntity(std::shared_ptr<TileEntity> _tileEntity);
 	// For registering a tile entity that already exists in the world (e.g. loaded from disk)
-	void RegisterChunkTileEntities(Chunk* _chunk) {
-		for (auto& te : _chunk->tileEntities) {
-			if (te) {
-				tileEntityManager.InitializeTileEntity(te);
-				te->chunk = _chunk;
-			}
-		}
-	}
-
+	void RegisterChunkTileEntities(Chunk* _chunk);
 	// Returns the tile entity at world position `pos`, or nullptr if none.
-	TileEntity* GetTileEntity(Int3 _pos) {
-		Chunk* chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
-		if (!chunk)
-			return nullptr;
-		for (auto& te : chunk->tileEntities) {
-			if (te && te->position.x == _pos.x && te->position.y == _pos.y && te->position.z == _pos.z)
-				return te.get();
-		}
-		return nullptr;
-	}
+	TileEntity* GetTileEntity(Int3 _pos);
 
 	// Returns nullptr if not found or wrong type.
 	template <typename T>
@@ -223,18 +169,7 @@ struct WorldManager {
 	}
 
 	// Remove the tile entity at world position `pos`.
-	void RemoveTileEntity(Int3 _pos) {
-		Chunk* chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
-		if (!chunk)
-			return;
-		auto& tes = chunk->tileEntities;
-		tes.erase(std::remove_if(tes.begin(), tes.end(),
-		                         [&](const std::shared_ptr<TileEntity>& _te) {
-			                         return _te && _te->position.x == _pos.x && _te->position.y == _pos.y &&
-			                                _te->position.z == _pos.z;
-		                         }),
-		          tes.end());
-	}
+	void RemoveTileEntity(Int3 _pos);
 
 	// Called from pool gen threads
 	void PostGenResult(std::shared_ptr<Chunk> _chunk) {
@@ -250,25 +185,11 @@ struct WorldManager {
 		return CanPopulateDirect(_pos);
 	}
 
-	BlockType GetBlockId(Int3 _wpos) {
-		if (!InBounds(_wpos.y))
-			return BlockType::BLOCK_AIR;
-		auto* chunk = GetChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
-		if (!chunk || chunk->state.load() < ChunkState::Generated)
-			return BlockType::BLOCK_AIR;
-		return chunk->GetBlock({ _wpos.x & 15, _wpos.y, _wpos.z & 15 });
-	}
+	BlockType GetBlockId(Int3 _wpos) const override;
 
-	uint8_t GetMetadata(Int3 _wpos) {
-		if (!InBounds(_wpos.y))
-			return 0;
-		auto* chunk = GetChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
-		if (!chunk || chunk->state.load() < ChunkState::Generated)
-			return 0;
-		return chunk->GetMeta({ _wpos.x & 15, _wpos.y, _wpos.z & 15 });
-	}
+	uint8_t GetMetadata(Int3 _wpos);
 
-	void SetBlock(Int3 _wpos, const Block& _block) {
+	void SetBlock(Int3 _wpos, const Block& _block) const {
 		SetBlock(_wpos, _block.type, _block.data);
 	}
 

@@ -10,7 +10,7 @@
 #include <vector>
 
 // Simple wrapper so we don't have to manually add
-struct WorldManager;
+class WorldManager;
 struct TileEntityManager {
 	std::vector<std::weak_ptr<TileEntity>> tickableTileEntities;
 

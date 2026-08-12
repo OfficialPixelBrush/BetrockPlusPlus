@@ -33,7 +33,7 @@ struct PendingEntry {
 	int64_t sequence;
 };
 
-struct WorldManager;
+class WorldManager;
 struct TickScheduler {
 	WorldManager* world = nullptr;
 	std::priority_queue<ScheduledTick, std::vector<ScheduledTick>, std::greater<ScheduledTick>> scheduledTicks;

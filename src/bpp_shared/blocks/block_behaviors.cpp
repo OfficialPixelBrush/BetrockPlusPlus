@@ -775,7 +775,7 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_GRASS].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                         Java::Random& _random) -> void {
 		Int3 aboveBlockPos = { _pos.x, _pos.y + 1, _pos.z };
-		auto lightLevel = _world.getBlockLightValue(aboveBlockPos);
+		auto lightLevel = _world.GetBlockLightValue(aboveBlockPos);
 		auto block = _world.GetBlockId(aboveBlockPos);
 		auto opacity = blockProperties[block].lightOpacity;
 
@@ -792,7 +792,7 @@ void RegisterBlockBehaviors() {
 			Int3 abovePos = { dx, dy + 1, dz };
 			auto aboveBlock = _world.GetBlockId(abovePos);
 			if (_world.GetBlockId({ dx, dy, dz }) == BLOCK_DIRT 
-				&& _world.getBlockLightValue(abovePos) >= 4 
+				&& _world.GetBlockLightValue(abovePos) >= 4 
 				&& blockProperties[aboveBlock].lightOpacity <= 2){
 				_world.SetBlock({ dx, dy, dz }, BLOCK_GRASS);
 			}

@@ -20,7 +20,7 @@ enum class TileType {
 
 // I hate doing inheritance but its simple to do for this
 struct Chunk;
-struct WorldManager;
+class WorldManager;
 struct TileEntity {
 	TileType type;
 	Int3 position{ 0, 0, 0 }; // Global coordinates

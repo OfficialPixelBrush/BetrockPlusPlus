@@ -12,7 +12,7 @@
 #include <unordered_set>
 #include <vector>
 
-struct WorldManager;
+class WorldManager;
 struct Chunk;
 struct ClientPosition;
 struct MobEntity;
