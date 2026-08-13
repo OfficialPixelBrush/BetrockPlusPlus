@@ -52,7 +52,7 @@ Prerequisites:
 
 ```bash
 # Server + Client dependencies
-sudo apt install git cmake build-essential libdeflate-dev libasan8
+sudo apt install git cmake build-essential libdeflate-dev libasan8 libcurl4-openssl-dev
 # Client-exclusive dependencies
 sudo apt install libglm-dev libsdl3-dev libgl1-mesa-dev
 ```
@@ -63,7 +63,7 @@ sudo apt install libglm-dev libsdl3-dev libgl1-mesa-dev
 
 ```bash
 # Server + Client dependencies
-sudo dnf install git cmake gcc gcc-c++ make libasan libdeflate-devel
+sudo dnf install git cmake gcc gcc-c++ make libasan libdeflate-devel libcurl-devel
 # Client-exclusive dependencies
 sudo dnf install glm-devel SDL3-devel mesa-libGL-devel
 ```
@@ -72,7 +72,7 @@ sudo dnf install glm-devel SDL3-devel mesa-libGL-devel
 
 ```bash
 # Server + Client dependencies
-sudo pacman -S git cmake base-devel libdeflate libasan
+sudo pacman -S git cmake base-devel libdeflate libasan curl
 # Client-exclusive dependencies
 sudo pacman -S glm sdl3
 ```
@@ -81,7 +81,7 @@ sudo pacman -S glm sdl3
 
 ```bash
 # Server + Client dependencies
-sudo zypper install git cmake gcc gcc-c++ make libdeflate-devel
+sudo zypper install git cmake gcc gcc-c++ make libdeflate-devel libcurl-devel
 # Client-exclusive dependencies
 sudo zypper install glm-devel SDL3-devel Mesa-libGL-devel libasan8
 ```
@@ -90,7 +90,7 @@ sudo zypper install glm-devel SDL3-devel Mesa-libGL-devel libasan8
 
 ```bash
 # Server + Client dependencies
-sudo apk add git cmake gcc g++ make libdeflate-dev
+sudo apk add git cmake gcc g++ make libdeflate-dev curl-dev
 # Client-exclusive dependencies
 sudo apk add glm-dev sdl3-dev mesa-dev compiler-rt
 ```
@@ -101,7 +101,7 @@ sudo apk add glm-dev sdl3-dev mesa-dev compiler-rt
 
 ```bash
 # Server + Client dependencies
-sudo xbps-install -S base-devel git cmake libdeflate-devel
+sudo xbps-install -S base-devel git cmake libdeflate-devel libcurl-devel
 # Client-exclusive dependencies
 sudo xbps-install -S glm SDL3-devel MesaLib-devel libsanitizer-devel
 ```
@@ -110,7 +110,7 @@ sudo xbps-install -S glm SDL3-devel MesaLib-devel libsanitizer-devel
 
 ```bash
 # Server + Client dependencies
-sudo emerge dev-vcs/git dev-build/cmake sys-devel/gcc dev-build/make app-arch/libdeflate
+sudo emerge dev-vcs/git dev-build/cmake sys-devel/gcc dev-build/make app-arch/libdeflate net-misc/curl
 # Client-exclusive dependencies
 sudo emerge media-libs/glm media-libs/libsdl3 media-libs/mesa
 ```
@@ -129,7 +129,7 @@ The only major difference this option introduces is that the farlands do not gen
 
 ### Optional: Online Mode Authentication
 
-Online Mode Authentication is **on by default**. It allows users to be authenticated via the legacy Minecraft Login protocol. By default this goes through the Betacraft.uk proxy, since the original authentication servers got shut down long ago.
+Online Mode Authentication is **on by default**. It allows users to be authenticated via the legacy Minecraft Login protocol. By default this goes through the Betacraft.uk proxy, since the original authentication servers got shut down long ago. It requires `libcurl`.
 
 Simply add `-DONLINE_MODE_AUTHENTICATION=OFF` to the first build command, if you'd like to disable it. This removes all auth-related code.
 
