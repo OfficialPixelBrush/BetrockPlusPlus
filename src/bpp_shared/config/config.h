@@ -1,11 +1,3 @@
-/*
- * Copyright (c) 2025, MINA <github.com/9mina>
- * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
- *
- * SPDX-License-Identifier: AGPL-3.0-only
- * 
-*/
-
 #pragma once
 #include "logger.h"
 
@@ -31,31 +23,46 @@ public:
 	// get the value at key or a the default mapped_type if key doesn't exist
 	std::string_view Get(const std::string& _key) noexcept;
 
-	std::string GetAsString(const std::string& _key) {
-		return std::string(this->Get(_key));
+	// get the value at key as string, or _default if the key doesn't exist
+	std::string GetAsString(const std::string& _key, std::string _default = "") {
+		std::shared_lock lock(propertiesMutex);
+		auto it = properties.find(_key);
+		if (it == properties.end())
+			return _default;
+		return it->second;
 	}
 
-	// get the value at key as number
+	// get the value at key as number, or _default if the key doesn't exist / doesn't parse
 	template <std::integral num_type>
-	num_type GetAsNumber(const std::string& _key) {
-		return std::stoll(std::string(this->Get(_key)));
+	num_type GetAsNumber(const std::string& _key, num_type _default = 0) {
+		std::shared_lock lock(propertiesMutex);
+		auto it = properties.find(_key);
+		if (it == properties.end())
+			return _default;
+
+		try {
+			return static_cast<num_type>(std::stoll(it->second));
+		} catch (const std::exception& e) {
+			std::cerr << "Error while parsing '" << _key << "' as number: " << e.what() << "\n";
+			return _default;
+		}
 	}
 
-	// get the value at key as boolean
-	bool GetAsBoolean(const std::string& _key) {
-		std::string val = std::string(this->Get(_key));
-		try {
-			if (val == "true" || val == "1")
-				return true;
-			// All other cases default to false
-			/*
-			if (val == "false" || val == "0")
-				return false;
-			*/
-		} catch (const std::exception& e) {
-			std::cerr << "Error while writing: " << e.what() << "\n";
-		}
-		return false;
+	// get the value at key as boolean, or _default if the key doesn't exist / isn't a recognized boolean
+	bool GetAsBoolean(const std::string& _key, bool _default = false) {
+		std::shared_lock lock(propertiesMutex);
+		auto it = properties.find(_key);
+		if (it == properties.end())
+			return _default;
+
+		const std::string& val = it->second;
+		if (val == "true" || val == "1")
+			return true;
+		if (val == "false" || val == "0")
+			return false;
+
+		// Unrecognized value: fall back to default
+		return _default;
 	}
 
 	// set value at key.

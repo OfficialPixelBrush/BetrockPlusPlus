@@ -50,7 +50,7 @@ Server::Server() : gameRuntime(serverViewRadius), config("server.properties") {
 		exit(1);
 	}
 	GlobalLogger().info << "Server initialized on port " << serverPort << "\n";
-	gameRuntime.Init(config.GetAsString("level-name"), config.GetAsString("level-seed"));
+	gameRuntime.Init(config.GetAsString("level-name", "world"), config.GetAsString("level-seed", "0"));
 }
 
 Server::~Server() {
@@ -162,8 +162,8 @@ void Server::LoadConfig() {
 		config.SaveToDisk();
 	}
 	//chunkDistance = config.GetAsNumber<int32_t>("view-distance");
-	serverPort = config.GetAsNumber<int32_t>("server-port");
-	auth.onlineMode = config.GetAsBoolean("online-mode");
+	serverPort = config.GetAsNumber<int32_t>("server-port", 25565);
+	auth.onlineMode = config.GetAsBoolean("online-mode", false);
 	//motd = config.GetAsString("motd");
 	//maximumPlayers = config.GetAsNumber<int32_t>("max-players");
 	//maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
