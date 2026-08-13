@@ -12,7 +12,7 @@
 #include "entities.h"
 #include "helpers/AABB.h"
 #include "helpers/java/java_random.h"
-#include "java/java_random.h"
+#include "helpers/java/java_math.h"
 #include "nbt/nbt.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
@@ -168,6 +168,14 @@ struct Entity {
 		collider = { position.x - halfWidth,  bottom,
 			         position.z - halfWidth,  position.x + halfWidth,
 			         bottom + double(height), position.z + halfWidth };
+	}
+
+	Vec3 GetLookVector(float _yaw, float _pitch) {
+		double yawRad = _yaw * (JavaMath::PI / 180.0);
+		double pitchRad = _pitch * (JavaMath::PI / 180.0);
+
+		double cosPitch = std::cos(pitchRad);
+		return { -std::sin(yawRad) * cosPitch, -std::sin(pitchRad), std::cos(yawRad) * cosPitch };
 	}
 
 	void Teleport(Vec3 _newpos, Vec2 _newrot = { 0, 0 }) {

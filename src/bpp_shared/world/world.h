@@ -107,7 +107,6 @@ class WorldManager : public WorldAccess {
 	BlockType GetBlockId(Int3 _wpos) override;
 	uint8_t GetMetadata(Int3 _wpos);
 	void RemoveTileEntity(Int3 _pos);
-	bool HasLineOfSight(Vec3 _from, Vec3 _to);
 	void SetViewRadius(int _viewRadius);
 	bool CanBlockSeeSky(const Int3 _pos) {
 		auto chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });

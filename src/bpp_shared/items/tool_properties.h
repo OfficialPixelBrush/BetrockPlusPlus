@@ -125,6 +125,7 @@ void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity
                       PacketData::FaceDirection _face);
 void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
 void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
+void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
 void UseShears(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack);
 
 // Attack

@@ -315,22 +315,18 @@ void RegisterBlockBehaviors() {
 	// Liquids/zero-size AABBs
 	blockBehaviors[BlockType::BLOCK_WATER_FLOWING] = {
 		.getSelectionBox = LiquidAabb,
-		.getRayBounds = LiquidAabb,
 		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_WATER_STILL] = {
 		.getSelectionBox = LiquidAabb,
-		.getRayBounds = LiquidAabb,
 		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_LAVA_FLOWING] = {
 		.getSelectionBox = LiquidAabb,
-		.getRayBounds = LiquidAabb,
 		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_LAVA_STILL] = {
 		.getSelectionBox = LiquidAabb,
-		.getRayBounds = LiquidAabb,
 		.getCollider = EmptyCollider,
 	};
 	blockBehaviors[BlockType::BLOCK_COBWEB] = {
