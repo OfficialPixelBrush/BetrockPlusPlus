@@ -63,18 +63,14 @@ void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, [[maybe_un
 	_session.username = incoming.username;
 
 	// Authentication
-	std::string hash = "-";
+	serverIdHash = "-";
 #ifdef ONLINE_MODE_AUTHENTICATION
-	if (!_server.auth.IsRegisteredUsername(_session.username)) {
-		std::string invalidUser = "Failed to verify username!";
-		DisconnectPlayer(_session, invalidUser, _server);
-		return;
-	}
+	if (_server.auth.onlineMode)
+		serverIdHash = _server.auth.GenerateAuthHash();
 #endif
 
 	Packet::PreLogin response;
-	// TODO: Figure this out
-	response.username = hash;
+	response.connectionHash = serverIdHash;
 	response.Serialize(_session.stream);
 
 	GlobalLogger().info << "Player " << _session.username << " is logging in.\n";
@@ -99,6 +95,14 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	}
 	if (!IsValidUsername(incoming.username))
 		return;
+
+#ifdef ONLINE_MODE_AUTHENTICATION
+	if (!_server.auth.IsRegisteredUsername(serverIdHash, _session.username)) {
+		std::string invalidUser = "Failed to verify username!";
+		DisconnectPlayer(_session, invalidUser, _server);
+		return;
+	}
+#endif
 
 	// Initialize our entity first as the player session depends on it
 	if (!_session.entity)
