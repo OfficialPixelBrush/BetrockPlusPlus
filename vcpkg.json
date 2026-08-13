@@ -4,7 +4,8 @@
   "dependencies": [
     "libdeflate",
     "glm",
-    "sdl3"
+    "sdl3",
+    "curl"
   ],
   "features": {
     "discord": {
