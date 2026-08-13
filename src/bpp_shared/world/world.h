@@ -104,7 +104,20 @@ class WorldManager : public WorldAccess {
 	float GetCelestialAngle();
 	int GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks = true);
 	Biome GetBiome(Int2 _wpos);
+	BlockType GetBlockId(Int3 _wpos) override;
+	uint8_t GetMetadata(Int3 _wpos);
+	void RemoveTileEntity(Int3 _pos);
 	bool HasLineOfSight(Vec3 _from, Vec3 _to);
+	void SetViewRadius(int _viewRadius);
+	bool CanBlockSeeSky(const Int3 _pos) {
+		auto chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
+		if (!chunk)
+			return false;
+		Int3 localPos = { _pos.x & 15, _pos.y, _pos.z & 15 };
+
+		return chunk->CanBlockSeeSky(localPos);
+	}
+
 	int GetBlockLightFull(Int3 _wpos) {
 		auto chunk = GetChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
 		if (!chunk)
@@ -112,6 +125,20 @@ class WorldManager : public WorldAccess {
 
 		Int3 localPos = { _wpos.x & 15, _wpos.y, _wpos.z & 15 };
 		int skylight = chunk->GetSkyLight(localPos) - this->skylightOffset;
+		int blockLight = chunk->GetBlockLight(localPos);
+		if (blockLight > skylight)
+			return blockLight;
+		else
+			return skylight;
+	}
+
+	int GetBlockLightRaw(Int3 _wpos) {
+		auto chunk = GetChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
+		if (!chunk)
+			return 15;
+
+		Int3 localPos = { _wpos.x & 15, _wpos.y, _wpos.z & 15 };
+		int skylight = chunk->GetSkyLight(localPos);
 		int blockLight = chunk->GetBlockLight(localPos);
 		if (blockLight > skylight)
 			return blockLight;
@@ -132,7 +159,6 @@ class WorldManager : public WorldAccess {
 	const int GetDimension() {
 		return thisDimension;
 	}
-	void SetViewRadius(int _viewRadius);
 	void InitWorldSeed(std::string _pSeed) {
 		InitWorldSeed(HashCode(_pSeed));
 	}
@@ -168,9 +194,6 @@ class WorldManager : public WorldAccess {
 		return nullptr;
 	}
 
-	// Remove the tile entity at world position `pos`.
-	void RemoveTileEntity(Int3 _pos);
-
 	// Called from pool gen threads
 	void PostGenResult(std::shared_ptr<Chunk> _chunk) {
 		std::lock_guard lk(genDoneMutex);
@@ -184,10 +207,6 @@ class WorldManager : public WorldAccess {
 	bool CanPopulate(Int32_2 _pos) {
 		return CanPopulateDirect(_pos);
 	}
-
-	BlockType GetBlockId(Int3 _wpos) override;
-
-	uint8_t GetMetadata(Int3 _wpos);
 
 	void SetBlock(Int3 _wpos, const Block& _block) {
 		SetBlock(_wpos, _block.type, _block.data);

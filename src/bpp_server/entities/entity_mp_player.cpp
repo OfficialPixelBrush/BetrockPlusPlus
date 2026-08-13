@@ -208,6 +208,10 @@ void EntityMPPlayer::Tick() {
 	// Do living entity stuff
 	MobileEntity::Tick();
 
+	if (onLadder())
+		// No fall damage on ladders
+		fallDistance = 0.0f;
+
 	// If we fell out of the world then die
 	if (position.y < -64.0)
 		OnDeath();
