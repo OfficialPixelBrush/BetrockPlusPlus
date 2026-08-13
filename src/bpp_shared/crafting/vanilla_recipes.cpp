@@ -44,7 +44,7 @@ void RecipeManager::AddVanillaRecipes() {
 	AddShapedRecipe({ "# #", "###", "# #" }, { { '#', { Items::Id::STICK } } }, { BLOCK_LADDER, 2 });
 	AddShapedRecipe({ "##", "##", "##" }, { { '#', { BLOCK_PLANKS } } }, { Items::Id::DOOR_WOOD, 1 });
 	AddShapedRecipe({ "##", "##", "##" }, { { '#', { Items::Id::IRON } } }, { Items::Id::DOOR_IRON, 1 });
-	AddShapedRecipe({ "###", "###" }, { { '#', { Items::Id::IRON } } }, { BLOCK_TRAPDOOR, 2 });
+	AddShapedRecipe({ "# ", " #" }, { { '#', { Items::Id::IRON } } }, { Items::Id::SHEARS, 1 });
 	AddShapedRecipe({ "###", "###", " X " }, { { '#', { BLOCK_PLANKS } }, { 'X', { Items::Id::STICK } } },
 	                { Items::Id::SIGN, 1 });
 	AddShapedRecipe({ "AAA", "BEB", "CCC" },

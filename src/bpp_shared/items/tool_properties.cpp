@@ -8,7 +8,10 @@
 #include "blocks.h"
 #include "blocks/block_properties.h"
 #include "entities/entity.h"
+#include "entities/entity_item.h"
 #include "entities/entity_mobile.h"
+#include "entities/entity_sheep.h"
+#include "inventory/item_stack.h"
 #include "items.h"
 #include "logger.h"
 
@@ -342,6 +345,21 @@ void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity
 	}
 	_pos = Blocks::GetAdjacentBlockPos(_pos, _face);
 	_world.SetBlock(_pos, BLOCK_FIRE);
+	HarmTool(_stack, 1);
+}
+
+void UseShears(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
+	SheepEntity* se = dynamic_cast<SheepEntity*>(&_targetEntity);
+	// Not a sheep, skip
+	if (!se)
+		return;
+	// Already sheared, can't shear again!
+	if (se->sheared)
+		return;
+	// TODO: Needs Random amount!
+	se->DropItemAtEntity(BLOCK_WOOL, 2, se->color);
+	se->sheared = true;
+
 	HarmTool(_stack, 1);
 }
 
