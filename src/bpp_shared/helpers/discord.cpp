@@ -14,7 +14,9 @@
 
 #include <dpp/dpp.h>
 
+#include <algorithm>
 #include <atomic>
+#include <cctype>
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
@@ -92,6 +94,10 @@ bool MemberHasRole(const dpp::guild_member& _member, const std::string& _roleId)
 
 struct Discord::Impl {
 	std::unique_ptr<dpp::cluster> cluster;
+	// Base webhook (id + token), parsed once. Per-message identity (name/avatar_url)
+	// is set on a copy of this before each execute_webhook() call.
+	dpp::webhook chatWebhook;
+	bool hasWebhook = false;
 };
 
 Discord::Discord() : impl(std::make_unique<Impl>()) {}
@@ -190,7 +196,7 @@ void Discord::Shutdown(const std::string& _finalMessage) {
 }
 
 void Discord::Init(const std::string& _token, const std::string& _channelId, const std::string& _guildId,
-                   const std::string& _adminRoleId) {
+                   const std::string& _adminRoleId, const std::string& _webhookUrl) {
 	if (initialized.load() || shuttingDown.load())
 		return;
 
@@ -198,6 +204,7 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 	channelId = _channelId;
 	guildId = _guildId;
 	adminRoleId = _adminRoleId;
+	webhookUrl = _webhookUrl;
 
 	if (token.empty() || channelId.empty()) {
 		GlobalLogger().warn << "Discord integration is enabled but discord-token or discord-channel-id "
@@ -229,6 +236,16 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 			GlobalLogger().warn << "Discord: discord-admin-role-id is invalid; privileged slash commands "
 			                       "(/stop) will be denied.\n";
 			adminRoleId.clear();
+		}
+	}
+
+	if (!webhookUrl.empty()) {
+		try {
+			impl->chatWebhook = dpp::webhook(webhookUrl);
+			impl->hasWebhook = true;
+		} catch (const std::exception& e) {
+			GlobalLogger().warn << "Discord: discord-webhook-url is invalid (" << e.what()
+			                    << "); player chat will be relayed as the bot instead.\n";
 		}
 	}
 
@@ -390,10 +407,44 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 		impl->cluster->start(dpp::st_return);
 		initialized.store(true);
 		GlobalLogger().info << "Discord: Gateway bot started\n";
+
+		// A webhook URL can silently point at the wrong channel (e.g. copied from a
+		// different channel than discord-channel-id) or be stale (deleted/regenerated).
+		// Either failure mode otherwise looks identical from here: chat just never
+		// shows up with no error visible outside the log. Check once at startup so
+		// that's obvious immediately instead of only surfacing per-message warnings.
+		if (impl->hasWebhook) {
+			const dpp::snowflake webhookId = impl->chatWebhook.id;
+			const std::string webhookToken = impl->chatWebhook.token;
+			impl->cluster->get_webhook_with_token(
+			    webhookId, webhookToken, [channelSnowflake](const dpp::confirmation_callback_t& result) {
+				    if (result.is_error()) {
+					    GlobalLogger().error
+					        << "Discord: discord-webhook-url could not be verified ("
+					        << result.get_error().message
+					        << "); it is likely deleted/regenerated. Player chat will fail to relay "
+					           "until it's replaced with a current webhook URL.\n";
+					    return;
+				    }
+				    const dpp::webhook wh = result.get<dpp::webhook>();
+				    if (wh.channel_id != channelSnowflake) {
+					    GlobalLogger().warn
+					        << "Discord: discord-webhook-url posts to channel " << wh.channel_id
+					        << ", but discord-channel-id is " << channelSnowflake
+					        << ". Player chat will relay to a different channel than /status, "
+					           "/list, and join/leave messages; create the webhook on the same "
+					           "channel or update discord-channel-id.\n";
+				    } else {
+					    GlobalLogger().info << "Discord: webhook verified, chat will relay to channel "
+					                        << wh.channel_id << "\n";
+				    }
+			    });
+		}
 	} catch (const std::exception& e) {
 		GlobalLogger().error << "Discord: failed to start bot: " << e.what() << "\n";
 		initialized.store(false);
 		impl->cluster.reset();
+		impl->hasWebhook = false;
 	}
 }
 
@@ -440,6 +491,172 @@ void Discord::SendFile(const std::string& _filename, const std::string& _message
 	} catch (const std::exception& e) {
 		GlobalLogger().warn << "Discord: failed to send file '" << _filename << "': " << e.what() << "\n";
 	}
+}
+
+std::string Discord::BuildSkinAvatarUrl(const std::string& _username, int _size) {
+	// mc-heads.net resolves the username to a skin server-side (Java accounts and most
+	// offline/cracked UUIDs alike) and returns just the face crop as a PNG. Discord fetches
+	// this URL itself when it renders the message/embed, so the bot never has to download
+	// or decode a skin texture — no image library or extra HTTP round trip needed here.
+	std::string safe;
+	safe.reserve(_username.size());
+	for (const char c : _username) {
+		// Minecraft usernames are already restricted to [A-Za-z0-9_]{1,16}; this is just a
+		// defensive filter so nothing unexpected ends up in a URL path segment.
+		if (std::isalnum(static_cast<unsigned char>(c)) || c == '_')
+			safe += c;
+	}
+	if (safe.empty())
+		safe = "MHF_Steve"; // generic fallback face if the username was unusable
+	return "https://mc-heads.net/avatar/" + safe + "/" + std::to_string(_size);
+}
+
+std::string Discord::SanitizeWebhookUsername(const std::string& _username) {
+	std::string name = RemoveMinecraftFormatting(_username);
+
+	// Discord rejects webhook usernames containing "discord" or "clyde" (case-insensitive).
+	// Mask rather than reject outright so a player named e.g. "Discordian" can still chat.
+	auto maskSubstring = [&name](const std::string& _needle) {
+		std::string lower = name;
+		std::transform(lower.begin(), lower.end(), lower.begin(),
+		               [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+		size_t pos = 0;
+		while ((pos = lower.find(_needle, pos)) != std::string::npos) {
+			for (size_t i = 0; i < _needle.size(); ++i) {
+				name[pos + i] = '_';
+				lower[pos + i] = '_';
+			}
+			pos += _needle.size();
+		}
+	};
+	maskSubstring("discord");
+	maskSubstring("clyde");
+
+	if (name.size() > 80)
+		name = name.substr(0, 80);
+	if (name.empty())
+		name = "Player";
+	return name;
+}
+
+void Discord::SendPlayerChatMessage(const std::string& _username, const std::string& _message) {
+	dpp::cluster* cluster = nullptr;
+	bool useWebhook = false;
+	dpp::webhook wh;
+	{
+		std::lock_guard lock(mutex);
+		if (!initialized.load() || shuttingDown.load() || !impl || !impl->cluster) {
+			GlobalLogger().warn << "Discord: chat message dropped, integration not initialized\n";
+			return;
+		}
+		cluster = impl->cluster.get();
+		useWebhook = impl->hasWebhook;
+		if (useWebhook)
+			wh = impl->chatWebhook;
+	}
+
+	const std::string content = RemoveMinecraftFormatting(_message);
+	if (content.empty())
+		return;
+
+	if (useWebhook) {
+		wh.name = SanitizeWebhookUsername(_username);
+		wh.avatar_url = BuildSkinAvatarUrl(_username, 128);
+		cluster->execute_webhook(wh, dpp::message(content), false, 0, "",
+		                          [](const dpp::confirmation_callback_t& result) {
+			                          if (result.is_error()) {
+				                          GlobalLogger().error << "Discord: failed to relay chat via webhook: "
+				                                              << result.get_error().message << "\n";
+			                          }
+		                          });
+		return;
+	}
+
+	// No webhook configured (or it failed to parse at startup): fall back to a plain
+	// message under the bot's own identity, same as before this feature existed.
+	dpp::message msg(dpp::snowflake{ channelId },
+	                  std::format("[{}] {}", RemoveMinecraftFormatting(_username), content));
+	cluster->message_create(msg, [](const dpp::confirmation_callback_t& result) {
+		if (result.is_error()) {
+			GlobalLogger().warn << "Discord: failed to send chat message: " << result.get_error().message << "\n";
+		}
+	});
+}
+
+constexpr uint32_t Discord::GetColorCode(const EmbedColor _color) const {
+	switch(_color) {
+		case EmbedColor::Red:
+			return 0xFF5555;
+		case EmbedColor::Yellow:
+			return 0xFFFF55;
+		case EmbedColor::Green:
+			return 0x55FF55;
+		case EmbedColor::Blue:
+			return 0x5555FF;
+		default:
+			return 0x555555;
+	}
+}
+
+void Discord::SendServerNotice(const std::string& _message, const EmbedColor _color) {
+	dpp::cluster* cluster = nullptr;
+	{
+		std::lock_guard lock(mutex);
+		if (!initialized.load() || shuttingDown.load() || !impl || !impl->cluster) {
+			GlobalLogger().warn << "Discord: join/leave message dropped, integration not initialized\n";
+			return;
+		}
+		cluster = impl->cluster.get();
+	}
+
+	dpp::embed embed;
+	embed.set_color(GetColorCode(_color))
+	    .set_description(_message);
+
+	dpp::message msg(dpp::snowflake{ channelId }, embed);
+	cluster->message_create(msg, [](const dpp::confirmation_callback_t& result) {
+		if (result.is_error()) {
+			GlobalLogger().warn << "Discord: failed to send notice embed: " << result.get_error().message
+			                    << "\n";
+		}
+	});
+}
+
+void Discord::SendPlayerEventEmbed(const std::string& _username, bool _joined) {
+	dpp::cluster* cluster = nullptr;
+	{
+		std::lock_guard lock(mutex);
+		if (!initialized.load() || shuttingDown.load() || !impl || !impl->cluster) {
+			GlobalLogger().warn << "Discord: join/leave message dropped, integration not initialized\n";
+			return;
+		}
+		cluster = impl->cluster.get();
+	}
+
+	const std::string username = RemoveMinecraftFormatting(_username);
+	const std::string avatarUrl = BuildSkinAvatarUrl(username, 256);
+
+	dpp::embed embed;
+	embed.set_color(_joined ? 0x55FF55 : 0xFF5555)
+	    .set_author(username, "", avatarUrl)
+	    .set_description(std::format("**{}** {} the game", username, _joined ? "joined" : "left"));
+	    //.set_thumbnail(avatarUrl);
+
+	dpp::message msg(dpp::snowflake{ channelId }, embed);
+	cluster->message_create(msg, [](const dpp::confirmation_callback_t& result) {
+		if (result.is_error()) {
+			GlobalLogger().warn << "Discord: failed to send join/leave embed: " << result.get_error().message
+			                    << "\n";
+		}
+	});
+}
+
+void Discord::SendPlayerJoinMessage(const std::string& _username) {
+	SendPlayerEventEmbed(_username, true);
+}
+
+void Discord::SendPlayerLeaveMessage(const std::string& _username) {
+	SendPlayerEventEmbed(_username, false);
 }
 
 void Discord::SendMessageSync(const std::string& _message) {

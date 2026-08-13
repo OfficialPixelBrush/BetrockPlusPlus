@@ -41,7 +41,8 @@ Server::Server() : gameRuntime(serverViewRadius), config("server.properties") {
 
 #ifdef DISCORD_INTEGRATION
 	GlobalDiscord().Init(config.GetAsString("discord-token"), config.GetAsString("discord-channel-id"),
-	                     config.GetAsString("discord-guild-id"), config.GetAsString("discord-admin-role-id"));
+	                     config.GetAsString("discord-guild-id"), config.GetAsString("discord-admin-role-id"),
+	                     config.GetAsString("discord-webhook-url"));
 #endif
 
 	serverSocket = ServerSocketManager::CreateServerSocket(serverPort);
@@ -152,6 +153,10 @@ void Server::LoadConfig() {
 		    { "discord-guild-id", "" },
 		    // Role required for privileged slash commands (e.g. /stop). Empty denies them.
 		    { "discord-admin-role-id", "" },
+		    // Optional: a channel webhook URL (Channel Settings -> Integrations -> Webhooks).
+		    // When set, in-game chat is relayed under each player's own name + skin face
+		    // instead of the bot's. Leave empty to relay chat as the bot instead.
+		    { "discord-webhook-url", "" },
 #endif
 		    //{"allow-nether",true},
 		    //{"spawn-monsters","true"},
@@ -324,7 +329,7 @@ void Server::Startup() {
 	float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
 	GlobalLogger().info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";
 #ifdef DISCORD_INTEGRATION
-	GlobalDiscord().SendMessage("Server started!");
+	GlobalDiscord().SendServerNotice("Server started!", Discord::EmbedColor::Green);
 #endif
 }
 
@@ -386,6 +391,8 @@ void Server::Stop() {
 		return;
 	stopped = true;
 #ifdef DISCORD_INTEGRATION
+	//GlobalDiscord().SendServerNotice("Server stopped!", Discord::EmbedColor::Red);
+	// TODO: The server often shuts down too fast for the embed to get sent!
 	GlobalDiscord().Shutdown("Server stopped!");
 #endif
 	GlobalLogger().info << "Server shutting down...\n";
@@ -603,7 +610,10 @@ void Server::DisconnectClients() {
 			                             if (_s->entity) {
 				                             GlobalLogger().info << "Disconnected client " << _s->username
 				                                                 << " with entity id " << _s->entity->id << "\n";
-				                             SendGlobalChatMessage("§e" + _s->username + " left the game.");
+				                             SendGlobalChatMessage("§e" + _s->username + " left the game.", false);
+#ifdef DISCORD_INTEGRATION
+					             GlobalDiscord().SendPlayerLeaveMessage(_s->username);
+#endif
 				                             if (_s->entity->entityManager)
 					                             _s->entity->entityManager->RemoveEntity(_s->entity->id);
 			                             }

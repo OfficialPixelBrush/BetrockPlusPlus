@@ -9,6 +9,10 @@
 #include "version.h"
 #include <regex>
 
+#ifdef DISCORD_INTEGRATION
+#include "discord.h"
+#endif
+
 void PlayerConnStateManager::HandleConnectionState(PlayerSession& _session, Server& _server) {
 	switch (_session.connState) {
 	case ConnectionState::Handshaking:
@@ -163,7 +167,10 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	_session.entity->RebuildCollider();
 
 	// Let everyone else know we logged in
-	_server.SendGlobalChatMessage("§e" + _session.username + " joined the game.");
+	_server.SendGlobalChatMessage("§e" + _session.username + " joined the game.", false);
+#ifdef DISCORD_INTEGRATION
+	GlobalDiscord().SendPlayerJoinMessage(_session.username);
+#endif
 
 	// Send our inventory
 	PacketUtilities::SendInventory(_session, 0, _session.inventory);
