@@ -23,13 +23,11 @@ static size_t WriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata
 	return size * nmemb;
 }
 
-bool Authentication::IsRegisteredUsername(std::string _username) {
+bool Authentication::IsRegisteredUsername(std::string _serverIdHash, std::string _username) {
 	if (!onlineMode)
 		return true;
-	std::string serverHash = GenerateAuthHash();
 	CURL* curl = curl_easy_init();
-	std::string url = std::format("{}/checkserver.jsp?user={}&serverId={}", baseUrl, _username, serverHash);
-	GlobalLogger().debug << url << "\n";
+	std::string url = std::format("{}/checkserver.jsp?user={}&serverId={}", baseUrl, _username, _serverIdHash);
 	std::string response;
 
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -53,7 +51,6 @@ bool Authentication::IsRegisteredUsername(std::string _username) {
 	if (res != CURLE_OK)
 		return false;
 
-	GlobalLogger().debug << response << "\n";
 	return response == "YES";
 }
 #endif

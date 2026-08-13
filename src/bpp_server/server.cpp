@@ -176,8 +176,13 @@ void Server::Startup() {
 
 	// Init auth
 #ifdef ONLINE_MODE_AUTHENTICATION
-	if (auth.onlineMode)
-		GlobalLogger().debug << "Starting with auth!\n";
+	if (!auth.onlineMode) {
+		GlobalLogger().warn << "**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!\n"
+		                    << "The server will make no attempt to authenticate usernames. Beware.\n"
+		                    << "While this makes the game possible to play without internet access,\n"
+		                    << "it also opens up the ability for hackers to connect with any username they choose.\n"
+		                    << "To change this, set \"online-mode\" to \"true\" in the server.properties file.\n";
+	}
 #endif
 
 	// Setup commands
