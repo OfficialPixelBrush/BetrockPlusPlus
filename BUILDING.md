@@ -141,11 +141,13 @@ Simply add `-DDISCORD_INTEGRATION=ON` to the first build command, then resume as
 
 In `server.properties`:
 
-| Key                  | Purpose                                                             |
-| -------------------- | ------------------------------------------------------------------- |
-| `discord-token`      | Bot token                                                           |
-| `discord-channel-id` | Channel used for chat bridge + crash uploads                        |
-| `discord-guild-id`   | Optional. When set, slash commands register to that guild instantly |
+| Key                     | Purpose                                                                                      |
+| ----------------------- | -------------------------------------------------------------------------------------------- |
+| `discord-token`         | Bot token                                                                                    |
+| `discord-channel-id`    | Channel used for chat bridge + crash uploads                                                 |
+| `discord-webhook-url`   | Makes it so player PFPs and names are used in messages, integrating them better with Discord |
+| `discord-admin-role-id` | Optional. Allows for more invasive commands to be run from Discord (i.e. `stop`)             |
+| `discord-guild-id`      | Optional. When set, slash commands register to that guild instantly                          |
 
 In the [Discord Developer Portal](https://discord.com/developers/applications), enable the **Message Content Intent**, invite the bot with `applications.commands` + `bot` scopes, and grant read/send message permissions in the bridge channel.
 
