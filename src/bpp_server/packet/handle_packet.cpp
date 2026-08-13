@@ -407,7 +407,7 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 			behavior.onEntityAttack(*entity, *sourceEntity, heldItem);
 	} else {
 		if (behavior.onEntityUse)
-			behavior.onEntityUse(*entity, heldItem);
+			behavior.onEntityUse(_world, *entity, heldItem);
 	}
 }
 

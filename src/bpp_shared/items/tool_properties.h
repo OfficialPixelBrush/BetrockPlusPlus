@@ -125,6 +125,7 @@ void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity
                       PacketData::FaceDirection _face);
 void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
 void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
+void UseShears(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack);
 
 // Attack
 void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face);
@@ -142,7 +143,7 @@ struct ToolBehavior {
 	void (*onBlockStartMining)(ItemStack* _stack, BlockType _targetBlock) = nullptr;
 	void (*onBlockFinishMining)(ItemStack* _stack, BlockType _targetBlock) = nullptr;
 	void (*onEntityAttack)(Entity& _attackedEntity, Entity& _sourceEntity, ItemStack* _stack) = nullptr;
-	void (*onEntityUse)(Entity& _usedEntity, ItemStack* _stack) = nullptr;
+	void (*onEntityUse)(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) = nullptr;
 };
 
 extern std::unordered_map<ItemId, ToolProperties> toolProperties;
