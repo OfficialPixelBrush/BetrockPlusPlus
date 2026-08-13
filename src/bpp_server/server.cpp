@@ -163,7 +163,9 @@ void Server::LoadConfig() {
 	}
 	//chunkDistance = config.GetAsNumber<int32_t>("view-distance");
 	serverPort = config.GetAsNumber<int32_t>("server-port", 25565);
+#ifdef ONLINE_MODE_AUTHENTICATION
 	auth.onlineMode = config.GetAsBoolean("online-mode", false);
+#endif
 	//motd = config.GetAsString("motd");
 	//maximumPlayers = config.GetAsNumber<int32_t>("max-players");
 	//maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
