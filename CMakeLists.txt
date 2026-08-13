@@ -9,7 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Must be set before project() so vcpkg can install the optional feature.
 option(REDUCED_GENERATION_PRECISION "Reduces perlin and simplex noise precision from 64-bit to 32-bit floats" OFF)
-
+option(ONLINE_MODE_AUTHENTICATION "Allows for authentcation with Mojang Servers (requires libcurl)" ON)
 option(DISCORD_INTEGRATION "Enable Discord bot integration via D++ (server only)" OFF)
 if(DISCORD_INTEGRATION)
     list(APPEND VCPKG_MANIFEST_FEATURES "discord")
@@ -177,6 +177,7 @@ set(SHARED_SOURCES
 # Server-specific source code
 set(SERVER_SOURCES
     src/bpp_server/server.cpp
+    src/bpp_server/online_auth.cpp
     src/bpp_server/packet/handle_packet.cpp
     src/bpp_server/player_conn/server_pconnstate_manager.cpp
     src/bpp_server/packet/packet_dispatcher.cpp
@@ -247,6 +248,13 @@ if(BUILD_SERVER)
     target_sources(BetrockPlusPlus PRIVATE
         ${SERVER_SOURCES}
     )
+    
+    if(ONLINE_MODE_AUTHENTICATION)
+        find_package(CURL REQUIRED)
+        target_compile_definitions(BetrockPlusPlus PRIVATE ONLINE_MODE_AUTHENTICATION)
+        target_link_libraries(BetrockPlusPlus PRIVATE CURL::libcurl)
+    endif()
+
     if (DISCORD_INTEGRATION)
         # Prefer a preinstalled D++ (e.g. vcpkg feature "discord"); otherwise fetch it.
         find_package(dpp CONFIG QUIET)

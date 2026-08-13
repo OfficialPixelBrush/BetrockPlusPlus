@@ -62,9 +62,19 @@ void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, [[maybe_un
 		return;
 	_session.username = incoming.username;
 
-	// TODO: Authentication!!
+	// Authentication
+	std::string hash = "-";
+#ifdef ONLINE_MODE_AUTHENTICATION
+	if (!_server.auth.IsRegisteredUsername(_session.username)) {
+		std::string invalidUser = "Failed to verify username!";
+		DisconnectPlayer(_session, invalidUser, _server);
+		return;
+	}
+#endif
+
 	Packet::PreLogin response;
-	response.username = "-";
+	// TODO: Figure this out
+	response.username = hash;
 	response.Serialize(_session.stream);
 
 	GlobalLogger().info << "Player " << _session.username << " is logging in.\n";
