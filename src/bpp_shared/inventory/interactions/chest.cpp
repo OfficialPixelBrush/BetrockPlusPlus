@@ -20,7 +20,10 @@ ChestInventoryInteraction::~ChestInventoryInteraction() {
 bool ChestInventoryInteraction::CanExist(PlayerEntity& _player) {
 	if (chestHandle.expired())
 		return false;
-	auto pos = chestHandle.lock()->position;
+	auto locked = chestHandle.lock();
+	if (!locked)
+		return false;
+	auto pos = locked->position;
 	return (GetDistSquared(_player.position, { pos.x + 0.5, pos.y + 0.5, pos.z + 0.5 }) < 64.0);
 }
 

@@ -20,9 +20,11 @@ LargeChestInventoryInteraction::~LargeChestInventoryInteraction() {
 }
 
 bool LargeChestInventoryInteraction::CanExist(PlayerEntity& _player) {
-	if (upperChest.expired() || lowerChest.expired())
+	auto lockedUpper = upperChest.lock();
+	auto lockedLower = lowerChest.lock();
+	if (!lockedUpper || !lockedLower)
 		return false;
-	auto avgPos = upperChest.lock()->position + lowerChest.lock()->position;
+	auto avgPos = lockedUpper->position + lockedLower->position;
 	return (GetDistSquared(_player.position, { avgPos.x / 2.0, avgPos.y / 2.0, avgPos.z / 2.0 }) < 64.0);
 }
 

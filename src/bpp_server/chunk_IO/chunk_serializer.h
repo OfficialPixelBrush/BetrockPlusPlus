@@ -12,15 +12,15 @@
 #include <vector>
 
 namespace ChunkSerializer {
-inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _xmax = 16, int _ymin = 0,
-                                      int _ymax = CHUNK_HEIGHT, int _zmin = 0, int _zmax = 16) {
-	int sizeX = _xmax - _xmin;
-	int sizeY = _ymax - _ymin;
-	int sizeZ = _zmax - _zmin;
+inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _xmax = CHUNK_WIDTH, int _ymin = 0,
+                                      int _ymax = CHUNK_HEIGHT, int _zmin = 0, int _zmax = CHUNK_WIDTH) {
+	const int sizeX = _xmax - _xmin;
+	const int sizeY = _ymax - _ymin;
+	const int sizeZ = _zmax - _zmin;
 
-	int blocks = sizeX * sizeY * sizeZ;
-	int nibbles = (blocks + 1) / 2;
-	int total = blocks + nibbles * 3;
+	const int blocks = sizeX * sizeY * sizeZ;
+	const int nibbles = (blocks + 1) / 2;
+	const int total = blocks + nibbles * 3;
 
 	std::vector<uint8_t> raw(size_t(total), 0);
 	uint8_t* blockData = raw.data();
@@ -56,8 +56,8 @@ inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _x
 		return {};
 	size_t maxSize = libdeflate_zlib_compress_bound(compressor.get(), static_cast<size_t>(total));
 	std::vector<uint8_t> compressed(maxSize);
-	size_t actualSize = libdeflate_zlib_compress(compressor.get(), raw.data(), static_cast<size_t>(total),
-	                                             compressed.data(), maxSize);
+	const size_t actualSize = libdeflate_zlib_compress(compressor.get(), raw.data(), static_cast<size_t>(total),
+	                                                   compressed.data(), maxSize);
 	if (actualSize == 0)
 		return {};
 	compressed.resize(actualSize);

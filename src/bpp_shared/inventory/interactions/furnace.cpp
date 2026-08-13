@@ -24,7 +24,10 @@ FurnaceInventoryInteraction::~FurnaceInventoryInteraction() {
 bool FurnaceInventoryInteraction::CanExist(PlayerEntity& _player) {
 	if (tile.expired())
 		return false;
-	auto pos = tile.lock()->position;
+	auto locked = tile.lock();
+	if (!locked)
+		return false;
+	auto pos = locked->position;
 	return (GetDistSquared(_player.position, { pos.x + 0.5, pos.y + 0.5, pos.z + 0.5 }) < 64.0);
 }
 
