@@ -70,6 +70,38 @@ bool CanSugarcaneSurviveAt(WorldManager& _world, Int3 _pos) {
 	return false;
 }
 
+bool CanGenericPlantSurviveAt(WorldManager& _world, Int3 _pos) {
+	auto lightLevel = _world.GetBlockLightRaw(_pos);
+	bool canSeeSky = _world.CanBlockSeeSky(_pos);
+	auto belowBlock = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
+	bool canGrowOnBlock = belowBlock == BLOCK_FARMLAND || belowBlock == BLOCK_DIRT || belowBlock == BLOCK_GRASS;
+	return (lightLevel >= 8 || canSeeSky) && canGrowOnBlock;
+}
+
+bool CanMushroomSurviveAt(WorldManager& _world, Int3 _pos) {
+	auto lightLevel = _world.GetBlockLightRaw(_pos);
+	bool canSeeSky = _world.CanBlockSeeSky(_pos);
+	auto belowBlock = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
+	bool canGrowOnBlock = blockProperties[belowBlock].isOpaqueCube;
+	return lightLevel < 13 && canGrowOnBlock;
+}
+
+bool CanCactusSurviveAt(WorldManager& _world, Int3 _pos) {
+	bool adjacentBlocksClear = true;
+	int d[4] = { -1, 1, 0, 0 };
+	for (int i = 0; i < 4; i++) {
+		int dx = _pos.x + d[i];
+		int dz = _pos.z + d[3 - i];
+		if (_world.GetMaterial({ dx, _pos.y, dz }).isSolid) {
+			adjacentBlocksClear = false;
+			break;
+		}
+	}
+	auto belowBlock = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
+	bool canGrowOnBlock = belowBlock == BLOCK_CACTUS || belowBlock == BLOCK_SAND;
+	return canGrowOnBlock && adjacentBlocksClear;
+}
+
 bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, PacketData::FaceDirection _face) {
 	if (_face == PacketData::FaceDirection::Y_MINUS)
 		return false;

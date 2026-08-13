@@ -52,6 +52,15 @@ class WorldWrapper : public WorldAccess {
 		return manager.seed;
 	}
 
+	bool CanBlockSeeSky(const Int3 _pos) {
+		auto chunk = chunkRegion.GetChunk(GetRegionChunkPos(_pos));
+		if (!chunk)
+			return false;
+		Int3 localPos = { _pos.x & 15, _pos.y, _pos.z & 15 };
+
+		return chunk->CanBlockSeeSky(localPos);
+	}
+
 	// Returns true when the world-space Y is within valid chunk bounds.
 	static constexpr bool InBounds(int _y) {
 		return _y >= 0 && _y < CHUNK_HEIGHT;

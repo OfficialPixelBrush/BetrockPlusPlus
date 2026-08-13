@@ -14,6 +14,7 @@ class WorldAccess {
     WorldAccess() = default;
     virtual ~WorldAccess() = default;
 	// Convert a world-space position to a region-local chunk offset (-1..1, -1..1)
+	virtual bool CanBlockSeeSky(const Int3 _pos) = 0;
 	virtual int FindTopSolidBlock(const int _wx, const int _wz) = 0;
 	virtual int GetHeightValue(const int _wx, const int _wz) = 0;
 	virtual double GetTemperatureAt(const int _wx, const int _wz) = 0;

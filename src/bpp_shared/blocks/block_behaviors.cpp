@@ -550,7 +550,7 @@ void RegisterBlockBehaviors() {
 		.getCollider = SoulSandCollider,
 	};
 
-	// specific behavioral overrides
+	// Specific behavioral overrides
 	blockBehaviors[BLOCK_WATER_FLOWING].velocityToAddToEntity = [](WorldManager& _world, Int3 _pos,
 	                                                               Vec3& _pushVector) -> void {
 		Vec3 flowVector = GetFluidFlowVector(_world, _pos);
@@ -580,10 +580,19 @@ void RegisterBlockBehaviors() {
 			BreakAndDropBlock(_world, _pos);
 	};
 
-	// placement overrides
+	// Placement overrides
 	auto onFurnaceDispenserPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
 	                                  BlockType _blockId, uint8_t _meta) -> bool {
 		int meta[] = { 2, 5, 3, 4 };
+		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
+	};
+	
+	auto onPumpkinPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+	                                  BlockType _blockId, uint8_t _meta) -> bool {
+		int meta[] = { 2, 3, 0, 1 };
+		auto belowBlockMaterial = _world.GetMaterial({ _pos.x, _pos.y - 1, _pos.z });
+		if (!belowBlockMaterial.isOpaque)
+			return false;
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
 	};
 
@@ -593,10 +602,114 @@ void RegisterBlockBehaviors() {
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
 	};
 
+	auto onPlantPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+	                       BlockType _blockId, uint8_t _meta) -> bool {
+		if (CanGenericPlantSurviveAt(_world, _pos)) {
+			return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
+		}
+		return false;
+	};
+
+	auto onMushroomPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+	                       BlockType _blockId, uint8_t _meta) -> bool {
+		if (CanMushroomSurviveAt(_world, _pos)) {
+			return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
+		}
+		return false;
+	};
+	
+	auto onCactusPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+	                          BlockType _blockId, uint8_t _meta) -> bool {
+		if (CanCactusSurviveAt(_world, _pos)) {
+			return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
+		}
+		return false;
+	};
+
+	// Plants
+	blockBehaviors[BLOCK_CACTUS].onBlockPlaced = onCactusPlace;
+	blockBehaviors[BLOCK_MUSHROOM_BROWN].onBlockPlaced = onMushroomPlace;
+	blockBehaviors[BLOCK_MUSHROOM_RED].onBlockPlaced = onMushroomPlace;
+	blockBehaviors[BLOCK_DANDELION].onBlockPlaced = onPlantPlace;
+	blockBehaviors[BLOCK_ROSE].onBlockPlaced = onPlantPlace;
+	blockBehaviors[BLOCK_SAPLING].onBlockPlaced = onPlantPlace;
+	blockBehaviors[BLOCK_TALLGRASS].onBlockPlaced = onPlantPlace;
+	blockBehaviors[BLOCK_CACTUS].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+		blockBehaviors[BLOCK_CACTUS].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+	};
+	blockBehaviors[BLOCK_MUSHROOM_BROWN].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+		blockBehaviors[BLOCK_MUSHROOM_BROWN].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+	};
+	blockBehaviors[BLOCK_MUSHROOM_RED].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+		blockBehaviors[BLOCK_MUSHROOM_RED].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+	};
+	blockBehaviors[BLOCK_DANDELION].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+		blockBehaviors[BLOCK_DANDELION].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+	};
+	blockBehaviors[BLOCK_ROSE].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+		blockBehaviors[BLOCK_ROSE].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+	};
+	blockBehaviors[BLOCK_TALLGRASS].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+		blockBehaviors[BLOCK_TALLGRASS].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+	};
+	blockBehaviors[BLOCK_SAPLING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+		blockBehaviors[BLOCK_SAPLING].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+	};
+	blockBehaviors[BLOCK_DANDELION].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                        Java::Random& _random) -> void {
+		if (!CanGenericPlantSurviveAt(_world, _pos))
+			BreakAndDropBlock(_world, _pos);
+	};
+	blockBehaviors[BLOCK_ROSE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                            Java::Random& _random) -> void {
+		if (!CanGenericPlantSurviveAt(_world, _pos))
+			BreakAndDropBlock(_world, _pos);
+	};
+	blockBehaviors[BLOCK_TALLGRASS].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                            Java::Random& _random) -> void {
+		if (!CanGenericPlantSurviveAt(_world, _pos))
+			BreakAndDropBlock(_world, _pos);
+	};
+	blockBehaviors[BLOCK_SAPLING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                            Java::Random& _random) -> void {
+		if (!CanGenericPlantSurviveAt(_world, _pos))
+			BreakAndDropBlock(_world, _pos);
+	};
+	blockBehaviors[BLOCK_MUSHROOM_BROWN].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                            Java::Random& _random) -> void {
+		if (!CanMushroomSurviveAt(_world, _pos))
+			BreakAndDropBlock(_world, _pos);
+	};
+	blockBehaviors[BLOCK_MUSHROOM_RED].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                               Java::Random& _random) -> void {
+		if (!CanMushroomSurviveAt(_world, _pos))
+			BreakAndDropBlock(_world, _pos);
+	};
+	blockBehaviors[BLOCK_CACTUS].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                               Java::Random& _random) -> void {
+		if (!CanCactusSurviveAt(_world, _pos))
+			BreakAndDropBlock(_world, _pos);
+	};
+
+	// Slabs
+	blockBehaviors[BLOCK_SLAB].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                                PacketData::FaceDirection _face, BlockType _blockId,
+	                                                uint8_t _meta) -> bool {
+		auto sourcePos = GetSourceBlockFromFace(_pos, _face);
+		auto sourceBlock = _world.GetBlockId(sourcePos);
+		auto sourceMeta = _world.GetMetadata(sourcePos);
+		if (sourceBlock == BLOCK_SLAB && sourceMeta == _meta) {
+			return GenericPlace(_world, sourcePos, _placer, _face, BLOCK_DOUBLE_SLAB, _meta);
+		}
+		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
+	};
+
+	// Directionals
+	blockBehaviors[BLOCK_PUMPKIN].onBlockPlaced = onPumpkinPlace;
+	blockBehaviors[BLOCK_PUMPKIN_LIT].onBlockPlaced = onPumpkinPlace;
 	blockBehaviors[BLOCK_FURNACE].onBlockPlaced = onFurnaceDispenserPlace;
 	blockBehaviors[BLOCK_FURNACE_LIT].onBlockPlaced = onFurnaceDispenserPlace;
 	blockBehaviors[BLOCK_DISPENSER].onBlockPlaced = onFurnaceDispenserPlace;
-
 	blockBehaviors[BLOCK_STAIRS_COBBLESTONE].onBlockPlaced = onStairPlace;
 	blockBehaviors[BLOCK_STAIRS_WOOD].onBlockPlaced = onStairPlace;
 	blockBehaviors[BLOCK_LADDER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
