@@ -165,42 +165,53 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 
 void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager& _world, Runtime& _gameRuntime) {
 	Int3 position = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
+
 	// Block interactions
 	auto block = _world.GetBlockId(position);
 
 	// Function returns true if we can place a block after running the function
 	if (ServerBlock::blockBehaviors[block].onBlockActivated) {
-		if (!ServerBlock::blockBehaviors[block].onBlockActivated(_world, position, _session, _gameRuntime))
+		if (!ServerBlock::blockBehaviors[block].onBlockActivated(_world, position, _session, _gameRuntime)) {
 			return;
+		}
 	}
 	// The server didn't override our block's behavior so check the base behavior
 	else if (Blocks::blockBehaviors[block].onBlockActivated) {
-		if (!Blocks::blockBehaviors[block].onBlockActivated(_world, position))
+		if (!Blocks::blockBehaviors[block].onBlockActivated(_world, position)) {
 			return;
+		}
 	}
 
 	ItemStack* heldItem = _session.inventory.GetHeldItem();
-	if (!heldItem)
+	if (!heldItem) {
 		return;
+	}
 
 	// NOTE:
 	// Invalid Use packet is sent ANYTIME the client predicts a placement will fail (like placing a block inside of yourself)
 	if (_pkt.face == PacketData::FaceDirection::INVALID_USE) {
 		if (Items::IsFood(heldItem->id)) {
-			// On player use
 			if (auto& fn = Items::itemBehavior[heldItem->id].onUse) {
-				GlobalLogger().info << "Managed to use item\n";
 				fn(_session, heldItem, *_session.entity);
 			}
-			// TODO: Add on animal (wolf) use
+			return;
+		}
+
+		// Buckets 
+		bool isBucketItem = (heldItem->id == Items::Id::BUCKET || heldItem->id == Items::Id::BUCKET_WATER ||
+		                     heldItem->id == Items::Id::BUCKET_LAVA);
+		bool hasOnBlockUse = static_cast<bool>(Items::itemBehavior[heldItem->id].onBlockUse);
+
+		if (isBucketItem && hasOnBlockUse) {
+			Items::itemBehavior[heldItem->id].onBlockUse(_world, heldItem, position, *_session.entity, _pkt.face);
 		}
 		return;
 	}
 
 	if (Items::IsBlock(heldItem->id)) {
 		Int3 placePosition = Blocks::GetAdjacentBlockPos(position, _pkt.face);
+
 		if (heldItem->id.value < 0 || heldItem->id.value >= 256) {
-			// invalid
 			return;
 		}
 
@@ -208,17 +219,18 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 
 		// We can place the block here
 		auto function = Blocks::blockBehaviors[blockId].onBlockPlaced;
-		if (!function)
+		if (!function) {
 			return;
+		}
 		bool result = function(_world, placePosition, *_session.entity, _pkt.face, blockId, heldItem->data);
 		if (result) {
 			heldItem->DecrementCount(1);
 		}
 	} else if (Items::IsItem(heldItem->id)) {
-		GlobalLogger().info << "Tried to use item\n";
-		GlobalLogger().info << position << "\n";
-		if (Items::itemBehavior[heldItem->id].onBlockUse) {
-			GlobalLogger().info << "Used on " << position << "\n";
+		bool isBucketItem = (heldItem->id == Items::Id::BUCKET || heldItem->id == Items::Id::BUCKET_WATER ||
+		                     heldItem->id == Items::Id::BUCKET_LAVA);
+
+		if (Items::itemBehavior[heldItem->id].onBlockUse && !isBucketItem) {
 			Items::itemBehavior[heldItem->id].onBlockUse(_world, heldItem, position, *_session.entity, _pkt.face);
 		}
 	}

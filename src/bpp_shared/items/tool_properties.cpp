@@ -10,10 +10,12 @@
 #include "entities/entity.h"
 #include "entities/entity_item.h"
 #include "entities/entity_mobile.h"
+#include "entities/entity_player.h"
 #include "entities/entity_sheep.h"
 #include "inventory/item_stack.h"
 #include "items.h"
 #include "logger.h"
+#include "raycast.h"
 
 namespace Items {
 std::unordered_map<ItemId, ToolProperties> toolProperties = {};
@@ -319,14 +321,55 @@ void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, P
 }
 
 void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face) {
-	// TODO - raycast!!
+	float reach = 5.0f;
+	auto pe = dynamic_cast<PlayerEntity*>(&_user);
+	if (!pe) {
+		return;
+	}
+
+	// Do our raycast
+	Vec3 startPos = pe->position;
+	startPos.y += PLAYER_EYE_HEIGHT;
+	Vec3 lookVec = pe->GetLookVector(pe->rotationYaw, pe->rotationPitch);
+	Vec3 endPos = startPos + (lookVec * Vec3{ reach, reach, reach });
+	RayCastResult result = Raycast::Raycast(_world, startPos, endPos, RayCastMode::ACCEPT_SOURCES);
+
+	if (!result.hit) {
+		return;
+	}
+
+	// Accept water or lava
+	if (result.hitBlock.type == BLOCK_WATER_FLOWING || result.hitBlock.type == BLOCK_WATER_STILL) {
+		_world.SetBlock(result.blockPosition, BLOCK_AIR);
+		_stack->id = Items::Id::BUCKET_WATER;
+	} else if (result.hitBlock.type == BLOCK_LAVA_FLOWING || result.hitBlock.type == BLOCK_LAVA_STILL) {
+		_world.SetBlock(result.blockPosition, BLOCK_AIR);
+		_stack->id = Items::Id::BUCKET_LAVA;
+	}
 }
 
 void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face) {
-	Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
+	float reach = 5.0f;
+	auto pe = dynamic_cast<PlayerEntity*>(&_user);
+	if (!pe) {
+		return;
+	}
+
+	Vec3 startPos = pe->position;
+	startPos.y += PLAYER_EYE_HEIGHT;
+	Vec3 lookVec = pe->GetLookVector(pe->rotationYaw, pe->rotationPitch);
+	Vec3 endPos = startPos + (lookVec * Vec3{ reach, reach, reach });
+	RayCastResult result = Raycast::Raycast(_world, startPos, endPos, RayCastMode::IGNORE_FLUIDS);
+
+	if (!result.hit) {
+		return;
+	}
+
+	Int3 placePos = Blocks::GetAdjacentBlockPos(result.blockPosition, result.face);
 	auto m = _world.GetMaterial(placePos);
-	if (m.isSolid)
+	if (m.isSolid) {
 		return; // can't place into solid ground
+	}
 
 	if (_world.GetDimension() == Dimension::Nether) {
 		_stack->id = Items::Id::BUCKET;
@@ -334,6 +377,33 @@ void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& 
 	}
 
 	_world.SetBlock(placePos, BLOCK_WATER_FLOWING);
+	_stack->id = Items::Id::BUCKET;
+}
+
+void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face) {
+	float reach = 5.0f;
+	auto pe = dynamic_cast<PlayerEntity*>(&_user);
+	if (!pe) {
+		return;
+	}
+
+	Vec3 startPos = pe->position;
+	startPos.y += PLAYER_EYE_HEIGHT;
+	Vec3 lookVec = pe->GetLookVector(pe->rotationYaw, pe->rotationPitch);
+	Vec3 endPos = startPos + (lookVec * Vec3{ reach, reach, reach });
+	RayCastResult result = Raycast::Raycast(_world, startPos, endPos, RayCastMode::IGNORE_FLUIDS);
+
+	if (!result.hit) {
+		return;
+	}
+
+	Int3 placePos = Blocks::GetAdjacentBlockPos(result.blockPosition, result.face);
+	auto m = _world.GetMaterial(placePos);
+	if (m.isSolid) {
+		return; // can't place into solid ground
+	}
+
+	_world.SetBlock(placePos, BLOCK_LAVA_FLOWING);
 	_stack->id = Items::Id::BUCKET;
 }
 

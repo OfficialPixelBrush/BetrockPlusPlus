@@ -24,6 +24,7 @@ struct EntityMPPlayer : public PlayerEntity {
 	bool PickupItem(ItemStack& _stack, EntityId _entityId) override;
 	void UpdateFallState(float _movedY) override;
 	void OnDeath() override;
+	bool DropItem(ItemStack _stack) override;
 	void HandlePositionChecks();
 	void DropInventory() override;
 };

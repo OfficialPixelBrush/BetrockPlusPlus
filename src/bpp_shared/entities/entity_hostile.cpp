@@ -13,7 +13,7 @@ std::shared_ptr<Entity> HostileEntity::FindPlayerToAttack() {
 
 	Vec3 eyeFrom = { position.x, position.y + GetEyeHeight(), position.z };
 	Vec3 eyeTo = { candidate->position.x, candidate->position.y + candidate->height * 0.85f, candidate->position.z };
-	if (!world->HasLineOfSight(eyeFrom, eyeTo))
+	if (!HasLineOfSight(eyeFrom, eyeTo))
 		return nullptr;
 
 	return candidate;
@@ -70,7 +70,7 @@ void HostileEntity::Tick() {
 			Vec3 eyeFrom = { position.x, position.y + GetEyeHeight(), position.z };
 			Vec3 eyeTo = { currentTarget->position.x, currentTarget->position.y + currentTarget->height * 0.85f,
 				           currentTarget->position.z };
-			if (world->HasLineOfSight(eyeFrom, eyeTo))
+			if (HasLineOfSight(eyeFrom, eyeTo))
 				TryAttackEntity(*currentTarget, distance);
 			else
 				OnTargetLostSight(*currentTarget, distance);
