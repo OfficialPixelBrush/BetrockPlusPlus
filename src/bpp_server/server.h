@@ -23,6 +23,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "items/tool_properties.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
+#include "online_auth.h"
 #include "packet/handle_packet.h"
 #include "packet/packet_dispatcher.h"
 #include "player_conn/player_session.h"
@@ -53,6 +54,9 @@ private:
 	uint16_t shutdownTimer = 0;
 
 public:
+#ifdef ONLINE_MODE_AUTHENTICATION
+	Authentication auth;
+#endif
 	Runtime gameRuntime;
 	ChunkSender chunkSender;
 	int flushChunkCount = 10;

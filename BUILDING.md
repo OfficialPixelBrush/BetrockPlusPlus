@@ -127,6 +127,12 @@ Simply add `-DREDUCED_GENERATION_PRECISION=ON` to the first build command, then 
 
 The only major difference this option introduces is that the farlands do not generate, and they just become an infinite ocean with a bedrock floor along the X-Axis, and the same but with a grid of blocks along the Z-Axis.
 
+### Optional: Online Mode Authentication
+
+Online Mode Authentication is **on by default**. It allows users to be authenticated via the legacy Minecraft Login protocol. By default this goes through the Betacraft.uk proxy, since the original authentication servers got shut down long ago.
+
+Simply add `-DONLINE_MODE_AUTHENTICATION=OFF` to the first build command, if you'd like to disable it. This removes all auth-related code.
+
 ### Optional: Discord Integration
 
 Discord support is **off by default**. Enabling it pulls in [D++](https://dpp.dev/) (Gateway WebSocket bot) via vcpkg or FetchContent, and requires OpenSSL.

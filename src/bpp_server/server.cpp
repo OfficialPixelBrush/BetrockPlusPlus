@@ -156,13 +156,14 @@ void Server::LoadConfig() {
 		    //{"allow-nether",true},
 		    //{"spawn-monsters","true"},
 		    //{"max-players", "-1"},
-		    //{"online-mode","false"},
+		    { "online-mode", "false" },
 		    //{"allow-flight","false"}
 		});
 		config.SaveToDisk();
 	}
 	//chunkDistance = config.GetAsNumber<int32_t>("view-distance");
 	serverPort = config.GetAsNumber<int32_t>("server-port");
+	auth.onlineMode = config.GetAsBoolean("online-mode");
 	//motd = config.GetAsString("motd");
 	//maximumPlayers = config.GetAsNumber<int32_t>("max-players");
 	//maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
@@ -172,6 +173,12 @@ void Server::LoadConfig() {
 void Server::Startup() {
 	auto startupStart = std::chrono::steady_clock::now();
 	GlobalLogger().info << "Initializing server startup.. \n";
+
+	// Init auth
+#ifdef ONLINE_MODE_AUTHENTICATION
+	if (auth.onlineMode)
+		GlobalLogger().debug << "Starting with auth!\n";
+#endif
 
 	// Setup commands
 	commandManager.Init(this);
