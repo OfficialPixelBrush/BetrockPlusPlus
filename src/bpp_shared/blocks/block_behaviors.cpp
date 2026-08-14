@@ -974,6 +974,7 @@ void RegisterBlockBehaviors() {
 		}
 	};
 	blockBehaviors[BLOCK_LEAVES].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
+		// Leaves drop themselves instead of their random loot table when broken with shears
 		PlayerEntity* pe = dynamic_cast<PlayerEntity*>(&_destroyer);
 		if (!pe)
 			return;
@@ -986,7 +987,11 @@ void RegisterBlockBehaviors() {
 		}
 		GenericBreak(_world, _pos, _destroyer);
 	};
-
+	blockBehaviors[BLOCK_LEAVES].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                                PacketData::FaceDirection _face, BlockType _blockId, uint8_t _meta) -> bool {
+		// So leaves placed by players dont decay
+		return GenericPlace(_world, _pos, _placer, _face, _blockId, 0b1000);
+	};
 	// Leaves and logs flag leaves to check for removal
 	blockBehaviors[BLOCK_LOG].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
 		// Mark a 9x9 area dirty if they are leaves
