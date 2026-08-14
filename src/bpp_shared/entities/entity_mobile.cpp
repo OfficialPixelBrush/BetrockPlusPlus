@@ -151,7 +151,7 @@ bool MobileEntity::FollowPath() {
 			jumping = true;
 	}
 
-	return true;          
+	return true;
 }
 
 void MobileEntity::ResolveEntityCollision(Entity& _other) {

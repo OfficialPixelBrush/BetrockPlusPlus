@@ -17,10 +17,10 @@ std::string Authentication::GenerateAuthHash() {
 	return stream.str();
 }
 
-static size_t WriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata) {
-	auto* out = static_cast<std::string*>(userdata);
-	out->append(ptr, size * nmemb);
-	return size * nmemb;
+static size_t WriteCallback(char* _ptr, size_t _size, size_t _nmemb, void* _userdata) {
+	auto* out = static_cast<std::string*>(_userdata);
+	out->append(_ptr, _size * _nmemb);
+	return _size * _nmemb;
 }
 
 bool Authentication::IsRegisteredUsername(std::string _serverIdHash, std::string _username) {

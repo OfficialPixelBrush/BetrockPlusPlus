@@ -29,16 +29,16 @@ enum class ChunkState : uint8_t {
 };
 
 struct Chunk {
-	static constexpr int M_VOLUME = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH;
-	static constexpr int M_META_VOLUME = M_VOLUME / 2;
+	static constexpr int VOLUME = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH;
+	static constexpr int META_VOLUME = VOLUME / 2;
 
 	Int32_2 cpos;
 	std::atomic_bool inUse{ false };
 
 	// Flat arrays indexed by (y * CHUNK_WIDTH * CHUNK_WIDTH) + (z * CHUNK_WIDTH) + x
-	BlockType blocks[M_VOLUME] = { BLOCK_AIR };
-	uint8_t lightNibble[M_VOLUME] = { 0 };
-	uint8_t nibbleBlockMeta[M_META_VOLUME] = { 0 };
+	BlockType blocks[VOLUME] = { BLOCK_AIR };
+	uint8_t lightNibble[VOLUME] = { 0 };
+	uint8_t nibbleBlockMeta[META_VOLUME] = { 0 };
 
 	std::atomic<ChunkState> state{ ChunkState::Unloaded };
 	uint8_t heightMap[CHUNK_WIDTH * CHUNK_WIDTH] = {};

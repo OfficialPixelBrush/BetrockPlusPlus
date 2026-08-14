@@ -20,8 +20,8 @@ struct PlayerSession;
 
 namespace Blocks {
 
-bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer,
-                         PacketData::FaceDirection _face, BlockType _blockId, uint8_t _meta);
+bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer, PacketData::FaceDirection _face,
+                  BlockType _blockId, uint8_t _meta);
 void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer);
 
 struct BlockBehavior {

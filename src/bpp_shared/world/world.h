@@ -26,6 +26,7 @@
 #include "tile_entities/tile_entity_manager.h"
 #include "world/spawner.h"
 #include "world/storage/region_manager.h"
+#include "world_access.h"
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
@@ -34,7 +35,6 @@
 #include <mutex>
 #include <unordered_map>
 #include <vector>
-#include "world_access.h"
 
 struct PendingBlock {
 	Block block{ BLOCK_AIR, 0 };
@@ -43,7 +43,7 @@ struct PendingBlock {
 };
 
 class WorldManager : public WorldAccess {
-	private:
+private:
 	std::unordered_map<Int32_2, std::vector<std::pair<Int3, Block>>> pendingBleedWrites;
 	std::mutex genDoneMutex;
 	std::deque<std::shared_ptr<Chunk>> genDoneQueue;
@@ -52,7 +52,7 @@ class WorldManager : public WorldAccess {
 	int skylightOffset = 0;
 	static BiomeGenerator biomeGenerator;
 
-	public:
+public:
 	BS::thread_pool<> pool{ 2 };
 	RegionManager* regionManager = nullptr;
 	TickTime elapsedTicks = 0;

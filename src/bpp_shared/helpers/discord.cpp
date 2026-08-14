@@ -157,8 +157,7 @@ void Discord::Shutdown(const std::string& _finalMessage) {
 
 	GlobalLogger().info << "Discord: shutting down...\n";
 
-	const std::string goodbye =
-	    _finalMessage.empty() ? std::string{} : RemoveMinecraftFormatting(_finalMessage);
+	const std::string goodbye = _finalMessage.empty() ? std::string{} : RemoveMinecraftFormatting(_finalMessage);
 
 	// Ownership moves into a worker so a stuck SSL/event-loop join cannot freeze Ctrl+C.
 	// DPP's cluster::shutdown() joins the engine thread; if that thread is blocked inside
@@ -327,9 +326,9 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 							if (player && player->connState == ConnectionState::Playing)
 								++online;
 						}
-						event.edit_original_response(dpp::message(
-						    std::format("{} {} — {} player(s) online, avg tick {:.2f} ms", PROJECT_NAME,
-						                PROJECT_VERSION_FULL_STRING, online, server.averageTickMs)));
+						event.edit_original_response(
+						    dpp::message(std::format("{} {} — {} player(s) online, avg tick {:.2f} ms", PROJECT_NAME,
+						                             PROJECT_VERSION_FULL_STRING, online, server.averageTickMs)));
 					});
 				});
 				return;
@@ -350,8 +349,8 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 							oss << player->username;
 							++online;
 						}
-						const std::string reply =
-						    online == 0 ? "No players online." : std::format("{} player(s): {}", online, oss.str());
+						const std::string reply = online == 0 ? "No players online."
+						                                      : std::format("{} player(s): {}", online, oss.str());
 						event.edit_original_response(dpp::message(reply));
 					});
 				});
@@ -365,8 +364,8 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 
 			if (name == "stop") {
 				if (!MemberHasRole(event.command.member, adminRoleId)) {
-					event.reply(dpp::message("You need the configured admin role to run /stop.")
-					                .set_flags(dpp::m_ephemeral));
+					event.reply(
+					    dpp::message("You need the configured admin role to run /stop.").set_flags(dpp::m_ephemeral));
 					return;
 				}
 
@@ -419,24 +418,22 @@ void Discord::Init(const std::string& _token, const std::string& _channelId, con
 			impl->cluster->get_webhook_with_token(
 			    webhookId, webhookToken, [channelSnowflake](const dpp::confirmation_callback_t& result) {
 				    if (result.is_error()) {
-					    GlobalLogger().error
-					        << "Discord: discord-webhook-url could not be verified ("
-					        << result.get_error().message
-					        << "); it is likely deleted/regenerated. Player chat will fail to relay "
-					           "until it's replaced with a current webhook URL.\n";
+					    GlobalLogger().error << "Discord: discord-webhook-url could not be verified ("
+					                         << result.get_error().message
+					                         << "); it is likely deleted/regenerated. Player chat will fail to relay "
+					                            "until it's replaced with a current webhook URL.\n";
 					    return;
 				    }
 				    const dpp::webhook wh = result.get<dpp::webhook>();
 				    if (wh.channel_id != channelSnowflake) {
-					    GlobalLogger().warn
-					        << "Discord: discord-webhook-url posts to channel " << wh.channel_id
-					        << ", but discord-channel-id is " << channelSnowflake
-					        << ". Player chat will relay to a different channel than /status, "
-					           "/list, and join/leave messages; create the webhook on the same "
-					           "channel or update discord-channel-id.\n";
+					    GlobalLogger().warn << "Discord: discord-webhook-url posts to channel " << wh.channel_id
+					                        << ", but discord-channel-id is " << channelSnowflake
+					                        << ". Player chat will relay to a different channel than /status, "
+					                           "/list, and join/leave messages; create the webhook on the same "
+					                           "channel or update discord-channel-id.\n";
 				    } else {
-					    GlobalLogger().info << "Discord: webhook verified, chat will relay to channel "
-					                        << wh.channel_id << "\n";
+					    GlobalLogger().info << "Discord: webhook verified, chat will relay to channel " << wh.channel_id
+					                        << "\n";
 				    }
 			    });
 		}
@@ -563,19 +560,18 @@ void Discord::SendPlayerChatMessage(const std::string& _username, const std::str
 		wh.name = SanitizeWebhookUsername(_username);
 		wh.avatar_url = BuildSkinAvatarUrl(_username, 128);
 		cluster->execute_webhook(wh, dpp::message(content), false, 0, "",
-		                          [](const dpp::confirmation_callback_t& result) {
-			                          if (result.is_error()) {
-				                          GlobalLogger().error << "Discord: failed to relay chat via webhook: "
+		                         [](const dpp::confirmation_callback_t& result) {
+			                         if (result.is_error()) {
+				                         GlobalLogger().error << "Discord: failed to relay chat via webhook: "
 				                                              << result.get_error().message << "\n";
-			                          }
-		                          });
+			                         }
+		                         });
 		return;
 	}
 
 	// No webhook configured (or it failed to parse at startup): fall back to a plain
 	// message under the bot's own identity, same as before this feature existed.
-	dpp::message msg(dpp::snowflake{ channelId },
-	                  std::format("[{}] {}", RemoveMinecraftFormatting(_username), content));
+	dpp::message msg(dpp::snowflake{ channelId }, std::format("[{}] {}", RemoveMinecraftFormatting(_username), content));
 	cluster->message_create(msg, [](const dpp::confirmation_callback_t& result) {
 		if (result.is_error()) {
 			GlobalLogger().warn << "Discord: failed to send chat message: " << result.get_error().message << "\n";
@@ -584,17 +580,17 @@ void Discord::SendPlayerChatMessage(const std::string& _username, const std::str
 }
 
 constexpr uint32_t Discord::GetColorCode(const EmbedColor _color) const {
-	switch(_color) {
-		case EmbedColor::Red:
-			return 0xFF5555;
-		case EmbedColor::Yellow:
-			return 0xFFFF55;
-		case EmbedColor::Green:
-			return 0x55FF55;
-		case EmbedColor::Blue:
-			return 0x5555FF;
-		default:
-			return 0x555555;
+	switch (_color) {
+	case EmbedColor::Red:
+		return 0xFF5555;
+	case EmbedColor::Yellow:
+		return 0xFFFF55;
+	case EmbedColor::Green:
+		return 0x55FF55;
+	case EmbedColor::Blue:
+		return 0x5555FF;
+	default:
+		return 0x555555;
 	}
 }
 
@@ -610,14 +606,12 @@ void Discord::SendServerNotice(const std::string& _message, const EmbedColor _co
 	}
 
 	dpp::embed embed;
-	embed.set_color(GetColorCode(_color))
-	    .set_description(_message);
+	embed.set_color(GetColorCode(_color)).set_description(_message);
 
 	dpp::message msg(dpp::snowflake{ channelId }, embed);
 	cluster->message_create(msg, [](const dpp::confirmation_callback_t& result) {
 		if (result.is_error()) {
-			GlobalLogger().warn << "Discord: failed to send notice embed: " << result.get_error().message
-			                    << "\n";
+			GlobalLogger().warn << "Discord: failed to send notice embed: " << result.get_error().message << "\n";
 		}
 	});
 }
@@ -640,13 +634,12 @@ void Discord::SendPlayerEventEmbed(const std::string& _username, bool _joined) {
 	embed.set_color(_joined ? 0x55FF55 : 0xFF5555)
 	    .set_author(username, "", avatarUrl)
 	    .set_description(std::format("**{}** {} the game", username, _joined ? "joined" : "left"));
-	    //.set_thumbnail(avatarUrl);
+	//.set_thumbnail(avatarUrl);
 
 	dpp::message msg(dpp::snowflake{ channelId }, embed);
 	cluster->message_create(msg, [](const dpp::confirmation_callback_t& result) {
 		if (result.is_error()) {
-			GlobalLogger().warn << "Discord: failed to send join/leave embed: " << result.get_error().message
-			                    << "\n";
+			GlobalLogger().warn << "Discord: failed to send join/leave embed: " << result.get_error().message << "\n";
 		}
 	});
 }
@@ -722,7 +715,9 @@ std::vector<std::string> Discord::FormatDiscordChatLines(const std::string& _aut
 	std::string author = RemoveMinecraftFormatting(_author);
 	std::string content = RemoveMinecraftFormatting(_content);
 
-	auto makePrefix = [](const std::string& name) { return "§9[" + name + "] §f"; };
+	auto makePrefix = [](const std::string& name) {
+		return "§9[" + name + "] §f";
+	};
 
 	std::string prefix = makePrefix(author);
 	if (prefix.size() >= MAX_LINE) {

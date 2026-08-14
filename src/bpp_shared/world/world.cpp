@@ -14,9 +14,9 @@
 #include "generator/nether/chunk_gen.h"
 #include "generator/overworld/chunk_gen.h"
 #include "generator/shared/cave_gen.h"
+#include "world_wrapper.h"
 #include <limits>
 #include <unordered_set>
-#include "world_wrapper.h"
 
 BiomeGenerator WorldManager::biomeGenerator;
 
@@ -312,7 +312,7 @@ void WorldManager::PerformRandomTicks(const std::vector<ClientPosition>& _player
 			int posZ = randomBlockPos >> 8 & 15;
 			int posY = randomBlockPos >> 16 & 127;
 			auto block = it.second->GetBlock({ posX, posY, posZ });
-			auto meta = it.second->GetMeta({ posX, posY, posZ });  
+			auto meta = it.second->GetMeta({ posX, posY, posZ });
 			if (Blocks::blockProperties[block].ticksOnLoad) {
 				if (auto func = Blocks::blockBehaviors[block].onTick) {
 					Int3 worldPos = { chunkOrigin.x + posX, posY, chunkOrigin.z + posZ };
@@ -1167,7 +1167,6 @@ void WorldManager::RegisterChunkTileEntities(Chunk* _chunk) {
 	}
 }
 
-
 TileEntity* WorldManager::GetTileEntity(Int3 _pos) {
 	Chunk* chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
 	if (!chunk)
@@ -1185,11 +1184,11 @@ void WorldManager::RemoveTileEntity(Int3 _pos) {
 		return;
 	auto& tes = chunk->tileEntities;
 	tes.erase(std::remove_if(tes.begin(), tes.end(),
-								[&](const std::shared_ptr<TileEntity>& _te) {
-									return _te && _te->position.x == _pos.x && _te->position.y == _pos.y &&
-										_te->position.z == _pos.z;
-								}),
-				tes.end());
+	                         [&](const std::shared_ptr<TileEntity>& _te) {
+		                         return _te && _te->position.x == _pos.x && _te->position.y == _pos.y &&
+		                                _te->position.z == _pos.z;
+	                         }),
+	          tes.end());
 }
 
 BlockType WorldManager::GetBlockId(Int3 _wpos) {
