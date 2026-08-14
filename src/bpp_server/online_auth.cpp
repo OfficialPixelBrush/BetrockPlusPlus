@@ -23,11 +23,11 @@ static size_t WriteCallback(char* _ptr, size_t _size, size_t _nmemb, void* _user
 	return _size * _nmemb;
 }
 
-bool Authentication::IsRegisteredUsername(std::string _serverIdHash, std::string _username) {
+bool Authentication::IsRegisteredUsername(std::string _serverId, std::string _username) {
 	if (!onlineMode)
 		return true;
 	CURL* curl = curl_easy_init();
-	std::string url = std::format("{}/checkserver.jsp?user={}&serverId={}", baseUrl, _username, _serverIdHash);
+	std::string url = std::format("{}/checkserver.jsp?user={}&serverId={}", baseUrl, _username, _serverId);
 	std::string response;
 
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
