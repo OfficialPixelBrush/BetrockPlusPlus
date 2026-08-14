@@ -22,6 +22,6 @@ struct Authentication {
 	uint16_t proxyPort = 11705;
 	const std::string baseUrl = "http://www.minecraft.net/game";
 	std::string GenerateAuthHash();
-	bool IsRegisteredUsername(std::string _serverIdHash, std::string _username);
+	bool IsRegisteredUsername(std::string _serverId, std::string _username);
 };
 #endif

@@ -9,7 +9,7 @@
 class Server;
 // For managing the player's connection state
 struct PlayerConnStateManager {
-	std::string serverIdHash = "";
+	std::string serverId = "";
 	bool IsValidUsername(const std::string& username);
 	void HandleConnectionState(PlayerSession& _session, Server& _server);
 	void HandleHandshake(PlayerSession& _session, Server& _server);

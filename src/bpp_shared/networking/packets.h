@@ -78,16 +78,16 @@ public:
 	struct PreLogin : BasePacket {
 		PreLogin() : BasePacket{ PacketId::PreLogin } {}
 		std::string username;
-		std::string& connectionHash = username;
-		std::string& usernameConnectionHash = username;
+		std::string& serverId = username;
+		std::string& usernameServerId = username;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.WriteString16(usernameConnectionHash);
+			_stream.WriteString16(usernameServerId);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			usernameConnectionHash = _stream.ReadString16();
+			usernameServerId = _stream.ReadString16();
 		}
 	};
 
