@@ -7,7 +7,8 @@
 #include "entity_sheep.h"
 
 void SheepEntity::OnDeath() {
-	DropItemAtEntity(BLOCK_WOOL, 1, this->color);
+	if (!isSheared)
+		DropItemAtEntity(BLOCK_WOOL, 1, this->color);
 }
 
 void SheepEntity::EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {
