@@ -18,6 +18,12 @@
 #include "packet_data.h"
 #include <vector>
 
+struct EntityFlags {
+    bool isBurning = false;
+    bool isSneaking = false;
+    bool isRiding = false;
+};
+
 // Constants pulled from the betaWiki!
 // https://pixelbrush.dev/beta-wiki/entities/movement
 // I <3 BETA WIKI!
@@ -123,7 +129,7 @@ struct Entity {
 
 	// Inputs
 	Float2 input;
-	bool sneaking = false;
+	//bool sneaking = false;
 	bool jumping = false;
 
 	// Fire
@@ -145,16 +151,19 @@ struct Entity {
 	int maxAir = 300;
 	int air = 300;
 
+	// TODO: This may be stupid
+	EntityFlags flags;
+
 	Entity() {
 		RebuildCollider();
 	}
 	virtual ~Entity() = default;
 
 	// Encode Entity info into relevant Metadata
-	virtual void EncodeMetadata([[maybe_unused]] const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {}
+	virtual void EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata);
 
 	// Apply Metadata to Entity
-	virtual void DecodeMetadata([[maybe_unused]] const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {}
+	virtual bool DecodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata);
 
 	virtual void Tick();
 
@@ -219,4 +228,15 @@ struct Entity {
 	virtual std::optional<Tag> SerializeToNbt();
 	virtual void LoadFromNbt(Tag& _nbt);
 	virtual void DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data = 0, int _pickupTime = 10);
+	protected:
+	template <typename T>
+	inline const T* FindMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata, PacketData::EntityMetadata::Type _desiredType, uint8_t _desiredIndex) {
+		for (auto& m : _metadata) {
+			if (m.type != _desiredType || m.index != _desiredIndex)
+				continue;
+			// Ew, gross, a pointer!
+			return &std::get<T>(m.value);
+		}
+		return nullptr;
+	}
 };

@@ -409,7 +409,7 @@ void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _
 
 void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
                       PacketData::FaceDirection _face) {
-	if (_user.sneaking) {
+	if (_user.flags.isSneaking) {
 		TestSetGoal(_world, _stack, _pos, _face);
 		return;
 	}
@@ -424,11 +424,11 @@ void UseShears(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
 	if (!se)
 		return;
 	// Already sheared, can't shear again!
-	if (se->sheared)
+	if (se->isSheared)
 		return;
 	// TODO: Needs Random amount!
 	se->DropItemAtEntity(BLOCK_WOOL, 2, se->color);
-	se->sheared = true;
+	se->isSheared = true;
 
 	HarmTool(_stack, 1);
 }

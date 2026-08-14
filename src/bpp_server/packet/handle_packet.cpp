@@ -441,10 +441,10 @@ void PlayerAction([[maybe_unused]] Packet::PlayerAction& _pkt, [[maybe_unused]] 
 		return;
 	switch (_pkt.action) {
 	case PacketData::PlayerAction::START_SNEAKING:
-		entity->sneaking = true;
+		entity->flags.isSneaking = true;
 		break;
 	case PacketData::PlayerAction::STOP_SNEAKING:
-		entity->sneaking = false;
+		entity->flags.isSneaking = false;
 		break;
 	default:
 		break;
