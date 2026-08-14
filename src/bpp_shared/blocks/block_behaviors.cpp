@@ -234,8 +234,8 @@ void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer) {
 	BreakAndDropBlock(_world, _pos);
 }
 
-bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer,
-                         PacketData::FaceDirection _face, BlockType _blockId, uint8_t _meta) {
+bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer, PacketData::FaceDirection _face,
+                  BlockType _blockId, uint8_t _meta) {
 	BlockType existing = _world.GetBlockId(_pos);
 	Int3 sourceBlock = Blocks::GetSourceBlockFromFace(_pos, _face);
 
@@ -582,9 +582,9 @@ void RegisterBlockBehaviors() {
 		int meta[] = { 2, 5, 3, 4 };
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
 	};
-	
+
 	auto onPumpkinPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
-	                                  BlockType _blockId, uint8_t _meta) -> bool {
+	                         BlockType _blockId, uint8_t _meta) -> bool {
 		int meta[] = { 2, 3, 0, 1 };
 		auto belowBlockMaterial = _world.GetMaterial({ _pos.x, _pos.y - 1, _pos.z });
 		if (!belowBlockMaterial.isOpaque)
@@ -607,15 +607,15 @@ void RegisterBlockBehaviors() {
 	};
 
 	auto onMushroomPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
-	                       BlockType _blockId, uint8_t _meta) -> bool {
+	                          BlockType _blockId, uint8_t _meta) -> bool {
 		if (CanMushroomSurviveAt(_world, _pos)) {
 			return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
 		}
 		return false;
 	};
-	
+
 	auto onCactusPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
-	                          BlockType _blockId, uint8_t _meta) -> bool {
+	                        BlockType _blockId, uint8_t _meta) -> bool {
 		if (CanCactusSurviveAt(_world, _pos)) {
 			return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
 		}
@@ -652,12 +652,12 @@ void RegisterBlockBehaviors() {
 		blockBehaviors[BLOCK_SAPLING].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
 	blockBehaviors[BLOCK_DANDELION].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                        Java::Random& _random) -> void {
+	                                            Java::Random& _random) -> void {
 		if (!CanGenericPlantSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_ROSE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                            Java::Random& _random) -> void {
+	                                       Java::Random& _random) -> void {
 		if (!CanGenericPlantSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
@@ -667,12 +667,12 @@ void RegisterBlockBehaviors() {
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_SAPLING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                            Java::Random& _random) -> void {
+	                                          Java::Random& _random) -> void {
 		if (!CanGenericPlantSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_MUSHROOM_BROWN].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                            Java::Random& _random) -> void {
+	                                                 Java::Random& _random) -> void {
 		if (!CanMushroomSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
@@ -682,19 +682,20 @@ void RegisterBlockBehaviors() {
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_CACTUS].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                               Java::Random& _random) -> void {
+	                                         Java::Random& _random) -> void {
 		if (!CanCactusSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
 
 	// Slabs
 	blockBehaviors[BLOCK_SLAB].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                PacketData::FaceDirection _face, BlockType _blockId,
-	                                                uint8_t _meta) -> bool {
+	                                              PacketData::FaceDirection _face, BlockType _blockId,
+	                                              uint8_t _meta) -> bool {
 		auto sourcePos = GetSourceBlockFromFace(_pos, _face);
 		auto sourceBlock = _world.GetBlockId(sourcePos);
 		auto sourceMeta = _world.GetMetadata(sourcePos);
-		if (sourceBlock == BLOCK_SLAB && sourceMeta == _meta) {
+		if (sourceBlock == BLOCK_SLAB && _face == PacketData::FaceDirection::Y_PLUS && sourceMeta == _meta) {
+			_world.SetBlock(sourcePos, BLOCK_AIR);
 			return GenericPlace(_world, sourcePos, _placer, _face, BLOCK_DOUBLE_SLAB, _meta);
 		}
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
@@ -708,6 +709,20 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_DISPENSER].onBlockPlaced = onFurnaceDispenserPlace;
 	blockBehaviors[BLOCK_STAIRS_COBBLESTONE].onBlockPlaced = onStairPlace;
 	blockBehaviors[BLOCK_STAIRS_WOOD].onBlockPlaced = onStairPlace;
+	blockBehaviors[BLOCK_LADDER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+		blockBehaviors[BLOCK_LADDER].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+	};
+	blockBehaviors[BLOCK_LADDER].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                         Java::Random& _random) -> void {
+		// Check to make sure we can till exist here
+		auto hasSupport = [&](PacketData::FaceDirection _dir) {
+			Int3 support = GetAdjacentBlockPos(_pos, PacketData::OppositeFace(_dir));
+			return _world.IsBlockNormalCube(support);
+		};
+
+		if (!hasSupport(PacketData::FaceDirection(_meta)))
+			BreakAndDropBlock(_world, _pos);
+	};
 	blockBehaviors[BLOCK_LADDER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                                PacketData::FaceDirection _face, BlockType _blockId,
 	                                                uint8_t _meta) -> bool {
@@ -876,7 +891,7 @@ void RegisterBlockBehaviors() {
 
 	// Grass spread / decay
 	blockBehaviors[BLOCK_GRASS].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                         Java::Random& _random) -> void {
+	                                        Java::Random& _random) -> void {
 		Int3 aboveBlockPos = { _pos.x, _pos.y + 1, _pos.z };
 		auto lightLevel = _world.GetBlockLightValue(aboveBlockPos);
 		auto block = _world.GetBlockId(aboveBlockPos);
@@ -894,9 +909,8 @@ void RegisterBlockBehaviors() {
 			int dz = _pos.z + _random.NextInt(3) - 1;
 			Int3 abovePos = { dx, dy + 1, dz };
 			auto aboveBlock = _world.GetBlockId(abovePos);
-			if (_world.GetBlockId({ dx, dy, dz }) == BLOCK_DIRT 
-				&& _world.GetBlockLightValue(abovePos) >= 4 
-				&& blockProperties[aboveBlock].lightOpacity <= 2){
+			if (_world.GetBlockId({ dx, dy, dz }) == BLOCK_DIRT && _world.GetBlockLightValue(abovePos) >= 4 &&
+			    blockProperties[aboveBlock].lightOpacity <= 2) {
 				_world.SetBlock({ dx, dy, dz }, BLOCK_GRASS);
 			}
 		}
@@ -1207,6 +1221,7 @@ void RegisterBlockBehaviors() {
 			} else if (candidateLevel != _meta) {
 				_world.SetMeta(_pos, candidateLevel);
 				level = candidateLevel;
+				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == -1 ? 10 : 30);
 			} else if (heldByHesitation) {
 				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == -1 ? 10 : 30);
 			} else {
@@ -1347,6 +1362,7 @@ void RegisterBlockBehaviors() {
 			} else if (candidateLevel != _meta) {
 				_world.SetMeta(_pos, candidateLevel);
 				level = candidateLevel;
+				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_WATER_FLOWING, 5);
 			} else {
 				_world.SetBlockRaw(_pos, BLOCK_WATER_STILL, _meta);
 			}
