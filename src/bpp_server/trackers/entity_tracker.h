@@ -96,6 +96,8 @@ struct EntityTracker {
 	TrackedEntry* GetTrackerForEntityId(EntityId _id);
 	void Update(TrackedEntry& _trackedEntry);
 	void UpdateDamageState(TrackedEntry& _trackedEntry);
+	void UpdateMetadataState(TrackedEntry& _trackedEntry);
+	void SendMetadataState(TrackedEntry& _trackedEntry, std::shared_ptr<PlayerSession> _targetSession);
 	void UpdateEquipmentState(TrackedEntry& _trackedEntry);
 	void SendEquipmentState(TrackedEntry& _trackedEntry, std::shared_ptr<PlayerSession> _targetSession);
 

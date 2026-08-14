@@ -232,6 +232,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.username = username;
 		pkt.Serialize(pSession->stream);
 		SendEquipmentState(_entityEntry, pSession);
+		SendMetadataState(_entityEntry, pSession);
 		break;
 	}
 	case EntityType::CREEPER: {
@@ -241,7 +242,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
 			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
-		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		_entityEntry.entity->EncodeMetadata(pkt.metadata);
 		pkt.Serialize(pSession->stream);
 		break;
 	}
@@ -252,7 +253,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
 			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
-		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		_entityEntry.entity->EncodeMetadata(pkt.metadata);
 		pkt.Serialize(pSession->stream);
 		break;
 	}
@@ -263,7 +264,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
 			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
-		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		_entityEntry.entity->EncodeMetadata(pkt.metadata);
 		pkt.Serialize(pSession->stream);
 		break;
 	}
@@ -274,7 +275,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
 			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
-		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		_entityEntry.entity->EncodeMetadata(pkt.metadata);
 		pkt.Serialize(pSession->stream);
 		break;
 	}
@@ -285,7 +286,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
 			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
-		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		_entityEntry.entity->EncodeMetadata(pkt.metadata);
 		pkt.Serialize(pSession->stream);
 		break;
 	}
@@ -296,7 +297,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
 			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
-		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		_entityEntry.entity->EncodeMetadata(pkt.metadata);
 		pkt.Serialize(pSession->stream);
 		break;
 	}
@@ -307,7 +308,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
 			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
-		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		_entityEntry.entity->EncodeMetadata(pkt.metadata);
 		pkt.Serialize(pSession->stream);
 		break;
 	}
@@ -318,7 +319,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
 			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
-		pkt.metadata.push_back(PacketData::EntityMetadata::DataEntry{ PacketData::EntityMetadata::BYTE, 0, int8_t(0) });
+		_entityEntry.entity->EncodeMetadata(pkt.metadata);
 		pkt.Serialize(pSession->stream);
 		break;
 	}
@@ -398,6 +399,20 @@ void EntityTracker::SendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id) 
 			continue;
 		_pkt.Serialize(session->stream);
 	}
+}
+
+void EntityTracker::SendMetadataState(TrackedEntry& _trackedEntry, std::shared_ptr<PlayerSession> _targetSession) {
+	Packet::EntityMetadata pkt;
+	pkt.entityId = _trackedEntry.entity->id;
+	_trackedEntry.entity->EncodeMetadata(pkt.metadata);
+		pkt.Serialize(_targetSession->stream);
+}
+
+void EntityTracker::UpdateMetadataState(TrackedEntry& _trackedEntry) {
+	Packet::EntityMetadata pkt;
+	pkt.entityId = _trackedEntry.entity->id;
+	_trackedEntry.entity->EncodeMetadata(pkt.metadata);
+	SendPacketToViewers(pkt, _trackedEntry.entity->id);
 }
 
 // Used when we first spawn an entity for a specific player
@@ -506,10 +521,12 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 	auto& entity = _trackedEntry.entity;
 
 	// If we are a mobile entity then send the damage state and update our equipment
+	// TODO: Only send these if any of them have been updated
 	if (std::find(this->mobileEntities.begin(), this->mobileEntities.end(), entity->type) !=
 	    this->mobileEntities.end()) {
 		UpdateDamageState(_trackedEntry);
 		UpdateEquipmentState(_trackedEntry);
+		//UpdateMetadataState(_trackedEntry);
 	}
 
 	// Dirty flag gets checked every Tick

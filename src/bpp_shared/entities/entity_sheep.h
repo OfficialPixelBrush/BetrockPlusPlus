@@ -9,7 +9,7 @@
 
 struct SheepEntity : public AnimalEntity {
 	int8_t color = 0;
-	bool sheared = false;
+	bool isSheared = false;
 
 	SheepEntity() : AnimalEntity() {
 		type = EntityType::SHEEP;
@@ -19,4 +19,6 @@ struct SheepEntity : public AnimalEntity {
 	}
 	~SheepEntity() = default;
 	void OnDeath() override;
+	void EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;
+	bool DecodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;
 };

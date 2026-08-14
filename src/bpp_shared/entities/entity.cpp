@@ -8,6 +8,7 @@
 #include "entity_item.h"
 #include "entity_manager.h"
 #include "entity_player.h"
+#include "packet_data.h"
 #include "world/world.h"
 #include <algorithm>
 #include <cmath>
@@ -188,7 +189,7 @@ void Entity::Move(Vec3& _velocity) {
 
 	Vec3 original = _velocity;
 	AABB originalCollider = collider;
-	bool clampSneak = onGround && sneaking;
+	bool clampSneak = onGround && flags.isSneaking;
 
 	if (clampSneak) {
 		const double step = 0.05;
@@ -462,4 +463,26 @@ std::optional<Tag> Entity::SerializeToNbt() {
 	rootTag.compound["id"] = idTag;
 
 	return rootTag;
+}
+
+void Entity::EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {
+	_metadata.push_back({
+		.type = PacketData::EntityMetadata::BYTE,
+		.index = 0,
+		.value = int8_t(int8_t(flags.isBurning) | int8_t(flags.isSneaking) << 1 | int8_t(flags.isRiding) << 2)
+	});
+}
+
+bool Entity::DecodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {
+	// No metadata, give up
+	if (_metadata.empty())
+		return false;
+	// TODO: Simplify this
+	if (auto* raw = FindMetadata<int8_t>(_metadata, PacketData::EntityMetadata::BYTE, 0)) {
+		flags.isBurning		= (*raw & 0x1) != 0;
+		flags.isSneaking	= (*raw & 0x2) != 0;
+		flags.isRiding		= (*raw & 0x4) != 0;
+		return true;
+	}
+	return false;
 }

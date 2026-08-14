@@ -230,7 +230,7 @@ void MobileEntity::TickPhysics() {
 			fallDistance = 0.0f;
 
 			// If sneaking we dont descend
-			if (sneaking && velocity.y < 0.0)
+			if (flags.isSneaking && velocity.y < 0.0)
 				velocity.y = 0.0;
 		}
 
