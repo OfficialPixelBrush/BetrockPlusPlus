@@ -111,6 +111,7 @@ void RecipeManager::AddVanillaRecipes() {
 	AddShapedRecipe({ "S", "P" }, { { 'S', { Items::Id::SLIME } }, { 'P', { BLOCK_PISTON } } },
 	                { BLOCK_PISTON_STICKY, 1 });
 	AddShapedRecipe({ "###", "XXX" }, { { '#', { BLOCK_WOOL } }, { 'X', { BLOCK_PLANKS } } }, { Items::Id::BED, 1 });
+	AddShapedRecipe({ "###", "###" }, { { '#', { BLOCK_PLANKS } } }, { BLOCK_TRAPDOOR, 2 });
 
 	// Armor
 	auto addArmor = [this](ItemId _material, ItemId _helmetId, ItemId _chestId, ItemId _leggingsId,

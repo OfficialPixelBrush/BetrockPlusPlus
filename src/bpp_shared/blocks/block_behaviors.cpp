@@ -272,6 +272,12 @@ bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _pla
 	return true;
 }
 
+static void ToggleTrapdoor(WorldManager& _world, Int3 _pos) {
+	auto meta = _world.GetMetadata(_pos);
+	_world.SetMeta(_pos, uint8_t(meta ^ 0b100)); // XOR bit 2; flips open/closed
+	return;
+}
+
 static void ToggleDoor(WorldManager& _world, Int3 _pos) {
 	auto meta = _world.GetMetadata(_pos);
 	if (meta & 8) {
@@ -286,9 +292,9 @@ static void ToggleDoor(WorldManager& _world, Int3 _pos) {
 	// We are the top half so lets open
 	Int3 top = { _pos.x, _pos.y + 1, _pos.z };
 	if (_world.GetBlockId(top) == BLOCK_DOOR_WOOD && (_world.GetMetadata(top) & 8)) {
-		_world.SetMeta(top, uint8_t((meta ^ 4) + 8));
+		_world.SetMeta(top, uint8_t((meta ^ 0b100) + 8));
 	}
-	_world.SetMeta(_pos, uint8_t(meta ^ 4)); // XOR bit 2; flips open/closed
+	_world.SetMeta(_pos, uint8_t(meta ^ 0b100)); // XOR bit 2; flips open/closed
 	return;
 }
 
@@ -467,6 +473,44 @@ void RegisterBlockBehaviors() {
 		.getSelectionBox = TrapdoorAabb,
 		.getRayBounds = TrapdoorAabb,
 		.getCollider = TrapdoorCollider,
+		.onBlockActivated = [](WorldManager& _world, Int3 _pos) -> bool {
+			ToggleTrapdoor(_world, _pos);
+			return false;
+		},
+		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+							BlockType _blockId, uint8_t _meta) -> bool {
+			// Doors can only be placed against the sides of blocks
+			if (_face == PacketData::FaceDirection::Y_PLUS || _face == PacketData::FaceDirection::Y_MINUS)
+				return false;
+
+			auto isReplaceable = [&](Int3 _p) {
+				BlockType existing = _world.GetBlockId(_p);
+				return existing == BLOCK_AIR || existing == BLOCK_WATER_FLOWING || existing == BLOCK_WATER_STILL ||
+					existing == BLOCK_LAVA_FLOWING || existing == BLOCK_LAVA_STILL || existing == BLOCK_FIRE ||
+					existing == BLOCK_SNOW_LAYER;
+			};
+			if (!isReplaceable(_pos))
+				return false;
+
+			int facing = 0;
+			switch(_face) {
+				case PacketData::Z_MINUS:
+					facing = 0; break;
+				case PacketData::Z_PLUS:
+					facing = 1; break;
+				case PacketData::X_MINUS:
+					facing = 2; break;
+				case PacketData::X_PLUS:
+					facing = 3; break;
+				default:
+					facing = 0; break;
+		    }
+
+		    _world.SetBlock(_pos, _blockId, uint8_t(facing));
+
+			// heldItem->DecrementCount(1) is handled by the caller when this returns true.
+			return true;
+		}
 	};
 
 	blockBehaviors[BlockType::BLOCK_BED] = {
