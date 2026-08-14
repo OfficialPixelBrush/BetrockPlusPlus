@@ -7,6 +7,7 @@
 
 #include "blocks/block_behaviors.h"
 #include "blocks.h"
+#include "entities/entity_player.h"
 #include "blocks/block_properties.h"
 #include "entities/entity_falling_block.h"
 #include "enums/items.h"
@@ -972,6 +973,20 @@ void RegisterBlockBehaviors() {
 			_world.SetMeta(_pos, _meta & ~8);
 		}
 	};
+	blockBehaviors[BLOCK_LEAVES].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
+		PlayerEntity* pe = dynamic_cast<PlayerEntity*>(&_destroyer);
+		if (!pe)
+			return;
+
+		auto heldItem = pe->GetHeldItem();
+		if (heldItem && heldItem->id == Items::Id::SHEARS) {
+			auto thisMeta = _world.GetMetadata(_pos);
+			DropBlockAt(_world, _pos, BLOCK_LEAVES, /*count=*/1, thisMeta);
+			return;
+		}
+		GenericBreak(_world, _pos, _destroyer);
+	};
+
 	// Leaves and logs flag leaves to check for removal
 	blockBehaviors[BLOCK_LOG].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
 		// Mark a 9x9 area dirty if they are leaves
