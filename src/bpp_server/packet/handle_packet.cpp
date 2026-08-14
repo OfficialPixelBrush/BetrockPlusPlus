@@ -357,12 +357,14 @@ void CloseContainer(Packet::CloseContainer& _pkt, PlayerSession& _session) {
 		// Drop the crafting grid items on inventory close
 		for (size_t i = 1; i <= 4; i++) {
 			ItemStack& stack = _session.inventory.slots[i];
-			_session.entity->DropItem(_session.inventory.slots[i]);
+			_session.entity->DropItem(stack);
 			stack = ItemStack{};
 		}
 		// Drop the cursor
-		if (_session.inventoryInteraction.carried.id != Items::INVALID)
+		if (_session.inventoryInteraction.carried.id != Items::INVALID) {
 			_session.entity->DropItem(_session.inventoryInteraction.carried);
+			_session.inventoryInteraction.carried = ItemStack{};
+		}
 	}
 
 	// Trigger the close interaction
@@ -395,7 +397,7 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 		return;
 
 	ItemStack* heldItem = _session.inventory.GetHeldItem();
-	if (!heldItem) {
+	if (!heldItem && _pkt.attack) {
 		ItemStack emptyStack{};
 		Items::AttackWithItem(*entity, *sourceEntity, &emptyStack);
 		return;
