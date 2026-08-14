@@ -153,6 +153,7 @@ struct Entity {
 
 	// TODO: This may be stupid
 	EntityFlags flags;
+	bool wasMetadataUpdated = false;
 
 	Entity() {
 		RebuildCollider();
@@ -228,6 +229,13 @@ struct Entity {
 	virtual std::optional<Tag> SerializeToNbt();
 	virtual void LoadFromNbt(Tag& _nbt);
 	virtual void DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data = 0, int _pickupTime = 10);
+	template <typename T>
+	void UpdateMetadata(T& _flag, T _value) {
+		if (_flag != _value) {
+			_flag = _value;
+			wasMetadataUpdated = true;
+		}
+	}
 	protected:
 	template <typename T>
 	inline const T* FindMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata, PacketData::EntityMetadata::Type _desiredType, uint8_t _desiredIndex) {

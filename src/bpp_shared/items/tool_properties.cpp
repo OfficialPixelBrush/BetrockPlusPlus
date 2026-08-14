@@ -428,7 +428,7 @@ void UseShears(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
 		return;
 	// TODO: Needs Random amount!
 	se->DropItemAtEntity(BLOCK_WOOL, 2, se->color);
-	se->isSheared = true;
+	se->UpdateMetadata(se->isSheared,true);
 
 	HarmTool(_stack, 1);
 }

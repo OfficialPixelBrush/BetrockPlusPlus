@@ -409,10 +409,13 @@ void EntityTracker::SendMetadataState(TrackedEntry& _trackedEntry, std::shared_p
 }
 
 void EntityTracker::UpdateMetadataState(TrackedEntry& _trackedEntry) {
+	if (!_trackedEntry.entity->wasMetadataUpdated)
+		return;
 	Packet::EntityMetadata pkt;
 	pkt.entityId = _trackedEntry.entity->id;
 	_trackedEntry.entity->EncodeMetadata(pkt.metadata);
 	SendPacketToViewers(pkt, _trackedEntry.entity->id);
+	_trackedEntry.entity->wasMetadataUpdated = false;
 }
 
 // Used when we first spawn an entity for a specific player
@@ -458,21 +461,21 @@ void EntityTracker::UpdateEquipmentState(TrackedEntry& _trackedEntry) {
 	auto chest = entity.armor[1] ? entity.armor[1] : &none;
 	auto leg = entity.armor[2] ? entity.armor[2] : &none;
 	auto boot = entity.armor[3] ? entity.armor[3] : &none;
-	if (equipment.helmet.id != helmet->id) {
+	if (equipment.helmet != helmet->id) {
 		updateEquipmentSlot(4, helmet);
-		equipment.helmet = *helmet;
+		equipment.helmet = helmet->id;
 	}
-	if (equipment.chestplate.id != chest->id) {
+	if (equipment.chestplate != chest->id) {
 		updateEquipmentSlot(3, chest);
-		equipment.chestplate = *chest;
+		equipment.chestplate = chest->id;
 	}
-	if (equipment.legging.id != leg->id) {
+	if (equipment.legging != leg->id) {
 		updateEquipmentSlot(2, leg);
-		equipment.legging = *leg;
+		equipment.legging = leg->id;
 	}
-	if (equipment.boot.id != boot->id) {
+	if (equipment.boot != boot->id) {
 		updateEquipmentSlot(1, boot);
-		equipment.boot = *boot;
+		equipment.boot = boot->id;
 	}
 	if (equipment.heldItem != entity.heldItem) {
 		updateEquipmentSlot(0, &entity.heldItem);
@@ -526,7 +529,7 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 	    this->mobileEntities.end()) {
 		UpdateDamageState(_trackedEntry);
 		UpdateEquipmentState(_trackedEntry);
-		//UpdateMetadataState(_trackedEntry);
+		UpdateMetadataState(_trackedEntry);
 	}
 
 	// Dirty flag gets checked every Tick
