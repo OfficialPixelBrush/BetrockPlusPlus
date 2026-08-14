@@ -244,6 +244,7 @@ if(BUILD_SERVER)
     target_compile_definitions(BetrockPlusPlus PRIVATE
         BUILD_SERVER
         NOMINMAX
+        WIN32_LEAN_AND_MEAN
     )
     target_sources(BetrockPlusPlus PRIVATE
         ${SERVER_SOURCES}
@@ -289,6 +290,7 @@ else()
     target_compile_definitions(BetrockPlusPlus PRIVATE
         BUILD_CLIENT
         NOMINMAX
+        WIN32_LEAN_AND_MEAN
         GLFW_INCLUDE_NONE
     )
     target_sources(BetrockPlusPlus PRIVATE
