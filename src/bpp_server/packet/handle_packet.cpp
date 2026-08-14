@@ -397,7 +397,9 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 		return;
 
 	ItemStack* heldItem = _session.inventory.GetHeldItem();
-	if (!heldItem && _pkt.attack) {
+	if (!heldItem) {
+		if (!_pkt.attack)
+			return;
 		ItemStack emptyStack{};
 		Items::AttackWithItem(*entity, *sourceEntity, &emptyStack);
 		return;
