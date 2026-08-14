@@ -6,8 +6,10 @@
 */
 
 #pragma once
+#include "base_types.h"
 #include "entities.h"
 #include "entities/entity_manager.h"
+#include "inventory/item_stack.h"
 #include "logger.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
@@ -27,10 +29,10 @@ struct TrackingProfile {
 
 struct EquipmentProfile {
 	// Track the item ids of our equipment, we dont care about metadata here
-	ItemStack helmet{};
-	ItemStack chestplate{};
-	ItemStack legging{};
-	ItemStack boot{};
+	ItemId helmet = Items::Id::INVALID;
+	ItemId chestplate = Items::Id::INVALID;
+	ItemId legging = Items::Id::INVALID;
+	ItemId boot = Items::Id::INVALID;
 	ItemStack heldItem{};
 };
 
