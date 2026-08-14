@@ -11,187 +11,186 @@
 // Grab the 3x3 region. Any chunk that is already inUse is left as nullptr
 // (writes to it will fall through to the deferred path via the manager).
 void WorldWrapper::GetChunkRegion() {
-    for (int dx = -1; dx <= 1; dx++) {
-        for (int dz = -1; dz <= 1; dz++) {
-            int ax = centerChunkPos.x + dx;
-            int az = centerChunkPos.z + dz;
-            auto c = manager.GetChunk({ ax, az });
-            if (!c || c->inUse.load()) {
-                chunkRegion.chunks[dx + 1][dz + 1] = nullptr;
-            } else {
-                chunkRegion.chunks[dx + 1][dz + 1] = c;
-            }
-        }
-    }
-    // Mark all successfully acquired chunks as inUse
-    for (auto& row : chunkRegion.chunks)
-        for (auto& c : row)
-            if (c)
-                c->inUse.store(true);
+	for (int dx = -1; dx <= 1; dx++) {
+		for (int dz = -1; dz <= 1; dz++) {
+			int ax = centerChunkPos.x + dx;
+			int az = centerChunkPos.z + dz;
+			auto c = manager.GetChunk({ ax, az });
+			if (!c || c->inUse.load()) {
+				chunkRegion.chunks[dx + 1][dz + 1] = nullptr;
+			} else {
+				chunkRegion.chunks[dx + 1][dz + 1] = c;
+			}
+		}
+	}
+	// Mark all successfully acquired chunks as inUse
+	for (auto& row : chunkRegion.chunks)
+		for (auto& c : row)
+			if (c)
+				c->inUse.store(true);
 }
 
 void WorldWrapper::FreeChunkRegion() {
-    for (auto& row : chunkRegion.chunks)
-        for (auto& c : row)
-            if (c)
-                c->inUse.store(false);
+	for (auto& row : chunkRegion.chunks)
+		for (auto& c : row)
+			if (c)
+				c->inUse.store(false);
 }
 
 // Convert a world-space position to a region-local chunk offset (-1..1, -1..1)
 Int2 WorldWrapper::GetRegionChunkPos(const Int3 _wPos) const {
-    return { (_wPos.x >> 4) - centerChunkPos.x, (_wPos.z >> 4) - centerChunkPos.z };
+	return { (_wPos.x >> 4) - centerChunkPos.x, (_wPos.z >> 4) - centerChunkPos.z };
 }
 
 int WorldWrapper::FindTopSolidBlock(const int _wx, const int _wz) {
-    auto chunk = chunkRegion.GetChunk(GetRegionChunkPos({ _wx, 0, _wz }));
-    if (!chunk || chunk->state.load() < ChunkState::Generated)
-        return -1;
-    int lx = _wx & 15, lz = _wz & 15;
-    for (int y = 127; y > 0; --y) {
-        BlockType block = chunk->GetBlock({ lx, y, lz });
-        if (block == BlockType::BLOCK_AIR)
-            continue;
-        Material mat = Blocks::blockProperties[block].material;
-        if (mat.isSolid || mat.isLiquid)
-            return y + 1;
-    }
-    return -1;
+	auto chunk = chunkRegion.GetChunk(GetRegionChunkPos({ _wx, 0, _wz }));
+	if (!chunk || chunk->state.load() < ChunkState::Generated)
+		return -1;
+	int lx = _wx & 15, lz = _wz & 15;
+	for (int y = 127; y > 0; --y) {
+		BlockType block = chunk->GetBlock({ lx, y, lz });
+		if (block == BlockType::BLOCK_AIR)
+			continue;
+		Material mat = Blocks::blockProperties[block].material;
+		if (mat.isSolid || mat.isLiquid)
+			return y + 1;
+	}
+	return -1;
 }
 
 int WorldWrapper::GetHeightValue(const int _wx, const int _wz) {
-    auto chunk = chunkRegion.GetChunk(GetRegionChunkPos({ _wx, 0, _wz }));
-    if (!chunk || chunk->state.load() < ChunkState::Generated)
-        return 0;
-    return chunk->GetHeightValue({ _wx & 15, _wz & 15 });
+	auto chunk = chunkRegion.GetChunk(GetRegionChunkPos({ _wx, 0, _wz }));
+	if (!chunk || chunk->state.load() < ChunkState::Generated)
+		return 0;
+	return chunk->GetHeightValue({ _wx & 15, _wz & 15 });
 }
 
 double WorldWrapper::GetTemperatureAt(const int _wx, const int _wz) {
-    auto chunk = chunkRegion.GetChunk(GetRegionChunkPos({ _wx, 0, _wz }));
-    if (!chunk || chunk->state.load() < ChunkState::Generated)
-        return 0.5;
-    return double(chunk->GetTemperature({ _wx & 15, _wz & 15 }));
+	auto chunk = chunkRegion.GetChunk(GetRegionChunkPos({ _wx, 0, _wz }));
+	if (!chunk || chunk->state.load() < ChunkState::Generated)
+		return 0.5;
+	return double(chunk->GetTemperature({ _wx & 15, _wz & 15 }));
 }
 
 double WorldWrapper::GetHumidityAt(const int _wx, const int _wz) {
-    auto chunk = chunkRegion.GetChunk(GetRegionChunkPos({ _wx, 0, _wz }));
-    if (!chunk || chunk->state.load() < ChunkState::Generated)
-        return 0.5;
-    return double(chunk->GetHumidity({ _wx & 15, _wz & 15 }));
+	auto chunk = chunkRegion.GetChunk(GetRegionChunkPos({ _wx, 0, _wz }));
+	if (!chunk || chunk->state.load() < ChunkState::Generated)
+		return 0.5;
+	return double(chunk->GetHumidity({ _wx & 15, _wz & 15 }));
 }
 
 BlockType WorldWrapper::GetBlockId(const Int3 _wpos) {
-    if (!InBounds(_wpos.y))
-        return BlockType::BLOCK_AIR;
-    auto chunk = chunkRegion.GetChunk(GetRegionChunkPos(_wpos));
-    // Falls outside our grabbed region -> ask the manager directly (read-only, safe)
-    if (!chunk)
-        return manager.GetBlockId(_wpos);
-    if (chunk->state.load() < ChunkState::Generated)
-        return BlockType::BLOCK_AIR;
-    return chunk->GetBlock({ _wpos.x & 15, _wpos.y, _wpos.z & 15 });
+	if (!InBounds(_wpos.y))
+		return BlockType::BLOCK_AIR;
+	auto chunk = chunkRegion.GetChunk(GetRegionChunkPos(_wpos));
+	// Falls outside our grabbed region -> ask the manager directly (read-only, safe)
+	if (!chunk)
+		return manager.GetBlockId(_wpos);
+	if (chunk->state.load() < ChunkState::Generated)
+		return BlockType::BLOCK_AIR;
+	return chunk->GetBlock({ _wpos.x & 15, _wpos.y, _wpos.z & 15 });
 }
 
-void WorldWrapper::SetBlock(const Int3 _wpos, const BlockType _type, const uint8_t _meta, const bool _keepTileEntity, const bool _updateNeighbors) {
-    if (!InBounds(_wpos.y))
-        return;
-    auto chunk = chunkRegion.GetChunk(GetRegionChunkPos(_wpos));
-    if (!chunk || chunk->state.load() < ChunkState::Generated) {
-        // Outside our locked region
-        manager.SetBlock(_wpos, _type, _meta);
-        return;
-    }
+void WorldWrapper::SetBlock(const Int3 _wpos, const BlockType _type, const uint8_t _meta, const bool _keepTileEntity,
+                            const bool _updateNeighbors) {
+	if (!InBounds(_wpos.y))
+		return;
+	auto chunk = chunkRegion.GetChunk(GetRegionChunkPos(_wpos));
+	if (!chunk || chunk->state.load() < ChunkState::Generated) {
+		// Outside our locked region
+		manager.SetBlock(_wpos, _type, _meta);
+		return;
+	}
 
-    // Remove any tile entities that exist at this spot
-    auto& tes = chunk->tileEntities;
-    if (!tes.empty()) {
-        tes.erase(std::remove_if(tes.begin(), tes.end(),
-                                    [&](const std::shared_ptr<TileEntity>& _te) {
-                                        return _te && _te->position == _wpos;
-                                    }),
-                    tes.end());
-    }
+	// Remove any tile entities that exist at this spot
+	auto& tes = chunk->tileEntities;
+	if (!tes.empty()) {
+		tes.erase(std::remove_if(tes.begin(), tes.end(),
+		                         [&](const std::shared_ptr<TileEntity>& _te) { return _te && _te->position == _wpos; }),
+		          tes.end());
+	}
 
-    // Get the local coordinates of this block within the chunk and set it
-    int lx = _wpos.x & 15;
-    int lz = _wpos.z & 15;
-    Int3 local{ lx, _wpos.y, lz };
-    auto oldBlock = chunk->GetBlock(local);
-    //auto oldMeta = chunk->GetMeta(local);
+	// Get the local coordinates of this block within the chunk and set it
+	int lx = _wpos.x & 15;
+	int lz = _wpos.z & 15;
+	Int3 local{ lx, _wpos.y, lz };
+	auto oldBlock = chunk->GetBlock(local);
+	//auto oldMeta = chunk->GetMeta(local);
 
-    // Making the assumption here that certain metadatas of
-    // blocks don't have differing light properties
-    bool changesLighting = (Blocks::blockProperties[_type].lightOpacity !=
-                            Blocks::blockProperties[oldBlock].lightOpacity) ||
-                            (Blocks::blockProperties[_type].lightEmission !=
-                            Blocks::blockProperties[oldBlock].lightEmission);
+	// Making the assumption here that certain metadatas of
+	// blocks don't have differing light properties
+	bool changesLighting = (Blocks::blockProperties[_type].lightOpacity !=
+	                        Blocks::blockProperties[oldBlock].lightOpacity) ||
+	                       (Blocks::blockProperties[_type].lightEmission !=
+	                        Blocks::blockProperties[oldBlock].lightEmission);
 
-    // Unlight before changing the block
-    if (changesLighting) {
-        manager.lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Block, manager);
-        manager.lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Sky, manager);
-    }
+	// Unlight before changing the block
+	if (changesLighting) {
+		manager.lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Block, manager);
+		manager.lightManager.UnlightAt(_wpos.x, _wpos.y, _wpos.z, LightType::Sky, manager);
+	}
 
-    // Then finally set the new block
-    chunk->SetBlock(local, _type);
-    chunk->SetMeta(local, _meta);
+	// Then finally set the new block
+	chunk->SetBlock(local, _type);
+	chunk->SetMeta(local, _meta);
 
-    int y = _wpos.y;
-    int x = _wpos.x;
-    int z = _wpos.z;
-    int oldHeight = chunk->GetHeightValue({ lx, lz });
+	int y = _wpos.y;
+	int x = _wpos.x;
+	int z = _wpos.z;
+	int oldHeight = chunk->GetHeightValue({ lx, lz });
 
-    // Placing opaque block; heightmap may rise
-    if (changesLighting) {
-        chunk->RelightColumn({ lx, lz });
-        int newHeight = chunk->GetHeightValue({ lx, lz });
-        if (newHeight > oldHeight) {
-            // Notify the BFS that all blocks from y down to oldHeight need updating
-            for (int sy = oldHeight; sy <= newHeight; ++sy) {
-                manager.lightManager.UnlightAt(x, sy, z, LightType::Sky, manager);
-            }
-        } else if (newHeight < oldHeight) {
-            // Height fell
-            for (int sy = newHeight; sy < oldHeight; ++sy) {
-                manager.lightManager.ScheduleLightUpdate({ x, sy, z }, LightType::Sky);
-            }
-        }
+	// Placing opaque block; heightmap may rise
+	if (changesLighting) {
+		chunk->RelightColumn({ lx, lz });
+		int newHeight = chunk->GetHeightValue({ lx, lz });
+		if (newHeight > oldHeight) {
+			// Notify the BFS that all blocks from y down to oldHeight need updating
+			for (int sy = oldHeight; sy <= newHeight; ++sy) {
+				manager.lightManager.UnlightAt(x, sy, z, LightType::Sky, manager);
+			}
+		} else if (newHeight < oldHeight) {
+			// Height fell
+			for (int sy = newHeight; sy < oldHeight; ++sy) {
+				manager.lightManager.ScheduleLightUpdate({ x, sy, z }, LightType::Sky);
+			}
+		}
 
-        // Always re-evaluate the edited block and its 4 horizontal neighbours
-        manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Sky);
-        manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Block);
-        int extendedBottom = CrossPlatform::Math::Min(newHeight, oldHeight);
-        while (extendedBottom > 0 &&
-                Blocks::blockProperties[chunk->GetBlock({ lx, extendedBottom - 1, lz })].lightOpacity == 0)
-            --extendedBottom;
+		// Always re-evaluate the edited block and its 4 horizontal neighbours
+		manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Sky);
+		manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Block);
+		int extendedBottom = CrossPlatform::Math::Min(newHeight, oldHeight);
+		while (extendedBottom > 0 &&
+		       Blocks::blockProperties[chunk->GetBlock({ lx, extendedBottom - 1, lz })].lightOpacity == 0)
+			--extendedBottom;
 
-        if (newHeight != oldHeight) {
-            manager.lightManager.ScheduleLightRegion(
-                { x - 1, extendedBottom, z - 1 }, { x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), z + 1 },
-                LightType::Sky);
-        }
-    }
+		if (newHeight != oldHeight) {
+			manager.lightManager.ScheduleLightRegion({ x - 1, extendedBottom, z - 1 },
+			                                         { x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), z + 1 },
+			                                         LightType::Sky);
+		}
+	}
 
-    // So water and lava flow
-    if (_type == BLOCK_WATER_FLOWING || _type == BLOCK_LAVA_FLOWING) {
-        auto function = Blocks::blockBehaviors[_type].onBlockAdded;
-        if (function)
-            function(manager, _wpos);
-    }
+	// So water and lava flow
+	if (_type == BLOCK_WATER_FLOWING || _type == BLOCK_LAVA_FLOWING) {
+		auto function = Blocks::blockBehaviors[_type].onBlockAdded;
+		if (function)
+			function(manager, _wpos);
+	}
 
-    // Callback for the client and server to know about this block update
-    if (manager.onBlockUpdate)
-        manager.onBlockUpdate(PendingBlock{ .block{ _type, _meta },
-                                            .blockPos{ _wpos.x, _wpos.y, _wpos.z },
-                                            .light{ chunk->GetBlockLight({ _wpos.x & 15, _wpos.y, _wpos.z & 15 }),
-                                                    chunk->GetSkyLight({ _wpos.x & 15, _wpos.y, _wpos.z & 15 }) } },
-                                chunk->cpos);
+	// Callback for the client and server to know about this block update
+	if (manager.onBlockUpdate)
+		manager.onBlockUpdate(PendingBlock{ .block{ _type, _meta },
+		                                    .blockPos{ _wpos.x, _wpos.y, _wpos.z },
+		                                    .light{ chunk->GetBlockLight({ _wpos.x & 15, _wpos.y, _wpos.z & 15 }),
+		                                            chunk->GetSkyLight({ _wpos.x & 15, _wpos.y, _wpos.z & 15 }) } },
+		                      chunk->cpos);
 }
 
 uint8_t WorldWrapper::GetSkyLight(const Int3 _wpos) {
-    if (!InBounds(_wpos.y))
-        return 0;
-    auto chunk = chunkRegion.GetChunk(GetRegionChunkPos(_wpos));
-    if (!chunk || chunk->state.load() < ChunkState::Generated)
-        return 0;
-    return chunk->GetSkyLight({ _wpos.x & 15, _wpos.y, _wpos.z & 15 });
+	if (!InBounds(_wpos.y))
+		return 0;
+	auto chunk = chunkRegion.GetChunk(GetRegionChunkPos(_wpos));
+	if (!chunk || chunk->state.load() < ChunkState::Generated)
+		return 0;
+	return chunk->GetSkyLight({ _wpos.x & 15, _wpos.y, _wpos.z & 15 });
 }

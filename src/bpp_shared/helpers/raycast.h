@@ -145,7 +145,7 @@ inline RayCastResult Raycast(WorldManager& _world, Vec3 _startPos, Vec3 _endPos,
 				uint8_t meta = _world.GetMetadata({ x, y, z });
 				AABB localBox = Blocks::blockBehaviors[id].getRayBounds(meta);
 
-				// Zero volume shapes 
+				// Zero volume shapes
 				if (localBox.maxX > localBox.minX && localBox.maxY > localBox.minY && localBox.maxZ > localBox.minZ) {
 					AABB worldBox = localBox.Offset(x, y, z);
 

@@ -197,7 +197,7 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 			return;
 		}
 
-		// Buckets 
+		// Buckets
 		bool isBucketItem = (heldItem->id == Items::Id::BUCKET || heldItem->id == Items::Id::BUCKET_WATER ||
 		                     heldItem->id == Items::Id::BUCKET_LAVA);
 		bool hasOnBlockUse = static_cast<bool>(Items::itemBehavior[heldItem->id].onBlockUse);

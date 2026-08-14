@@ -43,8 +43,8 @@ static constexpr double BytesPerUnit(MemoryUnit unit) noexcept {
 #endif
 #define PSAPI_VERSION 2
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 #include <psapi.h>
+#include <windows.h>
 
 static double GetMemoryUsage(MemoryUnit _unit) {
 	PROCESS_MEMORY_COUNTERS pmc{};

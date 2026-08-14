@@ -150,7 +150,7 @@ void NoisePerlin::GenerateNoise(std::span<double> _noiseField, Vec3 _offset, Int
 				gen_float x1 = Lerp(u, Grad2d(permutations[aa], fx, fz), Grad3d(permutations[ba], fx - 1.0, 0.0, fz));
 
 				gen_float x2 = Lerp(u, Grad3d(permutations[aa + 1], fx, 0.0, fz - 1.0),
-				                 Grad3d(permutations[ba + 1], fx - 1.0, 0.0, fz - 1.0));
+				                    Grad3d(permutations[ba + 1], fx - 1.0, 0.0, fz - 1.0));
 
 				*out++ += Lerp(w, x1, x2) * invAmp;
 			}

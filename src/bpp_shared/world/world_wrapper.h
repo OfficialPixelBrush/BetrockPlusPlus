@@ -25,12 +25,12 @@ struct ChunkPtrRegion {
 // Holds a 3x3 region of chunk pointers centered on the chunk being populated.
 // Chunks are marked inUse on acquire and released on free.
 class WorldWrapper : public WorldAccess {
-	public:
+public:
 	WorldManager& manager;
 	ChunkPtrRegion chunkRegion;
 	Int2 centerChunkPos;
 
-    WorldWrapper(WorldManager& _manager, Int2 _centerChunkPos) : manager(_manager), centerChunkPos(_centerChunkPos) {}
+	WorldWrapper(WorldManager& _manager, Int2 _centerChunkPos) : manager(_manager), centerChunkPos(_centerChunkPos) {}
 
 	// Grab the 3x3 region. Any chunk that is already inUse is left as nullptr
 	// (writes to it will fall through to the deferred path via the manager).
@@ -45,7 +45,8 @@ class WorldWrapper : public WorldAccess {
 
 	double GetHumidityAt(const int _wx, const int _wz) override;
 	BlockType GetBlockId(const Int3 _wpos) override;
-	void SetBlock(const Int3 _wpos, const BlockType _type, const uint8_t _meta = 0, const bool _keepTileEntity = false, const bool _updateNeighbors = true) override;
+	void SetBlock(const Int3 _wpos, const BlockType _type, const uint8_t _meta = 0, const bool _keepTileEntity = false,
+	              const bool _updateNeighbors = true) override;
 	uint8_t GetSkyLight(const Int3 _wpos) override;
 
 	int64_t GetSeed() const {

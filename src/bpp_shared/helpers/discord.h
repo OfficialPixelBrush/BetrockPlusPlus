@@ -25,7 +25,6 @@
 class Server;
 
 class Discord {
-
 public:
 	enum class EmbedColor : int8_t {
 		Red,

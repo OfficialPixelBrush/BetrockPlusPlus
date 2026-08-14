@@ -8,27 +8,27 @@
 #include "command.h"
 #include "logger.h"
 
-std::vector<std::unique_ptr<Command>> CommandManager::m_registeredCommands;
-Server* CommandManager::m_server = nullptr;
+std::vector<std::unique_ptr<Command>> CommandManager::registeredCommands;
+Server* CommandManager::server = nullptr;
 
 // Register all commands
 void CommandManager::Init(Server* _server) {
-	m_server = _server;
+	server = _server;
 	// Anyone can run these
-	m_registeredCommands.push_back(std::make_unique<CommandHelp>());
-	m_registeredCommands.push_back(std::make_unique<CommandTeleport>());
-	m_registeredCommands.push_back(std::make_unique<CommandTime>());
-	m_registeredCommands.push_back(std::make_unique<CommandSeed>());
-	m_registeredCommands.push_back(std::make_unique<CommandSpawn>());
-	m_registeredCommands.push_back(std::make_unique<CommandGive>());
-	m_registeredCommands.push_back(std::make_unique<CommandList>());
-	m_registeredCommands.push_back(std::make_unique<CommandLoaded>());
-	m_registeredCommands.push_back(std::make_unique<CommandDimension>());
-	m_registeredCommands.push_back(std::make_unique<CommandVersion>());
-	m_registeredCommands.push_back(std::make_unique<CommandSummon>());
-	m_registeredCommands.push_back(std::make_unique<CommandStats>());
-	m_registeredCommands.push_back(std::make_unique<CommandFill>());
-	m_registeredCommands.push_back(std::make_unique<CommandStop>());
+	registeredCommands.push_back(std::make_unique<CommandHelp>());
+	registeredCommands.push_back(std::make_unique<CommandTeleport>());
+	registeredCommands.push_back(std::make_unique<CommandTime>());
+	registeredCommands.push_back(std::make_unique<CommandSeed>());
+	registeredCommands.push_back(std::make_unique<CommandSpawn>());
+	registeredCommands.push_back(std::make_unique<CommandGive>());
+	registeredCommands.push_back(std::make_unique<CommandList>());
+	registeredCommands.push_back(std::make_unique<CommandLoaded>());
+	registeredCommands.push_back(std::make_unique<CommandDimension>());
+	registeredCommands.push_back(std::make_unique<CommandVersion>());
+	registeredCommands.push_back(std::make_unique<CommandSummon>());
+	registeredCommands.push_back(std::make_unique<CommandStats>());
+	registeredCommands.push_back(std::make_unique<CommandFill>());
+	registeredCommands.push_back(std::make_unique<CommandStop>());
 	/*
 	registeredCommands.push_back(CommandPose());
 	// Needs at least creative mode to run
@@ -54,12 +54,12 @@ void CommandManager::Init(Server* _server) {
 	registeredCommands.push_back(CommandModified());
 	registeredCommands.push_back(CommandPacket());
 	*/
-	GlobalLogger().info << "Registered " << m_registeredCommands.size() << " command(s)!" << "\n";
+	GlobalLogger().info << "Registered " << registeredCommands.size() << " command(s)!" << "\n";
 }
 
 // Get all registered commands
 const std::vector<std::unique_ptr<Command>>& CommandManager::GetRegisteredCommands() noexcept {
-	return m_registeredCommands;
+	return registeredCommands;
 }
 
 // Parses commands and executes them
@@ -84,11 +84,11 @@ void CommandManager::Parse(std::string& _cmdString, PlayerSession& _session, Wor
 	} else {
 		try {
 			// TODO: Make this efficient
-			for (size_t i = 0; i < m_registeredCommands.size(); i++) {
+			for (size_t i = 0; i < registeredCommands.size(); i++) {
 				// This'll throw an out of bounds error
-				if (m_registeredCommands[i]->GetLabel() == command.at(0)) {
-					failureReason = m_registeredCommands[i]->Execute(command, _session, _world, _transferDimension,
-					                                                 *m_server);
+				if (registeredCommands[i]->GetLabel() == command.at(0)) {
+					failureReason = registeredCommands[i]->Execute(command, _session, _world, _transferDimension,
+					                                               *server);
 					break;
 				}
 			}

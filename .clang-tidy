@@ -5,7 +5,7 @@ Checks: '-*,readability-identifier-naming'
 CheckOptions:
   # Prefixes
   - key: readability-identifier-naming.ClassMemberPrefix
-    value: 'm_'
+    value: ''
   - key: readability-identifier-naming.PrivateClassMemberPrefix
     value: ''
   - key: readability-identifier-naming.ParameterPrefix

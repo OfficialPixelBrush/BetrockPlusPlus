@@ -612,7 +612,7 @@ void Server::DisconnectClients() {
 				                                                 << " with entity id " << _s->entity->id << "\n";
 				                             SendGlobalChatMessage("§e" + _s->username + " left the game.", false);
 #ifdef DISCORD_INTEGRATION
-					             GlobalDiscord().SendPlayerLeaveMessage(_s->username);
+				                             GlobalDiscord().SendPlayerLeaveMessage(_s->username);
 #endif
 				                             if (_s->entity->entityManager)
 					                             _s->entity->entityManager->RemoveEntity(_s->entity->id);
