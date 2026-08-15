@@ -182,6 +182,8 @@ private:
 		if (_session.entity) {
 			if (auto func = Blocks::blockBehaviors[blockId].onBlockDestroyedByPlayer) {
 				func(_world, blockPos, *_session.entity);
+			} else {
+				Blocks::GenericBreak(_world, blockPos, *_session.entity);
 			}
 		}
 

@@ -20,6 +20,7 @@ bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, PacketData::FaceDirection
 float GetFluidPercentAir(uint8_t _meta);
 void BreakAndDropBlock(WorldManager& _world, Int3 _pos);
 void DropBlockAt(WorldManager& _world, Int3 _pos, BlockType _id, ItemAmount _count, int16_t _data);
+void DropItemAt(WorldManager& _world, Int3 _pos, Items::Id _id, ItemAmount _count, int16_t _data);
 bool CanFallAt(WorldManager& _world, Int3 _position);
 bool CanGenericPlantSurviveAt(WorldManager& _world, Int3 _pos);
 bool CanMushroomSurviveAt(WorldManager& _world, Int3 _pos);

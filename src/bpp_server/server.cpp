@@ -581,8 +581,6 @@ void Server::UpdateBlockBreaking(PlayerSession& _session, WorldManager& _world) 
 			} else {
 				Blocks::BreakAndDropBlock(_world, blockPos);
 			}
-		} else {
-			Blocks::BreakAndDropBlock(_world, blockPos);
 		}
 		finishMiningWithTool(heldItem, blockId);
 		_session.pendingBlockBreak.reset();
