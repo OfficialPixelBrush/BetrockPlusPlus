@@ -405,7 +405,7 @@ void EntityTracker::SendMetadataState(TrackedEntry& _trackedEntry, std::shared_p
 	Packet::EntityMetadata pkt;
 	pkt.entityId = _trackedEntry.entity->id;
 	_trackedEntry.entity->EncodeMetadata(pkt.metadata);
-		pkt.Serialize(_targetSession->stream);
+	pkt.Serialize(_targetSession->stream);
 }
 
 void EntityTracker::UpdateMetadataState(TrackedEntry& _trackedEntry) {
@@ -416,6 +416,12 @@ void EntityTracker::UpdateMetadataState(TrackedEntry& _trackedEntry) {
 	_trackedEntry.entity->EncodeMetadata(pkt.metadata);
 	SendPacketToViewers(pkt, _trackedEntry.entity->id);
 	_trackedEntry.entity->wasMetadataUpdated = false;
+
+	// Send the packet to ourselves if we are a player
+	auto mpe = dynamic_cast<EntityMPPlayer*>(_trackedEntry.entity);
+	if (mpe && mpe->session) {
+		pkt.Serialize(mpe->session->stream);
+	}
 }
 
 // Used when we first spawn an entity for a specific player

@@ -142,6 +142,7 @@ void Entity::Tick() {
 		this->isDead = true;
 
 	isFirstUpdate = false;
+	UpdateMetadata(flags.isBurning, fireTicks > 0);
 }
 
 void Entity::ApplyKnockback(Vec3 _direction) {
