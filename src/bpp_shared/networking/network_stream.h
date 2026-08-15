@@ -17,6 +17,7 @@
 #endif
 #include "helpers/byteswap_compat.h"
 #include "packet_data.h"
+#include <atomic>
 #include <cstdint>
 #include <cstring>
 #include <packet_ids.h>
@@ -54,6 +55,15 @@ class NetworkStream {
 public:
 	NetworkStream(int _clientSocket);
 	~NetworkStream();
+	NetworkStream(const NetworkStream&) = delete;
+	NetworkStream& operator=(const NetworkStream&) = delete;
+	NetworkStream(NetworkStream&& _other) noexcept
+	    : clientSocket(_other.clientSocket), connected(_other.connected.load()), shortRead(_other.shortRead),
+	      readBuffer(std::move(_other.readBuffer)), readPos(_other.readPos),
+	      writeBuffer(std::move(_other.writeBuffer)) {
+		_other.clientSocket = INVALID_SOCKET;
+		_other.readPos = 0;
+	}
 	bool NewClient();
 
 	// NOTE: if CheckAndClearShortRead()/IsShortRead() ends up true after this
@@ -107,7 +117,8 @@ public:
 	// Handles Entity Metadata Conversion
 	void WriteEntityMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata);
 
-	// Flush the write buffer to the socket once per Tick.
+	// Flush the write buffer to the socket (non-blocking).
+	// On the server this runs on the write thread, not the tick thread.
 	// Returns false if the connection was lost.
 	bool FlushWriteBuffer();
 	// Blocking flush for use SHUTDOWN ONLY
@@ -166,7 +177,8 @@ public:
 
 private:
 	int clientSocket = INVALID_SOCKET;
-	bool connected = true;
+	// Written by the write thread (flush), read by the tick thread
+	std::atomic<bool> connected{ true };
 	bool shortRead = false;
 
 	// All un-consumed bytes recevied from the socket.

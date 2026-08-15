@@ -12,6 +12,7 @@
 #include "packet/packet_utils.h"
 #include "trackers/inventory_tracker.h"
 #include "world.h"
+#include <future>
 #include <string>
 #include <thread>
 #if defined(__linux__) || defined(__APPLE__)
@@ -381,6 +382,9 @@ void Server::Run() {
 		}
 	}
 
+	// Wait for any in-flight write flushes before saving and cleaning up
+	writePool.wait();
+
 	// Shutdown was requested. Save and clean up on the main thread
 	Stop();
 	shutdownRequested.store(false); // Unblock the ctrl handler thread
@@ -428,6 +432,10 @@ void Server::ResetTimeout() {
 }
 
 void Server::Tick() {
+	// Wait for the previous tick's write flushes to finish. The main thread
+	// owns the session write buffers for the duration of the tick; the write
+	// thread may only touch them after Tick has submitted its flushes.
+	writePool.wait();
 #ifdef DISCORD_INTEGRATION
 	GlobalDiscord().Drain(*this);
 #endif
@@ -491,11 +499,24 @@ void Server::Tick() {
 	ChunkBroadcaster::BroadcastBlockChanges(*this, localBlockChanges, 0, gameRuntime.world);
 	ChunkBroadcaster::BroadcastBlockChanges(*this, localBlockChangesHell, -1, gameRuntime.worldHell);
 
-	// Flush all pending outgoing data to the socket at the end of the tick
+	// Disconnect timed-out clients; the removed sessions are returned so we
+	// can send their last packets (e.g. a disconnect reason) before they die
+	std::vector<std::shared_ptr<PlayerSession>> removedSessions = this->DisconnectClients();
+
+	// Flush pending outgoing data on the write thread so socket I/O never
+	// holds up the main tick thread
+	std::vector<std::future<void>> flushFutures;
 	for (auto& session : players) {
-		session->stream.FlushWriteBuffer();
+		if (session->stream.GetRawWriteBuffer().empty())
+			continue;
+		auto sessionRef = session;
+		flushFutures.push_back(writePool.submit_task([sessionRef]() { sessionRef->stream.FlushWriteBuffer(); }));
 	}
-	this->DisconnectClients();
+
+	// Sessions removed this tick get one final synchronous flush (their
+	// pending data is small) before their shared_ptr drops and they are destroyed
+	for (auto& session : removedSessions)
+		session->stream.FlushWriteBuffer();
 
 	// TODO: This is rather fragile!
 	// Countdown
@@ -583,7 +604,7 @@ void Server::UpdateBlockBreaking(PlayerSession& _session, WorldManager& _world) 
 	OnPlayerBlockBreak(_session, _world);
 }
 
-void Server::DisconnectClients() {
+std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {
 	// Mark clients who have timed out for removal
 	auto now = std::chrono::steady_clock::now();
 	for (auto& session : players) {
@@ -604,6 +625,7 @@ void Server::DisconnectClients() {
 	}
 
 	// Force disconnect players that quit
+	std::vector<std::shared_ptr<PlayerSession>> removed;
 	players.erase(std::remove_if(players.begin(), players.end(),
 	                             [&](const auto& _s) {
 		                             if (!_s->stream.IsConnected()) {
@@ -619,11 +641,13 @@ void Server::DisconnectClients() {
 			                             }
 			                             IndexRemoveSession(*_s);
 			                             chunkSender.Remove(*_s);
+			                             removed.push_back(_s);
 			                             return true;
 		                             }
 		                             return false;
 	                             }),
 	              players.end());
+	return removed;
 };
 
 void Server::ProcessIncoming(PlayerSession& _session) {
