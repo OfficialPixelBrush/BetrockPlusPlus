@@ -746,6 +746,24 @@ void RegisterBlockBehaviors() {
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
 	};
 
+	// Snow
+	blockBehaviors[BLOCK_SNOW_LAYER].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
+		// Snow drops itself when broken with a shovel
+		_world.SetBlock(_pos, BLOCK_AIR);
+		DropItemAt(_world, _pos, Items::Id::SNOWBALL, /*count=*/1, 0);
+		return;
+	};
+	blockBehaviors[BLOCK_SNOW_LAYER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+		Int3 belowPos = _pos + Int3{ 0, -1, 0 };
+		BlockType below = _world.GetBlockId(belowPos);
+
+		bool canStay = below != BLOCK_AIR && Blocks::blockProperties[below].isOpaqueCube &&
+		               Blocks::blockProperties[below].material.isSolid;
+
+		if (!canStay)
+			_world.SetBlock(_pos, BLOCK_AIR);
+	};
+
 	// Directionals
 	blockBehaviors[BLOCK_PUMPKIN].onBlockPlaced = onPumpkinPlace;
 	blockBehaviors[BLOCK_PUMPKIN_LIT].onBlockPlaced = onPumpkinPlace;
@@ -988,12 +1006,6 @@ void RegisterBlockBehaviors() {
 			return;
 		}
 		GenericBreak(_world, _pos, _destroyer);
-	};
-	blockBehaviors[BLOCK_SNOW_LAYER].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
-		// Snow drops itself when broken with a shovel
-		_world.SetBlock(_pos, BLOCK_AIR);
-		DropItemAt(_world, _pos, Items::Id::SNOWBALL, /*count=*/1, 0);
-		return;
 	};
 	blockBehaviors[BLOCK_LEAVES].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                                PacketData::FaceDirection _face, BlockType _blockId, uint8_t _meta) -> bool {
