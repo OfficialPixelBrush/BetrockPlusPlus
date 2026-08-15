@@ -15,11 +15,24 @@
 #include "items/item_properties.h"
 #include "logger.h"
 #include "packet_data.h"
+#include "tick_scheduler.h"
 #include "tile_entities/tile_entity.h"
 #include "world.h"
 
 namespace Blocks {
 BlockBehavior blockBehaviors[BLOCK_MAX] = {};
+
+static bool IsReplaceable(WorldManager& _world, Int3 _pos) {
+	BlockType existing = _world.GetBlockId(_pos);
+	return existing == BLOCK_AIR || existing == BLOCK_WATER_FLOWING || existing == BLOCK_WATER_STILL ||
+		existing == BLOCK_LAVA_FLOWING || existing == BLOCK_LAVA_STILL || existing == BLOCK_FIRE ||
+		existing == BLOCK_SNOW_LAYER;
+};
+
+static bool IsSupported(WorldManager& _world, Int3 _pos, PacketData::FaceDirection _dir) {
+	Int3 support = GetAdjacentBlockPos(_pos, PacketData::OppositeFace(_dir));
+	return _world.IsBlockNormalCube(support);
+};
 
 static bool SearchForLog(int _sLength, Int3 _pos, Int3 _cameFrom, WorldManager& _world) {
 	auto thisBlock = _world.GetBlockId(_pos);
@@ -484,13 +497,7 @@ void RegisterBlockBehaviors() {
 			if (_face == PacketData::FaceDirection::Y_PLUS || _face == PacketData::FaceDirection::Y_MINUS)
 				return false;
 
-			auto isReplaceable = [&](Int3 _p) {
-				BlockType existing = _world.GetBlockId(_p);
-				return existing == BLOCK_AIR || existing == BLOCK_WATER_FLOWING || existing == BLOCK_WATER_STILL ||
-					existing == BLOCK_LAVA_FLOWING || existing == BLOCK_LAVA_STILL || existing == BLOCK_FIRE ||
-					existing == BLOCK_SNOW_LAYER;
-			};
-			if (!isReplaceable(_pos))
+			if (!IsReplaceable(_world, _pos))
 				return false;
 
 			int facing = 0;
@@ -546,6 +553,62 @@ void RegisterBlockBehaviors() {
 		.getSelectionBox = ButtonAabb,
 		.getRayBounds = ButtonAabb,
 		.getCollider = EmptyCollider,
+		.onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                         Java::Random& _random) -> void {
+			PacketData::FaceDirection trueFace = PacketData::FaceDirection::INVALID_USE;
+			switch(_meta & 0b111) {
+				case 1:
+					trueFace = PacketData::FaceDirection::X_PLUS; break;
+				case 2:
+					trueFace = PacketData::FaceDirection::X_MINUS; break;
+				case 3:
+					trueFace = PacketData::FaceDirection::Z_PLUS; break;
+				case 4:
+					trueFace = PacketData::FaceDirection::Z_MINUS; break;
+			}
+			// Check to make sure we can till exist here
+			if (!IsSupported(_world, _pos, trueFace))
+				BreakAndDropBlock(_world, _pos);
+			// Unpress again
+			_world.SetMeta(_pos, _meta & 0b111);
+		},
+		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+			blockBehaviors[BLOCK_BUTTON_STONE].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+		},
+		.onBlockClicked = [](WorldManager& _world, Int3 _pos) -> void {
+			_world.SetMeta(_pos, _world.GetMetadata(_pos) | 0b1000);
+			_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_BUTTON_STONE, 20);
+		},
+		.onBlockActivated = [](WorldManager& _world, Int3 _pos) -> bool {
+			blockBehaviors[BLOCK_BUTTON_STONE].onBlockClicked(_world, _pos);
+			return false;
+		},
+		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+							BlockType _blockId, uint8_t _meta) -> bool {
+			// Buttons can only be placed against the sides of blocks
+			if (_face == PacketData::FaceDirection::Y_PLUS || _face == PacketData::FaceDirection::Y_MINUS)
+				return false;
+
+			if (!IsReplaceable(_world, _pos))
+				return false;
+
+			int facing = 0;
+			switch(_face) {
+				case PacketData::X_PLUS:
+					facing = 1; break;
+				case PacketData::X_MINUS:
+					facing = 2; break;
+				case PacketData::Z_PLUS:
+					facing = 3; break;
+				case PacketData::Z_MINUS:
+					facing = 4; break;
+				default:
+					facing = 0; break;
+		    }
+
+		    _world.SetBlock(_pos, _blockId, uint8_t(facing));
+			return true;
+		},
 	};
 
 	blockBehaviors[BlockType::BLOCK_LEVER] = {
@@ -778,12 +841,7 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_LADDER].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                         Java::Random& _random) -> void {
 		// Check to make sure we can till exist here
-		auto hasSupport = [&](PacketData::FaceDirection _dir) {
-			Int3 support = GetAdjacentBlockPos(_pos, PacketData::OppositeFace(_dir));
-			return _world.IsBlockNormalCube(support);
-		};
-
-		if (!hasSupport(PacketData::FaceDirection(_meta)))
+		if (!IsSupported(_world, _pos, PacketData::FaceDirection(_meta)))
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LADDER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
@@ -794,22 +852,17 @@ void RegisterBlockBehaviors() {
 		if (_world.GetBlockId(sourceBlock) == BLOCK_SNOW_LAYER)
 			targetPos = sourceBlock;
 
-		auto hasSupport = [&](PacketData::FaceDirection _dir) {
-			Int3 support = GetAdjacentBlockPos(targetPos, PacketData::OppositeFace(_dir));
-			return _world.IsBlockNormalCube(support);
-		};
-
 		static constexpr std::array<PacketData::FaceDirection, 4> CHECK_ORDER = { PacketData::FaceDirection::Z_MINUS,
 			                                                                      PacketData::FaceDirection::Z_PLUS,
 			                                                                      PacketData::FaceDirection::X_MINUS,
 			                                                                      PacketData::FaceDirection::X_PLUS };
 
-		if (_face >= 2 && hasSupport(_face)) {
+		if (_face >= 2 && IsSupported(_world, _pos, _face)) {
 			return GenericPlace(_world, _pos, _placer, _face, _blockId, uint8_t(_face));
 		}
 
 		for (PacketData::FaceDirection dir : CHECK_ORDER) {
-			if (hasSupport(dir)) {
+			if (IsSupported(_world, _pos, dir)) {
 				return GenericPlace(_world, _pos, _placer, _face, _blockId, uint8_t(dir));
 			}
 		}
@@ -871,14 +924,7 @@ void RegisterBlockBehaviors() {
 			return false;
 		if (!_world.IsBlockNormalCube({ placePos.x, placePos.y - 1, placePos.z }))
 			return false;
-
-		auto isReplaceable = [&](Int3 _p) {
-			BlockType existing = _world.GetBlockId(_p);
-			return existing == BLOCK_AIR || existing == BLOCK_WATER_FLOWING || existing == BLOCK_WATER_STILL ||
-			       existing == BLOCK_LAVA_FLOWING || existing == BLOCK_LAVA_STILL || existing == BLOCK_FIRE ||
-			       existing == BLOCK_SNOW_LAYER;
-		};
-		if (!isReplaceable(placePos) || !isReplaceable(abovePos))
+		if (!IsReplaceable(_world, placePos) || !IsReplaceable(_world, abovePos))
 			return false;
 
 		int facing = MathHelper::FloorDouble((_placer.rotationYaw + 180.0F) * 4.0F / 360.0F - 0.5f) & 3;

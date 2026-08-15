@@ -647,16 +647,16 @@ struct TrapdoorBuilder {
 	Block asBlock() const {
 		uint8_t data;
 		switch (direction) {
-		case Direction::South:
+		case Direction::East:
 			data = 0;
 			break;
-		case Direction::North:
+		case Direction::West:
 			data = 1;
 			break;
-		case Direction::East:
+		case Direction::North:
 			data = 2;
 			break;
-		case Direction::West:
+		case Direction::South:
 			data = 3;
 			break;
 		}
