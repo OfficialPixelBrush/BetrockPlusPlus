@@ -989,6 +989,12 @@ void RegisterBlockBehaviors() {
 		}
 		GenericBreak(_world, _pos, _destroyer);
 	};
+	blockBehaviors[BLOCK_SNOW_LAYER].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
+		// Snow drops itself when broken with a shovel
+		_world.SetBlock(_pos, BLOCK_AIR);
+		DropItemAt(_world, _pos, Items::Id::SNOWBALL, /*count=*/1, 0);
+		return;
+	};
 	blockBehaviors[BLOCK_LEAVES].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                                PacketData::FaceDirection _face, BlockType _blockId, uint8_t _meta) -> bool {
 		// So leaves placed by players dont decay

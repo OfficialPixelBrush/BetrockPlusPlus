@@ -64,6 +64,18 @@ void DropBlockAt(WorldManager& _world, Int3 _pos, BlockType _id, ItemAmount _cou
 	return;
 }
 
+void DropItemAt(WorldManager& _world, Int3 _pos, Items::Id _id, ItemAmount _count, int16_t _data) {
+	Vec3 dropPos = { double(_pos.x), double(_pos.y), double(_pos.z) };
+	float offset = 0.7f;
+	dropPos.x += (_world.rand.NextFloat() * offset) + (1.0f - offset) * 0.5;
+	dropPos.y += (_world.rand.NextFloat() * offset) + (1.0f - offset) * 0.5;
+	dropPos.z += (_world.rand.NextFloat() * offset) + (1.0f - offset) * 0.5;
+	ItemEntity item(dropPos);
+	item.itemStack = { .id = _id, .count = _count, .data = _data };
+	_world.entityManager.AddEntity(std::make_shared<ItemEntity>(item));
+	return;
+}
+
 bool CanSugarcaneSurviveAt(WorldManager& _world, Int3 _pos) {
 	auto belowBlock = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
 	if (belowBlock == BLOCK_SUGARCANE)
