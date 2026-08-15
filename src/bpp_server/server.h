@@ -14,6 +14,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "discord.h"
 #endif
 
+#include "BS_thread_pool.hpp"
 #include "blocks/serverBlockBehaviors.h"
 #include "chunk_IO/chunk_broadcaster.h"
 #include "chunk_IO/chunk_sender.h"
@@ -155,7 +156,7 @@ private:
 	void Tick();
 	void Startup();
 	void AcceptNewPlayers();
-	void DisconnectClients();
+	std::vector<std::shared_ptr<PlayerSession>> DisconnectClients();
 
 	// When a player breaks a block
 	void OnPlayerBlockBreak(PlayerSession& _session, WorldManager& _world) {
@@ -231,4 +232,6 @@ private:
 	CommandManager commandManager;
 	bool stopped = false;
 	Config config;
+	// Flushes session write buffers off the main tick thread
+	BS::thread_pool<> writePool{ 1 };
 };
