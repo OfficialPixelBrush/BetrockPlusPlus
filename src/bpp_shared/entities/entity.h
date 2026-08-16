@@ -6,6 +6,7 @@
  *
  */
 #pragma once
+#include "lighter.h"
 #include "base_types.h"
 #include "blocks/block_properties.h"
 #include "dimensions.h"
@@ -155,10 +156,15 @@ struct Entity {
 	EntityFlags flags;
 	bool wasMetadataUpdated = false;
 
+	float entityBrightness = 0.0f;
+
 	Entity() {
 		RebuildCollider();
 	}
 	virtual ~Entity() = default;
+
+	// Get the brightness of the entity at this block
+	float GetEntityBrightnessValue();
 
 	// Encode Entity info into relevant Metadata
 	virtual void EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata);

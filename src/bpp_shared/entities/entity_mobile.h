@@ -44,6 +44,7 @@ public:
 	virtual void Tick() override;
 	virtual void OnDeath();
 	virtual void SetGoal(std::optional<Int3> _goal);
+	virtual bool onLadder();
 	void Heal(int _health);
 	bool AABBNotInLiquidOrObstructed(AABB& _collider);
 	bool HeadInOpaqueBlock();
@@ -51,7 +52,6 @@ public:
 	ItemStack* GetHeldItem();
 	void SetHeldItem(ItemStack _stack);
 	bool FollowPath();
-	bool onLadder();
 	void DealDamage(int _damage);
 	int GetArmorValue();
 	bool AttackEntityFrom(Entity* _entity, int _damage) override;

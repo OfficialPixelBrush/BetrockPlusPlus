@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
 */
 #include "../command.h"
-#include "entities/entity_zombie.h"
+#include "entities/entity_spider.h"
 #include "networking/packets.h"
 #include "server.h"
 #include <memory>
@@ -13,7 +13,7 @@
 std::string CommandSummon::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
                                    std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
 	// Make a dummy player
-	auto entity = std::make_shared<ZombieEntity>();
+	auto entity = std::make_shared<SpiderEntity>();
 
 	Vec3 spawnPos = _session.position.pos +
 	                Vec3(_world.rand.NextFloat() * 4 + 0.5, 0, _world.rand.NextFloat() * 4 + 0.5);

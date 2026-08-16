@@ -120,6 +120,9 @@ set(SHARED_SOURCES
     src/bpp_shared/entities/entity_mob.cpp
     src/bpp_shared/entities/entity_zombie.cpp
     src/bpp_shared/entities/entity_hostile.cpp
+    src/bpp_shared/entities/entity_skeleton.cpp
+    src/bpp_shared/entities/entity_creeper.cpp
+    src/bpp_shared/entities/entity_spider.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/strings/ucs2.cpp
     src/bpp_shared/strings/labels.cpp
