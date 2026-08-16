@@ -179,7 +179,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 			AABB rollbackCollider = collider.Offset(safeRollback.x - position.x, safeRollback.y - position.y,
 			                                        safeRollback.z - position.z);
 			if (!world->GetCollidingBoundingBoxes(rollbackCollider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE,
-			                                                             -CLEAR_CHECK_TOLERANCE))
+			                                                              -CLEAR_CHECK_TOLERANCE))
 			         .empty()) {
 				safeRollback.y += ROLLBACK_NUDGE;
 			}
@@ -191,8 +191,8 @@ void EntityMPPlayer::HandlePositionChecks() {
 			session->pendingTeleport = safeRollback;
 			Packet::PlayerPosition pkt;
 			pkt.onGround = onGround;
-			pkt.position = { position.x, position.y + PLAYER_EYE_HEIGHT, position.z };
-			pkt.cameraY = position.y; // This is backwards, thanks notch
+			pkt.position = { safeRollback.x, safeRollback.y + PLAYER_EYE_HEIGHT, safeRollback.z };
+			pkt.cameraY = safeRollback.y; // This is backwards, thanks notch
 			pkt.Serialize(session->stream);
 		}
 
