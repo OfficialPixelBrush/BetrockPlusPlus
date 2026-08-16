@@ -8,9 +8,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Must be set before project() so vcpkg can install the optional feature.
-option(REDUCED_GENERATION_PRECISION "Reduces perlin and simplex noise precision from 64-bit to 32-bit floats" OFF)
 option(ONLINE_MODE_AUTHENTICATION "Allows for authentcation with Mojang Servers (requires libcurl)" ON)
+option(CRASH_LOGGING "Lets the server catch crashes and create crash reports" ON)
 option(DISCORD_INTEGRATION "Enable Discord bot integration via D++ (server only)" OFF)
+option(REDUCED_GENERATION_PRECISION "Reduces perlin and simplex noise precision from 64-bit to 32-bit floats" OFF)
 if(DISCORD_INTEGRATION)
     list(APPEND VCPKG_MANIFEST_FEATURES "discord")
 endif()
@@ -190,6 +191,7 @@ set(SERVER_SOURCES
     src/bpp_server/entities/entity_mp_player.cpp
     src/bpp_server/blocks/serverBlockBehaviors.cpp
     src/bpp_server/entities/entity_dummy_player.cpp
+    src/bpp_server/world/world_event_broadcaster.cpp
 
     src/bpp_server/commands/command.cpp
     src/bpp_server/commands/command_manager.cpp

@@ -33,6 +33,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "server_socket.h"
 #include "strings/ucs2.h"
 #include "trackers/entity_tracker.h"
+#include "world/world_event_broadcaster.h"
 #include <chrono>
 #include <memory>
 #include <thread>
@@ -152,6 +153,9 @@ private:
 	friend void ChunkBroadcaster::BroadcastBlockChanges(Server& _server,
 	                                                    std::unordered_map<Int32_2, std::vector<PendingBlock>>& _changes,
 	                                                    int8_t _dimension, WorldManager& _dimWorld);
+	friend void WorldEventBroadcaster::BroadcastWorldEvent(Server& _server, PacketData::WorldEvent _eventType,
+	                                                       Int3 _position, int32_t _data, int8_t _dimension,
+	                                                       double _rangeSq);
 
 	void Tick();
 	void Startup();
@@ -191,7 +195,7 @@ private:
 
 		// Send the particle packet
 		Packet::WorldEvent pkt;
-		pkt.eventId = PacketData::WorldEvent::BLOCK_BREAK;
+		pkt.eventType = PacketData::WorldEvent::BLOCK_BREAK;
 		pkt.data = blockId;
 		pkt.position = { blockPos.x, int8_t(blockPos.y), blockPos.z };
 		_session.entityTracker->SendPacketToViewers(pkt, _session.entity->id);
