@@ -60,6 +60,8 @@ bool EntityMPPlayer::PickupItem(ItemStack& _stack, EntityId _entityId) {
 }
 
 static constexpr int MAX_TELEPORT_RETRIES = 5;
+static constexpr double CLEAR_CHECK_TOLERANCE = 0.05;
+static constexpr double ROLLBACK_NUDGE = 0.01;
 
 void EntityMPPlayer::HandlePositionChecks() {
 	if (isDead || !world)
@@ -114,7 +116,10 @@ void EntityMPPlayer::HandlePositionChecks() {
 		bool savedOnGround = onGround;
 		bool residualTooLarge = false;
 		bool movedWrong = false;
-		bool wasClearBefore = world->GetCollidingBoundingBoxes(collider.Expand(-0.0625, -0.0625, -0.0625)).empty();
+		bool wasClearBefore = world
+		                          ->GetCollidingBoundingBoxes(collider.Expand(
+		                              -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE))
+		                          .empty();
 		Vec3 lastPosition = this->position;
 		Vec3 claimed = *session->pendingPosition;
 		Vec3 delta = claimed - lastPosition;
@@ -162,16 +167,28 @@ void EntityMPPlayer::HandlePositionChecks() {
 			residualTooLarge = true;
 		}
 
-		bool clearNow = world->GetCollidingBoundingBoxes(collider.Expand(-0.0625, -0.0625, -0.0625)).empty();
+		bool clearNow = world
+		                    ->GetCollidingBoundingBoxes(
+		                        collider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE))
+		                    .empty();
 
 		bool willCorrect = (wasClearBefore && (residualTooLarge || !clearNow)) || movedWrong;
 
 		if (willCorrect) {
+			Vec3 safeRollback = lastPosition;
+			AABB rollbackCollider = collider.Offset(safeRollback.x - position.x, safeRollback.y - position.y,
+			                                        safeRollback.z - position.z);
+			if (!world->GetCollidingBoundingBoxes(rollbackCollider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE,
+			                                                             -CLEAR_CHECK_TOLERANCE))
+			         .empty()) {
+				safeRollback.y += ROLLBACK_NUDGE;
+			}
+
 			// TP our player back
-			this->Teleport(lastPosition, { rotationYaw, rotationPitch });
-			session->position.pos = lastPosition;
+			this->Teleport(safeRollback, { rotationYaw, rotationPitch });
+			session->position.pos = safeRollback;
 			// Wait until our client catches up
-			session->pendingTeleport = lastPosition;
+			session->pendingTeleport = safeRollback;
 			Packet::PlayerPosition pkt;
 			pkt.onGround = onGround;
 			pkt.position = { position.x, position.y + PLAYER_EYE_HEIGHT, position.z };
