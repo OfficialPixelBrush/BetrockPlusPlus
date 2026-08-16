@@ -19,6 +19,18 @@ std::shared_ptr<Entity> HostileEntity::FindPlayerToAttack() {
 	return candidate;
 }
 
+bool HostileEntity::AttackEntityFrom(Entity* _entity, int _damage) {
+	if (MobileEntity::AttackEntityFrom(_entity, _damage)) {
+		if (_entity != this->passenger.lock().get() && _entity != this->vehicle.lock().get()) {
+			if (_entity && _entity != this) {
+				this->attackTarget = entityManager->GetEntityByIdShared(_entity->id);
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
 void HostileEntity::TryAttackEntity(Entity& _target, float _distance) {
 	// Check if our attack time and distance are valid, make sure our Y axis overlap
 	if (attackTime <= 0 && _distance < 2.0f && _target.collider.maxY > collider.minY &&
