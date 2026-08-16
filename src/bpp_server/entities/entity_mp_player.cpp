@@ -61,7 +61,7 @@ bool EntityMPPlayer::PickupItem(ItemStack& _stack, EntityId _entityId) {
 
 static constexpr int MAX_TELEPORT_RETRIES = 10;
 static constexpr double CLEAR_CHECK_TOLERANCE = 0.05;
-static constexpr double ROLLBACK_NUDGE = 0.01;
+static constexpr double ROLLBACK_NUDGE = 0.06;
 
 void EntityMPPlayer::HandlePositionChecks() {
 	if (isDead || !world)
@@ -116,10 +116,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 		bool savedOnGround = onGround;
 		bool residualTooLarge = false;
 		bool movedWrong = false;
-		bool wasClearBefore = world
-		                          ->GetCollidingBoundingBoxes(collider.Expand(
-		                              -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE))
-		                          .empty();
+		bool wasClearBefore = world->GetCollidingBoundingBoxes(collider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE)).empty();
 		Vec3 lastPosition = this->position;
 		Vec3 claimed = *session->pendingPosition;
 		Vec3 delta = claimed - lastPosition;
@@ -167,22 +164,12 @@ void EntityMPPlayer::HandlePositionChecks() {
 			residualTooLarge = true;
 		}
 
-		bool clearNow = world
-		                    ->GetCollidingBoundingBoxes(
-		                        collider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE))
-		                    .empty();
+		bool clearNow = world->GetCollidingBoundingBoxes(collider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE)).empty();
 
 		bool willCorrect = (wasClearBefore && (residualTooLarge || !clearNow)) || movedWrong;
 
 		if (willCorrect) {
-			Vec3 safeRollback = lastPosition;
-			AABB rollbackCollider = collider.Offset(safeRollback.x - position.x, safeRollback.y - position.y,
-			                                        safeRollback.z - position.z);
-			if (!world->GetCollidingBoundingBoxes(rollbackCollider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE,
-			                                                              -CLEAR_CHECK_TOLERANCE))
-			         .empty()) {
-				safeRollback.y += ROLLBACK_NUDGE;
-			}
+			Vec3 safeRollback = { lastPosition.x, lastPosition.y + ROLLBACK_NUDGE, lastPosition.z };
 
 			// TP our player back
 			this->Teleport(safeRollback, { rotationYaw, rotationPitch });
