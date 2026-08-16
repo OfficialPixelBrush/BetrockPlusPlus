@@ -239,6 +239,14 @@ void Server::Startup() {
 
 	gameRuntime.world.onBlockUpdate = makeBlockUpdateCallback(0, chunkBlockChanges);
 	gameRuntime.worldHell.onBlockUpdate = makeBlockUpdateCallback(-1, chunkBlockChangesHell);
+
+	gameRuntime.world.onWorldEvent = [this](PacketData::WorldEvent _eventType, Int3 _position, int32_t _data) {
+		WorldEventBroadcaster::BroadcastWorldEvent(*this, _eventType, _position, _data, 0);
+	};
+	gameRuntime.worldHell.onWorldEvent = [this](PacketData::WorldEvent _eventType, Int3 _position, int32_t _data) {
+		WorldEventBroadcaster::BroadcastWorldEvent(*this, _eventType, _position, _data, -1);
+	};
+
 	registerEntityTrackerCallbacks(overworldEntityTracker, gameRuntime.world.entityManager);
 	registerEntityTrackerCallbacks(hellEntityTracker, gameRuntime.worldHell.entityManager);
 

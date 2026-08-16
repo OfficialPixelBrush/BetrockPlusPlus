@@ -309,6 +309,8 @@ static void ToggleDoor(WorldManager& _world, Int3 _pos) {
 		_world.SetMeta(top, uint8_t((meta ^ 0b100) + 8));
 	}
 	_world.SetMeta(_pos, uint8_t(meta ^ 0b100)); // XOR bit 2; flips open/closed
+	if (_world.onWorldEvent)
+		_world.onWorldEvent(PacketData::WorldEvent::DOOR_TOGGLE, _pos, 0);
 	return;
 }
 
@@ -570,7 +572,11 @@ void RegisterBlockBehaviors() {
 			if (!IsSupported(_world, _pos, trueFace))
 				BreakAndDropBlock(_world, _pos);
 			// Unpress again
-			_world.SetMeta(_pos, _meta & 0b111);
+			if (_meta & 0b1000) {
+				_world.SetMeta(_pos, _meta & 0b111);
+				if (_world.onWorldEvent)
+					_world.onWorldEvent(PacketData::WorldEvent::CLICK1, _pos, 0);
+			}
 		},
 		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
 			blockBehaviors[BLOCK_BUTTON_STONE].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
@@ -578,6 +584,8 @@ void RegisterBlockBehaviors() {
 		.onBlockClicked = [](WorldManager& _world, Int3 _pos) -> void {
 			_world.SetMeta(_pos, _world.GetMetadata(_pos) | 0b1000);
 			_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_BUTTON_STONE, 20);
+			if (_world.onWorldEvent)
+				_world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0);
 		},
 		.onBlockActivated = [](WorldManager& _world, Int3 _pos) -> bool {
 			blockBehaviors[BLOCK_BUTTON_STONE].onBlockClicked(_world, _pos);

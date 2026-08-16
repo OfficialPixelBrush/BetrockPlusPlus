@@ -8,6 +8,7 @@
 #pragma once
 #include "../player_conn/player_session.h"
 #include "networking/packets.h"
+#include "packet_data.h"
 #include <vector>
 
 namespace PacketUtilities {

@@ -22,6 +22,7 @@
 #include "helpers/AABB.h"
 #include "java_math.h"
 #include "lighter.h"
+#include "packet_data.h"
 #include "tick_scheduler.h"
 #include "tile_entities/tile_entity_manager.h"
 #include "world/spawner.h"
@@ -60,6 +61,7 @@ public:
 	TickScheduler tickScheduler;
 	Lighter lightManager;
 	std::function<void(PendingBlock, Int32_2)> onBlockUpdate;
+	std::function<void(PacketData::WorldEvent, Int3, int32_t)> onWorldEvent;
 	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> chunks;
 	Java::Random rand;
 	int64_t seed = 0;
