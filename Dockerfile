@@ -29,6 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     clang \
     pkg-config \
+    libcurl4-openssl-dev \
     && if [ "$BUILD_TARGET" = "client" ]; then \
     apt-get install -y --no-install-recommends \
     libglm-dev \
@@ -86,11 +87,13 @@ RUN printf '%s\n' \
 # libdeflate is statically linked from the builder stage. Client runtime
 # still needs OpenGL/SDL display libs if you actually run the GUI in-container
 # (unusual; see DOCKER.md).
-RUN if [ "$BUILD_TARGET" = "client" ]; then \
-    apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcurl4 \
+    && if [ "$BUILD_TARGET" = "client" ]; then \
+    apt-get install -y --no-install-recommends \
     libgl1 libglx0 \
-    && rm -rf /var/lib/apt/lists/* ; \
-    fi
+    ; fi \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /data
 COPY --from=builder /src/build/BetrockPlusPlus /usr/local/bin/BetrockPlusPlus
