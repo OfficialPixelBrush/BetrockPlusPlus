@@ -1071,13 +1071,13 @@ public:
 	// Used to trigger world events, such as sound effects
 	struct WorldEvent : BasePacket {
 		WorldEvent() : BasePacket{ PacketId::WorldEvent } {}
-		PacketData::WorldEvent eventId;
+		PacketData::WorldEvent eventType;
 		SlimInt3<int8_t> position;
 		int32_t data;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
-			_stream.Write(eventId);
+			_stream.Write(eventType);
 			_stream.Write(position.x);
 			_stream.Write(position.y);
 			_stream.Write(position.z);
@@ -1085,7 +1085,7 @@ public:
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
-			eventId = _stream.Read<PacketData::WorldEvent>();
+			eventType = _stream.Read<PacketData::WorldEvent>();
 			position.x = _stream.Read<int32_t>();
 			position.y = _stream.Read<int8_t>();
 			position.z = _stream.Read<int32_t>();

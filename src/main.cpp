@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
-#include "CrashCatch.hpp"
+
 #include "bpp_server/server.h"
 #include "bpp_shared/helpers/java/java_math.h"
 #include "logger.h"
@@ -88,6 +88,8 @@ struct Args : MainArguments<Args> {
 	uint32_t entityTickRadius = option("entity_tick_radius", '\0', "Radius within which entities are ticked") = 5;
 };
 
+#ifdef CRASH_LOGGING
+#include "CrashCatch.hpp"
 void InitCrashHandler(std::string _platformString) {
 	CrashCatch::Config config{ .dumpFolder = "./",
 		                       // TODO: Apparently enableTextLog only affects stuff on Windows? TEST!!!
@@ -144,10 +146,13 @@ void InitCrashHandler(std::string _platformString) {
 	};
 	CrashCatch::initialize(config);
 }
+#endif
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 	std::string platformString = std::format("{} ({}, {})", PLATFORM_NAME, BUILD_MODE, ARCH_NAME);
+#ifdef CRASH_LOGGING
 	InitCrashHandler(platformString);
+#endif
 	// Hook up signals
 	std::signal(SIGINT, SignalHandler);
 	std::signal(SIGTERM, SignalHandler);
