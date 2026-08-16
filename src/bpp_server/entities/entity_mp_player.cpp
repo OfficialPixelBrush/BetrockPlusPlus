@@ -59,7 +59,7 @@ bool EntityMPPlayer::PickupItem(ItemStack& _stack, EntityId _entityId) {
 	return false;
 }
 
-static constexpr int MAX_TELEPORT_RETRIES = 5;
+static constexpr int MAX_TELEPORT_RETRIES = 10;
 static constexpr double CLEAR_CHECK_TOLERANCE = 0.05;
 static constexpr double ROLLBACK_NUDGE = 0.01;
 
