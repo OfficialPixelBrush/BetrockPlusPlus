@@ -110,7 +110,7 @@ struct EntityTracker {
 		case EntityType::NONE:
 			return { 0, 0, false };
 		case EntityType::PLAYER:
-			return { 512, 2, false };
+			return { 128, 2, false };
 		case EntityType::FISH:
 			return { 64, 5, true };
 		case EntityType::ARROW:
@@ -124,9 +124,9 @@ struct EntityTracker {
 			return { 64, 20, true };
 		case EntityType::MINECART:
 		case EntityType::BOAT:
-			return { 160, 5, true };
+			return { 128, 5, true };
 		case EntityType::SQUID:
-			return { 160, 3, true };
+			return { 128, 3, true };
 		case EntityType::CHICKEN:
 		case EntityType::COW:
 		case EntityType::PIG:
@@ -140,15 +140,15 @@ struct EntityTracker {
 		case EntityType::GHAST:
 		case EntityType::SLIME:
 		case EntityType::GIANT_ZOMBIE:
-			return { 160, 2, true };
+			return { 128, 3, true };
 		case EntityType::LIT_TNT:
-			return { 160, 10, true };
+			return { 128, 10, true };
 		case EntityType::FALLING_SAND:
 		case EntityType::FALLING_GRAVEL:
-			return { 160, 20, false };
+			return { 128, 20, false };
 		case EntityType::PAINTING:
 			// Paintings never move so there's nothing to resync
-			return { 160, INT_MAX, false };
+			return { 128, INT_MAX, false };
 		default:
 			return { 0, 0, false };
 
