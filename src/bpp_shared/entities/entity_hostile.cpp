@@ -33,8 +33,7 @@ void HostileEntity::Tick() {
 		Int3 blockPos = { MathHelper::FloorDouble(position.x), MathHelper::FloorDouble(position.y),
 			              MathHelper::FloorDouble(position.z) };
 
-		// TODO BRIGHTNESS CURVE!!
-		float brightness = float(world->GetBlockLightFull(blockPos)) / 15.0f;
+		float brightness = GetEntityBrightnessValue();
 
 		Chunk* chunk = world->GetChunkRaw({ blockPos.x >> 4, blockPos.z >> 4 });
 		bool seesSky = chunk && chunk->CanBlockSeeSky({ blockPos.x & 15, blockPos.y, blockPos.z & 15 });

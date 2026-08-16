@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+ */
+#pragma once
+#include "entity_hostile.h"
+
+struct SpiderEntity : public HostileEntity {
+	SpiderEntity() : HostileEntity() {
+		type = EntityType::SPIDER;
+		width = 1.4f;
+		height = 0.9f;
+		movementSpeed = 0.8f;
+		burnInDaylight = false;
+	}
+	~SpiderEntity() = default;
+	bool onLadder() override;
+	void OnDeath() override;
+	void TryAttackEntity(Entity& _target, float _distance) override;
+	std::shared_ptr<Entity> FindPlayerToAttack() override;
+};

@@ -89,6 +89,26 @@ void Entity::OnCollideWithPlayer(PlayerEntity& _entity) {
 	return;
 }
 
+float Entity::GetEntityBrightnessValue() {
+	auto fd = MathHelper::FloorDouble;
+	int x = fd(position.x);
+	double offset = (collider.maxY - collider.minY) * 0.66;
+	int y = fd(position.y - double(this->yOffset + offset));
+	int z = fd(position.z);
+	if (this->world->AABBinValidChunks({ double(fd(collider.minX)), double(fd(collider.minY)),
+	                                     double(fd(collider.minZ)), double(fd(collider.maxX)),
+	                                     double(fd(collider.maxY)), double(fd(collider.maxZ)) })) {
+		float brightness = Lighting::BrightnessArray[this->world->GetBlockLightValue({ x, y, z })];
+		if (brightness < this->entityBrightness) {
+			brightness = this->entityBrightness;
+		}
+
+		return brightness;
+	} else {
+		return this->entityBrightness;
+	}
+}
+
 void Entity::Tick() {
 	ticksExisted++;
 

@@ -133,3 +133,7 @@ private:
 	// Persistent cache for unlightAt
 	ChunkCache unlightCache;
 };
+
+namespace Lighting {
+	extern const float BrightnessArray[16];
+} // namespace Lighting

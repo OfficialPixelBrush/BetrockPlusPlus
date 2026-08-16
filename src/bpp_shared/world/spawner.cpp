@@ -13,6 +13,9 @@
 #include "entities/entity_pig.h"
 #include "entities/entity_sheep.h"
 #include "entities/entity_zombie.h"
+#include "entities/entity_creeper.h"
+#include "entities/entity_spider.h"
+#include "entities/entity_skeleton.h"
 #include "world.h"
 
 EntitySpawner::EntitySpawner() {
@@ -31,6 +34,9 @@ EntitySpawner::EntitySpawner() {
 	categories.push_back({
 	    .spawnList = {
 	        { []() { return std::make_shared<ZombieEntity>(); }, 10 },
+			{ []() { return std::make_shared<CreeperEntity>(); }, 10 },
+			{ []() { return std::make_shared<SpiderEntity>(); }, 10 },
+			{ []() { return std::make_shared<SkeletonEntity>(); }, 10 },
 	    },
 	    .cap = 70,
 	});
