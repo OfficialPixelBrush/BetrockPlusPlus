@@ -40,12 +40,4 @@ inline void CloseContainer(PlayerSession& _session) {
 	_session.activeInteraction = nullptr;
 	_session.openWindowId = 0;
 }
-
-inline void SendWorldEffect(PlayerSession& _session, PacketData::WorldEvent _worldEvent, Int3 _pos, int32_t data = 0) {
-	Packet::WorldEvent pkt;
-	pkt.eventType = _worldEvent;
-	pkt.position = {_pos.x, static_cast<int8_t>(_pos.y), _pos.z};
-	pkt.data = data;
-	pkt.Serialize(_session.stream);
-}
 }; // namespace PacketUtilities
