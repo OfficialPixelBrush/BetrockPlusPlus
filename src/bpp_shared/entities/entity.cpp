@@ -93,7 +93,7 @@ float Entity::GetEntityBrightnessValue() {
 	auto fd = MathHelper::FloorDouble;
 	int x = fd(position.x);
 	double offset = (collider.maxY - collider.minY) * 0.66;
-	int y = fd(position.y - double(this->yOffset + offset));
+	int y = fd(position.y - double(this->yOffset) + offset);
 	int z = fd(position.z);
 	if (this->world->AABBinValidChunks({ double(fd(collider.minX)), double(fd(collider.minY)),
 	                                     double(fd(collider.minZ)), double(fd(collider.maxX)),
@@ -104,9 +104,8 @@ float Entity::GetEntityBrightnessValue() {
 		}
 
 		return brightness;
-	} else {
-		return this->entityBrightness;
 	}
+	return this->entityBrightness;
 }
 
 void Entity::Tick() {

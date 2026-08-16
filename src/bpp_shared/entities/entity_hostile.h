@@ -25,4 +25,5 @@ struct HostileEntity : public MobEntity {
 	virtual std::shared_ptr<Entity> FindPlayerToAttack();
 	virtual void TryAttackEntity(Entity& _target, float _distance);
 	virtual void OnTargetLostSight(Entity& _target, float _distance) {}
+	bool AttackEntityFrom(Entity* _entity, int _damage) override;
 };

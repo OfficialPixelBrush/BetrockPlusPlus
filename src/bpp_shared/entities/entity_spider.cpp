@@ -25,9 +25,12 @@ void SpiderEntity::TryAttackEntity(Entity& _target, float _distance) {
 	auto brightness = this->GetEntityBrightnessValue();
 
 	if (brightness > 0.5f && rand.NextInt(100) == 0) {
-		this->target.reset();
+		this->attackTarget.reset();
 		return;
 	}
+	auto target = attackTarget.lock();
+	if (!target)
+		return;
 	if (_distance > 2.0f && _distance < 6.0f && rand.NextInt(10) == 0) {
 		if (this->onGround) {
 			double dx = _target.position.x - position.x;
@@ -39,7 +42,7 @@ void SpiderEntity::TryAttackEntity(Entity& _target, float _distance) {
 			return;
 		}
 	}
-	HostileEntity::TryAttackEntity(_target, _distance);
+	HostileEntity::TryAttackEntity(*target, _distance);
 }
 
 std::shared_ptr<Entity> SpiderEntity::FindPlayerToAttack() {
