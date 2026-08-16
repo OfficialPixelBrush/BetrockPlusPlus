@@ -59,6 +59,8 @@ bool EntityMPPlayer::PickupItem(ItemStack& _stack, EntityId _entityId) {
 	return false;
 }
 
+static constexpr int MAX_TELEPORT_RETRIES = 5;
+
 void EntityMPPlayer::HandlePositionChecks() {
 	if (isDead || !world)
 		return;
@@ -72,6 +74,24 @@ void EntityMPPlayer::HandlePositionChecks() {
 		auto dist = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
 
 		if (dist > 0.0625) {
+			session->teleportRetries++;
+
+			if (session->teleportRetries > MAX_TELEPORT_RETRIES) {
+				GlobalLogger().warn << "Client " << session->username
+				                    << " stuck on position correction, forcing acceptance\n";
+				session->pendingTeleport.reset();
+				session->teleportRetries = 0;
+
+				this->position = *session->pendingPosition;
+				session->position.pos = this->position;
+				this->velocity = { 0.0, 0.0, 0.0 };
+				ySize = 0.0f;
+				RebuildCollider();
+				// onGround already reflects the client's last claimed state
+				session->pendingPosition.reset();
+				return;
+			}
+
 			// Player isn't at the teleported position so send another tp packet
 			// Also reset our position
 			this->Teleport(*session->pendingTeleport, { rotationYaw, rotationPitch });
@@ -85,6 +105,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 		}
 		// Client acknowledged our tp
 		session->pendingTeleport.reset();
+		session->teleportRetries = 0;
 	}
 
 	// If we recieved a movement packet this Tick do our server side checks

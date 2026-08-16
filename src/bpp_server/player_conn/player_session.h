@@ -49,6 +49,8 @@ struct PlayerSession {
 	std::optional<Vec3> pendingPosition = std::nullopt;
 	std::optional<Vec3> pendingTeleport = std::nullopt;
 
+	int teleportRetries = 0;
+
 	// Our player entity
 	std::shared_ptr<EntityMPPlayer> entity;
 	EntityTracker* entityTracker = nullptr;
