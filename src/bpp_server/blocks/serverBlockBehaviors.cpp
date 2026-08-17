@@ -134,7 +134,7 @@ void ServerBlock::Initialize() {
 		//if (!IsRecord(heldItem.id) && )
 		//	return false;
 		if (auto fn = _world.onWorldEvent) {
-			fn(PacketData::WorldEvent::RECORD_PLAY, _position, Items::Id::RECORD_CAT);
+			fn(PacketData::WorldEvent::RECORD_PLAY, _position, Items::Id::RECORD_CAT, nullptr);
 			//fn(PacketData::WorldEvent::RECORD_PLAY, _position, 0);
 		}
 		return false;

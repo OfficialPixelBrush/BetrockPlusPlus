@@ -116,7 +116,7 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 		}
 
 		if (auto fn = Blocks::blockBehaviors[blockId].onBlockClicked) {
-			fn(_world, packetPos);
+			fn(_world, packetPos, &_session);
 		}
 
 		ItemStack* heldItem = _session.inventory.GetHeldItem();
@@ -177,7 +177,7 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 	}
 	// The server didn't override our block's behavior so check the base behavior
 	else if (Blocks::blockBehaviors[block].onBlockActivated) {
-		if (!Blocks::blockBehaviors[block].onBlockActivated(_world, position)) {
+		if (!Blocks::blockBehaviors[block].onBlockActivated(_world, position, &_session)) {
 			return;
 		}
 	}
@@ -483,7 +483,7 @@ void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
 
 	// Force a refresh
 	_session.dimension = targetDim;
-	_session.entityTracker = targetDim == 0 ? &_server.overworldEntityTracker : &_server.hellEntityTracker;
+	_session.entityTracker = targetDim == Dimension::Overworld ? &_server.overworldEntityTracker : &_server.hellEntityTracker;
 
 	// Get our spawn point
 	auto world = _server.GetWorldForDimension(targetDim);

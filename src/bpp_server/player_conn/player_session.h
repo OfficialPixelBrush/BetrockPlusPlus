@@ -167,7 +167,7 @@ struct PlayerSession {
 		Tag dimensionTag;
 		dimensionTag.type = TAG_INT;
 		dimensionTag.name = "Dimension";
-		dimensionTag.intValue = dimension;
+		dimensionTag.intValue = int(dimension);
 		Tag rotationTag;
 		rotationTag.type = TAG_LIST;
 		rotationTag.name = "Rotation";

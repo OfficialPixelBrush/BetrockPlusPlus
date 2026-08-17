@@ -10,7 +10,8 @@
 #include "../server.h"
 
 void WorldEventBroadcaster::BroadcastWorldEvent(Server& _server, PacketData::WorldEvent _eventType, Int3 _position,
-                                                int32_t _data, int8_t _dimension, double _rangeSq) {
+                                                int32_t _data, Dimension _dimension, PlayerSession* _triggeringSession,
+                                                double _rangeSq) {
 	Packet::WorldEvent pkt;
 	pkt.eventType = _eventType;
 	pkt.position = { _position.x, static_cast<int8_t>(_position.y), _position.z };
@@ -20,9 +21,11 @@ void WorldEventBroadcaster::BroadcastWorldEvent(Server& _server, PacketData::Wor
 	// same rule the wiki documents for sounds (e.g. music discs).
 	std::vector<PlayerSession*> inRange;
 	for (auto& session : _server.players) {
+		if (session.get() == _triggeringSession)
+			continue;
 		if (session->connState != ConnectionState::Playing)
 			continue;
-		if (static_cast<int8_t>(session->dimension) != _dimension)
+		if (session->dimension != _dimension)
 			continue;
 
 		Vec3 playerPos = session->position.pos;
