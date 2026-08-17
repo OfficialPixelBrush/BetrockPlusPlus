@@ -40,6 +40,7 @@ public:
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
+			_stream.IncrementPacketCount(id);
 		}
 
 		// NOTE: Reading the packet id is enough to deserialize it
@@ -64,6 +65,7 @@ public:
 			_stream.WriteString16(username);
 			_stream.Write(worldSeed);
 			_stream.Write(dimension);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -84,6 +86,7 @@ public:
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.WriteString16(usernameServerId);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -99,6 +102,7 @@ public:
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.WriteString16(message);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -114,6 +118,7 @@ public:
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.Write(time);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -135,6 +140,7 @@ public:
 			_stream.Write(inventorySlot);
 			_stream.Write(itemId);
 			_stream.Write(itemMetadata);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -155,6 +161,7 @@ public:
 			_stream.Write(position.x);
 			_stream.Write(position.y);
 			_stream.Write(position.z);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -176,6 +183,7 @@ public:
 			_stream.Write(sourceEntityId);
 			_stream.Write(targetEntityId);
 			_stream.Write(attack);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -193,6 +201,7 @@ public:
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.Write(health);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -208,6 +217,7 @@ public:
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.Write(dimension);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -223,6 +233,7 @@ public:
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.Write(onGround);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -252,6 +263,7 @@ public:
 			_stream.Write(cameraY);
 			_stream.Write(position.z);
 			_stream.Write(onGround);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -276,6 +288,7 @@ public:
 			_stream.Write(yaw);
 			_stream.Write(pitch);
 			_stream.Write(onGround);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -304,6 +317,7 @@ public:
 			_stream.Write(yaw);
 			_stream.Write(pitch);
 			_stream.Write(onGround);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -331,6 +345,7 @@ public:
 			_stream.Write(position.y);
 			_stream.Write(position.z);
 			_stream.Write(face);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -358,6 +373,7 @@ public:
 			_stream.Write(item.id);
 			_stream.Write(item.count);
 			_stream.Write(item.data);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -402,6 +418,7 @@ public:
 			_stream.Write(position.x);
 			_stream.Write(position.y);
 			_stream.Write(position.z);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -423,6 +440,7 @@ public:
 			_stream.Write(id);
 			_stream.Write(entityId);
 			_stream.Write(animation);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -441,6 +459,7 @@ public:
 			_stream.Write(id);
 			_stream.Write(entityId);
 			_stream.Write(action);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -470,6 +489,7 @@ public:
 			_stream.Write(qYaw);
 			_stream.Write(qPitch);
 			_stream.Write(heldItemId);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -507,6 +527,7 @@ public:
 			_stream.Write(qPitch);
 			_stream.Write(qYaw);
 			_stream.Write(qRoll);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -533,6 +554,7 @@ public:
 			_stream.Write(id);
 			_stream.Write(itemEntityId);
 			_stream.Write(collectorEntityId);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -563,6 +585,7 @@ public:
 				_stream.Write(qVelocity.y);
 				_stream.Write(qVelocity.z);
 			}
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -601,6 +624,7 @@ public:
 			_stream.Write(qYaw);
 			_stream.Write(qPitch);
 			_stream.WriteEntityMetadata(metadata);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -631,6 +655,7 @@ public:
 			_stream.Write(position.y);
 			_stream.Write(position.z);
 			_stream.Write(direction);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -663,6 +688,7 @@ public:
 			_stream.Write(yaw);
 			_stream.Write(jumping);
 			_stream.Write(sneaking);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -687,6 +713,7 @@ public:
 			_stream.Write(velocity.x);
 			_stream.Write(velocity.y);
 			_stream.Write(velocity.z);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -705,6 +732,7 @@ public:
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.Write(entityId);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -718,6 +746,7 @@ public:
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize([[maybe_unused]] NetworkStream& _stream) override {}
@@ -735,6 +764,7 @@ public:
 			_stream.Write(qrPosition.x);
 			_stream.Write(qrPosition.y);
 			_stream.Write(qrPosition.z);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -758,6 +788,7 @@ public:
 			_stream.Write(entityId);
 			_stream.Write(qYaw);
 			_stream.Write(qPitch);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -784,6 +815,7 @@ public:
 			_stream.Write(qrPosition.z);
 			_stream.Write(qYaw);
 			_stream.Write(qPitch);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -813,6 +845,7 @@ public:
 			_stream.Write(position.z);
 			_stream.Write(yaw);
 			_stream.Write(pitch);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -835,6 +868,7 @@ public:
 			_stream.Write(id);
 			_stream.Write(entityId);
 			_stream.Write(action);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -853,6 +887,7 @@ public:
 			_stream.Write(id);
 			_stream.Write(passengerEntityId);
 			_stream.Write(vehicleEntityId);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -875,6 +910,7 @@ public:
 			_stream.Write(id);
 			_stream.Write(entityId);
 			_stream.WriteEntityMetadata(metadata);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -894,6 +930,7 @@ public:
 			_stream.Write(pos.x);
 			_stream.Write(pos.z);
 			_stream.Write(visible);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -920,6 +957,7 @@ public:
 			_stream.Write(size.z);
 			_stream.Write(static_cast<int32_t>(compressedData.size()));
 			_stream.WriteBytes(compressedData.data(), compressedData.size());
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -955,6 +993,7 @@ public:
 				_stream.Write(blockTypes[static_cast<size_t>(i)]);
 			for (int16_t i = 0; i < numberOfBlocks; i++)
 				_stream.Write(blockMetadata[static_cast<size_t>(i)]);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -986,6 +1025,7 @@ public:
 			_stream.Write(position.z);
 			_stream.Write(block.type);
 			_stream.Write(block.data);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -1011,6 +1051,7 @@ public:
 			_stream.Write(position.z);
 			_stream.Write(instrumentState);
 			_stream.Write(pitchDirection);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -1054,6 +1095,7 @@ public:
 			_stream.Write(radius);
 			_stream.Write(static_cast<int32_t>(destroyedBlocks.size()));
 			_stream.WriteBytes(reinterpret_cast<const uint8_t*>(destroyedBlocks.data()), destroyedBlocks.size());
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -1082,6 +1124,7 @@ public:
 			_stream.Write(position.y);
 			_stream.Write(position.z);
 			_stream.Write(data);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -1101,6 +1144,7 @@ public:
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.Write(eventId);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -1123,6 +1167,7 @@ public:
 			_stream.Write(position.x);
 			_stream.Write(position.y);
 			_stream.Write(position.z);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -1148,6 +1193,7 @@ public:
 			_stream.Write(windowType);
 			_stream.WriteString8(title);
 			_stream.Write(slotCount);
+			_stream.IncrementPacketCount(id);
 		}
 		void Deserialize(NetworkStream& _stream) override {
 			windowId = _stream.Read<WindowId>();
@@ -1165,6 +1211,7 @@ public:
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.Write(windowId);
+			_stream.IncrementPacketCount(id);
 		}
 		void Deserialize(NetworkStream& _stream) override {
 			windowId = _stream.Read<WindowId>();
@@ -1193,6 +1240,7 @@ public:
 				_stream.Write(item.count);
 				_stream.Write(item.data);
 			}
+			_stream.IncrementPacketCount(id);
 		}
 		void Deserialize(NetworkStream& _stream) override {
 			windowId = _stream.Read<WindowId>();
@@ -1224,6 +1272,7 @@ public:
 				_stream.Write(item.count);
 				_stream.Write(item.data);
 			}
+			_stream.IncrementPacketCount(id);
 		}
 		void Deserialize(NetworkStream& _stream) override {
 			windowId = _stream.Read<WindowId>();
@@ -1254,6 +1303,7 @@ public:
 					_stream.Write(item.data);
 				}
 			}
+			_stream.IncrementPacketCount(id);
 		}
 		void Deserialize(NetworkStream& _stream) override {
 			windowId = _stream.Read<WindowId>();
@@ -1283,6 +1333,7 @@ public:
 			_stream.Write(windowId);
 			_stream.Write(containerData.type);
 			_stream.Write(containerData.value);
+			_stream.IncrementPacketCount(id);
 		}
 		void Deserialize(NetworkStream& _stream) override {
 			windowId = _stream.Read<WindowId>();
@@ -1303,6 +1354,7 @@ public:
 			_stream.Write(windowId);
 			_stream.Write(transactionId);
 			_stream.Write(accepted);
+			_stream.IncrementPacketCount(id);
 		}
 		void Deserialize(NetworkStream& _stream) override {
 			windowId = _stream.Read<WindowId>();
@@ -1326,6 +1378,7 @@ public:
 			_stream.WriteString16(lines[1]);
 			_stream.WriteString16(lines[2]);
 			_stream.WriteString16(lines[3]);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -1352,6 +1405,7 @@ public:
 			_stream.Write(mapId);
 			_stream.Write(uint8_t(data.size()));
 			_stream.WriteBytes(data.data(), data.size());
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -1373,6 +1427,7 @@ public:
 			_stream.Write(id);
 			_stream.Write(statisticId);
 			_stream.Write(amount);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -1389,6 +1444,7 @@ public:
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.WriteString16(reason);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
