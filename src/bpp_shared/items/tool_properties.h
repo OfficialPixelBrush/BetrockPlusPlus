@@ -95,6 +95,7 @@ constexpr bool IsShovel(ItemId _id);
 bool IsEffective(ToolType _type, BlockType _block);
 bool IsWeapon(ItemId _id);
 bool IsTool(ItemId _id);
+bool IsRecord(ItemId _id);
 
 // True if the held item (or bare hand via material.isHarvestable) can harvest the block.
 // Determines whether dig speed uses /30 (harvest) or /100 (cannot harvest).

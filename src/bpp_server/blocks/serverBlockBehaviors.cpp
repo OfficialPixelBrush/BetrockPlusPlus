@@ -124,4 +124,19 @@ void ServerBlock::Initialize() {
 		PacketUtilities::SendInventory(_session, _session.openWindowId, *_session.activeInteraction->inventory);
 		return false;
 	};
+
+	blockBehaviors[BLOCK_JUKEBOX].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
+	                                                    Runtime& _gameRuntime) -> bool {
+		//ItemStack* heldItem = _session.inventory.GetHeldItem();
+		//if (!heldItem)
+		//	return false;
+		// TODO: Check if jukebox is already playing
+		//if (!IsRecord(heldItem.id) && )
+		//	return false;
+		if (auto fn = _world.onWorldEvent) {
+			fn(PacketData::WorldEvent::RECORD_PLAY, _position, Items::Id::RECORD_CAT);
+			//fn(PacketData::WorldEvent::RECORD_PLAY, _position, 0);
+		}
+		return false;
+	};
 }
