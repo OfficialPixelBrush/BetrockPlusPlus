@@ -367,25 +367,36 @@ void Entity::UpdateFallState(float _movedY) {
 }
 
 void Entity::LoadFromNbt(Tag& _nbt) {
-	auto& motion = _nbt.compound["Motion"].GetList();
-	auto& pos = _nbt.compound["Pos"].GetList();
-	auto& rotation = _nbt.compound["Rotation"].GetList();
+	if (_nbt.Has("Motion")) {
+		auto& motion = _nbt.compound["Motion"].GetList();
+		if (motion.size() >= 3) {
+			velocity.x = motion[0].GetDouble();
+			velocity.y = motion[1].GetDouble();
+			velocity.z = motion[2].GetDouble();
+		}
+	}
 
-	velocity.x = motion[0].GetDouble();
-	velocity.y = motion[1].GetDouble();
-	velocity.z = motion[2].GetDouble();
+	if (_nbt.Has("Pos")) {
+		auto& pos = _nbt.compound["Pos"].GetList();
+		if (pos.size() >= 3) {
+			position.x = pos[0].GetDouble();
+			position.y = pos[1].GetDouble();
+			position.z = pos[2].GetDouble();
+		}
+	}
 
-	position.x = pos[0].GetDouble();
-	position.y = pos[1].GetDouble();
-	position.z = pos[2].GetDouble();
+	if (_nbt.Has("Rotation")) {
+		auto& rotation = _nbt.compound["Rotation"].GetList();
+		if (rotation.size() >= 2) {
+			rotationYaw = rotation[0].GetFloat();
+			rotationPitch = rotation[1].GetFloat();
+		}
+	}
 
-	rotationYaw = rotation[0].GetFloat();
-	rotationPitch = rotation[1].GetFloat();
-
-	air = _nbt.compound["Air"].GetShort();
-	onGround = _nbt.compound["OnGround"].GetByte();
-	fallDistance = _nbt.compound["FallDistance"].GetFloat();
-	fireTicks = _nbt.compound["Fire"].GetShort();
+	air = _nbt.Has("Air") ? _nbt.compound["Air"].GetShort() : maxAir;
+	onGround = _nbt.Has("OnGround") ? (_nbt.compound["OnGround"].GetByte() != 0) : true;
+	fallDistance = _nbt.Has("FallDistance") ? _nbt.compound["FallDistance"].GetFloat() : 0.0f;
+	fireTicks = _nbt.Has("Fire") ? _nbt.compound["Fire"].GetShort() : 0;
 
 	RebuildCollider();
 }
