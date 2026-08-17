@@ -6,7 +6,7 @@
  */
 #include "entity_cow.h"
 
-void CowEntity::OnDeath() {
+void CowEntity::OnDeath(Entity* _killer) {
 	// Drop 0-2 leather
 	auto targetItem = Items::Id::LEATHER;
 	int itemCount = this->rand.NextInt(3);

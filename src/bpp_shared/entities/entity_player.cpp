@@ -14,8 +14,8 @@ bool PlayerEntity::PickupItem(ItemStack& _stack, EntityId _entityId) {
 void PlayerEntity::DropInventory() {
 	return;
 }
-void PlayerEntity::OnDeath() {
-	MobileEntity::OnDeath();
+void PlayerEntity::OnDeath(Entity* _killer) {
+	MobileEntity::OnDeath(_killer);
 
 	// Shrink to the "squished corpse" hitbox
 	width = 0.2f;

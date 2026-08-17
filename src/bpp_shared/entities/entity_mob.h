@@ -27,7 +27,7 @@ struct MobEntity : public MobileEntity {
 	virtual float GetWanderWeight(Int3 _pos);
 	virtual void UpdateState();
 	virtual bool TryDespawn();
-	virtual void OnDeath() override;
+	virtual void OnDeath(Entity* _killer) override;
 	virtual void Tick() override;
 	virtual bool CanSpawnAt(Int3 _pos) {
 		if (!world)

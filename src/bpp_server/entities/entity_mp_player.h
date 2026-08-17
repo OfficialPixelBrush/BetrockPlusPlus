@@ -23,7 +23,7 @@ struct EntityMPPlayer : public PlayerEntity {
 	virtual void Tick() override;
 	bool PickupItem(ItemStack& _stack, EntityId _entityId) override;
 	void UpdateFallState(float _movedY) override;
-	void OnDeath() override;
+	void OnDeath(Entity* _killer) override;
 	bool DropItem(ItemStack _stack) override;
 	void HandlePositionChecks();
 	void DropInventory() override;

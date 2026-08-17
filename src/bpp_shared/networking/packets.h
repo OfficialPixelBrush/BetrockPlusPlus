@@ -1093,7 +1093,7 @@ public:
 			_stream.Write(position.y);
 			_stream.Write(position.z);
 			_stream.Write(radius);
-			_stream.Write(static_cast<int32_t>(destroyedBlocks.size()));
+			_stream.Write(static_cast<int32_t>(numberOfDestroyedBlocks));
 			_stream.WriteBytes(reinterpret_cast<const uint8_t*>(destroyedBlocks.data()), destroyedBlocks.size());
 			_stream.IncrementPacketCount(id);
 		}

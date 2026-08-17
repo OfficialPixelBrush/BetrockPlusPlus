@@ -19,5 +19,5 @@ struct ZombieEntity : public HostileEntity {
 		attackStrength = 5;
 	}
 	~ZombieEntity() = default;
-	void OnDeath() override;
+	void OnDeath(Entity* _killer) override;
 };

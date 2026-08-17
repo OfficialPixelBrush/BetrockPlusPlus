@@ -20,7 +20,7 @@ MobileEntity::MobileEntity() {
 	preventEntitySpawning = true;
 }
 
-void MobileEntity::OnDeath() {
+void MobileEntity::OnDeath(Entity* _killer) {
 	health = 0;
 }
 
@@ -384,7 +384,7 @@ bool MobileEntity::AttackEntityFrom(Entity* _entity, int _damage) {
 	}
 
 	if (health <= 0) {
-		OnDeath();
+		OnDeath(_entity);
 	}
 
 	return true;

@@ -14,5 +14,5 @@ struct PigEntity : public AnimalEntity {
 		height = 0.9f;
 	}
 	~PigEntity() = default;
-	void OnDeath() override;
+	void OnDeath(Entity* _killer) override;
 };

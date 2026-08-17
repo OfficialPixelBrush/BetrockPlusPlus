@@ -6,7 +6,7 @@
  */
 #include "entity_sheep.h"
 
-void SheepEntity::OnDeath() {
+void SheepEntity::OnDeath(Entity* _killer) {
 	if (!isSheared)
 		DropItemAtEntity(BLOCK_WOOL, 1, this->color);
 }

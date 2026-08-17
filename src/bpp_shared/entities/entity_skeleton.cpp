@@ -6,7 +6,7 @@
  */
 #include "entity_skeleton.h"
 
-void SkeletonEntity::OnDeath() {
+void SkeletonEntity::OnDeath(Entity* _killer) {
 	// Drop arrows
 	auto targetItem = Items::Id::ARROW;
 	int itemCount = this->rand.NextInt(3);

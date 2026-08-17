@@ -202,8 +202,8 @@ void EntityMPPlayer::DropInventory() {
 	session->inventoryInteraction.needsDiff = true;
 }
 
-void EntityMPPlayer::OnDeath() {
-	PlayerEntity::OnDeath();
+void EntityMPPlayer::OnDeath(Entity* _killer) {
+	PlayerEntity::OnDeath(_killer);
 
 	// Hehe
 	if (session && (session->username == "wAidanJC" || session->username == "PixelBrushArt")) {
@@ -251,7 +251,7 @@ void EntityMPPlayer::Tick() {
 
 	// If we fell out of the world then die
 	if (position.y < -64.0)
-		OnDeath();
+		OnDeath(nullptr);
 
 	if (this->lastNotifiedHealth != GetHeartsHealth()) {
 		Packet::SetHealth healthPkt;

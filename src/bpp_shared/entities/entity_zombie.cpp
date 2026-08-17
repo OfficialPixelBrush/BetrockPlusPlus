@@ -6,7 +6,7 @@
  */
 #include "entity_zombie.h"
 
-void ZombieEntity::OnDeath() {
+void ZombieEntity::OnDeath(Entity* _killer) {
 	// Drop 0-2 feathers
 	auto targetItem = Items::Id::FEATHER;
 	int itemCount = this->rand.NextInt(3);
