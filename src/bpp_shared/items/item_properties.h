@@ -25,6 +25,14 @@ struct ItemProperties {
 	ItemAmount maxStack = STACK_MAX;
 };
 
+enum ArmorPiece {
+	INVALID_PIECE = -1,
+	HELMET,
+	CHESTPLATE,
+	LEGGING,
+	BOOT
+};
+
 struct ItemBehavior {
 	void (*onUse)(PlayerSession& _session, ItemStack* _stack, Entity& _target) = nullptr;
 	void (*onBlockUse)(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
@@ -86,6 +94,15 @@ constexpr int GetArmorDamageReduction(ItemId _id) {
 	// Each of the following tiers of armor follow this pattern from then on
 	int pieceIndex = (_id - 298) % 4;
 	return damageReduceAmounts[pieceIndex];
+}
+
+constexpr ArmorPiece GetArmorPiece(ItemId _id) {
+	if (!IsArmor(_id))
+		return ArmorPiece::INVALID_PIECE;
+
+	int pieceIndex = (_id - 298) % 4;
+	ArmorPiece type[4] = { HELMET, CHESTPLATE, LEGGING, BOOT };
+	return type[pieceIndex];
 }
 
 inline void DamageItem(ItemStack& _stack, int _damage) {
