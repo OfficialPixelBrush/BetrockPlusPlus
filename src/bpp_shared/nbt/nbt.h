@@ -143,15 +143,19 @@ struct Tag {
 
 	const Tag& Get(const std::string& _key) const {
 		auto it = compound.find(_key);
-		if (it == compound.end())
-			throw std::runtime_error("NBT key not found: " + _key);
+		if (it == compound.end()) {
+			GlobalLogger().error << "Tried to access a NBT tag that doesn't exist! (" << _key << ")\n";
+			throw std::runtime_error("NBT tag doesn't exist!");
+		}
 		return it->second;
 	}
 
 private:
 	void Expect(TagType _t) const {
-		if (type != _t)
-			throw std::runtime_error("NBT type mismatch");
+		if (type != _t) {
+			GlobalLogger().error << "Unexpected NBT type in getter! '" << _t << "'. Expected: '" << type << "'\n";
+			throw std::runtime_error("Unexpected NBT type!");
+		}
 	}
 };
 
