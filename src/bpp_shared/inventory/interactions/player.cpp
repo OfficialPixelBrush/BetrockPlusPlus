@@ -11,6 +11,52 @@
 PlayerInventoryInteraction::PlayerInventoryInteraction(InventoryPlayer* _inv, Runtime& _gameRuntime)
     : CraftingInventoryInteraction(_inv, _inv, _inv, _gameRuntime, { 2, 2 }), playerInventory(_inv) {}
 
+void PlayerInventoryInteraction::OnLeftClick(int _slot) {
+	auto playerInv = dynamic_cast<InventoryPlayer*>(inventory);
+	if (!playerInv)
+		return;
+
+	if (playerInv->GetInventoryAreaFromSlot(_slot) == InvMap::ARMOR) {
+		// Slots 5 -> 8 are for armor
+		if (this->carried.id != Items::Id::INVALID) {
+			// Check to see if the armor piece matches
+			if (!Items::IsArmor(this->carried.id))
+				return;
+
+			Items::ArmorPiece pieces[4] = { Items::ArmorPiece::HELMET, Items::ArmorPiece::CHESTPLATE,
+				                            Items::ArmorPiece::LEGGING, Items::ArmorPiece::BOOT };
+
+			if (pieces[_slot - 5] != Items::GetArmorPiece(this->carried.id))
+				return;
+		}
+	}
+
+	CraftingInventoryInteraction::OnLeftClick(_slot);
+}
+
+void PlayerInventoryInteraction::OnRightClick(int _slot) {
+	auto playerInv = dynamic_cast<InventoryPlayer*>(inventory);
+	if (!playerInv)
+		return;
+
+	if (playerInv->GetInventoryAreaFromSlot(_slot) == InvMap::ARMOR) {
+		// Slots 5 -> 8 are for armor
+		if (this->carried.id != Items::Id::INVALID) {
+			// Check to see if the armor piece matches
+			if (!Items::IsArmor(this->carried.id))
+				return;
+
+			Items::ArmorPiece pieces[4] = { Items::ArmorPiece::HELMET, Items::ArmorPiece::CHESTPLATE,
+				                            Items::ArmorPiece::LEGGING, Items::ArmorPiece::BOOT };
+
+			if (pieces[_slot - 5] != Items::GetArmorPiece(this->carried.id))
+				return;
+		}
+	}
+
+	CraftingInventoryInteraction::OnRightClick(_slot);
+}
+
 bool PlayerInventoryInteraction::CanExist(PlayerEntity& _player) {
 	return playerInventory != nullptr;
 }
