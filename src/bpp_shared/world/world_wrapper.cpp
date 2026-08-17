@@ -194,3 +194,15 @@ uint8_t WorldWrapper::GetSkyLight(const Int3 _wpos) {
 		return 0;
 	return chunk->GetSkyLight({ _wpos.x & 15, _wpos.y, _wpos.z & 15 });
 }
+
+int WorldWrapper::GetBlockLightRaw(const Int3 _wpos) {
+	if (!InBounds(_wpos.y))
+		return 15;
+	auto chunk = chunkRegion.GetChunk(GetRegionChunkPos(_wpos));
+	if (!chunk || chunk->state.load() < ChunkState::Generated)
+		return 15;
+	Int3 localPos = { _wpos.x & 15, _wpos.y, _wpos.z & 15 };
+	int skylight = chunk->GetSkyLight(localPos);
+	int blockLight = chunk->GetBlockLight(localPos);
+	return blockLight > skylight ? blockLight : skylight;
+}

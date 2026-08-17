@@ -338,11 +338,10 @@ bool GenerateFlowers(BlockType _type, WorldWrapper& _world, Java::Random& _rand,
 			continue;
 
 		if (isMushroom) {
-			if (IsSolid(_world.GetBlockId({ x, y - 1, z })) && _world.GetSkyLight({ x, y, z }) == 0)
+			if (Blocks::CanMushroomSurviveAt(_world, { x, y, z }))
 				_world.SetBlock({ x, y, z }, _type);
 		} else {
-			BlockType below = _world.GetBlockId({ x, y - 1, z });
-			if (below == BLOCK_GRASS)
+			if (Blocks::CanGenericPlantSurviveAt(_world, { x, y, z }))
 				_world.SetBlock({ x, y, z }, _type);
 		}
 	}
@@ -366,8 +365,7 @@ bool GenerateTallgrass(uint8_t _meta, WorldWrapper& _world, Java::Random& _rand,
 			continue;
 		if (_world.GetBlockId({ x, y, z }) != BLOCK_AIR)
 			continue;
-		BlockType below = _world.GetBlockId({ x, y - 1, z });
-		if (below == BLOCK_GRASS || below == BLOCK_DIRT)
+		if (Blocks::CanGenericPlantSurviveAt(_world, {x, y, z}))
 			_world.SetBlock({ x, y, z }, BLOCK_TALLGRASS, _meta);
 	}
 	return true;

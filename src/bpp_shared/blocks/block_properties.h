@@ -10,20 +10,21 @@
 #include <numeric_structs.h>
 
 class WorldManager;
+class WorldAccess;
 struct Entity;
 struct PlayerSession;
 
 namespace Blocks {
 
-bool CanSugarcaneSurviveAt(WorldManager& _world, Int3 _pos);
+bool CanSugarcaneSurviveAt(WorldAccess& _world, Int3 _pos);
 bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, PacketData::FaceDirection _face);
 float GetFluidPercentAir(uint8_t _meta);
 void BreakAndDropBlock(WorldManager& _world, Int3 _pos);
 void DropBlockAt(WorldManager& _world, Int3 _pos, BlockType _id, ItemAmount _count, int16_t _data);
 void DropItemAt(WorldManager& _world, Int3 _pos, Items::Id _id, ItemAmount _count, int16_t _data);
-bool CanFallAt(WorldManager& _world, Int3 _position);
-bool CanGenericPlantSurviveAt(WorldManager& _world, Int3 _pos);
-bool CanMushroomSurviveAt(WorldManager& _world, Int3 _pos);
+bool CanFallAt(WorldAccess& _world, Int3 _position);
+bool CanGenericPlantSurviveAt(WorldAccess& _world, Int3 _pos);
+bool CanMushroomSurviveAt(WorldAccess& _world, Int3 _pos);
 bool CanCactusSurviveAt(WorldManager& _world, Int3 _pos);
 
 constexpr Int3 GetAdjacentBlockPos(Int3 _pos, PacketData::FaceDirection _face) {
