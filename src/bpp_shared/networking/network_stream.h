@@ -65,6 +65,12 @@ public:
 		_other.readPos = 0;
 	}
 	bool NewClient();
+	// NOTE: This is a limitation of the Vanilla Beta 1.7.3 Client,
+	// as it can only process 100 Packets per tick
+	static constexpr uint8_t MAX_PACKETS_PER_TICK = 100;
+	uint8_t packetsInQueue = 0;
+	void IncrementPacketCount(PacketId _id);
+	void ResetPacketCount();
 
 	// NOTE: if CheckAndClearShortRead()/IsShortRead() ends up true after this
 	// call, the returned value is not meaningful, it was built from a
