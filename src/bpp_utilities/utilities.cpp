@@ -237,7 +237,9 @@ bool convertAlphaLevel(std::string& _dir) {
 	constexpr size_t FLUSH_BATCH_SIZE = 200;
 
 	// Convert overworld
+	GlobalLogger().info << "Converting overworld...\n";
 	size_t sinceFlush = 0;
+	int chunksProcessed = 0;
 	for (auto& chunkPath : result) {
 		FileHandle chunkFileHandle(chunkPath);
 		auto chunk = loadAlphaChunk(chunkFileHandle);
@@ -256,15 +258,22 @@ bool convertAlphaLevel(std::string& _dir) {
 				world.SaveChunks(/*saveIfEntities=*/true);
 				overworldRegionManager.FlushAll();
 				sinceFlush = 0;
+				world.chunks.clear();
 			}
+		}
+		chunksProcessed++;
+
+		if (chunksProcessed % 100 == 0 || chunksProcessed >= result.size()) {
+			GlobalLogger().info << "Processed " << chunksProcessed << "/" << result.size() << "\n";
 		}
 	}
 	world.DrainLoadQueue();
 	world.SaveChunks(/*saveIfEntities=*/true);
-	overworldRegionManager.FlushAll();
 
 	// Convert nether
+	GlobalLogger().info << "Converting nether...\n";
 	sinceFlush = 0;
+	chunksProcessed = 0;
 	for (auto& chunkPath : netherResult) {
 		FileHandle chunkFileHandle(chunkPath);
 		auto chunk = loadAlphaChunk(chunkFileHandle);
@@ -283,14 +292,23 @@ bool convertAlphaLevel(std::string& _dir) {
 				hellWorld.SaveChunks(/*saveIfEntities=*/true);
 				hellRegionManager.FlushAll();
 				sinceFlush = 0;
+				hellWorld.chunks.clear();
 			}
+		}
+		chunksProcessed++;
+
+		if (chunksProcessed % 100 == 0 || chunksProcessed >= netherResult.size()) {
+			GlobalLogger().info << "Processed " << chunksProcessed << "/" << netherResult.size() << "\n";
 		}
 	}
 	hellWorld.DrainLoadQueue();
 	hellWorld.SaveChunks(/*saveIfEntities=*/true);
+
+	// Save everything
+	overworldRegionManager.FlushAll();
 	hellRegionManager.FlushAll();
 
-	// Force save (handles any remaining bleed writes / final cleanup)
+	// Shutdown the worlds
 	world.Shutdown();
 	hellWorld.Shutdown();
 

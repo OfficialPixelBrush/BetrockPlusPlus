@@ -311,7 +311,8 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 
 	int32_t cx = lvl.Get("xPos").GetInt();
 	int32_t cz = lvl.Get("zPos").GetInt();
-	bool tp = lvl.Get("TerrainPopulated").GetByte() != 0;
+	bool tp = true;
+	lvl.Has("TerrainPopulated") ? tp = lvl.Get("TerrainPopulated").GetByte() != 0 : tp = 1;
 	[[maybe_unused]] int64_t lu = lvl.Get("LastUpdate").GetLong();
 
 	const auto& blocks = lvl.Get("Blocks").GetByteArray();
@@ -320,7 +321,9 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 	const auto& skyLight = lvl.Get("SkyLight").GetByteArray();
 	const auto& heightMap = lvl.Get("HeightMap").GetByteArray();
 	const auto& tileEntities = lvl.Get("TileEntities").GetList();
-	const auto& entities = lvl.Get("Entities").GetList();
+
+	std::vector<Tag> empty = {};
+	const auto& entities = lvl.Has("Entities") ? lvl.Get("Entities").GetList() : empty;
 
 	// Setup our chunk
 	auto chunk = std::make_shared<Chunk>();
