@@ -152,10 +152,10 @@ private:
 	                                       Server& _server);
 	friend void ChunkBroadcaster::BroadcastBlockChanges(Server& _server,
 	                                                    std::unordered_map<Int32_2, std::vector<PendingBlock>>& _changes,
-	                                                    int8_t _dimension, WorldManager& _dimWorld);
+	                                                    Dimension _dimension, WorldManager& _dimWorld);
 	friend void WorldEventBroadcaster::BroadcastWorldEvent(Server& _server, PacketData::WorldEvent _eventType,
-	                                                       Int3 _position, int32_t _data, int8_t _dimension,
-	                                                       double _rangeSq);
+	                                                       Int3 _position, int32_t _data, Dimension _dimension,
+	                                                       PlayerSession* _triggeringSession, double _rangeSq);
 
 	void Tick();
 	void Startup();
@@ -214,7 +214,7 @@ private:
 
 	// Encodes chunk position + dimension into a single key for chunkSessions.
 	// x = chunk X, y = chunk Z, z = dimension id
-	static Int32_3 ChunkKey(const Int32_2& _pos, int8_t _dimension) {
+	static Int32_3 ChunkKey(const Int32_2& _pos, Dimension _dimension) {
 		return Int32_3{ _pos.x, _pos.z, int32_t(_dimension) };
 	}
 	static constexpr int MAX_TICK_CATCH_UP = 5;

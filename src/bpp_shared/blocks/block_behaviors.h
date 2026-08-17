@@ -49,11 +49,11 @@ struct BlockBehavior {
 
 	// Called when a player left-clicks the block (not breaks, just clicks)
 	// pos is where that block that is interacted with is
-	void (*onBlockClicked)(WorldManager& _world, Int3 _pos) = nullptr;
+	void (*onBlockClicked)(WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) = nullptr;
 
 	// Called when a player right-clicks the block
 	// Return true if we allow the player to still place their held block
-	bool (*onBlockActivated)(WorldManager& _world, Int3 _pos) = nullptr;
+	bool (*onBlockActivated)(WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) = nullptr;
 
 	// Called when block is placed by a player
 	// Returns if the placement was successful

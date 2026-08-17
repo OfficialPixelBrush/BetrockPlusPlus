@@ -6,6 +6,7 @@
  *
 */
 #pragma once
+#include "dimensions.h"
 #include "numeric_structs.h"
 #include "world/world.h"
 #include <cstdint>
@@ -17,5 +18,5 @@ class Server;
 // Sends accumulated per-Tick block changes out to whichever player sessions care about them
 namespace ChunkBroadcaster {
 void BroadcastBlockChanges(Server& _server, std::unordered_map<Int32_2, std::vector<PendingBlock>>& _changes,
-                           int8_t _dimension, WorldManager& _dimWorld);
+                           Dimension _dimension, WorldManager& _dimWorld);
 } // namespace ChunkBroadcaster

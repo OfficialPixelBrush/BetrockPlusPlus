@@ -11,7 +11,7 @@
 
 void ChunkBroadcaster::BroadcastBlockChanges(Server& _server,
                                              std::unordered_map<Int32_2, std::vector<PendingBlock>>& _changes,
-                                             int8_t _dimension, WorldManager& _dimWorld) {
+                                             Dimension _dimension, WorldManager& _dimWorld) {
 	for (auto& [chunk, blockChanges] : _changes) {
 		// Find which sessions care about this chunk
 		// Split into flushed (send immediately) and sentOnly (queue).

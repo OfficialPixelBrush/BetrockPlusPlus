@@ -17,6 +17,7 @@
 #include "blocks/block_properties_behaviors.h"
 #include "chunk.h"
 #include "client_pos.h"
+#include "dimensions.h"
 #include "entities/entity_manager.h"
 #include "generator/overworld/biome_gen.h"
 #include "helpers/AABB.h"
@@ -61,7 +62,7 @@ public:
 	TickScheduler tickScheduler;
 	Lighter lightManager;
 	std::function<void(PendingBlock, Int32_2)> onBlockUpdate;
-	std::function<void(PacketData::WorldEvent, Int3, int32_t)> onWorldEvent;
+	std::function<void(PacketData::WorldEvent, Int3, int32_t, PlayerSession*)> onWorldEvent;
 	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> chunks;
 	Java::Random rand;
 	int64_t seed = 0;
@@ -157,7 +158,7 @@ public:
 	const int GetSimulationDistance() {
 		return simulationRadius;
 	}
-	const int GetDimension() {
+	const Dimension GetDimension() {
 		return thisDimension;
 	}
 	void InitWorldSeed(std::string _pSeed) {
