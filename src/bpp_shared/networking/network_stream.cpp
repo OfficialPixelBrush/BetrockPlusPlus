@@ -9,6 +9,7 @@
 #include "logger.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
+#include "packet_labels.h"
 #include "ucs2.h"
 #include <string>
 #include <vector>
@@ -54,6 +55,7 @@ void NetworkStream::FlushWriteBufferBlocking() {
 		sent += static_cast<size_t>(result);
 	}
 	writeBuffer.clear();
+	ResetPacketCount();
 
 	// We close here so the client can get the packet data we just sent out before we disconnect
 #if defined(_WIN32) || defined(_WIN64)
@@ -64,6 +66,18 @@ void NetworkStream::FlushWriteBufferBlocking() {
 	close(clientSocket);
 #endif
 	clientSocket = INVALID_SOCKET;
+}
+
+void NetworkStream::IncrementPacketCount(PacketId _id) {
+	packetsInQueue++;
+	if (packetsInQueue > MAX_PACKETS_PER_TICK) {
+		GlobalLogger().warn << "Max # of packets/tick exceeded by " << PacketIdToLabel(_id) << "! ("
+		                    << int(packetsInQueue) << "/" << int(MAX_PACKETS_PER_TICK) << ")\n";
+	}
+}
+
+void NetworkStream::ResetPacketCount() {
+	packetsInQueue = 0;
 }
 
 // String-8 Handling
@@ -269,6 +283,8 @@ bool NetworkStream::FlushWriteBuffer() {
 		writeBuffer.erase(writeBuffer.begin(),
 		                  writeBuffer.begin() + static_cast<std::vector<unsigned char>::difference_type>(sent));
 	}
+	// TODO: Probably not right
+	ResetPacketCount();
 	return connected;
 }
 
