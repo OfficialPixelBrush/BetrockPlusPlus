@@ -54,6 +54,10 @@ bool IsTool(ItemId _id) {
 	       _id == Items::FISHING_ROD || _id == Items::SHEARS;
 }
 
+bool IsRecord(ItemId _id) {
+	return _id == Items::RECORD_13 || _id == Items::RECORD_CAT;
+}
+
 constexpr ToolLevel MaterialToLevel(ToolMaterial _material) {
 	switch (_material) {
 	case ToolMaterial::None:
@@ -428,7 +432,7 @@ void UseShears(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
 		return;
 	// TODO: Needs Random amount!
 	se->DropItemAtEntity(BLOCK_WOOL, 2, se->color);
-	se->UpdateMetadata(se->isSheared,true);
+	se->UpdateMetadata(se->isSheared, true);
 
 	HarmTool(_stack, 1);
 }
