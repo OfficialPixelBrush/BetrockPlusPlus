@@ -36,6 +36,18 @@ struct EquipmentProfile {
 	ItemStack heldItem{};
 };
 
+// Per-viewer movement resync state. Kept separate from TrackedEntry's own
+// lastEncodedPos/lastEncodedYaw/lastEncodedPitch, which remain the
+// entity's *current* canonical encoded state used for spawn packets -
+// a viewer who just came into range must always see where the entity
+// actually is right now, not a stale, throttled position.
+struct ViewerMovementState {
+	int updateCounter = 0;
+	Int32_3 lastEncodedPos{};
+	int32_t lastEncodedYaw = 0;
+	int32_t lastEncodedPitch = 0;
+};
+
 struct TrackedEntry {
 	Entity* entity = nullptr;
 	EquipmentProfile equipmentProfile{};
@@ -46,7 +58,8 @@ struct TrackedEntry {
 	int32_t lastEncodedPitch = 0;
 	int updateCounter = 0;
 	int ticksSinceTeleport = 0;
-	std::unordered_set<EntityId> visibleTo; // what player ids can see this entity
+	std::unordered_set<EntityId> visibleTo;                           // what player ids can see this entity
+	std::unordered_map<EntityId, ViewerMovementState> viewerMovement; // per-viewer resync cadence/state, keyed by viewer id
 };
 
 class Server;
@@ -85,6 +98,21 @@ struct EntityTracker {
 
 	int32_t QuantizeRotation(float _r) {
 		return MathHelper::FloorFloat(_r * 256.0f / 360.0f);
+	}
+
+	// Scales down movement-resync frequency for viewers who are further from
+	// an entity, relative to that entity's own tracking range. Near = full
+	// rate, mid = half rate, far = quarter rate. Velocity-delta sends and
+	// forced teleport correction are NOT scaled by this - only the periodic
+	// position/rotation resync cadence is.
+	int GetFrequencyMultiplierForDistance(int32_t _distance, int _range) {
+		if (_range <= 0)
+			return 1;
+		if (_distance <= _range / 3)
+			return 1; // near: full precision
+		if (_distance <= (_range * 8) / 10)
+			return 2; // mid: half rate
+		return 4;     // far: quarter rate
 	}
 
 	void TrackEntity(Entity* _entity);

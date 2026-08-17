@@ -28,6 +28,7 @@ void EntityTracker::Tick() {
 		DespawnEntityForViewers(entityId, entry);
 		for (auto& [id, otherEntry] : trackedEntities) {
 			otherEntry.visibleTo.erase(entityId);
+			otherEntry.viewerMovement.erase(entityId);
 		}
 		trackedEntities.erase(entityId);
 		playerIds.erase(entityId);
@@ -40,6 +41,7 @@ void EntityTracker::Tick() {
 			EntityId playerId = *it;
 			auto playerIt = trackedEntities.find(playerId);
 			if (playerIt == trackedEntities.end()) {
+				entry.viewerMovement.erase(playerId);
 				it = entry.visibleTo.erase(it);
 				continue;
 			}
@@ -50,6 +52,7 @@ void EntityTracker::Tick() {
 			if (distanceTo > entry.profile.range) {
 				auto pSession = server->GetSessionById(playerId);
 				if (!pSession) {
+					entry.viewerMovement.erase(playerId);
 					it = entry.visibleTo.erase(it);
 					continue;
 				}
@@ -57,6 +60,7 @@ void EntityTracker::Tick() {
 				pkt.entityId = entry.entity->id;
 				pkt.Serialize(pSession->stream);
 
+				entry.viewerMovement.erase(playerId);
 				it = entry.visibleTo.erase(it);
 			} else {
 				++it;
@@ -125,8 +129,10 @@ void EntityTracker::UntrackEntity(Entity* _entity) {
 
 	DespawnEntityForViewers(_entity->id, it->second);
 
-	for (auto& [id, otherEntry] : trackedEntities)
+	for (auto& [id, otherEntry] : trackedEntities) {
 		otherEntry.visibleTo.erase(_entity->id);
+		otherEntry.viewerMovement.erase(_entity->id);
+	}
 
 	trackedEntities.erase(it);
 	playerIds.erase(_entity->id);
@@ -197,6 +203,16 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 	auto pSession = server->GetSessionById(_playerId);
 	if (!pSession)
 		return;
+
+	// Reset this viewer's movement cadence/delta state so the next resync's
+	// deltas are computed against the absolute position we're about to send
+	// in the spawn packet below, not against some stale prior encoding.
+	ViewerMovementState& vs = _entityEntry.viewerMovement[_playerId];
+	vs = ViewerMovementState{};
+	vs.lastEncodedPos = _entityEntry.lastEncodedPos;
+	vs.lastEncodedYaw = _entityEntry.lastEncodedYaw;
+	vs.lastEncodedPitch = _entityEntry.lastEncodedPitch;
+
 	switch (_entityEntry.entity->type) {
 	case EntityType::ITEM: {
 		ItemEntity& ie = dynamic_cast<ItemEntity&>(*_entityEntry.entity);
@@ -560,90 +576,119 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 	bool needsMovementUpdate = _trackedEntry.updateCounter >= _trackedEntry.profile.updateFrequency ||
 	                           _trackedEntry.ticksSinceTeleport >= forceTeleportTicks;
 
-	if (needsMovementUpdate) {
-		_trackedEntry.updateCounter = 0;
+	if (!needsMovementUpdate)
+		return;
 
-		// The threshold-based velocity check
-		if (_trackedEntry.profile.sendVelocity) {
-			Vec3 currentMotion = { entity->velocity.x, entity->velocity.y, entity->velocity.z };
-			Vec3& lastMotion = _trackedEntry.lastBroadcastMotion;
-			double dmx = currentMotion.x - lastMotion.x;
-			double dmy = currentMotion.y - lastMotion.y;
-			double dmz = currentMotion.z - lastMotion.z;
-			double deltaSq = dmx * dmx + dmy * dmy + dmz * dmz;
-			const double motionThreshold = 0.02;
+	_trackedEntry.updateCounter = 0;
 
-			bool needsVelocityUpdate = deltaSq > motionThreshold * motionThreshold ||
-			                           (deltaSq > 0.0 && currentMotion.x == 0.0 && currentMotion.y == 0.0 &&
-			                            currentMotion.z == 0.0);
+	// The threshold-based velocity check. This is NOT distance-scaled: a
+	// sudden velocity change (creeper launch, arrow fired, knockback) is
+	// exactly the kind of event worth telling far viewers about promptly,
+	// and it's already gated behind needsMovementUpdate/updateFrequency so
+	// it can't spam every tick regardless.
+	if (_trackedEntry.profile.sendVelocity) {
+		Vec3 currentMotion = { entity->velocity.x, entity->velocity.y, entity->velocity.z };
+		Vec3& lastMotion = _trackedEntry.lastBroadcastMotion;
+		double dmx = currentMotion.x - lastMotion.x;
+		double dmy = currentMotion.y - lastMotion.y;
+		double dmz = currentMotion.z - lastMotion.z;
+		double deltaSq = dmx * dmx + dmy * dmy + dmz * dmz;
+		const double motionThreshold = 0.02;
 
-			if (needsVelocityUpdate) {
-				lastMotion = currentMotion;
-				Packet::EntityVelocity pkt;
-				pkt.entityId = entity->id;
-				pkt.velocity = { QuantizeVelocityComponent(entity->velocity.x),
-					             QuantizeVelocityComponent(entity->velocity.y),
-					             QuantizeVelocityComponent(entity->velocity.z) };
-				SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
-			}
+		bool needsVelocityUpdate = deltaSq > motionThreshold * motionThreshold ||
+		                           (deltaSq > 0.0 && currentMotion.x == 0.0 && currentMotion.y == 0.0 &&
+		                            currentMotion.z == 0.0);
+
+		if (needsVelocityUpdate) {
+			lastMotion = currentMotion;
+			Packet::EntityVelocity pkt;
+			pkt.entityId = entity->id;
+			pkt.velocity = { QuantizeVelocityComponent(entity->velocity.x),
+				             QuantizeVelocityComponent(entity->velocity.y),
+				             QuantizeVelocityComponent(entity->velocity.z) };
+			SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
 		}
+	}
 
-		int32_t qx = QuantizePositionComponent(entity->position.x);
-		int32_t qy = QuantizePositionComponent(entity->position.y);
-		int32_t qz = QuantizePositionComponent(entity->position.z);
-		int32_t qYaw = QuantizeRotation(entity->rotationYaw);
-		int32_t qPitch = QuantizeRotation(entity->rotationPitch);
+	// Canonical current encoded state - always kept up to date regardless of
+	// throttling, so SpawnEntityForPlayer always has accurate ground truth.
+	int32_t qx = QuantizePositionComponent(entity->position.x);
+	int32_t qy = QuantizePositionComponent(entity->position.y);
+	int32_t qz = QuantizePositionComponent(entity->position.z);
+	int32_t qYaw = QuantizeRotation(entity->rotationYaw);
+	int32_t qPitch = QuantizeRotation(entity->rotationPitch);
+	_trackedEntry.lastEncodedPos = { qx, qy, qz };
+	_trackedEntry.lastEncodedYaw = qYaw;
+	_trackedEntry.lastEncodedPitch = qPitch;
 
-		int32_t dx = qx - _trackedEntry.lastEncodedPos.x;
-		int32_t dy = qy - _trackedEntry.lastEncodedPos.y;
-		int32_t dz = qz - _trackedEntry.lastEncodedPos.z;
+	bool forceTeleportAll = _trackedEntry.ticksSinceTeleport >= forceTeleportTicks;
+	if (forceTeleportAll)
+		_trackedEntry.ticksSinceTeleport = 0;
 
-		bool needsTP = dx < -128 || dx >= 128 || dy < -128 || dy >= 128 || dz < -128 || dz >= 128 ||
-		               _trackedEntry.ticksSinceTeleport >= forceTeleportTicks;
+	// Per-viewer resync pass: each viewer gets throttled and delta-tracked
+	// independently based on their current distance to this entity.
+	for (EntityId viewerId : _trackedEntry.visibleTo) {
+		auto session = server->GetSessionById(viewerId);
+		if (!session || !session->entity)
+			continue;
+
+		ViewerMovementState& vs = _trackedEntry.viewerMovement[viewerId];
+
+		int32_t horizDist =
+		    std::abs(std::max(std::abs(entity->position.x - session->entity->position.x),
+		                      std::abs(entity->position.z - session->entity->position.z)));
+		int freqMul = GetFrequencyMultiplierForDistance(horizDist, _trackedEntry.profile.range);
+
+		vs.updateCounter++;
+		bool viewerDue = forceTeleportAll || vs.updateCounter >= freqMul;
+		if (!viewerDue)
+			continue;
+		vs.updateCounter = 0;
+
+		int32_t dx = qx - vs.lastEncodedPos.x;
+		int32_t dy = qy - vs.lastEncodedPos.y;
+		int32_t dz = qz - vs.lastEncodedPos.z;
+
+		bool needsTP =
+		    forceTeleportAll || dx < -128 || dx >= 128 || dy < -128 || dy >= 128 || dz < -128 || dz >= 128;
 
 		if (needsTP) {
-			_trackedEntry.ticksSinceTeleport = 0;
-
 			Packet::TeleportEntity pkt;
 			pkt.entityId = entity->id;
 			pkt.position = { qx, qy, qz };
 			pkt.rotation = { int8_t(qYaw), int8_t(qPitch) };
-			SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
-			_trackedEntry.lastEncodedPos = { qx, qy, qz };
-			_trackedEntry.lastEncodedYaw = qYaw;
-			_trackedEntry.lastEncodedPitch = qPitch;
-		} else {
-			bool needsRelMove = dx != 0 || dy != 0 || dz != 0;
-			bool needsRot = qYaw != _trackedEntry.lastEncodedYaw || qPitch != _trackedEntry.lastEncodedPitch;
+			pkt.Serialize(session->stream);
+			vs.lastEncodedPos = { qx, qy, qz };
+			vs.lastEncodedYaw = qYaw;
+			vs.lastEncodedPitch = qPitch;
+			continue;
+		}
 
-			if (needsRelMove && needsRot) {
-				Packet::EntityPositionAndRotation pkt;
-				pkt.qrPosition = { int8_t(dx), int8_t(dy), int8_t(dz) };
-				pkt.qRotation = { int8_t(qYaw), int8_t(qPitch) };
-				pkt.entityId = entity->id;
-				SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
-				_trackedEntry.lastEncodedPos = { qx, qy, qz };
-				_trackedEntry.lastEncodedYaw = qYaw;
-				_trackedEntry.lastEncodedPitch = qPitch;
-				return;
-			};
-			if (needsRelMove) {
-				Packet::EntityPosition pkt;
-				pkt.qrPosition = { int8_t(dx), int8_t(dy), int8_t(dz) };
-				pkt.entityId = entity->id;
-				SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
-				_trackedEntry.lastEncodedPos = { qx, qy, qz };
-				return;
-			}
-			if (needsRot) {
-				Packet::EntityRotation pkt;
-				pkt.qRotation = { int8_t(qYaw), int8_t(qPitch) };
-				pkt.entityId = entity->id;
-				SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
-				_trackedEntry.lastEncodedYaw = qYaw;
-				_trackedEntry.lastEncodedPitch = qPitch;
-				return;
-			}
+		bool needsRelMove = dx != 0 || dy != 0 || dz != 0;
+		bool needsRot = qYaw != vs.lastEncodedYaw || qPitch != vs.lastEncodedPitch;
+
+		if (needsRelMove && needsRot) {
+			Packet::EntityPositionAndRotation pkt;
+			pkt.qrPosition = { int8_t(dx), int8_t(dy), int8_t(dz) };
+			pkt.qRotation = { int8_t(qYaw), int8_t(qPitch) };
+			pkt.entityId = entity->id;
+			pkt.Serialize(session->stream);
+			vs.lastEncodedPos = { qx, qy, qz };
+			vs.lastEncodedYaw = qYaw;
+			vs.lastEncodedPitch = qPitch;
+		} else if (needsRelMove) {
+			Packet::EntityPosition pkt;
+			pkt.qrPosition = { int8_t(dx), int8_t(dy), int8_t(dz) };
+			pkt.entityId = entity->id;
+			pkt.Serialize(session->stream);
+			vs.lastEncodedPos = { qx, qy, qz };
+		} else if (needsRot) {
+			Packet::EntityRotation pkt;
+			pkt.qRotation = { int8_t(qYaw), int8_t(qPitch) };
+			pkt.entityId = entity->id;
+			pkt.Serialize(session->stream);
+			vs.lastEncodedYaw = qYaw;
+			vs.lastEncodedPitch = qPitch;
 		}
 	}
 }
