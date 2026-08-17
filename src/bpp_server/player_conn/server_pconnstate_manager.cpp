@@ -25,7 +25,7 @@ void PlayerConnStateManager::HandleConnectionState(PlayerSession& _session, Serv
 		WaitForSpawnChunks(_session, _server);
 		break;
 	case ConnectionState::Playing: {
-		WorldManager& sessionWorld = _session.dimension == -1 ? _server.gameRuntime.worldHell
+		WorldManager& sessionWorld = _session.dimension == Dimension::Nether ? _server.gameRuntime.worldHell
 		                                                      : _server.gameRuntime.world;
 		_server.chunkSender.Enqueue(_session, sessionWorld, 16);
 		_server.chunkSender.Flush(_session);
@@ -118,11 +118,11 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	_session.LoadPlayerNbt(playerNbt);
 
 	// Get the right world pointer
-	WorldManager& sessionWorld = _session.dimension == -1 ? _server.gameRuntime.worldHell : _server.gameRuntime.world;
+	WorldManager& sessionWorld = _session.dimension == Dimension::Nether ? _server.gameRuntime.worldHell : _server.gameRuntime.world;
 
 	_session.entity->session = &_session;
 	_session.entity->id = sessionWorld.entityManager.GetNextEntityId();
-	_session.entity->dim = _session.dimension == -1 ? Dimension::Nether : Dimension::Overworld;
+	_session.entity->dim = _session.dimension == Dimension::Nether ? Dimension::Nether : Dimension::Overworld;
 
 	Packet::Login response;
 	response.entityId = _session.entity->id;
@@ -194,7 +194,7 @@ void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std
 }
 
 void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server& _server) {
-	WorldManager& sessionWorld = _session.dimension == -1 ? _server.gameRuntime.worldHell : _server.gameRuntime.world;
+	WorldManager& sessionWorld = _session.dimension == Dimension::Nether ? _server.gameRuntime.worldHell : _server.gameRuntime.world;
 	_server.chunkSender.Enqueue(_session, sessionWorld, _server.flushChunkCount);
 	_server.chunkSender.Flush(_session);
 
@@ -252,7 +252,7 @@ void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server&
 	_session.entityRegistered = true;
 
 	// Give our player session a pointer to the entity tracker
-	_session.entityTracker = _session.dimension == 0 ? &_server.overworldEntityTracker : &_server.hellEntityTracker;
+	_session.entityTracker = _session.dimension == Dimension::Overworld ? &_server.overworldEntityTracker : &_server.hellEntityTracker;
 
 	// Welcome message
 	Packet::ChatMessage welcomeMsg;
