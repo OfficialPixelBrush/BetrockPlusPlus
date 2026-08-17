@@ -179,6 +179,7 @@ set(SHARED_SOURCES
 
     # Utilities
     src/bpp_utilities/utilities.cpp
+    src/bpp_shared/helpers/explosion.cpp
 )
 
 # Server-specific source code

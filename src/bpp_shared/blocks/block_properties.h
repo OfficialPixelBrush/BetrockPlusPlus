@@ -20,6 +20,7 @@ bool CanSugarcaneSurviveAt(WorldAccess& _world, Int3 _pos);
 bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, PacketData::FaceDirection _face);
 float GetFluidPercentAir(uint8_t _meta);
 void BreakAndDropBlock(WorldManager& _world, Int3 _pos);
+void BreakAndDropBlockWithChance(WorldManager& _world, Int3 _pos, float _chance);
 void DropBlockAt(WorldManager& _world, Int3 _pos, BlockType _id, ItemAmount _count, int16_t _data);
 void DropItemAt(WorldManager& _world, Int3 _pos, Items::Id _id, ItemAmount _count, int16_t _data);
 bool CanFallAt(WorldAccess& _world, Int3 _position);
@@ -98,7 +99,7 @@ struct BlockProperties {
 	int tickRate = 10;          // Used for self scheduling blocks
 
 	float hardness = 1.0f;        // -1 = unbreakable (bedrock)
-	float resistance = 5.0f;      // blast resistance
+	float resistance = -1.0f;     // -1 = never explicitly set, fallback
 	float slipperiness = 0.6f;    // default friction, ice = 0.98f
 	float particleGravity = 1.0f; // how fast break particles fall
 

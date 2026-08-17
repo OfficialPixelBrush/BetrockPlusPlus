@@ -28,6 +28,7 @@
 #include "world/spawner.h"
 #include "world/storage/region_manager.h"
 #include "world_access.h"
+#include "helpers/explosion.h"
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
@@ -60,6 +61,8 @@ public:
 	EntityManager entityManager;
 	TickScheduler tickScheduler;
 	Lighter lightManager;
+	// Pos, size, unordered set of destroyed blocks
+	std::function<void(Vec3, float, std::unordered_set<Int3>&, Entity*)> onExplosion;
 	std::function<void(PendingBlock, Int32_2)> onBlockUpdate;
 	std::function<void(PacketData::WorldEvent, Int3, int32_t)> onWorldEvent;
 	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> chunks;
@@ -110,6 +113,11 @@ public:
 	uint8_t GetMetadata(Int3 _wpos);
 	void RemoveTileEntity(Int3 _pos);
 	void SetViewRadius(int _viewRadius);
+	void DoExplosion(Entity* _exploder, Vec3 _position, float _size, bool _doFire) {
+		auto result = Explosion::DoExplosion(*this, _exploder, _position, _size, _doFire);
+		if (onExplosion)
+			onExplosion(_position, _size, result, _exploder);
+	}
 	bool CanBlockSeeSky(const Int3 _pos) {
 		auto chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
 		if (!chunk)

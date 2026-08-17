@@ -244,6 +244,10 @@ static int GetDirectionFromYaw(float _yaw, int _directionCount) {
 	return MathHelper::FloorDouble((_yaw * _directionCount / 360.0f) + 0.5f) & 3;
 }
 
+void GenericExplode(WorldManager& _world, Int3 _pos) {
+	BreakAndDropBlockWithChance(_world, _pos, 0.3f);
+}
+
 void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer) {
 	BreakAndDropBlock(_world, _pos);
 }

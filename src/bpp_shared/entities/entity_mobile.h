@@ -42,7 +42,7 @@ public:
 	ItemStack* armor[4] = { nullptr, nullptr, nullptr, nullptr }; // Helmet, chestplate, leggings, boots
 
 	virtual void Tick() override;
-	virtual void OnDeath();
+	virtual void OnDeath(Entity* _killer);
 	virtual void SetGoal(std::optional<Int3> _goal);
 	virtual bool onLadder();
 	void Heal(int _health);

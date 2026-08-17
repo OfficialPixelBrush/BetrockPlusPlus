@@ -6,7 +6,7 @@
  */
 #include "entity_spider.h"
 
-void SpiderEntity::OnDeath() {
+void SpiderEntity::OnDeath(Entity* _killer) {
 	// Drop arrows
 	auto targetItem = Items::Id::STRING;
 	int itemCount = this->rand.NextInt(3);

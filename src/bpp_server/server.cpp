@@ -238,6 +238,25 @@ void Server::Startup() {
 		_entityTracker.server = this;
 	};
 
+	auto registerExplosionCallback = [this](WorldManager& _world, EntityTracker& _entityTracker) {
+		_world.onExplosion = [&](Vec3 _pos, float _size, std::unordered_set<Int3>& _blockPositions, Entity* _exploder) {
+			if (!_exploder)
+				return;
+			Packet::Explosion pkt;
+			pkt.position = _pos;
+			pkt.numberOfDestroyedBlocks = _blockPositions.size();
+			pkt.radius = _size;
+
+			Int3 blockPos = { int(_pos.x), int(_pos.y), int(_pos.z) };
+			for (auto& pos : _blockPositions) {
+				pkt.destroyedBlocks.push_back(static_cast<int8_t>(pos.x - blockPos.x));
+				pkt.destroyedBlocks.push_back(static_cast<int8_t>(pos.y - blockPos.y));
+				pkt.destroyedBlocks.push_back(static_cast<int8_t>(pos.z - blockPos.z));
+			}
+			_entityTracker.SendPacketToViewers(pkt, _exploder->id);
+		};
+	};
+
 	gameRuntime.world.onBlockUpdate = makeBlockUpdateCallback(0, chunkBlockChanges);
 	gameRuntime.worldHell.onBlockUpdate = makeBlockUpdateCallback(-1, chunkBlockChangesHell);
 
@@ -250,6 +269,9 @@ void Server::Startup() {
 
 	registerEntityTrackerCallbacks(overworldEntityTracker, gameRuntime.world.entityManager);
 	registerEntityTrackerCallbacks(hellEntityTracker, gameRuntime.worldHell.entityManager);
+
+	registerExplosionCallback(gameRuntime.world, overworldEntityTracker);
+	registerExplosionCallback(gameRuntime.worldHell, hellEntityTracker);
 
 	// Get spawn ready
 	int spawnChunkDistance = this->spawnChunkRadius;

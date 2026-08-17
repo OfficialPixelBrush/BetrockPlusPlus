@@ -19,8 +19,9 @@ void EntityTracker::Tick() {
 	std::vector<EntityId> deadThisTick;
 
 	for (auto& [entityId, entry] : trackedEntities) {
-		if (entry.entity->isDead)
+		if (entry.entity->isDead) {
 			deadThisTick.push_back(entry.entity->id);
+		}
 	}
 
 	for (auto& entityId : deadThisTick) {

@@ -15,7 +15,7 @@ struct ChickenEntity : public AnimalEntity {
 		SetMaxHealth(/*Health=*/4);
 	}
 	~ChickenEntity() = default;
-	void OnDeath() override;
+	void OnDeath(Entity* _killer) override;
 	void UpdateFallState(float _movedY) override;
 	void Tick() override {
 		AnimalEntity::Tick();

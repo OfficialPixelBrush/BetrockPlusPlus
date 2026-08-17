@@ -32,7 +32,7 @@ void DummyMPPlayer::Tick() {
 
 	// If we fell out of the world then die
 	if (position.y < -64.0)
-		OnDeath();
+		OnDeath(nullptr);
 
 	// Tell entities we collided with a player
 	if (entityManager) {

@@ -18,7 +18,7 @@ struct SheepEntity : public AnimalEntity {
 		SetMaxHealth(/*Health=*/8);
 	}
 	~SheepEntity() = default;
-	void OnDeath() override;
+	void OnDeath(Entity* _killer) override;
 	void EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;
 	bool DecodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;
 };

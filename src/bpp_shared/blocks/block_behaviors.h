@@ -23,6 +23,7 @@ namespace Blocks {
 bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer, PacketData::FaceDirection _face,
                   BlockType _blockId, uint8_t _meta);
 void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer);
+void GenericExplode(WorldManager& _world, Int3 _pos);
 
 struct BlockBehavior {
 	// Called when we need to get the AABB for the selection box
@@ -64,7 +65,7 @@ struct BlockBehavior {
 	void (*onBlockDestroyedByPlayer)(WorldManager& _world, Int3 _pos, Entity& _destroyer) = GenericBreak;
 
 	// Called when an explosion destroys the block
-	void (*onBlockDestroyedByExplosion)(WorldManager& _world, Int3 _pos) = nullptr;
+	void (*onBlockDestroyedByExplosion)(WorldManager& _world, Int3 _pos) = GenericExplode;
 
 	// Called when an entity walks on top of the block
 	void (*onEntityWalking)(WorldManager& _world, Int3 _pos, Entity& _entity) = nullptr;
