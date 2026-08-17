@@ -219,8 +219,7 @@ void MobileEntity::TickPhysics() {
 
 		// Clamp our velocity if we are touching a ladder
 		// Also make sure we stop if we sneak
-		bool isOnLadder = onLadder();
-		if (isOnLadder) {
+		if (onLadder()) {
 			double maxLadderVelocity = 0.15;
 			velocity.x = std::min(maxLadderVelocity, std::max(-maxLadderVelocity, velocity.x));
 			velocity.z = std::min(maxLadderVelocity, std::max(-maxLadderVelocity, velocity.z));
@@ -239,7 +238,7 @@ void MobileEntity::TickPhysics() {
 
 		// Our entity is pushing itself into the wall the ladder is on
 		// So apply an upwards nudge
-		if (collidedHorizontally && isOnLadder) {
+		if (collidedHorizontally && onLadder()) {
 			velocity.y = 0.2;
 		}
 
