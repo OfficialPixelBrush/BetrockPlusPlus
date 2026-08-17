@@ -8,6 +8,7 @@
 */
 
 #include "base_types.h"
+#include "dimensions.h"
 #include "logger.h"
 #include "packet/packet_utils.h"
 #include "trackers/inventory_tracker.h"
@@ -89,7 +90,7 @@ void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
 	_session.pendingBlockChanges.clear();
 	_session.newlyFlushed.clear();
 	_session.newlyUnloaded.clear();
-	_session.entityTracker = _session.dimension == 0 ? &overworldEntityTracker : &hellEntityTracker;
+	_session.entityTracker = _session.dimension == Dimension::Overworld ? &overworldEntityTracker : &hellEntityTracker;
 
 	// Make sure we don't send any pending chunk updates
 	chunkSender.inFlight.erase(&_session);
@@ -198,9 +199,9 @@ void Server::Startup() {
 	commandManager.Init(this);
 
 	// Setup the block callback so we can send it to clients
-	auto makeBlockUpdateCallback = [this](int _dimensionId, auto& _blockChangeMap) {
+	auto makeBlockUpdateCallback = [this](Dimension _dimensionId, auto& _blockChangeMap) {
 		return [this, _dimensionId, &_blockChangeMap](PendingBlock _pendingBlock, Int32_2 _chunkPos) {
-			auto idxIt = chunkSessions.find(ChunkKey(_chunkPos, -1));
+			auto idxIt = chunkSessions.find(ChunkKey(_chunkPos, Dimension::Nether));
 			bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
 			if (!anyInterested) {
 				for (auto& session : players) {
@@ -257,14 +258,16 @@ void Server::Startup() {
 		};
 	};
 
-	gameRuntime.world.onBlockUpdate = makeBlockUpdateCallback(0, chunkBlockChanges);
-	gameRuntime.worldHell.onBlockUpdate = makeBlockUpdateCallback(-1, chunkBlockChangesHell);
+	gameRuntime.world.onBlockUpdate = makeBlockUpdateCallback(Dimension::Overworld, chunkBlockChanges);
+	gameRuntime.worldHell.onBlockUpdate = makeBlockUpdateCallback(Dimension::Nether, chunkBlockChangesHell);
 
-	gameRuntime.world.onWorldEvent = [this](PacketData::WorldEvent _eventType, Int3 _position, int32_t _data) {
-		WorldEventBroadcaster::BroadcastWorldEvent(*this, _eventType, _position, _data, 0);
+	gameRuntime.world.onWorldEvent = [this](PacketData::WorldEvent _eventType, Int3 _position, int32_t _data,
+	                                        PlayerSession* _triggeringSession) {
+		WorldEventBroadcaster::BroadcastWorldEvent(*this, _eventType, _position, _data, Dimension::Overworld, _triggeringSession);
 	};
-	gameRuntime.worldHell.onWorldEvent = [this](PacketData::WorldEvent _eventType, Int3 _position, int32_t _data) {
-		WorldEventBroadcaster::BroadcastWorldEvent(*this, _eventType, _position, _data, -1);
+	gameRuntime.worldHell.onWorldEvent = [this](PacketData::WorldEvent _eventType, Int3 _position, int32_t _data,
+	                                            PlayerSession* _triggeringSession) {
+		WorldEventBroadcaster::BroadcastWorldEvent(*this, _eventType, _position, _data, Dimension::Nether, _triggeringSession);
 	};
 
 	registerEntityTrackerCallbacks(overworldEntityTracker, gameRuntime.world.entityManager);
@@ -483,7 +486,7 @@ void Server::Tick() {
 			ProcessIncoming(*session);
 
 			// Register with the correct dimension
-			if (session->dimension == -1)
+			if (session->dimension == Dimension::Nether)
 				netherPositions.push_back(session->position);
 			else
 				overworldPositions.push_back(session->position);
@@ -527,8 +530,8 @@ void Server::Tick() {
 	hellEntityTracker.Tick();
 
 	// Dispatch block changes
-	ChunkBroadcaster::BroadcastBlockChanges(*this, localBlockChanges, 0, gameRuntime.world);
-	ChunkBroadcaster::BroadcastBlockChanges(*this, localBlockChangesHell, -1, gameRuntime.worldHell);
+	ChunkBroadcaster::BroadcastBlockChanges(*this, localBlockChanges, Dimension::Overworld, gameRuntime.world);
+	ChunkBroadcaster::BroadcastBlockChanges(*this, localBlockChangesHell, Dimension::Nether, gameRuntime.worldHell);
 
 	// Disconnect timed-out clients; the removed sessions are returned so we
 	// can send their last packets (e.g. a disconnect reason) before they die
@@ -680,7 +683,7 @@ std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {
 };
 
 void Server::ProcessIncoming(PlayerSession& _session) {
-	WorldManager& sessionWorld = _session.dimension == -1 ? gameRuntime.worldHell : gameRuntime.world;
+	WorldManager& sessionWorld = _session.dimension == Dimension::Nether ? gameRuntime.worldHell : gameRuntime.world;
 
 	while (_session.stream.HasData()) {
 		size_t packetMark = _session.stream.Mark();

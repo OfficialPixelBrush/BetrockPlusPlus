@@ -28,8 +28,8 @@ void SpiderEntity::TryAttackEntity(Entity& _target, float _distance) {
 		this->attackTarget.reset();
 		return;
 	}
-	auto target = attackTarget.lock();
-	if (!target)
+	auto activeTarget = attackTarget.lock();
+	if (!activeTarget)
 		return;
 	if (_distance > 2.0f && _distance < 6.0f && rand.NextInt(10) == 0) {
 		if (this->onGround) {
@@ -42,7 +42,7 @@ void SpiderEntity::TryAttackEntity(Entity& _target, float _distance) {
 			return;
 		}
 	}
-	HostileEntity::TryAttackEntity(*target, _distance);
+	HostileEntity::TryAttackEntity(*activeTarget, _distance);
 }
 
 std::shared_ptr<Entity> SpiderEntity::FindPlayerToAttack() {

@@ -16,10 +16,10 @@ std::string CommandDimension::Execute([[maybe_unused]] std::vector<std::string>&
                                       std::function<void(PlayerSession&)> _transferDimension,
                                       [[maybe_unused]] Server& _server) {
 	Packet::ChatMessage reply;
-	reply.message = _session.dimension == 0 ? "§7Transferring to the Nether..." : "§7Transferring to the Overworld...";
+	reply.message = _session.dimension == Dimension::Overworld ? "§7Transferring to the Nether..." : "§7Transferring to the Overworld...";
 	reply.Serialize(_session.stream);
 
-	Dimension newDim = _session.dimension == -1 ? Dimension::Overworld : Dimension::Nether;
+	Dimension newDim = _session.dimension == Dimension::Nether ? Dimension::Overworld : Dimension::Nether;
 
 	_server.SendPlayerToDimension(newDim, _session);
 

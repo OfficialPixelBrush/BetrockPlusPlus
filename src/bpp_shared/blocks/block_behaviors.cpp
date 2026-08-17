@@ -7,6 +7,7 @@
 
 #include "blocks/block_behaviors.h"
 #include "blocks.h"
+#include "dimensions.h"
 #include "entities/entity_player.h"
 #include "blocks/block_properties.h"
 #include "entities/entity_falling_block.h"
@@ -296,7 +297,7 @@ static void ToggleTrapdoor(WorldManager& _world, Int3 _pos) {
 	return;
 }
 
-static void ToggleDoor(WorldManager& _world, Int3 _pos) {
+static void ToggleDoor(WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) {
 	auto meta = _world.GetMetadata(_pos);
 	if (meta & 8) {
 		// We are the top half of the door
@@ -304,7 +305,7 @@ static void ToggleDoor(WorldManager& _world, Int3 _pos) {
 			// Below us is not the bottom of a door! This is bad!
 			return;
 		// Recall this function on the bottom of the door
-		blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated(_world, { _pos.x, _pos.y - 1, _pos.z });
+		blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated(_world, { _pos.x, _pos.y - 1, _pos.z }, _triggeringSession);
 		return;
 	}
 	// We are the top half so lets open
@@ -314,7 +315,7 @@ static void ToggleDoor(WorldManager& _world, Int3 _pos) {
 	}
 	_world.SetMeta(_pos, uint8_t(meta ^ 0b100)); // XOR bit 2; flips open/closed
 	if (_world.onWorldEvent)
-		_world.onWorldEvent(PacketData::WorldEvent::DOOR_TOGGLE, _pos, 0);
+		_world.onWorldEvent(PacketData::WorldEvent::DOOR_TOGGLE, _pos, 0, _triggeringSession);
 	return;
 }
 
@@ -493,7 +494,7 @@ void RegisterBlockBehaviors() {
 		.getSelectionBox = TrapdoorAabb,
 		.getRayBounds = TrapdoorAabb,
 		.getCollider = TrapdoorCollider,
-		.onBlockActivated = [](WorldManager& _world, Int3 _pos) -> bool {
+		.onBlockActivated = [](WorldManager& _world, Int3 _pos, PlayerSession* /*_triggeringSession*/) -> bool {
 			ToggleTrapdoor(_world, _pos);
 			return false;
 		},
@@ -578,21 +579,19 @@ void RegisterBlockBehaviors() {
 			// Unpress again
 			if (_meta & 0b1000) {
 				_world.SetMeta(_pos, _meta & 0b111);
-				if (_world.onWorldEvent)
-					_world.onWorldEvent(PacketData::WorldEvent::CLICK1, _pos, 0);
 			}
 		},
 		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
 			blockBehaviors[BLOCK_BUTTON_STONE].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 		},
-		.onBlockClicked = [](WorldManager& _world, Int3 _pos) -> void {
+		.onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> void {
 			_world.SetMeta(_pos, _world.GetMetadata(_pos) | 0b1000);
 			_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_BUTTON_STONE, 20);
 			if (_world.onWorldEvent)
-				_world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0);
+				_world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
 		},
-		.onBlockActivated = [](WorldManager& _world, Int3 _pos) -> bool {
-			blockBehaviors[BLOCK_BUTTON_STONE].onBlockClicked(_world, _pos);
+		.onBlockActivated = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> bool {
+			blockBehaviors[BLOCK_BUTTON_STONE].onBlockClicked(_world, _pos, _triggeringSession);
 			return false;
 		},
 		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
@@ -998,8 +997,9 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_DOOR_IRON].onBlockPlaced = onDoorPlace;
 
 	// for when the block is interacted with!
-	blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated = [](WorldManager& _world, Int3 _pos) -> bool {
-		ToggleDoor(_world, _pos);
+	blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated = [](WorldManager& _world, Int3 _pos,
+	                                                      PlayerSession* _triggeringSession) -> bool {
+		ToggleDoor(_world, _pos, _triggeringSession);
 		return false;
 	};
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockClicked = ToggleDoor;
@@ -1284,18 +1284,18 @@ void RegisterBlockBehaviors() {
 	// Lava physics
 	blockBehaviors[BLOCK_LAVA_FLOWING].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		// Schedule ourselves for an update
-		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == -1 ? 10 : 30);
+		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == Dimension::Nether ? 10 : 30);
 		TryLavaHarden(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LAVA_FLOWING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
 		// Stack overflow if this was regular set block!
-		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == -1 ? 10 : 30);
+		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == Dimension::Nether ? 10 : 30);
 		TryLavaHarden(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LAVA_STILL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
 		// Stack overflow if this was regular set block!
 		_world.SetBlockRaw(_pos, BLOCK_LAVA_FLOWING, _world.GetMetadata(_pos));
-		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == -1 ? 10 : 30);
+		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == Dimension::Nether ? 10 : 30);
 		TryLavaHarden(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LAVA_STILL].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
@@ -1309,7 +1309,7 @@ void RegisterBlockBehaviors() {
 		auto candidateLevel = -1;
 		Int3 belowPos = { _pos.x, _pos.y - 1, _pos.z };
 
-		int stepDecay = _world.GetDimension() == -1 ? 1 : 2;
+		int stepDecay = _world.GetDimension() == Dimension::Nether ? 1 : 2;
 
 		// Are we a source block?
 		if (!isSource) {
@@ -1363,9 +1363,9 @@ void RegisterBlockBehaviors() {
 			} else if (candidateLevel != _meta) {
 				_world.SetMeta(_pos, candidateLevel);
 				level = candidateLevel;
-				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == -1 ? 10 : 30);
+				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == Dimension::Nether ? 10 : 30);
 			} else if (heldByHesitation) {
-				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == -1 ? 10 : 30);
+				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == Dimension::Nether ? 10 : 30);
 			} else {
 				_world.SetBlockRaw(_pos, BLOCK_LAVA_STILL, _meta);
 			}
