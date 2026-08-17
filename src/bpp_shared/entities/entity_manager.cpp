@@ -11,6 +11,10 @@
 #include "entity_pig.h"
 #include "entity_sheep.h"
 #include "entity_zombie.h"
+#include "entity_skeleton.h"
+#include "entity_creeper.h"
+#include "entity_spider.h"
+#include "entity_falling_block.h"
 #include "world.h"
 
 void EntityManager::RemoveEntity(EntityId _id) {
@@ -239,6 +243,30 @@ void EntityManager::CreateEntityFromNbt(Tag& _nbt) {
 		ChickenEntity entity;
 		entity.LoadFromNbt(_nbt);
 		AddEntity(std::make_shared<ChickenEntity>(entity));
+	}
+	if (id == "Skeleton") {
+		SkeletonEntity entity;
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<SkeletonEntity>(entity));
+	}
+	if (id == "Creeper") {
+		CreeperEntity entity;
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<CreeperEntity>(entity));
+	}
+	if (id == "Spider") {
+		SpiderEntity entity;
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<SpiderEntity>(entity));
+	}
+	if (id == "FallingSand") {
+		FallingBlockEntity entity(Vec3{}, BLOCK_AIR);
+		entity.LoadFromNbt(_nbt);
+		if (entity.block == BLOCK_SAND)
+			entity.type = EntityType::FALLING_SAND;
+		else if (entity.block == BLOCK_GRAVEL)
+			entity.type = EntityType::FALLING_GRAVEL;
+		AddEntity(std::make_shared<FallingBlockEntity>(entity));
 	}
 }
 

@@ -37,33 +37,48 @@ struct Runtime {
 		worldHell.entityManager.nextEntityId = &sharedEntityId;
 		GlobalLogger().info << "New game runtime created!\n";
 	}
-	Runtime(int _renderDistance) : worldHell(true) {
-		Blocks::RegisterAll();
-		Items::RegisterAll();
-		recipeManager.AddVanillaRecipes();
-		world.entityManager.nextEntityId = &sharedEntityId;
-		worldHell.entityManager.nextEntityId = &sharedEntityId;
 
+	void Init(std::string _levelPath, std::string _seedOverride = "", int _renderDistance = 8) {
 		// Override our view distance
 		world.SetViewRadius(_renderDistance);
 		worldHell.SetViewRadius(_renderDistance);
+		GlobalLogger().info << "Render distance set to " << _renderDistance << " chunks!\n";
 
-		GlobalLogger().info << "New game runtime created with view radius overriden to " << _renderDistance << "!\n";
-	}
-
-	void Init(std::string _levelPath, std::string _seedOverride = "") {
 		// Setup our save
 		bool newSave = false;
-		if (!saveManager.Initialize(_levelPath)) {
-			GlobalLogger().warn << "**** FAILED TO LOAD WORLD DATA! Attempting to create new world... \n";
-			newSave = true;
-			if (!saveManager.CreateNewWorld({ .randomSeed = (_seedOverride != "")
-			                                                    ? saveManager.SeedFromString(_seedOverride)
-			                                                    : Java::Random().NextLong() })) {
-				GlobalLogger().error << "**** FAILED TO CREATE NEW WORLD! \n";
-				exit(1);
+		auto initResult = saveManager.Initialize(_levelPath);
+		if (initResult != LevelInitFailureReason::SUCCESS) {
+			auto tryNewSave = [&]() -> void {
+				GlobalLogger().warn << "**** FAILED TO LOAD WORLD DATA! Attempting to create new world... \n";
+				newSave = true;
+				if (!saveManager.CreateNewWorld({ .randomSeed = (_seedOverride != "")
+				                                                    ? saveManager.SeedFromString(_seedOverride)
+				                                                    : Java::Random().NextLong() })) {
+					GlobalLogger().error << "**** FAILED TO CREATE NEW WORLD! \n";
+					exit(1);
+				}
+				GlobalLogger().info << "New world created successfully. \n";	
+			};
+
+			if (initResult == LevelInitFailureReason::ALPHA_FORMATTED) {
+				GlobalLogger().info << "MCA Formatted world detected! Attempting to convert...\n";
+				saveManager.Release();
+				auto conversionResult = Utilities::convertAlphaLevel(_levelPath);
+
+				if (!conversionResult) {
+					// We failed to convert
+					GlobalLogger().info << "Failed to convert MCA world! Falling back.\n";
+					tryNewSave();
+				} else {
+					// Re-init our level
+					if (saveManager.Initialize(_levelPath) != LevelInitFailureReason::SUCCESS) {
+						GlobalLogger().error << "Converted level failed to load!";
+						tryNewSave();
+					}
+				}
+			} else {
+				tryNewSave();
 			}
-			GlobalLogger().info << "New world created successfully. \n";
 		}
 
 		// Initialize our region managers

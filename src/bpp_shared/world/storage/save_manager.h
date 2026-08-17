@@ -8,6 +8,7 @@
 #include "helpers/file_handle.h"
 #include "java_math.h"
 #include "nbt/nbt.h"
+#include "utilities.h"
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -22,6 +23,15 @@
 #include <sys/file.h>
 #include <unistd.h>
 #endif
+
+enum LevelInitFailureReason {
+	SUCCESS,
+	ALPHA_FORMATTED,
+	NEW_SAVE,
+	MISSING_FOLDERS,
+	INVALID_LOCK,
+	LEVELDAT_FAILURE
+};
 
 struct LevelData {
 	int64_t randomSeed = 0;
@@ -103,10 +113,30 @@ private:
 };
 
 struct SaveManager {
-	bool Initialize(const std::string& _pSaveName, [[maybe_unused]] bool _isMultiplayerSave = false) {
+	LevelInitFailureReason Initialize(const std::string& _pSaveName, [[maybe_unused]] bool _isMultiplayerSave = false) {
 		saveDirectory = _pSaveName;
 
-		// Make sure we have the necessary folders
+		// Make sure session lock and level.dat are valid
+		if (!sessionLock.Acquire(saveDirectory + "/session.lock"))
+			return LevelInitFailureReason::INVALID_LOCK;
+		if (!std::filesystem::exists(saveDirectory + "/level.dat")) {
+			GlobalLogger().warn << "level.dat couldn't be found!\n";
+			if (!std::filesystem::exists(saveDirectory + "/level.dat_old")) {
+				GlobalLogger().warn << "level.dat_old couldn't be found!\n";
+				return LevelInitFailureReason::LEVELDAT_FAILURE;
+			}
+			std::filesystem::copy_file(saveDirectory + "/level.dat_old", saveDirectory + "/level.dat");
+		}
+		worldFile = std::make_unique<FileHandle>(saveDirectory + "/level.dat");
+		if (!worldFile->Get().is_open())
+			return LevelInitFailureReason::LEVELDAT_FAILURE;
+
+		// See if we are an alpha level
+		if (Utilities::isAlphaLevel(_pSaveName)) {
+			return LevelInitFailureReason::ALPHA_FORMATTED;
+		}
+
+		// Check for missing directories
 		int necessaryFolders = 0;
 		necessaryFolders += std::filesystem::create_directories(saveDirectory + "/players");
 		necessaryFolders += std::filesystem::create_directories(saveDirectory + "/region");
@@ -116,20 +146,7 @@ struct SaveManager {
 			GlobalLogger().warn << "Failed to load " << necessaryFolders
 			                    << " necessary folder(s) for level " + _pSaveName + ".\n";
 
-		if (!sessionLock.Acquire(saveDirectory + "/session.lock"))
-			return false;
-		if (!std::filesystem::exists(saveDirectory + "/level.dat")) {
-			GlobalLogger().warn << "level.dat couldn't be found!\n";
-			if (!std::filesystem::exists(saveDirectory + "/level.dat_old")) {
-				GlobalLogger().warn << "level.dat_old couldn't be found!\n";
-				return false;
-			}
-			std::filesystem::copy_file(saveDirectory + "/level.dat_old", saveDirectory + "/level.dat");
-		}
-		worldFile = std::make_unique<FileHandle>(saveDirectory + "/level.dat");
-		if (!worldFile->Get().is_open())
-			return false;
-		return true;
+		return LevelInitFailureReason::SUCCESS;
 	}
 
 	bool LoadLevelData() {
@@ -526,6 +543,8 @@ struct SaveManager {
 
 	void Release() {
 		sessionLock.Release();
+		worldFile.reset(); // also close the level.dat handle, or a subsequent
+		                   // Initialize() on this same object can't touch the file
 	}
 
 	~SaveManager() {
