@@ -36,7 +36,7 @@
 #include "discord.h"
 #endif
 
-Server::Server() : gameRuntime(serverViewRadius), config("server.properties") {
+Server::Server() : gameRuntime(), config("server.properties") {
 	ServerBlock::Initialize();
 	LoadConfig();
 
@@ -52,7 +52,8 @@ Server::Server() : gameRuntime(serverViewRadius), config("server.properties") {
 		exit(1);
 	}
 	GlobalLogger().info << "Server initialized on port " << serverPort << "\n";
-	gameRuntime.Init(config.GetAsString("level-name", "world"), config.GetAsString("level-seed", "0"));
+	gameRuntime.Init(config.GetAsString("level-name", "world"), config.GetAsString("level-seed", "0"),
+	                 config.GetAsNumber("view-distance", 8));
 }
 
 Server::~Server() {
@@ -138,7 +139,7 @@ void Server::LoadConfig() {
 	if (!config.LoadFromDisk()) {
 		config.Overwrite({
 		    { "level-name", "world" },
-		    //{"view-distance", "10"},
+		    { "view-distance", "10"},
 		    //{"white-list", "false"},
 		    //{"server-ip", ""},
 		    //{"motd", "A Minecraft Server"},

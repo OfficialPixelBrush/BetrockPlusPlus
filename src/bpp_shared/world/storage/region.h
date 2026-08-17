@@ -42,6 +42,7 @@ class Region {
 public:
 	Int32_2 rpos;
 	std::mutex mutex;
+	Region() {};
 	Region(Int32_2 _rpos, std::string _folderPath)
 	    : rpos(_rpos), regionFile(_folderPath + "/" + RegionPositionToFileName(_rpos)) {
 		// Cache our header
@@ -69,11 +70,13 @@ public:
 		}
 	}
 
-private:
-	//std::array<std::shared_ptr<Chunk>, REGION_AREA> chunks;
 	std::vector<uint8_t> EncodeNbtData(const std::shared_ptr<Chunk>& _chunk, int64_t _timestamp,
 	                                   std::shared_ptr<const std::vector<Tag>> _entities);
 	std::shared_ptr<Chunk> DecodeNbtData(const std::vector<uint8_t>& _rawData);
+	std::shared_ptr<Chunk> DecodeDecompressedNbtData(const std::vector<uint8_t>& _decompressedData);
+
+private:
+	//std::array<std::shared_ptr<Chunk>, REGION_AREA> chunks;
 	std::string GetPath();
 	std::array<FileHeaderEntry, 1024> regionHeader;
 	FileHandle regionFile;
