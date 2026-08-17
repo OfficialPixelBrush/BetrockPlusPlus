@@ -140,7 +140,7 @@ struct EntityTracker {
 		case EntityType::GHAST:
 		case EntityType::SLIME:
 		case EntityType::GIANT_ZOMBIE:
-			return { 128, 3, true };
+			return { 128, 3, false };
 		case EntityType::LIT_TNT:
 			return { 128, 10, true };
 		case EntityType::FALLING_SAND:
