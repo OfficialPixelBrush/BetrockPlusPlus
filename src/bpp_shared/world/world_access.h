@@ -23,4 +23,6 @@ public:
 	virtual void SetBlock(const Int3 _wpos, const BlockType _type, const uint8_t _meta = 0,
 	                      const bool _keepTileEntity = false, const bool _updateNeighbors = true) = 0;
 	virtual uint8_t GetSkyLight(const Int3 _wpos) = 0;
+	// Combined block light value (max of sky light and emitted block light),
+	virtual int GetBlockLightRaw(const Int3 _wpos) = 0;
 };

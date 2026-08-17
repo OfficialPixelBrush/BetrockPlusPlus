@@ -48,6 +48,7 @@ public:
 	void SetBlock(const Int3 _wpos, const BlockType _type, const uint8_t _meta = 0, const bool _keepTileEntity = false,
 	              const bool _updateNeighbors = true) override;
 	uint8_t GetSkyLight(const Int3 _wpos) override;
+	int GetBlockLightRaw(const Int3 _wpos) override;
 
 	int64_t GetSeed() const {
 		return manager.seed;

@@ -18,7 +18,7 @@ namespace Blocks {
 BlockProperties blockProperties[BLOCK_MAX] = {};
 
 // Behavior helper functions
-bool CanFallAt(WorldManager& _world, Int3 _position) {
+bool CanFallAt(WorldAccess& _world, Int3 _position) {
 	auto block = _world.GetBlockId(_position);
 	if (block == BLOCK_AIR)
 		return true;
@@ -59,7 +59,7 @@ void DropBlockAt(WorldManager& _world, Int3 _pos, BlockType _id, ItemAmount _cou
 	dropPos.y += (_world.rand.NextFloat() * offset) + (1.0f - offset) * 0.5;
 	dropPos.z += (_world.rand.NextFloat() * offset) + (1.0f - offset) * 0.5;
 	ItemEntity item(dropPos);
-	item.itemStack = {.id = _id, .count = _count, .data = _data};
+	item.itemStack = { .id = _id, .count = _count, .data = _data };
 	_world.entityManager.AddEntity(std::make_shared<ItemEntity>(item));
 	return;
 }
@@ -76,7 +76,7 @@ void DropItemAt(WorldManager& _world, Int3 _pos, Items::Id _id, ItemAmount _coun
 	return;
 }
 
-bool CanSugarcaneSurviveAt(WorldManager& _world, Int3 _pos) {
+bool CanSugarcaneSurviveAt(WorldAccess& _world, Int3 _pos) {
 	auto belowBlock = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
 	if (belowBlock == BLOCK_SUGARCANE)
 		return true;
@@ -94,7 +94,7 @@ bool CanSugarcaneSurviveAt(WorldManager& _world, Int3 _pos) {
 	return false;
 }
 
-bool CanGenericPlantSurviveAt(WorldManager& _world, Int3 _pos) {
+bool CanGenericPlantSurviveAt(WorldAccess& _world, Int3 _pos) {
 	auto lightLevel = _world.GetBlockLightRaw(_pos);
 	bool canSeeSky = _world.CanBlockSeeSky(_pos);
 	auto belowBlock = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
@@ -102,12 +102,11 @@ bool CanGenericPlantSurviveAt(WorldManager& _world, Int3 _pos) {
 	return (lightLevel >= 8 || canSeeSky) && canGrowOnBlock;
 }
 
-bool CanMushroomSurviveAt(WorldManager& _world, Int3 _pos) {
+bool CanMushroomSurviveAt(WorldAccess& _world, Int3 _pos) {
 	auto lightLevel = _world.GetBlockLightRaw(_pos);
-	bool canSeeSky = _world.CanBlockSeeSky(_pos);
 	auto belowBlock = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
 	bool canGrowOnBlock = blockProperties[belowBlock].isOpaqueCube;
-	return lightLevel < 13 && canGrowOnBlock;
+	return lightLevel <= 13 && canGrowOnBlock;
 }
 
 bool CanCactusSurviveAt(WorldManager& _world, Int3 _pos) {
