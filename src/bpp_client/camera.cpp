@@ -23,7 +23,7 @@ void Camera::UpdateLook(Float2 _delta) {
 	pitch += _delta.y;
 
 	// Prevent flipping over
-	pitch = std::clamp(pitch, -89.0f, 89.0f);
+	pitch = std::clamp(pitch, -90.0f, 90.0f);
 
 	glm::vec3 direction;
 	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));

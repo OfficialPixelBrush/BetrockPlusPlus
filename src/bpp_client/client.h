@@ -29,7 +29,6 @@ private:
 	static constexpr int MAX_TICKS_PER_FRAME = 10;
 
 	void Tick();
-	void Render([[maybe_unused]] float _partialTick);
 	void ProcessIncoming();
 
 	Window window;
@@ -43,6 +42,7 @@ private:
 	std::string targetIP = "127.0.0.1";
 	int targetPort = 25565;
 	int clientSocket = -1;
+	ConnectionState connectionState = ConnectionState::Handshaking;
 	std::optional<NetworkStream> stream;
 	std::chrono::steady_clock::time_point lastPacketTime = std::chrono::steady_clock::now();
 };
