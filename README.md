@@ -1,8 +1,9 @@
 # BetrockPlusPlus/Betrock++
 
 ![C++23](https://img.shields.io/badge/Language-C%2B%2B23-5E96CF)
-![Issues](https://img.shields.io/github/issues/OfficialPixelBrush/BetrockPlusPlus)
-![Pull requests](https://img.shields.io/github/issues-pr/OfficialPixelBrush/BetrockPlusPlus)
+[![Issues](https://img.shields.io/github/issues/OfficialPixelBrush/BetrockPlusPlus)](https://github.com/OfficialPixelBrush/BetrockPlusPlus/issues)
+[![Pull requests](https://img.shields.io/github/issues-pr/OfficialPixelBrush/BetrockPlusPlus)](https://github.com/OfficialPixelBrush/BetrockPlusPlus/pulls)
+[![OpenBeta](https://img.shields.io/badge/OpenBeta-Discord-purple)](https://discord.gg/JHTz2HSKrf)
 
 A from-scratch rewrite/combination of Beta++/Betrock and BetrockServer to combine their bests parts cleanly.
 
