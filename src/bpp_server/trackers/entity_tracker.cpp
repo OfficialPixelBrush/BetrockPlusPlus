@@ -14,6 +14,12 @@
 #include <algorithm>
 #include <cstdint>
 
+double DistanceBetweenPlayerAndEntity(Entity* _entity, Entity* _player) {
+	auto dx = _entity->position.x - _player->position.x;
+	auto dz = _entity->position.z - _player->position.z;
+	return dx * dx + dz * dz;
+}
+
 // Update each player instance so entities properly despawn and spawn for them
 void EntityTracker::Tick() {
 	std::vector<EntityId> deadThisTick;
@@ -46,9 +52,7 @@ void EntityTracker::Tick() {
 			}
 			auto& player = playerIt->second;
 
-			auto distanceTo = std::abs(std::max(std::abs(entry.entity->position.x - player.entity->position.x),
-			                                    std::abs(entry.entity->position.z - player.entity->position.z)));
-			if (distanceTo > entry.profile.range) {
+			if (DistanceBetweenPlayerAndEntity(entry.entity, player.entity) > entry.profile.range*entry.profile.range) {
 				auto pSession = server->GetSessionById(playerId);
 				if (!pSession) {
 					it = entry.visibleTo.erase(it);
@@ -73,9 +77,7 @@ void EntityTracker::Tick() {
 			if (entityId == playerId)
 				continue;
 
-			auto distanceTo = std::abs(std::max(std::abs(entityEntry.entity->position.x - player.entity->position.x),
-			                                    std::abs(entityEntry.entity->position.z - player.entity->position.z)));
-			if (distanceTo > entityEntry.profile.range ||
+			if (DistanceBetweenPlayerAndEntity(entityEntry.entity, player.entity) > entityEntry.profile.range*entityEntry.profile.range ||
 			    entityEntry.visibleTo.find(playerId) != entityEntry.visibleTo.end()) {
 				continue;
 			}
@@ -106,9 +108,7 @@ void EntityTracker::TrackEntity(Entity* _entity) {
 		if (playerIt == trackedEntities.end())
 			continue;
 		auto& player = playerIt->second;
-		auto distanceTo = std::abs(std::max(std::abs(_entity->position.x - player.entity->position.x),
-		                                    std::abs(_entity->position.z - player.entity->position.z)));
-		if (distanceTo > newEntry.profile.range)
+		if (DistanceBetweenPlayerAndEntity(entry.entity, player.entity) > newEntry.profile.range*newEntry.profile.range)
 			continue;
 		// Register the viewer before spawning
 		newEntry.visibleTo.insert(playerId);
@@ -151,9 +151,7 @@ void EntityTracker::AddPlayer(Entity* _player) {
 	for (auto& [entityId, entityEntry] : trackedEntities) {
 		if (entityId == _player->id)
 			continue;
-		auto distanceTo = std::abs(std::max(std::abs(entityEntry.entity->position.x - _player->position.x),
-		                                    std::abs(entityEntry.entity->position.z - _player->position.z)));
-		if (distanceTo > entityEntry.profile.range)
+		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) > entityEntry.profile.range*entityEntry.profile.range)
 			continue;
 		// Register the viewer before spawning
 		entityEntry.visibleTo.insert(_player->id);
@@ -166,9 +164,7 @@ void EntityTracker::AddPlayer(Entity* _player) {
 		auto otherIt = trackedEntities.find(otherPlayerId);
 		if (otherIt == trackedEntities.end())
 			continue;
-		auto distanceTo = std::abs(std::max(std::abs(_player->position.x - otherIt->second.entity->position.x),
-		                                    std::abs(_player->position.z - otherIt->second.entity->position.z)));
-		if (distanceTo > newPlayerEntry.profile.range)
+		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) > newPlayerEntry.profile.range*newPlayerEntry.profile.range)
 			continue;
 		newPlayerEntry.visibleTo.insert(otherPlayerId);
 		SpawnEntityForPlayer(otherPlayerId, newPlayerEntry);
