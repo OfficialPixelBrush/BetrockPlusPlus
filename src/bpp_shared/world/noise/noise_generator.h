@@ -9,6 +9,7 @@
 #include "java_random.h"
 #include "numeric_structs.h"
 #include <array>
+#include <vector>
 
 #ifdef REDUCED_GENERATION_PRECISION
 typedef float gen_float;
@@ -24,7 +25,7 @@ typedef double gen_float;
  */
 class NoiseGenerator {
 protected:
-    uint8_t permutations[512];
+	uint8_t permutations[512];
 	Vec3 coordinate;
 	virtual void InitPermTable(Java::Random& _rand);
 
