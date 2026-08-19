@@ -73,7 +73,10 @@ void EntityTracker::Tick() {
 	for (EntityId playerId : playerIds) {
 		auto& player = trackedEntities.at(playerId);
 
+		int entitiesSpawnedThisTick = 0;
 		for (auto& [entityId, entityEntry] : trackedEntities) {
+			if (entitiesSpawnedThisTick > MAXIMUM_ENTITY_SPAWNS_PER_TICK)
+				break;
 			if (entityId == playerId)
 				continue;
 
@@ -83,6 +86,7 @@ void EntityTracker::Tick() {
 			}
 
 			SpawnEntityForPlayer(playerId, entityEntry);
+			entitiesSpawnedThisTick++;
 		}
 	}
 }
