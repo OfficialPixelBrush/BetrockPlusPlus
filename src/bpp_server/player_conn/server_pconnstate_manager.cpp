@@ -66,8 +66,8 @@ void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, [[maybe_un
 	// NOTE: Ornite hyjacks the PreLogin packet to report which mods it has,
 	// so we shouldn't use the PreLogin username to identification.
 	// This works on Vanilla Beta 1.7.3, so we should replicate this.
-	if (incoming.username.size() >= 2 && incoming.username[0] == '^' && incoming.username[1] == '@')
-		GlobalLogger().info << "Modifified client! Provided mods: " << incoming.username << "\n";
+	if (incoming.username.starts_with("^@"))
+		GlobalLogger().info << "Modified client! Provided mods: " << incoming.username << '\n';
 
 	// Authentication
 	serverId = "-";
