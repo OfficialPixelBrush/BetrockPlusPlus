@@ -53,6 +53,8 @@ class Server;
 struct MobileEntity;
 struct PlayerSession;
 struct EntityTracker {
+	static constexpr int32_t MINIMUM_POSITION_DELTA = 8;
+	static constexpr int32_t MINIMUM_ROTATION_DELTA = 8;
 	Server* server = nullptr;
 
 	std::unordered_map<EntityId, TrackedEntry> trackedEntities;

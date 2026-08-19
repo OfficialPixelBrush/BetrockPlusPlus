@@ -614,8 +614,13 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 			_trackedEntry.lastEncodedYaw = qYaw;
 			_trackedEntry.lastEncodedPitch = qPitch;
 		} else {
-			bool needsRelMove = dx != 0 || dy != 0 || dz != 0;
-			bool needsRot = qYaw != _trackedEntry.lastEncodedYaw || qPitch != _trackedEntry.lastEncodedPitch;
+			bool needsRelMove =
+				std::abs(dx) > MINIMUM_POSITION_DELTA ||
+				std::abs(dy) > MINIMUM_POSITION_DELTA ||
+				std::abs(dz) > MINIMUM_POSITION_DELTA;
+			bool needsRot =
+				std::abs(qYaw   - _trackedEntry.lastEncodedYaw)   > MINIMUM_ROTATION_DELTA ||
+				std::abs(qPitch - _trackedEntry.lastEncodedPitch) > MINIMUM_ROTATION_DELTA;
 
 			if (needsRelMove && needsRot) {
 				Packet::EntityPositionAndRotation pkt;
