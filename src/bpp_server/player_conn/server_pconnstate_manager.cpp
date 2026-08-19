@@ -26,7 +26,7 @@ void PlayerConnStateManager::HandleConnectionState(PlayerSession& _session, Serv
 		break;
 	case ConnectionState::Playing: {
 		WorldManager& sessionWorld = _session.dimension == Dimension::Nether ? _server.gameRuntime.worldHell
-		                                                      : _server.gameRuntime.world;
+		                                                                     : _server.gameRuntime.world;
 		_server.chunkSender.Enqueue(_session, sessionWorld, 16);
 		_server.chunkSender.Flush(_session);
 		if (sessionWorld.elapsedTicks % 20 == 0) {
@@ -62,9 +62,12 @@ void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, [[maybe_un
 	if (_session.stream.CheckAndClearShortRead()) {
 		return;
 	}
-	if (!IsValidUsername(incoming.username))
-		return;
-	_session.username = incoming.username;
+
+	// NOTE: Ornite hyjacks the PreLogin packet to report which mods it has,
+	// so we shouldn't use the PreLogin username to identification.
+	// This works on Vanilla Beta 1.7.3, so we should replicate this.
+	if (incoming.username.size() >= 2 && incoming.username[0] == '^' && incoming.username[1] == '@')
+		GlobalLogger().info << "Modifified client! Provided mods: " << incoming.username << "\n";
 
 	// Authentication
 	serverId = "-";
@@ -76,8 +79,6 @@ void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, [[maybe_un
 	Packet::PreLogin response;
 	response.serverId = serverId;
 	response.Serialize(_session.stream);
-
-	GlobalLogger().info << "Player " << _session.username << " is logging in.\n";
 
 	_session.connState = ConnectionState::LoggingIn;
 }
@@ -99,6 +100,9 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	}
 	if (!IsValidUsername(incoming.username))
 		return;
+	_session.username = incoming.username;
+
+	GlobalLogger().info << "Player " << _session.username << " is logging in.\n";
 
 #ifdef ONLINE_MODE_AUTHENTICATION
 	if (!_server.auth.IsRegisteredUsername(serverId, _session.username)) {
@@ -118,7 +122,8 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	_session.LoadPlayerNbt(playerNbt);
 
 	// Get the right world pointer
-	WorldManager& sessionWorld = _session.dimension == Dimension::Nether ? _server.gameRuntime.worldHell : _server.gameRuntime.world;
+	WorldManager& sessionWorld = _session.dimension == Dimension::Nether ? _server.gameRuntime.worldHell
+	                                                                     : _server.gameRuntime.world;
 
 	_session.entity->session = &_session;
 	_session.entity->id = sessionWorld.entityManager.GetNextEntityId();
@@ -194,7 +199,8 @@ void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std
 }
 
 void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server& _server) {
-	WorldManager& sessionWorld = _session.dimension == Dimension::Nether ? _server.gameRuntime.worldHell : _server.gameRuntime.world;
+	WorldManager& sessionWorld = _session.dimension == Dimension::Nether ? _server.gameRuntime.worldHell
+	                                                                     : _server.gameRuntime.world;
 	_server.chunkSender.Enqueue(_session, sessionWorld, _server.flushChunkCount);
 	_server.chunkSender.Flush(_session);
 
@@ -252,7 +258,8 @@ void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server&
 	_session.entityRegistered = true;
 
 	// Give our player session a pointer to the entity tracker
-	_session.entityTracker = _session.dimension == Dimension::Overworld ? &_server.overworldEntityTracker : &_server.hellEntityTracker;
+	_session.entityTracker = _session.dimension == Dimension::Overworld ? &_server.overworldEntityTracker
+	                                                                    : &_server.hellEntityTracker;
 
 	// Welcome message
 	Packet::ChatMessage welcomeMsg;
