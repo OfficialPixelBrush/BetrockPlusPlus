@@ -5,17 +5,19 @@
  * Based on code by Mojang Studios (2011)
 */
 
+#pragma once
 #include "../../noise/noise_octaves_perlin.h"
 #include "../generator.h"
 #include "../shared/cave_gen.h"
 
 /**
- * @brief A faithful reimplementation of the Beta 1.7.3 Nether Generator
- * 
+ * @brief Seed-initialized, read-only octave/permutation tables for the nether.
+ * Shared across generation threads; scratch buffers stay per-thread on NetherGenerator.
  */
-class NetherGenerator : public Generator {
-private:
-	// Perlin Noise Generators
+struct NetherNoise {
+	explicit NetherNoise(int64_t _seed);
+
+	int64_t seed = 0;
 	NoiseOctavesPerlin lowNoiseGen;
 	NoiseOctavesPerlin highNoiseGen;
 	NoiseOctavesPerlin selectorNoiseGen;
@@ -23,6 +25,14 @@ private:
 	NoiseOctavesPerlin stoneNoiseGen;
 	NoiseOctavesPerlin continentalnessNoiseGen;
 	NoiseOctavesPerlin depthNoiseGen;
+};
+
+/**
+ * @brief A faithful reimplementation of the Beta 1.7.3 Nether Generator
+ */
+class NetherGenerator : public Generator {
+private:
+	NetherNoise* tables = nullptr;
 
 	// Stored noise Fields (fixed buffers — no per-chunk heap traffic on the gen hot path)
 	static constexpr Int3 MAX{ CHUNK_WIDTH / 4 + 1, CHUNK_HEIGHT / 8 + 1, CHUNK_WIDTH / 4 + 1 };
@@ -39,7 +49,6 @@ private:
 	double gravelNoise[CHUNK_WIDTH * CHUNK_WIDTH];
 	double stoneNoise[CHUNK_WIDTH * CHUNK_WIDTH];
 
-	// Cave Gen
 	CaveGenerator caver;
 
 	void GenerateTerrain(Chunk& _chunk);
@@ -47,8 +56,17 @@ private:
 	void ReplaceBlocksForBiome(Chunk& _chunk);
 
 public:
-	NetherGenerator(int64_t _seed);
+	NetherGenerator() : caver(true) {}
+	explicit NetherGenerator(NetherNoise& _tables) : caver(true) {
+		Bind(_tables);
+	}
 	~NetherGenerator() = default;
+
+	void Bind(NetherNoise& _tables) {
+		tables = &_tables;
+		seed = _tables.seed;
+	}
+
 	void GenerateChunk(Chunk& _chunk) override;
 	bool PopulateChunk(Chunk& _chunk, WorldWrapper& _world) override;
 };

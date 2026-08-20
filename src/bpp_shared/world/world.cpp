@@ -15,10 +15,24 @@
 #include "generator/overworld/chunk_gen.h"
 #include "generator/shared/cave_gen.h"
 #include "world_wrapper.h"
-#include <limits>
 #include <unordered_set>
 
 BiomeGenerator WorldManager::biomeGenerator;
+
+WorldManager::~WorldManager() = default;
+
+void WorldManager::InitWorldSeed(int64_t _pSeed) {
+	pool.wait();
+	seed = _pSeed;
+	if (!isHell) {
+		overworldNoise = std::make_unique<OverworldNoise>(seed);
+		netherNoise.reset();
+		biomeGenerator = BiomeGenerator(seed);
+	} else {
+		netherNoise = std::make_unique<NetherNoise>(seed);
+		overworldNoise.reset();
+	}
+}
 
 Biome WorldManager::GetBiome(Int2 _wpos) {
 	if (isHell)
@@ -480,17 +494,11 @@ void WorldManager::DrainLoadQueue() {
 		it->second->spawnChunk = wasSpawnChunk;
 
 		// Regenerate temp and humidity data
-		thread_local BiomeGenerator tlBiomeGen(0);
-		thread_local int64_t tlBiomeSeed = std::numeric_limits<int64_t>::min();
-		if (tlBiomeSeed != this->seed) {
-			tlBiomeGen = BiomeGenerator(this->seed);
-			tlBiomeSeed = this->seed;
-		}
 		thread_local double temp[CHUNK_AREA];
 		thread_local double humi[CHUNK_AREA];
 		thread_local double weird[CHUNK_AREA];
 		Biome ignored[CHUNK_AREA];
-		tlBiomeGen.GenerateBiomeMap(ignored, temp, humi, weird, Int2{ pos.x * CHUNK_WIDTH, pos.z * CHUNK_WIDTH });
+		biomeGenerator.GenerateBiomeMap(ignored, temp, humi, weird, Int2{ pos.x * CHUNK_WIDTH, pos.z * CHUNK_WIDTH });
 		for (int i = 0; i < CHUNK_AREA; ++i) {
 			it->second->temperature[i] = float(temp[i]);
 			it->second->humidity[i] = float(humi[i]);
@@ -704,10 +712,12 @@ void WorldManager::PumpPipeline(const std::vector<ClientPosition>& _players) {
 			auto chunk = std::make_shared<Chunk>();
 			chunk->cpos = _pos;
 			if (isHell) {
-				thread_local NetherGenerator tlGen(this->seed);
+				thread_local NetherGenerator tlGen;
+				tlGen.Bind(*this->netherNoise);
 				tlGen.GenerateChunk(*chunk);
 			} else {
-				thread_local OverworldGenerator tlGen(this->seed);
+				thread_local OverworldGenerator tlGen;
+				tlGen.Bind(*this->overworldNoise);
 				tlGen.GenerateChunk(*chunk);
 			}
 			chunk->isModified = true;
@@ -789,51 +799,47 @@ void WorldManager::PopulateReady(int _maxPopulates) {
 		return _a.z < _b.z;
 	});
 
-	// Reuse generators across chunks: PopulateChunk resets its RNG from the world seed,
-	// so perm tables only need rebuilding when the world seed changes.
-	thread_local OverworldGenerator tlOverworld(0);
-	thread_local NetherGenerator tlNether(0);
-	thread_local int64_t tlOverworldSeed = std::numeric_limits<int64_t>::min();
-	thread_local int64_t tlNetherSeed = std::numeric_limits<int64_t>::min();
-	if (!isHell && tlOverworldSeed != this->seed) {
-		tlOverworld = OverworldGenerator(this->seed);
-		tlOverworldSeed = this->seed;
-	} else if (isHell && tlNetherSeed != this->seed) {
-		tlNether = NetherGenerator(this->seed);
-		tlNetherSeed = this->seed;
-	}
+	auto populateWith = [&](Generator& _gen) {
+		// Make sure we don't try to populate the same chunk multiple times in one Tick (can happen with the weird population order and multiple players)
+		// Also make sure we populate in the right order!
+		// We break if the target chunk isn't ready yet so population order is guaranteed
+		std::unordered_set<Int32_2> populatedThisTick;
+		int populatedCount = 0;
+		for (const Int32_2& pos : ordered) {
+			if (populatedCount >= _maxPopulates)
+				break;
+			if (!CanPopulateDirect(pos))
+				break;
+			if (populatedThisTick.contains(pos))
+				continue;
+			auto cit = chunks.find(pos);
+			if (cit == chunks.end())
+				break;
+			cit->second->state.store(ChunkState::Populating, std::memory_order_release);
+			WorldWrapper wrapper(*this, pos);
+			wrapper.centerChunkPos = pos;
+			wrapper.GetChunkRegion();
+			_gen.PopulateChunk(*cit->second, wrapper);
+			auto& chunk = cit->second;
+			chunk->isTerrainPopulated = true;
+			chunk->isModified = true;
+			chunk->state.store(ChunkState::Populated, std::memory_order_release);
+			populatedThisTick.insert(pos);
+			++populatedCount;
+			wrapper.FreeChunkRegion();
+			FlushBleedWrites();
+		}
+	};
 
-	// Make sure we don't try to populate the same chunk multiple times in one Tick (can happen with the weird population order and multiple players)
-	// Also make sure we populate in the right order!
-	// We break if the target chunk isn't ready yet so population order is guaranteed
-	std::unordered_set<Int32_2> populatedThisTick;
-	int populatedCount = 0;
-	for (const Int32_2& pos : ordered) {
-		if (populatedCount >= _maxPopulates)
-			break;
-		if (!CanPopulateDirect(pos))
-			break;
-		if (populatedThisTick.contains(pos))
-			continue;
-		auto cit = chunks.find(pos);
-		if (cit == chunks.end())
-			break;
-		cit->second->state.store(ChunkState::Populating, std::memory_order_release);
-		WorldWrapper wrapper(*this, pos);
-		wrapper.centerChunkPos = pos;
-		wrapper.GetChunkRegion();
-		if (isHell)
-			tlNether.PopulateChunk(*cit->second, wrapper);
-		else
-			tlOverworld.PopulateChunk(*cit->second, wrapper);
-		auto& chunk = cit->second;
-		chunk->isTerrainPopulated = true;
-		chunk->isModified = true;
-		chunk->state.store(ChunkState::Populated, std::memory_order_release);
-		populatedThisTick.insert(pos);
-		++populatedCount;
-		wrapper.FreeChunkRegion();
-		FlushBleedWrites();
+	// Scratch only: permutation tables live on the world's shared OverworldNoise / NetherNoise.
+	if (!isHell) {
+		thread_local OverworldGenerator tlOverworld;
+		tlOverworld.Bind(*overworldNoise);
+		populateWith(tlOverworld);
+	} else {
+		thread_local NetherGenerator tlNether;
+		tlNether.Bind(*netherNoise);
+		populateWith(tlNether);
 	}
 }
 

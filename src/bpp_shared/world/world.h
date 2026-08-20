@@ -45,8 +45,14 @@ struct PendingBlock {
 	Int2 light{ 0, 15 }; // block light, sky light
 };
 
+struct OverworldNoise;
+struct NetherNoise;
+
 class WorldManager : public WorldAccess {
 private:
+	// Declared before the gen pool so tables outlive in-flight GenerateChunk tasks.
+	std::unique_ptr<OverworldNoise> overworldNoise;
+	std::unique_ptr<NetherNoise> netherNoise;
 	std::unordered_map<Int32_2, std::vector<std::pair<Int3, Block>>> pendingBleedWrites;
 	std::mutex genDoneMutex;
 	std::deque<std::shared_ptr<Chunk>> genDoneQueue;
@@ -79,7 +85,7 @@ public:
 			thisDimension = Dimension::Nether;
 	}
 
-	~WorldManager() override {}
+	~WorldManager() override;
 
 	void Tick(const std::vector<ClientPosition>& _players);
 	void Update(const std::vector<ClientPosition>& _players);
@@ -172,12 +178,7 @@ public:
 	void InitWorldSeed(std::string _pSeed) {
 		InitWorldSeed(HashCode(_pSeed));
 	}
-	void InitWorldSeed(int64_t _pSeed) {
-		seed = _pSeed;
-		// Update the biome generator with this seed
-		if (!isHell)
-			biomeGenerator = BiomeGenerator(seed);
-	}
+	void InitWorldSeed(int64_t _pSeed);
 	void NotifyNeighborsOfUpdate(Int3 _globalPos);
 	// For creating a fresh tile entity for generation etc
 	void CreateTileEntity(std::shared_ptr<TileEntity> _tileEntity);

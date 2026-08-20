@@ -9,26 +9,23 @@
 #include "chunk.h"
 #include "generator/overworld/biome_gen.h"
 #include "generator/overworld/tree_gen.h"
+#include "java_random.h"
 #include "tree_gen.h"
 
 /**
- * @brief Construct a new Beta 1.7.3 Overworld Generator
- *
- * @param pSeed The seed of the generated world
- * @param pWorld The world that the OverworldGenerator belongs to
+ * @brief Construct shared overworld octave/permutation tables from a world seed
  */
-OverworldGenerator::OverworldGenerator(int64_t _pSeed) : Generator(_pSeed) {
-	rand = Java::Random(seed);
-	// Init Terrain Noise
-	lowNoiseGen = NoiseOctavesPerlin(rand, 16);
-	highNoiseGen = NoiseOctavesPerlin(rand, 16);
-	selectorNoiseGen = NoiseOctavesPerlin(rand, 8);
-	sandGravelNoiseGen = NoiseOctavesPerlin(rand, 4);
-	stoneNoiseGen = NoiseOctavesPerlin(rand, 4);
-	continentalnessNoiseGen = NoiseOctavesPerlin(rand, 10);
-	depthNoiseGen = NoiseOctavesPerlin(rand, 16);
-	treeDensityNoiseGen = NoiseOctavesPerlin(rand, 8);
-	biomeGen = BiomeGenerator(seed);
+OverworldNoise::OverworldNoise(int64_t _seed) : seed(_seed) {
+	Java::Random initRand(_seed);
+	lowNoiseGen = NoiseOctavesPerlin(initRand, 16);
+	highNoiseGen = NoiseOctavesPerlin(initRand, 16);
+	selectorNoiseGen = NoiseOctavesPerlin(initRand, 8);
+	sandGravelNoiseGen = NoiseOctavesPerlin(initRand, 4);
+	stoneNoiseGen = NoiseOctavesPerlin(initRand, 4);
+	continentalnessNoiseGen = NoiseOctavesPerlin(initRand, 10);
+	depthNoiseGen = NoiseOctavesPerlin(initRand, 16);
+	treeDensityNoiseGen = NoiseOctavesPerlin(initRand, 8);
+	biomeGen = BiomeGenerator(_seed);
 }
 
 /**
@@ -38,17 +35,19 @@ OverworldGenerator::OverworldGenerator(int64_t _pSeed) : Generator(_pSeed) {
  * @return std::shared_ptr<Chunk>
  */
 void OverworldGenerator::GenerateChunk(Chunk& _chunk) {
+	if (!tables)
+		return;
 	rand.SetSeed(int64_t(_chunk.cpos.x) * 341873128712L + int64_t(_chunk.cpos.z) * 132897987541L);
 
 	// Allocate empty chunk
 	_chunk.Clear();
 
 	// Generate Biomes
-	biomeGen.GenerateBiomeMap(biomeMap, temperature, humidity, weirdness,
-	                          Int2{ _chunk.cpos.x * CHUNK_WIDTH, _chunk.cpos.z * CHUNK_WIDTH });
+	tables->biomeGen.GenerateBiomeMap(biomeMap, temperature, humidity, weirdness,
+	                                  Int2{ _chunk.cpos.x * CHUNK_WIDTH, _chunk.cpos.z * CHUNK_WIDTH });
 
 	// Store the final temperature and humidity in the chunk so PopulateChunk
-	// (which runs on a different thread_local OverworldGenerator) can reconstruct the
+	// (which runs on a different OverworldGenerator scratch instance) can reconstruct the
 	// biome map via GetBiomeFromLookup without re-running the noise generators.
 	for (size_t i = 0; i < CHUNK_AREA; ++i) {
 		_chunk.temperature[i] = float(temperature[i]);
@@ -83,13 +82,13 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 	//stoneNoise.resize(256, 0.0);
 
 	// Populate noise maps
-	sandGravelNoiseGen.GenerateOctaves(
+	tables->sandGravelNoiseGen.GenerateOctaves(
 	    sandNoise, Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), double(_chunk.cpos.z * CHUNK_WIDTH), 0.0 },
 	    Int32_3{ 16, 16, 1 }, Vec3{ oneThirtySecond, oneThirtySecond, 1.0 });
-	sandGravelNoiseGen.GenerateOctaves(
+	tables->sandGravelNoiseGen.GenerateOctaves(
 	    gravelNoise, Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), 109.0134, double(_chunk.cpos.z * CHUNK_WIDTH) },
 	    Int32_3{ 16, 1, 16 }, Vec3{ oneThirtySecond, 1.0, oneThirtySecond });
-	stoneNoiseGen.GenerateOctaves(stoneNoise,
+	tables->stoneNoiseGen.GenerateOctaves(stoneNoise,
 	                              Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), double(_chunk.cpos.z * CHUNK_WIDTH), 0.0 },
 	                              Int32_3{ 16, 16, 1 },
 	                              Vec3{ oneThirtySecond * 2.0, oneThirtySecond * 2.0, oneThirtySecond * 2.0 });
@@ -274,16 +273,17 @@ void OverworldGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
 	double vertScale = 684.412;
 
 	// We do this to need to generate noise as often
-	continentalnessNoiseGen.GenerateOctaves(continentalnessNoiseField, Int32_2{ _cpos.x, _cpos.z },
-	                                        Int32_2{ _max.x, _max.z }, Vec2{ 1.121, 1.121 }, 0.5);
-	depthNoiseGen.GenerateOctaves(depthNoiseField, Int32_2{ _cpos.x, _cpos.z }, Int32_2{ _max.x, _max.z },
-	                              Vec2{ 200.0, 200.0 }, 0.5);
-	selectorNoiseGen.GenerateOctaves(selectorNoiseField, Vec3{ double(_cpos.x), double(_cpos.y), double(_cpos.z) },
-	                                 _max, Vec3{ horiScale / 80.0, vertScale / 160.0, horiScale / 80.0 });
-	lowNoiseGen.GenerateOctaves(lowNoiseField, Vec3{ double(_cpos.x), double(_cpos.y), double(_cpos.z) }, _max,
-	                            Vec3{ horiScale, vertScale, horiScale });
-	highNoiseGen.GenerateOctaves(highNoiseField, Vec3{ double(_cpos.x), double(_cpos.y), double(_cpos.z) }, _max,
-	                             Vec3{ horiScale, vertScale, horiScale });
+	tables->continentalnessNoiseGen.GenerateOctaves(continentalnessNoiseField, Int32_2{ _cpos.x, _cpos.z },
+	                                                Int32_2{ _max.x, _max.z }, Vec2{ 1.121, 1.121 }, 0.5);
+	tables->depthNoiseGen.GenerateOctaves(depthNoiseField, Int32_2{ _cpos.x, _cpos.z }, Int32_2{ _max.x, _max.z },
+	                                      Vec2{ 200.0, 200.0 }, 0.5);
+	tables->selectorNoiseGen.GenerateOctaves(selectorNoiseField,
+	                                         Vec3{ double(_cpos.x), double(_cpos.y), double(_cpos.z) }, _max,
+	                                         Vec3{ horiScale / 80.0, vertScale / 160.0, horiScale / 80.0 });
+	tables->lowNoiseGen.GenerateOctaves(lowNoiseField, Vec3{ double(_cpos.x), double(_cpos.y), double(_cpos.z) }, _max,
+	                                    Vec3{ horiScale, vertScale, horiScale });
+	tables->highNoiseGen.GenerateOctaves(highNoiseField, Vec3{ double(_cpos.x), double(_cpos.y), double(_cpos.z) },
+	                                     _max, Vec3{ horiScale, vertScale, horiScale });
 	// Used to iterate 3D noise maps (low, high, selector)
 	size_t xyzIndex = 0;
 	// Used to iterate 2D Noise maps (depth, continentalness)
@@ -427,9 +427,11 @@ void OverworldGenerator::GenerateTreeForBiome(WorldWrapper& _world, Java::Random
  * match the Java source exactly.
  */
 bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
+	if (!tables)
+		return false;
 	const int32_t blockX = _chunk.cpos.x * CHUNK_WIDTH;
 	const int32_t blockZ = _chunk.cpos.z * CHUNK_WIDTH;
-	Biome biome = biomeGen.GetBiomeAtPoint(Int2{ blockX + CHUNK_WIDTH, blockZ + CHUNK_WIDTH });
+	Biome biome = tables->biomeGen.GetBiomeAtPoint(Int2{ blockX + CHUNK_WIDTH, blockZ + CHUNK_WIDTH });
 	// Java RNG seeding sequence
 	rand.SetSeed(_world.GetSeed());
 	int64_t xSalt = rand.NextLong() / 2L * 2L + 1L;
@@ -543,7 +545,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 	}
 
 	// Tree count
-	double noiseVal = treeDensityNoiseGen.GenerateOctaves({ double(blockX) * 0.5, double(blockZ) * 0.5 });
+	double noiseVal = tables->treeDensityNoiseGen.GenerateOctaves({ double(blockX) * 0.5, double(blockZ) * 0.5 });
 	int32_t baseTreeCount = Java::DoubleToInt32((noiseVal / 8.0 + rand.NextDouble() * 4.0 + 4.0) / 3.0);
 	int32_t treeCount = 0;
 	if (rand.NextInt(10) == 0)

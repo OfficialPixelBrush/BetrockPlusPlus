@@ -230,7 +230,8 @@ Renderer::Renderer(Window& _window) : window(_window) {
 
 	// Setup rendering
 	Chunk* chunk = new Chunk();
-	OverworldGenerator generator(123);
+	OverworldNoise noise(123);
+	OverworldGenerator generator(noise);
 	generator.GenerateChunk(*chunk);
 
 	MeshData meshData = GenerateChunkMesh(*chunk);

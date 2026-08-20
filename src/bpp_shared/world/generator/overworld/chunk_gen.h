@@ -5,6 +5,7 @@
  * Based on code by Mojang Studios (2011)
 */
 
+#pragma once
 #include "../generator.h"
 #include "../noise/noise_octaves_perlin.h"
 #include "../shared/cave_gen.h"
@@ -13,12 +14,13 @@
 #include "generator/overworld/biome_gen.h"
 
 /**
- * @brief A faithful reimplementation of the Beta 1.7.3 Overworld Generator
- * 
+ * @brief Seed-initialized, read-only octave/permutation tables for the overworld.
+ * Shared across generation threads; scratch buffers stay per-thread on OverworldGenerator.
  */
-class OverworldGenerator : public Generator {
-private:
-	// Perlin Noise Generators
+struct OverworldNoise {
+	explicit OverworldNoise(int64_t _seed);
+
+	int64_t seed = 0;
 	NoiseOctavesPerlin lowNoiseGen;
 	NoiseOctavesPerlin highNoiseGen;
 	NoiseOctavesPerlin selectorNoiseGen;
@@ -27,6 +29,15 @@ private:
 	NoiseOctavesPerlin continentalnessNoiseGen;
 	NoiseOctavesPerlin depthNoiseGen;
 	NoiseOctavesPerlin treeDensityNoiseGen;
+	BiomeGenerator biomeGen;
+};
+
+/**
+ * @brief A faithful reimplementation of the Beta 1.7.3 Overworld Generator
+ */
+class OverworldGenerator : public Generator {
+private:
+	OverworldNoise* tables = nullptr;
 
 	// Stored noise Fields
 	static constexpr Int3 MAX{ CHUNK_WIDTH / 4 + 1, CHUNK_HEIGHT / 8 + 1, CHUNK_WIDTH / 4 + 1 };
@@ -48,11 +59,7 @@ private:
 	double humidity[CHUNK_AREA];
 	double weirdness[CHUNK_AREA];
 
-	// Cave Gen
 	CaveGenerator caver;
-
-	// Reused biome generator
-	BiomeGenerator biomeGen;
 
 	void GenerateTerrain(Chunk& _chunk);
 	void GenerateTerrainNoise(Int3 _cpos, Int3 _max);
@@ -61,8 +68,17 @@ private:
 	void GenerateTreeForBiome(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, Biome _biome);
 
 public:
-	OverworldGenerator(int64_t _seed);
+	OverworldGenerator() = default;
+	explicit OverworldGenerator(OverworldNoise& _tables) {
+		Bind(_tables);
+	}
 	~OverworldGenerator() = default;
+
+	void Bind(OverworldNoise& _tables) {
+		tables = &_tables;
+		seed = _tables.seed;
+	}
+
 	void GenerateChunk(Chunk& _chunk) override;
 	bool PopulateChunk(Chunk& _chunk, WorldWrapper& _world) override;
 };

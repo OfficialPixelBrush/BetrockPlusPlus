@@ -7,24 +7,20 @@
 
 #include "chunk_gen.h"
 #include "chunk.h"
+#include "java_random.h"
 
 /**
- * @brief Construct a new Beta 1.7.3 Nether Generator
- *
- * @param pSeed The seed of the generated world
- * @param pWorld The world that the NetherGenerator belongs to
+ * @brief Construct shared nether octave/permutation tables from a world seed
  */
-NetherGenerator::NetherGenerator(int64_t _pSeed) : Generator(_pSeed), caver(true) {
-	// Tell caver it's a nether caver
-	rand = Java::Random(seed);
-	// Init Terrain Noise
-	lowNoiseGen = NoiseOctavesPerlin(rand, 16);
-	highNoiseGen = NoiseOctavesPerlin(rand, 16);
-	selectorNoiseGen = NoiseOctavesPerlin(rand, 8);
-	sandGravelNoiseGen = NoiseOctavesPerlin(rand, 4);
-	stoneNoiseGen = NoiseOctavesPerlin(rand, 4);
-	continentalnessNoiseGen = NoiseOctavesPerlin(rand, 10);
-	depthNoiseGen = NoiseOctavesPerlin(rand, 16);
+NetherNoise::NetherNoise(int64_t _seed) : seed(_seed) {
+	Java::Random initRand(_seed);
+	lowNoiseGen = NoiseOctavesPerlin(initRand, 16);
+	highNoiseGen = NoiseOctavesPerlin(initRand, 16);
+	selectorNoiseGen = NoiseOctavesPerlin(initRand, 8);
+	sandGravelNoiseGen = NoiseOctavesPerlin(initRand, 4);
+	stoneNoiseGen = NoiseOctavesPerlin(initRand, 4);
+	continentalnessNoiseGen = NoiseOctavesPerlin(initRand, 10);
+	depthNoiseGen = NoiseOctavesPerlin(initRand, 16);
 }
 
 /**
@@ -34,6 +30,8 @@ NetherGenerator::NetherGenerator(int64_t _pSeed) : Generator(_pSeed), caver(true
  * @return std::shared_ptr<Chunk>
  */
 void NetherGenerator::GenerateChunk(Chunk& _chunk) {
+	if (!tables)
+		return;
 	rand.SetSeed(int64_t(_chunk.cpos.x) * 341873128712L + int64_t(_chunk.cpos.z) * 132897987541L);
 
 	// Allocate empty chunk
@@ -64,13 +62,13 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 	//stoneNoise.resize(256, 0.0);
 
 	// Populate noise maps
-	sandGravelNoiseGen.GenerateOctaves(
+	tables->sandGravelNoiseGen.GenerateOctaves(
 	    sandNoise, Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), double(_chunk.cpos.z * CHUNK_WIDTH), 0.0 },
 	    Int32_3{ 16, 16, 1 }, Vec3{ oneThirtySecond, oneThirtySecond, 1.0 });
-	sandGravelNoiseGen.GenerateOctaves(
+	tables->sandGravelNoiseGen.GenerateOctaves(
 	    gravelNoise, Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), 109.0134, double(_chunk.cpos.z * CHUNK_WIDTH) },
 	    Int32_3{ 16, 1, 16 }, Vec3{ oneThirtySecond, 1.0, oneThirtySecond });
-	stoneNoiseGen.GenerateOctaves(stoneNoise,
+	tables->stoneNoiseGen.GenerateOctaves(stoneNoise,
 	                              Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), double(_chunk.cpos.z * CHUNK_WIDTH), 0.0 },
 	                              Int32_3{ 16, 16, 1 },
 	                              Vec3{ oneThirtySecond * 2.0, oneThirtySecond * 2.0, oneThirtySecond * 2.0 });
@@ -248,13 +246,14 @@ void NetherGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
 	{
 		Vec3 vecCpos = Vec3{ double(_cpos.x), double(_cpos.y), double(_cpos.z) };
 		// We do this to need to generate noise as often
-		continentalnessNoiseGen.GenerateOctaves(continentalnessNoiseField, vecCpos, Int32_3{ _max.x, 1, _max.z },
-		                                        Vec3{ 1.0, 0.0, 1.0 });
-		depthNoiseGen.GenerateOctaves(depthNoiseField, vecCpos, Int32_3{ _max.x, 1, _max.z }, Vec3{ 100.0, 0.0, 100.0 });
-		selectorNoiseGen.GenerateOctaves(selectorNoiseField, vecCpos, _max,
-		                                 Vec3{ horiScale / 80.0, vertScale / 60.0, horiScale / 80.0 });
-		lowNoiseGen.GenerateOctaves(lowNoiseField, vecCpos, _max, Vec3{ horiScale, vertScale, horiScale });
-		highNoiseGen.GenerateOctaves(highNoiseField, vecCpos, _max, Vec3{ horiScale, vertScale, horiScale });
+		tables->continentalnessNoiseGen.GenerateOctaves(continentalnessNoiseField, vecCpos, Int32_3{ _max.x, 1, _max.z },
+		                                                Vec3{ 1.0, 0.0, 1.0 });
+		tables->depthNoiseGen.GenerateOctaves(depthNoiseField, vecCpos, Int32_3{ _max.x, 1, _max.z },
+		                                      Vec3{ 100.0, 0.0, 100.0 });
+		tables->selectorNoiseGen.GenerateOctaves(selectorNoiseField, vecCpos, _max,
+		                                         Vec3{ horiScale / 80.0, vertScale / 60.0, horiScale / 80.0 });
+		tables->lowNoiseGen.GenerateOctaves(lowNoiseField, vecCpos, _max, Vec3{ horiScale, vertScale, horiScale });
+		tables->highNoiseGen.GenerateOctaves(highNoiseField, vecCpos, _max, Vec3{ horiScale, vertScale, horiScale });
 	}
 	// Used to iterate 3D noise maps (low, high, selector)
 	size_t xyzIndex = 0;
@@ -349,6 +348,8 @@ void NetherGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
  * match the Java source exactly.
  */
 bool NetherGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
+	if (!tables)
+		return false;
 	const int32_t blockX = _chunk.cpos.x * CHUNK_WIDTH;
 	const int32_t blockZ = _chunk.cpos.z * CHUNK_WIDTH;
 	// TODO: The nether does not initialize its prng values,

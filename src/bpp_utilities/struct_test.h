@@ -20,6 +20,8 @@ void PrintStructSizes() {
 	GlobalLogger().debug << "Region: " << sizeof(Region) << " Bytes\n";
 	GlobalLogger().debug << "Entity: " << sizeof(Entity) << " Bytes\n";
 	GlobalLogger().debug << "PlayerSession: " << sizeof(PlayerSession) << " Bytes\n";
+	GlobalLogger().debug << "OverworldNoise: " << sizeof(OverworldNoise) << " Bytes\n";
+	GlobalLogger().debug << "NetherNoise: " << sizeof(NetherNoise) << " Bytes\n";
 	GlobalLogger().debug << "OverworldGenerator: " << sizeof(OverworldGenerator) << " Bytes\n";
 	GlobalLogger().debug << "NetherGenerator: " << sizeof(NetherGenerator) << " Bytes\n";
 }
