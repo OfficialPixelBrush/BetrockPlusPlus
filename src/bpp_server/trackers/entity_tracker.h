@@ -53,7 +53,6 @@ class Server;
 struct MobileEntity;
 struct PlayerSession;
 struct EntityTracker {
-	static constexpr int32_t MAXIMUM_ENTITY_SPAWNS_PER_TICK = 10;
 	static constexpr int32_t MINIMUM_POSITION_DELTA = 2; // 2 = 1/16th of a block (Vanilla value: 8 (1/4th of a block))
 	static constexpr int32_t MINIMUM_ROTATION_DELTA = 8; // 8 Quantized angles
 	Server* server = nullptr;
