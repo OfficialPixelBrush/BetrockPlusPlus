@@ -96,6 +96,7 @@ void EntityTracker::TrackEntity(Entity* _entity) {
 	entry.lastBroadcastMotion = _entity->velocity;
 	entry.lastEncodedPitch = QuantizeRotation(_entity->rotationPitch);
 	entry.lastEncodedYaw = QuantizeRotation(_entity->rotationYaw);
+	entry.updateCounter = entry.profile.updateFrequency > 0 ? rand.NextInt(entry.profile.updateFrequency) : 0;
 
 	trackedEntities[_entity->id] = std::move(entry);
 
@@ -142,6 +143,7 @@ void EntityTracker::AddPlayer(Entity* _player) {
 	entry.lastBroadcastMotion = _player->velocity;
 	entry.lastEncodedPitch = QuantizeRotation(_player->rotationPitch);
 	entry.lastEncodedYaw = QuantizeRotation(_player->rotationYaw);
+	entry.updateCounter = entry.profile.updateFrequency > 0 ? rand.NextInt(entry.profile.updateFrequency) : 0;
 
 	trackedEntities[_player->id] = std::move(entry);
 	playerIds.insert(_player->id);
