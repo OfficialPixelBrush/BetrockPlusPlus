@@ -16,6 +16,8 @@
 
 NetworkStream::NetworkStream(int _pClientSocket) {
 	clientSocket = _pClientSocket;
+	writeBuffer.reserve(WRITE_BUFFER_RESERVE);
+	readBuffer.reserve(4096);
 }
 
 NetworkStream::~NetworkStream() {
@@ -33,8 +35,27 @@ NetworkStream::~NetworkStream() {
 	}
 }
 
+void NetworkStream::CompactWriteBuffer() {
+	if (writeSent == 0)
+		return;
+	if (writeSent >= writeBuffer.size()) {
+		writeBuffer.clear();
+		writeSent = 0;
+		return;
+	}
+	writeBuffer.erase(writeBuffer.begin(),
+	                  writeBuffer.begin() + static_cast<std::vector<uint8_t>::difference_type>(writeSent));
+	writeSent = 0;
+}
+
+void NetworkStream::ClearWriteBuffer() {
+	writeBuffer.clear();
+	writeSent = 0;
+	packetsInQueue = 0;
+}
+
 void NetworkStream::FlushWriteBufferBlocking() {
-	if (writeBuffer.empty() || clientSocket == INVALID_SOCKET)
+	if (writeSent >= writeBuffer.size() || clientSocket == INVALID_SOCKET)
 		return;
 
 	// Switch to blocking mode
@@ -46,7 +67,7 @@ void NetworkStream::FlushWriteBufferBlocking() {
 	fcntl(clientSocket, F_SETFL, flags & ~O_NONBLOCK);
 #endif
 
-	size_t sent = 0;
+	size_t sent = writeSent;
 	while (sent < writeBuffer.size()) {
 		int result = send(clientSocket, reinterpret_cast<const char*>(writeBuffer.data() + sent),
 		                  static_cast<int>(writeBuffer.size() - sent), 0);
@@ -55,7 +76,7 @@ void NetworkStream::FlushWriteBufferBlocking() {
 		sent += static_cast<size_t>(result);
 	}
 	writeBuffer.clear();
-	ResetPacketCount();
+	writeSent = 0;
 
 	// We close here so the client can get the packet data we just sent out before we disconnect
 #if defined(_WIN32) || defined(_WIN64)
@@ -69,8 +90,10 @@ void NetworkStream::FlushWriteBufferBlocking() {
 }
 
 void NetworkStream::IncrementPacketCount(PacketId _id) {
-	packetsInQueue++;
-	if (packetsInQueue > MAX_PACKETS_PER_TICK) {
+	if (packetsInQueue < 0xFFFFu)
+		packetsInQueue++;
+	// One warning per tick, when the client budget is first exceeded.
+	if (packetsInQueue == MAX_PACKETS_PER_TICK + 1) {
 		GlobalLogger().warn << "Max # of packets/tick exceeded by " << PacketIdToLabel(_id) << "! ("
 		                    << int(packetsInQueue) << "/" << int(MAX_PACKETS_PER_TICK) << ")\n";
 	}
@@ -84,8 +107,7 @@ void NetworkStream::ResetPacketCount() {
 void NetworkStream::WriteString8(const std::string& _str) {
 	uint16_t length = static_cast<uint16_t>(_str.size());
 	Write(length);
-	std::vector<uint8_t> data(_str.begin(), _str.end());
-	WriteBytes(data.data(), data.size());
+	WriteBytes(reinterpret_cast<const uint8_t*>(_str.data()), _str.size());
 }
 
 std::string NetworkStream::ReadString8() {
@@ -100,12 +122,18 @@ void NetworkStream::WriteString16(const std::string& _str) {
 	std::u16string str16 = ToUCS2(_str);
 	uint16_t length = static_cast<uint16_t>(str16.size());
 	Write(length);
-	std::vector<uint8_t> data(length * 2);
+	if (length == 0)
+		return;
+	if (writeSent > 0 && writeSent >= WRITE_COMPACT_THRESHOLD)
+		CompactWriteBuffer();
+	const size_t nbytes = static_cast<size_t>(length) * 2;
+	const size_t off = writeBuffer.size();
+	writeBuffer.resize(off + nbytes);
+	uint8_t* out = writeBuffer.data() + off;
 	for (size_t i = 0; i < str16.size(); i++) {
-		data[i * 2] = (static_cast<uint8_t>((str16[i] >> 8) & 0xFF));
-		data[i * 2 + 1] = (static_cast<uint8_t>(str16[i] & 0xFF));
+		out[i * 2] = static_cast<uint8_t>((str16[i] >> 8) & 0xFF);
+		out[i * 2 + 1] = static_cast<uint8_t>(str16[i] & 0xFF);
 	}
-	WriteBytes(data.data(), data.size());
 }
 
 std::string NetworkStream::ReadString16() {
@@ -140,6 +168,10 @@ size_t NetworkStream::ReadBytes(uint8_t* _buf, size_t _len) {
 }
 
 void NetworkStream::WriteBytes(const uint8_t* _buf, size_t _len) {
+	if (_len == 0)
+		return;
+	if (writeSent > 0 && writeSent >= WRITE_COMPACT_THRESHOLD)
+		CompactWriteBuffer();
 	writeBuffer.insert(writeBuffer.end(), _buf, _buf + _len);
 }
 
@@ -255,9 +287,9 @@ void NetworkStream::WriteEntityMetadata(const std::vector<PacketData::EntityMeta
 }
 
 bool NetworkStream::FlushWriteBuffer() {
-	if (writeBuffer.empty())
+	if (writeSent >= writeBuffer.size())
 		return connected;
-	size_t sent = 0;
+	size_t sent = writeSent;
 	while (sent < writeBuffer.size()) {
 		int result = send(clientSocket, reinterpret_cast<const char*>(writeBuffer.data() + sent),
 		                  static_cast<int>(writeBuffer.size() - sent), 0);
@@ -279,12 +311,13 @@ bool NetworkStream::FlushWriteBuffer() {
 		}
 		sent += static_cast<size_t>(result);
 	}
-	if (sent > 0) {
-		writeBuffer.erase(writeBuffer.begin(),
-		                  writeBuffer.begin() + static_cast<std::vector<unsigned char>::difference_type>(sent));
+	writeSent = sent;
+	if (writeSent >= writeBuffer.size()) {
+		writeBuffer.clear();
+		writeSent = 0;
+	} else if (writeSent >= WRITE_COMPACT_THRESHOLD) {
+		CompactWriteBuffer();
 	}
-	// TODO: Probably not right
-	ResetPacketCount();
 	return connected;
 }
 

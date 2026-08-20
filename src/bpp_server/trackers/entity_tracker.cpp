@@ -5,6 +5,8 @@
  *
 */
 #include "entity_tracker.h"
+#include "../entities/entity_mp_player.h"
+#include "../packet/packet_utils.h"
 #include "../server.h"
 #include "entities.h"
 #include "entities/entity_item.h"
@@ -13,11 +15,25 @@
 #include "packet_data.h"
 #include <algorithm>
 #include <cstdint>
+#include <vector>
 
 double DistanceBetweenPlayerAndEntity(Entity* _entity, Entity* _player) {
 	auto dx = _entity->position.x - _player->position.x;
 	auto dz = _entity->position.z - _player->position.z;
 	return dx * dx + dz * dz;
+}
+
+PlayerSession* EntityTracker::GetPlayerSession(EntityId _id) {
+	auto it = playerSessions.find(_id);
+	if (it != playerSessions.end() && it->second)
+		return it->second;
+	if (!server)
+		return nullptr;
+	auto session = server->GetSessionById(_id);
+	if (!session)
+		return nullptr;
+	playerSessions[_id] = session.get();
+	return session.get();
 }
 
 // Update each player instance so entities properly despawn and spawn for them
@@ -38,6 +54,7 @@ void EntityTracker::Tick() {
 		}
 		trackedEntities.erase(entityId);
 		playerIds.erase(entityId);
+		playerSessions.erase(entityId);
 	}
 
 	// Despawn pass / update
@@ -53,7 +70,7 @@ void EntityTracker::Tick() {
 			auto& player = playerIt->second;
 
 			if (DistanceBetweenPlayerAndEntity(entry.entity, player.entity) > entry.profile.range*entry.profile.range) {
-				auto pSession = server->GetSessionById(playerId);
+				auto pSession = GetPlayerSession(playerId);
 				if (!pSession) {
 					it = entry.visibleTo.erase(it);
 					continue;
@@ -108,10 +125,9 @@ void EntityTracker::TrackEntity(Entity* _entity) {
 		if (playerIt == trackedEntities.end())
 			continue;
 		auto& player = playerIt->second;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, player.entity) > newEntry.profile.range*newEntry.profile.range)
+		if (DistanceBetweenPlayerAndEntity(newEntry.entity, player.entity) >
+		    newEntry.profile.range * newEntry.profile.range)
 			continue;
-		// Register the viewer before spawning
-		newEntry.visibleTo.insert(playerId);
 		SpawnEntityForPlayer(playerId, newEntry);
 	}
 
@@ -131,6 +147,7 @@ void EntityTracker::UntrackEntity(Entity* _entity) {
 
 	trackedEntities.erase(it);
 	playerIds.erase(_entity->id);
+	playerSessions.erase(_entity->id);
 }
 
 void EntityTracker::AddPlayer(Entity* _player) {
@@ -145,16 +162,17 @@ void EntityTracker::AddPlayer(Entity* _player) {
 
 	trackedEntities[_player->id] = std::move(entry);
 	playerIds.insert(_player->id);
+	if (auto* mpe = dynamic_cast<EntityMPPlayer*>(_player))
+		playerSessions[_player->id] = mpe->session;
 	auto& newPlayerEntry = trackedEntities.at(_player->id);
 
 	// This new player should immediately see anything already in range
 	for (auto& [entityId, entityEntry] : trackedEntities) {
 		if (entityId == _player->id)
 			continue;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) > entityEntry.profile.range*entityEntry.profile.range)
+		if (DistanceBetweenPlayerAndEntity(entityEntry.entity, newPlayerEntry.entity) >
+		    entityEntry.profile.range * entityEntry.profile.range)
 			continue;
-		// Register the viewer before spawning
-		entityEntry.visibleTo.insert(_player->id);
 		SpawnEntityForPlayer(_player->id, entityEntry);
 	}
 
@@ -164,9 +182,9 @@ void EntityTracker::AddPlayer(Entity* _player) {
 		auto otherIt = trackedEntities.find(otherPlayerId);
 		if (otherIt == trackedEntities.end())
 			continue;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) > newPlayerEntry.profile.range*newPlayerEntry.profile.range)
+		if (DistanceBetweenPlayerAndEntity(otherIt->second.entity, newPlayerEntry.entity) >
+		    newPlayerEntry.profile.range * newPlayerEntry.profile.range)
 			continue;
-		newPlayerEntry.visibleTo.insert(otherPlayerId);
 		SpawnEntityForPlayer(otherPlayerId, newPlayerEntry);
 	}
 
@@ -175,15 +193,15 @@ void EntityTracker::AddPlayer(Entity* _player) {
 }
 
 void EntityTracker::RemovePlayer(Entity* _player) {
+	auto* leavingSession = GetPlayerSession(_player->id);
+	playerSessions.erase(_player->id);
 	// Despawn all entities that we are viewing
 	for (auto& [id, otherEntry] : trackedEntities)
 		if (otherEntry.visibleTo.contains(_player->id)) {
-			// Send a despawn packet to the client
 			Packet::DespawnEntity pkt;
 			pkt.entityId = otherEntry.entity->id;
-			auto playerSession = server->GetSessionById(_player->id);
-			if (playerSession)
-				pkt.Serialize(playerSession->stream);
+			if (leavingSession)
+				pkt.Serialize(leavingSession->stream);
 		}
 
 	// Fully untrack this entity as usual
@@ -191,8 +209,12 @@ void EntityTracker::RemovePlayer(Entity* _player) {
 }
 
 void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _entityEntry) {
-	auto pSession = server->GetSessionById(_playerId);
+	auto pSession = GetPlayerSession(_playerId);
 	if (!pSession)
+		return;
+	const uint16_t needed = (_entityEntry.entity->type == EntityType::PLAYER) ? PLAYER_SPAWN_PACKET_BUDGET
+	                                                                         : MIN_SPAWN_PACKET_BUDGET;
+	if (pSession->stream.RemainingPacketBudget() < needed)
 		return;
 	switch (_entityEntry.entity->type) {
 	case EntityType::ITEM: {
@@ -228,8 +250,8 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		}
 		pkt.username = username;
 		pkt.Serialize(pSession->stream);
-		SendEquipmentState(_entityEntry, pSession);
-		SendMetadataState(_entityEntry, pSession);
+		SendEquipmentState(_entityEntry, *pSession);
+		SendMetadataState(_entityEntry, *pSession);
 		break;
 	}
 	case EntityType::CREEPER: {
@@ -363,7 +385,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 
 void EntityTracker::DespawnEntityForViewers(EntityId _entityId, TrackedEntry& _entry) {
 	for (EntityId viewerId : _entry.visibleTo) {
-		auto pSession = server->GetSessionById(viewerId);
+		auto pSession = GetPlayerSession(viewerId);
 		if (!pSession)
 			continue;
 		Packet::DespawnEntity pkt;
@@ -373,12 +395,22 @@ void EntityTracker::DespawnEntityForViewers(EntityId _entityId, TrackedEntry& _e
 }
 
 void EntityTracker::SendPacketToPlayersInTrackedEntry(Packet::BasePacket& _pkt, TrackedEntry& _trackedEntry) {
-	for (auto& playerId : _trackedEntry.visibleTo) {
-		auto session = server->GetSessionById(playerId);
-		if (!session)
-			continue;
-		_pkt.Serialize(session->stream);
+	if (_trackedEntry.visibleTo.empty())
+		return;
+	if (_trackedEntry.visibleTo.size() == 1) {
+		auto* session = GetPlayerSession(*_trackedEntry.visibleTo.begin());
+		if (session)
+			_pkt.Serialize(session->stream);
+		return;
 	}
+	std::vector<PlayerSession*> sessions;
+	sessions.reserve(_trackedEntry.visibleTo.size());
+	for (auto& playerId : _trackedEntry.visibleTo) {
+		auto* session = GetPlayerSession(playerId);
+		if (session)
+			sessions.push_back(session);
+	}
+	PacketUtilities::BroadcastPacket(_pkt, sessions);
 }
 
 TrackedEntry* EntityTracker::GetTrackerForEntityId(EntityId _id) {
@@ -389,20 +421,15 @@ TrackedEntry* EntityTracker::GetTrackerForEntityId(EntityId _id) {
 void EntityTracker::SendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id) {
 	auto* entry = GetTrackerForEntityId(_id);
 	if (!entry)
-		return; // entity isn't tracked
-	for (EntityId viewerId : entry->visibleTo) {
-		auto session = server->GetSessionById(viewerId);
-		if (!session)
-			continue;
-		_pkt.Serialize(session->stream);
-	}
+		return;
+	SendPacketToPlayersInTrackedEntry(_pkt, *entry);
 }
 
-void EntityTracker::SendMetadataState(TrackedEntry& _trackedEntry, std::shared_ptr<PlayerSession> _targetSession) {
+void EntityTracker::SendMetadataState(TrackedEntry& _trackedEntry, PlayerSession& _targetSession) {
 	Packet::EntityMetadata pkt;
 	pkt.entityId = _trackedEntry.entity->id;
 	_trackedEntry.entity->EncodeMetadata(pkt.metadata);
-	pkt.Serialize(_targetSession->stream);
+	pkt.Serialize(_targetSession.stream);
 }
 
 void EntityTracker::UpdateMetadataState(TrackedEntry& _trackedEntry) {
@@ -422,9 +449,9 @@ void EntityTracker::UpdateMetadataState(TrackedEntry& _trackedEntry) {
 }
 
 // Used when we first spawn an entity for a specific player
-void EntityTracker::SendEquipmentState(TrackedEntry& _trackedEntry, std::shared_ptr<PlayerSession> _targetSession) {
+void EntityTracker::SendEquipmentState(TrackedEntry& _trackedEntry, PlayerSession& _targetSession) {
 	auto updateEquipmentSlot = [&](int _slot, ItemStack* _stack) -> void {
-		if (!_stack || !_targetSession)
+		if (!_stack)
 			return;
 		Packet::SetEquipment pkt;
 		pkt.entityId = _trackedEntry.entity->id;
@@ -432,7 +459,7 @@ void EntityTracker::SendEquipmentState(TrackedEntry& _trackedEntry, std::shared_
 		pkt.itemId = _stack->id;
 		pkt.itemMetadata = _stack->data;
 
-		pkt.Serialize(_targetSession->stream);
+		pkt.Serialize(_targetSession.stream);
 	};
 
 	MobileEntity& entity = dynamic_cast<MobileEntity&>(*_trackedEntry.entity);
@@ -510,7 +537,7 @@ void EntityTracker::UpdateDamageState(TrackedEntry& _trackedEntry) {
 
 			// If we are a player play the damage sound for ourselves too
 			if (entity.type == EntityType::PLAYER) {
-				auto session = server->GetSessionById(entity.id);
+				auto session = GetPlayerSession(entity.id);
 				if (session) {
 					pkt.Serialize(session->stream);
 				}
@@ -525,6 +552,14 @@ void EntityTracker::UpdateDamageState(TrackedEntry& _trackedEntry) {
 
 void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 	auto& entity = _trackedEntry.entity;
+
+	if (_trackedEntry.visibleTo.empty() && entity->type != EntityType::PLAYER) {
+		_trackedEntry.lastEncodedPos = QuantizePosition(entity->position);
+		_trackedEntry.lastEncodedYaw = QuantizeRotation(entity->rotationYaw);
+		_trackedEntry.lastEncodedPitch = QuantizeRotation(entity->rotationPitch);
+		_trackedEntry.lastBroadcastMotion = entity->velocity;
+		return;
+	}
 
 	// If we are a mobile entity then send the damage state and update our equipment
 	// TODO: Only send these if any of them have been updated
@@ -546,7 +581,7 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 		SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
 
 		// If we are a player then we need to recieve this velocity update
-		if (auto thisSession = server->GetSessionById(entity->id)) {
+		if (auto thisSession = GetPlayerSession(entity->id)) {
 			pkt.Serialize(thisSession->stream);
 		}
 	}

@@ -22,6 +22,7 @@ void Client::Tick() {
 	// Process packets sent by the server
 	this->ProcessIncoming();
 
+	this->stream->ResetPacketCount();
 	// Flush outgoing packets to the server
 	this->stream->FlushWriteBuffer();
 }

@@ -397,6 +397,7 @@ public:
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.Write(slot);
+			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
@@ -1296,7 +1297,7 @@ public:
 			_stream.Write(id);
 			_stream.Write(windowId);
 			_stream.Write(int16_t(items.size()));
-			for (ItemStack item : items) {
+			for (const ItemStack& item : items) {
 				_stream.Write(item.id);
 				if (item.id != Items::Id::INVALID) {
 					_stream.Write(item.count);

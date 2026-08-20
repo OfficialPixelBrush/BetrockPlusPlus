@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <cstring>
 #include <packet_ids.h>
+#include <span>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -60,17 +61,25 @@ public:
 	NetworkStream(NetworkStream&& _other) noexcept
 	    : clientSocket(_other.clientSocket), connected(_other.connected.load()), shortRead(_other.shortRead),
 	      readBuffer(std::move(_other.readBuffer)), readPos(_other.readPos),
-	      writeBuffer(std::move(_other.writeBuffer)) {
+	      writeBuffer(std::move(_other.writeBuffer)), writeSent(_other.writeSent),
+	      packetsInQueue(_other.packetsInQueue) {
 		_other.clientSocket = INVALID_SOCKET;
 		_other.readPos = 0;
+		_other.writeSent = 0;
+		_other.packetsInQueue = 0;
 	}
 	bool NewClient();
 	// NOTE: This is a limitation of the Vanilla Beta 1.7.3 Client,
 	// as it can only process 100 Packets per tick
-	static constexpr uint8_t MAX_PACKETS_PER_TICK = 100;
-	uint8_t packetsInQueue = 0;
+	static constexpr uint16_t MAX_PACKETS_PER_TICK = 100;
+	uint16_t packetsInQueue = 0;
 	void IncrementPacketCount(PacketId _id);
 	void ResetPacketCount();
+	uint16_t RemainingPacketBudget() const {
+		return packetsInQueue >= MAX_PACKETS_PER_TICK ? uint16_t(0)
+		                                              : uint16_t(MAX_PACKETS_PER_TICK - packetsInQueue);
+	}
+	void ClearWriteBuffer();
 
 	// NOTE: if CheckAndClearShortRead()/IsShortRead() ends up true after this
 	// call, the returned value is not meaningful, it was built from a
@@ -160,10 +169,19 @@ public:
 		WriteBytes(_data, _len);
 	}
 
-	// Read-only view of the pending write buffer.
-	// Valid only until the next Write*/writeRaw/flushWriteBuffer call.
-	const std::vector<uint8_t>& GetRawWriteBuffer() const {
-		return writeBuffer;
+	// Copy a pre-serialised packet and count it against this session's tick budget.
+	void WriteRawPacket(const uint8_t* _data, size_t _len, PacketId _id) {
+		WriteBytes(_data, _len);
+		IncrementPacketCount(_id);
+	}
+
+	bool HasPendingWrite() const {
+		return writeSent < writeBuffer.size();
+	}
+
+	// Unsent bytes in the write buffer. Valid until the next Write*/Flush call.
+	std::span<const uint8_t> GetPendingWrite() const {
+		return { writeBuffer.data() + writeSent, writeBuffer.size() - writeSent };
 	}
 
 	// Returns true if the *most recent* ReadBytes()-family call came up
@@ -192,7 +210,12 @@ private:
 	size_t readPos = 0;
 
 	std::vector<uint8_t> writeBuffer;
+	size_t writeSent = 0;
 
 	static constexpr size_t MAX_READ_BUFFER = 1u << 20; // 1 MiB
 	static constexpr size_t MAX_METADATA_ENTRIES = 256;
+	static constexpr size_t WRITE_BUFFER_RESERVE = 8192;
+	static constexpr size_t WRITE_COMPACT_THRESHOLD = 4096;
+
+	void CompactWriteBuffer();
 };

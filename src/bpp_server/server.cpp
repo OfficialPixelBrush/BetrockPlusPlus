@@ -201,7 +201,7 @@ void Server::Startup() {
 	// Setup the block callback so we can send it to clients
 	auto makeBlockUpdateCallback = [this](Dimension _dimensionId, auto& _blockChangeMap) {
 		return [this, _dimensionId, &_blockChangeMap](PendingBlock _pendingBlock, Int32_2 _chunkPos) {
-			auto idxIt = chunkSessions.find(ChunkKey(_chunkPos, Dimension::Nether));
+			auto idxIt = chunkSessions.find(ChunkKey(_chunkPos, _dimensionId));
 			bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
 			if (!anyInterested) {
 				for (auto& session : players) {
@@ -490,6 +490,7 @@ void Server::Tick() {
 	std::vector<ClientPosition> overworldPositions;
 	std::vector<ClientPosition> netherPositions;
 	for (auto& session : players) {
+		session->stream.ResetPacketCount();
 		session->stream.DrainToBuffer();
 		if (session->connState == ConnectionState::WaitingForSpawnChunks ||
 		    session->connState == ConnectionState::Playing) {
@@ -552,7 +553,7 @@ void Server::Tick() {
 	// holds up the main tick thread
 	std::vector<std::future<void>> flushFutures;
 	for (auto& session : players) {
-		if (session->stream.GetRawWriteBuffer().empty())
+		if (!session->stream.HasPendingWrite())
 			continue;
 		auto sessionRef = session;
 		flushFutures.push_back(writePool.submit_task([sessionRef]() { sessionRef->stream.FlushWriteBuffer(); }));

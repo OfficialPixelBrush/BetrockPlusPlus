@@ -27,8 +27,8 @@ void PlayerConnStateManager::HandleConnectionState(PlayerSession& _session, Serv
 	case ConnectionState::Playing: {
 		WorldManager& sessionWorld = _session.dimension == Dimension::Nether ? _server.gameRuntime.worldHell
 		                                                                     : _server.gameRuntime.world;
-		_server.chunkSender.Enqueue(_session, sessionWorld, 16);
-		_server.chunkSender.Flush(_session);
+		_server.chunkSender.Enqueue(_session, sessionWorld, _server.flushChunkCount);
+		_server.chunkSender.Flush(_session, _server.flushChunkCount);
 		if (sessionWorld.elapsedTicks % 20 == 0) {
 			// Update the server time so client's don't desync
 			Packet::SetTime time;
@@ -201,11 +201,12 @@ void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std
 void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server& _server) {
 	WorldManager& sessionWorld = _session.dimension == Dimension::Nether ? _server.gameRuntime.worldHell
 	                                                                     : _server.gameRuntime.world;
-	_server.chunkSender.Enqueue(_session, sessionWorld, _server.flushChunkCount);
-	_server.chunkSender.Flush(_session);
-
-	// Force a tiny view distance for players trying to spawn in
+	// Restrict view distance *before* enqueue so we don't dump the full
+	// render radius into the 100-packet/tick client budget at login.
 	_session.position.viewDistanceOverride = 3;
+
+	_server.chunkSender.Enqueue(_session, sessionWorld, _server.flushChunkCount);
+	_server.chunkSender.Flush(_session, _server.flushChunkCount);
 
 	// Spawn chunk radius; 3 chunks in each direction
 	int spawnChunkX = int(std::floor(_session.position.pos.x)) >> 4;

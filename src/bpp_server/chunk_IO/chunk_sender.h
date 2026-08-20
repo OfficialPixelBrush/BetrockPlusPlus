@@ -50,7 +50,8 @@ struct ChunkSender {
 		int cx = int(std::floor(_session.position.pos.x)) >> 4;
 		int cz = int(std::floor(_session.position.pos.z)) >> 4;
 
-		int radius = _world.GetViewRadius();
+		int radius = _session.position.viewDistanceOverride ? _session.position.viewDistanceOverride
+		                                                    : _world.GetViewRadius();
 
 		std::vector<Int32_2> toSend;
 		for (int dx = -radius; dx <= radius; dx++) {
@@ -100,9 +101,12 @@ struct ChunkSender {
 		            queue.end());
 
 		// Rebuild toSend, excluding chunks that already have an in-flight job.
+		// Cap the total in-flight queue so compression results don't pile up
+		// faster than the 100-packet/tick client can drain them.
 		int submitted = 0;
+		const int inFlightCount = int(queue.size());
 		for (auto& p : toSend) {
-			if (_batchSize > 0 && submitted >= _batchSize)
+			if (_batchSize > 0 && inFlightCount + submitted >= _batchSize)
 				break;
 			PendingChunk pc;
 			std::shared_ptr<Chunk> chunkRef = _world.chunks.at(p);
@@ -165,20 +169,26 @@ struct ChunkSender {
 		subRegionFlight[&_session].push_back(std::move(psr));
 	}
 
-	// Drains every job that is already done and writes the resulting
-	// SetChunkVisibility + ChunkData packets to the session stream.
-	// Jobs that aren't finished yet stay in the queue for the next Tick.
-	void Flush(PlayerSession& _session) {
+	// Drains ready jobs and writes SetChunkVisibility + ChunkData packets.
+	// Caps how many full chunks go out this tick so we stay inside the
+	// vanilla client's 100-packet/tick budget.
+	void Flush(PlayerSession& _session, int _maxChunks = -1) {
 		auto it = inFlight.find(&_session);
 		if (it == inFlight.end())
 			return;
 
 		auto& queue = it->second;
 		std::vector<PendingChunk> stillPending;
+		int flushedChunks = 0;
 
 		for (auto& pc : queue) {
 			// Non-blocking check: only consume results that are ready now.
 			if (pc.data.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+				stillPending.push_back(std::move(pc));
+				continue;
+			}
+
+			if ((_maxChunks > 0 && flushedChunks >= _maxChunks) || _session.stream.RemainingPacketBudget() < 2) {
 				stillPending.push_back(std::move(pc));
 				continue;
 			}
@@ -199,6 +209,7 @@ struct ChunkSender {
 
 			_session.flushedChunks.insert(pc.pos);
 			_session.newlyFlushed.push_back(pc.pos);
+			++flushedChunks;
 
 			auto chunkLocked = pc.chunkRef.lock();
 
@@ -242,6 +253,8 @@ struct ChunkSender {
 			while (!srQueue.empty()) {
 				auto& psr = srQueue.front();
 				if (!psr.data.valid() || psr.data.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+					break;
+				if (_session.stream.RemainingPacketBudget() == 0)
 					break;
 				psr.header.compressedData = psr.data.get();
 				psr.header.Serialize(_session.stream);

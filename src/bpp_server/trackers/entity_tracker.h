@@ -18,6 +18,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 // Entity tracker so we can send entity updates to the right players. This is server side only annoyingly enough.
 // I am not entirely happy with how this is done but notch demands we have several packet types for each type of entity
@@ -55,10 +56,13 @@ struct PlayerSession;
 struct EntityTracker {
 	static constexpr int32_t MINIMUM_POSITION_DELTA = 2; // 2 = 1/16th of a block (Vanilla value: 8 (1/4th of a block))
 	static constexpr int32_t MINIMUM_ROTATION_DELTA = 8; // 8 Quantized angles
+	static constexpr uint16_t MIN_SPAWN_PACKET_BUDGET = 2;
+	static constexpr uint16_t PLAYER_SPAWN_PACKET_BUDGET = 8;
 	Server* server = nullptr;
 
 	std::unordered_map<EntityId, TrackedEntry> trackedEntities;
 	std::unordered_set<EntityId> playerIds;
+	std::unordered_map<EntityId, PlayerSession*> playerSessions;
 	std::vector<EntityType> mobileEntities = { EntityType::CHICKEN,       EntityType::COW,      EntityType::PIG,
 		                                       EntityType::SHEEP,         EntityType::WOLF,     EntityType::ZOMBIE,
 		                                       EntityType::ZOMBIE_PIGMAN, EntityType::SKELETON, EntityType::CREEPER,
@@ -101,9 +105,10 @@ struct EntityTracker {
 	void Update(TrackedEntry& _trackedEntry);
 	void UpdateDamageState(TrackedEntry& _trackedEntry);
 	void UpdateMetadataState(TrackedEntry& _trackedEntry);
-	void SendMetadataState(TrackedEntry& _trackedEntry, std::shared_ptr<PlayerSession> _targetSession);
+	void SendMetadataState(TrackedEntry& _trackedEntry, PlayerSession& _targetSession);
 	void UpdateEquipmentState(TrackedEntry& _trackedEntry);
-	void SendEquipmentState(TrackedEntry& _trackedEntry, std::shared_ptr<PlayerSession> _targetSession);
+	void SendEquipmentState(TrackedEntry& _trackedEntry, PlayerSession& _targetSession);
+	PlayerSession* GetPlayerSession(EntityId _id);
 
 	// With my strict goal of keeping strict separation we cannot put this as a virtual in the actual entity class itself
 	TrackingProfile GetTrackingProfile(Entity& _entity) {

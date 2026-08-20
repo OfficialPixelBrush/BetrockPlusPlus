@@ -78,7 +78,7 @@ public:
 	}
 
 	std::shared_ptr<PlayerSession> GetSessionById(EntityId _entityId) {
-		for (auto player : players) {
+		for (const auto& player : players) {
 			if (player->entity && player->entity->id == _entityId) {
 				return player;
 			}
@@ -87,7 +87,7 @@ public:
 	}
 
 	std::shared_ptr<PlayerSession> GetSessionByUsername(const std::string& _username) {
-		for (auto player : players) {
+		for (const auto& player : players) {
 			if (player->username == _username) {
 				return player;
 			}

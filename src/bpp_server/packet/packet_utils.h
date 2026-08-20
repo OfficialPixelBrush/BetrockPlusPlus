@@ -12,8 +12,26 @@
 #include <vector>
 
 namespace PacketUtilities {
+// Serialise once and copy the bytes to every session. Counts against each
+// session's per-tick packet budget.
+inline void BroadcastPacket(const Packet::BasePacket& _pkt, const std::vector<PlayerSession*>& _sessions) {
+	if (_sessions.empty())
+		return;
+	if (_sessions.size() == 1) {
+		_pkt.Serialize(_sessions[0]->stream);
+		return;
+	}
+	thread_local NetworkStream scratch(-1);
+	scratch.ClearWriteBuffer();
+	_pkt.Serialize(scratch);
+	auto pending = scratch.GetPendingWrite();
+	for (auto* session : _sessions)
+		session->stream.WriteRawPacket(pending.data(), pending.size(), _pkt.id);
+}
+
 inline void SendInventory(PlayerSession& _session, WindowId _windowId, Inventory& _inventory) {
 	std::vector<ItemStack> items;
+	items.reserve(_inventory.slots.size());
 	for (auto& item : _inventory.slots) {
 		items.emplace_back(item.id, item.count, item.data);
 	}

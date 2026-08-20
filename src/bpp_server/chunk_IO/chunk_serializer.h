@@ -9,6 +9,7 @@
 #pragma once
 #include "chunk.h"
 #include <libdeflate.h>
+#include <memory>
 #include <vector>
 
 namespace ChunkSerializer {
@@ -22,7 +23,8 @@ inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _x
 	const int nibbles = (blocks + 1) / 2;
 	const int total = blocks + nibbles * 3;
 
-	std::vector<uint8_t> raw(size_t(total), 0);
+	thread_local std::vector<uint8_t> raw;
+	raw.assign(size_t(total), 0);
 	uint8_t* blockData = raw.data();
 	uint8_t* metaData = blockData + blocks;
 	uint8_t* blockLight = metaData + nibbles;
@@ -35,15 +37,20 @@ inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _x
 			_byte = uint8_t((_byte & 0xF0) | (_val & 0x0F));
 	};
 
+	const int columnStride = CHUNK_WIDTH * CHUNK_WIDTH;
 	int i = 0;
 	for (int x = _xmin; x < _xmax; x++) {
 		for (int z = _zmin; z < _zmax; z++) {
+			const int col = z * CHUNK_WIDTH + x;
 			for (int y = _ymin; y < _ymax; y++, i++) {
-				Int3 pos{ x, y, z };
-				blockData[i] = uint8_t(_chunk.GetBlock(pos));
-				packNibble(metaData[i >> 1], _chunk.GetMeta(pos), i & 1);
-				packNibble(blockLight[i >> 1], _chunk.GetBlockLight(pos), i & 1);
-				packNibble(skyLight[i >> 1], _chunk.GetSkyLight(pos), i & 1);
+				const int idx = y * columnStride + col;
+				blockData[i] = uint8_t(_chunk.blocks[idx]);
+				const uint8_t metaByte = _chunk.nibbleBlockMeta[idx >> 1];
+				const uint8_t meta = (idx & 1) ? uint8_t(metaByte >> 4) : uint8_t(metaByte & 0x0F);
+				const uint8_t light = _chunk.lightNibble[idx];
+				packNibble(metaData[i >> 1], meta, i & 1);
+				packNibble(blockLight[i >> 1], uint8_t(light & 0x0F), i & 1);
+				packNibble(skyLight[i >> 1], uint8_t(light >> 4), i & 1);
 			}
 		}
 	}
@@ -55,12 +62,12 @@ inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _x
 	if (!compressor)
 		return {};
 	size_t maxSize = libdeflate_zlib_compress_bound(compressor.get(), static_cast<size_t>(total));
-	std::vector<uint8_t> compressed(maxSize);
+	thread_local std::vector<uint8_t> compressed;
+	compressed.resize(maxSize);
 	const size_t actualSize = libdeflate_zlib_compress(compressor.get(), raw.data(), static_cast<size_t>(total),
 	                                                   compressed.data(), maxSize);
 	if (actualSize == 0)
 		return {};
-	compressed.resize(actualSize);
-	return compressed;
+	return { compressed.data(), compressed.data() + actualSize };
 }
 } // namespace ChunkSerializer

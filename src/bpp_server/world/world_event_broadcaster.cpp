@@ -7,6 +7,7 @@
 */
 #include "world_event_broadcaster.h"
 
+#include "../packet/packet_utils.h"
 #include "../server.h"
 
 void WorldEventBroadcaster::BroadcastWorldEvent(Server& _server, PacketData::WorldEvent _eventType, Int3 _position,
@@ -42,9 +43,5 @@ void WorldEventBroadcaster::BroadcastWorldEvent(Server& _server, PacketData::Wor
 	if (inRange.empty())
 		return;
 
-	NetworkStream tmpStream(-1);
-	pkt.Serialize(tmpStream);
-	const auto& buf = tmpStream.GetRawWriteBuffer();
-	for (auto* session : inRange)
-		session->stream.WriteRaw(buf.data(), buf.size());
+	PacketUtilities::BroadcastPacket(pkt, inRange);
 }
