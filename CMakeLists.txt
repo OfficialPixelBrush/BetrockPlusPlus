@@ -11,7 +11,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(ONLINE_MODE_AUTHENTICATION "Allows for authentcation with Mojang Servers (requires libcurl)" ON)
 option(CRASH_LOGGING "Lets the server catch crashes and create crash reports" ON)
 option(DISCORD_INTEGRATION "Enable Discord bot integration via D++ (server only)" OFF)
-option(REDUCED_GENERATION_PRECISION "Reduces perlin and simplex noise precision from 64-bit to 32-bit floats" OFF)
+set(GENERATION_PRECISION "FLOAT64" CACHE STRING "Reduces perlin and simplex noise precision from 64-bit to 32-bit floats or integers")
+set_property(CACHE GENERATION_PRECISION PROPERTY STRINGS "FLOAT64" "FLOAT32" "INT64" "INT32")
 if(DISCORD_INTEGRATION)
     list(APPEND VCPKG_MANIFEST_FEATURES "discord")
 endif()
@@ -338,6 +339,10 @@ target_link_libraries(BetrockPlusPlus
 #         >
 #     )
 # endif()
+
+target_compile_definitions(BetrockPlusPlus PRIVATE
+    GENERATION_PRECISION_${GENERATION_PRECISION}
+)
 
 # Add some extra warnings
 target_compile_options(BetrockPlusPlus PRIVATE
