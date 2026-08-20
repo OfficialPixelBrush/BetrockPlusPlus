@@ -13,15 +13,16 @@
 std::string CommandSummon::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
                                    std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
 	// Make a dummy player
-	auto entity = std::make_shared<CreeperEntity>();
+	for (int i = 0; i < 400; i++) {
+		auto entity = std::make_shared<CreeperEntity>();
 
-	Vec3 spawnPos = _session.position.pos +
-	                Vec3(_world.rand.NextFloat() * 4 + 0.5, 0, _world.rand.NextFloat() * 4 + 0.5);
-	spawnPos.y = _world.GetHeightValue(spawnPos.x, spawnPos.z) + 0.1;
-	entity->Teleport(spawnPos);
+		Vec3 spawnPos = _session.position.pos +
+		                Vec3(_world.rand.NextFloat() * 4 + 0.5, 0, _world.rand.NextFloat() * 4 + 0.5);
+		spawnPos.y = _world.GetHeightValue(spawnPos.x, spawnPos.z) + 0.1;
+		entity->Teleport(spawnPos);
 
-	_world.entityManager.AddEntity(std::move(entity));
-
+		_world.entityManager.AddEntity(std::move(entity));
+	}
 	Packet::ChatMessage pkt;
 	pkt.message = "§eSpawned entity!";
 	pkt.Serialize(_session.stream);

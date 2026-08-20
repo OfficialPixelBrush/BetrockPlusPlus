@@ -66,6 +66,7 @@ struct EntityTracker {
 		                                       EntityType::GIANT_ZOMBIE,  EntityType::PLAYER };
 
 	TickTime forceTeleportTicks = 400; // 20 seconds
+	Java::Random rand;
 
 	void Tick();
 
