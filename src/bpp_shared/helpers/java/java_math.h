@@ -21,10 +21,8 @@
  * @param b End value (t = 1.0)
  * @return Interpolated value between a and b
  */
-constexpr inline double Lerp(const double _t, const double _a, const double _b) {
-	return _a + _t * (_b - _a);
-}
-constexpr inline float Lerp(const float _t, const float _a, const float _b) {
+template <typename T>
+constexpr inline T Lerp(const T _t, const T _a, const T _b) {
 	return _a + _t * (_b - _a);
 }
 
