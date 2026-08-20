@@ -15,8 +15,14 @@
 typedef float gen_float;
 #define GenFloatToInt32 Java::FloatToInt32
 #else
-typedef double gen_float;
-#define GenFloatToInt32 Java::DoubleToInt32
+#include "../../quantized_types.h"
+#include <cstdint>
+
+typedef Fixed<int32_t, 4> gen_float;
+// Toward-zero conversion, matching Java's FloatToInt32 / DoubleToInt32.
+constexpr inline int32_t GenFloatToInt32(const gen_float _value) {
+	return static_cast<int32_t>(_value.Raw() / gen_float::M_SCALE);
+}
 #endif
 
 /**

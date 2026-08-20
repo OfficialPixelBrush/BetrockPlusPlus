@@ -45,6 +45,14 @@ struct Fixed {
 		return static_cast<double>(mValue) / M_SCALE;
 	}
 
+	constexpr explicit operator double() const {
+		return Value();
+	}
+
+	constexpr explicit operator float() const {
+		return static_cast<float>(Value());
+	}
+
 	constexpr Fixed operator+(Fixed _other) const {
 		return FromRaw(mValue + _other.mValue);
 	}
@@ -65,6 +73,46 @@ struct Fixed {
 	constexpr Fixed& operator-=(Fixed _other) {
 		mValue -= _other.mValue;
 		return *this;
+	}
+
+	template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+	friend constexpr Fixed operator+(T _lhs, Fixed _rhs) {
+		return Fixed(_lhs) + _rhs;
+	}
+
+	template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+	friend constexpr Fixed operator-(T _lhs, Fixed _rhs) {
+		return Fixed(_lhs) - _rhs;
+	}
+
+	template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+	friend constexpr Fixed operator*(T _lhs, Fixed _rhs) {
+		return Fixed(_lhs) * _rhs;
+	}
+
+	template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+	friend constexpr Fixed operator/(T _lhs, Fixed _rhs) {
+		return Fixed(_lhs) / _rhs;
+	}
+
+	template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+	friend constexpr bool operator<(T _lhs, Fixed _rhs) {
+		return Fixed(_lhs) < _rhs;
+	}
+
+	template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+	friend constexpr bool operator>(T _lhs, Fixed _rhs) {
+		return Fixed(_lhs) > _rhs;
+	}
+
+	template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+	friend constexpr bool operator<=(T _lhs, Fixed _rhs) {
+		return Fixed(_lhs) <= _rhs;
+	}
+
+	template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+	friend constexpr bool operator>=(T _lhs, Fixed _rhs) {
+		return Fixed(_lhs) >= _rhs;
 	}
 
 	constexpr Fixed operator*(Fixed _other) const {
@@ -89,6 +137,16 @@ struct Fixed {
 		                                >;
 
 		return FromRaw(static_cast<Storage>((static_cast<Wide>(mValue) * M_SCALE) / static_cast<Wide>(_other.mValue)));
+	}
+
+	constexpr Fixed& operator*=(Fixed _other) {
+		*this = *this * _other;
+		return *this;
+	}
+
+	constexpr Fixed& operator/=(Fixed _other) {
+		*this = *this / _other;
+		return *this;
 	}
 
 	constexpr bool operator==(Fixed _other) const {
@@ -116,7 +174,7 @@ struct Fixed {
 	}
 
 	friend std::ostream& operator<<(std::ostream& _os, Fixed _n) {
-		return _os << _n.mValue();
+		return _os << _n.Value();
 	}
 };
 
