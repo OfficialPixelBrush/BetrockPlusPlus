@@ -34,6 +34,11 @@
 
 #include "bpp_utilities/utilities.h"
 #include <format>
+#include <thread>
+#if !defined(_WIN32) && !defined(_WIN64)
+#include <pthread.h>
+#include <signal.h>
+#endif
 
 Server* server;
 std::atomic<bool> shutdownRequested{ false };
@@ -64,6 +69,47 @@ BOOL WINAPI consoleCtrlHandler(DWORD dwCtrlType) {
 
 static void SignalHandler(int /*sig*/) {
 	shutdownRequested.store(true);
+}
+
+#if !defined(_WIN32) && !defined(_WIN64)
+static void BlockStopSignals() {
+	sigset_t set;
+	sigemptyset(&set);
+	sigaddset(&set, SIGINT);
+	sigaddset(&set, SIGTERM);
+	pthread_sigmask(SIG_BLOCK, &set, nullptr);
+}
+
+// Dedicated waiter so SIGINT/SIGTERM cannot be swallowed by libcurl/OpenSSL
+// handlers or by libc++ restarting sleep_until() on EINTR (musl SA_RESTART).
+static void SignalWatchThread() {
+	sigset_t set;
+	sigemptyset(&set);
+	sigaddset(&set, SIGINT);
+	sigaddset(&set, SIGTERM);
+	int sig = 0;
+	if (sigwait(&set, &sig) == 0)
+		shutdownRequested.store(true);
+}
+#endif
+
+static void InstallProcessSignalHandlers() {
+#if defined(_WIN32) || defined(_WIN64)
+	std::signal(SIGINT, SignalHandler);
+	std::signal(SIGTERM, SignalHandler);
+#else
+	struct sigaction sa {};
+	sa.sa_handler = SignalHandler;
+	sigemptyset(&sa.sa_mask);
+	// musl's signal() sets SA_RESTART, which makes a later libcurl/OpenSSL
+	// connect ignore SIGTERM. We want the tick loop to wake and shut down.
+	sa.sa_flags = 0;
+	sigaction(SIGINT, &sa, nullptr);
+	sigaction(SIGTERM, &sa, nullptr);
+#endif
+#ifdef SIGPIPE
+	std::signal(SIGPIPE, SIG_IGN);
+#endif
 }
 
 struct Args : MainArguments<Args> {
@@ -153,13 +199,13 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 #ifdef CRASH_LOGGING
 	InitCrashHandler(platformString);
 #endif
-	// Hook up signals
-	std::signal(SIGINT, SignalHandler);
-	std::signal(SIGTERM, SignalHandler);
-#ifdef SIGPIPE
-	// Ignore broken pipes caused by early disconnecting client
-	std::signal(SIGPIPE, SIG_IGN);
+#if !defined(_WIN32) && !defined(_WIN64)
+	// Block before any other threads so they inherit this mask; sigwait in
+	// SignalWatchThread is then the only consumer of SIGINT/SIGTERM.
+	BlockStopSignals();
+	std::thread(SignalWatchThread).detach();
 #endif
+	InstallProcessSignalHandlers();
 	// Parse CLI Args
 	Args args{ { argc, argv } };
 	// Init the sine table
@@ -171,12 +217,25 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 #endif
 
 #ifdef BUILD_SERVER
+#if defined(ONLINE_MODE_AUTHENTICATION)
+	// Initialize libcurl before the server starts its thread pools. First-login
+	// curl_easy_init() would otherwise do this unsafely and can block SIGTERM.
+	if (!Authentication::GlobalInit())
+		GlobalLogger().warn << "libcurl global init failed; online-mode auth may not work.\n";
+	InstallProcessSignalHandlers();
+#if !defined(_WIN32) && !defined(_WIN64)
+	BlockStopSignals();
+#endif
+#endif
 	// For testing REMOVE LATER!
 	// std::string path = "";
 	// Utilities::convertBetrockServerLevel(/*path=*/path);
 	Server serv;
 	server = &serv;
 	server->Run();
+#if defined(ONLINE_MODE_AUTHENTICATION)
+	Authentication::GlobalCleanup();
+#endif
 #endif
 #ifdef BUILD_CLIENT
 	Client client;

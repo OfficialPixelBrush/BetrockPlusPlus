@@ -401,7 +401,15 @@ void Server::Run() {
 
 		++ticks;
 		auto nextTickTime = baseTime + ticks * TICK_DURATION;
-		std::this_thread::sleep_until(nextTickTime);
+		// Slice the wait so shutdownRequested is observed even if libc++
+		// restarts sleep_until() after EINTR (musl + libcurl).
+		while (!shutdownRequested.load() && Clock::now() < nextTickTime) {
+			auto remaining = nextTickTime - Clock::now();
+			auto slice = remaining < std::chrono::milliseconds(10) ? remaining : std::chrono::milliseconds(10);
+			std::this_thread::sleep_for(slice);
+		}
+		if (shutdownRequested.load())
+			break;
 
 		// Check if the server can not keep up with the tickrate
 		// if it gets too far behind, reset the ticks & baseTime
@@ -417,7 +425,10 @@ void Server::Run() {
 	}
 
 	// Wait for any in-flight write flushes before saving and cleaning up
-	writePool.wait();
+	while (!writePool.wait_for(std::chrono::milliseconds(100))) {
+		if (shutdownRequested.load())
+			break;
+	}
 
 	// Shutdown was requested. Save and clean up on the main thread
 	Stop();
