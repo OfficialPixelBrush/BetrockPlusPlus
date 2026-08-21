@@ -66,13 +66,14 @@
       }
     },
     {
-      "name": "server-release-with-debug-info-discord",
+      "name": "server-release-with-debug-info-optionals",
       "inherits": "base",
       "cacheVariables": {
         "BUILD_SERVER": "ON",
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "DISCORD_INTEGRATION": "ON",
-        "VCPKG_MANIFEST_FEATURES": "discord"
+        "BETACRAFT_HEARTBEAT": "ON",
+        "VCPKG_MANIFEST_FEATURES": "discord betacraft-heartbeat"
       }
     },
     {

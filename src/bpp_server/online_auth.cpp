@@ -8,55 +8,14 @@
 #include "online_auth.h"
 
 #ifdef ONLINE_MODE_AUTHENTICATION
-#include <atomic>
-#include <csignal>
-#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
-#include <pthread.h>
-#include <signal.h>
-#endif
+#include "curl_runtime.h"
 
-extern std::atomic<bool> shutdownRequested;
-
-static void AuthStopSignalHandler(int /*sig*/) {
-	shutdownRequested.store(true);
-}
-
-static void RestoreStopSignals() {
-#if defined(_WIN32) || defined(_WIN64)
-	std::signal(SIGINT, AuthStopSignalHandler);
-	std::signal(SIGTERM, AuthStopSignalHandler);
-#else
-	struct sigaction sa{};
-	sa.sa_handler = AuthStopSignalHandler;
-	sigemptyset(&sa.sa_mask);
-	// No SA_RESTART: a blocked connect/wait must return so the tick loop
-	// can observe shutdownRequested.
-	sa.sa_flags = 0;
-	sigaction(SIGINT, &sa, nullptr);
-	sigaction(SIGTERM, &sa, nullptr);
-	sigset_t set;
-	sigemptyset(&set);
-	sigaddset(&set, SIGINT);
-	sigaddset(&set, SIGTERM);
-	// Keep these blocked so the sigwait thread in main() receives them.
-	// Unblocking here let libcurl/OpenSSL swallow SIGTERM on musl.
-	pthread_sigmask(SIG_BLOCK, &set, nullptr);
-#ifdef SIGPIPE
-	std::signal(SIGPIPE, SIG_IGN);
-#endif
-#endif
-}
-
-// Note: MUST happen before any other threads exist, otherwise this can block all other signals on Musl
 bool Authentication::GlobalInit() {
-	if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK)
-		return false;
-	RestoreStopSignals();
-	return true;
+	return CurlRuntimeInit();
 }
 
 void Authentication::GlobalCleanup() {
-	curl_global_cleanup();
+	CurlRuntimeCleanup();
 }
 
 std::string Authentication::GenerateAuthHash() {
@@ -105,7 +64,7 @@ bool Authentication::IsRegisteredUsername(std::string _serverId, std::string _us
 
 	CURLcode res = curl_easy_perform(curl);
 	curl_easy_cleanup(curl);
-	RestoreStopSignals();
+	CurlRestoreStopSignals();
 
 	if (res != CURLE_OK)
 		return false;

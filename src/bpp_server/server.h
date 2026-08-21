@@ -24,6 +24,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "items/tool_properties.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
+#include "betacraft_heartbeat.h"
 #include "online_auth.h"
 #include "packet/handle_packet.h"
 #include "packet/packet_dispatcher.h"
@@ -58,6 +59,9 @@ private:
 public:
 #ifdef ONLINE_MODE_AUTHENTICATION
 	Authentication auth;
+#endif
+#ifdef BETACRAFT_HEARTBEAT
+	BetacraftHeartbeat betacraftHeartbeat;
 #endif
 	Runtime gameRuntime;
 	ChunkSender chunkSender;

@@ -24,6 +24,9 @@
 #ifdef DISCORD_INTEGRATION
 #include "discord.h"
 #endif
+#if defined(ONLINE_MODE_AUTHENTICATION) || defined(BETACRAFT_HEARTBEAT)
+#include "curl_runtime.h"
+#endif
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -217,11 +220,11 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 #endif
 
 #ifdef BUILD_SERVER
-#if defined(ONLINE_MODE_AUTHENTICATION)
+#if defined(ONLINE_MODE_AUTHENTICATION) || defined(BETACRAFT_HEARTBEAT)
 	// Initialize libcurl before the server starts its thread pools. First-login
 	// curl_easy_init() would otherwise do this unsafely and can block SIGTERM.
-	if (!Authentication::GlobalInit())
-		GlobalLogger().warn << "libcurl global init failed; online-mode auth may not work.\n";
+	if (!CurlRuntimeInit())
+		GlobalLogger().warn << "libcurl global init failed; online-mode auth and Betacraft heartbeat may not work.\n";
 	InstallProcessSignalHandlers();
 #if !defined(_WIN32) && !defined(_WIN64)
 	BlockStopSignals();
@@ -233,8 +236,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 	Server serv;
 	server = &serv;
 	server->Run();
-#if defined(ONLINE_MODE_AUTHENTICATION)
-	Authentication::GlobalCleanup();
+#if defined(ONLINE_MODE_AUTHENTICATION) || defined(BETACRAFT_HEARTBEAT)
+	CurlRuntimeCleanup();
 #endif
 #endif
 #ifdef BUILD_CLIENT

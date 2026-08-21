@@ -13,6 +13,12 @@
       "dependencies": [
         "dpp"
       ]
+    },
+    "betacraft-heartbeat": {
+      "description": "Optional Betacraft server-list heartbeat (nlohmann-json)",
+      "dependencies": [
+        "nlohmann-json"
+      ]
     }
   }
 }
