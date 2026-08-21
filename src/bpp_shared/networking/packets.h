@@ -510,10 +510,7 @@ public:
 		EntityId entityId;
 		ItemStack item;
 		Int32_3 qPosition;
-		Int8_3 qRotation;
-		int8_t& qPitch = qRotation.x;
-		int8_t& qYaw = qRotation.y;
-		int8_t& qRoll = qRotation.z;
+		Int8_3 qVelocity;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
@@ -524,9 +521,9 @@ public:
 			_stream.Write(qPosition.x);
 			_stream.Write(qPosition.y);
 			_stream.Write(qPosition.z);
-			_stream.Write(qPitch);
-			_stream.Write(qYaw);
-			_stream.Write(qRoll);
+			_stream.Write(qVelocity.x);
+			_stream.Write(qVelocity.y);
+			_stream.Write(qVelocity.z);
 			_stream.IncrementPacketCount(id);
 		}
 
@@ -538,9 +535,9 @@ public:
 			qPosition.x = _stream.Read<int32_t>();
 			qPosition.y = _stream.Read<int32_t>();
 			qPosition.z = _stream.Read<int32_t>();
-			qPitch = _stream.Read<int8_t>();
-			qYaw = _stream.Read<int8_t>();
-			qRoll = _stream.Read<int8_t>();
+			qVelocity.x = _stream.Read<int8_t>();
+			qVelocity.y = _stream.Read<int8_t>();
+			qVelocity.z = _stream.Read<int8_t>();
 		}
 	};
 
