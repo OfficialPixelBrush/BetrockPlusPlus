@@ -13,6 +13,8 @@
 #define PLATFORM_NAME "macOS"
 #elif defined(__ANDROID__)
 #define PLATFORM_NAME "Android"
+#elif defined(__HAIKU__)
+#define PLATFORM_NAME "Haiku"
 #elif defined(__linux__)
 #define PLATFORM_NAME "Linux"
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
