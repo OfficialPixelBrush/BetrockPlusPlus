@@ -10,7 +10,7 @@
 #ifdef ONLINE_MODE_AUTHENTICATION
 #include <atomic>
 #include <csignal>
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
 #include <pthread.h>
 #include <signal.h>
 #endif

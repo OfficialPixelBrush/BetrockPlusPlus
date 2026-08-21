@@ -16,7 +16,7 @@
 #include <future>
 #include <string>
 #include <thread>
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
 #include <fcntl.h>
 #include <iomanip>
 #include <netinet/in.h>
