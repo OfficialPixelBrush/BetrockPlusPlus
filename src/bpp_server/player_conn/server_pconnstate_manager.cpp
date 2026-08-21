@@ -21,6 +21,9 @@ void PlayerConnStateManager::HandleConnectionState(PlayerSession& _session, Serv
 	case ConnectionState::LoggingIn:
 		HandleLogin(_session, _server);
 		break;
+	case ConnectionState::VerifyingUsername:
+		HandleVerifyingUsername(_session, _server);
+		break;
 	case ConnectionState::WaitingForSpawnChunks:
 		WaitForSpawnChunks(_session, _server);
 		break;
@@ -70,14 +73,14 @@ void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, [[maybe_un
 		GlobalLogger().info << "Modified client! Provided mods: " << incoming.username << '\n';
 
 	// Authentication
-	serverId = "-";
+	_session.serverId = "-";
 #ifdef ONLINE_MODE_AUTHENTICATION
 	if (_server.auth.onlineMode)
-		serverId = _server.auth.GenerateAuthHash();
+		_session.serverId = _server.auth.GenerateAuthHash();
 #endif
 
 	Packet::PreLogin response;
-	response.serverId = serverId;
+	response.serverId = _session.serverId;
 	response.Serialize(_session.stream);
 
 	_session.connState = ConnectionState::LoggingIn;
@@ -105,13 +108,43 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	GlobalLogger().info << "Player " << _session.username << " is logging in.\n";
 
 #ifdef ONLINE_MODE_AUTHENTICATION
-	if (!_server.auth.IsRegisteredUsername(serverId, _session.username)) {
-		std::string invalidUser = "Failed to verify username!";
-		DisconnectPlayer(_session, invalidUser, _server);
+	if (_server.auth.onlineMode) {
+		_session.pendingAuthFuture = _server.auth.IsRegisteredUsernameAsync(_session.serverId, _session.username);
+		_session.authStartTime = std::chrono::steady_clock::now();
+		_session.connState = ConnectionState::VerifyingUsername;
 		return;
 	}
 #endif
 
+	FinishLogin(_session, _server);
+}
+
+void PlayerConnStateManager::HandleVerifyingUsername(PlayerSession& _session, [[maybe_unused]] Server& _server) {
+#ifdef ONLINE_MODE_AUTHENTICATION
+	using namespace std::chrono_literals;
+	constexpr auto kAuthTimeout = 20s;
+
+	if (!_session.pendingAuthFuture.valid()) {
+		DisconnectPlayer(_session, "Failed to verify username!", _server);
+		return;
+	}
+
+	if (_session.pendingAuthFuture.wait_for(0s) != std::future_status::ready) {
+		if (std::chrono::steady_clock::now() - _session.authStartTime > kAuthTimeout)
+			DisconnectPlayer(_session, "Login verification timed out!", _server);
+		return; // Not ready yet - check again next tick.
+	}
+
+	const bool verified = _session.pendingAuthFuture.get();
+	if (!verified) {
+		DisconnectPlayer(_session, "Failed to verify username!", _server);
+		return;
+	}
+#endif
+	FinishLogin(_session, _server);
+}
+
+void PlayerConnStateManager::FinishLogin(PlayerSession& _session, Server& _server) {
 	// Initialize our entity first as the player session depends on it
 	if (!_session.entity)
 		_session.entity = std::make_shared<EntityMPPlayer>();

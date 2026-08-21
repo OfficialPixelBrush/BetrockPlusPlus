@@ -19,6 +19,7 @@
 #include "world/world.h"
 #include <chrono>
 #include <cstdint>
+#include <future>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -26,6 +27,7 @@
 enum class ConnectionState : uint8_t {
 	Handshaking,
 	LoggingIn,
+	VerifyingUsername, // Online-mode auth check is in flight on a worker thread
 	WaitingForSpawnChunks,
 	Playing
 };
@@ -73,6 +75,10 @@ struct PlayerSession {
 	ConnectionState connState = ConnectionState::Handshaking;
 	std::string username;
 	std::chrono::steady_clock::time_point lastPacketTime = std::chrono::steady_clock::now();
+
+	std::string serverId;
+	std::future<bool> pendingAuthFuture;
+	std::chrono::steady_clock::time_point authStartTime;
 
 	// Inventory
 	InventoryPlayer inventory;

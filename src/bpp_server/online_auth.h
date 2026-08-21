@@ -8,10 +8,12 @@
 #pragma once
 #ifdef ONLINE_MODE_AUTHENTICATION
 #include "../bpp_shared/helpers/java/java_random.h"
+#include "BS_thread_pool.hpp"
 #include "logger.h"
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <format>
+#include <future>
 #include <ios>
 #include <sstream>
 #include <string>
@@ -25,5 +27,9 @@ struct Authentication {
 	static void GlobalCleanup();
 	std::string GenerateAuthHash();
 	bool IsRegisteredUsername(std::string _serverId, std::string _username);
+	std::future<bool> IsRegisteredUsernameAsync(std::string _serverId, std::string _username);
+
+private:
+	BS::thread_pool<> pool{ 2 };
 };
 #endif

@@ -71,4 +71,11 @@ bool Authentication::IsRegisteredUsername(std::string _serverId, std::string _us
 
 	return response == "YES";
 }
+
+std::future<bool> Authentication::IsRegisteredUsernameAsync(std::string _serverId, std::string _username) {
+	return pool.submit_task(
+	    [this, _serverId = std::move(_serverId), _username = std::move(_username)]() {
+		    return IsRegisteredUsername(_serverId, _username);
+	    });
+}
 #endif
