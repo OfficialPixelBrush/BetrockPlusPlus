@@ -165,6 +165,19 @@ void Server::LoadConfig() {
 		    //{"spawn-monsters","true"},
 		    //{"max-players", "-1"},
 		    { "online-mode", "false" },
+#ifdef BETACRAFT_HEARTBEAT
+		    { "betacraft-heartbeat", "false" },
+		    { "betacraft-name", "A Minecraft server" },
+		    { "betacraft-description", "" },
+		    { "betacraft-socket", "" },
+		    { "betacraft-private-key", "" },
+		    { "betacraft-category", "beta" },
+		    { "betacraft-game-version", "b1.7.3" },
+		    { "betacraft-protocol", "beta_14" },
+		    { "betacraft-v1-version", "b1.7.3" },
+		    { "betacraft-send-players", "true" },
+		    { "betacraft-icon", "" },
+#endif
 		    //{"allow-flight","false"}
 		});
 		config.SaveToDisk();
@@ -173,6 +186,9 @@ void Server::LoadConfig() {
 	serverPort = config.GetAsNumber<int32_t>("server-port", 25565);
 #ifdef ONLINE_MODE_AUTHENTICATION
 	auth.onlineMode = config.GetAsBoolean("online-mode", false);
+#endif
+#ifdef BETACRAFT_HEARTBEAT
+	betacraftHeartbeat.Load(config, serverPort);
 #endif
 	//motd = config.GetAsString("motd");
 	//maximumPlayers = config.GetAsNumber<int32_t>("max-players");
@@ -366,6 +382,9 @@ void Server::Startup() {
 #ifdef DISCORD_INTEGRATION
 	GlobalDiscord().SendServerNotice("Server started!", Discord::EmbedColor::Green);
 #endif
+#ifdef BETACRAFT_HEARTBEAT
+	betacraftHeartbeat.Start();
+#endif
 }
 
 void Server::Run() {
@@ -439,6 +458,9 @@ void Server::Stop() {
 	if (stopped)
 		return;
 	stopped = true;
+#ifdef BETACRAFT_HEARTBEAT
+	betacraftHeartbeat.Stop();
+#endif
 #ifdef DISCORD_INTEGRATION
 	//GlobalDiscord().SendServerNotice("Server stopped!", Discord::EmbedColor::Red);
 	// TODO: The server often shuts down too fast for the embed to get sent!
@@ -569,6 +591,24 @@ void Server::Tick() {
 		shutdownTimer--;
 	if (shutdownTimer == 1)
 		shutdownRequested.store(true);
+
+#ifdef BETACRAFT_HEARTBEAT
+	if (betacraftHeartbeat.Enabled() && gameRuntime.world.tickScheduler.currentTick % TICKS_PER_SECOND == 0) {
+		BetacraftHeartbeatSnapshot snap;
+		snap.maxPlayers = config.GetAsNumber<int>("max-players", 20);
+		if (snap.maxPlayers < 0)
+			snap.maxPlayers = 20;
+		snap.onlineMode = config.GetAsBoolean("online-mode", false);
+		for (const auto& session : players) {
+			if (session->connState != ConnectionState::Playing)
+				continue;
+			++snap.onlinePlayers;
+			if (!session->username.empty())
+				snap.playerNames.push_back(session->username);
+		}
+		betacraftHeartbeat.UpdateSnapshot(snap);
+	}
+#endif
 }
 
 void Server::TryForceBreak(PlayerSession& _session, WorldManager& _world) {

@@ -8,12 +8,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Must be set before project() so vcpkg can install the optional feature.
-option(ONLINE_MODE_AUTHENTICATION "Allows for authentcation with Mojang Servers (requires libcurl)" ON)
+option(ONLINE_MODE_AUTHENTICATION "Allows authentication with Mojang servers (requires libcurl)" ON)
+option(BETACRAFT_HEARTBEAT "Ping the Betacraft server list (requires libcurl and nlohmann_json)" OFF)
 option(CRASH_LOGGING "Lets the server catch crashes and create crash reports" ON)
 option(DISCORD_INTEGRATION "Enable Discord bot integration via D++ (server only)" OFF)
 option(REDUCED_GENERATION_PRECISION "Reduces perlin and simplex noise precision from 64-bit to 32-bit floats" OFF)
 if(DISCORD_INTEGRATION)
     list(APPEND VCPKG_MANIFEST_FEATURES "discord")
+endif()
+if(BETACRAFT_HEARTBEAT)
+    list(APPEND VCPKG_MANIFEST_FEATURES "betacraft-heartbeat")
 endif()
 
 project(Betrock++ VERSION 0.0.1)
@@ -186,6 +190,7 @@ set(SHARED_SOURCES
 set(SERVER_SOURCES
     src/bpp_server/server.cpp
     src/bpp_server/online_auth.cpp
+    src/bpp_server/betacraft_heartbeat.cpp
     src/bpp_server/packet/handle_packet.cpp
     src/bpp_server/player_conn/server_pconnstate_manager.cpp
     src/bpp_server/packet/packet_dispatcher.cpp
@@ -259,10 +264,33 @@ if(BUILD_SERVER)
         ${SERVER_SOURCES}
     )
     
-    if(ONLINE_MODE_AUTHENTICATION)
+    if(ONLINE_MODE_AUTHENTICATION OR BETACRAFT_HEARTBEAT)
         find_package(CURL REQUIRED)
-        target_compile_definitions(BetrockPlusPlus PRIVATE ONLINE_MODE_AUTHENTICATION)
         target_link_libraries(BetrockPlusPlus PRIVATE CURL::libcurl)
+        target_sources(BetrockPlusPlus PRIVATE
+            src/bpp_server/curl_runtime.cpp
+        )
+    endif()
+
+    if(ONLINE_MODE_AUTHENTICATION)
+        target_compile_definitions(BetrockPlusPlus PRIVATE ONLINE_MODE_AUTHENTICATION)
+    endif()
+
+    if(BETACRAFT_HEARTBEAT)
+        find_package(nlohmann_json CONFIG QUIET)
+        if(NOT nlohmann_json_FOUND)
+            message(STATUS "nlohmann_json package not found; fetching nlohmann/json via FetchContent")
+            include(FetchContent)
+            FetchContent_Declare(
+                nlohmann_json
+                URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+            )
+            set(JSON_BuildTests OFF CACHE INTERNAL "")
+            set(JSON_Install OFF CACHE INTERNAL "")
+            FetchContent_MakeAvailable(nlohmann_json)
+        endif()
+        target_compile_definitions(BetrockPlusPlus PRIVATE BETACRAFT_HEARTBEAT)
+        target_link_libraries(BetrockPlusPlus PRIVATE nlohmann_json::nlohmann_json)
     endif()
 
     if (DISCORD_INTEGRATION)
@@ -294,6 +322,9 @@ if(BUILD_SERVER)
 else()
     if (DISCORD_INTEGRATION)
         message(WARNING "DISCORD_INTEGRATION has no effect when BUILD_SERVER is OFF; ignoring it")
+    endif()
+    if (BETACRAFT_HEARTBEAT)
+        message(WARNING "BETACRAFT_HEARTBEAT has no effect when BUILD_SERVER is OFF; ignoring it")
     endif()
 #Client mode
     target_compile_definitions(BetrockPlusPlus PRIVATE
