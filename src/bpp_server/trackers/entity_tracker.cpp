@@ -52,7 +52,8 @@ void EntityTracker::Tick() {
 			}
 			auto& player = playerIt->second;
 
-			if (DistanceBetweenPlayerAndEntity(entry.entity, player.entity) > entry.profile.range*entry.profile.range) {
+			if (DistanceBetweenPlayerAndEntity(entry.entity, player.entity) >
+			    entry.profile.range * entry.profile.range) {
 				auto pSession = server->GetSessionById(playerId);
 				if (!pSession) {
 					it = entry.visibleTo.erase(it);
@@ -77,7 +78,8 @@ void EntityTracker::Tick() {
 			if (entityId == playerId)
 				continue;
 
-			if (DistanceBetweenPlayerAndEntity(entityEntry.entity, player.entity) > entityEntry.profile.range*entityEntry.profile.range ||
+			if (DistanceBetweenPlayerAndEntity(entityEntry.entity, player.entity) >
+			        entityEntry.profile.range * entityEntry.profile.range ||
 			    entityEntry.visibleTo.find(playerId) != entityEntry.visibleTo.end()) {
 				continue;
 			}
@@ -109,7 +111,8 @@ void EntityTracker::TrackEntity(Entity* _entity) {
 		if (playerIt == trackedEntities.end())
 			continue;
 		auto& player = playerIt->second;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, player.entity) > newEntry.profile.range*newEntry.profile.range)
+		if (DistanceBetweenPlayerAndEntity(entry.entity, player.entity) >
+		    newEntry.profile.range * newEntry.profile.range)
 			continue;
 		// Register the viewer before spawning
 		newEntry.visibleTo.insert(playerId);
@@ -153,7 +156,8 @@ void EntityTracker::AddPlayer(Entity* _player) {
 	for (auto& [entityId, entityEntry] : trackedEntities) {
 		if (entityId == _player->id)
 			continue;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) > entityEntry.profile.range*entityEntry.profile.range)
+		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) >
+		    entityEntry.profile.range * entityEntry.profile.range)
 			continue;
 		// Register the viewer before spawning
 		entityEntry.visibleTo.insert(_player->id);
@@ -166,7 +170,8 @@ void EntityTracker::AddPlayer(Entity* _player) {
 		auto otherIt = trackedEntities.find(otherPlayerId);
 		if (otherIt == trackedEntities.end())
 			continue;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) > newPlayerEntry.profile.range*newPlayerEntry.profile.range)
+		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) >
+		    newPlayerEntry.profile.range * newPlayerEntry.profile.range)
 			continue;
 		newPlayerEntry.visibleTo.insert(otherPlayerId);
 		SpawnEntityForPlayer(otherPlayerId, newPlayerEntry);
@@ -207,7 +212,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		auto quantizeSpawnVelocity = [](double _v) -> int8_t {
 			return int8_t(_v * 128.0);
 		};
-		pkt.qRotation = { quantizeSpawnVelocity(_entityEntry.entity->velocity.x),
+		pkt.qVelocity = { quantizeSpawnVelocity(_entityEntry.entity->velocity.x),
 			              quantizeSpawnVelocity(_entityEntry.entity->velocity.y),
 			              quantizeSpawnVelocity(_entityEntry.entity->velocity.z) };
 		pkt.Serialize(pSession->stream);
@@ -612,13 +617,10 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 			_trackedEntry.lastEncodedYaw = qYaw;
 			_trackedEntry.lastEncodedPitch = qPitch;
 		} else {
-			bool needsRelMove =
-				std::abs(dx) > MINIMUM_POSITION_DELTA ||
-				std::abs(dy) > MINIMUM_POSITION_DELTA ||
-				std::abs(dz) > MINIMUM_POSITION_DELTA;
-			bool needsRot =
-				std::abs(qYaw   - _trackedEntry.lastEncodedYaw)   > MINIMUM_ROTATION_DELTA ||
-				std::abs(qPitch - _trackedEntry.lastEncodedPitch) > MINIMUM_ROTATION_DELTA;
+			bool needsRelMove = std::abs(dx) > MINIMUM_POSITION_DELTA || std::abs(dy) > MINIMUM_POSITION_DELTA ||
+			                    std::abs(dz) > MINIMUM_POSITION_DELTA;
+			bool needsRot = std::abs(qYaw - _trackedEntry.lastEncodedYaw) > MINIMUM_ROTATION_DELTA ||
+			                std::abs(qPitch - _trackedEntry.lastEncodedPitch) > MINIMUM_ROTATION_DELTA;
 
 			if (needsRelMove && needsRot) {
 				Packet::EntityPositionAndRotation pkt;
