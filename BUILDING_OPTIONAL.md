@@ -67,4 +67,4 @@ The only major difference this option introduces is that the farlands do not gen
 
 ## Continuing
 
-[Please continue after the first command of Step #3 in BUILDING](./BUILDING#3-building).
+[Please continue after the first command of Step #3 in BUILDING](./BUILDING.md#3-building).

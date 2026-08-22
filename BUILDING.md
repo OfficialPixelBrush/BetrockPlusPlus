@@ -121,7 +121,7 @@ Then move onto the [building step](#3-building).
 
 Optional Features are settings that we expose at compile-time for people that want specific features, without unnecessarily inflating compile time, binary size or the number of necessary dependencies for those that don't want them.
 
-Check out the [BUILDING_OPTIONAL](./BUILDING_OPTIONAL) file for more info, then return here and continue with Step #3.
+Check out the [BUILDING_OPTIONAL](./BUILDING_OPTIONAL.md) file for more info, then return here and continue with Step #3.
 
 ### 3. Building
 
