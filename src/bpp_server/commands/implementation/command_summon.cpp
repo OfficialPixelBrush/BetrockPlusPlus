@@ -12,6 +12,8 @@
 
 std::string CommandSummon::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
                                    std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
+	if (!HasPermissions(_session))
+		return ERROR_PERMISSIONS;
 	// Make a dummy player
 	for (int i = 0; i < 400; i++) {
 		auto entity = std::make_shared<CreeperEntity>();

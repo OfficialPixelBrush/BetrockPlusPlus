@@ -14,13 +14,16 @@
 std::string CommandHelp::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
                                  [[maybe_unused]] std::function<void(PlayerSession&)> _transferDimension,
                                  [[maybe_unused]] Server& _server) {
-	//DEFINE_PERMSCHECK(pClient)
-	const auto& registeredCommands = CommandManager::GetRegisteredCommands();
+	if (!HasPermissions(_session))
+		return ERROR_PERMISSIONS;
+ 	const auto& registeredCommands = CommandManager::GetRegisteredCommands();
 	Packet::ChatMessage pkt;
 	// Get help with specific command
 	if (_parameters.size() > 1) {
 		for (size_t i = 0; i < registeredCommands.size(); i++) {
 			if (registeredCommands[i]->GetLabel() == _parameters[1]) {
+				if (!registeredCommands[i]->HasPermissions(_session))
+					return ERROR_PERMISSIONS;
 				pkt.message = "§7" + registeredCommands[i]->GetLabel() + ": " + registeredCommands[i]->GetDescription();
 				pkt.Serialize(_session.stream);
 				// Only print syntax if it has a value
@@ -42,12 +45,16 @@ std::string CommandHelp::Execute(std::vector<std::string>& _parameters, PlayerSe
 		pkt.Serialize(_session.stream);
 		pkt.message = "§7";
 		for (size_t i = 0; i < registeredCommands.size(); i++) {
-			pkt.message += registeredCommands[i]->GetLabel();
-			if (i < registeredCommands.size() - 1) {
-				pkt.message += ", ";
+			if (registeredCommands[i]->HasPermissions(_session)) {
+				pkt.message += registeredCommands[i]->GetLabel();
+				if (i < registeredCommands.size() - 1) {
+					pkt.message += ", ";
+				}
 			}
 			if (pkt.message.size() > MAX_CHAT_LINE_SIZE || i == registeredCommands.size() - 1) {
-				pkt.Serialize(_session.stream);
+				if (pkt.message != "§7") {   // avoid sending an empty line
+					pkt.Serialize(_session.stream);
+				}
 				pkt.message = "§7";
 			}
 		}

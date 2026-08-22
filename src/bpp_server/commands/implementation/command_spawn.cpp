@@ -11,6 +11,8 @@
 //   /spawn
 std::string CommandSpawn::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
                                   std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
+	if (!HasPermissions(_session))
+		return ERROR_PERMISSIONS;
 	Int32_3 ipos = _world.GetSpawnPoint(false);
 	ipos.y = _world.GetHeightValue(
 	    ipos.x,

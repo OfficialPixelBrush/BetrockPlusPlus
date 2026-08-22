@@ -16,6 +16,8 @@ std::string CommandList::Execute([[maybe_unused]] std::vector<std::string>& _par
                                  [[maybe_unused]] PlayerSession& _session, [[maybe_unused]] WorldManager& _world,
                                  [[maybe_unused]] std::function<void(PlayerSession&)> _transferDimension,
                                  Server& _server) {
+	if (!HasPermissions(_session))
+		return ERROR_PERMISSIONS;
 	const auto& players = _server.GetPlayers();
 	Packet::ChatMessage pkt;
 	pkt.message = std::format("§7-- {} Player(s) --", players.size());
