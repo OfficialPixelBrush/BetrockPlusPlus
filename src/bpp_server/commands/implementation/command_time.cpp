@@ -12,6 +12,8 @@
 //   /time <new_time>
 std::string CommandTime::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
                                  std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
+	if (!HasPermissions(_session))
+		return ERROR_PERMISSIONS;
 	// Set the time
 	if (_parameters.size() > 2) {
 		if (_parameters[1] == "set") {

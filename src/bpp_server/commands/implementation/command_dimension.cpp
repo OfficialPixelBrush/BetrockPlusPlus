@@ -15,6 +15,8 @@ std::string CommandDimension::Execute([[maybe_unused]] std::vector<std::string>&
                                       [[maybe_unused]] WorldManager& _world,
                                       std::function<void(PlayerSession&)> _transferDimension,
                                       [[maybe_unused]] Server& _server) {
+	if (!HasPermissions(_session))
+		return ERROR_PERMISSIONS;
 	Packet::ChatMessage reply;
 	reply.message = _session.dimension == Dimension::Overworld ? "§7Transferring to the Nether..." : "§7Transferring to the Overworld...";
 	reply.Serialize(_session.stream);

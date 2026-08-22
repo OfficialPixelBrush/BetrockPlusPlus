@@ -12,6 +12,8 @@
 //   /version
 std::string CommandVersion::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
                                     std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
+	if (!HasPermissions(_session))
+		return ERROR_PERMISSIONS;
 	Packet::ChatMessage pkt;
 	pkt.message = "§eCurrent " + std::string(PROJECT_NAME) + " version is " + std::string(PROJECT_VERSION_FULL_STRING);
 	pkt.Serialize(_session.stream);

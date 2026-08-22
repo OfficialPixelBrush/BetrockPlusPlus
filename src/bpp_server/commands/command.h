@@ -13,6 +13,7 @@
 
 #define ERROR_OPERATOR "Only operators can use this command!"
 #define ERROR_CREATIVE "Only creative players can use this command!"
+#define ERROR_PERMISSIONS "You lack the required permissions for this command!"
 #define ERROR_WHITELIST "Only whitelisted players can use this command!"
 #define ERROR_REASON_SYNTAX "Invalid Syntax"
 #define ERROR_REASON_PARAMETERS "Invalid Parameters"
@@ -29,13 +30,6 @@
 		std::string Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,         \
 		                    std::function<void(PlayerSession&)> transferDimension, Server& server) override;           \
 	};
-
-/*
-#define DEFINE_PERMSCHECK(session)                                                                                      \
-	std::string perms = CheckPermissions(client);                                                                      \
-	if (!perms.empty())                                                                                                \
-		return perms;
-*/
 
 class CommandManager;
 
@@ -68,7 +62,7 @@ public:
 		return requiresCreative;
 	}
 
-	std::string CheckPermissions(PlayerSession& _session);
+	bool HasPermissions(PlayerSession& _session);
 	Command(std::string _label, std::string _description, std::string _syntax, bool _requiresOp = true,
 	        bool _requiresCreative = false);
 	virtual std::string Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
@@ -80,19 +74,19 @@ public:
 // Anyone can run these
 DEFINE_COMMAND(CommandHelp, "help", "Lists commands or helps with command", "[command]", false, false);
 DEFINE_COMMAND(CommandTeleport, "tp", "Teleports player to coordinates or another player",
-               "<player> <x> <y> <z> / <player> <player>", false, false);
-DEFINE_COMMAND(CommandTime, "time", "Gets or sets the current world time", "<new_time>", false, false);
+               "<player> <x> <y> <z> / <player> <player>", true, false);
+DEFINE_COMMAND(CommandTime, "time", "Gets or sets the current world time", "<new_time>", true, false);
 DEFINE_COMMAND(CommandSpawn, "spawn", "Teleport to spawn", "", false, false);
-DEFINE_COMMAND(CommandSeed, "seed", "Get the world seed", "", false, false);
-DEFINE_COMMAND(CommandGive, "give", "Give yourself a block or item", "<id>[:meta] [amount]", false, false);
+DEFINE_COMMAND(CommandSeed, "seed", "Get the world seed", "", true, false);
+DEFINE_COMMAND(CommandGive, "give", "Give yourself a block or item", "<id>[:meta] [amount]", true, false);
 DEFINE_COMMAND(CommandList, "list", "List all currently online players", "", false, false);
-DEFINE_COMMAND(CommandLoaded, "loaded", "Shows the number of loaded chunks", "", false, false);
-DEFINE_COMMAND(CommandDimension, "dim", "Swap to the other dimension", "", false, false);
+DEFINE_COMMAND(CommandLoaded, "loaded", "Shows the number of loaded chunks", "", true, false);
+DEFINE_COMMAND(CommandDimension, "dim", "Swap to the other dimension", "", true, false);
 DEFINE_COMMAND(CommandVersion, "version", "Shows the current Server version", "", false, false);
-DEFINE_COMMAND(CommandSummon, "summon", "Summons a smart entity", "", false, false);
+DEFINE_COMMAND(CommandSummon, "summon", "Summons a smart entity", "", true, false);
 DEFINE_COMMAND(CommandStats, "stats", "Shows usage statistics", "", false, false);
 DEFINE_COMMAND(CommandFill, "fill", "Fills an area with the desired block",
-               "<block:meta> <x0> <y0> <z0> <x1> <y1> <z1>", false, false);
+               "<block>[:meta] <x0> <y0> <z0> <x1> <y1> <z1>", true, false);
 DEFINE_COMMAND(CommandStop, "stop", "Forces the server to stop", "[time]/cancel", true, false);
 /*
 DEFINE_COMMAND(CommandPose, "pose", "Set the current players' pose", "<crouch/fire/sit>", false, false);

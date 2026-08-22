@@ -42,23 +42,20 @@ ItemStack Command::ParseItemStack(std::vector<std::string>& _parameters, size_t&
 	return item;
 }
 
-// Check permissions for the command
-/*
-std::string Command::CheckPermissions(Client *client) {
-	auto player = client->GetPlayer();
-	bool isOp = Betrock::Server::Instance().IsOperator(player->username);
-	if (isOp) {
-		return "";
-	}
-	if (requiresOp && !isOp) {
-		return ERROR_OPERATOR;
-	}
-	if (requiresCreative && !player->creativeMode) {
-		return ERROR_CREATIVE;
-	}
-	return "";
+bool IsOperator(PlayerSession& _session) {
+	return false;
 }
-*/
+
+bool Command::HasPermissions(PlayerSession& _session) {
+	bool isOp = IsOperator(_session);
+	if (requiresOp && !isOp) {
+		return false;
+	}
+	return true;
+	//if (requiresCreative && !player->creativeMode) {
+	//	return false;
+	//}
+}
 
 /*
 // Shows how long the server has been alive in ticks

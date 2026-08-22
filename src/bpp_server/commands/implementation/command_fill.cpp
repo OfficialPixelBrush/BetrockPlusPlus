@@ -16,6 +16,8 @@
 //   /fill <block:meta> <x0> <y0> <z0> <x1> <y1> <z1>
 std::string CommandFill::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
                                  std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
+	if (!HasPermissions(_session))
+		return ERROR_PERMISSIONS;
 	// Parse parameters
 	size_t paramOffset = 1;
 	ItemStack item = ParseItemStack(_parameters, paramOffset, false);
