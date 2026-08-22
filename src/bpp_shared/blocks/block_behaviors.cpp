@@ -768,7 +768,8 @@ void RegisterBlockBehaviors() {
 		blockBehaviors[BLOCK_TALLGRASS].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
 	blockBehaviors[BLOCK_SAPLING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
-		blockBehaviors[BLOCK_SAPLING].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+		if (!CanGenericPlantSurviveAt(_world, _pos))
+			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_DANDELION].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                            Java::Random& _random) -> void {
@@ -782,11 +783,6 @@ void RegisterBlockBehaviors() {
 	};
 	blockBehaviors[BLOCK_TALLGRASS].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                            Java::Random& _random) -> void {
-		if (!CanGenericPlantSurviveAt(_world, _pos))
-			BreakAndDropBlock(_world, _pos);
-	};
-	blockBehaviors[BLOCK_SAPLING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                          Java::Random& _random) -> void {
 		if (!CanGenericPlantSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};

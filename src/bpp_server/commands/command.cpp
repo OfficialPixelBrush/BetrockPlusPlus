@@ -43,7 +43,7 @@ ItemStack Command::ParseItemStack(std::vector<std::string>& _parameters, size_t&
 }
 
 bool IsOperator(PlayerSession& _session) {
-	return false;
+	return true;
 }
 
 bool Command::HasPermissions(PlayerSession& _session) {
