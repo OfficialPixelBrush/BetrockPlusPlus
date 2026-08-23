@@ -15,6 +15,7 @@
 #include "generator/overworld/chunk_gen.h"
 #include "generator/shared/cave_gen.h"
 #include "world_wrapper.h"
+#include "redstone_manager.h"
 #include <limits>
 #include <unordered_set>
 
@@ -974,11 +975,15 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	// Call our on placed function
 	if (_blockType != BLOCK_AIR) {
 		// Java has this functionality in the chunk setters themselves, but
-		// in my opinion (Aidan here) that is stupid and redundant
+		// in my opinion that is stupid and redundant
 		auto function = Blocks::blockBehaviors[_blockType].onBlockAdded;
 		if (function)
 			function(*this, _wpos);
 	}
+
+	// Trigger redstone updates
+	if (RedstoneManager::CanTriggerRedstoneUpdate(_blockType) || RedstoneManager::CanTriggerRedstoneUpdate(oldBlock))
+		if (_updateNeighbors) RedstoneManager::TriggerRedstoneUpdate(*this, _wpos);
 
 	// Callback for the client and server to know about this block update
 	if (onBlockUpdate && (oldBlock != _blockType ||

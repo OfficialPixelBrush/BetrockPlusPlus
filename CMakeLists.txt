@@ -141,6 +141,7 @@ set(SHARED_SOURCES
     src/bpp_shared/world/storage/region.cpp
     src/bpp_shared/world/storage/region_manager.cpp
     src/bpp_shared/world/tick_scheduler.cpp
+    src/bpp_shared/world/redstone_manager.cpp
     src/bpp_shared/blocks/block_properties_behaviors.cpp
     src/bpp_shared/blocks/block_behaviors.cpp
     src/bpp_shared/blocks/block_properties.cpp
