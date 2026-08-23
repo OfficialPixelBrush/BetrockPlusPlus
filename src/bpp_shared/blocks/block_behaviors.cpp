@@ -876,6 +876,46 @@ void RegisterBlockBehaviors() {
 		return false;
 	};
 
+	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                               PacketData::FaceDirection _face, BlockType _blockId,
+	                                               uint8_t _meta) -> bool {
+		if (_world.GetBlockId(Blocks::GetSourceBlockFromFace(_pos, _face)) == BLOCK_SNOW_LAYER)
+			_pos = Blocks::GetSourceBlockFromFace(_pos, _face);
+		if (CanTorchAttachTo(_world, _pos, _face)) {
+			return GenericPlace(_world, _pos, _placer, _face, _blockId, 6 - _face);
+		}
+		return false;
+	};
+
+	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		auto currentFace = static_cast<PacketData::FaceDirection>(6 - _world.GetMetadata(_pos));
+		if (CanTorchAttachTo(_world, _pos, currentFace))
+			return; // Already valid
+
+		// Matches vanilla order
+		static constexpr std::array<PacketData::FaceDirection, 5> CHECK_ORDER = {
+			PacketData::FaceDirection::X_PLUS, PacketData::FaceDirection::X_MINUS, PacketData::FaceDirection::Z_PLUS,
+			PacketData::FaceDirection::Z_MINUS, PacketData::FaceDirection::Y_PLUS
+		};
+
+		// Attach to the first support block we find
+		for (PacketData::FaceDirection face : CHECK_ORDER) {
+			if (CanTorchAttachTo(_world, _pos, face)) {
+				_world.SetMeta(_pos, 6 - face);
+				return;
+			}
+		}
+
+		BreakAndDropBlock(_world, _pos);
+	};
+
+	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+		uint8_t meta = _world.GetMetadata(_pos);
+		auto supportFace = static_cast<PacketData::FaceDirection>(6 - meta);
+		if (!CanTorchAttachTo(_world, _pos, supportFace))
+			BreakAndDropBlock(_world, _pos);
+	};
+
 	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                               PacketData::FaceDirection _face, BlockType _blockId,
 	                                               uint8_t _meta) -> bool {
