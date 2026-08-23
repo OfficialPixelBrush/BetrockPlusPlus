@@ -981,10 +981,6 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 			function(*this, _wpos);
 	}
 
-	// Trigger redstone updates
-	if (RedstoneManager::CanTriggerRedstoneUpdate(_blockType) || RedstoneManager::CanTriggerRedstoneUpdate(oldBlock))
-		if (_updateNeighbors) RedstoneManager::TriggerRedstoneUpdate(*this, _wpos);
-
 	// Callback for the client and server to know about this block update
 	if (onBlockUpdate && (oldBlock != _blockType ||
 	                      (oldMeta != _metadata && Blocks::blockProperties[_blockType].notifySelfOnMetaChange)))
@@ -992,6 +988,11 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 		                            .blockPos{ _wpos.x, _wpos.y, _wpos.z },
 		                            .light{ chunk->GetBlockLight(local), chunk->GetSkyLight(local) } },
 		              chunk->cpos);
+	
+	// Trigger redstone updates
+	if (RedstoneManager::CanTriggerRedstoneUpdate(_blockType) || RedstoneManager::CanTriggerRedstoneUpdate(oldBlock))
+		if (_updateNeighbors)
+			RedstoneManager::TriggerRedstoneUpdate(*this, _wpos);
 }
 
 int WorldManager::FindTopSolidBlock(int _wx, int _wz) {
