@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
 */
 #pragma once
+#include <unordered_set>
 #include "java/java_math.h"
 #include "java/java_random.h"
 #include <numeric_structs.h>
