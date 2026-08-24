@@ -8,6 +8,7 @@
 #include "../../server.h"
 #include "../command.h"
 #include "../command_manager.h"
+#include "config/list_parser.h"
 #include "inventory/item_stack.h"
 #include "items.h"
 #include "strings/labels.h"
