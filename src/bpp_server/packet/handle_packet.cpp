@@ -483,7 +483,8 @@ void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
 
 	// Force a refresh
 	_session.dimension = targetDim;
-	_session.entityTracker = targetDim == Dimension::Overworld ? &_server.overworldEntityTracker : &_server.hellEntityTracker;
+	_session.entityTracker = targetDim == Dimension::Overworld ? &_server.overworldEntityTracker
+	                                                           : &_server.hellEntityTracker;
 
 	// Get our spawn point
 	auto world = _server.GetWorldForDimension(targetDim);

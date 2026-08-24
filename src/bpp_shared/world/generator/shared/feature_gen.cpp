@@ -365,7 +365,7 @@ bool GenerateTallgrass(uint8_t _meta, WorldWrapper& _world, Java::Random& _rand,
 			continue;
 		if (_world.GetBlockId({ x, y, z }) != BLOCK_AIR)
 			continue;
-		if (Blocks::CanGenericPlantSurviveAt(_world, {x, y, z}))
+		if (Blocks::CanGenericPlantSurviveAt(_world, { x, y, z }))
 			_world.SetBlock({ x, y, z }, BLOCK_TALLGRASS, _meta);
 	}
 	return true;

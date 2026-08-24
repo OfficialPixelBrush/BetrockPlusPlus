@@ -14,8 +14,8 @@
 #include "generator/nether/chunk_gen.h"
 #include "generator/overworld/chunk_gen.h"
 #include "generator/shared/cave_gen.h"
-#include "world_wrapper.h"
 #include "redstone_manager.h"
+#include "world_wrapper.h"
 #include <limits>
 #include <unordered_set>
 
@@ -988,7 +988,7 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 		                            .blockPos{ _wpos.x, _wpos.y, _wpos.z },
 		                            .light{ chunk->GetBlockLight(local), chunk->GetSkyLight(local) } },
 		              chunk->cpos);
-	
+
 	// Trigger redstone updates
 	if (RedstoneManager::CanTriggerRedstoneUpdate(_blockType) || RedstoneManager::CanTriggerRedstoneUpdate(oldBlock))
 		if (_updateNeighbors)

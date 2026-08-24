@@ -6,7 +6,6 @@
  *
  */
 #pragma once
-#include "lighter.h"
 #include "base_types.h"
 #include "blocks/block_properties.h"
 #include "dimensions.h"
@@ -14,15 +13,16 @@
 #include "helpers/AABB.h"
 #include "helpers/java/java_math.h"
 #include "helpers/java/java_random.h"
+#include "lighter.h"
 #include "nbt/nbt.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
 #include <vector>
 
 struct EntityFlags {
-    bool isBurning = false;
-    bool isSneaking = false;
-    bool isRiding = false;
+	bool isBurning = false;
+	bool isSneaking = false;
+	bool isRiding = false;
 };
 
 // Constants pulled from the betaWiki!
@@ -242,9 +242,11 @@ struct Entity {
 			wasMetadataUpdated = true;
 		}
 	}
-	protected:
+
+protected:
 	template <typename T>
-	inline const T* FindMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata, PacketData::EntityMetadata::Type _desiredType, uint8_t _desiredIndex) {
+	inline const T* FindMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata,
+	                             PacketData::EntityMetadata::Type _desiredType, uint8_t _desiredIndex) {
 		for (auto& m : _metadata) {
 			if (m.type != _desiredType || m.index != _desiredIndex)
 				continue;

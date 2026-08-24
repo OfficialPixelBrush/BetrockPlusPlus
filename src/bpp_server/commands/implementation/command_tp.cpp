@@ -12,12 +12,12 @@
 
 namespace {
 
-constexpr int kTeleportLimit = 2147482000;
+constexpr int K_TELEPORT_LIMIT = 2147482000;
 
 void ClampTeleport(Vec3& _pos) {
-	_pos.x = std::clamp(static_cast<int>(_pos.x), -kTeleportLimit, kTeleportLimit);
-	_pos.y = std::clamp(static_cast<int>(_pos.y), -kTeleportLimit, kTeleportLimit);
-	_pos.z = std::clamp(static_cast<int>(_pos.z), -kTeleportLimit, kTeleportLimit);
+	_pos.x = std::clamp(static_cast<int>(_pos.x), -K_TELEPORT_LIMIT, K_TELEPORT_LIMIT);
+	_pos.y = std::clamp(static_cast<int>(_pos.y), -K_TELEPORT_LIMIT, K_TELEPORT_LIMIT);
+	_pos.z = std::clamp(static_cast<int>(_pos.z), -K_TELEPORT_LIMIT, K_TELEPORT_LIMIT);
 }
 
 std::string TeleportToCoords(PlayerSession& _source, PlayerSession& _caller, const strategos::Vec3& _cmdPos) {
@@ -69,12 +69,11 @@ std::string TpPlayerTarget(const strategos::CmdNode& _cmd, void* _userData) {
 } // namespace
 
 void RegisterTeleport(strategos::BrigadierContext& _dispatcher) {
-	_dispatcher.add_command(
-	    strategos::Node::literal("tp")
-	        .describe("Teleports player to coordinates or another player")
-	        .op()
-	        .then(strategos::Node::vec3("pos").executes(TpSelfCoords))
-	        .then(strategos::Node::string("player")
-	                  .then(strategos::Node::vec3("pos").executes(TpPlayerCoords))
-	                  .then(strategos::Node::string("target").executes(TpPlayerTarget))));
+	_dispatcher.add_command(strategos::Node::literal("tp")
+	                            .describe("Teleports player to coordinates or another player")
+	                            .op()
+	                            .then(strategos::Node::vec3("pos").executes(TpSelfCoords))
+	                            .then(strategos::Node::string("player")
+	                                      .then(strategos::Node::vec3("pos").executes(TpPlayerCoords))
+	                                      .then(strategos::Node::string("target").executes(TpPlayerTarget))));
 }

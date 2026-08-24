@@ -34,15 +34,15 @@ bool recreateTempDir(const fs::path& _dir) {
 
 bool isAlphaLevel(const std::string& _dir) {
 	// Are we a chunk?
-	auto isChunkFilename = [](const std::string& filename) -> bool {
-		static const std::string prefix = "c.";
-		static const std::string suffix = ".dat";
+	auto isChunkFilename = [](const std::string& _filename) -> bool {
+		static const std::string PREFIX = "c.";
+		static const std::string SUFFIX = ".dat";
 
-		if (filename.size() < prefix.size() + suffix.size())
+		if (_filename.size() < PREFIX.size() + SUFFIX.size())
 			return false;
-		if (filename.compare(0, prefix.size(), prefix) != 0)
+		if (_filename.compare(0, PREFIX.size(), PREFIX) != 0)
 			return false;
-		if (filename.compare(filename.size() - suffix.size(), suffix.size(), suffix) != 0)
+		if (_filename.compare(_filename.size() - SUFFIX.size(), SUFFIX.size(), SUFFIX) != 0)
 			return false;
 
 		return true;
@@ -80,22 +80,22 @@ bool isAlphaLevel(const std::string& _dir) {
 }
 
 bool convertAlphaLevel(std::string& _dir) {
-	auto decompressChunk = [](const char* compressed_data, size_t compressed_size,
-	                          size_t& decompressed_size) -> std::unique_ptr<char[]> {
+	auto decompressChunk = [](const char* _compressedData, size_t _compressedSize,
+	                          size_t& _decompressedSize) -> std::unique_ptr<char[]> {
 		struct libdeflate_decompressor* decompressor = libdeflate_alloc_decompressor();
 		if (!decompressor)
 			return nullptr;
 
-		size_t capacity = decompressed_size > 0 ? decompressed_size : 81920;
+		size_t capacity = _decompressedSize > 0 ? _decompressedSize : 81920;
 		for (int attempt = 0; attempt < 6; attempt++) {
-			auto decompressed_data = std::make_unique<char[]>(capacity);
-			size_t actual_size = 0;
-			int32_t result = libdeflate_gzip_decompress(decompressor, compressed_data, compressed_size,
-			                                            decompressed_data.get(), capacity, &actual_size);
+			auto decompressedData = std::make_unique<char[]>(capacity);
+			size_t actualSize = 0;
+			int32_t result = libdeflate_gzip_decompress(decompressor, _compressedData, _compressedSize,
+			                                            decompressedData.get(), capacity, &actualSize);
 			if (result == LIBDEFLATE_SUCCESS) {
-				decompressed_size = actual_size;
+				_decompressedSize = actualSize;
 				libdeflate_free_decompressor(decompressor);
-				return decompressed_data;
+				return decompressedData;
 			}
 			if (result != LIBDEFLATE_INSUFFICIENT_SPACE)
 				break;     // real error, don't keep retrying
@@ -106,24 +106,24 @@ bool convertAlphaLevel(std::string& _dir) {
 	};
 
 	// Are we a chunk?
-	auto isChunkFilename = [](const std::string& filename) -> bool {
-		static const std::string prefix = "c.";
-		static const std::string suffix = ".dat";
+	auto isChunkFilename = [](const std::string& _filename) -> bool {
+		static const std::string PREFIX = "c.";
+		static const std::string SUFFIX = ".dat";
 
-		if (filename.size() < prefix.size() + suffix.size())
+		if (_filename.size() < PREFIX.size() + SUFFIX.size())
 			return false;
-		if (filename.compare(0, prefix.size(), prefix) != 0)
+		if (_filename.compare(0, PREFIX.size(), PREFIX) != 0)
 			return false;
-		if (filename.compare(filename.size() - suffix.size(), suffix.size(), suffix) != 0)
+		if (_filename.compare(_filename.size() - SUFFIX.size(), SUFFIX.size(), SUFFIX) != 0)
 			return false;
 
 		return true;
 	};
 
 	// Check if we are in the nether
-	auto isInNetherSubtree = [](const fs::path& worldDir, const fs::path& chunkFilePath) -> bool {
+	auto isInNetherSubtree = [](const fs::path& _worldDir, const fs::path& _chunkFilePath) -> bool {
 		std::error_code ec;
-		fs::path relative = fs::relative(chunkFilePath, worldDir, ec);
+		fs::path relative = fs::relative(_chunkFilePath, _worldDir, ec);
 		if (ec)
 			return false;
 
@@ -134,8 +134,8 @@ bool convertAlphaLevel(std::string& _dir) {
 		return false;
 	};
 
-	auto loadAlphaChunk = [&](FileHandle& cFile) -> std::shared_ptr<Chunk> {
-		auto& chunkFile = cFile.Get();
+	auto loadAlphaChunk = [&](FileHandle& _cFile) -> std::shared_ptr<Chunk> {
+		auto& chunkFile = _cFile.Get();
 
 		// Get the length of the file
 		chunkFile.seekg(0, std::ios::end);
@@ -383,34 +383,34 @@ bool convertBetrockServerLevel(std::string& _dir) {
 		GlobalLogger().warn << "No Betrock player files found!\n";
 	}
 
-	auto BlockIndexToPosition = [](int32_t index) -> Int3 {
+	auto blockIndexToPosition = [](int32_t _index) -> Int3 {
 		Int3 pos;
-		pos.y = index % CHUNK_HEIGHT;
-		index /= CHUNK_HEIGHT;
+		pos.y = _index % CHUNK_HEIGHT;
+		_index /= CHUNK_HEIGHT;
 
-		pos.z = index % CHUNK_WIDTH;
-		index /= CHUNK_WIDTH;
+		pos.z = _index % CHUNK_WIDTH;
+		_index /= CHUNK_WIDTH;
 
-		pos.x = index;
+		pos.x = _index;
 		return pos;
 	};
 
-	auto decompressChunk = [](const char* compressed_data, size_t compressed_size,
-	                          size_t& decompressed_size) -> std::unique_ptr<char[]> {
+	auto decompressChunk = [](const char* _compressedData, size_t _compressedSize,
+	                          size_t& _decompressedSize) -> std::unique_ptr<char[]> {
 		struct libdeflate_decompressor* decompressor = libdeflate_alloc_decompressor();
 		if (!decompressor)
 			return nullptr;
 
-		size_t capacity = decompressed_size > 0 ? decompressed_size : 81920;
+		size_t capacity = _decompressedSize > 0 ? _decompressedSize : 81920;
 		for (int attempt = 0; attempt < 6; attempt++) {
-			auto decompressed_data = std::make_unique<char[]>(capacity);
-			size_t actual_size = 0;
-			int32_t result = libdeflate_zlib_decompress(decompressor, compressed_data, compressed_size,
-			                                            decompressed_data.get(), capacity, &actual_size);
+			auto decompressedData = std::make_unique<char[]>(capacity);
+			size_t actualSize = 0;
+			int32_t result = libdeflate_zlib_decompress(decompressor, _compressedData, _compressedSize,
+			                                            decompressedData.get(), capacity, &actualSize);
 			if (result == LIBDEFLATE_SUCCESS) {
-				decompressed_size = actual_size;
+				_decompressedSize = actualSize;
 				libdeflate_free_decompressor(decompressor);
-				return decompressed_data;
+				return decompressedData;
 			}
 			if (result != LIBDEFLATE_INSUFFICIENT_SPACE)
 				break;     // real error, don't keep retrying
@@ -420,8 +420,8 @@ bool convertBetrockServerLevel(std::string& _dir) {
 		return nullptr;
 	};
 
-	auto loadOldFormat = [&](FileHandle& cFile) -> std::shared_ptr<Chunk> {
-		auto& chunkFile = cFile.Get();
+	auto loadOldFormat = [&](FileHandle& _cFile) -> std::shared_ptr<Chunk> {
+		auto& chunkFile = _cFile.Get();
 
 		// Get the length of the file
 		chunkFile.seekg(0, std::ios::end);
@@ -446,22 +446,22 @@ bool convertBetrockServerLevel(std::string& _dir) {
 		for (size_t i = 0; i < decompressedSize; i++) {
 			if (i < blockDataSize) {
 				// Block Data
-				c->SetBlock(BlockIndexToPosition(i), BlockType(chunkData[i]));
+				c->SetBlock(blockIndexToPosition(i), BlockType(chunkData[i]));
 			} else if (
 			    // Metadata
 			    i >= blockDataSize && i < blockDataSize + nibbleDataSize) {
-				c->SetMeta(BlockIndexToPosition((i % nibbleDataSize) * 2), chunkData[i] & 0xF);
-				c->SetMeta(BlockIndexToPosition((i % nibbleDataSize) * 2 + 1), (chunkData[i] >> 4) & 0xF);
+				c->SetMeta(blockIndexToPosition((i % nibbleDataSize) * 2), chunkData[i] & 0xF);
+				c->SetMeta(blockIndexToPosition((i % nibbleDataSize) * 2 + 1), (chunkData[i] >> 4) & 0xF);
 			} else if (
 			    // Block Light
 			    i >= blockDataSize + nibbleDataSize && i < blockDataSize + (nibbleDataSize * 2)) {
-				c->SetBlockLight(BlockIndexToPosition((i % nibbleDataSize) * 2), chunkData[i] & 0xF);
-				c->SetBlockLight(BlockIndexToPosition((i % nibbleDataSize) * 2 + 1), (chunkData[i] >> 4) & 0xF);
+				c->SetBlockLight(blockIndexToPosition((i % nibbleDataSize) * 2), chunkData[i] & 0xF);
+				c->SetBlockLight(blockIndexToPosition((i % nibbleDataSize) * 2 + 1), (chunkData[i] >> 4) & 0xF);
 			} else if (
 			    // Sky Light
 			    i >= blockDataSize + (nibbleDataSize * 2) && i < blockDataSize + (nibbleDataSize * 3)) {
-				c->SetSkyLight(BlockIndexToPosition((i % nibbleDataSize) * 2), chunkData[i] & 0xF);
-				c->SetSkyLight(BlockIndexToPosition((i % nibbleDataSize) * 2 + 1), (chunkData[i] >> 4) & 0xF);
+				c->SetSkyLight(blockIndexToPosition((i % nibbleDataSize) * 2), chunkData[i] & 0xF);
+				c->SetSkyLight(blockIndexToPosition((i % nibbleDataSize) * 2 + 1), (chunkData[i] >> 4) & 0xF);
 			}
 		}
 		c->isTerrainPopulated = true;
@@ -471,8 +471,8 @@ bool convertBetrockServerLevel(std::string& _dir) {
 		return c;
 	};
 
-	auto loadV2Format = [&](FileHandle& cFile) -> std::shared_ptr<Chunk> {
-		auto& chunkFile = cFile.Get();
+	auto loadV2Format = [&](FileHandle& _cFile) -> std::shared_ptr<Chunk> {
+		auto& chunkFile = _cFile.Get();
 
 		// Get the length of the file
 		chunkFile.seekg(0, std::ios::end);
@@ -504,13 +504,13 @@ bool convertBetrockServerLevel(std::string& _dir) {
 
 		// Block ids
 		for (size_t i = 0; i < blockDataSize; i++) {
-			c->SetBlock(BlockIndexToPosition(i), BlockType(blocksTag.byteArray[i]));
+			c->SetBlock(blockIndexToPosition(i), BlockType(blocksTag.byteArray[i]));
 		}
 
 		// Metadata
 		for (size_t i = 0; i < nibbleDataSize; i++) {
-			c->SetMeta(BlockIndexToPosition(i * 2), (metaData[i]) & 0xF);
-			c->SetMeta(BlockIndexToPosition(i * 2 + 1), (metaData[i] >> 4) & 0xF);
+			c->SetMeta(blockIndexToPosition(i * 2), (metaData[i]) & 0xF);
+			c->SetMeta(blockIndexToPosition(i * 2 + 1), (metaData[i] >> 4) & 0xF);
 		}
 
 		c->isTerrainPopulated = true;

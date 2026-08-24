@@ -96,7 +96,10 @@ void EntityMPPlayer::HandlePositionChecks() {
 		bool savedOnGround = onGround;
 		bool residualTooLarge = false;
 		bool movedWrong = false;
-		bool wasClearBefore = world->GetCollidingBoundingBoxes(collider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE)).empty();
+		bool wasClearBefore = world
+		                          ->GetCollidingBoundingBoxes(collider.Expand(
+		                              -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE))
+		                          .empty();
 		Vec3 lastPosition = this->position;
 		Vec3 claimed = *session->pendingPosition;
 		Vec3 delta = claimed - lastPosition;
@@ -144,7 +147,10 @@ void EntityMPPlayer::HandlePositionChecks() {
 			residualTooLarge = true;
 		}
 
-		bool clearNow = world->GetCollidingBoundingBoxes(collider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE)).empty();
+		bool clearNow = world
+		                    ->GetCollidingBoundingBoxes(
+		                        collider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE))
+		                    .empty();
 
 		bool willCorrect = (wasClearBefore && (residualTooLarge || !clearNow)) || movedWrong;
 

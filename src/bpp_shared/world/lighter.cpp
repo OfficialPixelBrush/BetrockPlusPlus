@@ -12,7 +12,7 @@
 #include <cstring>
 
 namespace Lighting {
-	const float BrightnessArray[16] = { 0.035f, 0.044f, 0.055f, 0.069f, 0.086f, 0.107f, 0.134f, 0.168f,
+const float BrightnessArray[16] = { 0.035f, 0.044f, 0.055f, 0.069f, 0.086f, 0.107f, 0.134f, 0.168f,
 	                                0.21f,  0.262f, 0.328f, 0.41f,  0.512f, 0.64f,  0.8f,   1.0f };
 } // namespace Lighting
 

@@ -135,5 +135,5 @@ private:
 };
 
 namespace Lighting {
-	extern const float BrightnessArray[16];
+extern const float BrightnessArray[16];
 } // namespace Lighting

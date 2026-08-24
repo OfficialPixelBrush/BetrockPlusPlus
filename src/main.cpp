@@ -101,7 +101,7 @@ static void InstallProcessSignalHandlers() {
 	std::signal(SIGINT, SignalHandler);
 	std::signal(SIGTERM, SignalHandler);
 #else
-	struct sigaction sa {};
+	struct sigaction sa{};
 	sa.sa_handler = SignalHandler;
 	sigemptyset(&sa.sa_mask);
 	// musl's signal() sets SA_RESTART, which makes a later libcurl/OpenSSL

@@ -47,10 +47,11 @@ std::string AddTime(const strategos::CmdNode& _cmd, void* _userData) {
 } // namespace
 
 void RegisterTime(strategos::BrigadierContext& _dispatcher) {
-	_dispatcher.add_command(strategos::Node::literal("time")
-	                            .describe("Gets or sets the current world time")
-	                            .op()
-	                            .executes(GetTime)
-	                            .then(strategos::Node::literal("set").then(strategos::Node::string("ticks").executes(SetTime)))
-	                            .then(strategos::Node::literal("add").then(strategos::Node::string("ticks").executes(AddTime))));
+	_dispatcher.add_command(
+	    strategos::Node::literal("time")
+	        .describe("Gets or sets the current world time")
+	        .op()
+	        .executes(GetTime)
+	        .then(strategos::Node::literal("set").then(strategos::Node::string("ticks").executes(SetTime)))
+	        .then(strategos::Node::literal("add").then(strategos::Node::string("ticks").executes(AddTime))));
 }

@@ -9,13 +9,13 @@
 #include "entities/entity_animal.h"
 #include "entities/entity_chicken.h"
 #include "entities/entity_cow.h"
+#include "entities/entity_creeper.h"
 #include "entities/entity_mob.h"
 #include "entities/entity_pig.h"
 #include "entities/entity_sheep.h"
-#include "entities/entity_zombie.h"
-#include "entities/entity_creeper.h"
-#include "entities/entity_spider.h"
 #include "entities/entity_skeleton.h"
+#include "entities/entity_spider.h"
+#include "entities/entity_zombie.h"
 #include "world.h"
 
 EntitySpawner::EntitySpawner() {
