@@ -16,7 +16,9 @@
 #define ERROR_PERMISSIONS "You lack the required permissions for this command!"
 #define ERROR_WHITELIST "Only whitelisted players can use this command!"
 #define ERROR_REASON_SYNTAX "Invalid Syntax"
+#define ERROR_REASON_NO_EXIST "Command does not exist!"
 #define ERROR_REASON_PARAMETERS "Invalid Parameters"
+#define ERROR_REASON_TOO_FEW_PARAMETERS "Not enough parameters!"
 #define ERROR_REASON_ERROR "Error"
 #define ERROR_REASON_NO_CMD "No command passed"
 
@@ -62,7 +64,7 @@ public:
 		return requiresCreative;
 	}
 
-	bool HasPermissions(PlayerSession& _session);
+	bool HasPermissions(PlayerSession& _session, Server& _server);
 	Command(std::string _label, std::string _description, std::string _syntax, bool _requiresOp = true,
 	        bool _requiresCreative = false);
 	virtual std::string Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
@@ -88,6 +90,10 @@ DEFINE_COMMAND(CommandStats, "stats", "Shows usage statistics", "", false, false
 DEFINE_COMMAND(CommandFill, "fill", "Fills an area with the desired block",
                "<block>[:meta] <x0> <y0> <z0> <x1> <y1> <z1>", true, false);
 DEFINE_COMMAND(CommandStop, "stop", "Forces the server to stop", "[time]/cancel", true, false);
+DEFINE_COMMAND(CommandOp, "op", "Grants a players operator privilidges", "[username]", true, false);
+DEFINE_COMMAND(CommandDeop, "deop", "Revokes a players operator privilidges", "[username]", true, false);
+DEFINE_COMMAND(CommandWhitelist, "whitelist", "Adjust the servers whitelist/allowlist",
+               "<add/remove/list/reload/on/off> [username]", true, false);
 /*
 DEFINE_COMMAND(CommandPose, "pose", "Set the current players' pose", "<crouch/fire/sit>", false, false);
 DEFINE_COMMAND(CommandInterface, "interface", "Open the desired interface", "<id>", false, false);

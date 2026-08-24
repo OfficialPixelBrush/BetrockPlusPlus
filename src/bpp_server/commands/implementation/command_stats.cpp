@@ -16,8 +16,6 @@
 //   /stats
 std::string CommandStats::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
                                   std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
-	if (!HasPermissions(_session))
-		return ERROR_PERMISSIONS;
 	const auto& players = _server.GetPlayers();
 	double chunksMb = static_cast<double>(_world.chunks.size() * sizeof(Chunk)) / 1024.0 / 1024.0;
 	std::array<std::string, 4> lines = {

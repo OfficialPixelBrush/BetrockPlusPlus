@@ -7,6 +7,7 @@
 #include "command_manager.h"
 #include "command.h"
 #include "logger.h"
+#include <algorithm>
 
 std::vector<std::unique_ptr<Command>> CommandManager::registeredCommands;
 Server* CommandManager::server = nullptr;
@@ -29,6 +30,9 @@ void CommandManager::Init(Server* _server) {
 	registeredCommands.push_back(std::make_unique<CommandStats>());
 	registeredCommands.push_back(std::make_unique<CommandFill>());
 	registeredCommands.push_back(std::make_unique<CommandStop>());
+	registeredCommands.push_back(std::make_unique<CommandOp>());
+	registeredCommands.push_back(std::make_unique<CommandDeop>());
+	registeredCommands.push_back(std::make_unique<CommandWhitelist>());
 	/*
 	registeredCommands.push_back(CommandPose());
 	// Needs at least creative mode to run
@@ -83,13 +87,18 @@ void CommandManager::Parse(std::string& _cmdString, PlayerSession& _session, Wor
 		failureReason = ERROR_REASON_NO_CMD;
 	} else {
 		try {
-			// TODO: Make this efficient
-			for (size_t i = 0; i < registeredCommands.size(); i++) {
+			auto cmd_fn = std::find_if(registeredCommands.begin(), registeredCommands.end(),
+			                           [&](const std::unique_ptr<Command>& _cmd) {
+				                           return _cmd->GetLabel() == command.at(0);
+			                           });
+			if (cmd_fn == registeredCommands.end()) {
+				failureReason = ERROR_REASON_NO_EXIST;
+			} else {
 				// This'll throw an out of bounds error
-				if (registeredCommands[i]->GetLabel() == command.at(0)) {
-					failureReason = registeredCommands[i]->Execute(command, _session, _world, _transferDimension,
-					                                               *server);
-					break;
+				if (!(*cmd_fn)->HasPermissions(_session, *server)) {
+					failureReason = ERROR_PERMISSIONS;
+				} else {
+					failureReason = (*cmd_fn)->Execute(command, _session, _world, _transferDimension, *server);
 				}
 			}
 		} catch (const std::exception& e) {

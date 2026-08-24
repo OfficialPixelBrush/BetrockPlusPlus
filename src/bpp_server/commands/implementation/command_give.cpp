@@ -20,8 +20,6 @@ std::string CommandGive::Execute(std::vector<std::string>& _parameters, PlayerSe
                                  [[maybe_unused]] WorldManager& _world,
                                  [[maybe_unused]] std::function<void(PlayerSession&)> _transferDimension,
                                  [[maybe_unused]] Server& _server) {
-	if (!HasPermissions(_session))
-		return ERROR_PERMISSIONS;
 	// TODO: Let player specify another player to give to
 	if (_parameters.size() <= 1)
 		return "Missing item id!";

@@ -13,8 +13,6 @@ std::string CommandLoaded::Execute([[maybe_unused]] std::vector<std::string>& _p
                                    [[maybe_unused]] WorldManager& _world,
                                    [[maybe_unused]] std::function<void(PlayerSession&)> _transferDimension,
                                    Server& _server) {
-	if (!HasPermissions(_session))
-		return ERROR_PERMISSIONS;
 	Packet::ChatMessage reply;
 	reply.message = "§e" + std::to_string(_world.chunks.size());
 	reply.Serialize(_session.stream);

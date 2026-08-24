@@ -101,9 +101,19 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	if (_session.stream.CheckAndClearShortRead()) {
 		return;
 	}
-	if (!IsValidUsername(incoming.username))
+	// Check if the username contains any invalid characters
+	if (!IsValidUsername(incoming.username)) {
+		DisconnectPlayer(_session, "Invalid username!", _server);
 		return;
+	}
 	_session.username = incoming.username;
+
+	// User isn't whitelisted, reject
+	if (_server.useWhitelist && std::find(_server.whitelistedUsernames.begin(), _server.whitelistedUsernames.end(),
+	                                      incoming.username) == _server.whitelistedUsernames.end()) {
+		DisconnectPlayer(_session, "You're not whitelisted!", _server);
+		return;
+	}
 
 	GlobalLogger().info << "Player " << _session.username << " is logging in.\n";
 
@@ -228,7 +238,8 @@ void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std
 	kick.Serialize(_session.stream);
 	_session.stream.SetConnected(false);
 	_server.SavePlayer(_session.username);
-	GlobalLogger().info << "Player " << _session.username << " disconnected: " << _reason << "\n";
+	GlobalLogger().info << "Player " << (_session.username.empty() ? "(username not yet set)" : _session.username)
+	                    << " disconnected: " << _reason << "\n";
 }
 
 void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server& _server) {
