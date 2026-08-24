@@ -224,6 +224,16 @@ void RegisterAll() {
 		_stack->DecrementCount(1);
 	};
 
+	itemBehavior[SEEDS_WHEAT].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+	                                        PacketData::FaceDirection _face) {
+		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
+		if (!Blocks::CanCropsSurviveAt(_world, placePos))
+			return;
+
+		_world.SetBlock(placePos, BLOCK_CROP_WHEAT);
+		_stack->DecrementCount(1);
+	};
+
 	itemBehavior[SIGN].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
 	                                   PacketData::FaceDirection _face) {
 		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);

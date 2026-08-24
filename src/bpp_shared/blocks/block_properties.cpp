@@ -118,6 +118,11 @@ bool CanSugarcaneSurviveAt(WorldAccess& _world, Int3 _pos) {
 	return false;
 }
 
+bool CanCropsSurviveAt(WorldAccess& _world, Int3 _pos) {
+	auto belowBlock = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
+	return belowBlock == BLOCK_FARMLAND;
+}
+
 bool CanGenericPlantSurviveAt(WorldAccess& _world, Int3 _pos) {
 	auto lightLevel = _world.GetBlockLightRaw(_pos);
 	bool canSeeSky = _world.CanBlockSeeSky(_pos);

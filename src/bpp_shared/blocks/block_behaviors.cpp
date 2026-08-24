@@ -702,6 +702,19 @@ void RegisterBlockBehaviors() {
 		_entity.velocity.x *= 0.4;
 		_entity.velocity.z *= 0.4;
 	};
+	blockBehaviors[BLOCK_CROP_WHEAT].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+		if (!CanCropsSurviveAt(_world, _pos))
+			BreakAndDropBlock(_world, _pos);
+	};
+
+	blockBehaviors[BLOCK_CROP_WHEAT].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                          Java::Random& _random) -> void {
+		// Add onto age
+		if (_meta < 7) {
+			_meta++;
+			_world.SetMeta(_pos, _meta);
+		}
+	};
 	blockBehaviors[BLOCK_SUGARCANE].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
 		// Check to see if our placement is still valid
 		if (!CanSugarcaneSurviveAt(_world, _pos))
