@@ -5,67 +5,70 @@
 */
 
 #include "../command.h"
+#include "../command_manager.h"
+#include "../command_registry.h"
 #include "blocks.h"
-#include "logger.h"
 #include "server.h"
+#include <chrono>
+#include <cstdlib>
 #include <format>
-#include <string>
 
-// Fills an area with the desired block
-// Usage:
-//   /fill <block:meta> <x0> <y0> <z0> <x1> <y1> <z1>
-std::string CommandFill::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
-                                 std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
-	// Parse parameters
-	size_t paramOffset = 1;
-	ItemStack item = ParseItemStack(_parameters, paramOffset, false);
+namespace {
+
+std::string FillArea(const strategos::CmdNode& _cmd, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	auto blockArg = _cmd.get_arg<std::string>("block");
+	auto fromCmd = _cmd.get_arg<strategos::Vec3>("from");
+	auto toCmd = _cmd.get_arg<strategos::Vec3>("to");
+	if (!blockArg || !fromCmd || !toCmd)
+		return ERROR_REASON_PARAMETERS;
+
+	ItemStack item;
+	try {
+		item = ParseItemStack(*blockArg);
+	} catch (...) {
+		return ERROR_REASON_PARAMETERS;
+	}
 
 	if (item.id >= BLOCK_MAX || item.id < 0)
 		return "Invalid Block Id!";
 
-	Int3 pos0, pos1;
+	Vec3 from = ResolveCmdVec3(*fromCmd, ctx.session->position.pos);
+	Vec3 to = ResolveCmdVec3(*toCmd, ctx.session->position.pos);
+	Int3 pos0{ static_cast<int32_t>(from.x), static_cast<int32_t>(from.y), static_cast<int32_t>(from.z) };
+	Int3 pos1{ static_cast<int32_t>(to.x), static_cast<int32_t>(to.y), static_cast<int32_t>(to.z) };
 
-	try {
-		pos0.x = static_cast<int32_t>(std::stoi(_parameters[paramOffset++]));
-		pos0.y = static_cast<int32_t>(std::stoi(_parameters[paramOffset++]));
-		pos0.z = static_cast<int32_t>(std::stoi(_parameters[paramOffset++]));
-		pos1.x = static_cast<int32_t>(std::stoi(_parameters[paramOffset++]));
-		pos1.y = static_cast<int32_t>(std::stoi(_parameters[paramOffset++]));
-		pos1.z = static_cast<int32_t>(std::stoi(_parameters[paramOffset++]));
-	} catch (...) {
-		return ERROR_REASON_PARAMETERS;
-	}
 	if (pos0.y >= CHUNK_HEIGHT || pos0.y < 0 || pos1.y >= CHUNK_HEIGHT || pos1.y < 0)
 		return ERROR_REASON_PARAMETERS;
 
-	// Calculate volume
 	int64_t width = std::abs(pos1.x - pos0.x) + 1;
 	int64_t height = std::abs(pos1.y - pos0.y) + 1;
 	int64_t depth = std::abs(pos1.z - pos0.z) + 1;
-
 	int64_t volume = width * height * depth;
 
-	Packet::ChatMessage pkt;
-	pkt.message = std::format("Attemping to fill {} block(s)...", volume);
-	pkt.Serialize(_session.stream);
+	SendChat(*ctx.session, std::format("Attemping to fill {} block(s)...", volume));
 
-	// Perform fill
 	const Int3 start = pos0;
-
 	auto fillStart = std::chrono::steady_clock::now();
 	for (pos0.x = start.x; pos0.x <= pos1.x; ++pos0.x) {
 		for (pos0.y = start.y; pos0.y <= pos1.y; ++pos0.y) {
 			for (pos0.z = start.z; pos0.z <= pos1.z; ++pos0.z) {
-				// TODO: Probably not the ideal approach, but this works
-				_world.SetBlock(pos0, static_cast<BlockType>(item.id.value), static_cast<uint8_t>(item.data));
+				ctx.world->SetBlock(pos0, static_cast<BlockType>(item.id.value), static_cast<uint8_t>(item.data));
 			}
 		}
 	}
 	float fillSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - fillStart).count();
-
-	// Send message back to player
-	Packet::ChatMessage pktEnd;
-	pktEnd.message = std::format("Filled {} block(s) in {:.2f} seconds!", volume, fillSeconds);
-	pktEnd.Serialize(_session.stream);
+	SendChat(*ctx.session, std::format("Filled {} block(s) in {:.2f} seconds!", volume, fillSeconds));
 	return "";
+}
+
+} // namespace
+
+void RegisterFill(strategos::BrigadierContext& _dispatcher) {
+	_dispatcher.add_command(
+	    strategos::Node::literal("fill")
+	        .describe("Fills an area with the desired block")
+	        .op()
+	        .then(strategos::Node::string("block").then(
+	            strategos::Node::vec3("from").then(strategos::Node::vec3("to").executes(FillArea)))));
 }

@@ -5,15 +5,19 @@
 */
 
 #include "../command.h"
-#include <string>
+#include "../command_manager.h"
+#include "../command_registry.h"
 
-// Get the world seed
-// Usage:
-//   /seed
-std::string CommandSeed::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
-                                 std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
-	Packet::ChatMessage reply;
-	reply.message = "§e" + std::to_string(_world.seed);
-	reply.Serialize(_session.stream);
+namespace {
+
+std::string ShowSeed(const strategos::CmdNode&, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	SendChat(*ctx.session, "§e" + std::to_string(ctx.world->seed));
 	return "";
+}
+
+} // namespace
+
+void RegisterSeed(strategos::BrigadierContext& _dispatcher) {
+	_dispatcher.add_command(strategos::Node::literal("seed").describe("Get the world seed").op().executes(ShowSeed));
 }

@@ -6,112 +6,60 @@
 
 #include "command_manager.h"
 #include "command.h"
+#include "command_registry.h"
 #include "logger.h"
-#include <algorithm>
+#include <string_view>
 
-std::vector<std::unique_ptr<Command>> CommandManager::registeredCommands;
-Server* CommandManager::server = nullptr;
-
-// Register all commands
 void CommandManager::Init(Server* _server) {
 	server = _server;
-	// Anyone can run these
-	registeredCommands.push_back(std::make_unique<CommandHelp>());
-	registeredCommands.push_back(std::make_unique<CommandTeleport>());
-	registeredCommands.push_back(std::make_unique<CommandTime>());
-	registeredCommands.push_back(std::make_unique<CommandSeed>());
-	registeredCommands.push_back(std::make_unique<CommandSpawn>());
-	registeredCommands.push_back(std::make_unique<CommandGive>());
-	registeredCommands.push_back(std::make_unique<CommandList>());
-	registeredCommands.push_back(std::make_unique<CommandLoaded>());
-	registeredCommands.push_back(std::make_unique<CommandDimension>());
-	registeredCommands.push_back(std::make_unique<CommandVersion>());
-	registeredCommands.push_back(std::make_unique<CommandSummon>());
-	registeredCommands.push_back(std::make_unique<CommandStats>());
-	registeredCommands.push_back(std::make_unique<CommandFill>());
-	registeredCommands.push_back(std::make_unique<CommandStop>());
-	registeredCommands.push_back(std::make_unique<CommandOp>());
-	registeredCommands.push_back(std::make_unique<CommandDeop>());
-	registeredCommands.push_back(std::make_unique<CommandWhitelist>());
-	/*
-	registeredCommands.push_back(CommandPose());
-	// Needs at least creative mode to run
-	registeredCommands.push_back(CommandHealth());
-	// Must be operator
-	registeredCommands.push_back(CommandUptime());
-	registeredCommands.push_back(CommandOp());
-	registeredCommands.push_back(CommandDeop());
-	registeredCommands.push_back(CommandWhitelist());
-	registeredCommands.push_back(CommandKick());
-	registeredCommands.push_back(CommandCreative());
-	registeredCommands.push_back(CommandSound());
-	registeredCommands.push_back(CommandKill());
-	registeredCommands.push_back(CommandGamerule());
-	registeredCommands.push_back(CommandSave());
-	registeredCommands.push_back(CommandFree());
-	registeredCommands.push_back(CommandUsage());
-	registeredCommands.push_back(CommandSummon());
-	registeredCommands.push_back(CommandPopulated());
-	registeredCommands.push_back(CommandInterface());
-	registeredCommands.push_back(CommandRegion());
-	registeredCommands.push_back(CommandEntity());
-	registeredCommands.push_back(CommandModified());
-	registeredCommands.push_back(CommandPacket());
-	*/
-	GlobalLogger().info << "Registered " << registeredCommands.size() << " command(s)!" << "\n";
+	RegisterHelp(dispatcher);
+	RegisterTeleport(dispatcher);
+	RegisterTime(dispatcher);
+	RegisterSeed(dispatcher);
+	RegisterSpawn(dispatcher);
+	RegisterGive(dispatcher);
+	RegisterList(dispatcher);
+	RegisterLoaded(dispatcher);
+	RegisterDimension(dispatcher);
+	RegisterVersion(dispatcher);
+	RegisterSummon(dispatcher);
+	RegisterStats(dispatcher);
+	RegisterFill(dispatcher);
+	RegisterStop(dispatcher);
+	RegisterOp(dispatcher);
+	RegisterWhitelist(dispatcher);
+	GlobalLogger().info << "Registered " << dispatcher.root().children.size() << " command(s)!" << "\n";
 }
 
-// Get all registered commands
-const std::vector<std::unique_ptr<Command>>& CommandManager::GetRegisteredCommands() noexcept {
-	return registeredCommands;
-}
-
-// Parses commands and executes them
 void CommandManager::Parse(std::string& _cmdString, PlayerSession& _session, WorldManager& _world,
                            std::function<void(PlayerSession&)> _transferDimension) noexcept {
-	// Remove initial /
-	_cmdString = _cmdString.substr(1);
-	// Set these up for command parsing
-	std::string failureReason = "Syntax";
-	std::vector<std::string> command;
+	std::string_view line = _cmdString;
+	if (!line.empty() && line.front() == '/')
+		line.remove_prefix(1);
 
-	std::string s;
-	std::stringstream ss(_cmdString);
-
-	while (getline(ss, s, ' ')) {
-		// store token string in the vector
-		command.push_back(s);
+	if (line.empty()) {
+		SendChat(_session, "§c" ERROR_REASON_NO_CMD);
+		return;
 	}
-	// No arguments passed, exit early
-	if (command.empty() || _cmdString.empty()) {
-		failureReason = ERROR_REASON_NO_CMD;
-	} else {
-		try {
-			auto cmd_fn = std::find_if(registeredCommands.begin(), registeredCommands.end(),
-			                           [&](const std::unique_ptr<Command>& _cmd) {
-				                           return _cmd->GetLabel() == command.at(0);
-			                           });
-			if (cmd_fn == registeredCommands.end()) {
-				failureReason = ERROR_REASON_NO_EXIST;
-			} else {
-				// This'll throw an out of bounds error
-				if (!(*cmd_fn)->HasPermissions(_session, *server)) {
-					failureReason = ERROR_PERMISSIONS;
-				} else {
-					failureReason = (*cmd_fn)->Execute(command, _session, _world, _transferDimension, *server);
-				}
-			}
-		} catch (const std::exception& e) {
-			GlobalLogger().info << e.what() << " on /" << _cmdString << "\n";
+
+	CommandContext ctx{ &_session, &_world, server, std::move(_transferDimension), &dispatcher };
+
+	try {
+		auto result = dispatcher.execute(line, &ctx, [](void* userData) {
+			auto& c = CmdCtx(userData);
+			return IsOperator(*c.session, *c.server);
+		});
+		if (!result) {
+			const auto& err = result.error();
+			std::string message = err.message;
+			if (err.error == strategos::ParseError::UnknownCommand && err.position == 0)
+				message = ERROR_REASON_NO_EXIST;
+			SendChat(_session, "§c" + message);
+			return;
 		}
-	}
-
-	Packet::ChatMessage failPkt;
-	if (!failureReason.empty()) {
-		if (failureReason == "Syntax")
-			failPkt.message = "§cInvalid Syntax \"" + _cmdString + "\"";
-		else
-			failPkt.message = "§c" + failureReason;
-		failPkt.Serialize(_session.stream);
+		if (!result->empty())
+			SendChat(_session, "§c" + *result);
+	} catch (const std::exception& e) {
+		GlobalLogger().info << e.what() << " on /" << std::string(line) << "\n";
 	}
 }

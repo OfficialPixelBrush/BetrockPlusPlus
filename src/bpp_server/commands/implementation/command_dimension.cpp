@@ -5,24 +5,25 @@
 */
 
 #include "../command.h"
-#include "networking/packets.h"
+#include "../command_manager.h"
+#include "../command_registry.h"
 #include "server.h"
 
-// Transfers the player to the opposite dimension.
-// Usage:
-//   /dim
-std::string CommandDimension::Execute([[maybe_unused]] std::vector<std::string>& _parameters, PlayerSession& _session,
-                                      [[maybe_unused]] WorldManager& _world,
-                                      std::function<void(PlayerSession&)> _transferDimension,
-                                      [[maybe_unused]] Server& _server) {
-	Packet::ChatMessage reply;
-	reply.message = _session.dimension == Dimension::Overworld ? "§7Transferring to the Nether..."
-	                                                           : "§7Transferring to the Overworld...";
-	reply.Serialize(_session.stream);
+namespace {
 
-	Dimension newDim = _session.dimension == Dimension::Nether ? Dimension::Overworld : Dimension::Nether;
+std::string SwapDimension(const strategos::CmdNode&, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	SendChat(*ctx.session, ctx.session->dimension == Dimension::Overworld ? "§7Transferring to the Nether..."
+	                                                                      : "§7Transferring to the Overworld...");
 
-	_server.SendPlayerToDimension(newDim, _session);
-
+	Dimension newDim = ctx.session->dimension == Dimension::Nether ? Dimension::Overworld : Dimension::Nether;
+	ctx.server->SendPlayerToDimension(newDim, *ctx.session);
 	return "";
+}
+
+} // namespace
+
+void RegisterDimension(strategos::BrigadierContext& _dispatcher) {
+	_dispatcher.add_command(
+	    strategos::Node::literal("dim").describe("Swap to the other dimension").op().executes(SwapDimension));
 }
