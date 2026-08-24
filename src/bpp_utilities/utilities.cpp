@@ -239,7 +239,7 @@ bool convertAlphaLevel(std::string& _dir) {
 	// Convert overworld
 	GlobalLogger().info << "Converting overworld...\n";
 	size_t sinceFlush = 0;
-	int chunksProcessed = 0;
+	size_t chunksProcessed = 0;
 	for (auto& chunkPath : result) {
 		FileHandle chunkFileHandle(chunkPath);
 		auto chunk = loadAlphaChunk(chunkFileHandle);
