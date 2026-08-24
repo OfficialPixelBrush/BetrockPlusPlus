@@ -7,42 +7,47 @@
 #include "../../packet/packet_utils.h"
 #include "../command.h"
 #include "../command_manager.h"
-#include "inventory/item_stack.h"
+#include "../command_registry.h"
 #include "items.h"
 #include "strings/labels.h"
-#include <cstddef>
-#include <string>
 
-// Give yourself a block or item
-// Usage:
-//   /give <id>[:meta] [amount]
-std::string CommandGive::Execute(std::vector<std::string>& _parameters, PlayerSession& _session,
-                                 [[maybe_unused]] WorldManager& _world,
-                                 [[maybe_unused]] std::function<void(PlayerSession&)> _transferDimension,
-                                 [[maybe_unused]] Server& _server) {
-	// TODO: Let player specify another player to give to
-	if (_parameters.size() <= 1)
+namespace {
+
+std::string GiveItem(const strategos::CmdNode& _cmd, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	auto itemArg = _cmd.get_arg<std::string>("item");
+	if (!itemArg)
 		return "Missing item id!";
 
-	size_t paramOffset = 1;
-	ItemStack item = ParseItemStack(_parameters, paramOffset, true);
+	std::optional<int> count;
+	if (auto amount = _cmd.get_arg<int>("amount"))
+		count = *amount;
 
-	// Check if its even a valid item
-	if (Items::IsValidId(item.id)) {
-		Packet::ChatMessage reply;
-		reply.message = "§eGave " + WIdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
-		                std::to_string(item.data) + ") x" + std::to_string(item.count) + " to " + _session.username;
-
-		reply.Serialize(_session.stream);
-
-		// Try to give
-		if (_session.inventory.PickupItem(item)) {
-			PacketUtilities::SendInventory(_session, _session.openWindowId, _session.inventory);
-			return "";
-		}
-
-		// TODO: Drop on the ground
-		return "";
+	ItemStack item;
+	try {
+		item = ParseItemStack(*itemArg, count);
+	} catch (...) {
+		return ERROR_REASON_PARAMETERS;
 	}
-	return std::to_string(item.id) + " is not a valid item id!";
+
+	if (!Items::IsValidId(item.id))
+		return std::to_string(item.id) + " is not a valid item id!";
+
+	SendChat(*ctx.session, "§eGave " + WIdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
+	                           std::to_string(item.data) + ") x" + std::to_string(item.count) + " to " +
+	                           ctx.session->username);
+
+	if (ctx.session->inventory.PickupItem(item))
+		PacketUtilities::SendInventory(*ctx.session, ctx.session->openWindowId, ctx.session->inventory);
+	return "";
+}
+
+} // namespace
+
+void RegisterGive(strategos::BrigadierContext& _dispatcher) {
+	_dispatcher.add_command(strategos::Node::literal("give")
+	                            .describe("Give yourself a block or item")
+	                            .op()
+	                            .then(strategos::Node::string("item").executes(GiveItem).then(
+	                                strategos::Node::integer("amount").executes(GiveItem))));
 }

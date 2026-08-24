@@ -5,16 +5,20 @@
 */
 
 #include "../command.h"
+#include "../command_manager.h"
+#include "../command_registry.h"
 
-// Shows the number of loaded chunks
-// Usage:
-//   /loaded
-std::string CommandLoaded::Execute([[maybe_unused]] std::vector<std::string>& _parameters, PlayerSession& _session,
-                                   [[maybe_unused]] WorldManager& _world,
-                                   [[maybe_unused]] std::function<void(PlayerSession&)> _transferDimension,
-                                   Server& _server) {
-	Packet::ChatMessage reply;
-	reply.message = "§e" + std::to_string(_world.chunks.size());
-	reply.Serialize(_session.stream);
+namespace {
+
+std::string ShowLoaded(const strategos::CmdNode&, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	SendChat(*ctx.session, "§e" + std::to_string(ctx.world->chunks.size()));
 	return "";
+}
+
+} // namespace
+
+void RegisterLoaded(strategos::BrigadierContext& _dispatcher) {
+	_dispatcher.add_command(
+	    strategos::Node::literal("loaded").describe("Shows the number of loaded chunks").op().executes(ShowLoaded));
 }

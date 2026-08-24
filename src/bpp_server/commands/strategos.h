@@ -10,13 +10,14 @@
 
 #pragma once
 
-#include <cassert>
+#include <algorithm>
 #include <cctype>
 #include <cstdint>
 #include <expected>
+#include <format>
 #include <functional>
+#include <limits>
 #include <optional>
-#include <print>
 #include <ranges>
 #include <span>
 #include <string>
@@ -47,7 +48,6 @@ enum class Axis : uint8_t {
 	Z
 };
 
-// Todo
 struct Vec3 {
 	float pos[3]{};
 	uint8_t relative_axes = 0; // bitmask
@@ -79,6 +79,7 @@ struct formatter<strategos::Vec3> : formatter<std::string> {
 namespace strategos {
 
 using ActionFunc = std::function<std::string(const CmdNode& ctx, void* user_data)>;
+using PermissionFunc = std::function<bool(void* user_data)>;
 
 struct IntSettings {
 	int min = std::numeric_limits<int>::min();
@@ -98,22 +99,41 @@ struct EnumSettings {
 using NodeSettings = std::variant<std::monostate, IntSettings, FloatSettings, EnumSettings>;
 
 struct Node {
-	NodeType type;
+	NodeType type{};
 	std::string name;
 	NodeSettings settings;
 	ActionFunc action;
+	std::string description;
+	bool requiresOperator = false;
 
-	// Contiguous memory layout
+	// Contiguous memory layout.
+	// String children always sit last: String matches any token, and find_matching_child
+	// returns the first hit, so literals / vec3 / numbers must be tried first.
 	std::vector<Node> children;
 
-	// Standard Lvalue Builder Pattern
 	Node& executes(ActionFunc fn) {
 		action = std::move(fn);
 		return *this;
 	}
 
+	Node& describe(std::string desc) {
+		description = std::move(desc);
+		return *this;
+	}
+
+	Node& op(bool required = true) {
+		requiresOperator = required;
+		return *this;
+	}
+
 	Node& then(Node child) {
-		children.push_back(std::move(child));
+		if (child.type == NodeType::String) {
+			children.push_back(std::move(child));
+		} else {
+			auto it = std::find_if(children.begin(), children.end(),
+			                       [](const Node& n) { return n.type == NodeType::String; });
+			children.insert(it, std::move(child));
+		}
 		return *this;
 	}
 
@@ -130,7 +150,7 @@ struct Node {
 	}
 
 	static inline Node integer(std::string name) {
-		return { NodeType::Integer, std::move(name) };
+		return { NodeType::Integer, std::move(name), IntSettings{} };
 	}
 
 	static inline Node float_(std::string name, float min, float max) {
@@ -138,7 +158,7 @@ struct Node {
 	}
 
 	static inline Node float_(std::string name) {
-		return { NodeType::Float, std::move(name) };
+		return { NodeType::Float, std::move(name), FloatSettings{} };
 	}
 
 	static inline Node boolean(std::string name) {
@@ -161,7 +181,6 @@ struct CmdNode {
 	CmdNodeData data;
 	const CmdNode* next{ nullptr };
 
-	// Type-safe accessors
 	template <typename T>
 	[[nodiscard]] auto get() const noexcept -> std::optional<T> {
 		if (auto* val = std::get_if<T>(&data)) {
@@ -178,11 +197,20 @@ struct CmdNode {
 		return current;
 	}
 
-	// Helper
 	template <typename T>
 	[[nodiscard]] auto get_arg(size_t index) const noexcept -> std::optional<T> {
 		if (auto* child = get_child(index)) {
 			return child->get<T>();
+		}
+		return std::nullopt;
+	}
+
+	template <typename T>
+	[[nodiscard]] auto get_arg(std::string_view name) const noexcept -> std::optional<T> {
+		for (auto* current = this; current; current = current->next) {
+			if (current->node && current->node->name == name) {
+				return current->get<T>();
+			}
 		}
 		return std::nullopt;
 	}
@@ -194,6 +222,7 @@ enum class ParseError {
 	IncompleteCommand,
 	TooManyArguments,
 	UnknownCommand,
+	NoPermission,
 };
 
 struct ErrorInfo {
@@ -218,7 +247,12 @@ public:
 		return *this;
 	}
 
-	[[nodiscard]] auto execute(std::string_view cmdline, void* user_data = nullptr) const -> ActionResult {
+	[[nodiscard]] const Node& root() const {
+		return rootNode;
+	}
+
+	[[nodiscard]] auto execute(std::string_view cmdline, void* user_data = nullptr,
+	                           PermissionFunc canOperate = nullptr) const -> ActionResult {
 		auto tokens = tokenize(cmdline);
 		if (tokens.empty()) {
 			return std::unexpected(ErrorInfo{ .error = ParseError::IncompleteCommand, .message = "Empty command" });
@@ -228,14 +262,13 @@ public:
 		// Pre-allocating to prevent pointer invalidation for CmdNode::next links
 		cmd_ctx.reserve(tokens.size() + 1);
 
-		// Root node
 		cmd_ctx.push_back({ .node = &rootNode });
 
 		const Node* current = &rootNode;
 		size_t token_idx = 0;
 
 		while (token_idx < tokens.size()) {
-			if (current->children.empty()) { // Fixed vector check
+			if (current->children.empty()) {
 				return std::unexpected(ErrorInfo{ .error = ParseError::TooManyArguments,
 				                                  .message = std::format("Unexpected token '{}'", tokens[token_idx]),
 				                                  .position = token_idx });
@@ -251,7 +284,6 @@ public:
 				               .position = token_idx });
 			}
 
-			// Build command context node
 			auto& cmd_node = cmd_ctx.emplace_back();
 			cmd_node.node = matched_node;
 
@@ -261,21 +293,25 @@ public:
 				                                  .position = token_idx });
 			}
 
-			// Link context nodes
 			cmd_ctx[cmd_ctx.size() - 2].next = &cmd_node;
 
 			current = matched_node;
 			token_idx += 1 + consumed;
 		}
 
-		// Check for completeness
 		if (!current->action) {
 			return std::unexpected(
 			    ErrorInfo{ .error = ParseError::IncompleteCommand,
 			               .message = std::format("Incomplete command. Expected: {}", get_expected_names(*current)) });
 		}
 
-		// Execute
+		if (cmd_ctx.size() > 1 && cmd_ctx[1].node && cmd_ctx[1].node->requiresOperator) {
+			if (!canOperate || !canOperate(user_data)) {
+				return std::unexpected(ErrorInfo{ .error = ParseError::NoPermission,
+				                                  .message = "You lack the required permissions for this command!" });
+			}
+		}
+
 		return current->action(cmd_ctx[1], user_data);
 	}
 
@@ -361,7 +397,10 @@ private:
 
 		case NodeType::Integer: {
 			if (auto val = parse_int(token)) {
-				const auto& settings = std::get<IntSettings>(node.settings);
+				IntSettings settings{};
+				if (auto* s = std::get_if<IntSettings>(&node.settings)) {
+					settings = *s;
+				}
 				if (*val < settings.min || *val > settings.max) {
 					return false;
 				}
@@ -373,7 +412,10 @@ private:
 
 		case NodeType::Float: {
 			if (auto val = parse_float(token)) {
-				const auto& settings = std::get<FloatSettings>(node.settings);
+				FloatSettings settings{};
+				if (auto* s = std::get_if<FloatSettings>(&node.settings)) {
+					settings = *s;
+				}
 				if (*val < settings.min || *val > settings.max) {
 					return false;
 				}
@@ -467,10 +509,7 @@ private:
 			return false;
 
 		auto t = token;
-		bool relative = false;
-
 		if (t[0] == '~') {
-			relative = true;
 			t = t.substr(1);
 			if (t.empty())
 				return true; // Just '~' is valid
@@ -552,41 +591,3 @@ private:
 };
 
 } // namespace strategos
-
-/*
-int main() {
-	using namespace strategos;
-
-	auto ctx = BrigadierContext{};
-
-	ctx.add_command(Node::literal("load").then(
-	    Node::string("filename").then(Node::string("author").executes([](const CmdNode& ctx, void* user_data) {
-		    auto filename = ctx.get_arg<std::string>(1).value_or("unknown");
-		    auto author = ctx.get_arg<std::string>(2).value_or("unknown");
-		    return std::format("Loading file {} by {}...", filename, author);
-	    }))));
-	ctx.add_command(Node::literal("tp").then(Node::vec3("pos").executes([](const CmdNode& ctx, void* user_data) {
-		const Vec3 current_position{ { 10.0f, 10.0f, 10.0f }, 0 };
-		auto position = ctx.get_arg<Vec3>(1).value();
-		if (position.is_relative(Axis::X)) {
-			position.pos[0] += current_position.pos[0];
-		}
-		if (position.is_relative(Axis::Y)) {
-			position.pos[1] += current_position.pos[1];
-		}
-		if (position.is_relative(Axis::Z)) {
-			position.pos[2] += current_position.pos[2];
-		}
-		return std::format("Current position: {} Teleporting to {}...", current_position, position);
-	})));
-
-	std::println("Executing command: tp ~10 20 ~5");
-	if (auto result = ctx.execute("tp ~10 20 ~5")) {
-		std::println("Success: {}", *result);
-	} else {
-		std::println("Error: {}", result.error().message);
-	}
-
-	return 0;
-}
-*/

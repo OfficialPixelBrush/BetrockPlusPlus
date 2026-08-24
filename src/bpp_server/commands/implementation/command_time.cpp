@@ -5,34 +5,52 @@
 */
 
 #include "../command.h"
+#include "../command_manager.h"
+#include "../command_registry.h"
 
-// Gets or sets the current world time
-// Usage:
-//   /time
-//   /time <new_time>
-std::string CommandTime::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
-                                 std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
-	// Set the time
-	if (_parameters.size() > 2) {
-		if (_parameters[1] == "set") {
-			_world.elapsedTicks = std::stol(_parameters[2]);
-		} else if (_parameters[1] == "add") {
-			_world.elapsedTicks += std::stol(_parameters[2]);
-		} else {
-			return "Invalid argument " + _parameters[1];
-		}
-		Packet::ChatMessage reply;
-		reply.message = "§eSet time to " + std::to_string(_world.elapsedTicks);
-		reply.Serialize(_session.stream);
-		return "";
-	}
+namespace {
 
-	// Get the time
-	if (_parameters.size() == 1) {
-		Packet::ChatMessage reply;
-		reply.message = "§eCurrent Time is " + std::to_string(_world.elapsedTicks);
-		reply.Serialize(_session.stream);
-		return "";
+std::string GetTime(const strategos::CmdNode&, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	SendChat(*ctx.session, "§eCurrent Time is " + std::to_string(ctx.world->elapsedTicks));
+	return "";
+}
+
+std::string SetTime(const strategos::CmdNode& _cmd, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	auto ticks = _cmd.get_arg<std::string>("ticks");
+	if (!ticks)
+		return ERROR_REASON_PARAMETERS;
+	try {
+		ctx.world->elapsedTicks = std::stol(*ticks);
+	} catch (...) {
+		return ERROR_REASON_PARAMETERS;
 	}
-	return ERROR_REASON_SYNTAX;
+	SendChat(*ctx.session, "§eSet time to " + std::to_string(ctx.world->elapsedTicks));
+	return "";
+}
+
+std::string AddTime(const strategos::CmdNode& _cmd, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	auto ticks = _cmd.get_arg<std::string>("ticks");
+	if (!ticks)
+		return ERROR_REASON_PARAMETERS;
+	try {
+		ctx.world->elapsedTicks += std::stol(*ticks);
+	} catch (...) {
+		return ERROR_REASON_PARAMETERS;
+	}
+	SendChat(*ctx.session, "§eSet time to " + std::to_string(ctx.world->elapsedTicks));
+	return "";
+}
+
+} // namespace
+
+void RegisterTime(strategos::BrigadierContext& _dispatcher) {
+	_dispatcher.add_command(strategos::Node::literal("time")
+	                            .describe("Gets or sets the current world time")
+	                            .op()
+	                            .executes(GetTime)
+	                            .then(strategos::Node::literal("set").then(strategos::Node::string("ticks").executes(SetTime)))
+	                            .then(strategos::Node::literal("add").then(strategos::Node::string("ticks").executes(AddTime))));
 }

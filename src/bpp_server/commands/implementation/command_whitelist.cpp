@@ -4,91 +4,90 @@
  * SPDX-License-Identifier: AGPL-3.0-only
 */
 
-#include "../../packet/packet_utils.h"
-#include "../../server.h"
 #include "../command.h"
 #include "../command_manager.h"
+#include "../command_registry.h"
 #include "config/list_parser.h"
-#include "inventory/item_stack.h"
-#include "items.h"
-#include "strings/labels.h"
-#include <cstddef>
-#include <string>
+#include "server.h"
+#include <algorithm>
+#include <format>
 
-// Adjust the servers whitelist/allowlist
-// Usage:
-//   /whitelist <add/remove/list/reload/on/off> [username]
-std::string CommandWhitelist::Execute(std::vector<std::string>& _parameters, PlayerSession& _session,
-                                      [[maybe_unused]] WorldManager& _world,
-                                      [[maybe_unused]] std::function<void(PlayerSession&)> _transferDimension,
-                                      Server& _server) {
-	if (_parameters.size() < 2)
+namespace {
+
+std::string WhitelistAdd(const strategos::CmdNode& _cmd, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	auto name = _cmd.get_arg<std::string>("username");
+	if (!name)
 		return ERROR_REASON_TOO_FEW_PARAMETERS;
+	auto it = std::find(ctx.server->whitelistedUsernames.begin(), ctx.server->whitelistedUsernames.end(), *name);
+	if (it != ctx.server->whitelistedUsernames.end())
+		return "User is already on whitelist!";
+	ctx.server->whitelistedUsernames.push_back(*name);
+	SendChat(*ctx.session, std::format("{} has been added to the whitelist!", *name));
+	return "";
+}
 
-	const bool needsUsername = _parameters[1] == "add" || _parameters[1] == "remove";
-	if (needsUsername && _parameters.size() < 3)
+std::string WhitelistRemove(const strategos::CmdNode& _cmd, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	auto name = _cmd.get_arg<std::string>("username");
+	if (!name)
 		return ERROR_REASON_TOO_FEW_PARAMETERS;
+	auto it = std::find(ctx.server->whitelistedUsernames.begin(), ctx.server->whitelistedUsernames.end(), *name);
+	if (it != ctx.server->whitelistedUsernames.end())
+		ctx.server->whitelistedUsernames.erase(it);
+	SendChat(*ctx.session, std::format("{} has been removed from the whitelist!", *name));
+	return "";
+}
 
-	std::string targetName;
-	if (_parameters.size() >= 3)
-		targetName = _parameters[2];
+std::string WhitelistOn(const strategos::CmdNode&, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	ctx.server->useWhitelist = true;
+	SendChat(*ctx.session, "Whitelist has been enabled!");
+	return "";
+}
 
-	if (_parameters[1] == "add") {
-		// Check if already in whitelist
-		auto it = std::find(_server.whitelistedUsernames.begin(), _server.whitelistedUsernames.end(), targetName);
-		if (it != _server.whitelistedUsernames.end())
-			return "User is already on whitelist!";
-		_server.whitelistedUsernames.push_back(targetName);
-		Packet::ChatMessage msg;
-		msg.message = std::format("{} has been added to the whitelist!", targetName);
-		msg.Serialize(_session.stream);
-		return "";
-	}
-	if (_parameters[1] == "remove") {
-		auto it = std::find(_server.whitelistedUsernames.begin(), _server.whitelistedUsernames.end(), targetName);
-		if (it != _server.whitelistedUsernames.end())
-			_server.whitelistedUsernames.erase(it);
-		Packet::ChatMessage msg;
-		msg.message = std::format("{} has been removed from the whitelist!", targetName);
-		msg.Serialize(_session.stream);
-		return "";
-	}
-	if (_parameters[1] == "on") {
-		_server.useWhitelist = true;
-		Packet::ChatMessage msg;
-		msg.message = "Whitelist has been enabled!";
-		msg.Serialize(_session.stream);
-		return "";
-	}
-	if (_parameters[1] == "off") {
-		_server.useWhitelist = false;
-		Packet::ChatMessage msg;
-		msg.message = "Whitelist has been disabled!";
-		msg.Serialize(_session.stream);
-		return "";
-	}
-	if (_parameters[1] == "list") {
-		Packet::ChatMessage pkt;
-		pkt.message = std::format("§7-- {} Whitelisted Player(s) --", _server.whitelistedUsernames.size());
-		pkt.Serialize(_session.stream);
-		pkt.message = "§7";
-		for (size_t i = 0; i < _server.whitelistedUsernames.size(); i++) {
-			auto& p = _server.whitelistedUsernames[i];
-			if (pkt.message.size() + p.size() > 64) {
-				pkt.Serialize(_session.stream);
-				pkt.message = "§7";
-			}
-			pkt.message += p + ((i < (_server.whitelistedUsernames.size() - 1)) ? ", " : "");
+std::string WhitelistOff(const strategos::CmdNode&, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	ctx.server->useWhitelist = false;
+	SendChat(*ctx.session, "Whitelist has been disabled!");
+	return "";
+}
+
+std::string WhitelistList(const strategos::CmdNode&, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	const auto& list = ctx.server->whitelistedUsernames;
+	SendChat(*ctx.session, std::format("§7-- {} Whitelisted Player(s) --", list.size()));
+	std::string line = "§7";
+	for (size_t i = 0; i < list.size(); i++) {
+		auto& p = list[i];
+		if (line.size() + p.size() > 64) {
+			SendChat(*ctx.session, line);
+			line = "§7";
 		}
-		pkt.Serialize(_session.stream);
-		return "";
+		line += p + ((i < (list.size() - 1)) ? ", " : "");
 	}
-	if (_parameters[1] == "reload") {
-		_server.whitelistedUsernames = ListParser::Read(ListParser::Target::Whitelist);
-		Packet::ChatMessage pkt;
-		pkt.message = "Reloaded whitelist!";
-		pkt.Serialize(_session.stream);
-		return "";
-	}
-	return ERROR_REASON_PARAMETERS;
+	SendChat(*ctx.session, line);
+	return "";
+}
+
+std::string WhitelistReload(const strategos::CmdNode&, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	ctx.server->whitelistedUsernames = ListParser::Read(ListParser::Target::Whitelist);
+	SendChat(*ctx.session, "Reloaded whitelist!");
+	return "";
+}
+
+} // namespace
+
+void RegisterWhitelist(strategos::BrigadierContext& _dispatcher) {
+	_dispatcher.add_command(
+	    strategos::Node::literal("whitelist")
+	        .describe("Adjust the servers whitelist/allowlist")
+	        .op()
+	        .then(strategos::Node::literal("add").then(strategos::Node::string("username").executes(WhitelistAdd)))
+	        .then(strategos::Node::literal("remove").then(strategos::Node::string("username").executes(WhitelistRemove)))
+	        .then(strategos::Node::literal("list").executes(WhitelistList))
+	        .then(strategos::Node::literal("reload").executes(WhitelistReload))
+	        .then(strategos::Node::literal("on").executes(WhitelistOn))
+	        .then(strategos::Node::literal("off").executes(WhitelistOff)));
 }

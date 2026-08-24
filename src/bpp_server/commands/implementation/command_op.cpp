@@ -4,55 +4,53 @@
  * SPDX-License-Identifier: AGPL-3.0-only
 */
 
-#include "../../packet/packet_utils.h"
-#include "../../server.h"
 #include "../command.h"
 #include "../command_manager.h"
-#include "inventory/item_stack.h"
-#include "items.h"
-#include "strings/labels.h"
-#include <cstddef>
-#include <string>
+#include "../command_registry.h"
+#include "server.h"
+#include <algorithm>
+#include <format>
 
-// Grants a players operator privilidges
-// Usage:
-//   /op [username]
-std::string CommandOp::Execute(std::vector<std::string>& _parameters, PlayerSession& _session,
-                               [[maybe_unused]] WorldManager& _world,
-                               [[maybe_unused]] std::function<void(PlayerSession&)> _transferDimension,
-                               Server& _server) {
-	std::string targetName = _session.username;
-	if (_parameters.size() >= 2) {
-		targetName = _parameters[1];
-	}
-	// Check if already opped
-	auto it = std::find(_server.operatorUsernames.begin(), _server.operatorUsernames.end(), targetName);
-	if (it != _server.operatorUsernames.end())
+namespace {
+
+std::string TargetName(const strategos::CmdNode& _cmd, CommandContext& _ctx) {
+	if (auto name = _cmd.get_arg<std::string>("username"))
+		return *name;
+	return _ctx.session->username;
+}
+
+std::string OpPlayer(const strategos::CmdNode& _cmd, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	std::string name = TargetName(_cmd, ctx);
+	auto it = std::find(ctx.server->operatorUsernames.begin(), ctx.server->operatorUsernames.end(), name);
+	if (it != ctx.server->operatorUsernames.end())
 		return "User is already an operator!";
-	Packet::ChatMessage msg;
-	_server.operatorUsernames.push_back(targetName);
-	msg.message = std::format("{} has been opped!", targetName);
-	msg.Serialize(_session.stream);
+	ctx.server->operatorUsernames.push_back(name);
+	SendChat(*ctx.session, std::format("{} has been opped!", name));
 	return "";
 }
 
-// Revokes a players operator privilidges
-// Usage:
-//   /op [username]
-std::string CommandDeop::Execute(std::vector<std::string>& _parameters, PlayerSession& _session,
-                                 [[maybe_unused]] WorldManager& _world,
-                                 [[maybe_unused]] std::function<void(PlayerSession&)> _transferDimension,
-                                 Server& _server) {
-	std::string& targetName = _session.username;
-	if (_parameters.size() >= 2) {
-		targetName = _parameters[1];
-	}
-	// Erase if found
-	auto it = std::find(_server.operatorUsernames.begin(), _server.operatorUsernames.end(), targetName);
-	if (it != _server.operatorUsernames.end())
-		_server.operatorUsernames.erase(it);
-	Packet::ChatMessage msg;
-	msg.message = std::format("{} has been deopped!", targetName);
-	msg.Serialize(_session.stream);
+std::string DeopPlayer(const strategos::CmdNode& _cmd, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	std::string name = TargetName(_cmd, ctx);
+	auto it = std::find(ctx.server->operatorUsernames.begin(), ctx.server->operatorUsernames.end(), name);
+	if (it != ctx.server->operatorUsernames.end())
+		ctx.server->operatorUsernames.erase(it);
+	SendChat(*ctx.session, std::format("{} has been deopped!", name));
 	return "";
+}
+
+} // namespace
+
+void RegisterOp(strategos::BrigadierContext& _dispatcher) {
+	_dispatcher.add_command(strategos::Node::literal("op")
+	                            .describe("Grants a players operator privilidges")
+	                            .op()
+	                            .executes(OpPlayer)
+	                            .then(strategos::Node::string("username").executes(OpPlayer)));
+	_dispatcher.add_command(strategos::Node::literal("deop")
+	                            .describe("Revokes a players operator privilidges")
+	                            .op()
+	                            .executes(DeopPlayer)
+	                            .then(strategos::Node::string("username").executes(DeopPlayer)));
 }
