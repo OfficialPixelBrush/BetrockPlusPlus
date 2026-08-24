@@ -7,10 +7,10 @@
 
 // A recreation of the the Infdev 20100227-1433 Perlin noise function
 #pragma once
-#include "noise_generator.h"
-#include <span>
 #include "java_math.h"
+#include "noise_generator.h"
 #include <cmath>
+#include <span>
 
 /**
  * @brief A faithful reimplementation of the Beta-era simplex noise generator, often used for Biome generation
@@ -18,9 +18,9 @@
  */
 class NoiseSimplex : public NoiseGenerator {
 private:
-    uint8_t permMod12[512];
+	uint8_t permMod12[512];
 	void InitPermTable(Java::Random& _rand) override;
-	
+
 	static constexpr int8_t GRADIENT_X[12] = { 1, -1, 1, -1, 1, -1, 1, -1, 0, 0, 0, 0 };
 	static constexpr int8_t GRADIENT_Y[12] = { 1, 1, -1, -1, 0, 0, 0, 0, 1, -1, 1, -1 };
 	// Note: MSVC and older versions GCC do not support
@@ -32,6 +32,7 @@ public:
 	NoiseSimplex(Java::Random& _rand);
 	~NoiseSimplex() override {}
 	void GenerateNoise(std::span<double> _noiseField, Vec2 _offset, Int32_2 _size, Vec2 _scale, double _amplitude);
+
 private:
 	static constexpr inline gen_float DotProd(const int32_t _gradient, const gen_float _x, const gen_float _y) noexcept {
 		return gen_float(GRADIENT_X[_gradient]) * _x + gen_float(GRADIENT_Y[_gradient]) * _y;

@@ -29,74 +29,74 @@ struct PowerProfile {
 };
 
 namespace RedstoneManager {
-	void TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos);
-	
-	static bool CanTriggerRedstoneUpdate(BlockType _block) {
-		switch (_block) {
-		case BLOCK_REDSTONE:
-		case BLOCK_LEVER:
-		case BLOCK_BUTTON_STONE:
-		case BLOCK_PRESSURE_PLATE_STONE:
-		case BLOCK_PRESSURE_PLATE_WOOD:
-		case BLOCK_REDSTONE_TORCH_ON:
-		case BLOCK_REDSTONE_TORCH_OFF:
-			return true;
-		// Repeaters are always false here
-		// Yes this means they dont cause updates!
-		default:
-			return false;
-		}
+void TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos);
+
+static bool CanTriggerRedstoneUpdate(BlockType _block) {
+	switch (_block) {
+	case BLOCK_REDSTONE:
+	case BLOCK_LEVER:
+	case BLOCK_BUTTON_STONE:
+	case BLOCK_PRESSURE_PLATE_STONE:
+	case BLOCK_PRESSURE_PLATE_WOOD:
+	case BLOCK_REDSTONE_TORCH_ON:
+	case BLOCK_REDSTONE_TORCH_OFF:
+		return true;
+	// Repeaters are always false here
+	// Yes this means they dont cause updates!
+	default:
+		return false;
 	}
-	
-	static ComponentProfile GetComponentProfile(BlockType _blockId, uint8_t _meta) {
-		switch (_blockId) {
-		case BLOCK_REDSTONE: {
+}
+
+static ComponentProfile GetComponentProfile(BlockType _blockId, uint8_t _meta) {
+	switch (_blockId) {
+	case BLOCK_REDSTONE: {
+		return ComponentProfile{ true, true, true, true, false };
+	}
+	case BLOCK_REDSTONE_TORCH_ON: {
+		if (_meta == 1) {
+			// Facing X+1
+			return ComponentProfile{ true, false, true, true, true };
+		} else if (_meta == 2) {
+			// Facing X-1
+			return ComponentProfile{ false, true, true, true, true };
+		} else if (_meta == 3) {
+			// Facing Z+1
+			return ComponentProfile{ true, true, true, false, true };
+		} else if (_meta == 4) {
+			// Facing Z-1
+			return ComponentProfile{ true, true, false, true, true };
+		} else if (_meta == 5) {
+			// On floor
 			return ComponentProfile{ true, true, true, true, false };
-		}
-		case BLOCK_REDSTONE_TORCH_ON: {
-			if (_meta == 1) {
-				// Facing X+1
-				return ComponentProfile{ true, false, true, true, true };
-			} else if (_meta == 2) {
-				// Facing X-1
-				return ComponentProfile{ false, true, true, true, true };
-			} else if (_meta == 3) {
-				// Facing Z+1
-				return ComponentProfile{ true, true, true, false, true };
-			} else if (_meta == 4) {
-				// Facing Z-1
-				return ComponentProfile{ true, true, false, true, true };
-			} else if (_meta == 5) {
-				// On floor
-				return ComponentProfile{ true, true, true, true, false };
-			} else {
-				// Invalid
-				return {};
-			}
-		}
-		case BLOCK_REDSTONE_TORCH_OFF: {
+		} else {
+			// Invalid
 			return {};
-		}
-		case BLOCK_REDSTONE_REPEATER_ON: {
-			switch (_meta & 0b11) {
-			case 0:
-				return ComponentProfile{ false, false, false, true, false }; // outputs -Z
-			case 1:
-				return ComponentProfile{ true, false, false, false, false }; // outputs +X
-			case 2:
-				return ComponentProfile{ false, false, true, false, false }; // outputs +Z
-			case 3:
-				return ComponentProfile{ false, true, false, false, false }; // outputs -X
-			default:
-				return {};
-			}
-		}
-		case BLOCK_REDSTONE_REPEATER_OFF: {
-			return {};
-		}
-		default: {
-			return {};
-		}
 		}
 	}
-};
+	case BLOCK_REDSTONE_TORCH_OFF: {
+		return {};
+	}
+	case BLOCK_REDSTONE_REPEATER_ON: {
+		switch (_meta & 0b11) {
+		case 0:
+			return ComponentProfile{ false, false, false, true, false }; // outputs -Z
+		case 1:
+			return ComponentProfile{ true, false, false, false, false }; // outputs +X
+		case 2:
+			return ComponentProfile{ false, false, true, false, false }; // outputs +Z
+		case 3:
+			return ComponentProfile{ false, true, false, false, false }; // outputs -X
+		default:
+			return {};
+		}
+	}
+	case BLOCK_REDSTONE_REPEATER_OFF: {
+		return {};
+	}
+	default: {
+		return {};
+	}
+	}
+}
+}; // namespace RedstoneManager

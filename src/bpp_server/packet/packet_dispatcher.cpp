@@ -126,7 +126,8 @@ bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, Wor
 		if (_session.stream.IsShortRead())
 			return true;
 		HandlePacket::Animation(pkt, _session,
-		                        _session.dimension == Dimension::Overworld ? _server.overworldEntityTracker : _server.hellEntityTracker);
+		                        _session.dimension == Dimension::Overworld ? _server.overworldEntityTracker
+		                                                                   : _server.hellEntityTracker);
 		break;
 	}
 	case PacketId::PlayerAction: {
@@ -135,7 +136,8 @@ bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, Wor
 		if (_session.stream.IsShortRead())
 			return true;
 		HandlePacket::PlayerAction(pkt, _session,
-		                           _session.dimension == Dimension::Overworld ? _server.overworldEntityTracker : _server.hellEntityTracker);
+		                           _session.dimension == Dimension::Overworld ? _server.overworldEntityTracker
+		                                                                      : _server.hellEntityTracker);
 		break;
 	}
 	case PacketId::PlayerInput: {

@@ -8,7 +8,7 @@
 
 namespace strategos {
 class BrigadierContext;
-}
+} // namespace strategos
 
 void RegisterHelp(strategos::BrigadierContext& _dispatcher);
 void RegisterTeleport(strategos::BrigadierContext& _dispatcher);

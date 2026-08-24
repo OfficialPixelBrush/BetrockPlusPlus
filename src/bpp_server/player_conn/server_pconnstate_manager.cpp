@@ -132,7 +132,7 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 void PlayerConnStateManager::HandleVerifyingUsername(PlayerSession& _session, [[maybe_unused]] Server& _server) {
 #ifdef ONLINE_MODE_AUTHENTICATION
 	using namespace std::chrono_literals;
-	constexpr auto kAuthTimeout = 20s;
+	constexpr auto K_AUTH_TIMEOUT = 20s;
 
 	if (!_session.pendingAuthFuture.valid()) {
 		DisconnectPlayer(_session, "Failed to verify username!", _server);
@@ -140,7 +140,7 @@ void PlayerConnStateManager::HandleVerifyingUsername(PlayerSession& _session, [[
 	}
 
 	if (_session.pendingAuthFuture.wait_for(0s) != std::future_status::ready) {
-		if (std::chrono::steady_clock::now() - _session.authStartTime > kAuthTimeout)
+		if (std::chrono::steady_clock::now() - _session.authStartTime > K_AUTH_TIMEOUT)
 			DisconnectPlayer(_session, "Login verification timed out!", _server);
 		return; // Not ready yet - check again next tick.
 	}

@@ -7,10 +7,10 @@
 
 #include "blocks/block_behaviors.h"
 #include "blocks.h"
-#include "dimensions.h"
-#include "entities/entity_player.h"
 #include "blocks/block_properties.h"
+#include "dimensions.h"
 #include "entities/entity_falling_block.h"
+#include "entities/entity_player.h"
 #include "enums/items.h"
 #include "generator/overworld/tree_gen.h"
 #include "items/item_properties.h"
@@ -26,8 +26,8 @@ BlockBehavior blockBehaviors[BLOCK_MAX] = {};
 static bool IsReplaceable(WorldManager& _world, Int3 _pos) {
 	BlockType existing = _world.GetBlockId(_pos);
 	return existing == BLOCK_AIR || existing == BLOCK_WATER_FLOWING || existing == BLOCK_WATER_STILL ||
-		existing == BLOCK_LAVA_FLOWING || existing == BLOCK_LAVA_STILL || existing == BLOCK_FIRE ||
-		existing == BLOCK_SNOW_LAYER;
+	       existing == BLOCK_LAVA_FLOWING || existing == BLOCK_LAVA_STILL || existing == BLOCK_FIRE ||
+	       existing == BLOCK_SNOW_LAYER;
 };
 
 static bool IsSupported(WorldManager& _world, Int3 _pos, PacketData::FaceDirection _dir) {
@@ -495,36 +495,41 @@ void RegisterBlockBehaviors() {
 		.getRayBounds = TrapdoorAabb,
 		.getCollider = TrapdoorCollider,
 		.onBlockActivated = [](WorldManager& _world, Int3 _pos, PlayerSession* /*_triggeringSession*/) -> bool {
-			ToggleTrapdoor(_world, _pos);
-			return false;
+		    ToggleTrapdoor(_world, _pos);
+		    return false;
 		},
 		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
-							BlockType _blockId, uint8_t _meta) -> bool {
-			// Doors can only be placed against the sides of blocks
-			if (_face == PacketData::FaceDirection::Y_PLUS || _face == PacketData::FaceDirection::Y_MINUS)
-				return false;
+		                    BlockType _blockId, uint8_t _meta) -> bool {
+		    // Doors can only be placed against the sides of blocks
+		    if (_face == PacketData::FaceDirection::Y_PLUS || _face == PacketData::FaceDirection::Y_MINUS)
+			    return false;
 
-			if (!IsReplaceable(_world, _pos))
-				return false;
+		    if (!IsReplaceable(_world, _pos))
+			    return false;
 
-			int facing = 0;
-			switch(_face) {
-				case PacketData::Z_MINUS:
-					facing = 0; break;
-				case PacketData::Z_PLUS:
-					facing = 1; break;
-				case PacketData::X_MINUS:
-					facing = 2; break;
-				case PacketData::X_PLUS:
-					facing = 3; break;
-				default:
-					facing = 0; break;
+		    int facing = 0;
+		    switch (_face) {
+		    case PacketData::Z_MINUS:
+			    facing = 0;
+			    break;
+		    case PacketData::Z_PLUS:
+			    facing = 1;
+			    break;
+		    case PacketData::X_MINUS:
+			    facing = 2;
+			    break;
+		    case PacketData::X_PLUS:
+			    facing = 3;
+			    break;
+		    default:
+			    facing = 0;
+			    break;
 		    }
 
 		    _world.SetBlock(_pos, _blockId, uint8_t(facing));
 
-			// heldItem->DecrementCount(1) is handled by the caller when this returns true.
-			return true;
+		    // heldItem->DecrementCount(1) is handled by the caller when this returns true.
+		    return true;
 		}
 	};
 
@@ -560,65 +565,73 @@ void RegisterBlockBehaviors() {
 		.getSelectionBox = ButtonAabb,
 		.getRayBounds = ButtonAabb,
 		.getCollider = EmptyCollider,
-		.onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                         Java::Random& _random) -> void {
-			PacketData::FaceDirection trueFace = PacketData::FaceDirection::INVALID_USE;
-			switch(_meta & 0b111) {
-				case 1:
-					trueFace = PacketData::FaceDirection::X_PLUS; break;
-				case 2:
-					trueFace = PacketData::FaceDirection::X_MINUS; break;
-				case 3:
-					trueFace = PacketData::FaceDirection::Z_PLUS; break;
-				case 4:
-					trueFace = PacketData::FaceDirection::Z_MINUS; break;
-			}
-			// Check to make sure we can till exist here
-			if (!IsSupported(_world, _pos, trueFace))
-				BreakAndDropBlock(_world, _pos);
-			// Unpress again
-			if (_meta & 0b1000) {
-				_world.SetMeta(_pos, _meta & 0b111);
-			}
+		.onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& _random) -> void {
+		    PacketData::FaceDirection trueFace = PacketData::FaceDirection::INVALID_USE;
+		    switch (_meta & 0b111) {
+		    case 1:
+			    trueFace = PacketData::FaceDirection::X_PLUS;
+			    break;
+		    case 2:
+			    trueFace = PacketData::FaceDirection::X_MINUS;
+			    break;
+		    case 3:
+			    trueFace = PacketData::FaceDirection::Z_PLUS;
+			    break;
+		    case 4:
+			    trueFace = PacketData::FaceDirection::Z_MINUS;
+			    break;
+		    }
+		    // Check to make sure we can till exist here
+		    if (!IsSupported(_world, _pos, trueFace))
+			    BreakAndDropBlock(_world, _pos);
+		    // Unpress again
+		    if (_meta & 0b1000) {
+			    _world.SetMeta(_pos, _meta & 0b111);
+		    }
 		},
 		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
-			blockBehaviors[BLOCK_BUTTON_STONE].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+		    blockBehaviors[BLOCK_BUTTON_STONE].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 		},
 		.onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> void {
-			_world.SetMeta(_pos, _world.GetMetadata(_pos) | 0b1000);
-			_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_BUTTON_STONE, 20);
-			if (_world.onWorldEvent)
-				_world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
+		    _world.SetMeta(_pos, _world.GetMetadata(_pos) | 0b1000);
+		    _world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_BUTTON_STONE, 20);
+		    if (_world.onWorldEvent)
+			    _world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
 		},
 		.onBlockActivated = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> bool {
-			blockBehaviors[BLOCK_BUTTON_STONE].onBlockClicked(_world, _pos, _triggeringSession);
-			return false;
+		    blockBehaviors[BLOCK_BUTTON_STONE].onBlockClicked(_world, _pos, _triggeringSession);
+		    return false;
 		},
 		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
-							BlockType _blockId, uint8_t _meta) -> bool {
-			// Buttons can only be placed against the sides of blocks
-			if (_face == PacketData::FaceDirection::Y_PLUS || _face == PacketData::FaceDirection::Y_MINUS)
-				return false;
+		                    BlockType _blockId, uint8_t _meta) -> bool {
+		    // Buttons can only be placed against the sides of blocks
+		    if (_face == PacketData::FaceDirection::Y_PLUS || _face == PacketData::FaceDirection::Y_MINUS)
+			    return false;
 
-			if (!IsReplaceable(_world, _pos))
-				return false;
+		    if (!IsReplaceable(_world, _pos))
+			    return false;
 
-			int facing = 0;
-			switch(_face) {
-				case PacketData::X_PLUS:
-					facing = 1; break;
-				case PacketData::X_MINUS:
-					facing = 2; break;
-				case PacketData::Z_PLUS:
-					facing = 3; break;
-				case PacketData::Z_MINUS:
-					facing = 4; break;
-				default:
-					facing = 0; break;
+		    int facing = 0;
+		    switch (_face) {
+		    case PacketData::X_PLUS:
+			    facing = 1;
+			    break;
+		    case PacketData::X_MINUS:
+			    facing = 2;
+			    break;
+		    case PacketData::Z_PLUS:
+			    facing = 3;
+			    break;
+		    case PacketData::Z_MINUS:
+			    facing = 4;
+			    break;
+		    default:
+			    facing = 0;
+			    break;
 		    }
 
 		    _world.SetBlock(_pos, _blockId, uint8_t(facing));
-			return true;
+		    return true;
 		},
 	};
 
@@ -877,8 +890,8 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                               PacketData::FaceDirection _face, BlockType _blockId,
-	                                               uint8_t _meta) -> bool {
+	                                                           PacketData::FaceDirection _face, BlockType _blockId,
+	                                                           uint8_t _meta) -> bool {
 		if (_world.GetBlockId(Blocks::GetSourceBlockFromFace(_pos, _face)) == BLOCK_SNOW_LAYER)
 			_pos = Blocks::GetSourceBlockFromFace(_pos, _face);
 		if (CanTorchAttachTo(_world, _pos, _face)) {
@@ -1102,7 +1115,8 @@ void RegisterBlockBehaviors() {
 		GenericBreak(_world, _pos, _destroyer);
 	};
 	blockBehaviors[BLOCK_LEAVES].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                PacketData::FaceDirection _face, BlockType _blockId, uint8_t _meta) -> bool {
+	                                                PacketData::FaceDirection _face, BlockType _blockId,
+	                                                uint8_t _meta) -> bool {
 		// So leaves placed by players dont decay
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, /*meta=*/_meta & 0b11);
 	};
@@ -1320,18 +1334,21 @@ void RegisterBlockBehaviors() {
 	// Lava physics
 	blockBehaviors[BLOCK_LAVA_FLOWING].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		// Schedule ourselves for an update
-		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == Dimension::Nether ? 10 : 30);
+		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING,
+		                                        _world.GetDimension() == Dimension::Nether ? 10 : 30);
 		TryLavaHarden(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LAVA_FLOWING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
 		// Stack overflow if this was regular set block!
-		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == Dimension::Nether ? 10 : 30);
+		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING,
+		                                        _world.GetDimension() == Dimension::Nether ? 10 : 30);
 		TryLavaHarden(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LAVA_STILL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
 		// Stack overflow if this was regular set block!
 		_world.SetBlockRaw(_pos, BLOCK_LAVA_FLOWING, _world.GetMetadata(_pos));
-		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == Dimension::Nether ? 10 : 30);
+		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING,
+		                                        _world.GetDimension() == Dimension::Nether ? 10 : 30);
 		TryLavaHarden(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LAVA_STILL].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
@@ -1399,9 +1416,11 @@ void RegisterBlockBehaviors() {
 			} else if (candidateLevel != _meta) {
 				_world.SetMeta(_pos, candidateLevel);
 				level = candidateLevel;
-				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == Dimension::Nether ? 10 : 30);
+				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING,
+				                                        _world.GetDimension() == Dimension::Nether ? 10 : 30);
 			} else if (heldByHesitation) {
-				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING, _world.GetDimension() == Dimension::Nether ? 10 : 30);
+				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING,
+				                                        _world.GetDimension() == Dimension::Nether ? 10 : 30);
 			} else {
 				_world.SetBlockRaw(_pos, BLOCK_LAVA_STILL, _meta);
 			}

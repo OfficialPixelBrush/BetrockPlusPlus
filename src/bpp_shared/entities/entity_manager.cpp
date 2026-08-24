@@ -7,14 +7,14 @@
 #include "entity_manager.h"
 #include "entity_chicken.h"
 #include "entity_cow.h"
+#include "entity_creeper.h"
+#include "entity_falling_block.h"
 #include "entity_item.h"
 #include "entity_pig.h"
 #include "entity_sheep.h"
-#include "entity_zombie.h"
 #include "entity_skeleton.h"
-#include "entity_creeper.h"
 #include "entity_spider.h"
-#include "entity_falling_block.h"
+#include "entity_zombie.h"
 #include "world.h"
 
 void EntityManager::RemoveEntity(EntityId _id) {

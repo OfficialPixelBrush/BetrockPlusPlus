@@ -88,15 +88,15 @@ static PowerProfile GetBlockPowerProfile(WorldManager& _world, Int3 _pos) {
 
 		// This is redstone dust, see if it is connecting to this block
 		if (_world.GetBlockId(thisPos) == BLOCK_REDSTONE && _world.GetMetadata(thisPos) > 0) {
-			auto GRDC = GetRedstoneDustConnectivity(_world, thisPos);
+			auto grdc = GetRedstoneDustConnectivity(_world, thisPos);
 			if (rdx != 0) {
 				// We care about the X here
-				if (!GRDC.powerX && !GRDC.powerNX)
+				if (!grdc.powerX && !grdc.powerNX)
 					softPowered = true;
 			}
 			if (rdz != 0) {
 				// We care about the Z here
-				if (!GRDC.powerZ && !GRDC.powerNZ)
+				if (!grdc.powerZ && !grdc.powerNZ)
 					softPowered = true;
 			}
 		}
@@ -229,5 +229,6 @@ void RedstoneManager::TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos) {
 	GetNeighbors(_world, _pos, visited);
 
 	// Resolve our power levels
-	while (ResolvePowerLevels(_world, visited));
+	while (ResolvePowerLevels(_world, visited))
+		;
 }

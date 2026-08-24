@@ -22,7 +22,8 @@ std::string ShowStats(const strategos::CmdNode&, void* _userData) {
 	std::array<std::string, 4> lines = {
 		std::format("§7Mem: {:.2f} MB", GetMemoryUsage(MemoryUnit::Megabyte)),
 		std::format("§7{} Chunks (Aprox. {:.2f} MB)", ctx.world->chunks.size(), chunksMb),
-		std::format("§7{} Players, {} Entities", players.size(), ctx.server->overworldEntityTracker.trackedEntities.size()),
+		std::format("§7{} Players, {} Entities", players.size(),
+		            ctx.server->overworldEntityTracker.trackedEntities.size()),
 		std::format("§7Avg. MSPT: {:.2f} ms", ctx.server->averageTickMs),
 	};
 	for (const auto& line : lines)

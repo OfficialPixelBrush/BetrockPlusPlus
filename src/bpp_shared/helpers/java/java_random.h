@@ -143,21 +143,21 @@ public:
 		* @return Pseudorandom gaussian with a mean of 0.0, and a standard deviation of 1.0
 		*/
 	const double NextGaussian() noexcept {
-        // See Knuth, ACP, Section 3.4.1 Algorithm C.
-        if (haveNextNextGaussian) {
-            haveNextNextGaussian = false;
-            return nextNextGaussian;
-        }
+		// See Knuth, ACP, Section 3.4.1 Algorithm C.
+		if (haveNextNextGaussian) {
+			haveNextNextGaussian = false;
+			return nextNextGaussian;
+		}
 		double v1, v2, s;
 		do {
 			v1 = 2 * NextDouble() - 1; // between -1 and 1
 			v2 = 2 * NextDouble() - 1; // between -1 and 1
 			s = v1 * v1 + v2 * v2;
 		} while (s >= 1 || s == 0);
-		double multiplier = std::sqrt(-2 * std::log(s)/s);
+		double multiplier = std::sqrt(-2 * std::log(s) / s);
 		nextNextGaussian = v2 * multiplier;
 		haveNextNextGaussian = true;
 		return v1 * multiplier;
-    }
+	}
 };
 } // namespace Java

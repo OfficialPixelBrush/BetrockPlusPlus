@@ -47,7 +47,8 @@ inline void SendChat(PlayerSession& _session, const std::string& _message) {
 		std::u16string line;
 		if (offset > 0 && !colorPrefix.empty()) {
 			line = colorPrefix;
-			chunk = MAX_CHAT_MESSAGE_SIZE > colorPrefix.size() ? MAX_CHAT_MESSAGE_SIZE - colorPrefix.size() : MAX_CHAT_MESSAGE_SIZE;
+			chunk = MAX_CHAT_MESSAGE_SIZE > colorPrefix.size() ? MAX_CHAT_MESSAGE_SIZE - colorPrefix.size()
+			                                                   : MAX_CHAT_MESSAGE_SIZE;
 		}
 		line += ucs2.substr(offset, chunk);
 		const size_t consumed = chunk < ucs2.size() - offset ? chunk : ucs2.size() - offset;

@@ -44,7 +44,7 @@ void CreeperEntity::TryAttackEntity(Entity& _target, float _distance) {
 		UpdateMetadata<int8_t>(creeperState, 1);
 		++timeSinceIgnited;
 		if (timeSinceIgnited >= 30) {
-			world->DoExplosion(this, this->position, this->powered ? 6.0f : 3.0f, /*doFire=*/ false);
+			world->DoExplosion(this, this->position, this->powered ? 6.0f : 3.0f, /*doFire=*/false);
 			isDead = true;
 			return;
 		}

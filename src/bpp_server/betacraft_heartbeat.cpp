@@ -114,7 +114,7 @@ void BetacraftHeartbeat::Start() {
 		const std::string ip = FetchPublicIp();
 		if (ip.empty()) {
 			GlobalLogger().error << "Betacraft heartbeat is enabled but betacraft-socket is empty and public IP "
-			                       "lookup failed. Set betacraft-socket to host:port.\n";
+			                        "lookup failed. Set betacraft-socket to host:port.\n";
 			running.store(false);
 			enabled = false;
 			return;

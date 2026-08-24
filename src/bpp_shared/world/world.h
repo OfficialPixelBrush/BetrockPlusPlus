@@ -21,6 +21,7 @@
 #include "entities/entity_manager.h"
 #include "generator/overworld/biome_gen.h"
 #include "helpers/AABB.h"
+#include "helpers/explosion.h"
 #include "java_math.h"
 #include "lighter.h"
 #include "packet_data.h"
@@ -29,7 +30,6 @@
 #include "world/spawner.h"
 #include "world/storage/region_manager.h"
 #include "world_access.h"
-#include "helpers/explosion.h"
 #include <algorithm>
 #include <atomic>
 #include <cstdint>

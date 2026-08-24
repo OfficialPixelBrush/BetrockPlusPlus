@@ -57,7 +57,7 @@ struct Runtime {
 					GlobalLogger().error << "**** FAILED TO CREATE NEW WORLD! \n";
 					exit(1);
 				}
-				GlobalLogger().info << "New world created successfully. \n";	
+				GlobalLogger().info << "New world created successfully. \n";
 			};
 
 			if (initResult == LevelInitFailureReason::ALPHA_FORMATTED) {

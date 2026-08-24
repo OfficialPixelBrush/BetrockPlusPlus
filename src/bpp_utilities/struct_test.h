@@ -11,8 +11,8 @@
 #include "player_conn/player_session.h"
 #include "storage/region.h"
 #include "storage/region_manager.h"
-#include "world/generator/overworld/chunk_gen.h"
 #include "world/generator/nether/chunk_gen.h"
+#include "world/generator/overworld/chunk_gen.h"
 
 void PrintStructSizes() {
 	GlobalLogger().debug << "Chunk: " << sizeof(Chunk) << " Bytes\n";

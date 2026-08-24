@@ -45,8 +45,8 @@ void CommandManager::Parse(std::string& _cmdString, PlayerSession& _session, Wor
 	CommandContext ctx{ &_session, &_world, server, std::move(_transferDimension), &dispatcher };
 
 	try {
-		auto result = dispatcher.execute(line, &ctx, [](void* userData) {
-			auto& c = CmdCtx(userData);
+		auto result = dispatcher.execute(line, &ctx, [](void* _userData) {
+			auto& c = CmdCtx(_userData);
 			return IsOperator(*c.session, *c.server);
 		});
 		if (!result) {

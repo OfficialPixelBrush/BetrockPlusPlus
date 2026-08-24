@@ -65,10 +65,9 @@ std::string FillArea(const strategos::CmdNode& _cmd, void* _userData) {
 } // namespace
 
 void RegisterFill(strategos::BrigadierContext& _dispatcher) {
-	_dispatcher.add_command(
-	    strategos::Node::literal("fill")
-	        .describe("Fills an area with the desired block")
-	        .op()
-	        .then(strategos::Node::string("block").then(
-	            strategos::Node::vec3("from").then(strategos::Node::vec3("to").executes(FillArea)))));
+	_dispatcher.add_command(strategos::Node::literal("fill")
+	                            .describe("Fills an area with the desired block")
+	                            .op()
+	                            .then(strategos::Node::string("block").then(strategos::Node::vec3("from").then(
+	                                strategos::Node::vec3("to").executes(FillArea)))));
 }
