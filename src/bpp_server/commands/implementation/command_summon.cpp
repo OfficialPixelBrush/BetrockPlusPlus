@@ -12,8 +12,6 @@
 
 std::string CommandSummon::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
                                    std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
-	if (!HasPermissions(_session))
-		return ERROR_PERMISSIONS;
 	auto entity = std::make_shared<SkeletonEntity>();
 
 	Vec3 spawnPos = _session.position.pos +

@@ -15,6 +15,7 @@ extern std::atomic<bool> shutdownRequested;
 #endif
 
 #include "BS_thread_pool.hpp"
+#include "betacraft_heartbeat.h"
 #include "blocks/serverBlockBehaviors.h"
 #include "chunk_IO/chunk_broadcaster.h"
 #include "chunk_IO/chunk_sender.h"
@@ -24,7 +25,6 @@ extern std::atomic<bool> shutdownRequested;
 #include "items/tool_properties.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
-#include "betacraft_heartbeat.h"
 #include "online_auth.h"
 #include "packet/handle_packet.h"
 #include "packet/packet_dispatcher.h"
@@ -150,6 +150,10 @@ public:
 	// Performance metric
 	double averageTickMs = 0.0;
 	static constexpr int TICKS_PER_SECOND = 20;
+	// Whitelist and Operator storage
+	bool useWhitelist = false;
+	std::vector<std::string> whitelistedUsernames = {};
+	std::vector<std::string> operatorUsernames = {};
 
 private:
 	friend bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld,

@@ -181,6 +181,7 @@ set(SHARED_SOURCES
     src/bpp_shared/logger/logstream.cpp
     src/bpp_shared/logger/style.cpp
     src/bpp_shared/config/config.cpp
+    src/bpp_shared/config/list_parser.cpp
 
     # Utilities
     src/bpp_utilities/utilities.cpp

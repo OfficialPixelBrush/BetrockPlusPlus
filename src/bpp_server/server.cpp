@@ -8,6 +8,7 @@
 */
 
 #include "base_types.h"
+#include "config/list_parser.h"
 #include "dimensions.h"
 #include "logger.h"
 #include "packet/packet_utils.h"
@@ -16,6 +17,7 @@
 #include <future>
 #include <string>
 #include <thread>
+
 #if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
 #include <fcntl.h>
 #include <iomanip>
@@ -140,7 +142,7 @@ void Server::LoadConfig() {
 	if (!config.LoadFromDisk()) {
 		config.Overwrite({
 		    { "level-name", "world" },
-		    { "view-distance", "10"},
+		    { "view-distance", "10" },
 		    //{"white-list", "false"},
 		    //{"server-ip", ""},
 		    //{"motd", "A Minecraft Server"},
@@ -193,7 +195,12 @@ void Server::LoadConfig() {
 	//motd = config.GetAsString("motd");
 	//maximumPlayers = config.GetAsNumber<int32_t>("max-players");
 	//maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
-	//whitelistEnabled = config.GetAsBoolean("white-list");
+	useWhitelist = config.GetAsBoolean("white-list");
+	if (useWhitelist) {
+		GlobalLogger().info << "Whitelist enabled!\n";
+		whitelistedUsernames = ListParser::Read(ListParser::Target::Whitelist);
+	}
+	operatorUsernames = ListParser::Read(ListParser::Target::Operator);
 }
 
 void Server::Startup() {
@@ -279,11 +286,13 @@ void Server::Startup() {
 
 	gameRuntime.world.onWorldEvent = [this](PacketData::WorldEvent _eventType, Int3 _position, int32_t _data,
 	                                        PlayerSession* _triggeringSession) {
-		WorldEventBroadcaster::BroadcastWorldEvent(*this, _eventType, _position, _data, Dimension::Overworld, _triggeringSession);
+		WorldEventBroadcaster::BroadcastWorldEvent(*this, _eventType, _position, _data, Dimension::Overworld,
+		                                           _triggeringSession);
 	};
 	gameRuntime.worldHell.onWorldEvent = [this](PacketData::WorldEvent _eventType, Int3 _position, int32_t _data,
 	                                            PlayerSession* _triggeringSession) {
-		WorldEventBroadcaster::BroadcastWorldEvent(*this, _eventType, _position, _data, Dimension::Nether, _triggeringSession);
+		WorldEventBroadcaster::BroadcastWorldEvent(*this, _eventType, _position, _data, Dimension::Nether,
+		                                           _triggeringSession);
 	};
 
 	registerEntityTrackerCallbacks(overworldEntityTracker, gameRuntime.world.entityManager);
@@ -481,6 +490,10 @@ void Server::Stop() {
 	curLevelData.spawnPoint = gameRuntime.world.spawnPoint;
 	curLevelData.time = gameRuntime.world.elapsedTicks;
 	gameRuntime.saveManager.SaveLevelFile(curLevelData);
+
+	// Save operator and whitelist updates
+	ListParser::Write(whitelistedUsernames, ListParser::Target::Whitelist);
+	ListParser::Write(operatorUsernames, ListParser::Target::Operator);
 }
 
 void Server::AcceptNewPlayers() {

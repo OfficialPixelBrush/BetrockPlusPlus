@@ -5,6 +5,7 @@
 */
 
 #include "command.h"
+#include "../server.h"
 #include <string>
 
 std::vector<std::string> command;
@@ -42,12 +43,13 @@ ItemStack Command::ParseItemStack(std::vector<std::string>& _parameters, size_t&
 	return item;
 }
 
-bool IsOperator(PlayerSession& _session) {
-	return _session.username == "PixelBrushArt" || _session.username == "wAidanJC";
+bool IsOperator(PlayerSession& _session, Server& _server) {
+	return std::find(_server.operatorUsernames.begin(), _server.operatorUsernames.end(), _session.username) !=
+	       _server.operatorUsernames.end();
 }
 
-bool Command::HasPermissions(PlayerSession& _session) {
-	bool isOp = IsOperator(_session);
+bool Command::HasPermissions(PlayerSession& _session, Server& _server) {
+	bool isOp = IsOperator(_session, _server);
 	if (requiresOp && !isOp) {
 		return false;
 	}

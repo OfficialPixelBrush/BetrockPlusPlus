@@ -15,8 +15,6 @@
 std::string CommandTeleport::Execute(std::vector<std::string>& _parameters, PlayerSession& _session,
                                      WorldManager& _world, std::function<void(PlayerSession&)> _transferDimension,
                                      Server& _server) {
-	if (!HasPermissions(_session))
-		return ERROR_PERMISSIONS;
 	if (_parameters.size() < 2)
 		return ERROR_REASON_SYNTAX;
 

@@ -12,8 +12,6 @@
 //   /seed
 std::string CommandSeed::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
                                  std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
-	if (!HasPermissions(_session))
-		return ERROR_PERMISSIONS;
 	Packet::ChatMessage reply;
 	reply.message = "§e" + std::to_string(_world.seed);
 	reply.Serialize(_session.stream);

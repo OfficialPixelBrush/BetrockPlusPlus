@@ -15,8 +15,6 @@
 //   /stop [time]/cancel
 std::string CommandStop::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
                                  std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
-	if (!HasPermissions(_session))
-		return ERROR_PERMISSIONS;
 	if (_parameters.size() < 2) {
 		_server.SendGlobalChatMessage(std::format("§eStopping..."));
 		shutdownRequested.store(true);
