@@ -1040,16 +1040,14 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                                               PacketData::FaceDirection _face, BlockType _blockId,
 	                                                               uint8_t _meta) -> bool {
-		int facing = ((MathHelper::FloorDouble(_placer.rotationYaw * 4.0F / 360.0F + 0.5) & 3) + 2) % 4;
-		bool canPlace = GenericPlace(_world, _pos, _placer, _face, _blockId, facing);
-		if (canPlace) {
-			// Turn on if we are being powered!
-			if (RedstoneManager::IsRepeaterInputPowered(_world, _pos, _meta)) {
-				_world.tickScheduler.ScheduleUpdateTick(_pos, _blockId, 1);
-			}
-			return true;
+		const auto dir = Direction::FromAngle(_placer.rotationYaw);
+		if (!GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_REDSTONE_REPEATER_OFF, dir)))
+			return false;
+		// Turn on if we are being powered!
+		if (RedstoneManager::IsRepeaterInputPowered(_world, _pos, _meta)) {
+			_world.tickScheduler.ScheduleUpdateTick(_pos, _blockId, 1);
 		}
-		return false;
+		return true;
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
@@ -1160,8 +1158,8 @@ void RegisterBlockBehaviors() {
 			return false;
 
 		// _pos is already the target cell
-		Int3 placePos = _pos;
-		Int3 abovePos = placePos.WithOffset(Direction::Value::Up);
+		const Int3 placePos = _pos;
+		const Int3 abovePos = placePos.WithOffset(Direction::Value::Up);
 
 		// Is this placement valid?
 		if (!_world.InBounds(abovePos.y))
@@ -1171,19 +1169,19 @@ void RegisterBlockBehaviors() {
 		if (!IsReplaceable(_world, placePos) || !IsReplaceable(_world, abovePos))
 			return false;
 
-		Direction::Value facing = Direction::FromAngle(_placer.rotationYaw);
+		auto facing = Direction::FromAngle(_placer.rotationYaw);
 
-		Int3 left = placePos.WithOffset(Direction::ToLeft(facing));
-		Int3 leftTop = left.WithOffset(Direction::Value::Up);
+		const Int3 left = placePos.WithOffset(Direction::ToLeft(facing));
+		const Int3 leftTop = left.WithOffset(Direction::Value::Up);
 
-		Int3 right = placePos.WithOffset(Direction::ToRight(facing));
-		Int3 rightTop = right.WithOffset(Direction::Value::Up);
+		const Int3 right = placePos.WithOffset(Direction::ToRight(facing));
+		const Int3 rightTop = right.WithOffset(Direction::Value::Up);
 
-		int leftSolidBlocks = (_world.IsBlockNormalCube(left) ? 1 : 0) + (_world.IsBlockNormalCube(leftTop) ? 1 : 0);
-		int rightSolidBlocks = (_world.IsBlockNormalCube(right) ? 1 : 0) + (_world.IsBlockNormalCube(rightTop) ? 1 : 0);
+		const int leftSolidBlocks = (_world.IsBlockNormalCube(left) ? 1 : 0) + (_world.IsBlockNormalCube(leftTop) ? 1 : 0);
+		const int rightSolidBlocks = (_world.IsBlockNormalCube(right) ? 1 : 0) + (_world.IsBlockNormalCube(rightTop) ? 1 : 0);
 
-		bool leftHasDoor = _world.GetBlockId(left) == _blockId || _world.GetBlockId(leftTop) == _blockId;
-		bool rightHasDoor = _world.GetBlockId(right) == _blockId || _world.GetBlockId(rightTop) == _blockId;
+		const bool leftHasDoor = _world.GetBlockId(left) == _blockId || _world.GetBlockId(leftTop) == _blockId;
+		const bool rightHasDoor = _world.GetBlockId(right) == _blockId || _world.GetBlockId(rightTop) == _blockId;
 
 		bool hingeOnRight = false;
 		if (leftHasDoor && !rightHasDoor) {
@@ -1362,7 +1360,7 @@ void RegisterBlockBehaviors() {
 	};
 	blockBehaviors[BLOCK_GRAVEL].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                         Java::Random& _random) -> void {
-		Int3 below = { _pos.x, _pos.y - 1, _pos.z };
+		const Int3 below = _pos.WithOffset(Direction::Value::Down);
 
 		if (!Blocks::CanFallAt(_world, below) || _pos.y < 0)
 			return;
@@ -1381,7 +1379,7 @@ void RegisterBlockBehaviors() {
 			_world.SetBlock(_pos, BLOCK_AIR, 0);
 
 			Int3 landing = _pos;
-			while (Blocks::CanFallAt(_world, { landing.x, landing.y - 1, landing.z }) && landing.y > 0)
+			while (Blocks::CanFallAt(_world, landing.WithOffset(Direction::Value::Down)) && landing.y > 0)
 				landing.y--;
 
 			if (landing.y > 0)
