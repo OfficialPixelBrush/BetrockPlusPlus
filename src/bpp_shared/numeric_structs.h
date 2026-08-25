@@ -209,7 +209,7 @@ struct TriNumber {
 		return std::sqrt(x * x + y * y + z * z);
 	}
 
-	auto Offset(Direction _direction, T _value = 1) {
+	auto Offset(const Direction _direction, const T _value = 1) {
 		switch (_direction) {
 			case Direction::None:
 				break;
@@ -233,6 +233,11 @@ struct TriNumber {
 				break;
 		}
 		return *this;
+	}
+
+	auto WithOffset(const Direction _direction, const T _value = 1) const {
+		TriNumber<T> result = *this;
+		return result.Offset(_direction, _value);
 	}
 };
 
@@ -393,7 +398,7 @@ struct BiNumber {
 		return x * y;
 	}
 
-	auto Offset(Direction _direction, T _value = 1) {
+	auto Offset(const Direction _direction, const T _value = 1) {
 		switch (_direction) {
 			case Direction::None:
 				break;
@@ -413,6 +418,11 @@ struct BiNumber {
 				break;
 		}
 		return *this;
+	}
+
+	auto WithOffset(const Direction _direction, const T _value = 1) const {
+		BiNumber<T> result = *this;
+		return result.Offset(_direction, _value);
 	}
 };
 
