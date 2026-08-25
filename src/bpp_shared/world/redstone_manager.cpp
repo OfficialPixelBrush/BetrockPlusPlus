@@ -106,7 +106,20 @@ PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _p
 
 		// This is a repeater, see if it is facing us and powered
 		if (_world.GetBlockId(thisPos) == BLOCK_REDSTONE_REPEATER_ON) {
-			// stub
+			auto grc = RedstoneManager::GetComponentProfile(BLOCK_REDSTONE_REPEATER_ON, _world.GetMetadata(thisPos));
+			if (rdx == 1) {
+				if (grc.powerNX)
+					return { true, true };
+			} else if (rdx == -1) {
+				if (grc.powerX)
+					return { true, true };
+			} else if (rdz == 1) {
+				if (grc.powerNZ)
+					return { true, true };
+			} else if (rdz == -1) {
+				if (grc.powerZ)
+					return { true, true };
+			}
 		}
 	}
 
@@ -165,6 +178,26 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 					torchPowersUs = torchProfile.powerZ;
 
 				if (torchPowersUs)
+					return 15;
+			}
+
+			// A repeater sitting directly beside us
+			if (dy == _pos.y && _world.GetBlockId({ dx, dy, dz }) == BLOCK_REDSTONE_REPEATER_ON) {
+				auto repeaterMeta = _world.GetMetadata({ dx, dy, dz });
+				auto repeaterProfile = RedstoneManager::GetComponentProfile(BLOCK_REDSTONE_REPEATER_ON, repeaterMeta);
+
+				// Direction FROM the repeater TOWARD us
+				bool repeaterPowersUs = false;
+				if (rdx == 1)
+					repeaterPowersUs = repeaterProfile.powerNX;
+				else if (rdx == -1)
+					repeaterPowersUs = repeaterProfile.powerX;
+				else if (rdz == 1)
+					repeaterPowersUs = repeaterProfile.powerNZ;
+				else if (rdz == -1)
+					repeaterPowersUs = repeaterProfile.powerZ;
+
+				if (repeaterPowersUs)
 					return 15;
 			}
 
@@ -237,22 +270,21 @@ static void SolveRedstoneNetwork(WorldManager& _world, Int3 _pos) {
 		oldLevels.insert({ pos, static_cast<uint8_t>(_world.GetMetadata(pos)) });
 	}
 
-	while (ResolvePowerLevels(_world, visited));
+	while (ResolvePowerLevels(_world, visited))
+		;
 
 	// Each redstone wire will try and reach further out if it went from 0->powered or powered->0
-	// Skip re-notifying other dust
 	for (auto& pos : visited) {
 		auto oldLevel = oldLevels.find(pos)->second;
 		auto newLevel = _world.GetMetadata(pos);
 		if (oldLevel != newLevel && (oldLevel == 0 || newLevel == 0)) {
-			Int3 neighbors[7] = {
-				pos,
-				{ pos.x - 1, pos.y, pos.z },
-				{ pos.x + 1, pos.y, pos.z },
-				{ pos.x, pos.y - 1, pos.z },
-				{ pos.x, pos.y + 1, pos.z },
-				{ pos.x, pos.y, pos.z - 1 },
-				{ pos.x, pos.y, pos.z + 1 },
+			// Always notify this wire tile's own direct neighbors
+			_world.NotifyNeighborsOfUpdate(pos, BLOCK_REDSTONE);
+
+			// Reach one hop further
+			Int3 neighbors[6] = {
+				{ pos.x - 1, pos.y, pos.z }, { pos.x + 1, pos.y, pos.z }, { pos.x, pos.y - 1, pos.z },
+				{ pos.x, pos.y + 1, pos.z }, { pos.x, pos.y, pos.z - 1 }, { pos.x, pos.y, pos.z + 1 },
 			};
 			for (auto& npos : neighbors) {
 				if (_world.GetBlockId(npos) != BLOCK_REDSTONE) {
@@ -266,6 +298,7 @@ static void SolveRedstoneNetwork(WorldManager& _world, Int3 _pos) {
 void RedstoneManager::TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos, BlockType _newBlock, BlockType _oldBlock) {
 	// Vanilla has some weird update quirks so we replicate that here in one pass
 	// This avoids vanilla's tendency to spam block updates
+	SolveRedstoneNetwork(_world, _pos);
 
 	// DUST:
 	if (_newBlock == BLOCK_REDSTONE || _oldBlock == BLOCK_REDSTONE) {
@@ -301,11 +334,61 @@ void RedstoneManager::TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos, Blo
 		for (auto& n : sixNeighbors)
 			_world.NotifyNeighborsOfUpdate(n, BLOCK_REDSTONE_TORCH_ON);
 	}
-
-	SolveRedstoneNetwork(_world, _pos);
 }
 
 void RedstoneManager::RefreshWireAt(WorldManager& _world, Int3 _pos) {
 	// Redstone wires on neighbor change gets called independently of whether the update was caused by a redstone component
 	SolveRedstoneNetwork(_world, _pos);
+}
+
+bool RedstoneManager::IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, uint8_t _meta) {
+	int facing = _meta & 3;
+	switch (facing) {
+	case 0: {
+		Int3 inputPos = { _pos.x, _pos.y, _pos.z + 1 };
+		auto block = _world.GetBlockId(inputPos);
+		auto meta = _world.GetMetadata(inputPos);
+		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON) &&
+		    RedstoneManager::GetComponentProfile(block, meta).powerNZ)
+			return true;
+		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
+			return true;
+		return block == BLOCK_REDSTONE && meta > 0;
+	}
+	case 1: {
+		Int3 inputPos = { _pos.x - 1, _pos.y, _pos.z };
+		auto block = _world.GetBlockId(inputPos);
+		auto meta = _world.GetMetadata(inputPos);
+		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON) &&
+		    RedstoneManager::GetComponentProfile(block, meta).powerX)
+			return true;
+		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
+			return true;
+		return block == BLOCK_REDSTONE && meta > 0;
+	}
+	case 2: {
+		Int3 inputPos = { _pos.x, _pos.y, _pos.z - 1 };
+		auto block = _world.GetBlockId(inputPos);
+		auto meta = _world.GetMetadata(inputPos);
+		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON) &&
+		    RedstoneManager::GetComponentProfile(block, meta).powerZ)
+			return true;
+		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
+			return true;
+		return block == BLOCK_REDSTONE && meta > 0;
+	}
+	case 3: {
+		Int3 inputPos = { _pos.x + 1, _pos.y, _pos.z };
+		auto block = _world.GetBlockId(inputPos);
+		auto meta = _world.GetMetadata(inputPos);
+		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON) &&
+		    RedstoneManager::GetComponentProfile(block, meta).powerNX)
+			return true;
+		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
+			return true;
+		return block == BLOCK_REDSTONE && meta > 0;
+	}
+	default:
+		return false;
+	}
 }

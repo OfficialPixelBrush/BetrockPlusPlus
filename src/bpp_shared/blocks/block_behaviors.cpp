@@ -24,6 +24,10 @@
 namespace Blocks {
 BlockBehavior blockBehaviors[BLOCK_MAX] = {};
 
+static bool CanRedstoneComponentStay(WorldManager& _world, Int3 _pos) {
+	return _world.IsBlockNormalCube({ _pos.x, _pos.y - 1, _pos.z });
+}
+
 static bool IsReplaceable(WorldManager& _world, Int3 _pos) {
 	BlockType existing = _world.GetBlockId(_pos);
 	return existing == BLOCK_AIR || existing == BLOCK_WATER_FLOWING || existing == BLOCK_WATER_STILL ||
@@ -383,6 +387,9 @@ void RegisterBlockBehaviors() {
 		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
 		    if (_blockId != BLOCK_REDSTONE)
 			    RedstoneManager::RefreshWireAt(_world, _pos);
+		    if (!CanRedstoneComponentStay(_world, _pos)) {
+			    BreakAndDropBlock(_world, _pos);
+		    }
 		},
 	};
 
@@ -1025,6 +1032,82 @@ void RegisterBlockBehaviors() {
 		if (!RedstoneManager::GetBlockPowerProfile(_world, supportPos).powered) {
 			_world.SetBlock(_pos, BLOCK_REDSTONE_TORCH_ON, _meta);
 		}
+	};
+
+	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                                               PacketData::FaceDirection _face, BlockType _blockId,
+	                                                               uint8_t _meta) -> bool {
+		int facing = ((MathHelper::FloorDouble(_placer.rotationYaw * 4.0F / 360.0F + 0.5) & 3) + 2) % 4;
+		bool canPlace = GenericPlace(_world, _pos, _placer, _face, _blockId, facing);
+		if (canPlace) {
+			// Turn on if we are being powered!
+			if (RedstoneManager::IsRepeaterInputPowered(_world, _pos, _meta)) {
+				_world.tickScheduler.ScheduleUpdateTick(_pos, _blockId, 1);
+			}
+			return true;
+		}
+		return false;
+	};
+
+	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                                       BlockType _blockId) -> void {
+		if (!CanRedstoneComponentStay(_world, _pos)) {
+			BreakAndDropBlock(_world, _pos);
+			return;
+		}
+		auto meta = _world.GetMetadata(_pos);
+		auto thisBlock = _world.GetBlockId(_pos);
+		bool inputPowered = RedstoneManager::IsRepeaterInputPowered(_world, _pos, meta);
+		bool isPoweredRepeater = _world.GetBlockId(_pos) ==
+		                         BLOCK_REDSTONE_REPEATER_ON; // Powered repeater calls this function too
+		int delaySetting = (meta & 12) >> 2;
+		int delayTicks = (delaySetting + 1) * 2;
+
+		if (isPoweredRepeater && !inputPowered) {
+			_world.tickScheduler.ScheduleUpdateTick(_pos, thisBlock, delayTicks);
+		} else if (!isPoweredRepeater && inputPowered) {
+			_world.tickScheduler.ScheduleUpdateTick(_pos, thisBlock, delayTicks);
+		}
+		GlobalLogger().debug << "Redstone repeater neighbor update triggered at " << _pos << "at tick " << _world.tickScheduler.currentTick << "!\n";
+	};
+
+	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                                        Java::Random& _random) -> void {
+		bool inputPowered = RedstoneManager::IsRepeaterInputPowered(_world, _pos, _meta);
+		bool isPoweredRepeater = _world.GetBlockId(_pos) ==
+		                         BLOCK_REDSTONE_REPEATER_ON; // Powered repeater calls this function too
+
+		if (isPoweredRepeater && !inputPowered) {
+			// Turn off if we are no longer being powered
+			_world.SetBlock(_pos, BLOCK_REDSTONE_REPEATER_OFF, _meta);
+		} else if (!isPoweredRepeater) {
+			// Turn on unconditionally
+			_world.SetBlock(_pos, BLOCK_REDSTONE_REPEATER_ON, _meta);
+			if (!inputPowered) {
+				// If we are no longer being powered request another update
+				int delaySetting = (_meta & 12) >> 2;
+				int delayTicks = (delaySetting + 1) * 2;
+				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_REDSTONE_REPEATER_ON, delayTicks);
+			}
+		}
+		GlobalLogger().debug << "Redstone repeater tick update triggered at " << _pos << " at tick "
+		                     << _world.tickScheduler.currentTick << "\n";
+	};
+
+	blockBehaviors[BLOCK_REDSTONE_REPEATER_ON].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                                      BlockType _blockId) -> void {
+		blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onNeighborBlockChange(_world, _pos, _blockId);
+	};
+
+	blockBehaviors[BLOCK_REDSTONE_REPEATER_ON].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                                       Java::Random& _random) -> void {
+		blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onTick(_world, _pos, _meta, _random);
+	};
+
+	blockBehaviors[BLOCK_REDSTONE_REPEATER_ON].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                                              PacketData::FaceDirection _face, BlockType _blockId,
+	                                                              uint8_t _meta) -> bool {
+		return blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockPlaced(_world, _pos, _placer, _face, _blockId, _meta);
 	};
 
 	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,

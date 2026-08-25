@@ -258,6 +258,21 @@ void RegisterAll() {
 	itemBehavior[DOOR_WOOD].onBlockUse = onDoorPlace;
 	itemBehavior[DOOR_IRON].onBlockUse = onDoorPlace;
 
+	itemBehavior[REDSTONE_REPEATER].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+	                                       PacketData::FaceDirection _face) {
+		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
+		if (Blocks::blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockPlaced(_world, placePos, _user, _face,
+		                                                                      BLOCK_REDSTONE_REPEATER_OFF, 0))
+			_stack->DecrementCount(1);
+	};
+
+	itemBehavior[REDSTONE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+	                                  PacketData::FaceDirection _face) {
+		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
+		if (Blocks::blockBehaviors[BLOCK_REDSTONE].onBlockPlaced(_world, placePos, _user, _face, BLOCK_REDSTONE, 0))
+			_stack->DecrementCount(1);
+	};
+
 	itemBehavior[BED].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
 	                                  PacketData::FaceDirection _face) {
 		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
