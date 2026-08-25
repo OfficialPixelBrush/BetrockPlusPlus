@@ -143,7 +143,7 @@ void Server::LoadConfig() {
 		config.Overwrite({
 		    { "level-name", "world" },
 		    { "view-distance", "10" },
-		    //{"white-list", "false"},
+		    { "white-list", "false" },
 		    //{"server-ip", ""},
 		    //{"motd", "A Minecraft Server"},
 		    //{"pvp","true"},
@@ -196,11 +196,57 @@ void Server::LoadConfig() {
 	//maximumPlayers = config.GetAsNumber<int32_t>("max-players");
 	//maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
 	useWhitelist = config.GetAsBoolean("white-list");
-	if (useWhitelist) {
-		GlobalLogger().info << "Whitelist enabled!\n";
-		whitelistedUsernames = ListParser::Read(ListParser::Target::Whitelist);
-	}
 	operatorUsernames = ListParser::Read(ListParser::Target::Operator);
+	if (useWhitelist) {
+		LoadWhitelist();
+		GlobalLogger().info << "Whitelist enabled!\n";
+	}
+}
+
+void Server::LoadWhitelist() {
+	if (whitelistLoaded)
+		return;
+	whitelistedUsernames = ListParser::Read(ListParser::Target::Whitelist);
+	whitelistLoaded = true;
+}
+
+void Server::UnloadWhitelist() {
+	whitelistedUsernames.clear();
+	whitelistedUsernames.shrink_to_fit();
+	whitelistLoaded = false;
+}
+
+void Server::SetWhitelistEnabled(bool _enabled, bool _persist) {
+	if (_enabled)
+		LoadWhitelist();
+	const bool changed = useWhitelist != _enabled;
+	useWhitelist = _enabled;
+	if (!_enabled)
+		UnloadWhitelist();
+	if (changed)
+		GlobalLogger().info << (useWhitelist ? "Whitelist enabled!\n" : "Whitelist disabled!\n");
+	if (!_persist)
+		return;
+	config.Set("white-list", useWhitelist ? "true" : "false");
+	if (!config.SaveKeyToDisk("white-list"))
+		GlobalLogger().error << "Failed to persist white-list to server.properties\n";
+}
+
+bool Server::SaveWhitelist() {
+	if (!whitelistLoaded)
+		return true;
+	return ListParser::Write(whitelistedUsernames, ListParser::Target::Whitelist);
+}
+
+bool Server::SaveOperators() {
+	return ListParser::Write(operatorUsernames, ListParser::Target::Operator);
+}
+
+void Server::ReloadWhitelist() {
+	if (!useWhitelist)
+		return;
+	whitelistedUsernames = ListParser::Read(ListParser::Target::Whitelist);
+	whitelistLoaded = true;
 }
 
 void Server::Startup() {
@@ -492,8 +538,8 @@ void Server::Stop() {
 	gameRuntime.saveManager.SaveLevelFile(curLevelData);
 
 	// Save operator and whitelist updates
-	ListParser::Write(whitelistedUsernames, ListParser::Target::Whitelist);
-	ListParser::Write(operatorUsernames, ListParser::Target::Operator);
+	SaveWhitelist();
+	SaveOperators();
 }
 
 void Server::AcceptNewPlayers() {

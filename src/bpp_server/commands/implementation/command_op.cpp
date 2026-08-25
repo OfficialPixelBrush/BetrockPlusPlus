@@ -8,6 +8,7 @@
 #include "../command_manager.h"
 #include "../command_registry.h"
 #include "server.h"
+#include "username.h"
 #include <algorithm>
 #include <format>
 
@@ -22,10 +23,14 @@ std::string TargetName(const strategos::CmdNode& _cmd, CommandContext& _ctx) {
 std::string OpPlayer(const strategos::CmdNode& _cmd, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
 	std::string name = TargetName(_cmd, ctx);
+	if (!IsValidUsername(name))
+		return "Invalid username!";
 	auto it = std::find(ctx.server->operatorUsernames.begin(), ctx.server->operatorUsernames.end(), name);
 	if (it != ctx.server->operatorUsernames.end())
 		return "User is already an operator!";
 	ctx.server->operatorUsernames.push_back(name);
+	if (!ctx.server->SaveOperators())
+		return "Failed to save ops!";
 	SendChat(*ctx.session, std::format("{} has been opped!", name));
 	return "";
 }
@@ -34,8 +39,11 @@ std::string DeopPlayer(const strategos::CmdNode& _cmd, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
 	std::string name = TargetName(_cmd, ctx);
 	auto it = std::find(ctx.server->operatorUsernames.begin(), ctx.server->operatorUsernames.end(), name);
-	if (it != ctx.server->operatorUsernames.end())
-		ctx.server->operatorUsernames.erase(it);
+	if (it == ctx.server->operatorUsernames.end())
+		return "User is not an operator!";
+	ctx.server->operatorUsernames.erase(it);
+	if (!ctx.server->SaveOperators())
+		return "Failed to save ops!";
 	SendChat(*ctx.session, std::format("{} has been deopped!", name));
 	return "";
 }

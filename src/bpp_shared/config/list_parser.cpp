@@ -7,28 +7,56 @@
 
 #include "list_parser.h"
 #include "logger.h"
+#include <algorithm>
+#include <cctype>
+#include <fstream>
+#include <string>
+
+namespace {
+
+std::string Trim(std::string _value) {
+	auto notSpace = [](unsigned char _c) { return !std::isspace(_c); };
+	_value.erase(_value.begin(), std::find_if(_value.begin(), _value.end(), notSpace));
+	_value.erase(std::find_if(_value.rbegin(), _value.rend(), notSpace).base(), _value.end());
+	return _value;
+}
+
+} // namespace
 
 std::vector<std::string> ListParser::Read(Target _target) {
 	std::vector<std::string> values;
-	std::ifstream file(TARGET_PATHS[size_t(_target)]);
+	const std::string path{ TARGET_PATHS[size_t(_target)] };
+	std::ifstream file(path);
 	if (!file) {
-		GlobalLogger().warn << TARGET_PATHS[size_t(_target)] << " doesn't exist! Creating it..." << "\n";
-		std::ofstream createFile(TARGET_PATHS[size_t(_target)]);
-		createFile.close();
+		GlobalLogger().warn << path << " doesn't exist! Creating it..." << "\n";
+		std::ofstream createFile(path);
+		if (!createFile)
+			GlobalLogger().error << "Failed to create " << path << "\n";
 		return {};
 	}
-	for (std::string username; getline(file, username);) {
-		values.push_back(username);
+	for (std::string username; std::getline(file, username);) {
+		username = Trim(std::move(username));
+		if (username.empty())
+			continue;
+		if (std::find(values.begin(), values.end(), username) == values.end())
+			values.push_back(std::move(username));
 	}
-	file.close();
 	return values;
 }
 
-bool ListParser::Write(std::vector<std::string>& _list, Target _target) {
-	std::ofstream file(TARGET_PATHS[size_t(_target)]);
-	for (auto entry : _list) {
-		file << entry << "\n";
+bool ListParser::Write(const std::vector<std::string>& _list, Target _target) {
+	const std::string path{ TARGET_PATHS[size_t(_target)] };
+	std::ofstream file(path);
+	if (!file) {
+		GlobalLogger().error << "Failed to open " << path << " for writing\n";
+		return false;
 	}
-	file.close();
+	for (const auto& entry : _list)
+		file << entry << '\n';
+	file.flush();
+	if (!file) {
+		GlobalLogger().error << "Failed to write " << path << "\n";
+		return false;
+	}
 	return true;
 }

@@ -234,6 +234,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 	// std::string path = "";
 	// Utilities::convertBetrockServerLevel(/*path=*/path);
 	Server serv;
+	if (args.enableWhitelist)
+		serv.SetWhitelistEnabled(true, false);
 	server = &serv;
 	server->Run();
 #if defined(ONLINE_MODE_AUTHENTICATION) || defined(BETACRAFT_HEARTBEAT)

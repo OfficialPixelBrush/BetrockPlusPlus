@@ -52,7 +52,9 @@ void CommandManager::Parse(std::string& _cmdString, PlayerSession& _session, Wor
 		if (!result) {
 			const auto& err = result.error();
 			std::string message = err.message;
-			if (err.error == strategos::ParseError::UnknownCommand && err.position == 0)
+			if (err.error == strategos::ParseError::NoPermission)
+				message = ERROR_OPERATOR;
+			else if (err.error == strategos::ParseError::UnknownCommand && err.position == 0)
 				message = ERROR_REASON_NO_EXIST;
 			SendChat(_session, "§c" + message);
 			return;

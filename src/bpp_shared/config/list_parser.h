@@ -5,8 +5,11 @@
  * 
 */
 
+#pragma once
+
 #include <array>
 #include <string>
+#include <string_view>
 #include <vector>
 
 /**
@@ -18,7 +21,7 @@ enum class Target {
 	Operator,
 	Whitelist
 };
-static constexpr std::array<std::string, 2> TARGET_PATHS{ "ops.txt", "whitelist.txt" };
+static constexpr std::array<std::string_view, 2> TARGET_PATHS{ "ops.txt", "whitelist.txt" };
 std::vector<std::string> Read(Target _target);
-bool Write(std::vector<std::string>& _list, Target _target);
+bool Write(const std::vector<std::string>& _list, Target _target);
 }; // namespace ListParser

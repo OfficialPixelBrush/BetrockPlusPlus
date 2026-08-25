@@ -6,8 +6,8 @@
 */
 #include "../packet/packet_utils.h"
 #include "../server.h"
+#include "username.h"
 #include "version.h"
-#include <regex>
 
 #ifdef DISCORD_INTEGRATION
 #include "discord.h"
@@ -41,13 +41,6 @@ void PlayerConnStateManager::HandleConnectionState(PlayerSession& _session, Serv
 		break;
 	}
 	}
-}
-
-bool PlayerConnStateManager::IsValidUsername(const std::string& _username) {
-	if (_username.size() < 3 || _username.size() > 16)
-		return false;
-	static const std::regex PATTERN(R"(^[A-Za-z0-9_]{3,16}$)");
-	return std::regex_match(_username, PATTERN);
 }
 
 void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, [[maybe_unused]] Server& _server) {
