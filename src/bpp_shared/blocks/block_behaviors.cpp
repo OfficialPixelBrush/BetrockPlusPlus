@@ -1069,7 +1069,6 @@ void RegisterBlockBehaviors() {
 		} else if (!isPoweredRepeater && inputPowered) {
 			_world.tickScheduler.ScheduleUpdateTick(_pos, thisBlock, delayTicks);
 		}
-		GlobalLogger().debug << "Redstone repeater neighbor update triggered at " << _pos << "at tick " << _world.tickScheduler.currentTick << "!\n";
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
@@ -1091,8 +1090,6 @@ void RegisterBlockBehaviors() {
 				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_REDSTONE_REPEATER_ON, delayTicks);
 			}
 		}
-		GlobalLogger().debug << "Redstone repeater tick update triggered at " << _pos << " at tick "
-		                     << _world.tickScheduler.currentTick << "\n";
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_ON].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
