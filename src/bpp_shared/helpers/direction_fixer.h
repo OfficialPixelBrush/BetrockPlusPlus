@@ -19,6 +19,7 @@
 #pragma once
 #include "../numeric_structs.h"
 #include "../enums/blocks.h"
+#include "../enums/network/packet_data.h"
 #include <array>
 
 // Makes this a little more readable-ish?
@@ -38,29 +39,29 @@ enum DirectionBlockType : size_t {
 };
 
 // Maps the metadata value to a direction value
-static constexpr Direction META_TO_DIRECTION_LUT[MAX_DIRECTION_BLOCK_TYPE][0b111] {
+static constexpr Direction::Value META_TO_DIRECTION_LUT[MAX_DIRECTION_BLOCK_TYPE][0b111] {
     // Torches
-    {Direction::None,Direction::West,Direction::East, Direction::South, Direction::North, Direction::Up, Direction::None},
+    {Direction::Value::None,Direction::Value::West,Direction::Value::East, Direction::Value::South, Direction::Value::North, Direction::Value::Up, Direction::Value::None},
     // Levers
-    {Direction::None,Direction::West,Direction::East, Direction::South, Direction::North, Direction::Up, Direction::Up},
+    {Direction::Value::None,Direction::Value::West,Direction::Value::East, Direction::Value::South, Direction::Value::North, Direction::Value::Up, Direction::Value::Up},
     // Buttons
-    {Direction::None,Direction::West,Direction::East, Direction::South, Direction::North, Direction::None, Direction::None},
+    {Direction::Value::None,Direction::Value::West,Direction::Value::East, Direction::Value::South, Direction::Value::North, Direction::Value::None, Direction::Value::None},
     // Stairs
-    {Direction::East,Direction::West,Direction::South, Direction::North, Direction::None, Direction::None, Direction::None},
+    {Direction::Value::East,Direction::Value::West,Direction::Value::South, Direction::Value::North, Direction::Value::None, Direction::Value::None, Direction::Value::None},
     // Doors
-    {Direction::East,Direction::South,Direction::West, Direction::North, Direction::None, Direction::None, Direction::None},
+    {Direction::Value::East,Direction::Value::South,Direction::Value::West, Direction::Value::North, Direction::Value::None, Direction::Value::None, Direction::Value::None},
     // Dispenser/Furnace/Ladder/Wall Sign
-    {Direction::None,Direction::None,Direction::North, Direction::South, Direction::West, Direction::East, Direction::None},
+    {Direction::Value::None,Direction::Value::None,Direction::Value::North, Direction::Value::South, Direction::Value::West, Direction::Value::East, Direction::Value::None},
     // Pistons
-    {Direction::Down,Direction::Up,Direction::North, Direction::South, Direction::East, Direction::West, Direction::None},
+    {Direction::Value::Down,Direction::Value::Up,Direction::Value::North, Direction::Value::South, Direction::Value::East, Direction::Value::West, Direction::Value::None},
     // Beds
-    {Direction::South,Direction::West,Direction::North, Direction::East, Direction::None, Direction::None, Direction::None},
+    {Direction::Value::South,Direction::Value::West,Direction::Value::North, Direction::Value::East, Direction::Value::None, Direction::Value::None, Direction::Value::None},
     // Pumpkins/Jack'o'Lantern
-    {Direction::South,Direction::West,Direction::North, Direction::East, Direction::None, Direction::None, Direction::None},
+    {Direction::Value::South,Direction::Value::West,Direction::Value::North, Direction::Value::East, Direction::Value::None, Direction::Value::None, Direction::Value::None},
     // Trapdoors
-    {Direction::South,Direction::North,Direction::East, Direction::West, Direction::None, Direction::None, Direction::None},
+    {Direction::Value::South,Direction::Value::North,Direction::Value::East, Direction::Value::West, Direction::Value::None, Direction::Value::None, Direction::Value::None},
     // Redstone Repeater
-    {Direction::North,Direction::East,Direction::South, Direction::West, Direction::None, Direction::None, Direction::None},
+    {Direction::Value::North,Direction::Value::East,Direction::Value::South, Direction::Value::West, Direction::Value::None, Direction::Value::None, Direction::Value::None},
 };
 
 /**
@@ -68,9 +69,9 @@ static constexpr Direction META_TO_DIRECTION_LUT[MAX_DIRECTION_BLOCK_TYPE][0b111
  * 
  * @param _type Block type
  * @param _meta Metadata value
- * @return Direction 
+ * @return Direction::Value 
  */
-Direction GetDirectionFromMeta(BlockType _type, uint8_t _meta) {
+static constexpr Direction::Value GetDirectionFromMeta(const BlockType _type, const uint8_t _meta) {
     switch(_type) {
         case BLOCK_TORCH:
         case BLOCK_REDSTONE_TORCH_OFF:
@@ -109,49 +110,49 @@ Direction GetDirectionFromMeta(BlockType _type, uint8_t _meta) {
         case BLOCK_REDSTONE_REPEATER_ON:
             return META_TO_DIRECTION_LUT[DirectionBlockType::RedstoneRepeater][_meta & 0b11];
         default: // Is a non-directional block
-            return Direction::None;
+            return Direction::Value::None;
     }
     // TODO: Should probably throw a warning or error?
-    return Direction::None;
+    return Direction::Value::None;
 }
 
 /**
  * @brief Turn a direction into an appropriate metadata value for the block
  * 
  * @param _type Block type
- * @param _dir Direction
+ * @param _dir Direction::Value
  * @return Metadata value 
  */
-static constexpr uint8_t GetMetaFromDirection(BlockType _type, Direction _dir) {
+static constexpr uint8_t GetMetaFromDirection(const BlockType _type, const Direction::Value _dir) {
     switch(_type) {
         case BLOCK_TORCH:
         case BLOCK_REDSTONE_TORCH_OFF:
         case BLOCK_ORE_REDSTONE_ON:
 	    case BLOCK_LEVER:
             switch(_dir) {
-		    case Direction::North:
+		    case Direction::Value::North:
                 return 4;
-		    case Direction::South:
+		    case Direction::Value::South:
                 return 3;
-		    case Direction::East:
+		    case Direction::Value::East:
                 return 2;
-		    case Direction::West:
+		    case Direction::Value::West:
                 return 1;
             // Note: For levers, handle North-South/East-West direction separately, defaults to North-South!
-		    case Direction::Up:
+		    case Direction::Value::Up:
                 return 5;
             default:
                 return 0;
 		    }
         case BLOCK_BUTTON_STONE:
             switch(_dir) {
-		    case Direction::North:
+		    case Direction::Value::North:
                 return 4;
-		    case Direction::South:
+		    case Direction::Value::South:
                 return 3;
-		    case Direction::East:
+		    case Direction::Value::East:
                 return 2;
-		    case Direction::West:
+		    case Direction::Value::West:
                 return 1;
             default:
                 return 0;
@@ -159,13 +160,13 @@ static constexpr uint8_t GetMetaFromDirection(BlockType _type, Direction _dir) {
         case BLOCK_STAIRS_COBBLESTONE:
         case BLOCK_STAIRS_WOOD:
             switch(_dir) {
-		    case Direction::North:
+		    case Direction::Value::North:
                 return 3;
-		    case Direction::South:
+		    case Direction::Value::South:
                 return 2;
-		    case Direction::East:
+		    case Direction::Value::East:
                 return 0;
-		    case Direction::West:
+		    case Direction::Value::West:
                 return 1;
             default:
                 return 0;
@@ -173,13 +174,13 @@ static constexpr uint8_t GetMetaFromDirection(BlockType _type, Direction _dir) {
         case BLOCK_DOOR_IRON:
         case BLOCK_DOOR_WOOD:
             switch(_dir) {
-		    case Direction::North:
+		    case Direction::Value::North:
                 return 3;
-		    case Direction::South:
+		    case Direction::Value::South:
                 return 1;
-		    case Direction::East:
+		    case Direction::Value::East:
                 return 0;
-		    case Direction::West:
+		    case Direction::Value::West:
                 return 2;
             default:
                 return 0;
@@ -190,13 +191,13 @@ static constexpr uint8_t GetMetaFromDirection(BlockType _type, Direction _dir) {
         case BLOCK_LADDER:
         case BLOCK_SIGN_WALL:
             switch(_dir) {
-		    case Direction::North:
+		    case Direction::Value::North:
                 return 2;
-		    case Direction::South:
+		    case Direction::Value::South:
                 return 3;
-		    case Direction::East:
+		    case Direction::Value::East:
                 return 5;
-		    case Direction::West:
+		    case Direction::Value::West:
                 return 4;
             default:
                 return 0;
@@ -206,30 +207,30 @@ static constexpr uint8_t GetMetaFromDirection(BlockType _type, Direction _dir) {
         case BLOCK_PISTON_HEAD:
         // TODO: Check if piston moving uses this too?
             switch(_dir) {
-		    case Direction::North:
+		    case Direction::Value::North:
                 return 2;
-		    case Direction::South:
+		    case Direction::Value::South:
                 return 3;
-		    case Direction::East:
+		    case Direction::Value::East:
                 return 4;
-		    case Direction::West:
+		    case Direction::Value::West:
                 return 5;
-            case Direction::Up:
+            case Direction::Value::Up:
                 return 1;
-            case Direction::Down:
+            case Direction::Value::Down:
                 return 0;
             default:
                 return 0;
             }
         case BLOCK_BED:
             switch(_dir) {
-		    case Direction::North:
+		    case Direction::Value::North:
                 return 2;
-		    case Direction::South:
+		    case Direction::Value::South:
                 return 0;
-		    case Direction::East:
+		    case Direction::Value::East:
                 return 3;
-		    case Direction::West:
+		    case Direction::Value::West:
                 return 1;
             default:
                 return 0;
@@ -237,26 +238,26 @@ static constexpr uint8_t GetMetaFromDirection(BlockType _type, Direction _dir) {
         case BLOCK_PUMPKIN:
         case BLOCK_PUMPKIN_LIT:
             switch(_dir) {
-		    case Direction::North:
+		    case Direction::Value::North:
                 return 2;
-		    case Direction::South:
+		    case Direction::Value::South:
                 return 0;
-		    case Direction::East:
+		    case Direction::Value::East:
                 return 3;
-		    case Direction::West:
+		    case Direction::Value::West:
                 return 1;
             default:
                 return 0;
             }
         case BLOCK_TRAPDOOR:
             switch(_dir) {
-		    case Direction::North:
+		    case Direction::Value::North:
                 return 1;
-		    case Direction::South:
+		    case Direction::Value::South:
                 return 0;
-		    case Direction::East:
+		    case Direction::Value::East:
                 return 2;
-		    case Direction::West:
+		    case Direction::Value::West:
                 return 3;
             default:
                 return 0;
@@ -264,13 +265,13 @@ static constexpr uint8_t GetMetaFromDirection(BlockType _type, Direction _dir) {
         case BLOCK_REDSTONE_REPEATER_OFF:
         case BLOCK_REDSTONE_REPEATER_ON:
             switch(_dir) {
-		    case Direction::North:
+		    case Direction::Value::North:
                 return 0;
-		    case Direction::South:
+		    case Direction::Value::South:
                 return 2;
-		    case Direction::East:
+		    case Direction::Value::East:
                 return 1;
-		    case Direction::West:
+		    case Direction::Value::West:
                 return 3;
             default:
                 return 0;
@@ -280,4 +281,42 @@ static constexpr uint8_t GetMetaFromDirection(BlockType _type, Direction _dir) {
     }
     // TODO: Should probably throw a warning or error?
     return 0;
+}
+
+static constexpr Direction::Value FaceDirectionToDirection(const PacketData::FaceDirection _face) {
+    switch(_face) {
+	case PacketData::Z_MINUS:
+        return Direction::Value::North;
+	case PacketData::Z_PLUS:
+        return Direction::Value::South;
+	case PacketData::X_MINUS:
+        return Direction::Value::West;
+	case PacketData::X_PLUS:
+        return Direction::Value::East;
+	case PacketData::Y_MINUS:
+        return Direction::Value::Down;
+	case PacketData::Y_PLUS:
+        return Direction::Value::Up;
+    default:
+        return Direction::Value::None;
+	}
+}
+
+static constexpr PacketData::FaceDirection DirectionToFaceDirection(const Direction::Value _dir) {
+    switch(_dir) {
+	case Direction::Value::North:
+        return PacketData::Z_MINUS;
+	case Direction::Value::South:
+        return PacketData::Z_PLUS;
+	case Direction::Value::West:
+        return PacketData::X_MINUS;
+	case Direction::Value::East:
+        return PacketData::X_PLUS;
+	case Direction::Value::Down:
+        return PacketData::Y_MINUS;
+	case Direction::Value::Up:
+        return PacketData::Y_PLUS;
+    default:
+        return PacketData::INVALID_USE;
+	}
 }
