@@ -11,6 +11,7 @@
 #include <fstream>
 #include <iostream>
 #include <mutex>
+#include <vector>
 
 // TODO: Replace std::string_view with std::filesystem::path
 Config::Config(const std::string& _pPath) {
@@ -88,6 +89,55 @@ bool Config::SaveToDisk() const noexcept {
 
 	GlobalLogger().info << "Properties file saved successfully.\n";
 	file.close();
+	return true;
+}
+
+bool Config::SaveKeyToDisk(const std::string& _key) {
+	std::string value;
+	{
+		std::shared_lock lock{ this->propertiesMutex };
+		auto it = this->properties.find(_key);
+		if (it == this->properties.end())
+			return false;
+		value = it->second;
+	}
+
+	std::ifstream in(this->path);
+	if (!in.is_open())
+		return SaveToDisk();
+
+	std::vector<std::string> lines;
+	bool found = false;
+	std::string line;
+	while (std::getline(in, line)) {
+		if (!line.empty() && line[0] != '#') {
+			auto delimiterPos = line.find('=');
+			if (delimiterPos != std::string::npos) {
+				std::string key = line.substr(0, delimiterPos);
+				key.erase(key.find_last_not_of(" \t\n\r\f\v") + 1);
+				if (key == _key) {
+					line = _key + "=" + value;
+					found = true;
+				}
+			}
+		}
+		lines.push_back(std::move(line));
+	}
+	in.close();
+	if (!found)
+		lines.push_back(_key + "=" + value);
+
+	std::ofstream out(this->path);
+	if (!out.is_open()) {
+		GlobalLogger().error << "**** Error opening properties file (save key).\n";
+		return false;
+	}
+	for (const auto& l : lines)
+		out << l << '\n';
+	if (!out) {
+		GlobalLogger().error << "**** Error while writing properties file\n";
+		return false;
+	}
 	return true;
 }
 

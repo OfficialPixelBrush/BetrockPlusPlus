@@ -155,7 +155,15 @@ public:
 	std::vector<std::string> whitelistedUsernames = {};
 	std::vector<std::string> operatorUsernames = {};
 
+	void SetWhitelistEnabled(bool _enabled, bool _persist = true);
+	void LoadWhitelist();
+	void UnloadWhitelist();
+	bool SaveWhitelist();
+	bool SaveOperators();
+	void ReloadWhitelist();
+
 private:
+	bool whitelistLoaded = false;
 	friend bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld,
 	                                       Server& _server);
 	friend void ChunkBroadcaster::BroadcastBlockChanges(Server& _server,

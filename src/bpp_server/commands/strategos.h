@@ -267,8 +267,19 @@ public:
 		const Node* current = &rootNode;
 		size_t token_idx = 0;
 
+		auto lacksOperator = [&]() {
+			return cmd_ctx.size() > 1 && cmd_ctx[1].node && cmd_ctx[1].node->requiresOperator &&
+			       (!canOperate || !canOperate(user_data));
+		};
+		auto operatorError = []() {
+			return std::unexpected(ErrorInfo{ .error = ParseError::NoPermission,
+			                                  .message = "Only operators can use this command!" });
+		};
+
 		while (token_idx < tokens.size()) {
 			if (current->children.empty()) {
+				if (lacksOperator())
+					return operatorError();
 				return std::unexpected(ErrorInfo{ .error = ParseError::TooManyArguments,
 				                                  .message = std::format("Unexpected token '{}'", tokens[token_idx]),
 				                                  .position = token_idx });
@@ -277,6 +288,8 @@ public:
 			auto [matched_node, consumed] = find_matching_child(*current, tokens, token_idx);
 
 			if (!matched_node) {
+				if (lacksOperator())
+					return operatorError();
 				return std::unexpected(
 				    ErrorInfo{ .error = ParseError::UnknownCommand,
 				               .message = std::format("Unknown token '{}'. Expected: {}", tokens[token_idx],
@@ -286,6 +299,10 @@ public:
 
 			auto& cmd_node = cmd_ctx.emplace_back();
 			cmd_node.node = matched_node;
+
+			// Privilege check as soon as the command is identified, before syntax errors.
+			if (lacksOperator())
+				return operatorError();
 
 			if (!parse_node_value(*matched_node, tokens, token_idx, consumed, cmd_node.data)) {
 				return std::unexpected(ErrorInfo{ .error = ParseError::InvalidToken,
@@ -299,17 +316,13 @@ public:
 			token_idx += 1 + consumed;
 		}
 
+		if (lacksOperator())
+			return operatorError();
+
 		if (!current->action) {
 			return std::unexpected(
 			    ErrorInfo{ .error = ParseError::IncompleteCommand,
 			               .message = std::format("Incomplete command. Expected: {}", get_expected_names(*current)) });
-		}
-
-		if (cmd_ctx.size() > 1 && cmd_ctx[1].node && cmd_ctx[1].node->requiresOperator) {
-			if (!canOperate || !canOperate(user_data)) {
-				return std::unexpected(ErrorInfo{ .error = ParseError::NoPermission,
-				                                  .message = "You lack the required permissions for this command!" });
-			}
 		}
 
 		return current->action(cmd_ctx[1], user_data);

@@ -7,22 +7,45 @@
 #include "../command.h"
 #include "../command_manager.h"
 #include "../command_registry.h"
-#include "config/list_parser.h"
 #include "server.h"
+#include "username.h"
 #include <algorithm>
 #include <format>
 
 namespace {
+
+// Load the whitelist for this command; unload again if it stays disabled.
+struct WhitelistSession {
+	Server& server;
+	const bool unloadOnExit;
+
+	explicit WhitelistSession(Server& _server) : server(_server), unloadOnExit(!_server.useWhitelist) {
+		server.LoadWhitelist();
+	}
+
+	~WhitelistSession() {
+		if (unloadOnExit)
+			server.UnloadWhitelist();
+	}
+
+	WhitelistSession(const WhitelistSession&) = delete;
+	WhitelistSession& operator=(const WhitelistSession&) = delete;
+};
 
 std::string WhitelistAdd(const strategos::CmdNode& _cmd, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
 	auto name = _cmd.get_arg<std::string>("username");
 	if (!name)
 		return ERROR_REASON_TOO_FEW_PARAMETERS;
+	if (!IsValidUsername(*name))
+		return "Invalid username!";
+	WhitelistSession list(*ctx.server);
 	auto it = std::find(ctx.server->whitelistedUsernames.begin(), ctx.server->whitelistedUsernames.end(), *name);
 	if (it != ctx.server->whitelistedUsernames.end())
 		return "User is already on whitelist!";
 	ctx.server->whitelistedUsernames.push_back(*name);
+	if (!ctx.server->SaveWhitelist())
+		return "Failed to save whitelist!";
 	SendChat(*ctx.session, std::format("{} has been added to the whitelist!", *name));
 	return "";
 }
@@ -32,47 +55,56 @@ std::string WhitelistRemove(const strategos::CmdNode& _cmd, void* _userData) {
 	auto name = _cmd.get_arg<std::string>("username");
 	if (!name)
 		return ERROR_REASON_TOO_FEW_PARAMETERS;
+	WhitelistSession list(*ctx.server);
 	auto it = std::find(ctx.server->whitelistedUsernames.begin(), ctx.server->whitelistedUsernames.end(), *name);
-	if (it != ctx.server->whitelistedUsernames.end())
-		ctx.server->whitelistedUsernames.erase(it);
+	if (it == ctx.server->whitelistedUsernames.end())
+		return "User is not on the whitelist!";
+	ctx.server->whitelistedUsernames.erase(it);
+	if (!ctx.server->SaveWhitelist())
+		return "Failed to save whitelist!";
 	SendChat(*ctx.session, std::format("{} has been removed from the whitelist!", *name));
 	return "";
 }
 
 std::string WhitelistOn(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	ctx.server->useWhitelist = true;
+	ctx.server->SetWhitelistEnabled(true);
 	SendChat(*ctx.session, "Whitelist has been enabled!");
 	return "";
 }
 
 std::string WhitelistOff(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	ctx.server->useWhitelist = false;
+	ctx.server->SetWhitelistEnabled(false);
 	SendChat(*ctx.session, "Whitelist has been disabled!");
 	return "";
 }
 
 std::string WhitelistList(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	const auto& list = ctx.server->whitelistedUsernames;
-	SendChat(*ctx.session, std::format("§7-- {} Whitelisted Player(s) --", list.size()));
+	WhitelistSession list(*ctx.server);
+	const auto& names = ctx.server->whitelistedUsernames;
+	SendChat(*ctx.session, std::format("§7-- {} Whitelisted Player(s) --", names.size()));
 	std::string line = "§7";
-	for (size_t i = 0; i < list.size(); i++) {
-		auto& p = list[i];
-		if (line.size() + p.size() > 64) {
+	for (size_t i = 0; i < names.size(); i++) {
+		auto& p = names[i];
+		const std::string suffix = (i < (names.size() - 1)) ? ", " : "";
+		if (line.size() + p.size() + suffix.size() > 64 && line != "§7") {
 			SendChat(*ctx.session, line);
 			line = "§7";
 		}
-		line += p + ((i < (list.size() - 1)) ? ", " : "");
+		line += p + suffix;
 	}
-	SendChat(*ctx.session, line);
+	if (line != "§7")
+		SendChat(*ctx.session, line);
 	return "";
 }
 
 std::string WhitelistReload(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	ctx.server->whitelistedUsernames = ListParser::Read(ListParser::Target::Whitelist);
+	if (!ctx.server->useWhitelist)
+		return "Whitelist is not enabled!";
+	ctx.server->ReloadWhitelist();
 	SendChat(*ctx.session, "Reloaded whitelist!");
 	return "";
 }
