@@ -45,8 +45,8 @@ struct TickScheduler {
 	void ScheduleUpdateTick(Int3 _pos, BlockType _block, int _tickDelay) {
 		TickTime dueTick = currentTick + TickTime(_tickDelay);
 		auto it = pending.find(_pos);
-		if (it != pending.end() && it->second.dueTick == dueTick) {
-			return; // already scheduled for exactly this tick
+		if (it != pending.end()) {
+			return; // an update is already pending for this block
 		}
 		auto sequence = nextSequence++;
 		scheduledTicks.push({ dueTick, sequence, _pos, _block });
