@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <ostream>
 #include <sstream>
+#include "direction.h"
 
 #if defined(__has_include)
 #if __has_include(<glm/glm.hpp>)
@@ -17,16 +18,6 @@
 #define TRINUM_HAS_GLM 1
 #endif
 #endif
-
-enum class Direction {
-	None,
-	North,
-	South,
-	East,
-	West,
-	Up,
-	Down
-};
 
 /**
  * @brief A struct that contains three numbers (x,y,z)
@@ -209,33 +200,33 @@ struct TriNumber {
 		return std::sqrt(x * x + y * y + z * z);
 	}
 
-	auto Offset(const Direction _direction, const T _value = 1) {
+	auto Offset(const Direction::Value _direction, const T _value = 1) {
 		switch (_direction) {
-			case Direction::None:
+			case Direction::Value::None:
 				break;
-			case Direction::North:
+			case Direction::Value::North:
 				z -= _value;
 				break;
-			case Direction::South:
+			case Direction::Value::South:
 				z += _value;
 				break;
-			case Direction::East:
+			case Direction::Value::East:
 				x += _value;
 				break;
-			case Direction::West:
+			case Direction::Value::West:
 				x -= _value;
 				break;
-			case Direction::Up:
+			case Direction::Value::Up:
 				y += _value;
 				break;
-			case Direction::Down:
+			case Direction::Value::Down:
 				y -= _value;
 				break;
 		}
 		return *this;
 	}
 
-	auto WithOffset(const Direction _direction, const T _value = 1) const {
+	auto WithOffset(const Direction::Value _direction, const T _value = 1) const {
 		TriNumber<T> result = *this;
 		return result.Offset(_direction, _value);
 	}
@@ -398,29 +389,29 @@ struct BiNumber {
 		return x * y;
 	}
 
-	auto Offset(const Direction _direction, const T _value = 1) {
+	auto Offset(const Direction::Value _direction, const T _value = 1) {
 		switch (_direction) {
-			case Direction::None:
+			case Direction::Value::None:
 				break;
-			case Direction::Up:
-			case Direction::North:
+			case Direction::Value::Up:
+			case Direction::Value::North:
 				z -= _value;
 				break;
-			case Direction::Down:
-			case Direction::South:
+			case Direction::Value::Down:
+			case Direction::Value::South:
 				z += _value;
 				break;
-			case Direction::East:
+			case Direction::Value::East:
 				x += _value;
 				break;
-			case Direction::West:
+			case Direction::Value::West:
 				x -= _value;
 				break;
 		}
 		return *this;
 	}
 
-	auto WithOffset(const Direction _direction, const T _value = 1) const {
+	auto WithOffset(const Direction::Value _direction, const T _value = 1) const {
 		BiNumber<T> result = *this;
 		return result.Offset(_direction, _value);
 	}

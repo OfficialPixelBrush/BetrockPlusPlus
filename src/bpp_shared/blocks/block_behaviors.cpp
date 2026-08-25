@@ -27,21 +27,6 @@
 namespace Blocks {
 BlockBehavior blockBehaviors[BLOCK_MAX] = {};
 
-constexpr static Direction AngleToDirection(const float _yaw) {
-	switch(MathHelper::FloorDouble((_yaw + 180.0f) * 4.0f / 360.0f - 0.5f) & 0b11) {
-		case 0:
-			return Direction::East;
-		case 1:
-			return Direction::South;
-		case 2:
-			return Direction::West;
-		case 3:
-			return Direction::North;
-		default:
-			return Direction::None;
-	}
-}
-
 static bool CanRedstoneComponentStay(WorldManager& _world, Int3 _pos) {
 	return _world.IsBlockNormalCube({ _pos.x, _pos.y - 1, _pos.z });
 }
@@ -1176,45 +1161,23 @@ void RegisterBlockBehaviors() {
 
 		// _pos is already the target cell
 		Int3 placePos = _pos;
-		Int3 abovePos = { placePos.x, placePos.y + 1, placePos.z };
+		Int3 abovePos = placePos.WithOffset(Direction::Value::Up);
 
 		// Is this placement valid?
 		if (!_world.InBounds(abovePos.y))
 			return false;
-		if (!_world.IsBlockNormalCube({ placePos.x, placePos.y - 1, placePos.z }))
+		if (!_world.IsBlockNormalCube(placePos.WithOffset(Direction::Value::Down)))
 			return false;
 		if (!IsReplaceable(_world, placePos) || !IsReplaceable(_world, abovePos))
 			return false;
 
-		int facing = MathHelper::FloorDouble((_placer.rotationYaw + 180.0F) * 4.0F / 360.0F - 0.5f) & 3;
+		Direction::Value facing = Direction::FromAngle(_placer.rotationYaw);
 
-		Int3 leftOffset{};
-		Int3 rightOffset{};
+		Int3 left = placePos.WithOffset(Direction::ToLeft(facing));
+		Int3 leftTop = left.WithOffset(Direction::Value::Up);
 
-		switch (facing) {
-		case 0:
-			leftOffset = { 0, 0, -1 };
-			rightOffset = { 0, 0, 1 };
-			break;
-		case 1:
-			leftOffset = { 1, 0, 0 };
-			rightOffset = { -1, 0, 0 };
-			break;
-		case 2:
-			leftOffset = { 0, 0, 1 };
-			rightOffset = { 0, 0, -1 };
-			break;
-		case 3:
-			leftOffset = { -1, 0, 0 };
-			rightOffset = { 1, 0, 0 };
-			break;
-		}
-
-		Int3 left = placePos + leftOffset;
-		Int3 leftTop = { left.x, left.y + 1, left.z };
-
-		Int3 right = placePos + rightOffset;
-		Int3 rightTop = { right.x, right.y + 1, right.z };
+		Int3 right = placePos.WithOffset(Direction::ToRight(facing));
+		Int3 rightTop = right.WithOffset(Direction::Value::Up);
 
 		int leftSolidBlocks = (_world.IsBlockNormalCube(left) ? 1 : 0) + (_world.IsBlockNormalCube(leftTop) ? 1 : 0);
 		int rightSolidBlocks = (_world.IsBlockNormalCube(right) ? 1 : 0) + (_world.IsBlockNormalCube(rightTop) ? 1 : 0);
@@ -1229,13 +1192,15 @@ void RegisterBlockBehaviors() {
 			hingeOnRight = true;
 		}
 
-		if (hingeOnRight) {
-			facing = (facing - 1) & 3;
-			facing |= 4;
-		}
+		if (hingeOnRight)
+			facing = Direction::ToLeft(facing);
 
-		_world.SetBlock(placePos, _blockId, uint8_t(facing));
-		_world.SetBlock(abovePos, _blockId, uint8_t(facing | 8));
+		uint8_t meta = GetMetaFromDirection(_blockId, facing);
+		if (hingeOnRight)
+			meta |= 4;
+
+		_world.SetBlock(placePos, _blockId, meta);
+		_world.SetBlock(abovePos, _blockId, uint8_t(meta | 8));
 
 		// heldItem->DecrementCount(1) is handled by the caller when this returns true.
 		return true;
@@ -1270,12 +1235,12 @@ void RegisterBlockBehaviors() {
 		if (!_world.InBounds(placePos.y))
 			return false;
 
-		const Direction dir = AngleToDirection(_placer.rotationYaw);
+		const auto dir = Direction::FromAngle(_placer.rotationYaw);
 		const Int3 headPos = placePos.WithOffset(dir);
 
 		// Is this placement valid?
-		if (!_world.IsBlockNormalCube(placePos.WithOffset(Direction::Down)) ||
-		    !_world.IsBlockNormalCube(headPos.WithOffset(Direction::Down)))
+		if (!_world.IsBlockNormalCube(placePos.WithOffset(Direction::Value::Down)) ||
+		    !_world.IsBlockNormalCube(headPos.WithOffset(Direction::Value::Down)))
 			return false;
 		if (!IsReplaceable(_world, placePos) || !IsReplaceable(_world, headPos))
 			return false;
