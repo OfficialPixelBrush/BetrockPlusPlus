@@ -381,7 +381,8 @@ void RegisterBlockBehaviors() {
 		.getRayBounds = RedstoneDustAabb,
 		.getCollider = EmptyCollider,
 		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
-		    if (_blockId != BLOCK_REDSTONE) RedstoneManager::RefreshWireAt(_world, _pos);
+		    if (_blockId != BLOCK_REDSTONE)
+			    RedstoneManager::RefreshWireAt(_world, _pos);
 		},
 	};
 
@@ -1154,6 +1155,55 @@ void RegisterBlockBehaviors() {
 	};
 	blockBehaviors[BLOCK_DOOR_IRON].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
 		BreakDoor(_world, _pos, BLOCK_DOOR_IRON);
+	};
+
+	blockBehaviors[BLOCK_BED].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                             PacketData::FaceDirection _face, BlockType _blockId,
+	                                             uint8_t _meta) -> bool {
+		// Beds can only be placed by clicking the top face of a block
+		if (_face != PacketData::FaceDirection::Y_PLUS)
+			return false;
+
+		// _pos is already the target cell
+		const Int3 placePos = _pos;
+		if (!_world.InBounds(placePos.y))
+			return false;
+
+		int facing = MathHelper::FloorDouble((_placer.rotationYaw + 180.0F) * 4.0F / 360.0F - 0.5f) & 3;
+
+		Int3 headPos = placePos;
+		GlobalLogger().info << facing << "\n";
+		switch (facing) {
+		case 0:
+			headPos += { 1, 0, 0 };
+			break;
+		case 1:
+			headPos += { 0, 0, 1 };
+			break;
+		case 2:
+			headPos += { -1, 0, 0 };
+			break;
+		case 3:
+			headPos += { 0, 0, -1 };
+			break;
+		}
+		facing = (facing - 1) & 0b11;
+
+		// Is this placement valid?
+		if (!_world.IsBlockNormalCube({ placePos.x, placePos.y - 1, placePos.z }) ||
+		    !_world.IsBlockNormalCube({ placePos.x, headPos.y - 1, placePos.z }))
+			return false;
+		if (!IsReplaceable(_world, placePos) || !IsReplaceable(_world, headPos))
+			return false;
+
+		_world.SetBlock(placePos, _blockId, uint8_t(facing));
+		_world.SetBlock(headPos, _blockId, uint8_t(facing | 0b1000));
+
+		return true;
+	};
+	//blockBehaviors[BLOCK_BED].onBlockClicked = ToggleDoor;
+	blockBehaviors[BLOCK_BED].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
+		// TODO
 	};
 
 	// Grass spread / decay
