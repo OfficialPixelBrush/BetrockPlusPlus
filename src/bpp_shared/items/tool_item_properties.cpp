@@ -225,7 +225,7 @@ void RegisterAll() {
 	};
 
 	itemBehavior[SEEDS_WHEAT].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                        PacketData::FaceDirection _face) {
+	                                          PacketData::FaceDirection _face) {
 		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
 		if (!Blocks::CanCropsSurviveAt(_world, placePos))
 			return;
@@ -257,6 +257,13 @@ void RegisterAll() {
 
 	itemBehavior[DOOR_WOOD].onBlockUse = onDoorPlace;
 	itemBehavior[DOOR_IRON].onBlockUse = onDoorPlace;
+
+	itemBehavior[BED].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+	                                  PacketData::FaceDirection _face) {
+		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
+		if (Blocks::blockBehaviors[BLOCK_BED].onBlockPlaced(_world, placePos, _user, _face, BLOCK_BED, 0))
+			_stack->DecrementCount(1);
+	};
 
 	itemBehavior[MAP].onStartHolding = [](ItemStack* _stack, PlayerSession& _session) {
 		GlobalLogger().debug << "Started holding a map!\n";
