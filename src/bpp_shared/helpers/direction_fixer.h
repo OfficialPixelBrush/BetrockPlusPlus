@@ -54,7 +54,7 @@ static constexpr Direction META_TO_DIRECTION_LUT[MAX_DIRECTION_BLOCK_TYPE][0b111
     // Pistons
     {Direction::Down,Direction::Up,Direction::North, Direction::South, Direction::East, Direction::West, Direction::None},
     // Beds
-    {Direction::South,Direction::East,Direction::North, Direction::West, Direction::None, Direction::None, Direction::None},
+    {Direction::South,Direction::West,Direction::North, Direction::East, Direction::None, Direction::None, Direction::None},
     // Pumpkins/Jack'o'Lantern
     {Direction::South,Direction::West,Direction::North, Direction::East, Direction::None, Direction::None, Direction::None},
     // Trapdoors
@@ -228,9 +228,9 @@ static constexpr uint8_t GetMetaFromDirection(BlockType _type, Direction _dir) {
 		    case Direction::South:
                 return 0;
 		    case Direction::East:
-                return 1;
-		    case Direction::West:
                 return 3;
+		    case Direction::West:
+                return 1;
             default:
                 return 0;
             }

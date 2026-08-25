@@ -19,10 +19,28 @@
 #include "redstone_manager.h"
 #include "tick_scheduler.h"
 #include "tile_entities/tile_entity.h"
+#include "../numeric_structs.h"
+#include "../helpers/java/java_math.h"
 #include "world.h"
+#include "../helpers/direction_fixer.h"
 
 namespace Blocks {
 BlockBehavior blockBehaviors[BLOCK_MAX] = {};
+
+constexpr static Direction AngleToDirection(const float _yaw) {
+	switch(MathHelper::FloorDouble((_yaw + 180.0f) * 4.0f / 360.0f - 0.5f) & 0b11) {
+		case 0:
+			return Direction::East;
+		case 1:
+			return Direction::South;
+		case 2:
+			return Direction::West;
+		case 3:
+			return Direction::North;
+		default:
+			return Direction::None;
+	}
+}
 
 static bool CanRedstoneComponentStay(WorldManager& _world, Int3 _pos) {
 	return _world.IsBlockNormalCube({ _pos.x, _pos.y - 1, _pos.z });
@@ -1252,35 +1270,19 @@ void RegisterBlockBehaviors() {
 		if (!_world.InBounds(placePos.y))
 			return false;
 
-		int facing = MathHelper::FloorDouble((_placer.rotationYaw + 180.0F) * 4.0F / 360.0F - 0.5f) & 3;
-
-		Int3 headPos = placePos;
-		GlobalLogger().info << facing << "\n";
-		switch (facing) {
-		case 0:
-			headPos += { 1, 0, 0 };
-			break;
-		case 1:
-			headPos += { 0, 0, 1 };
-			break;
-		case 2:
-			headPos += { -1, 0, 0 };
-			break;
-		case 3:
-			headPos += { 0, 0, -1 };
-			break;
-		}
-		facing = (facing - 1) & 0b11;
+		const Direction dir = AngleToDirection(_placer.rotationYaw);
+		const Int3 headPos = placePos.WithOffset(dir);
 
 		// Is this placement valid?
-		if (!_world.IsBlockNormalCube({ placePos.x, placePos.y - 1, placePos.z }) ||
-		    !_world.IsBlockNormalCube({ placePos.x, headPos.y - 1, placePos.z }))
+		if (!_world.IsBlockNormalCube(placePos.WithOffset(Direction::Down)) ||
+		    !_world.IsBlockNormalCube(headPos.WithOffset(Direction::Down)))
 			return false;
 		if (!IsReplaceable(_world, placePos) || !IsReplaceable(_world, headPos))
 			return false;
 
-		_world.SetBlock(placePos, _blockId, uint8_t(facing));
-		_world.SetBlock(headPos, _blockId, uint8_t(facing | 0b1000));
+		uint8_t meta = GetMetaFromDirection(BLOCK_BED, dir);
+		_world.SetBlock(placePos, _blockId, meta);
+		_world.SetBlock(headPos, _blockId, uint8_t(meta | 0b1000));
 
 		return true;
 	};
