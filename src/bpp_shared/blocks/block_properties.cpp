@@ -964,6 +964,7 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
+		.ticksOnLoad = true
 	};
 
 	// Redstone Torch (on)
@@ -977,6 +978,7 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
+		.ticksOnLoad = true
 	};
 
 	// Stone Button

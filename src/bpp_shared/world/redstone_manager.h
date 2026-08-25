@@ -35,6 +35,7 @@ void TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos, BlockType _newBlock,
 void RefreshWireAt(WorldManager& _world, Int3 _pos);
 
 bool CanBridgeVertical(WorldManager& _world, Int3 _pos, int _dx, int _dz, int _dyOffset);
+bool IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, uint8_t _meta);
 ComponentProfile GetRedstoneDustConnectivity(WorldManager& _world, Int3 _pos);
 PowerProfile GetBlockPowerProfile(WorldManager& _world, Int3 _pos);
 
@@ -48,8 +49,6 @@ static bool CanTriggerRedstoneUpdate(BlockType _block) {
 	case BLOCK_REDSTONE_TORCH_ON:
 	case BLOCK_REDSTONE_TORCH_OFF:
 		return true;
-	// Repeaters are always false here
-	// Yes this means they dont cause updates!
 	default:
 		return false;
 	}
