@@ -48,6 +48,8 @@ static bool CanTriggerRedstoneUpdate(BlockType _block) {
 	case BLOCK_PRESSURE_PLATE_WOOD:
 	case BLOCK_REDSTONE_TORCH_ON:
 	case BLOCK_REDSTONE_TORCH_OFF:
+	case BLOCK_REDSTONE_REPEATER_ON:
+	case BLOCK_REDSTONE_REPEATER_OFF:
 		return true;
 	default:
 		return false;
