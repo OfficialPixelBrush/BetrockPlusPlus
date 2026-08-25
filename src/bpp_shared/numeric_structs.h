@@ -18,6 +18,16 @@
 #endif
 #endif
 
+enum class Direction {
+	None,
+	North,
+	South,
+	East,
+	West,
+	Up,
+	Down
+};
+
 /**
  * @brief A struct that contains three numbers (x,y,z)
  * 
@@ -198,6 +208,32 @@ struct TriNumber {
 	double Length() const {
 		return std::sqrt(x * x + y * y + z * z);
 	}
+
+	auto Offset(Direction _direction, T _value = 1) {
+		switch (_direction) {
+			case Direction::None:
+				break;
+			case Direction::North:
+				z -= _value;
+				break;
+			case Direction::South:
+				z += _value;
+				break;
+			case Direction::East:
+				x += _value;
+				break;
+			case Direction::West:
+				x -= _value;
+				break;
+			case Direction::Up:
+				y += _value;
+				break;
+			case Direction::Down:
+				y -= _value;
+				break;
+		}
+		return *this;
+	}
 };
 
 /**
@@ -355,6 +391,28 @@ struct BiNumber {
 
 	T Total() const {
 		return x * y;
+	}
+
+	auto Offset(Direction _direction, T _value = 1) {
+		switch (_direction) {
+			case Direction::None:
+				break;
+			case Direction::Up:
+			case Direction::North:
+				z -= _value;
+				break;
+			case Direction::Down:
+			case Direction::South:
+				z += _value;
+				break;
+			case Direction::East:
+				x += _value;
+				break;
+			case Direction::West:
+				x -= _value;
+				break;
+		}
+		return *this;
 	}
 };
 
