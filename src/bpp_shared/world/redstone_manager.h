@@ -29,7 +29,14 @@ struct PowerProfile {
 };
 
 namespace RedstoneManager {
-void TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos);
+void TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos, BlockType _newBlock, BlockType _oldBlock);
+
+// Call this from redstone dust's onNeighborBlockChange
+void RefreshWireAt(WorldManager& _world, Int3 _pos);
+
+bool CanBridgeVertical(WorldManager& _world, Int3 _pos, int _dx, int _dz, int _dyOffset);
+ComponentProfile GetRedstoneDustConnectivity(WorldManager& _world, Int3 _pos);
+PowerProfile GetBlockPowerProfile(WorldManager& _world, Int3 _pos);
 
 static bool CanTriggerRedstoneUpdate(BlockType _block) {
 	switch (_block) {

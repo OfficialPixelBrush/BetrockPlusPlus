@@ -6,11 +6,11 @@
 */
 
 #include "redstone_manager.h"
+#include "logger/logger.h"
 #include "world.h"
 #include <unordered_set>
 
-// Determines whether redstone dust can bridge a one-block vertical step
-static bool CanBridgeVertical(WorldManager& _world, Int3 _pos, int _dx, int _dz, int _dyOffset) {
+bool RedstoneManager::CanBridgeVertical(WorldManager& _world, Int3 _pos, int _dx, int _dz, int _dyOffset) {
 	bool sideIsSolid = Blocks::blockProperties[_world.GetBlockId({ _pos.x + _dx, _pos.y, _pos.z + _dz })].isNormalCube;
 
 	if (_dyOffset > 0) {
@@ -21,7 +21,7 @@ static bool CanBridgeVertical(WorldManager& _world, Int3 _pos, int _dx, int _dz,
 	return !sideIsSolid;
 }
 
-static ComponentProfile GetRedstoneDustConnectivity(WorldManager& _world, Int3 _pos) {
+ComponentProfile RedstoneManager::GetRedstoneDustConnectivity(WorldManager& _world, Int3 _pos) {
 	// Check if this redstone dust is being redirected, and if so, where its being redirected to
 	ComponentProfile thisProfile;
 
@@ -56,7 +56,7 @@ static ComponentProfile GetRedstoneDustConnectivity(WorldManager& _world, Int3 _
 	return thisProfile;
 }
 
-static PowerProfile GetBlockPowerProfile(WorldManager& _world, Int3 _pos) {
+PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _pos) {
 	auto thisBlock = _world.GetBlockId(_pos);
 
 	// Non opaque blocks cant have power travel through them
@@ -89,14 +89,17 @@ static PowerProfile GetBlockPowerProfile(WorldManager& _world, Int3 _pos) {
 		// This is redstone dust, see if it is connecting to this block
 		if (_world.GetBlockId(thisPos) == BLOCK_REDSTONE && _world.GetMetadata(thisPos) > 0) {
 			auto grdc = GetRedstoneDustConnectivity(_world, thisPos);
-			if (rdx != 0) {
-				// We care about the X here
-				if (!grdc.powerX && !grdc.powerNX)
+			if (rdx == 1) {
+				if (!grdc.powerNX)
 					softPowered = true;
-			}
-			if (rdz != 0) {
-				// We care about the Z here
-				if (!grdc.powerZ && !grdc.powerNZ)
+			} else if (rdx == -1) {
+				if (!grdc.powerX)
+					softPowered = true;
+			} else if (rdz == 1) {
+				if (!grdc.powerNZ)
+					softPowered = true;
+			} else if (rdz == -1) {
+				if (!grdc.powerZ)
 					softPowered = true;
 			}
 		}
@@ -118,11 +121,11 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 	auto thisMeta = _world.GetMetadata(_pos);
 
 	// Is the block under us being hard powered?
-	if (GetBlockPowerProfile(_world, { _pos.x, _pos.y - 1, _pos.z }).hardPowered)
+	if (RedstoneManager::GetBlockPowerProfile(_world, { _pos.x, _pos.y - 1, _pos.z }).hardPowered)
 		return 15;
 
 	// Is the block above us being hard powered?
-	if (GetBlockPowerProfile(_world, { _pos.x, _pos.y + 1, _pos.z }).hardPowered)
+	if (RedstoneManager::GetBlockPowerProfile(_world, { _pos.x, _pos.y + 1, _pos.z }).hardPowered)
 		return 15;
 
 	// Can the block above us power us?
@@ -142,7 +145,7 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 
 		for (int dy = _pos.y - 1; dy <= _pos.y + 1; dy++) {
 			// We only care if we are being hard powered from the same Y level
-			if (dy == _pos.y && GetBlockPowerProfile(_world, { dx, dy, dz }).hardPowered)
+			if (dy == _pos.y && RedstoneManager::GetBlockPowerProfile(_world, { dx, dy, dz }).hardPowered)
 				return 15;
 
 			// A torch sitting directly beside us
@@ -166,9 +169,9 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 			}
 
 			// Check if we are a valid connection (same level, or a valid vertical bridge)
-			bool canConnect = (dy == _pos.y) || CanBridgeVertical(_world, _pos, rdx, rdz, dy - _pos.y);
+			bool canConnect = (dy == _pos.y) || RedstoneManager::CanBridgeVertical(_world, _pos, rdx, rdz, dy - _pos.y);
 			if (_world.GetBlockId({ dx, dy, dz }) == BLOCK_REDSTONE && canConnect) {
-				// This is a dust - use its current power level directly
+				// This is a dust so use its current power level directly
 				auto neighborLevel = _world.GetMetadata({ dx, dy, dz });
 				if (neighborLevel > best)
 					best = neighborLevel;
@@ -193,7 +196,7 @@ static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int
 			auto dx = rdx + _pos.x;
 			auto dz = rdz + _pos.z;
 
-			bool canConnect = (dy == _pos.y) || CanBridgeVertical(_world, _pos, rdx, rdz, dy - _pos.y);
+			bool canConnect = (dy == _pos.y) || RedstoneManager::CanBridgeVertical(_world, _pos, rdx, rdz, dy - _pos.y);
 
 			if (_world.GetBlockId({ dx, dy, dz }) == BLOCK_REDSTONE && canConnect)
 				if (!_visited.count({ dx, dy, dz }))
@@ -223,12 +226,86 @@ static bool ResolvePowerLevels(WorldManager& _world, std::unordered_set<Int3>& _
 	return hasChanged;
 }
 
-void RedstoneManager::TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos) {
-	// Recursive scan for redstone dust
+// Flood fill solver
+// Avoids a ton of redundant updates!
+static void SolveRedstoneNetwork(WorldManager& _world, Int3 _pos) {
 	std::unordered_set<Int3> visited;
 	GetNeighbors(_world, _pos, visited);
 
-	// Resolve our power levels
-	while (ResolvePowerLevels(_world, visited))
-		;
+	std::unordered_map<Int3, uint8_t> oldLevels;
+	for (auto& pos : visited) {
+		oldLevels.insert({ pos, static_cast<uint8_t>(_world.GetMetadata(pos)) });
+	}
+
+	while (ResolvePowerLevels(_world, visited));
+
+	// Each redstone wire will try and reach further out if it went from 0->powered or powered->0
+	// Skip re-notifying other dust
+	for (auto& pos : visited) {
+		auto oldLevel = oldLevels.find(pos)->second;
+		auto newLevel = _world.GetMetadata(pos);
+		if (oldLevel != newLevel && (oldLevel == 0 || newLevel == 0)) {
+			Int3 neighbors[7] = {
+				pos,
+				{ pos.x - 1, pos.y, pos.z },
+				{ pos.x + 1, pos.y, pos.z },
+				{ pos.x, pos.y - 1, pos.z },
+				{ pos.x, pos.y + 1, pos.z },
+				{ pos.x, pos.y, pos.z - 1 },
+				{ pos.x, pos.y, pos.z + 1 },
+			};
+			for (auto& npos : neighbors) {
+				if (_world.GetBlockId(npos) != BLOCK_REDSTONE) {
+					_world.NotifyNeighborsOfUpdate(npos, BLOCK_REDSTONE);
+				}
+			}
+		}
+	}
+}
+
+void RedstoneManager::TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos, BlockType _newBlock, BlockType _oldBlock) {
+	// Vanilla has some weird update quirks so we replicate that here in one pass
+	// This avoids vanilla's tendency to spam block updates
+
+	// DUST:
+	if (_newBlock == BLOCK_REDSTONE || _oldBlock == BLOCK_REDSTONE) {
+		// Vertical updates happen no matter what
+		_world.NotifyNeighborsOfUpdate({ _pos.x, _pos.y - 1, _pos.z }, BLOCK_REDSTONE);
+		_world.NotifyNeighborsOfUpdate({ _pos.x, _pos.y + 1, _pos.z }, BLOCK_REDSTONE);
+
+		auto notifyWireNeighbor = [&_world](Int3 _neighborPos) -> void {
+			if (_world.GetBlockId(_neighborPos) != BLOCK_REDSTONE)
+				return;
+
+			_world.NotifyNeighborsOfUpdate(_neighborPos, BLOCK_REDSTONE); // the neighbor itself
+			_world.NotifyNeighborsOfUpdate({ _neighborPos.x - 1, _neighborPos.y, _neighborPos.z }, BLOCK_REDSTONE);
+			_world.NotifyNeighborsOfUpdate({ _neighborPos.x + 1, _neighborPos.y, _neighborPos.z }, BLOCK_REDSTONE);
+			_world.NotifyNeighborsOfUpdate({ _neighborPos.x, _neighborPos.y - 1, _neighborPos.z }, BLOCK_REDSTONE);
+			_world.NotifyNeighborsOfUpdate({ _neighborPos.x, _neighborPos.y + 1, _neighborPos.z }, BLOCK_REDSTONE);
+			_world.NotifyNeighborsOfUpdate({ _neighborPos.x, _neighborPos.y, _neighborPos.z - 1 }, BLOCK_REDSTONE);
+			_world.NotifyNeighborsOfUpdate({ _neighborPos.x, _neighborPos.y, _neighborPos.z + 1 }, BLOCK_REDSTONE);
+		};
+
+		notifyWireNeighbor({ _pos.x - 1, _pos.y, _pos.z });
+		notifyWireNeighbor({ _pos.x + 1, _pos.y, _pos.z });
+		notifyWireNeighbor({ _pos.x, _pos.y, _pos.z - 1 });
+		notifyWireNeighbor({ _pos.x, _pos.y, _pos.z + 1 });
+	}
+
+	// REDSTONE TORCH:
+	if (_newBlock == BLOCK_REDSTONE_TORCH_ON || _oldBlock == BLOCK_REDSTONE_TORCH_ON) {
+		Int3 sixNeighbors[6] = {
+			{ _pos.x - 1, _pos.y, _pos.z }, { _pos.x + 1, _pos.y, _pos.z }, { _pos.x, _pos.y - 1, _pos.z },
+			{ _pos.x, _pos.y + 1, _pos.z }, { _pos.x, _pos.y, _pos.z - 1 }, { _pos.x, _pos.y, _pos.z + 1 },
+		};
+		for (auto& n : sixNeighbors)
+			_world.NotifyNeighborsOfUpdate(n, BLOCK_REDSTONE_TORCH_ON);
+	}
+
+	SolveRedstoneNetwork(_world, _pos);
+}
+
+void RedstoneManager::RefreshWireAt(WorldManager& _world, Int3 _pos) {
+	// Redstone wires on neighbor change gets called independently of whether the update was caused by a redstone component
+	SolveRedstoneNetwork(_world, _pos);
 }

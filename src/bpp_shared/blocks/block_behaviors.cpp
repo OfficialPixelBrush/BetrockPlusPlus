@@ -16,6 +16,7 @@
 #include "items/item_properties.h"
 #include "logger.h"
 #include "packet_data.h"
+#include "redstone_manager.h"
 #include "tick_scheduler.h"
 #include "tile_entities/tile_entity.h"
 #include "world.h"
@@ -379,6 +380,9 @@ void RegisterBlockBehaviors() {
 		.getSelectionBox = RedstoneDustAabb,
 		.getRayBounds = RedstoneDustAabb,
 		.getCollider = EmptyCollider,
+		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
+		    if (_blockId != BLOCK_REDSTONE) RedstoneManager::RefreshWireAt(_world, _pos);
+		},
 	};
 
 	// Farmland
@@ -589,7 +593,7 @@ void RegisterBlockBehaviors() {
 			    _world.SetMeta(_pos, _meta & 0b111);
 		    }
 		},
-		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
 		    blockBehaviors[BLOCK_BUTTON_STONE].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 		},
 		.onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> void {
@@ -702,20 +706,22 @@ void RegisterBlockBehaviors() {
 		_entity.velocity.x *= 0.4;
 		_entity.velocity.z *= 0.4;
 	};
-	blockBehaviors[BLOCK_CROP_WHEAT].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_CROP_WHEAT].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                            BlockType _blockId) -> void {
 		if (!CanCropsSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
 
 	blockBehaviors[BLOCK_CROP_WHEAT].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                          Java::Random& _random) -> void {
+	                                             Java::Random& _random) -> void {
 		// Add onto age
 		if (_meta < 7) {
 			_meta++;
 			_world.SetMeta(_pos, _meta);
 		}
 	};
-	blockBehaviors[BLOCK_SUGARCANE].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_SUGARCANE].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                           BlockType _blockId) -> void {
 		// Check to see if our placement is still valid
 		if (!CanSugarcaneSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
@@ -775,25 +781,31 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_ROSE].onBlockPlaced = onPlantPlace;
 	blockBehaviors[BLOCK_SAPLING].onBlockPlaced = onPlantPlace;
 	blockBehaviors[BLOCK_TALLGRASS].onBlockPlaced = onPlantPlace;
-	blockBehaviors[BLOCK_CACTUS].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_CACTUS].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                        BlockType _blockId) -> void {
 		blockBehaviors[BLOCK_CACTUS].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
-	blockBehaviors[BLOCK_MUSHROOM_BROWN].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_MUSHROOM_BROWN].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                                BlockType _blockId) -> void {
 		blockBehaviors[BLOCK_MUSHROOM_BROWN].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
-	blockBehaviors[BLOCK_MUSHROOM_RED].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_MUSHROOM_RED].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                              BlockType _blockId) -> void {
 		blockBehaviors[BLOCK_MUSHROOM_RED].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
-	blockBehaviors[BLOCK_DANDELION].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_DANDELION].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                           BlockType _blockId) -> void {
 		blockBehaviors[BLOCK_DANDELION].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
-	blockBehaviors[BLOCK_ROSE].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_ROSE].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
 		blockBehaviors[BLOCK_ROSE].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
-	blockBehaviors[BLOCK_TALLGRASS].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_TALLGRASS].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                           BlockType _blockId) -> void {
 		blockBehaviors[BLOCK_TALLGRASS].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
-	blockBehaviors[BLOCK_SAPLING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_SAPLING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                         BlockType _blockId) -> void {
 		if (!CanGenericPlantSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
@@ -849,7 +861,8 @@ void RegisterBlockBehaviors() {
 		DropItemAt(_world, _pos, Items::Id::SNOWBALL, /*count=*/1, 0);
 		return;
 	};
-	blockBehaviors[BLOCK_SNOW_LAYER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_SNOW_LAYER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                            BlockType _blockId) -> void {
 		Int3 belowPos = _pos + Int3{ 0, -1, 0 };
 		BlockType below = _world.GetBlockId(belowPos);
 
@@ -868,7 +881,8 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_DISPENSER].onBlockPlaced = onFurnaceDispenserPlace;
 	blockBehaviors[BLOCK_STAIRS_COBBLESTONE].onBlockPlaced = onStairPlace;
 	blockBehaviors[BLOCK_STAIRS_WOOD].onBlockPlaced = onStairPlace;
-	blockBehaviors[BLOCK_LADDER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_LADDER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                        BlockType _blockId) -> void {
 		blockBehaviors[BLOCK_LADDER].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
 	blockBehaviors[BLOCK_LADDER].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
@@ -935,11 +949,81 @@ void RegisterBlockBehaviors() {
 		BreakAndDropBlock(_world, _pos);
 	};
 
-	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                                   BlockType _blockId) -> void {
 		uint8_t meta = _world.GetMetadata(_pos);
 		auto supportFace = static_cast<PacketData::FaceDirection>(6 - meta);
-		if (!CanTorchAttachTo(_world, _pos, supportFace))
+		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
 			BreakAndDropBlock(_world, _pos);
+			return;
+		}
+
+		// Torches take two ticks to update
+		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_REDSTONE_TORCH_ON, 2);
+	};
+
+	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                                    Java::Random& _random) -> void {
+		auto supportFace = static_cast<PacketData::FaceDirection>(6 - _meta);
+		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
+			BreakAndDropBlock(_world, _pos);
+			return;
+		}
+
+		Int3 supportPos = Blocks::GetAdjacentBlockPos(_pos, PacketData::OppositeFace(supportFace));
+
+		// turn OFF the instant the block it's mounted on is powered
+		if (RedstoneManager::GetBlockPowerProfile(_world, supportPos).powered) {
+			_world.SetBlock(_pos, BLOCK_REDSTONE_TORCH_OFF, _meta);
+		}
+	};
+
+	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		auto currentFace = static_cast<PacketData::FaceDirection>(6 - _world.GetMetadata(_pos));
+		if (CanTorchAttachTo(_world, _pos, currentFace))
+			return; // Already valid
+
+		static constexpr std::array<PacketData::FaceDirection, 5> CHECK_ORDER = {
+			PacketData::FaceDirection::X_PLUS, PacketData::FaceDirection::X_MINUS, PacketData::FaceDirection::Z_PLUS,
+			PacketData::FaceDirection::Z_MINUS, PacketData::FaceDirection::Y_PLUS
+		};
+
+		for (PacketData::FaceDirection face : CHECK_ORDER) {
+			if (CanTorchAttachTo(_world, _pos, face)) {
+				_world.SetMeta(_pos, 6 - face);
+				return;
+			}
+		}
+
+		BreakAndDropBlock(_world, _pos);
+	};
+
+	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                                    BlockType _blockId) -> void {
+		uint8_t meta = _world.GetMetadata(_pos);
+		auto supportFace = static_cast<PacketData::FaceDirection>(6 - meta);
+		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
+			BreakAndDropBlock(_world, _pos);
+			return;
+		}
+
+		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_REDSTONE_TORCH_OFF, 2);
+	};
+
+	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                                     Java::Random& _random) -> void {
+		auto supportFace = static_cast<PacketData::FaceDirection>(6 - _meta);
+		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
+			BreakAndDropBlock(_world, _pos);
+			return;
+		}
+
+		Int3 supportPos = Blocks::GetAdjacentBlockPos(_pos, PacketData::OppositeFace(supportFace));
+
+		// An unlit torch turns back ON the instant the block it's mounted on is no longer powered
+		if (!RedstoneManager::GetBlockPowerProfile(_world, supportPos).powered) {
+			_world.SetBlock(_pos, BLOCK_REDSTONE_TORCH_ON, _meta);
+		}
 	};
 
 	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
@@ -975,7 +1059,7 @@ void RegisterBlockBehaviors() {
 		BreakAndDropBlock(_world, _pos);
 	};
 
-	blockBehaviors[BLOCK_TORCH].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_TORCH].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
 		uint8_t meta = _world.GetMetadata(_pos);
 		auto supportFace = static_cast<PacketData::FaceDirection>(6 - meta);
 		if (!CanTorchAttachTo(_world, _pos, supportFace))
@@ -1168,7 +1252,8 @@ void RegisterBlockBehaviors() {
 	};
 
 	// Falling blocks!
-	blockBehaviors[BLOCK_GRAVEL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_GRAVEL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                        BlockType _blockId) -> void {
 		// Schedule a check to see if we can fall
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_GRAVEL, 3);
 	};
@@ -1203,7 +1288,7 @@ void RegisterBlockBehaviors() {
 				_world.SetBlock(landing, BLOCK_GRAVEL, 0);
 		}
 	};
-	blockBehaviors[BLOCK_SAND].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_SAND].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
 		// Schedule a check to see if we can fall
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_SAND, 3);
 	};
@@ -1351,13 +1436,15 @@ void RegisterBlockBehaviors() {
 		                                        _world.GetDimension() == Dimension::Nether ? 10 : 30);
 		TryLavaHarden(_world, _pos);
 	};
-	blockBehaviors[BLOCK_LAVA_FLOWING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_LAVA_FLOWING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                              BlockType _blockId) -> void {
 		// Stack overflow if this was regular set block!
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING,
 		                                        _world.GetDimension() == Dimension::Nether ? 10 : 30);
 		TryLavaHarden(_world, _pos);
 	};
-	blockBehaviors[BLOCK_LAVA_STILL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_LAVA_STILL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                            BlockType _blockId) -> void {
 		// Stack overflow if this was regular set block!
 		_world.SetBlockRaw(_pos, BLOCK_LAVA_FLOWING, _world.GetMetadata(_pos));
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING,
@@ -1502,11 +1589,13 @@ void RegisterBlockBehaviors() {
 		// Schedule ourselves for an update
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_WATER_FLOWING, 5);
 	};
-	blockBehaviors[BLOCK_WATER_FLOWING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_WATER_FLOWING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                               BlockType _blockId) -> void {
 		// Stack overflow if this was regular set block!
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_WATER_FLOWING, 5);
 	};
-	blockBehaviors[BLOCK_WATER_STILL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos) -> void {
+	blockBehaviors[BLOCK_WATER_STILL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                             BlockType _blockId) -> void {
 		// Stack overflow if this was regular set block!
 		_world.SetBlockRaw(_pos, BLOCK_WATER_FLOWING, _world.GetMetadata(_pos));
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_WATER_FLOWING, 5);

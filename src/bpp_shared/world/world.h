@@ -178,7 +178,7 @@ public:
 		if (!isHell)
 			biomeGenerator = BiomeGenerator(seed);
 	}
-	void NotifyNeighborsOfUpdate(Int3 _globalPos);
+	void NotifyNeighborsOfUpdate(Int3 _globalPos, BlockType _blockId);
 	// For creating a fresh tile entity for generation etc
 	void CreateTileEntity(std::shared_ptr<TileEntity> _tileEntity);
 	// For registering a tile entity that already exists in the world (e.g. loaded from disk)

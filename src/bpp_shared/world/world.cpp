@@ -851,7 +851,7 @@ void WorldManager::SetMeta(const Int3 _wpos, const uint8_t _metadata) {
 	chunk->SetMeta(local, _metadata);
 
 	// Update our neighbors
-	this->NotifyNeighborsOfUpdate(_wpos);
+	this->NotifyNeighborsOfUpdate(_wpos, blockId);
 
 	// Callback for the client and server to know about this block update
 	if (onBlockUpdate && (oldMeta != _metadata && Blocks::blockProperties[blockId].notifySelfOnMetaChange))
@@ -955,7 +955,7 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 
 	// Update our neighbors
 	if (_updateNeighbors)
-		this->NotifyNeighborsOfUpdate(_wpos);
+		this->NotifyNeighborsOfUpdate(_wpos, _blockType);
 
 	if (_blockType == BLOCK_AIR) {
 		// We removed this block effectively
@@ -975,24 +975,26 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	// Call our on placed function
 	if (_blockType != BLOCK_AIR) {
 		// Java has this functionality in the chunk setters themselves, but
-		// in my opinion that is stupid and redundant
+		// in my opinion that is stupid
 		auto function = Blocks::blockBehaviors[_blockType].onBlockAdded;
 		if (function)
 			function(*this, _wpos);
 	}
 
-	// Callback for the client and server to know about this block update
-	if (onBlockUpdate && (oldBlock != _blockType ||
-	                      (oldMeta != _metadata && Blocks::blockProperties[_blockType].notifySelfOnMetaChange)))
-		onBlockUpdate(PendingBlock{ .block{ _blockType, _metadata },
-		                            .blockPos{ _wpos.x, _wpos.y, _wpos.z },
-		                            .light{ chunk->GetBlockLight(local), chunk->GetSkyLight(local) } },
-		              chunk->cpos);
-
 	// Trigger redstone updates
 	if (RedstoneManager::CanTriggerRedstoneUpdate(_blockType) || RedstoneManager::CanTriggerRedstoneUpdate(oldBlock))
 		if (_updateNeighbors)
-			RedstoneManager::TriggerRedstoneUpdate(*this, _wpos);
+			RedstoneManager::TriggerRedstoneUpdate(*this, _wpos, _blockType, oldBlock);
+
+	// Callback for the client and server to know about this block update
+	auto newBlock = chunk->GetBlock(local);
+	auto newMeta = chunk->GetMeta(local);
+	if (onBlockUpdate &&
+	    (oldBlock != newBlock || (oldMeta != newMeta && Blocks::blockProperties[newBlock].notifySelfOnMetaChange)))
+		onBlockUpdate(PendingBlock{ .block{ newBlock, newMeta },
+		                            .blockPos{ _wpos.x, _wpos.y, _wpos.z },
+		                            .light{ chunk->GetBlockLight(local), chunk->GetSkyLight(local) } },
+		              chunk->cpos);
 }
 
 int WorldManager::FindTopSolidBlock(int _wx, int _wz) {
@@ -1127,7 +1129,7 @@ void WorldManager::SetViewRadius(int _viewRadius) {
 	simulationRadius = std::min(9, newViewRadius);
 }
 
-void WorldManager::NotifyNeighborsOfUpdate(Int3 _globalPos) {
+void WorldManager::NotifyNeighborsOfUpdate(Int3 _globalPos, BlockType _blockId) {
 	// Update our six neighbors
 	const int ndx[] = { -1, 1, 0, 0 };
 	const int ndz[] = { 0, 0, -1, 1 };
@@ -1140,7 +1142,7 @@ void WorldManager::NotifyNeighborsOfUpdate(Int3 _globalPos) {
 		auto block = this->GetBlockId(newPos);
 		auto updateFunction = Blocks::blockBehaviors[block].onNeighborBlockChange;
 		if (updateFunction)
-			updateFunction(*this, newPos);
+			updateFunction(*this, newPos, _blockId);
 	}
 
 	// Vertical neighbors
@@ -1150,7 +1152,7 @@ void WorldManager::NotifyNeighborsOfUpdate(Int3 _globalPos) {
 		auto block = this->GetBlockId(newPos);
 		auto updateFunction = Blocks::blockBehaviors[block].onNeighborBlockChange;
 		if (updateFunction)
-			updateFunction(*this, newPos);
+			updateFunction(*this, newPos, _blockId);
 	}
 }
 
