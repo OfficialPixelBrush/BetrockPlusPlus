@@ -46,7 +46,7 @@ struct BlockBehavior {
 	void (*onBlockRemoval)(WorldManager& _world, Int3 _pos) = nullptr;
 
 	// Called when a neighboring block changes
-	void (*onNeighborBlockChange)(WorldManager& _world, Int3 _pos) = nullptr;
+	void (*onNeighborBlockChange)(WorldManager& _world, Int3 _pos, BlockType _blockId) = nullptr;
 
 	// Called when a player left-clicks the block (not breaks, just clicks)
 	// pos is where that block that is interacted with is
