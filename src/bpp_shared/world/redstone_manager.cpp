@@ -334,6 +334,16 @@ void RedstoneManager::TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos, Blo
 		for (auto& n : sixNeighbors)
 			_world.NotifyNeighborsOfUpdate(n, BLOCK_REDSTONE_TORCH_ON);
 	}
+
+	// REDSTONE REPEATER:
+	if (_newBlock == BLOCK_REDSTONE_REPEATER_ON || _newBlock == BLOCK_REDSTONE_REPEATER_OFF) {
+		Int3 sixNeighbors[6] = {
+			{ _pos.x - 1, _pos.y, _pos.z }, { _pos.x + 1, _pos.y, _pos.z }, { _pos.x, _pos.y - 1, _pos.z },
+			{ _pos.x, _pos.y + 1, _pos.z }, { _pos.x, _pos.y, _pos.z - 1 }, { _pos.x, _pos.y, _pos.z + 1 },
+		};
+		for (auto& n : sixNeighbors)
+			_world.NotifyNeighborsOfUpdate(n, _newBlock);
+	}
 }
 
 void RedstoneManager::RefreshWireAt(WorldManager& _world, Int3 _pos) {
