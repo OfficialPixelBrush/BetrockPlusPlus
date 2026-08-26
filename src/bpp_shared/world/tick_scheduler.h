@@ -31,6 +31,7 @@ struct ScheduledTick {
 struct PendingEntry {
 	TickTime dueTick;
 	int64_t sequence;
+	BlockType expectedBlock; // what this entry will actually do when it fires
 };
 
 class WorldManager;
@@ -45,12 +46,12 @@ struct TickScheduler {
 	void ScheduleUpdateTick(Int3 _pos, BlockType _block, int _tickDelay) {
 		TickTime dueTick = currentTick + TickTime(_tickDelay);
 		auto it = pending.find(_pos);
-		if (it != pending.end()) {
-			return; // an update is already pending for this block
+		if (it != pending.end() && it->second.expectedBlock == _block) {
+			return; // an equivalent update is already pending for this block
 		}
 		auto sequence = nextSequence++;
 		scheduledTicks.push({ dueTick, sequence, _pos, _block });
-		pending[_pos] = { dueTick, sequence };
+		pending[_pos] = { dueTick, sequence, _block };
 	}
 
 	void Tick();
