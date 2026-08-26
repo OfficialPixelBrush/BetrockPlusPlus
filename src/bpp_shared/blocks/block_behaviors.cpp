@@ -1038,12 +1038,20 @@ void RegisterBlockBehaviors() {
 	                                                               PacketData::FaceDirection _face, BlockType _blockId,
 	                                                               uint8_t _meta) -> bool {
 		const auto dir = Direction::FromAngle(_placer.rotationYaw);
-		if (!GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_REDSTONE_REPEATER_OFF, dir)))
+		if (!CanRedstoneComponentStay(_world, _pos) || !GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_REDSTONE_REPEATER_OFF, dir)))
 			return false;
 		// Turn on if we are being powered!
 		if (RedstoneManager::IsRepeaterInputPowered(_world, _pos, _meta)) {
 			_world.tickScheduler.ScheduleUpdateTick(_pos, _blockId, 1);
 		}
+		return true;
+	};
+	blockBehaviors[BLOCK_REDSTONE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                                               PacketData::FaceDirection _face, BlockType _blockId,
+	                                                               uint8_t _meta) -> bool {
+		if (!CanRedstoneComponentStay(_world, _pos) ||
+		    !GenericPlace(_world, _pos, _placer, _face, _blockId, _meta))
+			return false;
 		return true;
 	};
 
