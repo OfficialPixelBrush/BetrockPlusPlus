@@ -28,7 +28,7 @@ namespace Blocks {
 BlockBehavior blockBehaviors[BLOCK_MAX] = {};
 
 static bool CanRedstoneComponentStay(WorldManager& _world, Int3 _pos) {
-	return _world.IsBlockNormalCube({ _pos.x, _pos.y - 1, _pos.z });
+	return _world.IsBlockNormalCube(_pos.Offset(Direction::Value::Down));
 }
 
 static bool IsReplaceable(WorldManager& _world, Int3 _pos) {
@@ -92,7 +92,7 @@ static void TryLavaHarden(WorldManager& _world, Int3 _pos) {
 
 	// Check above
 	if (!canHarden)
-		canHarden = _world.GetMaterial({ _pos.x, _pos.y + 1, _pos.z }).type == MaterialType::Water;
+		canHarden = _world.GetMaterial(_pos.WithOffset(Direction::Value::Up)).type == MaterialType::Water;
 
 	// We can harden
 	if (canHarden) {
@@ -209,21 +209,21 @@ static Vec3 GetFluidFlowVector(WorldManager& _world, Int3 _pos) {
 	if (_world.GetMetadata(_pos) >= 8) {
 		bool nearWall = false;
 
-		if (!nearWall && isFluidWall({ _pos.x, _pos.y, _pos.z - 1 }))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::North)))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ _pos.x, _pos.y, _pos.z + 1 }))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::South)))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ _pos.x - 1, _pos.y, _pos.z }))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::West)))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ _pos.x + 1, _pos.y, _pos.z }))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::East)))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ _pos.x, _pos.y + 1, _pos.z - 1 }))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::Up).Offset(Direction::Value::North)))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ _pos.x, _pos.y + 1, _pos.z + 1 }))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::Up).Offset(Direction::Value::South)))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ _pos.x - 1, _pos.y + 1, _pos.z }))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::Up).Offset(Direction::Value::West)))
 			nearWall = true;
-		if (!nearWall && isFluidWall({ _pos.x + 1, _pos.y + 1, _pos.z }))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::Up).Offset(Direction::Value::East)))
 			nearWall = true;
 
 		if (nearWall) {
@@ -874,12 +874,9 @@ void RegisterBlockBehaviors() {
 	};
 	blockBehaviors[BLOCK_SNOW_LAYER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                            BlockType _blockId) -> void {
-		Int3 belowPos = _pos + Int3{ 0, -1, 0 };
-		BlockType below = _world.GetBlockId(belowPos);
-
-		bool canStay = below != BLOCK_AIR && Blocks::blockProperties[below].isOpaqueCube &&
+		const BlockType below = _world.GetBlockId(_pos.WithOffset(Direction::Value::Down));
+		const bool canStay = (below != BLOCK_AIR) && Blocks::blockProperties[below].isOpaqueCube &&
 		               Blocks::blockProperties[below].material.isSolid;
-
 		if (!canStay)
 			_world.SetBlock(_pos, BLOCK_AIR);
 	};
@@ -906,7 +903,7 @@ void RegisterBlockBehaviors() {
 	                                                PacketData::FaceDirection _face, BlockType _blockId,
 	                                                uint8_t _meta) -> bool {
 		Int3 targetPos = _pos;
-		Int3 sourceBlock = Blocks::GetSourceBlockFromFace(_pos, _face);
+		const Int3 sourceBlock = Blocks::GetSourceBlockFromFace(_pos, _face);
 		if (_world.GetBlockId(sourceBlock) == BLOCK_SNOW_LAYER)
 			targetPos = sourceBlock;
 
@@ -939,7 +936,7 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
-		auto currentFace = static_cast<PacketData::FaceDirection>(6 - _world.GetMetadata(_pos));
+		const auto currentFace = static_cast<PacketData::FaceDirection>(6 - _world.GetMetadata(_pos));
 		if (CanTorchAttachTo(_world, _pos, currentFace))
 			return; // Already valid
 
