@@ -1205,6 +1205,19 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_DOOR_IRON].onBlockPlaced = onDoorPlace;
 
 	// for when the block is interacted with!
+	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockActivated = [](WorldManager& _world, Int3 _pos,
+	                                                      PlayerSession* _triggeringSession) -> bool {
+		// Increase and loop delay
+		auto meta = _world.GetMetadata(_pos);
+		int delay = (meta & 12) >> 2;
+		delay = delay + 1 << 2 & 12;
+		_world.SetMeta(_pos, delay | meta & 3);
+		return false;
+	};
+	blockBehaviors[BLOCK_REDSTONE_REPEATER_ON].onBlockActivated = [](WorldManager& _world, Int3 _pos,
+	                                                      PlayerSession* _triggeringSession) -> bool {
+		return blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockActivated(_world, _pos, _triggeringSession);
+	};
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated = [](WorldManager& _world, Int3 _pos,
 	                                                      PlayerSession* _triggeringSession) -> bool {
 		ToggleDoor(_world, _pos, _triggeringSession);
