@@ -89,19 +89,20 @@ PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _p
 		// This is redstone dust, see if it is connecting to this block
 		if (_world.GetBlockId(thisPos) == BLOCK_REDSTONE && _world.GetMetadata(thisPos) > 0) {
 			auto grdc = GetRedstoneDustConnectivity(_world, thisPos);
-			if (rdx == 1) {
-				if (!grdc.powerNX)
-					softPowered = true;
-			} else if (rdx == -1) {
-				if (!grdc.powerX)
-					softPowered = true;
-			} else if (rdz == 1) {
-				if (!grdc.powerNZ)
-					softPowered = true;
-			} else if (rdz == -1) {
-				if (!grdc.powerZ)
-					softPowered = true;
+			if (rdx == 1 || rdx == -1) {
+				if (grdc.powerX || grdc.powerNX) {
+					bool redirected = grdc.powerNZ || grdc.powerZ;
+					if (!redirected)
+						softPowered = true;
+				}
+			} else if (rdz == 1 || rdz == -1) {
+				if (grdc.powerZ || grdc.powerNZ) {
+					bool redirected = grdc.powerNX || grdc.powerX;
+					if (!redirected) softPowered = true;
+				}
 			}
+			if (!grdc.powerNX && !grdc.powerNZ && !grdc.powerX && !grdc.powerZ)
+				softPowered = true;
 		}
 
 		// This is a repeater, see if it is facing us and powered
