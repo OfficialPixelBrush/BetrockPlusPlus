@@ -854,12 +854,12 @@ void RegisterBlockBehaviors() {
 		};
 
 		if (Direction::IsHorizontal(_face) && IsSupported(_world, _pos, _face)) {
-			return GenericPlace(_world, _pos, _placer, _face, _blockId, uint8_t(_face));
+			return GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_LADDER, _face));
 		}
 
 		for (Direction::Value dir : CHECK_ORDER) {
 			if (IsSupported(_world, _pos, dir)) {
-				return GenericPlace(_world, _pos, _placer, _face, _blockId, uint8_t(dir));
+				return GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_LADDER, dir));
 			}
 		}
 		return false;
