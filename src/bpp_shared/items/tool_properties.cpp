@@ -369,7 +369,7 @@ void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& 
 		return;
 	}
 
-	Int3 placePos = Blocks::GetAdjacentBlockPos(result.blockPosition, result.face);
+	Int3 placePos = result.blockPosition.WithOffset(result.face);
 	auto m = _world.GetMaterial(placePos);
 	if (m.isSolid) {
 		return; // can't place into solid ground
@@ -401,7 +401,7 @@ void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _
 		return;
 	}
 
-	Int3 placePos = Blocks::GetAdjacentBlockPos(result.blockPosition, result.face);
+	Int3 placePos = result.blockPosition.WithOffset(result.face);
 	auto m = _world.GetMaterial(placePos);
 	if (m.isSolid) {
 		return; // can't place into solid ground

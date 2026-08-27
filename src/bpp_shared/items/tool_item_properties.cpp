@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
+#include "../helpers/direction_fixer.h"
 #include "blocks.h"
 #include "item_map.h"
 #include "item_properties.h"
@@ -240,7 +241,7 @@ void RegisterAll() {
 		if (_face == Direction::Value::Up)
 			_world.SetBlock(placePos, BLOCK_SIGN); //TODO: facing meta
 		else
-			_world.SetBlock(placePos, BLOCK_SIGN_WALL, _face);
+			_world.SetBlock(placePos, BLOCK_SIGN_WALL, GetMetaFromDirection(BLOCK_SIGN_WALL, _face));
 
 		_stack->DecrementCount(1);
 	};
