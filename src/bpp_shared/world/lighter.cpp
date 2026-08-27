@@ -160,6 +160,8 @@ void Lighter::UnlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _
 	if (_y < 0 || _y >= CHUNK_HEIGHT)
 		return;
 
+	ChunkCache unlightCache;
+
 	unlightCache.Refresh(_x >> 4, _z >> 4, _world);
 	Chunk* chunk = unlightCache.grid[1][1];
 	if (!chunk)
