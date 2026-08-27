@@ -7,6 +7,7 @@
 
 #pragma once
 #include "./helpers/java/java_math.h"
+#include <string_view>
 namespace Direction {
 
 enum class Value : uint8_t {
@@ -103,6 +104,25 @@ constexpr bool IsVertical(const Value _dir) {
 		return true;
 	default:
 		return false;
+	}
+}
+
+constexpr std::string_view Str(const Value _dir) {
+	switch (_dir) {
+	case Value::North:
+		return "North";
+	case Value::South:
+		return "South";
+	case Value::East:
+		return "East";
+	case Value::West:
+		return "West";
+	case Value::Up:
+		return "Up";
+	case Value::Down:
+		return "Down";
+	default:
+		return "INVALID";
 	}
 }
 

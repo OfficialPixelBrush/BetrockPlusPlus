@@ -154,12 +154,21 @@ bool CanCactusSurviveAt(WorldManager& _world, Int3 _pos) {
 	return canGrowOnBlock && adjacentBlocksClear;
 }
 
+/**
+ * @brief Says if a torch can attach to the block its placed on
+ * 
+ * @param _world Active world
+ * @param _pos The position of the torch
+ * @param _face The direction the torch is pointing out towards
+ * @return true The torch can be placed
+ * @return false The torch cannot be placed
+ */
 bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, Direction::Value _face) {
+	// Torches cannot be placed on the ceiling
 	if (_face == Direction::Value::Down)
 		return false;
-
+	// Get supporting block
 	Int3 support = _pos.WithOffset(Direction::Opposite(_face));
-
 	return _world.IsBlockNormalCube(support) ||
 	       (_face == Direction::Value::Up && _world.GetBlockId(support) == BLOCK_FENCE);
 }
