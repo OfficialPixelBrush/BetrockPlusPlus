@@ -11,6 +11,7 @@
 #include "../trackers/entity_tracker.h"
 #include "blocks.h"
 #include "blocks/block_properties.h"
+#include "direction_fixer.h"
 #include "entities/entity_item.h"
 #include "inventory/inventory_interaction.h"
 #include "inventory/item_stack.h"
@@ -233,7 +234,8 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		                     heldItem->id == Items::Id::BUCKET_LAVA);
 
 		if (Items::itemBehavior[heldItem->id].onBlockUse && !isBucketItem) {
-			Items::itemBehavior[heldItem->id].onBlockUse(_world, heldItem, position, *_session.entity, _pkt.face);
+			Items::itemBehavior[heldItem->id].onBlockUse(_world, heldItem, position, *_session.entity,
+			                                             FaceDirectionToDirection(_pkt.face));
 		}
 	}
 }
