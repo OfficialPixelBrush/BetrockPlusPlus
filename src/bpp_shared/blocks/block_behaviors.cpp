@@ -38,8 +38,8 @@ static bool IsReplaceable(WorldManager& _world, Int3 _pos) {
 	       existing == BLOCK_SNOW_LAYER;
 };
 
-static bool IsSupported(WorldManager& _world, Int3 _pos, PacketData::FaceDirection _dir) {
-	Int3 support = GetAdjacentBlockPos(_pos, PacketData::OppositeFace(_dir));
+static bool IsSupported(WorldManager& _world, Int3 _pos, Direction::Value _dir) {
+	Int3 support = _pos.WithOffset(Direction::Opposite(_dir));
 	return _world.IsBlockNormalCube(support);
 };
 
@@ -261,7 +261,7 @@ void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer) {
 	BreakAndDropBlock(_world, _pos);
 }
 
-bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer, PacketData::FaceDirection _face,
+bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer, Direction::Value _face,
                   BlockType _blockId, uint8_t _meta) {
 	BlockType existing = _world.GetBlockId(_pos);
 	Int3 sourceBlock = Blocks::GetSourceBlockFromFace(_pos, _face);
@@ -514,10 +514,10 @@ void RegisterBlockBehaviors() {
 		    ToggleTrapdoor(_world, _pos);
 		    return false;
 		},
-		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
 		                    BlockType _blockId, uint8_t _meta) -> bool {
 		    // Doors can only be placed against the sides of blocks
-		    if (_face == PacketData::FaceDirection::Y_PLUS || _face == PacketData::FaceDirection::Y_MINUS)
+		    if (_face == Direction::Value::Up || _face == Direction::Value::Down)
 			    return false;
 
 		    if (!IsReplaceable(_world, _pos))
@@ -582,19 +582,19 @@ void RegisterBlockBehaviors() {
 		.getRayBounds = ButtonAabb,
 		.getCollider = EmptyCollider,
 		.onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& _random) -> void {
-		    PacketData::FaceDirection trueFace = PacketData::FaceDirection::INVALID_USE;
+		    Direction::Value trueFace = Direction::Value::INVALID_USE;
 		    switch (_meta & 0b111) {
 		    case 1:
-			    trueFace = PacketData::FaceDirection::X_PLUS;
+			    trueFace = Direction::Value::X_PLUS;
 			    break;
 		    case 2:
-			    trueFace = PacketData::FaceDirection::X_MINUS;
+			    trueFace = Direction::Value::X_MINUS;
 			    break;
 		    case 3:
-			    trueFace = PacketData::FaceDirection::Z_PLUS;
+			    trueFace = Direction::Value::Z_PLUS;
 			    break;
 		    case 4:
-			    trueFace = PacketData::FaceDirection::Z_MINUS;
+			    trueFace = Direction::Value::Z_MINUS;
 			    break;
 		    }
 		    // Check to make sure we can till exist here
@@ -618,10 +618,10 @@ void RegisterBlockBehaviors() {
 		    blockBehaviors[BLOCK_BUTTON_STONE].onBlockClicked(_world, _pos, _triggeringSession);
 		    return false;
 		},
-		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
 		                    BlockType _blockId, uint8_t _meta) -> bool {
 		    // Buttons can only be placed against the sides of blocks
-		    if (_face == PacketData::FaceDirection::Y_PLUS || _face == PacketData::FaceDirection::Y_MINUS)
+		    if (_face == Direction::Value::Up || _face == Direction::Value::Down)
 			    return false;
 
 		    if (!IsReplaceable(_world, _pos))
@@ -722,13 +722,13 @@ void RegisterBlockBehaviors() {
 	};
 
 	// Placement overrides
-	auto onFurnaceDispenserPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+	auto onFurnaceDispenserPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
 	                                  BlockType _blockId, uint8_t _meta) -> bool {
 		int meta[] = { 2, 5, 3, 4 };
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
 	};
 
-	auto onPumpkinPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+	auto onPumpkinPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
 	                         BlockType _blockId, uint8_t _meta) -> bool {
 		int meta[] = { 2, 3, 0, 1 };
 		auto belowBlockMaterial = _world.GetMaterial({ _pos.x, _pos.y - 1, _pos.z });
@@ -737,21 +737,21 @@ void RegisterBlockBehaviors() {
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
 	};
 
-	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
-	                       BlockType _blockId, uint8_t _meta) -> bool {
+	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+	                       uint8_t _meta) -> bool {
 		int meta[] = { 2, 1, 3, 0 };
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
 	};
 
-	auto onPlantPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
-	                       BlockType _blockId, uint8_t _meta) -> bool {
+	auto onPlantPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+	                       uint8_t _meta) -> bool {
 		if (CanGenericPlantSurviveAt(_world, _pos)) {
 			return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
 		}
 		return false;
 	};
 
-	auto onMushroomPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+	auto onMushroomPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
 	                          BlockType _blockId, uint8_t _meta) -> bool {
 		if (CanMushroomSurviveAt(_world, _pos)) {
 			return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
@@ -759,7 +759,7 @@ void RegisterBlockBehaviors() {
 		return false;
 	};
 
-	auto onCactusPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
+	auto onCactusPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
 	                        BlockType _blockId, uint8_t _meta) -> bool {
 		if (CanCactusSurviveAt(_world, _pos)) {
 			return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
@@ -836,12 +836,11 @@ void RegisterBlockBehaviors() {
 
 	// Slabs
 	blockBehaviors[BLOCK_SLAB].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                              PacketData::FaceDirection _face, BlockType _blockId,
-	                                              uint8_t _meta) -> bool {
+	                                              Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
 		auto sourcePos = GetSourceBlockFromFace(_pos, _face);
 		auto sourceBlock = _world.GetBlockId(sourcePos);
 		auto sourceMeta = _world.GetMetadata(sourcePos);
-		if (sourceBlock == BLOCK_SLAB && _face == PacketData::FaceDirection::Y_PLUS && sourceMeta == _meta) {
+		if (sourceBlock == BLOCK_SLAB && _face == Direction::Value::Y_PLUS && sourceMeta == _meta) {
 			_world.SetBlock(sourcePos, BLOCK_AIR);
 			return GenericPlace(_world, sourcePos, _placer, _face, BLOCK_DOUBLE_SLAB, _meta);
 		}
@@ -879,27 +878,25 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_LADDER].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                         Java::Random& _random) -> void {
 		// Check to make sure we can till exist here
-		if (!IsSupported(_world, _pos, PacketData::FaceDirection(_meta)))
+		if (!IsSupported(_world, _pos, Direction::Value(_meta)))
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LADDER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                PacketData::FaceDirection _face, BlockType _blockId,
-	                                                uint8_t _meta) -> bool {
+	                                                Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
 		Int3 targetPos = _pos;
 		const Int3 sourceBlock = Blocks::GetSourceBlockFromFace(_pos, _face);
 		if (_world.GetBlockId(sourceBlock) == BLOCK_SNOW_LAYER)
 			targetPos = sourceBlock;
 
-		static constexpr std::array<PacketData::FaceDirection, 4> CHECK_ORDER = { PacketData::FaceDirection::Z_MINUS,
-			                                                                      PacketData::FaceDirection::Z_PLUS,
-			                                                                      PacketData::FaceDirection::X_MINUS,
-			                                                                      PacketData::FaceDirection::X_PLUS };
+		static constexpr std::array<Direction::Value, 4> CHECK_ORDER = {
+			Direction::Value::Z_MINUS, Direction::Value::Z_PLUS, Direction::Value::X_MINUS, Direction::Value::X_PLUS
+		};
 
 		if (_face >= 2 && IsSupported(_world, _pos, _face)) {
 			return GenericPlace(_world, _pos, _placer, _face, _blockId, uint8_t(_face));
 		}
 
-		for (PacketData::FaceDirection dir : CHECK_ORDER) {
+		for (Direction::Value dir : CHECK_ORDER) {
 			if (IsSupported(_world, _pos, dir)) {
 				return GenericPlace(_world, _pos, _placer, _face, _blockId, uint8_t(dir));
 			}
@@ -908,7 +905,7 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                           PacketData::FaceDirection _face, BlockType _blockId,
+	                                                           Direction::Value _face, BlockType _blockId,
 	                                                           uint8_t _meta) -> bool {
 		if (_world.GetBlockId(Blocks::GetSourceBlockFromFace(_pos, _face)) == BLOCK_SNOW_LAYER)
 			_pos = Blocks::GetSourceBlockFromFace(_pos, _face);
@@ -919,18 +916,18 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
-		const auto currentFace = static_cast<PacketData::FaceDirection>(6 - _world.GetMetadata(_pos));
+		const auto currentFace = static_cast<Direction::Value>(6 - _world.GetMetadata(_pos));
 		if (CanTorchAttachTo(_world, _pos, currentFace))
 			return; // Already valid
 
 		// Matches vanilla order
-		static constexpr std::array<PacketData::FaceDirection, 5> CHECK_ORDER = {
-			PacketData::FaceDirection::X_PLUS, PacketData::FaceDirection::X_MINUS, PacketData::FaceDirection::Z_PLUS,
-			PacketData::FaceDirection::Z_MINUS, PacketData::FaceDirection::Y_PLUS
+		static constexpr std::array<Direction::Value, 5> CHECK_ORDER = {
+			Direction::Value::X_PLUS, Direction::Value::X_MINUS, Direction::Value::Z_PLUS, Direction::Value::Z_MINUS,
+			Direction::Value::Y_PLUS
 		};
 
 		// Attach to the first support block we find
-		for (PacketData::FaceDirection face : CHECK_ORDER) {
+		for (Direction::Value face : CHECK_ORDER) {
 			if (CanTorchAttachTo(_world, _pos, face)) {
 				_world.SetMeta(_pos, 6 - face);
 				return;
@@ -943,7 +940,7 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                                   BlockType _blockId) -> void {
 		uint8_t meta = _world.GetMetadata(_pos);
-		auto supportFace = static_cast<PacketData::FaceDirection>(6 - meta);
+		auto supportFace = static_cast<Direction::Value>(6 - meta);
 		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
@@ -955,13 +952,13 @@ void RegisterBlockBehaviors() {
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                                    Java::Random& _random) -> void {
-		auto supportFace = static_cast<PacketData::FaceDirection>(6 - _meta);
+		auto supportFace = static_cast<Direction::Value>(6 - _meta);
 		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
 		}
 
-		Int3 supportPos = Blocks::GetAdjacentBlockPos(_pos, PacketData::OppositeFace(supportFace));
+		Int3 supportPos = _pos.WithOffset(PacketData::OppositeFace(supportFace));
 
 		// turn OFF the instant the block it's mounted on is powered
 		if (RedstoneManager::GetBlockPowerProfile(_world, supportPos).powered) {
@@ -970,16 +967,16 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
-		auto currentFace = static_cast<PacketData::FaceDirection>(6 - _world.GetMetadata(_pos));
+		auto currentFace = static_cast<Direction::Value>(6 - _world.GetMetadata(_pos));
 		if (CanTorchAttachTo(_world, _pos, currentFace))
 			return; // Already valid
 
-		static constexpr std::array<PacketData::FaceDirection, 5> CHECK_ORDER = {
-			PacketData::FaceDirection::X_PLUS, PacketData::FaceDirection::X_MINUS, PacketData::FaceDirection::Z_PLUS,
-			PacketData::FaceDirection::Z_MINUS, PacketData::FaceDirection::Y_PLUS
+		static constexpr std::array<Direction::Value, 5> CHECK_ORDER = {
+			Direction::Value::X_PLUS, Direction::Value::X_MINUS, Direction::Value::Z_PLUS, Direction::Value::Z_MINUS,
+			Direction::Value::Y_PLUS
 		};
 
-		for (PacketData::FaceDirection face : CHECK_ORDER) {
+		for (Direction::Value face : CHECK_ORDER) {
 			if (CanTorchAttachTo(_world, _pos, face)) {
 				_world.SetMeta(_pos, 6 - face);
 				return;
@@ -992,7 +989,7 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                                    BlockType _blockId) -> void {
 		uint8_t meta = _world.GetMetadata(_pos);
-		auto supportFace = static_cast<PacketData::FaceDirection>(6 - meta);
+		auto supportFace = static_cast<Direction::Value>(6 - meta);
 		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
@@ -1003,13 +1000,13 @@ void RegisterBlockBehaviors() {
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                                     Java::Random& _random) -> void {
-		auto supportFace = static_cast<PacketData::FaceDirection>(6 - _meta);
+		auto supportFace = static_cast<Direction::Value>(6 - _meta);
 		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
 		}
 
-		Int3 supportPos = Blocks::GetAdjacentBlockPos(_pos, PacketData::OppositeFace(supportFace));
+		Int3 supportPos = _pos.WithOffset(PacketData::OppositeFace(supportFace));
 
 		// An unlit torch turns back ON the instant the block it's mounted on is no longer powered
 		if (!RedstoneManager::GetBlockPowerProfile(_world, supportPos).powered) {
@@ -1018,7 +1015,7 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                               PacketData::FaceDirection _face, BlockType _blockId,
+	                                                               Direction::Value _face, BlockType _blockId,
 	                                                               uint8_t _meta) -> bool {
 		const auto dir = Direction::FromAngle(_placer.rotationYaw);
 		if (!CanRedstoneComponentStay(_world, _pos) ||
@@ -1032,7 +1029,7 @@ void RegisterBlockBehaviors() {
 		return true;
 	};
 	blockBehaviors[BLOCK_REDSTONE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                  PacketData::FaceDirection _face, BlockType _blockId,
+	                                                  Direction::Value _face, BlockType _blockId,
 	                                                  uint8_t _meta) -> bool {
 		if (!CanRedstoneComponentStay(_world, _pos) || !GenericPlace(_world, _pos, _placer, _face, _blockId, _meta))
 			return false;
@@ -1092,14 +1089,13 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_ON].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                              PacketData::FaceDirection _face, BlockType _blockId,
+	                                                              Direction::Value _face, BlockType _blockId,
 	                                                              uint8_t _meta) -> bool {
 		return blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockPlaced(_world, _pos, _placer, _face, _blockId, _meta);
 	};
 
 	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                               PacketData::FaceDirection _face, BlockType _blockId,
-	                                               uint8_t _meta) -> bool {
+	                                               Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
 		if (_world.GetBlockId(Blocks::GetSourceBlockFromFace(_pos, _face)) == BLOCK_SNOW_LAYER)
 			_pos = Blocks::GetSourceBlockFromFace(_pos, _face);
 		if (CanTorchAttachTo(_world, _pos, _face)) {
@@ -1109,18 +1105,18 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_TORCH].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
-		auto currentFace = static_cast<PacketData::FaceDirection>(6 - _world.GetMetadata(_pos));
+		auto currentFace = static_cast<Direction::Value>(6 - _world.GetMetadata(_pos));
 		if (CanTorchAttachTo(_world, _pos, currentFace))
 			return; // Already valid
 
 		// Matches vanilla order
-		static constexpr std::array<PacketData::FaceDirection, 5> CHECK_ORDER = {
-			PacketData::FaceDirection::X_PLUS, PacketData::FaceDirection::X_MINUS, PacketData::FaceDirection::Z_PLUS,
-			PacketData::FaceDirection::Z_MINUS, PacketData::FaceDirection::Y_PLUS
+		static constexpr std::array<Direction::Value, 5> CHECK_ORDER = {
+			Direction::Value::X_PLUS, Direction::Value::X_MINUS, Direction::Value::Z_PLUS, Direction::Value::Z_MINUS,
+			Direction::Value::Y_PLUS
 		};
 
 		// Attach to the first support block we find
-		for (PacketData::FaceDirection face : CHECK_ORDER) {
+		for (Direction::Value face : CHECK_ORDER) {
 			if (CanTorchAttachTo(_world, _pos, face)) {
 				_world.SetMeta(_pos, 6 - face);
 				return;
@@ -1132,15 +1128,15 @@ void RegisterBlockBehaviors() {
 
 	blockBehaviors[BLOCK_TORCH].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
 		uint8_t meta = _world.GetMetadata(_pos);
-		auto supportFace = static_cast<PacketData::FaceDirection>(6 - meta);
+		auto supportFace = static_cast<Direction::Value>(6 - meta);
 		if (!CanTorchAttachTo(_world, _pos, supportFace))
 			BreakAndDropBlock(_world, _pos);
 	};
 
-	auto onDoorPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
-	                      BlockType _blockId, uint8_t _meta) -> bool {
+	auto onDoorPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+	                      uint8_t _meta) -> bool {
 		// Doors can only be placed by clicking the top face of a block
-		if (_face != PacketData::FaceDirection::Y_PLUS)
+		if (_face != Direction::Value::Y_PLUS)
 			return false;
 
 		// _pos is already the target cell
@@ -1223,10 +1219,9 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_BED].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                             PacketData::FaceDirection _face, BlockType _blockId,
-	                                             uint8_t _meta) -> bool {
+	                                             Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
 		// Beds can only be placed by clicking the top face of a block
-		if (_face != PacketData::FaceDirection::Y_PLUS)
+		if (_face != Direction::Value::Y_PLUS)
 			return false;
 
 		// _pos is already the target cell
@@ -1327,8 +1322,7 @@ void RegisterBlockBehaviors() {
 		GenericBreak(_world, _pos, _destroyer);
 	};
 	blockBehaviors[BLOCK_LEAVES].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                PacketData::FaceDirection _face, BlockType _blockId,
-	                                                uint8_t _meta) -> bool {
+	                                                Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
 		// So leaves placed by players dont decay
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, /*meta=*/_meta & 0b11);
 	};

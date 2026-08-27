@@ -121,16 +121,15 @@ float ShearsEffectiveness(ItemStack* _stack, BlockType _block);
 // Usage
 void HarmTool(ItemStack* _stack, const int _amount = 1);
 void OnToolFinishMining(ItemStack* _stack, BlockType _targetBlock);
-void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
-void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-                      PacketData::FaceDirection _face);
-void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
-void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
-void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face);
+void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face);
+void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face);
+void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face);
+void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face);
+void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face);
 void UseShears(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack);
 
 // Attack
-void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face);
+void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, Direction::Value _face);
 void AttackWithItem(Entity& _targetEntity, Entity& _sourceEntity, ItemStack* _stack);
 
 struct ToolProperties {
