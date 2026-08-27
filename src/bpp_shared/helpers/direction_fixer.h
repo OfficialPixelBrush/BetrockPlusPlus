@@ -41,13 +41,13 @@ enum DirectionBlockType : size_t {
 // Maps the metadata value to a direction value
 static constexpr Direction::Value META_TO_DIRECTION_LUT[MAX_DIRECTION_BLOCK_TYPE][0b111]{
 	// Torches
-	{ Direction::Value::None, Direction::Value::West, Direction::Value::East, Direction::Value::South,
+	{ Direction::Value::None, Direction::Value::East, Direction::Value::West, Direction::Value::South,
 	  Direction::Value::North, Direction::Value::Up, Direction::Value::None },
 	// Levers
-	{ Direction::Value::None, Direction::Value::West, Direction::Value::East, Direction::Value::South,
+	{ Direction::Value::None, Direction::Value::East, Direction::Value::West, Direction::Value::South,
 	  Direction::Value::North, Direction::Value::Up, Direction::Value::Up },
 	// Buttons
-	{ Direction::Value::None, Direction::Value::West, Direction::Value::East, Direction::Value::South,
+	{ Direction::Value::None, Direction::Value::East, Direction::Value::West, Direction::Value::South,
 	  Direction::Value::North, Direction::Value::None, Direction::Value::None },
 	// Stairs
 	{ Direction::Value::East, Direction::Value::West, Direction::Value::South, Direction::Value::North,
@@ -86,13 +86,13 @@ static constexpr Direction::Value GetDirectionFromMeta(const BlockType _type, co
 	switch (_type) {
 	case BLOCK_TORCH:
 	case BLOCK_REDSTONE_TORCH_OFF:
-	case BLOCK_ORE_REDSTONE_ON:
-		return META_TO_DIRECTION_LUT[DirectionBlockType::Torch][_meta & 0b11];
+	case BLOCK_REDSTONE_TORCH_ON:
+		return META_TO_DIRECTION_LUT[DirectionBlockType::Torch][_meta & 0b111];
 	case BLOCK_LEVER:
 		// Note: Does not differentiate North-South/East-West direction
 		return META_TO_DIRECTION_LUT[DirectionBlockType::Lever][_meta & 0b111];
 	case BLOCK_BUTTON_STONE:
-		return META_TO_DIRECTION_LUT[DirectionBlockType::Button][_meta & 0b11];
+		return META_TO_DIRECTION_LUT[DirectionBlockType::Button][_meta & 0b111];
 	case BLOCK_STAIRS_COBBLESTONE:
 	case BLOCK_STAIRS_WOOD:
 		return META_TO_DIRECTION_LUT[DirectionBlockType::Stairs][_meta & 0b11];
@@ -138,7 +138,7 @@ static constexpr uint8_t GetMetaFromDirection(const BlockType _type, const Direc
 	switch (_type) {
 	case BLOCK_TORCH:
 	case BLOCK_REDSTONE_TORCH_OFF:
-	case BLOCK_ORE_REDSTONE_ON:
+	case BLOCK_REDSTONE_TORCH_ON:
 	case BLOCK_LEVER:
 		switch (_dir) {
 		case Direction::Value::North:

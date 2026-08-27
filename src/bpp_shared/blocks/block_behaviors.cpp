@@ -900,9 +900,8 @@ void RegisterBlockBehaviors() {
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                                   BlockType _blockId) -> void {
-		uint8_t meta = _world.GetMetadata(_pos);
-		auto supportFace = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, meta);
-		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
+		auto dir = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _world.GetMetadata(_pos));
+		if (!CanTorchAttachTo(_world, _pos, dir)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
 		}
@@ -913,13 +912,13 @@ void RegisterBlockBehaviors() {
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                                    Java::Random& _random) -> void {
-		auto supportFace = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _meta);
-		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
+		const auto dir = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _meta);
+		if (!CanTorchAttachTo(_world, _pos, dir)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
 		}
 
-		Int3 supportPos = _pos.WithOffset(Direction::Opposite(supportFace));
+		Int3 supportPos = _pos.WithOffset(Direction::Opposite(dir));
 
 		// turn OFF the instant the block it's mounted on is powered
 		if (RedstoneManager::GetBlockPowerProfile(_world, supportPos).powered) {
@@ -928,8 +927,8 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
-		auto currentFace = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_OFF, _world.GetMetadata(_pos));
-		if (CanTorchAttachTo(_world, _pos, currentFace))
+		const auto dir = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_OFF, _world.GetMetadata(_pos));
+		if (CanTorchAttachTo(_world, _pos, dir))
 			return; // Already valid
 
 		static constexpr std::array<Direction::Value, 5> CHECK_ORDER = { Direction::Value::East, Direction::Value::West,
@@ -948,9 +947,8 @@ void RegisterBlockBehaviors() {
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                                    BlockType _blockId) -> void {
-		uint8_t meta = _world.GetMetadata(_pos);
-		auto supportFace = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_OFF, meta);
-		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
+		const auto dir = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_OFF, _world.GetMetadata(_pos));
+		if (!CanTorchAttachTo(_world, _pos, dir)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
 		}
@@ -960,13 +958,13 @@ void RegisterBlockBehaviors() {
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                                     Java::Random& _random) -> void {
-		auto supportFace = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_OFF, _meta);
-		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
+		const auto dir = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_OFF, _meta);
+		if (!CanTorchAttachTo(_world, _pos, dir)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
 		}
 
-		Int3 supportPos = _pos.WithOffset(Direction::Opposite(supportFace));
+		Int3 supportPos = _pos.WithOffset(Direction::Opposite(dir));
 
 		// An unlit torch turns back ON the instant the block it's mounted on is no longer powered
 		if (!RedstoneManager::GetBlockPowerProfile(_world, supportPos).powered) {
@@ -1066,7 +1064,7 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_TORCH].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
-		auto currentFace = GetDirectionFromMeta(BLOCK_TORCH, _world.GetMetadata(_pos));
+		const auto currentFace = GetDirectionFromMeta(BLOCK_TORCH, _world.GetMetadata(_pos));
 		if (CanTorchAttachTo(_world, _pos, currentFace))
 			return; // Already valid
 
@@ -1087,8 +1085,8 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_TORCH].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
-		auto supportFace = GetDirectionFromMeta(BLOCK_TORCH, _world.GetMetadata(_pos));
-		if (!CanTorchAttachTo(_world, _pos, supportFace))
+		const auto dir = GetDirectionFromMeta(BLOCK_TORCH, _world.GetMetadata(_pos));
+		if (!CanTorchAttachTo(_world, _pos, dir))
 			BreakAndDropBlock(_world, _pos);
 	};
 
