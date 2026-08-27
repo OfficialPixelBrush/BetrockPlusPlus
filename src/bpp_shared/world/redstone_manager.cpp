@@ -127,7 +127,8 @@ PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _p
 			} else if (rdz == 1 || rdz == -1) {
 				if (grdc.powerZ || grdc.powerNZ) {
 					bool redirected = grdc.powerNX || grdc.powerX;
-					if (!redirected) softPowered = true;
+					if (!redirected)
+						softPowered = true;
 				}
 			}
 			if (!grdc.powerNX && !grdc.powerNZ && !grdc.powerX && !grdc.powerZ)
@@ -164,16 +165,16 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 	auto thisMeta = _world.GetMetadata(_pos);
 
 	// Is the block under us being hard powered?
-	if (RedstoneManager::GetBlockPowerProfile(_world, { _pos.x, _pos.y - 1, _pos.z }).hardPowered)
+	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Direction::Value::Down)).hardPowered)
 		return 15;
 
 	// Is the block above us being hard powered?
-	if (RedstoneManager::GetBlockPowerProfile(_world, { _pos.x, _pos.y + 1, _pos.z }).hardPowered)
+	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Direction::Value::Up)).hardPowered)
 		return 15;
 
 	// Can the block above us power us?
-	if (RedstoneManager::GetComponentProfile(_world.GetBlockId({ _pos.x, _pos.y + 1, _pos.z }),
-	                                         _world.GetMetadata({ _pos.x, _pos.y + 1, _pos.z }))
+	if (RedstoneManager::GetComponentProfile(_world.GetBlockId(_pos.WithOffset(Direction::Value::Up)),
+	                                         _world.GetMetadata(_pos.WithOffset(Direction::Value::Up)))
 	        .powerBelow)
 		return 15;
 
@@ -187,13 +188,14 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 		auto dz = rdz + _pos.z;
 
 		for (int dy = _pos.y - 1; dy <= _pos.y + 1; dy++) {
+			Int3 dPos = { dx, dy, dz };
 			// We only care if we are being hard powered from the same Y level
-			if (dy == _pos.y && RedstoneManager::GetBlockPowerProfile(_world, { dx, dy, dz }).hardPowered)
+			if (dy == _pos.y && RedstoneManager::GetBlockPowerProfile(_world, dPos).hardPowered)
 				return 15;
 
 			// A torch sitting directly beside us
-			if (dy == _pos.y && _world.GetBlockId({ dx, dy, dz }) == BLOCK_REDSTONE_TORCH_ON) {
-				auto torchMeta = _world.GetMetadata({ dx, dy, dz });
+			if (dy == _pos.y && _world.GetBlockId(dPos) == BLOCK_REDSTONE_TORCH_ON) {
+				auto torchMeta = _world.GetMetadata(dPos);
 				auto torchProfile = RedstoneManager::GetComponentProfile(BLOCK_REDSTONE_TORCH_ON, torchMeta);
 
 				// Direction FROM the torch TOWARD us
@@ -212,8 +214,8 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 			}
 
 			// A repeater sitting directly beside us
-			if (dy == _pos.y && _world.GetBlockId({ dx, dy, dz }) == BLOCK_REDSTONE_REPEATER_ON) {
-				auto repeaterMeta = _world.GetMetadata({ dx, dy, dz });
+			if (dy == _pos.y && _world.GetBlockId(dPos) == BLOCK_REDSTONE_REPEATER_ON) {
+				auto repeaterMeta = _world.GetMetadata(dPos);
 				auto repeaterProfile = RedstoneManager::GetComponentProfile(BLOCK_REDSTONE_REPEATER_ON, repeaterMeta);
 
 				// Direction FROM the repeater TOWARD us
@@ -233,9 +235,9 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 
 			// Check if we are a valid connection (same level, or a valid vertical bridge)
 			bool canConnect = (dy == _pos.y) || RedstoneManager::CanBridgeVertical(_world, _pos, rdx, rdz, dy - _pos.y);
-			if (_world.GetBlockId({ dx, dy, dz }) == BLOCK_REDSTONE && canConnect) {
+			if (_world.GetBlockId(dPos) == BLOCK_REDSTONE && canConnect) {
 				// This is a dust so use its current power level directly
-				auto neighborLevel = _world.GetMetadata({ dx, dy, dz });
+				auto neighborLevel = _world.GetMetadata(dPos);
 				if (neighborLevel > best)
 					best = neighborLevel;
 			}
@@ -256,7 +258,8 @@ static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int
 	ComponentProfile thisProfile;
 	if (thisBlock != BLOCK_REDSTONE) {
 		// Make the profile getter use the powered repeater since the unpowered repeater will return false for every direction
-		thisProfile = RedstoneManager::GetComponentProfile(thisBlock == BLOCK_REDSTONE_REPEATER_OFF ? BLOCK_REDSTONE_REPEATER_ON : thisBlock, _world.GetMetadata(_pos));
+		thisProfile = RedstoneManager::GetComponentProfile(
+		    thisBlock == BLOCK_REDSTONE_REPEATER_OFF ? BLOCK_REDSTONE_REPEATER_ON : thisBlock, _world.GetMetadata(_pos));
 		doProfileCheck = true;
 	}
 
