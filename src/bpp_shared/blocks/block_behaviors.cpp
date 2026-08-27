@@ -626,27 +626,9 @@ void RegisterBlockBehaviors() {
 
 		    if (!IsReplaceable(_world, _pos))
 			    return false;
-
-		    int facing = 0;
-		    switch (_face) {
-		    case PacketData::X_PLUS:
-			    facing = 1;
-			    break;
-		    case PacketData::X_MINUS:
-			    facing = 2;
-			    break;
-		    case PacketData::Z_PLUS:
-			    facing = 3;
-			    break;
-		    case PacketData::Z_MINUS:
-			    facing = 4;
-			    break;
-		    default:
-			    facing = 0;
-			    break;
-		    }
-
-		    _world.SetBlock(_pos, _blockId, uint8_t(facing));
+		    const uint8_t meta = GetMetaFromDirection(BLOCK_BUTTON_STONE, FaceDirectionToDirection(_face));
+		    GlobalLogger().info << int(_face) << ": " << int(meta) << "\n";
+		    _world.SetBlock(_pos, _blockId, meta);
 		    return true;
 		},
 	};
