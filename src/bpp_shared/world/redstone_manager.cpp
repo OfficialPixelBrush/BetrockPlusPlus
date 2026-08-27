@@ -34,9 +34,38 @@ ComponentProfile RedstoneManager::GetRedstoneDustConnectivity(WorldManager& _wor
 			auto dx = rdx + _pos.x;
 			auto dz = rdz + _pos.z;
 
-			bool canConnect = (dy == _pos.y) || CanBridgeVertical(_world, _pos, rdx, rdz, dy - _pos.y);
+			BlockType neighborBlock = _world.GetBlockId({ dx, dy, dz });
+			bool canConnect = (dy == _pos.y) || (CanBridgeVertical(_world, _pos, rdx, rdz, dy - _pos.y) &&
+			                                     neighborBlock == BLOCK_REDSTONE);
 
-			if (_world.GetBlockId({ dx, dy, dz }) == BLOCK_REDSTONE && canConnect) {
+			bool continuesHere = neighborBlock == BLOCK_REDSTONE || neighborBlock == BLOCK_REDSTONE_TORCH_ON ||
+			                     neighborBlock == BLOCK_REDSTONE_TORCH_OFF;
+
+			// Repeaters depend on facing direction
+			if (dy == _pos.y &&
+			    (neighborBlock == BLOCK_REDSTONE_REPEATER_ON || neighborBlock == BLOCK_REDSTONE_REPEATER_OFF)) {
+				continuesHere = false;
+				auto profile = RedstoneManager::GetComponentProfile(BLOCK_REDSTONE_REPEATER_ON,
+				                                                    _world.GetMetadata({ dx, dy, dz }));
+				if (rdx == -1) {
+					if (profile.powerNX)
+						continuesHere = true;
+				}
+				if (rdx == 1) {
+					if (profile.powerX)
+						continuesHere = true;
+				}
+				if (rdz == -1) {
+					if (profile.powerNZ)
+						continuesHere = true;
+				}
+				if (rdz == 1) {
+					if (profile.powerZ)
+						continuesHere = true;
+				}
+			}
+
+			if (continuesHere && canConnect) {
 				if (rdx == -1) {
 					thisProfile.powerNX = true;
 				}
@@ -217,8 +246,19 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 }
 
 static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int3>& _visited) {
-	if (_world.GetBlockId(_pos) == BLOCK_REDSTONE)
+	auto thisBlock = _world.GetBlockId(_pos);
+	bool doProfileCheck = false;
+
+	// Only mark visited if we are redstone dust
+	if (thisBlock == BLOCK_REDSTONE)
 		_visited.insert(_pos);
+
+	ComponentProfile thisProfile;
+	if (thisBlock != BLOCK_REDSTONE) {
+		// Make the profile getter use the powered repeater since the unpowered repeater will return false for every direction
+		thisProfile = RedstoneManager::GetComponentProfile(thisBlock == BLOCK_REDSTONE_REPEATER_OFF ? BLOCK_REDSTONE_REPEATER_ON : thisBlock, _world.GetMetadata(_pos));
+		doProfileCheck = true;
+	}
 
 	std::unordered_set<Int3> neighbors;
 	// Horizontal scan
@@ -229,6 +269,25 @@ static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int
 			auto rdz = d[3 - i];
 			auto dx = rdx + _pos.x;
 			auto dz = rdz + _pos.z;
+
+			if (doProfileCheck) {
+				if (rdx == -1) {
+					if (!thisProfile.powerNX)
+						continue;
+				}
+				if (rdx == 1) {
+					if (!thisProfile.powerX)
+						continue;
+				}
+				if (rdz == -1) {
+					if (!thisProfile.powerNZ)
+						continue;
+				}
+				if (rdz == 1) {
+					if (!thisProfile.powerZ)
+						continue;
+				}
+			}
 
 			bool canConnect = (dy == _pos.y) || RedstoneManager::CanBridgeVertical(_world, _pos, rdx, rdz, dy - _pos.y);
 
