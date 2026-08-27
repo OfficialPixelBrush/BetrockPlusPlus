@@ -6,6 +6,7 @@
 */
 
 #pragma once
+#include "direction.h"
 
 #include "base_types.h"
 #include "blocks.h"

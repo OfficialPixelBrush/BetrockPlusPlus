@@ -839,7 +839,7 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_LADDER].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                         Java::Random& _random) -> void {
 		// Check to make sure we can till exist here
-		if (!IsSupported(_world, _pos, Direction::Value(_meta)))
+		if (!IsSupported(_world, _pos, GetDirectionFromMeta(BLOCK_LADDER, _meta)))
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LADDER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
@@ -872,14 +872,13 @@ void RegisterBlockBehaviors() {
 			_pos = _pos.WithOffset(Direction::Opposite(_face));
 		if (CanTorchAttachTo(_world, _pos, _face)) {
 			return GenericPlace(_world, _pos, _placer, _face, _blockId,
-			                    GetMetaFromDirection(BLOCK_REDSTONE_TORCH_ON, Direction::Opposite(_face)));
+			                    GetMetaFromDirection(BLOCK_REDSTONE_TORCH_ON, _face));
 		}
 		return false;
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
-		const auto currentFace = Direction::Opposite(
-		    GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _world.GetMetadata(_pos)));
+		const auto currentFace = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _world.GetMetadata(_pos));
 		if (CanTorchAttachTo(_world, _pos, currentFace))
 			return; // Already valid
 
@@ -891,7 +890,7 @@ void RegisterBlockBehaviors() {
 		// Attach to the first support block we find
 		for (Direction::Value face : CHECK_ORDER) {
 			if (CanTorchAttachTo(_world, _pos, face)) {
-				_world.SetMeta(_pos, GetMetaFromDirection(BLOCK_REDSTONE_TORCH_ON, Direction::Opposite(face)));
+				_world.SetMeta(_pos, GetMetaFromDirection(BLOCK_REDSTONE_TORCH_ON, face));
 				return;
 			}
 		}
@@ -902,7 +901,7 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                                   BlockType _blockId) -> void {
 		uint8_t meta = _world.GetMetadata(_pos);
-		auto supportFace = static_cast<Direction::Value>(6 - meta);
+		auto supportFace = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, meta);
 		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
@@ -914,7 +913,7 @@ void RegisterBlockBehaviors() {
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                                    Java::Random& _random) -> void {
-		auto supportFace = Direction::Opposite(GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _meta));
+		auto supportFace = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _meta);
 		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
@@ -939,7 +938,7 @@ void RegisterBlockBehaviors() {
 
 		for (Direction::Value face : CHECK_ORDER) {
 			if (CanTorchAttachTo(_world, _pos, face)) {
-				_world.SetMeta(_pos, GetMetaFromDirection(BLOCK_REDSTONE_TORCH_OFF, Direction::Opposite(face)));
+				_world.SetMeta(_pos, GetMetaFromDirection(BLOCK_REDSTONE_TORCH_OFF, face));
 				return;
 			}
 		}
@@ -950,7 +949,7 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                                    BlockType _blockId) -> void {
 		uint8_t meta = _world.GetMetadata(_pos);
-		auto supportFace = static_cast<Direction::Value>(6 - meta);
+		auto supportFace = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_OFF, meta);
 		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
@@ -961,7 +960,7 @@ void RegisterBlockBehaviors() {
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                                     Java::Random& _random) -> void {
-		auto supportFace = Direction::Opposite(GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_OFF, _meta));
+		auto supportFace = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_OFF, _meta);
 		if (!CanTorchAttachTo(_world, _pos, supportFace)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
@@ -1061,13 +1060,13 @@ void RegisterBlockBehaviors() {
 			_pos = _pos.WithOffset(Direction::Opposite(_face));
 		if (CanTorchAttachTo(_world, _pos, _face)) {
 			return GenericPlace(_world, _pos, _placer, _face, _blockId,
-			                    GetMetaFromDirection(BLOCK_TORCH, Direction::Opposite(_face)));
+			                    GetMetaFromDirection(BLOCK_TORCH, _face));
 		}
 		return false;
 	};
 
 	blockBehaviors[BLOCK_TORCH].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
-		auto currentFace = Direction::Opposite(GetDirectionFromMeta(BLOCK_TORCH, _world.GetMetadata(_pos)));
+		auto currentFace = GetDirectionFromMeta(BLOCK_TORCH, _world.GetMetadata(_pos));
 		if (CanTorchAttachTo(_world, _pos, currentFace))
 			return; // Already valid
 
@@ -1079,7 +1078,7 @@ void RegisterBlockBehaviors() {
 		// Attach to the first support block we find
 		for (Direction::Value face : CHECK_ORDER) {
 			if (CanTorchAttachTo(_world, _pos, face)) {
-				_world.SetMeta(_pos, GetMetaFromDirection(BLOCK_TORCH, Direction::Opposite(face)));
+				_world.SetMeta(_pos, GetMetaFromDirection(BLOCK_TORCH, face));
 				return;
 			}
 		}

@@ -6,6 +6,7 @@
 */
 
 #pragma once
+#include "direction.h"
 
 #include "AABB.h"
 #include "block_shapes.h"

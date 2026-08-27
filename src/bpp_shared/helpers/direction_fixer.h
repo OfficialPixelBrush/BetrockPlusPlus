@@ -146,9 +146,9 @@ static constexpr uint8_t GetMetaFromDirection(const BlockType _type, const Direc
 		case Direction::Value::South:
 			return 3;
 		case Direction::Value::East:
-			return 2;
-		case Direction::Value::West:
 			return 1;
+		case Direction::Value::West:
+			return 2;
 		// Note: For levers, handle North-South/East-West direction separately, defaults to North-South!
 		case Direction::Value::Up:
 			return 5;
