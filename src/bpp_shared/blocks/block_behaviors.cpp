@@ -336,11 +336,10 @@ static void BreakDoor(WorldManager& _world, Int3 _pos, BlockType _doorType) {
 		if (_world.GetBlockId(_pos) != _doorType)
 			// Below us is not the bottom of a door! This is bad!
 			return;
-
-		// Tell the bottom of the door to break
-		BreakDoor(_world, _pos, _doorType);
-		return;
 	}
+	// Since we're now guaranteed to be
+	// pointing at the bottom of the door,
+	// we can continue like this
 	Int3 top = _pos.WithOffset(Direction::Value::Up);
 	if (_world.GetBlockId(top) == _doorType && (_world.GetMetadata(top) & 8)) {
 		_world.SetBlock(top, BLOCK_AIR);
@@ -1280,10 +1279,9 @@ void RegisterBlockBehaviors() {
 			if (_world.GetBlockId(_pos) != BLOCK_BED)
 				// The foot is not a bed block!
 				return;
-			// Tell the foot of the bed to break
-			blockBehaviors[BLOCK_BED].onBlockDestroyedByPlayer(_world, _pos, _destroyer);
-			return;
 		}
+		// Since we're now guaranteed to be pointing at the foot of the bed,
+		// we can continue like this
 		Int3 headPos = _pos.WithOffset(dir);
 		if (_world.GetBlockId(headPos) == BLOCK_BED && (_world.GetMetadata(headPos) & 0b1000)) {
 			_world.SetBlock(headPos, BLOCK_AIR);
