@@ -5,6 +5,7 @@
  *
 */
 #pragma once
+#include "direction.h"
 #include "materials.h"
 #include "packet_data.h"
 #include <numeric_structs.h>
