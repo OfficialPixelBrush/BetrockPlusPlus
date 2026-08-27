@@ -203,13 +203,14 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		bool hasOnBlockUse = static_cast<bool>(Items::itemBehavior[heldItem->id].onBlockUse);
 
 		if (isBucketItem && hasOnBlockUse) {
-			Items::itemBehavior[heldItem->id].onBlockUse(_world, heldItem, position, *_session.entity, _pkt.face);
+			Items::itemBehavior[heldItem->id].onBlockUse(_world, heldItem, position, *_session.entity,
+			                                             FaceDirectionToDirection(_pkt.face));
 		}
 		return;
 	}
 
 	if (Items::IsBlock(heldItem->id)) {
-		Int3 placePosition = Blocks::GetAdjacentBlockPos(position, _pkt.face);
+		Int3 placePosition = position.WithOffset(FaceDirectionToDirection(_pkt.face));
 
 		if (heldItem->id.value < 0 || heldItem->id.value >= 256) {
 			return;
@@ -222,7 +223,8 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		if (!function) {
 			return;
 		}
-		bool result = function(_world, placePosition, *_session.entity, _pkt.face, blockId, heldItem->data);
+		bool result = function(_world, placePosition, *_session.entity, FaceDirectionToDirection(_pkt.face), blockId,
+		                       heldItem->data);
 		if (result) {
 			heldItem->DecrementCount(1);
 		}

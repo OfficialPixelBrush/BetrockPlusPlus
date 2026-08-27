@@ -215,8 +215,8 @@ void RegisterAll() {
 	itemBehavior[MUSHROOM_STEW].onUse = EatFood;
 
 	itemBehavior[SUGARCANE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                        PacketData::FaceDirection _face) {
-		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
+	                                        Direction::Value _face) {
+		Int3 placePos = _pos.WithOffset(_face);
 		if (!Blocks::CanSugarcaneSurviveAt(_world, placePos))
 			return;
 
@@ -225,8 +225,8 @@ void RegisterAll() {
 	};
 
 	itemBehavior[SEEDS_WHEAT].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                          PacketData::FaceDirection _face) {
-		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
+	                                          Direction::Value _face) {
+		Int3 placePos = _pos.WithOffset(_face);
 		if (!Blocks::CanCropsSurviveAt(_world, placePos))
 			return;
 
@@ -235,9 +235,9 @@ void RegisterAll() {
 	};
 
 	itemBehavior[SIGN].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                   PacketData::FaceDirection _face) {
-		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
-		if (_face == PacketData::FaceDirection::Y_PLUS)
+	                                   Direction::Value _face) {
+		Int3 placePos = _pos.WithOffset(_face);
+		if (_face == Direction::Value::Up)
 			_world.SetBlock(placePos, BLOCK_SIGN); //TODO: facing meta
 		else
 			_world.SetBlock(placePos, BLOCK_SIGN_WALL, _face);
@@ -245,11 +245,10 @@ void RegisterAll() {
 		_stack->DecrementCount(1);
 	};
 
-	auto onDoorPlace = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                      PacketData::FaceDirection _face) {
+	auto onDoorPlace = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
 		BlockType targetBlockType;
 		targetBlockType = _stack->id == DOOR_WOOD ? BLOCK_DOOR_WOOD : BLOCK_DOOR_IRON;
-		Int3 placePosition = Blocks::GetAdjacentBlockPos(_pos, _face);
+		Int3 placePosition = _pos.WithOffset(_face);
 		if (Blocks::blockBehaviors[targetBlockType].onBlockPlaced(_world, placePosition, _user, _face, targetBlockType,
 		                                                          0))
 			_stack->DecrementCount(1);
@@ -259,23 +258,23 @@ void RegisterAll() {
 	itemBehavior[DOOR_IRON].onBlockUse = onDoorPlace;
 
 	itemBehavior[REDSTONE_REPEATER].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                       PacketData::FaceDirection _face) {
-		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
+	                                                Direction::Value _face) {
+		Int3 placePos = _pos.WithOffset(_face);
 		if (Blocks::blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockPlaced(_world, placePos, _user, _face,
 		                                                                      BLOCK_REDSTONE_REPEATER_OFF, 0))
 			_stack->DecrementCount(1);
 	};
 
 	itemBehavior[REDSTONE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                  PacketData::FaceDirection _face) {
-		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
+	                                       Direction::Value _face) {
+		Int3 placePos = _pos.WithOffset(_face);
 		if (Blocks::blockBehaviors[BLOCK_REDSTONE].onBlockPlaced(_world, placePos, _user, _face, BLOCK_REDSTONE, 0))
 			_stack->DecrementCount(1);
 	};
 
 	itemBehavior[BED].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                  PacketData::FaceDirection _face) {
-		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
+	                                  Direction::Value _face) {
+		Int3 placePos = _pos.WithOffset(_face);
 		if (Blocks::blockBehaviors[BLOCK_BED].onBlockPlaced(_world, placePos, _user, _face, BLOCK_BED, 0))
 			_stack->DecrementCount(1);
 	};

@@ -36,7 +36,7 @@ enum ArmorPiece {
 struct ItemBehavior {
 	void (*onUse)(PlayerSession& _session, ItemStack* _stack, Entity& _target) = nullptr;
 	void (*onBlockUse)(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                   PacketData::FaceDirection _face) = nullptr;
+	                   Direction::Value _face) = nullptr;
 	void (*onStartHolding)(ItemStack* _stack, PlayerSession& _session) = nullptr;
 	void (*whileHeld)(ItemStack* _stack, PlayerSession& _session, Server& _server) = nullptr;
 	void (*onStopHolding)(ItemStack* _stack) = nullptr;
