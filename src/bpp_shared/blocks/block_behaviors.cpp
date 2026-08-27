@@ -6,6 +6,9 @@
 */
 
 #include "blocks/block_behaviors.h"
+#include "../helpers/direction_fixer.h"
+#include "../helpers/java/java_math.h"
+#include "../numeric_structs.h"
 #include "blocks.h"
 #include "blocks/block_properties.h"
 #include "dimensions.h"
@@ -19,10 +22,7 @@
 #include "redstone_manager.h"
 #include "tick_scheduler.h"
 #include "tile_entities/tile_entity.h"
-#include "../numeric_structs.h"
-#include "../helpers/java/java_math.h"
 #include "world.h"
-#include "../helpers/direction_fixer.h"
 
 namespace Blocks {
 BlockBehavior blockBehaviors[BLOCK_MAX] = {};
@@ -330,16 +330,18 @@ static void ToggleDoor(WorldManager& _world, Int3 _pos, PlayerSession* _triggeri
 static void BreakDoor(WorldManager& _world, Int3 _pos, BlockType _doorType) {
 	auto meta = _world.GetMetadata(_pos);
 	if (meta & 8) {
+		// Offset post down
+		_pos.Offset(Direction::Value::Down);
 		// We are the top of the door
-		if (_world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z }) != _doorType)
+		if (_world.GetBlockId(_pos) != _doorType)
 			// Below us is not the bottom of a door! This is bad!
 			return;
 
 		// Tell the bottom of the door to break
-		BreakDoor(_world, { _pos.x, _pos.y - 1, _pos.z }, _doorType);
+		BreakDoor(_world, _pos, _doorType);
 		return;
 	}
-	Int3 top = { _pos.x, _pos.y + 1, _pos.z };
+	Int3 top = _pos.WithOffset(Direction::Value::Up);
 	if (_world.GetBlockId(top) == _doorType && (_world.GetMetadata(top) & 8)) {
 		_world.SetBlock(top, BLOCK_AIR);
 	}
@@ -876,7 +878,7 @@ void RegisterBlockBehaviors() {
 	                                                            BlockType _blockId) -> void {
 		const BlockType below = _world.GetBlockId(_pos.WithOffset(Direction::Value::Down));
 		const bool canStay = (below != BLOCK_AIR) && Blocks::blockProperties[below].isOpaqueCube &&
-		               Blocks::blockProperties[below].material.isSolid;
+		                     Blocks::blockProperties[below].material.isSolid;
 		if (!canStay)
 			_world.SetBlock(_pos, BLOCK_AIR);
 	};
@@ -1038,7 +1040,9 @@ void RegisterBlockBehaviors() {
 	                                                               PacketData::FaceDirection _face, BlockType _blockId,
 	                                                               uint8_t _meta) -> bool {
 		const auto dir = Direction::FromAngle(_placer.rotationYaw);
-		if (!CanRedstoneComponentStay(_world, _pos) || !GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_REDSTONE_REPEATER_OFF, dir)))
+		if (!CanRedstoneComponentStay(_world, _pos) ||
+		    !GenericPlace(_world, _pos, _placer, _face, _blockId,
+		                  GetMetaFromDirection(BLOCK_REDSTONE_REPEATER_OFF, dir)))
 			return false;
 		// Turn on if we are being powered!
 		if (RedstoneManager::IsRepeaterInputPowered(_world, _pos, _meta)) {
@@ -1047,10 +1051,9 @@ void RegisterBlockBehaviors() {
 		return true;
 	};
 	blockBehaviors[BLOCK_REDSTONE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                               PacketData::FaceDirection _face, BlockType _blockId,
-	                                                               uint8_t _meta) -> bool {
-		if (!CanRedstoneComponentStay(_world, _pos) ||
-		    !GenericPlace(_world, _pos, _placer, _face, _blockId, _meta))
+	                                                  PacketData::FaceDirection _face, BlockType _blockId,
+	                                                  uint8_t _meta) -> bool {
+		if (!CanRedstoneComponentStay(_world, _pos) || !GenericPlace(_world, _pos, _placer, _face, _blockId, _meta))
 			return false;
 		return true;
 	};
@@ -1179,8 +1182,10 @@ void RegisterBlockBehaviors() {
 		const Int3 right = placePos.WithOffset(Direction::ToRight(facing));
 		const Int3 rightTop = right.WithOffset(Direction::Value::Up);
 
-		const int leftSolidBlocks = (_world.IsBlockNormalCube(left) ? 1 : 0) + (_world.IsBlockNormalCube(leftTop) ? 1 : 0);
-		const int rightSolidBlocks = (_world.IsBlockNormalCube(right) ? 1 : 0) + (_world.IsBlockNormalCube(rightTop) ? 1 : 0);
+		const int leftSolidBlocks = (_world.IsBlockNormalCube(left) ? 1 : 0) +
+		                            (_world.IsBlockNormalCube(leftTop) ? 1 : 0);
+		const int rightSolidBlocks = (_world.IsBlockNormalCube(right) ? 1 : 0) +
+		                             (_world.IsBlockNormalCube(rightTop) ? 1 : 0);
 
 		const bool leftHasDoor = _world.GetBlockId(left) == _blockId || _world.GetBlockId(leftTop) == _blockId;
 		const bool rightHasDoor = _world.GetBlockId(right) == _blockId || _world.GetBlockId(rightTop) == _blockId;
@@ -1211,7 +1216,7 @@ void RegisterBlockBehaviors() {
 
 	// for when the block is interacted with!
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockActivated = [](WorldManager& _world, Int3 _pos,
-	                                                      PlayerSession* _triggeringSession) -> bool {
+	                                                                  PlayerSession* _triggeringSession) -> bool {
 		// Increase and loop delay
 		auto meta = _world.GetMetadata(_pos);
 		int delay = (meta & 12) >> 2;
@@ -1220,7 +1225,7 @@ void RegisterBlockBehaviors() {
 		return false;
 	};
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_ON].onBlockActivated = [](WorldManager& _world, Int3 _pos,
-	                                                      PlayerSession* _triggeringSession) -> bool {
+	                                                                 PlayerSession* _triggeringSession) -> bool {
 		return blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockActivated(_world, _pos, _triggeringSession);
 	};
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated = [](WorldManager& _world, Int3 _pos,
@@ -1266,7 +1271,24 @@ void RegisterBlockBehaviors() {
 	};
 	//blockBehaviors[BLOCK_BED].onBlockClicked = ToggleDoor;
 	blockBehaviors[BLOCK_BED].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
-		// TODO
+		auto meta = _world.GetMetadata(_pos);
+		auto dir = GetDirectionFromMeta(BLOCK_BED, meta);
+		if (meta & 0b1000) {
+			// We are the head of the bed
+			// Offset one down
+			_pos.Offset(Direction::Opposite(dir));
+			if (_world.GetBlockId(_pos) != BLOCK_BED)
+				// The foot is not a bed block!
+				return;
+			// Tell the foot of the bed to break
+			blockBehaviors[BLOCK_BED].onBlockDestroyedByPlayer(_world, _pos, _destroyer);
+			return;
+		}
+		Int3 headPos = _pos.WithOffset(dir);
+		if (_world.GetBlockId(headPos) == BLOCK_BED && (_world.GetMetadata(headPos) & 0b1000)) {
+			_world.SetBlock(headPos, BLOCK_AIR);
+		}
+		BreakAndDropBlock(_world, _pos);
 	};
 
 	// Grass spread / decay
