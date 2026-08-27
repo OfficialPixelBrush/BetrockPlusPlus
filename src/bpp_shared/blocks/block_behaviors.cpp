@@ -523,7 +523,7 @@ void RegisterBlockBehaviors() {
 		    if (!IsReplaceable(_world, _pos))
 			    return false;
 
-		    _world.SetBlock(_pos, _blockId, GetMetaFromDirection(BLOCK_TRAPDOOR, _face));
+		    _world.SetBlock(_pos, _blockId, GetMetaFromDirection(BLOCK_TRAPDOOR, Direction::Opposite(_face)));
 		    return true;
 		}
 	};
