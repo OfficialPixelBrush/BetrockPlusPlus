@@ -300,7 +300,7 @@ public:
 	}
 
 	bool AABBinValidChunks(AABB _collider) {
-		if (_collider.minY < 0.0 || _collider.maxY >= 128.0)
+		if (_collider.minY < 0.0 || _collider.maxY >= CHUNK_HEIGHT)
 			return false;
 		int minCX = MathHelper::FloorDouble(_collider.minX) >> 4;
 		int maxCX = MathHelper::FloorDouble(_collider.maxX + 1.0) >> 4;
