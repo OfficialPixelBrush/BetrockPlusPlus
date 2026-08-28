@@ -5,6 +5,7 @@
  *
 */
 #pragma once
+#include "direction.h"
 #include "materials.h"
 #include "packet_data.h"
 #include <numeric_structs.h>
@@ -18,7 +19,7 @@ namespace Blocks {
 
 bool CanSugarcaneSurviveAt(WorldAccess& _world, Int3 _pos);
 bool CanCropsSurviveAt(WorldAccess& _world, Int3 _pos);
-bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, PacketData::FaceDirection _face);
+bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, Direction::Value _face);
 float GetFluidPercentAir(uint8_t _meta);
 void BreakAndDropBlock(WorldManager& _world, Int3 _pos);
 void BreakAndDropBlockWithChance(WorldManager& _world, Int3 _pos, float _chance);
@@ -28,58 +29,6 @@ bool CanFallAt(WorldAccess& _world, Int3 _position);
 bool CanGenericPlantSurviveAt(WorldAccess& _world, Int3 _pos);
 bool CanMushroomSurviveAt(WorldAccess& _world, Int3 _pos);
 bool CanCactusSurviveAt(WorldAccess& _world, Int3 _pos);
-
-constexpr Int3 GetAdjacentBlockPos(Int3 _pos, PacketData::FaceDirection _face) {
-	switch (_face) {
-	case PacketData::FaceDirection::Y_MINUS:
-		--_pos.y;
-		break;
-	case PacketData::FaceDirection::Y_PLUS:
-		++_pos.y;
-		break;
-	case PacketData::FaceDirection::Z_MINUS:
-		--_pos.z;
-		break;
-	case PacketData::FaceDirection::Z_PLUS:
-		++_pos.z;
-		break;
-	case PacketData::FaceDirection::X_MINUS:
-		--_pos.x;
-		break;
-	case PacketData::FaceDirection::X_PLUS:
-		++_pos.x;
-		break;
-	default:
-		break;
-	}
-	return _pos;
-}
-
-constexpr Int3 GetSourceBlockFromFace(Int3 _pos, PacketData::FaceDirection _face) {
-	switch (_face) {
-	case PacketData::FaceDirection::Y_MINUS:
-		++_pos.y;
-		break;
-	case PacketData::FaceDirection::Y_PLUS:
-		--_pos.y;
-		break;
-	case PacketData::FaceDirection::Z_MINUS:
-		++_pos.z;
-		break;
-	case PacketData::FaceDirection::Z_PLUS:
-		--_pos.z;
-		break;
-	case PacketData::FaceDirection::X_MINUS:
-		++_pos.x;
-		break;
-	case PacketData::FaceDirection::X_PLUS:
-		--_pos.x;
-		break;
-	default:
-		break;
-	}
-	return _pos;
-}
 
 enum class StepSound : uint8_t {
 	Stone, // default, also metal (different pitch)
