@@ -111,17 +111,17 @@ void WorldWrapper::SetBlock(const Int3 _wpos, const BlockType _type, const uint8
 	}
 
 	// Get the local coordinates of this block within the chunk and set it
-	const Int2 local_xz{_wpos.x & 15, _wpos.z & 15};
-	const Int3 local{ local_xz.x, _wpos.y, local_xz.z };
+	const Int2 localXz{ _wpos.x & 15, _wpos.z & 15 };
+	const Int3 local{ localXz.x, _wpos.y, localXz.z };
 	const auto oldBlock = chunk->GetBlock(local);
 	//auto oldMeta = chunk->GetMeta(local);
 
 	// Making the assumption here that certain metadatas of
 	// blocks don't have differing light properties
 	const bool changesLighting = (Blocks::blockProperties[_type].lightOpacity !=
-	                        Blocks::blockProperties[oldBlock].lightOpacity) ||
-	                       (Blocks::blockProperties[_type].lightEmission !=
-	                        Blocks::blockProperties[oldBlock].lightEmission);
+	                              Blocks::blockProperties[oldBlock].lightOpacity) ||
+	                             (Blocks::blockProperties[_type].lightEmission !=
+	                              Blocks::blockProperties[oldBlock].lightEmission);
 
 	// Unlight before changing the block
 	if (changesLighting) {
@@ -133,12 +133,12 @@ void WorldWrapper::SetBlock(const Int3 _wpos, const BlockType _type, const uint8
 	chunk->SetBlock(local, _type);
 	chunk->SetMeta(local, _meta);
 
-	const int oldHeight = chunk->GetHeightValue(local_xz);
+	const int oldHeight = chunk->GetHeightValue(localXz);
 
 	// Placing opaque block; heightmap may rise
 	if (changesLighting) {
-		chunk->RelightColumn(local_xz);
-		const int newHeight = chunk->GetHeightValue(local_xz);
+		chunk->RelightColumn(localXz);
+		const int newHeight = chunk->GetHeightValue(localXz);
 		if (newHeight > oldHeight) {
 			// Notify the BFS that all blocks from y down to oldHeight need updating
 			for (int sy = oldHeight; sy <= newHeight; ++sy) {
@@ -160,9 +160,9 @@ void WorldWrapper::SetBlock(const Int3 _wpos, const BlockType _type, const uint8
 			--extendedBottom;
 
 		if (newHeight != oldHeight) {
-			manager.lightManager.ScheduleLightRegion({ _wpos.x - 1, extendedBottom, _wpos.z - 1 },
-			                                         { _wpos.x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), _wpos.z + 1 },
-			                                         LightType::Sky);
+			manager.lightManager.ScheduleLightRegion(
+			    { _wpos.x - 1, extendedBottom, _wpos.z - 1 },
+			    { _wpos.x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), _wpos.z + 1 }, LightType::Sky);
 		}
 	}
 
@@ -177,8 +177,7 @@ void WorldWrapper::SetBlock(const Int3 _wpos, const BlockType _type, const uint8
 	if (manager.onBlockUpdate)
 		manager.onBlockUpdate(PendingBlock{ .block{ _type, _meta },
 		                                    .blockPos = _wpos,
-		                                    .light{ chunk->GetBlockLight(local),
-		                                            chunk->GetSkyLight(local) } },
+		                                    .light{ chunk->GetBlockLight(local), chunk->GetSkyLight(local) } },
 		                      chunk->cpos);
 }
 

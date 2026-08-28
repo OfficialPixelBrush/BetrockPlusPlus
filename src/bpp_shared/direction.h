@@ -11,32 +11,22 @@
 namespace Direction {
 
 enum class Value : uint8_t {
-	None,
-	North,
-	South,
-	East,
-	West,
-	Up,
-	Down
+	// Do NOT change this order!
+	// This order allows us to get the
+	// opposite direction with a single XOR!
+	North = 0,
+	South = 1,
+	East = 2,
+	West = 3,
+	Up = 4,
+	Down = 5,
+	None = 6,
 };
 
 constexpr Value Opposite(const Value _dir) {
-	switch (_dir) {
-	case Value::North:
-		return Value::South;
-	case Value::South:
-		return Value::North;
-	case Value::East:
-		return Value::West;
-	case Value::West:
-		return Value::East;
-	case Value::Up:
-		return Value::Down;
-	case Value::Down:
-		return Value::Up;
-	default:
-		return _dir;
-	}
+	if (_dir == Value::None)
+		return Value::None;
+	return static_cast<Value>(static_cast<uint8_t>(_dir) ^ 1);
 }
 
 // Rotating around the vertical (Y) axis, as seen from above.
