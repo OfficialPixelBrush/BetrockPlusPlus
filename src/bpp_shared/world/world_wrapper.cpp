@@ -47,7 +47,7 @@ int WorldWrapper::FindTopSolidBlock(const int _wx, const int _wz) {
 	if (!chunk || chunk->state.load() < ChunkState::Generated)
 		return -1;
 	int lx = _wx & 15, lz = _wz & 15;
-	for (int y = 127; y > 0; --y) {
+	for (int y = CHUNK_HEIGHT - 1; y > 0; --y) {
 		BlockType block = chunk->GetBlock({ lx, y, lz });
 		if (block == BlockType::BLOCK_AIR)
 			continue;
@@ -111,15 +111,14 @@ void WorldWrapper::SetBlock(const Int3 _wpos, const BlockType _type, const uint8
 	}
 
 	// Get the local coordinates of this block within the chunk and set it
-	int lx = _wpos.x & 15;
-	int lz = _wpos.z & 15;
-	Int3 local{ lx, _wpos.y, lz };
-	auto oldBlock = chunk->GetBlock(local);
+	const Int2 local_xz{_wpos.x & 15, _wpos.z & 15};
+	const Int3 local{ local_xz.x, _wpos.y, local_xz.z };
+	const auto oldBlock = chunk->GetBlock(local);
 	//auto oldMeta = chunk->GetMeta(local);
 
 	// Making the assumption here that certain metadatas of
 	// blocks don't have differing light properties
-	bool changesLighting = (Blocks::blockProperties[_type].lightOpacity !=
+	const bool changesLighting = (Blocks::blockProperties[_type].lightOpacity !=
 	                        Blocks::blockProperties[oldBlock].lightOpacity) ||
 	                       (Blocks::blockProperties[_type].lightEmission !=
 	                        Blocks::blockProperties[oldBlock].lightEmission);
@@ -134,38 +133,35 @@ void WorldWrapper::SetBlock(const Int3 _wpos, const BlockType _type, const uint8
 	chunk->SetBlock(local, _type);
 	chunk->SetMeta(local, _meta);
 
-	int y = _wpos.y;
-	int x = _wpos.x;
-	int z = _wpos.z;
-	int oldHeight = chunk->GetHeightValue({ lx, lz });
+	const int oldHeight = chunk->GetHeightValue(local_xz);
 
 	// Placing opaque block; heightmap may rise
 	if (changesLighting) {
-		chunk->RelightColumn({ lx, lz });
-		int newHeight = chunk->GetHeightValue({ lx, lz });
+		chunk->RelightColumn(local_xz);
+		const int newHeight = chunk->GetHeightValue(local_xz);
 		if (newHeight > oldHeight) {
 			// Notify the BFS that all blocks from y down to oldHeight need updating
 			for (int sy = oldHeight; sy <= newHeight; ++sy) {
-				manager.lightManager.UnlightAt(x, sy, z, LightType::Sky, manager);
+				manager.lightManager.UnlightAt(_wpos.x, sy, _wpos.z, LightType::Sky, manager);
 			}
 		} else if (newHeight < oldHeight) {
 			// Height fell
 			for (int sy = newHeight; sy < oldHeight; ++sy) {
-				manager.lightManager.ScheduleLightUpdate({ x, sy, z }, LightType::Sky);
+				manager.lightManager.ScheduleLightUpdate({ _wpos.x, sy, _wpos.z }, LightType::Sky);
 			}
 		}
 
 		// Always re-evaluate the edited block and its 4 horizontal neighbours
-		manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Sky);
-		manager.lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Block);
+		manager.lightManager.ScheduleLightUpdate(_wpos, LightType::Sky);
+		manager.lightManager.ScheduleLightUpdate(_wpos, LightType::Block);
 		int extendedBottom = CrossPlatform::Math::Min(newHeight, oldHeight);
 		while (extendedBottom > 0 &&
-		       Blocks::blockProperties[chunk->GetBlock({ lx, extendedBottom - 1, lz })].lightOpacity == 0)
+		       Blocks::blockProperties[chunk->GetBlock({ local.x, extendedBottom - 1, local.z })].lightOpacity == 0)
 			--extendedBottom;
 
 		if (newHeight != oldHeight) {
-			manager.lightManager.ScheduleLightRegion({ x - 1, extendedBottom, z - 1 },
-			                                         { x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), z + 1 },
+			manager.lightManager.ScheduleLightRegion({ _wpos.x - 1, extendedBottom, _wpos.z - 1 },
+			                                         { _wpos.x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), _wpos.z + 1 },
 			                                         LightType::Sky);
 		}
 	}
@@ -180,9 +176,9 @@ void WorldWrapper::SetBlock(const Int3 _wpos, const BlockType _type, const uint8
 	// Callback for the client and server to know about this block update
 	if (manager.onBlockUpdate)
 		manager.onBlockUpdate(PendingBlock{ .block{ _type, _meta },
-		                                    .blockPos{ _wpos.x, _wpos.y, _wpos.z },
-		                                    .light{ chunk->GetBlockLight({ _wpos.x & 15, _wpos.y, _wpos.z & 15 }),
-		                                            chunk->GetSkyLight({ _wpos.x & 15, _wpos.y, _wpos.z & 15 }) } },
+		                                    .blockPos = _wpos,
+		                                    .light{ chunk->GetBlockLight(local),
+		                                            chunk->GetSkyLight(local) } },
 		                      chunk->cpos);
 }
 

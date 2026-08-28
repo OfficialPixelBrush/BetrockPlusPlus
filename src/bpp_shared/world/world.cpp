@@ -18,6 +18,7 @@
 #include "world_wrapper.h"
 #include <limits>
 #include <unordered_set>
+#include "direction.h"
 
 BiomeGenerator WorldManager::biomeGenerator;
 
@@ -39,11 +40,11 @@ int WorldManager::GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
 		auto blockId = this->GetBlockId(_wpos);
 		if (blockId == BLOCK_SLAB || blockId == BLOCK_FARMLAND || blockId == BLOCK_STAIRS_WOOD ||
 		    blockId == BLOCK_STAIRS_WOOD) {
-			int yP = GetBlockLightValue({ _wpos.x, _wpos.y + 1, _wpos.z }, false);
-			int xP = GetBlockLightValue({ _wpos.x + 1, _wpos.y, _wpos.z }, false);
-			int xM = GetBlockLightValue({ _wpos.x - 1, _wpos.y, _wpos.z }, false);
-			int zP = GetBlockLightValue({ _wpos.x, _wpos.y, _wpos.z + 1 }, false);
-			int zM = GetBlockLightValue({ _wpos.x, _wpos.y, _wpos.z - 1 }, false);
+			int yP = GetBlockLightValue(_wpos.WithOffset(Direction::Value::Up), false);
+			int xP = GetBlockLightValue(_wpos.WithOffset(Direction::Value::East), false);
+			int xM = GetBlockLightValue(_wpos.WithOffset(Direction::Value::West), false);
+			int zP = GetBlockLightValue(_wpos.WithOffset(Direction::Value::South), false);
+			int zM = GetBlockLightValue(_wpos.WithOffset(Direction::Value::North), false);
 
 			if (xP > yP)
 				yP = xP;
