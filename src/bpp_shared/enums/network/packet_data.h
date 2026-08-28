@@ -31,13 +31,6 @@ enum FaceDirection : int8_t {
 	X_PLUS = 5
 };
 
-constexpr inline FaceDirection OppositeFace(FaceDirection _face) {
-	if (_face == INVALID_USE)
-		return _face;
-
-	return static_cast<FaceDirection>(static_cast<int8_t>(_face) ^ 1);
-}
-
 // Used by the Interact with Block Packet (0x11)
 enum BlockInteraction : uint8_t {
 	SLEEPING = 0

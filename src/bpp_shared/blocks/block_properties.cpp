@@ -154,14 +154,23 @@ bool CanCactusSurviveAt(WorldAccess& _world, Int3 _pos) {
 	return canGrowOnBlock && adjacentBlocksClear;
 }
 
-bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, PacketData::FaceDirection _face) {
-	if (_face == PacketData::FaceDirection::Y_MINUS)
+/**
+ * @brief Says if a torch can attach to the block its placed on
+ * 
+ * @param _world Active world
+ * @param _pos The position of the torch
+ * @param _face The direction the torch is pointing out towards
+ * @return true The torch can be placed
+ * @return false The torch cannot be placed
+ */
+bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, Direction::Value _face) {
+	// Torches cannot be placed on the ceiling
+	if (_face == Direction::Value::Down)
 		return false;
-
-	Int3 support = GetAdjacentBlockPos(_pos, OppositeFace(_face));
-
+	// Get supporting block
+	Int3 support = _pos.WithOffset(Direction::Opposite(_face));
 	return _world.IsBlockNormalCube(support) ||
-	       (_face == PacketData::FaceDirection::Y_PLUS && _world.GetBlockId(support) == BLOCK_FENCE);
+	       (_face == Direction::Value::Up && _world.GetBlockId(support) == BLOCK_FENCE);
 }
 
 // Some fluid specific stuff
@@ -955,31 +964,27 @@ void RegisterBlockProperties() {
 	};
 
 	// Redstone Torch (off)
-	blockProperties[BlockType::BLOCK_REDSTONE_TORCH_OFF] = {
-		.material = Material::Circuits(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 0,
-		.hardness = 0.0f,
-		.isCollidable = false,
-		.isOpaqueCube = false,
-		.isNormalCube = false,
-		.renderAsNormalBlock = false,
-		.ticksOnLoad = true
-	};
+	blockProperties[BlockType::BLOCK_REDSTONE_TORCH_OFF] = { .material = Material::Circuits(),
+		                                                     .stepSound = StepSound::Wood,
+		                                                     .lightOpacity = 0,
+		                                                     .hardness = 0.0f,
+		                                                     .isCollidable = false,
+		                                                     .isOpaqueCube = false,
+		                                                     .isNormalCube = false,
+		                                                     .renderAsNormalBlock = false,
+		                                                     .ticksOnLoad = true };
 
 	// Redstone Torch (on)
-	blockProperties[BlockType::BLOCK_REDSTONE_TORCH_ON] = {
-		.material = Material::Circuits(),
-		.stepSound = StepSound::Wood,
-		.lightEmission = 7,
-		.lightOpacity = 0,
-		.hardness = 0.0f,
-		.isCollidable = false,
-		.isOpaqueCube = false,
-		.isNormalCube = false,
-		.renderAsNormalBlock = false,
-		.ticksOnLoad = true
-	};
+	blockProperties[BlockType::BLOCK_REDSTONE_TORCH_ON] = { .material = Material::Circuits(),
+		                                                    .stepSound = StepSound::Wood,
+		                                                    .lightEmission = 7,
+		                                                    .lightOpacity = 0,
+		                                                    .hardness = 0.0f,
+		                                                    .isCollidable = false,
+		                                                    .isOpaqueCube = false,
+		                                                    .isNormalCube = false,
+		                                                    .renderAsNormalBlock = false,
+		                                                    .ticksOnLoad = true };
 
 	// Stone Button
 	blockProperties[BlockType::BLOCK_BUTTON_STONE] = {

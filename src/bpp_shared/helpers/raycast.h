@@ -5,6 +5,7 @@
 */
 
 #pragma once
+#include "../direction.h"
 #include "world.h"
 #include <cmath>
 #include <limits>
@@ -19,14 +20,14 @@ struct RayCastResult {
 	bool hit = false;
 	Block hitBlock = {};
 	Int3 blockPosition = {};
-	PacketData::FaceDirection face = PacketData::FaceDirection::INVALID_USE;
+	Direction::Value face = Direction::Value::None;
 };
 
 // Name is a bit obvious isn't it?
 namespace Raycast {
 
 inline bool ClipRayAABB(const Vec3& _origin, const Vec3& _dir, double _maxDist, const AABB& _box, double& _outT,
-                        PacketData::FaceDirection& _outFace) {
+                        Direction::Value& _outFace) {
 	double originArr[3] = { _origin.x, _origin.y, _origin.z };
 	double dirArr[3] = { _dir.x, _dir.y, _dir.z };
 	double boxMin[3] = { _box.minX, _box.minY, _box.minZ };
@@ -75,13 +76,13 @@ inline bool ClipRayAABB(const Vec3& _origin, const Vec3& _dir, double _maxDist, 
 	double d = dirArr[hitAxis];
 	switch (hitAxis) {
 	case 0:
-		_outFace = (d > 0) ? PacketData::FaceDirection::X_MINUS : PacketData::FaceDirection::X_PLUS;
+		_outFace = (d > 0) ? Direction::Value::West : Direction::Value::East;
 		break;
 	case 1:
-		_outFace = (d > 0) ? PacketData::FaceDirection::Y_MINUS : PacketData::FaceDirection::Y_PLUS;
+		_outFace = (d > 0) ? Direction::Value::Down : Direction::Value::Up;
 		break;
 	default:
-		_outFace = (d > 0) ? PacketData::FaceDirection::Z_MINUS : PacketData::FaceDirection::Z_PLUS;
+		_outFace = (d > 0) ? Direction::Value::North : Direction::Value::South;
 		break;
 	}
 	return true;
@@ -150,7 +151,7 @@ inline RayCastResult Raycast(WorldManager& _world, Vec3 _startPos, Vec3 _endPos,
 					AABB worldBox = localBox.Offset(x, y, z);
 
 					double hitT;
-					PacketData::FaceDirection hitFace;
+					Direction::Value hitFace;
 					if (ClipRayAABB(_startPos, dir, dist, worldBox, hitT, hitFace)) {
 						result.hit = true;
 						result.hitBlock = { id, meta };
