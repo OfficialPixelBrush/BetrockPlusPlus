@@ -1098,6 +1098,16 @@ void RegisterBlockBehaviors() {
 		}
 	};
 
+	blockBehaviors[BLOCK_LEVER].onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> void {
+		_world.SetMeta(_pos, _world.GetMetadata(_pos) ^ 0b1000);
+		if (_world.onWorldEvent)
+			_world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
+	},
+	blockBehaviors[BLOCK_LEVER].onBlockActivated = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> bool {
+		blockBehaviors[BLOCK_LEVER].onBlockClicked(_world, _pos, _triggeringSession);
+		return false;
+	},
+
 	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                               Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
 		if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER)
