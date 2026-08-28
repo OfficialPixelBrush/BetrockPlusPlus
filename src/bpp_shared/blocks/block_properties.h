@@ -27,7 +27,7 @@ void DropItemAt(WorldManager& _world, Int3 _pos, Items::Id _id, ItemAmount _coun
 bool CanFallAt(WorldAccess& _world, Int3 _position);
 bool CanGenericPlantSurviveAt(WorldAccess& _world, Int3 _pos);
 bool CanMushroomSurviveAt(WorldAccess& _world, Int3 _pos);
-bool CanCactusSurviveAt(WorldManager& _world, Int3 _pos);
+bool CanCactusSurviveAt(WorldAccess& _world, Int3 _pos);
 
 constexpr Int3 GetAdjacentBlockPos(Int3 _pos, PacketData::FaceDirection _face) {
 	switch (_face) {

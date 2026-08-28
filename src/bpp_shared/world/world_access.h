@@ -7,6 +7,7 @@
 
 #pragma once
 #include "blocks.h"
+#include "blocks/block_properties.h"
 #include "numeric_structs.h"
 
 class WorldAccess {
@@ -25,4 +26,8 @@ public:
 	virtual uint8_t GetSkyLight(const Int3 _wpos) = 0;
 	// Combined block light value (max of sky light and emitted block light),
 	virtual int GetBlockLightRaw(const Int3 _wpos) = 0;
+
+	Material GetMaterial(const Int3 _wpos) {
+		return Blocks::blockProperties[GetBlockId(_wpos)].material;
+	}
 };

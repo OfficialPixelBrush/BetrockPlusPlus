@@ -138,7 +138,7 @@ bool CanMushroomSurviveAt(WorldAccess& _world, Int3 _pos) {
 	return lightLevel <= 13 && canGrowOnBlock;
 }
 
-bool CanCactusSurviveAt(WorldManager& _world, Int3 _pos) {
+bool CanCactusSurviveAt(WorldAccess& _world, Int3 _pos) {
 	bool adjacentBlocksClear = true;
 	int d[4] = { -1, 1, 0, 0 };
 	for (int i = 0; i < 4; i++) {
