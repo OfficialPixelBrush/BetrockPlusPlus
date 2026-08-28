@@ -988,6 +988,7 @@ void RegisterBlockBehaviors() {
 		}
 		return true;
 	};
+	
 	blockBehaviors[BLOCK_REDSTONE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                                  Direction::Value _face, BlockType _blockId,
 	                                                  uint8_t _meta) -> bool {
@@ -1052,6 +1053,49 @@ void RegisterBlockBehaviors() {
 	                                                              Direction::Value _face, BlockType _blockId,
 	                                                              uint8_t _meta) -> bool {
 		return blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockPlaced(_world, _pos, _placer, _face, _blockId, _meta);
+	};
+
+
+	blockBehaviors[BLOCK_LEVER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                                           Direction::Value _face, BlockType _blockId,
+	                                                           uint8_t _meta) -> bool {
+		if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER)
+			_pos = _pos.WithOffset(Direction::Opposite(_face));
+		if (CanTorchAttachTo(_world, _pos, _face)) {
+			return GenericPlace(_world, _pos, _placer, _face, _blockId,
+			                    GetMetaFromDirection(BLOCK_LEVER, _face));
+		}
+		return false;
+	};
+
+	blockBehaviors[BLOCK_LEVER].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		const auto currentFace = GetDirectionFromMeta(BLOCK_LEVER, _world.GetMetadata(_pos));
+		if (CanTorchAttachTo(_world, _pos, currentFace))
+			return; // Already valid
+
+		// Matches vanilla order
+		static constexpr std::array<Direction::Value, 5> CHECK_ORDER = { Direction::Value::East, Direction::Value::West,
+			                                                             Direction::Value::South,
+			                                                             Direction::Value::North, Direction::Value::Up };
+
+		// Attach to the first support block we find
+		for (Direction::Value face : CHECK_ORDER) {
+			if (CanTorchAttachTo(_world, _pos, face)) {
+				_world.SetMeta(_pos, GetMetaFromDirection(BLOCK_LEVER, face));
+				return;
+			}
+		}
+
+		BreakAndDropBlock(_world, _pos);
+	};
+
+	blockBehaviors[BLOCK_LEVER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                                   BlockType _blockId) -> void {
+		auto dir = GetDirectionFromMeta(BLOCK_LEVER, _world.GetMetadata(_pos));
+		if (!CanTorchAttachTo(_world, _pos, dir)) {
+			BreakAndDropBlock(_world, _pos);
+			return;
+		}
 	};
 
 	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
