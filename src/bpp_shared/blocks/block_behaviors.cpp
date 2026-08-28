@@ -980,8 +980,7 @@ void RegisterBlockBehaviors() {
 	                                                               uint8_t _meta) -> bool {
 		const auto dir = Direction::FromAngle(_placer.rotationYaw);
 		auto meta = GetMetaFromDirection(BLOCK_REDSTONE_REPEATER_OFF, dir);
-		if (!CanRedstoneComponentStay(_world, _pos) ||
-		    !GenericPlace(_world, _pos, _placer, _face, _blockId, meta))
+		if (!CanRedstoneComponentStay(_world, _pos) || !GenericPlace(_world, _pos, _placer, _face, _blockId, meta))
 			return false;
 		// Turn on if we are being powered!
 		if (RedstoneManager::IsRepeaterInputPowered(_world, _pos, meta)) {
@@ -1060,8 +1059,7 @@ void RegisterBlockBehaviors() {
 		if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER)
 			_pos = _pos.WithOffset(Direction::Opposite(_face));
 		if (CanTorchAttachTo(_world, _pos, _face)) {
-			return GenericPlace(_world, _pos, _placer, _face, _blockId,
-			                    GetMetaFromDirection(BLOCK_TORCH, _face));
+			return GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_TORCH, _face));
 		}
 		return false;
 	};

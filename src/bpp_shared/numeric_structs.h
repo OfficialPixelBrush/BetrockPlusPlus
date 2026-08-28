@@ -6,11 +6,11 @@
 */
 
 #pragma once
+#include "direction.h"
 #include <cmath>
 #include <cstdint>
 #include <ostream>
 #include <sstream>
-#include "direction.h"
 
 #if defined(__has_include)
 #if __has_include(<glm/glm.hpp>)
@@ -202,26 +202,26 @@ struct TriNumber {
 
 	auto Offset(const Direction::Value _direction, const T _value = 1) {
 		switch (_direction) {
-			case Direction::Value::None:
-				break;
-			case Direction::Value::North:
-				z -= _value;
-				break;
-			case Direction::Value::South:
-				z += _value;
-				break;
-			case Direction::Value::East:
-				x += _value;
-				break;
-			case Direction::Value::West:
-				x -= _value;
-				break;
-			case Direction::Value::Up:
-				y += _value;
-				break;
-			case Direction::Value::Down:
-				y -= _value;
-				break;
+		case Direction::Value::None:
+			break;
+		case Direction::Value::North:
+			z -= _value;
+			break;
+		case Direction::Value::South:
+			z += _value;
+			break;
+		case Direction::Value::East:
+			x += _value;
+			break;
+		case Direction::Value::West:
+			x -= _value;
+			break;
+		case Direction::Value::Up:
+			y += _value;
+			break;
+		case Direction::Value::Down:
+			y -= _value;
+			break;
 		}
 		return *this;
 	}
@@ -391,22 +391,22 @@ struct BiNumber {
 
 	auto Offset(const Direction::Value _direction, const T _value = 1) {
 		switch (_direction) {
-			case Direction::Value::None:
-				break;
-			case Direction::Value::Up:
-			case Direction::Value::North:
-				z -= _value;
-				break;
-			case Direction::Value::Down:
-			case Direction::Value::South:
-				z += _value;
-				break;
-			case Direction::Value::East:
-				x += _value;
-				break;
-			case Direction::Value::West:
-				x -= _value;
-				break;
+		case Direction::Value::None:
+			break;
+		case Direction::Value::Up:
+		case Direction::Value::North:
+			z -= _value;
+			break;
+		case Direction::Value::Down:
+		case Direction::Value::South:
+			z += _value;
+			break;
+		case Direction::Value::East:
+			x += _value;
+			break;
+		case Direction::Value::West:
+			x -= _value;
+			break;
 		}
 		return *this;
 	}

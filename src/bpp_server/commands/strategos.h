@@ -272,8 +272,8 @@ public:
 			       (!canOperate || !canOperate(user_data));
 		};
 		auto operatorError = []() {
-			return std::unexpected(ErrorInfo{ .error = ParseError::NoPermission,
-			                                  .message = "Only operators can use this command!" });
+			return std::unexpected(
+			    ErrorInfo{ .error = ParseError::NoPermission, .message = "Only operators can use this command!" });
 		};
 
 		while (token_idx < tokens.size()) {

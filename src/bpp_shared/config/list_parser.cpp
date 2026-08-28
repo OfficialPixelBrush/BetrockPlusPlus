@@ -15,7 +15,9 @@
 namespace {
 
 std::string Trim(std::string _value) {
-	auto notSpace = [](unsigned char _c) { return !std::isspace(_c); };
+	auto notSpace = [](unsigned char _c) {
+		return !std::isspace(_c);
+	};
 	_value.erase(_value.begin(), std::find_if(_value.begin(), _value.end(), notSpace));
 	_value.erase(std::find_if(_value.rbegin(), _value.rend(), notSpace).base(), _value.end());
 	return _value;

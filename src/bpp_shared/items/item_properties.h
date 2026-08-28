@@ -6,8 +6,8 @@
 */
 
 #pragma once
-#include "direction.h"
 #include "base_types.h"
+#include "direction.h"
 #include "items.h"
 #include "logger.h"
 #include "numeric_structs.h"
