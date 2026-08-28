@@ -263,6 +263,9 @@ void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer) {
 
 bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer, Direction::Value _face,
                   BlockType _blockId, uint8_t _meta) {
+	if (!_world.InBounds(_pos.y))
+		return false;
+
 	BlockType existing = _world.GetBlockId(_pos);
 	Int3 sourceBlock = _pos.WithOffset(Direction::Opposite(_face));
 
