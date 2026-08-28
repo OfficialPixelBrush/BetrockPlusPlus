@@ -130,7 +130,7 @@ struct Args : MainArguments<Args> {
 	                               "Generates chunks around 0,0 until the desired radius is met") = 5;
 	uint32_t chunkRenderRadius = option(
 	    "chunk_render_radius", '\0',
-	    "Radius within which chunks are rendered for clients. On Vanilla clients this caps out at about 16 Chunks") = 5;
+	    "Radius within which chunks are rendered for clients. On Vanilla clients this caps out at about 13 Chunks") = 5;
 	uint32_t chunkGenRadius = option("chunk_gen_radius", '\0', "Radius within which chunks are generated") = 5;
 	uint32_t chunkTickRadius = option("chunk_tick_radius", '\0', "Radius within which chunks are randomly ticked") = 5;
 	uint32_t entityRenderRadius = option("entity_render_radius", '\0', "Radius within which entities are shown") = 5;

@@ -39,6 +39,22 @@ bool IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, uint8_t _meta);
 ComponentProfile GetRedstoneDustConnectivity(WorldManager& _world, Int3 _pos);
 PowerProfile GetBlockPowerProfile(WorldManager& _world, Int3 _pos);
 
+static bool CanProvidePower(BlockType _block) {
+	// Repeaters are excluded for some reason in vanilla
+	switch (_block) {
+	case BLOCK_REDSTONE:
+	case BLOCK_LEVER:
+	case BLOCK_BUTTON_STONE:
+	case BLOCK_PRESSURE_PLATE_STONE:
+	case BLOCK_PRESSURE_PLATE_WOOD:
+	case BLOCK_REDSTONE_TORCH_ON:
+	case BLOCK_REDSTONE_TORCH_OFF:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static bool CanTriggerRedstoneUpdate(BlockType _block) {
 	switch (_block) {
 	case BLOCK_REDSTONE:

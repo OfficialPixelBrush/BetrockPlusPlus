@@ -38,8 +38,7 @@ ComponentProfile RedstoneManager::GetRedstoneDustConnectivity(WorldManager& _wor
 			bool canConnect = (dy == _pos.y) || (CanBridgeVertical(_world, _pos, rdx, rdz, dy - _pos.y) &&
 			                                     neighborBlock == BLOCK_REDSTONE);
 
-			bool continuesHere = neighborBlock == BLOCK_REDSTONE || neighborBlock == BLOCK_REDSTONE_TORCH_ON ||
-			                     neighborBlock == BLOCK_REDSTONE_TORCH_OFF;
+			bool continuesHere = RedstoneManager::CanProvidePower(neighborBlock);
 
 			// Repeaters depend on facing direction
 			if (dy == _pos.y &&
