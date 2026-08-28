@@ -226,10 +226,6 @@ public:
 		return GetBlockId(_wpos) == BlockType::BLOCK_AIR;
 	}
 
-	Material GetMaterial(Int3 _wpos) {
-		return Blocks::blockProperties[GetBlockId(_wpos)].material;
-	}
-
 	bool IsBlockNormalCube(Int3 _wpos) {
 		BlockType block = GetBlockId(_wpos);
 		if (block == BlockType::BLOCK_AIR)
