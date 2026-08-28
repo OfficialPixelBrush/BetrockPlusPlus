@@ -33,7 +33,7 @@ Grab the `main` branch for the most up-to-date, albeit unstable, repository.
 
 ```bash
 run-clang-tidy -fix
-clang-format -i $(find ./src -name "_.cpp" -o -name "_.h")
+clang-format -i $(find ./src -name "*.cpp" -o -name "*.h")
 ```
 
 - Unless this is already obvious via its name or usage, provide a short description what a file is for the relevant file, why it exists and what its used for
