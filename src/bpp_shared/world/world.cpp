@@ -10,6 +10,7 @@
 #include "blocks.h"
 #include "blocks/block_behaviors.h"
 #include "chunk.h"
+#include "direction.h"
 #include "entities/entity_item.h"
 #include "generator/nether/chunk_gen.h"
 #include "generator/overworld/chunk_gen.h"
@@ -18,7 +19,6 @@
 #include "world_wrapper.h"
 #include <limits>
 #include <unordered_set>
-#include "direction.h"
 
 BiomeGenerator WorldManager::biomeGenerator;
 
