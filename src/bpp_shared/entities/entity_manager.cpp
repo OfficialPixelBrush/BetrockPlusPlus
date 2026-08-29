@@ -84,6 +84,46 @@ void EntityManager::AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEn
 		onEntitySpawn(entities.back());
 }
 
+void EntityManager::TickEntityAndPassenger(const std::shared_ptr<Entity>& _entity) {
+	_entity->Tick();
+
+	// Check to see if this entity went into another container or bucket
+	Int3 newBucketPos = ComputeBucketPos(_entity->position);
+
+	if (newBucketPos != _entity->bucketPos) {
+		Int2 oldCpos{ _entity->bucketPos.x, _entity->bucketPos.y };
+		// Remove from the old bucket and mark the old chunk as modified
+		if (auto chunk = world->GetChunk(oldCpos))
+			chunk->isModified = true;
+		auto& oldContainer = entityContainers[oldCpos];
+		auto& b = oldContainer.buckets[_entity->bucketPos.z];
+		b.entities.erase(std::remove_if(b.entities.begin(), b.entities.end(),
+		                                [&_entity](const std::weak_ptr<Entity>& _weak) {
+			                                auto locked = _weak.lock();
+			                                return !locked ||
+			                                       locked == _entity; // Remove if expired or matches our entity
+		                                }),
+		                 b.entities.end());
+		PruneEmptyContainer(oldCpos);
+
+		// Put in the new bucket
+		auto& newContainer = entityContainers[{ newBucketPos.x, newBucketPos.y }];
+		auto& newB = newContainer.buckets[newBucketPos.z];
+		newB.entities.push_back(_entity);
+		_entity->bucketPos = newBucketPos;
+	}
+
+	// If something is riding us, tick it
+	if (auto lockPassenger = _entity->passenger.lock()) {
+		auto passengersVehicle = lockPassenger->vehicle.lock();
+		if (!lockPassenger->isDead && passengersVehicle.get() == _entity.get()) {
+			TickEntityAndPassenger(lockPassenger);
+		} else {
+			_entity->passenger.reset();
+		}
+	}
+}
+
 void EntityManager::Tick() {
 	// Snapshot weak refs so mid-tick spawn/despawn cannot invalidate iteration,
 	// without the full shared_ptr vector copy every tick.
@@ -97,33 +137,14 @@ void EntityManager::Tick() {
 		if (!entity || entity->isDead)
 			continue;
 
-		entity->Tick();
-
-		// Check to see if this entity went into another container or bucket
-		Int3 newBucketPos = ComputeBucketPos(entity->position);
-
-		if (newBucketPos != entity->bucketPos) {
-			Int2 oldCpos{ entity->bucketPos.x, entity->bucketPos.y };
-			// Remove from the old bucket and mark the old chunk as modified
-			if (auto chunk = world->GetChunk(oldCpos))
-				chunk->isModified = true;
-			auto& oldContainer = entityContainers[oldCpos];
-			auto& b = oldContainer.buckets[entity->bucketPos.z];
-			b.entities.erase(std::remove_if(b.entities.begin(), b.entities.end(),
-			                                [&entity](const std::weak_ptr<Entity>& _weak) {
-				                                auto locked = _weak.lock();
-				                                return !locked ||
-				                                       locked == entity; // Remove if expired or matches our entity
-			                                }),
-			                 b.entities.end());
-			PruneEmptyContainer(oldCpos);
-
-			// Put in the new bucket
-			auto& newContainer = entityContainers[{ newBucketPos.x, newBucketPos.y }];
-			auto& newB = newContainer.buckets[newBucketPos.z];
-			newB.entities.push_back(entity);
-			entity->bucketPos = newBucketPos;
+		// Skip entities that are riding something
+		if (auto lockVehicle = entity->vehicle.lock()) {
+			if (!lockVehicle->isDead && lockVehicle->passenger.lock().get() == entity.get())
+				continue;
+			entity->vehicle.reset();
 		}
+
+		TickEntityAndPassenger(entity);
 	}
 
 	// Remove dead entities after ticking so iteration stays stable

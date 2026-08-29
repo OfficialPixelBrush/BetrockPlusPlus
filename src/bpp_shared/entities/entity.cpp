@@ -13,6 +13,11 @@
 #include <algorithm>
 #include <cmath>
 
+void Entity::OnPlayerInteract(PlayerEntity* _entity) {
+	// stub
+	return;
+}
+
 void Entity::DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data, int _pickupTime) {
 	Vec3 itemPos = position;
 	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(itemPos);
@@ -108,15 +113,7 @@ float Entity::GetEntityBrightnessValue() {
 	return this->entityBrightness;
 }
 
-void Entity::Tick() {
-	ticksExisted++;
-
-	if (this->vehicle.expired())
-		this->vehicle.reset();
-
-	if (this->passenger.expired())
-		this->passenger.reset();
-
+void Entity::UpdateState() {
 	// Returns if we are in water and applies a push to our entity
 	if (world->HandleFluidAcceleration(GetFluidCollider(), Material::Water(), *this)) {
 		fallDistance = 0.0;
@@ -162,6 +159,96 @@ void Entity::Tick() {
 
 	isFirstUpdate = false;
 	UpdateMetadata(flags.isBurning, fireTicks > 0);
+}
+
+void Entity::MountEntity(std::shared_ptr<Entity>& _entity) {
+	auto entityPtr = _entity.get();
+	if (entityPtr && entityPtr != this->vehicle.lock().get()) {
+		UnmountEntity();
+		if (auto oldPassenger = _entity->passenger.lock())
+			oldPassenger->vehicle.reset();
+
+		_entity->passenger = entityManager->GetEntityByIdShared(this->id);
+		this->vehicle = _entity;
+
+		// Fresh mount: no smoothing debt yet, and seed our "last seen" vehicle
+		// rotation with its CURRENT rotation so the first tick doesn't read a
+		// bogus turn from whatever we rode previously (or from zero-init).
+		this->passengerLookDelta = { 0.0f, 0.0f };
+		this->lastVehicleRotation = { _entity->rotationYaw, _entity->rotationPitch };
+		return;
+	}
+	UnmountEntity();
+}
+
+void Entity::UnmountEntity() {
+	auto lockVehicle = vehicle.lock();
+	if (lockVehicle) {
+		lockVehicle->passenger.reset();
+		Vec3 unmountPos = lockVehicle->position;
+		unmountPos.y = lockVehicle->collider.minY + lockVehicle->height;
+		this->Teleport(unmountPos, { this->rotationYaw, this->rotationPitch });
+	}
+	this->vehicle.reset();
+}
+
+void Entity::TickPassengerEntity() {
+	auto lockVehicle = this->vehicle.lock();
+	if (!lockVehicle || lockVehicle->isDead) {
+		this->vehicle.reset();
+		return;
+	}
+
+	this->velocity = {};
+	this->UpdateState();
+
+	Vec3 newPos = lockVehicle->position;
+	newPos.y += lockVehicle->GetMountOffset() + this->yOffset;
+
+	// Look direction smoothing
+	passengerLookDelta.x += lockVehicle->rotationYaw - lastVehicleRotation.x;
+	passengerLookDelta.y += lockVehicle->rotationPitch - lastVehicleRotation.y;
+	lastVehicleRotation = { lockVehicle->rotationYaw, lockVehicle->rotationPitch };
+
+	// Wrap into -180, 180
+	while (passengerLookDelta.x >= 180.0f)
+		passengerLookDelta.x -= 360.0f;
+	while (passengerLookDelta.x < -180.0f)
+		passengerLookDelta.x += 360.0f;
+	while (passengerLookDelta.y >= 180.0f)
+		passengerLookDelta.y -= 360.0f;
+	while (passengerLookDelta.y < -180.0f)
+		passengerLookDelta.y += 360.0f;
+
+	constexpr float MAX_LOOK_STEP_PER_TICK = 10.0f;
+	float yawStep = std::clamp(passengerLookDelta.x * 0.5f, -MAX_LOOK_STEP_PER_TICK, MAX_LOOK_STEP_PER_TICK);
+	float pitchStep = std::clamp(passengerLookDelta.y * 0.5f, -MAX_LOOK_STEP_PER_TICK, MAX_LOOK_STEP_PER_TICK);
+
+	passengerLookDelta.x -= yawStep;
+	passengerLookDelta.y -= pitchStep;
+	rotationYaw += yawStep;
+	rotationPitch += pitchStep;
+
+	this->Teleport(newPos, { rotationYaw, rotationPitch });
+}
+
+void Entity::Tick() {
+	ticksExisted++;
+
+	if (this->vehicle.expired())
+		this->vehicle.reset();
+
+	if (this->passenger.expired())
+		this->passenger.reset();
+
+	// Are we riding something?
+	auto lockVehicle = this->vehicle.lock();
+	if (lockVehicle) {
+		this->TickPassengerEntity();
+		return;
+	}
+
+	UpdateState();
 }
 
 void Entity::ApplyKnockback(Vec3 _direction) {
