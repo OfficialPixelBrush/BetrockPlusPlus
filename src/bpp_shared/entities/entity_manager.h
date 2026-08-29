@@ -45,6 +45,10 @@ struct EntityManager {
 	void RemoveEntity(EntityId _id);
 	void CreateEntityFromNbt(Tag& _nbt);
 
+private:
+	void TickEntityAndPassenger(const std::shared_ptr<Entity>& _entity);
+
+public:
 	static Int3 ComputeBucketPos(Vec3 _position) {
 		Int3 bucketPos = { MathHelper::FloorDouble(_position.x / 16.0), MathHelper::FloorDouble(_position.z / 16.0),
 			               MathHelper::FloorDouble(_position.y / 16.0) };

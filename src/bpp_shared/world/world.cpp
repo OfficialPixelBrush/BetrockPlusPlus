@@ -252,6 +252,14 @@ std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area) {
 			}
 		}
 	}
+
+	// Collect entities in this area
+	auto entitiesInArea = entityManager.GetEntitiesWithinAabb({double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ)});
+	for (auto& entity : entitiesInArea) {
+		if (entity->actsAsWorldCollider)
+			collidingBoxes.push_back(entity->collider);
+	}
+
 	return collidingBoxes;
 }
 

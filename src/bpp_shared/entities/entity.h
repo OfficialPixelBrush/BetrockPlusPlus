@@ -114,6 +114,9 @@ struct Entity {
 	bool collidedHorizontally = false;
 	bool collidedVertically = false;
 
+	// Does this entity act as a block collider?
+	bool actsAsWorldCollider = false;
+
 	// Movement / environment state
 	bool hasPhysics = true;
 	bool inWeb = false; // Inside a cobweb
@@ -123,6 +126,11 @@ struct Entity {
 
 	float fallDistance = 0.0f;
 	int nextStepDistance = 0;
+
+	// Yaw, pitch smoothing
+	Float2 passengerLookDelta = { 0.0f, 0.0f };
+	// The vehicle's rotationYaw/rotationPitch as of the last tick
+	Float2 lastVehicleRotation = { 0.0f, 0.0f };
 
 	// Accumulated walk distance this Tick (unused rn its mostly for the client)
 	float distanceWalkedModified = 0.0f;
@@ -162,20 +170,31 @@ struct Entity {
 		RebuildCollider();
 	}
 	virtual ~Entity() = default;
-
-	// Get the brightness of the entity at this block
-	float GetEntityBrightnessValue();
-
-	// Encode Entity info into relevant Metadata
 	virtual void EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata);
-
-	// Apply Metadata to Entity
 	virtual bool DecodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata);
-
 	virtual void Tick();
+	virtual void TickPassengerEntity();
+	virtual bool PushOutOfBlocks(Vec3 _pos);
+	virtual void OnCollideWithPlayer(PlayerEntity& _entity);
+	virtual void ApplyKnockback(Vec3 _direction);
+	virtual void ApplyInput(float _acceleration);
+	virtual void Move(Vec3& _velocity);
+	virtual void UpdateFallState(float _movedY);
+	virtual std::optional<Tag> SerializeToNbt();
+	virtual void LoadFromNbt(Tag& _nbt);
+	virtual void DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data = 0, int _pickupTime = 10);
+	virtual void OnPlayerInteract(PlayerEntity* _entity);
+	virtual void UpdateState();
+	float GetEntityBrightnessValue();
+	void MountEntity(std::shared_ptr<Entity>& _entity);
+	void UnmountEntity();
 
 	virtual bool CanBePushed() {
 		return false;
+	}
+
+	virtual float GetMountOffset() {
+		return this->height * 0.75;
 	}
 
 	void RebuildCollider() {
@@ -226,15 +245,6 @@ struct Entity {
 		// Returns the collider we use to detect if we are in something flammable
 		return collider.Expand(-0.001, -0.001, -0.001);
 	}
-	virtual bool PushOutOfBlocks(Vec3 _pos);
-	virtual void OnCollideWithPlayer(PlayerEntity& _entity);
-	virtual void ApplyKnockback(Vec3 _direction);
-	virtual void ApplyInput(float _acceleration);
-	virtual void Move(Vec3& _velocity);
-	virtual void UpdateFallState(float _movedY);
-	virtual std::optional<Tag> SerializeToNbt();
-	virtual void LoadFromNbt(Tag& _nbt);
-	virtual void DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data = 0, int _pickupTime = 10);
 	template <typename T>
 	void UpdateMetadata(T& _flag, T _value) {
 		if (_flag != _value) {
