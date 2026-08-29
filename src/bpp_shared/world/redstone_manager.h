@@ -10,6 +10,7 @@
 #include "blocks.h"
 #include "blocks/block_behaviors.h"
 #include "blocks/block_properties_behaviors.h"
+#include "../helpers/direction_fixer.h"
 
 // For redstone!
 struct WorldManager;
