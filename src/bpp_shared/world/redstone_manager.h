@@ -78,38 +78,33 @@ static ComponentProfile GetComponentProfile(BlockType _blockId, uint8_t _meta) {
 		return ComponentProfile{ true, true, true, true, false };
 	}
 	case BLOCK_REDSTONE_TORCH_ON: {
-		if (_meta == 1) {
-			// Facing X+1
-			return ComponentProfile{ true, false, true, true, true };
-		} else if (_meta == 2) {
-			// Facing X-1
-			return ComponentProfile{ false, true, true, true, true };
-		} else if (_meta == 3) {
-			// Facing Z+1
-			return ComponentProfile{ true, true, true, false, true };
-		} else if (_meta == 4) {
-			// Facing Z-1
-			return ComponentProfile{ true, true, false, true, true };
-		} else if (_meta == 5) {
-			// On floor
-			return ComponentProfile{ true, true, true, true, false };
-		} else {
-			// Invalid
-			return {};
+		switch(GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _meta)) {
+			case Direction::Value::North:
+				return ComponentProfile{ true, true, false, true, true };
+			case Direction::Value::South:
+				return ComponentProfile{ true, true, true, false, true };
+			case Direction::Value::East:
+				return ComponentProfile{ true, false, true, true, true };
+			case Direction::Value::West:
+				return ComponentProfile{ false, true, true, true, true };
+			case Direction::Value::Up:
+				return ComponentProfile{ true, true, true, true, false };
+			default:
+				return {};
 		}
 	}
 	case BLOCK_REDSTONE_TORCH_OFF: {
 		return {};
 	}
 	case BLOCK_REDSTONE_REPEATER_ON: {
-		switch (_meta & 0b11) {
-		case 0:
+		switch (GetDirectionFromMeta(BLOCK_REDSTONE_REPEATER_ON, _meta)) {
+		case Direction::Value::North:
 			return ComponentProfile{ false, false, false, true, false }; // outputs -Z
-		case 1:
+		case Direction::Value::East:
 			return ComponentProfile{ true, false, false, false, false }; // outputs +X
-		case 2:
+		case Direction::Value::South:
 			return ComponentProfile{ false, false, true, false, false }; // outputs +Z
-		case 3:
+		case Direction::Value::West:
 			return ComponentProfile{ false, true, false, false, false }; // outputs -X
 		default:
 			return {};
@@ -117,6 +112,42 @@ static ComponentProfile GetComponentProfile(BlockType _blockId, uint8_t _meta) {
 	}
 	case BLOCK_REDSTONE_REPEATER_OFF: {
 		return {};
+	}
+	case BLOCK_LEVER: {
+		if (!(_meta & 0b1000))
+			return {};
+		switch (GetDirectionFromMeta(BLOCK_LEVER, _meta)) {
+			case Direction::Value::North:
+				return ComponentProfile{ true, true, false, true, true };
+			case Direction::Value::South:
+				return ComponentProfile{ true, true, true, false, true };
+			case Direction::Value::East:
+				return ComponentProfile{ true, false, true, true, true };
+			case Direction::Value::West:
+				return ComponentProfile{ false, true, true, true, true };
+			case Direction::Value::Up:
+				return ComponentProfile{ true, true, true, true, false };
+			default:
+				return {};
+		}
+	}
+	case BLOCK_BUTTON_STONE: {
+		if (!(_meta & 0b1000))
+			return {};
+		switch (GetDirectionFromMeta(BLOCK_BUTTON_STONE, _meta)) {
+			case Direction::Value::North:
+				return ComponentProfile{ true, true, false, true, true };
+			case Direction::Value::South:
+				return ComponentProfile{ true, true, true, false, true };
+			case Direction::Value::East:
+				return ComponentProfile{ true, false, true, true, true };
+			case Direction::Value::West:
+				return ComponentProfile{ false, true, true, true, true };
+			case Direction::Value::Up:
+				return ComponentProfile{ true, true, true, true, false };
+			default:
+				return {};
+		}
 	}
 	default: {
 		return {};

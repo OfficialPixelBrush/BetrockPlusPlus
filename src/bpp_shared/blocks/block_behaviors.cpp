@@ -43,6 +43,25 @@ static bool IsSupported(WorldManager& _world, Int3 _pos, Direction::Value _dir) 
 	return _world.IsBlockNormalCube(support);
 };
 
+static void NotifyAttachedSupportBlock(WorldManager& _world, Int3 _pos, BlockType _blockId, uint8_t _meta) {
+	Direction::Value dir = GetDirectionFromMeta(_blockId, _meta);
+	Int3 support = _pos.WithOffset(Direction::Opposite(dir));
+
+	static constexpr Direction::Value ALL_DIRS[6] = {
+		Direction::Value::North, Direction::Value::South, Direction::Value::East,
+		Direction::Value::West,  Direction::Value::Up,    Direction::Value::Down,
+	};
+	for (auto d : ALL_DIRS) {
+		if (d == dir)
+			continue;
+		Int3 neighborPos = support.WithOffset(d);
+		auto block = _world.GetBlockId(neighborPos);
+		auto updateFunction = Blocks::blockBehaviors[block].onNeighborBlockChange;
+		if (updateFunction)
+			updateFunction(_world, neighborPos, _blockId);
+	}
+}
+
 static bool SearchForLog(int _sLength, Int3 _pos, Int3 _cameFrom, WorldManager& _world) {
 	auto thisBlock = _world.GetBlockId(_pos);
 	if (thisBlock == BLOCK_LOG)
@@ -570,13 +589,16 @@ void RegisterBlockBehaviors() {
 		    // Unpress again
 		    if (_meta & 0b1000) {
 			    _world.SetMeta(_pos, _meta & 0b111);
+			    NotifyAttachedSupportBlock(_world, _pos, BLOCK_BUTTON_STONE, _meta);
 		    }
 		},
 		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
 		    blockBehaviors[BLOCK_BUTTON_STONE].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 		},
 		.onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> void {
-		    _world.SetMeta(_pos, _world.GetMetadata(_pos) | 0b1000);
+		    auto newMeta = _world.GetMetadata(_pos) | 0b1000;
+		    _world.SetMeta(_pos, newMeta);
+		    NotifyAttachedSupportBlock(_world, _pos, BLOCK_BUTTON_STONE, newMeta);
 		    _world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_BUTTON_STONE, 20);
 		    if (_world.onWorldEvent)
 			    _world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
@@ -1099,7 +1121,9 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_LEVER].onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> void {
-		_world.SetMeta(_pos, _world.GetMetadata(_pos) ^ 0b1000);
+		auto newMeta = _world.GetMetadata(_pos) ^ 0b1000;
+		_world.SetMeta(_pos, newMeta);
+		NotifyAttachedSupportBlock(_world, _pos, BLOCK_LEVER, newMeta);
 		if (_world.onWorldEvent)
 			_world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
 	},
