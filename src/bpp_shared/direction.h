@@ -20,7 +20,7 @@ enum class Value : uint8_t {
 	West = 3,
 	Up = 4,
 	Down = 5,
-	None = 6,
+	None,
 };
 
 constexpr Value Opposite(const Value _dir) {

@@ -1083,9 +1083,17 @@ void RegisterBlockBehaviors() {
 	                                                           uint8_t _meta) -> bool {
 		if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER)
 			_pos = _pos.WithOffset(Direction::Opposite(_face));
+		// TODO: This isn't exactly the best way to do it, as it relies on Metadata fuckery,
+		// but it works, and it's better than bastardizing the Direction system we got!
+		bool isEastWestAligned = false;
+		if (_face == Direction::Value::Up) {
+			auto alignment = Direction::FromAngle(_placer.rotationYaw);
+			if (alignment == Direction::Value::East || alignment == Direction::Value::West)
+				isEastWestAligned = true;
+		}
 		if (CanTorchAttachTo(_world, _pos, _face)) {
 			return GenericPlace(_world, _pos, _placer, _face, _blockId,
-			                    GetMetaFromDirection(BLOCK_LEVER, _face));
+			                    GetMetaFromDirection(BLOCK_LEVER, _face) + isEastWestAligned);
 		}
 		return false;
 	};
