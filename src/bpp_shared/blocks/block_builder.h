@@ -534,7 +534,7 @@ struct SignBuilder {
 	}
 
 private:
-	BlockType id = BLOCK_SIGN;
+	BlockType id = BLOCK_SIGN_STANDING;
 	uint8_t rotation = 0;
 };
 

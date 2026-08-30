@@ -520,7 +520,7 @@ void UpdateSign(Packet::UpdateSign& _pkt, PlayerSession& _session, WorldManager&
                 std::vector<std::shared_ptr<PlayerSession>>& _players) {
 	Int3 position = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
 	BlockType blockId = _world.GetBlockId(position);
-	if (blockId != BLOCK_SIGN && blockId != BLOCK_SIGN_WALL)
+	if (blockId != BLOCK_SIGN_STANDING && blockId != BLOCK_SIGN_WALL)
 		return;
 
 	auto tile = std::make_shared<TileEntitySign>(position);

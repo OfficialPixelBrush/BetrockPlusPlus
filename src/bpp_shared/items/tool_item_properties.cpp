@@ -238,11 +238,14 @@ void RegisterAll() {
 	itemBehavior[SIGN].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
 	                                   Direction::Value _face) {
 		Int3 placePos = _pos.WithOffset(_face);
-		if (_face == Direction::Value::Up)
-			_world.SetBlock(placePos, BLOCK_SIGN); //TODO: facing meta
-		else
+		if (_face == Direction::Value::Up) {
+			int meta = MathHelper::FloorDouble(
+				((_user.rotationYaw + 180.0f) / 360.0f) * 16.0f + 0.5f
+			) & 0xF;
+			_world.SetBlock(placePos, BLOCK_SIGN_STANDING, meta);
+		} else {
 			_world.SetBlock(placePos, BLOCK_SIGN_WALL, GetMetaFromDirection(BLOCK_SIGN_WALL, _face));
-
+		}
 		_stack->DecrementCount(1);
 	};
 

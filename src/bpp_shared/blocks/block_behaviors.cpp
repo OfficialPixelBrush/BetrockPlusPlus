@@ -127,7 +127,7 @@ static void TryLavaHarden(WorldManager& _world, Int3 _pos) {
 
 static bool BlocksFlow(BlockType _block) {
 	auto blockMaterial = blockProperties[_block].material;
-	if (_block == BLOCK_DOOR_WOOD || _block == BLOCK_DOOR_IRON || _block == BLOCK_SIGN || _block == BLOCK_LADDER ||
+	if (_block == BLOCK_DOOR_WOOD || _block == BLOCK_DOOR_IRON || _block == BLOCK_SIGN_STANDING || _block == BLOCK_LADDER ||
 	    _block == BLOCK_SUGARCANE)
 		return true;
 	return blockMaterial.isSolid;
@@ -1914,7 +1914,7 @@ void RegisterBlockBehaviors() {
 		return BLOCK_COBBLESTONE;
 	};
 
-	blockBehaviors[BLOCK_SIGN].idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_SIGN_STANDING].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::SIGN;
 	};
 	blockBehaviors[BLOCK_SIGN_WALL].idDropped = [](uint8_t, Java::Random&) -> ItemId {
