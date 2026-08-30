@@ -113,7 +113,7 @@ float Entity::GetEntityBrightnessValue() {
 	return this->entityBrightness;
 }
 
-void Entity::UpdateState() {
+void Entity::UpdateEntityPhysicsState() {
 	// Returns if we are in water and applies a push to our entity
 	if (world->HandleFluidAcceleration(GetFluidCollider(), Material::Water(), *this)) {
 		fallDistance = 0.0;
@@ -200,7 +200,7 @@ void Entity::TickPassengerEntity() {
 	}
 
 	this->velocity = {};
-	this->UpdateState();
+	this->UpdateEntityPhysicsState();
 
 	Vec3 newPos = lockVehicle->position;
 	newPos.y += lockVehicle->GetMountOffset() + this->yOffset;
@@ -248,7 +248,7 @@ void Entity::Tick() {
 		return;
 	}
 
-	UpdateState();
+	UpdateEntityPhysicsState();
 }
 
 void Entity::ApplyKnockback(Vec3 _direction) {

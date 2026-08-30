@@ -184,7 +184,7 @@ struct Entity {
 	virtual void LoadFromNbt(Tag& _nbt);
 	virtual void DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data = 0, int _pickupTime = 10);
 	virtual void OnPlayerInteract(PlayerEntity* _entity);
-	virtual void UpdateState();
+	virtual void UpdateEntityPhysicsState();
 	float GetEntityBrightnessValue();
 	void MountEntity(std::shared_ptr<Entity>& _entity);
 	void UnmountEntity();
