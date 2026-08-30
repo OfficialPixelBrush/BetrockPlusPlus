@@ -610,8 +610,8 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 
 			Packet::TeleportEntity pkt;
 			pkt.entityId = entity->id;
-			pkt.position = { qx, qy, qz };
-			pkt.rotation = { int8_t(qYaw), int8_t(qPitch) };
+			pkt.qPosition = { qx, qy, qz };
+			pkt.qRotation = { int8_t(qYaw), int8_t(qPitch) };
 			SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
 			_trackedEntry.lastEncodedPos = { qx, qy, qz };
 			_trackedEntry.lastEncodedYaw = qYaw;

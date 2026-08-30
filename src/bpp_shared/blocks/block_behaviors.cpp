@@ -1241,8 +1241,8 @@ void RegisterBlockBehaviors() {
 		// Increase and loop delay
 		auto meta = _world.GetMetadata(_pos);
 		int delay = (meta & 12) >> 2;
-		delay = delay + 1 << 2 & 12;
-		_world.SetMeta(_pos, delay | meta & 3);
+		delay = (delay + 1) << 2 & 12;
+		_world.SetMeta(_pos, delay | (meta & 3));
 		return false;
 	};
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_ON].onBlockActivated = [](WorldManager& _world, Int3 _pos,
