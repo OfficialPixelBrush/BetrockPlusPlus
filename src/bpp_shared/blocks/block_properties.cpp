@@ -822,7 +822,7 @@ void RegisterBlockProperties() {
 	};
 
 	// Sign (standing)
-	blockProperties[BlockType::BLOCK_SIGN] = {
+	blockProperties[BlockType::BLOCK_SIGN_STANDING] = {
 		.material = Material::Wood(),
 		.stepSound = StepSound::Wood,
 		.lightOpacity = 0,
