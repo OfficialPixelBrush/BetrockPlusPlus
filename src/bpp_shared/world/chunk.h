@@ -46,9 +46,9 @@ struct Chunk {
 	float humidity[CHUNK_WIDTH * CHUNK_WIDTH] = {};
 	Biome biomes[CHUNK_WIDTH * CHUNK_WIDTH] = {};
 
-	bool isTerrainPopulated = false;
-	bool isModified = false;
-	bool spawnChunk = false;
+	bool isTerrainPopulated : 1 = false;
+	bool isModified : 1 = false;
+	bool spawnChunk : 1 = false;
 
 	// Tile entities
 	std::vector<std::shared_ptr<TileEntity>> tileEntities;
