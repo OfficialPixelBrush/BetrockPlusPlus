@@ -207,7 +207,7 @@ std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabb(const 
 	bucketMaxY = std::max(0, bucketMaxY);
 	bucketMaxY = std::min(9, bucketMaxY);
 
-	// Go through each block position (find-only: never insert empty containers)
+	// Go through each block position
 	for (int x = blockMinX; x <= blockMaxX; x++) {
 		for (int z = blockMinZ; z <= blockMaxZ; z++) {
 			auto it = entityContainers.find({ x, z });

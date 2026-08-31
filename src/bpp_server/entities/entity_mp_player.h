@@ -27,4 +27,6 @@ struct EntityMPPlayer : public PlayerEntity {
 	bool DropItem(ItemStack _stack) override;
 	void HandlePositionChecks();
 	void DropInventory() override;
+	void OnMountEntity() override;
+	void OnDismountEntity() override;
 };
