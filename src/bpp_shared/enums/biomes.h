@@ -10,7 +10,7 @@
 #include <array>
 #include <iostream>
 
-enum Biome {
+enum Biome : uint8_t {
 	BIOME_NONE = 0,
 	BIOME_RAINFOREST = 1,
 	BIOME_SWAMPLAND = 2,

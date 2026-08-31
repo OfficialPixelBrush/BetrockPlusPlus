@@ -6,11 +6,11 @@
 */
 
 #pragma once
+#include "../helpers/direction_fixer.h"
 #include "base_structs.h"
 #include "blocks.h"
 #include "blocks/block_behaviors.h"
 #include "blocks/block_properties_behaviors.h"
-#include "../helpers/direction_fixer.h"
 
 // For redstone!
 struct WorldManager;
@@ -79,19 +79,19 @@ static ComponentProfile GetComponentProfile(BlockType _blockId, uint8_t _meta) {
 		return ComponentProfile{ true, true, true, true, false };
 	}
 	case BLOCK_REDSTONE_TORCH_ON: {
-		switch(GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _meta)) {
-			case Direction::Value::North:
-				return ComponentProfile{ true, true, false, true, true };
-			case Direction::Value::South:
-				return ComponentProfile{ true, true, true, false, true };
-			case Direction::Value::East:
-				return ComponentProfile{ true, false, true, true, true };
-			case Direction::Value::West:
-				return ComponentProfile{ false, true, true, true, true };
-			case Direction::Value::Up:
-				return ComponentProfile{ true, true, true, true, false };
-			default:
-				return {};
+		switch (GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _meta)) {
+		case Direction::Value::North:
+			return ComponentProfile{ true, true, false, true, true };
+		case Direction::Value::South:
+			return ComponentProfile{ true, true, true, false, true };
+		case Direction::Value::East:
+			return ComponentProfile{ true, false, true, true, true };
+		case Direction::Value::West:
+			return ComponentProfile{ false, true, true, true, true };
+		case Direction::Value::Up:
+			return ComponentProfile{ true, true, true, true, false };
+		default:
+			return {};
 		}
 	}
 	case BLOCK_REDSTONE_TORCH_OFF: {
@@ -118,36 +118,36 @@ static ComponentProfile GetComponentProfile(BlockType _blockId, uint8_t _meta) {
 		if (!(_meta & 0b1000))
 			return {};
 		switch (GetDirectionFromMeta(BLOCK_LEVER, _meta)) {
-			case Direction::Value::North:
-				return ComponentProfile{ true, true, false, true, true };
-			case Direction::Value::South:
-				return ComponentProfile{ true, true, true, false, true };
-			case Direction::Value::East:
-				return ComponentProfile{ true, false, true, true, true };
-			case Direction::Value::West:
-				return ComponentProfile{ false, true, true, true, true };
-			case Direction::Value::Up:
-				return ComponentProfile{ true, true, true, true, false };
-			default:
-				return {};
+		case Direction::Value::North:
+			return ComponentProfile{ true, true, false, true, true };
+		case Direction::Value::South:
+			return ComponentProfile{ true, true, true, false, true };
+		case Direction::Value::East:
+			return ComponentProfile{ true, false, true, true, true };
+		case Direction::Value::West:
+			return ComponentProfile{ false, true, true, true, true };
+		case Direction::Value::Up:
+			return ComponentProfile{ true, true, true, true, false };
+		default:
+			return {};
 		}
 	}
 	case BLOCK_BUTTON_STONE: {
 		if (!(_meta & 0b1000))
 			return {};
 		switch (GetDirectionFromMeta(BLOCK_BUTTON_STONE, _meta)) {
-			case Direction::Value::North:
-				return ComponentProfile{ true, true, false, true, true };
-			case Direction::Value::South:
-				return ComponentProfile{ true, true, true, false, true };
-			case Direction::Value::East:
-				return ComponentProfile{ true, false, true, true, true };
-			case Direction::Value::West:
-				return ComponentProfile{ false, true, true, true, true };
-			case Direction::Value::Up:
-				return ComponentProfile{ true, true, true, true, false };
-			default:
-				return {};
+		case Direction::Value::North:
+			return ComponentProfile{ true, true, false, true, true };
+		case Direction::Value::South:
+			return ComponentProfile{ true, true, true, false, true };
+		case Direction::Value::East:
+			return ComponentProfile{ true, false, true, true, true };
+		case Direction::Value::West:
+			return ComponentProfile{ false, true, true, true, true };
+		case Direction::Value::Up:
+			return ComponentProfile{ true, true, true, true, false };
+		default:
+			return {};
 		}
 	}
 	default: {

@@ -28,14 +28,9 @@ enum CompressorFormat {
 };
 
 struct FileHeaderEntry {
-	uint32_t offset;
-	uint8_t numberOfSectors;
+	uint32_t offset : 24;
+	uint32_t numberOfSectors : 8;
 	// TODO: Maybe store last-updated here?
-};
-
-struct ChunkHeaderEntry {
-	uint32_t length;
-	uint8_t format;
 };
 
 class Region {

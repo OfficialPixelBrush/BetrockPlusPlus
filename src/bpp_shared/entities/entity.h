@@ -66,17 +66,11 @@ struct Entity {
 	// For randomness
 	Java::Random rand;
 
-	// Entity type because notch split stuff into multiple packets based on type
-	EntityType type = EntityType::NONE;
-
 	// World pointer
 	WorldManager* world = nullptr;
 	EntityManager* entityManager = nullptr;
 
-	// Identity
-	EntityId id = -1; // -1 = not yet spawned
 	TickTime ticksExisted = 0;
-	Dimension dim = Dimension::Overworld;
 
 	// Mob links
 	std::weak_ptr<Entity> vehicle;
@@ -92,7 +86,6 @@ struct Entity {
 	// Collision
 	AABB collider;
 	Int3 bucketPos; // The bucket this entity is currently in (for spatial partitioning)
-	Blocks::BlockProperties belowBlock;
 
 	// Width/height of the collision box in blocks.
 	float width = 0.6f;
@@ -121,8 +114,8 @@ struct Entity {
 	//bool sneaking = false;
 
 	// Fire
-	int fireTicks = 0;           // Ticks remaining on fire; 0 = not on fire
-	int fireResistance = 1;      // Ticks of immunity after catching fire
+	int fireTicks = 0;      // Ticks remaining on fire; 0 = not on fire
+	int fireResistance = 1; // Ticks of immunity after catching fire
 
 	// Combat
 	int hurtResistantTime = 0;  // Invincibility frames after being hit
@@ -132,10 +125,15 @@ struct Entity {
 	int maxAir = 300;
 	int air = 300;
 
-	// TODO: This may be stupid
-	EntityFlags flags;
+	// Identity
+	EntityId id = -1; // -1 = not yet spawned
 
 	float entityBrightness = 0.0f;
+
+	EntityType type = EntityType::NONE;
+	Dimension dim = Dimension::Overworld;
+	BlockType belowBlockType = BLOCK_AIR;
+	EntityFlags flags;
 
 	bool isDead : 1 = false;
 	bool forceVelocityUpdate : 1 = false;
@@ -150,8 +148,8 @@ struct Entity {
 	bool inLava : 1 = false;
 	bool onLadder : 1 = false;
 	bool jumping : 1 = false;
-	bool inFire : 1 = false;            // Currently touching a fire/lava block
-	bool isImmuneToFire : 1 = false;    // Total fire immunity
+	bool inFire : 1 = false;         // Currently touching a fire/lava block
+	bool isImmuneToFire : 1 = false; // Total fire immunity
 	bool beenAttacked : 1 = false;
 	bool preventEntitySpawning : 1 = false;
 	bool isFirstUpdate : 1 = true; // True only on the very first Tick
