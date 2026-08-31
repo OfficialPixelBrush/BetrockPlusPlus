@@ -144,6 +144,9 @@ void ServerBlock::Initialize() {
 	                                                    Runtime& _gameRuntime) -> bool {
 		if (!_world.InBounds(_position.y))
 			return false;
+		// Already sleeping? Don't let the client re-trigger the interaction.
+		if (_session.entity->isSleeping)
+			return false;
 		// If not head, but foot, move to headboard
 		{
 			auto meta = _world.GetMetadata(_position);
@@ -157,6 +160,14 @@ void ServerBlock::Initialize() {
 		pkt.interactionId = PacketData::BlockInteraction::SLEEPING;
 		pkt.position = { _position.x, static_cast<int8_t>(_position.y), _position.z };
 		pkt.Serialize(_session.stream);
+		Packet::Animation anim;
+		anim.entityId = _session.entity->id;
+		anim.animation = PacketData::Animation::PUNCH;
+		_session.entityTracker->SendPacketToViewers(anim, _session.entity->id);
+		_session.entityTracker->SendPacketToViewers(pkt, _session.entity->id);
+		_session.entity->isSleeping = true;
+		// TODO: Find proper spawn position!
+		_session.spawnPosition = _position.Offset(Direction::Value::Up);
 		return false;
 	};
 }

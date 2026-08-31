@@ -237,6 +237,16 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.Serialize(pSession->stream);
 		SendEquipmentState(_entityEntry, pSession);
 		SendMetadataState(_entityEntry, pSession);
+		// TODO: Sync with new joiners ffs
+		/*
+		if (_entityEntry.entity->isSleeping) {
+			Packet::InteractWithBlock sleepingAnim;
+			sleepingAnim.entityId = _entityEntry.entity->id;
+			sleepingAnim.interactionId = PacketData::BlockInteraction::SLEEPING;
+			sleepingAnim.position = { _position.x, static_cast<int8_t>(_position.y), _position.z };
+			sleepingAnim.Serialize(pSession->stream);
+		}
+		*/
 		break;
 	}
 	case EntityType::CREEPER: {
