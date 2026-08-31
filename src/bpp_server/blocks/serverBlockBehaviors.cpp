@@ -11,6 +11,7 @@
 #include "inventory/interactions/furnace.h"
 #include "inventory/interactions/large_chest.h"
 #include "tile_entities/tile_entity.h"
+#include "../../bpp_shared/helpers/direction_fixer.h"
 
 namespace ServerBlock {
 BlockBehavior blockBehaviors[BLOCK_MAX] = {};
@@ -137,6 +138,25 @@ void ServerBlock::Initialize() {
 			fn(PacketData::WorldEvent::RECORD_PLAY, _position, Items::Id::RECORD_CAT, nullptr);
 			//fn(PacketData::WorldEvent::RECORD_PLAY, _position, 0);
 		}
+		return false;
+	};
+	blockBehaviors[BLOCK_BED].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
+	                                                    Runtime& _gameRuntime) -> bool {
+		if (!_world.InBounds(_position.y))
+			return false;
+		// If not head, but foot, move to headboard
+		{
+			auto meta = _world.GetMetadata(_position);
+			if (!(meta & 0b1000)) {
+				auto dir = GetDirectionFromMeta(BLOCK_BED, meta);
+				_position.Offset(dir);
+			}
+		}
+		Packet::InteractWithBlock pkt;
+		pkt.entityId = _session.entity->id;
+		pkt.interactionId = PacketData::BlockInteraction::SLEEPING;
+		pkt.position = { _position.x, static_cast<int8_t>(_position.y), _position.z };
+		pkt.Serialize(_session.stream);
 		return false;
 	};
 }
