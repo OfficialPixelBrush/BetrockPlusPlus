@@ -59,6 +59,7 @@ struct PlayerSession {
 
 	// rotation.x = yaw, rotation.y = pitch
 	Float2 rotation = { 0.0f, 0.0f };
+	Int3 spawnPosition;
 
 	std::unordered_set<Int32_2> sentChunks;
 	std::unordered_set<Int32_2> flushedChunks; // Actually written to stream
@@ -185,7 +186,7 @@ struct PlayerSession {
 		Tag sleepingTag;
 		sleepingTag.type = TAG_BYTE;
 		sleepingTag.name = "Sleeping";
-		sleepingTag.byteValue = 0;
+		sleepingTag.byteValue = entity->isSleeping;
 		Tag posTag;
 		posTag.type = TAG_LIST;
 		posTag.name = "Pos";

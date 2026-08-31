@@ -445,8 +445,7 @@ void Animation(Packet::Animation& _pkt, PlayerSession& _session, EntityTracker& 
 	_entityTracker.SendPacketToViewers(anim, anim.entityId);
 }
 
-void PlayerAction([[maybe_unused]] Packet::PlayerAction& _pkt, [[maybe_unused]] PlayerSession& _session,
-                  [[maybe_unused]] EntityTracker& _entityTracker) {
+void PlayerAction(Packet::PlayerAction& _pkt, PlayerSession& _session, EntityTracker& _entityTracker) {
 	auto& entity = _session.entity;
 	if (!entity)
 		return;
@@ -457,8 +456,17 @@ void PlayerAction([[maybe_unused]] Packet::PlayerAction& _pkt, [[maybe_unused]] 
 	case PacketData::PlayerAction::STOP_SNEAKING:
 		entity->UpdateMetadata(entity->flags.isSneaking, false);
 		break;
-	case PacketData::PlayerAction::STOP_SLEEPING:
+	case PacketData::PlayerAction::STOP_SLEEPING: {
+		if (!entity->isSleeping)
+			break;
+		entity->isSleeping = false;
+		Packet::Animation anim;
+		anim.entityId = entity->id;
+		anim.animation = PacketData::Animation::LEAVE_BED;
+		anim.Serialize(_session.stream);
+		_entityTracker.SendPacketToViewers(anim, entity->id);
 		break;
+	}
 	default:
 		break;
 	}
