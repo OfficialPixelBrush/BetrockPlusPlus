@@ -32,7 +32,7 @@ Biome WorldManager::GetBiome(Int2 _wpos) {
 	if (!chunk || chunk->state != ChunkState::Generated)
 		return biomeGenerator.GetBiomeAtPoint(_wpos);
 	// TODO: Dunno if this is the right index formula, please test!
-	return chunk->biomes[_wpos.x % 0xF + _wpos.z % 0xF * 16];
+	return static_cast<Biome>(chunk->biomes.Get(_wpos.x % 0xF + _wpos.z % 0xF * 16));
 }
 
 int WorldManager::GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
@@ -500,7 +500,7 @@ void WorldManager::DrainLoadQueue() {
 		thread_local double temp[CHUNK_AREA];
 		thread_local double humi[CHUNK_AREA];
 		thread_local double weird[CHUNK_AREA];
-		Biome ignored[CHUNK_AREA];
+		PackedArray<CHUNK_AREA, 4> ignored;
 		tlBiomeGen.GenerateBiomeMap(ignored, temp, humi, weird, Int2{ pos.x * CHUNK_WIDTH, pos.z * CHUNK_WIDTH });
 		for (int i = 0; i < CHUNK_AREA; ++i) {
 			it->second->temperature[i] = float(temp[i]);

@@ -43,7 +43,7 @@ private:
 	double gravelNoise[CHUNK_WIDTH * CHUNK_WIDTH];
 	double stoneNoise[CHUNK_WIDTH * CHUNK_WIDTH];
 
-	Biome biomeMap[CHUNK_AREA];
+	PackedArray<CHUNK_AREA, 4> biomeMap;
 	double temperature[CHUNK_AREA];
 	double humidity[CHUNK_AREA];
 	double weirdness[CHUNK_AREA];

@@ -36,8 +36,8 @@ BiomeGenerator::BiomeGenerator(int64_t _seed) {
  * @param blockPos The x,z block-space coordindate of the chunk
  * @param max The size of the area that'll be generated (16x16 by default)
  */
-void BiomeGenerator::GenerateBiomeMap(Biome _biomeMap[], std::span<double> _temperature, std::span<double> _humidity,
-                                      std::span<double> _weirdness, Int2 _blockPos) {
+void BiomeGenerator::GenerateBiomeMap(PackedArray<CHUNK_AREA, 4>& _biomeMap, std::span<double> _temperature,
+                                      std::span<double> _humidity, std::span<double> _weirdness, Int2 _blockPos) {
 	static constexpr Int32_2 MAX_AREA{ CHUNK_WIDTH, CHUNK_WIDTH };
 	static constexpr size_t K_COUNT = size_t(CHUNK_WIDTH) * size_t(CHUNK_WIDTH);
 	if (_temperature.size() < K_COUNT || _humidity.size() < K_COUNT || _weirdness.size() < K_COUNT)
@@ -75,7 +75,7 @@ void BiomeGenerator::GenerateBiomeMap(Biome _biomeMap[], std::span<double> _temp
 			_temperature[index] = temp;
 			_humidity[index] = humi;
 			// Get the biome from the lookup
-			_biomeMap[index] = GetBiomeFromLookup(float(temp), float(humi));
+			_biomeMap.Set(index, GetBiomeFromLookup(float(temp), float(humi)));
 			index++;
 		}
 	}
