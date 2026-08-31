@@ -53,14 +53,14 @@ struct BlockProperties {
 	float slipperiness = 0.6f;    // default friction, ice = 0.98f
 	float particleGravity = 1.0f; // how fast break particles fall
 
-	bool isCollidable = true;
-	bool isOpaqueCube = true;
-	bool isNormalCube = true;
-	bool renderAsNormalBlock = true;
-	bool ticksOnLoad = false; // Can we random tick?
-	bool canBlockGrass = true;
-	bool enableStats = true;            // false = breaking doesn't count for achievements
-	bool notifySelfOnMetaChange = true; // Whether to send an update to the client when meta changes
+	bool isCollidable : 1 = true;
+	bool isOpaqueCube : 1 = true;
+	bool isNormalCube : 1 = true;
+	bool renderAsNormalBlock : 1 = true;
+	bool ticksOnLoad : 1 = false; // Can we random tick?
+	bool canBlockGrass : 1 = true;
+	bool enableStats : 1 = true;            // false = breaking doesn't count for achievements
+	bool notifySelfOnMetaChange : 1 = true; // Whether to send an update to the client when meta changes
 };
 
 // Indexed by block ID, populated by registerAll()

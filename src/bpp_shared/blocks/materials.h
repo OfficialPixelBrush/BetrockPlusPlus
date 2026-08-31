@@ -96,13 +96,13 @@ enum PushabilityFlag : uint8_t {
 struct Material {
 	MaterialType type = MaterialType::Rock;
 	MapColor mapColor = MapColor::Stone();
-	bool isLiquid = false;
-	bool isSolid = true;
-	bool isOpaque = true;
-	bool canBurn = false;
-	bool isGroundCover = false;
-	bool canBlockGrass = true;
-	bool isHarvestable = true;
+	bool isLiquid : 1 = false;
+	bool isSolid : 1 = true;
+	bool isOpaque : 1 = true;
+	bool canBurn : 1 = false;
+	bool isGroundCover : 1 = false;
+	bool canBlockGrass : 1 = true;
+	bool isHarvestable : 1 = true;
 	PushabilityFlag mobilityFlag = PushabilityFlag::Normal;
 
 	bool operator==(const Material& _other) const {
