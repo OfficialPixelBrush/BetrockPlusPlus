@@ -261,7 +261,8 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 			}
 
 			// A lever or button sitting directly beside us
-			if (dy == _pos.y && (_world.GetBlockId(dPos) == BLOCK_LEVER || _world.GetBlockId(dPos) == BLOCK_BUTTON_STONE)) {
+			if (dy == _pos.y &&
+			    (_world.GetBlockId(dPos) == BLOCK_LEVER || _world.GetBlockId(dPos) == BLOCK_BUTTON_STONE)) {
 				auto neighborBlock = _world.GetBlockId(dPos);
 				auto neighborMeta = _world.GetMetadata(dPos);
 				auto neighborProfile = RedstoneManager::GetComponentProfile(neighborBlock, neighborMeta);
@@ -469,8 +470,8 @@ bool RedstoneManager::IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, ui
 		Int3 inputPos = { _pos.x, _pos.y, _pos.z + 1 };
 		auto block = _world.GetBlockId(inputPos);
 		auto meta = _world.GetMetadata(inputPos);
-		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON ||
-		     block == BLOCK_LEVER || block == BLOCK_BUTTON_STONE) &&
+		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
+		     block == BLOCK_BUTTON_STONE) &&
 		    RedstoneManager::GetComponentProfile(block, meta).powerNZ)
 			return true;
 		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
@@ -481,8 +482,8 @@ bool RedstoneManager::IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, ui
 		Int3 inputPos = { _pos.x - 1, _pos.y, _pos.z };
 		auto block = _world.GetBlockId(inputPos);
 		auto meta = _world.GetMetadata(inputPos);
-		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON ||
-		     block == BLOCK_LEVER || block == BLOCK_BUTTON_STONE) &&
+		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
+		     block == BLOCK_BUTTON_STONE) &&
 		    RedstoneManager::GetComponentProfile(block, meta).powerX)
 			return true;
 		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
@@ -493,8 +494,8 @@ bool RedstoneManager::IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, ui
 		Int3 inputPos = { _pos.x, _pos.y, _pos.z - 1 };
 		auto block = _world.GetBlockId(inputPos);
 		auto meta = _world.GetMetadata(inputPos);
-		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON ||
-		     block == BLOCK_LEVER || block == BLOCK_BUTTON_STONE) &&
+		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
+		     block == BLOCK_BUTTON_STONE) &&
 		    RedstoneManager::GetComponentProfile(block, meta).powerZ)
 			return true;
 		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
@@ -505,8 +506,8 @@ bool RedstoneManager::IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, ui
 		Int3 inputPos = { _pos.x + 1, _pos.y, _pos.z };
 		auto block = _world.GetBlockId(inputPos);
 		auto meta = _world.GetMetadata(inputPos);
-		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON ||
-		     block == BLOCK_LEVER || block == BLOCK_BUTTON_STONE) &&
+		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
+		     block == BLOCK_BUTTON_STONE) &&
 		    RedstoneManager::GetComponentProfile(block, meta).powerNX)
 			return true;
 		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)

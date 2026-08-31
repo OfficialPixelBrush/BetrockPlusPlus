@@ -9,8 +9,8 @@
 
 // Map colors
 struct MapColor {
-	uint8_t index = 0;
-	uint32_t colorValue = 0; // packed RGB
+	uint32_t index : 8 = 0;
+	uint32_t colorValue : 24 = 0; // packed RGB
 
 	static constexpr MapColor Air() {
 		return { 0, 0x000000 };
@@ -56,6 +56,7 @@ struct MapColor {
 	}
 };
 
+// Uses at most 5 bits
 enum class MaterialType : uint8_t {
 	Air,
 	Grass,
@@ -94,8 +95,9 @@ enum PushabilityFlag : uint8_t {
 };
 
 struct Material {
-	MaterialType type = MaterialType::Rock;
 	MapColor mapColor = MapColor::Stone();
+	MaterialType type : 5 = MaterialType::Rock;
+	PushabilityFlag mobilityFlag : 2 = PushabilityFlag::Normal;
 	bool isLiquid : 1 = false;
 	bool isSolid : 1 = true;
 	bool isOpaque : 1 = true;
@@ -103,7 +105,6 @@ struct Material {
 	bool isGroundCover : 1 = false;
 	bool canBlockGrass : 1 = true;
 	bool isHarvestable : 1 = true;
-	PushabilityFlag mobilityFlag = PushabilityFlag::Normal;
 
 	bool operator==(const Material& _other) const {
 		return type == _other.type;

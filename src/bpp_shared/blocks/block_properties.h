@@ -42,16 +42,17 @@ enum class StepSound : uint8_t {
 
 struct BlockProperties {
 	Material material = Material::Rock();
-	StepSound stepSound = StepSound::Stone;
-
-	uint8_t lightEmission = 0;  // 0-15
-	uint8_t lightOpacity = 255; // 0 = transparent, 255 = fully opaque
-	int tickRate = 10;          // Used for self scheduling blocks
 
 	float hardness = 1.0f;        // -1 = unbreakable (bedrock)
 	float resistance = -1.0f;     // -1 = never explicitly set, fallback
 	float slipperiness = 0.6f;    // default friction, ice = 0.98f
 	float particleGravity = 1.0f; // how fast break particles fall
+
+	int tickRate = 10; // Used for self scheduling blocks
+
+	uint8_t lightEmission = 0;  // 0-15
+	uint8_t lightOpacity = 255; // 0 = transparent, 255 = fully opaque
+	StepSound stepSound = StepSound::Stone;
 
 	bool isCollidable : 1 = true;
 	bool isOpaqueCube : 1 = true;

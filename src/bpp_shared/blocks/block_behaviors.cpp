@@ -127,8 +127,8 @@ static void TryLavaHarden(WorldManager& _world, Int3 _pos) {
 
 static bool BlocksFlow(BlockType _block) {
 	auto blockMaterial = blockProperties[_block].material;
-	if (_block == BLOCK_DOOR_WOOD || _block == BLOCK_DOOR_IRON || _block == BLOCK_SIGN_STANDING || _block == BLOCK_LADDER ||
-	    _block == BLOCK_SUGARCANE)
+	if (_block == BLOCK_DOOR_WOOD || _block == BLOCK_DOOR_IRON || _block == BLOCK_SIGN_STANDING ||
+	    _block == BLOCK_LADDER || _block == BLOCK_SUGARCANE)
 		return true;
 	return blockMaterial.isSolid;
 }
@@ -1010,7 +1010,7 @@ void RegisterBlockBehaviors() {
 		}
 		return true;
 	};
-	
+
 	blockBehaviors[BLOCK_REDSTONE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                                  Direction::Value _face, BlockType _blockId,
 	                                                  uint8_t _meta) -> bool {
@@ -1077,10 +1077,8 @@ void RegisterBlockBehaviors() {
 		return blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockPlaced(_world, _pos, _placer, _face, _blockId, _meta);
 	};
 
-
 	blockBehaviors[BLOCK_LEVER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                           Direction::Value _face, BlockType _blockId,
-	                                                           uint8_t _meta) -> bool {
+	                                               Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
 		if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER)
 			_pos = _pos.WithOffset(Direction::Opposite(_face));
 		// TODO: This isn't exactly the best way to do it, as it relies on Metadata fuckery,
@@ -1119,8 +1117,7 @@ void RegisterBlockBehaviors() {
 		BreakAndDropBlock(_world, _pos);
 	};
 
-	blockBehaviors[BLOCK_LEVER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                                   BlockType _blockId) -> void {
+	blockBehaviors[BLOCK_LEVER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
 		auto dir = GetDirectionFromMeta(BLOCK_LEVER, _world.GetMetadata(_pos));
 		if (!CanTorchAttachTo(_world, _pos, dir)) {
 			BreakAndDropBlock(_world, _pos);
@@ -1128,14 +1125,16 @@ void RegisterBlockBehaviors() {
 		}
 	};
 
-	blockBehaviors[BLOCK_LEVER].onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> void {
+	blockBehaviors[BLOCK_LEVER].onBlockClicked = [](WorldManager& _world, Int3 _pos,
+	                                                PlayerSession* _triggeringSession) -> void {
 		auto newMeta = _world.GetMetadata(_pos) ^ 0b1000;
 		_world.SetMeta(_pos, newMeta);
 		NotifyAttachedSupportBlock(_world, _pos, BLOCK_LEVER, newMeta);
 		if (_world.onWorldEvent)
 			_world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
 	},
-	blockBehaviors[BLOCK_LEVER].onBlockActivated = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> bool {
+	blockBehaviors[BLOCK_LEVER].onBlockActivated = [](WorldManager& _world, Int3 _pos,
+	                                                  PlayerSession* _triggeringSession) -> bool {
 		blockBehaviors[BLOCK_LEVER].onBlockClicked(_world, _pos, _triggeringSession);
 		return false;
 	},
