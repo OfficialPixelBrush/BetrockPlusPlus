@@ -12,8 +12,9 @@
 struct PlayerSession;
 struct EntityMPPlayer : public PlayerEntity {
 	PlayerSession* session = nullptr;
-	bool movedThisTick = false;
 	int lastNotifiedHealth = health;
+	bool movedThisTick : 1 = false;
+	bool isSleeping : 1 = false;
 	EntityMPPlayer() : PlayerEntity() {
 		hasPhysics = false;
 	}

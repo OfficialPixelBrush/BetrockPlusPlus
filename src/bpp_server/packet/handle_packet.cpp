@@ -454,6 +454,8 @@ void PlayerAction([[maybe_unused]] Packet::PlayerAction& _pkt, [[maybe_unused]] 
 	case PacketData::PlayerAction::STOP_SNEAKING:
 		entity->UpdateMetadata(entity->flags.isSneaking, false);
 		break;
+	case PacketData::PlayerAction::STOP_SLEEPING:
+		break;
 	default:
 		break;
 	}
