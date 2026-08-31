@@ -87,7 +87,7 @@ public:
 	void Shutdown();
 	void SeedChunkLighting(Int32_2 _pos);
 	void PerformRandomTicks(const std::vector<ClientPosition>& _players);
-	std::vector<AABB> GetCollidingBoundingBoxes(const AABB& _area);
+	std::vector<AABB> GetCollidingBoundingBoxes(const AABB& _area, Entity* _mover = nullptr);
 	void FlushBleedWrites();
 	void PropagateChunkLightBorders(Int32_2 _cpos);
 	BlockType GetFirstUncoveredBlock(int _wx, int _wz);

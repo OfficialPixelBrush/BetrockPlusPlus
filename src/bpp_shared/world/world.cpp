@@ -206,7 +206,7 @@ bool WorldManager::HandleFluidAcceleration(AABB _collider, Material _material, E
 }
 
 // Get colliders for an area
-std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area) {
+std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area, Entity* _mover) {
 	std::vector<AABB> collidingBoxes;
 
 	int minX = Java::DoubleToInt32(std::floor(_area.minX));
@@ -253,12 +253,21 @@ std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area) {
 		}
 	}
 
-	// Collect entities in this area
-	auto entitiesInArea = entityManager.GetEntitiesWithinAabb(
-	    { double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ) });
+	// Collect entities in this area, excluding the mover itself
+	AABB entitySearchArea = { double(minX), double(minY), double(minZ),
+		                      double(maxX), double(maxY), double(maxZ) };
+	auto entitiesInArea = _mover ? entityManager.GetEntitiesWithinAabbExcluding(entitySearchArea, _mover->id)
+	                              : entityManager.GetEntitiesWithinAabb(entitySearchArea);
+
 	for (auto& entity : entitiesInArea) {
-		if (entity->actsAsWorldCollider)
-			collidingBoxes.push_back(entity->collider);
+		if (entity->actsAsWorldCollider && entity->collider.Intersects(_area))
+			collidingBoxes.push_back(entity->collider.Expand(-0.1, -0.1, -0.1));
+
+		if (_mover) {
+			auto moverOverrideBox = _mover->GetMoverCollisionOverride(*entity);
+			if (moverOverrideBox && moverOverrideBox->Intersects(_area))
+				collidingBoxes.push_back(*moverOverrideBox);
+		}
 	}
 
 	return collidingBoxes;

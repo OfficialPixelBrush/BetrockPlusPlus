@@ -12,6 +12,27 @@
 #include "networking/network_stream.h"
 #include "networking/packets.h"
 
+void EntityMPPlayer::OnMountEntity() {
+	auto vehiclePtr = this->vehicle.lock().get();
+	if (this->session->entityTracker && vehiclePtr) {
+		Packet::AddPassenger pkt;
+		pkt.passengerEntityId = this->id;
+		pkt.vehicleEntityId = vehiclePtr->id;
+		this->session->entityTracker->SendPacketToViewers(pkt, this->id);
+		pkt.Serialize(session->stream);
+	}
+}
+
+void EntityMPPlayer::OnDismountEntity() {
+	if (this->session->entityTracker) {
+		Packet::AddPassenger pkt;
+		pkt.passengerEntityId = this->id;
+		pkt.vehicleEntityId = -1;
+		this->session->entityTracker->SendPacketToViewers(pkt, this->id);
+		pkt.Serialize(session->stream);
+	}
+}
+
 bool EntityMPPlayer::DropItem(ItemStack _stack) {
 	if (_stack.id == Items::Id::INVALID || _stack.count <= 0)
 		return false;
@@ -65,6 +86,17 @@ static constexpr double ROLLBACK_NUDGE = 0.06;
 void EntityMPPlayer::HandlePositionChecks() {
 	if (isDead || !world)
 		return;
+
+	this->velocity = {};
+	if (this->vehicle.lock().get()) {
+		// Boats are weird!
+		Vec3 pos = session->pendingPosition.value();
+		if (pos.x <= -1 || pos.x > 1 || pos.z <= -1 || pos.z > 1)
+			return;
+		this->velocity = pos;
+		this->velocity.y = 0;
+		return;
+	}
 
 	// We have a pending teleport. Check to see if the player caught up
 	if (session->pendingTeleport && session->pendingPosition) {

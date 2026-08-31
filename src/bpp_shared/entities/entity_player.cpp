@@ -7,6 +7,16 @@
 #include "entity_player.h"
 #include "entity_item.h"
 
+void PlayerEntity::OnMountEntity() {
+	// stub
+	return;
+}
+
+void PlayerEntity::OnDismountEntity() {
+	// stub
+	return;
+}
+
 bool PlayerEntity::PickupItem(ItemStack& _stack, EntityId _entityId) {
 	return true;
 }

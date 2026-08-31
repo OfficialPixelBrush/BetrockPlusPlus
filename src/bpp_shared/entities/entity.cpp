@@ -13,6 +13,16 @@
 #include <algorithm>
 #include <cmath>
 
+void Entity::OnMountEntity() {
+	// stub
+	return;
+}
+
+void Entity::OnDismountEntity() {
+	// stub
+	return;
+}
+
 void Entity::OnPlayerInteract(PlayerEntity* _entity) {
 	// stub
 	return;
@@ -161,7 +171,11 @@ void Entity::UpdateEntityPhysicsState() {
 	UpdateMetadata(flags.isBurning, fireTicks > 0);
 }
 
-void Entity::MountEntity(std::shared_ptr<Entity>& _entity) {
+void Entity::MountEntity(std::shared_ptr<Entity> _entity) {
+	if (!entityManager) {
+		GlobalLogger().warn << "Tried to mount an entity before being initialized!\n";
+		return;
+	}
 	auto entityPtr = _entity.get();
 	if (entityPtr && entityPtr != this->vehicle.lock().get()) {
 		UnmountEntity();
@@ -171,11 +185,9 @@ void Entity::MountEntity(std::shared_ptr<Entity>& _entity) {
 		_entity->passenger = entityManager->GetEntityByIdShared(this->id);
 		this->vehicle = _entity;
 
-		// Fresh mount: no smoothing debt yet, and seed our "last seen" vehicle
-		// rotation with its CURRENT rotation so the first tick doesn't read a
-		// bogus turn from whatever we rode previously (or from zero-init).
 		this->passengerLookDelta = { 0.0f, 0.0f };
 		this->lastVehicleRotation = { _entity->rotationYaw, _entity->rotationPitch };
+		this->OnMountEntity();
 		return;
 	}
 	UnmountEntity();
@@ -190,6 +202,7 @@ void Entity::UnmountEntity() {
 		this->Teleport(unmountPos, { this->rotationYaw, this->rotationPitch });
 	}
 	this->vehicle.reset();
+	this->OnDismountEntity();
 }
 
 void Entity::TickPassengerEntity() {
@@ -202,8 +215,10 @@ void Entity::TickPassengerEntity() {
 	this->velocity = {};
 	this->UpdateEntityPhysicsState();
 
-	Vec3 newPos = lockVehicle->position;
-	newPos.y += lockVehicle->GetMountOffset() + this->yOffset;
+	Vec3 seatOffset = lockVehicle->GetRiderSeatOffset();
+	Vec3 newPos = { lockVehicle->position.x + seatOffset.x,
+		            lockVehicle->position.y + lockVehicle->GetMountOffset() + this->yOffset,
+		            lockVehicle->position.z + seatOffset.z };
 
 	// Look direction smoothing
 	passengerLookDelta.x += lockVehicle->rotationYaw - lastVehicleRotation.x;
@@ -302,7 +317,7 @@ void Entity::Move(Vec3& _velocity) {
 		const double step = 0.05;
 
 		auto groundBelow = [&](double _dx, double _dz) -> bool {
-			return !world->GetCollidingBoundingBoxes(collider.Offset(_dx, -1.0, _dz)).empty();
+			return !world->GetCollidingBoundingBoxes(collider.Offset(_dx, -1.0, _dz), this).empty();
 		};
 
 		// Clamp on the X and Z axes to avoid falling off edges while sneaking
@@ -328,7 +343,8 @@ void Entity::Move(Vec3& _velocity) {
 		original.z = _velocity.z;
 	}
 
-	auto sweptCollider = world->GetCollidingBoundingBoxes(collider.AddCoord(_velocity.x, _velocity.y, _velocity.z));
+	auto sweptCollider =
+	    world->GetCollidingBoundingBoxes(collider.AddCoord(_velocity.x, _velocity.y, _velocity.z), this);
 
 	// Resolve Y first
 	for (auto& col : sweptCollider) {
@@ -361,7 +377,7 @@ void Entity::Move(Vec3& _velocity) {
 		collider = originalCollider;
 
 		auto stepUpSweptCollider = world->GetCollidingBoundingBoxes(
-		    collider.AddCoord(_velocity.x, _velocity.y, _velocity.z));
+		    collider.AddCoord(_velocity.x, _velocity.y, _velocity.z), this);
 
 		// Resolve Y first
 		for (auto& col : stepUpSweptCollider) {

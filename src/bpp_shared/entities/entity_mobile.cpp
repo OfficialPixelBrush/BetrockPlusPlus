@@ -249,19 +249,19 @@ void MobileEntity::TickPhysics() {
 
 		// Gravity
 		velocity.y -= 0.08;
+	}
 
-		auto collidingEntities = world->entityManager.GetEntitiesWithinAabbExcluding(collider.Expand(0.2, 0.0, 0.2), id);
+	auto collidingEntities = world->entityManager.GetEntitiesWithinAabbExcluding(collider.Expand(0.2, 0.0, 0.2), id);
 
-		for (const auto& entity : collidingEntities) {
-			if (entity->CanBePushed()) {
-				this->ResolveEntityCollision(*entity);
-			}
+	for (const auto& entity : collidingEntities) {
+		if (entity->CanBePushed()) {
+			this->ResolveEntityCollision(*entity);
 		}
 	}
 }
 
 bool MobileEntity::AABBNotInLiquidOrObstructed(AABB& _collider) {
-	auto collidedWith = world->GetCollidingBoundingBoxes(_collider);
+	auto collidedWith = world->GetCollidingBoundingBoxes(_collider, this);
 	if (collidedWith.size() > 0)
 		return false;
 	return !world->IsLiquidInAabb(_collider);

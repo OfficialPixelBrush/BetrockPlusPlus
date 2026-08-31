@@ -402,8 +402,11 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 
 	ItemStack* heldItem = _session.inventory.GetHeldItem();
 	if (!heldItem) {
-		if (!_pkt.attack)
+		if (!_pkt.attack) {
+			PlayerEntity* playerPtr = dynamic_cast<PlayerEntity*>(sourceEntity.get());
+			entity->OnPlayerInteract(playerPtr);
 			return;
+		}
 		ItemStack emptyStack{};
 		Items::AttackWithItem(*entity, *sourceEntity, &emptyStack);
 		return;
