@@ -205,11 +205,11 @@ void MobileEntity::TickPhysics() {
 
 		if (onGround) {
 			friction = 0.546f;
-			auto newBelowBlock = world->GetBlockId({ MathHelper::FloorDouble(position.x),
+			BlockType newBelowBlockType = world->GetBlockId({ MathHelper::FloorDouble(position.x),
 			                                         MathHelper::FloorDouble(position.y) - 1,
 			                                         MathHelper::FloorDouble(position.z) });
-			if (newBelowBlock > BLOCK_AIR) {
-				friction = Blocks::blockProperties[newBelowBlock < BLOCK_MAX ? newBelowBlock : BLOCK_MAX].slipperiness *
+			if (newBelowBlockType > BLOCK_AIR) {
+				friction = Blocks::blockProperties[newBelowBlockType < BLOCK_MAX ? newBelowBlockType : BLOCK_MAX].slipperiness *
 				           0.91f;
 			}
 		}
