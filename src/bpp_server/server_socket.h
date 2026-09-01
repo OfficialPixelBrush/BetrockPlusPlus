@@ -7,11 +7,13 @@
 */
 #pragma once
 #include "logger.h"
-#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__) || defined(__SWITCH__) || defined(__3DS__)
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 #elif defined(_WIN32) || defined(_WIN64)
 #include <winsock2.h>

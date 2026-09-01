@@ -10,16 +10,6 @@
 #include <fstream>
 #include <libdeflate.h>
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <winsock2.h>
-#else
-#include <fcntl.h>
-#include <sys/file.h>
-#include <unistd.h>
-#endif
-
 RegionManager::~RegionManager() {
 	Release();
 }

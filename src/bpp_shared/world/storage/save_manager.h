@@ -20,8 +20,15 @@
 #include <winsock2.h>
 #else
 #include <fcntl.h>
-#include <sys/file.h>
 #include <unistd.h>
+// Nintendo Switch/3DS homebrew (libnx/libctru) only ever runs a single
+// process, and their newlib ports aren't guaranteed to provide BSD file
+// locking (there's no <sys/file.h>/flock() to depend on, and nothing else
+// could contend for the save directory anyway), so skip it there.
+#if !defined(__SWITCH__) && !defined(__3DS__)
+#include <sys/file.h>
+#define BPP_HAVE_FLOCK
+#endif
 #endif
 
 enum LevelInitFailureReason {
@@ -64,11 +71,13 @@ struct SessionLock {
 		fd = open(_path.c_str(), O_RDWR | O_CREAT, 0644);
 		if (fd < 0)
 			return false;
+#ifdef BPP_HAVE_FLOCK
 		if (flock(fd, LOCK_EX | LOCK_NB) < 0) {
 			close(fd);
 			fd = -1;
 			return false;
 		}
+#endif
 #endif
 		WriteTimestamp();
 		return true;
@@ -82,7 +91,9 @@ struct SessionLock {
 		}
 #else
 		if (fd >= 0) {
+#ifdef BPP_HAVE_FLOCK
 			flock(fd, LOCK_UN);
+#endif
 			close(fd);
 			fd = -1;
 		}

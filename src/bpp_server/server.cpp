@@ -18,7 +18,7 @@
 #include <string>
 #include <thread>
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__) || defined(__SWITCH__) || defined(__3DS__)
 #include <fcntl.h>
 #include <iomanip>
 #include <netinet/in.h>
@@ -29,6 +29,7 @@
 #pragma comment(lib, "ws2_32.lib")
 #endif
 
+#include "../bpp_shared/helpers/platform_network.h"
 #include "../bpp_utilities/compression_test.h"
 
 #include "server.h"
@@ -458,6 +459,14 @@ void Server::Run() {
 	// Main Tick loop
 	// Heavily based on https://github.com/Minestom/Minestom/blob/59406d5b54d5221df85f381f204fbc07fd861a43/src/main/java/net/minestom/server/thread/TickSchedulerThread.java
 	while (!shutdownRequested.load()) {
+		// On Nintendo Switch/3DS this pumps the OS's own event loop and
+		// returns false if the Home Menu wants the app to close; it's a
+		// harmless no-op that always returns true on every other platform.
+		if (!PlatformNetwork::PumpEvents()) {
+			shutdownRequested.store(true);
+			break;
+		}
+
 		auto tickStart = Clock::now();
 		Tick();
 		auto tickEnd = Clock::now();

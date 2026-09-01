@@ -8,6 +8,7 @@
 
 #include "bpp_server/server.h"
 #include "bpp_shared/helpers/java/java_math.h"
+#include "bpp_shared/helpers/platform_network.h"
 #include "logger.h"
 #include "platforms.h"
 #include "quick_arg_parser.hpp"
@@ -38,7 +39,11 @@
 #include "bpp_utilities/utilities.h"
 #include <format>
 #include <thread>
-#if !defined(_WIN32) && !defined(_WIN64)
+// Nintendo Switch/3DS homebrew has no terminal and never delivers POSIX
+// process signals, so none of the sigwait()/pthread_sigmask() machinery
+// below applies there; shutdown is instead observed via
+// PlatformNetwork::PumpEvents() inside the server tick loop.
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(__SWITCH__) && !defined(__3DS__)
 #include <pthread.h>
 #include <signal.h>
 #endif
@@ -74,7 +79,7 @@ static void SignalHandler(int /*sig*/) {
 	shutdownRequested.store(true);
 }
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(__SWITCH__) && !defined(__3DS__)
 static void BlockStopSignals() {
 	sigset_t set;
 	sigemptyset(&set);
@@ -100,6 +105,9 @@ static void InstallProcessSignalHandlers() {
 #if defined(_WIN32) || defined(_WIN64)
 	std::signal(SIGINT, SignalHandler);
 	std::signal(SIGTERM, SignalHandler);
+#elif defined(__SWITCH__) || defined(__3DS__)
+	// No process signals on console homebrew; nothing to install.
+	// See PlatformNetwork::PumpEvents(), called from the server tick loop.
 #else
 	struct sigaction sa{};
 	sa.sa_handler = SignalHandler;
@@ -202,13 +210,16 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 #ifdef CRASH_LOGGING
 	InitCrashHandler(platformString);
 #endif
-#if !defined(_WIN32) && !defined(_WIN64)
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(__SWITCH__) && !defined(__3DS__)
 	// Block before any other threads so they inherit this mask; sigwait in
 	// SignalWatchThread is then the only consumer of SIGINT/SIGTERM.
 	BlockStopSignals();
 	std::thread(SignalWatchThread).detach();
 #endif
 	InstallProcessSignalHandlers();
+	// Bring up the console's socket service (no-op on desktop platforms).
+	if (!PlatformNetwork::Init())
+		GlobalLogger().warn << "Platform network initialization failed; server sockets may not work.\n";
 	// Parse CLI Args
 	Args args{ { argc, argv } };
 	// Init the sine table
@@ -246,6 +257,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 	Client client;
 	client.Run();
 #endif
+
+	PlatformNetwork::Shutdown();
 
 	return 0;
 }
