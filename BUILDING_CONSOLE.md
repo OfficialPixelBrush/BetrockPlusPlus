@@ -57,7 +57,7 @@ cmake --install build
 cd /project
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake -DBUILD_SERVER=ON
 cd build
-cmake --build .
+cmake --build . -j$(nproc)
 ```
 
 ### 4. Package it into a `.nro`
@@ -116,7 +116,7 @@ cmake --install build
 cd /project
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/3DS.cmake -DBUILD_SERVER=ON
 cd build
-cmake --build .
+cmake --build . -j$(nproc)
 ```
 
 ### 4. Package it into a `.3dsx`

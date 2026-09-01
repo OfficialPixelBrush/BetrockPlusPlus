@@ -5,6 +5,7 @@
  *
 */
 #include "platform_network.h"
+#include <cstddef>
 
 #if defined(__SWITCH__)
 #include <switch.h>
@@ -26,6 +27,10 @@ namespace PlatformNetwork {
 
 bool Init() {
 #if defined(__SWITCH__)
+	// libnx console output is rendered to the framebuffer only when the
+	// console is explicitly initialized and updated. Keep this on the main
+	// thread alongside the server tick loop.
+	consoleInit(NULL);
 	return R_SUCCEEDED(socketInitializeDefault());
 #elif defined(__3DS__)
 	socBuffer = static_cast<u32*>(memalign(SOC_ALIGNMENT, SOC_BUFFER_SIZE));
@@ -45,12 +50,19 @@ bool Init() {
 void Shutdown() {
 #if defined(__SWITCH__)
 	socketExit();
+	consoleExit(NULL);
 #elif defined(__3DS__)
 	socExit();
 	if (socBuffer) {
 		free(socBuffer);
 		socBuffer = nullptr;
 	}
+#endif
+}
+
+void UpdateUI() {
+#if defined(__SWITCH__)
+	consoleUpdate(NULL);
 #endif
 }
 
