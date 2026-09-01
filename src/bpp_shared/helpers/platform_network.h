@@ -33,4 +33,7 @@ void Shutdown();
 // don't need this.
 bool PumpEvents();
 
+
+void UpdateUI();
+
 } // namespace PlatformNetwork

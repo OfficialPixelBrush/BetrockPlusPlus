@@ -471,6 +471,11 @@ void Server::Run() {
 		Tick();
 		auto tickEnd = Clock::now();
 
+		// Nintendo Switch/libnx does not present stdio output immediately;
+		// flush the console after each tick so the server UI remains visible
+		// while the main loop continues to run. No-op on desktop platforms.
+		PlatformNetwork::UpdateUI();
+
 		// Sample and print average Tick data
 		avgTotalTickDuration += (tickEnd - tickStart);
 		++avgTickCount;

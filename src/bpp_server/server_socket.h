@@ -84,8 +84,13 @@ inline int CreateClientSocket(int _socket = -1) {
 	if (clientSocket < 0)
 		return -1;
 	fcntl(clientSocket, F_SETFL, O_NONBLOCK);
+#ifdef SO_RCVTIMEO
+	// Not defined by libctru's socket headers on the 3DS. Harmless to skip:
+	// the socket above is already non-blocking, so a blocking-recv timeout
+	// wouldn't apply to it anyway; this is a best-effort nicety elsewhere.
 	struct timeval recvTimeout{ 0, 45000 };
 	setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
+#endif
 	int nodelay = 1;
 	setsockopt(clientSocket, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
 #endif
