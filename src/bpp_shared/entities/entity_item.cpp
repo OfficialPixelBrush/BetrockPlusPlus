@@ -104,11 +104,10 @@ void ItemEntity::Tick() {
 		int bx = MathHelper::FloorDouble(position.x);
 		int by = MathHelper::FloorDouble(collider.minY) - 1;
 		int bz = MathHelper::FloorDouble(position.z);
-		int blockId = world->GetBlockId({ bx, by, bz });
-		belowBlock = Blocks::blockProperties[blockId];
+		belowBlockType = world->GetBlockId({ bx, by, bz });
 
-		if (blockId > 0)
-			horizontalDrag = belowBlock.slipperiness * 0.98f;
+		if (belowBlockType > BLOCK_AIR)
+			horizontalDrag = Blocks::blockProperties[belowBlockType].slipperiness * 0.98f;
 	}
 
 	velocity.x *= double(horizontalDrag);
