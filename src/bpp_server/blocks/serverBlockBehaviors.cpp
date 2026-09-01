@@ -5,13 +5,13 @@
  *
 */
 #include "serverBlockBehaviors.h"
+#include "../../bpp_shared/helpers/direction_fixer.h"
 #include "blocks.h"
 #include "inventory/interactions/chest.h"
 #include "inventory/interactions/crafting_table.h"
 #include "inventory/interactions/furnace.h"
 #include "inventory/interactions/large_chest.h"
 #include "tile_entities/tile_entity.h"
-#include "../../bpp_shared/helpers/direction_fixer.h"
 
 namespace ServerBlock {
 BlockBehavior blockBehaviors[BLOCK_MAX] = {};
@@ -141,7 +141,7 @@ void ServerBlock::Initialize() {
 		return false;
 	};
 	blockBehaviors[BLOCK_BED].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
-	                                                    Runtime& _gameRuntime) -> bool {
+	                                                Runtime& _gameRuntime) -> bool {
 		if (!_world.InBounds(_position.y))
 			return false;
 		// Already sleeping? Don't let the client re-trigger the interaction.

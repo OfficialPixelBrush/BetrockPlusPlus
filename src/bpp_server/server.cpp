@@ -14,6 +14,7 @@
 #include "packet/packet_utils.h"
 #include "trackers/inventory_tracker.h"
 #include "world.h"
+#include <cstdio>
 #include <future>
 #include <string>
 #include <thread>
@@ -444,7 +445,15 @@ void Server::Startup() {
 }
 
 void Server::Run() {
+#if defined(__SWITCH__)
+	printf("[switch] Server::Run entered\n");
+	PlatformNetwork::UpdateUI();
+#endif
 	Startup();
+#if defined(__SWITCH__)
+	printf("[switch] Server::Startup returned\n");
+	PlatformNetwork::UpdateUI();
+#endif
 
 	static constexpr auto TICK_DURATION = std::chrono::nanoseconds(std::chrono::seconds{ 1 }) / TICKS_PER_SECOND;
 
