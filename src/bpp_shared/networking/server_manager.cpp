@@ -9,6 +9,7 @@
 #include "logger.h"
 #include "networking/network_stream.h"
 #include <cerrno>
+#include <arpa/inet.h>
 
 ServerManager::ServerManager(uint16_t _port) {
 	// Only bind new socket if it doesn't exist already

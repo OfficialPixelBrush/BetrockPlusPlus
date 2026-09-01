@@ -7,7 +7,7 @@
 */
 #pragma once
 #include <functional>
-#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__) || defined(__SWITCH__) || defined(__3DS__)
 #define INVALID_SOCKET -1
 #include <netinet/in.h>
 #include <sys/ioctl.h>

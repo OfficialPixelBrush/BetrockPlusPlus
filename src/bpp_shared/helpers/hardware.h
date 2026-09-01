@@ -32,68 +32,11 @@ static constexpr double BytesPerUnit(MemoryUnit unit) noexcept {
 	return 1.0;
 }
 
-#if defined(_WIN32)
-
-// The K32* functions are only declared when _WIN32_WINNT targets Vista (0x0600) or later.
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
-#endif
-#ifndef WINVER
-#define WINVER 0x0600
-#endif
-#define PSAPI_VERSION 2
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <psapi.h>
-
-static double GetMemoryUsage(MemoryUnit _unit) {
-	PROCESS_MEMORY_COUNTERS pmc{};
-	pmc.cb = sizeof(pmc);
-
-	if (!GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
-		return 0.0;
-
-	// WorkingSetSize is the closest Windows analogue to Linux RSS.
-	return static_cast<double>(pmc.WorkingSetSize) / BytesPerUnit(_unit);
-}
-
-#else // Linux / POSIX
-
-#include <fstream>
-#include <ios>
-#include <string>
-#include <unistd.h>
-
-static double GetMemoryUsage(MemoryUnit _unit) {
-	double rssUsage = 0.0;
-
-	std::ifstream statStream("/proc/self/stat", std::ios_base::in);
-	if (!statStream)
-		return 0.0;
-
-	// dummy vars for leading entries in stat that we don't care about
-	//
-	std::string pid, comm, state, ppid, pgrp, session, ttyNr;
-	std::string tpgid, flags, minflt, cminflt, majflt, cmajflt;
-	std::string utime, stime, cutime, cstime, priority, nice;
-	std::string o, itrealvalue, starttime;
-
-	// the two fields we want
-	//
-	unsigned long vsize;
-	long rss;
-
-	statStream >> pid >> comm >> state >> ppid >> pgrp >> session >> ttyNr >> tpgid >> flags >> minflt >> cminflt >>
-	    majflt >> cmajflt >> utime >> stime >> cutime >> cstime >> priority >> nice >> o >> itrealvalue >> starttime >>
-	    vsize >> rss; // don't care about the rest
-
-	statStream.close();
-
-	long pageSizeBytes = sysconf(_SC_PAGE_SIZE);
-
-	//vmUsage = static_cast<double>(vsize) / BytesPerUnit(_unit);
-	rssUsage = static_cast<double>(rss * pageSizeBytes) / BytesPerUnit(_unit);
-	return rssUsage;
-}
-
-#endif
+// Returns how much memory the current process is using (RSS, or the closest
+// equivalent the platform exposes), in the requested unit. Implemented per
+// platform in hardware.cpp rather than inline here: on Nintendo
+// Switch/3DS the implementation needs <switch.h>/<3ds.h>, and both define
+// names (e.g. libnx's C-style `Event` typedef) that collide with unrelated
+// types elsewhere in this codebase, so pulling those headers into every
+// translation unit that merely wants this declaration is unsafe.
+double GetMemoryUsage(MemoryUnit _unit);

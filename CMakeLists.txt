@@ -22,6 +22,51 @@ endif()
 
 project(Betrock++ VERSION 0.0.1)
 
+# Detect Nintendo Switch (libnx) / Nintendo 3DS (libctru) homebrew targets by
+# asking the compiler directly whether it predefines __SWITCH__ / __3DS__.
+# This is more robust than matching CMAKE_SYSTEM_NAME, since that string is
+# defined by whichever devkitPro CMake toolchain file happens to be in use
+# and isn't guaranteed to be stable across versions.
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("#ifndef __SWITCH__\n#error not switch\n#endif\nint main(){return 0;}" BPP_TARGET_SWITCH)
+check_cxx_source_compiles("#ifndef __3DS__\n#error not 3ds\n#endif\nint main(){return 0;}" BPP_TARGET_3DS)
+if(BPP_TARGET_SWITCH OR BPP_TARGET_3DS)
+    set(BPP_TARGET_HOMEBREW TRUE)
+    if(BPP_TARGET_SWITCH)
+        message(STATUS "Detected devkitPro/libnx toolchain: building for Nintendo Switch")
+    else()
+        message(STATUS "Detected devkitPro/libctru toolchain: building for Nintendo 3DS")
+    endif()
+
+    # The client needs SDL3/OpenGL, neither of which is portable to these
+    # homebrew targets today. Only the server is currently supported.
+    if(NOT BUILD_SERVER)
+        message(WARNING "The client is not currently portable to Nintendo Switch/3DS (needs SDL3/OpenGL); forcing BUILD_SERVER=ON.")
+        set(BUILD_SERVER ON CACHE BOOL "Build as server" FORCE)
+    endif()
+
+    # These optional features pull in libcurl / OpenSSL / D++ via vcpkg,
+    # which has no Switch/3DS triplet, and CrashCatch uses fork()/waitpid(),
+    # which don't exist on either platform. Disable them by default; they can
+    # still be force-re-enabled, but nothing guarantees they'll build.
+    if(ONLINE_MODE_AUTHENTICATION)
+        message(WARNING "ONLINE_MODE_AUTHENTICATION requires libcurl via vcpkg, which has no Switch/3DS triplet; disabling by default.")
+        set(ONLINE_MODE_AUTHENTICATION OFF CACHE BOOL "" FORCE)
+    endif()
+    if(BETACRAFT_HEARTBEAT)
+        message(WARNING "BETACRAFT_HEARTBEAT requires libcurl via vcpkg, which has no Switch/3DS triplet; disabling by default.")
+        set(BETACRAFT_HEARTBEAT OFF CACHE BOOL "" FORCE)
+    endif()
+    if(DISCORD_INTEGRATION)
+        message(WARNING "DISCORD_INTEGRATION requires D++ via vcpkg, which has no Switch/3DS triplet; disabling by default.")
+        set(DISCORD_INTEGRATION OFF CACHE BOOL "" FORCE)
+    endif()
+    if(CRASH_LOGGING)
+        message(WARNING "CRASH_LOGGING (CrashCatch) uses fork()/waitpid(), unavailable on Switch/3DS; disabling by default.")
+        set(CRASH_LOGGING OFF CACHE BOOL "" FORCE)
+    endif()
+endif()
+
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
     message(STATUS "No build type specified, defaulting to RelWithDebInfo")
@@ -185,8 +230,10 @@ set(SHARED_SOURCES
     src/bpp_shared/config/list_parser.cpp
 
     # Utilities
+    src/bpp_shared/helpers/hardware.cpp
     src/bpp_utilities/utilities.cpp
     src/bpp_shared/helpers/explosion.cpp
+    src/bpp_shared/helpers/platform_network.cpp
 )
 
 # Server-specific source code
@@ -479,6 +526,37 @@ target_compile_options(BetrockPlusPlus PRIVATE
         /analyze
     >
 )
+
+# Automatically package the loadable homebrew binary as part of the normal
+# build, mirroring what `elf2nro`/`3dsxtool` would otherwise be run by hand.
+# Falls back to a warning (rather than failing) if the packaging tools aren't
+# on PATH, since CMAKE_FIND_ROOT_PATH_MODE_PROGRAM is often set to NEVER by
+# the devkitPro toolchain files.
+if(BPP_TARGET_SWITCH)
+    find_program(BPP_ELF2NRO_EXE elf2nro PATHS "$ENV{DEVKITPRO}/tools/bin" NO_CMAKE_FIND_ROOT_PATH)
+    find_program(BPP_NACPTOOL_EXE nacptool PATHS "$ENV{DEVKITPRO}/tools/bin" NO_CMAKE_FIND_ROOT_PATH)
+    if(BPP_ELF2NRO_EXE AND BPP_NACPTOOL_EXE)
+        add_custom_command(TARGET BetrockPlusPlus POST_BUILD
+            COMMAND ${BPP_NACPTOOL_EXE} --create "BetrockPlusPlus" "OfficialPixelBrush" "${PROJECT_VERSION}" "${CMAKE_BINARY_DIR}/BetrockPlusPlus.nacp"
+            COMMAND ${BPP_ELF2NRO_EXE} "$<TARGET_FILE:BetrockPlusPlus>" "${CMAKE_BINARY_DIR}/BetrockPlusPlus.nro" --nacp=${CMAKE_BINARY_DIR}/BetrockPlusPlus.nacp
+            COMMENT "Packaging BetrockPlusPlus.nro"
+            VERBATIM
+        )
+    else()
+        message(WARNING "elf2nro/nacptool not found; you'll need to package the .nro by hand. See PORTING_3DS_SWITCH.md")
+    endif()
+elseif(BPP_TARGET_3DS)
+    find_program(BPP_3DSXTOOL_EXE 3dsxtool PATHS "$ENV{DEVKITPRO}/tools/bin" NO_CMAKE_FIND_ROOT_PATH)
+    if(BPP_3DSXTOOL_EXE)
+        add_custom_command(TARGET BetrockPlusPlus POST_BUILD
+            COMMAND ${BPP_3DSXTOOL_EXE} "$<TARGET_FILE:BetrockPlusPlus>" "${CMAKE_BINARY_DIR}/BetrockPlusPlus.3dsx"
+            COMMENT "Packaging BetrockPlusPlus.3dsx"
+            VERBATIM
+        )
+    else()
+        message(WARNING "3dsxtool not found; you'll need to package the .3dsx by hand. See PORTING_3DS_SWITCH.md")
+    endif()
+endif()
 
 # Ensure all files have copyright notice
 file(GLOB_RECURSE SOURCE_FILES
