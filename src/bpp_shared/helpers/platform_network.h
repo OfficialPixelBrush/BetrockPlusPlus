@@ -16,6 +16,10 @@
 //   - libctru: socInit() / socExit() / aptMainLoop()
 namespace PlatformNetwork {
 
+// Initializes the platform console/UI before any potentially blocking startup work.
+// On Switch this must happen before server startup so early output is visible.
+void InitUI();
+
 // Brings up the platform's BSD-socket layer, if the platform needs it.
 // Must be called once before the server starts listening. Returns false if
 // initialization failed (e.g. the SOC service could not be started).
@@ -32,8 +36,6 @@ void Shutdown();
 // the same as a shutdown request. Always returns true on platforms that
 // don't need this.
 bool PumpEvents();
-
-
 void UpdateUI();
 
 } // namespace PlatformNetwork

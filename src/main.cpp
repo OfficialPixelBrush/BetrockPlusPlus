@@ -15,6 +15,7 @@
 #include "version.h"
 #include <atomic>
 #include <csignal>
+#include <cstdio>
 #include <fstream>
 #include <numeric_structs.h>
 #include <sstream>
@@ -206,6 +207,14 @@ void InitCrashHandler(std::string _platformString) {
 #endif
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
+	// Bring up the Switch framebuffer before doing anything that can fail or
+	// block. This makes early-startup failures visible even if Startup() never
+	// reaches the normal tick loop.
+	PlatformNetwork::InitUI();
+#if defined(__SWITCH__)
+	printf("[switch] main entered\n");
+	PlatformNetwork::UpdateUI();
+#endif
 	std::string platformString = std::format("{} ({}, {})", PLATFORM_NAME, BUILD_MODE, ARCH_NAME);
 #ifdef CRASH_LOGGING
 	InitCrashHandler(platformString);
@@ -220,6 +229,10 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 	// Bring up the console's socket service (no-op on desktop platforms).
 	if (!PlatformNetwork::Init())
 		GlobalLogger().warn << "Platform network initialization failed; server sockets may not work.\n";
+#if defined(__SWITCH__)
+	printf("[switch] socket service initialized\n");
+	PlatformNetwork::UpdateUI();
+#endif
 	// Parse CLI Args
 	Args args{ { argc, argv } };
 	// Init the sine table
@@ -245,9 +258,17 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 	// std::string path = "";
 	// Utilities::convertBetrockServerLevel(/*path=*/path);
 	Server serv;
+#if defined(__SWITCH__)
+	printf("[switch] Server constructed\n");
+	PlatformNetwork::UpdateUI();
+#endif
 	if (args.enableWhitelist)
 		serv.SetWhitelistEnabled(true, false);
 	server = &serv;
+#if defined(__SWITCH__)
+	printf("[switch] entering Server::Run\n");
+	PlatformNetwork::UpdateUI();
+#endif
 	server->Run();
 #if defined(ONLINE_MODE_AUTHENTICATION) || defined(BETACRAFT_HEARTBEAT)
 	CurlRuntimeCleanup();

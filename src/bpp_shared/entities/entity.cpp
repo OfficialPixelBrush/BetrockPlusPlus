@@ -343,8 +343,8 @@ void Entity::Move(Vec3& _velocity) {
 		original.z = _velocity.z;
 	}
 
-	auto sweptCollider =
-	    world->GetCollidingBoundingBoxes(collider.AddCoord(_velocity.x, _velocity.y, _velocity.z), this);
+	auto sweptCollider = world->GetCollidingBoundingBoxes(collider.AddCoord(_velocity.x, _velocity.y, _velocity.z),
+	                                                      this);
 
 	// Resolve Y first
 	for (auto& col : sweptCollider) {

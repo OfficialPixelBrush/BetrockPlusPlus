@@ -5,7 +5,6 @@
  *
 */
 #include "platform_network.h"
-#include <cstddef>
 
 #if defined(__SWITCH__)
 #include <switch.h>
@@ -25,12 +24,15 @@ u32* socBuffer = nullptr;
 
 namespace PlatformNetwork {
 
+void InitUI() {
+#if defined(__SWITCH__)
+	consoleInit(NULL);
+	consoleUpdate(NULL);
+#endif
+}
+
 bool Init() {
 #if defined(__SWITCH__)
-	// libnx console output is rendered to the framebuffer only when the
-	// console is explicitly initialized and updated. Keep this on the main
-	// thread alongside the server tick loop.
-	consoleInit(NULL);
 	return R_SUCCEEDED(socketInitializeDefault());
 #elif defined(__3DS__)
 	socBuffer = static_cast<u32*>(memalign(SOC_ALIGNMENT, SOC_BUFFER_SIZE));
@@ -60,12 +62,6 @@ void Shutdown() {
 #endif
 }
 
-void UpdateUI() {
-#if defined(__SWITCH__)
-	consoleUpdate(NULL);
-#endif
-}
-
 bool PumpEvents() {
 #if defined(__SWITCH__)
 	return appletMainLoop();
@@ -73,6 +69,12 @@ bool PumpEvents() {
 	return aptMainLoop();
 #else
 	return true;
+#endif
+}
+
+void UpdateUI() {
+#if defined(__SWITCH__)
+	consoleUpdate(NULL);
 #endif
 }
 

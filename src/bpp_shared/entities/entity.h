@@ -119,8 +119,8 @@ struct Entity {
 	//bool sneaking = false;
 
 	// Fire
-	int fireTicks = 0;           // Ticks remaining on fire; 0 = not on fire
-	int fireResistance = 1;      // Ticks of immunity after catching fire
+	int fireTicks = 0;      // Ticks remaining on fire; 0 = not on fire
+	int fireResistance = 1; // Ticks of immunity after catching fire
 
 	// Combat
 	int hurtResistantTime = 0;  // Invincibility frames after being hit
@@ -161,7 +161,7 @@ struct Entity {
 	bool beenAttacked : 1 = false;
 	bool inFire : 1 = false;         // Currently touching a fire/lava block
 	bool isImmuneToFire : 1 = false; // Total fire immunity
-	
+
 	// Spawning
 	bool preventEntitySpawning : 1 = false;
 	bool isFirstUpdate : 1 = true; // True only on the very first Tick
