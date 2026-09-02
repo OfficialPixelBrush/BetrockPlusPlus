@@ -129,11 +129,8 @@ private:
 	std::vector<LightRegion> lightQueue;
 	std::vector<UnlightUpdate> unlightQueue;
 	int processingDepth = 0;
-
-	// Persistent cache for unlightAt
-	ChunkCache unlightCache;
 };
 
 namespace Lighting {
-	extern const float BrightnessArray[16];
+extern const float BrightnessArray[16];
 } // namespace Lighting

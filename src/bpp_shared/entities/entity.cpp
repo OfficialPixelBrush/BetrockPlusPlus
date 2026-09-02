@@ -13,6 +13,21 @@
 #include <algorithm>
 #include <cmath>
 
+void Entity::OnMountEntity() {
+	// stub
+	return;
+}
+
+void Entity::OnDismountEntity() {
+	// stub
+	return;
+}
+
+void Entity::OnPlayerInteract(PlayerEntity* _entity) {
+	// stub
+	return;
+}
+
 void Entity::DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data, int _pickupTime) {
 	Vec3 itemPos = position;
 	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(itemPos);
@@ -108,15 +123,7 @@ float Entity::GetEntityBrightnessValue() {
 	return this->entityBrightness;
 }
 
-void Entity::Tick() {
-	ticksExisted++;
-
-	if (this->vehicle.expired())
-		this->vehicle.reset();
-
-	if (this->passenger.expired())
-		this->passenger.reset();
-
+void Entity::UpdateEntityPhysicsState() {
 	// Returns if we are in water and applies a push to our entity
 	if (world->HandleFluidAcceleration(GetFluidCollider(), Material::Water(), *this)) {
 		fallDistance = 0.0;
@@ -162,6 +169,101 @@ void Entity::Tick() {
 
 	isFirstUpdate = false;
 	UpdateMetadata(flags.isBurning, fireTicks > 0);
+}
+
+void Entity::MountEntity(std::shared_ptr<Entity> _entity) {
+	if (!entityManager) {
+		GlobalLogger().warn << "Tried to mount an entity before being initialized!\n";
+		return;
+	}
+	auto entityPtr = _entity.get();
+	if (entityPtr && entityPtr != this->vehicle.lock().get()) {
+		UnmountEntity();
+		if (auto oldPassenger = _entity->passenger.lock())
+			oldPassenger->vehicle.reset();
+
+		_entity->passenger = entityManager->GetEntityByIdShared(this->id);
+		this->vehicle = _entity;
+
+		this->passengerLookDelta = { 0.0f, 0.0f };
+		this->lastVehicleRotation = { _entity->rotationYaw, _entity->rotationPitch };
+		this->OnMountEntity();
+		return;
+	}
+	UnmountEntity();
+}
+
+void Entity::UnmountEntity() {
+	auto lockVehicle = vehicle.lock();
+	if (lockVehicle) {
+		lockVehicle->passenger.reset();
+		Vec3 unmountPos = lockVehicle->position;
+		unmountPos.y = lockVehicle->collider.minY + lockVehicle->height;
+		this->Teleport(unmountPos, { this->rotationYaw, this->rotationPitch });
+	}
+	this->vehicle.reset();
+	this->OnDismountEntity();
+}
+
+void Entity::TickPassengerEntity() {
+	auto lockVehicle = this->vehicle.lock();
+	if (!lockVehicle || lockVehicle->isDead) {
+		this->vehicle.reset();
+		return;
+	}
+
+	this->velocity = {};
+	this->UpdateEntityPhysicsState();
+
+	Vec3 seatOffset = lockVehicle->GetRiderSeatOffset();
+	Vec3 newPos = { lockVehicle->position.x + seatOffset.x,
+		            lockVehicle->position.y + lockVehicle->GetMountOffset() + this->yOffset,
+		            lockVehicle->position.z + seatOffset.z };
+
+	// Look direction smoothing
+	passengerLookDelta.x += lockVehicle->rotationYaw - lastVehicleRotation.x;
+	passengerLookDelta.y += lockVehicle->rotationPitch - lastVehicleRotation.y;
+	lastVehicleRotation = { lockVehicle->rotationYaw, lockVehicle->rotationPitch };
+
+	// Wrap into -180, 180
+	while (passengerLookDelta.x >= 180.0f)
+		passengerLookDelta.x -= 360.0f;
+	while (passengerLookDelta.x < -180.0f)
+		passengerLookDelta.x += 360.0f;
+	while (passengerLookDelta.y >= 180.0f)
+		passengerLookDelta.y -= 360.0f;
+	while (passengerLookDelta.y < -180.0f)
+		passengerLookDelta.y += 360.0f;
+
+	constexpr float MAX_LOOK_STEP_PER_TICK = 10.0f;
+	float yawStep = std::clamp(passengerLookDelta.x * 0.5f, -MAX_LOOK_STEP_PER_TICK, MAX_LOOK_STEP_PER_TICK);
+	float pitchStep = std::clamp(passengerLookDelta.y * 0.5f, -MAX_LOOK_STEP_PER_TICK, MAX_LOOK_STEP_PER_TICK);
+
+	passengerLookDelta.x -= yawStep;
+	passengerLookDelta.y -= pitchStep;
+	rotationYaw += yawStep;
+	rotationPitch += pitchStep;
+
+	this->Teleport(newPos, { rotationYaw, rotationPitch });
+}
+
+void Entity::Tick() {
+	ticksExisted++;
+
+	if (this->vehicle.expired())
+		this->vehicle.reset();
+
+	if (this->passenger.expired())
+		this->passenger.reset();
+
+	// Are we riding something?
+	auto lockVehicle = this->vehicle.lock();
+	if (lockVehicle) {
+		this->TickPassengerEntity();
+		return;
+	}
+
+	UpdateEntityPhysicsState();
 }
 
 void Entity::ApplyKnockback(Vec3 _direction) {
@@ -215,7 +317,7 @@ void Entity::Move(Vec3& _velocity) {
 		const double step = 0.05;
 
 		auto groundBelow = [&](double _dx, double _dz) -> bool {
-			return !world->GetCollidingBoundingBoxes(collider.Offset(_dx, -1.0, _dz)).empty();
+			return !world->GetCollidingBoundingBoxes(collider.Offset(_dx, -1.0, _dz), this).empty();
 		};
 
 		// Clamp on the X and Z axes to avoid falling off edges while sneaking
@@ -241,7 +343,8 @@ void Entity::Move(Vec3& _velocity) {
 		original.z = _velocity.z;
 	}
 
-	auto sweptCollider = world->GetCollidingBoundingBoxes(collider.AddCoord(_velocity.x, _velocity.y, _velocity.z));
+	auto sweptCollider =
+	    world->GetCollidingBoundingBoxes(collider.AddCoord(_velocity.x, _velocity.y, _velocity.z), this);
 
 	// Resolve Y first
 	for (auto& col : sweptCollider) {
@@ -274,7 +377,7 @@ void Entity::Move(Vec3& _velocity) {
 		collider = originalCollider;
 
 		auto stepUpSweptCollider = world->GetCollidingBoundingBoxes(
-		    collider.AddCoord(_velocity.x, _velocity.y, _velocity.z));
+		    collider.AddCoord(_velocity.x, _velocity.y, _velocity.z), this);
 
 		// Resolve Y first
 		for (auto& col : stepUpSweptCollider) {
@@ -497,11 +600,10 @@ std::optional<Tag> Entity::SerializeToNbt() {
 }
 
 void Entity::EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {
-	_metadata.push_back({
-		.type = PacketData::EntityMetadata::BYTE,
-		.index = 0,
-		.value = int8_t(int8_t(flags.isBurning) | int8_t(flags.isSneaking) << 1 | int8_t(flags.isRiding) << 2)
-	});
+	_metadata.push_back(
+	    { .type = PacketData::EntityMetadata::BYTE,
+	      .index = 0,
+	      .value = int8_t(int8_t(flags.isBurning) | int8_t(flags.isSneaking) << 1 | int8_t(flags.isRiding) << 2) });
 }
 
 bool Entity::DecodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {
@@ -510,9 +612,9 @@ bool Entity::DecodeMetadata(const std::vector<PacketData::EntityMetadata::DataEn
 		return false;
 	// TODO: Simplify this
 	if (auto* raw = FindMetadata<int8_t>(_metadata, PacketData::EntityMetadata::BYTE, 0)) {
-		flags.isBurning		= (*raw & 0x1) != 0;
-		flags.isSneaking	= (*raw & 0x2) != 0;
-		flags.isRiding		= (*raw & 0x4) != 0;
+		flags.isBurning = (*raw & 0x1) != 0;
+		flags.isSneaking = (*raw & 0x2) != 0;
+		flags.isRiding = (*raw & 0x4) != 0;
 		return true;
 	}
 	return false;

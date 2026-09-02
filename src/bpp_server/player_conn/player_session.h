@@ -19,6 +19,7 @@
 #include "world/world.h"
 #include <chrono>
 #include <cstdint>
+#include <future>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -26,6 +27,7 @@
 enum class ConnectionState : uint8_t {
 	Handshaking,
 	LoggingIn,
+	VerifyingUsername, // Online-mode auth check is in flight on a worker thread
 	WaitingForSpawnChunks,
 	Playing
 };
@@ -57,6 +59,7 @@ struct PlayerSession {
 
 	// rotation.x = yaw, rotation.y = pitch
 	Float2 rotation = { 0.0f, 0.0f };
+	Int3 spawnPosition;
 
 	std::unordered_set<Int32_2> sentChunks;
 	std::unordered_set<Int32_2> flushedChunks; // Actually written to stream
@@ -73,6 +76,10 @@ struct PlayerSession {
 	ConnectionState connState = ConnectionState::Handshaking;
 	std::string username;
 	std::chrono::steady_clock::time_point lastPacketTime = std::chrono::steady_clock::now();
+
+	std::string serverId;
+	std::future<bool> pendingAuthFuture;
+	std::chrono::steady_clock::time_point authStartTime;
 
 	// Inventory
 	InventoryPlayer inventory;
@@ -179,7 +186,7 @@ struct PlayerSession {
 		Tag sleepingTag;
 		sleepingTag.type = TAG_BYTE;
 		sleepingTag.name = "Sleeping";
-		sleepingTag.byteValue = 0;
+		sleepingTag.byteValue = entity->isSleeping;
 		Tag posTag;
 		posTag.type = TAG_LIST;
 		posTag.name = "Pos";

@@ -11,6 +11,7 @@
 #include "constants.h"
 #include "enums/biomes.h"
 #include "helpers/cross_platform.h"
+#include "helpers/packed_array.h"
 #include "nbt/nbt.h"
 #include "tile_entities/tile_entity.h"
 #include <atomic>
@@ -41,14 +42,14 @@ struct Chunk {
 	uint8_t nibbleBlockMeta[META_VOLUME] = { 0 };
 
 	std::atomic<ChunkState> state{ ChunkState::Unloaded };
-	uint8_t heightMap[CHUNK_WIDTH * CHUNK_WIDTH] = {};
-	float temperature[CHUNK_WIDTH * CHUNK_WIDTH] = {};
-	float humidity[CHUNK_WIDTH * CHUNK_WIDTH] = {};
-	Biome biomes[CHUNK_WIDTH * CHUNK_WIDTH] = {};
+	uint8_t heightMap[CHUNK_AREA] = {};
+	float temperature[CHUNK_AREA] = {};
+	float humidity[CHUNK_AREA] = {};
+	PackedArray<CHUNK_AREA, 4> biomes;
 
-	bool isTerrainPopulated = false;
-	bool isModified = false;
-	bool spawnChunk = false;
+	bool isTerrainPopulated : 1 = false;
+	bool isModified : 1 = false;
+	bool spawnChunk : 1 = false;
 
 	// Tile entities
 	std::vector<std::shared_ptr<TileEntity>> tileEntities;

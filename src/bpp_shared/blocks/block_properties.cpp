@@ -118,6 +118,11 @@ bool CanSugarcaneSurviveAt(WorldAccess& _world, Int3 _pos) {
 	return false;
 }
 
+bool CanCropsSurviveAt(WorldAccess& _world, Int3 _pos) {
+	auto belowBlock = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
+	return belowBlock == BLOCK_FARMLAND;
+}
+
 bool CanGenericPlantSurviveAt(WorldAccess& _world, Int3 _pos) {
 	auto lightLevel = _world.GetBlockLightRaw(_pos);
 	bool canSeeSky = _world.CanBlockSeeSky(_pos);
@@ -133,7 +138,7 @@ bool CanMushroomSurviveAt(WorldAccess& _world, Int3 _pos) {
 	return lightLevel <= 13 && canGrowOnBlock;
 }
 
-bool CanCactusSurviveAt(WorldManager& _world, Int3 _pos) {
+bool CanCactusSurviveAt(WorldAccess& _world, Int3 _pos) {
 	bool adjacentBlocksClear = true;
 	int d[4] = { -1, 1, 0, 0 };
 	for (int i = 0; i < 4; i++) {
@@ -149,14 +154,23 @@ bool CanCactusSurviveAt(WorldManager& _world, Int3 _pos) {
 	return canGrowOnBlock && adjacentBlocksClear;
 }
 
-bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, PacketData::FaceDirection _face) {
-	if (_face == PacketData::FaceDirection::Y_MINUS)
+/**
+ * @brief Says if a torch can attach to the block its placed on
+ * 
+ * @param _world Active world
+ * @param _pos The position of the torch
+ * @param _face The direction the torch is pointing out towards
+ * @return true The torch can be placed
+ * @return false The torch cannot be placed
+ */
+bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, Direction::Value _face) {
+	// Torches cannot be placed on the ceiling
+	if (_face == Direction::Value::Down)
 		return false;
-
-	Int3 support = GetAdjacentBlockPos(_pos, OppositeFace(_face));
-
+	// Get supporting block
+	Int3 support = _pos.WithOffset(Direction::Opposite(_face));
 	return _world.IsBlockNormalCube(support) ||
-	       (_face == PacketData::FaceDirection::Y_PLUS && _world.GetBlockId(support) == BLOCK_FENCE);
+	       (_face == Direction::Value::Up && _world.GetBlockId(support) == BLOCK_FENCE);
 }
 
 // Some fluid specific stuff
@@ -171,9 +185,9 @@ void RegisterBlockProperties() {
 	// Air
 	blockProperties[BlockType::BLOCK_AIR] = {
 		.material = Material::Air(),
-		.lightOpacity = 0,
 		.hardness = 0.0f,
 		.resistance = 0.0f,
+		.lightOpacity = 0,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -185,53 +199,53 @@ void RegisterBlockProperties() {
 	// Stone
 	blockProperties[BlockType::BLOCK_STONE] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 1.5f,
 		.resistance = 10.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Grass
 	blockProperties[BlockType::BLOCK_GRASS] = {
 		.material = Material::Grass(),
-		.stepSound = StepSound::Grass,
-		.lightOpacity = 255,
 		.hardness = 0.6f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Grass,
 		.ticksOnLoad = true,
 	};
 
 	// Dirt
 	blockProperties[BlockType::BLOCK_DIRT] = {
 		.material = Material::Ground(),
-		.stepSound = StepSound::Gravel,
-		.lightOpacity = 255,
 		.hardness = 0.5f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Gravel,
 	};
 
 	// Cobblestone
 	blockProperties[BlockType::BLOCK_COBBLESTONE] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 2.0f,
 		.resistance = 10.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Planks (Oak Wood)
 	blockProperties[BlockType::BLOCK_PLANKS] = {
 		.material = Material::Wood(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 255,
 		.hardness = 2.0f,
 		.resistance = 5.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Wood,
 	};
 
 	// Sapling
 	blockProperties[BlockType::BLOCK_SAPLING] = {
 		.material = Material::Plants(),
-		.stepSound = StepSound::Grass,
-		.lightOpacity = 0,
 		.hardness = 0.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Grass,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -242,17 +256,17 @@ void RegisterBlockProperties() {
 	// Bedrock
 	blockProperties[BlockType::BLOCK_BEDROCK] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
 		.hardness = -1.0f, // unbreakable
 		.resistance = 6000000.0f,
+		.stepSound = StepSound::Stone,
 		.enableStats = false,
 	};
 
 	// Water (flowing)
 	blockProperties[BlockType::BLOCK_WATER_FLOWING] = {
 		.material = Material::Water(),
-		.lightOpacity = 3,
 		.hardness = 100.0f,
+		.lightOpacity = 3,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -262,8 +276,8 @@ void RegisterBlockProperties() {
 	// Water (still/stationary)
 	blockProperties[BlockType::BLOCK_WATER_STILL] = {
 		.material = Material::Water(),
-		.lightOpacity = 3,
 		.hardness = 100.0f,
+		.lightOpacity = 3,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -273,9 +287,9 @@ void RegisterBlockProperties() {
 	// Lava (flowing)
 	blockProperties[BlockType::BLOCK_LAVA_FLOWING] = {
 		.material = Material::Lava(),
+		.hardness = 0.0f,
 		.lightEmission = 15, // setLightValue(1.0f) -> 15*1.0 = 15
 		.lightOpacity = 255,
-		.hardness = 0.0f,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -285,9 +299,9 @@ void RegisterBlockProperties() {
 	// Lava (still/stationary)
 	blockProperties[BlockType::BLOCK_LAVA_STILL] = {
 		.material = Material::Lava(),
+		.hardness = 100.0f,
 		.lightEmission = 15,
 		.lightOpacity = 255,
-		.hardness = 100.0f,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -297,60 +311,60 @@ void RegisterBlockProperties() {
 	// Sand
 	blockProperties[BlockType::BLOCK_SAND] = {
 		.material = Material::Sand(),
-		.stepSound = StepSound::Sand,
-		.lightOpacity = 255,
 		.hardness = 0.5f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Sand,
 	};
 
 	// Gravel
 	blockProperties[BlockType::BLOCK_GRAVEL] = {
 		.material = Material::Sand(),
-		.stepSound = StepSound::Gravel,
-		.lightOpacity = 255,
 		.hardness = 0.6f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Gravel,
 	};
 
 	// Gold Ore
 	blockProperties[BlockType::BLOCK_ORE_GOLD] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 3.0f,
 		.resistance = 5.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Iron Ore
 	blockProperties[BlockType::BLOCK_ORE_IRON] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 3.0f,
 		.resistance = 5.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Coal Ore
 	blockProperties[BlockType::BLOCK_ORE_COAL] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 3.0f,
 		.resistance = 5.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Wood Log
 	blockProperties[BlockType::BLOCK_LOG] = {
 		.material = Material::Wood(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 255,
 		.hardness = 2.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Wood,
 	};
 
 	// Leaves
 	blockProperties[BlockType::BLOCK_LEAVES] = {
 		.material = Material::Leaves(),
-		.stepSound = StepSound::Grass,
-		.lightOpacity = 1,
 		.hardness = 0.2f,
+		.lightOpacity = 1,
+		.stepSound = StepSound::Grass,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.ticksOnLoad = true,
@@ -360,17 +374,17 @@ void RegisterBlockProperties() {
 	// Sponge
 	blockProperties[BlockType::BLOCK_SPONGE] = {
 		.material = Material::Sponge(),
-		.stepSound = StepSound::Grass,
-		.lightOpacity = 255,
 		.hardness = 0.6f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Grass,
 	};
 
 	// Glass
 	blockProperties[BlockType::BLOCK_GLASS] = {
 		.material = Material::Glass(),
-		.stepSound = StepSound::Glass,
-		.lightOpacity = 0,
 		.hardness = 0.3f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Glass,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -379,51 +393,51 @@ void RegisterBlockProperties() {
 	// Lapis Lazuli Ore
 	blockProperties[BlockType::BLOCK_ORE_LAPIS_LAZULI] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 3.0f,
 		.resistance = 5.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Lapis Lazuli Block
 	blockProperties[BlockType::BLOCK_LAPIS_LAZULI] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 3.0f,
 		.resistance = 5.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Dispenser
 	blockProperties[BlockType::BLOCK_DISPENSER] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 3.5f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Sandstone
 	blockProperties[BlockType::BLOCK_SANDSTONE] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 0.8f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Note Block
 	blockProperties[BlockType::BLOCK_NOTEBLOCK] = {
 		.material = Material::Wood(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 255,
 		.hardness = 0.8f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Wood,
 	};
 
 	// Bed
 	blockProperties[BlockType::BLOCK_BED] = {
 		.material = Material::Cloth(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 0,
 		.hardness = 0.2f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -433,9 +447,9 @@ void RegisterBlockProperties() {
 	// Powered Rail (Golden Rail)
 	blockProperties[BlockType::BLOCK_RAIL_POWERED] = {
 		.material = Material::Circuits(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 0,
 		.hardness = 0.7f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Stone,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -445,9 +459,9 @@ void RegisterBlockProperties() {
 	// Detector Rail
 	blockProperties[BlockType::BLOCK_RAIL_DETECTOR] = {
 		.material = Material::Circuits(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 0,
 		.hardness = 0.7f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Stone,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -457,18 +471,18 @@ void RegisterBlockProperties() {
 	// Sticky Piston Base
 	blockProperties[BlockType::BLOCK_PISTON_STICKY] = {
 		.material = Material::Piston(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 0.5f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
 	};
 
 	// Cobweb
 	blockProperties[BlockType::BLOCK_COBWEB] = {
 		.material = Material::Web(),
-		.stepSound = StepSound::Cloth,
-		.lightOpacity = 1,
 		.hardness = 4.0f,
+		.lightOpacity = 1,
+		.stepSound = StepSound::Cloth,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -477,9 +491,9 @@ void RegisterBlockProperties() {
 	// Tall Grass
 	blockProperties[BlockType::BLOCK_TALLGRASS] = {
 		.material = Material::Plants(),
-		.stepSound = StepSound::Grass,
-		.lightOpacity = 0,
 		.hardness = 0.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Grass,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -489,9 +503,9 @@ void RegisterBlockProperties() {
 	// Dead Bush
 	blockProperties[BlockType::BLOCK_DEADBUSH] = {
 		.material = Material::Plants(),
-		.stepSound = StepSound::Grass,
-		.lightOpacity = 0,
 		.hardness = 0.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Grass,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -501,18 +515,18 @@ void RegisterBlockProperties() {
 	// Piston Base
 	blockProperties[BlockType::BLOCK_PISTON] = {
 		.material = Material::Piston(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 0.5f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
 	};
 
 	// Piston Extension (head)
 	blockProperties[BlockType::BLOCK_PISTON_HEAD] = {
 		.material = Material::Piston(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 0,
 		.hardness = 0.5f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -521,16 +535,16 @@ void RegisterBlockProperties() {
 	// Wool (Cloth)
 	blockProperties[BlockType::BLOCK_WOOL] = {
 		.material = Material::Cloth(),
-		.stepSound = StepSound::Cloth,
-		.lightOpacity = 255,
 		.hardness = 0.8f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Cloth,
 	};
 
 	// Piston Moving (tile entity placeholder)
 	blockProperties[BlockType::BLOCK_PISTON_MOVING] = {
 		.material = Material::Piston(),
-		.lightOpacity = 0,
 		.hardness = -1.0f,
+		.lightOpacity = 0,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -540,9 +554,9 @@ void RegisterBlockProperties() {
 	// Dandelion (Yellow Flower)
 	blockProperties[BlockType::BLOCK_DANDELION] = {
 		.material = Material::Plants(),
-		.stepSound = StepSound::Grass,
-		.lightOpacity = 0,
 		.hardness = 0.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Grass,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -552,9 +566,9 @@ void RegisterBlockProperties() {
 	// Rose (Red Flower)
 	blockProperties[BlockType::BLOCK_ROSE] = {
 		.material = Material::Plants(),
-		.stepSound = StepSound::Grass,
-		.lightOpacity = 0,
 		.hardness = 0.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Grass,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -564,10 +578,10 @@ void RegisterBlockProperties() {
 	// Brown Mushroom
 	blockProperties[BlockType::BLOCK_MUSHROOM_BROWN] = {
 		.material = Material::Plants(),
-		.stepSound = StepSound::Grass,
+		.hardness = 0.0f,
 		.lightEmission = 1,
 		.lightOpacity = 0,
-		.hardness = 0.0f,
+		.stepSound = StepSound::Grass,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -577,9 +591,9 @@ void RegisterBlockProperties() {
 	// Red Mushroom
 	blockProperties[BlockType::BLOCK_MUSHROOM_RED] = {
 		.material = Material::Plants(),
-		.stepSound = StepSound::Grass,
-		.lightOpacity = 0,
 		.hardness = 0.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Grass,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -589,37 +603,37 @@ void RegisterBlockProperties() {
 	// Gold Block
 	blockProperties[BlockType::BLOCK_GOLD] = {
 		.material = Material::Iron(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 3.0f,
 		.resistance = 10.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Iron Block
 	blockProperties[BlockType::BLOCK_IRON] = {
 		.material = Material::Iron(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 5.0f,
 		.resistance = 10.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Double Stone Slab
 	blockProperties[BlockType::BLOCK_DOUBLE_SLAB] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 2.0f,
 		.resistance = 10.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Stone Slab (single)
 	blockProperties[BlockType::BLOCK_SLAB] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 2.0f,
 		.resistance = 10.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -628,53 +642,53 @@ void RegisterBlockProperties() {
 	// Bricks
 	blockProperties[BlockType::BLOCK_BRICKS] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 2.0f,
 		.resistance = 10.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// TNT
 	blockProperties[BlockType::BLOCK_TNT] = {
 		.material = Material::TNT(),
-		.stepSound = StepSound::Grass,
-		.lightOpacity = 255,
 		.hardness = 0.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Grass,
 	};
 
 	// Bookshelf
 	blockProperties[BlockType::BLOCK_BOOKSHELF] = {
 		.material = Material::Wood(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 255,
 		.hardness = 1.5f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Wood,
 	};
 
 	// Mossy Cobblestone
 	blockProperties[BlockType::BLOCK_COBBLESTONE_MOSSY] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 2.0f,
 		.resistance = 10.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Obsidian
 	blockProperties[BlockType::BLOCK_OBSIDIAN] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 10.0f,
 		.resistance = 2000.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Torch
 	blockProperties[BlockType::BLOCK_TORCH] = {
 		.material = Material::Circuits(),
-		.stepSound = StepSound::Wood,
+		.hardness = 0.0f,
 		.lightEmission = 14,
 		.lightOpacity = 0,
-		.hardness = 0.0f,
+		.stepSound = StepSound::Wood,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -684,9 +698,9 @@ void RegisterBlockProperties() {
 	// Fire
 	blockProperties[BlockType::BLOCK_FIRE] = {
 		.material = Material::Fire(),
+		.hardness = 0.0f,
 		.lightEmission = 15,
 		.lightOpacity = 0,
-		.hardness = 0.0f,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -698,19 +712,19 @@ void RegisterBlockProperties() {
 	// Monster Spawner
 	blockProperties[BlockType::BLOCK_MOB_SPAWNER] = {
 		.material = Material::Iron(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 0,
 		.hardness = 5.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Stone,
 		.enableStats = false,
 	};
 
 	// Oak Wood Stairs
 	blockProperties[BlockType::BLOCK_STAIRS_WOOD] = {
 		.material = Material::Wood(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 255,
 		.hardness = 2.0f,
 		.resistance = 5.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -719,9 +733,9 @@ void RegisterBlockProperties() {
 	// Chest
 	blockProperties[BlockType::BLOCK_CHEST] = {
 		.material = Material::Wood(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 0,
 		.hardness = 2.5f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 	};
@@ -729,9 +743,9 @@ void RegisterBlockProperties() {
 	// Redstone Wire
 	blockProperties[BlockType::BLOCK_REDSTONE] = {
 		.material = Material::Circuits(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 0,
 		.hardness = 0.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Stone,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -742,35 +756,35 @@ void RegisterBlockProperties() {
 	// Diamond Ore
 	blockProperties[BlockType::BLOCK_ORE_DIAMOND] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 3.0f,
 		.resistance = 5.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Diamond Block
 	blockProperties[BlockType::BLOCK_DIAMOND] = {
 		.material = Material::Iron(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 5.0f,
 		.resistance = 10.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Crafting Table (Workbench)
 	blockProperties[BlockType::BLOCK_CRAFTING_TABLE] = {
 		.material = Material::Wood(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 255,
 		.hardness = 2.5f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Wood,
 	};
 
 	// Crops / Wheat
 	blockProperties[BlockType::BLOCK_CROP_WHEAT] = {
 		.material = Material::Plants(),
-		.stepSound = StepSound::Grass,
-		.lightOpacity = 0,
 		.hardness = 0.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Grass,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -782,37 +796,38 @@ void RegisterBlockProperties() {
 	// Farmland (Tilled Field)
 	blockProperties[BlockType::BLOCK_FARMLAND] = {
 		.material = Material::Ground(),
-		.stepSound = StepSound::Gravel,
-		.lightOpacity = 255,
 		.hardness = 0.6f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Gravel,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
+		.ticksOnLoad = true
 	};
 
 	// Furnace (idle)
 	blockProperties[BlockType::BLOCK_FURNACE] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 3.5f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Furnace (active/lit)
 	blockProperties[BlockType::BLOCK_FURNACE_LIT] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
+		.hardness = 3.5f,
 		.lightEmission = 13,
 		.lightOpacity = 255,
-		.hardness = 3.5f,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Sign (standing)
-	blockProperties[BlockType::BLOCK_SIGN] = {
+	blockProperties[BlockType::BLOCK_SIGN_STANDING] = {
 		.material = Material::Wood(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 0,
 		.hardness = 1.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Wood,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -823,10 +838,10 @@ void RegisterBlockProperties() {
 	// Wooden Door
 	blockProperties[BlockType::BLOCK_DOOR_WOOD] = {
 		.material = Material::Wood(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 0,
 		.hardness = 3.0f,
 		.resistance = 3.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -836,9 +851,9 @@ void RegisterBlockProperties() {
 	// Ladder
 	blockProperties[BlockType::BLOCK_LADDER] = {
 		.material = Material::Circuits(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 0,
 		.hardness = 0.4f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Wood,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -848,9 +863,9 @@ void RegisterBlockProperties() {
 	// Rail (normal)
 	blockProperties[BlockType::BLOCK_RAIL] = {
 		.material = Material::Circuits(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 0,
 		.hardness = 0.7f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Stone,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -860,10 +875,10 @@ void RegisterBlockProperties() {
 	// Cobblestone Stairs
 	blockProperties[BlockType::BLOCK_STAIRS_COBBLESTONE] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 2.0f,
 		.resistance = 10.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -872,9 +887,9 @@ void RegisterBlockProperties() {
 	// Wall Sign
 	blockProperties[BlockType::BLOCK_SIGN_WALL] = {
 		.material = Material::Wood(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 0,
 		.hardness = 1.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Wood,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -885,9 +900,9 @@ void RegisterBlockProperties() {
 	// Lever
 	blockProperties[BlockType::BLOCK_LEVER] = {
 		.material = Material::Circuits(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 0,
 		.hardness = 0.5f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Wood,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -897,9 +912,9 @@ void RegisterBlockProperties() {
 	// Stone Pressure Plate
 	blockProperties[BlockType::BLOCK_PRESSURE_PLATE_STONE] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 0,
 		.hardness = 0.5f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Stone,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -909,9 +924,9 @@ void RegisterBlockProperties() {
 	// Iron Door
 	blockProperties[BlockType::BLOCK_DOOR_IRON] = {
 		.material = Material::Iron(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 0,
 		.hardness = 5.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -921,9 +936,9 @@ void RegisterBlockProperties() {
 	// Wooden Pressure Plate
 	blockProperties[BlockType::BLOCK_PRESSURE_PLATE_WOOD] = {
 		.material = Material::Wood(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 0,
 		.hardness = 0.5f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Wood,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -933,53 +948,51 @@ void RegisterBlockProperties() {
 	// Redstone Ore
 	blockProperties[BlockType::BLOCK_ORE_REDSTONE_OFF] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 3.0f,
 		.resistance = 5.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Redstone Ore (glowing/lit)
 	blockProperties[BlockType::BLOCK_ORE_REDSTONE_ON] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightEmission = 9,
-		.lightOpacity = 255,
 		.hardness = 3.0f,
 		.resistance = 5.0f,
+		.lightEmission = 9,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Redstone Torch (off)
-	blockProperties[BlockType::BLOCK_REDSTONE_TORCH_OFF] = {
-		.material = Material::Circuits(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 0,
-		.hardness = 0.0f,
-		.isCollidable = false,
-		.isOpaqueCube = false,
-		.isNormalCube = false,
-		.renderAsNormalBlock = false,
-	};
+	blockProperties[BlockType::BLOCK_REDSTONE_TORCH_OFF] = { .material = Material::Circuits(),
+		                                                     .hardness = 0.0f,
+		                                                     .lightOpacity = 0,
+		                                                     .stepSound = StepSound::Wood,
+		                                                     .isCollidable = false,
+		                                                     .isOpaqueCube = false,
+		                                                     .isNormalCube = false,
+		                                                     .renderAsNormalBlock = false,
+		                                                     .ticksOnLoad = true };
 
 	// Redstone Torch (on)
-	blockProperties[BlockType::BLOCK_REDSTONE_TORCH_ON] = {
-		.material = Material::Circuits(),
-		.stepSound = StepSound::Wood,
-		.lightEmission = 7,
-		.lightOpacity = 0,
-		.hardness = 0.0f,
-		.isCollidable = false,
-		.isOpaqueCube = false,
-		.isNormalCube = false,
-		.renderAsNormalBlock = false,
-	};
+	blockProperties[BlockType::BLOCK_REDSTONE_TORCH_ON] = { .material = Material::Circuits(),
+		                                                    .hardness = 0.0f,
+		                                                    .lightEmission = 7,
+		                                                    .lightOpacity = 0,
+		                                                    .stepSound = StepSound::Wood,
+		                                                    .isCollidable = false,
+		                                                    .isOpaqueCube = false,
+		                                                    .isNormalCube = false,
+		                                                    .renderAsNormalBlock = false,
+		                                                    .ticksOnLoad = true };
 
 	// Stone Button
 	blockProperties[BlockType::BLOCK_BUTTON_STONE] = {
 		.material = Material::Circuits(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 0,
 		.hardness = 0.5f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Stone,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -989,9 +1002,9 @@ void RegisterBlockProperties() {
 	// Snow (layer)
 	blockProperties[BlockType::BLOCK_SNOW_LAYER] = {
 		.material = Material::SnowLayer(),
-		.stepSound = StepSound::Cloth,
-		.lightOpacity = 0,
 		.hardness = 0.1f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Cloth,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -1001,26 +1014,26 @@ void RegisterBlockProperties() {
 	// Ice
 	blockProperties[BlockType::BLOCK_ICE] = {
 		.material = Material::Ice(),
-		.stepSound = StepSound::Glass,
-		.lightOpacity = 3,
 		.hardness = 0.5f,
 		.slipperiness = 0.98f,
+		.lightOpacity = 3,
+		.stepSound = StepSound::Glass,
 	};
 
 	// Snow Block
 	blockProperties[BlockType::BLOCK_SNOW] = {
 		.material = Material::SnowBlock(),
-		.stepSound = StepSound::Cloth,
-		.lightOpacity = 255,
 		.hardness = 0.2f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Cloth,
 	};
 
 	// Cactus
 	blockProperties[BlockType::BLOCK_CACTUS] = {
 		.material = Material::Cactus(),
-		.stepSound = StepSound::Cloth,
-		.lightOpacity = 0,
 		.hardness = 0.4f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Cloth,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -1030,17 +1043,17 @@ void RegisterBlockProperties() {
 	// Clay Block
 	blockProperties[BlockType::BLOCK_CLAY] = {
 		.material = Material::Clay(),
-		.stepSound = StepSound::Gravel,
-		.lightOpacity = 255,
 		.hardness = 0.6f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Gravel,
 	};
 
 	// Sugar Cane (Reed)
 	blockProperties[BlockType::BLOCK_SUGARCANE] = {
 		.material = Material::Plants(),
-		.stepSound = StepSound::Grass,
-		.lightOpacity = 0,
 		.hardness = 0.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Grass,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -1052,19 +1065,19 @@ void RegisterBlockProperties() {
 	// Jukebox
 	blockProperties[BlockType::BLOCK_JUKEBOX] = {
 		.material = Material::Wood(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 2.0f,
 		.resistance = 10.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Fence
 	blockProperties[BlockType::BLOCK_FENCE] = {
 		.material = Material::Wood(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 0,
 		.hardness = 2.0f,
 		.resistance = 5.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -1073,43 +1086,43 @@ void RegisterBlockProperties() {
 	// Pumpkin
 	blockProperties[BlockType::BLOCK_PUMPKIN] = {
 		.material = Material::Pumpkin(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 255,
 		.hardness = 1.0f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Wood,
 	};
 
 	// Netherrack
 	blockProperties[BlockType::BLOCK_NETHERRACK] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Stone,
-		.lightOpacity = 255,
 		.hardness = 0.4f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Stone,
 	};
 
 	// Soul Sand
 	blockProperties[BlockType::BLOCK_SOULSAND] = {
 		.material = Material::Sand(),
-		.stepSound = StepSound::Sand,
-		.lightOpacity = 255,
 		.hardness = 0.5f,
+		.lightOpacity = 255,
+		.stepSound = StepSound::Sand,
 	};
 
 	// Glowstone
 	blockProperties[BlockType::BLOCK_GLOWSTONE] = {
 		.material = Material::Rock(),
-		.stepSound = StepSound::Glass,
+		.hardness = 0.3f,
 		.lightEmission = 15,
 		.lightOpacity = 255,
-		.hardness = 0.3f,
+		.stepSound = StepSound::Glass,
 	};
 
 	// Nether Portal
 	blockProperties[BlockType::BLOCK_NETHER_PORTAL] = {
 		.material = Material::Portal(),
-		.stepSound = StepSound::Glass,
+		.hardness = -1.0f,
 		.lightEmission = 11,
 		.lightOpacity = 0,
-		.hardness = -1.0f,
+		.stepSound = StepSound::Glass,
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
@@ -1119,18 +1132,18 @@ void RegisterBlockProperties() {
 	// Jack-o-Lantern (Lit Pumpkin)
 	blockProperties[BlockType::BLOCK_PUMPKIN_LIT] = {
 		.material = Material::Pumpkin(),
-		.stepSound = StepSound::Wood,
+		.hardness = 1.0f,
 		.lightEmission = 15,
 		.lightOpacity = 255,
-		.hardness = 1.0f,
+		.stepSound = StepSound::Wood,
 	};
 
 	// Cake
 	blockProperties[BlockType::BLOCK_CAKE] = {
 		.material = Material::Cake(),
-		.stepSound = StepSound::Cloth,
-		.lightOpacity = 0,
 		.hardness = 0.5f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Cloth,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -1140,9 +1153,9 @@ void RegisterBlockProperties() {
 	// Redstone Repeater (off)
 	blockProperties[BlockType::BLOCK_REDSTONE_REPEATER_OFF] = {
 		.material = Material::Circuits(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 0,
 		.hardness = 0.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -1152,10 +1165,10 @@ void RegisterBlockProperties() {
 	// Redstone Repeater (on)
 	blockProperties[BlockType::BLOCK_REDSTONE_REPEATER_ON] = {
 		.material = Material::Circuits(),
-		.stepSound = StepSound::Wood,
+		.hardness = 0.0f,
 		.lightEmission = 9,
 		.lightOpacity = 0,
-		.hardness = 0.0f,
+		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
@@ -1165,9 +1178,9 @@ void RegisterBlockProperties() {
 	// Trapdoor
 	blockProperties[BlockType::BLOCK_TRAPDOOR] = {
 		.material = Material::Wood(),
-		.stepSound = StepSound::Wood,
-		.lightOpacity = 0,
 		.hardness = 3.0f,
+		.lightOpacity = 0,
+		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,

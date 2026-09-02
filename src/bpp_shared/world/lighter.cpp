@@ -12,7 +12,7 @@
 #include <cstring>
 
 namespace Lighting {
-	const float BrightnessArray[16] = { 0.035f, 0.044f, 0.055f, 0.069f, 0.086f, 0.107f, 0.134f, 0.168f,
+const float BrightnessArray[16] = { 0.035f, 0.044f, 0.055f, 0.069f, 0.086f, 0.107f, 0.134f, 0.168f,
 	                                0.21f,  0.262f, 0.328f, 0.41f,  0.512f, 0.64f,  0.8f,   1.0f };
 } // namespace Lighting
 
@@ -159,6 +159,8 @@ void Lighter::UnlightAt(int _x, int _y, int _z, LightType _type, WorldManager& _
 	// Separate function for this since beta's lighting engine can't decrease light values in place
 	if (_y < 0 || _y >= CHUNK_HEIGHT)
 		return;
+
+	ChunkCache unlightCache;
 
 	unlightCache.Refresh(_x >> 4, _z >> 4, _world);
 	Chunk* chunk = unlightCache.grid[1][1];

@@ -7,6 +7,7 @@
 #include "java/java_math.h"
 #include "java/java_random.h"
 #include <numeric_structs.h>
+#include <unordered_set>
 
 struct WorldManager;
 struct Entity;

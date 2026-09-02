@@ -24,6 +24,7 @@ public:
 
 	void ResolveEntityCollision(Entity& _other);
 	void TickPhysics();
+	void ResolveEntityPushes();
 
 	MobileEntity();
 
@@ -36,8 +37,8 @@ public:
 	int attackTime = 0;
 	float accumulatedFractionalDamage = 0.0f;
 	float movementSpeed = 0.7f;
-	bool canBreatheUnderwater = false;
-	bool beenAttacked = false;
+	bool canBreatheUnderwater : 1 = false;
+	bool beenAttacked : 1 = false;
 	ItemStack heldItem;
 	ItemStack* armor[4] = { nullptr, nullptr, nullptr, nullptr }; // Helmet, chestplate, leggings, boots
 

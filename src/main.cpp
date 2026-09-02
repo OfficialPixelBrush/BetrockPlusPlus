@@ -24,6 +24,9 @@
 #ifdef DISCORD_INTEGRATION
 #include "discord.h"
 #endif
+#if defined(ONLINE_MODE_AUTHENTICATION) || defined(BETACRAFT_HEARTBEAT)
+#include "curl_runtime.h"
+#endif
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -98,7 +101,7 @@ static void InstallProcessSignalHandlers() {
 	std::signal(SIGINT, SignalHandler);
 	std::signal(SIGTERM, SignalHandler);
 #else
-	struct sigaction sa {};
+	struct sigaction sa{};
 	sa.sa_handler = SignalHandler;
 	sigemptyset(&sa.sa_mask);
 	// musl's signal() sets SA_RESTART, which makes a later libcurl/OpenSSL
@@ -127,7 +130,7 @@ struct Args : MainArguments<Args> {
 	                               "Generates chunks around 0,0 until the desired radius is met") = 5;
 	uint32_t chunkRenderRadius = option(
 	    "chunk_render_radius", '\0',
-	    "Radius within which chunks are rendered for clients. On Vanilla clients this caps out at about 16 Chunks") = 5;
+	    "Radius within which chunks are rendered for clients. On Vanilla clients this caps out at about 13 Chunks") = 5;
 	uint32_t chunkGenRadius = option("chunk_gen_radius", '\0', "Radius within which chunks are generated") = 5;
 	uint32_t chunkTickRadius = option("chunk_tick_radius", '\0', "Radius within which chunks are randomly ticked") = 5;
 	uint32_t entityRenderRadius = option("entity_render_radius", '\0', "Radius within which entities are shown") = 5;
@@ -217,11 +220,11 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 #endif
 
 #ifdef BUILD_SERVER
-#if defined(ONLINE_MODE_AUTHENTICATION)
+#if defined(ONLINE_MODE_AUTHENTICATION) || defined(BETACRAFT_HEARTBEAT)
 	// Initialize libcurl before the server starts its thread pools. First-login
 	// curl_easy_init() would otherwise do this unsafely and can block SIGTERM.
-	if (!Authentication::GlobalInit())
-		GlobalLogger().warn << "libcurl global init failed; online-mode auth may not work.\n";
+	if (!CurlRuntimeInit())
+		GlobalLogger().warn << "libcurl global init failed; online-mode auth and Betacraft heartbeat may not work.\n";
 	InstallProcessSignalHandlers();
 #if !defined(_WIN32) && !defined(_WIN64)
 	BlockStopSignals();
@@ -231,10 +234,12 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 	// std::string path = "";
 	// Utilities::convertBetrockServerLevel(/*path=*/path);
 	Server serv;
+	if (args.enableWhitelist)
+		serv.SetWhitelistEnabled(true, false);
 	server = &serv;
 	server->Run();
-#if defined(ONLINE_MODE_AUTHENTICATION)
-	Authentication::GlobalCleanup();
+#if defined(ONLINE_MODE_AUTHENTICATION) || defined(BETACRAFT_HEARTBEAT)
+	CurlRuntimeCleanup();
 #endif
 #endif
 #ifdef BUILD_CLIENT

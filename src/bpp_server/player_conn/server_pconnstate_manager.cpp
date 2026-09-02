@@ -6,8 +6,8 @@
 */
 #include "../packet/packet_utils.h"
 #include "../server.h"
+#include "username.h"
 #include "version.h"
-#include <regex>
 
 #ifdef DISCORD_INTEGRATION
 #include "discord.h"
@@ -20,6 +20,9 @@ void PlayerConnStateManager::HandleConnectionState(PlayerSession& _session, Serv
 		break;
 	case ConnectionState::LoggingIn:
 		HandleLogin(_session, _server);
+		break;
+	case ConnectionState::VerifyingUsername:
+		HandleVerifyingUsername(_session, _server);
 		break;
 	case ConnectionState::WaitingForSpawnChunks:
 		WaitForSpawnChunks(_session, _server);
@@ -38,13 +41,6 @@ void PlayerConnStateManager::HandleConnectionState(PlayerSession& _session, Serv
 		break;
 	}
 	}
-}
-
-bool PlayerConnStateManager::IsValidUsername(const std::string& _username) {
-	if (_username.size() < 3 || _username.size() > 16)
-		return false;
-	static const std::regex PATTERN(R"(^[A-Za-z0-9_]{3,16}$)");
-	return std::regex_match(_username, PATTERN);
 }
 
 void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, [[maybe_unused]] Server& _server) {
@@ -70,14 +66,14 @@ void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, [[maybe_un
 		GlobalLogger().info << "Modified client! Provided mods: " << incoming.username << '\n';
 
 	// Authentication
-	serverId = "-";
+	_session.serverId = "-";
 #ifdef ONLINE_MODE_AUTHENTICATION
 	if (_server.auth.onlineMode)
-		serverId = _server.auth.GenerateAuthHash();
+		_session.serverId = _server.auth.GenerateAuthHash();
 #endif
 
 	Packet::PreLogin response;
-	response.serverId = serverId;
+	response.serverId = _session.serverId;
 	response.Serialize(_session.stream);
 
 	_session.connState = ConnectionState::LoggingIn;
@@ -98,20 +94,60 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	if (_session.stream.CheckAndClearShortRead()) {
 		return;
 	}
-	if (!IsValidUsername(incoming.username))
+	// Check if the username contains any invalid characters
+	if (!IsValidUsername(incoming.username)) {
+		DisconnectPlayer(_session, "Invalid username!", _server);
 		return;
+	}
 	_session.username = incoming.username;
+
+	// User isn't whitelisted, reject
+	if (_server.useWhitelist && std::find(_server.whitelistedUsernames.begin(), _server.whitelistedUsernames.end(),
+	                                      incoming.username) == _server.whitelistedUsernames.end()) {
+		DisconnectPlayer(_session, "You're not whitelisted!", _server);
+		return;
+	}
 
 	GlobalLogger().info << "Player " << _session.username << " is logging in.\n";
 
 #ifdef ONLINE_MODE_AUTHENTICATION
-	if (!_server.auth.IsRegisteredUsername(serverId, _session.username)) {
-		std::string invalidUser = "Failed to verify username!";
-		DisconnectPlayer(_session, invalidUser, _server);
+	if (_server.auth.onlineMode) {
+		_session.pendingAuthFuture = _server.auth.IsRegisteredUsernameAsync(_session.serverId, _session.username);
+		_session.authStartTime = std::chrono::steady_clock::now();
+		_session.connState = ConnectionState::VerifyingUsername;
 		return;
 	}
 #endif
 
+	FinishLogin(_session, _server);
+}
+
+void PlayerConnStateManager::HandleVerifyingUsername(PlayerSession& _session, [[maybe_unused]] Server& _server) {
+#ifdef ONLINE_MODE_AUTHENTICATION
+	using namespace std::chrono_literals;
+	constexpr auto K_AUTH_TIMEOUT = 20s;
+
+	if (!_session.pendingAuthFuture.valid()) {
+		DisconnectPlayer(_session, "Failed to verify username!", _server);
+		return;
+	}
+
+	if (_session.pendingAuthFuture.wait_for(0s) != std::future_status::ready) {
+		if (std::chrono::steady_clock::now() - _session.authStartTime > K_AUTH_TIMEOUT)
+			DisconnectPlayer(_session, "Login verification timed out!", _server);
+		return; // Not ready yet - check again next tick.
+	}
+
+	const bool verified = _session.pendingAuthFuture.get();
+	if (!verified) {
+		DisconnectPlayer(_session, "Failed to verify username!", _server);
+		return;
+	}
+#endif
+	FinishLogin(_session, _server);
+}
+
+void PlayerConnStateManager::FinishLogin(PlayerSession& _session, Server& _server) {
 	// Initialize our entity first as the player session depends on it
 	if (!_session.entity)
 		_session.entity = std::make_shared<EntityMPPlayer>();
@@ -195,7 +231,8 @@ void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std
 	kick.Serialize(_session.stream);
 	_session.stream.SetConnected(false);
 	_server.SavePlayer(_session.username);
-	GlobalLogger().info << "Player " << _session.username << " disconnected: " << _reason << "\n";
+	GlobalLogger().info << "Player " << (_session.username.empty() ? "(username not yet set)" : _session.username)
+	                    << " disconnected: " << _reason << "\n";
 }
 
 void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server& _server) {

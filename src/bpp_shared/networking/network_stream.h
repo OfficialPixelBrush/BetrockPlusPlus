@@ -6,7 +6,7 @@
 */
 #pragma once
 #define INVALID_SOCKET -1
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <sys/socket.h>

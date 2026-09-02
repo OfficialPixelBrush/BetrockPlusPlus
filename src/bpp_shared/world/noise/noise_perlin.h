@@ -22,6 +22,7 @@ public:
 	double GenerateNoise(Vec2 _coord);
 	double GenerateNoise(Vec3 _coord);
 	void GenerateNoise(std::span<double> _noiseField, Vec3 _offset, Int3 _size, Vec3 _scale, double _amplitude);
+
 private:
 	double GenerateNoiseBase(Vec3 _pos);
 	// Java Math functions that're only used by the generator

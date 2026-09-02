@@ -7,7 +7,7 @@
 */
 #pragma once
 #include "logger.h"
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>

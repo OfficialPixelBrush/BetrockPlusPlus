@@ -88,6 +88,9 @@ public:
 	// returns false on error.
 	bool SaveToDisk() const noexcept;
 
+	// update a single key on disk without rewriting the rest of the file
+	bool SaveKeyToDisk(const std::string& _key);
+
 	// set a new path to the properties file
 	void SetPath(std::string_view _path) noexcept;
 

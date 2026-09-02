@@ -12,6 +12,7 @@
 #include "entities/entity_mobile.h"
 #include "entities/entity_player.h"
 #include "entities/entity_sheep.h"
+#include "entities/entity_boat.h"
 #include "inventory/item_stack.h"
 #include "items.h"
 #include "logger.h"
@@ -316,7 +317,7 @@ void OnToolFinishMining(ItemStack* _stack, BlockType _targetBlock) {
 	}
 }
 
-void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face) {
+void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
 	BlockType b = _world.GetBlockId(_pos);
 	if (b == BLOCK_GRASS || b == BLOCK_DIRT) {
 		_world.SetBlock(_pos, BLOCK_FARMLAND);
@@ -324,7 +325,36 @@ void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, P
 	HarmTool(_stack, 1);
 }
 
-void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face) {
+void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
+	float reach = 5.0f;
+	auto pe = dynamic_cast<PlayerEntity*>(&_user);
+	if (!pe) {
+		return;
+	}
+
+	// Do our raycast
+	Vec3 startPos = pe->position;
+	startPos.y += PLAYER_EYE_HEIGHT;
+	Vec3 lookVec = pe->GetLookVector(pe->rotationYaw, pe->rotationPitch);
+	Vec3 endPos = startPos + (lookVec * Vec3{ reach, reach, reach });
+	RayCastResult result = Raycast::Raycast(_world, startPos, endPos, RayCastMode::ACCEPT_SOURCES);
+
+	if (!result.hit) {
+		return;
+	}
+	BoatEntity boat;
+
+	if (result.hitBlock.type == BLOCK_SNOW_LAYER) {
+		result.blockPosition.y--;
+	}
+
+	boat.Teleport({ result.blockPosition.x + 0.5f, result.blockPosition.y + 1.0f + boat.yOffset,
+	                result.blockPosition.z + 0.5f });
+	_world.entityManager.AddEntity(std::make_shared<BoatEntity>(boat));
+	_stack->DecrementCount(1);
+}
+
+void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
 	float reach = 5.0f;
 	auto pe = dynamic_cast<PlayerEntity*>(&_user);
 	if (!pe) {
@@ -352,7 +382,7 @@ void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user
 	}
 }
 
-void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face) {
+void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
 	float reach = 5.0f;
 	auto pe = dynamic_cast<PlayerEntity*>(&_user);
 	if (!pe) {
@@ -369,7 +399,7 @@ void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& 
 		return;
 	}
 
-	Int3 placePos = Blocks::GetAdjacentBlockPos(result.blockPosition, result.face);
+	Int3 placePos = result.blockPosition.WithOffset(result.face);
 	auto m = _world.GetMaterial(placePos);
 	if (m.isSolid) {
 		return; // can't place into solid ground
@@ -384,7 +414,7 @@ void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& 
 	_stack->id = Items::Id::BUCKET;
 }
 
-void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, PacketData::FaceDirection _face) {
+void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
 	float reach = 5.0f;
 	auto pe = dynamic_cast<PlayerEntity*>(&_user);
 	if (!pe) {
@@ -401,7 +431,7 @@ void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _
 		return;
 	}
 
-	Int3 placePos = Blocks::GetAdjacentBlockPos(result.blockPosition, result.face);
+	Int3 placePos = result.blockPosition.WithOffset(result.face);
 	auto m = _world.GetMaterial(placePos);
 	if (m.isSolid) {
 		return; // can't place into solid ground
@@ -411,13 +441,12 @@ void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _
 	_stack->id = Items::Id::BUCKET;
 }
 
-void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-                      PacketData::FaceDirection _face) {
+void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
 	if (_user.flags.isSneaking) {
 		TestSetGoal(_world, _stack, _pos, _face);
 		return;
 	}
-	_pos = Blocks::GetAdjacentBlockPos(_pos, _face);
+	_pos.Offset(_face);
 	_world.SetBlock(_pos, BLOCK_FIRE);
 	HarmTool(_stack, 1);
 }
@@ -437,7 +466,7 @@ void UseShears(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
 	HarmTool(_stack, 1);
 }
 
-void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, PacketData::FaceDirection _face) {
+void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, Direction::Value _face) {
 	Int3 topPos = _pos;
 	topPos.y += 1;
 	_world.SetBlock(topPos, BLOCK_AIR);

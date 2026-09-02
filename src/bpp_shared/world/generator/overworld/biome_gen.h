@@ -7,6 +7,8 @@
 
 #pragma once
 #include "biomes.h"
+#include "constants.h"
+#include "helpers/packed_array.h"
 #include "noise_octaves_simplex.h"
 #include <span>
 
@@ -25,7 +27,7 @@ public:
 	BiomeGenerator();
 	BiomeGenerator(int64_t _seed);
 	Biome GetBiomeAtPoint(Int2 _worldPos);
-	void GenerateBiomeMap(Biome _biomeMap[], std::span<double> _temperature, std::span<double> _humidity,
-	                      std::span<double> _weirdness, Int2 _blockPos);
+	void GenerateBiomeMap(PackedArray<CHUNK_AREA, 4>& _biomeMap, std::span<double> _temperature,
+	                      std::span<double> _humidity, std::span<double> _weirdness, Int2 _blockPos);
 	void GenerateTemperature(std::span<double> _temperature, std::span<double> _weirdness, Int2 _chunkPos, Int2 _max);
 };

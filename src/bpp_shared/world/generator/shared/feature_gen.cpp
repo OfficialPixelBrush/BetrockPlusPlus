@@ -365,7 +365,7 @@ bool GenerateTallgrass(uint8_t _meta, WorldWrapper& _world, Java::Random& _rand,
 			continue;
 		if (_world.GetBlockId({ x, y, z }) != BLOCK_AIR)
 			continue;
-		if (Blocks::CanGenericPlantSurviveAt(_world, {x, y, z}))
+		if (Blocks::CanGenericPlantSurviveAt(_world, { x, y, z }))
 			_world.SetBlock({ x, y, z }, BLOCK_TALLGRASS, _meta);
 	}
 	return true;
@@ -400,21 +400,14 @@ bool GenerateSugarcane(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 		int32_t z = _pos.z + _rand.NextInt(4) - _rand.NextInt(4);
 		if (_world.GetBlockId({ x, y, z }) != BLOCK_AIR)
 			continue;
-
-		auto isWater = [&](int _wx, int _wy, int _wz) {
-			BlockType b = _world.GetBlockId({ _wx, _wy, _wz });
-			return b == BLOCK_WATER_STILL || b == BLOCK_WATER_FLOWING;
-		};
-		if (!isWater(x - 1, y - 1, z) && !isWater(x + 1, y - 1, z) && !isWater(x, y - 1, z - 1) &&
-		    !isWater(x, y - 1, z + 1))
+		if (!Blocks::CanSugarcaneSurviveAt(_world, { x, y, z }))
 			continue;
 
 		int32_t height = 2 + _rand.NextInt(_rand.NextInt(3) + 1);
 		for (int32_t h = 0; h < height; ++h) {
-			BlockType below = _world.GetBlockId({ x, y + h - 1, z });
-			if (below != BLOCK_GRASS && below != BLOCK_DIRT && below != BLOCK_SUGARCANE)
-				break;
 			if (_world.GetBlockId({ x, y + h, z }) != BLOCK_AIR)
+				break;
+			if (!Blocks::CanSugarcaneSurviveAt(_world, { x, y + h, z }))
 				break;
 			_world.SetBlock({ x, y + h, z }, BLOCK_SUGARCANE);
 		}
@@ -459,16 +452,7 @@ bool GenerateCacti(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 
 		int32_t height = 1 + _rand.NextInt(_rand.NextInt(3) + 1);
 		for (int32_t h = 0; h < height; ++h) {
-			if (Blocks::blockProperties[_world.GetBlockId({ x - 1, y + h, z })].material.isSolid)
-				continue;
-			if (Blocks::blockProperties[_world.GetBlockId({ x + 1, y + h, z })].material.isSolid)
-				continue;
-			if (Blocks::blockProperties[_world.GetBlockId({ x, y + h, z - 1 })].material.isSolid)
-				continue;
-			if (Blocks::blockProperties[_world.GetBlockId({ x, y + h, z + 1 })].material.isSolid)
-				continue;
-			BlockType below = _world.GetBlockId({ x, y + h - 1, z });
-			if (below == BLOCK_SAND || below == BLOCK_CACTUS)
+			if (Blocks::CanCactusSurviveAt(_world, { x, y + h, z }))
 				_world.SetBlock({ x, y + h, z }, BLOCK_CACTUS);
 		}
 	}

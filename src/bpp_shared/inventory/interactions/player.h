@@ -17,6 +17,7 @@ struct PlayerInventoryInteraction : CraftingInventoryInteraction {
 	bool CanExist(PlayerEntity& player) override;
 	void OnLeftClick(int _slot) override;
 	void OnRightClick(int _slot) override;
+
 protected:
 	void ShiftClickResult() override;
 	void ShiftClickOther(int _slot) override;

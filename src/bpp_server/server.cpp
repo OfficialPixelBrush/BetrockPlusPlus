@@ -8,6 +8,7 @@
 */
 
 #include "base_types.h"
+#include "config/list_parser.h"
 #include "dimensions.h"
 #include "logger.h"
 #include "packet/packet_utils.h"
@@ -16,7 +17,8 @@
 #include <future>
 #include <string>
 #include <thread>
-#if defined(__linux__) || defined(__APPLE__)
+
+#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
 #include <fcntl.h>
 #include <iomanip>
 #include <netinet/in.h>
@@ -140,8 +142,8 @@ void Server::LoadConfig() {
 	if (!config.LoadFromDisk()) {
 		config.Overwrite({
 		    { "level-name", "world" },
-		    { "view-distance", "10"},
-		    //{"white-list", "false"},
+		    { "view-distance", "10" },
+		    { "white-list", "false" },
 		    //{"server-ip", ""},
 		    //{"motd", "A Minecraft Server"},
 		    //{"pvp","true"},
@@ -165,6 +167,19 @@ void Server::LoadConfig() {
 		    //{"spawn-monsters","true"},
 		    //{"max-players", "-1"},
 		    { "online-mode", "false" },
+#ifdef BETACRAFT_HEARTBEAT
+		    { "betacraft-heartbeat", "false" },
+		    { "betacraft-name", "A Minecraft server" },
+		    { "betacraft-description", "" },
+		    { "betacraft-socket", "" },
+		    { "betacraft-private-key", "" },
+		    { "betacraft-category", "beta" },
+		    { "betacraft-game-version", "b1.7.3" },
+		    { "betacraft-protocol", "beta_14" },
+		    { "betacraft-v1-version", "b1.7.3" },
+		    { "betacraft-send-players", "true" },
+		    { "betacraft-icon", "" },
+#endif
 		    //{"allow-flight","false"}
 		});
 		config.SaveToDisk();
@@ -174,10 +189,64 @@ void Server::LoadConfig() {
 #ifdef ONLINE_MODE_AUTHENTICATION
 	auth.onlineMode = config.GetAsBoolean("online-mode", false);
 #endif
+#ifdef BETACRAFT_HEARTBEAT
+	betacraftHeartbeat.Load(config, serverPort);
+#endif
 	//motd = config.GetAsString("motd");
 	//maximumPlayers = config.GetAsNumber<int32_t>("max-players");
 	//maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
-	//whitelistEnabled = config.GetAsBoolean("white-list");
+	useWhitelist = config.GetAsBoolean("white-list");
+	operatorUsernames = ListParser::Read(ListParser::Target::Operator);
+	if (useWhitelist) {
+		LoadWhitelist();
+		GlobalLogger().info << "Whitelist enabled!\n";
+	}
+}
+
+void Server::LoadWhitelist() {
+	if (whitelistLoaded)
+		return;
+	whitelistedUsernames = ListParser::Read(ListParser::Target::Whitelist);
+	whitelistLoaded = true;
+}
+
+void Server::UnloadWhitelist() {
+	whitelistedUsernames.clear();
+	whitelistedUsernames.shrink_to_fit();
+	whitelistLoaded = false;
+}
+
+void Server::SetWhitelistEnabled(bool _enabled, bool _persist) {
+	if (_enabled)
+		LoadWhitelist();
+	const bool changed = useWhitelist != _enabled;
+	useWhitelist = _enabled;
+	if (!_enabled)
+		UnloadWhitelist();
+	if (changed)
+		GlobalLogger().info << (useWhitelist ? "Whitelist enabled!\n" : "Whitelist disabled!\n");
+	if (!_persist)
+		return;
+	config.Set("white-list", useWhitelist ? "true" : "false");
+	if (!config.SaveKeyToDisk("white-list"))
+		GlobalLogger().error << "Failed to persist white-list to server.properties\n";
+}
+
+bool Server::SaveWhitelist() {
+	if (!whitelistLoaded)
+		return true;
+	return ListParser::Write(whitelistedUsernames, ListParser::Target::Whitelist);
+}
+
+bool Server::SaveOperators() {
+	return ListParser::Write(operatorUsernames, ListParser::Target::Operator);
+}
+
+void Server::ReloadWhitelist() {
+	if (!useWhitelist)
+		return;
+	whitelistedUsernames = ListParser::Read(ListParser::Target::Whitelist);
+	whitelistLoaded = true;
 }
 
 void Server::Startup() {
@@ -201,7 +270,7 @@ void Server::Startup() {
 	// Setup the block callback so we can send it to clients
 	auto makeBlockUpdateCallback = [this](Dimension _dimensionId, auto& _blockChangeMap) {
 		return [this, _dimensionId, &_blockChangeMap](PendingBlock _pendingBlock, Int32_2 _chunkPos) {
-			auto idxIt = chunkSessions.find(ChunkKey(_chunkPos, Dimension::Nether));
+			auto idxIt = chunkSessions.find(ChunkKey(_chunkPos, _dimensionId));
 			bool anyInterested = (idxIt != chunkSessions.end() && !idxIt->second.empty());
 			if (!anyInterested) {
 				for (auto& session : players) {
@@ -263,11 +332,13 @@ void Server::Startup() {
 
 	gameRuntime.world.onWorldEvent = [this](PacketData::WorldEvent _eventType, Int3 _position, int32_t _data,
 	                                        PlayerSession* _triggeringSession) {
-		WorldEventBroadcaster::BroadcastWorldEvent(*this, _eventType, _position, _data, Dimension::Overworld, _triggeringSession);
+		WorldEventBroadcaster::BroadcastWorldEvent(*this, _eventType, _position, _data, Dimension::Overworld,
+		                                           _triggeringSession);
 	};
 	gameRuntime.worldHell.onWorldEvent = [this](PacketData::WorldEvent _eventType, Int3 _position, int32_t _data,
 	                                            PlayerSession* _triggeringSession) {
-		WorldEventBroadcaster::BroadcastWorldEvent(*this, _eventType, _position, _data, Dimension::Nether, _triggeringSession);
+		WorldEventBroadcaster::BroadcastWorldEvent(*this, _eventType, _position, _data, Dimension::Nether,
+		                                           _triggeringSession);
 	};
 
 	registerEntityTrackerCallbacks(overworldEntityTracker, gameRuntime.world.entityManager);
@@ -366,6 +437,9 @@ void Server::Startup() {
 #ifdef DISCORD_INTEGRATION
 	GlobalDiscord().SendServerNotice("Server started!", Discord::EmbedColor::Green);
 #endif
+#ifdef BETACRAFT_HEARTBEAT
+	betacraftHeartbeat.Start();
+#endif
 }
 
 void Server::Run() {
@@ -439,6 +513,9 @@ void Server::Stop() {
 	if (stopped)
 		return;
 	stopped = true;
+#ifdef BETACRAFT_HEARTBEAT
+	betacraftHeartbeat.Stop();
+#endif
 #ifdef DISCORD_INTEGRATION
 	//GlobalDiscord().SendServerNotice("Server stopped!", Discord::EmbedColor::Red);
 	// TODO: The server often shuts down too fast for the embed to get sent!
@@ -459,6 +536,10 @@ void Server::Stop() {
 	curLevelData.spawnPoint = gameRuntime.world.spawnPoint;
 	curLevelData.time = gameRuntime.world.elapsedTicks;
 	gameRuntime.saveManager.SaveLevelFile(curLevelData);
+
+	// Save operator and whitelist updates
+	SaveWhitelist();
+	SaveOperators();
 }
 
 void Server::AcceptNewPlayers() {
@@ -569,6 +650,24 @@ void Server::Tick() {
 		shutdownTimer--;
 	if (shutdownTimer == 1)
 		shutdownRequested.store(true);
+
+#ifdef BETACRAFT_HEARTBEAT
+	if (betacraftHeartbeat.Enabled() && gameRuntime.world.tickScheduler.currentTick % TICKS_PER_SECOND == 0) {
+		BetacraftHeartbeatSnapshot snap;
+		snap.maxPlayers = config.GetAsNumber<int>("max-players", 20);
+		if (snap.maxPlayers < 0)
+			snap.maxPlayers = 20;
+		snap.onlineMode = config.GetAsBoolean("online-mode", false);
+		for (const auto& session : players) {
+			if (session->connState != ConnectionState::Playing)
+				continue;
+			++snap.onlinePlayers;
+			if (!session->username.empty())
+				snap.playerNames.push_back(session->username);
+		}
+		betacraftHeartbeat.UpdateSnapshot(snap);
+	}
+#endif
 }
 
 void Server::TryForceBreak(PlayerSession& _session, WorldManager& _world) {

@@ -8,7 +8,6 @@
 
 // The world manager acts like a wrapper around the chunk manager and lighting manager.
 // It handles all world-related operations and provides a simple interface for the rest of the code to interact with the world.
-// WorldManager.h
 #pragma once
 #include "BS_thread_pool.hpp"
 #include "base_structs.h"
@@ -21,6 +20,7 @@
 #include "entities/entity_manager.h"
 #include "generator/overworld/biome_gen.h"
 #include "helpers/AABB.h"
+#include "helpers/explosion.h"
 #include "java_math.h"
 #include "lighter.h"
 #include "packet_data.h"
@@ -29,7 +29,6 @@
 #include "world/spawner.h"
 #include "world/storage/region_manager.h"
 #include "world_access.h"
-#include "helpers/explosion.h"
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
@@ -73,7 +72,7 @@ public:
 	Dimension thisDimension = Dimension::Overworld;
 
 	WorldManager(bool _pIsHell = false) : isHell(_pIsHell) {
-		entityManager.world = this; // Bind the world pointer in EntityManager
+		entityManager.world = this;
 		tickScheduler.world = this;
 		if (isHell)
 			thisDimension = Dimension::Nether;
@@ -87,7 +86,7 @@ public:
 	void Shutdown();
 	void SeedChunkLighting(Int32_2 _pos);
 	void PerformRandomTicks(const std::vector<ClientPosition>& _players);
-	std::vector<AABB> GetCollidingBoundingBoxes(const AABB& _area);
+	std::vector<AABB> GetCollidingBoundingBoxes(const AABB& _area, Entity* _mover = nullptr);
 	void FlushBleedWrites();
 	void PropagateChunkLightBorders(Int32_2 _cpos);
 	BlockType GetFirstUncoveredBlock(int _wx, int _wz);
@@ -103,7 +102,7 @@ public:
 	bool IsMaterialInAabb(AABB _collider, Material _material);
 	void UpdateLoadRadius(const std::vector<ClientPosition>& _players);
 	void PumpPipeline(const std::vector<ClientPosition>& _players);
-	void PopulateReady(int _maxPopulates = 2);
+	void PopulateReady(int _maxPopulates = 16);
 	void DrainLoadQueue();
 	void DropInventory(Inventory& inventory, Int3 _wpos);
 	void UpdateSkylightOffset();
@@ -178,7 +177,7 @@ public:
 		if (!isHell)
 			biomeGenerator = BiomeGenerator(seed);
 	}
-	void NotifyNeighborsOfUpdate(Int3 _globalPos);
+	void NotifyNeighborsOfUpdate(Int3 _globalPos, BlockType _blockId);
 	// For creating a fresh tile entity for generation etc
 	void CreateTileEntity(std::shared_ptr<TileEntity> _tileEntity);
 	// For registering a tile entity that already exists in the world (e.g. loaded from disk)
@@ -224,10 +223,6 @@ public:
 
 	bool IsAirBlock(Int3 _wpos) {
 		return GetBlockId(_wpos) == BlockType::BLOCK_AIR;
-	}
-
-	Material GetMaterial(Int3 _wpos) {
-		return Blocks::blockProperties[GetBlockId(_wpos)].material;
 	}
 
 	bool IsBlockNormalCube(Int3 _wpos) {
@@ -304,7 +299,7 @@ public:
 	}
 
 	bool AABBinValidChunks(AABB _collider) {
-		if (_collider.minY < 0.0 || _collider.maxY >= 128.0)
+		if (_collider.minY < 0.0 || _collider.maxY >= CHUNK_HEIGHT)
 			return false;
 		int minCX = MathHelper::FloorDouble(_collider.minX) >> 4;
 		int maxCX = MathHelper::FloorDouble(_collider.maxX + 1.0) >> 4;

@@ -10,10 +10,12 @@
 #include "blocks.h"
 #include "blocks/block_behaviors.h"
 #include "chunk.h"
+#include "direction.h"
 #include "entities/entity_item.h"
 #include "generator/nether/chunk_gen.h"
 #include "generator/overworld/chunk_gen.h"
 #include "generator/shared/cave_gen.h"
+#include "redstone_manager.h"
 #include "world_wrapper.h"
 #include <limits>
 #include <unordered_set>
@@ -30,7 +32,7 @@ Biome WorldManager::GetBiome(Int2 _wpos) {
 	if (!chunk || chunk->state != ChunkState::Generated)
 		return biomeGenerator.GetBiomeAtPoint(_wpos);
 	// TODO: Dunno if this is the right index formula, please test!
-	return chunk->biomes[_wpos.x % 0xF + _wpos.z % 0xF * 16];
+	return static_cast<Biome>(chunk->biomes.Get(_wpos.x % 0xF + _wpos.z % 0xF * 16));
 }
 
 int WorldManager::GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
@@ -38,11 +40,11 @@ int WorldManager::GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
 		auto blockId = this->GetBlockId(_wpos);
 		if (blockId == BLOCK_SLAB || blockId == BLOCK_FARMLAND || blockId == BLOCK_STAIRS_WOOD ||
 		    blockId == BLOCK_STAIRS_WOOD) {
-			int yP = GetBlockLightValue({ _wpos.x, _wpos.y + 1, _wpos.z }, false);
-			int xP = GetBlockLightValue({ _wpos.x + 1, _wpos.y, _wpos.z }, false);
-			int xM = GetBlockLightValue({ _wpos.x - 1, _wpos.y, _wpos.z }, false);
-			int zP = GetBlockLightValue({ _wpos.x, _wpos.y, _wpos.z + 1 }, false);
-			int zM = GetBlockLightValue({ _wpos.x, _wpos.y, _wpos.z - 1 }, false);
+			int yP = GetBlockLightValue(_wpos.WithOffset(Direction::Value::Up), false);
+			int xP = GetBlockLightValue(_wpos.WithOffset(Direction::Value::East), false);
+			int xM = GetBlockLightValue(_wpos.WithOffset(Direction::Value::West), false);
+			int zP = GetBlockLightValue(_wpos.WithOffset(Direction::Value::South), false);
+			int zM = GetBlockLightValue(_wpos.WithOffset(Direction::Value::North), false);
 
 			if (xP > yP)
 				yP = xP;
@@ -60,8 +62,8 @@ int WorldManager::GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
 	if (_wpos.y < 0) {
 		return 0;
 	} else {
-		if (_wpos.y >= 128)
-			_wpos.y = 127;
+		if (_wpos.y >= CHUNK_HEIGHT)
+			_wpos.y = CHUNK_HEIGHT - 1;
 		auto chunk = this->GetChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
 		if (!chunk)
 			return 15;
@@ -204,7 +206,7 @@ bool WorldManager::HandleFluidAcceleration(AABB _collider, Material _material, E
 }
 
 // Get colliders for an area
-std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area) {
+std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area, Entity* _mover) {
 	std::vector<AABB> collidingBoxes;
 
 	int minX = Java::DoubleToInt32(std::floor(_area.minX));
@@ -250,6 +252,24 @@ std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area) {
 			}
 		}
 	}
+
+	// Collect entities in this area, excluding the mover itself
+	AABB entitySearchArea = { double(minX), double(minY), double(minZ),
+		                      double(maxX), double(maxY), double(maxZ) };
+	auto entitiesInArea = _mover ? entityManager.GetEntitiesWithinAabbExcluding(entitySearchArea, _mover->id)
+	                              : entityManager.GetEntitiesWithinAabb(entitySearchArea);
+
+	for (auto& entity : entitiesInArea) {
+		if (entity->actsAsWorldCollider && entity->collider.Intersects(_area))
+			collidingBoxes.push_back(entity->collider.Expand(-0.1, -0.1, -0.1));
+
+		if (_mover) {
+			auto moverOverrideBox = _mover->GetMoverCollisionOverride(*entity);
+			if (moverOverrideBox && moverOverrideBox->Intersects(_area))
+				collidingBoxes.push_back(*moverOverrideBox);
+		}
+	}
+
 	return collidingBoxes;
 }
 
@@ -489,7 +509,7 @@ void WorldManager::DrainLoadQueue() {
 		thread_local double temp[CHUNK_AREA];
 		thread_local double humi[CHUNK_AREA];
 		thread_local double weird[CHUNK_AREA];
-		Biome ignored[CHUNK_AREA];
+		PackedArray<CHUNK_AREA, 4> ignored;
 		tlBiomeGen.GenerateBiomeMap(ignored, temp, humi, weird, Int2{ pos.x * CHUNK_WIDTH, pos.z * CHUNK_WIDTH });
 		for (int i = 0; i < CHUNK_AREA; ++i) {
 			it->second->temperature[i] = float(temp[i]);
@@ -523,10 +543,10 @@ void WorldManager::SeedChunkLighting(Int32_2 _pos) {
 
 	// We check each column in the chunk's height against its neighbors, if they differ then we schedule light updates for the vertical column between them.
 	// This works like 99% of the time but can miss some edge cases; its fast though!
-	int bx = _pos.x * 16;
-	int bz = _pos.z * 16;
-	for (int x = 0; x < 16; ++x) {
-		for (int z = 0; z < 16; ++z) {
+	int bx = _pos.x * CHUNK_WIDTH;
+	int bz = _pos.z * CHUNK_WIDTH;
+	for (int x = 0; x < CHUNK_WIDTH; ++x) {
+		for (int z = 0; z < CHUNK_WIDTH; ++z) {
 			int wx = bx + x, wz = bz + z;
 			int thisH = chunk->GetHeightValue({ x, z });
 			const int ndx[] = { -1, 1, 0, 0 };
@@ -544,8 +564,8 @@ void WorldManager::SeedChunkLighting(Int32_2 _pos) {
 	}
 
 	// Block light emitters
-	for (int x = 0; x < 16; ++x)
-		for (int z = 0; z < 16; ++z)
+	for (int x = 0; x < CHUNK_WIDTH; ++x)
+		for (int z = 0; z < CHUNK_WIDTH; ++z)
 			for (int y = 0; y < CHUNK_HEIGHT; ++y) {
 				BlockType id = chunk->GetBlock({ x, y, z });
 				if (Blocks::blockProperties[id].lightEmission > 0)
@@ -850,7 +870,7 @@ void WorldManager::SetMeta(const Int3 _wpos, const uint8_t _metadata) {
 	chunk->SetMeta(local, _metadata);
 
 	// Update our neighbors
-	this->NotifyNeighborsOfUpdate(_wpos);
+	this->NotifyNeighborsOfUpdate(_wpos, blockId);
 
 	// Callback for the client and server to know about this block update
 	if (onBlockUpdate && (oldMeta != _metadata && Blocks::blockProperties[blockId].notifySelfOnMetaChange))
@@ -893,18 +913,17 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	}
 
 	// Get the local coordinates of this block within the chunk, and check what block we're replacing
-	int lx = _wpos.x & 15;
-	int lz = _wpos.z & 15;
-	Int3 local{ lx, _wpos.y, lz };
-	auto oldBlock = chunk->GetBlock(local);
-	auto oldMeta = chunk->GetMeta(local);
+	const Int2 localXz{ _wpos.x & 15, _wpos.z & 15 };
+	const Int3 local{ localXz.x, _wpos.y, localXz.z };
+	const auto oldBlock = chunk->GetBlock(local);
+	const auto oldMeta = chunk->GetMeta(local);
 
 	// Making the assumption here that certain metadatas of
 	// blocks don't have differing light properties
-	bool changesLighting = (Blocks::blockProperties[_blockType].lightOpacity !=
-	                        Blocks::blockProperties[oldBlock].lightOpacity) ||
-	                       (Blocks::blockProperties[_blockType].lightEmission !=
-	                        Blocks::blockProperties[oldBlock].lightEmission);
+	const bool changesLighting = (Blocks::blockProperties[_blockType].lightOpacity !=
+	                              Blocks::blockProperties[oldBlock].lightOpacity) ||
+	                             (Blocks::blockProperties[_blockType].lightEmission !=
+	                              Blocks::blockProperties[oldBlock].lightEmission);
 
 	// Unlight before changing the block
 	if (changesLighting) {
@@ -916,45 +935,43 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	chunk->SetBlock(local, _blockType);
 	chunk->SetMeta(local, _metadata);
 
-	int y = _wpos.y;
-	int x = _wpos.x;
-	int z = _wpos.z;
-	int oldHeight = chunk->GetHeightValue({ lx, lz });
+	const Int3 pos = _wpos;
+	const int oldHeight = chunk->GetHeightValue(localXz);
 
 	// Placing opaque block; heightmap may rise
 	if (changesLighting) {
-		chunk->RelightColumn({ lx, lz });
-		int newHeight = chunk->GetHeightValue({ lx, lz });
+		chunk->RelightColumn(localXz);
+		int newHeight = chunk->GetHeightValue(localXz);
 		if (newHeight > oldHeight) {
 			// Notify the BFS that all blocks from y down to oldHeight need updating
 			for (int sy = oldHeight; sy <= newHeight; ++sy) {
-				lightManager.UnlightAt(x, sy, z, LightType::Sky, *this);
+				lightManager.UnlightAt(pos.x, sy, pos.z, LightType::Sky, *this);
 			}
 		} else if (newHeight < oldHeight) {
 			// Height fell
 			for (int sy = newHeight; sy < oldHeight; ++sy) {
-				lightManager.ScheduleLightUpdate({ x, sy, z }, LightType::Sky);
+				lightManager.ScheduleLightUpdate({ pos.x, sy, pos.z }, LightType::Sky);
 			}
 		}
 
 		// Always re-evaluate the edited block and its 4 horizontal neighbours
-		lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Sky);
-		lightManager.ScheduleLightUpdate({ x, y, z }, LightType::Block);
+		lightManager.ScheduleLightUpdate(pos, LightType::Sky);
+		lightManager.ScheduleLightUpdate(pos, LightType::Block);
 		int extendedBottom = CrossPlatform::Math::Min(newHeight, oldHeight);
 		while (extendedBottom > 0 &&
-		       Blocks::blockProperties[chunk->GetBlock({ lx, extendedBottom - 1, lz })].lightOpacity == 0)
+		       Blocks::blockProperties[chunk->GetBlock({ localXz.x, extendedBottom - 1, localXz.z })].lightOpacity == 0)
 			--extendedBottom;
 
 		if (newHeight != oldHeight) {
-			lightManager.ScheduleLightRegion({ x - 1, extendedBottom, z - 1 },
-			                                 { x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), z + 1 },
+			lightManager.ScheduleLightRegion({ pos.x - 1, extendedBottom, pos.z - 1 },
+			                                 { pos.x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), pos.z + 1 },
 			                                 LightType::Sky);
 		}
 	}
 
 	// Update our neighbors
 	if (_updateNeighbors)
-		this->NotifyNeighborsOfUpdate(_wpos);
+		this->NotifyNeighborsOfUpdate(_wpos, _blockType);
 
 	if (_blockType == BLOCK_AIR) {
 		// We removed this block effectively
@@ -974,16 +991,23 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	// Call our on placed function
 	if (_blockType != BLOCK_AIR) {
 		// Java has this functionality in the chunk setters themselves, but
-		// in my opinion (Aidan here) that is stupid and redundant
+		// in my opinion that is stupid
 		auto function = Blocks::blockBehaviors[_blockType].onBlockAdded;
 		if (function)
 			function(*this, _wpos);
 	}
 
+	// Trigger redstone updates
+	if (RedstoneManager::CanTriggerRedstoneUpdate(_blockType) || RedstoneManager::CanTriggerRedstoneUpdate(oldBlock))
+		if (_updateNeighbors)
+			RedstoneManager::TriggerRedstoneUpdate(*this, _wpos, _blockType, oldBlock);
+
 	// Callback for the client and server to know about this block update
-	if (onBlockUpdate && (oldBlock != _blockType ||
-	                      (oldMeta != _metadata && Blocks::blockProperties[_blockType].notifySelfOnMetaChange)))
-		onBlockUpdate(PendingBlock{ .block{ _blockType, _metadata },
+	const auto newBlock = chunk->GetBlock(local);
+	const auto newMeta = chunk->GetMeta(local);
+	if (onBlockUpdate &&
+	    (oldBlock != newBlock || (oldMeta != newMeta && Blocks::blockProperties[newBlock].notifySelfOnMetaChange)))
+		onBlockUpdate(PendingBlock{ .block{ newBlock, newMeta },
 		                            .blockPos{ _wpos.x, _wpos.y, _wpos.z },
 		                            .light{ chunk->GetBlockLight(local), chunk->GetSkyLight(local) } },
 		              chunk->cpos);
@@ -994,7 +1018,7 @@ int WorldManager::FindTopSolidBlock(int _wx, int _wz) {
 	if (!chunk || chunk->state.load() < ChunkState::Generated)
 		return -1;
 	int lx = _wx & 15, lz = _wz & 15;
-	for (int y = 127; y > 0; --y) {
+	for (int y = CHUNK_HEIGHT - 1; y > 0; --y) {
 		BlockType block = chunk->GetBlock({ lx, y, lz });
 		if (block == BlockType::BLOCK_AIR)
 			continue;
@@ -1054,48 +1078,55 @@ void WorldManager::InitSpawn() {
 
 void WorldManager::PropagateChunkLightBorders(Int32_2 _cpos) {
 	// Iterate through our chunk borders
-	const int ndx[] = { -1, 1, 0, 0 };
-	const int ndz[] = { 0, 0, -1, 1 };
-	int bx = _cpos.x * 16;
-	int bz = _cpos.z * 16;
-	for (int i = 0; i < 4; ++i) {
-		Chunk* neighborChunk = GetChunkRaw({ _cpos.x + ndx[i], _cpos.z + ndz[i] });
+	const Direction::Value dirs[4] = { Direction::Value::West, Direction::Value::East, Direction::Value::North,
+		                               Direction::Value::South };
+	const Int32_2 bpos = _cpos * CHUNK_WIDTH;
+	for (auto dir : dirs) {
+		Chunk* neighborChunk = GetChunkRaw(_cpos.WithOffset(dir));
 		if (!neighborChunk)
 			continue;
 
 		// Walk the border edge of this chunk that faces the neighbor
-		for (int t = 0; t < 16; ++t) {
+		for (int t = 0; t < CHUNK_WIDTH; ++t) {
 			// Pick the border column of this chunk facing direction i
 			int lx, lz, nx, nz;
-			if (ndx[i] == -1) {
+			switch (dir) {
+			case Direction::Value::West:
 				lx = 0;
 				lz = t;
-				nx = 15;
+				nx = CHUNK_WIDTH - 1;
 				nz = t;
-			} else if (ndx[i] == 1) {
-				lx = 15;
+				break;
+			case Direction::Value::East:
+				lx = CHUNK_WIDTH - 1;
 				lz = t;
 				nx = 0;
 				nz = t;
-			} else if (ndz[i] == -1) {
+				break;
+			case Direction::Value::North:
 				lx = t;
 				lz = 0;
 				nx = t;
-				nz = 15;
-			} else {
+				nz = CHUNK_WIDTH - 1;
+				break;
+			case Direction::Value::South:
+			default:
 				lx = t;
-				lz = 15;
+				lz = CHUNK_WIDTH - 1;
 				nx = t;
 				nz = 0;
+				break;
 			}
 
 			for (int y = 0; y < CHUNK_HEIGHT; ++y) {
-				// Does our neighbor block have a block light > 0 or sky light > 0? If so, schedule a light update for the block on our side of the border.
-				if (neighborChunk->GetBlockLight({ nx, y, nz })) {
-					lightManager.ScheduleLightUpdate({ bx + lx, y, bz + lz }, LightType::Block);
+				// Does our neighbor block have a block light > 0 or sky light > 0?
+				// If so, schedule a light update for the block on our side of the border.
+				const Int3 lightUpdatePos = { nx, y, nz };
+				if (neighborChunk->GetBlockLight(lightUpdatePos)) {
+					lightManager.ScheduleLightUpdate({ bpos.x + lx, y, bpos.z + lz }, LightType::Block);
 				}
-				if (neighborChunk->GetSkyLight({ nx, y, nz }) > 0) {
-					lightManager.ScheduleLightUpdate({ bx + lx, y, bz + lz }, LightType::Sky);
+				if (neighborChunk->GetSkyLight(lightUpdatePos) > 0) {
+					lightManager.ScheduleLightUpdate({ bpos.x + lx, y, bpos.z + lz }, LightType::Sky);
 				}
 			}
 		}
@@ -1121,30 +1152,18 @@ void WorldManager::SetViewRadius(int _viewRadius) {
 	simulationRadius = std::min(9, newViewRadius);
 }
 
-void WorldManager::NotifyNeighborsOfUpdate(Int3 _globalPos) {
+void WorldManager::NotifyNeighborsOfUpdate(Int3 _globalPos, BlockType _blockId) {
 	// Update our six neighbors
-	const int ndx[] = { -1, 1, 0, 0 };
-	const int ndz[] = { 0, 0, -1, 1 };
+	const Direction::Value dirs[6] = { Direction::Value::West,  Direction::Value::East, Direction::Value::North,
+		                               Direction::Value::South, Direction::Value::Down, Direction::Value::Up };
 
-	// Notify horizontal neighbors
-	for (int i = 0; i < 4; i++) {
-		auto dx = ndx[i];
-		auto dz = ndz[i];
-		Int3 newPos = { _globalPos.x + dx, _globalPos.y, _globalPos.z + dz };
+	// Notify neighbors
+	for (auto dir : dirs) {
+		Int3 newPos = _globalPos.WithOffset(dir);
 		auto block = this->GetBlockId(newPos);
 		auto updateFunction = Blocks::blockBehaviors[block].onNeighborBlockChange;
 		if (updateFunction)
-			updateFunction(*this, newPos);
-	}
-
-	// Vertical neighbors
-	for (int i = 0; i < 2; i++) {
-		auto dy = ndx[i]; // we are using ndx because the first two items are -1, 1
-		Int3 newPos = { _globalPos.x, _globalPos.y + dy, _globalPos.z };
-		auto block = this->GetBlockId(newPos);
-		auto updateFunction = Blocks::blockBehaviors[block].onNeighborBlockChange;
-		if (updateFunction)
-			updateFunction(*this, newPos);
+			updateFunction(*this, newPos, _blockId);
 	}
 }
 

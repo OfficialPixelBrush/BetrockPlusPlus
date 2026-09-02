@@ -52,7 +52,8 @@ void EntityTracker::Tick() {
 			}
 			auto& player = playerIt->second;
 
-			if (DistanceBetweenPlayerAndEntity(entry.entity, player.entity) > entry.profile.range*entry.profile.range) {
+			if (DistanceBetweenPlayerAndEntity(entry.entity, player.entity) >
+			    entry.profile.range * entry.profile.range) {
 				auto pSession = server->GetSessionById(playerId);
 				if (!pSession) {
 					it = entry.visibleTo.erase(it);
@@ -77,7 +78,8 @@ void EntityTracker::Tick() {
 			if (entityId == playerId)
 				continue;
 
-			if (DistanceBetweenPlayerAndEntity(entityEntry.entity, player.entity) > entityEntry.profile.range*entityEntry.profile.range ||
+			if (DistanceBetweenPlayerAndEntity(entityEntry.entity, player.entity) >
+			        entityEntry.profile.range * entityEntry.profile.range ||
 			    entityEntry.visibleTo.find(playerId) != entityEntry.visibleTo.end()) {
 				continue;
 			}
@@ -96,6 +98,7 @@ void EntityTracker::TrackEntity(Entity* _entity) {
 	entry.lastBroadcastMotion = _entity->velocity;
 	entry.lastEncodedPitch = QuantizeRotation(_entity->rotationPitch);
 	entry.lastEncodedYaw = QuantizeRotation(_entity->rotationYaw);
+	entry.updateCounter = entry.profile.updateFrequency > 0 ? rand.NextInt(entry.profile.updateFrequency) : 0;
 
 	trackedEntities[_entity->id] = std::move(entry);
 
@@ -108,7 +111,8 @@ void EntityTracker::TrackEntity(Entity* _entity) {
 		if (playerIt == trackedEntities.end())
 			continue;
 		auto& player = playerIt->second;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, player.entity) > newEntry.profile.range*newEntry.profile.range)
+		if (DistanceBetweenPlayerAndEntity(entry.entity, player.entity) >
+		    newEntry.profile.range * newEntry.profile.range)
 			continue;
 		// Register the viewer before spawning
 		newEntry.visibleTo.insert(playerId);
@@ -142,6 +146,7 @@ void EntityTracker::AddPlayer(Entity* _player) {
 	entry.lastBroadcastMotion = _player->velocity;
 	entry.lastEncodedPitch = QuantizeRotation(_player->rotationPitch);
 	entry.lastEncodedYaw = QuantizeRotation(_player->rotationYaw);
+	entry.updateCounter = entry.profile.updateFrequency > 0 ? rand.NextInt(entry.profile.updateFrequency) : 0;
 
 	trackedEntities[_player->id] = std::move(entry);
 	playerIds.insert(_player->id);
@@ -151,7 +156,8 @@ void EntityTracker::AddPlayer(Entity* _player) {
 	for (auto& [entityId, entityEntry] : trackedEntities) {
 		if (entityId == _player->id)
 			continue;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) > entityEntry.profile.range*entityEntry.profile.range)
+		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) >
+		    entityEntry.profile.range * entityEntry.profile.range)
 			continue;
 		// Register the viewer before spawning
 		entityEntry.visibleTo.insert(_player->id);
@@ -164,7 +170,8 @@ void EntityTracker::AddPlayer(Entity* _player) {
 		auto otherIt = trackedEntities.find(otherPlayerId);
 		if (otherIt == trackedEntities.end())
 			continue;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) > newPlayerEntry.profile.range*newPlayerEntry.profile.range)
+		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) >
+		    newPlayerEntry.profile.range * newPlayerEntry.profile.range)
 			continue;
 		newPlayerEntry.visibleTo.insert(otherPlayerId);
 		SpawnEntityForPlayer(otherPlayerId, newPlayerEntry);
@@ -205,7 +212,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		auto quantizeSpawnVelocity = [](double _v) -> int8_t {
 			return int8_t(_v * 128.0);
 		};
-		pkt.qRotation = { quantizeSpawnVelocity(_entityEntry.entity->velocity.x),
+		pkt.qVelocity = { quantizeSpawnVelocity(_entityEntry.entity->velocity.x),
 			              quantizeSpawnVelocity(_entityEntry.entity->velocity.y),
 			              quantizeSpawnVelocity(_entityEntry.entity->velocity.z) };
 		pkt.Serialize(pSession->stream);
@@ -230,6 +237,24 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.Serialize(pSession->stream);
 		SendEquipmentState(_entityEntry, pSession);
 		SendMetadataState(_entityEntry, pSession);
+
+		// Sync riding state with the new joiner
+		if (auto vehiclePtr = _entityEntry.entity->vehicle.lock()) {
+			Packet::AddPassenger pkt;
+			pkt.vehicleEntityId = vehiclePtr->id;
+			pkt.passengerEntityId = _entityEntry.entity->id;
+			pkt.Serialize(pSession->stream);
+		}
+		// TODO: Sync with new joiners ffs
+		/*
+		if (_entityEntry.entity->isSleeping) {
+			Packet::InteractWithBlock sleepingAnim;
+			sleepingAnim.entityId = _entityEntry.entity->id;
+			sleepingAnim.interactionId = PacketData::BlockInteraction::SLEEPING;
+			sleepingAnim.position = { _position.x, static_cast<int8_t>(_position.y), _position.z };
+			sleepingAnim.Serialize(pSession->stream);
+		}
+		*/
 		break;
 	}
 	case EntityType::CREEPER: {
@@ -325,7 +350,15 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.entityId = _entityEntry.entity->id;
 		pkt.objectType = PacketData::ObjectType::BOAT;
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
 		pkt.Serialize(pSession->stream);
+
+		// This is annoying, but the boat needs a separate rotation packet to be sent after the spawn packet
+		Packet::EntityRotation pktRot;
+		pktRot.entityId = _entityEntry.entity->id;
+		pktRot.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
+			                 int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
+		pktRot.Serialize(pSession->stream);
 		break;
 	}
 	case EntityType::FALLING_SAND: {
@@ -562,7 +595,11 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 
 		// The threshold-based velocity check
 		if (_trackedEntry.profile.sendVelocity) {
-			Vec3 currentMotion = { entity->velocity.x, entity->velocity.y, entity->velocity.z };
+			double THRESHOLD = 0.01;
+			Vec3 currentMotion;
+			entity->velocity.x < THRESHOLD ? 0 : currentMotion.x = entity->velocity.x;
+			entity->velocity.y < THRESHOLD ? 0 : currentMotion.y = entity->velocity.y;
+			entity->velocity.z < THRESHOLD ? 0 : currentMotion.z = entity->velocity.z;
 			Vec3& lastMotion = _trackedEntry.lastBroadcastMotion;
 			double dmx = currentMotion.x - lastMotion.x;
 			double dmy = currentMotion.y - lastMotion.y;
@@ -603,20 +640,17 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 
 			Packet::TeleportEntity pkt;
 			pkt.entityId = entity->id;
-			pkt.position = { qx, qy, qz };
-			pkt.rotation = { int8_t(qYaw), int8_t(qPitch) };
+			pkt.qPosition = { qx, qy, qz };
+			pkt.qRotation = { int8_t(qYaw), int8_t(qPitch) };
 			SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
 			_trackedEntry.lastEncodedPos = { qx, qy, qz };
 			_trackedEntry.lastEncodedYaw = qYaw;
 			_trackedEntry.lastEncodedPitch = qPitch;
 		} else {
-			bool needsRelMove =
-				std::abs(dx) > MINIMUM_POSITION_DELTA ||
-				std::abs(dy) > MINIMUM_POSITION_DELTA ||
-				std::abs(dz) > MINIMUM_POSITION_DELTA;
-			bool needsRot =
-				std::abs(qYaw   - _trackedEntry.lastEncodedYaw)   > MINIMUM_ROTATION_DELTA ||
-				std::abs(qPitch - _trackedEntry.lastEncodedPitch) > MINIMUM_ROTATION_DELTA;
+			bool needsRelMove = std::abs(dx) > MINIMUM_POSITION_DELTA || std::abs(dy) > MINIMUM_POSITION_DELTA ||
+			                    std::abs(dz) > MINIMUM_POSITION_DELTA;
+			bool needsRot = std::abs(qYaw - _trackedEntry.lastEncodedYaw) > MINIMUM_ROTATION_DELTA ||
+			                std::abs(qPitch - _trackedEntry.lastEncodedPitch) > MINIMUM_ROTATION_DELTA;
 
 			if (needsRelMove && needsRot) {
 				Packet::EntityPositionAndRotation pkt;

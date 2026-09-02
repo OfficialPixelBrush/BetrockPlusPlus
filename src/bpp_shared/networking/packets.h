@@ -278,9 +278,12 @@ public:
 	// Defines the players rotation
 	struct PlayerRotation : BasePacket {
 		PlayerRotation() : BasePacket{ PacketId::PlayerRotation } {}
-		Float2 rotation = { 0, 0 };
-		float& yaw = rotation.x; // wire order: yaw first
-		float& pitch = rotation.y;
+		union {
+			Float2 rotation = { 0.0f, 0.0f };
+			struct {
+				float yaw, pitch;
+			};
+		};
 		bool onGround = false;
 
 		void Serialize(NetworkStream& _stream) const override {
@@ -303,9 +306,12 @@ public:
 		PlayerPositionAndRotation() : BasePacket{ PacketId::PlayerPositionAndRotation } {}
 		Vec3 position = { 0, 0, 0 };
 		double cameraY = position.y + 1.62;
-		Float2 rotation = { 0.0f, 0.0f };
-		float& yaw = rotation.x; // wire order: yaw first
-		float& pitch = rotation.y;
+		union {
+			Float2 rotation = { 0.0f, 0.0f };
+			struct {
+				float yaw, pitch;
+			};
+		};
 		bool onGround = false;
 
 		void Serialize(NetworkStream& _stream) const override {
@@ -474,9 +480,12 @@ public:
 		EntityId entityId;
 		std::string username;
 		Int32_3 qPosition;
-		Int8_2 qRotation;
-		int8_t& qYaw = qRotation.x; // wire order: yaw first
-		int8_t& qPitch = qRotation.y;
+		union {
+			Int8_2 qRotation;
+			struct {
+				int8_t qYaw, qPitch;
+			};
+		};
 		ItemId heldItemId;
 
 		void Serialize(NetworkStream& _stream) const override {
@@ -510,10 +519,7 @@ public:
 		EntityId entityId;
 		ItemStack item;
 		Int32_3 qPosition;
-		Int8_3 qRotation;
-		int8_t& qPitch = qRotation.x;
-		int8_t& qYaw = qRotation.y;
-		int8_t& qRoll = qRotation.z;
+		Int8_3 qVelocity;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
@@ -524,9 +530,9 @@ public:
 			_stream.Write(qPosition.x);
 			_stream.Write(qPosition.y);
 			_stream.Write(qPosition.z);
-			_stream.Write(qPitch);
-			_stream.Write(qYaw);
-			_stream.Write(qRoll);
+			_stream.Write(qVelocity.x);
+			_stream.Write(qVelocity.y);
+			_stream.Write(qVelocity.z);
 			_stream.IncrementPacketCount(id);
 		}
 
@@ -538,9 +544,9 @@ public:
 			qPosition.x = _stream.Read<int32_t>();
 			qPosition.y = _stream.Read<int32_t>();
 			qPosition.z = _stream.Read<int32_t>();
-			qPitch = _stream.Read<int8_t>();
-			qYaw = _stream.Read<int8_t>();
-			qRoll = _stream.Read<int8_t>();
+			qVelocity.x = _stream.Read<int8_t>();
+			qVelocity.y = _stream.Read<int8_t>();
+			qVelocity.z = _stream.Read<int8_t>();
 		}
 	};
 
@@ -609,9 +615,12 @@ public:
 		EntityId entityId;
 		PacketData::MobType mobType;
 		Int32_3 qPosition;
-		Int8_2 qRotation;
-		int8_t& qYaw = qRotation.x; // wire order: yaw first
-		int8_t& qPitch = qRotation.y;
+		union {
+			Int8_2 qRotation;
+			struct {
+				int8_t qYaw, qPitch;
+			};
+		};
 		std::vector<PacketData::EntityMetadata::DataEntry> metadata;
 
 		void Serialize(NetworkStream& _stream) const override {
@@ -644,16 +653,16 @@ public:
 		SpawnPainting() : BasePacket{ PacketId::SpawnPainting } {}
 		EntityId entityId;
 		std::string title;
-		Int32_3 position; // Block position
+		Int32_3 qPosition;
 		PacketData::PaintingDirection direction;
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.Write(entityId);
 			_stream.WriteString16(title);
-			_stream.Write(position.x);
-			_stream.Write(position.y);
-			_stream.Write(position.z);
+			_stream.Write(qPosition.x);
+			_stream.Write(qPosition.y);
+			_stream.Write(qPosition.z);
 			_stream.Write(direction);
 			_stream.IncrementPacketCount(id);
 		}
@@ -661,9 +670,9 @@ public:
 		void Deserialize(NetworkStream& _stream) override {
 			entityId = _stream.Read<EntityId>();
 			title = _stream.ReadString16();
-			position.x = _stream.Read<int32_t>();
-			position.y = _stream.Read<int32_t>();
-			position.z = _stream.Read<int32_t>();
+			qPosition.x = _stream.Read<int32_t>();
+			qPosition.y = _stream.Read<int32_t>();
+			qPosition.z = _stream.Read<int32_t>();
 			direction = _stream.Read<PacketData::PaintingDirection>();
 		}
 	};
@@ -671,12 +680,18 @@ public:
 	// Unused, but exists for sending raw player input to the client/server
 	struct PlayerInput : BasePacket {
 		PlayerInput() : BasePacket{ PacketId::PlayerInput } {}
-		Float2 direction;
-		float& strafeDirection = direction.x;
-		float& forwardDirection = direction.y;
-		Float2 rotation;
-		float& pitch = rotation.x;
-		float& yaw = rotation.y;
+		union {
+			Float2 direction;
+			struct {
+				float strafeDirection, forwardDirection;
+			};
+		};
+		union {
+			Float2 rotation;
+			struct {
+				float pitch, yaw;
+			};
+		};
 		bool jumping;
 		bool sneaking;
 
@@ -779,9 +794,12 @@ public:
 	struct EntityRotation : BasePacket {
 		EntityRotation() : BasePacket{ PacketId::EntityRotation } {}
 		EntityId entityId;
-		Int8_2 qRotation;
-		int8_t& qYaw = qRotation.x; // wire order: yaw first
-		int8_t& qPitch = qRotation.y;
+		union {
+			Int8_2 qRotation;
+			struct {
+				int8_t qYaw, qPitch;
+			};
+		};
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
@@ -803,9 +821,12 @@ public:
 		EntityPositionAndRotation() : BasePacket{ PacketId::EntityPositionAndRotation } {}
 		EntityId entityId;
 		Int8_3 qrPosition;
-		Int8_2 qRotation;
-		int8_t& qYaw = qRotation.x; // wire order: yaw first
-		int8_t& qPitch = qRotation.y;
+		union {
+			Int8_2 qRotation;
+			struct {
+				int8_t qYaw, qPitch;
+			};
+		};
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
@@ -832,29 +853,32 @@ public:
 	struct TeleportEntity : BasePacket {
 		TeleportEntity() : BasePacket{ PacketId::TeleportEntity } {}
 		EntityId entityId;
-		Int32_3 position;
-		Int8_2 rotation;
-		int8_t& yaw = rotation.x; // wire order: yaw first
-		int8_t& pitch = rotation.y;
+		Int32_3 qPosition;
+		union {
+			Int8_2 qRotation;
+			struct {
+				int8_t qYaw, qPitch;
+			};
+		};
 
 		void Serialize(NetworkStream& _stream) const override {
 			_stream.Write(id);
 			_stream.Write(entityId);
-			_stream.Write(position.x);
-			_stream.Write(position.y);
-			_stream.Write(position.z);
-			_stream.Write(yaw);
-			_stream.Write(pitch);
+			_stream.Write(qPosition.x);
+			_stream.Write(qPosition.y);
+			_stream.Write(qPosition.z);
+			_stream.Write(qYaw);
+			_stream.Write(qPitch);
 			_stream.IncrementPacketCount(id);
 		}
 
 		void Deserialize(NetworkStream& _stream) override {
 			entityId = _stream.Read<EntityId>();
-			position.x = _stream.Read<int32_t>();
-			position.y = _stream.Read<int32_t>();
-			position.z = _stream.Read<int32_t>();
-			yaw = _stream.Read<int8_t>();
-			pitch = _stream.Read<int8_t>();
+			qPosition.x = _stream.Read<int32_t>();
+			qPosition.y = _stream.Read<int32_t>();
+			qPosition.z = _stream.Read<int32_t>();
+			qYaw = _stream.Read<int8_t>();
+			qPitch = _stream.Read<int8_t>();
 		}
 	};
 
