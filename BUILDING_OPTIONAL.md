@@ -3,6 +3,7 @@
 Optional Features are settings that we expose at compile-time for people that want specific features, without unnecessarily inflating compile time, binary size or the number of necessary dependencies for those that don't want them.
 
 For example, if you'd like to disable Online Mode Authencation, but enable Discord Integration, you'd type:
+
 ```bash
 cmake -S . -B build -DONLINE_MODE_AUTHENTICATION=OFF -DDISCORD_INTEGRATION=ON
 ```
@@ -21,19 +22,19 @@ Add `-DBETACRAFT_HEARTBEAT=ON` to the first build command.
 
 To appear on the list, contact Moresteck on the [Betacraft Discord](https://betacraft.uk/) for a private key assigned to your address, then set these in `server.properties`:
 
-| Key                        | Purpose                                                                                          |
-| -------------------------- | ------------------------------------------------------------------------------------------------ |
-| `betacraft-heartbeat`      | `true` to ping `https://api.betacraft.uk/v2/server_update` every 60 seconds                      |
-| `betacraft-name`           | List name (max 64 characters)                                                                    |
-| `betacraft-description`    | List description (max 256 characters). State whitelist/anarchy clearly if that applies           |
-| `betacraft-socket`         | Public `host:port` players should join. Empty auto-detects public IP + `server-port`             |
-| `betacraft-private-key`    | Verification key from Betacraft (required for category, domain names, and icons)                 |
-| `betacraft-category`       | `classic`, `indev`, `infdev`, `alpha`, `beta`, or `release`                                      |
-| `betacraft-game-version`   | Version ID as shown in the Betacraft launcher (default `b1.7.3`)                                 |
-| `betacraft-protocol`       | Protocol ID from Betacraft version metadata (default `beta_14` for Beta 1.7.3)                   |
-| `betacraft-v1-version`     | Version string for Betacraft launcher v1                                                         |
-| `betacraft-send-players`   | `true` shares online usernames; `false` only shares the player count                             |
-| `betacraft-icon`           | Optional path to a PNG icon (max 128×128 and 64 KiB)                                             |
+| Key                      | Purpose                                                                                |
+| ------------------------ | -------------------------------------------------------------------------------------- |
+| `betacraft-heartbeat`    | `true` to ping `https://api.betacraft.uk/v2/server_update` every 60 seconds            |
+| `betacraft-name`         | List name (max 64 characters)                                                          |
+| `betacraft-description`  | List description (max 256 characters). State whitelist/anarchy clearly if that applies |
+| `betacraft-socket`       | Public `host:port` players should join. Empty auto-detects public IP + `server-port`   |
+| `betacraft-private-key`  | Verification key from Betacraft (required for category, domain names, and icons)       |
+| `betacraft-category`     | `classic`, `indev`, `infdev`, `alpha`, `beta`, or `release`                            |
+| `betacraft-game-version` | Version ID as shown in the Betacraft launcher (default `b1.7.3`)                       |
+| `betacraft-protocol`     | Protocol ID from Betacraft version metadata (default `beta_14` for Beta 1.7.3)         |
+| `betacraft-v1-version`   | Version string for Betacraft launcher v1                                               |
+| `betacraft-send-players` | `true` shares online usernames; `false` only shares the player count                   |
+| `betacraft-icon`         | Optional path to a PNG icon (max 128×128 and 64 KiB)                                   |
 
 ### Discord Integration (OFF)
 
@@ -55,15 +56,22 @@ In the [Discord Developer Portal](https://discord.com/developers/applications), 
 
 > **Windows note:** if installing DPP through `vcpkg`, use a non-static triplet (`x64-windows`, not `x64-windows-static`).
 
-### Reduced Terrain Precision (OFF)
+### Terrain Precision (DOUBLE)
 
-Reduced Terrain Precision is **off by default**. Enabling it reduces the floating-point precision of the Perlin and Simplex noise generators from 64-bit to 32-bit floats. This shouldn't do much on systems with a dedicated floating-point co-processor, such as an Intel 8087, or integrated floating-point functionality, like most x86 CPUs made after ~1987, as they use the same 80-Bit registers for 32-bit and 64-bit floating-point math, the only difference being potential memory bandwidth usage.
+Terrain Precision is set to **`DOUBLE` by default**. Setting it to another value changes the numerical precision of the Perlin and Simplex noise generators.
 
-The main benefits are for some microcontrollers or cost-reduced x86 chips that don't have integrated floating-point support, and thus need to emulate it all in software. Examples for such include RISC-V cores that lack the F (float) and D (double) extensions (e.g. RV32I, RV64IM) or the i486SX.
+There exist four options, listed from most to least supported/usable.
 
-Simply add `-DREDUCED_GENERATION_PRECISION=ON` to the first build command, then resume as normal.
+| Value    | Description                                                                                                                                                                                                                                                                                                                                                             | Consequences                                                                                                                                                                                                                  |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DOUBLE` | Uses a **64-Bit floating point number**. The default, supported mode                                                                                                                                                                                                                                                                                                          | None. This is identical to Vanilla Minecraft                                                                                                                                                                                  |
+| `FLOAT`  | Uses a **32-Bit floating point number**. This shouldn't do much on systems with a dedicated floating-point co-processor, such as an Intel 8087, or integrated floating-point functionality, like most x86 CPUs made after ~1987, as they use the same 80-Bit registers for 32-bit and 64-bit floating-point math, the only difference being potential memory bandwidth usage. | The only major difference this option introduces is that the farlands do not generate, and they just become an infinite ocean with a bedrock floor along the X-Axis, and the same but with a grid of blocks along the Z-Axis. |
+| `LONG`   | Uses a **36.28 Fixed-point number**, removing some floating-point overhead                                                                                                                                                                                                                                                                                                | Generation can differ slightly under some circumstances, even near 0,0                                                                                                                                                        |
+| `INT`    | Uses a **18.14 Fixed-point number**, removing some floating-point overhead                                                                                                                                                                                                                                                                                                | Generation can differ noticably under some circumstances, even near 0,0                                                                                                                                                       |
 
-The only major difference this option introduces is that the farlands do not generate, and they just become an infinite ocean with a bedrock floor along the X-Axis, and the same but with a grid of blocks along the Z-Axis.
+The main benefits for this are for some microcontrollers or cost-reduced x86 chips that don't have integrated floating-point support, and thus need to emulate it all in software. Examples for such include RISC-V cores that lack the F (float) and D (double) extensions (e.g. RV32I, RV64IM) or the i486SX.
+
+Simply add `-DREDUCED_GENERATION_PRECISION=`, followed by your desired precision type, to the first build command, then resume as normal.
 
 ## Continuing
 

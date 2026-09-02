@@ -11,25 +11,23 @@
 #include <array>
 #include <vector>
 
-#if defined(GENERATION_PRECISION_FLOAT64)
+#if defined(GENERATION_PRECISION_DOUBLE)
 typedef double gen_float;
 #define GenFloatToInt32 Java::DoubleToInt32
-#elif defined(GENERATION_PRECISION_FLOAT32)
+#elif defined(GENERATION_PRECISION_FLOAT)
 typedef float gen_float;
 #define GenFloatToInt32 Java::FloatToInt32
-#elif defined(GENERATION_PRECISION_INT64)
+#elif defined(GENERATION_PRECISION_LONG)
 #include "../../quantized_types.h"
 #include <cstdint>
 typedef Fixed<int64_t, (1 << 28)> gen_float;
-// Toward-zero conversion, matching Java's FloatToInt32 / DoubleToInt32.
 constexpr inline int32_t GenFloatToInt32(const gen_float value) {
     return static_cast<int32_t>(value.Raw() / gen_float::M_SCALE);
 }
-#elif defined(GENERATION_PRECISION_INT32)
+#elif defined(GENERATION_PRECISION_INT)
 #include "../../quantized_types.h"
 #include <cstdint>
 typedef Fixed<int32_t, (1 << 14)> gen_float;
-// Toward-zero conversion, matching Java's FloatToInt32 / DoubleToInt32.
 constexpr inline int32_t GenFloatToInt32(const gen_float value) {
     return static_cast<int32_t>(value.Raw() / gen_float::M_SCALE);
 }
