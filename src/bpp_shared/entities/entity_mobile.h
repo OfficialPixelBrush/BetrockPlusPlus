@@ -24,6 +24,7 @@ public:
 
 	void ResolveEntityCollision(Entity& _other);
 	void TickPhysics();
+	void ResolveEntityPushes();
 
 	MobileEntity();
 

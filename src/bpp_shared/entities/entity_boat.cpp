@@ -59,6 +59,7 @@ void BoatEntity::OnPlayerInteract(PlayerEntity* _entity) {
 }
 
 void BoatEntity::Tick() {
+	Entity::Tick();
 	if (shakeTimer > 0)
 		shakeTimer--;
 	if (damageTaken > 0)

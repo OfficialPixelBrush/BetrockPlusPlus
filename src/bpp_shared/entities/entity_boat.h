@@ -39,9 +39,8 @@ struct BoatEntity : public Entity {
 	}
 
 	Vec3 GetRiderSeatOffset() override {
-		double xOffset = std::cos(rotationYaw * JavaMath::PI / 180.0) * 0.4;
-		double zOffset = std::sin(rotationYaw * JavaMath::PI / 180.0) * 0.4;
-		return { xOffset, 0.0, zOffset };
+		double yawRad = double(rotationYaw) * (JavaMath::PI / 180.0);
+		return { std::cos(yawRad) * 0.4, 0.0, std::sin(yawRad) * 0.4 };
 	}
 
 	bool AttackEntityFrom(Entity* _entity, int _damage) override;

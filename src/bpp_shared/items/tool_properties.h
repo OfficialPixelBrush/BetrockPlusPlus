@@ -124,6 +124,7 @@ void HarmTool(ItemStack* _stack, const int _amount = 1);
 void OnToolFinishMining(ItemStack* _stack, BlockType _targetBlock);
 void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face);
 void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face);
+void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face);
 void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face);
 void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face);
 void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face);

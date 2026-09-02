@@ -198,12 +198,13 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 			return;
 		}
 
-		// Buckets
+		// Special cases
 		bool isBucketItem = (heldItem->id == Items::Id::BUCKET || heldItem->id == Items::Id::BUCKET_WATER ||
 		                     heldItem->id == Items::Id::BUCKET_LAVA);
+		bool isBoatItem = heldItem->id == Items::Id::BOAT;
 		bool hasOnBlockUse = static_cast<bool>(Items::itemBehavior[heldItem->id].onBlockUse);
 
-		if (isBucketItem && hasOnBlockUse) {
+		if ((isBucketItem || isBoatItem) && hasOnBlockUse) {
 			Items::itemBehavior[heldItem->id].onBlockUse(_world, heldItem, position, *_session.entity,
 			                                             FaceDirectionToDirection(_pkt.face));
 		}

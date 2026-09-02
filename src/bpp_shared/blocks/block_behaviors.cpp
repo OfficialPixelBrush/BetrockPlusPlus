@@ -27,6 +27,49 @@
 namespace Blocks {
 BlockBehavior blockBehaviors[BLOCK_MAX] = {};
 
+static float GetCropGrowthRate(WorldManager& _world, Int3 _pos) {
+	float rate = 1.0f;
+
+	// Check each axis to see if there is wheat there
+	BlockType north = _world.GetBlockId({ _pos.x, _pos.y, _pos.z - 1 });
+	BlockType south = _world.GetBlockId({ _pos.x, _pos.y, _pos.z + 1 });
+	BlockType west = _world.GetBlockId({ _pos.x - 1, _pos.y, _pos.z });
+	BlockType east = _world.GetBlockId({ _pos.x + 1, _pos.y, _pos.z });
+	BlockType nw = _world.GetBlockId({ _pos.x - 1, _pos.y, _pos.z - 1 });
+	BlockType ne = _world.GetBlockId({ _pos.x + 1, _pos.y, _pos.z - 1 });
+	BlockType se = _world.GetBlockId({ _pos.x + 1, _pos.y, _pos.z + 1 });
+	BlockType sw = _world.GetBlockId({ _pos.x - 1, _pos.y, _pos.z + 1 });
+
+	bool wheatOnXAxis = (west == BLOCK_CROP_WHEAT || east == BLOCK_CROP_WHEAT);
+	bool wheatOnZAxis = (north == BLOCK_CROP_WHEAT || south == BLOCK_CROP_WHEAT);
+	bool wheatDiagonal = (nw == BLOCK_CROP_WHEAT || ne == BLOCK_CROP_WHEAT || se == BLOCK_CROP_WHEAT ||
+	                      sw == BLOCK_CROP_WHEAT);
+
+	// Check the quality of the farmland around us
+	// Our own tile counts fully and neighbor tiles count for 1/4
+	for (int x = _pos.x - 1; x <= _pos.x + 1; x++) {
+		for (int z = _pos.z - 1; z <= _pos.z + 1; z++) {
+			BlockType below = _world.GetBlockId({ x, _pos.y - 1, z });
+			float contribution = 0.0f;
+			if (below == BLOCK_FARMLAND) {
+				contribution = 1.0f;
+				if (_world.GetMetadata({ x, _pos.y - 1, z }) > 0)
+					contribution = 3.0f; // moist farmland scores triple
+
+				if (x != _pos.x || z != _pos.z)
+					contribution /= 4.0f; // neighbor tiles count for 1/4
+			}
+			rate += contribution;
+		}
+	}
+
+	// If there is wheat on the diagonal or on both axes, the growth rate is halved
+	if (wheatDiagonal || (wheatOnXAxis && wheatOnZAxis))
+		rate /= 2.0f;
+
+	return rate;
+}
+
 static bool CanRedstoneComponentStay(WorldManager& _world, Int3 _pos) {
 	return _world.IsBlockNormalCube(_pos.Offset(Direction::Value::Down));
 }
@@ -694,11 +737,13 @@ void RegisterBlockBehaviors() {
 
 	blockBehaviors[BLOCK_CROP_WHEAT].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                             Java::Random& _random) -> void {
-		// Add onto age
-		if (_meta < 7) {
-			_meta++;
-			_world.SetMeta(_pos, _meta);
-		}
+		if (_world.GetBlockLightValue({ _pos.x, _pos.y + 1, _pos.z }) < 9)
+			return;
+		if (_meta >= 7)
+			return;
+		auto rate = GetCropGrowthRate(_world, _pos);
+		if (_random.NextInt(int(100.0f / rate)) == 0)
+			_world.SetMeta(_pos, _meta + 1);
 	};
 	blockBehaviors[BLOCK_SUGARCANE].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                           BlockType _blockId) -> void {
@@ -756,6 +801,52 @@ void RegisterBlockBehaviors() {
 	auto onPistonPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
 	                        BlockType _blockId, uint8_t _meta) -> bool {
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_PISTON, _face));
+	};
+
+	// Farmland
+	blockBehaviors[BLOCK_FARMLAND].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                          BlockType _blockId) -> void {
+			// Revert to dirt if something is solid above us
+			if (_world.GetMaterial({ _pos.x, _pos.y + 1, _pos.z }).isSolid) {
+				_world.SetBlock(_pos, BLOCK_DIRT, 0);
+			}
+		};
+	blockBehaviors[BLOCK_FARMLAND].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                           Java::Random& _random) -> void {
+		if (_random.NextInt(5) != 0)
+			return;
+
+		// Check if we are hydrated
+		auto WaterNearby = [](WorldManager& _world, Int3 _pos) -> bool {
+			for (int dx = -4; dx <= 4; dx++) {
+				for (int dz = -4; dz <= 4; dz++) {
+					for (int dy = 0; dy <= 1; dy++) {
+						Int3 checkPos = { _pos.x + dx, _pos.y + dy, _pos.z + dz };
+						if (_world.GetMaterial(checkPos) == Material::Water())
+							return true;
+					}
+				}
+			}
+			return false;
+		};
+
+		// There is water so max hydration
+		if (WaterNearby(_world, _pos)) {
+			if (_meta < 7) {
+				_world.SetMeta(_pos, 7);
+			}
+			return;
+		}
+
+		// We still have room to dry out
+		if (_meta > 0) {
+			_world.SetMeta(_pos, _meta - 1);
+			return;
+		}
+
+		// We are completely dry, check if we have a crop on top of us
+		if (_world.GetBlockId({ _pos.x, _pos.y + 1, _pos.z }) != BLOCK_CROP_WHEAT)
+			_world.SetBlock(_pos, BLOCK_DIRT, 0);
 	};
 
 	// Plants
@@ -1949,6 +2040,11 @@ void RegisterBlockBehaviors() {
 	};
 	blockBehaviors[BLOCK_SAPLING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                          Java::Random& _random) -> void {
+		if (_world.GetBlockLightValue({_pos.x, _pos.y + 1, _pos.z}) < 9)
+			return;
+		if (_random.NextInt(30) != 0)
+			return;
+
 		// Add onto age
 		if ((_meta & 0b1100) < 0b1100) {
 			_meta += 0b100;
@@ -1979,6 +2075,7 @@ void RegisterBlockBehaviors() {
 		if (!successfullyGrew)
 			_world.SetBlock(_pos, BLOCK_SAPLING, _meta);
 	};
+
 	blockBehaviors[BLOCK_SAPLING].damageDropped = [](uint8_t _meta) -> ItemDamage {
 		return _meta & 3;
 	};
