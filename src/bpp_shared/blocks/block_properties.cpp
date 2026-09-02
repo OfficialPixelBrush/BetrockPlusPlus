@@ -802,6 +802,7 @@ void RegisterBlockProperties() {
 		.isOpaqueCube = false,
 		.isNormalCube = false,
 		.renderAsNormalBlock = false,
+		.ticksOnLoad = true
 	};
 
 	// Furnace (idle)
