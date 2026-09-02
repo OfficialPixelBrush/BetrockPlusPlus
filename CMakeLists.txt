@@ -223,8 +223,6 @@ set(CLIENT_SOURCES
     src/bpp_client/packet/handle_client_packet.cpp
     src/bpp_client/packet/client_packet_dispatcher.cpp
 
-    src/bpp_client/renderers/world_renderer.cpp
-    src/bpp_client/renderers/sub_chunk_mesher.cpp
 
     src/bpp_client/single_header_impl/sokol_gfx.cpp
 )

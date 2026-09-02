@@ -8,6 +8,7 @@
 #include "entity_item.h"
 #include "entity_manager.h"
 #include "entity_player.h"
+#include "helpers/movement.h"
 #include "packet_data.h"
 #include "world/world.h"
 #include <algorithm>
@@ -277,16 +278,9 @@ void Entity::ApplyKnockback(Vec3 _direction) {
 }
 
 void Entity::ApplyInput(float _acceleration) {
-	float length = std::sqrt((input.x * input.x) + (input.y * input.y));
-
-	if (length < 0.01f)
+	// Normalizes in place: entity_mobile decays these same fields afterwards.
+	if (!Movement::NormalizeMoveInput(input.x, input.y))
 		return;
-
-	if (length < 1.0f)
-		length = 1.0f;
-
-	input.x /= length;
-	input.y /= length;
 
 	float yaw = rotationYaw * (JavaMath::PI / 180.0f);
 	float sinYaw = std::sin(yaw);
@@ -309,129 +303,21 @@ void Entity::Move(Vec3& _velocity) {
 		_velocity.z = 0.0;
 	}
 
-	Vec3 original = _velocity;
-	AABB originalCollider = collider;
-	bool clampSneak = onGround && flags.isSneaking;
-
-	if (clampSneak) {
-		const double step = 0.05;
-
-		auto groundBelow = [&](double _dx, double _dz) -> bool {
-			return !world->GetCollidingBoundingBoxes(collider.Offset(_dx, -1.0, _dz), this).empty();
-		};
-
-		// Clamp on the X and Z axes to avoid falling off edges while sneaking
-		while (_velocity.x != 0.0 && !groundBelow(_velocity.x, 0.0)) {
-			if (_velocity.x < step && _velocity.x >= -step)
-				_velocity.x = 0.0;
-			else if (_velocity.x > 0.0)
-				_velocity.x -= step;
-			else
-				_velocity.x += step;
-		}
-		while (_velocity.z != 0.0 && !groundBelow(0.0, _velocity.z)) {
-			if (_velocity.z < step && _velocity.z >= -step)
-				_velocity.z = 0.0;
-			else if (_velocity.z > 0.0)
-				_velocity.z -= step;
-			else
-				_velocity.z += step;
-		}
-
-		// Update our og values so step up logic uses the correct position
-		original.x = _velocity.x;
-		original.z = _velocity.z;
-	}
-
-	auto sweptCollider =
-	    world->GetCollidingBoundingBoxes(collider.AddCoord(_velocity.x, _velocity.y, _velocity.z), this);
-
-	// Resolve Y first
-	for (auto& col : sweptCollider) {
-		_velocity.y = col.CalculateYOffset(collider, _velocity.y);
-	}
-	collider = collider.Offset(0.0, _velocity.y, 0.0);
-
-	// Check if we are on ground or landed this Tick
-	bool canStepUp = onGround || (original.y != _velocity.y && original.y < 0.0);
-
-	// Resolve X
-	for (auto& col : sweptCollider) {
-		_velocity.x = col.CalculateXOffset(collider, _velocity.x);
-	}
-	collider = collider.Offset(_velocity.x, 0.0, 0.0);
-
-	// Resolve Z
-	for (auto& col : sweptCollider) {
-		_velocity.z = col.CalculateZOffset(collider, _velocity.z);
-	}
-	collider = collider.Offset(0.0, 0.0, _velocity.z);
-
-	collidedHorizontally = original.x != _velocity.x || original.z != _velocity.z;
-
-	if (stepHeight > 0.0f && canStepUp && (clampSneak || ySize < 0.05f) && collidedHorizontally) {
-		Vec3 stepUpMovement = _velocity;
-		_velocity = { original.x, stepHeight, original.z };
-
-		AABB resolvedCollider = collider;
-		collider = originalCollider;
-
-		auto stepUpSweptCollider = world->GetCollidingBoundingBoxes(
-		    collider.AddCoord(_velocity.x, _velocity.y, _velocity.z), this);
-
-		// Resolve Y first
-		for (auto& col : stepUpSweptCollider) {
-			_velocity.y = col.CalculateYOffset(collider, _velocity.y);
-		}
-		collider = collider.Offset(0.0, _velocity.y, 0.0);
-
-		// Resolve X
-		for (auto& col : stepUpSweptCollider) {
-			_velocity.x = col.CalculateXOffset(collider, _velocity.x);
-		}
-		collider = collider.Offset(_velocity.x, 0.0, 0.0);
-
-		// Resolve Z
-		for (auto& col : stepUpSweptCollider) {
-			_velocity.z = col.CalculateZOffset(collider, _velocity.z);
-		}
-		collider = collider.Offset(0.0, 0.0, _velocity.z);
-
-		// Snap down
-		double downY = -stepHeight;
-		for (auto& col : stepUpSweptCollider) {
-			downY = col.CalculateYOffset(collider, downY);
-		}
-		collider = collider.Offset(0.0, downY, 0.0);
-
-		// Keep whichever collision path moved further horizontally
-		if (stepUpMovement.x * stepUpMovement.x + stepUpMovement.z * stepUpMovement.z >=
-		    _velocity.x * _velocity.x + _velocity.z * _velocity.z) {
-			_velocity = stepUpMovement;
-			collider = resolvedCollider;
-		} else {
-			double frac = collider.minY - std::trunc(collider.minY);
-			if (frac > 0.0)
-				ySize += float(frac + 0.01);
-		}
-	}
+	const Movement::SweepResult sweep =
+	    Movement::Sweep(collider, _velocity, ySize, double(stepHeight), onGround && flags.isSneaking, onGround,
+	                    [&](const AABB& _box, std::vector<AABB>& _out) {
+		                    _out = world->GetCollidingBoundingBoxes(_box, this);
+	                    });
 
 	// Derive our current position from our collider
 	position.x = (collider.minX + collider.maxX) / 2.0;
 	position.y = collider.minY + double(yOffset) - double(ySize);
 	position.z = (collider.minZ + collider.maxZ) / 2.0;
 
-	collidedHorizontally = original.x != _velocity.x || original.z != _velocity.z;
-	collidedVertically = original.y != _velocity.y;
-	onGround = original.y != _velocity.y && original.y < 0.0;
+	collidedHorizontally = sweep.collidedHorizontally;
+	collidedVertically = sweep.collidedVertically;
+	onGround = sweep.onGround;
 	collided = collidedHorizontally || collidedVertically;
-
-	if (original.x != _velocity.x)
-		_velocity.x = 0.0;
-	if (original.y != _velocity.y)
-		_velocity.y = 0.0;
-	if (original.z != _velocity.z)
-		_velocity.z = 0.0;
 
 	UpdateFallState(_velocity.y);
 

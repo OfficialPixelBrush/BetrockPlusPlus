@@ -25,7 +25,7 @@ BiomeGenerator WorldManager::biomeGenerator;
 Biome WorldManager::GetBiome(Int2 _wpos) {
 	if (isHell)
 		return Biome::BIOME_HELL;
-	const Int32_2 cpos = Int32_2{ _wpos.x >> 4, _wpos.z >> 4 };
+	const Int32_2 cpos = ToChunkPos(_wpos);
 	const auto chunk = GetChunkShared(cpos);
 	// This is rather expensive, so we want to avoid
 	// getting biome points outside of the loaded chunks
@@ -64,11 +64,11 @@ int WorldManager::GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
 	} else {
 		if (_wpos.y >= CHUNK_HEIGHT)
 			_wpos.y = CHUNK_HEIGHT - 1;
-		auto chunk = this->GetChunkRaw({ _wpos.x >> 4, _wpos.z >> 4 });
+		auto chunk = this->GetChunkRaw(ToChunkPos(_wpos));
 		if (!chunk)
 			return 15;
 
-		Int3 localPos = { _wpos.x & 15, _wpos.y, _wpos.z & 15 };
+		Int3 localPos = ToLocalPos(_wpos);
 		int skylight = chunk->GetSkyLight(localPos) - this->skylightOffset;
 		int blockLight = chunk->GetBlockLight(localPos);
 		if (blockLight > skylight)
@@ -860,11 +860,11 @@ void WorldManager::PopulateReady(int _maxPopulates) {
 void WorldManager::SetMeta(const Int3 _wpos, const uint8_t _metadata) {
 	if (!InBounds(_wpos.y))
 		return;
-	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
+	Int32_2 cp = ToChunkPos(_wpos);
 	auto* chunk = GetChunkRaw(cp);
 	if (!IsChunkValid(cp))
 		return;
-	Int3 local{ _wpos.x & 15, _wpos.y, _wpos.z & 15 };
+	Int3 local = ToLocalPos(_wpos);
 	auto oldMeta = chunk->GetMeta(local);
 	auto blockId = chunk->GetBlock(local);
 	chunk->SetMeta(local, _metadata);
@@ -884,13 +884,13 @@ void WorldManager::SetBlockRaw(const Int3 _wpos, const BlockType _blockType, con
 	// Don't trigger any of the fancy stuff normal set block does, just replace this blocks id in the chunk array
 	if (!InBounds(_wpos.y))
 		return;
-	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
+	Int32_2 cp = ToChunkPos(_wpos);
 	auto* chunk = GetChunkRaw(cp);
 	if (!IsChunkValid(cp)) {
 		// Target chunk isn't valid
 		return;
 	}
-	Int3 local{ _wpos.x & 15, _wpos.y, _wpos.z & 15 };
+	Int3 local = ToLocalPos(_wpos);
 
 	chunk->SetBlock(local, _blockType);
 	chunk->SetMeta(local, _metadata);
@@ -900,7 +900,7 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
                             const bool _keepTileEntity, const bool _updateNeighbors) {
 	if (!InBounds(_wpos.y))
 		return;
-	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
+	Int32_2 cp = ToChunkPos(_wpos);
 	auto* chunk = GetChunkRaw(cp);
 	if (!IsChunkValid(cp)) {
 		// Target chunk isn't ready; cache the write for replay (bounded).

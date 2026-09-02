@@ -1018,6 +1018,10 @@ void RegisterBlockProperties() {
 		.slipperiness = 0.98f,
 		.lightOpacity = 3,
 		.stepSound = StepSound::Glass,
+		// BlockIce inherits BlockBreakable's isOpaqueCube() == false, so ice must
+		// not cull the faces of whatever it sits against; it is see-through.
+		.isOpaqueCube = false,
+		.isNormalCube = false,
 	};
 
 	// Snow Block

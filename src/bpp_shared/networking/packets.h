@@ -1128,9 +1128,19 @@ public:
 			position.z = _stream.Read<double>();
 			radius = _stream.Read<float>();
 			numberOfDestroyedBlocks = _stream.Read<int32_t>();
-			destroyedBlocks.resize(static_cast<size_t>(numberOfDestroyedBlocks));
-			_stream.ReadBytes(reinterpret_cast<uint8_t*>(destroyedBlocks.data()),
-			                  static_cast<size_t>(numberOfDestroyedBlocks));
+			// Guard rail to prevent a peer to crap out the wire.
+			// This tries to ensure a generous cap and if any negative
+			// or very high value are sent this will generate a desync and
+			// drop the connection.
+			constexpr int32_t MAX_DESTROYED_BLOCKS = 1 << 20;
+			if (numberOfDestroyedBlocks < 0 || numberOfDestroyedBlocks > MAX_DESTROYED_BLOCKS) {
+				numberOfDestroyedBlocks = 0;
+				destroyedBlocks.clear();
+				return;
+			}
+			// Each destroyed block is a 3-byte (dx, dy, dz) relative offset record.
+			destroyedBlocks.resize(static_cast<size_t>(numberOfDestroyedBlocks) * 3);
+			_stream.ReadBytes(reinterpret_cast<uint8_t*>(destroyedBlocks.data()), destroyedBlocks.size());
 		}
 	};
 

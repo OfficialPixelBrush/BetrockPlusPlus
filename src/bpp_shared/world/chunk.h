@@ -29,6 +29,28 @@ enum class ChunkState : uint8_t {
 	Unloading
 };
 
+static constexpr int CHUNK_SHIFT = 4;
+static constexpr int CHUNK_MASK = CHUNK_WIDTH - 1;
+static_assert(CHUNK_WIDTH == (1 << CHUNK_SHIFT), "chunk coordinate math assumes a power-of-two width");
+
+// Using this prevents divide and modulus round issues that could lead to 1 chunk offset twords negative.
+inline Int2 ToChunkPos(Int3 _pos) {
+	return { _pos.x >> CHUNK_SHIFT, _pos.z >> CHUNK_SHIFT };
+}
+
+// Column coordinates, for the callers that never had a Y to begin with.
+inline Int2 ToChunkPos(Int2 _pos) {
+	return { _pos.x >> CHUNK_SHIFT, _pos.y >> CHUNK_SHIFT };
+}
+
+inline Int3 ToLocalPos(Int3 _pos) {
+	return { _pos.x & CHUNK_MASK, _pos.y, _pos.z & CHUNK_MASK };
+}
+
+inline Int2 ToLocalPos(Int2 _pos) {
+	return { _pos.x & CHUNK_MASK, _pos.y & CHUNK_MASK };
+}
+
 struct Chunk {
 	static constexpr int VOLUME = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH;
 	static constexpr int META_VOLUME = VOLUME / 2;

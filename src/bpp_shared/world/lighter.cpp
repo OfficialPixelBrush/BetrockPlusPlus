@@ -12,8 +12,17 @@
 #include <cstring>
 
 namespace Lighting {
-const float BrightnessArray[16] = { 0.035f, 0.044f, 0.055f, 0.069f, 0.086f, 0.107f, 0.134f, 0.168f,
-	                                0.21f,  0.262f, 0.328f, 0.41f,  0.512f, 0.64f,  0.8f,   1.0f };
+// Better approximation of the actual brightness function. Also replicated in 
+// the shader.
+const std::array<float, 16> BrightnessArray = [] {
+	std::array<float, 16> table{};
+	constexpr float AMBIENT = 0.05f;
+	for (int i = 0; i < 16; i++) {
+		const float shade = 1.0f - float(i) / 15.0f;
+		table[size_t(i)] = (1.0f - shade) / (shade * 3.0f + 1.0f) * (1.0f - AMBIENT) + AMBIENT;
+	}
+	return table;
+}();
 } // namespace Lighting
 
 // ChunkCache so we don't have to do map lookups for every neighbor access during light propagation.

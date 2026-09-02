@@ -9,6 +9,7 @@
 #pragma once
 #include "blocks/block_properties.h"
 #include "chunk.h"
+#include <array>
 #include <climits>
 #include <cstdint>
 #include <numeric_structs.h>
@@ -132,5 +133,5 @@ private:
 };
 
 namespace Lighting {
-extern const float BrightnessArray[16];
+extern const std::array<float, 16> BrightnessArray;
 } // namespace Lighting

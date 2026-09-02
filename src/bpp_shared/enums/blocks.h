@@ -122,3 +122,18 @@ enum BlockType : int8_t {
 	// etc.
 	BLOCK_MAX
 };
+
+// blockProperties and blockBehaviors are plain arrays sized BLOCK_MAX, and
+// BlockType is signed, so a raw payload byte of 200 arrives here as -56. Any id
+// that came off the wire has to be bounded at both ends before it indexes
+// either table, or the lookup reads outside the array.
+constexpr bool IsKnownBlock(BlockType _block) {
+	return _block >= BLOCK_AIR && _block < BLOCK_MAX;
+}
+
+// The same bound, for the common case that also wants a block actually there:
+// most property lookups are meaningless for air, and some (isCollidable) carry
+// a default that would be actively wrong for it.
+constexpr bool IsRealBlock(BlockType _block) {
+	return _block > BLOCK_AIR && _block < BLOCK_MAX;
+}
