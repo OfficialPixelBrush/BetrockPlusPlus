@@ -110,20 +110,20 @@ struct Entity {
 	float stepHeight = 0.0f;
 
 	// Collision state
-	bool onGround = true;
-	bool collided = false;
-	bool collidedHorizontally = false;
-	bool collidedVertically = false;
+	bool onGround : 1 = true;
+	bool collided : 1 = false;
+	bool collidedHorizontally : 1 = false;
+	bool collidedVertically : 1 = false;
 
 	// Does this entity act as a block collider?
-	bool actsAsWorldCollider = false;
+	bool actsAsWorldCollider : 1 = false;
 
 	// Movement / environment state
-	bool hasPhysics = true;
-	bool inWeb = false; // Inside a cobweb
-	bool inWater = false;
-	bool inLava = false;
-	bool onLadder = false;
+	bool hasPhysics : 1 = true;
+	bool inWeb : 1 = false; // Inside a cobweb
+	bool inWater : 1 = false;
+	bool inLava : 1 = false;
+	bool onLadder : 1 = false;
 
 	float fallDistance = 0.0f;
 	int nextStepDistance = 0;
