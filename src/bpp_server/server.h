@@ -15,6 +15,7 @@ extern std::atomic<bool> shutdownRequested;
 #endif
 
 #include "BS_thread_pool.hpp"
+#include "betacraft_heartbeat.h"
 #include "blocks/serverBlockBehaviors.h"
 #include "chunk_IO/chunk_broadcaster.h"
 #include "chunk_IO/chunk_sender.h"
@@ -58,6 +59,9 @@ private:
 public:
 #ifdef ONLINE_MODE_AUTHENTICATION
 	Authentication auth;
+#endif
+#ifdef BETACRAFT_HEARTBEAT
+	BetacraftHeartbeat betacraftHeartbeat;
 #endif
 	Runtime gameRuntime;
 	ChunkSender chunkSender;
@@ -146,8 +150,20 @@ public:
 	// Performance metric
 	double averageTickMs = 0.0;
 	static constexpr int TICKS_PER_SECOND = 20;
+	// Whitelist and Operator storage
+	bool useWhitelist = false;
+	std::vector<std::string> whitelistedUsernames = {};
+	std::vector<std::string> operatorUsernames = {};
+
+	void SetWhitelistEnabled(bool _enabled, bool _persist = true);
+	void LoadWhitelist();
+	void UnloadWhitelist();
+	bool SaveWhitelist();
+	bool SaveOperators();
+	void ReloadWhitelist();
 
 private:
+	bool whitelistLoaded = false;
 	friend bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld,
 	                                       Server& _server);
 	friend void ChunkBroadcaster::BroadcastBlockChanges(Server& _server,

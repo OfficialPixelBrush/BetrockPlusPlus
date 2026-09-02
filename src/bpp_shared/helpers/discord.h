@@ -27,6 +27,7 @@ class Server;
 class Discord {
 public:
 	enum class EmbedColor : int8_t {
+		None,
 		Red,
 		Yellow,
 		Green,
@@ -52,7 +53,7 @@ public:
 	void SendMessageSync(const std::string& _message);
 	void SendFileSync(const std::string& _filename, const std::string& _message = "");
 
-	void SendServerNotice(const std::string& _message, const EmbedColor _color);
+	void SendServerNotice(const std::string& _message, const EmbedColor _color = Discord::EmbedColor::None);
 	void SendPlayerChatMessage(const std::string& _username, const std::string& _message);
 
 	// Posts a join/leave notice as an embed with the player's skin face as the thumbnail.

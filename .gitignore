@@ -54,3 +54,4 @@ CMakeSettings.json
 src/bpp_shared/version.h
 *.dat_old
 /vcpkg_installed
+ops.txt

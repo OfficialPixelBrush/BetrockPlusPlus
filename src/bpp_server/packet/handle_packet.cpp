@@ -11,6 +11,7 @@
 #include "../trackers/entity_tracker.h"
 #include "blocks.h"
 #include "blocks/block_properties.h"
+#include "direction_fixer.h"
 #include "entities/entity_item.h"
 #include "inventory/inventory_interaction.h"
 #include "inventory/item_stack.h"
@@ -197,19 +198,21 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 			return;
 		}
 
-		// Buckets
+		// Special cases
 		bool isBucketItem = (heldItem->id == Items::Id::BUCKET || heldItem->id == Items::Id::BUCKET_WATER ||
 		                     heldItem->id == Items::Id::BUCKET_LAVA);
+		bool isBoatItem = heldItem->id == Items::Id::BOAT;
 		bool hasOnBlockUse = static_cast<bool>(Items::itemBehavior[heldItem->id].onBlockUse);
 
-		if (isBucketItem && hasOnBlockUse) {
-			Items::itemBehavior[heldItem->id].onBlockUse(_world, heldItem, position, *_session.entity, _pkt.face);
+		if ((isBucketItem || isBoatItem) && hasOnBlockUse) {
+			Items::itemBehavior[heldItem->id].onBlockUse(_world, heldItem, position, *_session.entity,
+			                                             FaceDirectionToDirection(_pkt.face));
 		}
 		return;
 	}
 
 	if (Items::IsBlock(heldItem->id)) {
-		Int3 placePosition = Blocks::GetAdjacentBlockPos(position, _pkt.face);
+		Int3 placePosition = position.WithOffset(FaceDirectionToDirection(_pkt.face));
 
 		if (heldItem->id.value < 0 || heldItem->id.value >= 256) {
 			return;
@@ -222,7 +225,8 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		if (!function) {
 			return;
 		}
-		bool result = function(_world, placePosition, *_session.entity, _pkt.face, blockId, heldItem->data);
+		bool result = function(_world, placePosition, *_session.entity, FaceDirectionToDirection(_pkt.face), blockId,
+		                       heldItem->data);
 		if (result) {
 			heldItem->DecrementCount(1);
 		}
@@ -231,7 +235,8 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		                     heldItem->id == Items::Id::BUCKET_LAVA);
 
 		if (Items::itemBehavior[heldItem->id].onBlockUse && !isBucketItem) {
-			Items::itemBehavior[heldItem->id].onBlockUse(_world, heldItem, position, *_session.entity, _pkt.face);
+			Items::itemBehavior[heldItem->id].onBlockUse(_world, heldItem, position, *_session.entity,
+			                                             FaceDirectionToDirection(_pkt.face));
 		}
 	}
 }
@@ -398,8 +403,11 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 
 	ItemStack* heldItem = _session.inventory.GetHeldItem();
 	if (!heldItem) {
-		if (!_pkt.attack)
+		if (!_pkt.attack) {
+			PlayerEntity* playerPtr = dynamic_cast<PlayerEntity*>(sourceEntity.get());
+			entity->OnPlayerInteract(playerPtr);
 			return;
+		}
 		ItemStack emptyStack{};
 		Items::AttackWithItem(*entity, *sourceEntity, &emptyStack);
 		return;
@@ -438,8 +446,7 @@ void Animation(Packet::Animation& _pkt, PlayerSession& _session, EntityTracker& 
 	_entityTracker.SendPacketToViewers(anim, anim.entityId);
 }
 
-void PlayerAction([[maybe_unused]] Packet::PlayerAction& _pkt, [[maybe_unused]] PlayerSession& _session,
-                  [[maybe_unused]] EntityTracker& _entityTracker) {
+void PlayerAction(Packet::PlayerAction& _pkt, PlayerSession& _session, EntityTracker& _entityTracker) {
 	auto& entity = _session.entity;
 	if (!entity)
 		return;
@@ -450,6 +457,17 @@ void PlayerAction([[maybe_unused]] Packet::PlayerAction& _pkt, [[maybe_unused]] 
 	case PacketData::PlayerAction::STOP_SNEAKING:
 		entity->UpdateMetadata(entity->flags.isSneaking, false);
 		break;
+	case PacketData::PlayerAction::STOP_SLEEPING: {
+		if (!entity->isSleeping)
+			break;
+		entity->isSleeping = false;
+		Packet::Animation anim;
+		anim.entityId = entity->id;
+		anim.animation = PacketData::Animation::LEAVE_BED;
+		anim.Serialize(_session.stream);
+		_entityTracker.SendPacketToViewers(anim, entity->id);
+		break;
+	}
 	default:
 		break;
 	}
@@ -483,7 +501,8 @@ void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
 
 	// Force a refresh
 	_session.dimension = targetDim;
-	_session.entityTracker = targetDim == Dimension::Overworld ? &_server.overworldEntityTracker : &_server.hellEntityTracker;
+	_session.entityTracker = targetDim == Dimension::Overworld ? &_server.overworldEntityTracker
+	                                                           : &_server.hellEntityTracker;
 
 	// Get our spawn point
 	auto world = _server.GetWorldForDimension(targetDim);
@@ -515,7 +534,7 @@ void UpdateSign(Packet::UpdateSign& _pkt, PlayerSession& _session, WorldManager&
                 std::vector<std::shared_ptr<PlayerSession>>& _players) {
 	Int3 position = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
 	BlockType blockId = _world.GetBlockId(position);
-	if (blockId != BLOCK_SIGN && blockId != BLOCK_SIGN_WALL)
+	if (blockId != BLOCK_SIGN_STANDING && blockId != BLOCK_SIGN_WALL)
 		return;
 
 	auto tile = std::make_shared<TileEntitySign>(position);

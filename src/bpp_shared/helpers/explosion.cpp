@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
 */
 
-#include "world.h"
 #include "raycast.h"
+#include "world.h"
 
 // for handling explosions
 namespace Explosion {
@@ -69,7 +69,7 @@ std::unordered_set<Int3> DoExplosion(WorldManager& _world, Entity* _exploder, Ve
 	auto affectedEntities = _world.entityManager.GetEntitiesWithinAabbExcluding({ minX, minY, minZ, maxX, maxY, maxZ },
 	                                                                            _exploder ? _exploder->id
 	                                                                                      : EntityId(-1));
-	auto GetBlockDensity = [&_world](Vec3 _explosionCenter, const AABB& _entityBox) -> double {
+	auto getBlockDensity = [&_world](Vec3 _explosionCenter, const AABB& _entityBox) -> double {
 		double stepX = 1.0 / ((_entityBox.maxX - _entityBox.minX) * 2.0 + 1.0);
 		double stepY = 1.0 / ((_entityBox.maxY - _entityBox.minY) * 2.0 + 1.0);
 		double stepZ = 1.0 / ((_entityBox.maxZ - _entityBox.minZ) * 2.0 + 1.0);
@@ -107,7 +107,7 @@ std::unordered_set<Int3> DoExplosion(WorldManager& _world, Entity* _exploder, Ve
 			dx /= offsetLength;
 			dy /= offsetLength;
 			dz /= offsetLength;
-			double blockDensity = GetBlockDensity(_position, entity->collider);
+			double blockDensity = getBlockDensity(_position, entity->collider);
 			double impactStrength = (1.0 - distanceFraction) * blockDensity;
 			entity->AttackEntityFrom(_exploder, int((impactStrength * impactStrength + impactStrength) / 2.0 * 8.0 *
 			                                            double(expandedExplosionSize) +

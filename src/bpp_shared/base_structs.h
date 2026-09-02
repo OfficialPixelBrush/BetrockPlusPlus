@@ -31,6 +31,6 @@ struct Block {
 
 // Lighting + Block Struct
 struct LitBlock : Block {
-	uint8_t blocklight = 0;
-	uint8_t skylight = 0;
+	uint8_t blocklight : 4 = 0;
+	uint8_t skylight : 4 = 0;
 };

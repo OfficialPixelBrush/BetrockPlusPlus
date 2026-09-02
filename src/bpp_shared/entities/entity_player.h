@@ -19,4 +19,6 @@ struct PlayerEntity : public MobileEntity {
 	virtual bool DropItem(ItemStack _stack);
 	virtual void DropInventory();
 	virtual void OnDeath(Entity* _killer) override;
+	virtual void OnMountEntity() override;
+	virtual void OnDismountEntity() override;
 };

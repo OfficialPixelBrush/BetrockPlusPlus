@@ -12,8 +12,9 @@
 struct PlayerSession;
 struct EntityMPPlayer : public PlayerEntity {
 	PlayerSession* session = nullptr;
-	bool movedThisTick = false;
-	int lastNotifiedHealth = health;
+	EntityHealth lastNotifiedHealth = health;
+	bool movedThisTick : 1 = false;
+	bool isSleeping : 1 = false;
 	EntityMPPlayer() : PlayerEntity() {
 		hasPhysics = false;
 	}
@@ -27,4 +28,6 @@ struct EntityMPPlayer : public PlayerEntity {
 	bool DropItem(ItemStack _stack) override;
 	void HandlePositionChecks();
 	void DropInventory() override;
+	void OnMountEntity() override;
+	void OnDismountEntity() override;
 };

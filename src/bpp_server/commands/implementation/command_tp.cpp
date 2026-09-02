@@ -5,73 +5,75 @@
 */
 
 #include "../command.h"
+#include "../command_manager.h"
+#include "../command_registry.h"
 #include "server.h"
+#include <algorithm>
 
-// Teleports a player to coordinates or to another player.
-// Usage:
-//   /tp <x> <y> <z>
-//   /tp <player> <x> <y> <z>
-//   /tp <source_player> <target_player>
-std::string CommandTeleport::Execute(std::vector<std::string>& _parameters, PlayerSession& _session,
-                                     WorldManager& _world, std::function<void(PlayerSession&)> _transferDimension,
-                                     Server& _server) {
-	if (_parameters.size() < 2)
-		return ERROR_REASON_SYNTAX;
+namespace {
 
-	PlayerSession* source = nullptr;
-	size_t offset = 1;
+constexpr int K_TELEPORT_LIMIT = 2147482000;
 
-	// Check if player is even passed
-	// Inspired by https://stackoverflow.com/a/16575564
-	{
-		std::stringstream ss;
-		ss << _parameters[offset];
-		double num = 0.0;
-		ss >> num;
-		if (!ss.fail() && ss.eof())
-			source = &_session;
-		else {
-			source = _server.GetSessionByUsername(_parameters[offset++]).get();
-		}
-	}
+void ClampTeleport(Vec3& _pos) {
+	_pos.x = std::clamp(static_cast<int>(_pos.x), -K_TELEPORT_LIMIT, K_TELEPORT_LIMIT);
+	_pos.y = std::clamp(static_cast<int>(_pos.y), -K_TELEPORT_LIMIT, K_TELEPORT_LIMIT);
+	_pos.z = std::clamp(static_cast<int>(_pos.z), -K_TELEPORT_LIMIT, K_TELEPORT_LIMIT);
+}
 
-	// TODO Should prolly report if a non-existent player runs this
+std::string TeleportToCoords(PlayerSession& _source, PlayerSession& _caller, const strategos::Vec3& _cmdPos) {
+	Vec3 pos = ResolveCmdVec3(_cmdPos, _source.position.pos);
+	ClampTeleport(pos);
+	SendTeleport(_source, pos);
+	SendChat(_caller, "§eTeleported " + _source.username + " to " + pos.Str());
+	return "";
+}
+
+std::string TpSelfCoords(const strategos::CmdNode& _cmd, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	auto pos = _cmd.get_arg<strategos::Vec3>("pos");
+	if (!pos)
+		return ERROR_REASON_PARAMETERS;
+	return TeleportToCoords(*ctx.session, *ctx.session, *pos);
+}
+
+std::string TpPlayerCoords(const strategos::CmdNode& _cmd, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	auto playerName = _cmd.get_arg<std::string>("player");
+	auto pos = _cmd.get_arg<strategos::Vec3>("pos");
+	if (!playerName || !pos)
+		return ERROR_REASON_PARAMETERS;
+	PlayerSession* source = ctx.server->GetSessionByUsername(*playerName).get();
 	if (!source)
-		return _parameters[offset - 1] + " does not exist!";
+		return *playerName + " does not exist!";
+	return TeleportToCoords(*source, *ctx.session, *pos);
+}
 
-	// /tp <player> <x> <y> <z>
-	if (_parameters.size() - offset >= 3) {
-		try {
-			Vec3 pos = ParseDouble3(offset, _parameters);
-			// Thank you for crashing my server 8 trillion times,
-			// very cool
-			int limit = 2147482000;
-			pos.x = std::clamp(int(pos.x), -limit, limit);
-			pos.z = std::clamp(int(pos.z), -limit, limit);
-			pos.y = std::clamp(int(pos.y), -limit, limit);
-			SendTeleport(*source, pos);
+std::string TpPlayerTarget(const strategos::CmdNode& _cmd, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	auto playerName = _cmd.get_arg<std::string>("player");
+	auto targetName = _cmd.get_arg<std::string>("target");
+	if (!playerName || !targetName)
+		return ERROR_REASON_PARAMETERS;
+	PlayerSession* source = ctx.server->GetSessionByUsername(*playerName).get();
+	if (!source)
+		return *playerName + " does not exist!";
+	PlayerSession* dest = ctx.server->GetSessionByUsername(*targetName).get();
+	if (!dest)
+		return *targetName + " does not exist!";
+	SendTeleport(*source, { dest->position.pos.x, dest->position.pos.y + 0.01, dest->position.pos.z }, dest->rotation.x,
+	             dest->rotation.y);
+	SendChat(*ctx.session, "§eTeleported " + source->username + " to " + dest->username);
+	return "";
+}
 
-			Packet::ChatMessage reply;
-			reply.message = "§eTeleported " + source->username + " to " + pos.Str();
-			reply.Serialize(_session.stream);
-			return "";
-		} catch (...) {
-			return ERROR_REASON_PARAMETERS;
-		}
-	}
+} // namespace
 
-	// /tp <player> <target_player>
-	if (_parameters.size() - offset == 1) { // offset=1→params[1], offset=2→params[2]
-		PlayerSession* dest = _server.GetSessionByUsername(_parameters[offset]).get();
-		if (!dest)
-			return _parameters[offset] + " does not exist!";
-		SendTeleport(*source, { dest->position.pos.x, dest->position.pos.y + 0.01, dest->position.pos.z },
-		             dest->rotation.x, dest->rotation.y);
-		Packet::ChatMessage reply;
-		reply.message = "§eTeleported " + source->username + " to " + _session.username;
-		reply.Serialize(_session.stream);
-		return "";
-	}
-
-	return ERROR_REASON_SYNTAX;
+void RegisterTeleport(strategos::BrigadierContext& _dispatcher) {
+	_dispatcher.add_command(strategos::Node::literal("tp")
+	                            .describe("Teleports player to coordinates or another player")
+	                            .op()
+	                            .then(strategos::Node::vec3("pos").executes(TpSelfCoords))
+	                            .then(strategos::Node::string("player")
+	                                      .then(strategos::Node::vec3("pos").executes(TpPlayerCoords))
+	                                      .then(strategos::Node::string("target").executes(TpPlayerTarget))));
 }

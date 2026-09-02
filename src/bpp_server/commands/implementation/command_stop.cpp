@@ -5,42 +5,51 @@
 */
 
 #include "../command.h"
+#include "../command_manager.h"
+#include "../command_registry.h"
 #include "server.h"
 #include <cstdint>
 #include <format>
-#include <string>
 
-// Fills an area with the desired block
-// Usage:
-//   /stop [time]/cancel
-std::string CommandStop::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
-                                 std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
-	if (_parameters.size() < 2) {
-		_server.SendGlobalChatMessage(std::format("§eStopping..."));
-		shutdownRequested.store(true);
-		return "";
-	}
+namespace {
 
-	// Parse parameters
-	size_t paramOffset = 1;
-	if (_parameters[paramOffset] == "cancel") {
-		_server.ResetTimeout();
-		_server.SendGlobalChatMessage(std::format("§eCancelled stop!"));
-		return "";
-	}
+std::string StopNow(const strategos::CmdNode&, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	ctx.server->SendGlobalChatMessage(std::format("§eStopping..."));
+	shutdownRequested.store(true);
+	return "";
+}
 
-	float timeout = 0.0f;
-	try {
-		timeout = std::stof(_parameters[paramOffset]);
-	} catch (...) {
+std::string CancelStop(const strategos::CmdNode&, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	ctx.server->ResetTimeout();
+	ctx.server->SendGlobalChatMessage(std::format("§eCancelled stop!"));
+	return "";
+}
+
+std::string StopInSeconds(const strategos::CmdNode& _cmd, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	auto seconds = _cmd.get_arg<float>("seconds");
+	if (!seconds)
 		return ERROR_REASON_PARAMETERS;
-	}
+
+	float timeout = *seconds;
 	static constexpr float MAX_TIMEOUT = UINT16_MAX / Server::TICKS_PER_SECOND;
 	if (timeout > MAX_TIMEOUT)
 		return std::format("Exceeds max timeout! ({} seconds)", MAX_TIMEOUT);
 
-	// Inform all players
-	_server.SendGlobalChatMessage(std::format("§eStopping in {:.1f} seconds...", timeout));
-	_server.StopTimeout(timeout);
+	ctx.server->SendGlobalChatMessage(std::format("§eStopping in {:.1f} seconds...", timeout));
+	ctx.server->StopTimeout(timeout);
 	return "";
+}
+
+} // namespace
+
+void RegisterStop(strategos::BrigadierContext& _dispatcher) {
+	_dispatcher.add_command(strategos::Node::literal("stop")
+	                            .describe("Forces the server to stop")
+	                            .op()
+	                            .executes(StopNow)
+	                            .then(strategos::Node::literal("cancel").executes(CancelStop))
+	                            .then(strategos::Node::float_("seconds").executes(StopInSeconds)));
 }

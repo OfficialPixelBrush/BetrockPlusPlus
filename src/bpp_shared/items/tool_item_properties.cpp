@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
+#include "../helpers/direction_fixer.h"
 #include "blocks.h"
 #include "item_map.h"
 #include "item_properties.h"
@@ -24,6 +25,7 @@ void RegisterAll() {
 	itemBehavior[Items::Id::BUCKET_WATER] = ItemBehavior{ .onBlockUse = UseWaterBucket };
 	itemBehavior[Items::Id::BUCKET_LAVA] = ItemBehavior{ .onBlockUse = UseLavaBucket };
 	itemBehavior[Items::Id::BUCKET] = ItemBehavior{ .onBlockUse = UseBucket };
+	itemBehavior[Items::Id::BOAT] = ItemBehavior{ .onBlockUse = UseBoat };
 
 	// Tool Properties
 	// Sword
@@ -215,8 +217,8 @@ void RegisterAll() {
 	itemBehavior[MUSHROOM_STEW].onUse = EatFood;
 
 	itemBehavior[SUGARCANE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                        PacketData::FaceDirection _face) {
-		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
+	                                        Direction::Value _face) {
+		Int3 placePos = _pos.WithOffset(_face);
 		if (!Blocks::CanSugarcaneSurviveAt(_world, placePos))
 			return;
 
@@ -224,22 +226,32 @@ void RegisterAll() {
 		_stack->DecrementCount(1);
 	};
 
-	itemBehavior[SIGN].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                   PacketData::FaceDirection _face) {
-		Int3 placePos = Blocks::GetAdjacentBlockPos(_pos, _face);
-		if (_face == PacketData::FaceDirection::Y_PLUS)
-			_world.SetBlock(placePos, BLOCK_SIGN); //TODO: facing meta
-		else
-			_world.SetBlock(placePos, BLOCK_SIGN_WALL, _face);
+	itemBehavior[SEEDS_WHEAT].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+	                                          Direction::Value _face) {
+		Int3 placePos = _pos.WithOffset(_face);
+		if (!Blocks::CanCropsSurviveAt(_world, placePos))
+			return;
 
+		_world.SetBlock(placePos, BLOCK_CROP_WHEAT);
 		_stack->DecrementCount(1);
 	};
 
-	auto onDoorPlace = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                      PacketData::FaceDirection _face) {
+	itemBehavior[SIGN].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+	                                   Direction::Value _face) {
+		Int3 placePos = _pos.WithOffset(_face);
+		if (_face == Direction::Value::Up) {
+			int meta = MathHelper::FloorDouble(((_user.rotationYaw + 180.0f) / 360.0f) * 16.0f + 0.5f) & 0xF;
+			_world.SetBlock(placePos, BLOCK_SIGN_STANDING, meta);
+		} else {
+			_world.SetBlock(placePos, BLOCK_SIGN_WALL, GetMetaFromDirection(BLOCK_SIGN_WALL, _face));
+		}
+		_stack->DecrementCount(1);
+	};
+
+	auto onDoorPlace = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
 		BlockType targetBlockType;
 		targetBlockType = _stack->id == DOOR_WOOD ? BLOCK_DOOR_WOOD : BLOCK_DOOR_IRON;
-		Int3 placePosition = Blocks::GetAdjacentBlockPos(_pos, _face);
+		Int3 placePosition = _pos.WithOffset(_face);
 		if (Blocks::blockBehaviors[targetBlockType].onBlockPlaced(_world, placePosition, _user, _face, targetBlockType,
 		                                                          0))
 			_stack->DecrementCount(1);
@@ -247,6 +259,28 @@ void RegisterAll() {
 
 	itemBehavior[DOOR_WOOD].onBlockUse = onDoorPlace;
 	itemBehavior[DOOR_IRON].onBlockUse = onDoorPlace;
+
+	itemBehavior[REDSTONE_REPEATER].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+	                                                Direction::Value _face) {
+		Int3 placePos = _pos.WithOffset(_face);
+		if (Blocks::blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockPlaced(_world, placePos, _user, _face,
+		                                                                      BLOCK_REDSTONE_REPEATER_OFF, 0))
+			_stack->DecrementCount(1);
+	};
+
+	itemBehavior[REDSTONE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+	                                       Direction::Value _face) {
+		Int3 placePos = _pos.WithOffset(_face);
+		if (Blocks::blockBehaviors[BLOCK_REDSTONE].onBlockPlaced(_world, placePos, _user, _face, BLOCK_REDSTONE, 0))
+			_stack->DecrementCount(1);
+	};
+
+	itemBehavior[BED].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+	                                  Direction::Value _face) {
+		Int3 placePos = _pos.WithOffset(_face);
+		if (Blocks::blockBehaviors[BLOCK_BED].onBlockPlaced(_world, placePos, _user, _face, BLOCK_BED, 0))
+			_stack->DecrementCount(1);
+	};
 
 	itemBehavior[MAP].onStartHolding = [](ItemStack* _stack, PlayerSession& _session) {
 		GlobalLogger().debug << "Started holding a map!\n";

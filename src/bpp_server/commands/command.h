@@ -5,131 +5,75 @@
 */
 
 #pragma once
-#include <functional>
-#include <sstream>
 
 #include "../player_conn/player_session.h"
-#include "world.h"
+#include "constants.h"
+#include "inventory/item_stack.h"
+#include "networking/packets.h"
+#include "strategos.h"
+#include "ucs2.h"
+#include <optional>
+#include <string>
 
 #define ERROR_OPERATOR "Only operators can use this command!"
 #define ERROR_CREATIVE "Only creative players can use this command!"
+#define ERROR_PERMISSIONS "You lack the required permissions for this command!"
 #define ERROR_WHITELIST "Only whitelisted players can use this command!"
 #define ERROR_REASON_SYNTAX "Invalid Syntax"
+#define ERROR_REASON_NO_EXIST "Command does not exist!"
 #define ERROR_REASON_PARAMETERS "Invalid Parameters"
+#define ERROR_REASON_TOO_FEW_PARAMETERS "Not enough parameters!"
 #define ERROR_REASON_ERROR "Error"
 #define ERROR_REASON_NO_CMD "No command passed"
 
 #define MAX_CHAT_LINE_SIZE 60
+// Classic client disconnects/crashes if a ChatMessage exceeds this UCS-2 length.
+#define MAX_CHAT_MESSAGE_SIZE 119
 
-// Small define for a bit less copy-paste
-#define DEFINE_COMMAND(name, label, description, syntax, requiresOp, requiresCreative)                                 \
-	class name : public Command {                                                                                      \
-	public:                                                                                                            \
-		name() : Command(label, description, syntax, requiresOp, requiresCreative) {}                                  \
-		std::string Execute(std::vector<std::string>& parameters, PlayerSession& session, WorldManager& world,         \
-		                    std::function<void(PlayerSession&)> transferDimension, Server& server) override;           \
-	};
+class Server;
 
-/*
-#define DEFINE_PERMSCHECK(session)                                                                                      \
-	std::string perms = CheckPermissions(client);                                                                      \
-	if (!perms.empty())                                                                                                \
-		return perms;
-*/
+bool IsOperator(PlayerSession& _session, Server& _server);
+ItemStack ParseItemStack(const std::string& _itemArg, std::optional<int> _count = std::nullopt);
 
-class CommandManager;
+inline void SendChat(PlayerSession& _session, const std::string& _message) {
+	std::u16string ucs2 = ToUCS2(_message);
+	std::u16string colorPrefix;
+	if (ucs2.size() >= 2 && ucs2[0] == u'\u00A7')
+		colorPrefix = ucs2.substr(0, 2);
 
-// Base class for how a command is defined
-class Command {
-private:
-	std::string label;
-	std::string description;
-	std::string syntax;
-	bool requiresOp;
-	bool requiresCreative;
+	size_t offset = 0;
+	while (offset < ucs2.size()) {
+		size_t chunk = MAX_CHAT_MESSAGE_SIZE;
+		std::u16string line;
+		if (offset > 0 && !colorPrefix.empty()) {
+			line = colorPrefix;
+			chunk = MAX_CHAT_MESSAGE_SIZE > colorPrefix.size() ? MAX_CHAT_MESSAGE_SIZE - colorPrefix.size()
+			                                                   : MAX_CHAT_MESSAGE_SIZE;
+		}
+		line += ucs2.substr(offset, chunk);
+		const size_t consumed = chunk < ucs2.size() - offset ? chunk : ucs2.size() - offset;
+		offset += consumed;
 
-protected:
-	ItemStack ParseItemStack(std::vector<std::string>& _parameters, size_t& _offset, bool _parseCount);
-
-public:
-	std::string GetLabel() {
-		return label;
+		Packet::ChatMessage pkt;
+		pkt.message = ToUTF8(line);
+		pkt.Serialize(_session.stream);
 	}
-	std::string GetDescription() {
-		return description;
-	}
-	std::string GetSyntax() {
-		return syntax;
-	}
-	bool GetRequiresOperator() {
-		return requiresOp;
-	}
-	bool GetRequiresCreative() {
-		return requiresCreative;
-	}
+}
 
-	std::string CheckPermissions(PlayerSession& _session);
-	Command(std::string _label, std::string _description, std::string _syntax, bool _requiresOp = true,
-	        bool _requiresCreative = false);
-	virtual std::string Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
-	                            std::function<void(PlayerSession&)> _transferDimension, Server& _server) = 0;
-	virtual ~Command() = default;
-};
+inline Vec3 ResolveCmdVec3(const strategos::Vec3& _cmd, const Vec3& _origin) {
+	Vec3 out{ static_cast<double>(_cmd.pos[0]), static_cast<double>(_cmd.pos[1]), static_cast<double>(_cmd.pos[2]) };
+	if (_cmd.is_relative(strategos::Axis::X))
+		out.x += _origin.x;
+	if (_cmd.is_relative(strategos::Axis::Y))
+		out.y += _origin.y;
+	if (_cmd.is_relative(strategos::Axis::Z))
+		out.z += _origin.z;
+	return out;
+}
 
-// Commands
-// Anyone can run these
-DEFINE_COMMAND(CommandHelp, "help", "Lists commands or helps with command", "[command]", false, false);
-DEFINE_COMMAND(CommandTeleport, "tp", "Teleports player to coordinates or another player",
-               "<player> <x> <y> <z> / <player> <player>", false, false);
-DEFINE_COMMAND(CommandTime, "time", "Gets or sets the current world time", "<new_time>", false, false);
-DEFINE_COMMAND(CommandSpawn, "spawn", "Teleport to spawn", "", false, false);
-DEFINE_COMMAND(CommandSeed, "seed", "Get the world seed", "", false, false);
-DEFINE_COMMAND(CommandGive, "give", "Give yourself a block or item", "<id>[:meta] [amount]", false, false);
-DEFINE_COMMAND(CommandList, "list", "List all currently online players", "", false, false);
-DEFINE_COMMAND(CommandLoaded, "loaded", "Shows the number of loaded chunks", "", false, false);
-DEFINE_COMMAND(CommandDimension, "dim", "Swap to the other dimension", "", false, false);
-DEFINE_COMMAND(CommandVersion, "version", "Shows the current Server version", "", false, false);
-DEFINE_COMMAND(CommandSummon, "summon", "Summons a smart entity", "", false, false);
-DEFINE_COMMAND(CommandStats, "stats", "Shows usage statistics", "", false, false);
-DEFINE_COMMAND(CommandFill, "fill", "Fills an area with the desired block",
-               "<block:meta> <x0> <y0> <z0> <x1> <y1> <z1>", false, false);
-DEFINE_COMMAND(CommandStop, "stop", "Forces the server to stop", "[time]/cancel", true, false);
-/*
-DEFINE_COMMAND(CommandPose, "pose", "Set the current players' pose", "<crouch/fire/sit>", false, false);
-DEFINE_COMMAND(CommandInterface, "interface", "Open the desired interface", "<id>", false, false);
-// Needs at least creative mode to run
-DEFINE_COMMAND(CommandGive, "give", "Give yourself a block or item", "<id> [meta] [amount]", false, true);
-DEFINE_COMMAND(CommandHealth, "health", "Get or Set Player Health", "[health]", false, true);
-// Must be operator
-DEFINE_COMMAND(CommandUptime, "uptime", "Shows how long the server has been alive for in ticks", "", true, false);
-DEFINE_COMMAND(CommandOp, "op", "Grant a player operator privlidges", "[player]", true, false);
-DEFINE_COMMAND(CommandDeop, "deop", "Revoke a players' operator privlidges", "[player]", true, false);
-DEFINE_COMMAND(CommandWhitelist, "whitelist", "Modify the whitelist", "<reload/list> / <add/remove> <player>", true,
-			   false);
-DEFINE_COMMAND(CommandKick, "kick", "Kick a player from the server", "[player]", true, false);
-DEFINE_COMMAND(CommandCreative, "creative", "Toggle creative mode", "", true, false);
-DEFINE_COMMAND(CommandSound, "sound", "Play a specified sound", "<id> [meta]", true, false);
-DEFINE_COMMAND(CommandKill, "kil", "Kill the specified player", "[player]", true, false);
-DEFINE_COMMAND(CommandGamerule, "gamerule", "Configure gamerules", "<rule> <state>", true, false);
-DEFINE_COMMAND(CommandSave, "save", "Forces the server to save all loaded chunks", "", true, false);
-DEFINE_COMMAND(CommandFree, "free", "Forces the server to unload chunks nobody can see", "", true, false);
-DEFINE_COMMAND(CommandLoaded, "loaded", "Shows the number of loaded chunks", "", true, false);
-DEFINE_COMMAND(CommandUsage, "usage", "Shows the current memory usage in megabytes", "", true, false);
-DEFINE_COMMAND(CommandSummon, "summon", "Summon a player entity", "<player>", true, false);
-DEFINE_COMMAND(CommandPopulated, "populated", "Check the population status of the current chunk", "", true, false);
-DEFINE_COMMAND(CommandRegion, "region", "Test the region infrastructure", "<action>", true, false);
-DEFINE_COMMAND(CommandEntity, "entity", "Get the latest entity id", "", true, false);
-DEFINE_COMMAND(CommandModified, "modified", "Get the number of modified chunks", "", true, false);
-DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <data>", true, false);
-*/
-
-// Helper: send a PlayerPositionAndRotation packet to move a session to new coords.
-[[maybe_unused]] static void SendTeleport(PlayerSession& _target, Vec3 _position, float _yaw = 0.0f,
-                                          float _pitch = 0.0f) {
-	// Update our server-side entity position to match the teleport, so that movement broadcasts are correct.
+inline void SendTeleport(PlayerSession& _target, Vec3 _position, float _yaw = 0.0f, float _pitch = 0.0f) {
 	_target.entity->Teleport(_position, { _yaw, _pitch });
 
-	// Keep server-side position in sync so movement broadcasts are correct.
 	_target.pendingTeleport = _position;
 	_target.pendingPosition.reset();
 
@@ -142,52 +86,4 @@ DEFINE_COMMAND(CommandPacket, "packet", "Send a custom packet", "[broadcast] <da
 	pkt.pitch = _pitch;
 	pkt.onGround = false;
 	pkt.Serialize(_target.stream);
-}
-
-inline Int3 ParseInt3(size_t& _offset, std::vector<std::string>& _parameters) {
-	Int3 out{
-		std::stoi(_parameters[_offset]),
-		std::stoi(_parameters[_offset + 1]),
-		std::stoi(_parameters[_offset + 2]),
-	};
-	_offset += 3;
-	return out;
-}
-
-inline Float2 ParseFloat2(size_t& _offset, std::vector<std::string>& _parameters) {
-	Float2 out{
-		std::stof(_parameters[_offset]),
-		std::stof(_parameters[_offset + 1]),
-	};
-	_offset += 2;
-	return out;
-}
-
-inline Float3 ParseFloat3(size_t& _offset, std::vector<std::string>& _parameters) {
-	Float3 out{
-		std::stof(_parameters[_offset]),
-		std::stof(_parameters[_offset + 1]),
-		std::stof(_parameters[_offset + 2]),
-	};
-	_offset += 3;
-	return out;
-}
-
-inline Double2 ParseDouble2(size_t& _offset, std::vector<std::string>& _parameters) {
-	Double2 out{
-		std::stod(_parameters[_offset]),
-		std::stod(_parameters[_offset + 1]),
-	};
-	_offset += 2;
-	return out;
-}
-
-inline Double3 ParseDouble3(size_t& _offset, std::vector<std::string>& _parameters) {
-	Double3 out{
-		std::stod(_parameters[_offset]),
-		std::stod(_parameters[_offset + 1]),
-		std::stod(_parameters[_offset + 2]),
-	};
-	_offset += 3;
-	return out;
 }

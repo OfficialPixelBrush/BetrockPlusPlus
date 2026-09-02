@@ -8,13 +8,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Must be set before project() so vcpkg can install the optional feature.
-option(ONLINE_MODE_AUTHENTICATION "Allows for authentcation with Mojang Servers (requires libcurl)" ON)
+option(ONLINE_MODE_AUTHENTICATION "Allows authentication with Mojang servers (requires libcurl)" ON)
+option(BETACRAFT_HEARTBEAT "Ping the Betacraft server list (requires libcurl and nlohmann_json)" OFF)
 option(CRASH_LOGGING "Lets the server catch crashes and create crash reports" ON)
 option(DISCORD_INTEGRATION "Enable Discord bot integration via D++ (server only)" OFF)
 set(GENERATION_PRECISION "FLOAT64" CACHE STRING "Reduces perlin and simplex noise precision (all values other than FLOAT64 are experimental and not really supported)")
 set_property(CACHE GENERATION_PRECISION PROPERTY STRINGS "FLOAT64" "FLOAT32" "INT64" "INT32")
 if(DISCORD_INTEGRATION)
     list(APPEND VCPKG_MANIFEST_FEATURES "discord")
+endif()
+if(BETACRAFT_HEARTBEAT)
+    list(APPEND VCPKG_MANIFEST_FEATURES "betacraft-heartbeat")
 endif()
 
 project(Betrock++ VERSION 0.0.1)
@@ -125,6 +129,7 @@ set(SHARED_SOURCES
     src/bpp_shared/entities/entity_skeleton.cpp
     src/bpp_shared/entities/entity_creeper.cpp
     src/bpp_shared/entities/entity_spider.cpp
+    src/bpp_shared/entities/entity_boat.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/strings/ucs2.cpp
     src/bpp_shared/strings/labels.cpp
@@ -138,6 +143,7 @@ set(SHARED_SOURCES
     src/bpp_shared/world/storage/region.cpp
     src/bpp_shared/world/storage/region_manager.cpp
     src/bpp_shared/world/tick_scheduler.cpp
+    src/bpp_shared/world/redstone_manager.cpp
     src/bpp_shared/blocks/block_properties_behaviors.cpp
     src/bpp_shared/blocks/block_behaviors.cpp
     src/bpp_shared/blocks/block_properties.cpp
@@ -177,6 +183,7 @@ set(SHARED_SOURCES
     src/bpp_shared/logger/logstream.cpp
     src/bpp_shared/logger/style.cpp
     src/bpp_shared/config/config.cpp
+    src/bpp_shared/config/list_parser.cpp
 
     # Utilities
     src/bpp_utilities/utilities.cpp
@@ -187,6 +194,7 @@ set(SHARED_SOURCES
 set(SERVER_SOURCES
     src/bpp_server/server.cpp
     src/bpp_server/online_auth.cpp
+    src/bpp_server/betacraft_heartbeat.cpp
     src/bpp_server/packet/handle_packet.cpp
     src/bpp_server/player_conn/server_pconnstate_manager.cpp
     src/bpp_server/packet/packet_dispatcher.cpp
@@ -260,10 +268,33 @@ if(BUILD_SERVER)
         ${SERVER_SOURCES}
     )
     
-    if(ONLINE_MODE_AUTHENTICATION)
+    if(ONLINE_MODE_AUTHENTICATION OR BETACRAFT_HEARTBEAT)
         find_package(CURL REQUIRED)
-        target_compile_definitions(BetrockPlusPlus PRIVATE ONLINE_MODE_AUTHENTICATION)
         target_link_libraries(BetrockPlusPlus PRIVATE CURL::libcurl)
+        target_sources(BetrockPlusPlus PRIVATE
+            src/bpp_server/curl_runtime.cpp
+        )
+    endif()
+
+    if(ONLINE_MODE_AUTHENTICATION)
+        target_compile_definitions(BetrockPlusPlus PRIVATE ONLINE_MODE_AUTHENTICATION)
+    endif()
+
+    if(BETACRAFT_HEARTBEAT)
+        find_package(nlohmann_json CONFIG QUIET)
+        if(NOT nlohmann_json_FOUND)
+            message(STATUS "nlohmann_json package not found; fetching nlohmann/json via FetchContent")
+            include(FetchContent)
+            FetchContent_Declare(
+                nlohmann_json
+                URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+            )
+            set(JSON_BuildTests OFF CACHE INTERNAL "")
+            set(JSON_Install OFF CACHE INTERNAL "")
+            FetchContent_MakeAvailable(nlohmann_json)
+        endif()
+        target_compile_definitions(BetrockPlusPlus PRIVATE BETACRAFT_HEARTBEAT)
+        target_link_libraries(BetrockPlusPlus PRIVATE nlohmann_json::nlohmann_json)
     endif()
 
     if (DISCORD_INTEGRATION)
@@ -296,6 +327,9 @@ else()
     if (DISCORD_INTEGRATION)
         message(WARNING "DISCORD_INTEGRATION has no effect when BUILD_SERVER is OFF; ignoring it")
     endif()
+    if (BETACRAFT_HEARTBEAT)
+        message(WARNING "BETACRAFT_HEARTBEAT has no effect when BUILD_SERVER is OFF; ignoring it")
+    endif()
 #Client mode
     target_compile_definitions(BetrockPlusPlus PRIVATE
         BUILD_CLIENT
@@ -319,6 +353,10 @@ target_link_libraries(BetrockPlusPlus
     PRIVATE
     $<IF:$<TARGET_EXISTS:libdeflate::libdeflate_shared>,libdeflate::libdeflate_shared,libdeflate::libdeflate_static>
 )
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Haiku")
+    target_link_libraries(BetrockPlusPlus PRIVATE network)
+endif()
 
 # Debug-specific stuff
 # if(CMAKE_BUILD_TYPE STREQUAL "Debug")

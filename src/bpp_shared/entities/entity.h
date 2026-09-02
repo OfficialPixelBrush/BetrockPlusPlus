@@ -6,7 +6,6 @@
  *
  */
 #pragma once
-#include "lighter.h"
 #include "base_types.h"
 #include "blocks/block_properties.h"
 #include "dimensions.h"
@@ -14,15 +13,17 @@
 #include "helpers/AABB.h"
 #include "helpers/java/java_math.h"
 #include "helpers/java/java_random.h"
+#include "lighter.h"
 #include "nbt/nbt.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
+#include <optional>
 #include <vector>
 
 struct EntityFlags {
-    bool isBurning = false;
-    bool isSneaking = false;
-    bool isRiding = false;
+	bool isBurning = false;
+	bool isSneaking = false;
+	bool isRiding = false;
 };
 
 // Constants pulled from the betaWiki!
@@ -109,20 +110,28 @@ struct Entity {
 	float stepHeight = 0.0f;
 
 	// Collision state
-	bool onGround = true;
-	bool collided = false;
-	bool collidedHorizontally = false;
-	bool collidedVertically = false;
+	bool onGround : 1 = true;
+	bool collided : 1 = false;
+	bool collidedHorizontally : 1 = false;
+	bool collidedVertically : 1 = false;
+
+	// Does this entity act as a block collider?
+	bool actsAsWorldCollider : 1 = false;
 
 	// Movement / environment state
-	bool hasPhysics = true;
-	bool inWeb = false; // Inside a cobweb
-	bool inWater = false;
-	bool inLava = false;
-	bool onLadder = false;
+	bool hasPhysics : 1 = true;
+	bool inWeb : 1 = false; // Inside a cobweb
+	bool inWater : 1 = false;
+	bool inLava : 1 = false;
+	bool onLadder : 1 = false;
 
 	float fallDistance = 0.0f;
 	int nextStepDistance = 0;
+
+	// Yaw, pitch smoothing
+	Float2 passengerLookDelta = { 0.0f, 0.0f };
+	// The vehicle's rotationYaw/rotationPitch as of the last tick
+	Float2 lastVehicleRotation = { 0.0f, 0.0f };
 
 	// Accumulated walk distance this Tick (unused rn its mostly for the client)
 	float distanceWalkedModified = 0.0f;
@@ -162,20 +171,41 @@ struct Entity {
 		RebuildCollider();
 	}
 	virtual ~Entity() = default;
-
-	// Get the brightness of the entity at this block
-	float GetEntityBrightnessValue();
-
-	// Encode Entity info into relevant Metadata
 	virtual void EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata);
-
-	// Apply Metadata to Entity
 	virtual bool DecodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata);
-
 	virtual void Tick();
+	virtual void TickPassengerEntity();
+	virtual bool PushOutOfBlocks(Vec3 _pos);
+	virtual void OnCollideWithPlayer(PlayerEntity& _entity);
+	virtual void ApplyKnockback(Vec3 _direction);
+	virtual void ApplyInput(float _acceleration);
+	virtual void Move(Vec3& _velocity);
+	virtual void UpdateFallState(float _movedY);
+	virtual std::optional<Tag> SerializeToNbt();
+	virtual void LoadFromNbt(Tag& _nbt);
+	virtual void DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data = 0, int _pickupTime = 10);
+	virtual void OnPlayerInteract(PlayerEntity* _entity);
+	virtual void UpdateEntityPhysicsState();
+	virtual void OnMountEntity();
+	virtual void OnDismountEntity();
+	float GetEntityBrightnessValue();
+	void MountEntity(std::shared_ptr<Entity> _entity);
+	void UnmountEntity();
 
 	virtual bool CanBePushed() {
 		return false;
+	}
+
+	virtual std::optional<AABB> GetMoverCollisionOverride([[maybe_unused]] Entity& _candidate) {
+		return std::nullopt;
+	}
+
+	virtual float GetMountOffset() {
+		return this->height * 0.75;
+	}
+
+	virtual Vec3 GetRiderSeatOffset() {
+		return { 0.0, 0.0, 0.0 };
 	}
 
 	void RebuildCollider() {
@@ -226,15 +256,6 @@ struct Entity {
 		// Returns the collider we use to detect if we are in something flammable
 		return collider.Expand(-0.001, -0.001, -0.001);
 	}
-	virtual bool PushOutOfBlocks(Vec3 _pos);
-	virtual void OnCollideWithPlayer(PlayerEntity& _entity);
-	virtual void ApplyKnockback(Vec3 _direction);
-	virtual void ApplyInput(float _acceleration);
-	virtual void Move(Vec3& _velocity);
-	virtual void UpdateFallState(float _movedY);
-	virtual std::optional<Tag> SerializeToNbt();
-	virtual void LoadFromNbt(Tag& _nbt);
-	virtual void DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data = 0, int _pickupTime = 10);
 	template <typename T>
 	void UpdateMetadata(T& _flag, T _value) {
 		if (_flag != _value) {
@@ -242,9 +263,11 @@ struct Entity {
 			wasMetadataUpdated = true;
 		}
 	}
-	protected:
+
+protected:
 	template <typename T>
-	inline const T* FindMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata, PacketData::EntityMetadata::Type _desiredType, uint8_t _desiredIndex) {
+	inline const T* FindMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata,
+	                             PacketData::EntityMetadata::Type _desiredType, uint8_t _desiredIndex) {
 		for (auto& m : _metadata) {
 			if (m.type != _desiredType || m.index != _desiredIndex)
 				continue;

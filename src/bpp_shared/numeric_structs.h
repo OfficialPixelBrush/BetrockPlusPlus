@@ -6,6 +6,7 @@
 */
 
 #pragma once
+#include "direction.h"
 #include <cmath>
 #include <cstdint>
 #include <ostream>
@@ -198,6 +199,37 @@ struct TriNumber {
 	double Length() const {
 		return std::sqrt(x * x + y * y + z * z);
 	}
+
+	auto Offset(const Direction::Value _direction, const T _value = 1) {
+		switch (_direction) {
+		case Direction::Value::None:
+			break;
+		case Direction::Value::North:
+			z -= _value;
+			break;
+		case Direction::Value::South:
+			z += _value;
+			break;
+		case Direction::Value::East:
+			x += _value;
+			break;
+		case Direction::Value::West:
+			x -= _value;
+			break;
+		case Direction::Value::Up:
+			y += _value;
+			break;
+		case Direction::Value::Down:
+			y -= _value;
+			break;
+		}
+		return *this;
+	}
+
+	auto WithOffset(const Direction::Value _direction, const T _value = 1) const {
+		TriNumber<T> result = *this;
+		return result.Offset(_direction, _value);
+	}
 };
 
 /**
@@ -355,6 +387,33 @@ struct BiNumber {
 
 	T Total() const {
 		return x * y;
+	}
+
+	auto Offset(const Direction::Value _direction, const T _value = 1) {
+		switch (_direction) {
+		case Direction::Value::None:
+			break;
+		case Direction::Value::Up:
+		case Direction::Value::North:
+			z -= _value;
+			break;
+		case Direction::Value::Down:
+		case Direction::Value::South:
+			z += _value;
+			break;
+		case Direction::Value::East:
+			x += _value;
+			break;
+		case Direction::Value::West:
+			x -= _value;
+			break;
+		}
+		return *this;
+	}
+
+	auto WithOffset(const Direction::Value _direction, const T _value = 1) const {
+		BiNumber<T> result = *this;
+		return result.Offset(_direction, _value);
 	}
 };
 

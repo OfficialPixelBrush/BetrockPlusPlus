@@ -7,28 +7,31 @@
 #include "../../server.h"
 #include "../command.h"
 #include "../command_manager.h"
+#include "../command_registry.h"
 #include <format>
 
-// List all currently online players
-// Usage:
-//   /list
-std::string CommandList::Execute([[maybe_unused]] std::vector<std::string>& _parameters,
-                                 [[maybe_unused]] PlayerSession& _session, [[maybe_unused]] WorldManager& _world,
-                                 [[maybe_unused]] std::function<void(PlayerSession&)> _transferDimension,
-                                 Server& _server) {
-	const auto& players = _server.GetPlayers();
-	Packet::ChatMessage pkt;
-	pkt.message = std::format("§7-- {} Player(s) --", players.size());
-	pkt.Serialize(_session.stream);
-	pkt.message = "§7";
+namespace {
+
+std::string ListPlayers(const strategos::CmdNode&, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	const auto& players = ctx.server->GetPlayers();
+	SendChat(*ctx.session, std::format("§7-- {} Player(s) --", players.size()));
+	std::string line = "§7";
 	for (size_t i = 0; i < players.size(); i++) {
 		auto& p = players[i];
-		if (pkt.message.size() + p->username.size() > 64) {
-			pkt.Serialize(_session.stream);
-			pkt.message = "§7";
+		if (line.size() + p->username.size() > 64) {
+			SendChat(*ctx.session, line);
+			line = "§7";
 		}
-		pkt.message += p->username + ((i < (players.size() - 1)) ? ", " : "");
+		line += p->username + ((i < (players.size() - 1)) ? ", " : "");
 	}
-	pkt.Serialize(_session.stream);
+	SendChat(*ctx.session, line);
 	return "";
+}
+
+} // namespace
+
+void RegisterList(strategos::BrigadierContext& _dispatcher) {
+	_dispatcher.add_command(
+	    strategos::Node::literal("list").describe("List all currently online players").executes(ListPlayers));
 }

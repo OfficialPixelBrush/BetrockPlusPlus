@@ -6,23 +6,34 @@
 
 #pragma once
 #include "../player_conn/player_session.h"
-#include "command.h"
+#include "strategos.h"
+#include "world.h"
 #include <functional>
 
 class Server;
 
-/**
- * @brief Responsible for all command handling and execution
- * 
- */
+struct CommandContext {
+	PlayerSession* session = nullptr;
+	WorldManager* world = nullptr;
+	Server* server = nullptr;
+	std::function<void(PlayerSession&)> transferDimension;
+	const strategos::BrigadierContext* dispatcher = nullptr;
+};
+
+inline CommandContext& CmdCtx(void* _userData) {
+	return *static_cast<CommandContext*>(_userData);
+}
+
 class CommandManager {
 public:
-	static void Init(Server* _server);
-	static void Parse(std::string& _cmdString, PlayerSession& _session, WorldManager& _world,
-	                  std::function<void(PlayerSession&)> _transferDimension) noexcept;
-	static const std::vector<std::unique_ptr<Command>>& GetRegisteredCommands() noexcept;
+	void Init(Server* _server);
+	void Parse(std::string& _cmdString, PlayerSession& _session, WorldManager& _world,
+	           std::function<void(PlayerSession&)> _transferDimension) noexcept;
+	const strategos::BrigadierContext& Dispatcher() const noexcept {
+		return dispatcher;
+	}
 
 private:
-	static Server* server;
-	static std::vector<std::unique_ptr<Command>> registeredCommands;
+	Server* server = nullptr;
+	strategos::BrigadierContext dispatcher;
 };

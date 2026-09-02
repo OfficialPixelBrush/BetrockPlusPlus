@@ -54,7 +54,7 @@ void OverworldGenerator::GenerateChunk(Chunk& _chunk) {
 		_chunk.temperature[i] = float(temperature[i]);
 		_chunk.humidity[i] = float(humidity[i]);
 		// TODO: Check if this is the right spot
-		_chunk.biomes[i] = biomeMap[i];
+		_chunk.biomes.Set(i, biomeMap.Get(i));
 	}
 
 	// Generate the Terrain, minus any caves, as just stone
@@ -98,9 +98,9 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 	for (int32_t x = 0; x < CHUNK_WIDTH; ++x) {
 		for (int32_t z = 0; z < CHUNK_WIDTH; ++z) {
 			// This is intentional, to match b1.7.3 behavior!
-			size_t bindex = size_t(x + z * CHUNK_WIDTH);
+			std::size_t bindex = size_t(x + z * CHUNK_WIDTH);
 			// Get values from noise maps
-			Biome biome = biomeMap[bindex];
+			Biome biome = static_cast<Biome>(biomeMap.Get(bindex));
 			bool sandActive = sandNoise[bindex] + rand.NextDouble() * 0.2 > 0.0;
 			bool gravelActive = gravelNoise[bindex] + rand.NextDouble() * 0.2 > 3.0;
 			int32_t stoneActive = Java::DoubleToInt32(stoneNoise[bindex] / 3.0 + 3.0 + rand.NextDouble() * 0.25);
@@ -379,7 +379,7 @@ Biome OverworldGenerator::GetBiomeAt(Int2 _worldPos) {
 	// Convert world coords to chunk-local [0,15] and index directly.
 	int32_t localX = ((_worldPos.x % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH;
 	int32_t localZ = ((_worldPos.z % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH;
-	return biomeMap[size_t(localX * CHUNK_WIDTH + localZ)];
+	return static_cast<Biome>(biomeMap.Get(localX * CHUNK_WIDTH + localZ));
 }
 
 // Exact port of BiomeGenBase.getRandomWorldGenForTrees() and per-biome overrides.

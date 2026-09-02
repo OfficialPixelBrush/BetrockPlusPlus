@@ -6,6 +6,7 @@
 */
 
 #pragma once
+#include "direction.h"
 
 #include "AABB.h"
 #include "block_shapes.h"
@@ -20,7 +21,7 @@ struct PlayerSession;
 
 namespace Blocks {
 
-bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer, PacketData::FaceDirection _face,
+bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer, Direction::Value _face,
                   BlockType _blockId, uint8_t _meta);
 void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer);
 void GenericExplode(WorldManager& _world, Int3 _pos);
@@ -46,7 +47,7 @@ struct BlockBehavior {
 	void (*onBlockRemoval)(WorldManager& _world, Int3 _pos) = nullptr;
 
 	// Called when a neighboring block changes
-	void (*onNeighborBlockChange)(WorldManager& _world, Int3 _pos) = nullptr;
+	void (*onNeighborBlockChange)(WorldManager& _world, Int3 _pos, BlockType _blockId) = nullptr;
 
 	// Called when a player left-clicks the block (not breaks, just clicks)
 	// pos is where that block that is interacted with is
@@ -58,8 +59,8 @@ struct BlockBehavior {
 
 	// Called when block is placed by a player
 	// Returns if the placement was successful
-	bool (*onBlockPlaced)(WorldManager& _world, Int3 _pos, Entity& _placer, PacketData::FaceDirection _face,
-	                      BlockType _blockId, uint8_t _meta) = GenericPlace;
+	bool (*onBlockPlaced)(WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+	                      uint8_t _meta) = GenericPlace;
 
 	// Called when player breaks the block
 	void (*onBlockDestroyedByPlayer)(WorldManager& _world, Int3 _pos, Entity& _destroyer) = GenericBreak;

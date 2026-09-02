@@ -5,15 +5,22 @@
 */
 
 #include "../command.h"
+#include "../command_manager.h"
+#include "../command_registry.h"
 #include "version.h"
 
-// Shows the current Server version
-// Usage:
-//   /version
-std::string CommandVersion::Execute(std::vector<std::string>& _parameters, PlayerSession& _session, WorldManager& _world,
-                                    std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
-	Packet::ChatMessage pkt;
-	pkt.message = "§eCurrent " + std::string(PROJECT_NAME) + " version is " + std::string(PROJECT_VERSION_FULL_STRING);
-	pkt.Serialize(_session.stream);
+namespace {
+
+std::string ShowVersion(const strategos::CmdNode&, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	SendChat(*ctx.session,
+	         "§eCurrent " + std::string(PROJECT_NAME) + " version is " + std::string(PROJECT_VERSION_FULL_STRING));
 	return "";
+}
+
+} // namespace
+
+void RegisterVersion(strategos::BrigadierContext& _dispatcher) {
+	_dispatcher.add_command(
+	    strategos::Node::literal("version").describe("Shows the current Server version").executes(ShowVersion));
 }
