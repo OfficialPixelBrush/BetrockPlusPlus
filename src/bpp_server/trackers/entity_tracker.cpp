@@ -350,6 +350,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.entityId = _entityEntry.entity->id;
 		pkt.objectType = PacketData::ObjectType::BOAT;
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
 		pkt.Serialize(pSession->stream);
 
 		// This is annoying, but the boat needs a separate rotation packet to be sent after the spawn packet
