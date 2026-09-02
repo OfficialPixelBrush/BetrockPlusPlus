@@ -15,6 +15,7 @@
 #include "entity_skeleton.h"
 #include "entity_spider.h"
 #include "entity_zombie.h"
+#include "entity_boat.h"
 #include "world.h"
 
 void EntityManager::RemoveEntity(EntityId _id) {
@@ -27,7 +28,7 @@ void EntityManager::RemoveEntity(EntityId _id) {
 
 	std::shared_ptr<Entity> entity = *it;
 
-	// Remove from its bucket (if the container still exists — unload may have erased it)
+	// Remove from its bucket
 	Int2 cpos{ entity->bucketPos.x, entity->bucketPos.y };
 	auto containerIt = entityContainers.find(cpos);
 	if (containerIt != entityContainers.end()) {
@@ -234,7 +235,12 @@ void EntityManager::CreateEntityFromNbt(Tag& _nbt) {
 	// Load an entity from the nbt list
 	std::string id = _nbt.compound["id"].GetString();
 
-	// TODO: load other entity types
+	// TODO: load other entity type
+	if (id == "Boat") {
+		BoatEntity entity;
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<BoatEntity>(entity));
+	}
 	if (id == "Item") {
 		ItemEntity entity({});
 		entity.LoadFromNbt(_nbt);
