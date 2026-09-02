@@ -548,7 +548,25 @@ struct SaveManager {
 			return false;
 		file.close();
 
-		std::filesystem::rename(tmpPath, finalPath);
+		// NOTE: std::filesystem::rename over an existing destination is
+		// guaranteed atomic-replace on POSIX/NTFS, but that guarantee does
+		// NOT reliably hold on the FAT-backed SD card filesystems used by
+		// Switch/3DS homebrew (fsdev/ctrulib) — a rename onto an existing
+		// file (i.e. every save after the player's first) can fail there.
+		// Use the non-throwing overload and fall back to remove-then-rename
+		// instead of letting a filesystem_error propagate out of a hot,
+		// heavily-multi-threaded save path with no catch anywhere above it.
+		std::error_code ec;
+		std::filesystem::rename(tmpPath, finalPath, ec);
+		if (ec) {
+			std::filesystem::remove(finalPath, ec);
+			std::filesystem::rename(tmpPath, finalPath, ec);
+			if (ec) {
+				GlobalLogger().error << "Failed to save player data for " << _playerName << ": " << ec.message()
+				                     << "\n";
+				return false;
+			}
+		}
 		return true;
 	}
 

@@ -158,13 +158,23 @@ void RegionManager::LoadChunk(const Int32_2 _cpos) {
 		return;
 	}
 	iopool.detach_task([_cpos, region, this]() {
-		auto chunk = region->GetChunk(_cpos); // blocks until region is free
-		if (!chunk) {
+		try {
+			auto chunk = region->GetChunk(_cpos); // blocks until region is free
+			if (!chunk) {
+				MarkLoadFailed(_cpos);
+				return;
+			}
+			std::lock_guard lk(outChunksMutex);
+			outChunks[_cpos] = std::move(chunk);
+		} catch (const std::exception& e) {
+			// A background IO thread throwing uncaught is fatal to the whole
+			// process (detach_task won't route it back to us) — this is far
+			// more likely to fire on flaky/removable SD storage than it ever
+			// was in desktop testing, so treat a failed load as recoverable.
+			GlobalLogger().error << "Exception loading chunk (" << _cpos.x << "," << _cpos.z << "): " << e.what()
+			                     << "\n";
 			MarkLoadFailed(_cpos);
-			return;
 		}
-		std::lock_guard lk(outChunksMutex);
-		outChunks[_cpos] = std::move(chunk);
 	});
 }
 
@@ -203,7 +213,12 @@ void RegionManager::PumpPipeline() {
 		if (world)
 			currentTime = world->elapsedTicks;
 		iopool.detach_task([chunk, region, currentTime, entitySnapshot]() {
-			region->AddChunk(chunk, currentTime, entitySnapshot); // Region stays alive via shared_ptr capture
+			try {
+				region->AddChunk(chunk, currentTime, entitySnapshot); // Region stays alive via shared_ptr capture
+			} catch (const std::exception& e) {
+				GlobalLogger().error << "Exception saving chunk (" << chunk->cpos.x << "," << chunk->cpos.z
+				                     << "): " << e.what() << "\n";
+			}
 		});
 	}
 
