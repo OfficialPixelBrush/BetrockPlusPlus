@@ -2040,6 +2040,11 @@ void RegisterBlockBehaviors() {
 	};
 	blockBehaviors[BLOCK_SAPLING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                          Java::Random& _random) -> void {
+		if (_world.GetBlockLightValue({_pos.x, _pos.y + 1, _pos.z}) < 9)
+			return;
+		if (_random.NextInt(30) != 0)
+			return;
+
 		// Add onto age
 		if ((_meta & 0b1100) < 0b1100) {
 			_meta += 0b100;
@@ -2070,6 +2075,7 @@ void RegisterBlockBehaviors() {
 		if (!successfullyGrew)
 			_world.SetBlock(_pos, BLOCK_SAPLING, _meta);
 	};
+
 	blockBehaviors[BLOCK_SAPLING].damageDropped = [](uint8_t _meta) -> ItemDamage {
 		return _meta & 3;
 	};
