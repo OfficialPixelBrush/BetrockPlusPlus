@@ -69,13 +69,18 @@ struct Entity {
 	// For randomness
 	Java::Random rand;
 
+	// Entity type because notch split stuff into multiple packets based on type
+	EntityType type = EntityType::NONE;
+
 	// World pointer
 	WorldManager* world = nullptr;
 	EntityManager* entityManager = nullptr;
 
 	// Identity
 	EntityId id = -1; // -1 = not yet spawned
+	bool isDead = false;
 	TickTime ticksExisted = 0;
+	Dimension dim = Dimension::Overworld;
 
 	// Mob links
 	std::weak_ptr<Entity> vehicle;
@@ -83,6 +88,7 @@ struct Entity {
 
 	Vec3 position;
 	Vec3 velocity;
+	bool forceVelocityUpdate = false;
 
 	// Look direction
 	float rotationYaw = 0.0f;
@@ -91,6 +97,7 @@ struct Entity {
 	// Collision
 	AABB collider;
 	Int3 bucketPos; // The bucket this entity is currently in (for spatial partitioning)
+	Blocks::BlockProperties belowBlock;
 
 	// Width/height of the collision box in blocks.
 	float width = 0.6f;
@@ -102,7 +109,24 @@ struct Entity {
 	// How high a block face this entity can step onto without jumping.
 	float stepHeight = 0.0f;
 
+	// Collision state
+	bool onGround = true;
+	bool collided = false;
+	bool collidedHorizontally = false;
+	bool collidedVertically = false;
+
+	// Does this entity act as a block collider?
+	bool actsAsWorldCollider = false;
+
+	// Movement / environment state
+	bool hasPhysics = true;
+	bool inWeb = false; // Inside a cobweb
+	bool inWater = false;
+	bool inLava = false;
+	bool onLadder = false;
+
 	float fallDistance = 0.0f;
+	int nextStepDistance = 0;
 
 	// Yaw, pitch smoothing
 	Float2 passengerLookDelta = { 0.0f, 0.0f };
@@ -115,59 +139,33 @@ struct Entity {
 
 	// Inputs
 	Float2 input;
-	int nextStepDistance = 0;
 	//bool sneaking = false;
+	bool jumping = false;
 
 	// Fire
 	int fireTicks = 0;           // Ticks remaining on fire; 0 = not on fire
+	bool inFire = false;         // Currently touching a fire/lava block
 	int fireResistance = 1;      // Ticks of immunity after catching fire
+	bool isImmuneToFire = false; // Total fire immunity
 
 	// Combat
+	bool beenAttacked = false;
 	int hurtResistantTime = 0;  // Invincibility frames after being hit
 	float attackedAtYaw = 0.0f; // Yaw from which the last attack came
+
+	// Spawning
+	bool preventEntitySpawning = false;
+	bool isFirstUpdate = true; // True only on the very first Tick
 
 	// Air
 	int maxAir = 300;
 	int air = 300;
 
-	float entityBrightness = 0.0f;
-
+	// TODO: This may be stupid
 	EntityFlags flags;
-	// Entity type because notch split stuff into multiple packets based on type
-	EntityType type = EntityType::NONE;
-	Dimension dim = Dimension::Overworld;
-	BlockType belowBlockType;
+	bool wasMetadataUpdated = false;
 
-	// All the bools
-	// Collision state
-	bool onGround : 1 = true;
-	bool collided : 1 = false;
-	bool collidedHorizontally : 1 = false;
-	bool collidedVertically : 1 = false;
-
-	// Does this entity act as a block collider?
-	bool actsAsWorldCollider : 1 = false;
-
-	// Movement / environment state
-	bool hasPhysics : 1 = true;
-	bool inWeb : 1 = false; // Inside a cobweb
-	bool inWater : 1 = false;
-	bool inLava : 1 = false;
-	bool onLadder : 1 = false;
-
-	bool isDead : 1 = false;
-	bool forceVelocityUpdate : 1 = false;
-
-	bool beenAttacked : 1 = false;
-	bool inFire : 1 = false;         // Currently touching a fire/lava block
-	bool isImmuneToFire : 1 = false; // Total fire immunity
-	
-	// Spawning
-	bool preventEntitySpawning : 1 = false;
-	bool isFirstUpdate : 1 = true; // True only on the very first Tick
-
-	bool wasMetadataUpdated : 1 = false;
-	bool jumping : 1 = false;
+	float entityBrightness = 0.0f;
 
 	Entity() {
 		RebuildCollider();

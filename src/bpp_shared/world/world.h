@@ -8,7 +8,6 @@
 
 // The world manager acts like a wrapper around the chunk manager and lighting manager.
 // It handles all world-related operations and provides a simple interface for the rest of the code to interact with the world.
-// WorldManager.h
 #pragma once
 #include "BS_thread_pool.hpp"
 #include "base_structs.h"
@@ -73,7 +72,7 @@ public:
 	Dimension thisDimension = Dimension::Overworld;
 
 	WorldManager(bool _pIsHell = false) : isHell(_pIsHell) {
-		entityManager.world = this; // Bind the world pointer in EntityManager
+		entityManager.world = this;
 		tickScheduler.world = this;
 		if (isHell)
 			thisDimension = Dimension::Nether;

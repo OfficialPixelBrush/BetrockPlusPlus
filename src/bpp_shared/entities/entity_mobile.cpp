@@ -205,11 +205,11 @@ void MobileEntity::TickPhysics() {
 
 		if (onGround) {
 			friction = 0.546f;
-			BlockType newBelowBlockType = world->GetBlockId({ MathHelper::FloorDouble(position.x),
+			auto newBelowBlock = world->GetBlockId({ MathHelper::FloorDouble(position.x),
 			                                         MathHelper::FloorDouble(position.y) - 1,
 			                                         MathHelper::FloorDouble(position.z) });
-			if (newBelowBlockType > BLOCK_AIR) {
-				friction = Blocks::blockProperties[newBelowBlockType < BLOCK_MAX ? newBelowBlockType : BLOCK_MAX].slipperiness *
+			if (newBelowBlock > BLOCK_AIR) {
+				friction = Blocks::blockProperties[newBelowBlock < BLOCK_MAX ? newBelowBlock : BLOCK_MAX].slipperiness *
 				           0.91f;
 			}
 		}
@@ -250,7 +250,9 @@ void MobileEntity::TickPhysics() {
 		// Gravity
 		velocity.y -= 0.08;
 	}
+}
 
+void MobileEntity::ResolveEntityPushes() {
 	auto collidingEntities = world->entityManager.GetEntitiesWithinAabbExcluding(collider.Expand(0.2, 0.0, 0.2), id);
 
 	for (const auto& entity : collidingEntities) {
@@ -439,6 +441,8 @@ void MobileEntity::Tick() {
 
 	if (hasPhysics)
 		TickPhysics();
+
+	ResolveEntityPushes();
 }
 
 ItemStack* MobileEntity::GetHeldItem() {
