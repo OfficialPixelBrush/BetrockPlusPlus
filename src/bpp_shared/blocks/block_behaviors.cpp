@@ -753,6 +753,11 @@ void RegisterBlockBehaviors() {
 		return false;
 	};
 
+	auto onPistonPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
+	                        BlockType _blockId, uint8_t _meta) -> bool {
+		return GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_PISTON, _face));
+	};
+
 	// Plants
 	blockBehaviors[BLOCK_CACTUS].onBlockPlaced = onCactusPlace;
 	blockBehaviors[BLOCK_MUSHROOM_BROWN].onBlockPlaced = onMushroomPlace;
@@ -819,6 +824,9 @@ void RegisterBlockBehaviors() {
 		if (!CanCactusSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
+
+	blockBehaviors[BLOCK_PISTON].onBlockPlaced = onPistonPlace;
+	blockBehaviors[BLOCK_PISTON_STICKY].onBlockPlaced = onPistonPlace;
 
 	// Slabs
 	blockBehaviors[BLOCK_SLAB].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,

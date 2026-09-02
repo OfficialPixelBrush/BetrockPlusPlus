@@ -11,6 +11,9 @@
 #include "inventory/item_stack.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
+#ifdef DISCORD_INTEGRATION
+#include "helpers/discord.h"
+#endif
 
 void EntityMPPlayer::OnMountEntity() {
 	auto vehiclePtr = this->vehicle.lock().get();
@@ -242,6 +245,45 @@ void EntityMPPlayer::DropInventory() {
 
 void EntityMPPlayer::OnDeath(Entity* _killer) {
 	PlayerEntity::OnDeath(_killer);
+
+#ifdef DISCORD_INTEGRATION
+	if (!_killer) {
+		GlobalDiscord().SendServerNotice(std::format("{} died", session->username), Discord::EmbedColor::Red);
+	} else {
+		std::string label = "other Entity";
+		switch(_killer->type) {
+			case EntityType::PLAYER: {
+				//auto pe = dynamic_cast<PlayerEntity*>(_killer);
+				//if (pe && pe->username)
+				//	label = pe->username;
+				// TODO: Figure out a good way to get the username here :p
+				label = "Player"; break;
+				break;
+			}
+			case EntityType::CREEPER:
+				label = "Creeper"; break;
+			case EntityType::SKELETON:
+				label = "Skeleton"; break;
+			case EntityType::SPIDER:
+				label = "Spider"; break;
+			case EntityType::ZOMBIE:
+				label = "Zombie"; break;
+			case EntityType::SLIME:
+				label = "Slime"; break;
+			case EntityType::WOLF:
+				label = "Wolf"; break;
+			case EntityType::GIANT_ZOMBIE:
+				label = "Giant Zombie"; break;
+			case EntityType::ZOMBIE_PIGMAN:
+				label = "Zombie Pigman"; break;
+			case EntityType::GHAST:
+				label = "Ghast"; break;
+			default:
+				break;
+		}
+		GlobalDiscord().SendServerNotice(std::format("{} was killed by {}", session->username, label), Discord::EmbedColor::Red);
+	}
+#endif
 
 	// Hehe
 	if (session && (session->username == "wAidanJC" || session->username == "PixelBrushArt")) {

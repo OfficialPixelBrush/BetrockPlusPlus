@@ -606,7 +606,8 @@ void Discord::SendServerNotice(const std::string& _message, const EmbedColor _co
 	}
 
 	dpp::embed embed;
-	embed.set_color(GetColorCode(_color)).set_description(_message);
+	if (_color != EmbedColor::None)
+		embed.set_color(GetColorCode(_color)).set_description(_message);
 
 	dpp::message msg(dpp::snowflake{ channelId }, embed);
 	cluster->message_create(msg, [](const dpp::confirmation_callback_t& result) {
