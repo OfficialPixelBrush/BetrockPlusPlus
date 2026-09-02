@@ -718,35 +718,23 @@ void WorldManager::PumpPipeline(const std::vector<ClientPosition>& _players) {
 		// Actually generate this chunk
 		it->second->state.store(ChunkState::Generating, std::memory_order_release);
 		pool.detach_task([_pos, this]() {
-			try {
-				// We make a new chunk here instead of modifying the existing chunk because multithreading is a pain
-				// The placeholder chunk in the map will be replaced by this one when we push to genDoneQueue
-				auto chunk = std::make_shared<Chunk>();
-				chunk->cpos = _pos;
-				if (isHell) {
-					thread_local NetherGenerator tlGen(this->seed);
-					tlGen.GenerateChunk(*chunk);
-				} else {
-					thread_local OverworldGenerator tlGen(this->seed);
-					tlGen.GenerateChunk(*chunk);
-				}
-				chunk->isModified = true;
-				chunk->GenerateSkylightMap();
-				chunk->state.store(ChunkState::Generated, std::memory_order_release);
-
-				// This just posts the result so we can start lighting and check for population
-				this->PostGenResult(std::move(chunk));
-			} catch (const std::exception& e) {
-				// Uncaught here would terminate() the whole process on a
-				// background thread with no chance to log why. Reset to
-				// Unloaded (rather than leaving it stuck in Generating
-				// forever) so it's simply retried on a later tick.
-				GlobalLogger().error << "Exception generating chunk (" << _pos.x << "," << _pos.z << "): " << e.what()
-				                     << "\n";
-				auto it = chunks.find(_pos);
-				if (it != chunks.end())
-					it->second->state.store(ChunkState::Unloaded, std::memory_order_release);
+			// We make a new chunk here instead of modifying the existing chunk because multithreading is a pain
+			// The placeholder chunk in the map will be replaced by this one when we push to genDoneQueue
+			auto chunk = std::make_shared<Chunk>();
+			chunk->cpos = _pos;
+			if (isHell) {
+				thread_local NetherGenerator tlGen(this->seed);
+				tlGen.GenerateChunk(*chunk);
+			} else {
+				thread_local OverworldGenerator tlGen(this->seed);
+				tlGen.GenerateChunk(*chunk);
 			}
+			chunk->isModified = true;
+			chunk->GenerateSkylightMap();
+			chunk->state.store(ChunkState::Generated, std::memory_order_release);
+
+			// This just posts the result so we can start lighting and check for population
+			this->PostGenResult(std::move(chunk));
 		});
 		startedThisTick.insert(_pos);
 		return true;
