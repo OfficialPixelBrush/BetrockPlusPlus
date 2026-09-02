@@ -12,6 +12,7 @@
 #include "entities/entity_mobile.h"
 #include "entities/entity_player.h"
 #include "entities/entity_sheep.h"
+#include "entities/entity_boat.h"
 #include "inventory/item_stack.h"
 #include "items.h"
 #include "logger.h"
@@ -322,6 +323,35 @@ void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, D
 		_world.SetBlock(_pos, BLOCK_FARMLAND);
 	}
 	HarmTool(_stack, 1);
+}
+
+void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
+	float reach = 5.0f;
+	auto pe = dynamic_cast<PlayerEntity*>(&_user);
+	if (!pe) {
+		return;
+	}
+
+	// Do our raycast
+	Vec3 startPos = pe->position;
+	startPos.y += PLAYER_EYE_HEIGHT;
+	Vec3 lookVec = pe->GetLookVector(pe->rotationYaw, pe->rotationPitch);
+	Vec3 endPos = startPos + (lookVec * Vec3{ reach, reach, reach });
+	RayCastResult result = Raycast::Raycast(_world, startPos, endPos, RayCastMode::ACCEPT_SOURCES);
+
+	if (!result.hit) {
+		return;
+	}
+	BoatEntity boat;
+
+	if (result.hitBlock.type == BLOCK_SNOW_LAYER) {
+		result.blockPosition.y--;
+	}
+
+	boat.Teleport({ result.blockPosition.x + 0.5f, result.blockPosition.y + 1.0f + boat.yOffset,
+	                result.blockPosition.z + 0.5f });
+	_world.entityManager.AddEntity(std::make_shared<BoatEntity>(boat));
+	_stack->DecrementCount(1);
 }
 
 void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {

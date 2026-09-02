@@ -237,6 +237,14 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.Serialize(pSession->stream);
 		SendEquipmentState(_entityEntry, pSession);
 		SendMetadataState(_entityEntry, pSession);
+
+		// Sync riding state with the new joiner
+		if (auto vehiclePtr = _entityEntry.entity->vehicle.lock()) {
+			Packet::AddPassenger pkt;
+			pkt.vehicleEntityId = vehiclePtr->id;
+			pkt.passengerEntityId = _entityEntry.entity->id;
+			pkt.Serialize(pSession->stream);
+		}
 		// TODO: Sync with new joiners ffs
 		/*
 		if (_entityEntry.entity->isSleeping) {
@@ -343,6 +351,13 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.objectType = PacketData::ObjectType::BOAT;
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		pkt.Serialize(pSession->stream);
+
+		// This is annoying, but the boat needs a separate rotation packet to be sent after the spawn packet
+		Packet::EntityRotation pktRot;
+		pktRot.entityId = _entityEntry.entity->id;
+		pktRot.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
+			                 int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
+		pktRot.Serialize(pSession->stream);
 		break;
 	}
 	case EntityType::FALLING_SAND: {
@@ -579,7 +594,11 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 
 		// The threshold-based velocity check
 		if (_trackedEntry.profile.sendVelocity) {
-			Vec3 currentMotion = { entity->velocity.x, entity->velocity.y, entity->velocity.z };
+			double THRESHOLD = 0.01;
+			Vec3 currentMotion;
+			entity->velocity.x < THRESHOLD ? 0 : currentMotion.x = entity->velocity.x;
+			entity->velocity.y < THRESHOLD ? 0 : currentMotion.y = entity->velocity.y;
+			entity->velocity.z < THRESHOLD ? 0 : currentMotion.z = entity->velocity.z;
 			Vec3& lastMotion = _trackedEntry.lastBroadcastMotion;
 			double dmx = currentMotion.x - lastMotion.x;
 			double dmy = currentMotion.y - lastMotion.y;
