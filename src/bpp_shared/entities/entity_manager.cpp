@@ -390,10 +390,13 @@ std::optional<std::string> EntityManager::GetEntityNbtId(EntityType _type) {
 	case EntityType::FALLING_SAND:
 	case EntityType::FALLING_GRAVEL:
 		return "FallingSand";
+	
+	// Players have a special case!
+	case EntityType::PLAYER:
+		return "Player";
 
 	// These have no mapping!
 	case EntityType::NONE:
-	case EntityType::PLAYER: // Note: Players are saved differently (thanks notch)
 	case EntityType::FISH:
 	case EntityType::FIREBALL:
 	case EntityType::THROWN_EGG:

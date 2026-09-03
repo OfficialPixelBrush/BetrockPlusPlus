@@ -511,40 +511,50 @@ struct SaveManager {
 	}
 
 	bool SavePlayerNbt(const std::string& _playerName, Tag& _playerData) const {
-		std::vector<uint8_t> raw;
-		NBTwriter writer(raw, _playerData);
+		try {
+			// Check to see if we have a root compound tag
+			if (_playerData.type != TAG_COMPOUND) {
+				return false;
+			}
+			std::vector<uint8_t> raw;
+			NBTwriter writer(raw, _playerData);
 
-		libdeflate_compressor* compressor = libdeflate_alloc_compressor(6);
-		if (!compressor)
-			return false;
-		size_t maxSize = libdeflate_gzip_compress_bound(compressor, raw.size());
-		std::vector<uint8_t> compressed(maxSize);
-		size_t actualSize = libdeflate_gzip_compress(compressor, raw.data(), raw.size(), compressed.data(), maxSize);
-		libdeflate_free_compressor(compressor);
-		if (actualSize == 0)
-			return false;
-		compressed.resize(actualSize);
+			libdeflate_compressor* compressor = libdeflate_alloc_compressor(6);
+			if (!compressor)
+				return false;
+			size_t maxSize = libdeflate_gzip_compress_bound(compressor, raw.size());
+			std::vector<uint8_t> compressed(maxSize);
+			size_t actualSize = libdeflate_gzip_compress(compressor, raw.data(), raw.size(), compressed.data(), maxSize);
+			libdeflate_free_compressor(compressor);
+			if (actualSize == 0)
+				return false;
+			compressed.resize(actualSize);
 
-		std::string finalPath = saveDirectory + "/players/" + _playerName + ".dat";
-		std::string tmpPath = finalPath + ".tmp";
+			std::string finalPath = saveDirectory + "/players/" + _playerName + ".dat";
+			std::string tmpPath = finalPath + ".tmp";
 
-		std::ofstream file(tmpPath, std::ios::binary);
-		if (!file.is_open())
-			return false;
-		file.write(reinterpret_cast<const char*>(compressed.data()), compressed.size());
-		file.flush();
-		if (!file.good())
-			return false;
-		file.close();
+			std::ofstream file(tmpPath, std::ios::binary);
+			if (!file.is_open())
+				return false;
+			file.write(reinterpret_cast<const char*>(compressed.data()), compressed.size());
+			file.flush();
+			if (!file.good())
+				return false;
+			file.close();
 
-		std::filesystem::rename(tmpPath, finalPath);
-		return true;
+			std::filesystem::rename(tmpPath, finalPath);
+			return true;
+		} catch (const std::exception& e) {
+			GlobalLogger().error << "Failed to save player NBT for " << _playerName << ": " << e.what() << "\n";
+		} catch (...) {
+			GlobalLogger().error << "Failed to save player NBT for " << _playerName << ": unknown exception\n";
+		}
+		return false;
 	}
 
 	void Release() {
 		sessionLock.Release();
-		worldFile.reset(); // also close the level.dat handle, or a subsequent
-		                   // Initialize() on this same object can't touch the file
+		worldFile.reset();          
 	}
 
 	~SaveManager() {
