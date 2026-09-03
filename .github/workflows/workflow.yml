@@ -1,32 +1,21 @@
-name: Run TODO to Issue
-
+name: "Run TODO to Issue"
 on:
   push:
-    paths:
-      - 'src/**'
   workflow_dispatch:
     inputs:
       MANUAL_COMMIT_REF:
-        description: 'The SHA of the commit to get the diff for'
+        description: "The SHA of the commit to get the diff for"
         required: true
       MANUAL_BASE_REF:
-        description: 'Optional SHA to compare against instead of the previous commit'
+        description: "By default, the commit entered above is compared to the one directly before it; to go back further, enter an earlier SHA here"
         required: false
 jobs:
   build:
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      issues: write
+    runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - name: TODO to Issue
-        uses: alstr/todo-to-issue-action@v5
+      - uses: "actions/checkout@v6"
+      - name: "TODO to Issue"
+        uses: "alstr/todo-to-issue-action@v5"
         env:
           MANUAL_COMMIT_REF: ${{ inputs.MANUAL_COMMIT_REF }}
           MANUAL_BASE_REF: ${{ inputs.MANUAL_BASE_REF }}
-        with:
-          IGNORE: '^(?!src/)'
