@@ -8,11 +8,11 @@
 #include "blocks.h"
 #include "blocks/block_properties.h"
 #include "entities/entity.h"
+#include "entities/entity_boat.h"
 #include "entities/entity_item.h"
 #include "entities/entity_mobile.h"
 #include "entities/entity_player.h"
 #include "entities/entity_sheep.h"
-#include "entities/entity_boat.h"
 #include "inventory/item_stack.h"
 #include "items.h"
 #include "logger.h"
@@ -348,8 +348,8 @@ void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, 
 		result.blockPosition.y--;
 	}
 
-	boat.Teleport({ result.blockPosition.x + 0.5f, result.blockPosition.y + 1.0f + boat.yOffset,
-	                result.blockPosition.z + 0.5f });
+	boat.Teleport(
+	    { result.blockPosition.x + 0.5f, result.blockPosition.y + 1.0f + boat.yOffset, result.blockPosition.z + 0.5f });
 	_world.entityManager.AddEntity(std::make_shared<BoatEntity>(boat));
 	_stack->DecrementCount(1);
 }

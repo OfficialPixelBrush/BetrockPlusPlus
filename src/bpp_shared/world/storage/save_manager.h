@@ -554,7 +554,7 @@ struct SaveManager {
 
 	void Release() {
 		sessionLock.Release();
-		worldFile.reset();          
+		worldFile.reset();
 	}
 
 	~SaveManager() {

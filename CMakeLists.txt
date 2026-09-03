@@ -188,6 +188,7 @@ set(SHARED_SOURCES
     # Utilities
     src/bpp_utilities/utilities.cpp
     src/bpp_shared/helpers/explosion.cpp
+    src/bpp_shared/helpers/direction_fixer.cpp
 )
 
 # Server-specific source code
@@ -222,9 +223,6 @@ set(CLIENT_SOURCES
     src/bpp_client/assets.cpp
     src/bpp_client/packet/handle_client_packet.cpp
     src/bpp_client/packet/client_packet_dispatcher.cpp
-
-    src/bpp_client/renderers/world_renderer.cpp
-    src/bpp_client/renderers/sub_chunk_mesher.cpp
 
     src/bpp_client/single_header_impl/sokol_gfx.cpp
 )

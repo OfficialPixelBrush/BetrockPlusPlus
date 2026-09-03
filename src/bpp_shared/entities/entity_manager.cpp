@@ -5,6 +5,7 @@
  *
 */
 #include "entity_manager.h"
+#include "entity_boat.h"
 #include "entity_chicken.h"
 #include "entity_cow.h"
 #include "entity_creeper.h"
@@ -15,7 +16,6 @@
 #include "entity_skeleton.h"
 #include "entity_spider.h"
 #include "entity_zombie.h"
-#include "entity_boat.h"
 #include "world.h"
 
 void EntityManager::RemoveEntity(EntityId _id) {
@@ -390,7 +390,7 @@ std::optional<std::string> EntityManager::GetEntityNbtId(EntityType _type) {
 	case EntityType::FALLING_SAND:
 	case EntityType::FALLING_GRAVEL:
 		return "FallingSand";
-	
+
 	// Players have a special case!
 	case EntityType::PLAYER:
 		return "Player";

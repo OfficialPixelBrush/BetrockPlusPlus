@@ -131,7 +131,8 @@ struct PlayerSession {
 		entity->lastHealth = entity->health;
 		entity->lastNotifiedHealth = entity->health;
 
-		dimension = _nbt.Has("Dimension") ? static_cast<Dimension>(_nbt.Get("Dimension").GetInt()) : Dimension::Overworld;
+		dimension = _nbt.Has("Dimension") ? static_cast<Dimension>(_nbt.Get("Dimension").GetInt())
+		                                  : Dimension::Overworld;
 
 		if (_nbt.Has("Inventory")) {
 			auto& it3 = _nbt.Get("Inventory").GetList();
@@ -151,11 +152,11 @@ struct PlayerSession {
 	}
 
 	Tag SerializeToNbt() {
-		if (!entity)			
+		if (!entity)
 			return {};
 
 		auto entityNBT = entity->SerializeToNbt();
-		if (!entityNBT.has_value()) 
+		if (!entityNBT.has_value())
 			return {};
 
 		Tag sleepTimerTag;
@@ -210,9 +211,9 @@ struct PlayerSession {
 
 		auto& rootTag = entityNBT.value();
 		rootTag.compound["SleepTimer"] = sleepTimerTag;
-		rootTag.compound["Dimension"]  = dimensionTag;
-		rootTag.compound["Sleeping"]   = sleepingTag;
-		rootTag.compound["Inventory"]  = inventoryTag;
+		rootTag.compound["Dimension"] = dimensionTag;
+		rootTag.compound["Sleeping"] = sleepingTag;
+		rootTag.compound["Inventory"] = inventoryTag;
 		return rootTag;
 	}
 };

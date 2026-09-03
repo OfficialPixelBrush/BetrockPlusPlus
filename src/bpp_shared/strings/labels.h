@@ -13,10 +13,6 @@
 #include "blocks.h"
 #include "items.h"
 
-static constexpr int SLOT_EMPTY = -1; // sentinel for "no slot found"
+constexpr int SLOT_EMPTY = -1; // sentinel for "no slot found"
 
-extern std::array<std::string, BLOCK_MAX> blockLabels;
-extern std::array<std::string, Items::MAX - Items::THRESHOLD> itemLabels;
-
-std::string IdToLabel(const int16_t _id);
-std::string WIdToLabel(const int16_t _id);
+const std::string IdToLabel(const int16_t _id);
