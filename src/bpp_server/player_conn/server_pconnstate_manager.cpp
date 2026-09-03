@@ -96,15 +96,29 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	}
 	// Check if the username contains any invalid characters
 	if (!IsValidUsername(incoming.username)) {
-		DisconnectPlayer(_session, "Invalid username!", _server);
+		DisconnectPlayer(_session, "Invalid username!", _server, false);
 		return;
 	}
 	_session.username = incoming.username;
 
+	// User is banned, reject
+	if (std::find(_server.bannedUsernames.begin(), _server.bannedUsernames.end(), incoming.username) !=
+	    _server.bannedUsernames.end()) {
+		DisconnectPlayer(_session, "You are banned from this server!", _server, false);
+		return;
+	}
+
+	// User's IP is banned, reject
+	if (!_session.ipAddress.empty() &&
+	    std::find(_server.bannedIps.begin(), _server.bannedIps.end(), _session.ipAddress) != _server.bannedIps.end()) {
+		DisconnectPlayer(_session, "Your IP address is banned from this server!", _server, false);
+		return;
+	}
+
 	// User isn't whitelisted, reject
 	if (_server.useWhitelist && std::find(_server.whitelistedUsernames.begin(), _server.whitelistedUsernames.end(),
 	                                      incoming.username) == _server.whitelistedUsernames.end()) {
-		DisconnectPlayer(_session, "You're not whitelisted!", _server);
+		DisconnectPlayer(_session, "You're not whitelisted!", _server, false);
 		return;
 	}
 
@@ -128,19 +142,19 @@ void PlayerConnStateManager::HandleVerifyingUsername(PlayerSession& _session, [[
 	constexpr auto K_AUTH_TIMEOUT = 20s;
 
 	if (!_session.pendingAuthFuture.valid()) {
-		DisconnectPlayer(_session, "Failed to verify username!", _server);
+		DisconnectPlayer(_session, "Failed to verify username!", _server, false);
 		return;
 	}
 
 	if (_session.pendingAuthFuture.wait_for(0s) != std::future_status::ready) {
 		if (std::chrono::steady_clock::now() - _session.authStartTime > K_AUTH_TIMEOUT)
-			DisconnectPlayer(_session, "Login verification timed out!", _server);
+			DisconnectPlayer(_session, "Login verification timed out!", _server, false);
 		return; // Not ready yet - check again next tick.
 	}
 
 	const bool verified = _session.pendingAuthFuture.get();
 	if (!verified) {
-		DisconnectPlayer(_session, "Failed to verify username!", _server);
+		DisconnectPlayer(_session, "Failed to verify username!", _server, false);
 		return;
 	}
 #endif
@@ -224,13 +238,14 @@ void PlayerConnStateManager::FinishLogin(PlayerSession& _session, Server& _serve
 }
 
 void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std::string& _reason,
-                                              [[maybe_unused]] Server& _server) {
+                                              [[maybe_unused]] Server& _server, bool doSave) {
 	// Send disconnect reason to the leaving player
 	Packet::Disconnect kick;
 	kick.reason = _reason;
 	kick.Serialize(_session.stream);
 	_session.stream.SetConnected(false);
-	_server.SavePlayer(_session.username);
+	if (doSave)
+		_server.SavePlayer(_session.username);
 	GlobalLogger().info << "Player " << (_session.username.empty() ? "(username not yet set)" : _session.username)
 	                    << " disconnected: " << _reason << "\n";
 }

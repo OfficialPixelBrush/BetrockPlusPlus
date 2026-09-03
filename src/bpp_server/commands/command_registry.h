@@ -26,3 +26,5 @@ void RegisterFill(strategos::BrigadierContext& _dispatcher);
 void RegisterStop(strategos::BrigadierContext& _dispatcher);
 void RegisterOp(strategos::BrigadierContext& _dispatcher);
 void RegisterWhitelist(strategos::BrigadierContext& _dispatcher);
+void RegisterKick(strategos::BrigadierContext& _dispatcher);
+void RegisterBan(strategos::BrigadierContext& _dispatcher);

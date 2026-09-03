@@ -99,6 +99,15 @@ public:
 		return nullptr;
 	}
 
+	std::shared_ptr<PlayerSession> GetSessionByIp(const std::string& _ip) {
+		for (auto player : players) {
+			if (!_ip.empty() && player->ipAddress == _ip) {
+				return player;
+			}
+		}
+		return nullptr;
+	}
+
 	std::string GetUsernameByEntityId(EntityId _id) {
 		for (auto& player : players) {
 			if (player->entity && player->entity->id == _id) {
@@ -154,12 +163,18 @@ public:
 	bool useWhitelist = false;
 	std::vector<std::string> whitelistedUsernames = {};
 	std::vector<std::string> operatorUsernames = {};
+	// Ban storage. Usernames and IPs are kept in separate lists, mirroring vanilla's
+	// banned-players.txt/banned-ips.txt split.
+	std::vector<std::string> bannedUsernames = {};
+	std::vector<std::string> bannedIps = {};
 
 	void SetWhitelistEnabled(bool _enabled, bool _persist = true);
 	void LoadWhitelist();
 	void UnloadWhitelist();
 	bool SaveWhitelist();
 	bool SaveOperators();
+	bool SaveBannedPlayers();
+	bool SaveBannedIps();
 	void ReloadWhitelist();
 
 private:

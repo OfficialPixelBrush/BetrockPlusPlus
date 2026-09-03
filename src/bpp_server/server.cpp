@@ -197,6 +197,9 @@ void Server::LoadConfig() {
 	//maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
 	useWhitelist = config.GetAsBoolean("white-list");
 	operatorUsernames = ListParser::Read(ListParser::Target::Operator);
+	// Bans are always enforced, unlike the whitelist, so we load them unconditionally
+	bannedUsernames = ListParser::Read(ListParser::Target::BannedPlayers);
+	bannedIps = ListParser::Read(ListParser::Target::BannedIps);
 	if (useWhitelist) {
 		LoadWhitelist();
 		GlobalLogger().info << "Whitelist enabled!\n";
@@ -240,6 +243,14 @@ bool Server::SaveWhitelist() {
 
 bool Server::SaveOperators() {
 	return ListParser::Write(operatorUsernames, ListParser::Target::Operator);
+}
+
+bool Server::SaveBannedPlayers() {
+	return ListParser::Write(bannedUsernames, ListParser::Target::BannedPlayers);
+}
+
+bool Server::SaveBannedIps() {
+	return ListParser::Write(bannedIps, ListParser::Target::BannedIps);
 }
 
 void Server::ReloadWhitelist() {
@@ -537,16 +548,21 @@ void Server::Stop() {
 	curLevelData.time = gameRuntime.world.elapsedTicks;
 	gameRuntime.saveManager.SaveLevelFile(curLevelData);
 
-	// Save operator and whitelist updates
+	// Save operator, whitelist, and ban updates
 	SaveWhitelist();
 	SaveOperators();
+	SaveBannedPlayers();
+	SaveBannedIps();
 }
 
 void Server::AcceptNewPlayers() {
-	auto clientSocket = ServerSocketManager::CreateClientSocket(serverSocket);
+	std::string clientIp;
+	auto clientSocket = ServerSocketManager::CreateClientSocket(serverSocket, &clientIp);
 	if (clientSocket < 0)
 		return;
-	players.push_back(std::make_shared<PlayerSession>(clientSocket, gameRuntime));
+	auto session = std::make_shared<PlayerSession>(clientSocket, gameRuntime);
+	session->ipAddress = clientIp;
+	players.push_back(std::move(session));
 }
 
 void Server::StopTimeout(float _secondsUntilShutdown) {

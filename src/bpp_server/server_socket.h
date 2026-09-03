@@ -8,6 +8,7 @@
 #pragma once
 #include "logger.h"
 #if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -15,8 +16,11 @@
 #include <unistd.h>
 #elif defined(_WIN32) || defined(_WIN64)
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 #endif
+
+#include <string>
 
 namespace ServerSocketManager {
 inline void CloseSocket(int _socket) {
@@ -65,9 +69,11 @@ inline int CreateServerSocket(int _port) {
 	return serverSocket;
 }
 
-inline int CreateClientSocket(int _socket = -1) {
+inline int CreateClientSocket(int _socket = -1, std::string* _outIp = nullptr) {
+	sockaddr_in clientAddr{};
 #if defined(_WIN32) || defined(_WIN64)
-	SOCKET rawSocket = accept(_socket, nullptr, nullptr);
+	int addrLen = sizeof(clientAddr);
+	SOCKET rawSocket = accept(_socket, reinterpret_cast<sockaddr*>(&clientAddr), &addrLen);
 	if (rawSocket == INVALID_SOCKET)
 		return -1;
 	u_long clientMode = 1;
@@ -78,7 +84,8 @@ inline int CreateClientSocket(int _socket = -1) {
 	setsockopt(rawSocket, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>(&nodelay), sizeof(nodelay));
 	int clientSocket = static_cast<int>(rawSocket);
 #else
-	int clientSocket = accept(_socket, nullptr, nullptr);
+	socklen_t addrLen = sizeof(clientAddr);
+	int clientSocket = accept(_socket, reinterpret_cast<sockaddr*>(&clientAddr), &addrLen);
 	if (clientSocket < 0)
 		return -1;
 	fcntl(clientSocket, F_SETFL, O_NONBLOCK);
@@ -87,6 +94,12 @@ inline int CreateClientSocket(int _socket = -1) {
 	int nodelay = 1;
 	setsockopt(clientSocket, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
 #endif
+
+	if (_outIp) {
+		char ipBuffer[INET_ADDRSTRLEN] = {};
+		if (inet_ntop(AF_INET, &clientAddr.sin_addr, ipBuffer, sizeof(ipBuffer)))
+			*_outIp = ipBuffer;
+	}
 
 	return clientSocket;
 }
