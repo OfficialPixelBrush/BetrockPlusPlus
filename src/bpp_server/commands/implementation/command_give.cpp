@@ -33,7 +33,7 @@ std::string GiveItem(const strategos::CmdNode& _cmd, void* _userData) {
 	if (!Items::IsValidId(item.id))
 		return std::to_string(item.id) + " is not a valid item id!";
 
-	SendChat(*ctx.session, "§eGave " + WIdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
+	SendChat(*ctx.session, "§eGave " + IdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
 	                           std::to_string(item.data) + ") x" + std::to_string(item.count) + " to " +
 	                           ctx.session->username);
 

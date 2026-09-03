@@ -16,8 +16,8 @@ enum class MemoryUnit : uint8_t {
 	Gigabyte
 };
 
-static constexpr double BytesPerUnit(MemoryUnit unit) noexcept {
-	switch (unit) {
+constexpr double BytesPerUnit(const MemoryUnit _unit) noexcept {
+	switch (_unit) {
 	case MemoryUnit::Bit:
 		return 1.0 / 8.0;
 	case MemoryUnit::Byte:
@@ -43,10 +43,10 @@ static constexpr double BytesPerUnit(MemoryUnit unit) noexcept {
 #endif
 #define PSAPI_VERSION 2
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 #include <psapi.h>
+#include <windows.h>
 
-static double GetMemoryUsage(MemoryUnit _unit) {
+const double GetMemoryUsage(const MemoryUnit _unit) {
 	PROCESS_MEMORY_COUNTERS pmc{};
 	pmc.cb = sizeof(pmc);
 
@@ -64,7 +64,7 @@ static double GetMemoryUsage(MemoryUnit _unit) {
 #include <string>
 #include <unistd.h>
 
-static double GetMemoryUsage(MemoryUnit _unit) {
+const double GetMemoryUsage(const MemoryUnit _unit) {
 	double rssUsage = 0.0;
 
 	std::ifstream statStream("/proc/self/stat", std::ios_base::in);

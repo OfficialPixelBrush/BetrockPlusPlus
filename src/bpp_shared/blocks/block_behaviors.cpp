@@ -806,18 +806,18 @@ void RegisterBlockBehaviors() {
 	// Farmland
 	blockBehaviors[BLOCK_FARMLAND].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                          BlockType _blockId) -> void {
-			// Revert to dirt if something is solid above us
-			if (_world.GetMaterial({ _pos.x, _pos.y + 1, _pos.z }).isSolid) {
-				_world.SetBlock(_pos, BLOCK_DIRT, 0);
-			}
-		};
+		// Revert to dirt if something is solid above us
+		if (_world.GetMaterial({ _pos.x, _pos.y + 1, _pos.z }).isSolid) {
+			_world.SetBlock(_pos, BLOCK_DIRT, 0);
+		}
+	};
 	blockBehaviors[BLOCK_FARMLAND].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                           Java::Random& _random) -> void {
 		if (_random.NextInt(5) != 0)
 			return;
 
 		// Check if we are hydrated
-		auto WaterNearby = [](WorldManager& _world, Int3 _pos) -> bool {
+		auto waterNearby = [](WorldManager& _world, Int3 _pos) -> bool {
 			for (int dx = -4; dx <= 4; dx++) {
 				for (int dz = -4; dz <= 4; dz++) {
 					for (int dy = 0; dy <= 1; dy++) {
@@ -831,7 +831,7 @@ void RegisterBlockBehaviors() {
 		};
 
 		// There is water so max hydration
-		if (WaterNearby(_world, _pos)) {
+		if (waterNearby(_world, _pos)) {
 			if (_meta < 7) {
 				_world.SetMeta(_pos, 7);
 			}
@@ -2040,7 +2040,7 @@ void RegisterBlockBehaviors() {
 	};
 	blockBehaviors[BLOCK_SAPLING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                          Java::Random& _random) -> void {
-		if (_world.GetBlockLightValue({_pos.x, _pos.y + 1, _pos.z}) < 9)
+		if (_world.GetBlockLightValue({ _pos.x, _pos.y + 1, _pos.z }) < 9)
 			return;
 		if (_random.NextInt(30) != 0)
 			return;

@@ -11,9 +11,9 @@
 
 namespace Items {
 // Items above this ID are pure items (not placeable blocks)
-static constexpr int16_t THRESHOLD = 255;
+constexpr int16_t THRESHOLD = 255;
 // Maximum number of items in a stack
-static constexpr int8_t STACK_MAX = 64;
+constexpr int8_t STACK_MAX = 64;
 enum Id : ItemId::Underlying {
 	INVALID = -1,
 	NONE = 0, // This is usually not you want to use, use INVALID instead

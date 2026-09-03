@@ -94,9 +94,9 @@ void BoatEntity::Tick() {
 		velocity.z += rider->velocity.z * 0.2;
 	}
 
-	constexpr double maxHorizontalSpeed = 0.4;
-	velocity.x = std::clamp(velocity.x, -maxHorizontalSpeed, maxHorizontalSpeed);
-	velocity.z = std::clamp(velocity.z, -maxHorizontalSpeed, maxHorizontalSpeed);
+	constexpr double MAX_HORIZONTAL_SPEED = 0.4;
+	velocity.x = std::clamp(velocity.x, -MAX_HORIZONTAL_SPEED, MAX_HORIZONTAL_SPEED);
+	velocity.z = std::clamp(velocity.z, -MAX_HORIZONTAL_SPEED, MAX_HORIZONTAL_SPEED);
 
 	if (onGround) {
 		velocity.x *= 0.5;

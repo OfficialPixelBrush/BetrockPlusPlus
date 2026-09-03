@@ -238,13 +238,13 @@ void PlayerConnStateManager::FinishLogin(PlayerSession& _session, Server& _serve
 }
 
 void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std::string& _reason,
-                                              [[maybe_unused]] Server& _server, bool doSave) {
+                                              [[maybe_unused]] Server& _server, bool _doSave) {
 	// Send disconnect reason to the leaving player
 	Packet::Disconnect kick;
 	kick.reason = _reason;
 	kick.Serialize(_session.stream);
 	_session.stream.SetConnected(false);
-	if (doSave)
+	if (_doSave)
 		_server.SavePlayer(_session.username);
 	GlobalLogger().info << "Player " << (_session.username.empty() ? "(username not yet set)" : _session.username)
 	                    << " disconnected: " << _reason << "\n";

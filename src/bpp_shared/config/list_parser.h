@@ -24,7 +24,7 @@ enum class Target {
 	BannedIps
 };
 static constexpr std::array<std::string_view, 4> TARGET_PATHS{ "ops.txt", "whitelist.txt", "banned-players.txt",
-	                                                            "banned-ips.txt" };
+	                                                           "banned-ips.txt" };
 std::vector<std::string> Read(Target _target);
 bool Write(const std::vector<std::string>& _list, Target _target);
 }; // namespace ListParser

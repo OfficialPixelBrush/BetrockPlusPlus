@@ -595,16 +595,16 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 
 		// The threshold-based velocity check
 		if (_trackedEntry.profile.sendVelocity) {
-			double THRESHOLD = 0.01;
+			constexpr double THRESHOLD = 0.01;
 			Vec3 currentMotion;
 			entity->velocity.x < THRESHOLD ? 0 : currentMotion.x = entity->velocity.x;
 			entity->velocity.y < THRESHOLD ? 0 : currentMotion.y = entity->velocity.y;
 			entity->velocity.z < THRESHOLD ? 0 : currentMotion.z = entity->velocity.z;
 			Vec3& lastMotion = _trackedEntry.lastBroadcastMotion;
-			double dmx = currentMotion.x - lastMotion.x;
-			double dmy = currentMotion.y - lastMotion.y;
-			double dmz = currentMotion.z - lastMotion.z;
-			double deltaSq = dmx * dmx + dmy * dmy + dmz * dmz;
+			const double dmx = currentMotion.x - lastMotion.x;
+			const double dmy = currentMotion.y - lastMotion.y;
+			const double dmz = currentMotion.z - lastMotion.z;
+			const double deltaSq = dmx * dmx + dmy * dmy + dmz * dmz;
 			const double motionThreshold = 0.02;
 
 			bool needsVelocityUpdate = deltaSq > motionThreshold * motionThreshold ||

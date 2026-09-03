@@ -22,14 +22,14 @@ typedef float gen_float;
 #include <cstdint>
 typedef Fixed<int64_t, (1 << 28)> gen_float;
 constexpr inline int32_t GenFloatToInt32(const gen_float value) {
-    return static_cast<int32_t>(value.Raw() / gen_float::M_SCALE);
+	return static_cast<int32_t>(value.Raw() / gen_float::M_SCALE);
 }
 #elif defined(GENERATION_PRECISION_INT)
 #include "../../quantized_types.h"
 #include <cstdint>
 typedef Fixed<int32_t, (1 << 14)> gen_float;
 constexpr inline int32_t GenFloatToInt32(const gen_float value) {
-    return static_cast<int32_t>(value.Raw() / gen_float::M_SCALE);
+	return static_cast<int32_t>(value.Raw() / gen_float::M_SCALE);
 }
 #else
 #error "Unsupported GENERATION_PRECISION"

@@ -794,16 +794,14 @@ void RegisterBlockProperties() {
 	};
 
 	// Farmland (Tilled Field)
-	blockProperties[BlockType::BLOCK_FARMLAND] = {
-		.material = Material::Ground(),
-		.hardness = 0.6f,
-		.lightOpacity = 255,
-		.stepSound = StepSound::Gravel,
-		.isOpaqueCube = false,
-		.isNormalCube = false,
-		.renderAsNormalBlock = false,
-		.ticksOnLoad = true
-	};
+	blockProperties[BlockType::BLOCK_FARMLAND] = { .material = Material::Ground(),
+		                                           .hardness = 0.6f,
+		                                           .lightOpacity = 255,
+		                                           .stepSound = StepSound::Gravel,
+		                                           .isOpaqueCube = false,
+		                                           .isNormalCube = false,
+		                                           .renderAsNormalBlock = false,
+		                                           .ticksOnLoad = true };
 
 	// Furnace (idle)
 	blockProperties[BlockType::BLOCK_FURNACE] = {
