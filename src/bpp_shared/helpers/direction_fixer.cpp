@@ -119,8 +119,6 @@ Direction::Value GetDirectionFromMeta(const BlockType _type, const uint8_t _meta
 	default: // Is a non-directional block
 		return Direction::Value::None;
 	}
-	// TODO: Should probably throw a warning or error?
-	return Direction::Value::None;
 }
 
 /**
