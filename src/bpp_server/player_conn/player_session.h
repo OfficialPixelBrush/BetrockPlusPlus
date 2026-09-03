@@ -119,136 +119,61 @@ struct PlayerSession {
 
 	// Load our player data from file
 	void LoadPlayerNbt(Tag& _nbt) {
-		// Very basic but just stuff we care about for now
-		auto& it = _nbt.Get("Pos").GetList();
-		position.pos.x = it[0].GetDouble();
-		position.pos.y = it[1].GetDouble();
-		position.pos.z = it[2].GetDouble();
+		if (!entity)
+			return;
 
-		auto& it2 = _nbt.Get("Rotation").GetList();
-		rotation.x = it2[0].GetFloat();
-		rotation.y = it2[1].GetFloat();
-
-		dimension = static_cast<Dimension>(_nbt.Get("Dimension").GetInt());
-
-		entity->health = _nbt.Get("Health").GetShort();
-		entity->lastHealth = entity->health;
-
-		auto& it3 = _nbt.Get("Inventory").GetList();
-		for (auto& item : it3) {
-			NbtSlotId nbtSlot = item.Get("Slot").GetByte();
-			NetworkSlotId networkSlot = inventory.GetNetworkSlotId(nbtSlot);
-			if (networkSlot < 0 || networkSlot >= int(inventory.slots.size()))
-				continue;
-			inventory.slots[size_t(networkSlot)] = ItemStack{ item.Get("id").GetShort(), item.Get("Count").GetByte(),
-				                                              item.Get("Damage").GetShort() };
+		if (_nbt.type != TAG_COMPOUND) {
+			GlobalLogger().error << "Player NBT data is not a compound tag!\n";
+			return;
 		}
+
+		entity->LoadFromNbt(_nbt);
+		entity->lastHealth = entity->health;
+		entity->lastNotifiedHealth = entity->health;
+
+		dimension = _nbt.Has("Dimension") ? static_cast<Dimension>(_nbt.Get("Dimension").GetInt()) : Dimension::Overworld;
+
+		if (_nbt.Has("Inventory")) {
+			auto& it3 = _nbt.Get("Inventory").GetList();
+			for (auto& item : it3) {
+				NbtSlotId nbtSlot = item.Get("Slot").GetByte();
+				NetworkSlotId networkSlot = inventory.GetNetworkSlotId(nbtSlot);
+				if (networkSlot < 0 || networkSlot >= int(inventory.slots.size()))
+					continue;
+				inventory.slots[size_t(networkSlot)] = ItemStack{ item.Get("id").GetShort(), item.Get("Count").GetByte(),
+					                                              item.Get("Damage").GetShort() };
+			}
+		}
+
+		this->position.pos = entity->position;
+		this->rotation.x = entity->rotationYaw;
+		this->rotation.z = entity->rotationPitch;
 	}
 
 	Tag SerializeToNbt() {
-		if (!entity)
+		if (!entity)			
 			return {};
-		Tag rootTag;
-		rootTag.type = TAG_COMPOUND;
-		rootTag.name = "";
 
-		Tag motionTag;
-		motionTag.type = TAG_LIST;
-		motionTag.name = "Motion";
-		motionTag.listType = TAG_DOUBLE;
+		auto entityNBT = entity->SerializeToNbt();
+		if (!entityNBT.has_value()) 
+			return {};
+
 		Tag sleepTimerTag;
 		sleepTimerTag.type = TAG_SHORT;
 		sleepTimerTag.name = "SleepTimer";
 		sleepTimerTag.shortValue = 0;
-		Tag healthTag;
-		healthTag.type = TAG_SHORT;
-		healthTag.name = "Health";
-		healthTag.shortValue = entity->health;
-		Tag airTag;
-		airTag.type = TAG_SHORT;
-		airTag.name = "Air";
-		airTag.shortValue = entity->air;
-		Tag onGroundTag;
-		onGroundTag.type = TAG_BYTE;
-		onGroundTag.name = "OnGround";
-		onGroundTag.byteValue = entity->onGround;
 		Tag dimensionTag;
 		dimensionTag.type = TAG_INT;
 		dimensionTag.name = "Dimension";
 		dimensionTag.intValue = int(dimension);
-		Tag rotationTag;
-		rotationTag.type = TAG_LIST;
-		rotationTag.name = "Rotation";
-		rotationTag.listType = TAG_FLOAT;
-		Tag fallDistanceTag;
-		fallDistanceTag.type = TAG_FLOAT;
-		fallDistanceTag.name = "FallDistance";
-		fallDistanceTag.floatValue = entity->fallDistance;
 		Tag sleepingTag;
 		sleepingTag.type = TAG_BYTE;
 		sleepingTag.name = "Sleeping";
 		sleepingTag.byteValue = entity->isSleeping;
-		Tag posTag;
-		posTag.type = TAG_LIST;
-		posTag.name = "Pos";
-		posTag.listType = TAG_DOUBLE;
-		Tag deathTimeTag;
-		deathTimeTag.type = TAG_SHORT;
-		deathTimeTag.name = "DeathTime";
-		deathTimeTag.shortValue = entity->deathTime;
-		Tag fireTag;
-		fireTag.type = TAG_SHORT;
-		fireTag.name = "Fire";
-		fireTag.shortValue = entity->fireTicks;
-		Tag hurtTimeTag;
-		hurtTimeTag.type = TAG_SHORT;
-		hurtTimeTag.name = "HurtTime";
-		hurtTimeTag.shortValue = entity->hurtResistantTime;
-		Tag attackTimeTag;
-		attackTimeTag.type = TAG_SHORT;
-		attackTimeTag.name = "AttackTime";
-		attackTimeTag.shortValue = entity->attackTime;
 		Tag inventoryTag;
 		inventoryTag.type = TAG_LIST;
 		inventoryTag.name = "Inventory";
 		inventoryTag.listType = TAG_COMPOUND;
-
-		// Save position and rotation
-		Tag posX;
-		posX.type = TAG_DOUBLE;
-		posX.doubleValue = position.pos.x;
-		Tag posY;
-		posY.type = TAG_DOUBLE;
-		posY.doubleValue = position.pos.y;
-		Tag posZ;
-		posZ.type = TAG_DOUBLE;
-		posZ.doubleValue = position.pos.z;
-		posTag.list.push_back(posX);
-		posTag.list.push_back(posY);
-		posTag.list.push_back(posZ);
-
-		Tag rotX;
-		rotX.type = TAG_FLOAT;
-		rotX.floatValue = entity->rotationYaw;
-		Tag rotY;
-		rotY.type = TAG_FLOAT;
-		rotY.floatValue = entity->rotationPitch;
-		rotationTag.list.push_back(rotX);
-		rotationTag.list.push_back(rotY);
-
-		// Initialize our position with a default
-		Tag movX;
-		movX.type = TAG_DOUBLE;
-		movX.doubleValue = 0.0;
-		Tag movY;
-		movY.type = TAG_DOUBLE;
-		movY.doubleValue = 0.0;
-		Tag movZ;
-		movZ.type = TAG_DOUBLE;
-		movZ.doubleValue = 0.0;
-		motionTag.list.push_back(movX);
-		motionTag.list.push_back(movY);
-		motionTag.list.push_back(movZ);
 
 		// Save our current inventory
 		NetworkSlotId slotId = 0;
@@ -283,22 +208,11 @@ struct PlayerSession {
 			slotId++;
 		}
 
-		rootTag.compound["Motion"] = motionTag;
+		auto& rootTag = entityNBT.value();
 		rootTag.compound["SleepTimer"] = sleepTimerTag;
-		rootTag.compound["Health"] = healthTag;
-		rootTag.compound["Air"] = airTag;
-		rootTag.compound["OnGround"] = onGroundTag;
-		rootTag.compound["Dimension"] = dimensionTag;
-		rootTag.compound["Rotation"] = rotationTag;
-		rootTag.compound["FallDistance"] = fallDistanceTag;
-		rootTag.compound["Sleeping"] = sleepingTag;
-		rootTag.compound["Pos"] = posTag;
-		rootTag.compound["DeathTime"] = deathTimeTag;
-		rootTag.compound["Fire"] = fireTag;
-		rootTag.compound["HurtTime"] = hurtTimeTag;
-		rootTag.compound["AttackTime"] = attackTimeTag;
-		rootTag.compound["Inventory"] = inventoryTag;
-
+		rootTag.compound["Dimension"]  = dimensionTag;
+		rootTag.compound["Sleeping"]   = sleepingTag;
+		rootTag.compound["Inventory"]  = inventoryTag;
 		return rootTag;
 	}
 };
