@@ -95,6 +95,11 @@ void EntityMPPlayer::HandlePositionChecks() {
 			return;
 		this->velocity = pos;
 		this->velocity.y = 0;
+
+		// Update our position to the session
+		if (!this->session)
+			return;
+		this->session->position.pos = this->position;
 		return;
 	}
 
