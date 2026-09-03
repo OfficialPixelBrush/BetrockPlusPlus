@@ -75,6 +75,7 @@ struct PlayerSession {
 
 	ConnectionState connState = ConnectionState::Handshaking;
 	std::string username;
+	std::string ipAddress;
 	std::chrono::steady_clock::time_point lastPacketTime = std::chrono::steady_clock::now();
 
 	std::string serverId;
