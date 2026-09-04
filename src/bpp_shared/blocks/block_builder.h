@@ -142,18 +142,18 @@ struct FluidBuilder {
 
 	FluidBuilder level(uint8_t _level) const {
 		FluidBuilder b = *this;
-		b.level = std::min<uint8_t>(_level, 7);
+		b.level_ = std::min<uint8_t>(_level, 7);
 		return b;
 	}
 	FluidBuilder falling(bool _falling) const {
 		FluidBuilder b = *this;
-		b.falling = _falling;
+		b.falling_ = _falling;
 		return b;
 	}
 
 	Block asBlock() const {
-		uint8_t data = level & 0x7;
-		if (falling)
+		uint8_t data = level_ & 0x7;
+		if (falling_)
 			data |= 0x8;
 		return Block{ id, data };
 	}
@@ -163,25 +163,25 @@ struct FluidBuilder {
 
 private:
 	BlockType id;
-	uint8_t level = 0;
-	bool falling = false;
+	uint8_t level_ = 0;
+	bool falling_ = false;
 };
 
 struct SaplingBuilder {
 	SaplingBuilder type(WoodType _type) const {
 		SaplingBuilder b = *this;
-		b.type = _type;
+		b.type_ = _type;
 		return b;
 	}
 	SaplingBuilder readyToGrow(bool _readyToGrow) const {
 		SaplingBuilder b = *this;
-		b.readyToGrow = _readyToGrow;
+		b.readyToGrow_ = _readyToGrow;
 		return b;
 	}
 
 	Block asBlock() const {
-		uint8_t data = static_cast<uint8_t>(type);
-		if (readyToGrow)
+		uint8_t data = static_cast<uint8_t>(type_);
+		if (readyToGrow_)
 			data |= 0x8;
 		return Block{ id, data };
 	}
@@ -191,19 +191,19 @@ struct SaplingBuilder {
 
 private:
 	BlockType id = BLOCK_SAPLING;
-	WoodType type = WoodType::Oak;
-	bool readyToGrow = false;
+	WoodType type_ = WoodType::Oak;
+	bool readyToGrow_ = false;
 };
 
 struct LogBuilder {
 	LogBuilder type(WoodType _type) const {
 		LogBuilder b = *this;
-		b.type = _type;
+		b.type_ = _type;
 		return b;
 	}
 
 	Block asBlock() const {
-		return Block{ id, static_cast<uint8_t>(type) };
+		return Block{ id, static_cast<uint8_t>(type_) };
 	}
 	operator Block() const {
 		return asBlock();
@@ -211,24 +211,24 @@ struct LogBuilder {
 
 private:
 	BlockType id = BLOCK_LOG;
-	WoodType type = WoodType::Oak;
+	WoodType type_ = WoodType::Oak;
 };
 
 struct LeavesBuilder {
 	LeavesBuilder type(WoodType _type) const {
 		LeavesBuilder b = *this;
-		b.type = _type;
+		b.type_ = _type;
 		return b;
 	}
 	LeavesBuilder decaying(bool _decaying) const {
 		LeavesBuilder b = *this;
-		b.decaying = _decaying;
+		b.decaying_ = _decaying;
 		return b;
 	}
 
 	Block asBlock() const {
-		uint8_t data = static_cast<uint8_t>(type);
-		if (decaying)
+		uint8_t data = static_cast<uint8_t>(type_);
+		if (decaying_)
 			data |= 0x8;
 		return Block{ id, data };
 	}
@@ -238,19 +238,19 @@ struct LeavesBuilder {
 
 private:
 	BlockType id = BLOCK_LEAVES;
-	WoodType type = WoodType::Oak;
-	bool decaying = false;
+	WoodType type_ = WoodType::Oak;
+	bool decaying_ = false;
 };
 
 struct TallGrassBuilder {
 	TallGrassBuilder type(TallGrassType _type) const {
 		TallGrassBuilder b = *this;
-		b.type = _type;
+		b.type_ = _type;
 		return b;
 	}
 
 	Block asBlock() const {
-		return Block{ id, static_cast<uint8_t>(type) };
+		return Block{ id, static_cast<uint8_t>(type_) };
 	}
 	operator Block() const {
 		return asBlock();
@@ -258,18 +258,18 @@ struct TallGrassBuilder {
 
 private:
 	BlockType id = BLOCK_TALLGRASS;
-	TallGrassType type = TallGrassType::TallGrass;
+	TallGrassType type_ = TallGrassType::TallGrass;
 };
 
 struct WoolBuilder {
 	WoolBuilder color(WoolColor _color) const {
 		WoolBuilder b = *this;
-		b.color = _color;
+		b.color_ = _color;
 		return b;
 	}
 
 	Block asBlock() const {
-		return Block{ id, static_cast<uint8_t>(color) };
+		return Block{ id, static_cast<uint8_t>(color_) };
 	}
 	operator Block() const {
 		return asBlock();
@@ -277,7 +277,7 @@ struct WoolBuilder {
 
 private:
 	BlockType id = BLOCK_WOOL;
-	WoolColor color = WoolColor::White;
+	WoolColor color_ = WoolColor::White;
 };
 
 struct SlabBuilder {
@@ -285,12 +285,12 @@ struct SlabBuilder {
 
 	SlabBuilder type(SlabType _type) const {
 		SlabBuilder b = *this;
-		b.type = _type;
+		b.type_ = _type;
 		return b;
 	}
 
 	Block asBlock() const {
-		return Block{ id, static_cast<uint8_t>(type) };
+		return Block{ id, static_cast<uint8_t>(type_) };
 	}
 	operator Block() const {
 		return asBlock();
@@ -298,7 +298,7 @@ struct SlabBuilder {
 
 private:
 	BlockType id;
-	SlabType type = SlabType::Stone;
+	SlabType type_ = SlabType::Stone;
 };
 
 struct TorchBuilder {
@@ -306,12 +306,12 @@ struct TorchBuilder {
 
 	TorchBuilder attachment(TorchAttachment _attachment) const {
 		TorchBuilder b = *this;
-		b.attachment = _attachment;
+		b.attachment_ = _attachment;
 		return b;
 	}
 
 	Block asBlock() const {
-		return Block{ id, static_cast<uint8_t>(attachment) };
+		return Block{ id, static_cast<uint8_t>(attachment_) };
 	}
 	operator Block() const {
 		return asBlock();
@@ -319,7 +319,7 @@ struct TorchBuilder {
 
 private:
 	BlockType id;
-	TorchAttachment attachment = TorchAttachment::Floor;
+	TorchAttachment attachment_ = TorchAttachment::Floor;
 };
 
 struct WallFacingBuilder {
@@ -327,12 +327,12 @@ struct WallFacingBuilder {
 
 	WallFacingBuilder facing(WallFacing _facing) const {
 		WallFacingBuilder b = *this;
-		b.facing = _facing;
+		b.facing_ = _facing;
 		return b;
 	}
 
 	Block asBlock() const {
-		return Block{ id, static_cast<uint8_t>(facing) };
+		return Block{ id, static_cast<uint8_t>(facing_) };
 	}
 	operator Block() const {
 		return asBlock();
@@ -340,7 +340,7 @@ struct WallFacingBuilder {
 
 private:
 	BlockType id;
-	WallFacing facing = WallFacing::North;
+	WallFacing facing_ = WallFacing::North;
 };
 
 struct BedBuilder {
@@ -351,12 +351,12 @@ struct BedBuilder {
 	}
 	BedBuilder occupied(bool _occupied) const {
 		BedBuilder b = *this;
-		b.occupied = _occupied;
+		b.occupied_ = _occupied;
 		return b;
 	}
 	BedBuilder head(bool _head) const {
 		BedBuilder b = *this;
-		b.head = _head;
+		b.head_ = _head;
 		return b;
 	}
 
@@ -376,9 +376,9 @@ struct BedBuilder {
 			data = 3;
 			break;
 		}
-		if (occupied)
+		if (occupied_)
 			data |= 0x4;
-		if (head)
+		if (head_)
 			data |= 0x8;
 		return Block{ id, data };
 	}
@@ -389,8 +389,8 @@ struct BedBuilder {
 private:
 	BlockType id = BLOCK_BED;
 	Direction direction = Direction::South;
-	bool occupied = false;
-	bool head = false;
+	bool occupied_ = false;
+	bool head_ = false;
 };
 
 struct PoweredRailBuilder {
@@ -398,18 +398,18 @@ struct PoweredRailBuilder {
 
 	PoweredRailBuilder shape(RailShape _shape) const {
 		PoweredRailBuilder b = *this;
-		b.shape = _shape;
+		b.shape_ = _shape;
 		return b;
 	}
 	PoweredRailBuilder powered(bool _powered) const {
 		PoweredRailBuilder b = *this;
-		b.powered = _powered;
+		b.powered_ = _powered;
 		return b;
 	}
 
 	Block asBlock() const {
-		uint8_t data = static_cast<uint8_t>(shape) & 0x7;
-		if (powered)
+		uint8_t data = static_cast<uint8_t>(shape_) & 0x7;
+		if (powered_)
 			data |= 0x8;
 		return Block{ id, data };
 	}
@@ -419,8 +419,8 @@ struct PoweredRailBuilder {
 
 private:
 	BlockType id;
-	RailShape shape = RailShape::FlatNorthSouth;
-	bool powered = false;
+	RailShape shape_ = RailShape::FlatNorthSouth;
+	bool powered_ = false;
 };
 
 struct PistonBuilder {
@@ -428,18 +428,18 @@ struct PistonBuilder {
 
 	PistonBuilder facing(PistonFacing _facing) const {
 		PistonBuilder b = *this;
-		b.facing = _facing;
+		b.facing_ = _facing;
 		return b;
 	}
 	PistonBuilder extended(bool _extended) const {
 		PistonBuilder b = *this;
-		b.extended = _extended;
+		b.extended_ = _extended;
 		return b;
 	}
 
 	Block asBlock() const {
-		uint8_t data = static_cast<uint8_t>(facing);
-		if (extended)
+		uint8_t data = static_cast<uint8_t>(facing_);
+		if (extended_)
 			data |= 0x8;
 		return Block{ id, data };
 	}
@@ -449,25 +449,25 @@ struct PistonBuilder {
 
 private:
 	BlockType id;
-	PistonFacing facing = PistonFacing::Up;
-	bool extended = false;
+	PistonFacing facing_ = PistonFacing::Up;
+	bool extended_ = false;
 };
 
 struct PistonHeadBuilder {
 	PistonHeadBuilder facing(PistonFacing _facing) const {
 		PistonHeadBuilder b = *this;
-		b.facing = _facing;
+		b.facing_ = _facing;
 		return b;
 	}
 	PistonHeadBuilder sticky(bool _sticky) const {
 		PistonHeadBuilder b = *this;
-		b.sticky = _sticky;
+		b.sticky_ = _sticky;
 		return b;
 	}
 
 	Block asBlock() const {
-		uint8_t data = static_cast<uint8_t>(facing);
-		if (sticky)
+		uint8_t data = static_cast<uint8_t>(facing_);
+		if (sticky_)
 			data |= 0x8;
 		return Block{ id, data };
 	}
@@ -477,8 +477,8 @@ struct PistonHeadBuilder {
 
 private:
 	BlockType id = BLOCK_PISTON_HEAD;
-	PistonFacing facing = PistonFacing::Up;
-	bool sticky = false;
+	PistonFacing facing_ = PistonFacing::Up;
+	bool sticky_ = false;
 };
 
 struct DoorBuilder {
@@ -486,25 +486,25 @@ struct DoorBuilder {
 
 	DoorBuilder rotation(uint8_t _rotation) const {
 		DoorBuilder b = *this;
-		b.rotation = _rotation & 0x3;
+		b.rotation_ = _rotation & 0x3;
 		return b;
 	}
 	DoorBuilder open(bool _open) const {
 		DoorBuilder b = *this;
-		b.open = _open;
+		b.open_ = _open;
 		return b;
 	}
 	DoorBuilder upperHalf(bool _upperHalf) const {
 		DoorBuilder b = *this;
-		b.upperHalf = _upperHalf;
+		b.upperHalf_ = _upperHalf;
 		return b;
 	}
 
 	Block asBlock() const {
-		uint8_t data = rotation & 0x3;
-		if (open)
+		uint8_t data = rotation_ & 0x3;
+		if (open_)
 			data |= 0x4;
-		if (upperHalf)
+		if (upperHalf_)
 			data |= 0x8;
 		return Block{ id, data };
 	}
@@ -514,20 +514,20 @@ struct DoorBuilder {
 
 private:
 	BlockType id;
-	uint8_t rotation = 0;
-	bool open = false;
-	bool upperHalf = false;
+	uint8_t rotation_ = 0;
+	bool open_ = false;
+	bool upperHalf_ = false;
 };
 
 struct SignBuilder {
 	SignBuilder rotation(uint8_t _rotation) const {
 		SignBuilder b = *this;
-		b.rotation = _rotation & 0xF;
+		b.rotation_ = _rotation & 0xF;
 		return b;
 	}
 
 	Block asBlock() const {
-		return Block{ id, static_cast<uint8_t>(rotation & 0xF) };
+		return Block{ id, static_cast<uint8_t>(rotation_ & 0xF) };
 	}
 	operator Block() const {
 		return asBlock();
@@ -535,18 +535,18 @@ struct SignBuilder {
 
 private:
 	BlockType id = BLOCK_SIGN_STANDING;
-	uint8_t rotation = 0;
+	uint8_t rotation_ = 0;
 };
 
 struct RailBuilder {
 	RailBuilder shape(RailShape _shape) const {
 		RailBuilder b = *this;
-		b.shape = _shape;
+		b.shape_ = _shape;
 		return b;
 	}
 
 	Block asBlock() const {
-		return Block{ id, static_cast<uint8_t>(shape) };
+		return Block{ id, static_cast<uint8_t>(shape_) };
 	}
 	operator Block() const {
 		return asBlock();
@@ -554,24 +554,24 @@ struct RailBuilder {
 
 private:
 	BlockType id = BLOCK_RAIL;
-	RailShape shape = RailShape::FlatNorthSouth;
+	RailShape shape_ = RailShape::FlatNorthSouth;
 };
 
 struct LeverBuilder {
 	LeverBuilder mount(LeverMount _mount) const {
 		LeverBuilder b = *this;
-		b.mount = _mount;
+		b.mount_ = _mount;
 		return b;
 	}
 	LeverBuilder on(bool _on) const {
 		LeverBuilder b = *this;
-		b.on = _on;
+		b.on_ = _on;
 		return b;
 	}
 
 	Block asBlock() const {
-		uint8_t data = static_cast<uint8_t>(mount);
-		if (on)
+		uint8_t data = static_cast<uint8_t>(mount_);
+		if (on_)
 			data |= 0x8;
 		return Block{ id, data };
 	}
@@ -581,25 +581,25 @@ struct LeverBuilder {
 
 private:
 	BlockType id = BLOCK_LEVER;
-	LeverMount mount = LeverMount::FloorEastWest;
-	bool on = false;
+	LeverMount mount_ = LeverMount::FloorEastWest;
+	bool on_ = false;
 };
 
 struct ButtonBuilder {
 	ButtonBuilder mount(ButtonMount _mount) const {
 		ButtonBuilder b = *this;
-		b.mount = _mount;
+		b.mount_ = _mount;
 		return b;
 	}
 	ButtonBuilder pressed(bool _pressed) const {
 		ButtonBuilder b = *this;
-		b.pressed = _pressed;
+		b.pressed_ = _pressed;
 		return b;
 	}
 
 	Block asBlock() const {
-		uint8_t data = static_cast<uint8_t>(mount);
-		if (pressed)
+		uint8_t data = static_cast<uint8_t>(mount_);
+		if (pressed_)
 			data |= 0x8;
 		return Block{ id, data };
 	}
@@ -609,19 +609,19 @@ struct ButtonBuilder {
 
 private:
 	BlockType id = BLOCK_BUTTON_STONE;
-	ButtonMount mount = ButtonMount::WestWall;
-	bool pressed = false;
+	ButtonMount mount_ = ButtonMount::WestWall;
+	bool pressed_ = false;
 };
 
 struct SnowLayerBuilder {
 	SnowLayerBuilder height(uint8_t _height) const {
 		SnowLayerBuilder b = *this;
-		b.height = std::min<uint8_t>(_height, 7);
+		b.height_ = std::min<uint8_t>(_height, 7);
 		return b;
 	}
 
 	Block asBlock() const {
-		return Block{ id, static_cast<uint8_t>(height & 0x7) };
+		return Block{ id, static_cast<uint8_t>(height_ & 0x7) };
 	}
 	operator Block() const {
 		return asBlock();
@@ -629,7 +629,7 @@ struct SnowLayerBuilder {
 
 private:
 	BlockType id = BLOCK_SNOW_LAYER;
-	uint8_t height = 0;
+	uint8_t height_ = 0;
 };
 
 struct TrapdoorBuilder {
@@ -640,7 +640,7 @@ struct TrapdoorBuilder {
 	}
 	TrapdoorBuilder open(bool _open) const {
 		TrapdoorBuilder b = *this;
-		b.open = _open;
+		b.open_ = _open;
 		return b;
 	}
 
@@ -660,7 +660,7 @@ struct TrapdoorBuilder {
 			data = 3;
 			break;
 		}
-		if (open)
+		if (open_)
 			data |= 0x4;
 		return Block{ id, data };
 	}
@@ -671,7 +671,7 @@ struct TrapdoorBuilder {
 private:
 	BlockType id = BLOCK_TRAPDOOR;
 	Direction direction = Direction::South;
-	bool open = false;
+	bool open_ = false;
 };
 
 struct PumpkinBuilder {
@@ -720,12 +720,12 @@ struct RepeaterBuilder {
 	}
 	RepeaterBuilder delay(uint8_t _delay) const {
 		RepeaterBuilder b = *this;
-		b.delay = std::min<uint8_t>(_delay, 3);
+		b.delay_ = std::min<uint8_t>(_delay, 3);
 		return b;
 	}
 
 	int delayTicks() const {
-		return (static_cast<int>(delay) + 1) * 2;
+		return (static_cast<int>(delay_) + 1) * 2;
 	}
 
 	Block asBlock() const {
@@ -744,7 +744,7 @@ struct RepeaterBuilder {
 			data = 3;
 			break;
 		}
-		data |= (delay & 0x3) << 2;
+		data |= (delay_ & 0x3) << 2;
 		return Block{ id, data };
 	}
 	operator Block() const {
@@ -754,7 +754,7 @@ struct RepeaterBuilder {
 private:
 	BlockType id;
 	Direction direction = Direction::North;
-	uint8_t delay = 0;
+	uint8_t delay_ = 0;
 };
 
 inline constexpr FluidBuilder flowingWater{ BLOCK_WATER_FLOWING };
