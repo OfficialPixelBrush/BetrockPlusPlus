@@ -21,7 +21,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-enum class CubeFace {
+enum class CubeFace : uint8_t {
 	Front,
 	Back,
 	Right,

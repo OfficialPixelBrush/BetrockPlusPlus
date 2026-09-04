@@ -278,7 +278,7 @@ float BigTree::GetCanopyRadius(int32_t _y) {
 			radius = 0.0F;
 		} else {
 			radius = float(std::sqrt(std::pow(double(MathHelper::Abs(halfHeight)), 2.0) -
-			                          std::pow(double(MathHelper::Abs(distanceFromCenter)), 2.0)));
+			                         std::pow(double(MathHelper::Abs(distanceFromCenter)), 2.0)));
 		}
 
 		radius *= 0.5F;
