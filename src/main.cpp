@@ -25,7 +25,7 @@
 #include "discord.h"
 #endif
 #if defined(ONLINE_MODE_AUTHENTICATION) || defined(BETACRAFT_HEARTBEAT)
-#include "curl_runtime.h"
+#include "internet/curl_runtime.h"
 #endif
 #endif
 

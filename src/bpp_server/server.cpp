@@ -696,14 +696,6 @@ void Server::TryForceBreak(PlayerSession& _session, WorldManager& _world) {
 		return;
 	}
 
-	auto finishMiningWithTool = [&](ItemStack* _held, BlockType _block) {
-		if (!_held)
-			return;
-		auto it = Items::toolBehavior.find(_held->id);
-		if (it != Items::toolBehavior.end() && it->second.onBlockFinishMining)
-			it->second.onBlockFinishMining(_held, _block);
-	};
-
 	// Success!
 	OnPlayerBlockBreak(_session, _world);
 }

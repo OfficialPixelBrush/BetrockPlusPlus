@@ -1,6 +1,6 @@
 HeaderFilterRegex: '^(?!.*(/include/)).*$'
 
-Checks: '-*,readability-identifier-naming'
+Checks: '-*,readability-identifier-naming,cppcoreguidelines-pro-type-cstyle-cast,google-readability-casting'
 
 CheckOptions:
   # Prefixes
@@ -44,4 +44,7 @@ CheckOptions:
   - key: readability-identifier-naming.StaticConstantCase
     value: UPPER_CASE
   - key: readability-identifier-naming.ConstexprVariableCase
+    value: UPPER_CASE
+  # #define blocks
+  - key: readability-identifier-naming.MacroDefinitionCase
     value: UPPER_CASE

@@ -240,10 +240,10 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 
 		// Sync riding state with the new joiner
 		if (auto vehiclePtr = _entityEntry.entity->vehicle.lock()) {
-			Packet::AddPassenger pkt;
-			pkt.vehicleEntityId = vehiclePtr->id;
-			pkt.passengerEntityId = _entityEntry.entity->id;
-			pkt.Serialize(pSession->stream);
+			Packet::AddPassenger passengerPkt;
+			passengerPkt.vehicleEntityId = vehiclePtr->id;
+			passengerPkt.passengerEntityId = _entityEntry.entity->id;
+			passengerPkt.Serialize(pSession->stream);
 		}
 		// TODO: Sync with new joiners ffs
 		/*
