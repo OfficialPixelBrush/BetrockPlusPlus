@@ -17,16 +17,16 @@ struct WorldManager;
 struct ComponentProfile {
 	// These are for purely whether we can power other components / dust
 	// NOT if we can power that block!
-	bool powerX = false;
-	bool powerNX = false;
-	bool powerZ = false;
-	bool powerNZ = false;
-	bool powerBelow = false;
+	bool powerX : 1 = false;
+	bool powerNX : 1 = false;
+	bool powerZ : 1 = false;
+	bool powerNZ : 1 = false;
+	bool powerBelow : 1 = false;
 };
 
 struct PowerProfile {
-	bool powered = false;
-	bool hardPowered = false;
+	bool powered : 1 = false;
+	bool hardPowered : 1 = false;
 };
 
 namespace RedstoneManager {

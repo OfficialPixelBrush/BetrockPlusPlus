@@ -5,6 +5,11 @@
  *
 */
 
+// Can be used to simplify fixed-point math for stuff like entities
+// TODO: See if we should use this/need this?
+// Realistically it shouldn't be used for anything but networked entities,
+// whose positions we turn into doubles for internal handling anyways
+
 #pragma once
 
 #include "helpers/byteswap_compat.h"
