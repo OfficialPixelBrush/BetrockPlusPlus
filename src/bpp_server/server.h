@@ -15,7 +15,7 @@ extern std::atomic<bool> shutdownRequested;
 #endif
 
 #include "BS_thread_pool.hpp"
-#include "betacraft_heartbeat.h"
+#include "./internet/betacraft_heartbeat.h"
 #include "blocks/serverBlockBehaviors.h"
 #include "chunk_IO/chunk_broadcaster.h"
 #include "chunk_IO/chunk_sender.h"
@@ -25,7 +25,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "items/tool_properties.h"
 #include "networking/network_stream.h"
 #include "networking/packets.h"
-#include "online_auth.h"
+#include "./internet/online_auth.h"
 #include "packet/handle_packet.h"
 #include "packet/packet_dispatcher.h"
 #include "player_conn/player_session.h"

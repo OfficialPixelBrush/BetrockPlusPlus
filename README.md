@@ -11,15 +11,15 @@ A from-scratch rewrite/combination of Beta++/Betrock and BetrockServer to combin
 
 A full, from-scratch reimplementation of Minecraft Beta 1.7.3.
 
-1. Ideally BPP should be capable of acting as both a Client and Server
+1. Ideally Betrock++ should be capable of acting as both a Client and Server
 2. Functionality would be extended where desired or necessary, but generally compatibility and faithfulness will be prioritized
 3. Cross-platform (Windows and Linux)
 4. Fully open-source, anyone can fork, commit and contribute
 5. Unless something requires decompiled code for the sake of accuracy, no decompiled code will be used, reimplemented or referenced. If it **is** used for anything, it'll be very clearly marked as such in the code via comments. At most it'll serve as a reference for what not to do, and what pitfalls we should avoid
 
-## Discord
+## Community
 
-This is another project that's part of/worked on by the OpenBeta Community. We have a [Discord Server](https://discord.gg/JHTz2HSKrf)!
+This is another project that's part of/worked on by the OpenBeta Community. We have a [Discord Server](https://discord.gg/JHTz2HSKrf) and [Website](https://officialpixelbrush.github.io/OpenBeta)!
 
 ## Contributing
 
@@ -36,11 +36,10 @@ The server can be run on lesser hardware, though the experience may not be ideal
 
 ## Related projects
 
-- Beta++ by JcbbcEnjoyer (Minecraft Beta 1.7.3 Client written in C++)
-- [LibreProg](https://github.com/OfficialPixelBrush/LibreProg) (fully FOSS Minecraft Beta 1.7.3 textures, sounds, etc.)
-- [Technical Beta Wiki](https://officialpixelbrush.github.io/beta-wiki) (technical protocol and implementation reference)
-- [BetrockViewer](https://github.com/OfficialPixelBrush/BetrockViewer) (McRegion world explorer)
-- [BetrockServer](https://github.com/OfficialPixelBrush/BetrockServer) (Minecraft Beta 1.7.3 Server written in C++)
+- Beta++ by JcbbcEnjoyer: Minecraft Beta 1.7.3 Client written in C++
+- [Technical Beta Wiki](https://officialpixelbrush.github.io/beta-wiki): Technical protocol and implementation reference (any findings are documented here)
+- [LibreProg](https://github.com/OfficialPixelBrush/LibreProg): Fully FOSS Minecraft Beta 1.7.3 textures, sounds, etc. (will be used for default textures for Client)
+- [LegacyMcServer](https://github.com/OfficialPixelBrush/LegacyMcServer): Minecraft Beta 1.7.3 Server written in C++ (some code was adopted from this)
 
 ## Credits
 

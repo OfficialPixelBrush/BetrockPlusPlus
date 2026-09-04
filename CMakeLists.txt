@@ -194,8 +194,8 @@ set(SHARED_SOURCES
 # Server-specific source code
 set(SERVER_SOURCES
     src/bpp_server/server.cpp
-    src/bpp_server/online_auth.cpp
-    src/bpp_server/betacraft_heartbeat.cpp
+    src/bpp_server/internet/online_auth.cpp
+    src/bpp_server/internet/betacraft_heartbeat.cpp
     src/bpp_server/packet/handle_packet.cpp
     src/bpp_server/player_conn/server_pconnstate_manager.cpp
     src/bpp_server/packet/packet_dispatcher.cpp
@@ -270,7 +270,7 @@ if(BUILD_SERVER)
         find_package(CURL REQUIRED)
         target_link_libraries(BetrockPlusPlus PRIVATE CURL::libcurl)
         target_sources(BetrockPlusPlus PRIVATE
-            src/bpp_server/curl_runtime.cpp
+            src/bpp_server/internet/curl_runtime.cpp
         )
     endif()
 
@@ -390,6 +390,7 @@ target_compile_options(BetrockPlusPlus PRIVATE
         # Sign mismatches
         #-Wsign-conversion
         # Variable shadowing
+        #-Wpadded # Warn about padded structs!
         -Wshadow
         # Unused variables, params, etc.
         #-Wunused

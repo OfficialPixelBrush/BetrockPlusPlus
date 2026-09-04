@@ -2,7 +2,7 @@
 
 Simply fork the [`main` branch](https://github.com/OfficialPixelBrush/BetrockPlusPlus/tree/main) and commit whatever changes you want to make.
 
-Ensure your fork is up-to-date with the `main` branch, then make a pull request.
+Ensure your fork is up-to-date with the `main` branch, then make a pull request. Keep your changes localized to what needs to be changed to reduce the chance of merge conflicts!
 
 ## AI policy
 
@@ -12,33 +12,28 @@ What we _don't_ want are slop-commits that just rewrite stuff for the sake of re
 
 Keep it reasonable, don't overdo it. This is supposed to be a learning-exercise and fun project for whoever wants to get involved, and to foster a better understanding of how Beta Minecraft works. This project doesn't need to be finished overnight in a half-broken state that nobody understands.
 
+At the very least keep out the 500 line long comments that explain stuff for the sake of explaining it. The code shouls peak for itself!
+
 ## Development
 
 Grab the `main` branch for the most up-to-date, albeit unstable, repository.
 
 ## Recommended VSCode Extensions
 
-- `clangd` (ideally `clangd-22` for Doxygen comment integration)
+- `clangd` (ideally `clangd-22` or later for Doxygen comment integration)
 - CMake Tools
 - Doxygen Documentation Generator
 
-## Style Guide
+## Code Style Guide
 
-- Use types that guarantee a known bit-width (i.e. `int32_t`, `int16_t` or `int8_t`)
-- Make use of existing functionality. Don't reinvent the wheel. Use enums, defines, custom types and classes for consistency, please.
-- Enums **must** have a type
-- If possible, do not pass values separately. Make use of structs that combine them
-  - i.e. instead of `int32_t posX, int32_t posY, int32_t posZ`, just use `Int3 pos`
-- Run `run-clang-tidy` and `clang-format` over the files you changed
+The following covers the most important parts on how we style our code. These aren't super hard rules to follow, and most are automatically enforced by the formatter anyways.
 
-```bash
-run-clang-tidy -fix
-clang-format -i $(find ./src -name "*.cpp" -o -name "*.h")
-```
+### File structure
 
-- Unless this is already obvious via its name or usage, provide a short description what a file is for the relevant file, why it exists and what its used for
-- Avoid keeping unsued `include`s. If an included thing is used inside of a `.cpp` file instead of the `.h` file it's included in, please move it out of the `.h` file and into the `.cpp` file
-- PLEASE include the copyright notice at the top. This also serves as a nice way for people to get credited, if the git history is ever lost. **Any** change will get you added to there (within reason).
+- File and directory names are in `snake_case`
+- We use `LF`-only line endings
+- Code files are `.cpp`, Headers are `.h`. While unconventional, its done so headers stick out better among the `.cpp` files. They are **NOT** C-header files!
+- **Include the copyright notice at the top!** This also serves as a nice way for people to get credited, if the git history is ever lost. ***Any change*** will get you added to there (within reason). If one already exists, be sure to add your own name *after* those who came before you.
 
 Use the template below if you're creating a new page.
 
@@ -49,4 +44,44 @@ Use the template below if you're creating a new page.
  * SPDX-License-Identifier: AGPL-3.0-only
  *
  */
+```
+
+- Unless this is already obvious via its name or usage, **provide a short description what a file is for** the relevant file, why it exists and what its used for
+- **Avoid keeping unused includes**. If an included thing is used inside of a `.cpp` file instead of the `.h` file it's included in, please move it out of the `.h` file and into the `.cpp` file!
+- Run `run-clang-tidy` and `clang-format` over the files you changed
+
+```bash
+run-clang-tidy -fix
+clang-format -i $(find ./src -name "*.cpp" -o -name "*.h")
+```
+
+### General
+- Avoid old-style casts, e.g. `(int)5.0f` -> `int(5.0f)`. Using `static_cast<int>(5.0f)` is fine too
+
+### Variables
+- Varialbes are written in `cascalCase`
+- `#define` blocks and `constexpr` are written in all uppercase snake case, aka `SCREAMING_SNAKE_CASE`
+- Avoid **ambiguous abbrevations**. Something like `pos` obviously means position, but just `p` or `m` could be anything. In for-loops or similar these are fine as iterators though
+- **Immutable variables** should be marked as `const`
+- **Magic numbers** should be turned into `#define` blocks or `constexpr` variables if they only belong to a specific class, struct or function
+- Use types that guarantee a **known bit-width** (i.e. `int32_t`, `int16_t` or `int8_t`), unless you need the variable to be architecture dependent, or it's required by an external library that doesn't follow our rules to work
+- Enums __must__ have a type
+- It's often smart to make enums into **enum classes**, as to avoid arbitrary associations with specific numbers or values
+- **Parameters** are prefixed with an underscore, e.g. `_pos`, `_entity`
+
+### Functions
+- Functions are written in `PascalCase`
+- Make use of **existing functionality**. Don't reinvent the wheel. Use what exists!
+- While we are using C++, **avoid using classes** unless necessary or if it results in much cleaner code. Thanks to C++, structs can provide a lot of similar capabilities.
+- If possible, **do not pass values separately**. Make use of structs that combine them. For example, instead of `int32_t posX, int32_t posY, int32_t posZ`, just use `Int3 pos`
+- Only **pass by reference if it makes sense**. A `bool` can be passed by value. If a set of values are always together, turn them into a struct, then pass that struct of values.
+- **Order variables** in structs from largest to smallest, as to reduce padding
+- Combine bools via **bitfields**
+```cpp
+// (2 Bytes)
+bool value1;
+bool value2;
+// (1 Byte / 2 Bits)
+bool value1 : 1;
+bool value2 : 1;
 ```

@@ -4,6 +4,9 @@
 Language: Cpp
 Standard: Latest
 
+# Line endings — LF only, per the code style guide
+LineEnding: LF
+
 # Indentation
 IndentWidth: 4
 TabWidth: 4
