@@ -91,9 +91,6 @@ bool MobileEntity::FollowPath() {
 	}
 
 	if (currentPath.empty()) {
-		// When vanilla mobs are stuck they will spam jump
-		// Not sure if this is to try and get unstuck or so spiders climb walls
-		jumping = true;
 		return false;
 	}
 
