@@ -83,7 +83,6 @@ void MobileEntity::SetGoal(std::optional<Int3> _goal) {
 }
 
 bool MobileEntity::FollowPath() {
-	input.y = 0.0f;
 	jumping = false;
 
 	// Mobs bob/hop while in water or lava
@@ -91,8 +90,12 @@ bool MobileEntity::FollowPath() {
 		jumping = true;
 	}
 
-	if (currentPath.empty())
+	if (currentPath.empty()) {
+		// When vanilla mobs are stuck they will spam jump
+		// Not sure if this is to try and get unstuck or so spiders climb walls
+		jumping = true;
 		return false;
+	}
 
 	// 1% chance to abandon our path
 	if (rand.NextInt(100) == 0) {
