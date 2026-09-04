@@ -43,8 +43,15 @@ constexpr double BytesPerUnit(const MemoryUnit _unit) noexcept {
 #endif
 #define PSAPI_VERSION 2
 #define WIN32_LEAN_AND_MEAN
+// NOTE: Due to psapi.h relying on macros defined in windows.h,
+// we're not able to reorder these includes. Why psapi.h doesn't just include
+// windows.h by itself is a question only the madmen at Microsoft can answer.
+// TL;DR:
+// For the love of god, don't let the auto-formatter switch these around!
+// clang-format off
 #include <windows.h>
 #include <psapi.h>
+// clang-format on
 
 const double GetMemoryUsage(const MemoryUnit _unit) {
 	PROCESS_MEMORY_COUNTERS pmc{};
