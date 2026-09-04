@@ -30,9 +30,7 @@ bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, Wor
 		if (_session.stream.IsShortRead())
 			return true;
 		HandlePacket::ChatMessage(pkt, _session, _server.players, _sessionWorld, _server.commandManager,
-		                          [&_server](PlayerSession& _s) {
-			                          nullptr; /* this is awful and needs to be cleaned up!*/
-		                          });
+		                          [&_server](PlayerSession& _s) {});
 		break;
 	}
 	case PacketId::SetTime: {
