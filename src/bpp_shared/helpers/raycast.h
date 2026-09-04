@@ -10,7 +10,7 @@
 #include <cmath>
 #include <limits>
 
-enum RayCastMode {
+enum class RayCastMode : uint8_t {
 	IGNORE_FLUIDS,
 	ACCEPT_SOURCES,
 	ACCEPT_ANY
@@ -91,11 +91,11 @@ inline bool ClipRayAABB(const Vec3& _origin, const Vec3& _dir, double _maxDist, 
 // Whether the fluid block should be treated as solid for this raycast mode.
 inline bool ShouldConsiderFluid(RayCastMode _mode, uint8_t _meta) {
 	switch (_mode) {
-	case IGNORE_FLUIDS:
+	case RayCastMode::IGNORE_FLUIDS:
 		return false;
-	case ACCEPT_SOURCES:
+	case RayCastMode::ACCEPT_SOURCES:
 		return _meta == 0;
-	case ACCEPT_ANY:
+	case RayCastMode::ACCEPT_ANY:
 	default:
 		return true;
 	}

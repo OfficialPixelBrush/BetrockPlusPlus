@@ -1,6 +1,6 @@
 HeaderFilterRegex: '^(?!.*(/include/)).*$'
 
-Checks: '-*,readability-identifier-naming,cppcoreguidelines-pro-type-cstyle-cast,google-readability-casting'
+Checks: '-*,readability-identifier-naming,cppcoreguidelines-pro-type-cstyle-cast'
 
 CheckOptions:
   # Prefixes

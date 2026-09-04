@@ -37,7 +37,7 @@ struct MobEntity : public MobileEntity {
 	bool HasLineOfSight(Vec3 _from, Vec3 _to) {
 		if (!world)
 			return false;
-		RayCastResult result = Raycast::Raycast(*this->world, _from, _to, IGNORE_FLUIDS);
+		RayCastResult result = Raycast::Raycast(*this->world, _from, _to, RayCastMode::IGNORE_FLUIDS);
 		return !result.hit;
 	}
 

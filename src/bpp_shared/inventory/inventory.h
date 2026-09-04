@@ -31,7 +31,7 @@ struct Inventory {
 	}
 
 	virtual ItemStack* GetStackInSlot(int _slot) {
-		if (_slot < 0 || _slot >= (int)slots.size())
+		if (_slot < 0 || _slot >= int(slots.size()))
 			return nullptr;
 		if (slots[size_t(_slot)].id == Items::Id::INVALID)
 			return nullptr;
@@ -39,7 +39,7 @@ struct Inventory {
 	}
 
 	virtual ItemStack DecreaseStackSize(int _slot, int _count) {
-		if (_slot < 0 || _slot >= (int)slots.size() || slots[size_t(_slot)].id == Items::Id::INVALID)
+		if (_slot < 0 || _slot >= int(slots.size()) || slots[size_t(_slot)].id == Items::Id::INVALID)
 			return ItemStack{};
 		auto& stack = slots[size_t(_slot)];
 		if (stack.count <= _count) {
@@ -55,7 +55,7 @@ struct Inventory {
 	}
 
 	virtual void SetInventorySlotContents(int _slot, ItemStack* _stack) {
-		if (_slot < 0 || _slot >= (int)slots.size())
+		if (_slot < 0 || _slot >= int(slots.size()))
 			return;
 		slots[size_t(_slot)] = _stack ? *_stack : ItemStack{};
 		OnInventoryChanged();
@@ -70,7 +70,7 @@ struct Inventory {
 	virtual ~Inventory() = default;
 
 	void ClearSlot(int _slot) {
-		if (_slot < 0 || _slot >= (int)slots.size())
+		if (_slot < 0 || _slot >= int(slots.size()))
 			return;
 		slots[size_t(_slot)] = ItemStack{};
 		OnInventoryChanged();
@@ -97,7 +97,7 @@ struct Inventory {
 
 					// Add the stacks together and do some checks to make sure we don't overflow
 					int space = maxStack - slot->count;
-					int toMove = CrossPlatform::Math::Min(space, (int)_stack.count);
+					int toMove = CrossPlatform::Math::Min(space, int(_stack.count));
 
 					slot->count += toMove;
 					_stack.count -= toMove;
@@ -145,7 +145,7 @@ struct Inventory {
 
 					// Add the stacks together and do some checks to make sure we don't overflow
 					int space = maxStack - slot->count;
-					int toMove = CrossPlatform::Math::Min(space, (int)_stack.count);
+					int toMove = CrossPlatform::Math::Min(space, int(_stack.count));
 
 					if (toMove > 0)
 						return true;

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
-#include "serverBlockBehaviors.h"
+#include "server_block_behaviors.h"
 #include "../../bpp_shared/helpers/direction_fixer.h"
 #include "blocks.h"
 #include "inventory/interactions/chest.h"

@@ -21,7 +21,7 @@ inline std::string RegionPositionToFileName(Int2 _rpos) {
 	return "r." + std::to_string(_rpos.x) + "." + std::to_string(_rpos.z) + ".mcr";
 }
 
-enum CompressorFormat {
+enum CompressorFormat : uint8_t {
 	REGION_INVALID = 0,
 	REGION_GZIP = 1,
 	REGION_ZLIB = 2

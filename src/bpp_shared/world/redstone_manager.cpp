@@ -188,8 +188,8 @@ PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _p
 }
 
 static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
-	auto thisBlock = _world.GetBlockId(_pos);
-	auto thisMeta = _world.GetMetadata(_pos);
+	//auto thisBlock = _world.GetBlockId(_pos);
+	//auto thisMeta = _world.GetMetadata(_pos);
 
 	// Is the block under us being hard powered?
 	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Direction::Value::Down)).hardPowered)

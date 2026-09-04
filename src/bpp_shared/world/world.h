@@ -19,7 +19,7 @@
 #include "dimensions.h"
 #include "entities/entity_manager.h"
 #include "generator/overworld/biome_gen.h"
-#include "helpers/AABB.h"
+#include "helpers/aabb.h"
 #include "helpers/explosion.h"
 #include "java_math.h"
 #include "lighter.h"

@@ -16,9 +16,9 @@ extern std::atomic<bool> shutdownRequested;
 
 #include "BS_thread_pool.hpp"
 #include "./internet/betacraft_heartbeat.h"
-#include "blocks/serverBlockBehaviors.h"
-#include "chunk_IO/chunk_broadcaster.h"
-#include "chunk_IO/chunk_sender.h"
+#include "blocks/server_block_behaviors.h"
+#include "chunk_io/chunk_broadcaster.h"
+#include "chunk_io/chunk_sender.h"
 #include "commands/command_manager.h"
 #include "config/config.h"
 #include "items/item_properties.h"

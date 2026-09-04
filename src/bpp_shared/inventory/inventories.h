@@ -16,7 +16,7 @@
 #include <optional>
 #include <random>
 
-enum InvMap {
+enum class InvMap : uint8_t {
 	ARMOR,
 	INVENTORY,
 	HOTBAR,

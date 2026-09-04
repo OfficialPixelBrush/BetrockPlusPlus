@@ -56,7 +56,7 @@ void InventoryInteraction::OnLeftClick(int _slot) {
 	if (targetSlot->id == carried.id && targetSlot->data == carried.data) {
 		int maxStack = Items::GetMaxStack(targetSlot->id);
 		int space = maxStack - targetSlot->count;
-		int toMove = std::min(space, (int)carried.count);
+		int toMove = std::min(space, int(carried.count));
 		targetSlot->count += toMove;
 		carried.count -= toMove;
 		if (carried.count == 0)

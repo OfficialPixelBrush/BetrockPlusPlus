@@ -197,7 +197,7 @@ void BigTree::GenerateBranchPositions() {
 						    std::pow(double(JavaMath::Abs(basePos.x - branchBase.x)), 2.0) +
 						    std::pow(double(JavaMath::Abs(basePos.z - branchBase.z)), 2.0));
 						double verticalDrop = horizontalDistance * trunkSlopeFactor;
-						if ((double)branchBase.y - verticalDrop > (double)targetY) {
+						if (double(branchBase.y) - verticalDrop > double(targetY)) {
 							trunkConnection.y = targetY;
 						} else {
 							trunkConnection.y = Java::DoubleToInt32(double(branchBase.y) - verticalDrop);
@@ -266,19 +266,19 @@ void BigTree::PlaceCircularLayer(Int3 _centerPos, float _radius, BranchAxis _axi
  * @return Radius in blocks
  */
 float BigTree::GetCanopyRadius(int32_t _y) {
-	if ((double)_y < double((float)totalHeight) * 0.3) {
+	if (double(_y) < double(float(totalHeight) * 0.3)) {
 		return -1.618F;
 	} else {
-		float halfHeight = (float)totalHeight / 2.0F;
-		float distanceFromCenter = (float)totalHeight / 2.0F - (float)_y;
+		float halfHeight = float(totalHeight) / 2.0F;
+		float distanceFromCenter = float(totalHeight) / 2.0F - float(_y);
 		float radius;
 		if (distanceFromCenter == 0.0F) {
 			radius = halfHeight;
 		} else if (MathHelper::Abs(distanceFromCenter) >= halfHeight) {
 			radius = 0.0F;
 		} else {
-			radius = (float)std::sqrt(std::pow((double)MathHelper::Abs(halfHeight), 2.0) -
-			                          std::pow((double)MathHelper::Abs(distanceFromCenter), 2.0));
+			radius = float(std::sqrt(std::pow(double(MathHelper::Abs(halfHeight)), 2.0) -
+			                          std::pow(double(MathHelper::Abs(distanceFromCenter)), 2.0)));
 		}
 
 		radius *= 0.5F;
@@ -346,8 +346,8 @@ void BigTree::DrawBlockLine(Int3 _startPos, Int3 _endPos, BlockType _blockType) 
 	if (delta[dominantAxis] > 0)
 		step = 1;
 
-	double secondaryRatioA = (double)delta[secondaryA] / (double)delta[dominantAxis];
-	double secondaryRatioB = (double)delta[secondaryB] / (double)delta[dominantAxis];
+	double secondaryRatioA = double(delta[secondaryA]) / double(delta[dominantAxis]);
+	double secondaryRatioB = double(delta[secondaryB]) / double(delta[dominantAxis]);
 	Int3 blockPos = INT3_ZERO;
 	int32_t distanceAlongAxis = 0;
 

@@ -817,12 +817,12 @@ void RegisterBlockBehaviors() {
 			return;
 
 		// Check if we are hydrated
-		auto waterNearby = [](WorldManager& _world, Int3 _pos) -> bool {
+		auto waterNearby = [](WorldManager& _farmWorld, Int3 _farmPos) -> bool {
 			for (int dx = -4; dx <= 4; dx++) {
 				for (int dz = -4; dz <= 4; dz++) {
 					for (int dy = 0; dy <= 1; dy++) {
-						Int3 checkPos = { _pos.x + dx, _pos.y + dy, _pos.z + dz };
-						if (_world.GetMaterial(checkPos) == Material::Water())
+						Int3 checkPos = { _farmPos.x + dx, _farmPos.y + dy, _farmPos.z + dz };
+						if (_farmWorld.GetMaterial(checkPos) == Material::Water())
 							return true;
 					}
 				}
