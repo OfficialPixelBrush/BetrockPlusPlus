@@ -243,14 +243,7 @@ void AttackWithItem(Entity& _targetEntity, Entity& _sourceEntity, ItemStack* _st
 	EntityHealth damage = 1;
 	if (toolProperties.contains(_stack->id))
 		damage = CalculateDamage(toolProperties[_stack->id].type, MaterialToLevel(toolProperties[_stack->id].material));
-	bool canInflictDamage = InflictDamage(_targetEntity, _sourceEntity, damage);
-
-	// Apparently vanilla doesn't do this for some reason
-	/*
-	if (!canInflictDamage) {
-		return;
-	}
-	*/
+	InflictDamage(_targetEntity, _sourceEntity, damage);
 
 	// ItemSword.hitEntity damages 1; ItemTool.hitEntity damages 2
 	int durabilityLoss = 1;
@@ -472,7 +465,7 @@ void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, Direction::
 	_world.SetBlock(topPos, BLOCK_AIR);
 	std::cout << "lol!!" << std::endl;
 	for (auto& entity : _world.entityManager.entities) {
-		std::cout << (int)entity->type << std::endl;
+		std::cout << int(entity->type) << std::endl;
 		if (entity->type == EntityType::PIG) {
 			auto finder = std::static_pointer_cast<MobileEntity>(entity);
 			std::cout << "Setting goal to" << topPos << std::endl;

@@ -24,7 +24,7 @@
 #include <unistd.h>
 #endif
 
-enum LevelInitFailureReason {
+enum class LevelInitFailureReason : uint8_t {
 	SUCCESS,
 	ALPHA_FORMATTED,
 	NEW_SAVE,

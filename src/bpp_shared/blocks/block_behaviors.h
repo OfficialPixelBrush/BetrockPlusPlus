@@ -8,7 +8,7 @@
 #pragma once
 #include "direction.h"
 
-#include "AABB.h"
+#include "aabb.h"
 #include "block_shapes.h"
 #include "inventory/item_stack.h"
 #include "java/java_random.h"

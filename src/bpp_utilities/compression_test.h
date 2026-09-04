@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../bpp_server/chunk_IO/chunk_serializer.h"
+#include "../bpp_server/chunk_io/chunk_serializer.h"
 #include "world/chunk.h"
 
 #include <chrono>

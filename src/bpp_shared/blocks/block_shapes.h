@@ -5,7 +5,7 @@
  *
 */
 
-#include "AABB.h"
+#include "aabb.h"
 #include <cstdint>
 
 namespace Blocks {

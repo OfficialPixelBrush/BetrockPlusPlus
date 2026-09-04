@@ -26,7 +26,7 @@ struct ItemProperties {
 	ItemAmount maxStack = STACK_MAX;
 };
 
-enum ArmorPiece {
+enum class ArmorPiece : int8_t {
 	INVALID_PIECE = -1,
 	HELMET,
 	CHESTPLATE,
@@ -97,12 +97,12 @@ constexpr int GetArmorDamageReduction(ItemId _id) {
 	return damageReduceAmounts[pieceIndex];
 }
 
-constexpr ArmorPiece GetArmorPiece(ItemId _id) {
+constexpr Items::ArmorPiece GetArmorPiece(ItemId _id) {
 	if (!IsArmor(_id))
 		return ArmorPiece::INVALID_PIECE;
 
 	int pieceIndex = (_id - 298) % 4;
-	ArmorPiece type[4] = { HELMET, CHESTPLATE, LEGGING, BOOT };
+	Items::ArmorPiece type[4] = { Items::ArmorPiece::HELMET, Items::ArmorPiece::CHESTPLATE, Items::ArmorPiece::LEGGING, Items::ArmorPiece::BOOT };
 	return type[pieceIndex];
 }
 

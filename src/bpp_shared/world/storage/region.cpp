@@ -66,7 +66,7 @@ void Region::AddChunk(std::shared_ptr<Chunk> _chunk, int64_t _timestamp,
 	file.write(reinterpret_cast<char*>(&lengthBE), 4);
 
 	// 1-byte compression type
-	uint8_t format = REGION_ZLIB;
+	CompressorFormat format = CompressorFormat::REGION_ZLIB;
 	file.write(reinterpret_cast<char*>(&format), 1);
 
 	// Compressed data
@@ -123,12 +123,12 @@ std::shared_ptr<Chunk> Region::GetChunk(Int32_2 _cpos) {
 	}
 
 	// Read compression type
-	uint8_t format = 0;
+	CompressorFormat format = CompressorFormat::REGION_INVALID;
 	file.read(reinterpret_cast<char*>(&format), 1);
 	if (file.fail())
 		return nullptr;
 
-	if (format != REGION_ZLIB) {
+	if (format != CompressorFormat::REGION_ZLIB) {
 		GlobalLogger().warn << "Unsupported compression format: " << int(format) << "\n";
 		return nullptr;
 	}

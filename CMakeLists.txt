@@ -199,11 +199,11 @@ set(SERVER_SOURCES
     src/bpp_server/packet/handle_packet.cpp
     src/bpp_server/player_conn/server_pconnstate_manager.cpp
     src/bpp_server/packet/packet_dispatcher.cpp
-    src/bpp_server/chunk_IO/chunk_broadcaster.cpp
+    src/bpp_server/chunk_io/chunk_broadcaster.cpp
     src/bpp_server/trackers/entity_tracker.cpp
     src/bpp_server/trackers/inventory_tracker.cpp
     src/bpp_server/entities/entity_mp_player.cpp
-    src/bpp_server/blocks/serverBlockBehaviors.cpp
+    src/bpp_server/blocks/server_block_behaviors.cpp
     src/bpp_server/entities/entity_dummy_player.cpp
     src/bpp_server/world/world_event_broadcaster.cpp
 

@@ -10,7 +10,7 @@
 #include "blocks/block_properties.h"
 #include "dimensions.h"
 #include "entities.h"
-#include "helpers/AABB.h"
+#include "helpers/aabb.h"
 #include "helpers/java/java_math.h"
 #include "helpers/java/java_random.h"
 #include "lighter.h"

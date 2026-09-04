@@ -7,7 +7,7 @@
  *
 */
 #include "handle_packet.h"
-#include "../blocks/serverBlockBehaviors.h"
+#include "../blocks/server_block_behaviors.h"
 #include "../trackers/entity_tracker.h"
 #include "blocks.h"
 #include "blocks/block_properties.h"
