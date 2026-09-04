@@ -102,7 +102,8 @@ constexpr Items::ArmorPiece GetArmorPiece(ItemId _id) {
 		return ArmorPiece::INVALID_PIECE;
 
 	int pieceIndex = (_id - 298) % 4;
-	Items::ArmorPiece type[4] = { Items::ArmorPiece::HELMET, Items::ArmorPiece::CHESTPLATE, Items::ArmorPiece::LEGGING, Items::ArmorPiece::BOOT };
+	Items::ArmorPiece type[4] = { Items::ArmorPiece::HELMET, Items::ArmorPiece::CHESTPLATE, Items::ArmorPiece::LEGGING,
+		                          Items::ArmorPiece::BOOT };
 	return type[pieceIndex];
 }
 

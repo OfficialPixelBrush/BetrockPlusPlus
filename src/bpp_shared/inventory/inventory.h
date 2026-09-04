@@ -48,8 +48,8 @@ struct Inventory {
 			OnInventoryChanged();
 			return taken;
 		}
-		ItemStack taken{ stack.id, (int8_t)_count, stack.data };
-		stack.count = (int8_t)(stack.count - _count);
+		ItemStack taken{ stack.id, int8_t(_count), stack.data };
+		stack.count = int8_t(stack.count - _count);
 		OnInventoryChanged();
 		return taken;
 	}

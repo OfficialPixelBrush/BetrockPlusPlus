@@ -15,7 +15,7 @@
 
 #include "numeric_structs.h"
 
-enum class WindowMode {
+enum class WindowMode : uint8_t {
 	WINDOWED,
 	WINDOWED_RESIZABLE,
 	FULLSCREEN

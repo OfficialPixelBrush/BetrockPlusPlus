@@ -10,7 +10,7 @@
 #include "nbt/nbt.h"
 #include "numeric_structs.h"
 
-enum class TileType {
+enum class TileType : uint8_t {
 	CHEST,
 	FURNACE,
 	DISPENSER,

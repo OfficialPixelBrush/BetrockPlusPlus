@@ -216,7 +216,7 @@ struct CmdNode {
 	}
 };
 
-enum class ParseError {
+enum class ParseError : uint8_t {
 	InvalidToken,
 	OutOfRange,
 	IncompleteCommand,

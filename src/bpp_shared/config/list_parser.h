@@ -8,6 +8,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -17,7 +18,7 @@
  * 
  */
 namespace ListParser {
-enum class Target {
+enum class Target : uint8_t {
 	Operator,
 	Whitelist,
 	BannedPlayers,

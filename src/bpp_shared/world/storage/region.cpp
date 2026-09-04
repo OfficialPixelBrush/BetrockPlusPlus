@@ -371,7 +371,7 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 				int16_t itemId = item.Get("id").GetShort();
 				int8_t count = item.Get("Count").GetByte();
 				int16_t damage = item.Get("Damage").GetShort();
-				if (slot >= 0 && slot < (int8_t)_slots.size()) {
+				if (slot >= 0 && slot < int8_t(_slots.size())) {
 					_slots[size_t(slot)] = ItemStack{ itemId, count, damage };
 				}
 			}
