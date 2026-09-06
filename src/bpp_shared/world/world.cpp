@@ -523,18 +523,20 @@ void WorldManager::DrainLoadQueue() {
 			pendingBleedWrites.erase(pit);
 		}
 
+		auto chunk = it->second.get();
+
 		// Register our tile entities
-		RegisterChunkTileEntities(it->second.get());
+		RegisterChunkTileEntities(chunk);
 
 		// Register our entities
-		for (auto& entityTag : it->second.get()->entityTags) {
+		for (auto& entityTag : chunk->entityTags) {
 			this->entityManager.CreateEntityFromNbt(entityTag);
 		}
-		it->second.get()->entityTags.clear();
-		it->second.get()->entityTags.shrink_to_fit();
+		chunk->entityTags.clear();
+		chunk->entityTags.shrink_to_fit();
 
 		// Regenerate our heightmap
-		it->second.get()->GenerateHeightMap();
+		chunk->GenerateHeightMap();
 	}
 }
 
