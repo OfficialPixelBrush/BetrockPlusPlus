@@ -25,6 +25,7 @@ struct TrackingProfile {
 	int range = 0;
 	int updateFrequency = 0; // ticks between movement-sync packets
 	bool sendVelocity = false;
+	bool applyRotationThreshold = true;
 };
 
 struct EquipmentProfile {
@@ -127,7 +128,7 @@ struct EntityTracker {
 			return { 64, 20, true };
 		case EntityType::MINECART:
 		case EntityType::BOAT:
-			return { 128, 5, true };
+			return { 128, 2, true, /*Apply rotation threshold=*/ false };
 		case EntityType::SQUID:
 			return { 128, 3, true };
 		case EntityType::CHICKEN:

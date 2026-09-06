@@ -7,7 +7,7 @@
 #include "../command.h"
 #include "../command_manager.h"
 #include "../command_registry.h"
-#include "entities/entity_boat.h"
+#include "entities/entity_minecart.h"
 #include "networking/packets.h"
 #include <memory>
 #include <utility>
@@ -17,11 +17,10 @@ namespace {
 std::string SummonEntity(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
 
-	auto entity = std::make_shared<BoatEntity>();
+	auto entity = std::make_shared<MinecartEntity>();
 
-	Vec3 spawnPos = ctx.session->position.pos +
-	                Vec3(ctx.world->rand.NextFloat() * 4 + 0.5, 0, ctx.world->rand.NextFloat() * 4 + 0.5);
-	spawnPos.y = ctx.world->GetHeightValue(spawnPos.x, spawnPos.z) + 0.1;
+	Vec3 spawnPos = ctx.session->position.pos;
+	spawnPos.y += 1.0f; // Spawn above the player
 	entity->Teleport(spawnPos);
 
 	ctx.world->entityManager.AddEntity(entity);

@@ -419,6 +419,9 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 		if (_pkt.attack) {
 			ItemStack emptyStack{};
 			Items::AttackWithItem(*entity, *sourceEntity, &emptyStack);
+		} else {
+			PlayerEntity* playerPtr = dynamic_cast<PlayerEntity*>(sourceEntity.get());
+			entity->OnPlayerInteract(playerPtr);
 		}
 		return;
 	}
