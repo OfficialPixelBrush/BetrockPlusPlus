@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <ostream>
 #include <sstream>
+#include <vector>
 
 #if defined(__has_include)
 #if __has_include(<glm/glm.hpp>)
@@ -231,6 +232,8 @@ struct TriNumber {
 		return result.Offset(_direction, _value);
 	}
 
+	// TODO: Replace with 3-value array, since a vector should,
+	// within a reasonable, 3-dimensional world, only ever point in, at most, three directions
 	std::vector<Direction::Value> GetFacingDirections() {
 		// Returns the directions that the vector is pointing towards
 		std::vector<Direction::Value> dirs;
