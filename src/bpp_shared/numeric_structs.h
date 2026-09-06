@@ -230,6 +230,28 @@ struct TriNumber {
 		TriNumber<T> result = *this;
 		return result.Offset(_direction, _value);
 	}
+
+	std::vector<Direction::Value> GetFacingDirections() {
+		// Returns the directions that the vector is pointing towards
+		std::vector<Direction::Value> dirs;
+		T length = Length();
+		TriNumber<T> checkVec = {x / length, y / length, z / length};
+
+		if (checkVec.x > 0)
+			dirs.push_back(Direction::Value::East);
+		else if (checkVec.x < 0)
+			dirs.push_back(Direction::Value::West);
+		if (checkVec.z > 0)
+			dirs.push_back(Direction::Value::South);
+		else if (checkVec.z < 0)
+			dirs.push_back(Direction::Value::North);
+		if (checkVec.y > 0)
+			dirs.push_back(Direction::Value::Up);
+		else if (checkVec.y < 0)
+			dirs.push_back(Direction::Value::Down);
+
+		return checkVec == TriNumber<T>{ 0, 0, 0 } ? std::vector<Direction::Value>{ Direction::Value::None } : dirs;
+	}
 };
 
 /**

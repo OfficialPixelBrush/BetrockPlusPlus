@@ -6,18 +6,12 @@
 */
 
 #pragma once
+#include "../direction.h"
 #include "base_structs.h"
 #include <algorithm>
 #include <cstdint>
 
 namespace Blocks {
-enum class Direction : uint8_t {
-	North = 0,
-	East = 1,
-	South = 2,
-	West = 3,
-};
-
 enum class WoodType : uint8_t {
 	Oak = 0,
 	Spruce = 1,
@@ -88,16 +82,17 @@ enum class ButtonMount : uint8_t {
 };
 
 enum class RailShape : uint8_t {
+	INVALID = -1,
 	FlatNorthSouth = 0,
 	FlatEastWest = 1,
 	AscendingEast = 2,
 	AscendingWest = 3,
 	AscendingNorth = 4,
 	AscendingSouth = 5,
-	CurveNorthEast = 6,
-	CurveSouthEast = 7,
-	CurveSouthWest = 8,
-	CurveNorthWest = 9,
+	CurveSouthEast = 6,
+	CurveSouthWest = 7,
+	CurveNorthWest = 8,
+	CurveNorthEast = 9,
 };
 
 enum class PistonFacing : uint8_t {
@@ -344,7 +339,7 @@ private:
 };
 
 struct BedBuilder {
-	BedBuilder facing(Direction _direction) const {
+	BedBuilder facing(Direction::Value _direction) const {
 		BedBuilder b = *this;
 		b.direction = _direction;
 		return b;
@@ -363,16 +358,16 @@ struct BedBuilder {
 	Block asBlock() const {
 		uint8_t data;
 		switch (direction) {
-		case Direction::South:
+		case Direction::Value::South:
 			data = 0;
 			break;
-		case Direction::West:
+		case Direction::Value::West:
 			data = 1;
 			break;
-		case Direction::North:
+		case Direction::Value::North:
 			data = 2;
 			break;
-		case Direction::East:
+		case Direction::Value::East:
 			data = 3;
 			break;
 		}
@@ -388,7 +383,7 @@ struct BedBuilder {
 
 private:
 	BlockType id = BLOCK_BED;
-	Direction direction = Direction::South;
+	Direction::Value direction = Direction::Value::South;
 	bool occupied_ = false;
 	bool head_ = false;
 };
@@ -633,7 +628,7 @@ private:
 };
 
 struct TrapdoorBuilder {
-	TrapdoorBuilder facing(Direction _direction) const {
+	TrapdoorBuilder facing(Direction::Value _direction) const {
 		TrapdoorBuilder b = *this;
 		b.direction = _direction;
 		return b;
@@ -647,16 +642,16 @@ struct TrapdoorBuilder {
 	Block asBlock() const {
 		uint8_t data;
 		switch (direction) {
-		case Direction::East:
+		case Direction::Value::East:
 			data = 0;
 			break;
-		case Direction::West:
+		case Direction::Value::West:
 			data = 1;
 			break;
-		case Direction::North:
+		case Direction::Value::North:
 			data = 2;
 			break;
-		case Direction::South:
+		case Direction::Value::South:
 			data = 3;
 			break;
 		}
@@ -670,14 +665,14 @@ struct TrapdoorBuilder {
 
 private:
 	BlockType id = BLOCK_TRAPDOOR;
-	Direction direction = Direction::South;
+	Direction::Value direction = Direction::Value::South;
 	bool open_ = false;
 };
 
 struct PumpkinBuilder {
 	constexpr explicit PumpkinBuilder(BlockType _id) : id(_id) {}
 
-	PumpkinBuilder facing(Direction _direction) const {
+	PumpkinBuilder facing(Direction::Value _direction) const {
 		PumpkinBuilder b = *this;
 		b.direction = _direction;
 		return b;
@@ -686,16 +681,16 @@ struct PumpkinBuilder {
 	Block asBlock() const {
 		uint8_t data;
 		switch (direction) {
-		case Direction::South:
+		case Direction::Value::South:
 			data = 0;
 			break;
-		case Direction::West:
+		case Direction::Value::West:
 			data = 1;
 			break;
-		case Direction::North:
+		case Direction::Value::North:
 			data = 2;
 			break;
-		case Direction::East:
+		case Direction::Value::East:
 			data = 3;
 			break;
 		}
@@ -707,13 +702,13 @@ struct PumpkinBuilder {
 
 private:
 	BlockType id;
-	Direction direction = Direction::South;
+	Direction::Value direction = Direction::Value::South;
 };
 
 struct RepeaterBuilder {
 	constexpr explicit RepeaterBuilder(BlockType _id) : id(_id) {}
 
-	RepeaterBuilder facing(Direction _direction) const {
+	RepeaterBuilder facing(Direction::Value _direction) const {
 		RepeaterBuilder b = *this;
 		b.direction = _direction;
 		return b;
@@ -731,16 +726,16 @@ struct RepeaterBuilder {
 	Block asBlock() const {
 		uint8_t data;
 		switch (direction) {
-		case Direction::North:
+		case Direction::Value::North:
 			data = 0;
 			break;
-		case Direction::East:
+		case Direction::Value::East:
 			data = 1;
 			break;
-		case Direction::South:
+		case Direction::Value::South:
 			data = 2;
 			break;
-		case Direction::West:
+		case Direction::Value::West:
 			data = 3;
 			break;
 		}
@@ -753,7 +748,7 @@ struct RepeaterBuilder {
 
 private:
 	BlockType id;
-	Direction direction = Direction::North;
+	Direction::Value direction = Direction::Value::North;
 	uint8_t delay_ = 0;
 };
 

@@ -39,6 +39,7 @@ bool CanBridgeVertical(WorldManager& _world, Int3 _pos, int _dx, int _dz, int _d
 bool IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, uint8_t _meta);
 ComponentProfile GetRedstoneDustConnectivity(WorldManager& _world, Int3 _pos);
 PowerProfile GetBlockPowerProfile(WorldManager& _world, Int3 _pos);
+bool IsPositionPowered(WorldManager& _world, Int3 _pos);
 
 static bool CanProvidePower(BlockType _block) {
 	// Repeaters are excluded for some reason in vanilla
