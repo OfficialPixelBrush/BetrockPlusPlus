@@ -532,6 +532,9 @@ void WorldManager::DrainLoadQueue() {
 		}
 		it->second.get()->entityTags.clear();
 		it->second.get()->entityTags.shrink_to_fit();
+
+		// Regenerate our heightmap
+		it->second.get()->GenerateHeightMap();
 	}
 }
 
