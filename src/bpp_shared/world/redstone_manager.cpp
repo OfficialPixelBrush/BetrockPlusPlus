@@ -296,6 +296,58 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 	return best > 0 ? best - 1 : 0;
 }
 
+bool RedstoneManager::IsPositionPowered(WorldManager& _world, Int3 _pos) {
+	// Is the block under us being powered?
+	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Direction::Value::Down)).powered)
+		return true;
+
+	// Is the block above us being powered?
+	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Direction::Value::Up)).powered)
+		return true;
+
+	// Can the block above us power us?
+	if (RedstoneManager::GetComponentProfile(_world.GetBlockId(_pos.WithOffset(Direction::Value::Up)),
+	                                         _world.GetMetadata(_pos.WithOffset(Direction::Value::Up)))
+	        .powerBelow)
+		return true;
+
+	// Check the blocks to the side of us
+	int d[4] = { -1, 1, 0, 0 };
+	for (int i = 0; i < 4; i++) {
+		auto rdx = d[i];
+		auto rdz = d[3 - i];
+		Int3 dPos = { rdx + _pos.x, _pos.y, rdz + _pos.z };
+		auto neighborBlock = _world.GetBlockId(dPos);
+
+		if (RedstoneManager::GetBlockPowerProfile(_world, dPos).powered)
+			return true;
+
+		if (neighborBlock == BLOCK_REDSTONE_TORCH_ON || neighborBlock == BLOCK_REDSTONE_REPEATER_ON ||
+		    neighborBlock == BLOCK_LEVER || neighborBlock == BLOCK_BUTTON_STONE) {
+			auto neighborProfile = RedstoneManager::GetComponentProfile(neighborBlock, _world.GetMetadata(dPos));
+
+			// Direction FROM the neighbor TOWARD us
+			bool poweredTowardUs = false;
+			if (rdx == 1)
+				poweredTowardUs = neighborProfile.powerNX;
+			else if (rdx == -1)
+				poweredTowardUs = neighborProfile.powerX;
+			else if (rdz == 1)
+				poweredTowardUs = neighborProfile.powerNZ;
+			else if (rdz == -1)
+				poweredTowardUs = neighborProfile.powerZ;
+
+			if (poweredTowardUs)
+				return true;
+		}
+
+		if (neighborBlock == BLOCK_REDSTONE && _world.GetMetadata(dPos) > 0)
+			return true;
+	}
+
+	return false;
+}
+
 static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int3>& _visited) {
 	auto thisBlock = _world.GetBlockId(_pos);
 	bool doProfileCheck = false;

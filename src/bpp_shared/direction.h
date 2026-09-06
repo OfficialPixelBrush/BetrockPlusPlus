@@ -8,6 +8,7 @@
 #pragma once
 #include "./helpers/java/java_math.h"
 #include <string_view>
+
 namespace Direction {
 
 enum class Value : uint8_t {

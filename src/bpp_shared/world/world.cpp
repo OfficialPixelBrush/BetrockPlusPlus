@@ -968,10 +968,6 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 		}
 	}
 
-	// Update our neighbors
-	if (_updateNeighbors)
-		this->NotifyNeighborsOfUpdate(_wpos, _blockType);
-
 	if (_blockType == BLOCK_AIR) {
 		// We removed this block effectively
 		auto function = Blocks::blockBehaviors[oldBlock].onBlockRemoval;
@@ -995,6 +991,10 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 		if (function)
 			function(*this, _wpos);
 	}
+
+	// Update our neighbors
+	if (_updateNeighbors)
+		this->NotifyNeighborsOfUpdate(_wpos, _blockType);
 
 	// Trigger redstone updates
 	if (RedstoneManager::CanTriggerRedstoneUpdate(_blockType) || RedstoneManager::CanTriggerRedstoneUpdate(oldBlock))
