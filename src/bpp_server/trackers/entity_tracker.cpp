@@ -361,6 +361,21 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pktRot.Serialize(pSession->stream);
 		break;
 	}
+	case EntityType::MINECART: {
+		Packet::SpawnObject pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.objectType = PacketData::ObjectType::MINECART;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
+		pkt.Serialize(pSession->stream);
+
+		Packet::EntityRotation pktRot;
+		pktRot.entityId = _entityEntry.entity->id;
+		pktRot.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
+			                 int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
+		pktRot.Serialize(pSession->stream);
+		break;
+	}
 	case EntityType::FALLING_SAND: {
 		Packet::SpawnObject pkt;
 		pkt.entityId = _entityEntry.entity->id;
@@ -649,8 +664,8 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 		} else {
 			bool needsRelMove = std::abs(dx) > MINIMUM_POSITION_DELTA || std::abs(dy) > MINIMUM_POSITION_DELTA ||
 			                    std::abs(dz) > MINIMUM_POSITION_DELTA;
-			bool needsRot = std::abs(qYaw - _trackedEntry.lastEncodedYaw) > MINIMUM_ROTATION_DELTA ||
-			                std::abs(qPitch - _trackedEntry.lastEncodedPitch) > MINIMUM_ROTATION_DELTA;
+			bool needsRot = std::abs(qYaw   - _trackedEntry.lastEncodedYaw)   > _trackedEntry.profile.applyRotationThreshold ? MINIMUM_ROTATION_DELTA : 0 || 
+							std::abs(qPitch - _trackedEntry.lastEncodedPitch) > _trackedEntry.profile.applyRotationThreshold ? MINIMUM_ROTATION_DELTA : 0;
 
 			if (needsRelMove && needsRot) {
 				Packet::EntityPositionAndRotation pkt;
