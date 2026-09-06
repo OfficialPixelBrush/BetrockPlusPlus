@@ -484,6 +484,7 @@ void WorldManager::DrainLoadQueue() {
 			it->second->state.store(ChunkState::Unloaded, std::memory_order_release);
 	}
 
+	// TODO: Please refactor, ew
 	for (auto& [pos, chunk] : chunks) {
 		if (chunk->state.load(std::memory_order_acquire) != ChunkState::Loading)
 			continue;
@@ -523,17 +524,17 @@ void WorldManager::DrainLoadQueue() {
 			pendingBleedWrites.erase(pit);
 		}
 
-		auto chunk = it->second.get();
+		auto chunk_got = it->second.get();
 
 		// Register our tile entities
-		RegisterChunkTileEntities(chunk);
+		RegisterChunkTileEntities(chunk_got);
 
 		// Register our entities
-		for (auto& entityTag : chunk->entityTags) {
+		for (auto& entityTag : chunk_got->entityTags) {
 			this->entityManager.CreateEntityFromNbt(entityTag);
 		}
-		chunk->entityTags.clear();
-		chunk->entityTags.shrink_to_fit();
+		chunk_got->entityTags.clear();
+		chunk_got->entityTags.shrink_to_fit();
 	}
 }
 

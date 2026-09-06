@@ -81,7 +81,7 @@ enum class ButtonMount : uint8_t {
 	SouthWall = 4,
 };
 
-enum class RailShape : uint8_t {
+enum class RailShape : int8_t {
 	INVALID = -1,
 	FlatNorthSouth = 0,
 	FlatEastWest = 1,
@@ -359,6 +359,7 @@ struct BedBuilder {
 		uint8_t data;
 		switch (direction) {
 		case Direction::Value::South:
+		default:
 			data = 0;
 			break;
 		case Direction::Value::West:
@@ -643,6 +644,7 @@ struct TrapdoorBuilder {
 		uint8_t data;
 		switch (direction) {
 		case Direction::Value::East:
+		default:
 			data = 0;
 			break;
 		case Direction::Value::West:
@@ -682,6 +684,7 @@ struct PumpkinBuilder {
 		uint8_t data;
 		switch (direction) {
 		case Direction::Value::South:
+		default:
 			data = 0;
 			break;
 		case Direction::Value::West:
@@ -727,6 +730,7 @@ struct RepeaterBuilder {
 		uint8_t data;
 		switch (direction) {
 		case Direction::Value::North:
+		default:
 			data = 0;
 			break;
 		case Direction::Value::East:
