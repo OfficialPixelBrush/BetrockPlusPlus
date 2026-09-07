@@ -25,6 +25,7 @@ bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _pla
                   BlockType _blockId, uint8_t _meta);
 void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer);
 void GenericExplode(WorldManager& _world, Int3 _pos);
+bool CanOpenChest(WorldManager& _world, Int3 _pos);
 
 struct BlockBehavior {
 	// Called when we need to get the AABB for the selection box

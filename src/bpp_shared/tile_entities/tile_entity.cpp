@@ -61,8 +61,8 @@ static bool CanAcceptSmeltResult(Inventory& _inventory, const ItemStack& _result
 	if (output.id != _result.id || output.data != _result.data)
 		return false;
 
-	int maxStack = Items::itemProperties[_result.id].maxStack;
-	return output.count < maxStack;
+	int maxStack = Items::GetMaxStack(output.id);
+	return (output.count + _result.count) <= maxStack;
 }
 
 void TileEntityFurnace::Tick(WorldManager& _world) {
@@ -87,7 +87,7 @@ void TileEntityFurnace::Tick(WorldManager& _world) {
 			--burnTime;
 
 		if (burnTime == 0 && hasInput && result.id != Items::INVALID) {
-			burnTime = maxBurnTime; // 0 if slot 1 is empty or not a valid fuel
+			burnTime = canSmelt ? maxBurnTime : 0; // 0 if slot 1 is empty or not a valid fuel
 			if (burnTime > 0) {
 				inventory.DecreaseStackSize(1, 1);
 			}

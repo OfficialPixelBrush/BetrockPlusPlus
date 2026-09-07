@@ -60,10 +60,10 @@ void ServerBlock::Initialize() {
 
 	blockBehaviors[BLOCK_CHEST].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
 	                                                  Runtime& _gameRuntime) -> bool {
-		auto chest = _world.GetTileEntityShared<TileEntityChest>(_position);
-		if (!chest) {
+		if (!Blocks::CanOpenChest(_world, _position))
 			return false;
-		}
+
+		auto chest = _world.GetTileEntityShared<TileEntityChest>(_position);
 
 		// Are we a double chest?
 		auto l = _world.GetBlockId({ _position.x - 1, _position.y, _position.z });
@@ -134,7 +134,7 @@ void ServerBlock::Initialize() {
 		// TODO: Check if jukebox is already playing
 		//if (!IsRecord(heldItem.id) && )
 		//	return false;
-		if (auto fn = _world.onWorldEvent) {
+		if (auto& fn = _world.onWorldEvent) {
 			fn(PacketData::WorldEvent::RECORD_PLAY, _position, Items::Id::RECORD_CAT, nullptr);
 			//fn(PacketData::WorldEvent::RECORD_PLAY, _position, 0);
 		}

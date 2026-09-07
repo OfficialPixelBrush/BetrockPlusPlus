@@ -13,6 +13,7 @@
 #include "entities/entity_mobile.h"
 #include "entities/entity_player.h"
 #include "entities/entity_sheep.h"
+#include "entities/entity_cow.h"
 #include "inventory/item_stack.h"
 #include "items.h"
 #include "logger.h"
@@ -452,11 +453,18 @@ void UseShears(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
 	// Already sheared, can't shear again!
 	if (se->isSheared)
 		return;
-	// TODO: Needs Random amount!
-	se->DropItemAtEntity(BLOCK_WOOL, 2, se->color);
+	se->DropItemAtEntity(BLOCK_WOOL, 2 + _world.rand.NextInt(3), se->color);
 	se->UpdateMetadata(se->isSheared, true);
 
 	HarmTool(_stack, 1);
+}
+
+void UseBucketOnEntity(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
+	CowEntity* se = dynamic_cast<CowEntity*>(&_targetEntity);
+	// Not a cow, skip
+	if (!se)
+		return;
+	_stack->id = BUCKET_MILK;
 }
 
 void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, Direction::Value _face) {
