@@ -46,7 +46,7 @@ struct RailManager {
 		return static_cast<Blocks::RailShape>(_meta & (_block == BLOCK_RAIL ? 0xF : 0x7));
 	}
 
-	static std::vector<Direction::Value> GetImpliedConnections(Blocks::RailShape _shape) {
+	static std::array<Direction::Value, 2> GetImpliedConnections(Blocks::RailShape _shape) {
 		// Name is a little confusing,
 		// But this is just what possible connection points exist
 		// Given the shape of the rail
