@@ -1612,8 +1612,8 @@ void RegisterBlockBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_FURNACE].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
-		auto furnace = std::make_shared<TileEntityFurnace>(_pos);
-		_world.CreateTileEntity(std::move(furnace));
+		auto furnaceTileEntity = std::make_shared<TileEntityFurnace>(_pos);
+		_world.CreateTileEntity(std::move(furnaceTileEntity));
 	};
 
 	auto dropFurnaceInventory = [](WorldManager& _world, Int3 _pos) -> void {
@@ -1627,7 +1627,8 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_FURNACE].onBlockRemoval = dropFurnaceInventory;
 	blockBehaviors[BLOCK_FURNACE_LIT].onBlockRemoval = dropFurnaceInventory;
 
-	// TODO: Add another portal creation function matching with b1.7.3's limitations, that is toggleable via a config entry,
+	// TODO: Add another portal creation function matching with b1.7.3's limitations,
+	// that is toggleable via a config entry,
 	// for a more authentic experience
 	blockBehaviors[BLOCK_FIRE].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		bool isXAligned = (_world.GetBlockId(_pos + Int3{ 1, -1, 0 }) == BLOCK_OBSIDIAN ||

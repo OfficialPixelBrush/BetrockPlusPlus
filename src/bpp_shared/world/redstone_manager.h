@@ -41,7 +41,7 @@ ComponentProfile GetRedstoneDustConnectivity(WorldManager& _world, Int3 _pos);
 PowerProfile GetBlockPowerProfile(WorldManager& _world, Int3 _pos);
 bool IsPositionPowered(WorldManager& _world, Int3 _pos);
 
-static bool CanProvidePower(BlockType _block) {
+inline bool CanProvidePower(BlockType _block) {
 	// Repeaters are excluded for some reason in vanilla
 	switch (_block) {
 	case BLOCK_REDSTONE:
@@ -57,7 +57,7 @@ static bool CanProvidePower(BlockType _block) {
 	}
 }
 
-static bool CanTriggerRedstoneUpdate(BlockType _block) {
+inline bool CanTriggerRedstoneUpdate(BlockType _block) {
 	switch (_block) {
 	case BLOCK_REDSTONE:
 	case BLOCK_LEVER:
@@ -74,7 +74,7 @@ static bool CanTriggerRedstoneUpdate(BlockType _block) {
 	}
 }
 
-static ComponentProfile GetComponentProfile(BlockType _blockId, uint8_t _meta) {
+inline ComponentProfile GetComponentProfile(BlockType _blockId, uint8_t _meta) {
 	switch (_blockId) {
 	case BLOCK_REDSTONE: {
 		return ComponentProfile{ true, true, true, true, false };

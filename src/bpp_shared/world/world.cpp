@@ -484,7 +484,6 @@ void WorldManager::DrainLoadQueue() {
 			it->second->state.store(ChunkState::Unloaded, std::memory_order_release);
 	}
 
-	// TODO: Please refactor, ew
 	for (auto& [pos, chunk] : chunks) {
 		if (chunk->state.load(std::memory_order_acquire) != ChunkState::Loading)
 			continue;
@@ -492,12 +491,9 @@ void WorldManager::DrainLoadQueue() {
 		if (!loaded)
 			continue;
 
-		auto it = chunks.find(pos);
-		if (it == chunks.end())
-			continue;
-		bool wasSpawnChunk = it->second->spawnChunk;
-		it->second = std::move(loaded);
-		it->second->spawnChunk = wasSpawnChunk;
+		bool wasSpawnChunk = chunk->spawnChunk;
+		chunk = std::move(loaded);
+		chunk->spawnChunk = wasSpawnChunk;
 
 		// Regenerate temp and humidity data
 		thread_local BiomeGenerator tlBiomeGen(0);
@@ -509,11 +505,11 @@ void WorldManager::DrainLoadQueue() {
 		thread_local double temp[CHUNK_AREA];
 		thread_local double humi[CHUNK_AREA];
 		thread_local double weird[CHUNK_AREA];
-		PackedArray<CHUNK_AREA, 4> ignored;
+		thread_local PackedArray<CHUNK_AREA, 4> ignored;
 		tlBiomeGen.GenerateBiomeMap(ignored, temp, humi, weird, Int2{ pos.x * CHUNK_WIDTH, pos.z * CHUNK_WIDTH });
 		for (int i = 0; i < CHUNK_AREA; ++i) {
-			it->second->temperature[i] = float(temp[i]);
-			it->second->humidity[i] = float(humi[i]);
+			chunk->temperature[i] = float(temp[i]);
+			chunk->humidity[i] = float(humi[i]);
 		}
 
 		// Replay any writes that arrived while this chunk was loading.
@@ -524,17 +520,17 @@ void WorldManager::DrainLoadQueue() {
 			pendingBleedWrites.erase(pit);
 		}
 
-		auto chunk_got = it->second.get();
-
+		// TODO: Do we need to use a raw pointer for the following?
+		auto rawChunkPtr = chunk.get();
 		// Register our tile entities
-		RegisterChunkTileEntities(chunk_got);
+		RegisterChunkTileEntities(rawChunkPtr);
 
 		// Register our entities
-		for (auto& entityTag : chunk_got->entityTags) {
+		for (auto& entityTag : rawChunkPtr->entityTags) {
 			this->entityManager.CreateEntityFromNbt(entityTag);
 		}
-		chunk_got->entityTags.clear();
-		chunk_got->entityTags.shrink_to_fit();
+		rawChunkPtr->entityTags.clear();
+		rawChunkPtr->entityTags.shrink_to_fit();
 	}
 }
 
