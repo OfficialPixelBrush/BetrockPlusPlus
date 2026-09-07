@@ -284,8 +284,6 @@ uint8_t GetMetaFromDirection(const BlockType _type, const Direction::Value _dir)
 	default: // Block without directional data
 		return 0;
 	}
-	// TODO: Should probably throw a warning or error?
-	return 0;
 }
 
 Direction::Value FaceDirectionToDirection(const PacketData::FaceDirection _face) {
