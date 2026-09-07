@@ -28,6 +28,33 @@
 namespace Blocks {
 BlockBehavior blockBehaviors[BLOCK_MAX] = {};
 
+static void TryTallPlantGrowth(WorldManager& _world, Int3 _pos, uint8_t _meta, BlockType _block) {
+	if (_world.GetBlockId(_pos.WithOffset(Direction::Value::Up)) != BLOCK_AIR)
+		return;
+
+	bool canContinue = true;
+	uint8_t height = 1;
+	Int3 checkPos = _pos;
+	while (canContinue) {
+		if (height >= 3)
+			return;
+		if (_world.GetBlockId(checkPos.Offset(Direction::Value::Down)) == _block) {
+			height++;
+			continue;
+		}
+		canContinue = false;
+	}
+	if (_meta >= 15) {
+		_world.SetBlock(_pos.WithOffset(Direction::Value::Up), _block);
+		
+		// So we dont regrown instantly
+		// Also updates the new plant block
+		_world.SetMeta(_pos, 0); 
+		return;
+	}
+	_world.SetMeta(_pos, _meta + 1);
+}
+
 static void UpdateRail(WorldManager& _world, Int3 _pos, BlockType _block) {
 	RailManager::RefreshRail(_world, _pos, _block);
 }
@@ -775,6 +802,10 @@ void RegisterBlockBehaviors() {
 		if (!CanSugarcaneSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
+	blockBehaviors[BLOCK_SUGARCANE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                             Java::Random& _random) -> void {
+		TryTallPlantGrowth(_world, _pos, _meta, BLOCK_SUGARCANE);
+	};
 
 	// Placement overrides
 	auto onFurnaceDispenserPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
@@ -883,7 +914,8 @@ void RegisterBlockBehaviors() {
 	blockBehaviors[BLOCK_TALLGRASS].onBlockPlaced = onPlantPlace;
 	blockBehaviors[BLOCK_CACTUS].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                        BlockType _blockId) -> void {
-		blockBehaviors[BLOCK_CACTUS].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+		if (!CanCactusSurviveAt(_world, _pos))
+			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_MUSHROOM_BROWN].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                                BlockType _blockId) -> void {
@@ -936,8 +968,7 @@ void RegisterBlockBehaviors() {
 	};
 	blockBehaviors[BLOCK_CACTUS].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                         Java::Random& _random) -> void {
-		if (!CanCactusSurviveAt(_world, _pos))
-			BreakAndDropBlock(_world, _pos);
+		TryTallPlantGrowth(_world, _pos, _meta, BLOCK_CACTUS);
 	};
 
 	blockBehaviors[BLOCK_PISTON].onBlockPlaced = onPistonPlace;
