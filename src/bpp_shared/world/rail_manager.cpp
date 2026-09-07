@@ -22,6 +22,7 @@ Int3 RailManager::FindRailConnection(WorldManager& _world, Int3 _pos, Direction:
 	return _pos; // Return our own pos if nothing is found
 }
 
+// TODO: Could this be turned into an array too?
 std::vector<Direction::Value> RailManager::GetVerifiedConnections(WorldManager& _world, Int3 _pos) {
 	auto shape = GetRailShape(_world.GetMetadata(_pos), _world.GetBlockId(_pos));
 	auto implied = GetImpliedConnections(shape);

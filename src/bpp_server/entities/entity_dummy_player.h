@@ -15,7 +15,7 @@ struct PlayerSession;
 struct DummyMPPlayer : public EntityMPPlayer {
 	PlayerSession dummySession;
 	Server& server;
-	DummyMPPlayer(Runtime& _runtime, Server& _server) : server(_server), dummySession(-1, _runtime), EntityMPPlayer() {
+	DummyMPPlayer(Runtime& _runtime, Server& _server) : EntityMPPlayer(), dummySession(-1, _runtime), server(_server) {
 		hasPhysics = true;
 	}
 	~DummyMPPlayer() {

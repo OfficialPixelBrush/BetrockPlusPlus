@@ -232,28 +232,35 @@ struct TriNumber {
 		return result.Offset(_direction, _value);
 	}
 
-	// TODO: Replace with 3-value array, since a vector should,
-	// within a reasonable, 3-dimensional world, only ever point in, at most, three directions
-	std::vector<Direction::Value> GetFacingDirections() {
-		// Returns the directions that the vector is pointing towards
-		std::vector<Direction::Value> dirs;
+	// Returns the directions that the vector is pointing towards
+	std::array<Direction::Value, 3> GetFacingDirections() {
+		// Within a reasonable, 3-dimensional world,
+		// a vector should only ever point in, at most, three directions
+		std::array<Direction::Value, 3> dirs;
+		int8_t dirIndex = 0;
 		T length = Length();
 		TriNumber<T> checkVec = {x / length, y / length, z / length};
+		if (checkVec == TriNumber<T>{ 0, 0, 0 })
+			return { Direction::Value::None, Direction::Value::None, Direction::Value::None };
 
 		if (checkVec.x > 0)
-			dirs.push_back(Direction::Value::East);
+			dirs[dirIndex++] = (Direction::Value::East);
 		else if (checkVec.x < 0)
-			dirs.push_back(Direction::Value::West);
+			dirs[dirIndex++] = (Direction::Value::West);
 		if (checkVec.z > 0)
-			dirs.push_back(Direction::Value::South);
+			dirs[dirIndex++] = (Direction::Value::South);
 		else if (checkVec.z < 0)
-			dirs.push_back(Direction::Value::North);
+			dirs[dirIndex++] = (Direction::Value::North);
 		if (checkVec.y > 0)
-			dirs.push_back(Direction::Value::Up);
+			dirs[dirIndex++] = (Direction::Value::Up);
 		else if (checkVec.y < 0)
-			dirs.push_back(Direction::Value::Down);
-
-		return checkVec == TriNumber<T>{ 0, 0, 0 } ? std::vector<Direction::Value>{ Direction::Value::None } : dirs;
+			dirs[dirIndex++] = (Direction::Value::Down);
+		// NOTE: If dirIndex is ever > 3, someone is
+		// trying to make this codebase support 4 or more dimensions.
+		// So as long as that doesn't happen,
+		// we can probably safely ignore that case.
+		// We'll know if we ever get a segfault here :p
+		return dirs;
 	}
 };
 

@@ -571,6 +571,7 @@ void EntityTracker::UpdateDamageState(TrackedEntry& _trackedEntry) {
 	}
 }
 
+// TODO: Unnest this a bit
 void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 	auto& entity = _trackedEntry.entity;
 
@@ -637,17 +638,17 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 			}
 		}
 
-		int32_t qx = QuantizePositionComponent(entity->position.x);
-		int32_t qy = QuantizePositionComponent(entity->position.y);
-		int32_t qz = QuantizePositionComponent(entity->position.z);
-		int32_t qYaw = QuantizeRotation(entity->rotationYaw);
-		int32_t qPitch = QuantizeRotation(entity->rotationPitch);
+		const int32_t qx = QuantizePositionComponent(entity->position.x);
+		const int32_t qy = QuantizePositionComponent(entity->position.y);
+		const int32_t qz = QuantizePositionComponent(entity->position.z);
+		const int32_t qYaw = QuantizeRotation(entity->rotationYaw);
+		const int32_t qPitch = QuantizeRotation(entity->rotationPitch);
 
-		int32_t dx = qx - _trackedEntry.lastEncodedPos.x;
-		int32_t dy = qy - _trackedEntry.lastEncodedPos.y;
-		int32_t dz = qz - _trackedEntry.lastEncodedPos.z;
+		const int32_t dx = qx - _trackedEntry.lastEncodedPos.x;
+		const int32_t dy = qy - _trackedEntry.lastEncodedPos.y;
+		const int32_t dz = qz - _trackedEntry.lastEncodedPos.z;
 
-		bool needsTP = dx < -128 || dx >= 128 || dy < -128 || dy >= 128 || dz < -128 || dz >= 128 ||
+		const bool needsTP = dx < -128 || dx >= 128 || dy < -128 || dy >= 128 || dz < -128 || dz >= 128 ||
 		               _trackedEntry.ticksSinceTeleport >= forceTeleportTicks;
 
 		if (needsTP) {
@@ -662,10 +663,12 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 			_trackedEntry.lastEncodedYaw = qYaw;
 			_trackedEntry.lastEncodedPitch = qPitch;
 		} else {
-			bool needsRelMove = std::abs(dx) > MINIMUM_POSITION_DELTA || std::abs(dy) > MINIMUM_POSITION_DELTA ||
+			const bool needsRelMove = std::abs(dx) > MINIMUM_POSITION_DELTA || std::abs(dy) > MINIMUM_POSITION_DELTA ||
 			                    std::abs(dz) > MINIMUM_POSITION_DELTA;
-			bool needsRot = std::abs(qYaw   - _trackedEntry.lastEncodedYaw)   > _trackedEntry.profile.applyRotationThreshold ? MINIMUM_ROTATION_DELTA : 0 || 
-							std::abs(qPitch - _trackedEntry.lastEncodedPitch) > _trackedEntry.profile.applyRotationThreshold ? MINIMUM_ROTATION_DELTA : 0;
+			// Only apply rotation threshold if tracked entity profile allows it
+			const auto rotationThreshold = _trackedEntry.profile.applyRotationThreshold ? MINIMUM_ROTATION_DELTA : 0;
+			const bool needsRot = (std::abs(qYaw   - _trackedEntry.lastEncodedYaw)   > rotationThreshold) || 
+							(std::abs(qPitch - _trackedEntry.lastEncodedPitch) > rotationThreshold);
 
 			if (needsRelMove && needsRot) {
 				Packet::EntityPositionAndRotation pkt;
