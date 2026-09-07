@@ -28,6 +28,63 @@
 namespace Blocks {
 BlockBehavior blockBehaviors[BLOCK_MAX] = {};
 
+static bool CanPlaceChest(WorldManager& _world, Int3 _pos) {
+	// If any of the block surrounding us are double chests we cannot be placed
+	Direction::Value directions[4] = { Direction::Value::East, Direction::Value::West, Direction::Value::North, Direction::Value::South };
+
+	auto isDoubleChest = [&](Int3 _npos) -> bool {
+		if (_world.GetBlockId(_npos) != BLOCK_CHEST)
+			return false;
+		for (auto& dir : directions) {
+			if (_world.GetBlockId(_npos.WithOffset(dir)) == BLOCK_CHEST)
+				return true;
+		}
+		return false;
+	};
+
+	for (auto& dir : directions) {
+		if (isDoubleChest(_pos.WithOffset(dir)))
+			return false;
+	}
+	return true;
+}
+
+bool CanOpenChest(WorldManager& _world, Int3 _pos) {
+	auto chest = _world.GetTileEntityShared<TileEntityChest>(_pos);
+	if (!chest)
+		return false;
+
+	// Is there a block above us?
+	if (_world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::Up)))
+		return false;
+
+	// Check if we are a double chest
+	auto l = _world.GetBlockId({ _pos.x - 1, _pos.y, _pos.z });
+	auto r = _world.GetBlockId({ _pos.x + 1, _pos.y, _pos.z });
+	auto f = _world.GetBlockId({ _pos.x, _pos.y, _pos.z - 1 });
+	auto b = _world.GetBlockId({ _pos.x, _pos.y, _pos.z + 1 });
+	bool doubleChest = (l == BLOCK_CHEST || r == BLOCK_CHEST || f == BLOCK_CHEST || b == BLOCK_CHEST);
+
+	if (doubleChest) {
+		std::shared_ptr<TileEntityChest> partnerChest = nullptr;
+		if (l == BLOCK_CHEST)
+			partnerChest = _world.GetTileEntityShared<TileEntityChest>({ _pos.x - 1, _pos.y, _pos.z });
+		else if (r == BLOCK_CHEST)
+			partnerChest = _world.GetTileEntityShared<TileEntityChest>({ _pos.x + 1, _pos.y, _pos.z });
+		else if (f == BLOCK_CHEST)
+			partnerChest = _world.GetTileEntityShared<TileEntityChest>({ _pos.x, _pos.y, _pos.z - 1 });
+		else
+			partnerChest = _world.GetTileEntityShared<TileEntityChest>({ _pos.x, _pos.y, _pos.z + 1 });
+		if (!partnerChest)
+			return false;
+
+		if (_world.IsBlockNormalCube(partnerChest->position.WithOffset(Direction::Value::Up)))
+			return false;
+	}
+
+	return true;
+}
+
 static void TryTallPlantGrowth(WorldManager& _world, Int3 _pos, uint8_t _meta, BlockType _block) {
 	if (_world.GetBlockId(_pos.WithOffset(Direction::Value::Up)) != BLOCK_AIR)
 		return;
@@ -973,6 +1030,26 @@ void RegisterBlockBehaviors() {
 
 	blockBehaviors[BLOCK_PISTON].onBlockPlaced = onPistonPlace;
 	blockBehaviors[BLOCK_PISTON_STICKY].onBlockPlaced = onPistonPlace;
+
+	// Fence
+	blockBehaviors[BLOCK_FENCE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                               Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
+		if (_world.GetBlockId(_pos.WithOffset(Direction::Value::Down)) == BLOCK_FENCE)
+			return true;
+
+		if (!_world.GetMaterial(_pos.WithOffset(Direction::Value::Down)).isSolid)
+			return false;
+
+		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
+	};
+
+	// Chest
+	blockBehaviors[BLOCK_CHEST].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                              Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
+		if (!CanPlaceChest(_world, _pos))
+			return false;
+		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
+	};
 
 	// Slabs
 	blockBehaviors[BLOCK_SLAB].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,

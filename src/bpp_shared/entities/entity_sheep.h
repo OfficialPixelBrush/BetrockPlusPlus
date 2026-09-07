@@ -15,10 +15,27 @@ struct SheepEntity : public AnimalEntity {
 		type = EntityType::SHEEP;
 		width = 0.9f;
 		height = 1.3f;
+		color = RollFleeceColor();
 		SetMaxHealth(/*Health=*/8);
 	}
 	~SheepEntity() = default;
 	void OnDeath(Entity* _killer) override;
 	void EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;
 	bool DecodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;
+	std::optional<Tag> SerializeToNbt() override;
+	void LoadFromNbt(Tag& _nbt) override;
+
+	int RollFleeceColor() {
+		int roll = rand.NextInt(100);
+		if (roll < 5)
+			return 15; // Black
+		else if (roll < 10)
+			return 7; // Gray
+		else if (roll < 15)
+			return 8; // Light Gray
+		else if (roll < 18)
+			return 12; // Brown
+		else
+			return rand.NextInt(500) == 0 ? 6 : 0; // Pink or White
+	}
 };

@@ -129,6 +129,7 @@ void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user
 void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face);
 void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face);
 void UseShears(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack);
+void UseBucketOnEntity(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack);
 
 // Attack
 void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, Direction::Value _face);
