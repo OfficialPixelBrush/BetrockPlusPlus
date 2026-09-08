@@ -23,73 +23,79 @@
 
 namespace {
 
-EntityType GetEntityTypeFromString(std::string name) {
-	if (name == "creeper") {
+EntityType GetEntityTypeFromString(std::string _name) {
+	if (_name == "creeper") {
 		return EntityType::CREEPER;
 	}
-	if (name == "zombie") {
+	if (_name == "zombie") {
 		return EntityType::ZOMBIE;
 	}
-	if (name == "skeleton") {
+	if (_name == "skeleton") {
 		return EntityType::SKELETON;
 	}
-	if (name == "spider") {
+	if (_name == "spider") {
 		return EntityType::SPIDER;
 	}
-	if (name == "sheep") {
+	if (_name == "sheep") {
 		return EntityType::SHEEP;
 	}
-	if (name == "cow") {
+	if (_name == "cow") {
 		return EntityType::COW;
 	}
-	if (name == "pig") {
+	if (_name == "pig") {
 		return EntityType::PIG;
 	}
-	if (name == "chicken") {
+	if (_name == "chicken") {
 		return EntityType::CHICKEN;
 	}
-	if (name == "boat") {
+	if (_name == "boat") {
 		return EntityType::BOAT;
 	}
-	if (name == "minecart") {
+	if (_name == "minecart") {
 		return EntityType::MINECART;
 	}
 	return EntityType::NONE;
 }
 
+std::shared_ptr<Entity> GetEntityShared(EntityType _type) {
+	switch (_type) {
+		case EntityType::CREEPER:
+			return std::make_shared<CreeperEntity>();
+		case EntityType::ZOMBIE:
+			return std::make_shared<ZombieEntity>();
+		case EntityType::SKELETON:
+			return std::make_shared<SkeletonEntity>();
+		case EntityType::SPIDER:
+			return std::make_shared<SpiderEntity>();
+		case EntityType::SHEEP:
+			return std::make_shared<SheepEntity>();
+		case EntityType::COW:
+			return std::make_shared<CowEntity>();
+		case EntityType::PIG:
+			return std::make_shared<PigEntity>();
+		case EntityType::CHICKEN:
+			return std::make_shared<ChickenEntity>();
+		case EntityType::BOAT:
+			return std::make_shared<BoatEntity>();
+		case EntityType::MINECART:
+			return std::make_shared<MinecartEntity>();
+		default:
+			return nullptr;
+	}
+}
+
 std::string SummonEntity(const strategos::CmdNode& _cmd, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	auto entityName = _cmd.get_arg<std::string>("entityName");
-	if (!entityName)
+	auto entityType = _cmd.get_arg<std::string>("entityType");
+	if (!entityType)
 		return ERROR_REASON_PARAMETERS;
-
-	std::shared_ptr<Entity> entity;
-	auto entityType = GetEntityTypeFromString(*entityName);
 	
-	switch (entityType) {
-		case EntityType::CREEPER:
-			entity = std::make_shared<CreeperEntity>(); break;
-		case EntityType::ZOMBIE:
-			entity = std::make_shared<ZombieEntity>(); break;
-		case EntityType::SKELETON:
-			entity = std::make_shared<SkeletonEntity>(); break;
-		case EntityType::SPIDER:
-			entity = std::make_shared<SpiderEntity>(); break;
-		case EntityType::SHEEP:
-			entity = std::make_shared<SheepEntity>(); break;
-		case EntityType::COW:
-			entity = std::make_shared<CowEntity>(); break;
-		case EntityType::PIG:
-			entity = std::make_shared<PigEntity>(); break;
-		case EntityType::CHICKEN:
-			entity = std::make_shared<ChickenEntity>(); break;
-		case EntityType::BOAT:
-			entity = std::make_shared<BoatEntity>(); break;
-		case EntityType::MINECART:
-			entity = std::make_shared<MinecartEntity>(); break;
-		default:
-			return "Invalid entity name!";
-	}
+	auto eTypeEnum = GetEntityTypeFromString(*entityType);
+	if (eTypeEnum == EntityType::NONE)
+		return "Unknown entity: " + *entityType;
+	auto entity = GetEntityShared(eTypeEnum);
+	if (!entity)
+		return "Failed to create entity: " + *entityType;
 
 	Vec3 spawnPos = ctx.session->position.pos;
 	spawnPos.y += 1.0f; // Spawn above the player
@@ -97,7 +103,30 @@ std::string SummonEntity(const strategos::CmdNode& _cmd, void* _userData) {
 
 	ctx.world->entityManager.AddEntity(entity);
 
-	SendChat(*ctx.session, "§eSpawned entity!");
+	SendChat(*ctx.session, std::format("§eSpawned entity at {}!", spawnPos.Str()));
+	return "";
+}
+
+std::string SummonEntityAtPos(const strategos::CmdNode& _cmd, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	auto entityType = _cmd.get_arg<std::string>("entityType");
+	auto pos = _cmd.get_arg<strategos::Vec3>("pos");
+	if (!entityType || !pos)
+		return ERROR_REASON_PARAMETERS;
+	
+	auto eTypeEnum = GetEntityTypeFromString(*entityType);
+	if (eTypeEnum == EntityType::NONE)
+		return "Unknown entity: " + *entityType;
+	auto entity = GetEntityShared(eTypeEnum);
+	if (!entity)
+		return "Failed to create entity: " + *entityType;
+
+	Vec3 ePos = ResolveCmdVec3(*pos, ctx.session->position.pos);
+	entity->Teleport(ePos);
+
+	ctx.world->entityManager.AddEntity(entity);
+
+	SendChat(*ctx.session, std::format("§eSpawned entity at {}!", ePos.Str()));
 	return "";
 }
 
@@ -106,7 +135,12 @@ std::string SummonEntity(const strategos::CmdNode& _cmd, void* _userData) {
 void RegisterSummon(strategos::BrigadierContext& _dispatcher) {
 	_dispatcher.add_command(
 	    strategos::Node::literal("summon")
-			.describe("Summons a smart entity")
-			.op()
-			.then(strategos::Node::string("entityName").executes(SummonEntity)));
+	        .describe("Summons a smart entity")
+	        .op()
+	        .then(strategos::Node::string("entityType")
+	                .executes(SummonEntity)
+	                .then(strategos::Node::vec3("pos")
+	                    .executes(SummonEntityAtPos))
+	        )
+	);
 }
