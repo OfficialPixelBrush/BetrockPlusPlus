@@ -8,6 +8,7 @@
 */
 #include "handle_packet.h"
 #include "../blocks/server_block_behaviors.h"
+#include "../commands/command.h"
 #include "../trackers/entity_tracker.h"
 #include "blocks.h"
 #include "blocks/block_properties.h"
@@ -464,6 +465,7 @@ void PlayerAction(Packet::PlayerAction& _pkt, PlayerSession& _session, EntityTra
 		if (!entity->isSleeping)
 			break;
 		entity->isSleeping = false;
+		entity->ticksInBed = 0;
 		Packet::Animation anim;
 		anim.entityId = entity->id;
 		anim.animation = PacketData::Animation::LEAVE_BED;
@@ -507,9 +509,18 @@ void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
 	_session.entityTracker = targetDim == Dimension::Overworld ? &_server.overworldEntityTracker
 	                                                           : &_server.hellEntityTracker;
 
-	// Get our spawn point
+	// Get our spawn point. If we have a valid bed spawn in this dimension, prefer it.
 	auto world = _server.GetWorldForDimension(targetDim);
-	auto spawn = world->GetSpawnPoint(/*Random Adjust=*/true);
+	Int3 spawn;
+	if (targetDim == Dimension::Overworld && _session.hasBedSpawn &&
+	    world->GetBlockId(_session.spawnPosition.WithOffset(Direction::Value::Down)) == BLOCK_BED) {
+		spawn = _session.spawnPosition;
+	} else {
+		if (_session.hasBedSpawn)
+			SendChat(_session, "Your home bed was missing or obstructed");
+		_session.hasBedSpawn = false;
+		spawn = world->GetSpawnPoint(/*Random Adjust=*/true);
+	}
 	Vec3 spawnLocation = { double(spawn.x) + 0.5, double(spawn.y) + 0.01, double(spawn.z) + 0.5 };
 
 	// Position the new entity then register it

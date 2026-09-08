@@ -40,6 +40,7 @@ extern std::atomic<bool> shutdownRequested;
 #include <thread>
 #include <unordered_set>
 #include <vector>
+#include "gamerules.h"
 
 class Server {
 public:
@@ -66,6 +67,7 @@ public:
 	Runtime gameRuntime;
 	ChunkSender chunkSender;
 	int flushChunkCount = 10;
+	Gamerules gamerules;
 
 	void SavePlayer(const std::string& _username) {
 		auto PlayerSession = GetSessionByUsername(_username);
@@ -192,6 +194,9 @@ private:
 	void Startup();
 	void AcceptNewPlayers();
 	std::vector<std::shared_ptr<PlayerSession>> DisconnectClients();
+	// If every connected player in a dimension is currently sleeping, skip to
+	// morning and wake everyone up. Called once per Tick, per dimension.
+	void ProcessSleeping(Dimension _dimension);
 
 	// When a player breaks a block
 	void OnPlayerBlockBreak(PlayerSession& _session, WorldManager& _world) {
