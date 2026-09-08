@@ -14,6 +14,18 @@
 
 namespace {
 
+EntityType GetEntityFromString(std::string name) {
+	if (name == "creeper") {
+		return EntityType::CREEPER;
+	}
+	if (name == "boat") {
+		return EntityType::BOAT;
+	}
+	if (name == "minecart") {
+		return Entity::MINECART;
+	}
+}
+
 std::string SummonEntity(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
 

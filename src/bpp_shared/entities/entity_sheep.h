@@ -8,6 +8,8 @@
 #include "entity_animal.h"
 
 struct SheepEntity : public AnimalEntity {
+	// TODO: Replace with an Enum
+	// TODO: Could possibly combine with isSheared via 4-bit + 1-bit value?
 	int8_t color = 0;
 	bool isSheared = false;
 
