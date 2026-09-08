@@ -98,47 +98,47 @@ int RailManager::GetAdjacentTrackCount(WorldManager& _world, Int3 _pos) {
 	return count;
 }
 
-static Blocks::RailShape ResolveCleanShape(bool cn, bool cs, bool ce, bool cw, bool canCurve) {
+static Blocks::RailShape ResolveCleanShape(bool _cn, bool _cs, bool _ce, bool _cw, bool _canCurve) {
 	Blocks::RailShape shape = Blocks::RailShape::INVALID;
-	bool connectedOnZ = cn || cs;
-	bool connectedOnX = ce || cw;
+	bool connectedOnZ = _cn || _cs;
+	bool connectedOnX = _ce || _cw;
 
 	if (connectedOnZ && !connectedOnX)
 		shape = Blocks::RailShape::FlatNorthSouth;
 	if (connectedOnX && !connectedOnZ)
 		shape = Blocks::RailShape::FlatEastWest;
 
-	if (canCurve) {
-		if (cs && ce && !cn && !cw)
+	if (_canCurve) {
+		if (_cs && _ce && !_cn && !_cw)
 			shape = Blocks::RailShape::CurveSouthEast;
-		if (cs && cw && !cn && !ce)
+		if (_cs && _cw && !_cn && !_ce)
 			shape = Blocks::RailShape::CurveSouthWest;
-		if (cn && ce && !cs && !cw)
+		if (_cn && _ce && !_cs && !_cw)
 			shape = Blocks::RailShape::CurveNorthEast;
-		if (cn && cw && !cs && !ce)
+		if (_cn && _cw && !_cs && !_ce)
 			shape = Blocks::RailShape::CurveNorthWest;
 	}
 	return shape;
 }
 
-static Blocks::RailShape ApplySlope(WorldManager& _world, Int3 _pos, Blocks::RailShape shape) {
-	if (shape == Blocks::RailShape::FlatNorthSouth) {
+static Blocks::RailShape ApplySlope(WorldManager& _world, Int3 _pos, Blocks::RailShape _shape) {
+	if (_shape == Blocks::RailShape::FlatNorthSouth) {
 		if (RailManager::IsRail(
 		        _world.GetBlockId(_pos.WithOffset(Direction::Value::North).WithOffset(Direction::Value::Up))))
-			shape = Blocks::RailShape::AscendingNorth;
+			_shape = Blocks::RailShape::AscendingNorth;
 		if (RailManager::IsRail(
 		        _world.GetBlockId(_pos.WithOffset(Direction::Value::South).WithOffset(Direction::Value::Up))))
-			shape = Blocks::RailShape::AscendingSouth;
+			_shape = Blocks::RailShape::AscendingSouth;
 	}
-	if (shape == Blocks::RailShape::FlatEastWest) {
+	if (_shape == Blocks::RailShape::FlatEastWest) {
 		if (RailManager::IsRail(
 		        _world.GetBlockId(_pos.WithOffset(Direction::Value::East).WithOffset(Direction::Value::Up))))
-			shape = Blocks::RailShape::AscendingEast;
+			_shape = Blocks::RailShape::AscendingEast;
 		if (RailManager::IsRail(
 		        _world.GetBlockId(_pos.WithOffset(Direction::Value::West).WithOffset(Direction::Value::Up))))
-			shape = Blocks::RailShape::AscendingWest;
+			_shape = Blocks::RailShape::AscendingWest;
 	}
-	return shape;
+	return _shape;
 }
 
 Blocks::RailShape RailManager::DetermineRailShape(WorldManager& _world, Int3 _pos, BlockType _block) {

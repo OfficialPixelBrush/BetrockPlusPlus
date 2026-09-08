@@ -649,7 +649,7 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 		const int32_t dz = qz - _trackedEntry.lastEncodedPos.z;
 
 		const bool needsTP = dx < -128 || dx >= 128 || dy < -128 || dy >= 128 || dz < -128 || dz >= 128 ||
-		               _trackedEntry.ticksSinceTeleport >= forceTeleportTicks;
+		                     _trackedEntry.ticksSinceTeleport >= forceTeleportTicks;
 
 		if (needsTP) {
 			_trackedEntry.ticksSinceTeleport = 0;
@@ -664,11 +664,11 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 			_trackedEntry.lastEncodedPitch = qPitch;
 		} else {
 			const bool needsRelMove = std::abs(dx) > MINIMUM_POSITION_DELTA || std::abs(dy) > MINIMUM_POSITION_DELTA ||
-			                    std::abs(dz) > MINIMUM_POSITION_DELTA;
+			                          std::abs(dz) > MINIMUM_POSITION_DELTA;
 			// Only apply rotation threshold if tracked entity profile allows it
 			const auto rotationThreshold = _trackedEntry.profile.applyRotationThreshold ? MINIMUM_ROTATION_DELTA : 0;
-			const bool needsRot = (std::abs(qYaw   - _trackedEntry.lastEncodedYaw)   > rotationThreshold) || 
-							(std::abs(qPitch - _trackedEntry.lastEncodedPitch) > rotationThreshold);
+			const bool needsRot = (std::abs(qYaw - _trackedEntry.lastEncodedYaw) > rotationThreshold) ||
+			                      (std::abs(qPitch - _trackedEntry.lastEncodedPitch) > rotationThreshold);
 
 			if (needsRelMove && needsRot) {
 				Packet::EntityPositionAndRotation pkt;
