@@ -44,6 +44,12 @@ struct PendingBlock {
 	Int2 light{ 0, 15 }; // block light, sky light
 };
 
+// How many ticks make up a full day/night cycle
+constexpr TickTime DAY_LENGTH = 24000;
+// The window of time (relative to DAY_LENGTH) during which beds may be used
+constexpr TickTime NIGHT_START_TICK = 12541;
+constexpr TickTime NIGHT_END_TICK = 23458;
+
 class WorldManager : public WorldAccess {
 private:
 	std::unordered_map<Int32_2, std::vector<std::pair<Int3, Block>>> pendingBleedWrites;
@@ -107,6 +113,11 @@ public:
 	void DropInventory(Inventory& inventory, Int3 _wpos);
 	void UpdateSkylightOffset();
 	float GetCelestialAngle();
+	// Is it currently dark enough (per the vanilla sleep window) for players to sleep?
+	bool IsNight() const {
+		TickTime relativeTime = elapsedTicks % DAY_LENGTH;
+		return relativeTime >= NIGHT_START_TICK && relativeTime < NIGHT_END_TICK;
+	}
 	int GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks = true);
 	Biome GetBiome(Int2 _wpos);
 	BlockType GetBlockId(Int3 _wpos) override;

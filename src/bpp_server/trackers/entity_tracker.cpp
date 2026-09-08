@@ -245,16 +245,17 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 			passengerPkt.passengerEntityId = _entityEntry.entity->id;
 			passengerPkt.Serialize(pSession->stream);
 		}
-		// TODO: Sync with new joiners ffs
-		/*
-		if (_entityEntry.entity->isSleeping) {
-			Packet::InteractWithBlock sleepingAnim;
-			sleepingAnim.entityId = _entityEntry.entity->id;
-			sleepingAnim.interactionId = PacketData::BlockInteraction::SLEEPING;
-			sleepingAnim.position = { _position.x, static_cast<int8_t>(_position.y), _position.z };
-			sleepingAnim.Serialize(pSession->stream);
+		// If they're already sleeping, let the new joiner see them in bed.
+		if (auto* mpPlayer = dynamic_cast<EntityMPPlayer*>(_entityEntry.entity)) {
+			if (mpPlayer->isSleeping) {
+				Packet::InteractWithBlock sleepingAnim;
+				sleepingAnim.entityId = mpPlayer->id;
+				sleepingAnim.interactionId = PacketData::BlockInteraction::SLEEPING;
+				sleepingAnim.position = { mpPlayer->bedPosition.x, static_cast<int8_t>(mpPlayer->bedPosition.y),
+					                      mpPlayer->bedPosition.z };
+				sleepingAnim.Serialize(pSession->stream);
+			}
 		}
-		*/
 		break;
 	}
 	case EntityType::CREEPER: {

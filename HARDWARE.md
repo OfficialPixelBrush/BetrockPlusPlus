@@ -19,11 +19,11 @@ The client is too WIP to really say anything concrete about, however, our render
 
 The conditions to set or lower these requirements are relatively arbitrary, and mostly down to what feels right. These are only the lowest specs that have been tested and we can 100% confirm Betrock++ can run on without trouble\*, and reasonable playability. Lesser systems can definitely host a server but they aren't guaranteed to attain a playable level of performance.
 
-> As of [`8cb7559`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/8cb755915b3a9ab2d65ef61670f4d2ad02de3f83) the known minimum requirements are:
->
-> - OS: A Linux Distro with Kernel 6.12 or later
-> - Processor: At least 32-Bit capable (e.g. i586 or later) @ >500MHz
-> - Memory: ~64MB of available RAM (as in, not used by the operating system or anything else)
+As of [`8cb7559`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/8cb755915b3a9ab2d65ef61670f4d2ad02de3f83) the known minimum requirements are:
+
+- OS: A Linux Distro with Kernel 6.12 or later
+- Processor: At least 32-Bit capable (e.g. i586 or later) @ >500MHz
+- Memory: ~64MB of available RAM (as in, not used by the operating system or anything else)
 
 > [!NOTE]  
 > CPU usage is rather minimal for the most part. The biggest bottlenecks, especially on older systems, are compression and world generation. If you plan to play on such a system, try to pregenerate the area you'd like to play in, or reduce the render distance so less chunks get generated at once as players explore.

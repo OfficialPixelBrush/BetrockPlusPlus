@@ -627,6 +627,11 @@ void Server::Tick() {
 	gameRuntime.worldHell.Tick(netherPositions);
 	gameRuntime.worldHell.Update(netherPositions);
 
+	// If everyone in a dimension is asleep, skip the night.
+	// (Beds can currently only be used in the Overworld, but this stays generic.)
+	ProcessSleeping(Dimension::Overworld);
+	ProcessSleeping(Dimension::Nether);
+
 	// Send all of the block changes that have accumulated since the last Tick, then clear the list.
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChanges;
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChangesHell;
@@ -752,6 +757,76 @@ void Server::UpdateBlockBreaking(PlayerSession& _session, WorldManager& _world) 
 	}
 
 	OnPlayerBlockBreak(_session, _world);
+}
+
+void Server::ProcessSleeping(Dimension _dimension) {
+	// How long (in ticks) a player has to lie in bed before they're "fully asleep"
+	static constexpr int SLEEP_TIMER_TARGET = 100;
+
+	WorldManager* world = GetWorldForDimension(_dimension);
+	EntityTracker* tracker = GetEntityTrackerForDimension(_dimension);
+
+	int playingCount = 0;
+	int fullyAsleepCount = 0;
+	for (auto& session : players) {
+		if (!session || session->connState != ConnectionState::Playing || session->dimension != _dimension)
+			continue;
+		if (!session->entity)
+			continue;
+		playingCount++;
+
+		// Check if our bed is still there
+		// and check if it's really still night (in case someone used commands)
+		if (world->GetBlockId(session->entity->bedPosition) != BLOCK_BED || !world->IsNight()) {
+			session->entity->isSleeping = false;
+			session->entity->ticksInBed = 0;
+			Packet::Animation anim;
+			anim.entityId = session->entity->id;
+			anim.animation = PacketData::Animation::LEAVE_BED;
+			anim.Serialize(session->stream);
+			tracker->SendPacketToViewers(anim, session->entity->id);
+			continue;
+		}
+
+		if (!session->entity->isSleeping)
+			continue;
+
+		// Tick the timer up while they're lying there.
+		if (session->entity->ticksInBed < SLEEP_TIMER_TARGET) {
+			session->entity->ticksInBed++;
+
+			// The timer just ran out this tick, try to give a nightmare!
+			if (gamerules.nightmares && session->entity->ticksInBed >= SLEEP_TIMER_TARGET)
+				ServerBlock::TrySpawnNightmare(*world, *session);
+		}
+
+		if (session->entity->isSleeping && session->entity->ticksInBed >= SLEEP_TIMER_TARGET)
+			fullyAsleepCount++;
+	}
+
+	// Nobody's here, or not everybody has slept their timer out yet - nothing to do.
+	if (playingCount == 0 || fullyAsleepCount < playingCount)
+		return;
+
+	// Fast-forward to the next morning.
+	world->elapsedTicks = ((world->elapsedTicks / DAY_LENGTH) + 1) * DAY_LENGTH;
+
+	// Wake everyone up.
+	for (auto& session : players) {
+		if (!session || session->connState != ConnectionState::Playing || session->dimension != _dimension)
+			continue;
+		if (!session->entity || !session->entity->isSleeping)
+			continue;
+
+		session->entity->isSleeping = false;
+		session->entity->ticksInBed = 0;
+
+		Packet::Animation anim;
+		anim.entityId = session->entity->id;
+		anim.animation = PacketData::Animation::LEAVE_BED;
+		anim.Serialize(session->stream);
+		tracker->SendPacketToViewers(anim, session->entity->id);
+	}
 }
 
 std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {

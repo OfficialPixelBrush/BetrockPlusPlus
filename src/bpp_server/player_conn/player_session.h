@@ -59,7 +59,9 @@ struct PlayerSession {
 
 	// rotation.x = yaw, rotation.y = pitch
 	Float2 rotation = { 0.0f, 0.0f };
+	// Bed respawn point. Only meaningful when hasBedSpawn is true.
 	Int3 spawnPosition;
+	bool hasBedSpawn = false;
 
 	std::unordered_set<Int32_2> sentChunks;
 	std::unordered_set<Int32_2> flushedChunks; // Actually written to stream
@@ -134,6 +136,11 @@ struct PlayerSession {
 		dimension = _nbt.Has("Dimension") ? static_cast<Dimension>(_nbt.Get("Dimension").GetInt())
 		                                  : Dimension::Overworld;
 
+		hasBedSpawn = _nbt.Has("SpawnX") && _nbt.Has("SpawnY") && _nbt.Has("SpawnZ");
+		if (hasBedSpawn) {
+			spawnPosition = { _nbt.Get("SpawnX").GetInt(), _nbt.Get("SpawnY").GetInt(), _nbt.Get("SpawnZ").GetInt() };
+		}
+
 		if (_nbt.Has("Inventory")) {
 			auto& it3 = _nbt.Get("Inventory").GetList();
 			for (auto& item : it3) {
@@ -162,7 +169,7 @@ struct PlayerSession {
 		Tag sleepTimerTag;
 		sleepTimerTag.type = TAG_SHORT;
 		sleepTimerTag.name = "SleepTimer";
-		sleepTimerTag.shortValue = 0;
+		sleepTimerTag.shortValue = static_cast<int16_t>(entity->isSleeping ? entity->ticksInBed : 0);
 		Tag dimensionTag;
 		dimensionTag.type = TAG_INT;
 		dimensionTag.name = "Dimension";
@@ -171,6 +178,18 @@ struct PlayerSession {
 		sleepingTag.type = TAG_BYTE;
 		sleepingTag.name = "Sleeping";
 		sleepingTag.byteValue = entity->isSleeping;
+		Tag spawnXTag;
+		spawnXTag.type = TAG_INT;
+		spawnXTag.name = "SpawnX";
+		spawnXTag.intValue = spawnPosition.x;
+		Tag spawnYTag;
+		spawnYTag.type = TAG_INT;
+		spawnYTag.name = "SpawnY";
+		spawnYTag.intValue = spawnPosition.y;
+		Tag spawnZTag;
+		spawnZTag.type = TAG_INT;
+		spawnZTag.name = "SpawnZ";
+		spawnZTag.intValue = spawnPosition.z;
 		Tag inventoryTag;
 		inventoryTag.type = TAG_LIST;
 		inventoryTag.name = "Inventory";
@@ -214,6 +233,11 @@ struct PlayerSession {
 		rootTag.compound["Dimension"] = dimensionTag;
 		rootTag.compound["Sleeping"] = sleepingTag;
 		rootTag.compound["Inventory"] = inventoryTag;
+		if (hasBedSpawn) {
+			rootTag.compound["SpawnX"] = spawnXTag;
+			rootTag.compound["SpawnY"] = spawnYTag;
+			rootTag.compound["SpawnZ"] = spawnZTag;
+		}
 		return rootTag;
 	}
 };
