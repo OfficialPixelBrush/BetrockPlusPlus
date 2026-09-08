@@ -239,7 +239,7 @@ struct TriNumber {
 		std::array<Direction::Value, 3> dirs;
 		int8_t dirIndex = 0;
 		T length = Length();
-		TriNumber<T> checkVec = {x / length, y / length, z / length};
+		TriNumber<T> checkVec = { x / length, y / length, z / length };
 		if (checkVec == TriNumber<T>{ 0, 0, 0 })
 			return { Direction::Value::None, Direction::Value::None, Direction::Value::None };
 

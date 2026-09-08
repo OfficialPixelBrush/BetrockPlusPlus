@@ -128,7 +128,7 @@ struct EntityTracker {
 			return { 64, 20, true };
 		case EntityType::MINECART:
 		case EntityType::BOAT:
-			return { 128, 2, true, /*Apply rotation threshold=*/ false };
+			return { 128, 2, true, /*Apply rotation threshold=*/false };
 		case EntityType::SQUID:
 			return { 128, 3, true };
 		case EntityType::CHICKEN:

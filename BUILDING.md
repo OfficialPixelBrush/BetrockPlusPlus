@@ -42,11 +42,13 @@ Betrock++ also works on Linux! Theoretically, any Distro should be supported, so
 
 Prerequisites:
 
-- CMake 3.25 (or later)
+- CMake 3.25+
 - GCC 13+ or Clang 17+
 - Glibc 2.35+ or Musl 1.2.4+
 
-**GCC 13+** is recommended, though Clang should work too, same goes for **glibc** and **musl**. The install instructions below assume `gcc`/`g++` though.
+**GCC 13+** is recommended, though Clang should work too, same goes for **glibc** and **musl**.
+Ninja or GNU Make have also been confirmed to both work, so pick your poison.
+The install instructions below assume that `glibc`, `gcc`/`g++` and `make` are used.
 
 ##### Debian / Ubuntu / Linux Mint
 
@@ -96,6 +98,8 @@ sudo apk add glm-dev sdl3-dev mesa-dev compiler-rt
 ```
 
 > Note: `sdl3-dev` is currently only in the **edge** branch's `community` repo. Also, Alpine ships no `libasan` and GCC's AddressSanitizer is broken on musl, so for Debug builds (which use `-fsanitize=address`) compile with **clang**, which uses the ASan runtime from `compiler-rt`.
+> Additionally, you may need to install `libdeflate-static` too.
+> For some reason, just `libdeflate` is not enough sometimes.
 
 ##### Void Linux
 
@@ -133,6 +137,15 @@ First you prepare and enter the build directory. This is also where you pass in 
 cmake -S . -B build
 cd build
 ```
+
+> Tip: If you have `ccache` and `mold` installed, you can speed up iterative builds with:
+> ```bash
+> cmake -S . -B build -G Ninja \
+>   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+>   -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+>   -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=mold" \
+>   -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=mold"
+> ```
 
 This will make a Release Server build. If you'd like to build a client instead, use
 
