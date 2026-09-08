@@ -16,10 +16,10 @@ std::optional<Tag> SheepEntity::SerializeToNbt() {
 	auto tag = AnimalEntity::SerializeToNbt();
 	if (!tag)
 		return std::nullopt;
-	Tag color;
-	color.type = TAG_BYTE;
-	color.name = "Color";
-	color.byteValue = this->color;
+	Tag tagColor;
+	tagColor.type = TAG_BYTE;
+	tagColor.name = "Color";
+	tagColor.byteValue = this->color;
 
 	Tag sheared;
 	sheared.type = TAG_BYTE;
