@@ -26,7 +26,7 @@ std::optional<Tag> SheepEntity::SerializeToNbt() {
 	sheared.name = "Sheared";
 	sheared.byteValue = this->isSheared;
 
-	tag->compound["Color"] = color;
+	tag->compound["Color"] = tagColor;
 	tag->compound["Sheared"] = sheared;
 
 	return tag;
