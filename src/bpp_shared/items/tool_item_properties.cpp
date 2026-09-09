@@ -205,6 +205,7 @@ void RegisterAll() {
 	}
 	toolBehavior[Items::Id::SHEARS] = ToolBehavior{ .onEntityUse = UseShears };
 	toolBehavior[Items::Id::BUCKET] = ToolBehavior{ .onEntityUse = UseBucketOnEntity };
+	toolBehavior[Items::Id::SADDLE] = ToolBehavior{ .onEntityUse = UseSaddle };
 
 	// Item behaviors
 	itemBehavior[APPLE].onUse = EatFood;
