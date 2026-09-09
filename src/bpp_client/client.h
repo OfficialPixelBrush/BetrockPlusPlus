@@ -16,7 +16,6 @@
 #include "packet/client_packet_dispatcher.h"
 #include "packet/handle_client_packet.h"
 #include "renderer.h"
-#include "server.h"
 #include "window.h"
 
 class Client {

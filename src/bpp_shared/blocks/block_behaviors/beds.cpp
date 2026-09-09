@@ -1,0 +1,188 @@
+/*
+ * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+*/
+
+#include "blocks/block_behaviors.h"
+#include "internal.h"
+#include "helpers/direction_fixer.h"
+#include "helpers/java/java_math.h"
+#include "numeric_structs.h"
+#include "blocks.h"
+#include "blocks/block_properties.h"
+#include "dimensions.h"
+#include "entities/entity_falling_block.h"
+#include "entities/entity_player.h"
+#include "entities/entity_skeleton.h"
+#include "entities/entity_spider.h"
+#include "entities/entity_zombie.h"
+#include "enums/items.h"
+#include "generator/overworld/tree_gen.h"
+#include "items/item_properties.h"
+#include "logger.h"
+#include "packet_data.h"
+#include "rail_manager.h"
+#include "redstone_manager.h"
+#include "tick_scheduler.h"
+#include "tile_entities/tile_entity.h"
+#include "world.h"
+
+namespace Blocks {
+
+std::vector<Int3> GetBedApproachSpots(WorldManager& _world, Int3 _headPos, Int3 _footPos) {
+	std::vector<Int3> spots;
+	Direction::Value dirs[4] = { Direction::Value::North, Direction::Value::South, Direction::Value::East,
+		                         Direction::Value::West };
+	for (Int3 bedPos : { _headPos, _footPos }) {
+		for (auto dir : dirs) {
+			Int3 candidate = bedPos.WithOffset(dir);
+			if (candidate == _headPos || candidate == _footPos)
+				continue;
+			if (!_world.InBounds(candidate.y))
+				continue;
+			if (_world.IsOpenGroundSpot(candidate))
+				spots.push_back(candidate);
+		}
+	}
+	return spots;
+}
+
+// Once a sleeping player's sleep timer runs out, up to 20 monsters attempt to
+// spawn around them in a 32x16x32 area. Any that can path to the bed get
+// teleported next to it and wake the sleeper up, without skipping the night.
+void TriggerNightmareSpawns(WorldManager& _world, PlayerEntity& _player, Int3 _headPos, Int3 _footPos) {
+	static constexpr int MAX_SPAWN_ATTEMPTS = 20;
+	static constexpr int HORIZONTAL_RADIUS = 16; // 32 wide
+	static constexpr int VERTICAL_RADIUS = 8;    // 16 tall
+
+	auto approachSpots = Blocks::GetBedApproachSpots(_world, _headPos, _footPos);
+	bool wokenByNightmare = false;
+
+	for (int attempt = 0; attempt < MAX_SPAWN_ATTEMPTS; attempt++) {
+		Int3 pos = {
+			_headPos.x + _world.rand.NextInt(HORIZONTAL_RADIUS * 2 + 1) - HORIZONTAL_RADIUS,
+			_headPos.y + _world.rand.NextInt(VERTICAL_RADIUS * 2 + 1) - VERTICAL_RADIUS,
+			_headPos.z + _world.rand.NextInt(HORIZONTAL_RADIUS * 2 + 1) - HORIZONTAL_RADIUS,
+		};
+		if (!_world.InBounds(pos.y) || !_world.IsOpenGroundSpot(pos))
+			continue;
+
+		std::shared_ptr<HostileEntity> candidate;
+		switch (_world.rand.NextInt(3)) {
+		case 0:
+			candidate = std::make_shared<ZombieEntity>();
+			break;
+		case 1:
+			candidate = std::make_shared<SkeletonEntity>();
+			break;
+		default:
+			candidate = std::make_shared<SpiderEntity>();
+			break;
+		}
+		candidate->world = &_world;
+		candidate->entityManager = &_world.entityManager;
+
+		Vec3 spawnPosition = { pos.x + 0.5, double(pos.y), pos.z + 0.5 };
+		float rotationYaw = _world.rand.NextFloat() * 360.0f;
+		candidate->Teleport(spawnPosition, { rotationYaw, 0.0 });
+		if (!candidate->CanSpawnAt(pos))
+			continue;
+
+		_world.entityManager.AddEntity(candidate);
+
+		// Can this one actually reach the bed?
+		if (approachSpots.empty())
+			continue;
+
+		Int3 goal = approachSpots[size_t(_world.rand.NextInt(int(approachSpots.size())))];
+		Pathfinder pathfinder(&_world);
+		auto path = pathfinder.FindPath(pos, goal, candidate->width, candidate->height, 32.0f);
+		if (path.empty())
+			continue;
+
+		Vec3 teleportPosition = { goal.x + 0.5, double(goal.y), goal.z + 0.5 };
+		candidate->Teleport(teleportPosition);
+		wokenByNightmare = true;
+	}
+
+	if (!wokenByNightmare)
+		return;
+
+	_player.WakeUp();
+}
+
+void TrySpawnNightmare(WorldManager& _world, PlayerEntity& _player) {
+	Int3 headPos = _player.bedPosition;
+
+	// The bed might've been broken out from under them while they were dozing off
+	if (_world.GetBlockId(headPos) != BLOCK_BED) {
+		_player.WakeUp();
+		return;
+	}
+
+	auto headMeta = _world.GetMetadata(headPos);
+	auto bedDir = GetDirectionFromMeta(BLOCK_BED, headMeta);
+	Int3 footPos = headPos.WithOffset(Direction::Opposite(bedDir));
+	TriggerNightmareSpawns(_world, _player, headPos, footPos);
+}
+
+void RegisterBedBehaviors() {
+	blockBehaviors[BlockType::BLOCK_BED] = {
+		.getSelectionBox = BedAabb,
+		.getRayBounds = BedAabb,
+		.getCollider = BedCollider,
+	};
+
+	blockBehaviors[BLOCK_BED].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                             Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
+		// Beds can only be placed by clicking the top face of a block
+		if (_face != Direction::Value::Up)
+			return false;
+
+		// _pos is already the target cell
+		const Int3 placePos = _pos;
+		if (!_world.InBounds(placePos.y))
+			return false;
+
+		const auto dir = Direction::FromAngle(_placer.rotationYaw);
+		const Int3 headPos = placePos.WithOffset(dir);
+
+		// Is this placement valid?
+		if (!_world.IsBlockNormalCube(placePos.WithOffset(Direction::Value::Down)) ||
+		    !_world.IsBlockNormalCube(headPos.WithOffset(Direction::Value::Down)))
+			return false;
+		if (!IsReplaceable(_world, placePos) || !IsReplaceable(_world, headPos))
+			return false;
+
+		uint8_t meta = GetMetaFromDirection(BLOCK_BED, dir);
+		_world.SetBlock(placePos, _blockId, meta);
+		_world.SetBlock(headPos, _blockId, uint8_t(meta | 0b1000));
+
+		return true;
+	};
+	//blockBehaviors[BLOCK_BED].onBlockClicked = ToggleDoor;
+	blockBehaviors[BLOCK_BED].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
+		auto meta = _world.GetMetadata(_pos);
+		auto dir = GetDirectionFromMeta(BLOCK_BED, meta);
+		if (meta & 0b1000) {
+			// We are the head of the bed
+			// Offset one down
+			_pos.Offset(Direction::Opposite(dir));
+			if (_world.GetBlockId(_pos) != BLOCK_BED)
+				// The foot is not a bed block!
+				return;
+		}
+		// Since we're now guaranteed to be pointing at the foot of the bed,
+		// we can continue like this
+		Int3 headPos = _pos.WithOffset(dir);
+		if (_world.GetBlockId(headPos) == BLOCK_BED && (_world.GetMetadata(headPos) & 0b1000)) {
+			_world.SetBlock(headPos, BLOCK_AIR);
+		}
+		BreakAndDropBlock(_world, _pos);
+	};
+
+}
+
+}; // namespace Blocks

@@ -12,13 +12,30 @@ option(ONLINE_MODE_AUTHENTICATION "Allows authentication with Mojang servers (re
 option(BETACRAFT_HEARTBEAT "Ping the Betacraft server list (requires libcurl and nlohmann_json)" OFF)
 option(CRASH_LOGGING "Lets the server catch crashes and create crash reports" ON)
 option(DISCORD_INTEGRATION "Enable Discord bot integration via D++ (server only)" OFF)
+option(EXPERIMENTAL "Experimental or work-in-progress features/changes" OFF)
 set(GENERATION_PRECISION "DOUBLE" CACHE STRING "Reduces perlin and simplex noise precision (all values other than DOUBLE are experimental and not really supported)")
 set_property(CACHE GENERATION_PRECISION PROPERTY STRINGS "DOUBLE" "FLOAT" "INT64" "INT32")
+
+option(BUILD_SERVER "Build as server" ON)
+option(SDL_VENDORED "Use vendored (locally built) SDL library" ON)
+
 if(DISCORD_INTEGRATION)
     list(APPEND VCPKG_MANIFEST_FEATURES "discord")
 endif()
 if(BETACRAFT_HEARTBEAT)
     list(APPEND VCPKG_MANIFEST_FEATURES "betacraft-heartbeat")
+endif()
+# curl/glm/sdl3 are only needed for a subset of configurations; pulling them
+# in unconditionally used to make vcpkg build (and the client link against)
+# libraries that particular builds never use.
+if(ONLINE_MODE_AUTHENTICATION OR BETACRAFT_HEARTBEAT)
+    list(APPEND VCPKG_MANIFEST_FEATURES "curl-support")
+endif()
+if(NOT BUILD_SERVER)
+    list(APPEND VCPKG_MANIFEST_FEATURES "client")
+    if(NOT SDL_VENDORED)
+        list(APPEND VCPKG_MANIFEST_FEATURES "client-sdl3")
+    endif()
 endif()
 
 project(Betrock++ VERSION 0.0.1)
@@ -34,14 +51,11 @@ if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
         "MinSizeRel")
 endif()
 
-# Build as server by default
-option(BUILD_SERVER "Build as server" ON)
-
 find_package(libdeflate CONFIG REQUIRED)
 
 # Building as a client, we need this extra stuff
-
-option(SDL_VENDORED "Use vendored (locally built) SDL library" ON)
+# (BUILD_SERVER / SDL_VENDORED are declared above project(), so vcpkg only
+# fetches what this particular configuration actually needs.)
 
 if(BUILD_SERVER)
 message(STATUS "Building as Server")
@@ -55,6 +69,7 @@ FetchContent_Declare(
     SDL3
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
     GIT_TAG        release-3.4.12
+    GIT_SHALLOW    TRUE
 )
 
 FetchContent_MakeAvailable(SDL3)
@@ -148,6 +163,18 @@ set(SHARED_SOURCES
     src/bpp_shared/world/rail_manager.cpp
     src/bpp_shared/blocks/block_properties_behaviors.cpp
     src/bpp_shared/blocks/block_behaviors.cpp
+    src/bpp_shared/blocks/block_behaviors/common.cpp
+    src/bpp_shared/blocks/block_behaviors/fluids.cpp
+    src/bpp_shared/blocks/block_behaviors/rails.cpp
+    src/bpp_shared/blocks/block_behaviors/redstone.cpp
+    src/bpp_shared/blocks/block_behaviors/plants.cpp
+    src/bpp_shared/blocks/block_behaviors/doors.cpp
+    src/bpp_shared/blocks/block_behaviors/beds.cpp
+    src/bpp_shared/blocks/block_behaviors/chests.cpp
+    src/bpp_shared/blocks/block_behaviors/falling_blocks.cpp
+    src/bpp_shared/blocks/block_behaviors/portal.cpp
+    src/bpp_shared/blocks/block_behaviors/misc.cpp
+    src/bpp_shared/blocks/block_behaviors/drops.cpp
     src/bpp_shared/blocks/block_properties.cpp
     src/bpp_shared/items/item_map.cpp
     src/bpp_shared/items/item_properties.cpp
@@ -345,6 +372,28 @@ else()
         glm::glm
         OpenGL::GL
         Threads::Threads
+    )
+endif()
+
+# Precompiled headers
+# <format> and nbt.h are pulled in, directly or transitively, by a large
+# fraction of this project's translation units (nbt.h alone by 7+ TUs, and
+# more via headers that include it). Re-parsing/re-instantiating them once
+# per TU is pure overhead, since none of it is per-TU-specific. On the
+# server, server.h is an even bigger win: it's included by ~25 of the
+# server's translation units and itself rolls up packets.h, world.h,
+# block_behaviors.h and friends, so precompiling it amortizes that whole
+# header graph across the build instead of re-parsing it in every file.
+if(BUILD_SERVER)
+    target_precompile_headers(BetrockPlusPlus PRIVATE
+        <format>
+        "${PROJECT_SOURCE_DIR}/src/bpp_shared/nbt/nbt.h"
+        "${PROJECT_SOURCE_DIR}/src/bpp_server/server.h"
+    )
+else()
+    target_precompile_headers(BetrockPlusPlus PRIVATE
+        <format>
+        "${PROJECT_SOURCE_DIR}/src/bpp_shared/nbt/nbt.h"
     )
 endif()
 

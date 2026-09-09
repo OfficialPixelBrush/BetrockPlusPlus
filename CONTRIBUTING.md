@@ -35,7 +35,7 @@ The following covers the most important parts on how we style our code. These ar
 - File and directory names are in `snake_case`
 - We use `LF`-only line endings
 - Code files are `.cpp`, Headers are `.h`. While unconventional, its done so headers stick out better among the `.cpp` files. They are **NOT** C-header files!
-- **Include the copyright notice at the top!** This also serves as a nice way for people to get credited, if the git history is ever lost. ***Any change*** will get you added to there (within reason). If one already exists, be sure to add your own name *after* those who came before you.
+- **Include the copyright notice at the top!** This also serves as a nice way for people to get credited, if the git history is ever lost. _**Any change**_ will get you added to there (within reason). If one already exists, be sure to add your own name _after_ those who came before you.
 
 Use the template below if you're creating a new page.
 
@@ -58,20 +58,23 @@ clang-format -i $(find ./src -name "*.cpp" -o -name "*.h")
 ```
 
 ### General
+
 - Avoid old-style casts, e.g. `(int)5.0f` -> `int(5.0f)`. Using `static_cast<int>(5.0f)` is fine too
 
 ### Variables
+
 - Varialbes are written in `cascalCase`
 - `#define` blocks and `constexpr` are written in all uppercase snake case, aka `SCREAMING_SNAKE_CASE`
 - Avoid **ambiguous abbrevations**. Something like `pos` obviously means position, but just `p` or `m` could be anything. In for-loops or similar these are fine as iterators though
 - **Immutable variables** should be marked as `const`
 - **Magic numbers** should be turned into `#define` blocks or `constexpr` variables if they only belong to a specific class, struct or function
 - Use types that guarantee a **known bit-width** (i.e. `int32_t`, `int16_t` or `int8_t`), unless you need the variable to be architecture dependent, or it's required by an external library that doesn't follow our rules to work
-- Enums __must__ have a type
+- Enums **must** have a type
 - It's often smart to make enums into **enum classes**, as to avoid arbitrary associations with specific numbers or values
 - **Parameters** are prefixed with an underscore, e.g. `_pos`, `_entity`
 
 ### Functions
+
 - Functions are written in `PascalCase`
 - Make use of **existing functionality**. Don't reinvent the wheel. Use what exists!
 - While we are using C++, **avoid using classes** unless necessary or if it results in much cleaner code. Thanks to C++, structs can provide a lot of similar capabilities.
@@ -79,6 +82,7 @@ clang-format -i $(find ./src -name "*.cpp" -o -name "*.h")
 - Only **pass by reference if it makes sense**. A `bool` can be passed by value. If a set of values are always together, turn them into a struct, then pass that struct of values.
 - **Order variables** in structs from largest to smallest, as to reduce padding
 - Combine bools via **bitfields**
+
 ```cpp
 // (2 Bytes)
 bool value1;

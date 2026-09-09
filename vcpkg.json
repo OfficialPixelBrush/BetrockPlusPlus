@@ -2,12 +2,27 @@
   "name": "betrockplusplus",
   "version-string": "0.0.1",
   "dependencies": [
-    "libdeflate",
-    "glm",
-    "sdl3",
-    "curl"
+    "libdeflate"
   ],
   "features": {
+    "curl-support": {
+      "description": "libcurl, needed for ONLINE_MODE_AUTHENTICATION and/or BETACRAFT_HEARTBEAT",
+      "dependencies": [
+        "curl"
+      ]
+    },
+    "client": {
+      "description": "Common client-only dependencies (BUILD_SERVER=OFF)",
+      "dependencies": [
+        "glm"
+      ]
+    },
+    "client-sdl3": {
+      "description": "vcpkg-provided SDL3, only needed when BUILD_SERVER=OFF and SDL_VENDORED=OFF",
+      "dependencies": [
+        "sdl3"
+      ]
+    },
     "discord": {
       "description": "Optional Discord Gateway bot integration via D++",
       "dependencies": [
