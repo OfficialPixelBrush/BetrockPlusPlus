@@ -5,6 +5,7 @@
  *
 */
 
+#ifdef EXPERIMENTAL
 #pragma once
 
 #include "../numeric_structs.h"
@@ -30,3 +31,4 @@ void AppendPixel(std::vector<uint8_t>& _mapData, const uint8_t _value);
 void InitGraphics(std::vector<uint8_t>& _mapData, const Byte2 _offset);
 void PlaceMarkers(std::vector<uint8_t>& _mapData, const std::vector<MarkerPlacement> _markers);
 }; // namespace Map
+#endif

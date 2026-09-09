@@ -83,8 +83,8 @@ void EntitySpawner::TrySpawnEntities(WorldManager& _world, const std::vector<Cli
 			continue;
 
 		for (auto& cpos : chunksToSpawnIn) {
-			Int3 anchorPos = { cpos.x * 16 + _world.rand.NextInt(16), _world.rand.NextInt(128),
-				               cpos.z * 16 + _world.rand.NextInt(16) };
+			Int3 anchorPos = { cpos.x * CHUNK_WIDTH + _world.rand.NextInt(CHUNK_WIDTH), _world.rand.NextInt(CHUNK_HEIGHT),
+				               cpos.z * CHUNK_WIDTH + _world.rand.NextInt(CHUNK_WIDTH) };
 
 			if (_world.IsBlockNormalCube(anchorPos) || _world.GetMaterial(anchorPos).isSolid)
 				continue; // Discard this chunk
