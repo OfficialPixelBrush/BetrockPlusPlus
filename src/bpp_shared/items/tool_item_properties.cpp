@@ -11,6 +11,7 @@
 #include "item_properties.h"
 #include "items.h"
 #include "server.h"
+#include "entities/entity_painting.h"
 #include "tool_properties.h"
 
 namespace Items {
@@ -236,6 +237,20 @@ void RegisterAll() {
 
 		_world.SetBlock(placePos, BLOCK_CROP_WHEAT);
 		_stack->DecrementCount(1);
+	};
+
+	itemBehavior[PAINTING].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+	                                          Direction::Value _face) {
+		if (_face == Direction::Value::Down || _face == Direction::Value::Up)
+			return;
+
+		PaintingEntity painting(_pos, _face);
+		painting.world = &_world;
+		painting.entityManager = &_world.entityManager;
+		if (painting.PickValidArt()) {
+			_world.entityManager.AddEntity(std::make_shared<PaintingEntity>(painting));
+			_stack->DecrementCount(1);
+		}
 	};
 
 	itemBehavior[SIGN].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,

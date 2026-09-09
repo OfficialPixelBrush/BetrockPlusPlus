@@ -17,6 +17,7 @@
 #include "entities/entity_chicken.h"
 #include "entities/entity_boat.h"
 #include "entities/entity_minecart.h"
+#include "entities/entity_painting.h"
 #include "networking/packets.h"
 #include <memory>
 #include <utility>
@@ -54,10 +55,13 @@ EntityType GetEntityTypeFromString(std::string _name) {
 	if (_name == "minecart") {
 		return EntityType::MINECART;
 	}
+	if (_name == "painting") {
+		return EntityType::PAINTING;
+	}
 	return EntityType::NONE;
 }
 
-std::shared_ptr<Entity> GetEntityShared(EntityType _type) {
+std::shared_ptr<Entity> GetEntityShared(EntityType _type, Vec3 _pos) {
 	switch (_type) {
 		case EntityType::CREEPER:
 			return std::make_shared<CreeperEntity>();
@@ -90,15 +94,16 @@ std::string SummonEntity(const strategos::CmdNode& _cmd, void* _userData) {
 	if (!entityType)
 		return ERROR_REASON_PARAMETERS;
 	
+	Vec3 spawnPos = ctx.session->position.pos;
+	spawnPos.y += 1.0f; // Spawn above the player
+
 	auto eTypeEnum = GetEntityTypeFromString(*entityType);
 	if (eTypeEnum == EntityType::NONE)
 		return "Unknown entity: " + *entityType;
-	auto entity = GetEntityShared(eTypeEnum);
+	auto entity = GetEntityShared(eTypeEnum, spawnPos);
 	if (!entity)
 		return "Failed to create entity: " + *entityType;
 
-	Vec3 spawnPos = ctx.session->position.pos;
-	spawnPos.y += 1.0f; // Spawn above the player
 	entity->Teleport(spawnPos);
 
 	ctx.world->entityManager.AddEntity(entity);
@@ -114,14 +119,14 @@ std::string SummonEntityAtPos(const strategos::CmdNode& _cmd, void* _userData) {
 	if (!entityType || !pos)
 		return ERROR_REASON_PARAMETERS;
 	
+	Vec3 ePos = ResolveCmdVec3(*pos, ctx.session->position.pos);
 	auto eTypeEnum = GetEntityTypeFromString(*entityType);
 	if (eTypeEnum == EntityType::NONE)
 		return "Unknown entity: " + *entityType;
-	auto entity = GetEntityShared(eTypeEnum);
+	auto entity = GetEntityShared(eTypeEnum, ePos);
 	if (!entity)
 		return "Failed to create entity: " + *entityType;
 
-	Vec3 ePos = ResolveCmdVec3(*pos, ctx.session->position.pos);
 	entity->Teleport(ePos);
 
 	ctx.world->entityManager.AddEntity(entity);

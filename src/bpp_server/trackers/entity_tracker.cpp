@@ -9,6 +9,8 @@
 #include "entities.h"
 #include "entities/entity_item.h"
 #include "entities/entity_mobile.h"
+#include "entities/entity_painting.h"
+#include "direction_fixer.h"
 #include "logger.h"
 #include "packet_data.h"
 #include <algorithm>
@@ -377,6 +379,19 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pktRot.Serialize(pSession->stream);
 		break;
 	}
+	case EntityType::PAINTING: {
+		PaintingEntity* painting = dynamic_cast<PaintingEntity*>(_entityEntry.entity);
+		if (!painting)
+			break;
+
+		Packet::SpawnPainting pkt;
+		pkt.title = painting->art.title;
+		pkt.entityId = painting->id;
+		pkt.qPosition = painting->blockCoordinates;
+		pkt.direction = FromDirectionToPaintingDirection(painting->direction);
+		pkt.Serialize(pSession->stream);
+		break;
+	}
 	case EntityType::FALLING_SAND: {
 		Packet::SpawnObject pkt;
 		pkt.entityId = _entityEntry.entity->id;
@@ -574,6 +589,8 @@ void EntityTracker::UpdateDamageState(TrackedEntry& _trackedEntry) {
 
 // TODO: Unnest this a bit
 void EntityTracker::Update(TrackedEntry& _trackedEntry) {
+	if (_trackedEntry.profile.updateFrequency == INT_MAX)
+		return;
 	auto& entity = _trackedEntry.entity;
 
 	// If we are a mobile entity then send the damage state and update our equipment

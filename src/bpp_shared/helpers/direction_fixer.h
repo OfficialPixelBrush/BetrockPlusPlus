@@ -22,3 +22,5 @@ Direction::Value GetDirectionFromMeta(const BlockType _type, const uint8_t _meta
 uint8_t GetMetaFromDirection(const BlockType _type, const Direction::Value _dir);
 Direction::Value FaceDirectionToDirection(const PacketData::FaceDirection _face);
 PacketData::FaceDirection DirectionToFaceDirection(const Direction::Value _dir);
+Direction::Value FromPaintingDirectionToDirection(const PacketData::PaintingDirection _value);
+PacketData::PaintingDirection FromDirectionToPaintingDirection(const Direction::Value _dir);

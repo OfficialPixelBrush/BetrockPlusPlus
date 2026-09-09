@@ -522,6 +522,7 @@ void WorldManager::DrainLoadQueue() {
 
 		// TODO: Do we need to use a raw pointer for the following?
 		auto rawChunkPtr = chunk.get();
+
 		// Register our tile entities
 		RegisterChunkTileEntities(rawChunkPtr);
 
