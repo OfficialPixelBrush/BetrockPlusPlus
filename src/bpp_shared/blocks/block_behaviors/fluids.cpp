@@ -274,7 +274,8 @@ void RegisterFluidBehaviors() {
 		// Are we a source block?
 		if (!isSource) {
 			// We aren't a source block so we need to update our level
-			int8_t adjacentSourceCount = 0;
+			// TODO: adjacentSourceCount isn't used?
+			//int8_t adjacentSourceCount = 0;
 			int lowestNeighborLevel = 999;
 			int d[4] = { -1, 1, 0, 0 };
 			for (int i = 0; i < 4; i++) {
@@ -286,8 +287,8 @@ void RegisterFluidBehaviors() {
 					auto neighborLevel = _world.GetMetadata({ dx, _pos.y, dz });
 					auto effectiveLevel = neighborLevel >= 8 ? 0 : neighborLevel;
 					// Yes !neighborLevel would work here but this is more explicit
-					if (neighborLevel == 0)
-						adjacentSourceCount++;
+					//if (neighborLevel == 0)
+					//	adjacentSourceCount++;
 					if (effectiveLevel < lowestNeighborLevel)
 						lowestNeighborLevel = effectiveLevel;
 				}

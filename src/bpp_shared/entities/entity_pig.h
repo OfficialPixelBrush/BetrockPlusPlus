@@ -8,7 +8,7 @@
 #include "entity_animal.h"
 
 struct PigEntity : public AnimalEntity {
-	bool saddled = false;
+	bool isSaddled = false;
 	PigEntity() : AnimalEntity() {
 		type = EntityType::PIG;
 		width = 0.9f;
@@ -17,4 +17,8 @@ struct PigEntity : public AnimalEntity {
 	~PigEntity() = default;
 	void OnDeath(Entity* _killer) override;
 	void OnPlayerInteract(PlayerEntity* _entity) override;
+	void EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;
+	bool DecodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;
+	std::optional<Tag> SerializeToNbt() override;
+	void LoadFromNbt(Tag& _nbt) override;
 };
