@@ -243,6 +243,7 @@ void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std
 	Packet::Disconnect kick;
 	kick.reason = _reason;
 	kick.Serialize(_session.stream);
+	_session.stream.FlushWriteBufferBlocking();
 	_session.stream.SetConnected(false);
 	if (_doSave)
 		_server.SavePlayer(_session.username);

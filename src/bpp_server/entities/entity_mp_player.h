@@ -14,6 +14,12 @@ struct EntityMPPlayer : public PlayerEntity {
 	PlayerSession* session = nullptr;
 	EntityHealth lastNotifiedHealth = health;
 	bool movedThisTick : 1 = false;
+	int ticksInAir = 0;
+	int messagesThisTick = 0;
+	double accumulatedUpDistance = 0.0;
+	double simulatedFallDistance = 0.0;
+	Vec3 firstUpPosition = {};
+	Vec3 previousVelocity = {};
 	EntityMPPlayer() : PlayerEntity() {
 		hasPhysics = false;
 	}

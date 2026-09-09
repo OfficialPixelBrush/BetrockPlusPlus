@@ -31,10 +31,6 @@ SleepFailureReason EntityMPPlayer::TrySleep(Int3 _pos) {
 	anim.animation = PacketData::Animation::PUNCH;
 	session->entityTracker->SendPacketToViewers(anim, this->id);
 	session->entityTracker->SendPacketToViewers(pkt, this->id);
-	session->hasBedSpawn = true;
-
-	Int3 headPos = _pos;
-	session->spawnPosition = headPos.WithOffset(Direction::Value::Up);
 
 	this->Teleport(this->position, { rotationYaw, rotationPitch });
 
@@ -217,11 +213,48 @@ void EntityMPPlayer::HandlePositionChecks() {
 		// How far the client claims to have moved this tick
 		double claimedTravelDistSq = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
 		if (claimedTravelDistSq > 100.0) {
-			GlobalLogger().warn << "Client " << session->username << " moved wrongly!\n";
 			movedWrong = true;
 		}
 		Move(delta);
 		movedThisTick = true;
+
+		// Simulate our own fall distance / on ground
+		// Anti cheat is fun :p
+		if (inWater || onGround || onLadder()) {
+			simulatedFallDistance = 0;
+		} else if (delta.y < 0) {
+			simulatedFallDistance -= delta.y;
+		}
+
+		// Ignore if something is resetting our fall distance to 0
+		// like ladders, water, etc
+		if (simulatedFallDistance != 0) {
+			const int VERTICAL_MAX = 4.0;
+
+			// Moved too fast down in one tick
+			if (delta.y < -VERTICAL_MAX)
+				movedWrong = true;
+
+			// Went up too far while nothing could be pushing us up
+			if (delta.y > 0) {
+				ticksInAir++;
+				accumulatedUpDistance += delta.y;
+				if (accumulatedUpDistance > VERTICAL_MAX) {
+					lastPosition = firstUpPosition;
+					movedWrong = true;
+				}
+				if (ticksInAir == 1 && delta.y > 0.5) {
+					lastPosition = firstUpPosition;
+					movedWrong = true;
+				}
+			} else {
+				ticksInAir = 0;
+				accumulatedUpDistance = 0;
+				firstUpPosition = this->position;
+			}
+		}
+
+		this->previousVelocity = delta;
 
 		// Reset on ground to what the client last claimed
 		onGround = savedOnGround;
@@ -263,6 +296,9 @@ void EntityMPPlayer::HandlePositionChecks() {
 		bool clearNow = collidingBoxes.empty();
 
 		bool willCorrect = (wasClearBefore && (residualTooLarge || !clearNow)) || movedWrong;
+
+		if (movedWrong)
+			GlobalLogger().warn << "Client " << session->username << " moved wrongly!\n";
 
 		if (willCorrect) {
 			Vec3 safeRollback = { lastPosition.x, lastPosition.y + ROLLBACK_NUDGE, lastPosition.z };
@@ -345,6 +381,8 @@ void EntityMPPlayer::Tick() {
 		Move(none);
 		onGround = savedOnGround;
 	}
+
+	this->messagesThisTick = 0;
 
 	// Always trust rotations
 	this->rotationYaw = session->rotation.x;

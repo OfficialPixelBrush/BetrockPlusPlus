@@ -200,8 +200,8 @@ void Entity::UnmountEntity() {
 		Vec3 unmountPos = lockVehicle->position;
 		unmountPos.y = lockVehicle->collider.minY + lockVehicle->height;
 		this->Teleport(unmountPos, { this->rotationYaw, this->rotationPitch });
-		this->OnDismountEntity();
 	}
+	this->OnDismountEntity();
 	this->vehicle.reset();
 }
 
