@@ -17,6 +17,7 @@
 
 class WorldManager;
 struct Entity;
+struct PlayerEntity;
 struct PlayerSession;
 
 namespace Blocks {
@@ -26,6 +27,9 @@ bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _pla
 void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer);
 void GenericExplode(WorldManager& _world, Int3 _pos);
 bool CanOpenChest(WorldManager& _world, Int3 _pos);
+std::vector<Int3> GetBedApproachSpots(WorldManager& _world, Int3 _headPos, Int3 _footPos);
+void TriggerNightmareSpawns(WorldManager& _world, PlayerEntity& _player, Int3 _headPos, Int3 _footPos);
+void TrySpawnNightmare(WorldManager& _world, PlayerEntity& _player);
 
 struct BlockBehavior {
 	// Called when we need to get the AABB for the selection box

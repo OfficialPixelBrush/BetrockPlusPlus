@@ -41,19 +41,26 @@ std::string FillArea(const strategos::CmdNode& _cmd, void* _userData) {
 	if (pos0.y >= CHUNK_HEIGHT || pos0.y < 0 || pos1.y >= CHUNK_HEIGHT || pos1.y < 0)
 		return ERROR_REASON_PARAMETERS;
 
-	int64_t width = std::abs(pos1.x - pos0.x) + 1;
-	int64_t height = std::abs(pos1.y - pos0.y) + 1;
-	int64_t depth = std::abs(pos1.z - pos0.z) + 1;
+	// Normalize
+	Int3 minPos{ std::min(pos0.x, pos1.x), std::min(pos0.y, pos1.y), std::min(pos0.z, pos1.z) };
+	Int3 maxPos{ std::max(pos0.x, pos1.x), std::max(pos0.y, pos1.y), std::max(pos0.z, pos1.z) };
+
+	if (!ctx.world->AABBinValidChunks({double(minPos.x), double(minPos.y), double(minPos.z), double(maxPos.x), double(maxPos.y), double(maxPos.z)}))
+		return "Tried to fill in unloaded chunks!";
+
+	int64_t width = int64_t(maxPos.x - minPos.x) + 1;
+	int64_t height = int64_t(maxPos.y - minPos.y) + 1;
+	int64_t depth = int64_t(maxPos.z - minPos.z) + 1;
 	int64_t volume = width * height * depth;
 
 	SendChat(*ctx.session, std::format("Attemping to fill {} block(s)...", volume));
 
-	const Int3 start = pos0;
+	Int3 pos;
 	auto fillStart = std::chrono::steady_clock::now();
-	for (pos0.x = start.x; pos0.x <= pos1.x; ++pos0.x) {
-		for (pos0.y = start.y; pos0.y <= pos1.y; ++pos0.y) {
-			for (pos0.z = start.z; pos0.z <= pos1.z; ++pos0.z) {
-				ctx.world->SetBlock(pos0, static_cast<BlockType>(item.id.value), static_cast<uint8_t>(item.data));
+	for (pos.x = minPos.x; pos.x <= maxPos.x; ++pos.x) {
+		for (pos.y = minPos.y; pos.y <= maxPos.y; ++pos.y) {
+			for (pos.z = minPos.z; pos.z <= maxPos.z; ++pos.z) {
+				ctx.world->SetBlock(pos, static_cast<BlockType>(item.id.value), static_cast<uint8_t>(item.data));
 			}
 		}
 	}

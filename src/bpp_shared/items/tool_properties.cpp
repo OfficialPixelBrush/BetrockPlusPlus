@@ -441,7 +441,8 @@ void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity
 		return;
 	}
 	_pos.Offset(_face);
-	_world.SetBlock(_pos, BLOCK_FIRE);
+	// *** DISABLED FOR FIRST RELEASE ***
+	// _world.SetBlock(_pos, BLOCK_FIRE);
 	HarmTool(_stack, 1);
 }
 

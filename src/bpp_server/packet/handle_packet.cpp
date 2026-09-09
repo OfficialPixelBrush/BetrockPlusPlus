@@ -462,15 +462,9 @@ void PlayerAction(Packet::PlayerAction& _pkt, PlayerSession& _session, EntityTra
 		entity->UpdateMetadata(entity->flags.isSneaking, false);
 		break;
 	case PacketData::PlayerAction::STOP_SLEEPING: {
-		if (!entity->isSleeping)
-			break;
-		entity->isSleeping = false;
-		entity->ticksInBed = 0;
-		Packet::Animation anim;
-		anim.entityId = entity->id;
-		anim.animation = PacketData::Animation::LEAVE_BED;
-		anim.Serialize(_session.stream);
-		_entityTracker.SendPacketToViewers(anim, entity->id);
+		GlobalLogger().debug << "STOP_SLEEPING: waking up " << _session.username << " from position "
+		                     << entity->position << " (isSleeping=" << entity->isSleeping << ")\n";
+		entity->WakeUp();
 		break;
 	}
 	default:

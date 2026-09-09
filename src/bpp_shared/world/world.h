@@ -113,17 +113,21 @@ public:
 	void DropInventory(Inventory& inventory, Int3 _wpos);
 	void UpdateSkylightOffset();
 	float GetCelestialAngle();
-	// Is it currently dark enough (per the vanilla sleep window) for players to sleep?
-	bool IsNight() const {
-		TickTime relativeTime = elapsedTicks % DAY_LENGTH;
-		return relativeTime >= NIGHT_START_TICK && relativeTime < NIGHT_END_TICK;
-	}
 	int GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks = true);
 	Biome GetBiome(Int2 _wpos);
 	BlockType GetBlockId(Int3 _wpos) override;
 	uint8_t GetMetadata(Int3 _wpos);
 	void RemoveTileEntity(Int3 _pos);
 	void SetViewRadius(int _viewRadius);
+	// Is it currently dark enough for players to sleep?
+	bool IsNight() const {
+		TickTime relativeTime = elapsedTicks % DAY_LENGTH;
+		return relativeTime >= NIGHT_START_TICK && relativeTime < NIGHT_END_TICK;
+	}
+	bool IsOpenGroundSpot(Int3 _pos) {
+		return IsBlockNormalCube({ _pos.x, _pos.y - 1, _pos.z }) && !IsBlockNormalCube(_pos) &&
+		       !GetMaterial(_pos).isLiquid && !IsBlockNormalCube({ _pos.x, _pos.y + 1, _pos.z });
+	}
 	void DoExplosion(Entity* _exploder, Vec3 _position, float _size, bool _doFire) {
 		auto result = Explosion::DoExplosion(*this, _exploder, _position, _size, _doFire);
 		if (onExplosion)

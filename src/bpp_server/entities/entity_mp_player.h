@@ -14,12 +14,6 @@ struct EntityMPPlayer : public PlayerEntity {
 	PlayerSession* session = nullptr;
 	EntityHealth lastNotifiedHealth = health;
 	bool movedThisTick : 1 = false;
-	bool isSleeping : 1 = false;
-	// Position of the bed (headboard) the player is currently sleeping in.
-	// Only meaningful while isSleeping is true.
-	Int3 bedPosition{ 0, 0, 0 };
-	// Also called "SleepTimer" in the player save
-	TickTime ticksInBed = 0;
 	EntityMPPlayer() : PlayerEntity() {
 		hasPhysics = false;
 	}
@@ -35,4 +29,6 @@ struct EntityMPPlayer : public PlayerEntity {
 	void DropInventory() override;
 	void OnMountEntity() override;
 	void OnDismountEntity() override;
+	virtual SleepFailureReason TrySleep(Int3 _pos);
+	virtual void WakeUp() override;
 };
