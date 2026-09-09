@@ -8,6 +8,7 @@
 #include "entity_animal.h"
 
 struct PigEntity : public AnimalEntity {
+	bool saddled = false;
 	PigEntity() : AnimalEntity() {
 		type = EntityType::PIG;
 		width = 0.9f;
@@ -15,4 +16,5 @@ struct PigEntity : public AnimalEntity {
 	}
 	~PigEntity() = default;
 	void OnDeath(Entity* _killer) override;
+	void OnPlayerInteract(PlayerEntity* _entity) override;
 };

@@ -14,6 +14,7 @@
 #include "entities/entity_player.h"
 #include "entities/entity_sheep.h"
 #include "entities/entity_cow.h"
+#include "entities/entity_pig.h"
 #include "inventory/item_stack.h"
 #include "items.h"
 #include "logger.h"
@@ -458,6 +459,15 @@ void UseShears(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
 	se->UpdateMetadata(se->isSheared, true);
 
 	HarmTool(_stack, 1);
+}
+
+void UseSaddle(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
+	PigEntity* se = dynamic_cast<PigEntity*>(&_targetEntity);
+	if (!se)
+		return;
+	if (se->saddled)
+		return;
+	se->saddled = true;
 }
 
 void UseBucketOnEntity(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
