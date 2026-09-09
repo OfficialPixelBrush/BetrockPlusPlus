@@ -28,8 +28,9 @@ void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer);
 void GenericExplode(WorldManager& _world, Int3 _pos);
 bool CanOpenChest(WorldManager& _world, Int3 _pos);
 std::vector<Int3> GetBedApproachSpots(WorldManager& _world, Int3 _headPos, Int3 _footPos);
-void TriggerNightmareSpawns(WorldManager& _world, PlayerEntity& _player, Int3 _headPos, Int3 _footPos);
-void TrySpawnNightmare(WorldManager& _world, PlayerEntity& _player);
+// Returns true if a monster successfully spawned and interrupted the player's sleep
+bool TriggerNightmareSpawns(WorldManager& _world, PlayerEntity& _player, Int3 _headPos, Int3 _footPos);
+bool TrySpawnNightmare(WorldManager& _world, PlayerEntity& _player);
 
 struct BlockBehavior {
 	// Called when we need to get the AABB for the selection box

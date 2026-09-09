@@ -70,10 +70,8 @@ void NetworkStream::FlushWriteBufferBlocking() {
 
 void NetworkStream::IncrementPacketCount(PacketId _id) {
 	packetsInQueue++;
-	if (packetsInQueue > MAX_PACKETS_PER_TICK) {
-		GlobalLogger().warn << "Max # of packets/tick exceeded by " << PacketIdToLabel(_id) << "! ("
-		                    << int(packetsInQueue) << "/" << int(MAX_PACKETS_PER_TICK) << ")\n";
-	}
+	if (packetsInQueue > MAX_PACKETS_PER_TICK)
+		return;
 }
 
 void NetworkStream::ResetPacketCount() {

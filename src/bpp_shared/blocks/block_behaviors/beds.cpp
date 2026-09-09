@@ -5,13 +5,10 @@
  *
 */
 
-#include "blocks/block_behaviors.h"
-#include "internal.h"
-#include "helpers/direction_fixer.h"
-#include "helpers/java/java_math.h"
-#include "numeric_structs.h"
 #include "blocks.h"
+#include "blocks/block_behaviors.h"
 #include "blocks/block_properties.h"
+#include "constants.h"
 #include "dimensions.h"
 #include "entities/entity_falling_block.h"
 #include "entities/entity_player.h"
@@ -20,14 +17,20 @@
 #include "entities/entity_zombie.h"
 #include "enums/items.h"
 #include "generator/overworld/tree_gen.h"
+#include "helpers/direction_fixer.h"
+#include "helpers/java/java_math.h"
+#include "internal.h"
 #include "items/item_properties.h"
 #include "logger.h"
+#include "numeric_structs.h"
 #include "packet_data.h"
 #include "rail_manager.h"
 #include "redstone_manager.h"
 #include "tick_scheduler.h"
 #include "tile_entities/tile_entity.h"
 #include "world.h"
+#include <algorithm>
+#include <cmath>
 
 namespace Blocks {
 
@@ -49,25 +52,33 @@ std::vector<Int3> GetBedApproachSpots(WorldManager& _world, Int3 _headPos, Int3 
 	return spots;
 }
 
-// Once a sleeping player's sleep timer runs out, up to 20 monsters attempt to
-// spawn around them in a 32x16x32 area. Any that can path to the bed get
-// teleported next to it and wake the sleeper up, without skipping the night.
-void TriggerNightmareSpawns(WorldManager& _world, PlayerEntity& _player, Int3 _headPos, Int3 _footPos) {
+bool TriggerNightmareSpawns(WorldManager& _world, PlayerEntity& _player, Int3 _headPos, Int3 _footPos) {
 	static constexpr int MAX_SPAWN_ATTEMPTS = 20;
-	static constexpr int HORIZONTAL_RADIUS = 16; // 32 wide
-	static constexpr int VERTICAL_RADIUS = 8;    // 16 tall
+	static constexpr double PATH_END_TOLERANCE = 1.5;
 
 	auto approachSpots = Blocks::GetBedApproachSpots(_world, _headPos, _footPos);
-	bool wokenByNightmare = false;
+	Pathfinder pathfinder(&_world);
 
 	for (int attempt = 0; attempt < MAX_SPAWN_ATTEMPTS; attempt++) {
 		Int3 pos = {
-			_headPos.x + _world.rand.NextInt(HORIZONTAL_RADIUS * 2 + 1) - HORIZONTAL_RADIUS,
-			_headPos.y + _world.rand.NextInt(VERTICAL_RADIUS * 2 + 1) - VERTICAL_RADIUS,
-			_headPos.z + _world.rand.NextInt(HORIZONTAL_RADIUS * 2 + 1) - HORIZONTAL_RADIUS,
+			_headPos.x + (_world.rand.NextInt(32) - _world.rand.NextInt(32)),
+			0,
+			_headPos.z + (_world.rand.NextInt(32) - _world.rand.NextInt(32)),
 		};
-		if (!_world.InBounds(pos.y) || !_world.IsOpenGroundSpot(pos))
+
+		int startY = std::clamp(_headPos.y + (_world.rand.NextInt(16) - _world.rand.NextInt(16)), 1, CHUNK_HEIGHT - 1);
+
+		// Search for an open spot
+		int y = startY;
+		for (; y > 2 && !_world.IsBlockNormalCube({ pos.x, y - 1, pos.z }); --y) {
+		}
+		while (y < startY + 16 && _world.InBounds(y) && !_world.IsOpenGroundSpot({ pos.x, y, pos.z }))
+			++y;
+
+		if (y >= startY + 16 || !_world.InBounds(y))
 			continue;
+
+		pos.y = y;
 
 		std::shared_ptr<HostileEntity> candidate;
 		switch (_world.rand.NextInt(3)) {
@@ -90,42 +101,45 @@ void TriggerNightmareSpawns(WorldManager& _world, PlayerEntity& _player, Int3 _h
 		if (!candidate->CanSpawnAt(pos))
 			continue;
 
-		_world.entityManager.AddEntity(candidate);
-
-		// Can this one actually reach the bed?
-		if (approachSpots.empty())
-			continue;
-
-		Int3 goal = approachSpots[size_t(_world.rand.NextInt(int(approachSpots.size())))];
-		Pathfinder pathfinder(&_world);
-		auto path = pathfinder.FindPath(pos, goal, candidate->width, candidate->height, 32.0f);
+		// Can this one actually reach the sleeping player?
+		auto path = pathfinder.FindPath(pos, _headPos, candidate->width, candidate->height, 32.0f);
 		if (path.empty())
 			continue;
 
-		Vec3 teleportPosition = { goal.x + 0.5, double(goal.y), goal.z + 0.5 };
+		const Int3& pathEnd = path.back();
+		if (std::min(pathEnd.Distance(_headPos), pathEnd.Distance(_footPos)) > PATH_END_TOLERANCE)
+			continue;
+
+		_world.entityManager.AddEntity(candidate);
+
+		Int3 teleportTarget = approachSpots.empty()
+		                          ? Int3{ pos.x, pos.y + 1, pos.z }
+		                          : approachSpots[size_t(_world.rand.NextInt(int(approachSpots.size())))];
+		Vec3 teleportPosition = { teleportTarget.x + 0.5, double(teleportTarget.y), teleportTarget.z + 0.5 };
 		candidate->Teleport(teleportPosition);
-		wokenByNightmare = true;
+
+		// Wake the player and don't set their spawn
+		_player.WakeUp(/*_confirmSpawn=*/false);
+
+		return true;
 	}
 
-	if (!wokenByNightmare)
-		return;
-
-	_player.WakeUp();
+	return false;
 }
 
-void TrySpawnNightmare(WorldManager& _world, PlayerEntity& _player) {
+bool TrySpawnNightmare(WorldManager& _world, PlayerEntity& _player) {
 	Int3 headPos = _player.bedPosition;
 
 	// The bed might've been broken out from under them while they were dozing off
 	if (_world.GetBlockId(headPos) != BLOCK_BED) {
-		_player.WakeUp();
-		return;
+		_player.WakeUp(/*_confirmSpawn=*/false);
+		return false;
 	}
 
 	auto headMeta = _world.GetMetadata(headPos);
 	auto bedDir = GetDirectionFromMeta(BLOCK_BED, headMeta);
 	Int3 footPos = headPos.WithOffset(Direction::Opposite(bedDir));
-	TriggerNightmareSpawns(_world, _player, headPos, footPos);
+	return TriggerNightmareSpawns(_world, _player, headPos, footPos);
 }
 
 void RegisterBedBehaviors() {
@@ -182,7 +196,6 @@ void RegisterBedBehaviors() {
 		}
 		BreakAndDropBlock(_world, _pos);
 	};
-
 }
 
 }; // namespace Blocks

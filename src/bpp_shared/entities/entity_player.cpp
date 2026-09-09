@@ -9,6 +9,13 @@
 #include "entity_item.h"
 #include "logger/logger.h"
 
+bool PlayerEntity::AttackEntityFrom(Entity* _entity, int _damage) {
+	auto success = MobileEntity::AttackEntityFrom(_entity, _damage);
+	if (success && isSleeping)
+		WakeUp();
+	return success;
+}
+
 SleepFailureReason PlayerEntity::TrySleep(Int3 _pos) {
 	if (this->isSleeping)
 		return SleepFailureReason::ALREADY_SLEEPING;
@@ -29,7 +36,7 @@ SleepFailureReason PlayerEntity::TrySleep(Int3 _pos) {
 	// Successfully sleep!
 	this->SetSize({ 0.2f, 0.2f });
 	this->bedPosition = _pos;
-	this->yOffset = 0.0f;
+	this->yOffset = 0.2f;
 
 	auto dir = GetDirectionFromMeta(BLOCK_BED, world->GetMetadata(_pos));
 
@@ -65,7 +72,7 @@ SleepFailureReason PlayerEntity::TrySleep(Int3 _pos) {
 	return SleepFailureReason::SUCCESS;
 }
 
-void PlayerEntity::WakeUp() {
+void PlayerEntity::WakeUp([[maybe_unused]] bool _confirmSpawn) {
 	this->SetSize({ 0.6f, 1.8f });
 	this->yOffset = 0.0f;
 	this->isSleeping = false;
