@@ -10,7 +10,7 @@
 bool PigEntity::TryDespawn() {
 	if (isSaddled)
 		return false;	
-	return MobEntity::TryDespawn()
+	return MobEntity::TryDespawn();
 }
 
 void PigEntity::OnDeath(Entity* _killer) {
