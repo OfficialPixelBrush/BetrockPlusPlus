@@ -7,6 +7,12 @@
 #include "entity_pig.h"
 #include "entity_player.h"
 
+bool PigEntity::TryDespawn() {
+	if (isSaddled)
+		return false;	
+	return MobEntity::TryDespawn()
+}
+
 void PigEntity::OnDeath(Entity* _killer) {
 	// Drop 0-2 porkchops, cooked if the pig was on fire
 	auto targetItem = this->fireTicks > 0 ? Items::Id::PORKCHOP_COOKED : Items::Id::PORKCHOP;
