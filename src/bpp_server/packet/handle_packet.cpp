@@ -186,11 +186,6 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 	if (!_session.entity)
 		return;
 
-	ItemStack* heldItem = _session.inventory.GetHeldItem();
-	if (!heldItem) {
-		return;
-	}
-
 	// Block interactions
 	auto block = _world.GetBlockId(position);
 
@@ -205,6 +200,11 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		if (!Blocks::blockBehaviors[block].onBlockActivated(_world, position, &_session)) {
 			return;
 		}
+	}
+
+	ItemStack* heldItem = _session.inventory.GetHeldItem();
+	if (!heldItem) {
+		return;
 	}
 
 	// NOTE:
@@ -231,10 +231,6 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 	}
 
 	if (Items::IsBlock(heldItem->id)) {
-		auto entityPos = _session.entity->position;
-		if (position.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > 6.0)
-			return;
-
 		Int3 placePosition = position.WithOffset(FaceDirectionToDirection(_pkt.face));
 
 		if (heldItem->id.value < 0 || heldItem->id.value >= 256) {
@@ -248,6 +244,9 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		if (!function) {
 			return;
 		}
+		auto entityPos = _session.entity->position;
+		if (position.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > 6.0)
+			return;
 		bool result = function(_world, placePosition, *_session.entity, FaceDirectionToDirection(_pkt.face), blockId,
 		                       heldItem->data);
 		if (result) {
