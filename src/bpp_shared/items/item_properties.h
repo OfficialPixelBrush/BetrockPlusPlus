@@ -93,7 +93,7 @@ constexpr int GetArmorDamageReduction(ItemId _id) {
 	// ok ok I wanted to explain this because it is a bit convoluted.
 	// Armor starts at id 298, and from there it goes helmet, chestplate, leggings boots
 	// Each of the following tiers of armor follow this pattern from then on
-	int pieceIndex = (_id - 298) % 4;
+	int pieceIndex = (_id - Items::Id::HELMET_LEATHER) % 4;
 	return damageReduceAmounts[pieceIndex];
 }
 
@@ -101,7 +101,7 @@ constexpr Items::ArmorPiece GetArmorPiece(ItemId _id) {
 	if (!IsArmor(_id))
 		return ArmorPiece::INVALID_PIECE;
 
-	int pieceIndex = (_id - 298) % 4;
+	int pieceIndex = (_id - Items::Id::HELMET_LEATHER) % 4;
 	Items::ArmorPiece type[4] = { Items::ArmorPiece::HELMET, Items::ArmorPiece::CHESTPLATE, Items::ArmorPiece::LEGGING,
 		                          Items::ArmorPiece::BOOT };
 	return type[pieceIndex];

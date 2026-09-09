@@ -94,8 +94,10 @@ void RecipeManager::AddVanillaRecipes() {
 	                { Items::Id::CLOCK, 1 });
 	AddShapedRecipe({ " # ", "#X#", " # " }, { { '#', { Items::Id::IRON } }, { 'X', { Items::Id::REDSTONE } } },
 	                { Items::Id::COMPASS, 1 });
+#ifdef EXPERIMENTAL
 	AddShapedRecipe({ "###", "#X#", "###" }, { { '#', { Items::Id::PAPER } }, { 'X', { Items::Id::COMPASS } } },
 	                { Items::Id::MAP, 1 });
+#endif
 	AddShapedRecipe({ "#", "#" }, { { '#', { BLOCK_STONE } } }, { BLOCK_BUTTON_STONE, 1 });
 	AddShapedRecipe({ "##" }, { { '#', { BLOCK_STONE } } }, { BLOCK_PRESSURE_PLATE_STONE, 1 });
 	AddShapedRecipe({ "##" }, { { '#', { BLOCK_PLANKS } } }, { BLOCK_PRESSURE_PLATE_WOOD, 1 });

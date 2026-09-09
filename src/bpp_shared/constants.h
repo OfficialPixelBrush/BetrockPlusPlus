@@ -20,3 +20,4 @@
 #define NETHER_BIOME_LAVA_LEVEL 64 // Comes about due to a copy-paste error by notch
 
 #define PLAYER_EYE_HEIGHT 1.62
+#define MAXIMUM_PLACEMENT_REACH 6.0

@@ -66,13 +66,13 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 	// Populate noise maps
 	sandGravelNoiseGen.GenerateOctaves(
 	    sandNoise, Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), double(_chunk.cpos.z * CHUNK_WIDTH), 0.0 },
-	    Int32_3{ 16, 16, 1 }, Vec3{ oneThirtySecond, oneThirtySecond, 1.0 });
+	    Int32_3{ CHUNK_WIDTH, CHUNK_WIDTH, 1 }, Vec3{ oneThirtySecond, oneThirtySecond, 1.0 });
 	sandGravelNoiseGen.GenerateOctaves(
 	    gravelNoise, Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), 109.0134, double(_chunk.cpos.z * CHUNK_WIDTH) },
-	    Int32_3{ 16, 1, 16 }, Vec3{ oneThirtySecond, 1.0, oneThirtySecond });
+	    Int32_3{ CHUNK_WIDTH, 1, CHUNK_WIDTH }, Vec3{ oneThirtySecond, 1.0, oneThirtySecond });
 	stoneNoiseGen.GenerateOctaves(stoneNoise,
 	                              Vec3{ double(_chunk.cpos.x * CHUNK_WIDTH), double(_chunk.cpos.z * CHUNK_WIDTH), 0.0 },
-	                              Int32_3{ 16, 16, 1 },
+	                              Int32_3{ CHUNK_WIDTH, CHUNK_WIDTH, 1 },
 	                              Vec3{ oneThirtySecond * 2.0, oneThirtySecond * 2.0, oneThirtySecond * 2.0 });
 
 	// Iterate through entire chunk
