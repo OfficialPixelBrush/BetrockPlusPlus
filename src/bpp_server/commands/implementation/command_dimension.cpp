@@ -11,22 +11,23 @@
 
 namespace {
 
+#ifdef EXPERIMENTAL
 std::string SwapDimension(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	// *** DISABLED FOR FIRST RELEASE ***
-	/*
 	SendChat(*ctx.session, ctx.session->dimension == Dimension::Overworld ? "§7Transferring to the Nether..."
 	                                                                      : "§7Transferring to the Overworld...");
 
 	Dimension newDim = ctx.session->dimension == Dimension::Nether ? Dimension::Overworld : Dimension::Nether;
 	ctx.server->SendPlayerToDimension(newDim, *ctx.session);
-	*/
 	return "";
 }
+#endif
 
 } // namespace
 
 void RegisterDimension(strategos::BrigadierContext& _dispatcher) {
+#ifdef EXPERIMENTAL
 	_dispatcher.add_command(
 	    strategos::Node::literal("dim").describe("Swap to the other dimension").op().executes(SwapDimension));
+#endif
 }

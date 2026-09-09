@@ -139,6 +139,7 @@ cd build
 ```
 
 > Tip: If you have `ccache` and `mold` installed, you can speed up iterative builds with:
+>
 > ```bash
 > cmake -S . -B build -G Ninja \
 >   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \

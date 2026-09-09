@@ -8,13 +8,23 @@ For example, if you'd like to disable Online Mode Authencation, but enable Disco
 cmake -S . -B build -DONLINE_MODE_AUTHENTICATION=OFF -DDISCORD_INTEGRATION=ON
 ```
 
-### Online Mode Authentication (ON)
+Here's a list of all optional flags and their default state:
+
+| Flag                                                        | Default State |
+| ----------------------------------------------------------- | ------------- |
+| [`ONLINE_MODE_AUTHENTICATION`](#online-mode-authentication) | `ON`          |
+| [`BETACRAFT_HEARTBEAT`](#betacraft-server-list-heartbeat)   | `ON`          |
+| [`DISCORD_INTEGRATION`](#discord-integration)               | `OFF`         |
+| [`EXPERIMENTAL`](#experimental)                             | `OFF`         |
+| [`GENERATION_PRECISION`](#terrain-precision)                | `DOUBLE`      |
+
+### Online Mode Authentication
 
 Online Mode Authentication is **on by default**. It allows users to be authenticated via the legacy Minecraft Login protocol. By default this goes through the Betacraft.uk proxy, since the original authentication servers got shut down long ago. It requires `libcurl`.
 
 Simply add `-DONLINE_MODE_AUTHENTICATION=OFF` to the first build command, if you'd like to disable it. This removes all auth-related code.
 
-### Betacraft Server List Heartbeat (OFF)
+### Betacraft Server List Heartbeat
 
 Betacraft heartbeat is **off by default**. Enabling it lets a dedicated server ping [the Betacraft list](https://betacraft.uk/serverlist). It requires `libcurl` and [nlohmann/json](https://github.com/nlohmann/json) (via vcpkg feature `betacraft-heartbeat`, or fetched by CMake).
 
@@ -36,7 +46,7 @@ To appear on the list, contact Moresteck on the [Betacraft Discord](https://beta
 | `betacraft-send-players` | `true` shares online usernames; `false` only shares the player count                   |
 | `betacraft-icon`         | Optional path to a PNG icon (max 128×128 and 64 KiB)                                   |
 
-### Discord Integration (OFF)
+### Discord Integration
 
 Discord support is **off by default**. Enabling it pulls in [DPP](https://dpp.dev/) (Gateway WebSocket bot) via `vcpkg` or `FetchContent`, and requires OpenSSL.
 
@@ -56,7 +66,18 @@ In the [Discord Developer Portal](https://discord.com/developers/applications), 
 
 > **Windows note:** if installing DPP through `vcpkg`, use a non-static triplet (`x64-windows`, not `x64-windows-static`).
 
-### Terrain Precision (DOUBLE)
+### Experimental
+
+Experimental features are **off by default**. This flag enables experimental or work-in-progress features that are only partially implemented. This is mostly meant to keep not yet finished or unstable functionality out of Release builds.
+
+Right now, this includes:
+
+- `/dim` command
+- Flint and Steel usage
+
+Simply add `-DEXPERIMENTAL=ON` to the first build command, if you'd like to enable it.
+
+### Terrain Precision
 
 Terrain Precision is set to **`DOUBLE` by default**. Setting it to another value changes the numerical precision of the Perlin and Simplex noise generators.
 

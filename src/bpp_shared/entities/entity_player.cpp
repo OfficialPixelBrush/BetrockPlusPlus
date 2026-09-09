@@ -49,6 +49,8 @@ SleepFailureReason PlayerEntity::TrySleep(Int3 _pos) {
 	case Direction::Value::East:
 		offsetX = 0.9f;
 		break;
+	default:
+		break;
 	}
 
 	this->Teleport({ double(_pos.x) + offsetX, double(_pos.y) + 0.9375, double(_pos.z) + offsetZ },
