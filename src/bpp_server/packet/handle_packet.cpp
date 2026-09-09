@@ -35,7 +35,15 @@ void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& _session) {
 
 void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
                  std::vector<std::shared_ptr<PlayerSession>>& _players, WorldManager& _world, CommandManager& _cmdMgr,
-                 std::function<void(PlayerSession&)> _transferDimension) {
+                 std::function<void(PlayerSession&)> _transferDimension, Server& _server) {
+	if (!_session.entity)
+		return;
+
+	_session.entity->messagesThisTick++;
+	if (_session.entity->messagesThisTick >= 3) {
+		_server.DisconnectPlayer("Chat spamming!", _session);
+	}
+
 	GlobalLogger().chat << "<" << _session.username << "> " << _pkt.message << "\n";
 	if (_pkt.message.size() > 0 && _pkt.message[0] == '/') {
 		_cmdMgr.Parse(_pkt.message, _session, _world, _transferDimension);
@@ -91,6 +99,13 @@ void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& _pkt, PlayerSe
 
 void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _world, Server& _server) {
 	Int3 packetPos = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
+
+	if (!_session.entity)
+		return;
+
+	auto entityPos = _session.entity->position;
+	if (packetPos.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > 6.0)
+		return;
 
 	auto resyncBlock = [&](Int3 _pos) {
 		if (!_world.onBlockUpdate)
@@ -167,6 +182,13 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 
 void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager& _world, Runtime& _gameRuntime) {
 	Int3 position = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
+
+	if (!_session.entity)
+		return;
+
+	auto entityPos = _session.entity->position;
+	if (position.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > 6.0)
+		return;
 
 	// Block interactions
 	auto block = _world.GetBlockId(position);
@@ -393,6 +415,9 @@ void ContainerTransaction(Packet::ContainerTransaction& _pkt, PlayerSession& _se
 // Other handlers
 void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _session, WorldManager& _world) {
 	// Check if session entity and source entity match
+	if (!_session.entity)
+		return;
+
 	if (_pkt.sourceEntityId != _session.entity->id)
 		return;
 
@@ -400,6 +425,9 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 	auto entity = _world.entityManager.GetEntityByIdShared(_pkt.targetEntityId);
 	auto sourceEntity = _world.entityManager.GetEntityByIdShared(_pkt.sourceEntityId);
 	if (!entity || !sourceEntity)
+		return;
+
+	if (entity->position.Distance(sourceEntity->position) > 6.0)
 		return;
 
 	ItemStack* heldItem = _session.inventory.GetHeldItem();
