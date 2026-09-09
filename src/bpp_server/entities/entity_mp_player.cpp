@@ -12,6 +12,18 @@
 #include "networking/network_stream.h"
 #include "networking/packets.h"
 
+void EntityMPPlayer::SendTpPacket(Vec3 _pos) {
+	if (!session)
+		return;
+	session->position.pos = _pos;
+	session->pendingTeleport = _pos;
+	Packet::PlayerPosition pos;
+	pos.onGround = false;
+	pos.position = { _pos.x, _pos.y + PLAYER_EYE_HEIGHT, _pos.z };
+	pos.cameraY = _pos.y; // This is backwards, thanks notch
+	pos.Serialize(session->stream);
+}
+
 SleepFailureReason EntityMPPlayer::TrySleep(Int3 _pos) {
 	if (!this->session)
 		return SleepFailureReason::OTHER;
@@ -37,13 +49,7 @@ SleepFailureReason EntityMPPlayer::TrySleep(Int3 _pos) {
 	session->spawnPosition = headPos.WithOffset(Direction::Value::Up);
 
 	this->Teleport(this->position, { rotationYaw, rotationPitch });
-	session->position.pos = this->position;
-	session->pendingTeleport = this->position;
-	Packet::PlayerPosition pos;
-	pos.onGround = false;
-	pos.position = { this->position.x, this->position.y + PLAYER_EYE_HEIGHT, this->position.z };
-	pos.cameraY = this->position.y; // This is backwards, thanks notch
-	pos.Serialize(session->stream);
+	SendTpPacket(this->position);
 
 	return SleepFailureReason::SUCCESS;
 }
@@ -61,13 +67,7 @@ void EntityMPPlayer::WakeUp() {
 	session->entityTracker->SendPacketToViewers(anim, this->id);
 
 	this->Teleport(this->position, { rotationYaw, rotationPitch });
-	session->position.pos = this->position;
-	session->pendingTeleport = this->position;
-	Packet::PlayerPosition pos;
-	pos.onGround = false;
-	pos.position = { this->position.x, this->position.y + PLAYER_EYE_HEIGHT, this->position.z };
-	pos.cameraY = this->position.y; // This is backwards, thanks notch
-	pos.Serialize(session->stream);
+	SendTpPacket(this->position);
 }
 
 void EntityMPPlayer::OnMountEntity() {
@@ -88,6 +88,8 @@ void EntityMPPlayer::OnDismountEntity() {
 		pkt.vehicleEntityId = -1;
 		this->session->entityTracker->SendPacketToViewers(pkt, this->id);
 		pkt.Serialize(session->stream);
+
+		SendTpPacket(this->position);
 	}
 }
 
@@ -146,48 +148,45 @@ void EntityMPPlayer::HandlePositionChecks() {
 		return;
 
 	this->velocity = {};
+	Vec3 pos = session->pendingPosition.value();
 	if (this->vehicle.lock().get()) {
 		// Boats are weird!
-		Vec3 pos = session->pendingPosition.value();
-		if (pos.x <= -1 || pos.x > 1 || pos.z <= -1 || pos.z > 1)
+		if (pos.x <= -1 || pos.x > 1 || pos.z <= -1 || pos.z > 1 || pos.y != -999) {
 			return;
+		}
 		this->velocity = pos;
 		this->velocity.y = 0;
 
-		// Update our position to the session
 		if (!this->session)
 			return;
 		this->session->position.pos = this->position;
 		return;
 	}
 
+	if (pos.y = -999)
+		return;
+
 	// We have a pending teleport. Check to see if the player caught up
 	if (session->pendingTeleport && session->pendingPosition) {
-		// Reset fall state
 		fallDistance = 0;
 		onGround = true;
 		Vec3 delta = *session->pendingPosition - *session->pendingTeleport;
 		auto dist = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
 
 		if (dist > 0.0625) {
-			// Player isn't at the teleported position so send another tp packet
-			// Also reset our position
 			this->Teleport(*session->pendingTeleport, { rotationYaw, rotationPitch });
 			session->position.pos = *session->pendingTeleport;
 			Packet::PlayerPosition pkt;
 			pkt.onGround = onGround;
 			pkt.position = { position.x, position.y + PLAYER_EYE_HEIGHT, position.z };
-			pkt.cameraY = position.y; // This is backwards, thanks notch
+			pkt.cameraY = position.y;
 			pkt.Serialize(session->stream);
 			return;
 		}
-		// Client acknowledged our tp
 		session->pendingTeleport.reset();
 	}
 
-	// If we recieved a movement packet this Tick do our server side checks
 	if (session->pendingPosition) {
-		// Re-simulate our move
 		bool savedOnGround = onGround;
 		bool residualTooLarge = false;
 		bool movedWrong = false;
@@ -195,57 +194,52 @@ void EntityMPPlayer::HandlePositionChecks() {
 		                          ->GetCollidingBoundingBoxes(collider.Expand(-CLEAR_CHECK_TOLERANCE,
 		                                                                      -CLEAR_CHECK_TOLERANCE,
 		                                                                      -CLEAR_CHECK_TOLERANCE),
-		                                                      /*_mover=*/nullptr)
+		                                                      nullptr)
 		                          .empty();
 		Vec3 lastPosition = this->position;
 		Vec3 claimed = *session->pendingPosition;
 		Vec3 delta = claimed - lastPosition;
-		// How far the client claims to have moved this tick
 		double claimedTravelDistSq = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+
 		if (claimedTravelDistSq > 100.0) {
-			GlobalLogger().warn << "Client " << session->username << " moved wrongly!\n";
+			GlobalLogger().warn << "Client " << session->username
+			                    << " moved wrongly! claimedTravelDistSq=" << claimedTravelDistSq << " delta=("
+			                    << delta.x << ", " << delta.y << ", " << delta.z << ") lastPos=(" << lastPosition.x
+			                    << ", " << lastPosition.y << ", " << lastPosition.z << ") claimedPos=(" << claimed.x
+			                    << ", " << claimed.y << ", " << claimed.z << ")\n";
 			movedWrong = true;
 		}
 		Move(delta);
 		movedThisTick = true;
-
-		// Reset on ground to what the client last claimed
 		onGround = savedOnGround;
 
-		// Deal fall damage
 		if (inWater)
 			fallDistance = 0;
 		if (onGround) {
-			if (fallDistance > FALL_DAMAGE_FLOOR) {
+			if (fallDistance > FALL_DAMAGE_FLOOR)
 				AttackEntityFrom(nullptr, int(std::ceil(fallDistance - FALL_DAMAGE_FLOOR)));
-			}
 			fallDistance = 0;
 		} else if (delta.y < 0) {
 			fallDistance -= delta.y;
 		}
 
 		auto resolvedDelta = delta;
-
-		// How far is our simulated move vs what the client says?
-		// Vanilla ignores Y here
 		delta = claimed - this->position;
 		delta.y = 0.0;
 		double residual = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
 
 		if (residual < 0.0625) {
-			this->position = claimed; // Trust it
+			this->position = claimed;
 			session->position.pos = claimed;
 			this->velocity = resolvedDelta;
-			// Reset ySize so step up works right
 			ySize = 0.0f;
 			RebuildCollider();
 		} else {
-			// Send a correction
 			residualTooLarge = true;
 		}
 
 		AABB clearCheckArea = collider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE);
-		auto collidingBoxes = world->GetCollidingBoundingBoxes(clearCheckArea, /*_mover=*/nullptr);
+		auto collidingBoxes = world->GetCollidingBoundingBoxes(clearCheckArea, nullptr);
 		bool clearNow = collidingBoxes.empty();
 
 		bool willCorrect = (wasClearBefore && (residualTooLarge || !clearNow)) || movedWrong;
@@ -253,15 +247,13 @@ void EntityMPPlayer::HandlePositionChecks() {
 		if (willCorrect) {
 			Vec3 safeRollback = { lastPosition.x, lastPosition.y + ROLLBACK_NUDGE, lastPosition.z };
 
-			// TP our player back
 			this->Teleport(safeRollback, { rotationYaw, rotationPitch });
 			session->position.pos = safeRollback;
-			// Wait until our client catches up
 			session->pendingTeleport = safeRollback;
 			Packet::PlayerPosition pkt;
 			pkt.onGround = onGround;
 			pkt.position = { safeRollback.x, safeRollback.y + PLAYER_EYE_HEIGHT, safeRollback.z };
-			pkt.cameraY = safeRollback.y; // This is backwards, thanks notch
+			pkt.cameraY = safeRollback.y;
 			pkt.Serialize(session->stream);
 		}
 

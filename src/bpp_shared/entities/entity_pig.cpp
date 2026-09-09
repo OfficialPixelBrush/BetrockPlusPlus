@@ -21,8 +21,11 @@ void PigEntity::OnDeath(Entity* _killer) {
 }
 
 void PigEntity::OnPlayerInteract(PlayerEntity* _entity) {
-	if (!_entity || !saddled)
+	if (!_entity)
 		return;
+
+	//if (!saddled)
+		//return;
 
 	auto rider = passenger.lock();
 	if (rider && rider.get() != _entity) {
