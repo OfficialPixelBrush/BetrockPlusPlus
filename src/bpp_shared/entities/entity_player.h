@@ -31,6 +31,7 @@ struct PlayerEntity : public MobileEntity {
 		stepHeight = 0.5f;
 	}
 	~PlayerEntity() = default;
+	bool AttackEntityFrom(Entity* _entity, int _damage) override;
 	virtual void Tick() override;
 	virtual bool PickupItem(ItemStack& _stack, EntityId _entityId);
 	virtual bool DropItem(ItemStack _stack);
@@ -39,5 +40,5 @@ struct PlayerEntity : public MobileEntity {
 	virtual void OnMountEntity() override;
 	virtual void OnDismountEntity() override;
 	virtual SleepFailureReason TrySleep(Int3 _pos);
-	virtual void WakeUp();
+	virtual void WakeUp(bool _confirmSpawn = true);
 };

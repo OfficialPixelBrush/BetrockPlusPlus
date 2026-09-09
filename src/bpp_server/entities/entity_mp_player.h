@@ -30,6 +30,5 @@ struct EntityMPPlayer : public PlayerEntity {
 	void OnMountEntity() override;
 	void OnDismountEntity() override;
 	virtual SleepFailureReason TrySleep(Int3 _pos);
-	virtual void WakeUp() override;
-	void SendTpPacket(Vec3 _pos);
+	virtual void WakeUp(bool _confirmSpawn = true) override;
 };

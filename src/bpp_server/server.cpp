@@ -768,6 +768,8 @@ void Server::ProcessSleeping(Dimension _dimension) {
 
 	int playingCount = 0;
 	int fullyAsleepCount = 0;
+	std::vector<std::shared_ptr<PlayerSession>> sleepingSessions;
+
 	for (auto& session : players) {
 		if (!session || session->connState != ConnectionState::Playing || session->dimension != _dimension)
 			continue;
@@ -781,34 +783,34 @@ void Server::ProcessSleeping(Dimension _dimension) {
 		// Check if our bed is still there
 		// and check if it's really still night (in case someone used commands)
 		if (world->GetBlockId(session->entity->bedPosition) != BLOCK_BED || !world->IsNight()) {
-			session->entity->WakeUp();
+			session->entity->WakeUp(/*_confirmSpawn=*/false);
 			continue;
 		}
 
-		// The timer just ran out this tick, try to give a nightmare!
-		if (gamerules.nightmares && session->entity->ticksInBed == SLEEP_TIMER_TARGET)
-			Blocks::TrySpawnNightmare(*world, *session->entity);
-
-		if (session->entity->isSleeping && session->entity->ticksInBed >= SLEEP_TIMER_TARGET)
+		sleepingSessions.push_back(session);
+		if (session->entity->ticksInBed >= SLEEP_TIMER_TARGET)
 			fullyAsleepCount++;
 	}
 
-	// Nobody's here, or not everybody has slept their timer out yet - nothing to do.
+	// Nobody's here, or not everybody is fully asleep yet
 	if (playingCount == 0 || fullyAsleepCount < playingCount)
+		return;
+
+	bool spawnedNightmare = false;
+	if (gamerules.nightmares) {
+		for (auto& session : sleepingSessions)
+			spawnedNightmare |= Blocks::TrySpawnNightmare(*world, *session->entity);
+	}
+
+	if (spawnedNightmare)
 		return;
 
 	// Fast-forward to the next morning.
 	world->elapsedTicks = ((world->elapsedTicks / DAY_LENGTH) + 1) * DAY_LENGTH;
 
 	// Wake everyone up.
-	for (auto& session : players) {
-		if (!session || session->connState != ConnectionState::Playing || session->dimension != _dimension)
-			continue;
-		if (!session->entity || !session->entity->isSleeping)
-			continue;
-
-		session->entity->WakeUp();
-	}
+	for (auto& session : sleepingSessions)
+		session->entity->WakeUp(/*_confirmSpawn=*/true);
 }
 
 std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {
