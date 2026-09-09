@@ -7,479 +7,677 @@
 
 #pragma once
 #include "logger.h"
+#include <algorithm>
+#include <bit>
 #include <cstdint>
 #include <cstring>
+#include <expected>
 #include <format>
+#include <span>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
+#include <string_view>
+#include <type_traits>
+#include <utility>
+#include <variant>
 #include <vector>
 
-enum TagType : uint8_t {
-	TAG_END,
-	TAG_BYTE,
-	TAG_SHORT,
-	TAG_INT,
-	TAG_LONG,
-	TAG_FLOAT,
-	TAG_DOUBLE,
-	TAG_BYTEARRAY,
-	TAG_STRING,
-	TAG_LIST,
-	TAG_COMPOUND,
-	TAG_INTARRAY
+namespace nbt {
+
+enum class TagType : uint8_t {
+	End = 0,
+	Byte,
+	Short,
+	Int,
+	Long,
+	Float,
+	Double,
+	ByteArray,
+	String,
+	List,
+	Compound,
+	IntArray,
 };
 
-struct Tag {
-	TagType type = TAG_END;
-	std::string name;
+[[nodiscard]] constexpr auto to_string(TagType type) noexcept -> std::string_view {
+	using enum TagType;
+	switch (type) {
+	case End:
+		return "TAG_End";
+	case Byte:
+		return "TAG_Byte";
+	case Short:
+		return "TAG_Short";
+	case Int:
+		return "TAG_Int";
+	case Long:
+		return "TAG_Long";
+	case Float:
+		return "TAG_Float";
+	case Double:
+		return "TAG_Double";
+	case ByteArray:
+		return "TAG_Byte_Array";
+	case String:
+		return "TAG_String";
+	case List:
+		return "TAG_List";
+	case Compound:
+		return "TAG_Compound";
+	case IntArray:
+		return "TAG_Int_Array";
+	default:
+		return "TAG_Unknown";
+	}
+}
 
-	// Leaf values
-	// do this as an anonymous union, since they can share memory
-	union {
-		int8_t byteValue;
-		int16_t shortValue;
-		int32_t intValue;
-		// this is enough to init all of these
-		int64_t longValue = 0;
-		float floatValue;
-		// all bits as 0 is also 0 in double!
-		double doubleValue;
-	};
-	std::vector<int8_t> byteArray = {};
-	std::vector<int32_t> intArray = {};
-	std::string stringValue = "";
+class Tag;
+struct CompoundEntry;
 
-	// Container values
-	TagType listType = TAG_END; // element type for TAG_LIST
-	std::vector<Tag> list = {};
-	std::unordered_map<std::string, Tag> compound = {};
+using Byte = int8_t;
+using Short = int16_t;
+using Int = int32_t;
+using Long = int64_t;
+using Float = float;
+using Double = double;
+using ByteArray = std::vector<int8_t>;
+using IntArray = std::vector<int32_t>;
+using String = std::string;
+using List = std::vector<Tag>;
+// vector<pair>, not a map: compounds are small, so a linear scan beats a tree/hash
+// map on both memory and cache behaviour, and keeps sizeof(Tag) down to its largest
+// leaf payload (std::string) rather than a map header.
+using Compound = std::vector<CompoundEntry>;
 
-	// Typed setter
-	template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
-	void Set(T _value) {
+class Tag {
+public:
+	using Value = std::variant<std::monostate, Byte, Short, Int, Long, Float, Double, ByteArray, String, List,
+	                            Compound, IntArray>;
+
+	TagType type = TagType::End;
+	TagType list_type = TagType::End; // element type; only meaningful when type == List
+	Value value;
+
+	Tag() = default;
+
+	// ---- Factories ----
+	[[nodiscard]] static auto byte(Byte v) -> Tag { return leaf(TagType::Byte, v); }
+	[[nodiscard]] static auto short_(Short v) -> Tag { return leaf(TagType::Short, v); }
+	[[nodiscard]] static auto int_(Int v) -> Tag { return leaf(TagType::Int, v); }
+	[[nodiscard]] static auto long_(Long v) -> Tag { return leaf(TagType::Long, v); }
+	[[nodiscard]] static auto float_(Float v) -> Tag { return leaf(TagType::Float, v); }
+	[[nodiscard]] static auto double_(Double v) -> Tag { return leaf(TagType::Double, v); }
+	[[nodiscard]] static auto byte_array(ByteArray v) -> Tag { return leaf(TagType::ByteArray, std::move(v)); }
+	[[nodiscard]] static auto int_array(IntArray v) -> Tag { return leaf(TagType::IntArray, std::move(v)); }
+	[[nodiscard]] static auto string(String v) -> Tag { return leaf(TagType::String, std::move(v)); }
+
+	[[nodiscard]] static auto list(TagType element_type = TagType::End) -> Tag {
+		Tag tag;
+		tag.type = TagType::List;
+		tag.list_type = element_type;
+		tag.value = List{};
+		return tag;
+	}
+
+	[[nodiscard]] static auto compound() -> Tag {
+		Tag tag;
+		tag.type = TagType::Compound;
+		tag.value = Compound{};
+		return tag;
+	}
+
+	// ---- Fluent building ----
+	Tag& add(Tag element); // append to a List, returns *this
+	Tag& put(std::string name, Tag child); // insert/overwrite in a Compound, returns *this
+
+	// ---- Compound lookup ----
+	[[nodiscard]] auto has(std::string_view name) const noexcept -> bool { return find(name) != nullptr; }
+	[[nodiscard]] auto find(std::string_view name) const noexcept -> const Tag*;
+	[[nodiscard]] auto find(std::string_view name) noexcept -> Tag*;
+	[[nodiscard]] auto at(std::string_view name) const -> const Tag&; // throws if missing
+
+	[[nodiscard]] auto size() const noexcept -> size_t; // List/Compound/*Array/String length, else 0
+
+	// Non-throwing typed access.
+	template <typename T>
+	[[nodiscard]] auto get() const noexcept -> const T* {
+		return std::get_if<T>(&value);
+	}
+
+	// Throwing typed access, for call sites that already know the type.
+	[[nodiscard]] auto as_byte() const -> Byte { return expect<Byte>(TagType::Byte); }
+	[[nodiscard]] auto as_short() const -> Short { return expect<Short>(TagType::Short); }
+	[[nodiscard]] auto as_int() const -> Int { return expect<Int>(TagType::Int); }
+	[[nodiscard]] auto as_long() const -> Long { return expect<Long>(TagType::Long); }
+	[[nodiscard]] auto as_float() const -> Float { return expect<Float>(TagType::Float); }
+	[[nodiscard]] auto as_double() const -> Double { return expect<Double>(TagType::Double); }
+	[[nodiscard]] auto as_byte_array() const -> const ByteArray& { return expect<ByteArray>(TagType::ByteArray); }
+	[[nodiscard]] auto as_byte_array() -> ByteArray& { return expect<ByteArray>(TagType::ByteArray); }
+	[[nodiscard]] auto as_int_array() const -> const IntArray& { return expect<IntArray>(TagType::IntArray); }
+	[[nodiscard]] auto as_int_array() -> IntArray& { return expect<IntArray>(TagType::IntArray); }
+	[[nodiscard]] auto as_string() const -> const String& { return expect<String>(TagType::String); }
+	[[nodiscard]] auto as_string() -> String& { return expect<String>(TagType::String); }
+	[[nodiscard]] auto as_list() const -> const List& { return expect<List>(TagType::List); }
+	[[nodiscard]] auto as_list() -> List& { return expect<List>(TagType::List); }
+	[[nodiscard]] auto as_compound() const -> const Compound& { return expect<Compound>(TagType::Compound); }
+	[[nodiscard]] auto as_compound() -> Compound& { return expect<Compound>(TagType::Compound); }
+
+	// Typed setters; warn (rather than throw) on a type mismatch.
+	template <typename T>
+	    requires std::is_arithmetic_v<T>
+	void set(T v) {
 		switch (type) {
-		case TAG_BYTE:
-			byteValue = _value;
+		case TagType::Byte:
+			value = static_cast<Byte>(v);
 			break;
-		case TAG_SHORT:
-			shortValue = _value;
+		case TagType::Short:
+			value = static_cast<Short>(v);
 			break;
-		case TAG_INT:
-			intValue = _value;
+		case TagType::Int:
+			value = static_cast<Int>(v);
 			break;
-		case TAG_LONG:
-			longValue = _value;
+		case TagType::Long:
+			value = static_cast<Long>(v);
 			break;
-		case TAG_FLOAT:
-			floatValue = _value;
+		case TagType::Float:
+			value = static_cast<Float>(v);
 			break;
-		case TAG_DOUBLE:
-			doubleValue = _value;
+		case TagType::Double:
+			value = static_cast<Double>(v);
 			break;
 		default:
-			GlobalLogger().warn << "Tried to use numeric setter on non-numeric NBT type " << type << "!\n";
+			GlobalLogger().warn << "Tried to use numeric setter on non-numeric NBT type " << to_string(type) << "!\n";
 			break;
 		}
 	}
 
-	void Set(const std::string& _value) {
-		if (type == TAG_STRING)
-			stringValue = _value;
-		else
-			GlobalLogger().warn << "Tried to use string setter on non-string NBT type " << type << "!\n";
-	}
-
-	// Typed getters; throw if wrong type
-	int8_t GetByte() const {
-		Expect(TAG_BYTE);
-		return byteValue;
-	}
-	int16_t GetShort() const {
-		Expect(TAG_SHORT);
-		return shortValue;
-	}
-	int32_t GetInt() const {
-		Expect(TAG_INT);
-		return intValue;
-	}
-	int64_t GetLong() const {
-		Expect(TAG_LONG);
-		return longValue;
-	}
-	float GetFloat() const {
-		Expect(TAG_FLOAT);
-		return floatValue;
-	}
-	double GetDouble() const {
-		Expect(TAG_DOUBLE);
-		return doubleValue;
-	}
-	const std::vector<int8_t>& GetByteArray() const {
-		Expect(TAG_BYTEARRAY);
-		return byteArray;
-	}
-	const std::vector<int32_t>& GetIntArray() const {
-		Expect(TAG_INTARRAY);
-		return intArray;
-	}
-	const std::string& GetString() const {
-		Expect(TAG_STRING);
-		return stringValue;
-	}
-	const std::vector<Tag>& GetList() const {
-		Expect(TAG_LIST);
-		return list;
-	}
-	const std::unordered_map<std::string, Tag>& GetCompound() const {
-		Expect(TAG_COMPOUND);
-		return compound;
-	}
-
-	// Compound lookup helpers
-	bool Has(const std::string& _key) const {
-		return compound.contains(_key);
-	}
-
-	const Tag& Get(const std::string& _key) const {
-		auto it = compound.find(_key);
-		if (it == compound.end()) {
-			GlobalLogger().error << "Tried to access a NBT tag that doesn't exist! (" << _key << ")\n";
-			throw std::runtime_error("NBT tag doesn't exist!");
+	void set(std::string v) {
+		if (type == TagType::String) {
+			value = std::move(v);
+		} else {
+			GlobalLogger().warn << "Tried to use string setter on non-string NBT type " << to_string(type) << "!\n";
 		}
-		return it->second;
 	}
 
 private:
-	void Expect(TagType _t) const {
-		if (type != _t) {
-			GlobalLogger().error << "Unexpected NBT type in getter! '" << _t << "'. Expected: '" << type << "'\n";
+	template <typename T>
+	[[nodiscard]] static auto leaf(TagType t, T v) -> Tag {
+		Tag tag;
+		tag.type = t;
+		tag.value = std::move(v);
+		return tag;
+	}
+
+	template <typename T>
+	[[nodiscard]] auto expect(TagType expected) const -> const T& {
+		if (type != expected) {
+			GlobalLogger().error << "Unexpected NBT type in getter! '" << to_string(expected) << "'. Expected: '"
+			                      << to_string(type) << "'\n";
 			throw std::runtime_error("Unexpected NBT type!");
 		}
+		return std::get<T>(value);
+	}
+
+	template <typename T>
+	[[nodiscard]] auto expect(TagType expected) -> T& {
+		if (type != expected) {
+			GlobalLogger().error << "Unexpected NBT type in getter! '" << to_string(expected) << "'. Expected: '"
+			                      << to_string(type) << "'\n";
+			throw std::runtime_error("Unexpected NBT type!");
+		}
+		return std::get<T>(value);
 	}
 };
 
-struct NBTwriter {
-	size_t pos;
-	NBTwriter() = default;
-	NBTwriter(std::vector<uint8_t>& _out, Tag& _root) : pos(0) {
-		// root should be a TAG_Compound with whatever name you want (usually "")
-		// writeTag handles type byte + name + payload + TAG_END automatically
-		_out.resize(WriteTag(_out, _root, false, true));
-		WriteTag(_out, _root, false, false);
+struct CompoundEntry {
+	std::string name;
+	Tag tag;
+};
+
+inline auto Tag::find(std::string_view name) const noexcept -> const Tag* {
+	if (type != TagType::Compound)
+		return nullptr;
+	const auto& entries = std::get<Compound>(value);
+	auto it = std::ranges::find(entries, name, &CompoundEntry::name);
+	return it != entries.end() ? &it->tag : nullptr;
+}
+
+inline auto Tag::find(std::string_view name) noexcept -> Tag* {
+	return const_cast<Tag*>(std::as_const(*this).find(name));
+}
+
+inline auto Tag::at(std::string_view name) const -> const Tag& {
+	if (const Tag* found = find(name))
+		return *found;
+	GlobalLogger().error << "Tried to access a NBT tag that doesn't exist! (" << name << ")\n";
+	throw std::runtime_error("NBT tag doesn't exist!");
+}
+
+inline auto Tag::size() const noexcept -> size_t {
+	switch (type) {
+	case TagType::ByteArray:
+		return std::get<ByteArray>(value).size();
+	case TagType::IntArray:
+		return std::get<IntArray>(value).size();
+	case TagType::String:
+		return std::get<String>(value).size();
+	case TagType::List:
+		return std::get<List>(value).size();
+	case TagType::Compound:
+		return std::get<Compound>(value).size();
+	default:
+		return 0;
+	}
+}
+
+inline Tag& Tag::add(Tag element) {
+	if (type != TagType::List) {
+		GlobalLogger().warn << "Tried to add an element to a non-list NBT tag!\n";
+		return *this;
+	}
+	auto& elements = std::get<List>(value);
+	if (elements.empty() && list_type == TagType::End)
+		list_type = element.type;
+	elements.push_back(std::move(element));
+	return *this;
+}
+
+inline Tag& Tag::put(std::string name, Tag child) {
+	if (type != TagType::Compound) {
+		GlobalLogger().warn << "Tried to put a child into a non-compound NBT tag!\n";
+		return *this;
+	}
+	auto& entries = std::get<Compound>(value);
+	auto it = std::ranges::find(entries, name, &CompoundEntry::name);
+	if (it != entries.end())
+		it->tag = std::move(child);
+	else
+		entries.push_back({ std::move(name), std::move(child) });
+	return *this;
+}
+
+// ---------------------------------------------------------------------------
+// Binary encode / decode
+// ---------------------------------------------------------------------------
+
+// Writes `root` (a TAG_Compound) as big-endian NBT. Computes the exact encoded
+// size first so the output buffer is allocated once, instead of growing it with
+// push_back as we go.
+class NBTWriter {
+public:
+	[[nodiscard]] static auto write(const Tag& root, std::string_view root_name = "") -> std::vector<uint8_t> {
+		std::vector<uint8_t> out(tag_size(root, root_name));
+		size_t pos = 0;
+		write_tag(out, pos, root, root_name);
+		return out;
 	}
 
-	size_t WriteTag(std::vector<uint8_t>& _out, const Tag& _tag, const bool _payload = false,
-	                const bool _dryRun = false) {
-		size_t size = 0;
+private:
+	[[nodiscard]] static auto string_size(std::string_view s) -> size_t { return sizeof(uint16_t) + s.size(); }
 
-		if (!_payload) {
-			size += sizeof(uint8_t);
-			if (!_dryRun)
-				_out[pos++] = (uint8_t(_tag.type));
+	[[nodiscard]] static auto tag_size(const Tag& tag, std::string_view name) -> size_t {
+		if (tag.type == TagType::End)
+			return sizeof(uint8_t);
+		return sizeof(uint8_t) + string_size(name) + payload_size(tag);
+	}
+
+	[[nodiscard]] static auto payload_size(const Tag& tag) -> size_t {
+		switch (tag.type) {
+		case TagType::End:
+			return 0;
+		case TagType::Byte:
+			return sizeof(Byte);
+		case TagType::Short:
+			return sizeof(Short);
+		case TagType::Int:
+			return sizeof(Int);
+		case TagType::Long:
+			return sizeof(Long);
+		case TagType::Float:
+			return sizeof(Float);
+		case TagType::Double:
+			return sizeof(Double);
+		case TagType::String:
+			return string_size(std::get<String>(tag.value));
+		case TagType::ByteArray:
+			return sizeof(int32_t) + std::get<ByteArray>(tag.value).size();
+		case TagType::IntArray:
+			return sizeof(int32_t) + std::get<IntArray>(tag.value).size() * sizeof(int32_t);
+		case TagType::List: {
+			size_t size = sizeof(uint8_t) + sizeof(int32_t);
+			for (const Tag& element : std::get<List>(tag.value))
+				size += payload_size(element);
+			return size;
 		}
-		if (!_payload && _tag.type != TAG_END)
-			size += WriteString(_out, _tag.name, _dryRun);
+		case TagType::Compound: {
+			size_t size = sizeof(uint8_t); // TAG_End terminator
+			for (const auto& [name, child] : std::get<Compound>(tag.value))
+				size += tag_size(child, name);
+			return size;
+		}
+		default:
+			throw std::runtime_error(std::format("Unknown NBT tag type: {}", uint8_t(tag.type)));
+		}
+	}
 
-		switch (_tag.type) {
-		case TAG_END:
+	static void write_tag(std::vector<uint8_t>& out, size_t& pos, const Tag& tag, std::string_view name) {
+		out[pos++] = uint8_t(tag.type);
+		if (tag.type == TagType::End)
+			return;
+		write_string(out, pos, name);
+		write_payload(out, pos, tag);
+	}
+
+	static void write_payload(std::vector<uint8_t>& out, size_t& pos, const Tag& tag) {
+		switch (tag.type) {
+		case TagType::End:
 			break;
-		case TAG_BYTE:
-			size += WriteI8(_out, _tag.byteValue, _dryRun);
+		case TagType::Byte:
+			write_i8(out, pos, std::get<Byte>(tag.value));
 			break;
-		case TAG_SHORT:
-			size += WriteI16(_out, _tag.shortValue, _dryRun);
+		case TagType::Short:
+			write_i16(out, pos, std::get<Short>(tag.value));
 			break;
-		case TAG_INT:
-			size += WriteI32(_out, _tag.intValue, _dryRun);
+		case TagType::Int:
+			write_i32(out, pos, std::get<Int>(tag.value));
 			break;
-		case TAG_LONG:
-			size += WriteI64(_out, _tag.longValue, _dryRun);
+		case TagType::Long:
+			write_i64(out, pos, std::get<Long>(tag.value));
 			break;
-		case TAG_FLOAT:
-			size += WriteF32(_out, _tag.floatValue, _dryRun);
+		case TagType::Float:
+			write_f32(out, pos, std::get<Float>(tag.value));
 			break;
-		case TAG_DOUBLE:
-			size += WriteF64(_out, _tag.doubleValue, _dryRun);
+		case TagType::Double:
+			write_f64(out, pos, std::get<Double>(tag.value));
 			break;
-		case TAG_STRING:
-			size += WriteString(_out, _tag.stringValue, _dryRun);
+		case TagType::String:
+			write_string(out, pos, std::get<String>(tag.value));
 			break;
 
-		case TAG_BYTEARRAY: {
-			size += WriteI32(_out, int32_t(_tag.byteArray.size()), _dryRun);
-			size += _tag.byteArray.size();
-			if (_dryRun)
-				break;
-			// TODO: Assume we got the size
-			memcpy(_out.data() + pos, _tag.byteArray.data(), _tag.byteArray.size());
-
-			pos += _tag.byteArray.size();
+		case TagType::ByteArray: {
+			const auto& arr = std::get<ByteArray>(tag.value);
+			write_i32(out, pos, int32_t(arr.size()));
+			std::memcpy(out.data() + pos, arr.data(), arr.size());
+			pos += arr.size();
 			break;
 		}
 
-		case TAG_INTARRAY: {
-			size += WriteI32(_out, int32_t(_tag.intArray.size()), _dryRun);
-			size += _tag.intArray.size() * sizeof(int32_t);
-			if (_dryRun)
-				break;
-			for (const int32_t b : _tag.intArray) {
-				uint32_t u = uint32_t(b);
-
-				_out[pos + 0] = u >> 24;
-				_out[pos + 1] = u >> 16;
-				_out[pos + 2] = u >> 8;
-				_out[pos + 3] = u;
-
-				pos += 4;
-			}
+		case TagType::IntArray: {
+			const auto& arr = std::get<IntArray>(tag.value);
+			write_i32(out, pos, int32_t(arr.size()));
+			for (int32_t v : arr)
+				write_i32(out, pos, v);
 			break;
 		}
 
-		case TAG_LIST: {
-			size += WriteI8(_out, int8_t(_tag.listType), _dryRun);
-			size += WriteI32(_out, int32_t(_tag.list.size()), _dryRun);
-			for (const Tag& element : _tag.list)
-				size += WriteTag(_out, element, true, _dryRun);
+		case TagType::List: {
+			const auto& elements = std::get<List>(tag.value);
+			out[pos++] = uint8_t(tag.list_type);
+			write_i32(out, pos, int32_t(elements.size()));
+			for (const Tag& element : elements)
+				write_payload(out, pos, element);
 			break;
 		}
 
-		case TAG_COMPOUND: {
-			for (const auto& [key, child] : _tag.compound)
-				size += WriteTag(_out, child, false, _dryRun);
-			// TAG_END terminates the compound
-			size += WriteI8(_out, uint8_t(TAG_END), _dryRun);
+		case TagType::Compound: {
+			for (const auto& [name, child] : std::get<Compound>(tag.value))
+				write_tag(out, pos, child, name);
+			out[pos++] = uint8_t(TagType::End);
 			break;
 		}
 
 		default:
-			throw std::runtime_error("Unknown tag type: " + std::to_string(_tag.type));
+			throw std::runtime_error(std::format("Unknown NBT tag type: {}", uint8_t(tag.type)));
 		}
-
-		return size;
 	}
 
-	// Write helpers
-	inline size_t WriteI8(std::vector<uint8_t>& _out, const int8_t _v, const bool _dryRun = false) {
-		if (!_dryRun)
-			_out[pos++] = (uint8_t(_v));
-		return sizeof(int8_t);
+	static void write_i8(std::vector<uint8_t>& out, size_t& pos, int8_t v) { out[pos++] = uint8_t(v); }
+
+	static void write_i16(std::vector<uint8_t>& out, size_t& pos, int16_t v) {
+		auto u = uint16_t(v);
+		out[pos + 0] = uint8_t(u >> 8);
+		out[pos + 1] = uint8_t(u);
+		pos += sizeof(u);
 	}
 
-	inline size_t WriteI16(std::vector<uint8_t>& _out, const int16_t _v, const bool _dryRun = false) {
-		if (!_dryRun) {
-			uint16_t u = uint16_t(_v);
-			_out[pos] = ((u >> 8) & 0xFF);
-			_out[pos + 1] = (u & 0xFF);
-			pos += sizeof(int16_t);
-		}
-		return sizeof(int16_t);
+	static void write_i32(std::vector<uint8_t>& out, size_t& pos, int32_t v) {
+		auto u = uint32_t(v);
+		out[pos + 0] = uint8_t(u >> 24);
+		out[pos + 1] = uint8_t(u >> 16);
+		out[pos + 2] = uint8_t(u >> 8);
+		out[pos + 3] = uint8_t(u);
+		pos += sizeof(u);
 	}
 
-	inline size_t WriteI32(std::vector<uint8_t>& _out, const int32_t _v, const bool _dryRun = false) {
-		if (!_dryRun) {
-			uint32_t u = uint32_t(_v);
-			_out[pos] = ((u >> 24) & 0xFF);
-			_out[pos + 1] = ((u >> 16) & 0xFF);
-			_out[pos + 2] = ((u >> 8) & 0xFF);
-			_out[pos + 3] = (u & 0xFF);
-			pos += sizeof(int32_t);
-		}
-		return sizeof(int32_t);
+	static void write_i64(std::vector<uint8_t>& out, size_t& pos, int64_t v) {
+		auto u = uint64_t(v);
+		out[pos + 0] = uint8_t(u >> 56);
+		out[pos + 1] = uint8_t(u >> 48);
+		out[pos + 2] = uint8_t(u >> 40);
+		out[pos + 3] = uint8_t(u >> 32);
+		out[pos + 4] = uint8_t(u >> 24);
+		out[pos + 5] = uint8_t(u >> 16);
+		out[pos + 6] = uint8_t(u >> 8);
+		out[pos + 7] = uint8_t(u);
+		pos += sizeof(u);
 	}
 
-	inline size_t WriteI64(std::vector<uint8_t>& _out, const int64_t _v, const bool _dryRun = false) {
-		if (!_dryRun) {
-			uint64_t u = uint64_t(_v);
-			_out[pos] = ((u >> 56) & 0xFF);
-			_out[pos + 1] = ((u >> 48) & 0xFF);
-			_out[pos + 2] = ((u >> 40) & 0xFF);
-			_out[pos + 3] = ((u >> 32) & 0xFF);
-			_out[pos + 4] = ((u >> 24) & 0xFF);
-			_out[pos + 5] = ((u >> 16) & 0xFF);
-			_out[pos + 6] = ((u >> 8) & 0xFF);
-			_out[pos + 7] = (u & 0xFF);
-			pos += sizeof(int64_t);
-		}
-		return sizeof(int64_t);
+	static void write_f32(std::vector<uint8_t>& out, size_t& pos, float v) {
+		write_i32(out, pos, std::bit_cast<int32_t>(v));
+	}
+	static void write_f64(std::vector<uint8_t>& out, size_t& pos, double v) {
+		write_i64(out, pos, std::bit_cast<int64_t>(v));
 	}
 
-	inline size_t WriteF32(std::vector<uint8_t>& _out, const float _v, const bool _dryRun = false) {
-		if (!_dryRun) {
-			uint32_t raw = std::bit_cast<uint32_t>(_v);
-			WriteI32(_out, int32_t(raw));
-		}
-		return sizeof(float);
-	}
-
-	inline size_t WriteF64(std::vector<uint8_t>& _out, const double _v, const bool _dryRun = false) {
-		if (!_dryRun) {
-			uint64_t raw = std::bit_cast<uint64_t>(_v);
-			WriteI64(_out, int64_t(raw));
-		}
-		return sizeof(double);
-	}
-
-	inline size_t WriteString(std::vector<uint8_t>& _out, const std::string& _s, const bool _dryRun = false) {
-		if (!_dryRun) {
-			WriteI16(_out, int16_t(_s.size()));
-			memcpy(_out.data() + pos, _s.data(), _s.size());
-			pos += _s.size();
-		}
-		return sizeof(int16_t) + _s.size();
+	static void write_string(std::vector<uint8_t>& out, size_t& pos, std::string_view s) {
+		write_i16(out, pos, int16_t(s.size()));
+		std::memcpy(out.data() + pos, s.data(), s.size());
+		pos += s.size();
 	}
 };
 
-struct NBTParser {
-	uint8_t* data;
-	size_t length;
-	size_t pos;
-	Tag root;
+enum class NBTError : uint8_t {
+	UnexpectedEnd,
+	InvalidTag,
+	RootNotCompound,
+};
 
-	NBTParser() = default;
-	NBTParser(uint8_t* _pdata, size_t _plength) : data(_pdata), length(_plength), pos(0) {
-		root = ParseTag();
-		if (root.type != TAG_COMPOUND)
-			throw std::runtime_error("NBT root tag is not a compound!");
+struct NBTErrorInfo {
+	NBTError error;
+	std::string message;
+	size_t position{ 0 };
+};
+
+// Parses big-endian NBT binary data into a Tag tree. Internally uses exceptions
+// for malformed input (simplest for recursive descent), but they never escape
+// this class: parse() converts them to std::expected at the boundary.
+class NBTParser {
+public:
+	struct Named {
+		std::string name;
+		Tag tag;
+	};
+
+	[[nodiscard]] static auto parse(std::span<const uint8_t> data) -> std::expected<Tag, NBTErrorInfo> {
+		auto result = parse_named(data);
+		if (!result)
+			return std::unexpected(result.error());
+		return std::move(result->tag);
 	}
 
-	// Parse a tag, either with type and name bytes (parseTag) or just a payload (parsePayload)
-	Tag ParsePayload(TagType _ptype, const std::string& _pname = "") {
-		Tag tag{ _ptype, _pname, {} };
+	[[nodiscard]] static auto parse_named(std::span<const uint8_t> data) -> std::expected<Named, NBTErrorInfo> {
+		try {
+			NBTParser parser(data);
+			auto [name, tag] = parser.parse_tag();
+			if (tag.type != TagType::Compound) {
+				return std::unexpected(
+				    NBTErrorInfo{ .error = NBTError::RootNotCompound, .message = "NBT root tag is not a compound!" });
+			}
+			return Named{ std::move(name), std::move(tag) };
+		} catch (const Failure& failure) {
+			return std::unexpected(
+			    NBTErrorInfo{ .error = failure.error, .message = failure.message, .position = failure.position });
+		}
+	}
 
-		switch (_ptype) {
-		case TAG_BYTE:
-			tag.byteValue = ReadI8();
+private:
+	struct Failure {
+		NBTError error;
+		std::string message;
+		size_t position;
+	};
+
+	std::span<const uint8_t> data;
+	size_t pos = 0;
+
+	explicit NBTParser(std::span<const uint8_t> d) : data(d) {}
+
+	[[noreturn]] void fail(NBTError error, std::string message) const {
+		throw Failure{ error, std::move(message), pos };
+	}
+
+	void ensure(size_t n) const {
+		if (pos + n > data.size())
+			fail(NBTError::UnexpectedEnd, "Unexpected end of NBT data");
+	}
+
+	// Type byte + name + payload.
+	auto parse_tag() -> std::pair<std::string, Tag> {
+		ensure(1);
+		auto type = TagType(data[pos++]);
+		if (type == TagType::End)
+			return { "", Tag{} };
+
+		std::string name = read_string();
+		return { std::move(name), parse_payload(type) };
+	}
+
+	// Payload only, used for list elements (no type byte or name).
+	auto parse_payload(TagType type) -> Tag {
+		Tag tag;
+		tag.type = type;
+
+		switch (type) {
+		case TagType::End:
 			break;
-		case TAG_SHORT:
-			tag.shortValue = ReadI16();
+		case TagType::Byte:
+			tag.value = read_i8();
 			break;
-		case TAG_INT:
-			tag.intValue = ReadI32();
+		case TagType::Short:
+			tag.value = read_i16();
 			break;
-		case TAG_LONG:
-			tag.longValue = ReadI64();
+		case TagType::Int:
+			tag.value = read_i32();
 			break;
-		case TAG_FLOAT:
-			tag.floatValue = ReadF32();
+		case TagType::Long:
+			tag.value = read_i64();
 			break;
-		case TAG_DOUBLE:
-			tag.doubleValue = ReadF64();
+		case TagType::Float:
+			tag.value = read_f32();
 			break;
-		case TAG_STRING:
-			tag.stringValue = ReadString();
+		case TagType::Double:
+			tag.value = read_f64();
+			break;
+		case TagType::String:
+			tag.value = read_string();
 			break;
 
-		case TAG_BYTEARRAY: {
-			int32_t count = ReadI32();
-			tag.byteArray.resize(count);
-			if (count < 0 || pos + size_t(count) > length) [[unlikely]]
-				throw std::runtime_error("NBT: byte array out of bounds");
-			std::memcpy(tag.byteArray.data(), data + pos, count);
-			pos += count;
+		case TagType::ByteArray: {
+			int32_t count = read_i32();
+			if (count < 0)
+				fail(NBTError::InvalidTag, "NBT: negative byte array length");
+			ensure(static_cast<size_t>(count));
+			ByteArray arr(static_cast<size_t>(count));
+			std::memcpy(arr.data(), data.data() + pos, arr.size());
+			pos += arr.size();
+			tag.value = std::move(arr);
 			break;
 		}
 
-		case TAG_INTARRAY: {
-			int32_t count = ReadI32();
-			tag.intArray.resize(count);
-			for (auto& v : tag.intArray)
-				v = ReadI32();
+		case TagType::IntArray: {
+			int32_t count = read_i32();
+			if (count < 0)
+				fail(NBTError::InvalidTag, "NBT: negative int array length");
+			IntArray arr(static_cast<size_t>(count));
+			for (auto& v : arr)
+				v = read_i32();
+			tag.value = std::move(arr);
 			break;
 		}
 
-		case TAG_LIST: {
-			int8_t innerType = ReadI8();
-			int32_t count = ReadI32();
+		case TagType::List: {
+			auto element_type = TagType(read_i8());
+			int32_t count = read_i32();
+			if (element_type == TagType::End && count > 0)
+				fail(NBTError::InvalidTag, "Invalid TAG_List: TAG_End element type with nonzero length");
+			if (count < 0)
+				fail(NBTError::InvalidTag, "NBT: negative list length");
 
-			if (innerType == TAG_END && count > 0)
-				throw std::runtime_error("Invalid TAG_List");
+			List elements;
+			elements.reserve(static_cast<size_t>(count));
+			for (int32_t i = 0; i < count; ++i)
+				elements.push_back(parse_payload(element_type));
 
-			tag.list.reserve(size_t(count));
-			for (int i = 0; i < count; i++)
-				tag.list.emplace_back(ParsePayload(TagType(innerType)));
-
-			tag.listType = TagType(innerType);
+			tag.list_type = element_type;
+			tag.value = std::move(elements);
 			break;
 		}
 
-		case TAG_COMPOUND: {
+		case TagType::Compound: {
+			Compound entries;
 			while (true) {
-				Tag child = ParseTag();
-				if (child.type == TAG_END)
+				auto [name, child] = parse_tag();
+				if (child.type == TagType::End)
 					break;
-				tag.compound.try_emplace(child.name, std::move(child));
+				entries.push_back({ std::move(name), std::move(child) });
 			}
+			tag.value = std::move(entries);
 			break;
 		}
 
 		default:
-			throw std::runtime_error("Unsupported payload type in list");
+			fail(NBTError::InvalidTag, std::format("Unknown NBT tag type: {}", uint8_t(type)));
 		}
 
 		return tag;
 	}
 
-	// Parse a tag including its type byte and name
-	Tag ParseTag() {
-		if (pos >= length)
-			throw std::runtime_error("Unexpected end of NBT data");
-
-		TagType type = TagType(data[pos++]);
-		if (type == TAG_END)
-			return Tag{ TAG_END, "", {} }; // no name for TAG_End
-
-		std::string name = ReadString();
-		return ParsePayload(type, name);
-	}
-
-	// Read helpers
-
-	inline int8_t ReadI8() {
-		if (pos >= length)
-			throw std::runtime_error("NBT: i8 out of bounds");
+	auto read_i8() -> int8_t {
+		ensure(1);
 		return int8_t(data[pos++]);
 	}
 
-	inline int16_t ReadI16() {
-		if (pos + 2 > length)
-			throw std::runtime_error("NBT: i16 out of bounds");
-		uint16_t v = static_cast<uint16_t>((static_cast<uint16_t>(data[pos]) << 8) |
-		                                   static_cast<uint16_t>(data[pos + 1]));
+	auto read_i16() -> int16_t {
+		ensure(2);
+		auto v = uint16_t((uint16_t(data[pos]) << 8) | uint16_t(data[pos + 1]));
 		pos += 2;
 		return int16_t(v);
 	}
 
-	inline int32_t ReadI32() {
-		if (pos + 4 > length)
-			throw std::runtime_error("NBT: unexpected end");
-		uint32_t v = (uint32_t(data[pos]) << 24) | (uint32_t(data[pos + 1]) << 16) | (uint32_t(data[pos + 2]) << 8) |
-		             (uint32_t(data[pos + 3]));
+	auto read_i32() -> int32_t {
+		ensure(4);
+		auto v = (uint32_t(data[pos]) << 24) | (uint32_t(data[pos + 1]) << 16) | (uint32_t(data[pos + 2]) << 8) |
+		         uint32_t(data[pos + 3]);
 		pos += 4;
 		return int32_t(v);
 	}
 
-	inline int64_t ReadI64() {
-		uint64_t hi = uint32_t(ReadI32());
-		return (hi << 32) | uint32_t(ReadI32());
+	auto read_i64() -> int64_t {
+		auto hi = uint64_t(uint32_t(read_i32()));
+		auto lo = uint64_t(uint32_t(read_i32()));
+		return int64_t((hi << 32) | lo);
 	}
 
-	inline float ReadF32() {
-		uint32_t raw = uint32_t(ReadI32());
-		return std::bit_cast<float>(raw);
-	}
+	auto read_f32() -> float { return std::bit_cast<float>(read_i32()); }
+	auto read_f64() -> double { return std::bit_cast<double>(read_i64()); }
 
-	inline double ReadF64() {
-		uint64_t raw = uint64_t(ReadI64());
-		return std::bit_cast<double>(raw);
-	}
-
-	inline std::string ReadString() {
-		uint16_t len = uint16_t(ReadI16());
-		if (pos + len > length)
-			throw std::runtime_error(std::format("NBT: string out of bounds ({}+{}/{})", pos, len, length));
-		std::string s(reinterpret_cast<const char*>(data) + pos, len);
+	auto read_string() -> std::string {
+		auto len = uint16_t(read_i16());
+		ensure(len);
+		std::string s(reinterpret_cast<const char*>(data.data()) + pos, len);
 		pos += len;
 		return s;
 	}
 };
+
+} // namespace nbt

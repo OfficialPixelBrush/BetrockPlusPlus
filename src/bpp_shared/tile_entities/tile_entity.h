@@ -31,7 +31,7 @@ struct TileEntity {
 	TileEntity(TileType _pType, Int3 _pPosition) : type(_pType), position(_pPosition) {};
 
 	virtual void Tick(WorldManager& _world);
-	virtual Tag Serialize();
+	virtual nbt::Tag Serialize();
 	virtual ~TileEntity() = default;
 };
 
@@ -40,7 +40,7 @@ struct TileEntityChest : TileEntity {
 	InventoryChest inventory;
 	TileEntityChest(Int3 _pPosition) : TileEntity(TileType::CHEST, _pPosition) {};
 
-	Tag Serialize() override;
+	nbt::Tag Serialize() override;
 	void Tick(WorldManager& _world) override;
 };
 
@@ -66,7 +66,7 @@ public:
 		canTick = true;
 	};
 
-	Tag Serialize() override;
+	nbt::Tag Serialize() override;
 	void Tick(WorldManager& _world) override;
 
 	int GetCookTime() const;
@@ -79,7 +79,7 @@ struct TileEntityDispenser : TileEntity {
 	InventoryDispenser inventory;
 	TileEntityDispenser(Int3 _pPosition) : TileEntity(TileType::DISPENSER, _pPosition) {};
 
-	Tag Serialize() override;
+	nbt::Tag Serialize() override;
 	void Tick(WorldManager& _world) override;
 };
 
@@ -91,7 +91,7 @@ struct TileEntitySign : TileEntity {
 	std::string text4 = "";
 	TileEntitySign(Int3 _pPosition) : TileEntity(TileType::SIGN, _pPosition) {};
 
-	Tag Serialize() override;
+	nbt::Tag Serialize() override;
 };
 
 // MobSpawner
@@ -102,5 +102,5 @@ struct TileEntityMobSpawner : TileEntity {
 		canTick = true;
 	};
 
-	Tag Serialize() override;
+	nbt::Tag Serialize() override;
 };

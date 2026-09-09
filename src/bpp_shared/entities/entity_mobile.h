@@ -56,8 +56,8 @@ public:
 	void DealDamage(int _damage);
 	int GetArmorValue();
 	bool AttackEntityFrom(Entity* _entity, int _damage) override;
-	std::optional<Tag> SerializeToNbt() override;
-	void LoadFromNbt(Tag& _nbt) override;
+	std::optional<nbt::Tag> SerializeToNbt() override;
+	void LoadFromNbt(nbt::Tag& _nbt) override;
 	float GetEyeHeight() {
 		return height * 0.85f;
 	}

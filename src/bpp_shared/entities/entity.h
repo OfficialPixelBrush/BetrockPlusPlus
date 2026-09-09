@@ -181,8 +181,8 @@ struct Entity {
 	virtual void ApplyInput(float _acceleration);
 	virtual void Move(Vec3& _velocity);
 	virtual void UpdateFallState(float _movedY);
-	virtual std::optional<Tag> SerializeToNbt();
-	virtual void LoadFromNbt(Tag& _nbt);
+	virtual std::optional<nbt::Tag> SerializeToNbt();
+	virtual void LoadFromNbt(nbt::Tag& _nbt);
 	virtual void DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data = 0, int _pickupTime = 10);
 	virtual void OnPlayerInteract(PlayerEntity* _entity);
 	virtual void UpdateEntityPhysicsState();

@@ -178,7 +178,7 @@ constexpr std::string GetTileNbtId(TileType _type) {
 	return "";
 }
 
-Tag TileEntity::Serialize() {
+nbt::Tag TileEntity::Serialize() {
 	auto root = Tag{};
 	root.type = TAG_COMPOUND;
 
@@ -195,7 +195,7 @@ Tag TileEntity::Serialize() {
 	return root;
 }
 
-Tag TileEntityChest::Serialize() {
+nbt::Tag TileEntityChest::Serialize() {
 	auto root = TileEntity::Serialize();
 
 	// Construct our inventory
@@ -224,7 +224,7 @@ Tag TileEntityChest::Serialize() {
 	return root;
 }
 
-Tag TileEntityFurnace::Serialize() {
+nbt::Tag TileEntityFurnace::Serialize() {
 	auto root = TileEntity::Serialize();
 
 	// Construct our inventory
@@ -253,7 +253,7 @@ Tag TileEntityFurnace::Serialize() {
 	return root;
 }
 
-Tag TileEntityDispenser::Serialize() {
+nbt::Tag TileEntityDispenser::Serialize() {
 	auto root = TileEntity::Serialize();
 
 	// Construct our inventory
@@ -282,7 +282,7 @@ Tag TileEntityDispenser::Serialize() {
 	return root;
 }
 
-Tag TileEntitySign::Serialize() {
+nbt::Tag TileEntitySign::Serialize() {
 	auto root = TileEntity::Serialize();
 
 	auto vText1 = Tag{ .type = TAG_STRING, .name = "Text1", .stringValue = text1 };
@@ -298,7 +298,7 @@ Tag TileEntitySign::Serialize() {
 	return root;
 }
 
-Tag TileEntityMobSpawner::Serialize() {
+nbt::Tag TileEntityMobSpawner::Serialize() {
 	auto root = TileEntity::Serialize();
 
 	auto vEntityId = Tag{ .type = TAG_STRING, .name = "EntityId", .stringValue = entityId };
