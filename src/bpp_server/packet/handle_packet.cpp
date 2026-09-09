@@ -191,10 +191,6 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		return;
 	}
 
-	auto entityPos = _session.entity->position;
-	if (Items::IsBlock(heldItem->id) && position.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > 6.0)
-		return;
-
 	// Block interactions
 	auto block = _world.GetBlockId(position);
 
@@ -235,6 +231,10 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 	}
 
 	if (Items::IsBlock(heldItem->id)) {
+		auto entityPos = _session.entity->position;
+		if (position.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > 6.0)
+			return;
+
 		Int3 placePosition = position.WithOffset(FaceDirectionToDirection(_pkt.face));
 
 		if (heldItem->id.value < 0 || heldItem->id.value >= 256) {
