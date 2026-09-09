@@ -104,7 +104,8 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 		return;
 
 	auto entityPos = _session.entity->position;
-	if (!PacketData::MineStatus::DROPPED_ITEM && packetPos.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > 6.0)
+	if (_pkt.status != PacketData::MineStatus::DROPPED_ITEM &&
+	    packetPos.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > 6.0)
 		return;
 
 	auto resyncBlock = [&](Int3 _pos) {

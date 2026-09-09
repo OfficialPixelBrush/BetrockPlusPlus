@@ -146,6 +146,7 @@ set(SHARED_SOURCES
     src/bpp_shared/entities/entity_spider.cpp
     src/bpp_shared/entities/entity_boat.cpp
     src/bpp_shared/entities/entity_minecart.cpp
+    src/bpp_shared/entities/entity_painting.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/strings/ucs2.cpp
     src/bpp_shared/strings/labels.cpp

@@ -17,6 +17,7 @@
 #include "entity_skeleton.h"
 #include "entity_spider.h"
 #include "entity_zombie.h"
+#include "entity_painting.h"
 #include "world.h"
 
 void EntityManager::RemoveEntity(EntityId _id) {
@@ -237,6 +238,11 @@ void EntityManager::CreateEntityFromNbt(Tag& _nbt) {
 	std::string id = _nbt.compound["id"].GetString();
 
 	// TODO: load other entity type
+	if (id == "Painting") {
+		PaintingEntity entity;
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<PaintingEntity>(entity));
+	}
 	if (id == "Minecart") {
 		MinecartEntity entity;
 		entity.LoadFromNbt(_nbt);
