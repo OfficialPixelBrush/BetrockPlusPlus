@@ -348,7 +348,8 @@ bool RedstoneManager::IsPositionPowered(WorldManager& _world, Int3 _pos) {
 	return false;
 }
 
-static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int3>& _visited) {
+static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int3>& _visited,
+                         bool _forceDisableProfileCheck = false) {
 	auto thisBlock = _world.GetBlockId(_pos);
 	bool doProfileCheck = false;
 
@@ -357,7 +358,7 @@ static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int
 		_visited.insert(_pos);
 
 	ComponentProfile thisProfile;
-	if (thisBlock != BLOCK_REDSTONE) {
+	if (thisBlock != BLOCK_REDSTONE && !_forceDisableProfileCheck) {
 		// Make the profile getter use the powered repeater since the unpowered repeater will return false for every direction
 		thisProfile = RedstoneManager::GetComponentProfile(
 		    thisBlock == BLOCK_REDSTONE_REPEATER_OFF ? BLOCK_REDSTONE_REPEATER_ON : thisBlock, _world.GetMetadata(_pos));
@@ -427,7 +428,7 @@ static bool ResolvePowerLevels(WorldManager& _world, std::unordered_set<Int3>& _
 // Avoids a ton of redundant updates!
 static void SolveRedstoneNetwork(WorldManager& _world, Int3 _pos) {
 	std::unordered_set<Int3> visited;
-	GetNeighbors(_world, _pos, visited);
+	GetNeighbors(_world, _pos, visited, /*disable profile checks=*/true);
 
 	std::unordered_map<Int3, uint8_t> oldLevels;
 	for (auto& pos : visited) {
