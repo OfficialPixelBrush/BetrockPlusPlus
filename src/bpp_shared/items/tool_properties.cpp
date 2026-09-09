@@ -467,9 +467,9 @@ void UseSaddle(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
 	PigEntity* se = dynamic_cast<PigEntity*>(&_targetEntity);
 	if (!se)
 		return;
-	if (se->saddled)
+	if (se->isSaddled)
 		return;
-	se->saddled = true;
+	se->isSaddled = true;
 	_stack->DecrementCount(1);
 }
 

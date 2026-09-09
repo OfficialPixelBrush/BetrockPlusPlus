@@ -16,7 +16,7 @@ void PigEntity::OnDeath(Entity* _killer) {
 		DropItemAtEntity(targetItem, 1);
 	}
 
-	if (saddled)
+	if (isSaddled)
 		DropItemAtEntity(Items::SADDLE, 1);
 }
 
@@ -24,7 +24,7 @@ void PigEntity::OnPlayerInteract(PlayerEntity* _entity) {
 	if (!_entity)
 		return;
 
-	if (!saddled)
+	if (!isSaddled)
 		return;
 
 	auto rider = passenger.lock();
@@ -41,4 +41,45 @@ void PigEntity::OnPlayerInteract(PlayerEntity* _entity) {
 	auto selfPtr = entityManager->GetEntityByIdShared(this->id);
 	if (selfPtr)
 		_entity->MountEntity(selfPtr);
+}
+
+
+void PigEntity::EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {
+	Entity::EncodeMetadata(_metadata);
+
+	const int8_t value = static_cast<int8_t>(isSaddled);
+
+	_metadata.push_back({ .type = PacketData::EntityMetadata::BYTE, .index = 16, .value = value });
+}
+
+bool PigEntity::DecodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {
+	if (!Entity::DecodeMetadata(_metadata)) {
+		return false;
+	}
+
+	if (auto* raw = FindMetadata<int8_t>(_metadata, PacketData::EntityMetadata::BYTE, 16)) {
+		isSaddled = *raw != 0;
+		return true;
+	}
+	return false;
+}
+
+void PigEntity::LoadFromNbt(Tag& _nbt) {
+	AnimalEntity::LoadFromNbt(_nbt);
+	isSaddled = _nbt.Has("Saddle") ? _nbt.compound["Saddle"].GetByte() : false;
+}
+
+std::optional<Tag> PigEntity::SerializeToNbt() {
+	auto tag = AnimalEntity::SerializeToNbt();
+	if (!tag)
+		return std::nullopt;
+
+	Tag saddled;
+	saddled.type = TAG_BYTE;
+	saddled.name = "Saddle";
+	saddled.byteValue = this->isSaddled;
+
+	tag->compound["Saddle"] = saddled;
+
+	return tag;
 }

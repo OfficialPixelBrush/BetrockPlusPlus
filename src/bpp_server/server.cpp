@@ -764,7 +764,6 @@ void Server::ProcessSleeping(Dimension _dimension) {
 	static constexpr int SLEEP_TIMER_TARGET = 100;
 
 	WorldManager* world = GetWorldForDimension(_dimension);
-	EntityTracker* tracker = GetEntityTrackerForDimension(_dimension);
 
 	int playingCount = 0;
 	int fullyAsleepCount = 0;
