@@ -24,8 +24,8 @@ void PigEntity::OnPlayerInteract(PlayerEntity* _entity) {
 	if (!_entity)
 		return;
 
-	//if (!saddled)
-		//return;
+	if (!saddled)
+		return;
 
 	auto rider = passenger.lock();
 	if (rider && rider.get() != _entity) {

@@ -470,6 +470,7 @@ void UseSaddle(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
 	if (se->saddled)
 		return;
 	se->saddled = true;
+	_stack->DecrementCount(1);
 }
 
 void UseBucketOnEntity(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
