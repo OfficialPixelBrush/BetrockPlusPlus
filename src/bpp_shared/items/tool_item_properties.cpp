@@ -284,6 +284,8 @@ void RegisterAll() {
 			_stack->DecrementCount(1);
 	};
 
+	// TODO: Implement maps properly
+#ifdef EXPERIMENTAL
 	itemBehavior[MAP].onStartHolding = [](ItemStack* _stack, PlayerSession& _session) {
 		GlobalLogger().debug << "Started holding a map!\n";
 	};
@@ -337,5 +339,6 @@ void RegisterAll() {
 	itemBehavior[MAP].onStopHolding = [](ItemStack* _stack) {
 		GlobalLogger().debug << "No longer holding a map!\n";
 	};
+#endif
 };
 }; // namespace Items

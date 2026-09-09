@@ -5,6 +5,7 @@
  *
 */
 
+#ifdef EXPERIMENTAL
 #include "item_map.h"
 #include "../enums/network/packet_data.h"
 #include "../logger/logger.h"
@@ -41,3 +42,4 @@ void PlaceMarkers(std::vector<uint8_t>& _mapData, const std::vector<MarkerPlacem
 	}
 }
 }; // namespace Map
+#endif
