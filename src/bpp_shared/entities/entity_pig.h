@@ -15,6 +15,7 @@ struct PigEntity : public AnimalEntity {
 		height = 0.9f;
 	}
 	~PigEntity() = default;
+	bool TryDespawn() override;
 	void OnDeath(Entity* _killer) override;
 	void OnPlayerInteract(PlayerEntity* _entity) override;
 	void EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;
