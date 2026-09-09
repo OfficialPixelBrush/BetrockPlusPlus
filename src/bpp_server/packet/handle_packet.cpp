@@ -233,7 +233,7 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 	if (Items::IsBlock(heldItem->id)) {
 		Int3 placePosition = position.WithOffset(FaceDirectionToDirection(_pkt.face));
 
-		if (heldItem->id.value < 0 || heldItem->id.value >= 256) {
+		if (heldItem->id.value < BLOCK_AIR || heldItem->id.value >= Items::Id::SHOVEL_IRON) {
 			return;
 		}
 
@@ -245,7 +245,7 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 			return;
 		}
 		auto entityPos = _session.entity->position;
-		if (position.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > 6.0)
+		if (position.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > MAXIMUM_PLACEMENT_REACH)
 			return;
 		bool result = function(_world, placePosition, *_session.entity, FaceDirectionToDirection(_pkt.face), blockId,
 		                       heldItem->data);
@@ -585,7 +585,7 @@ void UpdateSign(Packet::UpdateSign& _pkt, PlayerSession& _session, WorldManager&
 		if (viewer->connState != ConnectionState::Playing || viewer->dimension != _world.thisDimension)
 			continue;
 
-		Int2 chunkCoord = Int2{ static_cast<int32_t>(position.x / 16.0), static_cast<int32_t>(position.z / 16.0) };
+		Int2 chunkCoord = Int2{ static_cast<int32_t>(position.x / CHUNK_WIDTH), static_cast<int32_t>(position.z / CHUNK_WIDTH) };
 		if (!viewer->sentChunks.contains(chunkCoord))
 			return;
 
