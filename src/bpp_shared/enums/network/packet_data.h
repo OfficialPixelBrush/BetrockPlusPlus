@@ -21,7 +21,7 @@ enum MineStatus : uint8_t {
 };
 
 // Used by Mine and Place Block Packets (0x0E and 0x0F)
-enum FaceDirection : int8_t {
+enum class FaceDirection : int8_t {
 	INVALID_USE = -1,
 	Y_MINUS = 0,
 	Y_PLUS = 1,
@@ -93,11 +93,11 @@ enum MobType : int8_t {
 };
 
 // Used by the Spawn Painting Packet (0x19)
-enum PaintingDirection : int32_t {
-	MINUS_Z = 0,
-	MINUS_X = 1,
-	PLUS_Z = 2,
-	PLUS_X = 3
+enum class PaintingDirection : int32_t {
+	Z_MINUS = 0,
+	X_MINUS = 1,
+	Z_PLUS = 2,
+	X_PLUS = 3
 };
 
 // Used by the Entity Event Packet (0x26)
@@ -182,12 +182,12 @@ enum PistonState : int8_t {
 };
 
 enum PistonDirection : int8_t {
-	DOWN = 0,
-	UP = 1,
-	EAST = 2,
-	WEST = 3,
-	NORTH = 4,
-	SOUTH = 5
+	Y_MINUS = 0,
+	Y_PLUS = 1,
+	X_MINUS = 2,
+	X_PLUS = 3,
+	Z_MINUS = 4,
+	Z_PLUS = 5
 };
 
 // Used by the World Event Packet (0x3D)

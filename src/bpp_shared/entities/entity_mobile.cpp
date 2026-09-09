@@ -378,8 +378,8 @@ bool MobileEntity::AttackEntityFrom(Entity* _entity, int _damage) {
 
 			attackedAtYaw = float(std::atan2(dz, dx) * 180.0 / JavaMath::PI) - rotationYaw;
 			double dist = std::sqrt(dx * dx + dz * dz);
-			auto passenger = this->passenger.lock();
-			if (!(passenger && _entity == passenger.get()))
+			auto activePassenger = this->passenger.lock();
+			if (!(activePassenger && _entity == activePassenger.get()))
 				ApplyKnockback({ float(dx / dist), 0.0f, float(dz / dist) });
 		} else {
 			attackedAtYaw = float(int(double(rand.NextInt() / INT_MAX * 2.0) * 180));

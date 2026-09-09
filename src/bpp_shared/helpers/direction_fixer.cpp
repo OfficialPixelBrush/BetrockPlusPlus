@@ -31,6 +31,7 @@ enum DirectionBlockType : size_t {
 	PumpkinJackOLatern,
 	Trapdoor,
 	RedstoneRepeater,
+	Paintings,
 	MAX_DIRECTION_BLOCK_TYPE
 };
 
@@ -68,6 +69,9 @@ constexpr Direction::Value META_TO_DIRECTION_LUT[MAX_DIRECTION_BLOCK_TYPE][0b111
 	  Direction::Value::None, Direction::Value::None, Direction::Value::None },
 	// Redstone Repeater
 	{ Direction::Value::North, Direction::Value::East, Direction::Value::South, Direction::Value::West,
+	  Direction::Value::None, Direction::Value::None, Direction::Value::None },
+	// Paintings
+	{ Direction::Value::North, Direction::Value::West, Direction::Value::South, Direction::Value::East,
 	  Direction::Value::None, Direction::Value::None, Direction::Value::None },
 };
 
@@ -286,19 +290,39 @@ uint8_t GetMetaFromDirection(const BlockType _type, const Direction::Value _dir)
 	}
 }
 
+Direction::Value FromPaintingDirectionToDirection(const PacketData::PaintingDirection _value) {
+	if (_value > PacketData::PaintingDirection::X_PLUS)
+		return Direction::Value::None;
+	return META_TO_DIRECTION_LUT[Paintings][static_cast<size_t>(_value)];
+}
+
+PacketData::PaintingDirection FromDirectionToPaintingDirection(const Direction::Value _dir) {
+	switch(_dir) {
+		default:
+		case Direction::Value::North:
+			return PacketData::PaintingDirection::Z_MINUS;
+		case Direction::Value::South:
+			return PacketData::PaintingDirection::Z_PLUS;
+		case Direction::Value::East:
+			return PacketData::PaintingDirection::X_PLUS;
+		case Direction::Value::West:
+			return PacketData::PaintingDirection::X_MINUS;
+	}
+}
+
 Direction::Value FaceDirectionToDirection(const PacketData::FaceDirection _face) {
 	switch (_face) {
-	case PacketData::Z_MINUS:
+	case PacketData::FaceDirection::Z_MINUS:
 		return Direction::Value::North;
-	case PacketData::Z_PLUS:
+	case PacketData::FaceDirection::Z_PLUS:
 		return Direction::Value::South;
-	case PacketData::X_MINUS:
+	case PacketData::FaceDirection::X_MINUS:
 		return Direction::Value::West;
-	case PacketData::X_PLUS:
+	case PacketData::FaceDirection::X_PLUS:
 		return Direction::Value::East;
-	case PacketData::Y_MINUS:
+	case PacketData::FaceDirection::Y_MINUS:
 		return Direction::Value::Down;
-	case PacketData::Y_PLUS:
+	case PacketData::FaceDirection::Y_PLUS:
 		return Direction::Value::Up;
 	default:
 		return Direction::Value::None;
@@ -308,18 +332,18 @@ Direction::Value FaceDirectionToDirection(const PacketData::FaceDirection _face)
 PacketData::FaceDirection DirectionToFaceDirection(const Direction::Value _dir) {
 	switch (_dir) {
 	case Direction::Value::North:
-		return PacketData::Z_MINUS;
+		return PacketData::FaceDirection::Z_MINUS;
 	case Direction::Value::South:
-		return PacketData::Z_PLUS;
+		return PacketData::FaceDirection::Z_PLUS;
 	case Direction::Value::West:
-		return PacketData::X_MINUS;
+		return PacketData::FaceDirection::X_MINUS;
 	case Direction::Value::East:
-		return PacketData::X_PLUS;
+		return PacketData::FaceDirection::X_PLUS;
 	case Direction::Value::Down:
-		return PacketData::Y_MINUS;
+		return PacketData::FaceDirection::Y_MINUS;
 	case Direction::Value::Up:
-		return PacketData::Y_PLUS;
+		return PacketData::FaceDirection::Y_PLUS;
 	default:
-		return PacketData::INVALID_USE;
+		return PacketData::FaceDirection::INVALID_USE;
 	}
 }
