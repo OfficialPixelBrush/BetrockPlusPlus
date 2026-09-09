@@ -5,7 +5,85 @@
  *
  */
 #include "entity_player.h"
+#include "direction_fixer.h"
 #include "entity_item.h"
+#include "logger/logger.h"
+
+SleepFailureReason PlayerEntity::TrySleep(Int3 _pos) {
+	if (this->isSleeping)
+		return SleepFailureReason::ALREADY_SLEEPING;
+
+	if (this->world && this->world->IsDay())
+		return SleepFailureReason::CANT_SLEEP_AT_TIME;
+
+	auto dx = std::abs(position.x - double(_pos.x));
+	auto dy = std::abs(position.y - double(_pos.y));
+	auto dz = std::abs(position.z - double(_pos.z));
+
+	if (dx > 3.0 || dy > 2.0 || dz > 3.0)
+		return SleepFailureReason::TOO_FAR;
+
+	if (this->world->GetBlockId(_pos) != BLOCK_BED)
+		return SleepFailureReason::OTHER;
+
+	// Successfully sleep!
+	this->SetSize({ 0.2f, 0.2f });
+	this->bedPosition = _pos;
+	this->yOffset = 0.0f;
+
+	auto dir = GetDirectionFromMeta(BLOCK_BED, world->GetMetadata(_pos));
+
+	float offsetX = 0.5f;
+	float offsetZ = 0.5f;
+
+	switch (dir) {
+	case Direction::Value::South:
+		offsetZ = 0.9f;
+		break;
+	case Direction::Value::West:
+		offsetX = 0.1f;
+		break;
+	case Direction::Value::North:
+		offsetZ = 0.1f;
+		break;
+	case Direction::Value::East:
+		offsetX = 0.9f;
+		break;
+	}
+
+	this->Teleport({ double(_pos.x) + offsetX, double(_pos.y) + 0.9375, double(_pos.z) + offsetZ },
+	               { rotationYaw, rotationPitch });
+
+	this->ticksInBed = 0;
+	this->isSleeping = true;
+	this->spawnPos = { double(_pos.x), double(_pos.y), double(_pos.z) };
+
+	this->velocity = {};
+
+	return SleepFailureReason::SUCCESS;
+}
+
+void PlayerEntity::WakeUp() {
+	this->SetSize({ 0.6f, 1.8f });
+	this->yOffset = 0.0f;
+	this->isSleeping = false;
+	this->ticksInBed = 0;
+
+	auto bedDir = GetDirectionFromMeta(BLOCK_BED, world->GetMetadata(this->bedPosition));
+	Int3 footPos = this->bedPosition.WithOffset(Direction::Opposite(bedDir));
+	auto SleepPositions = Blocks::GetBedApproachSpots(*this->world, this->bedPosition, footPos);
+	if (!SleepPositions.empty()) {
+		Int3 wakeupSpot = SleepPositions[0];
+		constexpr double GROUND_NUDGE = 0.06;
+		Vec3 teleportPos = { double(wakeupSpot.x) + 0.5, double(wakeupSpot.y) + double(this->yOffset) + GROUND_NUDGE,
+			                 double(wakeupSpot.z) + 0.5 };
+		this->Teleport(teleportPos, { rotationYaw, rotationPitch });
+	} else {
+		Vec3 teleportPos = { double(footPos.x) + 0.5, double(footPos.y) + double(this->yOffset) + 0.1,
+			                 double(footPos.z) + 0.5 };
+		this->Teleport(teleportPos, { rotationYaw, rotationPitch });
+	}
+}
 
 void PlayerEntity::OnMountEntity() {
 	// stub
@@ -24,13 +102,22 @@ bool PlayerEntity::PickupItem(ItemStack& _stack, EntityId _entityId) {
 void PlayerEntity::DropInventory() {
 	return;
 }
+
+void PlayerEntity::Tick() {
+	MobileEntity::Tick();
+
+	if (isSleeping) {
+		ticksInBed++;
+	} else {
+		ticksInBed = 0;
+	}
+}
+
 void PlayerEntity::OnDeath(Entity* _killer) {
 	MobileEntity::OnDeath(_killer);
 
 	// Shrink to the "squished corpse" hitbox
-	width = 0.2f;
-	height = 0.2f;
-	RebuildCollider();
+	SetSize({ 0.2f, 0.2f });
 
 	velocity.y = 0.1;
 

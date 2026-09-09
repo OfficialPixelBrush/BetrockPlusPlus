@@ -775,30 +775,19 @@ void Server::ProcessSleeping(Dimension _dimension) {
 			continue;
 		playingCount++;
 
-		// Check if our bed is still there
-		// and check if it's really still night (in case someone used commands)
-		if (world->GetBlockId(session->entity->bedPosition) != BLOCK_BED || !world->IsNight()) {
-			session->entity->isSleeping = false;
-			session->entity->ticksInBed = 0;
-			Packet::Animation anim;
-			anim.entityId = session->entity->id;
-			anim.animation = PacketData::Animation::LEAVE_BED;
-			anim.Serialize(session->stream);
-			tracker->SendPacketToViewers(anim, session->entity->id);
-			continue;
-		}
-
 		if (!session->entity->isSleeping)
 			continue;
 
-		// Tick the timer up while they're lying there.
-		if (session->entity->ticksInBed < SLEEP_TIMER_TARGET) {
-			session->entity->ticksInBed++;
-
-			// The timer just ran out this tick, try to give a nightmare!
-			if (gamerules.nightmares && session->entity->ticksInBed >= SLEEP_TIMER_TARGET)
-				ServerBlock::TrySpawnNightmare(*world, *session);
+		// Check if our bed is still there
+		// and check if it's really still night (in case someone used commands)
+		if (world->GetBlockId(session->entity->bedPosition) != BLOCK_BED || !world->IsNight()) {
+			session->entity->WakeUp();
+			continue;
 		}
+
+		// The timer just ran out this tick, try to give a nightmare!
+		if (gamerules.nightmares && session->entity->ticksInBed == SLEEP_TIMER_TARGET)
+			Blocks::TrySpawnNightmare(*world, *session->entity);
 
 		if (session->entity->isSleeping && session->entity->ticksInBed >= SLEEP_TIMER_TARGET)
 			fullyAsleepCount++;
@@ -818,14 +807,7 @@ void Server::ProcessSleeping(Dimension _dimension) {
 		if (!session->entity || !session->entity->isSleeping)
 			continue;
 
-		session->entity->isSleeping = false;
-		session->entity->ticksInBed = 0;
-
-		Packet::Animation anim;
-		anim.entityId = session->entity->id;
-		anim.animation = PacketData::Animation::LEAVE_BED;
-		anim.Serialize(session->stream);
-		tracker->SendPacketToViewers(anim, session->entity->id);
+		session->entity->WakeUp();
 	}
 }
 

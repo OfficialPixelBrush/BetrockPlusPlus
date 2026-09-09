@@ -12,6 +12,64 @@
 #include "networking/network_stream.h"
 #include "networking/packets.h"
 
+SleepFailureReason EntityMPPlayer::TrySleep(Int3 _pos) {
+	if (!this->session)
+		return SleepFailureReason::OTHER;
+
+	auto result = PlayerEntity::TrySleep(_pos);
+	if (result != SleepFailureReason::SUCCESS)
+		return result;
+
+	Packet::InteractWithBlock pkt;
+	pkt.entityId = session->entity->id;
+	pkt.interactionId = PacketData::BlockInteraction::SLEEPING;
+	pkt.position = { _pos.x, static_cast<int8_t>(_pos.y), _pos.z };
+	pkt.Serialize(session->stream);
+
+	Packet::Animation anim;
+	anim.entityId = session->entity->id;
+	anim.animation = PacketData::Animation::PUNCH;
+	session->entityTracker->SendPacketToViewers(anim, this->id);
+	session->entityTracker->SendPacketToViewers(pkt, this->id);
+	session->hasBedSpawn = true;
+
+	Int3 headPos = _pos;
+	session->spawnPosition = headPos.WithOffset(Direction::Value::Up);
+
+	this->Teleport(this->position, { rotationYaw, rotationPitch });
+	session->position.pos = this->position;
+	session->pendingTeleport = this->position;
+	Packet::PlayerPosition pos;
+	pos.onGround = false;
+	pos.position = { this->position.x, this->position.y + PLAYER_EYE_HEIGHT, this->position.z };
+	pos.cameraY = this->position.y; // This is backwards, thanks notch
+	pos.Serialize(session->stream);
+
+	return SleepFailureReason::SUCCESS;
+}
+
+void EntityMPPlayer::WakeUp() {
+	if (!this->session)
+		return;
+
+	PlayerEntity::WakeUp();
+
+	Packet::Animation anim;
+	anim.entityId = this->id;
+	anim.animation = PacketData::Animation::LEAVE_BED;
+	anim.Serialize(session->stream);
+	session->entityTracker->SendPacketToViewers(anim, this->id);
+
+	this->Teleport(this->position, { rotationYaw, rotationPitch });
+	session->position.pos = this->position;
+	session->pendingTeleport = this->position;
+	Packet::PlayerPosition pos;
+	pos.onGround = false;
+	pos.position = { this->position.x, this->position.y + PLAYER_EYE_HEIGHT, this->position.z };
+	pos.cameraY = this->position.y; // This is backwards, thanks notch
+	pos.Serialize(session->stream);
+}
+
 void EntityMPPlayer::OnMountEntity() {
 	auto vehiclePtr = this->vehicle.lock().get();
 	if (this->session->entityTracker && vehiclePtr) {
@@ -186,11 +244,9 @@ void EntityMPPlayer::HandlePositionChecks() {
 			residualTooLarge = true;
 		}
 
-		bool clearNow = world
-		                    ->GetCollidingBoundingBoxes(collider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE,
-		                                                                -CLEAR_CHECK_TOLERANCE),
-		                                                /*_mover=*/nullptr)
-		                    .empty();
+		AABB clearCheckArea = collider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE);
+		auto collidingBoxes = world->GetCollidingBoundingBoxes(clearCheckArea, /*_mover=*/nullptr);
+		bool clearNow = collidingBoxes.empty();
 
 		bool willCorrect = (wasClearBefore && (residualTooLarge || !clearNow)) || movedWrong;
 
@@ -289,7 +345,7 @@ void EntityMPPlayer::Tick() {
 	}
 
 	// Do living entity stuff
-	MobileEntity::Tick();
+	PlayerEntity::Tick();
 
 	if (onLadder())
 		// No fall damage on ladders

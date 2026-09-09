@@ -216,6 +216,12 @@ struct Entity {
 			         bottom + double(height), position.z + halfWidth };
 	}
 
+	void SetSize(Vec2 _size) {
+		this->width = _size.x;
+		this->height = _size.y;
+		this->RebuildCollider();
+	}
+
 	Vec3 GetLookVector(float _yaw, float _pitch) {
 		double yawRad = _yaw * (JavaMath::PI / 180.0);
 		double pitchRad = _pitch * (JavaMath::PI / 180.0);

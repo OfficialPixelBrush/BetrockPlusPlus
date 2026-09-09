@@ -164,8 +164,12 @@ struct TriNumber {
 #endif
 
 	friend std::ostream& operator<<(std::ostream& _os, const TriNumber& _val) {
-		_os << "(" << static_cast<int64_t>(_val.x) << ", " << static_cast<int64_t>(_val.y) << ", "
-		    << static_cast<int64_t>(_val.z) << ")";
+		if constexpr (std::is_integral_v<T>) {
+			_os << "(" << static_cast<int64_t>(_val.x) << ", " << static_cast<int64_t>(_val.y) << ", "
+			    << static_cast<int64_t>(_val.z) << ")";
+		} else {
+			_os << "(" << _val.x << ", " << _val.y << ", " << _val.z << ")";
+		}
 		return _os;
 	}
 
@@ -407,7 +411,11 @@ struct BiNumber {
 #endif
 
 	friend std::ostream& operator<<(std::ostream& _os, const BiNumber& _val) {
-		_os << "(" << static_cast<int64_t>(_val.x) << ", " << static_cast<int64_t>(_val.y) << ")";
+		if constexpr (std::is_integral_v<T>) {
+			_os << "(" << static_cast<int64_t>(_val.x) << ", " << static_cast<int64_t>(_val.y) << ")";
+		} else {
+			_os << "(" << _val.x << ", " << _val.y << ")";
+		}
 		return _os;
 	}
 

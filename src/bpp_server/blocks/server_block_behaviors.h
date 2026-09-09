@@ -24,8 +24,4 @@ struct BlockBehavior {
 extern BlockBehavior blockBehaviors[BLOCK_MAX];
 
 void Initialize();
-
-// Attempts to spawn hostile mobs near a sleeping player's bed and, if any of
-// them manage to path to it, wakes the player up
-void TrySpawnNightmare(WorldManager& _world, PlayerSession& _session);
 } // namespace ServerBlock
