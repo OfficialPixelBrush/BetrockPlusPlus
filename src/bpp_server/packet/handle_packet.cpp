@@ -186,8 +186,13 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 	if (!_session.entity)
 		return;
 
+	ItemStack* heldItem = _session.inventory.GetHeldItem();
+	if (!heldItem) {
+		return;
+	}
+
 	auto entityPos = _session.entity->position;
-	if (position.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > 6.0)
+	if (Items::IsBlock(heldItem->id) && position.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > 6.0)
 		return;
 
 	// Block interactions
@@ -204,11 +209,6 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		if (!Blocks::blockBehaviors[block].onBlockActivated(_world, position, &_session)) {
 			return;
 		}
-	}
-
-	ItemStack* heldItem = _session.inventory.GetHeldItem();
-	if (!heldItem) {
-		return;
 	}
 
 	// NOTE:
