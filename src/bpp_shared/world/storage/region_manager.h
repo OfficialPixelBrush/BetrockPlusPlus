@@ -16,7 +16,7 @@
 
 struct SnapshotContainer {
 	std::shared_ptr<Chunk> chunkSnapshot;
-	std::shared_ptr<const std::vector<Tag>> entitySnapshot;
+	std::shared_ptr<const std::vector<nbt::Tag>> entitySnapshot;
 };
 
 class WorldManager;

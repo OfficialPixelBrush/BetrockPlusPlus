@@ -55,7 +55,7 @@ struct Chunk {
 	std::vector<std::shared_ptr<TileEntity>> tileEntities;
 
 	// Used for loading entities into the world from disk
-	std::vector<Tag> entityTags;
+	std::vector<nbt::Tag> entityTags;
 
 	inline int BlockIndex(Int3 _pos) const {
 		return (_pos.y * CHUNK_WIDTH * CHUNK_WIDTH) + (_pos.z * CHUNK_WIDTH) + _pos.x;

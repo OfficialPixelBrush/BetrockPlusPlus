@@ -176,8 +176,13 @@ struct SaveManager {
 		raw.resize(actualSize);
 
 		// Parse NBT
-		NBTParser parser(raw.data(), raw.size());
-		Tag data = parser.root.Get("Data");
+		auto nbtResult = nbt::NBTParser::parse(raw);
+		if (!nbtResult) {
+			GlobalLogger().error << "Failed to parse level data: " << nbtResult.error().message << "\n";
+			return false;
+		}
+		auto nbtTag = dynamic_cast<nbt::Tag>(nbtResult)
+		const auto* data = nbtTag.at("Data").as_compound();
 
 		auto CheckAndAssignDefault = [&](std::string tagName, TagType type, auto defaultValue) {
 			if (!data.compound.count(tagName)) {
@@ -356,7 +361,7 @@ struct SaveManager {
 		return HashCode(_input);
 	}
 
-	Tag GetPlayerNbt(const std::string& _playerName) { // return by value
+	nbt::Tag GetPlayerNbt(const std::string& _playerName) { // return by value
 		std::string playerPath = saveDirectory + "/players/" + _playerName + ".dat";
 
 		if (!std::filesystem::exists(playerPath)) {
@@ -389,7 +394,7 @@ struct SaveManager {
 		return parser.root;
 	}
 
-	Tag GetNewPlayerNbt() {
+	nbt::Tag GetNewPlayerNbt() {
 		Tag root;
 		root.type = TAG_COMPOUND;
 		root.name = "";
@@ -510,7 +515,7 @@ struct SaveManager {
 		return root;
 	}
 
-	bool SavePlayerNbt(const std::string& _playerName, Tag& _playerData) const {
+	bool SavePlayerNbt(const std::string& _playerName, nbt::Tag& _playerData) const {
 		try {
 			// Check to see if we have a root compound tag
 			if (_playerData.type != TAG_COMPOUND) {

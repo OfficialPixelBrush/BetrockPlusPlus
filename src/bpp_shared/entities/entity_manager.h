@@ -38,12 +38,12 @@ struct EntityManager {
 	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabb(const AABB& _box);
 	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbExcludingTypes(
 	    const AABB& _box, const std::vector<EntityType>& _excludedTypes);
-	std::vector<Tag> CollectEntitiesForSave(Int2 _cpos, bool _clearCollectedEntities = false);
+	std::vector<nbt::Tag> CollectEntitiesForSave(Int2 _cpos, bool _clearCollectedEntities = false);
 	std::optional<std::string> GetEntityNbtId(EntityType _type);
 	void Tick();
 	void AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEntityId = -1);
 	void RemoveEntity(EntityId _id);
-	void CreateEntityFromNbt(Tag& _nbt);
+	void CreateEntityFromNbt(nbt::Tag& _nbt);
 
 private:
 	void TickEntityAndPassenger(const std::shared_ptr<Entity>& _entity);
