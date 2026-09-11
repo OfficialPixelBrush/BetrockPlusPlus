@@ -237,8 +237,8 @@ void PlayerConnStateManager::FinishLogin(PlayerSession& _session, Server& _serve
 	_session.connState = ConnectionState::WaitingForSpawnChunks;
 }
 
-void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std::string& _reason,
-                                              Server& _server, bool _doSave) {
+void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std::string& _reason, Server& _server,
+                                              bool _doSave) {
 	// Send disconnect reason to the leaving player
 	Packet::Disconnect kick;
 	kick.reason = _reason;

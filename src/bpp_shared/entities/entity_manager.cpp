@@ -69,7 +69,7 @@ void EntityManager::AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEn
 	                                   : _forceEntityId; // Assign an ID if we weren't forced to use one
 	_entity->world = world; // Bind the world pointer so the entity can interact with the world
 	_entity->entityManager = this;
-	_entity->dim = (Dimension)world->GetDimension();
+	_entity->dim = world->GetDimension();
 
 	// Register the entity into its initial bucket
 	_entity->bucketPos = ComputeBucketPos(_entity->position);

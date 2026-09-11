@@ -69,7 +69,8 @@ void RegisterFallingBlockBehaviors() {
 				_world.SetBlock(landing, BLOCK_GRAVEL, 0);
 		}
 	};
-	blockBehaviors[BLOCK_SAND].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType /*_blockId*/) -> void {
+	blockBehaviors[BLOCK_SAND].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                      BlockType /*_blockId*/) -> void {
 		// Schedule a check to see if we can fall
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_SAND, 3);
 	};

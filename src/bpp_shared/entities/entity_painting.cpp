@@ -53,9 +53,9 @@ void PaintingEntity::SetDirection(Direction::Value _direction) {
 	centerPos.y += GetArtSize(art.sizeY);
 	this->Teleport(centerPos);
 	float epsilon = -0.00625f;
-	this->collider = { (double)(centerPos.x - halfWidth - epsilon),  (double)(centerPos.y - halfHeight - epsilon),
-		               (double)(centerPos.z - halfDepth - epsilon),  (double)(centerPos.x + halfWidth + epsilon),
-		               (double)(centerPos.y + halfHeight + epsilon), (double)(centerPos.z + halfDepth + epsilon) };
+	this->collider = { double(centerPos.x - halfWidth - epsilon),  double(centerPos.y - halfHeight - epsilon),
+		               double(centerPos.z - halfDepth - epsilon),  double(centerPos.x + halfWidth + epsilon),
+		               double(centerPos.y + halfHeight + epsilon), double(centerPos.z + halfDepth + epsilon) };
 }
 
 bool PaintingEntity::OnValidSurface() {

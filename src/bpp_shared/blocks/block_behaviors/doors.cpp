@@ -177,10 +177,12 @@ void RegisterDoorBehaviors() {
 		return false;
 	};
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockClicked = ToggleDoor;
-	blockBehaviors[BLOCK_DOOR_WOOD].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& /*_destroyer*/) {
+	blockBehaviors[BLOCK_DOOR_WOOD].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos,
+	                                                              Entity& /*_destroyer*/) {
 		BreakDoor(_world, _pos, BLOCK_DOOR_WOOD);
 	};
-	blockBehaviors[BLOCK_DOOR_IRON].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& /*_destroyer*/) {
+	blockBehaviors[BLOCK_DOOR_IRON].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos,
+	                                                              Entity& /*_destroyer*/) {
 		BreakDoor(_world, _pos, BLOCK_DOOR_IRON);
 	};
 }

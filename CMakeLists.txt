@@ -445,14 +445,14 @@ target_compile_options(BetrockPlusPlus PRIVATE
         #-Wpadded # Warn about padded structs!
         -Wshadow
         # Unused variables, params, etc.
-        #-Wunused
-        #-Wuninitialized
+        -Wunused
+        -Wuninitialized
         # Treat warnings as errors
         #-Werror
         # Common OOP pitfall
         -Wnon-virtual-dtor
         # C-style casts
-        #-Wold-style-cast
+        -Wold-style-cast
         # Hides virtual functions
         -Woverloaded-virtual
         # Dereferencing null pointers

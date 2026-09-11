@@ -51,8 +51,8 @@ void GenericBreak(WorldManager& _world, Int3 _pos, Entity& /*_destroyer*/) {
 	BreakAndDropBlock(_world, _pos);
 }
 
-bool GenericPlace(WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Direction::Value _face,
-                  BlockType _blockId, uint8_t _meta) {
+bool GenericPlace(WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Direction::Value _face, BlockType _blockId,
+                  uint8_t _meta) {
 	if (!_world.InBounds(_pos.y))
 		return false;
 
