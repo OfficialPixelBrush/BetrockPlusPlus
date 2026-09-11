@@ -6,11 +6,11 @@
 */
 #include "entity_tracker.h"
 #include "../server.h"
+#include "direction_fixer.h"
 #include "entities.h"
 #include "entities/entity_item.h"
 #include "entities/entity_mobile.h"
 #include "entities/entity_painting.h"
-#include "direction_fixer.h"
 #include "logger.h"
 #include "packet_data.h"
 #include <algorithm>

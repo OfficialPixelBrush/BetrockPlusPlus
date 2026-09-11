@@ -5,12 +5,8 @@
  *
 */
 
-#include "blocks/block_behaviors.h"
-#include "internal.h"
-#include "helpers/direction_fixer.h"
-#include "helpers/java/java_math.h"
-#include "numeric_structs.h"
 #include "blocks.h"
+#include "blocks/block_behaviors.h"
 #include "blocks/block_properties.h"
 #include "dimensions.h"
 #include "entities/entity_falling_block.h"
@@ -20,8 +16,12 @@
 #include "entities/entity_zombie.h"
 #include "enums/items.h"
 #include "generator/overworld/tree_gen.h"
+#include "helpers/direction_fixer.h"
+#include "helpers/java/java_math.h"
+#include "internal.h"
 #include "items/item_properties.h"
 #include "logger.h"
+#include "numeric_structs.h"
 #include "packet_data.h"
 #include "rail_manager.h"
 #include "redstone_manager.h"
@@ -33,7 +33,8 @@ namespace Blocks {
 
 static bool CanPlaceChest(WorldManager& _world, Int3 _pos) {
 	// If any of the block surrounding us are double chests we cannot be placed
-	Direction::Value directions[4] = { Direction::Value::East, Direction::Value::West, Direction::Value::North, Direction::Value::South };
+	Direction::Value directions[4] = { Direction::Value::East, Direction::Value::West, Direction::Value::North,
+		                               Direction::Value::South };
 
 	auto isDoubleChest = [&](Int3 _npos) -> bool {
 		if (_world.GetBlockId(_npos) != BLOCK_CHEST)
@@ -91,7 +92,7 @@ bool CanOpenChest(WorldManager& _world, Int3 _pos) {
 void RegisterChestBehaviors() {
 	// Chest
 	blockBehaviors[BLOCK_CHEST].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                              Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
+	                                               Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
 		if (!CanPlaceChest(_world, _pos))
 			return false;
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
@@ -108,7 +109,6 @@ void RegisterChestBehaviors() {
 
 		_world.DropInventory(te->inventory, _pos);
 	};
-
 }
 
 }; // namespace Blocks

@@ -297,16 +297,16 @@ Direction::Value FromPaintingDirectionToDirection(const PacketData::PaintingDire
 }
 
 PacketData::PaintingDirection FromDirectionToPaintingDirection(const Direction::Value _dir) {
-	switch(_dir) {
-		default:
-		case Direction::Value::North:
-			return PacketData::PaintingDirection::Z_MINUS;
-		case Direction::Value::South:
-			return PacketData::PaintingDirection::Z_PLUS;
-		case Direction::Value::East:
-			return PacketData::PaintingDirection::X_PLUS;
-		case Direction::Value::West:
-			return PacketData::PaintingDirection::X_MINUS;
+	switch (_dir) {
+	default:
+	case Direction::Value::North:
+		return PacketData::PaintingDirection::Z_MINUS;
+	case Direction::Value::South:
+		return PacketData::PaintingDirection::Z_PLUS;
+	case Direction::Value::East:
+		return PacketData::PaintingDirection::X_PLUS;
+	case Direction::Value::West:
+		return PacketData::PaintingDirection::X_MINUS;
 	}
 }
 

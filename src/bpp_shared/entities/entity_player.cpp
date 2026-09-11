@@ -80,9 +80,9 @@ void PlayerEntity::WakeUp([[maybe_unused]] bool _confirmSpawn) {
 
 	auto bedDir = GetDirectionFromMeta(BLOCK_BED, world->GetMetadata(this->bedPosition));
 	Int3 footPos = this->bedPosition.WithOffset(Direction::Opposite(bedDir));
-	auto SleepPositions = Blocks::GetBedApproachSpots(*this->world, this->bedPosition, footPos);
-	if (!SleepPositions.empty()) {
-		Int3 wakeupSpot = SleepPositions[0];
+	auto sleepPositions = Blocks::GetBedApproachSpots(*this->world, this->bedPosition, footPos);
+	if (!sleepPositions.empty()) {
+		Int3 wakeupSpot = sleepPositions[0];
 		constexpr double GROUND_NUDGE = 0.06;
 		Vec3 teleportPos = { double(wakeupSpot.x) + 0.5, double(wakeupSpot.y) + double(this->yOffset) + GROUND_NUDGE,
 			                 double(wakeupSpot.z) + 0.5 };

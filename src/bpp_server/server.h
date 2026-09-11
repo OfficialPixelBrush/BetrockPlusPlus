@@ -22,6 +22,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "chunk_io/chunk_sender.h"
 #include "commands/command_manager.h"
 #include "config/config.h"
+#include "gamerules.h"
 #include "items/item_properties.h"
 #include "items/tool_properties.h"
 #include "networking/network_stream.h"
@@ -40,7 +41,6 @@ extern std::atomic<bool> shutdownRequested;
 #include <thread>
 #include <unordered_set>
 #include <vector>
-#include "gamerules.h"
 
 class Server {
 public:

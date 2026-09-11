@@ -5,12 +5,8 @@
  *
 */
 
-#include "blocks/block_behaviors.h"
-#include "internal.h"
-#include "helpers/direction_fixer.h"
-#include "helpers/java/java_math.h"
-#include "numeric_structs.h"
 #include "blocks.h"
+#include "blocks/block_behaviors.h"
 #include "blocks/block_properties.h"
 #include "dimensions.h"
 #include "entities/entity_falling_block.h"
@@ -20,8 +16,12 @@
 #include "entities/entity_zombie.h"
 #include "enums/items.h"
 #include "generator/overworld/tree_gen.h"
+#include "helpers/direction_fixer.h"
+#include "helpers/java/java_math.h"
+#include "internal.h"
 #include "items/item_properties.h"
 #include "logger.h"
+#include "numeric_structs.h"
 #include "packet_data.h"
 #include "rail_manager.h"
 #include "redstone_manager.h"
@@ -132,7 +132,6 @@ void RegisterRailBehaviors() {
 	blockBehaviors[BLOCK_RAIL_POWERED].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		UpdateRail(_world, _pos, BLOCK_RAIL_POWERED);
 	};
-
 }
 
 }; // namespace Blocks

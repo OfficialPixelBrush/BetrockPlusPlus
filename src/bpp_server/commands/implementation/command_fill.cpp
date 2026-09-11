@@ -45,7 +45,8 @@ std::string FillArea(const strategos::CmdNode& _cmd, void* _userData) {
 	Int3 minPos{ std::min(pos0.x, pos1.x), std::min(pos0.y, pos1.y), std::min(pos0.z, pos1.z) };
 	Int3 maxPos{ std::max(pos0.x, pos1.x), std::max(pos0.y, pos1.y), std::max(pos0.z, pos1.z) };
 
-	if (!ctx.world->AABBinValidChunks({double(minPos.x), double(minPos.y), double(minPos.z), double(maxPos.x), double(maxPos.y), double(maxPos.z)}))
+	if (!ctx.world->AABBinValidChunks({ double(minPos.x), double(minPos.y), double(minPos.z), double(maxPos.x),
+	                                    double(maxPos.y), double(maxPos.z) }))
 		return "Tried to fill in unloaded chunks!";
 
 	int64_t width = int64_t(maxPos.x - minPos.x) + 1;

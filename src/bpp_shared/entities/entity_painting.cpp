@@ -5,9 +5,9 @@
  *
  */
 #include "entity_painting.h"
+#include "direction_fixer.h"
 #include "entity_player.h"
 #include "world/world.h"
-#include "direction_fixer.h"
 #include <algorithm>
 #include <cmath>
 
@@ -108,7 +108,8 @@ bool PaintingEntity::OnValidSurface() {
 
 void PaintingEntity::LoadFromNbt(Tag& _nbt) {
 	Entity::LoadFromNbt(_nbt);
-	this->direction = _nbt.Has("Dir") ? FromPaintingDirectionToDirection(static_cast<PacketData::PaintingDirection>(_nbt.compound["Dir"].GetByte()))
+	this->direction = _nbt.Has("Dir") ? FromPaintingDirectionToDirection(
+	                                        static_cast<PacketData::PaintingDirection>(_nbt.compound["Dir"].GetByte()))
 	                                  : Direction::Value::North;
 	art = _nbt.Has("Motive") ? GetArtProfile(_nbt.compound["Motive"].stringValue) : GetArtProfile("Kebab");
 	if (_nbt.Has("TileX") && _nbt.Has("TileY") && _nbt.Has("TileZ")) {

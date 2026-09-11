@@ -7,6 +7,6 @@
 #pragma once
 
 struct Gamerules {
-    bool explodingBeds : 1 = true;
-    bool nightmares : 1 = true;
+	bool explodingBeds : 1 = true;
+	bool nightmares : 1 = true;
 };
