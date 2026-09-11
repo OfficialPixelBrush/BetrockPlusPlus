@@ -204,12 +204,12 @@ void RegisterPlantBehaviors() {
 		.getCollider = CactusCollider,
 	};
 
-	blockBehaviors[BLOCK_CACTUS].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos,
+	blockBehaviors[BLOCK_CACTUS].onEntityCollidedWithBlock = []([[maybe_unused]] WorldManager& _world, [[maybe_unused]] Int3 _pos,
 	                                                            Entity& _entity) -> void {
 		_entity.AttackEntityFrom(nullptr, 1);
 	};
 	blockBehaviors[BLOCK_CROP_WHEAT].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                            BlockType _blockId) -> void {
+	                                                            [[maybe_unused]] BlockType _blockId) -> void {
 		if (!CanCropsSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
@@ -225,13 +225,13 @@ void RegisterPlantBehaviors() {
 			_world.SetMeta(_pos, _meta + 1);
 	};
 	blockBehaviors[BLOCK_SUGARCANE].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                           BlockType _blockId) -> void {
+	                                                           [[maybe_unused]] BlockType _blockId) -> void {
 		// Check to see if our placement is still valid
 		if (!CanSugarcaneSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_SUGARCANE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                            Java::Random& _random) -> void {
+	                                            [[maybe_unused]] Java::Random& _random) -> void {
 		TryTallPlantGrowth(_world, _pos, _meta, BLOCK_SUGARCANE);
 	};
 
@@ -261,7 +261,7 @@ void RegisterPlantBehaviors() {
 
 	// Farmland
 	blockBehaviors[BLOCK_FARMLAND].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                          BlockType _blockId) -> void {
+	                                                          [[maybe_unused]] BlockType _blockId) -> void {
 		// Revert to dirt if something is solid above us
 		if (_world.GetMaterial({ _pos.x, _pos.y + 1, _pos.z }).isSolid) {
 			_world.SetBlock(_pos, BLOCK_DIRT, 0);
@@ -314,66 +314,66 @@ void RegisterPlantBehaviors() {
 	blockBehaviors[BLOCK_SAPLING].onBlockPlaced = onPlantPlace;
 	blockBehaviors[BLOCK_TALLGRASS].onBlockPlaced = onPlantPlace;
 	blockBehaviors[BLOCK_CACTUS].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                        BlockType _blockId) -> void {
+	                                                        [[maybe_unused]] BlockType _blockId) -> void {
 		if (!CanCactusSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_MUSHROOM_BROWN].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                                BlockType _blockId) -> void {
+	                                                                [[maybe_unused]] BlockType _blockId) -> void {
 		blockBehaviors[BLOCK_MUSHROOM_BROWN].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
 	blockBehaviors[BLOCK_MUSHROOM_RED].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                              BlockType _blockId) -> void {
+	                                                              [[maybe_unused]] BlockType _blockId) -> void {
 		blockBehaviors[BLOCK_MUSHROOM_RED].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
 	blockBehaviors[BLOCK_DANDELION].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                           BlockType _blockId) -> void {
+	                                                           [[maybe_unused]] BlockType _blockId) -> void {
 		blockBehaviors[BLOCK_DANDELION].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
-	blockBehaviors[BLOCK_ROSE].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
+	blockBehaviors[BLOCK_ROSE].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] BlockType _blockId) -> void {
 		blockBehaviors[BLOCK_ROSE].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
 	blockBehaviors[BLOCK_TALLGRASS].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                           BlockType _blockId) -> void {
+	                                                           [[maybe_unused]] BlockType _blockId) -> void {
 		blockBehaviors[BLOCK_TALLGRASS].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
 	blockBehaviors[BLOCK_SAPLING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                         BlockType _blockId) -> void {
+	                                                         [[maybe_unused]] BlockType _blockId) -> void {
 		if (!CanGenericPlantSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
-	blockBehaviors[BLOCK_DANDELION].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                            Java::Random& _random) -> void {
+	blockBehaviors[BLOCK_DANDELION].onTick = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] uint8_t _meta,
+	                                            [[maybe_unused]] Java::Random& _random) -> void {
 		if (!CanGenericPlantSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
-	blockBehaviors[BLOCK_ROSE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                       Java::Random& _random) -> void {
+	blockBehaviors[BLOCK_ROSE].onTick = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] uint8_t _meta,
+	                                       [[maybe_unused]] Java::Random& _random) -> void {
 		if (!CanGenericPlantSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
-	blockBehaviors[BLOCK_TALLGRASS].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                            Java::Random& _random) -> void {
+	blockBehaviors[BLOCK_TALLGRASS].onTick = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] uint8_t _meta,
+	                                            [[maybe_unused]] Java::Random& _random) -> void {
 		if (!CanGenericPlantSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
-	blockBehaviors[BLOCK_MUSHROOM_BROWN].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                                 Java::Random& _random) -> void {
+	blockBehaviors[BLOCK_MUSHROOM_BROWN].onTick = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] uint8_t _meta,
+	                                                 [[maybe_unused]] Java::Random& _random) -> void {
 		if (!CanMushroomSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
-	blockBehaviors[BLOCK_MUSHROOM_RED].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                               Java::Random& _random) -> void {
+	blockBehaviors[BLOCK_MUSHROOM_RED].onTick = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] uint8_t _meta,
+	                                               [[maybe_unused]] Java::Random& _random) -> void {
 		if (!CanMushroomSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_CACTUS].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                         Java::Random& _random) -> void {
+	                                         [[maybe_unused]] Java::Random& _random) -> void {
 		TryTallPlantGrowth(_world, _pos, _meta, BLOCK_CACTUS);
 	};
 
 	// Grass spread / decay
-	blockBehaviors[BLOCK_GRASS].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	blockBehaviors[BLOCK_GRASS].onTick = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] uint8_t _meta,
 	                                        Java::Random& _random) -> void {
 		Int3 aboveBlockPos = { _pos.x, _pos.y + 1, _pos.z };
 		auto lightLevel = _world.GetBlockLightValue(aboveBlockPos);
@@ -401,7 +401,7 @@ void RegisterPlantBehaviors() {
 
 	// Leaf decay!
 	blockBehaviors[BLOCK_LEAVES].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                         Java::Random& _random) -> void {
+	                                         [[maybe_unused]] Java::Random& _random) -> void {
 		// Are we marked to check for despawn?
 		if ((_meta & 8) != 0) {
 			if (!SearchForLog(0, _pos, _pos, _world)) {

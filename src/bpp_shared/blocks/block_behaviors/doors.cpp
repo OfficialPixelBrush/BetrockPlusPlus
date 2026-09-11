@@ -99,8 +99,8 @@ void RegisterDoorBehaviors() {
 		    ToggleTrapdoor(_world, _pos);
 		    return false;
 		},
-		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
-		                    BlockType _blockId, uint8_t _meta) -> bool {
+		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer, Direction::Value _face,
+		                    BlockType _blockId, [[maybe_unused]] uint8_t _meta) -> bool {
 		    // Doors can only be placed against the sides of blocks
 		    if (_face == Direction::Value::Up || _face == Direction::Value::Down)
 			    return false;
@@ -114,7 +114,7 @@ void RegisterDoorBehaviors() {
 	};
 
 	auto onDoorPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
-	                      uint8_t _meta) -> bool {
+	                      [[maybe_unused]] uint8_t _meta) -> bool {
 		// Doors can only be placed by clicking the top face of a block
 		if (_face != Direction::Value::Up)
 			return false;
@@ -177,10 +177,10 @@ void RegisterDoorBehaviors() {
 		return false;
 	};
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockClicked = ToggleDoor;
-	blockBehaviors[BLOCK_DOOR_WOOD].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
+	blockBehaviors[BLOCK_DOOR_WOOD].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _destroyer) {
 		BreakDoor(_world, _pos, BLOCK_DOOR_WOOD);
 	};
-	blockBehaviors[BLOCK_DOOR_IRON].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
+	blockBehaviors[BLOCK_DOOR_IRON].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _destroyer) {
 		BreakDoor(_world, _pos, BLOCK_DOOR_IRON);
 	};
 }

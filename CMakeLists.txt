@@ -436,7 +436,7 @@ target_compile_definitions(BetrockPlusPlus PRIVATE
 target_compile_options(BetrockPlusPlus PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang>:
         -Wall
-        #-Wextra
+        -Wextra
         # Implicit conversions (int32_t -> float, etc.)
         #-Wconversion
         # Sign mismatches
