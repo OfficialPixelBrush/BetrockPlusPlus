@@ -68,7 +68,7 @@ void NetworkStream::FlushWriteBufferBlocking() {
 	clientSocket = INVALID_SOCKET;
 }
 
-void NetworkStream::IncrementPacketCount(PacketId _id) {
+void NetworkStream::IncrementPacketCount(PacketId /*_id*/) {
 	packetsInQueue++;
 	if (packetsInQueue > MAX_PACKETS_PER_TICK)
 		return;

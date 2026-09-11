@@ -84,7 +84,7 @@ void RegisterRedstoneBehaviors() {
 		.getSelectionBox = ButtonAabb,
 		.getRayBounds = ButtonAabb,
 		.getCollider = EmptyCollider,
-		.onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& _random) -> void {
+		.onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& /*_random*/) -> void {
 		    // Check to make sure we can till exist here
 		    if (!IsSupported(_world, _pos, GetDirectionFromMeta(BLOCK_BUTTON_STONE, _meta)))
 			    BreakAndDropBlock(_world, _pos);
@@ -94,7 +94,7 @@ void RegisterRedstoneBehaviors() {
 			    NotifyAttachedSupportBlock(_world, _pos, BLOCK_BUTTON_STONE, _meta);
 		    }
 		},
-		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
+		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType /*_blockId*/) -> void {
 		    blockBehaviors[BLOCK_BUTTON_STONE].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 		},
 		.onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> void {
@@ -109,8 +109,8 @@ void RegisterRedstoneBehaviors() {
 		    blockBehaviors[BLOCK_BUTTON_STONE].onBlockClicked(_world, _pos, _triggeringSession);
 		    return false;
 		},
-		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
-		                    BlockType _blockId, uint8_t _meta) -> bool {
+		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Direction::Value _face,
+		                    BlockType _blockId, uint8_t /*_meta*/) -> bool {
 		    // Buttons can only be placed against the sides of blocks
 		    if (_face == Direction::Value::Up || _face == Direction::Value::Down)
 			    return false;
@@ -156,7 +156,7 @@ void RegisterRedstoneBehaviors() {
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                                           Direction::Value _face, BlockType _blockId,
-	                                                           uint8_t _meta) -> bool {
+	                                                           uint8_t /*_meta*/) -> bool {
 		if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER)
 			_pos = _pos.WithOffset(Direction::Opposite(_face));
 		if (CanTorchAttachTo(_world, _pos, _face)) {
@@ -188,7 +188,7 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                                   BlockType _blockId) -> void {
+	                                                                   BlockType /*_blockId*/) -> void {
 		auto dir = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _world.GetMetadata(_pos));
 		if (!CanTorchAttachTo(_world, _pos, dir)) {
 			BreakAndDropBlock(_world, _pos);
@@ -200,7 +200,7 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                                    Java::Random& _random) -> void {
+	                                                    Java::Random& /*_random*/) -> void {
 		const auto dir = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _meta);
 		if (!CanTorchAttachTo(_world, _pos, dir)) {
 			BreakAndDropBlock(_world, _pos);
@@ -235,7 +235,7 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                                    BlockType _blockId) -> void {
+	                                                                    BlockType /*_blockId*/) -> void {
 		const auto dir = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_OFF, _world.GetMetadata(_pos));
 		if (!CanTorchAttachTo(_world, _pos, dir)) {
 			BreakAndDropBlock(_world, _pos);
@@ -246,7 +246,7 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                                     Java::Random& _random) -> void {
+	                                                     Java::Random& /*_random*/) -> void {
 		const auto dir = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_OFF, _meta);
 		if (!CanTorchAttachTo(_world, _pos, dir)) {
 			BreakAndDropBlock(_world, _pos);
@@ -263,7 +263,7 @@ void RegisterRedstoneBehaviors() {
 
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                                               Direction::Value _face, BlockType _blockId,
-	                                                               uint8_t _meta) -> bool {
+	                                                               uint8_t /*_meta*/) -> bool {
 		const auto dir = Direction::FromAngle(_placer.rotationYaw);
 		auto meta = GetMetaFromDirection(BLOCK_REDSTONE_REPEATER_OFF, dir);
 		if (!CanRedstoneComponentStay(_world, _pos) || !GenericPlace(_world, _pos, _placer, _face, _blockId, meta))
@@ -284,7 +284,7 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                                       BlockType _blockId) -> void {
+	                                                                       BlockType /*_blockId*/) -> void {
 		if (!CanRedstoneComponentStay(_world, _pos)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
@@ -305,7 +305,7 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                                        Java::Random& _random) -> void {
+	                                                        Java::Random& /*_random*/) -> void {
 		bool inputPowered = RedstoneManager::IsRepeaterInputPowered(_world, _pos, _meta);
 		bool isPoweredRepeater = _world.GetBlockId(_pos) ==
 		                         BLOCK_REDSTONE_REPEATER_ON; // Powered repeater calls this function too
@@ -342,7 +342,7 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_LEVER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                               Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
+	                                               Direction::Value _face, BlockType _blockId, uint8_t /*_meta*/) -> bool {
 		if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER)
 			_pos = _pos.WithOffset(Direction::Opposite(_face));
 		// TODO: This isn't exactly the best way to do it, as it relies on Metadata fuckery,
@@ -381,7 +381,7 @@ void RegisterRedstoneBehaviors() {
 		BreakAndDropBlock(_world, _pos);
 	};
 
-	blockBehaviors[BLOCK_LEVER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
+	blockBehaviors[BLOCK_LEVER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType /*_blockId*/) -> void {
 		auto dir = GetDirectionFromMeta(BLOCK_LEVER, _world.GetMetadata(_pos));
 		if (!CanTorchAttachTo(_world, _pos, dir)) {
 			BreakAndDropBlock(_world, _pos);
@@ -404,7 +404,7 @@ void RegisterRedstoneBehaviors() {
 	},
 
 	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                               Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
+	                                               Direction::Value _face, BlockType _blockId, uint8_t /*_meta*/) -> bool {
 		if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER)
 			_pos = _pos.WithOffset(Direction::Opposite(_face));
 		if (CanTorchAttachTo(_world, _pos, _face)) {
@@ -434,7 +434,7 @@ void RegisterRedstoneBehaviors() {
 		BreakAndDropBlock(_world, _pos);
 	};
 
-	blockBehaviors[BLOCK_TORCH].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
+	blockBehaviors[BLOCK_TORCH].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType /*_blockId*/) -> void {
 		const auto dir = GetDirectionFromMeta(BLOCK_TORCH, _world.GetMetadata(_pos));
 		if (!CanTorchAttachTo(_world, _pos, dir))
 			BreakAndDropBlock(_world, _pos);
@@ -442,7 +442,7 @@ void RegisterRedstoneBehaviors() {
 
 	// for when the block is interacted with!
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockActivated = [](WorldManager& _world, Int3 _pos,
-	                                                                  PlayerSession* _triggeringSession) -> bool {
+	                                                                  PlayerSession* /*_triggeringSession*/) -> bool {
 		// Increase and loop delay
 		auto meta = _world.GetMetadata(_pos);
 		int delay = (meta & 12) >> 2;

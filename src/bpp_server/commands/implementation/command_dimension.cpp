@@ -25,7 +25,7 @@ std::string SwapDimension(const strategos::CmdNode&, void* _userData) {
 
 } // namespace
 
-void RegisterDimension(strategos::BrigadierContext& _dispatcher) {
+void RegisterDimension(strategos::BrigadierContext& /*_dispatcher*/) {
 #ifdef EXPERIMENTAL
 	_dispatcher.add_command(
 	    strategos::Node::literal("dim").describe("Swap to the other dimension").op().executes(SwapDimension));

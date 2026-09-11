@@ -34,15 +34,15 @@ namespace Blocks {
 void RegisterFallingBlockBehaviors() {
 	// Falling blocks!
 	blockBehaviors[BLOCK_GRAVEL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                        [[maybe_unused]] BlockType _blockId) -> void {
+	                                                        BlockType /*_blockId*/) -> void {
 		// Schedule a check to see if we can fall
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_GRAVEL, 3);
 	};
 	blockBehaviors[BLOCK_GRAVEL].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_GRAVEL, 3);
 	};
-	blockBehaviors[BLOCK_GRAVEL].onTick = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] uint8_t _meta,
-	                                         [[maybe_unused]] Java::Random& _random) -> void {
+	blockBehaviors[BLOCK_GRAVEL].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
+	                                         Java::Random& /*_random*/) -> void {
 		const Int3 below = _pos.WithOffset(Direction::Value::Down);
 
 		if (!Blocks::CanFallAt(_world, below) || _pos.y < 0)
@@ -69,15 +69,15 @@ void RegisterFallingBlockBehaviors() {
 				_world.SetBlock(landing, BLOCK_GRAVEL, 0);
 		}
 	};
-	blockBehaviors[BLOCK_SAND].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] BlockType _blockId) -> void {
+	blockBehaviors[BLOCK_SAND].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType /*_blockId*/) -> void {
 		// Schedule a check to see if we can fall
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_SAND, 3);
 	};
 	blockBehaviors[BLOCK_SAND].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_SAND, 3);
 	};
-	blockBehaviors[BLOCK_SAND].onTick = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] uint8_t _meta,
-	                                       [[maybe_unused]] Java::Random& _random) -> void {
+	blockBehaviors[BLOCK_SAND].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
+	                                       Java::Random& /*_random*/) -> void {
 		Int3 below = { _pos.x, _pos.y - 1, _pos.z };
 
 		if (!Blocks::CanFallAt(_world, below) || _pos.y < 0)

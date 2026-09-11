@@ -74,7 +74,7 @@ void ItemEntity::OnCollideWithPlayer(PlayerEntity& _entity) {
 		this->isDead = true;
 }
 
-void ItemEntity::UpdateFallState(float _movedY) {
+void ItemEntity::UpdateFallState(float /*_movedY*/) {
 	fallDistance = 0;
 }
 

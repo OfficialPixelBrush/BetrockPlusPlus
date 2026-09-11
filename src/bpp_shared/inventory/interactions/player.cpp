@@ -57,7 +57,7 @@ void PlayerInventoryInteraction::OnRightClick(int _slot) {
 	CraftingInventoryInteraction::OnRightClick(_slot);
 }
 
-bool PlayerInventoryInteraction::CanExist(PlayerEntity& _player) {
+bool PlayerInventoryInteraction::CanExist(PlayerEntity& /*_player*/) {
 	return playerInventory != nullptr;
 }
 

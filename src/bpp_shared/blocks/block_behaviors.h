@@ -22,7 +22,7 @@ struct PlayerSession;
 
 namespace Blocks {
 
-bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer, Direction::Value _face,
+bool GenericPlace(WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
                   BlockType _blockId, uint8_t _meta);
 void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer);
 void GenericExplode(WorldManager& _world, Int3 _pos);

@@ -47,11 +47,11 @@ void GenericExplode(WorldManager& _world, Int3 _pos) {
 	BreakAndDropBlockWithChance(_world, _pos, 0.3f);
 }
 
-void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer) {
+void GenericBreak(WorldManager& _world, Int3 _pos, Entity& /*_destroyer*/) {
 	BreakAndDropBlock(_world, _pos);
 }
 
-bool GenericPlace(WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _placer, Direction::Value _face,
+bool GenericPlace(WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Direction::Value _face,
                   BlockType _blockId, uint8_t _meta) {
 	if (!_world.InBounds(_pos.y))
 		return false;

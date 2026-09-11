@@ -8,7 +8,7 @@
 #pragma once
 #include "base_types.h"
 
-static const std::string PacketIdToLabel(PacketId _id) {
+inline std::string PacketIdToLabel(PacketId _id) {
 	switch (_id) {
 	case PacketId::KeepAlive:
 		return "KeepAlive";

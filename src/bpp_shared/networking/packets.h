@@ -44,7 +44,7 @@ public:
 		}
 
 		// NOTE: Reading the packet id is enough to deserialize it
-		void Deserialize([[maybe_unused]] NetworkStream& _stream) override {}
+		void Deserialize(NetworkStream& /*_stream*/) override {}
 	};
 
 	// Used to finalize the connection
@@ -764,7 +764,7 @@ public:
 			_stream.IncrementPacketCount(id);
 		}
 
-		void Deserialize([[maybe_unused]] NetworkStream& _stream) override {}
+		void Deserialize(NetworkStream& /*_stream*/) override {}
 	};
 
 	// Used for setting an entitys relative position

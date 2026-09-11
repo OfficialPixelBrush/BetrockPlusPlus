@@ -43,7 +43,7 @@ void PlayerConnStateManager::HandleConnectionState(PlayerSession& _session, Serv
 	}
 }
 
-void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, [[maybe_unused]] Server& _server) {
+void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, Server& _server) {
 	if (!_session.stream.HasData())
 		return;
 	PacketId packetId = _session.stream.Read<PacketId>();
@@ -136,7 +136,7 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	FinishLogin(_session, _server);
 }
 
-void PlayerConnStateManager::HandleVerifyingUsername(PlayerSession& _session, [[maybe_unused]] Server& _server) {
+void PlayerConnStateManager::HandleVerifyingUsername(PlayerSession& _session, Server& _server) {
 #ifdef ONLINE_MODE_AUTHENTICATION
 	using namespace std::chrono_literals;
 	constexpr auto K_AUTH_TIMEOUT = 20s;
@@ -238,7 +238,7 @@ void PlayerConnStateManager::FinishLogin(PlayerSession& _session, Server& _serve
 }
 
 void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std::string& _reason,
-                                              [[maybe_unused]] Server& _server, bool _doSave) {
+                                              Server& _server, bool _doSave) {
 	// Send disconnect reason to the leaving player
 	Packet::Disconnect kick;
 	kick.reason = _reason;

@@ -116,7 +116,7 @@ static void InstallProcessSignalHandlers() {
 }
 
 struct Args : MainArguments<Args> {
-	[[maybe_unused]] inline static const std::string Version() noexcept {
+	inline static const std::string Version() noexcept {
 		return std::string(PROJECT_FULL_VERSION_LABEL);
 	}
 	uint16_t port = option("port", 'p', "Port the server will run on (25565)") = 25565;
@@ -197,7 +197,7 @@ void InitCrashHandler(std::string _platformString) {
 }
 #endif
 
-int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
+int main(int argc, char** argv) {
 	std::string platformString = std::format("{} ({}, {})", PLATFORM_NAME, BUILD_MODE, ARCH_NAME);
 #ifdef CRASH_LOGGING
 	InitCrashHandler(platformString);

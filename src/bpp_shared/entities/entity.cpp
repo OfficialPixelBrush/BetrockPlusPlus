@@ -23,7 +23,7 @@ void Entity::OnDismountEntity() {
 	return;
 }
 
-void Entity::OnPlayerInteract(PlayerEntity* _entity) {
+void Entity::OnPlayerInteract(PlayerEntity* /*_entity*/) {
 	// stub
 	return;
 }
@@ -100,7 +100,7 @@ bool Entity::PushOutOfBlocks(Vec3 _pos) {
 
 	return false;
 }
-void Entity::OnCollideWithPlayer(PlayerEntity& _entity) {
+void Entity::OnCollideWithPlayer(PlayerEntity& /*_entity*/) {
 	return;
 }
 

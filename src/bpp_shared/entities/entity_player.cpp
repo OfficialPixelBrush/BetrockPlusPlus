@@ -72,7 +72,7 @@ SleepFailureReason PlayerEntity::TrySleep(Int3 _pos) {
 	return SleepFailureReason::SUCCESS;
 }
 
-void PlayerEntity::WakeUp([[maybe_unused]] bool _confirmSpawn) {
+void PlayerEntity::WakeUp(bool /*_confirmSpawn*/) {
 	this->SetSize({ 0.6f, 1.8f });
 	this->yOffset = 0.0f;
 	this->isSleeping = false;
@@ -104,7 +104,7 @@ void PlayerEntity::OnDismountEntity() {
 	return;
 }
 
-bool PlayerEntity::PickupItem(ItemStack& _stack, EntityId _entityId) {
+bool PlayerEntity::PickupItem(ItemStack& /*_stack*/, EntityId /*_entityId*/) {
 	return true;
 }
 

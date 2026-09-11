@@ -582,7 +582,6 @@ void Server::Tick() {
 	GlobalDiscord().Drain(*this);
 #endif
 	AcceptNewPlayers();
-	[[maybe_unused]] const int playerCount = int(players.size());
 
 	std::vector<ClientPosition> overworldPositions;
 	std::vector<ClientPosition> netherPositions;

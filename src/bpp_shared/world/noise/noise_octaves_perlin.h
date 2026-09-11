@@ -25,7 +25,7 @@ public:
 	void GenerateOctaves(std::span<double> _noiseField, Vec3 _coordinate, Int32_3 _size, Vec3 _pScale);
 	// func_4103_a
 	void GenerateOctaves(std::span<double> _noiseField, Int32_2 _offset, Int32_2 _size, Vec2 _scale,
-	                     [[maybe_unused]] double _unused);
+	                     double /*_unused*/);
 
 private:
 	int32_t octaves = 0;
@@ -71,7 +71,7 @@ inline void NoiseOctavesPerlin::GenerateOctaves(std::span<double> _noiseField, V
 }
 
 inline void NoiseOctavesPerlin::GenerateOctaves(std::span<double> _noiseField, Int32_2 _offset, Int32_2 _size,
-                                                Vec2 _scale, [[maybe_unused]] double _unused) {
+                                                Vec2 _scale, double /*_unused*/) {
 	this->GenerateOctaves(_noiseField, Vec3{ double(_offset.x), 10.0, double(_offset.z) },
 	                      Int32_3{ _size.x, 1, _size.z }, Vec3{ _scale.x, 1.0, _scale.z });
 }

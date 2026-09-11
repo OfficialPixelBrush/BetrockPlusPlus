@@ -460,7 +460,7 @@ bool GenerateCacti(WorldWrapper& _world, Java::Random& _rand, Int3 _pos) {
 }
 
 //  Attempts to generate a singular liquid source block
-bool GenerateLiquid(BlockType _type, WorldWrapper& _world, [[maybe_unused]] Java::Random& _rand, Int3 _pos) {
+bool GenerateLiquid(BlockType _type, WorldWrapper& _world, Java::Random& /*_rand*/, Int3 _pos) {
 	if (_world.GetBlockId({ _pos.x, _pos.y + 1, _pos.z }) != BLOCK_STONE)
 		return false;
 	if (_world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z }) != BLOCK_STONE)
@@ -497,7 +497,7 @@ bool GenerateLiquid(BlockType _type, WorldWrapper& _world, [[maybe_unused]] Java
 
 // TODO: Merge with GenerateLiquid?
 //  GenerateNetherLiquid
-bool GenerateNetherLiquid(WorldWrapper& _world, [[maybe_unused]] Java::Random& _rand, Int3 _pos) {
+bool GenerateNetherLiquid(WorldWrapper& _world, Java::Random& /*_rand*/, Int3 _pos) {
 	if (_world.GetBlockId({ _pos.x, _pos.y + 1, _pos.z }) != BLOCK_NETHERRACK)
 		return false;
 	if (_world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z }) != BLOCK_NETHERRACK)

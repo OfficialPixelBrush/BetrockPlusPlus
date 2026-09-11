@@ -82,10 +82,10 @@ void LargeChestInventoryInteraction::OnShiftClick(int _slot) {
 
 	if (_slot <= 53) {
 		// Chest -> inventory
-		[[maybe_unused]] bool success = playerInventory->MergeItemStackInInventory(copy, true, 9, 44);
+		playerInventory->MergeItemStackInInventory(copy, true, 9, 44);
 	} else {
 		// Inventory -> Chest
-		[[maybe_unused]] bool success = chestInventory.MergeItemStackInInventory(copy);
+		chestInventory.MergeItemStackInInventory(copy);
 	}
 
 	// Update the source in the real inventory before re-merging

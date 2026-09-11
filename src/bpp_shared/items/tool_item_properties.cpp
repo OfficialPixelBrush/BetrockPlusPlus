@@ -219,7 +219,7 @@ void RegisterAll() {
 	itemBehavior[FISH_COOKED].onUse = EatFood;
 	itemBehavior[MUSHROOM_STEW].onUse = EatFood;
 
-	itemBehavior[SUGARCANE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+	itemBehavior[SUGARCANE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/,
 	                                        Direction::Value _face) {
 		Int3 placePos = _pos.WithOffset(_face);
 		if (!Blocks::CanSugarcaneSurviveAt(_world, placePos))
@@ -229,7 +229,7 @@ void RegisterAll() {
 		_stack->DecrementCount(1);
 	};
 
-	itemBehavior[SEEDS_WHEAT].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+	itemBehavior[SEEDS_WHEAT].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/,
 	                                          Direction::Value _face) {
 		Int3 placePos = _pos.WithOffset(_face);
 		if (!Blocks::CanCropsSurviveAt(_world, placePos))
@@ -239,7 +239,7 @@ void RegisterAll() {
 		_stack->DecrementCount(1);
 	};
 
-	itemBehavior[PAINTING].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+	itemBehavior[PAINTING].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/,
 	                                       Direction::Value _face) {
 		if (_face == Direction::Value::Down || _face == Direction::Value::Up)
 			return;

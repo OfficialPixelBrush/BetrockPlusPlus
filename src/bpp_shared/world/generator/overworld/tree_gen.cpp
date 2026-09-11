@@ -126,7 +126,7 @@ void BigTree::Configure(double _pTreeHeight, double _pBranchLength, double _pTru
  * @param pBirch If the tree should be birch or oak (not used for big trees)
  * @return If tree successfully generated
  */
-bool BigTree::Generate(WorldAccess& _pWorld, Java::Random& _pRand, [[maybe_unused]] Int3 _pPos) {
+bool BigTree::Generate(WorldAccess& _pWorld, Java::Random& _pRand, Int3 _pPos) {
 	Configure(1.0, 1.0, 1.0);
 	wm = &_pWorld;
 	int64_t seed = _pRand.NextLong();

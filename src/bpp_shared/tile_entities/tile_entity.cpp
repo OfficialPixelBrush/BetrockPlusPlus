@@ -14,12 +14,12 @@
 #include <string>
 
 //TODO: Move all these into seperate files just like InventoryInteraction
-void TileEntity::Tick(WorldManager& _world) {
+void TileEntity::Tick(WorldManager& /*_world*/) {
 	// no-op
 	return;
 }
 
-void TileEntityChest::Tick(WorldManager& _world) {
+void TileEntityChest::Tick(WorldManager& /*_world*/) {
 	if (chunk && inventory.isModified) {
 		chunk->isModified = true;
 		inventory.isModified = false;
@@ -154,7 +154,7 @@ int TileEntityFurnace::GetCookTime() const {
 	return cookTime;
 }
 
-void TileEntityDispenser::Tick(WorldManager& _world) {
+void TileEntityDispenser::Tick(WorldManager& /*_world*/) {
 	if (chunk && inventory.isModified) {
 		chunk->isModified = true;
 		inventory.isModified = false;
@@ -182,7 +182,7 @@ Tag TileEntity::Serialize() {
 	auto root = Tag{};
 	root.type = TAG_COMPOUND;
 
-	auto id = Tag{ .type = TAG_STRING, .name = "id", .stringValue = GetTileNbtId(type) };
+	auto id = Tag{ .type = TAG_STRING, .name = "id", .longValue = 0, .stringValue = GetTileNbtId(type) };
 	auto x = Tag{ .type = TAG_INT, .name = "x", .intValue = position.x };
 	auto y = Tag{ .type = TAG_INT, .name = "y", .intValue = position.y };
 	auto z = Tag{ .type = TAG_INT, .name = "z", .intValue = position.z };
@@ -199,11 +199,11 @@ Tag TileEntityChest::Serialize() {
 	auto root = TileEntity::Serialize();
 
 	// Construct our inventory
-	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
+	auto items = Tag{ .type = TAG_LIST, .name = "Items", .longValue = 0, .listType = TAG_COMPOUND };
 	int8_t currentSlot = 0;
 	for (auto& stack : inventory.slots) {
 		if (stack.id != Items::Id::INVALID) {
-			auto item = Tag{ .type = TAG_COMPOUND };
+			auto item = Tag{ .type = TAG_COMPOUND, .longValue = 0 };
 			auto count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
 			auto damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
 			auto id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
@@ -228,11 +228,11 @@ Tag TileEntityFurnace::Serialize() {
 	auto root = TileEntity::Serialize();
 
 	// Construct our inventory
-	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
+	auto items = Tag{ .type = TAG_LIST, .name = "Items", .longValue = 0, .listType = TAG_COMPOUND };
 	int8_t currentSlot = 0;
 	for (auto& stack : inventory.slots) {
 		if (stack.id != Items::Id::INVALID) {
-			auto item = Tag{ .type = TAG_COMPOUND };
+			auto item = Tag{ .type = TAG_COMPOUND, .longValue = 0 };
 			auto count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
 			auto damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
 			auto id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
@@ -257,11 +257,11 @@ Tag TileEntityDispenser::Serialize() {
 	auto root = TileEntity::Serialize();
 
 	// Construct our inventory
-	auto items = Tag{ .type = TAG_LIST, .name = "Items", .listType = TAG_COMPOUND };
+	auto items = Tag{ .type = TAG_LIST, .name = "Items", .longValue = 0, .listType = TAG_COMPOUND };
 	int8_t currentSlot = 0;
 	for (auto& stack : inventory.slots) {
 		if (stack.id != Items::Id::INVALID) {
-			auto item = Tag{ .type = TAG_COMPOUND };
+			auto item = Tag{ .type = TAG_COMPOUND, .longValue = 0 };
 			auto count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
 			auto damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
 			auto id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
@@ -285,10 +285,10 @@ Tag TileEntityDispenser::Serialize() {
 Tag TileEntitySign::Serialize() {
 	auto root = TileEntity::Serialize();
 
-	auto vText1 = Tag{ .type = TAG_STRING, .name = "Text1", .stringValue = text1 };
-	auto vText2 = Tag{ .type = TAG_STRING, .name = "Text2", .stringValue = text2 };
-	auto vText3 = Tag{ .type = TAG_STRING, .name = "Text3", .stringValue = text3 };
-	auto vText4 = Tag{ .type = TAG_STRING, .name = "Text4", .stringValue = text4 };
+	auto vText1 = Tag{ .type = TAG_STRING, .name = "Text1", .longValue = 0, .stringValue = text1 };
+	auto vText2 = Tag{ .type = TAG_STRING, .name = "Text2", .longValue = 0, .stringValue = text2 };
+	auto vText3 = Tag{ .type = TAG_STRING, .name = "Text3", .longValue = 0, .stringValue = text3 };
+	auto vText4 = Tag{ .type = TAG_STRING, .name = "Text4", .longValue = 0, .stringValue = text4 };
 
 	root.compound["Text1"] = vText1;
 	root.compound["Text2"] = vText2;
@@ -301,7 +301,7 @@ Tag TileEntitySign::Serialize() {
 Tag TileEntityMobSpawner::Serialize() {
 	auto root = TileEntity::Serialize();
 
-	auto vEntityId = Tag{ .type = TAG_STRING, .name = "EntityId", .stringValue = entityId };
+	auto vEntityId = Tag{ .type = TAG_STRING, .name = "EntityId", .longValue = 0, .stringValue = entityId };
 	auto vDelay = Tag{ .type = TAG_SHORT, .name = "Delay", .shortValue = delay };
 
 	root.compound["EntityId"] = vEntityId;

@@ -244,14 +244,14 @@ void RegisterFluidBehaviors() {
 		TryLavaHarden(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LAVA_FLOWING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                              BlockType _blockId) -> void {
+	                                                              BlockType /*_blockId*/) -> void {
 		// Stack overflow if this was regular set block!
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING,
 		                                        _world.GetDimension() == Dimension::Nether ? 10 : 30);
 		TryLavaHarden(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LAVA_STILL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                            BlockType _blockId) -> void {
+	                                                            BlockType /*_blockId*/) -> void {
 		// Stack overflow if this was regular set block!
 		_world.SetBlockRaw(_pos, BLOCK_LAVA_FLOWING, _world.GetMetadata(_pos));
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING,
@@ -262,7 +262,7 @@ void RegisterFluidBehaviors() {
 		TryLavaHarden(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LAVA_FLOWING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                               Java::Random& _random) -> void {
+	                                               Java::Random& /*_random*/) -> void {
 		auto level = _meta % 8;
 		bool isFalling = _meta >= 8;
 		bool isSource = _meta == 0;
@@ -398,18 +398,18 @@ void RegisterFluidBehaviors() {
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_WATER_FLOWING, 5);
 	};
 	blockBehaviors[BLOCK_WATER_FLOWING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                               BlockType _blockId) -> void {
+	                                                               BlockType /*_blockId*/) -> void {
 		// Stack overflow if this was regular set block!
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_WATER_FLOWING, 5);
 	};
 	blockBehaviors[BLOCK_WATER_STILL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                             BlockType _blockId) -> void {
+	                                                             BlockType /*_blockId*/) -> void {
 		// Stack overflow if this was regular set block!
 		_world.SetBlockRaw(_pos, BLOCK_WATER_FLOWING, _world.GetMetadata(_pos));
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_WATER_FLOWING, 5);
 	};
 	blockBehaviors[BLOCK_WATER_FLOWING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                                Java::Random& _random) -> void {
+	                                                Java::Random& /*_random*/) -> void {
 		auto level = _meta % 8;
 		bool isFalling = _meta >= 8;
 		bool isSource = _meta == 0;

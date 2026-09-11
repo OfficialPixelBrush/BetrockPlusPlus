@@ -7,7 +7,7 @@
 
 InventoryInteraction::InventoryInteraction(Inventory* _inv) : inventory(_inv) {}
 
-bool InventoryInteraction::CanExist(PlayerEntity& _player) {
+bool InventoryInteraction::CanExist(PlayerEntity& /*_player*/) {
 	return inventory != nullptr;
 }
 
@@ -18,7 +18,7 @@ void InventoryInteraction::InitSnapshot() {
 std::vector<DeltaSlot> InventoryInteraction::TickDiff() {
 	std::vector<DeltaSlot> differences;
 	for (size_t i = 0; i < snapshot.size(); i++) {
-		[[maybe_unused]] auto* current = inventory->GetStackInSlot(i);
+		inventory->GetStackInSlot(i);
 		auto& snap = snapshot[i];
 
 		bool changed = snap != inventory->slots[i];

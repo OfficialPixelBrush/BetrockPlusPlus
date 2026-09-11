@@ -6,7 +6,7 @@
  */
 #include "entity_mob.h"
 
-void MobEntity::OnDeath(Entity* _killer) {
+void MobEntity::OnDeath(Entity* /*_killer*/) {
 	// no op, drop items
 	return;
 }

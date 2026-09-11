@@ -37,7 +37,7 @@ void ChestInventoryInteraction::InitSnapshot() {
 std::vector<DeltaSlot> ChestInventoryInteraction::TickDiff() {
 	std::vector<DeltaSlot> differences;
 	for (size_t i = 0; i < snapshot.size(); i++) {
-		[[maybe_unused]] auto* current = chestInventory->GetStackInSlot(i);
+		chestInventory->GetStackInSlot(i);
 		auto& snap = snapshot[i];
 
 		bool changed = snap != chestInventory->slots[i];
@@ -75,10 +75,10 @@ void ChestInventoryInteraction::OnShiftClick(int _slot) {
 
 	if (_slot <= 26) {
 		// Chest -> inventory
-		[[maybe_unused]] bool success = playerInventory->MergeItemStackInInventory(copy, true, 9, 44);
+		playerInventory->MergeItemStackInInventory(copy, true, 9, 44);
 	} else {
 		// Inventory -> Chest
-		[[maybe_unused]] bool success = chestInventory->MergeItemStackInInventory(copy);
+		chestInventory->MergeItemStackInInventory(copy);
 	}
 
 	// Update the source in the real inventory before re-merging
