@@ -24,8 +24,7 @@ public:
 	// generateNoiseOctaves
 	void GenerateOctaves(std::span<double> _noiseField, Vec3 _coordinate, Int32_3 _size, Vec3 _pScale);
 	// func_4103_a
-	void GenerateOctaves(std::span<double> _noiseField, Int32_2 _offset, Int32_2 _size, Vec2 _scale,
-	                     double /*_unused*/);
+	void GenerateOctaves(std::span<double> _noiseField, Int32_2 _offset, Int32_2 _size, Vec2 _scale, double /*_unused*/);
 
 private:
 	int32_t octaves = 0;

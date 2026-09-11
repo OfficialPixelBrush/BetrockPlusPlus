@@ -342,7 +342,8 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_LEVER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                               Direction::Value _face, BlockType _blockId, uint8_t /*_meta*/) -> bool {
+	                                               Direction::Value _face, BlockType _blockId,
+	                                               uint8_t /*_meta*/) -> bool {
 		if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER)
 			_pos = _pos.WithOffset(Direction::Opposite(_face));
 		// TODO: This isn't exactly the best way to do it, as it relies on Metadata fuckery,
@@ -381,7 +382,8 @@ void RegisterRedstoneBehaviors() {
 		BreakAndDropBlock(_world, _pos);
 	};
 
-	blockBehaviors[BLOCK_LEVER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType /*_blockId*/) -> void {
+	blockBehaviors[BLOCK_LEVER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                       BlockType /*_blockId*/) -> void {
 		auto dir = GetDirectionFromMeta(BLOCK_LEVER, _world.GetMetadata(_pos));
 		if (!CanTorchAttachTo(_world, _pos, dir)) {
 			BreakAndDropBlock(_world, _pos);
@@ -404,7 +406,8 @@ void RegisterRedstoneBehaviors() {
 	},
 
 	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                               Direction::Value _face, BlockType _blockId, uint8_t /*_meta*/) -> bool {
+	                                               Direction::Value _face, BlockType _blockId,
+	                                               uint8_t /*_meta*/) -> bool {
 		if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER)
 			_pos = _pos.WithOffset(Direction::Opposite(_face));
 		if (CanTorchAttachTo(_world, _pos, _face)) {
@@ -434,7 +437,8 @@ void RegisterRedstoneBehaviors() {
 		BreakAndDropBlock(_world, _pos);
 	};
 
-	blockBehaviors[BLOCK_TORCH].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType /*_blockId*/) -> void {
+	blockBehaviors[BLOCK_TORCH].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                       BlockType /*_blockId*/) -> void {
 		const auto dir = GetDirectionFromMeta(BLOCK_TORCH, _world.GetMetadata(_pos));
 		if (!CanTorchAttachTo(_world, _pos, dir))
 			BreakAndDropBlock(_world, _pos);

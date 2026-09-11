@@ -131,8 +131,8 @@ void ServerBlock::Initialize() {
 		return false;
 	};
 
-	blockBehaviors[BLOCK_JUKEBOX].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& /*_session*/,
-	                                                    Runtime& /*_gameRuntime*/) -> bool {
+	blockBehaviors[BLOCK_JUKEBOX].onBlockActivated =
+	    [](WorldManager& _world, Int3 _position, PlayerSession& /*_session*/, Runtime& /*_gameRuntime*/) -> bool {
 		//ItemStack* heldItem = _session.inventory.GetHeldItem();
 		//if (!heldItem)
 		//	return false;

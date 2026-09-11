@@ -467,8 +467,7 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 	}
 }
 
-void InteractWithBlock(Packet::InteractWithBlock& /*_pkt*/, PlayerSession& /*_session*/,
-                       WorldManager& /*_world*/) {}
+void InteractWithBlock(Packet::InteractWithBlock& /*_pkt*/, PlayerSession& /*_session*/, WorldManager& /*_world*/) {}
 
 void Animation(Packet::Animation& _pkt, PlayerSession& _session, EntityTracker& _entityTracker) {
 	// Broadcast what we were sent to players who can see this player

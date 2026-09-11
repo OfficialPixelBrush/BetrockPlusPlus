@@ -436,7 +436,8 @@ void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entit
 	_stack->id = Items::Id::BUCKET;
 }
 
-void UseFlintAndSteel(WorldManager& /*_world*/, ItemStack* _stack, Int3 /*_pos*/, Entity& /*_user*/, Direction::Value /*_face*/) {
+void UseFlintAndSteel(WorldManager& /*_world*/, ItemStack* _stack, Int3 /*_pos*/, Entity& /*_user*/,
+                      Direction::Value /*_face*/) {
 	// *** DISABLED FOR FIRST RELEASE ***
 #ifdef EXPERIMENTAL
 	if (_user.flags.isSneaking) {

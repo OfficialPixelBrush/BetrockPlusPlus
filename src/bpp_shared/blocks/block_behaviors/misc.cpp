@@ -152,7 +152,8 @@ void RegisterMiscBehaviors() {
 	};
 
 	// Snow
-	blockBehaviors[BLOCK_SNOW_LAYER].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& /*_destroyer*/) {
+	blockBehaviors[BLOCK_SNOW_LAYER].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos,
+	                                                               Entity& /*_destroyer*/) {
 		// Snow drops itself when broken with a shovel
 		_world.SetBlock(_pos, BLOCK_AIR);
 		DropItemAt(_world, _pos, Items::Id::SNOWBALL, /*count=*/1, 0);
@@ -186,7 +187,8 @@ void RegisterMiscBehaviors() {
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LADDER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                Direction::Value _face, BlockType _blockId, uint8_t /*_meta*/) -> bool {
+	                                                Direction::Value _face, BlockType _blockId,
+	                                                uint8_t /*_meta*/) -> bool {
 		Int3 targetPos = _pos;
 		const Int3 sourceBlock = _pos.WithOffset(Direction::Opposite(_face));
 		if (_world.GetBlockId(sourceBlock) == BLOCK_SNOW_LAYER)

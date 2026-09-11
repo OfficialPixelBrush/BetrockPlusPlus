@@ -91,8 +91,8 @@ BlockType WorldWrapper::GetBlockId(const Int3 _wpos) {
 	return chunk->GetBlock({ _wpos.x & 15, _wpos.y, _wpos.z & 15 });
 }
 
-void WorldWrapper::SetBlock(const Int3 _wpos, const BlockType _type, const uint8_t _meta, const bool /*_keepTileEntity*/,
-                            const bool /*_updateNeighbors*/) {
+void WorldWrapper::SetBlock(const Int3 _wpos, const BlockType _type, const uint8_t _meta,
+                            const bool /*_keepTileEntity*/, const bool /*_updateNeighbors*/) {
 	if (!InBounds(_wpos.y))
 		return;
 	auto chunk = chunkRegion.GetChunk(GetRegionChunkPos(_wpos));
