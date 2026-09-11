@@ -18,92 +18,92 @@ struct ArgumentError : std::runtime_error {
 
 template <typename T, typename SFINAE = void>
 struct ArgConverter {
-	constexpr static bool canDo = false;
+	constexpr static bool CAN_DO = false;
 };
 
 template <typename T>
 struct ArgConverter<T, typename std::enable_if<std::is_integral<T>::value>::type> {
-	static T makeDefault() {
+	static T MakeDefault() {
 		return 0;
 	}
-	static T deserialise(const std::string& _from) {
+	static T Deserialise(const std::string& _from) {
 		return std::stoi(_from);
 	}
-	constexpr static bool canDo = true;
+	constexpr static bool CAN_DO = true;
 };
 
 template <typename T>
 struct ArgConverter<T, typename std::enable_if<std::is_floating_point<T>::value>::type> {
-	static T makeDefault() {
+	static T MakeDefault() {
 		return 0;
 	}
-	static T deserialise(const std::string& _from) {
+	static T Deserialise(const std::string& _from) {
 		return std::stof(_from);
 	}
-	constexpr static bool canDo = true;
+	constexpr static bool CAN_DO = true;
 };
 
 template <>
 struct ArgConverter<std::string, void> {
-	static std::string makeDefault() {
+	static std::string MakeDefault() {
 		return "";
 	}
-	static std::string deserialise(const std::string& _from) {
+	static std::string Deserialise(const std::string& _from) {
 		return _from;
 	}
-	constexpr static bool canDo = true;
+	constexpr static bool CAN_DO = true;
 };
 
 template <typename T>
 struct ArgConverter<std::shared_ptr<T>, void> {
-	static std::shared_ptr<T> makeDefault() {
+	static std::shared_ptr<T> MakeDefault() {
 		return nullptr;
 	}
-	static std::shared_ptr<T> deserialise(const std::string& _from) {
-		return std::make_shared<T>(ArgConverter<T>::deserialise(_from));
+	static std::shared_ptr<T> Deserialise(const std::string& _from) {
+		return std::make_shared<T>(ArgConverter<T>::Deserialise(_from));
 	}
-	constexpr static bool canDo = true;
+	constexpr static bool CAN_DO = true;
 };
 
 template <typename T>
 struct ArgConverter<std::unique_ptr<T>, void> {
-	static std::unique_ptr<T> makeDefault() {
+	static std::unique_ptr<T> MakeDefault() {
 		return nullptr;
 	}
-	static std::unique_ptr<T> deserialise(const std::string& _from) {
-		return std::unique_ptr<T>(new T(ArgConverter<T>::deserialise(_from)));
+	static std::unique_ptr<T> Deserialise(const std::string& _from) {
+		return std::unique_ptr<T>(new T(ArgConverter<T>::Deserialise(_from)));
 	}
-	constexpr static bool canDo = true;
+	constexpr static bool CAN_DO = true;
 };
 
 template <typename T>
-struct ArgConverter<std::vector<T>, typename std::enable_if<ArgConverter<T>::canDo>::type> {
-	static std::vector<T> makeDefault() {
+struct ArgConverter<std::vector<T>, typename std::enable_if<ArgConverter<T>::CAN_DO>::type> {
+	static std::vector<T> MakeDefault() {
 		return {};
 	}
-	static std::vector<T> deserialise(const std::vector<std::string>& _from) {
+	static std::vector<T> Deserialise(const std::vector<std::string>& _from) {
 		std::vector<T> made;
 		for (const std::string& part : _from) {
 			int lastPosition = 0;
 			for (int i = 0; i < int(part.size()) + 1; i++) {
 				if (part[i] == ',' || i == int(part.size())) {
 					made.push_back(
-					    ArgConverter<T>::deserialise(std::string(part.begin() + lastPosition, part.begin() + i)));
+					    ArgConverter<T>::Deserialise(std::string(part.begin() + lastPosition, part.begin() + i)));
 					lastPosition = i + 1;
 				}
 			}
 		}
 		return made;
 	}
-	constexpr static bool canDo = true;
+	constexpr static bool CAN_DO = true;
 };
 
 template <typename T>
-struct ArgConverter<std::unordered_map<std::string, T>, typename std::enable_if<ArgConverter<T>::canDo>::type> {
-	static std::unordered_map<std::string, T> makeDefault() {
+struct ArgConverter<std::unordered_map<std::string, T>, typename std::enable_if<ArgConverter<T>::CAN_DO>::type> {
+	static std::unordered_map<std::string, T> MakeDefault() {
 		return {};
 	}
-	static std::unordered_map<std::string, T> deserialise(const std::vector<std::string>& _from) {
+	static std::unordered_map<std::string, T> Deserialise(const std::vector<std::string>& _from) {
 		std::unordered_map<std::string, T> made;
 		for (const std::string& part : _from) {
 			int lastPosition = 0;
@@ -114,21 +114,21 @@ struct ArgConverter<std::unordered_map<std::string, T>, typename std::enable_if<
 					if (separator == std::string::npos)
 						throw ArgumentError(
 						    "Argument is expected to be a comma separated list of name-value pairs separated by '='");
-					made[section.substr(0, separator)] = ArgConverter<T>::deserialise(section.substr(separator + 1));
+					made[section.substr(0, separator)] = ArgConverter<T>::Deserialise(section.substr(separator + 1));
 					lastPosition = i + 1;
 				}
 			}
 		}
 		return made;
 	}
-	constexpr static bool canDo = true;
+	constexpr static bool CAN_DO = true;
 };
 
 template <typename T>
 class Optional {
 	alignas(T) std::array<int8_t, sizeof(T)> contents;
 	bool exists = false;
-	void clear() {
+	void Clear() {
 		if (exists)
 			operator*().~T();
 	}
@@ -148,7 +148,7 @@ public:
 			new (operator->()) T(*_other);
 	}
 	T& operator=(const T& _other) {
-		clear();
+		Clear();
 		if (exists) {
 			operator*() = _other;
 		} else
@@ -157,7 +157,7 @@ public:
 		return operator*();
 	}
 	T& operator=(T&& _other) {
-		clear();
+		Clear();
 		if (exists)
 			operator*() = _other;
 		else
@@ -166,7 +166,7 @@ public:
 		return operator*();
 	}
 	void operator=(std::nullptr_t) {
-		clear();
+		Clear();
 		exists = false;
 	}
 #if __cplusplus > 201402L
@@ -198,58 +198,58 @@ public:
 	}
 #endif
 	~Optional() {
-		clear();
+		Clear();
 	}
 };
 
 template <typename T>
 struct ArgConverter<Optional<T>, void> {
-	static Optional<T> makeDefault() {
+	static Optional<T> MakeDefault() {
 		return nullptr;
 	}
-	static Optional<T> deserialise(const std::string& _from) {
+	static Optional<T> Deserialise(const std::string& _from) {
 		Optional<T> made;
-		made = ArgConverter<T>::deserialise(_from);
+		made = ArgConverter<T>::Deserialise(_from);
 		return made;
 	}
-	constexpr static bool canDo = true;
+	constexpr static bool CAN_DO = true;
 };
 
 #if __cplusplus > 201402L
 template <>
 struct ArgConverter<std::filesystem::path, void> {
-	static std::filesystem::path makeDefault() {
+	static std::filesystem::path MakeDefault() {
 		return {};
 	}
-	static std::filesystem::path deserialise(const std::string& _from) {
+	static std::filesystem::path Deserialise(const std::string& _from) {
 		return std::filesystem::path(_from);
 	}
-	constexpr static bool canDo = true;
+	constexpr static bool CAN_DO = true;
 };
 #endif
 
 template <typename T, typename SFINAE = void>
 struct Demultiplexer {
-	static T deserialise(const std::vector<std::string>& _multiplexed) {
-		return ArgConverter<T>::deserialise(_multiplexed);
+	static T Deserialise(const std::vector<std::string>& _multiplexed) {
+		return ArgConverter<T>::Deserialise(_multiplexed);
 	}
 };
 
 template <typename T>
-struct Demultiplexer<T, typename std::enable_if<!std::is_void<decltype(ArgConverter<T>::deserialise(
+struct Demultiplexer<T, typename std::enable_if<!std::is_void<decltype(ArgConverter<T>::Deserialise(
                             std::declval<std::string>()))>::value>::type> {
-	static T deserialise(const std::vector<std::string>& _multiplexed) {
+	static T Deserialise(const std::vector<std::string>& _multiplexed) {
 		if (_multiplexed.size() > 1)
 			throw ArgumentError("Argument was not expected to appear more than once (" + _multiplexed[1] +
 			                    " is excessive)");
-		return ArgConverter<T>::deserialise(_multiplexed[0]);
+		return ArgConverter<T>::Deserialise(_multiplexed[0]);
 	}
 };
 
 template <typename T, typename SFINAE = void>
 struct HelpProvider {
 	template <typename F>
-	static std::string get(const F& _ifAbsent, const std::string& _programName) {
+	static std::string Get(const F& _ifAbsent, const std::string& _programName) {
 		return _ifAbsent(_programName);
 	}
 };
@@ -258,7 +258,7 @@ template <typename T>
 struct HelpProvider<T,
                     typename std::enable_if<!std::is_void<decltype(T::help(std::declval<std::string>()))>::value>::type> {
 	template <typename F>
-	static std::string get(const F&, const std::string& _programName) {
+	static std::string Get(const F&, const std::string& _programName) {
 		return T::help(_programName);
 	}
 };
@@ -266,7 +266,7 @@ struct HelpProvider<T,
 template <typename T, typename SFINAE = void>
 struct OnHelpCallback {
 	template <typename F>
-	static void on(T*, const F& _ifAbsent) {
+	static void On(T*, const F& _ifAbsent) {
 		_ifAbsent();
 	}
 };
@@ -274,7 +274,7 @@ struct OnHelpCallback {
 template <typename T>
 struct OnHelpCallback<T, typename std::enable_if<std::is_void<decltype(std::declval<T>().onHelp())>::value>::type> {
 	template <typename F>
-	static void on(T* _instance, const F&) {
+	static void On(T* _instance, const F&) {
 		_instance->onHelp();
 	}
 };
@@ -288,14 +288,14 @@ struct HasHelpOptionsProvider<T, typename std::enable_if<!std::is_void<decltype(
 
 template <typename T, typename SFINAE = void>
 struct VersionPrinter {
-	static bool print() {
+	static bool Print() {
 		return false;
 	}
 };
 
 template <typename T>
 struct VersionPrinter<T, typename std::enable_if<!std::is_void<decltype(std::string(T::version))>::value>::type> {
-	static bool print() {
+	static bool Print() {
 		std::cout << T::version << std::endl;
 		return true;
 	}
@@ -303,7 +303,7 @@ struct VersionPrinter<T, typename std::enable_if<!std::is_void<decltype(std::str
 
 template <typename T>
 struct VersionPrinter<T, typename std::enable_if<!std::is_void<decltype(std::string(T::version()))>::value>::type> {
-	static bool print() {
+	static bool Print() {
 		std::cout << T::Version() << std::endl;
 		return true;
 	}
@@ -312,7 +312,7 @@ struct VersionPrinter<T, typename std::enable_if<!std::is_void<decltype(std::str
 template <typename T, typename SFINAE = void>
 struct OnVersionCallback {
 	template <typename F>
-	static void on(T*, const F& _ifAbsent) {
+	static void On(T*, const F& _ifAbsent) {
 		_ifAbsent();
 	}
 };
@@ -320,7 +320,7 @@ struct OnVersionCallback {
 template <typename T>
 struct OnVersionCallback<T, typename std::enable_if<std::is_void<decltype(std::declval<T>().onVersion())>::value>::type> {
 	template <typename F>
-	static void on(T* _instance, const F&) {
+	static void On(T* _instance, const F&) {
 		_instance->onVersion();
 	}
 };
@@ -344,26 +344,26 @@ struct StringFilterOk<
 
 struct DummyValidator {};
 
-template <typename Validator, typename SFINAE = void>
+template <typename ValidatorType, typename SFINAE = void>
 struct ValidatorUser {
 	template <typename Value>
-	static bool useValidator(const Validator& _validator, const Value& _value) {
+	static bool UseValidator(const ValidatorType& /*_validator*/, const Value& /*_value*/) {
 		return true;
 	}
 };
 
-template <typename Validator>
-struct ValidatorUser<Validator, typename std::enable_if<!std::is_same<Validator, DummyValidator>::value>::type> {
+template <typename ValidatorType>
+struct ValidatorUser<ValidatorType, typename std::enable_if<!std::is_same<ValidatorType, DummyValidator>::value>::type> {
 	template <typename Value,
 	          typename std::enable_if<
-	              std::is_same<bool, decltype(std::declval<Validator>()(std::declval<Value>()))>::value>::type* = nullptr>
-	static bool useValidator(const Validator& _validator, const Value& _value) {
+	              std::is_same<bool, decltype(std::declval<ValidatorType>()(std::declval<Value>()))>::value>::type* = nullptr>
+	static bool UseValidator(const ValidatorType& _validator, const Value& _value) {
 		return _validator(_value);
 	}
 	template <typename Value,
 	          typename std::enable_if<
-	              !std::is_same<bool, decltype(std::declval<Validator>()(std::declval<Value>()))>::value>::type* = nullptr>
-	static bool useValidator(const Validator& _validator, const Value& _value) {
+	              !std::is_same<bool, decltype(std::declval<ValidatorType>()(std::declval<Value>()))>::value>::type* = nullptr>
+	static bool UseValidator(const ValidatorType& _validator, const Value& _value) {
 		_validator(_value);
 		return true;
 	}
@@ -391,8 +391,8 @@ class MainArguments {
 		int argumentCountMax = 0;
 		InitialisationStep initialisationState = UNINITIALISED;
 	};
-	static Singleton& singleton() {
-		static Singleton instance;
+	static Singleton& Singleton() {
+		static struct Singleton instance;
 		return instance;
 	}
 
@@ -404,22 +404,22 @@ public:
 	MainArguments() = default;
 	MainArguments(int _argc, char** _argv) : programName(_argv[0]), argv(_argv + 1, _argv + _argc) {
 		using namespace QuickArgParserInternals;
-		if (singleton().initialisationState == UNINITIALISED) {
+		if (Singleton().initialisationState == UNINITIALISED) {
 			// When first created, create temporarily another instance to explore what are the members
-			singleton().initialisationState = INITIALISING;
+			Singleton().initialisationState = INITIALISING;
 
 			Child investigator;
 			// This will fill the static variables
-			singleton().helpPreface << QuickArgParserInternals::HelpProvider<Child>::get(
+			Singleton().helpPreface << QuickArgParserInternals::HelpProvider<Child>::Get(
 			    [](const std::string& _programName) {
-				    return _programName + " takes between " + std::to_string(singleton().argumentCountMin) + " and " +
-				           std::to_string(singleton().argumentCountMax) + " arguments, plus these options:";
+				    return _programName + " takes between " + std::to_string(Singleton().argumentCountMin) + " and " +
+				           std::to_string(Singleton().argumentCountMax) + " arguments, plus these options:";
 			    },
 			    programName);
 
-			singleton().initialisationState = INITIALISED;
+			Singleton().initialisationState = INITIALISED;
 		}
-		if (singleton().initialisationState == INITIALISED) {
+		if (Singleton().initialisationState == INITIALISED) {
 			bool switchesEnabled = true;
 			auto isListedAsChar = [](const char _arg, const std::vector<std::pair<std::string, char>>& _switches) {
 				for (const auto& it : _switches) {
@@ -449,16 +449,16 @@ public:
 				return false;
 			};
 			auto printHelp = [this]() {
-				std::cout << singleton().helpPreface.str() << std::endl;
-				std::cout << singleton().help.str() << std::endl;
+				std::cout << Singleton().helpPreface.str() << std::endl;
+				std::cout << Singleton().help.str() << std::endl;
 
-				QuickArgParserInternals::OnHelpCallback<Child>::on(static_cast<Child*>(this), [] { std::exit(0); });
+				QuickArgParserInternals::OnHelpCallback<Child>::On(static_cast<Child*>(this), [] { std::exit(0); });
 			};
 			auto printVersion = [this]() {
-				if (!QuickArgParserInternals::VersionPrinter<Child>::print())
+				if (!QuickArgParserInternals::VersionPrinter<Child>::Print())
 					return false; // Returns false if the version is not known, leading to no action if found
 
-				QuickArgParserInternals::OnVersionCallback<Child>::on(static_cast<Child*>(this), [] { std::exit(0); });
+				QuickArgParserInternals::OnVersionCallback<Child>::On(static_cast<Child*>(this), [] { std::exit(0); });
 				return true;
 			};
 
@@ -478,11 +478,11 @@ public:
 						goto nextArg;
 					}
 					bool skipsNext = false;
-					if (isListedAsString(argv[i], singleton().unarySwitches, true, skipsNext)) {
+					if (isListedAsString(argv[i], Singleton().unarySwitches, true, skipsNext)) {
 						if (skipsNext)
 							i++; // The next argument is part of the switch
 						goto nextArg;
-					} else if (isListedAsString(argv[i], singleton().nullarySwitches, false, skipsNext)) {
+					} else if (isListedAsString(argv[i], Singleton().nullarySwitches, false, skipsNext)) {
 						goto nextArg;
 					}
 
@@ -505,13 +505,13 @@ public:
 
 						// Some validations that all massed single letter switches
 						for (int j = 1; j < int(argv[i].size()); j++) {
-							if (isListedAsChar(argv[i][j], singleton().unarySwitches)) {
+							if (isListedAsChar(argv[i][j], Singleton().unarySwitches)) {
 								if (j == int(argv[i].size()) - 1) {
 									i++; // The next argument is part of the switch
 								}
 								goto nextArg;
 							}
-							if (!isListedAsChar(argv[i][j], singleton().nullarySwitches)) {
+							if (!isListedAsChar(argv[i][j], Singleton().nullarySwitches)) {
 								throw ArgumentError(std::string("Unknown switch ") + argv[i][j]);
 							}
 						}
@@ -525,33 +525,33 @@ public:
 			nextArg:;
 			}
 
-			if (int(arguments.size()) < singleton().argumentCountMin)
-				throw ArgumentError("Expected at least " + std::to_string(singleton().argumentCountMin) +
+			if (int(arguments.size()) < Singleton().argumentCountMin)
+				throw ArgumentError("Expected at least " + std::to_string(Singleton().argumentCountMin) +
 				                    " arguments, got " + std::to_string(arguments.size()));
-			if (int(arguments.size()) > singleton().argumentCountMax)
-				throw ArgumentError("Expected at most " + std::to_string(singleton().argumentCountMax) +
+			if (int(arguments.size()) > Singleton().argumentCountMax)
+				throw ArgumentError("Expected at most " + std::to_string(Singleton().argumentCountMax) +
 				                    " arguments, got " + std::to_string(arguments.size()));
 		}
 	}
 	std::vector<std::string> arguments;
 
 private:
-	std::vector<std::string> findOption(const std::string& _argument, char _shortcut) const {
+	std::vector<std::string> FindOption(const std::string& _argument, char _shortcut) const {
 		// This returns hogwash if the option is bool, but in that case, we only care that the vector is not empty
 		std::vector<std::string> collected;
-		auto matches = [&](const std::string& _matched, int _argument_index) {
+		auto matches = [&](const std::string& _matched, int _argumentIndex) {
 			for (int i = 0; i < int(_matched.size()); i++) {
-				if (_matched[i] != argv[_argument_index][i])
+				if (_matched[i] != argv[_argumentIndex][i])
 					return false;
 			}
-			return _matched.size() == argv[_argument_index].size() || argv[_argument_index][_matched.size()] == '=';
+			return _matched.size() == argv[_argumentIndex].size() || argv[_argumentIndex][_matched.size()] == '=';
 		};
 
 		for (int i = 0; i < int(argv.size()); i++) {
 			// Look for shortcut, end of string means no shortcut
 			if (_shortcut != '\0') {
 				// Skip this if it is a strange switch starting with a single dash
-				for (const auto& it : singleton().confusingSwitches)
+				for (const auto& it : Singleton().confusingSwitches)
 					if (matches(it, i))
 						goto skipThisOne;
 
@@ -566,7 +566,7 @@ private:
 								collected.push_back(argv[i].substr(j + 1));
 						}
 
-						for (auto& it : singleton().unarySwitches)
+						for (auto& it : Singleton().unarySwitches)
 							if (it.second == argv[i][j])
 								goto skipThisOne; // It is a switch followed by arguments
 					}
@@ -593,47 +593,47 @@ private:
 	}
 
 protected:
-	template <typename Validator>
+	template <typename ValidatorType>
 	class GrabberBase {
 	protected:
 		const std::string name;
 		const MainArguments* parent;
 		const char shortcut;
 		const std::string help;
-		Validator validator;
+		ValidatorType validator;
 		GrabberBase(const MainArguments* _parent, const std::string& _name, char _shortcut, const std::string& _help,
-		            const Validator& _validator)
+		            const ValidatorType& _validator)
 		    : name(_name), parent(_parent), shortcut(_shortcut), help(_help), validator(_validator) {}
 
-		void addHelpEntry() const {
+		void AddHelpEntry() const {
 			if (QuickArgParserInternals::HasHelpOptionsProvider<Child>::value)
 				return;
 
 			if (shortcut != '\0')
-				parent->singleton().help << '-' << shortcut;
-			parent->singleton().help << '\t';
+				parent->Singleton().help << '-' << shortcut;
+			parent->Singleton().help << '\t';
 			if (!name.empty())
-				parent->singleton().help << name;
-			parent->singleton().help << "\t " << help << std::endl;
+				parent->Singleton().help << name;
+			parent->Singleton().help << "\t " << help << std::endl;
 		}
 
 	public:
 		operator bool() const {
-			if (parent->singleton().initialisationState == INITIALISING) {
-				parent->singleton().nullarySwitches.push_back(std::make_pair(name, shortcut));
-				addHelpEntry();
+			if (parent->Singleton().initialisationState == INITIALISING) {
+				parent->Singleton().nullarySwitches.push_back(std::make_pair(name, shortcut));
+				AddHelpEntry();
 				return false;
 			}
-			return !parent->findOption(name, shortcut).empty();
+			return !parent->FindOption(name, shortcut).empty();
 		}
 
 		operator std::vector<bool>() const {
-			if (parent->singleton().initialisationState == INITIALISING) {
-				parent->singleton().nullarySwitches.push_back(std::make_pair(name, shortcut));
-				addHelpEntry();
+			if (parent->Singleton().initialisationState == INITIALISING) {
+				parent->Singleton().nullarySwitches.push_back(std::make_pair(name, shortcut));
+				AddHelpEntry();
 				return std::vector<bool>();
 			}
-			return std::vector<bool>(parent->findOption(name, shortcut).size(), true);
+			return std::vector<bool>(parent->FindOption(name, shortcut).size(), true);
 		}
 
 #if _MSC_VER && !__INTEL_COMPILER
@@ -641,22 +641,22 @@ protected:
 #else
 		template <typename T>
 #endif
-		T getOption(T _defaultValue) const {
-			if (parent->singleton().initialisationState == INITIALISING) {
-				parent->singleton().unarySwitches.push_back(std::make_pair(name, shortcut));
-				addHelpEntry();
+		T GetOption(T _defaultValue) const {
+			if (parent->Singleton().initialisationState == INITIALISING) {
+				parent->Singleton().unarySwitches.push_back(std::make_pair(name, shortcut));
+				AddHelpEntry();
 				return _defaultValue;
 			}
 
 			auto validate = [&](const T& _value) {
-				if (!QuickArgParserInternals::ValidatorUser<Validator>::useValidator(validator, _value)) {
+				if (!QuickArgParserInternals::ValidatorUser<ValidatorType>::UseValidator(validator, _value)) {
 					throw QuickArgParserInternals::ArgumentError("Invalid value of argument " + name);
 				}
 			};
-			const auto found = parent->findOption(name, shortcut);
+			const auto found = parent->FindOption(name, shortcut);
 
 			if (!found.empty()) {
-				auto obtained = QuickArgParserInternals::Demultiplexer<T>::deserialise(found);
+				auto obtained = QuickArgParserInternals::Demultiplexer<T>::Deserialise(found);
 				validate(obtained);
 				return obtained;
 			}
@@ -665,14 +665,14 @@ protected:
 		}
 	};
 
-	template <typename Default, typename Validator>
-	class GrabberDefaulted : public GrabberBase<Validator> {
+	template <typename Default, typename ValidatorType>
+	class GrabberDefaulted : public GrabberBase<ValidatorType> {
 		Default defaultValue;
-		using Base = GrabberBase<Validator>;
+		using Base = GrabberBase<ValidatorType>;
 
 	public:
 		GrabberDefaulted(const MainArguments* _parent, const std::string& _name, char _shortcut,
-		                 const std::string& _help, Validator _validator, Default _defaultValue)
+		                 const std::string& _help, ValidatorType _validator, Default _defaultValue)
 		    : Base(_parent, _name, _shortcut, _help, _validator), defaultValue(_defaultValue) {}
 #if _MSC_VER && !__INTEL_COMPILER
 		template <typename T, typename std::enable_if<QuickArgParserInternals::StringFilterOk<T>::value &&
@@ -681,20 +681,20 @@ protected:
 		template <typename T, typename std::enable_if<!std::is_same<T, bool>::value>::type* = nullptr>
 #endif
 		operator T() const {
-			static_assert(QuickArgParserInternals::ArgConverter<T>::canDo, "Cannot deserialise into this type");
-			return Base::template getOption<T>(defaultValue);
+			static_assert(QuickArgParserInternals::ArgConverter<T>::CAN_DO, "Cannot deserialise into this type");
+			return Base::template GetOption<T>(defaultValue);
 		}
 	};
 
-	template <typename Validator>
-	class Grabber : public GrabberBase<Validator> {
+	template <typename ValidatorType>
+	class Grabber : public GrabberBase<ValidatorType> {
 		friend class MainArguments;
-		using Base = GrabberBase<Validator>;
+		using Base = GrabberBase<ValidatorType>;
 
 	public:
 		using Base::GrabberBase;
 		template <typename Default>
-		GrabberDefaulted<Default, Validator> operator=(Default _defaultValue) {
+		GrabberDefaulted<Default, ValidatorType> operator=(Default _defaultValue) {
 			return { Base::parent, Base::name, Base::shortcut, Base::help, Base::validator, _defaultValue };
 		}
 
@@ -704,55 +704,55 @@ protected:
 		template <typename T>
 #endif
 		operator T() const {
-			static_assert(QuickArgParserInternals::ArgConverter<T>::canDo, "Cannot deserialise into this type");
-			return Base::template getOption<T>(QuickArgParserInternals::ArgConverter<T>::makeDefault());
+			static_assert(QuickArgParserInternals::ArgConverter<T>::CAN_DO, "Cannot deserialise into this type");
+			return Base::template GetOption<T>(QuickArgParserInternals::ArgConverter<T>::MakeDefault());
 		}
 
 		template <typename NewValidator>
-		Grabber<NewValidator> validator(const NewValidator& _newValidator) {
+		Grabber<NewValidator> Validator(const NewValidator& _newValidator) {
 			return { Base::parent, Base::name, Base::shortcut, Base::help, _newValidator };
 		}
 	};
 
-	Grabber<DummyValidator> option(const std::string& _name, char _shortcut = '\0', const std::string& _help = "") {
+	Grabber<DummyValidator> Option(const std::string& _name, char _shortcut = '\0', const std::string& _help = "") {
 		return Grabber<DummyValidator>(this, "--" + _name, _shortcut, _help, DummyValidator{});
 	}
-	Grabber<DummyValidator> option(char _shortcut = '\0', const std::string& _help = "") {
+	Grabber<DummyValidator> Option(char _shortcut = '\0', const std::string& _help = "") {
 		return Grabber<DummyValidator>(this, "", _shortcut, _help, DummyValidator{});
 	}
-	Grabber<DummyValidator> nonstandardOption(const std::string& _name, char _shortcut = '\0',
+	Grabber<DummyValidator> NonstandardOption(const std::string& _name, char _shortcut = '\0',
 	                                          const std::string& _help = "") {
-		if (singleton().initialisationState == INITIALISING && _name[0] == '-' && _name[1] != '-')
-			singleton().confusingSwitches.push_back(_name);
+		if (Singleton().initialisationState == INITIALISING && _name[0] == '-' && _name[1] != '-')
+			Singleton().confusingSwitches.push_back(_name);
 
 		return Grabber<DummyValidator>(this, _name, _shortcut, _help, DummyValidator{});
 	}
 
-	template <typename Validator>
+	template <typename ValidatorType>
 	class ArgGrabberBase {
 	protected:
 		const MainArguments* parent;
 		const int index;
-		Validator validator;
+		ValidatorType validator;
 		template <typename Value>
-		void validate(const Value& _value) const {
-			if (!QuickArgParserInternals::ValidatorUser<Validator>::useValidator(validator, _value)) {
+		void Validate(const Value& _value) const {
+			if (!QuickArgParserInternals::ValidatorUser<ValidatorType>::UseValidator(validator, _value)) {
 				throw QuickArgParserInternals::ArgumentError("Invalid value of argument " + std::to_string(index));
 			}
 		}
 
 	public:
-		ArgGrabberBase(const MainArguments* _parent, int _index, const Validator& _validator)
+		ArgGrabberBase(const MainArguments* _parent, int _index, const ValidatorType& _validator)
 		    : parent(_parent), index(_index), validator(_validator) {}
 	};
 
-	template <typename Default, typename Validator>
-	class ArgGrabberDefaulted : public ArgGrabberBase<Validator> {
+	template <typename Default, typename ValidatorType>
+	class ArgGrabberDefaulted : public ArgGrabberBase<ValidatorType> {
 		Default defaultValue;
-		using Base = ArgGrabberBase<Validator>;
+		using Base = ArgGrabberBase<ValidatorType>;
 
 	public:
-		ArgGrabberDefaulted(const MainArguments* _parent, int _index, const Validator& _validator, Default _defaultValue)
+		ArgGrabberDefaulted(const MainArguments* _parent, int _index, const ValidatorType& _validator, Default _defaultValue)
 		    : Base(_parent, _index, _validator), defaultValue(_defaultValue) {}
 
 #if _MSC_VER && !__INTEL_COMPILER
@@ -761,29 +761,29 @@ protected:
 		template <typename T>
 #endif
 		operator T() const {
-			static_assert(QuickArgParserInternals::ArgConverter<T>::canDo, "Cannot deserialise into this type");
+			static_assert(QuickArgParserInternals::ArgConverter<T>::CAN_DO, "Cannot deserialise into this type");
 			if (Base::parent->singleton().initialisationState == INITIALISING) {
 				Base::parent->singleton().argumentCountMax = std::max(Base::parent->singleton().argumentCountMax,
 				                                                      Base::index + 1);
-				return QuickArgParserInternals::ArgConverter<T>::makeDefault();
+				return QuickArgParserInternals::ArgConverter<T>::MakeDefault();
 			}
 			if (Base::index >= int(Base::parent->arguments.size())) {
 				Base::validate(defaultValue);
 				return defaultValue;
 			}
-			auto obtained = QuickArgParserInternals::ArgConverter<T>::deserialise(Base::parent->arguments[Base::index]);
+			auto obtained = QuickArgParserInternals::ArgConverter<T>::Deserialise(Base::parent->arguments[Base::index]);
 			Base::validate(obtained);
 			return obtained;
 		}
 	};
 
-	template <typename Validator>
-	struct ArgGrabber : public ArgGrabberBase<Validator> {
-		using Base = ArgGrabberBase<Validator>;
+	template <typename ValidatorType>
+	struct ArgGrabber : public ArgGrabberBase<ValidatorType> {
+		using Base = ArgGrabberBase<ValidatorType>;
 		using Base::ArgGrabberBase;
 		template <typename Default>
-		ArgGrabberDefaulted<Default, Validator> operator=(Default _defaultValue) const {
-			return ArgGrabberDefaulted<Default, Validator>{ Base::parent, Base::index, Base::validator, _defaultValue };
+		ArgGrabberDefaulted<Default, ValidatorType> operator=(Default _defaultValue) const {
+			return ArgGrabberDefaulted<Default, ValidatorType>{ Base::parent, Base::index, Base::validator, _defaultValue };
 		}
 
 #if _MSC_VER && !__INTEL_COMPILER
@@ -792,26 +792,26 @@ protected:
 		template <typename T>
 #endif
 		operator T() const {
-			static_assert(QuickArgParserInternals::ArgConverter<T>::canDo, "Cannot deserialise into this type");
+			static_assert(QuickArgParserInternals::ArgConverter<T>::CAN_DO, "Cannot deserialise into this type");
 			if (Base::parent->singleton().initialisationState == INITIALISING) {
 				Base::parent->singleton().argumentCountMin = std::max(Base::parent->singleton().argumentCountMin,
 				                                                      Base::index + 1);
 				Base::parent->singleton().argumentCountMax = std::max(Base::parent->singleton().argumentCountMax,
 				                                                      Base::index + 1);
-				return QuickArgParserInternals::ArgConverter<T>::makeDefault();
+				return QuickArgParserInternals::ArgConverter<T>::MakeDefault();
 			}
-			auto obtained = QuickArgParserInternals::ArgConverter<T>::deserialise(Base::parent->arguments[Base::index]);
+			auto obtained = QuickArgParserInternals::ArgConverter<T>::Deserialise(Base::parent->arguments[Base::index]);
 			Base::validate(obtained);
 			return obtained;
 		}
 
 		template <typename NewValidator>
-		ArgGrabber<NewValidator> validator(const NewValidator& _newValidator) {
+		ArgGrabber<NewValidator> Validator(const NewValidator& _newValidator) {
 			return ArgGrabber<NewValidator>{ Base::parent, Base::index, _newValidator };
 		}
 	};
 
-	ArgGrabber<DummyValidator> argument(int _index) {
+	ArgGrabber<DummyValidator> Argument(int _index) {
 		return ArgGrabber<DummyValidator>{ this, _index, DummyValidator{} };
 	}
 };
