@@ -61,7 +61,7 @@ EntityType GetEntityTypeFromString(std::string _name) {
 	return EntityType::NONE;
 }
 
-std::shared_ptr<Entity> GetEntityShared(EntityType _type, Vec3 _pos) {
+std::shared_ptr<Entity> GetEntityShared(EntityType _type) {
 	switch (_type) {
 	case EntityType::CREEPER:
 		return std::make_shared<CreeperEntity>();
@@ -100,7 +100,7 @@ std::string SummonEntity(const strategos::CmdNode& _cmd, void* _userData) {
 	auto eTypeEnum = GetEntityTypeFromString(*entityType);
 	if (eTypeEnum == EntityType::NONE)
 		return "Unknown entity: " + *entityType;
-	auto entity = GetEntityShared(eTypeEnum, spawnPos);
+	auto entity = GetEntityShared(eTypeEnum);
 	if (!entity)
 		return "Failed to create entity: " + *entityType;
 
@@ -123,7 +123,7 @@ std::string SummonEntityAtPos(const strategos::CmdNode& _cmd, void* _userData) {
 	auto eTypeEnum = GetEntityTypeFromString(*entityType);
 	if (eTypeEnum == EntityType::NONE)
 		return "Unknown entity: " + *entityType;
-	auto entity = GetEntityShared(eTypeEnum, ePos);
+	auto entity = GetEntityShared(eTypeEnum);
 	if (!entity)
 		return "Failed to create entity: " + *entityType;
 

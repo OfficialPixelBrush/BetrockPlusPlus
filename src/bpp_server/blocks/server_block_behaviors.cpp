@@ -40,7 +40,7 @@ void ServerBlock::Initialize() {
 	};
 
 	auto furnaceActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
-	                           Runtime& _gameRuntime) -> bool {
+	                           [[maybe_unused]] Runtime& _gameRuntime) -> bool {
 		auto furnace = _world.GetTileEntityShared<TileEntityFurnace>(_position);
 		if (!furnace)
 			return false;
@@ -64,7 +64,7 @@ void ServerBlock::Initialize() {
 	blockBehaviors[BLOCK_FURNACE_LIT].onBlockActivated = furnaceActivated;
 
 	blockBehaviors[BLOCK_CHEST].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
-	                                                  Runtime& _gameRuntime) -> bool {
+	                                                  [[maybe_unused]] Runtime& _gameRuntime) -> bool {
 		if (!Blocks::CanOpenChest(_world, _position))
 			return false;
 
@@ -131,8 +131,8 @@ void ServerBlock::Initialize() {
 		return false;
 	};
 
-	blockBehaviors[BLOCK_JUKEBOX].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
-	                                                    Runtime& _gameRuntime) -> bool {
+	blockBehaviors[BLOCK_JUKEBOX].onBlockActivated = [](WorldManager& _world, Int3 _position, [[maybe_unused]] PlayerSession& _session,
+	                                                    [[maybe_unused]] Runtime& _gameRuntime) -> bool {
 		//ItemStack* heldItem = _session.inventory.GetHeldItem();
 		//if (!heldItem)
 		//	return false;
@@ -146,7 +146,7 @@ void ServerBlock::Initialize() {
 		return false;
 	};
 	blockBehaviors[BLOCK_BED].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
-	                                                Runtime& _gameRuntime) -> bool {
+	                                                [[maybe_unused]] Runtime& _gameRuntime) -> bool {
 		if (!_world.InBounds(_position.y))
 			return false;
 		// Already sleeping? Don't let the client re-trigger the interaction.

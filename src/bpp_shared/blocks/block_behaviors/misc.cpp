@@ -87,24 +87,24 @@ void RegisterMiscBehaviors() {
 		.getCollider = SoulSandCollider,
 	};
 
-	blockBehaviors[BLOCK_COBWEB].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos,
+	blockBehaviors[BLOCK_COBWEB].onEntityCollidedWithBlock = []([[maybe_unused]] WorldManager& _world, [[maybe_unused]] Int3 _pos,
 	                                                            Entity& _entity) -> void {
 		_entity.inWeb = true;
 	};
-	blockBehaviors[BLOCK_SOULSAND].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos,
+	blockBehaviors[BLOCK_SOULSAND].onEntityCollidedWithBlock = []([[maybe_unused]] WorldManager& _world, [[maybe_unused]] Int3 _pos,
 	                                                              Entity& _entity) -> void {
 		_entity.velocity.x *= 0.4;
 		_entity.velocity.z *= 0.4;
 	};
 	// Placement overrides
 	auto onFurnaceDispenserPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
-	                                  BlockType _blockId, uint8_t _meta) -> bool {
+	                                  BlockType _blockId, [[maybe_unused]] uint8_t _meta) -> bool {
 		int meta[] = { 2, 5, 3, 4 };
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
 	};
 
 	auto onPumpkinPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
-	                         BlockType _blockId, uint8_t _meta) -> bool {
+	                         BlockType _blockId, [[maybe_unused]] uint8_t _meta) -> bool {
 		int meta[] = { 2, 3, 0, 1 };
 		auto belowBlockMaterial = _world.GetMaterial({ _pos.x, _pos.y - 1, _pos.z });
 		if (!belowBlockMaterial.isOpaque)
@@ -113,13 +113,13 @@ void RegisterMiscBehaviors() {
 	};
 
 	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
-	                       uint8_t _meta) -> bool {
+	                       [[maybe_unused]] uint8_t _meta) -> bool {
 		int meta[] = { 2, 1, 3, 0 };
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
 	};
 
 	auto onPistonPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
-	                        BlockType _blockId, uint8_t _meta) -> bool {
+	                        BlockType _blockId, [[maybe_unused]] uint8_t _meta) -> bool {
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_PISTON, _face));
 	};
 
@@ -152,14 +152,14 @@ void RegisterMiscBehaviors() {
 	};
 
 	// Snow
-	blockBehaviors[BLOCK_SNOW_LAYER].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
+	blockBehaviors[BLOCK_SNOW_LAYER].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _destroyer) {
 		// Snow drops itself when broken with a shovel
 		_world.SetBlock(_pos, BLOCK_AIR);
 		DropItemAt(_world, _pos, Items::Id::SNOWBALL, /*count=*/1, 0);
 		return;
 	};
 	blockBehaviors[BLOCK_SNOW_LAYER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                            BlockType _blockId) -> void {
+	                                                            [[maybe_unused]] BlockType _blockId) -> void {
 		const BlockType below = _world.GetBlockId(_pos.WithOffset(Direction::Value::Down));
 		const bool canStay = (below != BLOCK_AIR) && Blocks::blockProperties[below].isOpaqueCube &&
 		                     Blocks::blockProperties[below].material.isSolid;
@@ -176,17 +176,17 @@ void RegisterMiscBehaviors() {
 	blockBehaviors[BLOCK_STAIRS_COBBLESTONE].onBlockPlaced = onStairPlace;
 	blockBehaviors[BLOCK_STAIRS_WOOD].onBlockPlaced = onStairPlace;
 	blockBehaviors[BLOCK_LADDER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                        BlockType _blockId) -> void {
+	                                                        [[maybe_unused]] BlockType _blockId) -> void {
 		blockBehaviors[BLOCK_LADDER].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
 	};
 	blockBehaviors[BLOCK_LADDER].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                         Java::Random& _random) -> void {
+	                                         [[maybe_unused]] Java::Random& _random) -> void {
 		// Check to make sure we can till exist here
 		if (!IsSupported(_world, _pos, GetDirectionFromMeta(BLOCK_LADDER, _meta)))
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LADDER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
+	                                                Direction::Value _face, BlockType _blockId, [[maybe_unused]] uint8_t _meta) -> bool {
 		Int3 targetPos = _pos;
 		const Int3 sourceBlock = _pos.WithOffset(Direction::Opposite(_face));
 		if (_world.GetBlockId(sourceBlock) == BLOCK_SNOW_LAYER)
