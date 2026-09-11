@@ -7,17 +7,17 @@
 #include "../command.h"
 #include "../command_manager.h"
 #include "../command_registry.h"
-#include "entities/entity_creeper.h"
-#include "entities/entity_zombie.h"
-#include "entities/entity_skeleton.h"
-#include "entities/entity_spider.h"
-#include "entities/entity_sheep.h"
-#include "entities/entity_cow.h"
-#include "entities/entity_pig.h"
-#include "entities/entity_chicken.h"
 #include "entities/entity_boat.h"
+#include "entities/entity_chicken.h"
+#include "entities/entity_cow.h"
+#include "entities/entity_creeper.h"
 #include "entities/entity_minecart.h"
 #include "entities/entity_painting.h"
+#include "entities/entity_pig.h"
+#include "entities/entity_sheep.h"
+#include "entities/entity_skeleton.h"
+#include "entities/entity_spider.h"
+#include "entities/entity_zombie.h"
 #include "networking/packets.h"
 #include <memory>
 #include <utility>
@@ -63,28 +63,28 @@ EntityType GetEntityTypeFromString(std::string _name) {
 
 std::shared_ptr<Entity> GetEntityShared(EntityType _type, Vec3 _pos) {
 	switch (_type) {
-		case EntityType::CREEPER:
-			return std::make_shared<CreeperEntity>();
-		case EntityType::ZOMBIE:
-			return std::make_shared<ZombieEntity>();
-		case EntityType::SKELETON:
-			return std::make_shared<SkeletonEntity>();
-		case EntityType::SPIDER:
-			return std::make_shared<SpiderEntity>();
-		case EntityType::SHEEP:
-			return std::make_shared<SheepEntity>();
-		case EntityType::COW:
-			return std::make_shared<CowEntity>();
-		case EntityType::PIG:
-			return std::make_shared<PigEntity>();
-		case EntityType::CHICKEN:
-			return std::make_shared<ChickenEntity>();
-		case EntityType::BOAT:
-			return std::make_shared<BoatEntity>();
-		case EntityType::MINECART:
-			return std::make_shared<MinecartEntity>();
-		default:
-			return nullptr;
+	case EntityType::CREEPER:
+		return std::make_shared<CreeperEntity>();
+	case EntityType::ZOMBIE:
+		return std::make_shared<ZombieEntity>();
+	case EntityType::SKELETON:
+		return std::make_shared<SkeletonEntity>();
+	case EntityType::SPIDER:
+		return std::make_shared<SpiderEntity>();
+	case EntityType::SHEEP:
+		return std::make_shared<SheepEntity>();
+	case EntityType::COW:
+		return std::make_shared<CowEntity>();
+	case EntityType::PIG:
+		return std::make_shared<PigEntity>();
+	case EntityType::CHICKEN:
+		return std::make_shared<ChickenEntity>();
+	case EntityType::BOAT:
+		return std::make_shared<BoatEntity>();
+	case EntityType::MINECART:
+		return std::make_shared<MinecartEntity>();
+	default:
+		return nullptr;
 	}
 }
 
@@ -93,7 +93,7 @@ std::string SummonEntity(const strategos::CmdNode& _cmd, void* _userData) {
 	auto entityType = _cmd.get_arg<std::string>("entityType");
 	if (!entityType)
 		return ERROR_REASON_PARAMETERS;
-	
+
 	Vec3 spawnPos = ctx.session->position.pos;
 	spawnPos.y += 1.0f; // Spawn above the player
 
@@ -118,7 +118,7 @@ std::string SummonEntityAtPos(const strategos::CmdNode& _cmd, void* _userData) {
 	auto pos = _cmd.get_arg<strategos::Vec3>("pos");
 	if (!entityType || !pos)
 		return ERROR_REASON_PARAMETERS;
-	
+
 	Vec3 ePos = ResolveCmdVec3(*pos, ctx.session->position.pos);
 	auto eTypeEnum = GetEntityTypeFromString(*entityType);
 	if (eTypeEnum == EntityType::NONE)
@@ -138,14 +138,10 @@ std::string SummonEntityAtPos(const strategos::CmdNode& _cmd, void* _userData) {
 } // namespace
 
 void RegisterSummon(strategos::BrigadierContext& _dispatcher) {
-	_dispatcher.add_command(
-	    strategos::Node::literal("summon")
-	        .describe("Summons a smart entity")
-	        .op()
-	        .then(strategos::Node::string("entityType")
-	                .executes(SummonEntity)
-	                .then(strategos::Node::vec3("pos")
-	                    .executes(SummonEntityAtPos))
-	        )
-	);
+	_dispatcher.add_command(strategos::Node::literal("summon")
+	                            .describe("Summons a smart entity")
+	                            .op()
+	                            .then(strategos::Node::string("entityType")
+	                                      .executes(SummonEntity)
+	                                      .then(strategos::Node::vec3("pos").executes(SummonEntityAtPos))));
 }

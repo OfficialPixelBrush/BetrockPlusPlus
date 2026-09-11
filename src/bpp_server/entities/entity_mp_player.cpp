@@ -40,20 +40,20 @@ SleepFailureReason EntityMPPlayer::TrySleep(Int3 _pos) {
 void EntityMPPlayer::WakeUp(bool _confirmSpawn) {
 	if (!this->session)
 		return;
- 
+
 	PlayerEntity::WakeUp(_confirmSpawn);
- 
+
 	if (_confirmSpawn) {
 		session->hasBedSpawn = true;
 		session->spawnPosition = this->bedPosition.WithOffset(Direction::Value::Up);
 	}
- 
+
 	Packet::Animation anim;
 	anim.entityId = this->id;
 	anim.animation = PacketData::Animation::LEAVE_BED;
 	anim.Serialize(session->stream);
 	session->entityTracker->SendPacketToViewers(anim, this->id);
- 
+
 	this->Teleport(this->position, { rotationYaw, rotationPitch });
 	session->position.pos = this->position;
 	session->pendingTeleport = this->position;
@@ -229,17 +229,17 @@ void EntityMPPlayer::HandlePositionChecks() {
 		// Ignore if something is resetting our fall distance to 0
 		// like ladders, water, etc
 		if (simulatedFallDistance != 0) {
-			const int VERTICAL_MAX = 4.0;
+			const int verticalMax = 4.0;
 
 			// Moved too fast down in one tick
-			if (delta.y < -VERTICAL_MAX)
+			if (delta.y < -verticalMax)
 				movedWrong = true;
 
 			// Went up too far while nothing could be pushing us up
 			if (delta.y > 0) {
 				ticksInAir++;
 				accumulatedUpDistance += delta.y;
-				if (accumulatedUpDistance > VERTICAL_MAX) {
+				if (accumulatedUpDistance > verticalMax) {
 					lastPosition = firstUpPosition;
 					movedWrong = true;
 				}
@@ -355,7 +355,8 @@ void EntityMPPlayer::DropInventory() {
 }
 
 void EntityMPPlayer::OnDeath(Entity* _killer) {
-	if (this->isSleeping) this->WakeUp();
+	if (this->isSleeping)
+		this->WakeUp();
 
 	PlayerEntity::OnDeath(_killer);
 

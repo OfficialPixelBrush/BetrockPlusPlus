@@ -7,11 +7,11 @@
 */
 #include "../helpers/direction_fixer.h"
 #include "blocks.h"
+#include "entities/entity_painting.h"
 #include "item_map.h"
 #include "item_properties.h"
 #include "items.h"
 #include "server.h"
-#include "entities/entity_painting.h"
 #include "tool_properties.h"
 
 namespace Items {
@@ -240,7 +240,7 @@ void RegisterAll() {
 	};
 
 	itemBehavior[PAINTING].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                          Direction::Value _face) {
+	                                       Direction::Value _face) {
 		if (_face == Direction::Value::Down || _face == Direction::Value::Up)
 			return;
 

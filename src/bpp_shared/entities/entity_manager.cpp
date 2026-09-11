@@ -12,12 +12,12 @@
 #include "entity_falling_block.h"
 #include "entity_item.h"
 #include "entity_minecart.h"
+#include "entity_painting.h"
 #include "entity_pig.h"
 #include "entity_sheep.h"
 #include "entity_skeleton.h"
 #include "entity_spider.h"
 #include "entity_zombie.h"
-#include "entity_painting.h"
 #include "world.h"
 
 void EntityManager::RemoveEntity(EntityId _id) {

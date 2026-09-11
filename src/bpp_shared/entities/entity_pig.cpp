@@ -9,7 +9,7 @@
 
 bool PigEntity::TryDespawn() {
 	if (isSaddled)
-		return false;	
+		return false;
 	return MobEntity::TryDespawn();
 }
 
@@ -48,7 +48,6 @@ void PigEntity::OnPlayerInteract(PlayerEntity* _entity) {
 	if (selfPtr)
 		_entity->MountEntity(selfPtr);
 }
-
 
 void PigEntity::EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {
 	Entity::EncodeMetadata(_metadata);

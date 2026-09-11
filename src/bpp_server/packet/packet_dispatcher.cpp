@@ -29,8 +29,9 @@ bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, Wor
 		pkt.Deserialize(_session.stream);
 		if (_session.stream.IsShortRead())
 			return true;
-		HandlePacket::ChatMessage(pkt, _session, _server.players, _sessionWorld, _server.commandManager,
-		                          [&_server](PlayerSession& _s) {}, _server);
+		HandlePacket::ChatMessage(
+		    pkt, _session, _server.players, _sessionWorld, _server.commandManager, [&_server](PlayerSession& _s) {},
+		    _server);
 		break;
 	}
 	case PacketId::SetTime: {

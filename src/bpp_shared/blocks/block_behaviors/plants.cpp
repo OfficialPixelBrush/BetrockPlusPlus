@@ -5,12 +5,8 @@
  *
 */
 
-#include "blocks/block_behaviors.h"
-#include "internal.h"
-#include "helpers/direction_fixer.h"
-#include "helpers/java/java_math.h"
-#include "numeric_structs.h"
 #include "blocks.h"
+#include "blocks/block_behaviors.h"
 #include "blocks/block_properties.h"
 #include "dimensions.h"
 #include "entities/entity_falling_block.h"
@@ -20,8 +16,12 @@
 #include "entities/entity_zombie.h"
 #include "enums/items.h"
 #include "generator/overworld/tree_gen.h"
+#include "helpers/direction_fixer.h"
+#include "helpers/java/java_math.h"
+#include "internal.h"
 #include "items/item_properties.h"
 #include "logger.h"
+#include "numeric_structs.h"
 #include "packet_data.h"
 #include "rail_manager.h"
 #include "redstone_manager.h"
@@ -49,10 +49,10 @@ static void TryTallPlantGrowth(WorldManager& _world, Int3 _pos, uint8_t _meta, B
 	}
 	if (_meta >= 15) {
 		_world.SetBlock(_pos.WithOffset(Direction::Value::Up), _block);
-		
+
 		// So we dont regrown instantly
 		// Also updates the new plant block
-		_world.SetMeta(_pos, 0); 
+		_world.SetMeta(_pos, 0);
 		return;
 	}
 	_world.SetMeta(_pos, _meta + 1);
@@ -74,7 +74,7 @@ static float GetCropGrowthRate(WorldManager& _world, Int3 _pos) {
 	const bool wheatOnXAxis = (west == BLOCK_CROP_WHEAT || east == BLOCK_CROP_WHEAT);
 	const bool wheatOnZAxis = (north == BLOCK_CROP_WHEAT || south == BLOCK_CROP_WHEAT);
 	const bool wheatDiagonal = (nw == BLOCK_CROP_WHEAT || ne == BLOCK_CROP_WHEAT || se == BLOCK_CROP_WHEAT ||
-	                      sw == BLOCK_CROP_WHEAT);
+	                            sw == BLOCK_CROP_WHEAT);
 
 	// Check the quality of the farmland around us
 	// Our own tile counts fully and neighbor tiles count for 1/4
@@ -231,7 +231,7 @@ void RegisterPlantBehaviors() {
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_SUGARCANE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                             Java::Random& _random) -> void {
+	                                            Java::Random& _random) -> void {
 		TryTallPlantGrowth(_world, _pos, _meta, BLOCK_SUGARCANE);
 	};
 
@@ -465,7 +465,6 @@ void RegisterPlantBehaviors() {
 			}
 		}
 	};
-
 }
 
 }; // namespace Blocks
