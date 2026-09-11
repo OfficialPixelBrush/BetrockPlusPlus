@@ -162,11 +162,11 @@ bool CanPickaxeHarvest(ToolLevel _level, BlockType _block) {
 	return true;
 }
 
-bool CanShovelHarvest(ToolLevel _level, BlockType _block) {
+bool CanShovelHarvest(ToolLevel /*_level*/, BlockType _block) {
 	return (_block == BLOCK_SNOW_LAYER || _block == BLOCK_SNOW);
 }
 
-bool CanShearsOrSwordHarvest(ToolLevel _level, BlockType _block) {
+bool CanShearsOrSwordHarvest(ToolLevel /*_level*/, BlockType _block) {
 	return (_block == BLOCK_COBWEB);
 }
 
@@ -312,7 +312,7 @@ void OnToolFinishMining(ItemStack* _stack, BlockType _targetBlock) {
 	}
 }
 
-void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
+void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/, Direction::Value /*_face*/) {
 	BlockType b = _world.GetBlockId(_pos);
 	if (b == BLOCK_GRASS || b == BLOCK_DIRT) {
 		_world.SetBlock(_pos, BLOCK_FARMLAND);
@@ -320,7 +320,7 @@ void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, D
 	HarmTool(_stack, 1);
 }
 
-void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
+void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Direction::Value /*_face*/) {
 	float reach = 5.0f;
 	auto pe = dynamic_cast<PlayerEntity*>(&_user);
 	if (!pe) {
@@ -349,7 +349,7 @@ void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, 
 	_stack->DecrementCount(1);
 }
 
-void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
+void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Direction::Value /*_face*/) {
 	float reach = 5.0f;
 	auto pe = dynamic_cast<PlayerEntity*>(&_user);
 	if (!pe) {
@@ -377,7 +377,7 @@ void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user
 	}
 }
 
-void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
+void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Direction::Value /*_face*/) {
 	float reach = 5.0f;
 	auto pe = dynamic_cast<PlayerEntity*>(&_user);
 	if (!pe) {
@@ -409,7 +409,7 @@ void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& 
 	_stack->id = Items::Id::BUCKET;
 }
 
-void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
+void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Direction::Value /*_face*/) {
 	float reach = 5.0f;
 	auto pe = dynamic_cast<PlayerEntity*>(&_user);
 	if (!pe) {
@@ -436,7 +436,7 @@ void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _
 	_stack->id = Items::Id::BUCKET;
 }
 
-void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
+void UseFlintAndSteel(WorldManager& /*_world*/, ItemStack* _stack, Int3 /*_pos*/, Entity& /*_user*/, Direction::Value /*_face*/) {
 	// *** DISABLED FOR FIRST RELEASE ***
 #ifdef EXPERIMENTAL
 	if (_user.flags.isSneaking) {
@@ -463,7 +463,7 @@ void UseShears(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
 	HarmTool(_stack, 1);
 }
 
-void UseSaddle(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
+void UseSaddle(WorldManager& /*_world*/, Entity& _targetEntity, ItemStack* _stack) {
 	PigEntity* se = dynamic_cast<PigEntity*>(&_targetEntity);
 	if (!se)
 		return;
@@ -473,7 +473,7 @@ void UseSaddle(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
 	_stack->DecrementCount(1);
 }
 
-void UseBucketOnEntity(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack) {
+void UseBucketOnEntity(WorldManager& /*_world*/, Entity& _targetEntity, ItemStack* _stack) {
 	CowEntity* se = dynamic_cast<CowEntity*>(&_targetEntity);
 	// Not a cow, skip
 	if (!se)
@@ -481,7 +481,7 @@ void UseBucketOnEntity(WorldManager& _world, Entity& _targetEntity, ItemStack* _
 	_stack->id = BUCKET_MILK;
 }
 
-void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, Direction::Value _face) {
+void TestSetGoal(WorldManager& _world, ItemStack* /*_stack*/, Int3 _pos, Direction::Value /*_face*/) {
 	Int3 topPos = _pos;
 	topPos.y += 1;
 	_world.SetBlock(topPos, BLOCK_AIR);

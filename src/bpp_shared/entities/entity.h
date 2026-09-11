@@ -196,7 +196,7 @@ struct Entity {
 		return false;
 	}
 
-	virtual std::optional<AABB> GetMoverCollisionOverride([[maybe_unused]] Entity& _candidate) {
+	virtual std::optional<AABB> GetMoverCollisionOverride(Entity& /*_candidate*/) {
 		return std::nullopt;
 	}
 

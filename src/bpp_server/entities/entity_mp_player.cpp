@@ -319,7 +319,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 	}
 }
 
-void EntityMPPlayer::UpdateFallState(float _movedY) {
+void EntityMPPlayer::UpdateFallState(float /*_movedY*/) {
 	return; // no-op
 }
 

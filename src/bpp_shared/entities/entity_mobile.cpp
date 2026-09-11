@@ -20,7 +20,7 @@ MobileEntity::MobileEntity() {
 	preventEntitySpawning = true;
 }
 
-void MobileEntity::OnDeath(Entity* _killer) {
+void MobileEntity::OnDeath(Entity* /*_killer*/) {
 	health = 0;
 }
 

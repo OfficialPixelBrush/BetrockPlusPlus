@@ -13,7 +13,7 @@ bool PigEntity::TryDespawn() {
 	return MobEntity::TryDespawn();
 }
 
-void PigEntity::OnDeath(Entity* _killer) {
+void PigEntity::OnDeath(Entity* /*_killer*/) {
 	// Drop 0-2 porkchops, cooked if the pig was on fire
 	auto targetItem = this->fireTicks > 0 ? Items::Id::PORKCHOP_COOKED : Items::Id::PORKCHOP;
 	int itemCount = this->rand.NextInt(3);

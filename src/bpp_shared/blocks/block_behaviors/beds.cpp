@@ -150,7 +150,7 @@ void RegisterBedBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_BED].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                             Direction::Value _face, BlockType _blockId, [[maybe_unused]] uint8_t _meta) -> bool {
+	                                             Direction::Value _face, BlockType _blockId, uint8_t /*_meta*/) -> bool {
 		// Beds can only be placed by clicking the top face of a block
 		if (_face != Direction::Value::Up)
 			return false;
@@ -177,7 +177,7 @@ void RegisterBedBehaviors() {
 		return true;
 	};
 	//blockBehaviors[BLOCK_BED].onBlockClicked = ToggleDoor;
-	blockBehaviors[BLOCK_BED].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, [[maybe_unused]] Entity& _destroyer) {
+	blockBehaviors[BLOCK_BED].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& /*_destroyer*/) {
 		auto meta = _world.GetMetadata(_pos);
 		auto dir = GetDirectionFromMeta(BLOCK_BED, meta);
 		if (meta & 0b1000) {

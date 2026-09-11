@@ -53,7 +53,7 @@ constexpr double BytesPerUnit(const MemoryUnit _unit) noexcept {
 #include <psapi.h>
 // clang-format on
 
-const double GetMemoryUsage(const MemoryUnit _unit) {
+double GetMemoryUsage(const MemoryUnit _unit) {
 	PROCESS_MEMORY_COUNTERS pmc{};
 	pmc.cb = sizeof(pmc);
 
@@ -71,7 +71,7 @@ const double GetMemoryUsage(const MemoryUnit _unit) {
 #include <string>
 #include <unistd.h>
 
-const double GetMemoryUsage(const MemoryUnit _unit) {
+double GetMemoryUsage(const MemoryUnit _unit) {
 	double rssUsage = 0.0;
 
 	std::ifstream statStream("/proc/self/stat", std::ios_base::in);

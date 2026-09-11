@@ -113,7 +113,7 @@ private:
 };
 
 struct SaveManager {
-	LevelInitFailureReason Initialize(const std::string& _pSaveName, [[maybe_unused]] bool _isMultiplayerSave = false) {
+	LevelInitFailureReason Initialize(const std::string& _pSaveName, bool /*_isMultiplayerSave*/ = false) {
 		saveDirectory = _pSaveName;
 
 		// Make sure session lock and level.dat are valid

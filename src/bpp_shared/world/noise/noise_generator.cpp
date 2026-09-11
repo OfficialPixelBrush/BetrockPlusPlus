@@ -25,4 +25,4 @@ void NoiseGenerator::InitPermTable(Java::Random& _rand) {
 
 NoiseGenerator::NoiseGenerator() {}
 
-NoiseGenerator::NoiseGenerator([[maybe_unused]] Java::Random& _rand) {}
+NoiseGenerator::NoiseGenerator(Java::Random& /*_rand*/) {}

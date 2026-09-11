@@ -9,8 +9,8 @@
 
 Generator::Generator(int64_t _seed) : seed(_seed) {}
 
-void Generator::GenerateChunk([[maybe_unused]] Chunk& _chunk) {}
+void Generator::GenerateChunk(Chunk& /*_chunk*/) {}
 
-bool Generator::PopulateChunk([[maybe_unused]] Chunk& _chunk, [[maybe_unused]] WorldWrapper& _world) {
+bool Generator::PopulateChunk(Chunk& /*_chunk*/, WorldWrapper& /*_world*/) {
 	return true;
 }

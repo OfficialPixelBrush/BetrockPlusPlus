@@ -32,7 +32,7 @@ std::optional<Tag> SheepEntity::SerializeToNbt() {
 	return tag;
 }
 
-void SheepEntity::OnDeath(Entity* _killer) {
+void SheepEntity::OnDeath(Entity* /*_killer*/) {
 	if (!isSheared)
 		DropItemAtEntity(BLOCK_WOOL, 1, this->color);
 }

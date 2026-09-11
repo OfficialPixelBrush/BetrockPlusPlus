@@ -11,27 +11,27 @@
 namespace Blocks {
 
 // defaults
-[[maybe_unused]] static AABB DefaultAabb(uint8_t) {
+inline AABB DefaultAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 }
-[[maybe_unused]] static CollisionShape DefaultCollider(uint8_t) {
+inline CollisionShape DefaultCollider(uint8_t) {
 	CollisionShape s;
 	s.Add({ 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 });
 	return s;
 }
 
 // slab
-[[maybe_unused]] static AABB SlabAabb(uint8_t) {
+inline AABB SlabAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 0.5, 1.0 };
 }
-[[maybe_unused]] static CollisionShape SlabCollider(uint8_t) {
+inline CollisionShape SlabCollider(uint8_t) {
 	CollisionShape s;
 	s.Add({ 0.0, 0.0, 0.0, 1.0, 0.5, 1.0 });
 	return s;
 }
 
 // stairs
-[[maybe_unused]] static CollisionShape StairCollider(uint8_t _meta) {
+inline CollisionShape StairCollider(uint8_t _meta) {
 	CollisionShape s;
 	switch (_meta & 3) {
 	case 0:
@@ -55,11 +55,11 @@ namespace Blocks {
 }
 
 // cactus
-[[maybe_unused]] static AABB CactusAabb(uint8_t) {
+inline AABB CactusAabb(uint8_t) {
 	constexpr double I = 0.0625;
 	return { I, 0.0, I, 1.0 - I, 1.0, 1.0 - I };
 }
-[[maybe_unused]] static CollisionShape CactusCollider(uint8_t) {
+inline CollisionShape CactusCollider(uint8_t) {
 	constexpr double I = 0.0625;
 	CollisionShape s;
 	s.Add({ I, 0.0, I, 1.0 - I, 1.0 - I, 1.0 - I });
@@ -67,11 +67,11 @@ namespace Blocks {
 }
 
 // snow layer
-[[maybe_unused]] static AABB SnowLayerAabb(uint8_t _meta) {
+inline AABB SnowLayerAabb(uint8_t _meta) {
 	float h = (2.0f * (1 + (_meta & 7))) / 16.0f;
 	return { 0.0, 0.0, 0.0, 1.0, h, 1.0 };
 }
-[[maybe_unused]] static CollisionShape SnowLayerCollider(uint8_t _meta) {
+inline CollisionShape SnowLayerCollider(uint8_t _meta) {
 	CollisionShape s;
 	if ((_meta & 7) >= 3)
 		s.Add({ 0.0, 0.0, 0.0, 1.0, 0.5, 1.0 });
@@ -79,7 +79,7 @@ namespace Blocks {
 }
 
 // ladder
-[[maybe_unused]] static AABB LadderAabb(uint8_t _meta) {
+inline AABB LadderAabb(uint8_t _meta) {
 	constexpr double T = 0.125;
 	switch (_meta) {
 	case 2:
@@ -94,7 +94,7 @@ namespace Blocks {
 		return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 	}
 }
-[[maybe_unused]] static CollisionShape LadderCollider(uint8_t _meta) {
+inline CollisionShape LadderCollider(uint8_t _meta) {
 	constexpr double T = 0.125;
 	CollisionShape s;
 	switch (_meta) {
@@ -116,10 +116,10 @@ namespace Blocks {
 
 // door
 // bits 0-1 = facing when closed, bit 2 = open, bit 3 = top half
-[[maybe_unused]] static int DoorState(uint8_t _meta) {
+inline int DoorState(uint8_t _meta) {
 	return ((_meta & 4) == 0) ? ((_meta - 1) & 3) : (_meta & 3);
 }
-[[maybe_unused]] static AABB DoorAabb(uint8_t _meta) {
+inline AABB DoorAabb(uint8_t _meta) {
 	constexpr double T = 0.1875;
 	switch (DoorState(_meta)) {
 	case 0:
@@ -134,7 +134,7 @@ namespace Blocks {
 		return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 	}
 }
-[[maybe_unused]] static CollisionShape DoorCollider(uint8_t _meta) {
+inline CollisionShape DoorCollider(uint8_t _meta) {
 	constexpr double T = 0.1875;
 	CollisionShape s;
 	switch (DoorState(_meta)) {
@@ -155,7 +155,7 @@ namespace Blocks {
 }
 
 // trapdoor
-[[maybe_unused]] static AABB TrapdoorAabb(uint8_t _meta) {
+inline AABB TrapdoorAabb(uint8_t _meta) {
 	constexpr double T = 0.1875;
 	if (!(_meta & 4))
 		return { 0.0, 0.0, 0.0, 1.0, T, 1.0 };
@@ -173,13 +173,13 @@ namespace Blocks {
 	}
 }
 
-[[maybe_unused]] static CollisionShape FarmlandCollider(uint8_t) {
+inline CollisionShape FarmlandCollider(uint8_t) {
 	CollisionShape s;
 	s.Add({ 0.0, 0.0, 0.0, 1.0, 0.9375, 1.0 });
 	return s;
 }
 
-[[maybe_unused]] static CollisionShape TrapdoorCollider(uint8_t _meta) {
+inline CollisionShape TrapdoorCollider(uint8_t _meta) {
 	constexpr double T = 0.1875;
 	CollisionShape s;
 	if (!(_meta & 4)) {
@@ -204,28 +204,28 @@ namespace Blocks {
 }
 
 // bed
-[[maybe_unused]] static AABB BedAabb(uint8_t) {
+inline AABB BedAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 0.5625, 1.0 };
 }
-[[maybe_unused]] static CollisionShape BedCollider(uint8_t) {
+inline CollisionShape BedCollider(uint8_t) {
 	CollisionShape s;
 	s.Add({ 0.0, 0.0, 0.0, 1.0, 0.5625, 1.0 });
 	return s;
 }
 
 // fence
-[[maybe_unused]] static CollisionShape FenceCollider(uint8_t) {
+inline CollisionShape FenceCollider(uint8_t) {
 	CollisionShape s;
 	s.Add({ 0.0, 0.0, 0.0, 1.0, 1.5, 1.0 });
 	return s;
 }
 
 // cake
-[[maybe_unused]] static AABB CakeAabb(uint8_t _meta) {
+inline AABB CakeAabb(uint8_t _meta) {
 	double x0 = (1 + _meta * 2) / 16.0;
 	return { x0, 0.0, 0.0625, 1.0 - 0.0625, 0.5 - 0.0625, 1.0 - 0.0625 };
 }
-[[maybe_unused]] static CollisionShape CakeCollider(uint8_t _meta) {
+inline CollisionShape CakeCollider(uint8_t _meta) {
 	double x0 = (1 + _meta * 2) / 16.0;
 	CollisionShape s;
 	s.Add({ x0, 0.0, 0.0625, 1.0 - 0.0625, 0.5 - 0.0625, 1.0 - 0.0625 });
@@ -233,15 +233,15 @@ namespace Blocks {
 }
 
 // repeater
-[[maybe_unused]] static AABB RepeaterAabb(uint8_t) {
+inline AABB RepeaterAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 0.125, 1.0 };
 }
-[[maybe_unused]] static CollisionShape EmptyCollider(uint8_t) {
+inline CollisionShape EmptyCollider(uint8_t) {
 	return {};
 }
 
 // button
-[[maybe_unused]] static AABB ButtonAabb(uint8_t _meta) {
+inline AABB ButtonAabb(uint8_t _meta) {
 	const int face = _meta & 7;
 	const bool pressed = (_meta & 8) != 0;
 	constexpr double LO = 0.375, HI = 0.625, HW = 0.1875;
@@ -261,7 +261,7 @@ namespace Blocks {
 }
 
 // lever
-[[maybe_unused]] static AABB LeverAabb(uint8_t _meta) {
+inline AABB LeverAabb(uint8_t _meta) {
 	constexpr double F = 0.1875;
 	switch (_meta & 7) {
 	case 1:
@@ -280,13 +280,13 @@ namespace Blocks {
 }
 
 // pressure plate
-[[maybe_unused]] static AABB PressurePlateAabb(uint8_t _meta) {
+inline AABB PressurePlateAabb(uint8_t _meta) {
 	constexpr double F = 0.0625;
 	return { F, 0.0, F, 1.0 - F, (_meta == 1) ? 0.03125 : 0.0625, 1.0 - F };
 }
 
 // torch (normal + redstone, same box)
-[[maybe_unused]] static AABB TorchAabb(uint8_t _meta) {
+inline AABB TorchAabb(uint8_t _meta) {
 	constexpr double F = 0.15;
 	switch (_meta & 7) {
 	case 1:
@@ -305,70 +305,70 @@ namespace Blocks {
 }
 
 // rail
-[[maybe_unused]] static AABB RailAabb(uint8_t) {
+inline AABB RailAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 0.125, 1.0 };
 }
 
 // redstone dust
-[[maybe_unused]] static AABB RedstoneDustAabb(uint8_t) {
+inline AABB RedstoneDustAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 0.0625, 1.0 };
 }
 
 // farmland
 // Collider is full cube; ray/selection use visual height 0.937
-[[maybe_unused]] static AABB FarmlandAabb(uint8_t) {
+inline AABB FarmlandAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 }
 
 // crop
-[[maybe_unused]] static AABB CropAabb(uint8_t) {
+inline AABB CropAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 1.0, 0.25, 1.0 }; // 4/16
 }
 
 // sapling / deadbush (f=0.4)
-[[maybe_unused]] static AABB SaplingAabb(uint8_t) {
+inline AABB SaplingAabb(uint8_t) {
 	constexpr float F = 0.4f;
 	return { 0.5f - F, 0.0f, 0.5f - F, 0.5f + F, F * 2.0f, 0.5f + F };
 }
 
 // tall grass
-[[maybe_unused]] static AABB TallGrassAabb(uint8_t) {
+inline AABB TallGrassAabb(uint8_t) {
 	constexpr float F = 0.4f;
 	return { 0.5f - F, 0.0f, 0.5f - F, 0.5f + F, 0.8f, 0.5f + F };
 }
 
 // mushroom (f=0.2)
-[[maybe_unused]] static AABB MushroomAabb(uint8_t) {
+inline AABB MushroomAabb(uint8_t) {
 	constexpr float F = 0.2f;
 	return { 0.5f - F, 0.0f, 0.5f - F, 0.5f + F, F * 2.0f, 0.5f + F };
 }
 
 // plant / flower (rose, dandelion) (f=0.2, h=f*3)
-[[maybe_unused]] static AABB PlantAabb(uint8_t) {
+inline AABB PlantAabb(uint8_t) {
 	constexpr float F = 0.2f;
 	return { 0.5f - F, 0.0f, 0.5f - F, 0.5f + F, F * 3.0f, 0.5f + F };
 }
 
 // sugarcane
-[[maybe_unused]] static AABB SugarcaneAabb(uint8_t) {
+inline AABB SugarcaneAabb(uint8_t) {
 	constexpr float F = 0.375f;
 	return { 0.5f - F, 0.0f, 0.5f - F, 0.5f + F, 1.0f, 0.5f + F };
 }
 
 // Liquids have no collision
-[[maybe_unused]] static AABB LiquidAabb(uint8_t) {
+inline AABB LiquidAabb(uint8_t) {
 	return { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 }
 
 // Soul sand is indented 1 block
-[[maybe_unused]] static CollisionShape SoulSandCollider(uint8_t) {
+inline CollisionShape SoulSandCollider(uint8_t) {
 	CollisionShape collider;
 	collider.Add({ 0.0, 0.0, 0.0, 1.0, 0.875, 1.0 });
 	return collider;
 }
 
 // piston head
-[[maybe_unused]] static AABB PistonHeadAabb(uint8_t _meta) {
+inline AABB PistonHeadAabb(uint8_t _meta) {
 	switch (_meta & 7) {
 	case 0:
 		return { 0.0, 0.0, 0.0, 1.0, 0.25, 1.0 };
@@ -386,7 +386,7 @@ namespace Blocks {
 		return { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 	}
 }
-[[maybe_unused]] static CollisionShape PistonHeadCollider(uint8_t _meta) {
+inline CollisionShape PistonHeadCollider(uint8_t _meta) {
 	CollisionShape s;
 	switch (_meta & 7) {
 	case 0:

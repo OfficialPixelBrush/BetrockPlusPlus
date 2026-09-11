@@ -668,7 +668,7 @@ void WorldManager::PumpPipeline(const std::vector<ClientPosition>& _players) {
 		});
 	} else {
 		perPlayerQueues.reserve(size_t(playerCount));
-		for ([[maybe_unused]] const auto& player : _players) {
+		for (size_t playerIndex = 0; playerIndex < _players.size(); ++playerIndex) {
 			std::vector<Int32_2> candidates;
 			candidates.reserve(snapshot.size());
 			for (const Int32_2& p : snapshot) {

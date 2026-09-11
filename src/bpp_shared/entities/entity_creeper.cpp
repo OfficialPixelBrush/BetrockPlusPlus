@@ -35,7 +35,7 @@ void CreeperEntity::Tick() {
 	}
 }
 
-void CreeperEntity::TryAttackEntity(Entity& _target, float _distance) {
+void CreeperEntity::TryAttackEntity(Entity& /*_target*/, float _distance) {
 	bool primed = creeperState > 0;
 	if ((!primed && _distance < 3.0f) || (primed && _distance < 7.0f)) {
 		if (timeSinceIgnited == 0) {
@@ -59,7 +59,7 @@ void CreeperEntity::TryAttackEntity(Entity& _target, float _distance) {
 	}
 }
 
-void CreeperEntity::OnTargetLostSight(Entity& _target, float _distance) {
+void CreeperEntity::OnTargetLostSight(Entity& /*_target*/, float /*_distance*/) {
 	// Defuse a step while we can't see the target.
 	if (timeSinceIgnited > 0) {
 		UpdateMetadata<int8_t>(creeperState, -1);

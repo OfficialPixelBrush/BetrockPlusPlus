@@ -97,7 +97,7 @@ void RegisterRailBehaviors() {
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
 	};
 	blockBehaviors[BLOCK_RAIL_DETECTOR].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                               BlockType _blockId) -> void {
+	                                                               BlockType /*_blockId*/) -> void {
 		if (!CanRailStay(_world, _pos, BLOCK_RAIL_DETECTOR)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
@@ -121,7 +121,7 @@ void RegisterRailBehaviors() {
 		return false;
 	};
 	blockBehaviors[BLOCK_RAIL_POWERED].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                              BlockType _blockId) -> void {
+	                                                              BlockType /*_blockId*/) -> void {
 		if (!CanRailStay(_world, _pos, BLOCK_RAIL_POWERED)) {
 			BreakAndDropBlock(_world, _pos);
 			return;

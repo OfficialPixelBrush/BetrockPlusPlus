@@ -467,8 +467,8 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 	}
 }
 
-void InteractWithBlock([[maybe_unused]] Packet::InteractWithBlock& _pkt, [[maybe_unused]] PlayerSession& _session,
-                       [[maybe_unused]] WorldManager& _world) {}
+void InteractWithBlock(Packet::InteractWithBlock& /*_pkt*/, PlayerSession& /*_session*/,
+                       WorldManager& /*_world*/) {}
 
 void Animation(Packet::Animation& _pkt, PlayerSession& _session, EntityTracker& _entityTracker) {
 	// Broadcast what we were sent to players who can see this player
@@ -478,7 +478,7 @@ void Animation(Packet::Animation& _pkt, PlayerSession& _session, EntityTracker& 
 	_entityTracker.SendPacketToViewers(anim, anim.entityId);
 }
 
-void PlayerAction(Packet::PlayerAction& _pkt, PlayerSession& _session, EntityTracker& _entityTracker) {
+void PlayerAction(Packet::PlayerAction& _pkt, PlayerSession& _session, EntityTracker& /*_entityTracker*/) {
 	auto& entity = _session.entity;
 	if (!entity)
 		return;
@@ -566,7 +566,7 @@ void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
 	tpPkt.Serialize(_session.stream);
 }
 
-void UpdateSign(Packet::UpdateSign& _pkt, PlayerSession& _session, WorldManager& _world,
+void UpdateSign(Packet::UpdateSign& _pkt, PlayerSession& /*_session*/, WorldManager& _world,
                 std::vector<std::shared_ptr<PlayerSession>>& _players) {
 	Int3 position = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
 	BlockType blockId = _world.GetBlockId(position);
