@@ -62,18 +62,18 @@ static float GetCropGrowthRate(WorldManager& _world, Int3 _pos) {
 	float rate = 1.0f;
 
 	// Check each axis to see if there is wheat there
-	BlockType north = _world.GetBlockId({ _pos.x, _pos.y, _pos.z - 1 });
-	BlockType south = _world.GetBlockId({ _pos.x, _pos.y, _pos.z + 1 });
-	BlockType west = _world.GetBlockId({ _pos.x - 1, _pos.y, _pos.z });
-	BlockType east = _world.GetBlockId({ _pos.x + 1, _pos.y, _pos.z });
-	BlockType nw = _world.GetBlockId({ _pos.x - 1, _pos.y, _pos.z - 1 });
-	BlockType ne = _world.GetBlockId({ _pos.x + 1, _pos.y, _pos.z - 1 });
-	BlockType se = _world.GetBlockId({ _pos.x + 1, _pos.y, _pos.z + 1 });
-	BlockType sw = _world.GetBlockId({ _pos.x - 1, _pos.y, _pos.z + 1 });
+	BlockType north = _world.GetBlockId(_pos.WithOffset(Direction::Value::North));
+	BlockType south = _world.GetBlockId(_pos.WithOffset(Direction::Value::South));
+	BlockType west = _world.GetBlockId(_pos.WithOffset(Direction::Value::West));
+	BlockType east = _world.GetBlockId(_pos.WithOffset(Direction::Value::East));
+	BlockType nw = _world.GetBlockId(_pos.WithOffset(Direction::Value::North).Offset(Direction::Value::West));
+	BlockType ne = _world.GetBlockId(_pos.WithOffset(Direction::Value::North).Offset(Direction::Value::East));
+	BlockType se = _world.GetBlockId(_pos.WithOffset(Direction::Value::South).Offset(Direction::Value::East));
+	BlockType sw = _world.GetBlockId(_pos.WithOffset(Direction::Value::South).Offset(Direction::Value::West));
 
-	bool wheatOnXAxis = (west == BLOCK_CROP_WHEAT || east == BLOCK_CROP_WHEAT);
-	bool wheatOnZAxis = (north == BLOCK_CROP_WHEAT || south == BLOCK_CROP_WHEAT);
-	bool wheatDiagonal = (nw == BLOCK_CROP_WHEAT || ne == BLOCK_CROP_WHEAT || se == BLOCK_CROP_WHEAT ||
+	const bool wheatOnXAxis = (west == BLOCK_CROP_WHEAT || east == BLOCK_CROP_WHEAT);
+	const bool wheatOnZAxis = (north == BLOCK_CROP_WHEAT || south == BLOCK_CROP_WHEAT);
+	const bool wheatDiagonal = (nw == BLOCK_CROP_WHEAT || ne == BLOCK_CROP_WHEAT || se == BLOCK_CROP_WHEAT ||
 	                      sw == BLOCK_CROP_WHEAT);
 
 	// Check the quality of the farmland around us
@@ -105,7 +105,7 @@ static bool SearchForLog(int _sLength, Int3 _pos, Int3 _cameFrom, WorldManager& 
 	auto thisBlock = _world.GetBlockId(_pos);
 	if (thisBlock == BLOCK_LOG)
 		return true;
-	if (_sLength >= 4 || thisBlock != BLOCK_LEAVES)
+	if (_sLength > 3 || thisBlock != BLOCK_LEAVES)
 		return false;
 
 	int d[4] = { -1, 1, 0, 0 };
