@@ -124,4 +124,12 @@ EntityHealth GetRegenerationAmount(const ItemId _id) {
 		return 0;
 	}
 }
+
+bool IsStackable(ItemId _id) {
+	return Items::GetMaxStack(_id) > 1;
+}
+
+bool IsFood(ItemId _id) {
+	return Items::GetRegenerationAmount(_id) > 1;
+}
 }; // namespace Items
