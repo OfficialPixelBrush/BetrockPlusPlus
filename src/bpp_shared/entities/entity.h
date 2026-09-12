@@ -103,7 +103,10 @@ struct Entity {
 	float width = 0.6f;
 	float height = 1.8f;
 
-	// Vertical offset from position.y down to the bottom of the bounding box
+	// Vanilla uses this field quite confusingly; we do not do the same
+	// position.y is FEET!
+	// yOffset nudges the collider DOWN as it INCREASES
+	// so a yOffset of 1.62 would nudge the collider down by 1.62
 	float yOffset = 0.0f;
 
 	// How high a block face this entity can step onto without jumping.
@@ -126,16 +129,14 @@ struct Entity {
 	bool onLadder : 1 = false;
 
 	float fallDistance = 0.0f;
-	int nextStepDistance = 0;
+
+	// Just an interpolated offset so stepping up ledges is smooth
+	float ySize = 0.0f;
 
 	// Yaw, pitch smoothing
 	Float2 passengerLookDelta = { 0.0f, 0.0f };
 	// The vehicle's rotationYaw/rotationPitch as of the last tick
 	Float2 lastVehicleRotation = { 0.0f, 0.0f };
-
-	// Accumulated walk distance this Tick (unused rn its mostly for the client)
-	float distanceWalkedModified = 0.0f;
-	float ySize = 0.0f;
 
 	// Inputs
 	Float2 input;
@@ -161,7 +162,7 @@ struct Entity {
 	int maxAir = 300;
 	int air = 300;
 
-	// TODO: This may be stupid
+	// Metadata flags
 	EntityFlags flags;
 	bool wasMetadataUpdated = false;
 

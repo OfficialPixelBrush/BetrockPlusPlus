@@ -7,6 +7,7 @@
 */
 #include "../helpers/direction_fixer.h"
 #include "blocks.h"
+#include "blocks/block_behaviors/internal.h"
 #include "entities/entity_painting.h"
 #include "item_map.h"
 #include "item_properties.h"
@@ -180,7 +181,7 @@ void RegisterAll() {
 	toolProperties[Items::Id::LEGGINGS_GOLD] = ToolProperties{ .maxUses = DURABILITY_LEGS_GOLD };
 	toolProperties[Items::Id::BOOTS_GOLD] = ToolProperties{ .maxUses = DURABILITY_BOOTS_GOLD };
 
-	// Tool behaviors — iterate registered tools (toolBehavior starts empty)
+	// Tool behaviors
 	for (const auto& [itemId, props] : toolProperties) {
 		ToolBehavior behavior{};
 		switch (props.type) {
@@ -204,9 +205,12 @@ void RegisterAll() {
 		}
 		toolBehavior[itemId] = behavior;
 	}
-	toolBehavior[Items::Id::SHEARS] = ToolBehavior{ .onEntityUse = UseShears };
-	toolBehavior[Items::Id::BUCKET] = ToolBehavior{ .onEntityUse = UseBucketOnEntity };
-	toolBehavior[Items::Id::SADDLE] = ToolBehavior{ .onEntityUse = UseSaddle };
+
+	// Item used on entity behaviors
+	toolBehavior[SHEARS] = ToolBehavior{ .onEntityUse = UseShears };
+	toolBehavior[BUCKET] = ToolBehavior{ .onEntityUse = UseBucketOnEntity };
+	toolBehavior[SADDLE] = ToolBehavior{ .onEntityUse = UseSaddle };
+	toolBehavior[DYE]    = ToolBehavior{ .onEntityUse = UseDye };
 
 	// Item behaviors
 	itemBehavior[APPLE].onUse = EatFood;
@@ -297,6 +301,64 @@ void RegisterAll() {
 		Int3 placePos = _pos.WithOffset(_face);
 		if (Blocks::blockBehaviors[BLOCK_BED].onBlockPlaced(_world, placePos, _user, _face, BLOCK_BED, 0))
 			_stack->DecrementCount(1);
+	};
+
+	itemBehavior[DYE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+	                                  Direction::Value _face) {
+		// Bonemeal has metadata 15
+		if (_stack->data != 15)
+			return;
+
+		auto thisBlock = _world.GetBlockId(_pos);
+		// Grow tree
+		if (thisBlock == BLOCK_SAPLING) {
+			_stack->DecrementCount(1);
+			Blocks::TryGrowTree(_world, _pos);
+			return;
+		}
+
+		// Grow crops
+		if (thisBlock == BLOCK_CROP_WHEAT) {
+			_stack->DecrementCount(1);
+			_world.SetMeta(_pos, 7);
+			return;
+		}
+
+		// This is fun!
+		// Try and spread decorations on grass
+		if (thisBlock == BLOCK_GRASS) {
+			_stack->DecrementCount(1);
+			auto& random = _world.rand;
+
+			for (size_t i = 0; i < 128; i++) {
+				Int3 pos = _pos.WithOffset(Direction::Value::Up);
+				bool validWalk = true;
+
+				for (size_t step = 0; step < (i / 16); step++) {
+					pos.x += random.NextInt(3) - 1;
+					pos.y += (random.NextInt(3) - 1) * random.NextInt(3) / 2;
+					pos.z += random.NextInt(3) - 1;
+					if (_world.GetBlockId(pos.WithOffset(Direction::Value::Down)) != BLOCK_GRASS ||
+					    _world.IsBlockNormalCube(pos)) {
+						validWalk = false;
+						break; // abort the attempt
+					}
+				}
+				if (!validWalk)
+					continue; // move on to attempt i+1
+
+				if (_world.GetBlockId(pos) == BLOCK_AIR) {
+					if (random.NextInt(10) != 0) {
+						_world.SetBlock(pos, BLOCK_TALLGRASS, /*meta=*/1);
+					} else if (random.NextInt(3) != 0) {
+						_world.SetBlock(pos, BLOCK_DANDELION);
+					} else {
+						_world.SetBlock(pos, BLOCK_ROSE);
+					}
+				}
+			}
+			return;
+		}
 	};
 
 	// TODO: Implement maps properly

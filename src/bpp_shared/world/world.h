@@ -244,8 +244,9 @@ public:
 		BlockType block = GetBlockId(_wpos);
 		if (block == BlockType::BLOCK_AIR)
 			return false;
+
 		const auto& props = Blocks::blockProperties[block];
-		return props.material.isSolid && props.isNormalCube;
+		return props.material.isSolid && props.material.isOpaque && props.isNormalCube;
 	}
 
 	Int3 GetSpawnPoint(bool _adjust) {

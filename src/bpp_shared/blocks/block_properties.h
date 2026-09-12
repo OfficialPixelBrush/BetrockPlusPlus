@@ -57,7 +57,6 @@ struct BlockProperties {
 	bool isCollidable : 1 = true;
 	bool isOpaqueCube : 1 = true;
 	bool isNormalCube : 1 = true;
-	bool renderAsNormalBlock : 1 = true;
 	bool ticksOnLoad : 1 = false; // Can we random tick?
 	bool canBlockGrass : 1 = true;
 	bool enableStats : 1 = true;            // false = breaking doesn't count for achievements

@@ -28,4 +28,7 @@ void RegisterBlockDrops();
 bool IsReplaceable(WorldManager& _world, Int3 _pos);
 bool IsSupported(WorldManager& _world, Int3 _pos, Direction::Value _dir);
 
+// Defined in plants.cpp
+void TryGrowTree(WorldManager& _world, Int3 _pos);
+
 }; // namespace Blocks

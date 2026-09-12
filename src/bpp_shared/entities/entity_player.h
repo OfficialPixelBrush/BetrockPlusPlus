@@ -18,6 +18,7 @@ enum SleepFailureReason : uint8_t {
 
 struct PlayerEntity : public MobileEntity {
 	bool isSleeping = false;
+
 	// Position of the bed (headboard) the player is currently sleeping in.
 	// Only meaningful while isSleeping is true.
 	Int3 bedPosition{ 0, 0, 0 };

@@ -14,7 +14,7 @@
 
 namespace Blocks {
 
-// Global table definitions; declared extern in the header
+// Global table definitions
 BlockProperties blockProperties[BLOCK_MAX] = {};
 
 // Behavior helper functions
@@ -163,14 +163,16 @@ bool CanCactusSurviveAt(WorldAccess& _world, Int3 _pos) {
  * @return true The torch can be placed
  * @return false The torch cannot be placed
  */
+// ^^ Why is this one function so elaborated on? lol
 bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, Direction::Value _face) {
 	// Torches cannot be placed on the ceiling
 	if (_face == Direction::Value::Down)
 		return false;
 	// Get supporting block
 	Int3 support = _pos.WithOffset(Direction::Opposite(_face));
-	return _world.IsBlockNormalCube(support) ||
-	       (_face == Direction::Value::Up && _world.GetBlockId(support) == BLOCK_FENCE);
+	return _world.GetBlockId(support) != BLOCK_ICE &&
+	       (_world.IsBlockNormalCube(support) ||
+	        (_face == Direction::Value::Up && _world.GetBlockId(support) == BLOCK_FENCE));
 }
 
 // Some fluid specific stuff
@@ -191,7 +193,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.canBlockGrass = false,
 		.enableStats = false,
 	};
@@ -249,7 +250,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.ticksOnLoad = true,
 	};
 
@@ -269,7 +269,6 @@ void RegisterBlockProperties() {
 		.lightOpacity = 3,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 
@@ -280,7 +279,6 @@ void RegisterBlockProperties() {
 		.lightOpacity = 3,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 
@@ -292,7 +290,6 @@ void RegisterBlockProperties() {
 		.lightOpacity = 255,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 
@@ -304,7 +301,6 @@ void RegisterBlockProperties() {
 		.lightOpacity = 255,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 
@@ -366,7 +362,6 @@ void RegisterBlockProperties() {
 		.lightOpacity = 1,
 		.stepSound = StepSound::Grass,
 		.isOpaqueCube = false,
-		.isNormalCube = false,
 		.ticksOnLoad = true,
 		.enableStats = false,
 	};
@@ -383,11 +378,8 @@ void RegisterBlockProperties() {
 	blockProperties[BlockType::BLOCK_GLASS] = {
 		.material = Material::Glass(),
 		.hardness = 0.3f,
-		.lightOpacity = 0,
+		.lightOpacity = 255,
 		.stepSound = StepSound::Glass,
-		.isOpaqueCube = false,
-		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Lapis Lazuli Ore
@@ -440,7 +432,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 
@@ -453,7 +444,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Detector Rail
@@ -465,7 +455,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Sticky Piston Base
@@ -485,7 +474,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Cloth,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Tall Grass
@@ -497,7 +485,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Dead Bush
@@ -509,7 +496,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Piston Base
@@ -529,7 +515,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Wool (Cloth)
@@ -547,7 +532,6 @@ void RegisterBlockProperties() {
 		.lightOpacity = 0,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 
@@ -560,7 +544,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Rose (Red Flower)
@@ -572,7 +555,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Brown Mushroom
@@ -585,7 +567,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Red Mushroom
@@ -597,7 +578,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Gold Block
@@ -636,7 +616,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Bricks
@@ -692,7 +671,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Fire
@@ -704,7 +682,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.canBlockGrass = false,
 		.enableStats = false,
 	};
@@ -727,17 +704,14 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Chest
 	blockProperties[BlockType::BLOCK_CHEST] = {
 		.material = Material::Wood(),
 		.hardness = 2.5f,
-		.lightOpacity = 0,
+		.lightOpacity = 255,
 		.stepSound = StepSound::Wood,
-		.isOpaqueCube = false,
-		.isNormalCube = false,
 	};
 
 	// Redstone Wire
@@ -749,7 +723,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 
@@ -788,7 +761,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.ticksOnLoad = true,
 		.enableStats = false,
 	};
@@ -800,7 +772,6 @@ void RegisterBlockProperties() {
 		                                           .stepSound = StepSound::Gravel,
 		                                           .isOpaqueCube = false,
 		                                           .isNormalCube = false,
-		                                           .renderAsNormalBlock = false,
 		                                           .ticksOnLoad = true };
 
 	// Furnace (idle)
@@ -829,7 +800,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 
@@ -842,7 +812,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 
@@ -855,7 +824,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Rail (normal)
@@ -867,7 +835,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Cobblestone Stairs
@@ -879,7 +846,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Wall Sign
@@ -891,7 +857,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 
@@ -904,7 +869,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Stone Pressure Plate
@@ -916,7 +880,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Iron Door
@@ -927,7 +890,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 
@@ -940,7 +902,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Redstone Ore
@@ -970,7 +931,6 @@ void RegisterBlockProperties() {
 		                                                     .isCollidable = false,
 		                                                     .isOpaqueCube = false,
 		                                                     .isNormalCube = false,
-		                                                     .renderAsNormalBlock = false,
 		                                                     .ticksOnLoad = true };
 
 	// Redstone Torch (on)
@@ -982,7 +942,6 @@ void RegisterBlockProperties() {
 		                                                    .isCollidable = false,
 		                                                    .isOpaqueCube = false,
 		                                                    .isNormalCube = false,
-		                                                    .renderAsNormalBlock = false,
 		                                                    .ticksOnLoad = true };
 
 	// Stone Button
@@ -994,29 +953,25 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Snow (layer)
-	blockProperties[BlockType::BLOCK_SNOW_LAYER] = {
-		.material = Material::SnowLayer(),
-		.hardness = 0.1f,
-		.lightOpacity = 0,
-		.stepSound = StepSound::Cloth,
-		.isOpaqueCube = false,
-		.isNormalCube = false,
-		.renderAsNormalBlock = false,
-		.canBlockGrass = false,
-	};
+	blockProperties[BlockType::BLOCK_SNOW_LAYER] = { .material = Material::SnowLayer(),
+		                                             .hardness = 0.1f,
+		                                             .lightOpacity = 0,
+		                                             .stepSound = StepSound::Cloth,
+		                                             .isOpaqueCube = false,
+		                                             .isNormalCube = false,
+		                                             .ticksOnLoad = true,
+		                                             .canBlockGrass = false };
 
 	// Ice
-	blockProperties[BlockType::BLOCK_ICE] = {
-		.material = Material::Ice(),
-		.hardness = 0.5f,
-		.slipperiness = 0.98f,
-		.lightOpacity = 3,
-		.stepSound = StepSound::Glass,
-	};
+	blockProperties[BlockType::BLOCK_ICE] = { .material = Material::Ice(),
+		                                      .hardness = 0.5f,
+		                                      .slipperiness = 0.98f,
+		                                      .lightOpacity = 3,
+		                                      .stepSound = StepSound::Glass,
+		                                      .ticksOnLoad = true };
 
 	// Snow Block
 	blockProperties[BlockType::BLOCK_SNOW] = {
@@ -1034,7 +989,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Cloth,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.ticksOnLoad = true,
 	};
 
@@ -1055,7 +1009,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.ticksOnLoad = true,
 		.enableStats = false,
 	};
@@ -1078,7 +1031,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Pumpkin
@@ -1124,7 +1076,6 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 	};
 
 	// Jack-o-Lantern (Lit Pumpkin)
@@ -1144,7 +1095,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Cloth,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 
@@ -1156,7 +1106,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 
@@ -1169,7 +1118,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 
@@ -1181,7 +1129,6 @@ void RegisterBlockProperties() {
 		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
-		.renderAsNormalBlock = false,
 		.enableStats = false,
 	};
 }

@@ -474,6 +474,20 @@ void UseSaddle(WorldManager& /*_world*/, Entity& _targetEntity, ItemStack* _stac
 	_stack->DecrementCount(1);
 }
 
+void UseDye(WorldManager& /*_world*/, Entity& _targetEntity, ItemStack* _stack) {
+	SheepEntity* se = dynamic_cast<SheepEntity*>(&_targetEntity);
+	int8_t dyeColorInverted = 15 - _stack->data;
+	if (!se)
+		return;
+	if (se->color == dyeColorInverted)
+		return;
+	if (se->isSheared)
+		return;
+	se->color = dyeColorInverted;
+	se->wasMetadataUpdated = true;
+	_stack->DecrementCount(1);
+}
+
 void UseBucketOnEntity(WorldManager& /*_world*/, Entity& _targetEntity, ItemStack* _stack) {
 	CowEntity* se = dynamic_cast<CowEntity*>(&_targetEntity);
 	// Not a cow, skip

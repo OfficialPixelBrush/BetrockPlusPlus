@@ -302,6 +302,7 @@ struct Material {
 		m.type = MaterialType::SnowBlock;
 		m.mapColor = MapColor::Snow();
 		m.isHarvestable = false;
+		m.isOpaque = false;
 		return m;
 	}
 
