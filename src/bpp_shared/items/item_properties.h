@@ -77,7 +77,7 @@ constexpr bool IsThrowable(ItemId _id) {
 	return (_id == Items::SNOWBALL || _id == Items::EGG);
 }
 
-constexpr bool IsStackable(ItemId _id) {
+bool IsStackable(ItemId _id) {
 	return Items::GetMaxStack(_id) > 1;
 }
 
