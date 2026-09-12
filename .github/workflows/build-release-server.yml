@@ -1,0 +1,286 @@
+name: Build & Release Server
+
+# Manual-only. Lets you type the release notes at trigger-time and builds
+# the SERVER (BUILD_SERVER=ON) for all 5 targets, then publishes one
+# GitHub Release with all the binaries attached.
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Tag for this release (e.g. v0.2.0)"
+        required: true
+      release_name:
+        description: "Release title (leave blank to reuse the tag)"
+        required: false
+      release_notes:
+        description: "Release notes / changelog body (Markdown)"
+        required: true
+        type: string
+      draft:
+        description: "Create as a draft (review before publishing)"
+        required: false
+        type: boolean
+        default: true
+      prerelease:
+        description: "Mark as a pre-release"
+        required: false
+        type: boolean
+        default: false
+
+env:
+  # Toolchain requirement from BUILDING.md (C++23 needs GCC 13+/Clang 17+).
+  # Pulled from the ubuntu-toolchain-r PPA so we still link against the
+  # older/wider-compatible glibc that ships with ubuntu-22.04 (2.35+).
+  LINUX_GCC_VERSION: "13"
+  LIBDEFLATE_VERSION: "1.23"
+  BINARY_NAME: BetrockPlusPlus
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-release-server-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  # ---------------------------------------------------------------------
+  # Windows x86_64
+  # ---------------------------------------------------------------------
+  windows-x64:
+    runs-on: windows-2022
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}\vcpkg
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use runner-preinstalled vcpkg
+        shell: pwsh
+        run: |
+          # GitHub's windows-2022 image ships vcpkg already; reuse it instead
+          # of cloning fresh (faster + avoids network flakiness).
+          Copy-Item -Recurse "$env:VCPKG_INSTALLATION_ROOT" "$env:VCPKG_ROOT"
+          & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat"
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}\vcpkg\installed
+          key: vcpkg-x64-windows-static-${{ hashFiles('vcpkg.json') }}
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DBUILD_SERVER=ON `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows-static `
+            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $out = "package"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          Copy-Item build\$env:BINARY_NAME.exe $out\
+          Copy-Item README.md,LICENSE $out\
+          Compress-Archive -Path $out\* -DestinationPath "$env:BINARY_NAME-Server-windows-x86_64.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x86_64
+          path: ${{ env.BINARY_NAME }}-Server-windows-x86_64.zip
+
+  # ---------------------------------------------------------------------
+  # Windows arm64 (native GH-hosted arm64 Windows runner)
+  # ---------------------------------------------------------------------
+  windows-arm64:
+    runs-on: windows-11-arm
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}\vcpkg
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use runner-preinstalled vcpkg
+        shell: pwsh
+        run: |
+          Copy-Item -Recurse "$env:VCPKG_INSTALLATION_ROOT" "$env:VCPKG_ROOT"
+          & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat"
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: arm64
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}\vcpkg\installed
+          key: vcpkg-arm64-windows-static-${{ hashFiles('vcpkg.json') }}
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DBUILD_SERVER=ON `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=arm64-windows-static `
+            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $out = "package"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          Copy-Item build\$env:BINARY_NAME.exe $out\
+          Copy-Item README.md,LICENSE $out\
+          Compress-Archive -Path $out\* -DestinationPath "$env:BINARY_NAME-Server-windows-arm64.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-arm64
+          path: ${{ env.BINARY_NAME }}-Server-windows-arm64.zip
+
+  # ---------------------------------------------------------------------
+  # Linux x86_64 (glibc) - native
+  # ---------------------------------------------------------------------
+  linux-x86_64:
+    runs-on: ubuntu-22.04 # glibc 2.35, matches BUILDING.md's stated minimum
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain + dependencies
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            git cmake ninja-build zip \
+            gcc-${LINUX_GCC_VERSION} g++-${LINUX_GCC_VERSION} \
+            libcurl4-openssl-dev
+
+      - name: Build & install libdeflate (static, provides the CONFIG package CMakeLists.txt requires)
+        run: |
+          git clone --depth 1 --branch "v${LIBDEFLATE_VERSION}" https://github.com/ebiggers/libdeflate.git /tmp/libdeflate
+          cmake -S /tmp/libdeflate -B /tmp/libdeflate/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DCMAKE_C_COMPILER=gcc-${LINUX_GCC_VERSION} \
+            -DLIBDEFLATE_BUILD_STATIC_LIB=ON \
+            -DLIBDEFLATE_BUILD_SHARED_LIB=OFF \
+            -DLIBDEFLATE_BUILD_GZIP=OFF
+          cmake --build /tmp/libdeflate/build -j"$(nproc)"
+          sudo cmake --install /tmp/libdeflate/build
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SERVER=ON \
+            -DCMAKE_PREFIX_PATH=/usr/local \
+            -DCMAKE_C_COMPILER=gcc-${LINUX_GCC_VERSION} \
+            -DCMAKE_CXX_COMPILER=g++-${LINUX_GCC_VERSION}
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Package
+        run: |
+          out=package
+          mkdir -p "$out"
+          cp build/$BINARY_NAME "$out"/
+          cp README.md LICENSE "$out"/
+          (cd "$out" && zip -r "../${BINARY_NAME}-Server-linux-x86_64.zip" .)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-x86_64
+          path: ${{ env.BINARY_NAME }}-Server-linux-x86_64.zip
+
+  # ---------------------------------------------------------------------
+  # Linux aarch64 (glibc) - native GH-hosted arm64 Linux runner (no
+  # cross-compilation needed)
+  # ---------------------------------------------------------------------
+  linux-aarch64:
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain + dependencies
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            git cmake ninja-build zip \
+            gcc-${LINUX_GCC_VERSION} g++-${LINUX_GCC_VERSION} \
+            libcurl4-openssl-dev
+
+      - name: Build & install libdeflate (static)
+        run: |
+          git clone --depth 1 --branch "v${LIBDEFLATE_VERSION}" https://github.com/ebiggers/libdeflate.git /tmp/libdeflate
+          cmake -S /tmp/libdeflate -B /tmp/libdeflate/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DCMAKE_C_COMPILER=gcc-${LINUX_GCC_VERSION} \
+            -DLIBDEFLATE_BUILD_STATIC_LIB=ON \
+            -DLIBDEFLATE_BUILD_SHARED_LIB=OFF \
+            -DLIBDEFLATE_BUILD_GZIP=OFF
+          cmake --build /tmp/libdeflate/build -j"$(nproc)"
+          sudo cmake --install /tmp/libdeflate/build
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SERVER=ON \
+            -DCMAKE_PREFIX_PATH=/usr/local \
+            -DCMAKE_C_COMPILER=gcc-${LINUX_GCC_VERSION} \
+            -DCMAKE_CXX_COMPILER=g++-${LINUX_GCC_VERSION}
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Package
+        run: |
+          out=package
+          mkdir -p "$out"
+          cp build/$BINARY_NAME "$out"/
+          cp README.md LICENSE "$out"/
+          (cd "$out" && zip -r "../${BINARY_NAME}-Server-linux-aarch64.zip" .)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-aarch64
+          path: ${{ env.BINARY_NAME }}-Server-linux-aarch64.zip
+
+  # ---------------------------------------------------------------------
+  # Publish everything as one GitHub Release
+  # ---------------------------------------------------------------------
+  release:
+    needs:
+      - windows-x64
+      - windows-arm64
+      - linux-x86_64
+      - linux-aarch64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag_name }}
+          name: ${{ inputs.release_name || inputs.tag_name }}
+          body: ${{ inputs.release_notes }}
+          draft: ${{ inputs.draft }}
+          prerelease: ${{ inputs.prerelease }}
+          files: artifacts/**/*.zip
