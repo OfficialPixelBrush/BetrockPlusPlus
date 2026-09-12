@@ -12,6 +12,8 @@
 #include <cmath>
 
 void BoatEntity::DropAsItems() {
+	if (auto rider = passenger.lock())
+		rider->UnmountEntity();
 	for (int i = 0; i < 3; i++)
 		DropItemAtEntity(ItemId(BlockType::BLOCK_PLANKS), 1);
 	for (int i = 0; i < 2; i++)
@@ -30,8 +32,6 @@ bool BoatEntity::AttackEntityFrom(Entity* _entity, int _damage) {
 	damageTaken += _damage * 10;
 
 	if (damageTaken > 40) {
-		if (auto rider = passenger.lock())
-			rider->UnmountEntity();
 		DropAsItems();
 	}
 
