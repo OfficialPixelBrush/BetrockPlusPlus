@@ -147,12 +147,17 @@ void EntityMPPlayer::HandlePositionChecks() {
 
 	this->velocity = {};
 	if (this->vehicle.lock().get()) {
-		// Boats are weird!
+		// Vehicles are weird!
 		Vec3 pos = session->pendingPosition.value();
+		session->pendingPosition.reset();
 		if (pos.x <= -1 || pos.x > 1 || pos.z <= -1 || pos.z > 1)
 			return;
 		this->velocity = pos;
 		this->velocity.y = 0;
+
+		// Leave the vehicle on teleport
+		if (session->pendingTeleport)
+			this->UnmountEntity();
 
 		// Update our position to the session
 		if (!this->session)
