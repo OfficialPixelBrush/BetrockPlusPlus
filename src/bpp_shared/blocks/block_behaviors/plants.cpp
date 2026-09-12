@@ -300,7 +300,7 @@ void RegisterPlantBehaviors() {
 		}
 	};
 	blockBehaviors[BLOCK_FARMLAND].onEntityWalking = [](WorldManager& _world, Int3 _pos,
-	                                                          Entity& _entity) -> void {
+	                                                          Entity& /*_entity*/) -> void {
 
 		// NOTE: 
 		// The vanilla java client will run its own simulation with its own randomness

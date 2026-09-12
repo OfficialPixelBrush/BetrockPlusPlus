@@ -77,13 +77,9 @@ constexpr bool IsThrowable(ItemId _id) {
 	return (_id == Items::SNOWBALL || _id == Items::EGG);
 }
 
-bool IsStackable(ItemId _id) {
-	return Items::GetMaxStack(_id) > 1;
-}
+bool IsStackable(ItemId _id);
 
-constexpr bool IsFood(ItemId _id) {
-	return Items::GetRegenerationAmount(_id) > 1;
-}
+bool IsFood(ItemId _id);
 
 constexpr int GetArmorDamageReduction(ItemId _id) {
 	if (!IsArmor(_id))

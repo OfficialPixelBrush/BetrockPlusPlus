@@ -303,8 +303,8 @@ void RegisterAll() {
 			_stack->DecrementCount(1);
 	};
 
-	itemBehavior[DYE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                  Direction::Value _face) {
+	itemBehavior[DYE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/,
+	                                  Direction::Value /*_face*/) {
 		// Bonemeal has metadata 15
 		if (_stack->data != 15)
 			return;

@@ -158,7 +158,7 @@ void RegisterMiscBehaviors() {
 		if (!canStay)
 			_world.SetBlock(_pos, BLOCK_AIR);
 	};
-	blockBehaviors[BLOCK_SNOW_LAYER].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	blockBehaviors[BLOCK_SNOW_LAYER].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
 	                                         Java::Random& /*_random*/) -> void {
 		// Melt!
 		if (_world.GetBlockLight(_pos) > 11) {
@@ -167,7 +167,7 @@ void RegisterMiscBehaviors() {
 	};
 
 	// Ice
-	blockBehaviors[BLOCK_ICE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	blockBehaviors[BLOCK_ICE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
 	                                             Java::Random& /*_random*/) -> void {
 		// Melt!
 		if (_world.GetBlockLight(_pos) > 11 - Blocks::blockProperties[BLOCK_ICE].lightOpacity) {
