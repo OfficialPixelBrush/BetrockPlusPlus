@@ -27,6 +27,17 @@
 #include <iomanip>
 #include <memory>
 
+static bool IsValidActionInSpawnRadius(PlayerSession& _session, Server& _server, Int3 _pos, WorldManager& _world) {
+	// TODO: Make this configurable and more intuitive
+	const int SPAWN_PROTECTION = 16;
+	if (IsOperator(_session, _server))
+		return true;
+
+	Int3 normalPos = _pos - _world.GetSpawnPoint(/*Adjust=*/false);
+
+	return (normalPos.x * normalPos.x + normalPos.z * normalPos.z) > (SPAWN_PROTECTION * SPAWN_PROTECTION);
+}
+
 namespace HandlePacket {
 void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& _session) {
 	Packet::KeepAlive ka;
@@ -104,9 +115,6 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 		return;
 
 	auto entityPos = _session.entity->position;
-	if (_pkt.status != PacketData::MineStatus::DROPPED_ITEM &&
-	    packetPos.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > 6.0)
-		return;
 
 	auto resyncBlock = [&](Int3 _pos) {
 		if (!_world.onBlockUpdate)
@@ -120,6 +128,15 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 		                                   .light{ chunk->GetBlockLight(local), chunk->GetSkyLight(local) } },
 		                     chunk->cpos);
 	};
+
+	if (_pkt.status != PacketData::MineStatus::DROPPED_ITEM) {
+		if (packetPos.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > 6.0)
+			return;
+		if (!IsValidActionInSpawnRadius(_session, _server, packetPos, _world)) {
+			resyncBlock(packetPos);
+			return;
+		}
+	}
 
 	switch (_pkt.status) {
 	case PacketData::MineStatus::DIGGING_STARTED: {
@@ -181,7 +198,7 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 	}
 }
 
-void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager& _world, Runtime& _gameRuntime) {
+void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager& _world, Runtime& _gameRuntime, Server& _server) {
 	Int3 position = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
 
 	if (!_session.entity)
@@ -189,6 +206,19 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 
 	// Block interactions
 	auto block = _world.GetBlockId(position);
+
+	auto resyncBlock = [&](Int3 _pos) {
+		if (!_world.onBlockUpdate)
+			return;
+		auto* chunk = _world.GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
+		if (!chunk)
+			return;
+		Int3 local{ _pos.x & 15, _pos.y, _pos.z & 15 };
+		_world.onBlockUpdate(PendingBlock{ .block{ chunk->GetBlock(local), chunk->GetMeta(local) },
+		                                   .blockPos{ _pos.x, _pos.y, _pos.z },
+		                                   .light{ chunk->GetBlockLight(local), chunk->GetSkyLight(local) } },
+		                     chunk->cpos);
+	};
 
 	// Function returns true if we can place a block after running the function
 	if (ServerBlock::blockBehaviors[block].onBlockActivated) {
@@ -235,6 +265,12 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		Int3 placePosition = position.WithOffset(FaceDirectionToDirection(_pkt.face));
 
 		if (heldItem->id.value < BLOCK_AIR || heldItem->id.value >= Items::Id::SHOVEL_IRON) {
+			return;
+		}
+
+		if (!IsValidActionInSpawnRadius(_session, _server, placePosition, _world)) {
+			resyncBlock(placePosition);
+			PacketUtilities::SendInventory(_session, 0, _session.inventory);
 			return;
 		}
 

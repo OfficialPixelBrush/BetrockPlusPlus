@@ -100,7 +100,7 @@ bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, Wor
 		pkt.Deserialize(_session.stream);
 		if (_session.stream.IsShortRead())
 			return true;
-		HandlePacket::PlaceBlock(pkt, _session, _sessionWorld, _server.gameRuntime);
+		HandlePacket::PlaceBlock(pkt, _session, _sessionWorld, _server.gameRuntime, _server);
 		break;
 	}
 	case PacketId::SetHotbarSlot: {
