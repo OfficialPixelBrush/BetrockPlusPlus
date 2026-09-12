@@ -137,11 +137,11 @@ struct MathHelper {
 		return m_SIN_TABLE[(Java::FloatToInt32(_x * 10430.378f + 16384.0f)) & 0xFFFF];
 	}
 
-	static constexpr inline float SqrtFloat(float _x) {
+	static inline float SqrtFloat(float _x) {
 		return std::sqrt(_x);
 	}
 
-	static constexpr inline float SqrtDouble(double _x) {
+	static inline float SqrtDouble(double _x) {
 		return static_cast<float>(std::sqrt(_x));
 	}
 
