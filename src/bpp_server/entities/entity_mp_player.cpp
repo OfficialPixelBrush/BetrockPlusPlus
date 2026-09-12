@@ -118,6 +118,12 @@ bool EntityMPPlayer::DropItem(ItemStack _stack) {
 }
 
 bool EntityMPPlayer::PickupItem(ItemStack& _stack, EntityId _entityId) {
+	if (this->isFirstUpdate)
+		return false;
+
+	if (!this->EntityAlive())
+		return false;
+
 	if (this->session->inventory.PickupItem(_stack)) {
 		session->inventoryInteraction.needsDiff = true;
 		Packet::CollectItem pkt;
@@ -210,6 +216,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 		                          .empty();
 		Vec3 lastPosition = this->position;
 		Vec3 delta = claimed - lastPosition;
+
 		// How far the client claims to have moved this tick
 		double claimedTravelDistSq = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
 		if (claimedTravelDistSq > 100.0) {
@@ -315,6 +322,26 @@ void EntityMPPlayer::HandlePositionChecks() {
 			pkt.Serialize(session->stream);
 		}
 
+		// Moved successfully
+		// Walking code
+		if (!willCorrect && canTriggerWalking && !(onGround && flags.isSneaking) && vehicle.expired()) {
+			Vec3 walkedDelta = this->position - lastPosition; // actual final displacement this tick
+			distanceWalkedModified += std::sqrt(walkedDelta.x * walkedDelta.x + walkedDelta.z * walkedDelta.z) * 0.6;
+
+			int bx = MathHelper::FloorDouble(position.x);
+			int by = MathHelper::FloorDouble(position.y - 0.2 - yOffset);
+			int bz = MathHelper::FloorDouble(position.z);
+			BlockType block = world->GetBlockId({ bx, by, bz });
+			if (world->GetBlockId({ bx, by - 1, bz }) == BLOCK_FENCE)
+				block = world->GetBlockId({ bx, by - 1, bz });
+
+			if (distanceWalkedModified > float(nextStepDistance) && block != BLOCK_AIR) {
+				++nextStepDistance;
+				if (auto func = Blocks::blockBehaviors[block].onEntityWalking)
+					func(*this->world, { bx, by, bz }, *this);
+			}
+		}
+
 		session->pendingPosition.reset();
 	}
 }
@@ -369,6 +396,11 @@ void EntityMPPlayer::OnDeath(Entity* _killer) {
 
 	if (session && session->entityTracker)
 		session->entityTracker->RemovePlayer(this);
+}
+
+void EntityMPPlayer::Move(Vec3& _velocity) {
+	// Remove the step logic so we can do it ourselves in the anti cheat
+	Entity::Move(_velocity);
 }
 
 void EntityMPPlayer::Tick() {

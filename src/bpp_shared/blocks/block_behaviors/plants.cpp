@@ -31,6 +31,38 @@
 
 namespace Blocks {
 
+void TryGrowTree(WorldManager& _world, Int3 _pos) {
+	if (_world.GetBlockId(_pos) != BLOCK_SAPLING)
+		return;
+
+	auto meta = _world.GetMetadata(_pos);
+
+	// Remove the sapling so it doesn't interfere with the tree
+	_world.SetBlock(_pos, BLOCK_AIR);
+
+	// Remove sapling so the tree can grow in its place
+	bool successfullyGrew = false;
+	switch (TreeType(meta & 0b11)) {
+	case TreeType::Oak: // Oak or Large Oak
+		if (_world.rand.NextInt(10) == 0)
+			successfullyGrew = TreeGenerator::BigTree().Generate(_world, _world.rand, _pos);
+		else
+			successfullyGrew = TreeGenerator::GenerateTree(_world, _world.rand, _pos);
+		break;
+	case TreeType::Spruce: // Spruce (lt Taiga)
+		successfullyGrew = TreeGenerator::GenerateAltTaiga(_world, _world.rand, _pos);
+		break;
+	case TreeType::Birch: // Birch
+		successfullyGrew = TreeGenerator::GenerateTree(_world, _world.rand, _pos, true);
+		break;
+	default:
+		break;
+	}
+	// If the tree placement failed, just place the sapling back
+	if (!successfullyGrew)
+		_world.SetBlock(_pos, BLOCK_SAPLING, meta & 0b11);
+}
+
 static void TryTallPlantGrowth(WorldManager& _world, Int3 _pos, uint8_t _meta, BlockType _block) {
 	if (_world.GetBlockId(_pos.WithOffset(Direction::Value::Up)) != BLOCK_AIR)
 		return;
@@ -267,6 +299,19 @@ void RegisterPlantBehaviors() {
 			_world.SetBlock(_pos, BLOCK_DIRT, 0);
 		}
 	};
+	blockBehaviors[BLOCK_FARMLAND].onEntityWalking = [](WorldManager& _world, Int3 _pos,
+	                                                          Entity& _entity) -> void {
+
+		// NOTE: 
+		// The vanilla java client will run its own simulation with its own randomness
+		// So these will only line up like 6% of the time lmao. And that is if the step counters
+		// stay in sync
+
+		// 25% chance to revert to dirt
+		if (_world.rand.NextInt(4) == 0) {
+			_world.SetBlock(_pos, BLOCK_DIRT, 0);
+		}
+	};
 	blockBehaviors[BLOCK_FARMLAND].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                           Java::Random& _random) -> void {
 		if (_random.NextInt(5) != 0)
@@ -371,6 +416,23 @@ void RegisterPlantBehaviors() {
 	blockBehaviors[BLOCK_CACTUS].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                         Java::Random& /*_random*/) -> void {
 		TryTallPlantGrowth(_world, _pos, _meta, BLOCK_CACTUS);
+	};
+
+	blockBehaviors[BLOCK_SAPLING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                          Java::Random& _random) -> void {
+		if (_world.GetBlockLightValue({ _pos.x, _pos.y + 1, _pos.z }) < 9)
+			return;
+		if (_random.NextInt(30) != 0)
+			return;
+
+		// Add onto age
+		if ((_meta & 0b1100) < 0b1100) {
+			_meta += 0b100;
+			_world.SetMeta(_pos, _meta);
+			return;
+		}
+
+		TryGrowTree(_world, _pos);
 	};
 
 	// Grass spread / decay

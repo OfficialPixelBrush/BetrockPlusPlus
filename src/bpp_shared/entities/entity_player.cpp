@@ -36,7 +36,7 @@ SleepFailureReason PlayerEntity::TrySleep(Int3 _pos) {
 	// Successfully sleep!
 	this->SetSize({ 0.2f, 0.2f });
 	this->bedPosition = _pos;
-	this->yOffset = 0.2f;
+	this->yOffset = 0.0f;
 
 	auto dir = GetDirectionFromMeta(BLOCK_BED, world->GetMetadata(_pos));
 
@@ -60,7 +60,7 @@ SleepFailureReason PlayerEntity::TrySleep(Int3 _pos) {
 		break;
 	}
 
-	this->Teleport({ double(_pos.x) + offsetX, double(_pos.y) + 0.9375, double(_pos.z) + offsetZ },
+	this->Teleport({ double(_pos.x) + offsetX, double(_pos.y) + 0.7375, double(_pos.z) + offsetZ },
 	               { rotationYaw, rotationPitch });
 
 	this->ticksInBed = 0;
@@ -133,8 +133,6 @@ void PlayerEntity::OnDeath(Entity* _killer) {
 	// Fling away from whatever hit us
 	velocity.x = double(-std::cos((attackedAtYaw + rotationYaw) * JavaMath::PI / 180.0f) * 0.1f);
 	velocity.z = double(-std::sin((attackedAtYaw + rotationYaw) * JavaMath::PI / 180.0f) * 0.1f);
-
-	yOffset = 0.1f;
 
 	this->forceVelocityUpdate = true;
 

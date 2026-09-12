@@ -42,10 +42,16 @@ public:
 	ItemStack heldItem;
 	ItemStack* armor[4] = { nullptr, nullptr, nullptr, nullptr }; // Helmet, chestplate, leggings, boots
 
+	// Footstep stuff
+	float distanceWalkedModified = 0.0f;
+	int nextStepDistance = 1;
+	bool canTriggerWalking = true;
+
 	virtual void Tick() override;
 	virtual void OnDeath(Entity* _killer);
 	virtual void SetGoal(std::optional<Int3> _goal);
 	virtual bool onLadder();
+	virtual void Move(Vec3& _velocity) override;
 	void Heal(int _health);
 	bool AABBNotInLiquidOrObstructed(AABB& _collider);
 	bool HeadInOpaqueBlock();

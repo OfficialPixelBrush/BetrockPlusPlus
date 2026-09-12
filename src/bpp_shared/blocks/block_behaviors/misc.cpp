@@ -87,37 +87,28 @@ void RegisterMiscBehaviors() {
 		.getCollider = SoulSandCollider,
 	};
 
+
+	// Cobweb
 	blockBehaviors[BLOCK_COBWEB].onEntityCollidedWithBlock = [](WorldManager& /*_world*/, Int3 /*_pos*/,
 	                                                            Entity& _entity) -> void {
 		_entity.inWeb = true;
 	};
+
+	// Soulsand
 	blockBehaviors[BLOCK_SOULSAND].onEntityCollidedWithBlock = [](WorldManager& /*_world*/, Int3 /*_pos*/,
 	                                                              Entity& _entity) -> void {
 		_entity.velocity.x *= 0.4;
 		_entity.velocity.z *= 0.4;
 	};
-	// Placement overrides
+
+	// Shared overrides
 	auto onFurnaceDispenserPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
 	                                  BlockType _blockId, uint8_t /*_meta*/) -> bool {
 		int meta[] = { 2, 5, 3, 4 };
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
 	};
 
-	auto onPumpkinPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
-	                         BlockType _blockId, uint8_t /*_meta*/) -> bool {
-		int meta[] = { 2, 3, 0, 1 };
-		auto belowBlockMaterial = _world.GetMaterial({ _pos.x, _pos.y - 1, _pos.z });
-		if (!belowBlockMaterial.isOpaque)
-			return false;
-		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
-	};
-
-	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
-	                       uint8_t /*_meta*/) -> bool {
-		int meta[] = { 2, 1, 3, 0 };
-		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
-	};
-
+	// Pistons
 	auto onPistonPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
 	                        BlockType _blockId, uint8_t /*_meta*/) -> bool {
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_PISTON, _face));
@@ -167,15 +158,78 @@ void RegisterMiscBehaviors() {
 		if (!canStay)
 			_world.SetBlock(_pos, BLOCK_AIR);
 	};
+	blockBehaviors[BLOCK_SNOW_LAYER].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                         Java::Random& /*_random*/) -> void {
+		// Melt!
+		if (_world.GetBlockLight(_pos) > 11) {
+			_world.SetBlock(_pos, BLOCK_AIR);
+		}
+	};
 
-	// Directionals
+	// Ice
+	blockBehaviors[BLOCK_ICE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                             Java::Random& /*_random*/) -> void {
+		// Melt!
+		if (_world.GetBlockLight(_pos) > 11 - Blocks::blockProperties[BLOCK_ICE].lightOpacity) {
+			_world.SetBlock(_pos, BLOCK_WATER_FLOWING);
+		}
+	};
+	blockBehaviors[BLOCK_ICE].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos,
+	                                                               Entity& /*_destroyer*/) {
+		// Ice will turn into water if there is something solid under it
+		// Or if there is a liquid under it lol
+		auto belowMaterial = _world.GetMaterial(_pos.WithOffset(Direction::Value::Down));
+		if (belowMaterial.isSolid || belowMaterial.isLiquid)
+			_world.SetBlock(_pos, BLOCK_WATER_FLOWING);
+	};
+
+	// Pumpkin
+	auto onPumpkinPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
+	                         BlockType _blockId, uint8_t /*_meta*/) -> bool {
+		int meta[] = { 2, 3, 0, 1 };
+		auto belowBlockMaterial = _world.GetMaterial({ _pos.x, _pos.y - 1, _pos.z });
+		if (!belowBlockMaterial.isOpaque)
+			return false;
+		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
+	};
+
 	blockBehaviors[BLOCK_PUMPKIN].onBlockPlaced = onPumpkinPlace;
 	blockBehaviors[BLOCK_PUMPKIN_LIT].onBlockPlaced = onPumpkinPlace;
+
+	// Furnaces
 	blockBehaviors[BLOCK_FURNACE].onBlockPlaced = onFurnaceDispenserPlace;
 	blockBehaviors[BLOCK_FURNACE_LIT].onBlockPlaced = onFurnaceDispenserPlace;
+
+	blockBehaviors[BLOCK_FURNACE].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		auto furnaceTileEntity = std::make_shared<TileEntityFurnace>(_pos);
+		_world.CreateTileEntity(std::move(furnaceTileEntity));
+	};
+
+	auto dropFurnaceInventory = [](WorldManager& _world, Int3 _pos) -> void {
+		auto* te = _world.GetTileEntityAs<TileEntityFurnace>(_pos);
+		if (!te)
+			return;
+
+		_world.DropInventory(te->inventory, _pos);
+	};
+
+	blockBehaviors[BLOCK_FURNACE].onBlockRemoval = dropFurnaceInventory;
+	blockBehaviors[BLOCK_FURNACE_LIT].onBlockRemoval = dropFurnaceInventory;
+
+	// Dispenser
 	blockBehaviors[BLOCK_DISPENSER].onBlockPlaced = onFurnaceDispenserPlace;
+
+	// Stairs
+	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+	                       uint8_t /*_meta*/) -> bool {
+		int meta[] = { 2, 1, 3, 0 };
+		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
+	};
+
 	blockBehaviors[BLOCK_STAIRS_COBBLESTONE].onBlockPlaced = onStairPlace;
 	blockBehaviors[BLOCK_STAIRS_WOOD].onBlockPlaced = onStairPlace;
+
+	// Ladder
 	blockBehaviors[BLOCK_LADDER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                        BlockType /*_blockId*/) -> void {
 		blockBehaviors[BLOCK_LADDER].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
@@ -209,22 +263,6 @@ void RegisterMiscBehaviors() {
 		}
 		return false;
 	};
-
-	blockBehaviors[BLOCK_FURNACE].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
-		auto furnaceTileEntity = std::make_shared<TileEntityFurnace>(_pos);
-		_world.CreateTileEntity(std::move(furnaceTileEntity));
-	};
-
-	auto dropFurnaceInventory = [](WorldManager& _world, Int3 _pos) -> void {
-		auto* te = _world.GetTileEntityAs<TileEntityFurnace>(_pos);
-		if (!te)
-			return;
-
-		_world.DropInventory(te->inventory, _pos);
-	};
-
-	blockBehaviors[BLOCK_FURNACE].onBlockRemoval = dropFurnaceInventory;
-	blockBehaviors[BLOCK_FURNACE_LIT].onBlockRemoval = dropFurnaceInventory;
 }
 
 }; // namespace Blocks

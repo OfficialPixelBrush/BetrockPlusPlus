@@ -27,6 +27,7 @@ struct EntityMPPlayer : public PlayerEntity {
 		session = nullptr;
 	}
 	virtual void Tick() override;
+	void Move(Vec3& _velocity) override;
 	bool PickupItem(ItemStack& _stack, EntityId _entityId) override;
 	void UpdateFallState(float _movedY) override;
 	void OnDeath(Entity* _killer) override;

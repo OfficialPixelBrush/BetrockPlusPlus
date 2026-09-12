@@ -93,44 +93,6 @@ void RegisterBlockDrops() {
 	blockBehaviors[BLOCK_LOG].damageDropped = [](uint8_t _meta) -> ItemDamage {
 		return _meta;
 	};
-	blockBehaviors[BLOCK_SAPLING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                          Java::Random& _random) -> void {
-		if (_world.GetBlockLightValue({ _pos.x, _pos.y + 1, _pos.z }) < 9)
-			return;
-		if (_random.NextInt(30) != 0)
-			return;
-
-		// Add onto age
-		if ((_meta & 0b1100) < 0b1100) {
-			_meta += 0b100;
-			_world.SetMeta(_pos, _meta);
-			return;
-		}
-		// Remove the sapling so it doesn't interfere with the tree
-		_world.SetBlock(_pos, BLOCK_AIR);
-		// Remove sapling so the tree can grow in its place
-		bool successfullyGrew = false;
-		switch (TreeType(_meta & 0b11)) {
-		case TreeType::Oak: // Oak or Large Oak
-			if (_random.NextInt(10) == 0)
-				successfullyGrew = TreeGenerator::BigTree().Generate(_world, _random, _pos);
-			else
-				successfullyGrew = TreeGenerator::GenerateTree(_world, _random, _pos);
-			break;
-		case TreeType::Spruce: // Spruce (lt Taiga)
-			successfullyGrew = TreeGenerator::GenerateAltTaiga(_world, _random, _pos);
-			break;
-		case TreeType::Birch: // Birch
-			successfullyGrew = TreeGenerator::GenerateTree(_world, _random, _pos, true);
-			break;
-		default:
-			break;
-		}
-		// If the tree placement failed, just place the sapling back
-		if (!successfullyGrew)
-			_world.SetBlock(_pos, BLOCK_SAPLING, _meta);
-	};
-
 	blockBehaviors[BLOCK_SAPLING].damageDropped = [](uint8_t _meta) -> ItemDamage {
 		return _meta & 3;
 	};

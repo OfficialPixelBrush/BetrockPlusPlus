@@ -446,8 +446,7 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 	auto iter = Items::toolBehavior.find(heldItem->id);
 	if (iter == Items::toolBehavior.end()) {
 		if (_pkt.attack) {
-			ItemStack emptyStack{};
-			Items::AttackWithItem(*entity, *sourceEntity, &emptyStack);
+			Items::AttackWithItem(*entity, *sourceEntity, heldItem);
 		} else {
 			PlayerEntity* playerPtr = dynamic_cast<PlayerEntity*>(sourceEntity.get());
 			entity->OnPlayerInteract(playerPtr);
@@ -461,6 +460,8 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 	if (_pkt.attack) {
 		if (behavior.onEntityAttack)
 			behavior.onEntityAttack(*entity, *sourceEntity, heldItem);
+		else
+			Items::AttackWithItem(*entity, *sourceEntity, heldItem);
 	} else {
 		if (behavior.onEntityUse)
 			behavior.onEntityUse(_world, *entity, heldItem);
@@ -529,15 +530,24 @@ void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
 	_session.dimension = targetDim;
 	_session.entityTracker = targetDim == Dimension::Overworld ? &_server.overworldEntityTracker
 	                                                           : &_server.hellEntityTracker;
-
 	// Get our spawn point. If we have a valid bed spawn in this dimension, prefer it.
 	auto world = _server.GetWorldForDimension(targetDim);
-	Int3 spawn;
-	if (targetDim == Dimension::Overworld && _session.hasBedSpawn &&
-	    world->GetBlockId(_session.spawnPosition.WithOffset(Direction::Value::Down)) == BLOCK_BED) {
-		spawn = _session.spawnPosition;
-	} else {
-		if (_session.hasBedSpawn)
+	Int3 spawn = {};
+	bool bedPositionFindFailed = true;
+	if (targetDim == Dimension::Overworld && _session.hasBedSpawn) {
+		// TODO: Make this a shared func
+		Int3 headPos = _session.spawnPosition.WithOffset(Direction::Value::Down);
+		auto bedDir = GetDirectionFromMeta(BLOCK_BED, world->GetMetadata(headPos));
+		Int3 footPos = headPos.WithOffset(Direction::Opposite(bedDir));
+		auto sleepPositions = Blocks::GetBedApproachSpots(*world, headPos, footPos);
+		
+		if (!sleepPositions.empty()) {
+			bedPositionFindFailed = false;
+			spawn = sleepPositions[0];
+		}
+	}
+	if (bedPositionFindFailed) {
+		if (_session.hasBedSpawn) 
 			SendChat(_session, "Your home bed was missing or obstructed");
 		_session.hasBedSpawn = false;
 		spawn = world->GetSpawnPoint(/*Random Adjust=*/true);

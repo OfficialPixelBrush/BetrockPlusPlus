@@ -14,6 +14,7 @@ struct SpiderEntity : public HostileEntity {
 		height = 0.9f;
 		movementSpeed = 0.8f;
 		burnInDaylight = false;
+		canTriggerWalking = false;
 	}
 	~SpiderEntity() = default;
 	bool onLadder() override;

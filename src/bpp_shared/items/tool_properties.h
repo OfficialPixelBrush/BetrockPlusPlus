@@ -131,6 +131,7 @@ void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _
 void UseShears(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack);
 void UseSaddle(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack);
 void UseBucketOnEntity(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack);
+void UseDye(WorldManager& /*_world*/, Entity& _targetEntity, ItemStack* _stack);
 
 // Attack
 void TestSetGoal(WorldManager& _world, ItemStack* _stack, Int3 _pos, Direction::Value _face);

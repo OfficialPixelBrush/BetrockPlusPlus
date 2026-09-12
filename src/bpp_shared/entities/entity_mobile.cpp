@@ -269,6 +269,30 @@ bool MobileEntity::AABBNotInLiquidOrObstructed(AABB& _collider) {
 	return !world->IsLiquidInAabb(_collider);
 }
 
+void MobileEntity::Move(Vec3& _velocity) {
+	Vec3 startPos = this->position;
+	Entity::Move(_velocity);
+
+	auto delta = position - startPos;
+
+	if (canTriggerWalking && vehicle.expired()) {
+		distanceWalkedModified += std::sqrt(delta.x * delta.x + delta.z * delta.z) * 0.6;
+
+		int bx = MathHelper::FloorDouble(position.x);
+		int by = MathHelper::FloorDouble(position.y - 0.2 - yOffset);
+		int bz = MathHelper::FloorDouble(position.z);
+		BlockType block = world->GetBlockId({ bx, by, bz });
+		if (world->GetBlockId({ bx, by - 1, bz }) == BLOCK_FENCE)
+			block = world->GetBlockId({ bx, by - 1, bz });
+
+		if (distanceWalkedModified > float(nextStepDistance) && block != BLOCK_AIR) {
+			++nextStepDistance;
+			if (auto func = Blocks::blockBehaviors[block].onEntityWalking)
+				func(*this->world, { bx, by, bz }, *this);
+		}
+	}
+}
+
 bool MobileEntity::HeadInOpaqueBlock() {
 	// Check 8 corners of a slightly shrunk hitbox
 	for (int corner = 0; corner < 8; corner++) {
