@@ -317,7 +317,7 @@ bool MobileEntity::HeadInWater() {
 
 	if (headBlock == BLOCK_WATER_STILL || headBlock == BLOCK_WATER_FLOWING) {
 		float percentAir = Blocks::GetFluidPercentAir(world->GetMetadata(headBlockPos));
-		float surfaceHeight = float(headBlockPos.y + 1) - percentAir;
+		float surfaceHeight = float(headBlockPos.y + 1) - (percentAir - 0.1111111f);
 		return eyePosY < double(surfaceHeight);
 	}
 	return false;
