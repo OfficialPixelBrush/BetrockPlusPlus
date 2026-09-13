@@ -142,6 +142,12 @@ void RegisterMiscBehaviors() {
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
 	};
 
+	// Mob spawner
+	blockBehaviors[BLOCK_MOB_SPAWNER].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		auto spawnerTileEntity = std::make_shared<TileEntityMobSpawner>(_pos);
+		_world.CreateTileEntity(std::move(spawnerTileEntity));
+	};
+
 	// Snow
 	blockBehaviors[BLOCK_SNOW_LAYER].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos,
 	                                                               Entity& /*_destroyer*/) {

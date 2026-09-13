@@ -52,6 +52,11 @@ std::vector<Int3> GetBedApproachSpots(WorldManager& _world, Int3 _headPos, Int3 
 	return spots;
 }
 
+static bool IsValidSpawnBlock(WorldManager& _world, Int3 _pos) {
+	return _world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::Down)) && !_world.IsBlockNormalCube(_pos) &&
+	       !_world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::Up)) && !_world.GetMaterial(_pos).isLiquid;
+}
+
 bool TriggerNightmareSpawns(WorldManager& _world, PlayerEntity& _player, Int3 _headPos, Int3 _footPos) {
 	static constexpr int MAX_SPAWN_ATTEMPTS = 20;
 	static constexpr double PATH_END_TOLERANCE = 1.5;
@@ -72,7 +77,7 @@ bool TriggerNightmareSpawns(WorldManager& _world, PlayerEntity& _player, Int3 _h
 		int y = startY;
 		for (; y > 2 && !_world.IsBlockNormalCube({ pos.x, y - 1, pos.z }); --y) {
 		}
-		while (y < startY + 16 && _world.InBounds(y) && !_world.IsOpenGroundSpot({ pos.x, y, pos.z }))
+		while (y < startY + 16 && _world.InBounds(y) && !IsValidSpawnBlock(_world, { pos.x, y, pos.z }))
 			++y;
 
 		if (y >= startY + 16 || !_world.InBounds(y))
@@ -98,7 +103,7 @@ bool TriggerNightmareSpawns(WorldManager& _world, PlayerEntity& _player, Int3 _h
 		Vec3 spawnPosition = { pos.x + 0.5, double(pos.y), pos.z + 0.5 };
 		float rotationYaw = _world.rand.NextFloat() * 360.0f;
 		candidate->Teleport(spawnPosition, { rotationYaw, 0.0 });
-		if (!candidate->CanSpawnAt(pos))
+		if (!candidate->CanSpawnAt())
 			continue;
 
 		// Can this one actually reach the sleeping player?

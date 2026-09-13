@@ -19,7 +19,7 @@ struct HostileEntity : public MobEntity {
 	}
 	~HostileEntity() = default;
 
-	bool CanSpawnAt(Int3 _pos) override;
+	bool CanSpawnAt() override;
 	float GetWanderWeight(Int3 _pos) override;
 	virtual void Tick() override;
 	virtual std::shared_ptr<Entity> FindPlayerToAttack();

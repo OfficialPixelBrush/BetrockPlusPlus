@@ -81,7 +81,7 @@ public:
 	bool EntityAlive() {
 		return !isDead && health > 0;
 	}
-	virtual bool CanSpawnAt(Int3 _pos) {
+	virtual bool CanSpawnAt() {
 		if (!world)
 			return false;
 		bool clearOfEntities = entityManager->GetEntitiesWithinAabb(this->collider).size() == 0;
