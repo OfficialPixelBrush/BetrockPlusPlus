@@ -247,7 +247,7 @@ void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std
 	_session.stream.SetConnected(false);
 	if (_doSave)
 		_server.SavePlayer(_session.username);
-	GlobalLogger().info << "Player " << (_session.username.empty() ? "(username not yet set)" : _session.username)
+	GlobalLogger().info << "Player " << _session.username
 	                    << " disconnected: " << _reason << "\n";
 }
 
