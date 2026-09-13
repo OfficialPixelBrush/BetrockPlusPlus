@@ -76,7 +76,7 @@ struct PlayerSession {
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> pendingBlockChanges;
 
 	ConnectionState connState = ConnectionState::Handshaking;
-	std::string username;
+	std::string username = "(username not yet set)";
 	std::string ipAddress;
 	std::chrono::steady_clock::time_point lastPacketTime = std::chrono::steady_clock::now();
 

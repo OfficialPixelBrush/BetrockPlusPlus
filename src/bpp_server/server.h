@@ -71,8 +71,10 @@ public:
 
 	void SavePlayer(const std::string& _username) {
 		auto PlayerSession = GetSessionByUsername(_username);
-		if (!PlayerSession)
+		if (!PlayerSession) {
 			GlobalLogger().error << "Failed to save player data for " << _username << "!\n";
+			return;
+		}
 
 		auto savedNbt = PlayerSession->SerializeToNbt();
 		gameRuntime.saveManager.SavePlayerNbt(
@@ -271,6 +273,7 @@ private:
 	int serverSocket = -1;
 	int serverPort = 25565;
 	int64_t timeoutSeconds = 60;
+	uint16_t maximumPlayers = 20;
 	CommandManager commandManager;
 	bool stopped = false;
 	Config config;

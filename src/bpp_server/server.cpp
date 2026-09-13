@@ -55,6 +55,7 @@ Server::Server() : gameRuntime(), config("server.properties") {
 		exit(1);
 	}
 	GlobalLogger().info << "Server initialized on port " << serverPort << "\n";
+	// TODO: If seed is 0, have it generate a new seed
 	gameRuntime.Init(config.GetAsString("level-name", "world"), config.GetAsString("level-seed", "0"),
 	                 config.GetAsNumber("view-distance", 8));
 }
@@ -165,11 +166,11 @@ void Server::LoadConfig() {
 #endif
 		    //{"allow-nether",true},
 		    //{"spawn-monsters","true"},
-		    //{"max-players", "-1"},
+		    {"max-players", "20"},
 		    { "online-mode", "false" },
 #ifdef BETACRAFT_HEARTBEAT
 		    { "betacraft-heartbeat", "false" },
-		    { "betacraft-name", "A Minecraft server" },
+		    { "betacraft-name", "A Betrock++ Server" },
 		    { "betacraft-description", "" },
 		    { "betacraft-socket", "" },
 		    { "betacraft-private-key", "" },
@@ -178,7 +179,7 @@ void Server::LoadConfig() {
 		    { "betacraft-protocol", "beta_14" },
 		    { "betacraft-v1-version", "b1.7.3" },
 		    { "betacraft-send-players", "true" },
-		    { "betacraft-icon", "" },
+		    { "betacraft-icon", "icon.png" },
 #endif
 		    //{"allow-flight","false"}
 		});
@@ -193,7 +194,7 @@ void Server::LoadConfig() {
 	betacraftHeartbeat.Load(config, serverPort);
 #endif
 	//motd = config.GetAsString("motd");
-	//maximumPlayers = config.GetAsNumber<int32_t>("max-players");
+	maximumPlayers = config.GetAsNumber<uint16_t>("max-players", 20);
 	//maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
 	useWhitelist = config.GetAsBoolean("white-list");
 	operatorUsernames = ListParser::Read(ListParser::Target::Operator);
@@ -561,6 +562,10 @@ void Server::AcceptNewPlayers() {
 	if (clientSocket < 0)
 		return;
 	auto session = std::make_shared<PlayerSession>(clientSocket, gameRuntime);
+	if (players.size() >= maximumPlayers) {
+		DisconnectPlayer("Server is full!", *session);
+		return;
+	}
 	session->ipAddress = clientIp;
 	players.push_back(std::move(session));
 }
@@ -674,7 +679,7 @@ void Server::Tick() {
 #ifdef BETACRAFT_HEARTBEAT
 	if (betacraftHeartbeat.Enabled() && gameRuntime.world.tickScheduler.currentTick % TICKS_PER_SECOND == 0) {
 		BetacraftHeartbeatSnapshot snap;
-		snap.maxPlayers = config.GetAsNumber<int>("max-players", 20);
+		snap.maxPlayers = maximumPlayers;
 		if (snap.maxPlayers < 0)
 			snap.maxPlayers = 20;
 		snap.onlineMode = config.GetAsBoolean("online-mode", false);
