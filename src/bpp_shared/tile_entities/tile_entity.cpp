@@ -89,7 +89,6 @@ void TileEntityMobSpawner::Tick(WorldManager& _world) {
 
 		auto mobEntity = dynamic_cast<MobEntity*>(myEntity.get());
 
-		auto fd = MathHelper::FloorDouble;
 		mobEntity->world = &_world;
 		mobEntity->entityManager = &_world.entityManager;
 		mobEntity->Teleport(spawn, { _world.rand.NextFloat() * 360.0f, 0 });
