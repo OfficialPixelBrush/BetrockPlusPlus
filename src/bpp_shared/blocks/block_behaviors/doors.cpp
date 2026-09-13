@@ -65,9 +65,11 @@ static void BreakDoor(WorldManager& _world, Int3 _pos, BlockType _doorType) {
 		// Offset post down
 		_pos.Offset(Direction::Value::Down);
 		// We are the top of the door
-		if (_world.GetBlockId(_pos) != _doorType)
+		if (_world.GetBlockId(_pos) != _doorType) {
 			// Below us is not the bottom of a door! This is bad!
+			_world.SetBlock(_pos.WithOffset(Direction::Value::Up), BLOCK_AIR);
 			return;
+		}
 	}
 	// Since we're now guaranteed to be
 	// pointing at the bottom of the door,
@@ -183,6 +185,12 @@ void RegisterDoorBehaviors() {
 	};
 	blockBehaviors[BLOCK_DOOR_IRON].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos,
 	                                                              Entity& /*_destroyer*/) {
+		BreakDoor(_world, _pos, BLOCK_DOOR_IRON);
+	};
+	blockBehaviors[BLOCK_DOOR_IRON].onBlockDestroyedByExplosion = [](WorldManager& _world, Int3 _pos) {
+		BreakDoor(_world, _pos, BLOCK_DOOR_IRON);
+	};
+	blockBehaviors[BLOCK_DOOR_WOOD].onBlockDestroyedByExplosion = [](WorldManager& _world, Int3 _pos) {
 		BreakDoor(_world, _pos, BLOCK_DOOR_IRON);
 	};
 }
