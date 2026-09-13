@@ -234,10 +234,10 @@ std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabb(const 
 }
 
 std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbOfType(const AABB& _box, EntityType& _type) {
-	auto entities = GetEntitiesWithinAabb(_box);
+	auto e = GetEntitiesWithinAabb(_box);
 	std::vector<std::shared_ptr<Entity>> typedEntities;
 
-	for (auto& entity : entities) {
+	for (auto& entity : e) {
 		if (entity->type == _type)
 			typedEntities.push_back(entity);
 	}
