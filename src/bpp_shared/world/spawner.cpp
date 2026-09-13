@@ -115,7 +115,7 @@ void EntitySpawner::TrySpawnEntities(WorldManager& _world, const std::vector<Cli
 					float rotationYaw = _world.rand.NextFloat() * 360.0f;
 
 					candidate->Teleport(position, { rotationYaw, 0.0 });
-					if (!candidate->CanSpawnAt(pos))
+					if (!candidate->CanSpawnAt())
 						continue;
 
 					_world.entityManager.AddEntity(candidate);

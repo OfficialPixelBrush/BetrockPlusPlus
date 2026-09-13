@@ -36,6 +36,7 @@ struct EntityManager {
 
 	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbExcluding(const AABB& _box, const EntityId _entityId);
 	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabb(const AABB& _box);
+	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbOfType(const AABB& _box, EntityType& _type);
 	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbExcludingTypes(
 	    const AABB& _box, const std::vector<EntityType>& _excludedTypes);
 	std::vector<Tag> CollectEntitiesForSave(Int2 _cpos, bool _clearCollectedEntities = false);

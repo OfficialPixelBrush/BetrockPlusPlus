@@ -137,7 +137,7 @@ float HostileEntity::GetWanderWeight(Int3 _pos) {
 	return 0.5f - brightness;
 }
 
-bool HostileEntity::CanSpawnAt(Int3 _pos) {
+bool HostileEntity::CanSpawnAt() {
 	if (!world)
 		return false;
 
@@ -154,5 +154,5 @@ bool HostileEntity::CanSpawnAt(Int3 _pos) {
 	if (combinedLight > rand.NextInt(8))
 		return false;
 
-	return MobileEntity::CanSpawnAt(_pos);
+	return MobileEntity::CanSpawnAt();
 }

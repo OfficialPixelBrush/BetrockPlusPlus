@@ -11,5 +11,5 @@ struct AnimalEntity : public MobEntity {
 	AnimalEntity() : MobEntity() {}
 	~AnimalEntity() = default;
 
-	bool CanSpawnAt(Int3 _pos) override;
+	bool CanSpawnAt() override;
 };

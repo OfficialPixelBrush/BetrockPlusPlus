@@ -97,10 +97,12 @@ struct TileEntitySign : TileEntity {
 // MobSpawner
 struct TileEntityMobSpawner : TileEntity {
 	std::string entityId = "";
-	int16_t delay = 0;
+	int16_t delay = 20;
 	TileEntityMobSpawner(Int3 _pPosition) : TileEntity(TileType::SPAWNER, _pPosition) {
 		canTick = true;
 	};
 
 	Tag Serialize() override;
+	void Tick(WorldManager& _world) override;
+	bool PlayerInRange(WorldManager& _world);
 };

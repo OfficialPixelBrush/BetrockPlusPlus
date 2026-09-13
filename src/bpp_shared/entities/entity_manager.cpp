@@ -233,6 +233,17 @@ std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabb(const 
 	return collidingEntities;
 }
 
+std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbOfType(const AABB& _box, EntityType& _type) {
+	auto entities = GetEntitiesWithinAabb(_box);
+	std::vector<std::shared_ptr<Entity>> typedEntities;
+
+	for (auto& entity : entities) {
+		if (entity->type == _type)
+			typedEntities.push_back(entity);
+	}
+	return typedEntities;
+}
+
 void EntityManager::CreateEntityFromNbt(Tag& _nbt) {
 	// Load an entity from the nbt list
 	std::string id = _nbt.compound["id"].GetString();

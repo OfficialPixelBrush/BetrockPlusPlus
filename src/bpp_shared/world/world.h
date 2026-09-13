@@ -125,8 +125,7 @@ public:
 		return relativeTime >= NIGHT_START_TICK && relativeTime < NIGHT_END_TICK;
 	}
 	bool IsOpenGroundSpot(Int3 _pos) {
-		return IsBlockNormalCube({ _pos.x, _pos.y - 1, _pos.z }) && !IsBlockNormalCube(_pos) &&
-		       !GetMaterial(_pos).isLiquid && !IsBlockNormalCube({ _pos.x, _pos.y + 1, _pos.z });
+		return IsBlockNormalCube(_pos.WithOffset(Direction::Value::Down)) && IsAirBlock(_pos) && IsAirBlock(_pos.WithOffset(Direction::Value::Up));
 	}
 	void DoExplosion(Entity* _exploder, Vec3 _position, float _size, bool _doFire) {
 		auto result = Explosion::DoExplosion(*this, _exploder, _position, _size, _doFire);

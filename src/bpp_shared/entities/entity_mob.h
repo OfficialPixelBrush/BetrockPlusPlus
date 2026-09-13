@@ -29,10 +29,10 @@ struct MobEntity : public MobileEntity {
 	virtual bool TryDespawn();
 	virtual void OnDeath(Entity* _killer) override;
 	virtual void Tick() override;
-	virtual bool CanSpawnAt(Int3 _pos) {
+	virtual bool CanSpawnAt() {
 		if (!world)
 			return false;
-		return MobileEntity::CanSpawnAt(_pos);
+		return MobileEntity::CanSpawnAt();
 	}
 	bool HasLineOfSight(Vec3 _from, Vec3 _to) {
 		if (!world)
