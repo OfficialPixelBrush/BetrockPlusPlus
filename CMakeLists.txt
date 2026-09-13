@@ -246,11 +246,6 @@ set(SERVER_SOURCES
 # Client-specific source code
 set(CLIENT_SOURCES
     src/bpp_client/client.cpp
-    src/bpp_client/window.cpp
-    src/bpp_client/input.cpp
-    src/bpp_client/renderer.cpp
-    src/bpp_client/camera.cpp
-    src/bpp_client/assets.cpp
     src/bpp_client/packet/handle_client_packet.cpp
     src/bpp_client/packet/client_packet_dispatcher.cpp
 
