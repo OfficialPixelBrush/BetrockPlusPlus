@@ -44,9 +44,40 @@ concurrency:
 
 jobs:
   # ---------------------------------------------------------------------
+  # Sanity check: tag_name must match the project version in CMakeLists.txt
+  # ---------------------------------------------------------------------
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tag_name matches project version
+        shell: bash
+        run: |
+          TAG="${{ inputs.tag_name }}"
+          TAG_VERSION="${TAG#v}"  # strip a leading "v" (e.g. v0.1.3 -> 0.1.3)
+
+          PROJECT_VERSION=$(grep -oP '(?<=project\(Betrock\+\+ VERSION )[0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt)
+
+          if [ -z "$PROJECT_VERSION" ]; then
+            echo "::error::Could not find the project version in CMakeLists.txt"
+            exit 1
+          fi
+
+          echo "tag_name:        $TAG"
+          echo "tag version:     $TAG_VERSION"
+          echo "project version: $PROJECT_VERSION"
+
+          if [ "$TAG_VERSION" != "$PROJECT_VERSION" ]; then
+            echo "::error::tag_name '${TAG}' implies version '${TAG_VERSION}', but CMakeLists.txt has version '${PROJECT_VERSION}'. Bump the project version or fix the tag before releasing."
+            exit 1
+          fi
+
+  # ---------------------------------------------------------------------
   # Windows x86_64
   # ---------------------------------------------------------------------
   windows-x64:
+    needs: check-version
     runs-on: windows-2022
     env:
       VCPKG_ROOT: ${{ github.workspace }}\vcpkg
@@ -101,6 +132,7 @@ jobs:
   # Windows arm64 (native GH-hosted arm64 Windows runner)
   # ---------------------------------------------------------------------
   windows-arm64:
+    needs: check-version
     runs-on: windows-11-arm
     env:
       VCPKG_ROOT: ${{ github.workspace }}\vcpkg
@@ -153,6 +185,7 @@ jobs:
   # Linux x86_64 (glibc) - native
   # ---------------------------------------------------------------------
   linux-x86_64:
+    needs: check-version
     runs-on: ubuntu-22.04 # glibc 2.35, matches BUILDING.md's stated minimum
     steps:
       - uses: actions/checkout@v4
@@ -209,6 +242,7 @@ jobs:
   # cross-compilation needed)
   # ---------------------------------------------------------------------
   linux-aarch64:
+    needs: check-version
     runs-on: ubuntu-22.04-arm
     steps:
       - uses: actions/checkout@v4
@@ -265,6 +299,7 @@ jobs:
   # ---------------------------------------------------------------------
   release:
     needs:
+      - check-version
       - windows-x64
       - windows-arm64
       - linux-x86_64
