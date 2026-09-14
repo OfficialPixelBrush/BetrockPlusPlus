@@ -11,7 +11,7 @@ A from-scratch rewrite/combination of Beta++/Betrock and BetrockServer to combin
 
 A full, from-scratch reimplementation of Minecraft Beta 1.7.3.
 
-1. Ideally Betrock++ should be capable of acting as both a Client and Server
+1. Ideally Betrock++ should be capable of acting as a Server
 2. Functionality would be extended where desired or necessary, but generally compatibility and faithfulness will be prioritized
 3. Cross-platform (Windows and Linux)
 4. Fully open-source, anyone can fork, commit and contribute
