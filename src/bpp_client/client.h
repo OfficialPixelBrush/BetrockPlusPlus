@@ -7,13 +7,16 @@
 
 #pragma once
 #include "client_pos.h"
+#include "runtime.h"
 #include "logger.h"
 
 class Client {
 public:
 	Client();
 	int Run();
+	bool LoadIntoWorld(std::string _levelPath);
 
+	Runtime gameRuntime;
 private:
 	static constexpr float TICK_DELTA = 1.0f / 20.0f;
 	static constexpr int MAX_TICKS_PER_FRAME = 10;

@@ -15,9 +15,18 @@ Client::Client() {}
 
 void Client::Tick() {}
 
+bool Client::LoadIntoWorld(std::string _levelPath) {
+	gameRuntime.CloseCurrentWorld();
+	gameRuntime.Init(_levelPath);
+	return true;
+}
+
 int Client::Run() {
 	const uint64_t freq = SDL_GetPerformanceFrequency();
 	uint64_t lastTime = SDL_GetPerformanceCounter();
+
+	// For testing
+	LoadIntoWorld("sp_world");
 
 	while (!shutdownRequested.load()) {
 		uint64_t ticksRan = 0;
