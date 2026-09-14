@@ -94,6 +94,83 @@ The main benefits for this are for some microcontrollers or cost-reduced x86 chi
 
 Simply add `-DGENERATION_PRECISION=`, followed by your desired precision type, to the first build command, then resume as normal.
 
+### Client
+
+> [!IMPORTANT]  
+> The client is HIGHLY wip and NON-FUNCTIONAL as of now!
+> DO NOT MESSAGE US ABOUT IT IF YOU TRY TO COMPILE IT,
+> IT IS NOT IN A USABLE STATE!!!
+
+> [!NOTE]
+> When the client *is* in a more workable state again,
+> we'll likely move these instructions back into the
+> main building instructions.
+>
+> It's been moved here so people stop compiling the client
+> and asking us if they did something wrong, and why it's
+> not yet usable.
+> The client is not our main focus right now,
+> the server is, as it'll give us a solid foundation to
+> build the Client ontop of.
+> 
+> This is also why the client isn't mentioned at the top
+> of the usable flags, so it hopefully flies under the
+> radar a little until it's in a more usable state.
+
+You'll need some additional dependencies for the client to compile. This assumes you've already grabbed the necessary dependencies for the Server, as most of those are shared.
+
+To build a client, just append `-DBUILD_SERVER=OFF` to the
+initial build line.
+
+##### Debian / Ubuntu / Linux Mint
+
+```bash
+sudo apt install git cmake build-essential libdeflate-dev libasan8 libcurl4-openssl-dev
+```
+
+> Note: `libsdl3-dev` is only packaged on Debian 13 (trixie) and newer, and Ubuntu 25.10 and newer. On Ubuntu 24.04/22.04 LTS it is not in `apt`, so you'll need a newer release or to build SDL3 from source.
+
+
+##### RHEL / Fedora
+
+```bash
+sudo dnf install glm-devel SDL3-devel mesa-libGL-devel
+```
+
+##### Arch Linux / SteamOS / CachyOS
+
+```bash
+sudo pacman -S glm sdl3
+```
+
+##### openSUSE (Leap / Tumbleweed)
+
+```bash
+sudo zypper install glm-devel SDL3-devel Mesa-libGL-devel libasan8
+```
+
+##### Alpine Linux
+
+```bash
+sudo apk add glm-dev sdl3-dev mesa-dev compiler-rt
+```
+
+> Note: `sdl3-dev` is currently only in the **edge** branch's `community` repo. Also, Alpine ships no `libasan` and GCC's AddressSanitizer is broken on musl, so for Debug builds (which use `-fsanitize=address`) compile with **clang**, which uses the ASan runtime from `compiler-rt`.
+> Additionally, you may need to install `libdeflate-static` too.
+> For some reason, just `libdeflate` is not enough sometimes.
+
+##### Void Linux
+
+```bash
+sudo xbps-install -S glm SDL3-devel MesaLib-devel libsanitizer-devel
+```
+
+##### Gentoo
+
+```bash
+sudo emerge media-libs/glm media-libs/libsdl3 media-libs/mesa
+```
+
 ## Continuing
 
 [Please continue after the first command of Step #3 in BUILDING](./BUILDING.md#3-building).
