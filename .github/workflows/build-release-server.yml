@@ -1,7 +1,7 @@
 name: Build & Release Server
 
 # Manual-only. Lets you type the release notes at trigger-time and builds
-# the SERVER (BUILD_SERVER=ON) for all 5 targets, then publishes one
+# the SERVER (BUILD_SERVER=ON) for all 7 targets, then publishes one
 # GitHub Release with all the binaries attached.
 on:
   workflow_dispatch:
@@ -295,6 +295,119 @@ jobs:
           path: ${{ env.BINARY_NAME }}-Server-linux-aarch64.zip
 
   # ---------------------------------------------------------------------
+  # macOS x86_64 (Intel) - native
+  # ---------------------------------------------------------------------
+  macos-x86_64:
+    needs: check-version
+    runs-on: macos-13 # last GH-hosted Intel macOS runner
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain + dependencies
+        run: |
+          # Apple Clang's version numbering doesn't line up with upstream
+          # LLVM, so pull a real Clang 17+ from Homebrew instead of relying
+          # on whatever Xcode ships on the runner.
+          brew update
+          brew install ninja llvm libdeflate curl
+
+      - name: Build & install libdeflate (static, provides the CONFIG package CMakeLists.txt requires)
+        run: |
+          LLVM_PREFIX="$(brew --prefix llvm)"
+          git clone --depth 1 --branch "v${LIBDEFLATE_VERSION}" https://github.com/ebiggers/libdeflate.git /tmp/libdeflate
+          cmake -S /tmp/libdeflate -B /tmp/libdeflate/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DCMAKE_C_COMPILER="$LLVM_PREFIX/bin/clang" \
+            -DLIBDEFLATE_BUILD_STATIC_LIB=ON \
+            -DLIBDEFLATE_BUILD_SHARED_LIB=OFF \
+            -DLIBDEFLATE_BUILD_GZIP=OFF
+          cmake --build /tmp/libdeflate/build -j"$(sysctl -n hw.ncpu)"
+          sudo cmake --install /tmp/libdeflate/build
+
+      - name: Configure
+        run: |
+          LLVM_PREFIX="$(brew --prefix llvm)"
+          CURL_PREFIX="$(brew --prefix curl)"
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SERVER=ON \
+            -DCMAKE_PREFIX_PATH="/usr/local;${CURL_PREFIX}" \
+            -DCMAKE_C_COMPILER="$LLVM_PREFIX/bin/clang" \
+            -DCMAKE_CXX_COMPILER="$LLVM_PREFIX/bin/clang++"
+
+      - name: Build
+        run: cmake --build build -j"$(sysctl -n hw.ncpu)"
+
+      - name: Package
+        run: |
+          out=package
+          mkdir -p "$out"
+          cp build/$BINARY_NAME "$out"/
+          cp README.md LICENSE "$out"/
+          (cd "$out" && zip -r "../${BINARY_NAME}-Server-macos-x86_64.zip" .)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-x86_64
+          path: ${{ env.BINARY_NAME }}-Server-macos-x86_64.zip
+
+  # ---------------------------------------------------------------------
+  # macOS arm64 (Apple Silicon / M-series) - native GH-hosted arm64 runner
+  # ---------------------------------------------------------------------
+  macos-arm64:
+    needs: check-version
+    runs-on: macos-14 # native Apple Silicon (M-series) runner
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain + dependencies
+        run: |
+          brew update
+          brew install ninja llvm libdeflate curl
+
+      - name: Build & install libdeflate (static)
+        run: |
+          LLVM_PREFIX="$(brew --prefix llvm)"
+          git clone --depth 1 --branch "v${LIBDEFLATE_VERSION}" https://github.com/ebiggers/libdeflate.git /tmp/libdeflate
+          cmake -S /tmp/libdeflate -B /tmp/libdeflate/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DCMAKE_C_COMPILER="$LLVM_PREFIX/bin/clang" \
+            -DLIBDEFLATE_BUILD_STATIC_LIB=ON \
+            -DLIBDEFLATE_BUILD_SHARED_LIB=OFF \
+            -DLIBDEFLATE_BUILD_GZIP=OFF
+          cmake --build /tmp/libdeflate/build -j"$(sysctl -n hw.ncpu)"
+          sudo cmake --install /tmp/libdeflate/build
+
+      - name: Configure
+        run: |
+          LLVM_PREFIX="$(brew --prefix llvm)"
+          CURL_PREFIX="$(brew --prefix curl)"
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SERVER=ON \
+            -DCMAKE_PREFIX_PATH="/usr/local;${CURL_PREFIX}" \
+            -DCMAKE_C_COMPILER="$LLVM_PREFIX/bin/clang" \
+            -DCMAKE_CXX_COMPILER="$LLVM_PREFIX/bin/clang++"
+
+      - name: Build
+        run: cmake --build build -j"$(sysctl -n hw.ncpu)"
+
+      - name: Package
+        run: |
+          out=package
+          mkdir -p "$out"
+          cp build/$BINARY_NAME "$out"/
+          cp README.md LICENSE "$out"/
+          (cd "$out" && zip -r "../${BINARY_NAME}-Server-macos-arm64.zip" .)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64
+          path: ${{ env.BINARY_NAME }}-Server-macos-arm64.zip
+
+  # ---------------------------------------------------------------------
   # Publish everything as one GitHub Release
   # ---------------------------------------------------------------------
   release:
@@ -304,6 +417,8 @@ jobs:
       - windows-arm64
       - linux-x86_64
       - linux-aarch64
+      - macos-x86_64
+      - macos-arm64
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
