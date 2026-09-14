@@ -299,7 +299,7 @@ jobs:
   # ---------------------------------------------------------------------
   macos-x86_64:
     needs: check-version
-    runs-on: macos-13 # last GH-hosted Intel macOS runner
+    runs-on: macos-15-intel # last GH-hosted Intel macOS runner
     steps:
       - uses: actions/checkout@v4
 
@@ -357,7 +357,7 @@ jobs:
   # ---------------------------------------------------------------------
   macos-arm64:
     needs: check-version
-    runs-on: macos-14 # native Apple Silicon (M-series) runner
+    runs-on: macos-15 # native Apple Silicon (M-series) runner
     steps:
       - uses: actions/checkout@v4
 
