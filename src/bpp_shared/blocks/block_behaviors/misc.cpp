@@ -120,8 +120,9 @@ void RegisterMiscBehaviors() {
 	// Fence
 	blockBehaviors[BLOCK_FENCE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                               Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
+		// TODO: Could maybe be merged with final Generic Place via awesome and-or magic?
 		if (_world.GetBlockId(_pos.WithOffset(Direction::Value::Down)) == BLOCK_FENCE)
-			return true;
+			return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
 
 		if (!_world.GetMaterial(_pos.WithOffset(Direction::Value::Down)).isSolid)
 			return false;

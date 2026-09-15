@@ -12,6 +12,13 @@
 #include "numeric_structs.h"
 #include <algorithm>
 
+// TODO: Find a better name for this, please!
+static constexpr ItemKey NormalizeItemMetadata(ItemKey _key) noexcept {
+	if (Items::IgnoresMetadataInRecipes(_key.id))
+		_key.data = 0;
+	return _key;
+}
+
 void RecipeManager::AddShapelessRecipe(std::span<const ItemKey> _items, ItemStack _output) {
 	auto [it, inserted] = shapelessRecipes.try_emplace(MakeShapelessKey(_items), _output);
 
@@ -152,7 +159,7 @@ ShapedRecipeKey RecipeManager::MakeShapedKey(std::span<const ItemKey> _grid, UIn
 	// Copy the actual recipe to top left
 	for (int y = 0; y < key.height; ++y) {
 		for (int x = 0; x < key.width; ++x) {
-			key.cells[y * 3 + x] = _grid[(minY + y) * _size.x + (minX + x)];
+			key.cells[y * 3 + x] = NormalizeItemMetadata(_grid[(minY + y) * _size.x + (minX + x)]);
 		}
 	}
 
@@ -170,7 +177,7 @@ ShapelessRecipeKey RecipeManager::MakeShapelessKey(std::span<const ItemKey> _ite
 			GlobalLogger().error << "Shapeless recipe has more than 9 valid items!\n";
 			break;
 		}
-		key.items[key.count++] = item;
+		key.items[key.count++] = NormalizeItemMetadata(item);
 	}
 
 	std::sort(key.items.begin(), key.items.begin() + key.count);
