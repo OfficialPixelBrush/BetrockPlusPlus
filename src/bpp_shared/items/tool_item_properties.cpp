@@ -207,10 +207,10 @@ void RegisterAll() {
 	}
 
 	// Item used on entity behaviors
-	toolBehavior[SHEARS] = ToolBehavior{ .onEntityUse = UseShears };
-	toolBehavior[BUCKET] = ToolBehavior{ .onEntityUse = UseBucketOnEntity };
-	toolBehavior[SADDLE] = ToolBehavior{ .onEntityUse = UseSaddle };
-	toolBehavior[DYE]    = ToolBehavior{ .onEntityUse = UseDye };
+	toolBehavior[SHEARS].onEntityUse = UseShears;
+	toolBehavior[BUCKET].onEntityUse = UseBucketOnEntity;
+	toolBehavior[SADDLE].onEntityUse = UseSaddle;
+	toolBehavior[DYE].onEntityUse = UseDye;
 
 	// Item behaviors
 	itemBehavior[APPLE].onUse = EatFood;
