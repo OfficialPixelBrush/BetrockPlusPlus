@@ -23,7 +23,7 @@ inside the container - only Docker needs to be on your machine.
 Both cases build the exact same image, so the resulting binary behaves
 identically regardless of host OS.
 
-## Building the server (default)
+## Building the server
 
 ```bash
 docker build -t betrockpp:server .
@@ -34,24 +34,6 @@ Or with Compose (also sets up a persistent world/config folder, see below):
 ```bash
 docker compose build
 ```
-
-## Building the client
-
-> [!NOTE]
-> The client is currently unfinished and not really usable. We apologize for the inconvenience!!
-
-The client needs OpenGL + GLM headers (installed via apt) and SDL3
-(fetched and built by CMake via `SDL_VENDORED=ON` during the image build):
-
-```bash
-docker build --build-arg BUILD_TARGET=client -t betrockpp:client .
-```
-
-> Running a GUI client _inside_ a container still needs a display (X11/Wayland
-> forwarding or a VNC-in-container setup), which this Dockerfile doesn't set
-> up, since it's rarely worth the complexity. Use this target to confirm the
-> client **compiles**, then copy the binary out (see below) and run it
-> natively if you want to actually play.
 
 ## Running the server
 
@@ -85,21 +67,9 @@ docker run -it --rm -p 25565:25565 -v "$PWD/data:/data" \
   betrockpp:server --port 25565 --max_players 10 --whitelist
 ```
 
-## Extracting a built binary (e.g. the client)
-
-If you just want the compiled executable rather than a running container:
-
-```bash
-docker build --build-arg BUILD_TARGET=client -t betrockpp:client-builder --target builder .
-docker create --name bpp-extract betrockpp:client-builder
-docker cp bpp-extract:/src/build/BetrockPlusPlus ./BetrockPlusPlus
-docker rm bpp-extract
-```
-
 ## Build arguments reference
 
 | Arg            | Values                           | Default   | Effect                                     |
 | -------------- | -------------------------------- | --------- | ------------------------------------------ |
-| `BUILD_TARGET` | `server`, `client`               | `server`  | Which CMake target to compile              |
 | `BUILD_TYPE`   | `Release`, `Debug`, `MinSizeRel` | `Release` | CMake build type                           |
 | `COMPILER`     | `clang`, `gcc`                   | `clang`   | Which compiler to use inside the container |

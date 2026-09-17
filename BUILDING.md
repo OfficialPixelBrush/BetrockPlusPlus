@@ -53,70 +53,43 @@ The install instructions below assume that `glibc`, `gcc`/`g++` and `make` are u
 ##### Debian / Ubuntu / Linux Mint
 
 ```bash
-# Server + Client dependencies
 sudo apt install git cmake build-essential libdeflate-dev libasan8 libcurl4-openssl-dev
-# Client-exclusive dependencies
-sudo apt install libglm-dev libsdl3-dev libgl1-mesa-dev
 ```
-
-> Note: `libsdl3-dev` is only packaged on Debian 13 (trixie) and newer, and Ubuntu 25.10 and newer. On Ubuntu 24.04/22.04 LTS it is not in `apt`, so you'll need a newer release or to build SDL3 from source.
 
 ##### RHEL / Fedora
 
 ```bash
-# Server + Client dependencies
 sudo dnf install git cmake gcc gcc-c++ make libasan libdeflate-devel libcurl-devel
-# Client-exclusive dependencies
-sudo dnf install glm-devel SDL3-devel mesa-libGL-devel
 ```
 
 ##### Arch Linux / SteamOS / CachyOS
 
 ```bash
-# Server + Client dependencies
 sudo pacman -S git cmake base-devel libdeflate libasan curl
-# Client-exclusive dependencies
-sudo pacman -S glm sdl3
 ```
 
 ##### openSUSE (Leap / Tumbleweed)
 
 ```bash
-# Server + Client dependencies
 sudo zypper install git cmake gcc gcc-c++ make libdeflate-devel libcurl-devel
-# Client-exclusive dependencies
-sudo zypper install glm-devel SDL3-devel Mesa-libGL-devel libasan8
 ```
 
 ##### Alpine Linux
 
 ```bash
-# Server + Client dependencies
 sudo apk add git cmake gcc g++ make libdeflate-dev curl-dev
-# Client-exclusive dependencies
-sudo apk add glm-dev sdl3-dev mesa-dev compiler-rt
 ```
-
-> Note: `sdl3-dev` is currently only in the **edge** branch's `community` repo. Also, Alpine ships no `libasan` and GCC's AddressSanitizer is broken on musl, so for Debug builds (which use `-fsanitize=address`) compile with **clang**, which uses the ASan runtime from `compiler-rt`.
-> Additionally, you may need to install `libdeflate-static` too.
-> For some reason, just `libdeflate` is not enough sometimes.
 
 ##### Void Linux
 
 ```bash
-# Server + Client dependencies
 sudo xbps-install -S base-devel git cmake libdeflate-devel libcurl-devel
-# Client-exclusive dependencies
-sudo xbps-install -S glm SDL3-devel MesaLib-devel libsanitizer-devel
 ```
 
 ##### Gentoo
 
 ```bash
-# Server + Client dependencies
 sudo emerge dev-vcs/git dev-build/cmake sys-devel/gcc dev-build/make app-arch/libdeflate net-misc/curl
-# Client-exclusive dependencies
-sudo emerge media-libs/glm media-libs/libsdl3 media-libs/mesa
 ```
 
 Then move onto the [building step](#3-building).
@@ -148,13 +121,7 @@ cd build
 >   -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=mold"
 > ```
 
-This will make a Release Server build. If you'd like to build a client instead, use
-
-```bash
-cmake -S . -B build -DBUILD_SERVER=OFF
-cd build
-```
-
+This will make a Release Server build folder.
 Then you build the project.
 
 ```bash

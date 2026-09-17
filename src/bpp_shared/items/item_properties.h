@@ -113,4 +113,18 @@ inline void DamageItem(ItemStack& _stack, int _damage) {
 		_stack = {};
 	}
 }
+
+// True when an items data value is meaningless for crafting
+[[nodiscard]] constexpr bool IgnoresMetadataInRecipes(ItemId _id) noexcept {
+	switch (_id) {
+	case BLOCK_WOOL:
+	case BLOCK_LOG:
+	case BLOCK_SAPLING:
+	case BLOCK_PLANKS:
+		return true;
+	default:
+		return false;
+	}
+}
+
 }; // namespace Items
