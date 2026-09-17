@@ -27,12 +27,12 @@ Biome WorldManager::GetBiome(Int2 _wpos) {
 		return Biome::BIOME_HELL;
 	const Int32_2 cpos = Int32_2{ _wpos.x >> 4, _wpos.z >> 4 };
 	const auto chunk = GetChunkShared(cpos);
-	// This is rather expensive, so we want to avoid
-	// getting biome points outside of the loaded chunks
 	if (!chunk || chunk->state != ChunkState::Generated)
 		return biomeGenerator.GetBiomeAtPoint(_wpos);
-	// TODO: Dunno if this is the right index formula, please test!
-	return static_cast<Biome>(chunk->biomes.Get(_wpos.x % 0xF + _wpos.z % 0xF * 16));
+
+	const int32_t localX = _wpos.x & 15;
+	const int32_t localZ = _wpos.z & 15;
+	return static_cast<Biome>(chunk->biomes.Get(localX * CHUNK_WIDTH + localZ));
 }
 
 int WorldManager::GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
