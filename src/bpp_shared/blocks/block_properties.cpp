@@ -378,7 +378,7 @@ void RegisterBlockProperties() {
 	blockProperties[BlockType::BLOCK_GLASS] = {
 		.material = Material::Glass(),
 		.hardness = 0.3f,
-		.lightOpacity = 255,
+		.lightOpacity = 0,
 		.stepSound = StepSound::Glass,
 	};
 
@@ -461,7 +461,7 @@ void RegisterBlockProperties() {
 	blockProperties[BlockType::BLOCK_PISTON_STICKY] = {
 		.material = Material::Piston(),
 		.hardness = 0.5f,
-		.lightOpacity = 255,
+		.lightOpacity = 0,
 		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
 	};
@@ -502,7 +502,7 @@ void RegisterBlockProperties() {
 	blockProperties[BlockType::BLOCK_PISTON] = {
 		.material = Material::Piston(),
 		.hardness = 0.5f,
-		.lightOpacity = 255,
+		.lightOpacity = 0,
 		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
 	};
