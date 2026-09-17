@@ -452,6 +452,8 @@ void MobileEntity::Tick() {
 		isDead = deathTime >= 20;
 	}
 
+	UpdateAIState();
+
 	// Jump code
 	if (jumping) {
 		if (inWater || inLava) {

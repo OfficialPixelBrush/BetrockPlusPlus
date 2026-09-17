@@ -51,6 +51,7 @@ public:
 	virtual void OnDeath(Entity* _killer);
 	virtual void SetGoal(std::optional<Int3> _goal);
 	virtual bool onLadder();
+	virtual void UpdateAIState() {}
 	virtual void Move(Vec3& _velocity) override;
 	void Heal(int _health);
 	bool AABBNotInLiquidOrObstructed(AABB& _collider);

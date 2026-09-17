@@ -23,6 +23,7 @@ struct MobEntity : public MobileEntity {
 	}
 	~MobEntity() = default;
 	void FaceEntity(MobileEntity& _entity, float _maxYaw, float _maxPitch);
+	virtual void UpdateAIState() override;
 	virtual void Wander();
 	virtual float GetWanderWeight(Int3 _pos);
 	virtual void UpdateState();

@@ -23,7 +23,20 @@ struct SpawnEntry {
 };
 
 struct SpawnCategory {
-	std::vector<SpawnEntry> spawnList = {};
+	const std::vector<SpawnEntry> GetSpawnSpawnListForBiome(Biome _biome) {
+		switch (_biome) {
+		case BIOME_FOREST:
+		case BIOME_TAIGA:
+			return spawnListForest;
+		case BIOME_HELL:
+			return spawnListNether;
+		default:
+			return spawnListDefault;
+		}
+	}
+	std::vector<SpawnEntry> spawnListDefault = {};
+	std::vector<SpawnEntry> spawnListForest = {};
+	std::vector<SpawnEntry> spawnListNether = {};
 	int cap = 15;
 };
 

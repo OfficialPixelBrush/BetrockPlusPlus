@@ -36,16 +36,17 @@ bool MobEntity::TryDespawn() {
 	return false;
 }
 
-void MobEntity::Tick() {
-	MobileEntity::Tick();
-
+void MobEntity::UpdateAIState() {
 	if (EntityAlive()) {
 		Wander();
 		if (!FollowPath())
 			UpdateState();
 		randomYawVelocity *= 0.9f;
 	}
+}
 
+void MobEntity::Tick() {
+	MobileEntity::Tick();
 	TryDespawn();
 }
 
@@ -67,6 +68,10 @@ void MobEntity::FaceEntity(MobileEntity& _entity, float _maxYaw, float _maxPitch
 }
 
 void MobEntity::UpdateState() {
+	// Reset our motion
+	input.x = 0.0f;
+	input.y = 0.0f;
+
 	// Try and look at a player
 	// 2 percent chance
 	if (rand.NextFloat() < 0.02f) {
