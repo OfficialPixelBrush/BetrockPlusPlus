@@ -50,6 +50,7 @@ struct Chunk {
 	bool isTerrainPopulated : 1 = false;
 	bool isModified : 1 = false;
 	bool spawnChunk : 1 = false;
+	bool refreshLighting : 1 = false;
 
 	// Tile entities
 	std::vector<std::shared_ptr<TileEntity>> tileEntities;
