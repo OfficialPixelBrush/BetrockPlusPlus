@@ -120,10 +120,9 @@ void RegisterMiscBehaviors() {
 	// Fence
 	blockBehaviors[BLOCK_FENCE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                               Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
-		if (_world.GetBlockId(_pos.WithOffset(Direction::Value::Down)) == BLOCK_FENCE)
-			return true;
+		const bool fenceBelow = (_world.GetBlockId(_pos.WithOffset(Direction::Value::Down)) == BLOCK_FENCE);
 
-		if (!_world.GetMaterial(_pos.WithOffset(Direction::Value::Down)).isSolid)
+		if (!fenceBelow && !_world.GetMaterial(_pos.WithOffset(Direction::Value::Down)).isSolid)
 			return false;
 
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);

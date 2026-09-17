@@ -1,7 +1,7 @@
 name: Build & Release Server
 
 # Manual-only. Lets you type the release notes at trigger-time and builds
-# the SERVER (BUILD_SERVER=ON) for all 5 targets, then publishes one
+# the SERVER (BUILD_SERVER=ON) for all 7 targets, then publishes one
 # GitHub Release with all the binaries attached.
 on:
   workflow_dispatch:
@@ -44,9 +44,40 @@ concurrency:
 
 jobs:
   # ---------------------------------------------------------------------
+  # Sanity check: tag_name must match the project version in CMakeLists.txt
+  # ---------------------------------------------------------------------
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tag_name matches project version
+        shell: bash
+        run: |
+          TAG="${{ inputs.tag_name }}"
+          TAG_VERSION="${TAG#v}"  # strip a leading "v" (e.g. v0.1.3 -> 0.1.3)
+
+          PROJECT_VERSION=$(grep -oP '(?<=project\(Betrock\+\+ VERSION )[0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt)
+
+          if [ -z "$PROJECT_VERSION" ]; then
+            echo "::error::Could not find the project version in CMakeLists.txt"
+            exit 1
+          fi
+
+          echo "tag_name:        $TAG"
+          echo "tag version:     $TAG_VERSION"
+          echo "project version: $PROJECT_VERSION"
+
+          if [ "$TAG_VERSION" != "$PROJECT_VERSION" ]; then
+            echo "::error::tag_name '${TAG}' implies version '${TAG_VERSION}', but CMakeLists.txt has version '${PROJECT_VERSION}'. Bump the project version or fix the tag before releasing."
+            exit 1
+          fi
+
+  # ---------------------------------------------------------------------
   # Windows x86_64
   # ---------------------------------------------------------------------
   windows-x64:
+    needs: check-version
     runs-on: windows-2022
     env:
       VCPKG_ROOT: ${{ github.workspace }}\vcpkg
@@ -101,6 +132,7 @@ jobs:
   # Windows arm64 (native GH-hosted arm64 Windows runner)
   # ---------------------------------------------------------------------
   windows-arm64:
+    needs: check-version
     runs-on: windows-11-arm
     env:
       VCPKG_ROOT: ${{ github.workspace }}\vcpkg
@@ -153,6 +185,7 @@ jobs:
   # Linux x86_64 (glibc) - native
   # ---------------------------------------------------------------------
   linux-x86_64:
+    needs: check-version
     runs-on: ubuntu-22.04 # glibc 2.35, matches BUILDING.md's stated minimum
     steps:
       - uses: actions/checkout@v4
@@ -209,6 +242,7 @@ jobs:
   # cross-compilation needed)
   # ---------------------------------------------------------------------
   linux-aarch64:
+    needs: check-version
     runs-on: ubuntu-22.04-arm
     steps:
       - uses: actions/checkout@v4
@@ -261,14 +295,71 @@ jobs:
           path: ${{ env.BINARY_NAME }}-Server-linux-aarch64.zip
 
   # ---------------------------------------------------------------------
+  # macOS arm64 (Apple Silicon / M-series) - native GH-hosted arm64 runner
+  # ---------------------------------------------------------------------
+  macos-arm64:
+    needs: check-version
+    runs-on: macos-15 # native Apple Silicon (M-series) runner
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain + dependencies
+        run: |
+          brew update
+          brew install ninja llvm libdeflate curl
+
+      - name: Build & install libdeflate (static)
+        run: |
+          LLVM_PREFIX="$(brew --prefix llvm)"
+          git clone --depth 1 --branch "v${LIBDEFLATE_VERSION}" https://github.com/ebiggers/libdeflate.git /tmp/libdeflate
+          cmake -S /tmp/libdeflate -B /tmp/libdeflate/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DCMAKE_C_COMPILER="$LLVM_PREFIX/bin/clang" \
+            -DLIBDEFLATE_BUILD_STATIC_LIB=ON \
+            -DLIBDEFLATE_BUILD_SHARED_LIB=OFF \
+            -DLIBDEFLATE_BUILD_GZIP=OFF
+          cmake --build /tmp/libdeflate/build -j"$(sysctl -n hw.ncpu)"
+          sudo cmake --install /tmp/libdeflate/build
+
+      - name: Configure
+        run: |
+          LLVM_PREFIX="$(brew --prefix llvm)"
+          CURL_PREFIX="$(brew --prefix curl)"
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SERVER=ON \
+            -DCMAKE_PREFIX_PATH="/usr/local;${CURL_PREFIX}" \
+            -DCMAKE_C_COMPILER="$LLVM_PREFIX/bin/clang" \
+            -DCMAKE_CXX_COMPILER="$LLVM_PREFIX/bin/clang++"
+
+      - name: Build
+        run: cmake --build build -j"$(sysctl -n hw.ncpu)"
+
+      - name: Package
+        run: |
+          out=package
+          mkdir -p "$out"
+          cp build/$BINARY_NAME "$out"/
+          cp README.md LICENSE "$out"/
+          (cd "$out" && zip -r "../${BINARY_NAME}-Server-macos-arm64.zip" .)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64
+          path: ${{ env.BINARY_NAME }}-Server-macos-arm64.zip
+
+  # ---------------------------------------------------------------------
   # Publish everything as one GitHub Release
   # ---------------------------------------------------------------------
   release:
     needs:
+      - check-version
       - windows-x64
       - windows-arm64
       - linux-x86_64
       - linux-aarch64
+      - macos-arm64
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
