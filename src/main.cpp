@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
 #endif
 #endif
 	// For testing REMOVE LATER!
-	// std::string path = "";
+	// std::string path = "world_betrock_old";
 	// Utilities::convertBetrockServerLevel(/*path=*/path);
 	Server serv;
 	if (args.enableWhitelist)

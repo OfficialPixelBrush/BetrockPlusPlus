@@ -495,6 +495,9 @@ void WorldManager::DrainLoadQueue() {
 		chunk = std::move(loaded);
 		chunk->spawnChunk = wasSpawnChunk;
 
+		bool needsLightingRefresh = chunk->refreshLighting;
+		chunk->refreshLighting = false;
+
 		// Regenerate temp and humidity data
 		thread_local BiomeGenerator tlBiomeGen(0);
 		thread_local int64_t tlBiomeSeed = std::numeric_limits<int64_t>::min();
@@ -520,18 +523,22 @@ void WorldManager::DrainLoadQueue() {
 			pendingBleedWrites.erase(pit);
 		}
 
-		// TODO: Do we need to use a raw pointer for the following?
-		auto rawChunkPtr = chunk.get();
-
 		// Register our tile entities
-		RegisterChunkTileEntities(rawChunkPtr);
+		RegisterChunkTileEntities(chunk.get());
 
 		// Register our entities
-		for (auto& entityTag : rawChunkPtr->entityTags) {
+		for (auto& entityTag : chunk->entityTags) {
 			this->entityManager.CreateEntityFromNbt(entityTag);
 		}
-		rawChunkPtr->entityTags.clear();
-		rawChunkPtr->entityTags.shrink_to_fit();
+		chunk->entityTags.clear();
+		chunk->entityTags.shrink_to_fit();
+
+		// If we need a lighting update then do so
+		if (needsLightingRefresh) {
+			chunk->GenerateSkylightMap();
+			SeedChunkLighting(chunk->cpos);
+			chunk->isModified = true;
+		}
 	}
 }
 
