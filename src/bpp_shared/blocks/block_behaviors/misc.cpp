@@ -268,6 +268,12 @@ void RegisterMiscBehaviors() {
 		}
 		return false;
 	};
+	
+	blockBehaviors[BlockType::BLOCK_SIGN_WALL] = {
+		.getSelectionBox = WallSignAabb,
+		.getRayBounds = WallSignAabb,
+		.getCollider = EmptyCollider,
+	};
 }
 
 }; // namespace Blocks
