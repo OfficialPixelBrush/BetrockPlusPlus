@@ -274,6 +274,12 @@ void RegisterMiscBehaviors() {
 		.getRayBounds = WallSignAabb,
 		.getCollider = EmptyCollider,
 	};
+	
+	blockBehaviors[BlockType::BLOCK_SIGN_STANDING] = {
+		.getSelectionBox = StandingSignAabb,
+		.getRayBounds = StandingSignAabb,
+		.getCollider = EmptyCollider,
+	};
 }
 
 }; // namespace Blocks
