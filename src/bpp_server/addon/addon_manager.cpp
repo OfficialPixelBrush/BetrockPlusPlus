@@ -43,7 +43,7 @@ AddonManager::AddonManager() {
 }
 
 AddonManager::~AddonManager() {
-	for (Addon addon : addons) {
+	for (const Addon& addon : addons) {
         dlclose(addon.dynHandle);
 	}
 }
