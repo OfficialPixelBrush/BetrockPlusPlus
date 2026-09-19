@@ -134,6 +134,20 @@ bool convertAlphaLevel(std::string& _dir) {
 		return false;
 	};
 
+	auto registerChunk = [&](WorldManager& _world, std::shared_ptr<Chunk> _chunk) -> void {
+		// Register our tile entities
+		_world.RegisterChunkTileEntities(_chunk.get());
+
+		// Register our entities
+		for (auto& entityTag : _chunk->entityTags) {
+			_world.entityManager.CreateEntityFromNbt(entityTag);
+		}
+		_chunk->entityTags.clear();
+		_chunk->entityTags.shrink_to_fit();
+
+		_world.chunks[_chunk->cpos] = std::move(_chunk);
+	};
+
 	auto loadAlphaChunk = [&](FileHandle& _cFile) -> std::shared_ptr<Chunk> {
 		auto& chunkFile = _cFile.Get();
 
@@ -244,17 +258,12 @@ bool convertAlphaLevel(std::string& _dir) {
 		FileHandle chunkFileHandle(chunkPath);
 		auto chunk = loadAlphaChunk(chunkFileHandle);
 		if (chunk) {
-			Int32_2 cpos = chunk->cpos;
+			// Alpha lighting tends to be buggy..
+			chunk->refreshLighting = true;
 
-			auto placeholder = std::make_shared<Chunk>();
-			placeholder->cpos = cpos;
-			placeholder->state.store(ChunkState::Loading);
-
-			overworldRegionManager.outChunks.insert({ cpos, std::move(chunk) });
-			world.chunks[cpos] = std::move(placeholder);
+			registerChunk(world, chunk);
 
 			if (++sinceFlush >= FLUSH_BATCH_SIZE) {
-				world.DrainLoadQueue();
 				world.SaveChunks(/*saveIfEntities=*/true);
 				overworldRegionManager.FlushAll();
 				sinceFlush = 0;
@@ -278,17 +287,12 @@ bool convertAlphaLevel(std::string& _dir) {
 		FileHandle chunkFileHandle(chunkPath);
 		auto chunk = loadAlphaChunk(chunkFileHandle);
 		if (chunk) {
-			Int32_2 cpos = chunk->cpos;
+			// Alpha lighting tends to be buggy..
+			chunk->refreshLighting = true;
 
-			auto placeholder = std::make_shared<Chunk>();
-			placeholder->cpos = cpos;
-			placeholder->state.store(ChunkState::Loading);
-
-			hellRegionManager.outChunks.insert({ cpos, std::move(chunk) });
-			hellWorld.chunks[cpos] = std::move(placeholder);
+			registerChunk(world, chunk);
 
 			if (++sinceFlush >= FLUSH_BATCH_SIZE) {
-				hellWorld.DrainLoadQueue();
 				hellWorld.SaveChunks(/*saveIfEntities=*/true);
 				hellRegionManager.FlushAll();
 				sinceFlush = 0;
@@ -365,6 +369,8 @@ bool convertBetrockServerLevel(std::string& _dir) {
 
 	fs::path srcPlayers = fs::path(_dir) / "players";
 	fs::path srcRegion = fs::path(_dir) / "region";
+
+	world.regionManager = &regionManager;
 
 	if (!fs::exists(srcRegion)) {
 		GlobalLogger().error << "Invalid Betrock level file!\n";
@@ -466,7 +472,7 @@ bool convertBetrockServerLevel(std::string& _dir) {
 		}
 		c->isTerrainPopulated = true;
 		c->isModified = true;
-		c->GenerateSkylightMap();
+		c->state = ChunkState::Populated; 
 
 		return c;
 	};
@@ -515,7 +521,7 @@ bool convertBetrockServerLevel(std::string& _dir) {
 
 		c->isTerrainPopulated = true;
 		c->isModified = true;
-		c->GenerateSkylightMap();
+		c->state = ChunkState::Populated; 
 
 		return c;
 	};
@@ -538,14 +544,23 @@ bool convertBetrockServerLevel(std::string& _dir) {
 	GlobalLogger().info << "Found " << chunkCoords.size() << " OLD format chunks to convert.\n";
 
 	// Save all our old format chunks
+	int count = 0;
 	for (auto& cpos : chunkCoords) {
 		auto path = srcRegion / (std::to_string(cpos.x) + "," + std::to_string(cpos.z) + ".cnk");
 		FileHandle fileHandle(path);
 		auto chunk = loadOldFormat(fileHandle);
-		if (chunk)
+		if (chunk) {
+			count++;
 			chunk->cpos = { cpos.x, cpos.z };
-		if (chunk)
+			chunk->refreshLighting = true;
 			world.chunks[chunk->cpos] = chunk;
+
+			if (count % 256 == 0) {
+				world.SaveChunks(true);
+				regionManager.FlushAll();
+				world.chunks.clear();
+			}
+		}
 	}
 
 	GlobalLogger().info << "Converted! Now converting V2 format chunks..\n";
@@ -573,20 +588,24 @@ bool convertBetrockServerLevel(std::string& _dir) {
 		auto path = srcRegion / (std::to_string(cpos.x) + "," + std::to_string(cpos.z) + ".ncnk");
 		FileHandle fileHandle(path);
 		auto chunk = loadV2Format(fileHandle);
-		if (chunk)
+		if (chunk) {
+			count++;
 			chunk->cpos = { cpos.x, cpos.z };
-		if (chunk)
+			chunk->refreshLighting = true;
 			world.chunks[chunk->cpos] = chunk;
+
+			if (count % 256 == 0) {
+				world.SaveChunks(true);
+				regionManager.FlushAll();
+				world.chunks.clear();
+			}
+		}
 	}
 	GlobalLogger().info << "Finishing up..\n";
 
 	// Save
-	for (auto& chunk : world.chunks) {
-		regionManager.SaveChunk(chunk.second);
-	}
+	world.Shutdown();
 
-	regionManager.FlushAll();
-	regionManager.Release();
 	GlobalLogger().info << "Done!\n";
 
 	return true;

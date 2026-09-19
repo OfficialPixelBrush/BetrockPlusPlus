@@ -251,6 +251,16 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& _chunk,
 	level.compound["Entities"] = entitiesTag;
 	level.compound["TileEntities"] = tileEntities;
 
+	// Only include this tag if we need to reseed lighting
+	if (_chunk->refreshLighting) {
+		Tag refreshLighting;
+		refreshLighting.type = TAG_BYTE;
+		refreshLighting.name = "RefreshLighting";
+		refreshLighting.byteValue = _chunk->refreshLighting ? 1 : 0;
+
+		level.compound["RefreshLighting"] = refreshLighting;
+	}
+
 	root.compound["Level"] = level;
 
 	// Serialize to bytes
@@ -330,6 +340,7 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 	chunk->cpos = Int32_2{ cx, cz };
 	chunk->state = tp ? ChunkState::Populated : ChunkState::Generated;
 	chunk->isTerrainPopulated = tp;
+	chunk->refreshLighting = lvl.Has("RefreshLighting") ? lvl.Get("RefreshLighting").byteValue : false;
 	std::copy(heightMap.begin(), heightMap.end(), chunk->heightMap);
 
 	// Load all of our block data

@@ -22,6 +22,7 @@ struct HostileEntity : public MobEntity {
 	bool CanSpawnAt() override;
 	float GetWanderWeight(Int3 _pos) override;
 	virtual void Tick() override;
+	void UpdateAIState() override;
 	virtual std::shared_ptr<Entity> FindPlayerToAttack();
 	virtual void TryAttackEntity(Entity& _target, float _distance);
 	virtual void OnTargetLostSight(Entity& /*_target*/, float /*_distance*/) {}

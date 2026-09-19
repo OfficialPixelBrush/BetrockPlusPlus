@@ -130,6 +130,6 @@ bool IsStackable(ItemId _id) {
 }
 
 bool IsFood(ItemId _id) {
-	return Items::GetRegenerationAmount(_id) > 1;
+	return Items::GetRegenerationAmount(_id) > 0;
 }
 }; // namespace Items

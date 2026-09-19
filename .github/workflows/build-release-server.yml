@@ -12,10 +12,6 @@ on:
       release_name:
         description: "Release title (leave blank to reuse the tag)"
         required: false
-      release_notes:
-        description: "Release notes / changelog body (Markdown)"
-        required: true
-        type: string
       draft:
         description: "Create as a draft (review before publishing)"
         required: false
@@ -371,7 +367,6 @@ jobs:
         with:
           tag_name: ${{ inputs.tag_name }}
           name: ${{ inputs.release_name || inputs.tag_name }}
-          body: ${{ inputs.release_notes }}
           draft: ${{ inputs.draft }}
           prerelease: ${{ inputs.prerelease }}
           files: artifacts/**/*.zip

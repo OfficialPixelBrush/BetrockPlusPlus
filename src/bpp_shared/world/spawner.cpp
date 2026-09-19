@@ -20,41 +20,62 @@
 
 EntitySpawner::EntitySpawner() {
 	// Passive (need to make this biome dependent)
-	categories.push_back({
-	    .spawnList = {
-	        { []() { return std::make_shared<PigEntity>(); }, 10 },
-	        { []() { return std::make_shared<CowEntity>(); }, 8 },
-	        { []() { return std::make_shared<ChickenEntity>(); }, 10 },
-	        { []() { return std::make_shared<SheepEntity>(); }, 12 },
-	    },
-	    .cap = 15,
-	});
+	SpawnCategory passive;
+	passive.spawnListDefault = {
+		{ []() { return std::make_shared<PigEntity>(); }, 10 },
+		{ []() { return std::make_shared<CowEntity>(); }, 8 },
+		{ []() { return std::make_shared<ChickenEntity>(); }, 10 },
+		{ []() { return std::make_shared<SheepEntity>(); }, 12 },
+	};
+	passive.spawnListForest = {
+		{ []() { return std::make_shared<PigEntity>(); }, 10 },
+		{ []() { return std::make_shared<CowEntity>(); }, 8 },
+		{ []() { return std::make_shared<ChickenEntity>(); }, 10 },
+		{ []() { return std::make_shared<SheepEntity>(); }, 12 },
+		// TODO: add wolf
+	};
+	passive.cap = 15;
+	categories.push_back(passive);
 
 	// Hostile
-	categories.push_back({
-	    .spawnList = {
-	        { []() { return std::make_shared<ZombieEntity>(); }, 10 },
-			{ []() { return std::make_shared<CreeperEntity>(); }, 10 },
-			{ []() { return std::make_shared<SpiderEntity>(); }, 10 },
-			{ []() { return std::make_shared<SkeletonEntity>(); }, 10 },
-	    },
-	    .cap = 70,
-	});
+	SpawnCategory hostile;
+	hostile.spawnListDefault = {
+		{ []() { return std::make_shared<ZombieEntity>(); }, 10 },
+		{ []() { return std::make_shared<CreeperEntity>(); }, 10 },
+		{ []() { return std::make_shared<SpiderEntity>(); }, 10 },
+		{ []() { return std::make_shared<SkeletonEntity>(); }, 10 },
+	};
+	hostile.spawnListForest = {
+		{ []() { return std::make_shared<ZombieEntity>(); }, 10 },
+		{ []() { return std::make_shared<CreeperEntity>(); }, 10 },
+		{ []() { return std::make_shared<SpiderEntity>(); }, 10 },
+		{ []() { return std::make_shared<SkeletonEntity>(); }, 10 },
+	};
+	hostile.spawnListNether = {
+		// TODO: zombie pigmen and ghast
+	};
+	hostile.cap = 70;
+	categories.push_back(hostile);
 }
 
 // Picks one entry from the weighted list
-static const SpawnEntry& PickWeighted(Java::Random& _rand, SpawnCategory& _category) {
+static std::optional<SpawnEntry> PickWeighted(Java::Random& _rand, SpawnCategory& _category, Biome _biome) {
 	int total = 0;
-	for (auto& entry : _category.spawnList)
+	auto spawnList = _category.GetSpawnSpawnListForBiome(_biome);
+
+	if (spawnList.size() == 0)
+		return std::nullopt;
+
+	for (auto& entry : spawnList)
 		total += entry.weight;
 
 	int roll = _rand.NextInt(total);
-	for (auto& entry : _category.spawnList) {
+	for (auto& entry : spawnList) {
 		roll -= entry.weight;
 		if (roll < 0)
 			return entry;
 	}
-	return _category.spawnList.back(); // unreachable in practice
+	return std::nullopt;
 }
 
 static bool IsValidSpawnBlock(WorldManager& _world, Int3 _pos) {
@@ -64,9 +85,18 @@ static bool IsValidSpawnBlock(WorldManager& _world, Int3 _pos) {
 
 int EntitySpawner::GetCategoryCount(WorldManager& _world, SpawnCategory& _category) {
 	int count = 0;
-	for (auto& spawnType : _category.spawnList) {
-		count += _world.entityManager.CountEntitiesOfType(spawnType.factory()->type);
+	std::unordered_set<EntityType> types;
+	for (auto& spawnType : _category.GetSpawnSpawnListForBiome(BIOME_FOREST)) {
+		types.insert(spawnType.factory()->type);
 	}
+	for (auto& spawnType : _category.GetSpawnSpawnListForBiome(BIOME_HELL)) {
+		types.insert(spawnType.factory()->type);
+	}
+	for (auto& spawnType : _category.GetSpawnSpawnListForBiome(BIOME_NONE)) {
+		types.insert(spawnType.factory()->type);
+	}
+	for (auto& type : types)
+		count += _world.entityManager.CountEntitiesOfType(type);
 	return count;
 }
 
@@ -90,7 +120,11 @@ void EntitySpawner::TrySpawnEntities(WorldManager& _world, const std::vector<Cli
 			if (_world.IsBlockNormalCube(anchorPos) || _world.GetMaterial(anchorPos).isSolid)
 				continue; // Discard this chunk
 
-			const SpawnEntry& picked = PickWeighted(_world.rand, category);
+			auto biome = _world.GetBiome({cpos.x << 4, cpos.z << 4});
+			auto picked = PickWeighted(_world.rand, category, biome);
+
+			if (!picked.has_value())
+				continue;
 
 			int spawnedThisCluster = 0;
 			for (int group = 0; group < 3 && spawnedThisCluster < 4; group++) {
@@ -107,7 +141,7 @@ void EntitySpawner::TrySpawnEntities(WorldManager& _world, const std::vector<Cli
 					if (pos.Distance(_world.GetSpawnPoint(false)) < 24.0)
 						continue;
 
-					auto candidate = picked.factory();
+					auto candidate = picked.value().factory();
 					candidate->world = &_world;
 					candidate->entityManager = &_world.entityManager;
 

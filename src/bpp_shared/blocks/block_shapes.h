@@ -6,6 +6,7 @@
 */
 
 #include "aabb.h"
+#include "helpers/direction_fixer.h"
 #include <cstdint>
 
 namespace Blocks {
@@ -415,5 +416,31 @@ inline CollisionShape PistonHeadCollider(uint8_t _meta) {
 		break;
 	}
 	return s;
+}
+
+// wall sign
+inline AABB WallSignAabb(uint8_t _meta) {
+    const auto dir = GetDirectionFromMeta(BLOCK_SIGN_WALL, _meta);
+    constexpr double signBottom = 9.0 / 32.0;
+    constexpr double signTop = 25.0 / 32.0;
+    constexpr double wallOffset = 2.0 / 16.0;
+    switch (dir) {
+    case Direction::Value::North:
+        return {0.0, signBottom, 1.0 - wallOffset, 1.0, signTop, 1.0};
+    case Direction::Value::South:
+        return {0.0, signBottom, 0.0, 1.0, signTop, wallOffset};
+    case Direction::Value::West:
+        return {1.0 - wallOffset, signBottom, 0.0, 1.0, signTop, 1.0};
+    case Direction::Value::East:
+        return {0.0, signBottom, 0.0, wallOffset, signTop, 1.0};
+    default:
+        return {};
+    }
+
+}
+
+// standing sign
+inline AABB StandingSignAabb(uint8_t _meta) {
+	return {0.25F, 0.0F, 0.25F, 0.75F, 1.0F, 0.75F};
 }
 }; // namespace Blocks

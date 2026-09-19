@@ -124,6 +124,7 @@ void RegionManager::SaveChunk(const std::shared_ptr<Chunk> _chunk, bool _unloadE
 	snapshot->isTerrainPopulated = _chunk->isTerrainPopulated;
 	snapshot->isModified = _chunk->isModified;
 	snapshot->spawnChunk = _chunk->spawnChunk;
+	snapshot->refreshLighting = _chunk->refreshLighting;
 	snapshot->state.store(_chunk->state.load(std::memory_order_acquire));
 	snapshot->inUse.store(false);
 	std::memcpy(snapshot->blocks, _chunk->blocks, sizeof(_chunk->blocks));
@@ -142,7 +143,7 @@ void RegionManager::SaveChunk(const std::shared_ptr<Chunk> _chunk, bool _unloadE
 	SnapshotContainer container{ std::move(snapshot), std::move(entities) };
 
 	std::lock_guard lk(saveQueueMutex);
-	// Coalesce: keep at most one pending snapshot per chunk position.
+
 	for (auto& existing : saveQueue) {
 		if (existing.chunkSnapshot && existing.chunkSnapshot->cpos == container.chunkSnapshot->cpos) {
 			existing = std::move(container);
@@ -150,7 +151,6 @@ void RegionManager::SaveChunk(const std::shared_ptr<Chunk> _chunk, bool _unloadE
 		}
 	}
 	if (saveQueue.size() >= MAX_SAVE_QUEUE) {
-		// Under sustained IO backlog, drop the oldest snapshot to bound RAM.
 		saveQueue.erase(saveQueue.begin());
 	}
 	saveQueue.push_back(std::move(container));
