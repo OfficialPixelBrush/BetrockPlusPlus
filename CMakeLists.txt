@@ -242,6 +242,9 @@ set(SERVER_SOURCES
     src/bpp_server/commands/command.cpp
     src/bpp_server/commands/command_manager.cpp
 
+    src/bpp_server/addon/addon_manager.cpp
+    src/bpp_server/addon/addon_impl.cpp
+
     ${COMMAND_SOURCES}
 )
 
