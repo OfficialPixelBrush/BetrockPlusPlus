@@ -22,6 +22,7 @@ struct Runtime {
 	WorldManager worldHell;
 	RegionManager overworldRegionManager;
 	RegionManager hellRegionManager; // hehe i call it hell instead of nether cause im quirky
+	std::string currentLevelPath = "";
 
 	// Gameplay
 	RecipeManager recipeManager;
@@ -38,8 +39,27 @@ struct Runtime {
 		GlobalLogger().info << "New game runtime created!\n";
 	}
 
+	void SetViewDistance(int _renderDistance) {
+		world.SetViewRadius(_renderDistance);
+		worldHell.SetViewRadius(_renderDistance);
+		GlobalLogger().info << "Render distance set to " << _renderDistance << " chunks!\n";
+	}
+
+	void CloseCurrentWorld() {
+		if (currentLevelPath == "")
+			return;
+
+		world.Shutdown();
+		worldHell.Shutdown();
+		saveManager.Release();
+
+		world.regionManager = nullptr;
+		worldHell.regionManager = nullptr;
+	}
+
 	void Init(std::string _levelPath, std::string _seedOverride = "", int _renderDistance = 8) {
 		// Override our view distance
+		currentLevelPath = _levelPath;
 		world.SetViewRadius(_renderDistance);
 		worldHell.SetViewRadius(_renderDistance);
 		GlobalLogger().info << "Render distance set to " << _renderDistance << " chunks!\n";
