@@ -10,11 +10,11 @@
 #include "logger.h"
 
 void LogInfo(const char* _message) {
-	GlobalLogger().error << _message << "\n";
+	GlobalLogger().info << _message << "\n";
 }
 
 void LogWarning(const char* _message) {
-	GlobalLogger().error << _message << "\n";
+	GlobalLogger().warn << _message << "\n";
 }
 
 void LogError(const char* _message) {

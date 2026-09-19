@@ -201,7 +201,7 @@ void PlayerConnStateManager::FinishLogin(PlayerSession& _session, Server& _serve
 	_session.entity->dim = _session.dimension == Dimension::Nether ? Dimension::Nether : Dimension::Overworld;
 
 	auto addonMgr = _server.GetAddonManager();
-	for (Addon addon : addonMgr.GetAddons()) {
+	for (const Addon& addon : addonMgr.GetAddons()) {
 		if (addon.info.events.playerJoin) {
 			bp_player player{ _session };
 			bp_player_join_event event{ &player };
