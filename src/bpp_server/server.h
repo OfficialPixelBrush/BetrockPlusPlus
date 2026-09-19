@@ -7,6 +7,7 @@
 */
 #pragma once
 
+#include "addon/addon_manager.h"
 #include <atomic>
 extern std::atomic<bool> shutdownRequested;
 
@@ -144,6 +145,10 @@ public:
 		return players;
 	}
 
+	const AddonManager& GetAddonManager() noexcept {
+		return addonManager;
+	}
+
 	WorldManager* GetWorldForDimension(Dimension _dim) {
 		return _dim == Dimension::Nether ? &this->gameRuntime.worldHell : &this->gameRuntime.world;
 	}
@@ -275,6 +280,7 @@ private:
 	int64_t timeoutSeconds = 60;
 	uint16_t maximumPlayers = 20;
 	CommandManager commandManager;
+	AddonManager addonManager;
 	bool stopped = false;
 	Config config;
 	// Flushes session write buffers off the main tick thread
