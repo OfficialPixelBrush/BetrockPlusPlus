@@ -244,6 +244,16 @@ std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbOfType(
 	return typedEntities;
 }
 
+std::vector<std::shared_ptr<Entity>> EntityManager::GetLivingEntitiesWithinAabb(const AABB& _box) {
+	auto entities = GetEntitiesWithinAabb(_box);
+	std::vector<std::shared_ptr<Entity>> living;
+	for (auto& entity : entities) {
+		if (dynamic_cast<MobileEntity*>(entity.get()))
+			living.push_back(entity);
+	}
+	return living;
+}
+
 void EntityManager::CreateEntityFromNbt(Tag& _nbt) {
 	// Load an entity from the nbt list
 	std::string id = _nbt.compound["id"].GetString();

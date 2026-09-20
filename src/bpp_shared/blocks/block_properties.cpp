@@ -880,6 +880,7 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
+		.ticksOnLoad = true
 	};
 
 	// Iron Door
@@ -902,6 +903,7 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
+		.ticksOnLoad = true
 	};
 
 	// Redstone Ore
@@ -953,6 +955,7 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
+		.ticksOnLoad = true
 	};
 
 	// Snow (layer)

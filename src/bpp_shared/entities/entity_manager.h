@@ -123,4 +123,6 @@ public:
 
 		return closestPlayer;
 	}
+
+	std::vector<std::shared_ptr<Entity>> GetLivingEntitiesWithinAabb(const AABB& _box);
 };

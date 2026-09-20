@@ -121,14 +121,21 @@ PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _p
 		return { true, true };
 	}
 
+	// Is a powered pressure plate above us?
+	auto above = _world.GetBlockId(_pos.WithOffset(Direction::Value::Up));
+	auto aboveMeta = _world.GetMetadata(_pos.WithOffset(Direction::Value::Up));
+	if (above == BLOCK_PRESSURE_PLATE_STONE || above == BLOCK_PRESSURE_PLATE_WOOD) {
+		if (aboveMeta == 1)
+			return { true, true };
+	}
+
 	// Check below us
 	if (_world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z }) == BLOCK_REDSTONE_TORCH_ON) {
 		return { true, true };
 	}
 
 	// Check above us
-	if (_world.GetBlockId({ _pos.x, _pos.y + 1, _pos.z }) == BLOCK_REDSTONE &&
-	    _world.GetMetadata({ _pos.x, _pos.y + 1, _pos.z }) > 0) {
+	if (above == BLOCK_REDSTONE && aboveMeta > 0) {
 		softPowered = true;
 	}
 
@@ -216,13 +223,15 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 
 		for (int dy = _pos.y - 1; dy <= _pos.y + 1; dy++) {
 			Int3 dPos = { dx, dy, dz };
+			auto checkId = _world.GetBlockId(dPos);
+			auto checkMeta = _world.GetMetadata(dPos);
 			// We only care if we are being hard powered from the same Y level
 			if (dy == _pos.y && RedstoneManager::GetBlockPowerProfile(_world, dPos).hardPowered)
 				return 15;
 
 			// A torch sitting directly beside us
-			if (dy == _pos.y && _world.GetBlockId(dPos) == BLOCK_REDSTONE_TORCH_ON) {
-				auto torchMeta = _world.GetMetadata(dPos);
+			if (dy == _pos.y && checkId == BLOCK_REDSTONE_TORCH_ON) {
+				auto torchMeta = checkMeta;
 				auto torchProfile = RedstoneManager::GetComponentProfile(BLOCK_REDSTONE_TORCH_ON, torchMeta);
 
 				// Direction FROM the torch TOWARD us
@@ -241,8 +250,8 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 			}
 
 			// A repeater sitting directly beside us
-			if (dy == _pos.y && _world.GetBlockId(dPos) == BLOCK_REDSTONE_REPEATER_ON) {
-				auto repeaterMeta = _world.GetMetadata(dPos);
+			if (dy == _pos.y && checkId == BLOCK_REDSTONE_REPEATER_ON) {
+				auto repeaterMeta = checkMeta;
 				auto repeaterProfile = RedstoneManager::GetComponentProfile(BLOCK_REDSTONE_REPEATER_ON, repeaterMeta);
 
 				// Direction FROM the repeater TOWARD us
@@ -260,9 +269,9 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 					return 15;
 			}
 
-			// A lever or button sitting directly beside us
-			if (dy == _pos.y &&
-			    (_world.GetBlockId(dPos) == BLOCK_LEVER || _world.GetBlockId(dPos) == BLOCK_BUTTON_STONE)) {
+			// A lever or button or pressure plate sitting directly beside us
+			if (dy == _pos.y && (checkId == BLOCK_LEVER || checkId == BLOCK_BUTTON_STONE ||
+			                     checkId == BLOCK_PRESSURE_PLATE_STONE || checkId == BLOCK_PRESSURE_PLATE_WOOD)) {
 				auto neighborBlock = _world.GetBlockId(dPos);
 				auto neighborMeta = _world.GetMetadata(dPos);
 				auto neighborProfile = RedstoneManager::GetComponentProfile(neighborBlock, neighborMeta);
@@ -323,7 +332,7 @@ bool RedstoneManager::IsPositionPowered(WorldManager& _world, Int3 _pos) {
 			return true;
 
 		if (neighborBlock == BLOCK_REDSTONE_TORCH_ON || neighborBlock == BLOCK_REDSTONE_REPEATER_ON ||
-		    neighborBlock == BLOCK_LEVER || neighborBlock == BLOCK_BUTTON_STONE) {
+		    neighborBlock == BLOCK_LEVER || neighborBlock == BLOCK_BUTTON_STONE || neighborBlock == BLOCK_PRESSURE_PLATE_STONE || neighborBlock == BLOCK_PRESSURE_PLATE_WOOD) {
 			auto neighborProfile = RedstoneManager::GetComponentProfile(neighborBlock, _world.GetMetadata(dPos));
 
 			// Direction FROM the neighbor TOWARD us

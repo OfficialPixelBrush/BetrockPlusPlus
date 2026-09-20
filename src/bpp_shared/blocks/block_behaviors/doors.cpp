@@ -42,23 +42,22 @@ static void ToggleTrapdoor(WorldManager& _world, Int3 _pos, PlayerSession* _trig
 static void ToggleDoor(WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) {
 	auto meta = _world.GetMetadata(_pos);
 	if (meta & 8) {
-		// We are the top half of the door
 		if (_world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z }) != BLOCK_DOOR_WOOD)
-			// Below us is not the bottom of a door! This is bad!
 			return;
-		// Recall this function on the bottom of the door
 		blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated(_world, { _pos.x, _pos.y - 1, _pos.z }, _triggeringSession);
 		return;
 	}
-	// We are the top half so lets open
+
 	Int3 top = { _pos.x, _pos.y + 1, _pos.z };
-	if (_world.GetBlockId(top) == BLOCK_DOOR_WOOD && (_world.GetMetadata(top) & 8)) {
-		_world.SetMeta(top, uint8_t((meta ^ 0b100) + 8));
-	}
-	_world.SetMeta(_pos, uint8_t(meta ^ 0b100)); // XOR bit 2; flips open/closed
+	uint8_t newBottomMeta = uint8_t(meta ^ 0b100);
+
+	_world.SetMeta(_pos, newBottomMeta);                                  
+	                                     
+	if (_world.GetBlockId(top) == BLOCK_DOOR_WOOD && (_world.GetMetadata(top) & 8))
+		_world.SetMeta(top, uint8_t(newBottomMeta + 8));
+
 	if (_world.onWorldEvent)
 		_world.onWorldEvent(PacketData::WorldEvent::DOOR_TOGGLE, _pos, 0, _triggeringSession);
-	return;
 }
 
 static void BreakDoor(WorldManager& _world, Int3 _pos, BlockType _doorType) {
@@ -83,16 +82,28 @@ static void BreakDoor(WorldManager& _world, Int3 _pos, BlockType _doorType) {
 	BreakAndDropBlock(_world, _pos);
 }
 
-static void NeighborUpdateDoor(WorldManager& _world, Int3 _pos, BlockType /*_blockId*/) {
-	// Clear top-most bit
-	/*
-	// TODO: Segfaults here
-	const bool isOpen = (_world.GetMetadata(_pos) >> 2) & 1;
-	const bool powered = RedstoneManager::IsPositionPowered(_world, _pos);
+static void NeighborUpdateDoor(WorldManager& _world, Int3 _pos, BlockType _blockId) {
+	if (!RedstoneManager::CanProvidePower(_blockId))
+		return;
+
+	const uint8_t meta = _world.GetMetadata(_pos);
+	if (meta & 8) {
+		// Top half
+		Int3 below = _pos.WithOffset(Direction::Value::Down);
+		if (_world.GetBlockId(below) != _world.GetBlockId(_pos))
+			return; // bottom half missing, nothing to do
+		NeighborUpdateDoor(_world, below, _blockId);
+		return;
+	}
+
+	// Only check power for the bottom
+	Int3 above = _pos.WithOffset(Direction::Value::Up);
+	const bool isOpen = (meta >> 2) & 1;
+	const bool powered = RedstoneManager::IsPositionPowered(_world, _pos) ||
+	                     RedstoneManager::IsPositionPowered(_world, above);
 	if (powered != isOpen)
 		ToggleDoor(_world, _pos, nullptr);
-	*/
-};
+}
 
 void RegisterDoorBehaviors() {
 	blockBehaviors[BlockType::BLOCK_DOOR_WOOD] = {
@@ -110,11 +121,12 @@ void RegisterDoorBehaviors() {
 		.getSelectionBox = TrapdoorAabb,
 		.getRayBounds = TrapdoorAabb,
 		.getCollider = TrapdoorCollider,
+		.onBlockClicked = ToggleTrapdoor,
 		.onBlockActivated = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> bool {
 		    ToggleTrapdoor(_world, _pos, _triggeringSession);
 		    return false;
 		},
-		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Direction::Value _face,
+		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
 		                    BlockType _blockId, uint8_t /*_meta*/) -> bool {
 		    // Doors can only be placed against the sides of blocks
 		    if (_face == Direction::Value::Up || _face == Direction::Value::Down)
@@ -123,9 +135,9 @@ void RegisterDoorBehaviors() {
 		    if (!IsReplaceable(_world, _pos))
 			    return false;
 
-		    _world.SetBlock(_pos, _blockId, GetMetaFromDirection(BLOCK_TRAPDOOR, Direction::Opposite(_face)));
-		    return true;
-		}
+		    return GenericPlace(_world, _pos, _placer, _face, BLOCK_TRAPDOOR,
+		                        GetMetaFromDirection(BLOCK_TRAPDOOR, Direction::Opposite(_face)));
+		},
 	};
 
 	auto onDoorPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
@@ -179,7 +191,6 @@ void RegisterDoorBehaviors() {
 		_world.SetBlock(placePos, _blockId, meta);
 		_world.SetBlock(abovePos, _blockId, uint8_t(meta | 8));
 
-		// heldItem->DecrementCount(1) is handled by the caller when this returns true.
 		return true;
 	};
 
@@ -210,13 +221,29 @@ void RegisterDoorBehaviors() {
 	blockBehaviors[BLOCK_DOOR_WOOD].onNeighborBlockChange = NeighborUpdateDoor;
 	blockBehaviors[BLOCK_DOOR_IRON].onNeighborBlockChange = NeighborUpdateDoor;
 
-	blockBehaviors[BLOCK_TRAPDOOR].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType /*_blockId*/) -> void {
+	blockBehaviors[BLOCK_TRAPDOOR].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
+		// Pop off if we aren't supported
+		auto meta = _world.GetMetadata(_pos);
+		auto direction = GetDirectionFromMeta(BLOCK_TRAPDOOR, meta);
+		auto supportPos = _pos.WithOffset(Direction::Opposite(direction));
+
+		if (!_world.IsBlockNormalCube(supportPos)) {
+			BreakAndDropBlock(_world, _pos);
+			return;
+		}
+		
+		// Check to see if the updater is from a redstone component
+		if (!RedstoneManager::CanProvidePower(_blockId))
+			return;
+
 		// Clear top-most bit
-		const bool isOpen = (_world.GetMetadata(_pos) >> 2) & 1;
+		const bool isOpen = (meta >> 2) & 1;
 		const bool powered = RedstoneManager::IsPositionPowered(_world, _pos);
 		if (powered != isOpen)
 			ToggleTrapdoor(_world, _pos, nullptr);
 	};
+
+	blockBehaviors[BLOCK_TRAPDOOR].onBlockClicked = ToggleTrapdoor;
 }
 
 }; // namespace Blocks
