@@ -54,6 +54,45 @@ static void NotifyAttachedSupportBlock(WorldManager& _world, Int3 _pos, BlockTyp
 	}
 }
 
+static void SetPressurePlateState(WorldManager& _world, Int3 _pos, BlockType _type) {
+	bool powered = _world.GetMetadata(_pos) == 1;
+	double horizontalInset = 0.125;
+	double veritcalInset = 0.25;
+
+	AABB detectionBox = { _pos.x + horizontalInset, _pos.y,
+		                  _pos.z + horizontalInset, (_pos.x + 1) - horizontalInset,
+		                  _pos.y + veritcalInset,   (_pos.z + 1) - horizontalInset };
+	
+	// Collect entities
+	std::vector<std::shared_ptr<Entity>> entities;
+
+	// Wooden pressure plates grab everything
+	if (_type == BLOCK_PRESSURE_PLATE_WOOD)
+		entities = _world.entityManager.GetEntitiesWithinAabb(detectionBox);
+
+	// Stone pressure plates only grab living entities
+	if (_type == BLOCK_PRESSURE_PLATE_STONE)
+		entities = _world.entityManager.GetLivingEntitiesWithinAabb(detectionBox);
+
+	bool triggered = entities.size() > 0;
+
+	if (triggered && !powered) {
+		_world.SetMeta(_pos, 1);
+		_world.NotifyNeighborsOfUpdate(_pos, _type);
+		_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Direction::Value::Down), _type);
+	}
+
+	if (!triggered && powered) {
+		_world.SetMeta(_pos, 0);
+		_world.NotifyNeighborsOfUpdate(_pos, _type);
+		_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Direction::Value::Down), _type);
+	}
+
+	if (triggered) {
+		_world.tickScheduler.ScheduleUpdateTick(_pos, _type, 20);
+	}
+}
+
 void RegisterRedstoneBehaviors() {
 	// Redstone dust
 	blockBehaviors[BlockType::BLOCK_REDSTONE] = {
@@ -85,17 +124,14 @@ void RegisterRedstoneBehaviors() {
 		.getRayBounds = ButtonAabb,
 		.getCollider = EmptyCollider,
 		.onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& /*_random*/) -> void {
-		    // Check to make sure we can till exist here
-		    if (!IsSupported(_world, _pos, GetDirectionFromMeta(BLOCK_BUTTON_STONE, _meta)))
-			    BreakAndDropBlock(_world, _pos);
-		    // Unpress again
 		    if (_meta & 0b1000) {
 			    _world.SetMeta(_pos, _meta & 0b111);
 			    NotifyAttachedSupportBlock(_world, _pos, BLOCK_BUTTON_STONE, _meta);
 		    }
 		},
 		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType /*_blockId*/) -> void {
-		    blockBehaviors[BLOCK_BUTTON_STONE].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+		    if (!IsSupported(_world, _pos, GetDirectionFromMeta(BLOCK_BUTTON_STONE, _world.GetMetadata(_pos))))
+			    BreakAndDropBlock(_world, _pos);
 		},
 		.onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> void {
 		    auto newMeta = _world.GetMetadata(_pos) | 0b1000;
@@ -460,6 +496,14 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	// Wooden Pressure Plate
+	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		auto meta = _world.GetMetadata(_pos);
+		if (meta > 0) {
+			_world.NotifyNeighborsOfUpdate(_pos, BLOCK_PRESSURE_PLATE_WOOD);
+			_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Direction::Value::Down), BLOCK_PRESSURE_PLATE_WOOD);
+		}
+	};
+
 	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                                               Direction::Value _face, BlockType _blockId,
 	                                                               uint8_t _meta) -> bool {
@@ -478,14 +522,54 @@ void RegisterRedstoneBehaviors() {
 
 	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                                       Java::Random& /*_random*/) -> void {
-		_world.SetMeta(_pos, _meta & ~1);
+		auto meta = _world.GetMetadata(_pos);
+		if (meta != 0)
+			SetPressurePlateState(_world, _pos, BLOCK_PRESSURE_PLATE_WOOD);
 	};
 
 	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos, Entity& /*_entity*/) -> void {
-		const uint8_t meta = _world.GetMetadata(_pos);
-		_world.SetMeta(_pos, meta | 1);
-		// TODO: Only do this if the entity has stepped off?
-		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_PRESSURE_PLATE_WOOD, 20);
+		auto meta = _world.GetMetadata(_pos);
+		if (meta != 1)
+			SetPressurePlateState(_world, _pos, BLOCK_PRESSURE_PLATE_WOOD);
+	};
+
+	// Stone Pressure Plate
+	blockBehaviors[BLOCK_PRESSURE_PLATE_STONE].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		auto meta = _world.GetMetadata(_pos);
+		if (meta > 0) {
+			_world.NotifyNeighborsOfUpdate(_pos, BLOCK_PRESSURE_PLATE_STONE);
+			_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Direction::Value::Down), BLOCK_PRESSURE_PLATE_STONE);
+		}
+	};
+
+	blockBehaviors[BLOCK_PRESSURE_PLATE_STONE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                                             Direction::Value _face, BlockType _blockId,
+	                                                             uint8_t _meta) -> bool {
+		if (!CanRedstoneComponentStay(_world, _pos) || !GenericPlace(_world, _pos, _placer, _face, _blockId, _meta))
+			return false;
+		return true;
+	};
+
+	blockBehaviors[BLOCK_PRESSURE_PLATE_STONE].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                                     BlockType /*_blockId*/) -> void {
+		if (!CanRedstoneComponentStay(_world, _pos)) {
+			BreakAndDropBlock(_world, _pos);
+			return;
+		}
+	};
+
+	blockBehaviors[BLOCK_PRESSURE_PLATE_STONE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                                      Java::Random& /*_random*/) -> void {
+		auto meta = _world.GetMetadata(_pos);
+		if (meta != 0)
+			SetPressurePlateState(_world, _pos, BLOCK_PRESSURE_PLATE_STONE);
+	};
+
+	blockBehaviors[BLOCK_PRESSURE_PLATE_STONE].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos,
+	                                                                         Entity& /*_entity*/) -> void {
+		auto meta = _world.GetMetadata(_pos);
+		if (meta != 1)
+			SetPressurePlateState(_world, _pos, BLOCK_PRESSURE_PLATE_STONE);
 	};
 }
 

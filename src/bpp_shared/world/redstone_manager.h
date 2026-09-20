@@ -98,6 +98,13 @@ inline ComponentProfile GetComponentProfile(BlockType _blockId, uint8_t _meta) {
 	case BLOCK_REDSTONE_TORCH_OFF: {
 		return {};
 	}
+	case BLOCK_PRESSURE_PLATE_STONE:
+	case BLOCK_PRESSURE_PLATE_WOOD: {
+		if (_meta == 1) {
+			return ComponentProfile{ true, true, true, true, false };
+		}
+		return {};
+	}
 	case BLOCK_REDSTONE_REPEATER_ON: {
 		switch (GetDirectionFromMeta(BLOCK_REDSTONE_REPEATER_ON, _meta)) {
 		case Direction::Value::North:
