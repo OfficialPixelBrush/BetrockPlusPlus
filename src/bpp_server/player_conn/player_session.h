@@ -17,6 +17,7 @@
 #include "networking/network_stream.h"
 #include "world/client_pos.h"
 #include "world/world.h"
+#include "addon/addon_impl.h"
 #include <chrono>
 #include <cstdint>
 #include <future>
@@ -41,6 +42,7 @@ struct PendingBlockBreak {
 };
 
 struct PlayerSession {
+	bp_player apiPlayer;
 	NetworkStream stream;
 	ClientPosition position;
 
@@ -109,7 +111,7 @@ struct PlayerSession {
 	Dimension dimension = Dimension::Overworld; // 0 = overworld, -1 = nether
 
 	explicit PlayerSession(int _socket, Runtime& _gameRuntime)
-	    : stream(_socket), inventoryInteraction(&inventory, _gameRuntime) {}
+	    : apiPlayer(this), stream(_socket), inventoryInteraction(&inventory, _gameRuntime) {}
 	~PlayerSession() {
 		// So our player entity despawns from the world
 		if (entity) {
