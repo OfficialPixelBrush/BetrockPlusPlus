@@ -225,7 +225,7 @@ void RegisterDoorBehaviors() {
 		// Pop off if we aren't supported
 		auto meta = _world.GetMetadata(_pos);
 		auto direction = GetDirectionFromMeta(BLOCK_TRAPDOOR, meta);
-		auto supportPos = _pos.WithOffset(Direction::Opposite(direction));
+		auto supportPos = _pos.WithOffset(direction);
 
 		if (!_world.IsBlockNormalCube(supportPos)) {
 			BreakAndDropBlock(_world, _pos);

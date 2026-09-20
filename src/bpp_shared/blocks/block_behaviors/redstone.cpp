@@ -237,6 +237,8 @@ void RegisterRedstoneBehaviors() {
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                                    Java::Random& /*_random*/) -> void {
+		RedstoneManager::PruneTorchUpdates(_world);
+
 		const auto dir = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _meta);
 		if (!CanTorchAttachTo(_world, _pos, dir)) {
 			BreakAndDropBlock(_world, _pos);
@@ -244,10 +246,9 @@ void RegisterRedstoneBehaviors() {
 		}
 
 		Int3 supportPos = _pos.WithOffset(Direction::Opposite(dir));
-
-		// turn OFF the instant the block it's mounted on is powered
 		if (RedstoneManager::GetBlockPowerProfile(_world, supportPos).powered) {
 			_world.SetBlock(_pos, BLOCK_REDSTONE_TORCH_OFF, _meta);
+			RedstoneManager::CheckTorchBurnout(_world, _pos, /*_logUpdate=*/true);
 		}
 	};
 
@@ -283,6 +284,8 @@ void RegisterRedstoneBehaviors() {
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_OFF].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                                     Java::Random& /*_random*/) -> void {
+		RedstoneManager::PruneTorchUpdates(_world);
+
 		const auto dir = GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_OFF, _meta);
 		if (!CanTorchAttachTo(_world, _pos, dir)) {
 			BreakAndDropBlock(_world, _pos);
@@ -290,9 +293,8 @@ void RegisterRedstoneBehaviors() {
 		}
 
 		Int3 supportPos = _pos.WithOffset(Direction::Opposite(dir));
-
-		// An unlit torch turns back ON the instant the block it's mounted on is no longer powered
-		if (!RedstoneManager::GetBlockPowerProfile(_world, supportPos).powered) {
+		if (!RedstoneManager::GetBlockPowerProfile(_world, supportPos).powered &&
+		    !RedstoneManager::CheckTorchBurnout(_world, _pos, /*_logUpdate=*/false)) {
 			_world.SetBlock(_pos, BLOCK_REDSTONE_TORCH_ON, _meta);
 		}
 	};

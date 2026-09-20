@@ -9,7 +9,29 @@
 #include "helpers/direction_fixer.h"
 #include "logger/logger.h"
 #include "world.h"
+#include <deque>
 #include <unordered_set>
+
+static std::deque<RedstoneUpdateInfo> torchUpdates;
+
+void RedstoneManager::PruneTorchUpdates(WorldManager& _world) {
+	while (!torchUpdates.empty() && _world.elapsedTicks - torchUpdates.front().updateTime > 100)
+		torchUpdates.pop_front();
+}
+
+bool RedstoneManager::CheckTorchBurnout(WorldManager& _world, Int3 _pos, bool _logUpdate) {
+	if (_logUpdate)
+		torchUpdates.push_back({ _pos.x, _pos.y, _pos.z, _world.elapsedTicks });
+
+	int count = 0;
+	for (auto& entry : torchUpdates) {
+		if (entry.x == _pos.x && entry.y == _pos.y && entry.z == _pos.z) {
+			if (++count >= 8)
+				return true;
+		}
+	}
+	return false;
+}
 
 static bool IsPoweredByAttachedLeverOrButton(WorldManager& _world, Int3 _pos) {
 	static constexpr Direction::Value ALL_DIRS[6] = {
