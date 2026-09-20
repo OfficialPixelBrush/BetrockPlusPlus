@@ -458,6 +458,35 @@ void RegisterRedstoneBehaviors() {
 	                                                                 PlayerSession* _triggeringSession) -> bool {
 		return blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockActivated(_world, _pos, _triggeringSession);
 	};
+
+	// Wooden Pressure Plate
+	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
+	                                                               Direction::Value _face, BlockType _blockId,
+	                                                               uint8_t _meta) -> bool {
+		if (!CanRedstoneComponentStay(_world, _pos) || !GenericPlace(_world, _pos, _placer, _face, _blockId, _meta))
+			return false;
+		return true;
+	};
+
+	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                                       BlockType /*_blockId*/) -> void {
+		if (!CanRedstoneComponentStay(_world, _pos)) {
+			BreakAndDropBlock(_world, _pos);
+			return;
+		}
+	};
+
+	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                                       Java::Random& /*_random*/) -> void {
+		_world.SetMeta(_pos, _meta & ~1);
+	};
+
+	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos, Entity& /*_entity*/) -> void {
+		const uint8_t meta = _world.GetMetadata(_pos);
+		_world.SetMeta(_pos, meta | 1);
+		// TODO: Only do this if the entity has stepped off?
+		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_PRESSURE_PLATE_WOOD, 20);
+	};
 }
 
 }; // namespace Blocks
