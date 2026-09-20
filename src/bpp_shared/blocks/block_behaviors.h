@@ -90,7 +90,7 @@ struct BlockBehavior {
 	ItemDamage (*damageDropped)(uint8_t _meta) = nullptr;
 
 	// How many items drop
-	ItemAmount (*quantityDropped)(Java::Random& _random) = nullptr;
+	ItemAmount (*quantityDropped)(uint8_t _meta, Java::Random& _random) = nullptr;
 };
 
 void RegisterBlockBehaviors();

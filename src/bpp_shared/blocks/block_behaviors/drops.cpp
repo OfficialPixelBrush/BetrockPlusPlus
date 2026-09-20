@@ -98,46 +98,46 @@ void RegisterBlockDrops() {
 	};
 
 	// --------------- don't drop anything ---------------
-	blockBehaviors[BLOCK_ICE].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_ICE].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_GLASS].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_GLASS].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_BOOKSHELF].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_BOOKSHELF].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_CAKE].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_CAKE].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_MOB_SPAWNER].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_MOB_SPAWNER].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_FIRE].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_FIRE].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_PISTON_HEAD].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_PISTON_HEAD].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_PISTON_MOVING].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_PISTON_MOVING].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_NETHER_PORTAL].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_NETHER_PORTAL].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_SNOW_LAYER].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_SNOW_LAYER].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_WATER_FLOWING].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_WATER_FLOWING].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_WATER_STILL].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_WATER_STILL].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_LAVA_FLOWING].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_LAVA_FLOWING].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 0;
 	};
-	blockBehaviors[BLOCK_LAVA_STILL].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_LAVA_STILL].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 0;
 	};
 
@@ -152,27 +152,27 @@ void RegisterBlockDrops() {
 	blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].damageDropped = [](uint8_t) -> ItemDamage {
 		return 4;
 	};
-	blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].quantityDropped = [](Java::Random& _rng) -> ItemAmount {
+	blockBehaviors[BLOCK_ORE_LAPIS_LAZULI].quantityDropped = [](uint8_t, Java::Random& _rng) -> ItemAmount {
 		return 4 + _rng.NextInt(5);
 	};
 
 	blockBehaviors[BLOCK_ORE_REDSTONE_OFF].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::REDSTONE;
 	};
-	blockBehaviors[BLOCK_ORE_REDSTONE_OFF].quantityDropped = [](Java::Random& _rng) -> ItemAmount {
+	blockBehaviors[BLOCK_ORE_REDSTONE_OFF].quantityDropped = [](uint8_t, Java::Random& _rng) -> ItemAmount {
 		return 4 + _rng.NextInt(2);
 	};
 	blockBehaviors[BLOCK_ORE_REDSTONE_ON].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::REDSTONE;
 	};
-	blockBehaviors[BLOCK_ORE_REDSTONE_ON].quantityDropped = [](Java::Random& _rng) -> ItemAmount {
+	blockBehaviors[BLOCK_ORE_REDSTONE_ON].quantityDropped = [](uint8_t, Java::Random& _rng) -> ItemAmount {
 		return 4 + _rng.NextInt(2);
 	};
 
 	blockBehaviors[BLOCK_GLOWSTONE].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::GLOWSTONE_DUST;
 	};
-	blockBehaviors[BLOCK_GLOWSTONE].quantityDropped = [](Java::Random& _rng) -> ItemAmount {
+	blockBehaviors[BLOCK_GLOWSTONE].quantityDropped = [](uint8_t, Java::Random& _rng) -> ItemAmount {
 		return 2 + _rng.NextInt(3);
 	};
 	blockBehaviors[BLOCK_LEAVES].idDropped = [](uint8_t, Java::Random&) -> ItemId {
@@ -181,7 +181,7 @@ void RegisterBlockDrops() {
 	blockBehaviors[BLOCK_LEAVES].damageDropped = [](uint8_t _meta) -> ItemDamage {
 		return _meta & 3;
 	};
-	blockBehaviors[BLOCK_LEAVES].quantityDropped = [](Java::Random& _rng) -> ItemAmount {
+	blockBehaviors[BLOCK_LEAVES].quantityDropped = [](uint8_t, Java::Random& _rng) -> ItemAmount {
 		return _rng.NextInt(20) == 0 ? 1 : 0;
 	};
 
@@ -206,7 +206,7 @@ void RegisterBlockDrops() {
 	blockBehaviors[BLOCK_CLAY].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::CLAY;
 	};
-	blockBehaviors[BLOCK_CLAY].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_CLAY].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 4;
 	};
 
@@ -214,20 +214,23 @@ void RegisterBlockDrops() {
 		return _meta;
 	};
 
-	blockBehaviors[BLOCK_DOUBLE_SLAB].idDropped = [](uint8_t, Java::Random&) -> ItemId {
+	blockBehaviors[BLOCK_DOUBLE_SLAB].idDropped = [](uint8_t _meta, Java::Random&) -> ItemId {
+		if (_meta == 4)
+			return BLOCK_DOUBLE_SLAB;
+
 		return BLOCK_SLAB;
 	};
 	blockBehaviors[BLOCK_DOUBLE_SLAB].damageDropped = [](uint8_t _meta) -> ItemDamage {
 		return _meta;
 	};
-	blockBehaviors[BLOCK_DOUBLE_SLAB].quantityDropped = [](Java::Random&) -> ItemAmount {
-		return 2;
+	blockBehaviors[BLOCK_DOUBLE_SLAB].quantityDropped = [](uint8_t _meta, Java::Random&) -> ItemAmount {
+		return _meta == 4 ? 1 : 2;
 	};
 
 	blockBehaviors[BLOCK_SNOW].idDropped = [](uint8_t, Java::Random&) -> ItemId {
 		return Items::Id::SNOWBALL;
 	};
-	blockBehaviors[BLOCK_SNOW].quantityDropped = [](Java::Random&) -> ItemAmount {
+	blockBehaviors[BLOCK_SNOW].quantityDropped = [](uint8_t, Java::Random&) -> ItemAmount {
 		return 4;
 	};
 }
@@ -255,7 +258,7 @@ std::vector<ItemStack> GetBlockDrops(BlockType _blockId, uint8_t _meta, Java::Ra
 	}
 
 	const BlockBehavior& behavior = blockBehaviors[static_cast<uint8_t>(_blockId)];
-	int count = behavior.quantityDropped ? behavior.quantityDropped(_rng) : 1;
+	int count = behavior.quantityDropped ? behavior.quantityDropped(_meta, _rng) : 1;
 	int16_t damage = behavior.damageDropped ? behavior.damageDropped(_meta) : 0;
 
 	for (int i = 0; i < count; i++) {
