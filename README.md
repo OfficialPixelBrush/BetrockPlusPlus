@@ -47,7 +47,7 @@ The server can be run on lesser hardware, though the experience may not be ideal
 - Barak Shoshany. Licensed under the MIT license. BS::thread_pool. https://github.com/bshoshany/thread-pool
 - Keith Potz. Licensed under the MIT license. CrashCatch. https://github.com/keithpotz/CrashCatch
 - Dugy. Licensed under the MIT license. quick_arg_parser. https://github.com/Dugy/quick_arg_parser
-- Andre Weissflog. Licensed under the Zlib license. quick_arg_parser. https://github.com/floooh/sokol
+- Andre Weissflog. Licensed under the zlib license. sokol. https://github.com/floooh/sokol
 
 ## Star History
 
