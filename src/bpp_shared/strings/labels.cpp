@@ -223,11 +223,11 @@ const std::string IdToLabel(const int16_t _id) {
 		if ((_id >= Items::SHOVEL_IRON) && (_id < Items::MAX)) {
 			return ITEM_LABELS[size_t(_id - Items::SHOVEL_IRON)];
 		}
-		switch(_id) {
-			case Items::RECORD_13:
-				return "Record (13)";
-			case Items::RECORD_CAT:
-				return "Record (cat)";
+		switch (_id) {
+		case Items::RECORD_13:
+			return "Record (13)";
+		case Items::RECORD_CAT:
+			return "Record (cat)";
 		}
 	}
 	return "Invalid";

@@ -59,10 +59,9 @@ static void SetPressurePlateState(WorldManager& _world, Int3 _pos, BlockType _ty
 	double horizontalInset = 0.125;
 	double veritcalInset = 0.25;
 
-	AABB detectionBox = { _pos.x + horizontalInset, _pos.y,
-		                  _pos.z + horizontalInset, (_pos.x + 1) - horizontalInset,
-		                  _pos.y + veritcalInset,   (_pos.z + 1) - horizontalInset };
-	
+	AABB detectionBox = { _pos.x + horizontalInset,       static_cast<double>(_pos.y), _pos.z + horizontalInset,
+		                  (_pos.x + 1) - horizontalInset, _pos.y + veritcalInset,      (_pos.z + 1) - horizontalInset };
+
 	// Collect entities
 	std::vector<std::shared_ptr<Entity>> entities;
 
@@ -507,15 +506,15 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                               Direction::Value _face, BlockType _blockId,
-	                                                               uint8_t _meta) -> bool {
+	                                                             Direction::Value _face, BlockType _blockId,
+	                                                             uint8_t _meta) -> bool {
 		if (!CanRedstoneComponentStay(_world, _pos) || !GenericPlace(_world, _pos, _placer, _face, _blockId, _meta))
 			return false;
 		return true;
 	};
 
 	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                                       BlockType /*_blockId*/) -> void {
+	                                                                     BlockType /*_blockId*/) -> void {
 		if (!CanRedstoneComponentStay(_world, _pos)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
@@ -523,13 +522,14 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                                       Java::Random& /*_random*/) -> void {
+	                                                      Java::Random& /*_random*/) -> void {
 		auto meta = _world.GetMetadata(_pos);
 		if (meta != 0)
 			SetPressurePlateState(_world, _pos, BLOCK_PRESSURE_PLATE_WOOD);
 	};
 
-	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos, Entity& /*_entity*/) -> void {
+	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos,
+	                                                                         Entity& /*_entity*/) -> void {
 		auto meta = _world.GetMetadata(_pos);
 		if (meta != 1)
 			SetPressurePlateState(_world, _pos, BLOCK_PRESSURE_PLATE_WOOD);
@@ -545,15 +545,15 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_PRESSURE_PLATE_STONE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                             Direction::Value _face, BlockType _blockId,
-	                                                             uint8_t _meta) -> bool {
+	                                                              Direction::Value _face, BlockType _blockId,
+	                                                              uint8_t _meta) -> bool {
 		if (!CanRedstoneComponentStay(_world, _pos) || !GenericPlace(_world, _pos, _placer, _face, _blockId, _meta))
 			return false;
 		return true;
 	};
 
 	blockBehaviors[BLOCK_PRESSURE_PLATE_STONE].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                                     BlockType /*_blockId*/) -> void {
+	                                                                      BlockType /*_blockId*/) -> void {
 		if (!CanRedstoneComponentStay(_world, _pos)) {
 			BreakAndDropBlock(_world, _pos);
 			return;
@@ -561,14 +561,14 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_PRESSURE_PLATE_STONE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                                      Java::Random& /*_random*/) -> void {
+	                                                       Java::Random& /*_random*/) -> void {
 		auto meta = _world.GetMetadata(_pos);
 		if (meta != 0)
 			SetPressurePlateState(_world, _pos, BLOCK_PRESSURE_PLATE_STONE);
 	};
 
 	blockBehaviors[BLOCK_PRESSURE_PLATE_STONE].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos,
-	                                                                         Entity& /*_entity*/) -> void {
+	                                                                          Entity& /*_entity*/) -> void {
 		auto meta = _world.GetMetadata(_pos);
 		if (meta != 1)
 			SetPressurePlateState(_world, _pos, BLOCK_PRESSURE_PLATE_STONE);

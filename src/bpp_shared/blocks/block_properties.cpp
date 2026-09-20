@@ -872,16 +872,14 @@ void RegisterBlockProperties() {
 	};
 
 	// Stone Pressure Plate
-	blockProperties[BlockType::BLOCK_PRESSURE_PLATE_STONE] = {
-		.material = Material::Rock(),
-		.hardness = 0.5f,
-		.lightOpacity = 0,
-		.stepSound = StepSound::Stone,
-		.isCollidable = false,
-		.isOpaqueCube = false,
-		.isNormalCube = false,
-		.ticksOnLoad = true
-	};
+	blockProperties[BlockType::BLOCK_PRESSURE_PLATE_STONE] = { .material = Material::Rock(),
+		                                                       .hardness = 0.5f,
+		                                                       .lightOpacity = 0,
+		                                                       .stepSound = StepSound::Stone,
+		                                                       .isCollidable = false,
+		                                                       .isOpaqueCube = false,
+		                                                       .isNormalCube = false,
+		                                                       .ticksOnLoad = true };
 
 	// Iron Door
 	blockProperties[BlockType::BLOCK_DOOR_IRON] = {
@@ -895,16 +893,14 @@ void RegisterBlockProperties() {
 	};
 
 	// Wooden Pressure Plate
-	blockProperties[BlockType::BLOCK_PRESSURE_PLATE_WOOD] = {
-		.material = Material::Wood(),
-		.hardness = 0.5f,
-		.lightOpacity = 0,
-		.stepSound = StepSound::Wood,
-		.isCollidable = false,
-		.isOpaqueCube = false,
-		.isNormalCube = false,
-		.ticksOnLoad = true
-	};
+	blockProperties[BlockType::BLOCK_PRESSURE_PLATE_WOOD] = { .material = Material::Wood(),
+		                                                      .hardness = 0.5f,
+		                                                      .lightOpacity = 0,
+		                                                      .stepSound = StepSound::Wood,
+		                                                      .isCollidable = false,
+		                                                      .isOpaqueCube = false,
+		                                                      .isNormalCube = false,
+		                                                      .ticksOnLoad = true };
 
 	// Redstone Ore
 	blockProperties[BlockType::BLOCK_ORE_REDSTONE_OFF] = {
@@ -947,16 +943,14 @@ void RegisterBlockProperties() {
 		                                                    .ticksOnLoad = true };
 
 	// Stone Button
-	blockProperties[BlockType::BLOCK_BUTTON_STONE] = {
-		.material = Material::Circuits(),
-		.hardness = 0.5f,
-		.lightOpacity = 0,
-		.stepSound = StepSound::Stone,
-		.isCollidable = false,
-		.isOpaqueCube = false,
-		.isNormalCube = false,
-		.ticksOnLoad = true
-	};
+	blockProperties[BlockType::BLOCK_BUTTON_STONE] = { .material = Material::Circuits(),
+		                                               .hardness = 0.5f,
+		                                               .lightOpacity = 0,
+		                                               .stepSound = StepSound::Stone,
+		                                               .isCollidable = false,
+		                                               .isOpaqueCube = false,
+		                                               .isNormalCube = false,
+		                                               .ticksOnLoad = true };
 
 	// Snow (layer)
 	blockProperties[BlockType::BLOCK_SNOW_LAYER] = { .material = Material::SnowLayer(),

@@ -87,7 +87,6 @@ void RegisterMiscBehaviors() {
 		.getCollider = SoulSandCollider,
 	};
 
-
 	// Cobweb
 	blockBehaviors[BLOCK_COBWEB].onEntityCollidedWithBlock = [](WorldManager& /*_world*/, Int3 /*_pos*/,
 	                                                            Entity& _entity) -> void {
@@ -181,7 +180,7 @@ void RegisterMiscBehaviors() {
 			_world.SetBlock(_pos, BLOCK_AIR);
 	};
 	blockBehaviors[BLOCK_SNOW_LAYER].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
-	                                         Java::Random& /*_random*/) -> void {
+	                                             Java::Random& /*_random*/) -> void {
 		// Melt!
 		if (_world.GetBlockLight(_pos) > 11) {
 			_world.SetBlock(_pos, BLOCK_AIR);
@@ -190,14 +189,13 @@ void RegisterMiscBehaviors() {
 
 	// Ice
 	blockBehaviors[BLOCK_ICE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
-	                                             Java::Random& /*_random*/) -> void {
+	                                      Java::Random& /*_random*/) -> void {
 		// Melt!
 		if (_world.GetBlockLight(_pos) > 11 - Blocks::blockProperties[BLOCK_ICE].lightOpacity) {
 			_world.SetBlock(_pos, BLOCK_WATER_FLOWING);
 		}
 	};
-	blockBehaviors[BLOCK_ICE].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos,
-	                                                               Entity& /*_destroyer*/) {
+	blockBehaviors[BLOCK_ICE].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& /*_destroyer*/) {
 		// Ice will turn into water if there is something solid under it
 		// Or if there is a liquid under it lol
 		auto belowMaterial = _world.GetMaterial(_pos.WithOffset(Direction::Value::Down));
@@ -285,13 +283,13 @@ void RegisterMiscBehaviors() {
 		}
 		return false;
 	};
-	
+
 	blockBehaviors[BlockType::BLOCK_SIGN_WALL] = {
 		.getSelectionBox = WallSignAabb,
 		.getRayBounds = WallSignAabb,
 		.getCollider = EmptyCollider,
 	};
-	
+
 	blockBehaviors[BlockType::BLOCK_SIGN_STANDING] = {
 		.getSelectionBox = StandingSignAabb,
 		.getRayBounds = StandingSignAabb,

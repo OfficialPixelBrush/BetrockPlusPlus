@@ -472,7 +472,7 @@ bool convertBetrockServerLevel(std::string& _dir) {
 		}
 		c->isTerrainPopulated = true;
 		c->isModified = true;
-		c->state = ChunkState::Populated; 
+		c->state = ChunkState::Populated;
 
 		return c;
 	};
@@ -521,7 +521,7 @@ bool convertBetrockServerLevel(std::string& _dir) {
 
 		c->isTerrainPopulated = true;
 		c->isModified = true;
-		c->state = ChunkState::Populated; 
+		c->state = ChunkState::Populated;
 
 		return c;
 	};

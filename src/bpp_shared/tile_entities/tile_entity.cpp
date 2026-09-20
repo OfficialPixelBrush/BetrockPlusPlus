@@ -7,13 +7,13 @@
 */
 #include "tile_entity.h"
 #include "blocks.h"
+#include "entities/entity_pig.h"
+#include "entities/entity_skeleton.h"
+#include "entities/entity_spider.h"
+#include "entities/entity_zombie.h"
 #include "inventory/item_stack.h"
 #include "items.h"
 #include "items/item_properties.h"
-#include "entities/entity_zombie.h"
-#include "entities/entity_skeleton.h"
-#include "entities/entity_spider.h"
-#include "entities/entity_pig.h"
 #include "world/world.h"
 #include <string>
 
@@ -31,7 +31,8 @@ void TileEntityChest::Tick(WorldManager& /*_world*/) {
 }
 
 bool TileEntityMobSpawner::PlayerInRange(WorldManager& _world) {
-	return _world.entityManager.GetClosestPlayerWithin(Vec3{ position.x + 0.5, position.y + 0.5, position.z + 0.5 }, 16) != nullptr;
+	return _world.entityManager.GetClosestPlayerWithin(Vec3{ position.x + 0.5, position.y + 0.5, position.z + 0.5 },
+	                                                   16) != nullptr;
 }
 
 void TileEntityMobSpawner::Tick(WorldManager& _world) {
@@ -42,7 +43,7 @@ void TileEntityMobSpawner::Tick(WorldManager& _world) {
 		return 200 + _rand.NextInt(600);
 	};
 
-	// Why not <= 0? Because notch wrote this as "delay == -1".. 
+	// Why not <= 0? Because notch wrote this as "delay == -1"..
 	// For some reason
 	if (this->delay < 0)
 		this->delay = updateDelay(_world.rand);
@@ -76,16 +77,17 @@ void TileEntityMobSpawner::Tick(WorldManager& _world) {
 			double(position.x),       double(position.y),       double(position.z),
 			double(position.x) + 1.0, double(position.y) + 1.0, double(position.z) + 1.0,
 		};
-		auto numEntities = _world.entityManager.GetEntitiesWithinAabbOfType(searchBox.Expand(8.0, 4.0, 8.0), checkType).size();
+		auto numEntities =
+		    _world.entityManager.GetEntitiesWithinAabbOfType(searchBox.Expand(8.0, 4.0, 8.0), checkType).size();
 		if (numEntities >= 6) {
 			this->delay = updateDelay(_world.rand);
 			return;
 		}
 
 		Vec3 spawn = {};
-		spawn.x = double(position.x) + (_world.rand.NextDouble() - _world.rand.NextDouble()) * 4.0; 
-		spawn.y = double(position.y) + _world.rand.NextInt(3) - 1; 
-		spawn.z = double(position.z) + (_world.rand.NextDouble() - _world.rand.NextDouble()) * 4.0; 
+		spawn.x = double(position.x) + (_world.rand.NextDouble() - _world.rand.NextDouble()) * 4.0;
+		spawn.y = double(position.y) + _world.rand.NextInt(3) - 1;
+		spawn.z = double(position.z) + (_world.rand.NextDouble() - _world.rand.NextDouble()) * 4.0;
 
 		auto mobEntity = dynamic_cast<MobEntity*>(myEntity.get());
 

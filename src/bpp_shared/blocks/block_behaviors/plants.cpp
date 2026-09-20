@@ -299,10 +299,8 @@ void RegisterPlantBehaviors() {
 			_world.SetBlock(_pos, BLOCK_DIRT, 0);
 		}
 	};
-	blockBehaviors[BLOCK_FARMLAND].onEntityWalking = [](WorldManager& _world, Int3 _pos,
-	                                                          Entity& /*_entity*/) -> void {
-
-		// NOTE: 
+	blockBehaviors[BLOCK_FARMLAND].onEntityWalking = [](WorldManager& _world, Int3 _pos, Entity& /*_entity*/) -> void {
+		// NOTE:
 		// The vanilla java client will run its own simulation with its own randomness
 		// So these will only line up like 6% of the time lmao. And that is if the step counters
 		// stay in sync

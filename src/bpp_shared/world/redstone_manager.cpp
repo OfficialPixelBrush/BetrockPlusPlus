@@ -354,7 +354,8 @@ bool RedstoneManager::IsPositionPowered(WorldManager& _world, Int3 _pos) {
 			return true;
 
 		if (neighborBlock == BLOCK_REDSTONE_TORCH_ON || neighborBlock == BLOCK_REDSTONE_REPEATER_ON ||
-		    neighborBlock == BLOCK_LEVER || neighborBlock == BLOCK_BUTTON_STONE || neighborBlock == BLOCK_PRESSURE_PLATE_STONE || neighborBlock == BLOCK_PRESSURE_PLATE_WOOD) {
+		    neighborBlock == BLOCK_LEVER || neighborBlock == BLOCK_BUTTON_STONE ||
+		    neighborBlock == BLOCK_PRESSURE_PLATE_STONE || neighborBlock == BLOCK_PRESSURE_PLATE_WOOD) {
 			auto neighborProfile = RedstoneManager::GetComponentProfile(neighborBlock, _world.GetMetadata(dPos));
 
 			// Direction FROM the neighbor TOWARD us
