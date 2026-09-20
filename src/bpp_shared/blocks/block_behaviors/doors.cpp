@@ -31,9 +31,11 @@
 
 namespace Blocks {
 
-static void ToggleTrapdoor(WorldManager& _world, Int3 _pos) {
+static void ToggleTrapdoor(WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) {
 	auto meta = _world.GetMetadata(_pos);
 	_world.SetMeta(_pos, uint8_t(meta ^ 0b100)); // XOR bit 2; flips open/closed
+	if (_world.onWorldEvent)
+		_world.onWorldEvent(PacketData::WorldEvent::DOOR_TOGGLE, _pos, 0, _triggeringSession);
 	return;
 }
 
@@ -81,6 +83,17 @@ static void BreakDoor(WorldManager& _world, Int3 _pos, BlockType _doorType) {
 	BreakAndDropBlock(_world, _pos);
 }
 
+static void NeighborUpdateDoor(WorldManager& _world, Int3 _pos, BlockType /*_blockId*/) {
+	// Clear top-most bit
+	/*
+	// TODO: Segfaults here
+	const bool isOpen = (_world.GetMetadata(_pos) >> 2) & 1;
+	const bool powered = RedstoneManager::IsPositionPowered(_world, _pos);
+	if (powered != isOpen)
+		ToggleDoor(_world, _pos, nullptr);
+	*/
+};
+
 void RegisterDoorBehaviors() {
 	blockBehaviors[BlockType::BLOCK_DOOR_WOOD] = {
 		.getSelectionBox = DoorAabb,
@@ -97,8 +110,8 @@ void RegisterDoorBehaviors() {
 		.getSelectionBox = TrapdoorAabb,
 		.getRayBounds = TrapdoorAabb,
 		.getCollider = TrapdoorCollider,
-		.onBlockActivated = [](WorldManager& _world, Int3 _pos, PlayerSession* /*_triggeringSession*/) -> bool {
-		    ToggleTrapdoor(_world, _pos);
+		.onBlockActivated = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> bool {
+		    ToggleTrapdoor(_world, _pos, _triggeringSession);
 		    return false;
 		},
 		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Direction::Value _face,
@@ -192,6 +205,17 @@ void RegisterDoorBehaviors() {
 	};
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockDestroyedByExplosion = [](WorldManager& _world, Int3 _pos) {
 		BreakDoor(_world, _pos, BLOCK_DOOR_IRON);
+	};
+
+	blockBehaviors[BLOCK_DOOR_WOOD].onNeighborBlockChange = NeighborUpdateDoor;
+	blockBehaviors[BLOCK_DOOR_IRON].onNeighborBlockChange = NeighborUpdateDoor;
+
+	blockBehaviors[BLOCK_TRAPDOOR].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType /*_blockId*/) -> void {
+		// Clear top-most bit
+		const bool isOpen = (_world.GetMetadata(_pos) >> 2) & 1;
+		const bool powered = RedstoneManager::IsPositionPowered(_world, _pos);
+		if (powered != isOpen)
+			ToggleTrapdoor(_world, _pos, nullptr);
 	};
 }
 
