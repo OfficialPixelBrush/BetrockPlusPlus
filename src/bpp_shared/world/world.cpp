@@ -320,7 +320,7 @@ void WorldManager::PerformRandomTicks(const std::vector<ClientPosition>& _player
 		}
 	}
 
-	int hashCounter = rand.NextInt();
+	uint32_t hashCounter = rand.NextInt();
 	for (auto& it : wanted) {
 		int attempts = 80;
 		Int2 chunkOrigin = { it.first.x * 16, it.first.z * 16 };
