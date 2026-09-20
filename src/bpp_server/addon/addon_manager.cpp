@@ -13,9 +13,7 @@
 #include <filesystem>
 
 AddonManager::AddonManager() {
-    api = MakeAddonAPI();
-
-    for (const auto& entry : std::filesystem::directory_iterator("addons")) {
+	for (const auto& entry : std::filesystem::directory_iterator("addons")) {
 		auto addonPath = entry.path().c_str();
 		void* handle = dlopen(addonPath, RTLD_NOW | RTLD_LOCAL);
 
@@ -31,19 +29,22 @@ AddonManager::AddonManager() {
 			continue;
 		}
 
-		bp_addon_info info = addonInit(&api);
+		auto addon = std::make_unique<Addon>();
 
-		addons.push_back(Addon{
-            .info = info,
-		    .dynHandle = handle,
-		});
+		addon->api = MakeAddonAPI();
+		addon->api.internal = addon.get();
 
-		GlobalLogger().info << "Loaded addon '" << info.id << "'\n";
+		addon->info = addonInit(&addon->api);
+		addon->dynHandle = handle;
+
+		GlobalLogger().info << "Loaded addon '" << addon->info.id << "'\n";
+
+		addons.push_back(std::move(addon));
 	}
 }
 
 AddonManager::~AddonManager() {
-	for (const Addon& addon : addons) {
-        dlclose(addon.dynHandle);
+	for (const auto& addon : addons) {
+		dlclose(addon->dynHandle);
 	}
 }

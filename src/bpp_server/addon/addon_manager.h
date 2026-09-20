@@ -6,29 +6,24 @@
 */
 #pragma once
 
-#include "addon/addon_api.h"
-#include "addon_impl.h"
+#include "addon.h"
+#include <memory>
 #include <vector>
-
-struct Addon {
-	bp_addon_info info;
-	void* dynHandle;
-};
 
 class AddonManager {
 public:
 	AddonManager();
 	~AddonManager();
 
-	const bp_api& GetAPI() const noexcept {
-		return api;
-	}
+	// Prevent copying by mistake, there should only be one instance
+	AddonManager(const AddonManager&) = delete;
+	AddonManager& operator=(const AddonManager&) = delete;
 
-	const std::vector<Addon>& GetAddons() const noexcept {
+	const std::vector<std::unique_ptr<Addon>>& GetAddons() const noexcept {
 		return addons;
 	}
 
 private:
-	bp_api api;
-	std::vector<Addon> addons;
+	// Only if C++ std had handle maps..., maybe we should use a library for that?
+	std::vector<std::unique_ptr<Addon>> addons;
 };

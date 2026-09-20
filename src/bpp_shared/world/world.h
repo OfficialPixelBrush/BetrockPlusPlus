@@ -29,6 +29,7 @@
 #include "world/spawner.h"
 #include "world/storage/region_manager.h"
 #include "world_access.h"
+#include "addon/addon_impl.h"
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
@@ -61,6 +62,7 @@ private:
 	static BiomeGenerator biomeGenerator;
 
 public:
+	bp_world apiWorld;
 	BS::thread_pool<> pool{ 2 };
 	RegionManager* regionManager = nullptr;
 	TickTime elapsedTicks = 0;
@@ -77,7 +79,7 @@ public:
 	Int3 spawnPoint{ 0, 0, 0 };
 	Dimension thisDimension = Dimension::Overworld;
 
-	WorldManager(bool _pIsHell = false) : isHell(_pIsHell) {
+	WorldManager(bool _pIsHell = false) : apiWorld(this), isHell(_pIsHell) {
 		entityManager.world = this;
 		tickScheduler.world = this;
 		if (isHell)

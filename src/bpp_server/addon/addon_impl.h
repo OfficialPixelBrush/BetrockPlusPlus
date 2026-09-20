@@ -10,10 +10,20 @@
 #pragma once
 
 #include "addon_api.h"
-#include "../player_conn/player_session.h"
+#include <unordered_map>
+
+class PlayerSession;
+class WorldManager;
+
+struct Addon;
 
 struct bp_player {
-	PlayerSession &session;
+	PlayerSession* session;
+	std::unordered_map<Addon*, void*> addonData;
+};
+
+struct bp_world {
+	WorldManager* manager;
 };
 
 bp_api MakeAddonAPI();

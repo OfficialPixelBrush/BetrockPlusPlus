@@ -10,6 +10,7 @@
 #include "../blocks/server_block_behaviors.h"
 #include "../commands/command.h"
 #include "../trackers/entity_tracker.h"
+#include "addon/addon_api.h"
 #include "blocks.h"
 #include "blocks/block_properties.h"
 #include "direction_fixer.h"
@@ -223,6 +224,40 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		                     chunk->cpos);
 	};
 
+	ItemStack* heldItem = _session.inventory.GetHeldItem();
+
+	{
+		const auto& addonMgr = _server.GetAddonManager();
+		bp_block_use_event event{};
+		event.player = &_session.apiPlayer;
+		event.world = &_world.apiWorld;
+		event.blockPos = { position.x, position.y, position.z };
+		event.block = { .id = block, .meta = _world.GetMetadata(position) };
+		if (heldItem) {
+			event.heldItem = { .id = heldItem->id, .count = heldItem->count, .data = heldItem->data };
+		} else {
+			event.heldItem.id = -1;
+		}
+		const auto oldItem = heldItem ? *heldItem : ItemStack{};
+		for (const auto& addon : addonMgr.GetAddons()) {
+			if (addon->info.events.blockUse) {
+				addon->info.events.blockUse(&addon->api, &event);
+				if (heldItem) {
+					heldItem->id = event.heldItem.id;
+					heldItem->count = event.heldItem.count;
+					heldItem->data = event.heldItem.data;
+				}
+				if (event.cancel) {
+					resyncBlock(position);
+					return;
+				}
+			}
+		}
+		// Send only if changed
+		if (heldItem && *heldItem != oldItem)
+			PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
+	}
+
 	// Function returns true if we can place a block after running the function
 	if (ServerBlock::blockBehaviors[block].onBlockActivated) {
 		if (!ServerBlock::blockBehaviors[block].onBlockActivated(_world, position, _session, _gameRuntime)) {
@@ -236,7 +271,6 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		}
 	}
 
-	ItemStack* heldItem = _session.inventory.GetHeldItem();
 	if (!heldItem) {
 		return;
 	}
