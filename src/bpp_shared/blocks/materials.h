@@ -362,7 +362,6 @@ struct Material {
 		Material m{};
 		m.type = MaterialType::Piston;
 		m.mapColor = MapColor::Stone();
-		m.isHarvestable = false;
 		m.mobilityFlag = PushabilityFlag::Immovable;
 		return m;
 	}

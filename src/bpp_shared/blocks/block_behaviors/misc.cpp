@@ -111,7 +111,24 @@ void RegisterMiscBehaviors() {
 	// Pistons
 	auto onPistonPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
 	                        BlockType _blockId, uint8_t /*_meta*/) -> bool {
-		return GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_PISTON, _face));
+		uint8_t orientation;
+
+		if (std::abs(_placer.position.x - _pos.x) < 2.0 && std::abs(_placer.position.z - _pos.z) < 2.0) {
+			double eyeY = _placer.position.y + 1.82 - _placer.yOffset;
+			if (eyeY - _pos.y > 2.0) {
+				orientation = 1; // up
+			} else if (_pos.y - eyeY > 0.0) {
+				orientation = 0; // down
+			} else {
+				int meta[] = { 2, 5, 3, 4 };
+				orientation = meta[GetDirectionFromYaw(_placer.rotationYaw, 4)];
+			}
+		} else {
+			int meta[] = { 2, 5, 3, 4 };
+			orientation = meta[GetDirectionFromYaw(_placer.rotationYaw, 4)];
+		}
+
+		return GenericPlace(_world, _pos, _placer, _face, _blockId, orientation);
 	};
 
 	blockBehaviors[BLOCK_PISTON].onBlockPlaced = onPistonPlace;
