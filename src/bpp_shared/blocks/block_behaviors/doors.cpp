@@ -51,8 +51,8 @@ static void ToggleDoor(WorldManager& _world, Int3 _pos, PlayerSession* _triggeri
 	Int3 top = { _pos.x, _pos.y + 1, _pos.z };
 	uint8_t newBottomMeta = uint8_t(meta ^ 0b100);
 
-	_world.SetMeta(_pos, newBottomMeta);                                  
-	                                     
+	_world.SetMeta(_pos, newBottomMeta);
+
 	if (_world.GetBlockId(top) == BLOCK_DOOR_WOOD && (_world.GetMetadata(top) & 8))
 		_world.SetMeta(top, uint8_t(newBottomMeta + 8));
 
@@ -221,7 +221,8 @@ void RegisterDoorBehaviors() {
 	blockBehaviors[BLOCK_DOOR_WOOD].onNeighborBlockChange = NeighborUpdateDoor;
 	blockBehaviors[BLOCK_DOOR_IRON].onNeighborBlockChange = NeighborUpdateDoor;
 
-	blockBehaviors[BLOCK_TRAPDOOR].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
+	blockBehaviors[BLOCK_TRAPDOOR].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                          BlockType _blockId) -> void {
 		// Pop off if we aren't supported
 		auto meta = _world.GetMetadata(_pos);
 		auto direction = GetDirectionFromMeta(BLOCK_TRAPDOOR, meta);
@@ -231,7 +232,7 @@ void RegisterDoorBehaviors() {
 			BreakAndDropBlock(_world, _pos);
 			return;
 		}
-		
+
 		// Check to see if the updater is from a redstone component
 		if (!RedstoneManager::CanProvidePower(_blockId))
 			return;

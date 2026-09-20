@@ -166,7 +166,7 @@ void Server::LoadConfig() {
 #endif
 		    //{"allow-nether",true},
 		    //{"spawn-monsters","true"},
-		    {"max-players", "20"},
+		    { "max-players", "20" },
 		    { "online-mode", "false" },
 #ifdef BETACRAFT_HEARTBEAT
 		    { "betacraft-heartbeat", "false" },

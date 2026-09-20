@@ -120,7 +120,7 @@ void EntitySpawner::TrySpawnEntities(WorldManager& _world, const std::vector<Cli
 			if (_world.IsBlockNormalCube(anchorPos) || _world.GetMaterial(anchorPos).isSolid)
 				continue; // Discard this chunk
 
-			auto biome = _world.GetBiome({cpos.x << 4, cpos.z << 4});
+			auto biome = _world.GetBiome({ cpos.x << 4, cpos.z << 4 });
 			auto picked = PickWeighted(_world.rand, category, biome);
 
 			if (!picked.has_value())

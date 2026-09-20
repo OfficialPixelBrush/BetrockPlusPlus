@@ -29,13 +29,13 @@
 
 static bool IsValidActionInSpawnRadius(PlayerSession& _session, Server& _server, Int3 _pos, WorldManager& _world) {
 	// TODO: Make this configurable and more intuitive
-	const int SPAWN_PROTECTION = 16;
+	const int spawnProtection = 16;
 	if (IsOperator(_session, _server))
 		return true;
 
 	Int3 normalPos = _pos - _world.GetSpawnPoint(/*Adjust=*/false);
 
-	return (normalPos.x * normalPos.x + normalPos.z * normalPos.z) > (SPAWN_PROTECTION * SPAWN_PROTECTION);
+	return (normalPos.x * normalPos.x + normalPos.z * normalPos.z) > (spawnProtection * spawnProtection);
 }
 
 namespace HandlePacket {
@@ -198,7 +198,8 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 	}
 }
 
-void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager& _world, Runtime& _gameRuntime, Server& _server) {
+void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager& _world, Runtime& _gameRuntime,
+                Server& _server) {
 	Int3 position = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
 
 	if (!_session.entity)
@@ -576,14 +577,14 @@ void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
 		auto bedDir = GetDirectionFromMeta(BLOCK_BED, world->GetMetadata(headPos));
 		Int3 footPos = headPos.WithOffset(Direction::Opposite(bedDir));
 		auto sleepPositions = Blocks::GetBedApproachSpots(*world, headPos, footPos);
-		
+
 		if (!sleepPositions.empty()) {
 			bedPositionFindFailed = false;
 			spawn = sleepPositions[0];
 		}
 	}
 	if (bedPositionFindFailed) {
-		if (_session.hasBedSpawn) 
+		if (_session.hasBedSpawn)
 			SendChat(_session, "Your home bed was missing or obstructed");
 		_session.hasBedSpawn = false;
 		spawn = world->GetSpawnPoint(/*Random Adjust=*/true);
