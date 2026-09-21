@@ -12,6 +12,8 @@ services:
     restart: unless-stopped
     ports:
       - "25565:25565"
+      # Rest API (optional)
+      # - "8080:8080"
     volumes:
       # World save, server config/properties, etc. all live in the working
       # directory the process is started in - persist it on the host.

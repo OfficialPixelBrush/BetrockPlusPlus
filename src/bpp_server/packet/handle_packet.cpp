@@ -70,6 +70,7 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
 			continue;
 		reply.Serialize(receiver->stream);
 	}
+	_server.PublishChatMessage(reply.message);
 #ifdef DISCORD_INTEGRATION
 	GlobalDiscord().SendPlayerChatMessage(_session.username, _pkt.message);
 #endif
@@ -576,14 +577,14 @@ void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
 		auto bedDir = GetDirectionFromMeta(BLOCK_BED, world->GetMetadata(headPos));
 		Int3 footPos = headPos.WithOffset(Direction::Opposite(bedDir));
 		auto sleepPositions = Blocks::GetBedApproachSpots(*world, headPos, footPos);
-		
+
 		if (!sleepPositions.empty()) {
 			bedPositionFindFailed = false;
 			spawn = sleepPositions[0];
 		}
 	}
 	if (bedPositionFindFailed) {
-		if (_session.hasBedSpawn) 
+		if (_session.hasBedSpawn)
 			SendChat(_session, "Your home bed was missing or obstructed");
 		_session.hasBedSpawn = false;
 		spawn = world->GetSpawnPoint(/*Random Adjust=*/true);

@@ -10,6 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Must be set before project() so vcpkg can install the optional feature.
 option(ONLINE_MODE_AUTHENTICATION "Allows authentication with Mojang servers (requires libcurl)" ON)
 option(BETACRAFT_HEARTBEAT "Ping the Betacraft server list (requires libcurl and nlohmann_json)" OFF)
+option(REST_API "Enable the REST API (requires Crow)" ON)
 option(CRASH_LOGGING "Lets the server catch crashes and create crash reports" ON)
 option(DISCORD_INTEGRATION "Enable Discord bot integration via D++ (server only)" OFF)
 option(EXPERIMENTAL "Experimental or work-in-progress features/changes" OFF)
@@ -24,6 +25,9 @@ if(DISCORD_INTEGRATION)
 endif()
 if(BETACRAFT_HEARTBEAT)
     list(APPEND VCPKG_MANIFEST_FEATURES "betacraft-heartbeat")
+endif()
+if(REST_API AND BUILD_SERVER)
+    list(APPEND VCPKG_MANIFEST_FEATURES "rest-api")
 endif()
 # curl/glm/sdl3 are only needed for a subset of configurations; pulling them
 # in unconditionally used to make vcpkg build (and the client link against)
@@ -85,7 +89,7 @@ endif()
 # Try to find Git, but don't fail if it's missing
 find_package(Git QUIET)
 
-# TODO: 
+# TODO:
 if(GIT_FOUND)
     # Get the latest Git commit hash
     execute_process(
@@ -290,7 +294,7 @@ if(BUILD_SERVER)
     target_sources(BetrockPlusPlus PRIVATE
         ${SERVER_SOURCES}
     )
-    
+
     if(ONLINE_MODE_AUTHENTICATION OR BETACRAFT_HEARTBEAT)
         find_package(CURL REQUIRED)
         target_link_libraries(BetrockPlusPlus PRIVATE CURL::libcurl)
@@ -318,6 +322,33 @@ if(BUILD_SERVER)
         endif()
         target_compile_definitions(BetrockPlusPlus PRIVATE BETACRAFT_HEARTBEAT)
         target_link_libraries(BetrockPlusPlus PRIVATE nlohmann_json::nlohmann_json)
+    endif()
+
+    if(REST_API)
+        find_package(Crow CONFIG QUIET)
+        if(NOT Crow_FOUND)
+            message(STATUS "Crow package not found; fetching Crow")
+            include(FetchContent)
+            find_path(ASIO_INCLUDE_DIR asio.hpp)
+            if(NOT ASIO_INCLUDE_DIR)
+                FetchContent_Declare(
+                    asio
+                    URL https://github.com/chriskohlhoff/asio/archive/refs/tags/asio-1-30-2.tar.gz
+                )
+                FetchContent_MakeAvailable(asio)
+                set(ASIO_INCLUDE_DIR "${asio_SOURCE_DIR}/asio/include" CACHE PATH "Asio include directory" FORCE)
+            endif()
+            FetchContent_Declare(
+                Crow
+                URL https://github.com/CrowCpp/Crow/archive/refs/tags/v1.3.3.tar.gz
+            )
+            set(CROW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+            set(CROW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+            FetchContent_MakeAvailable(Crow)
+        endif()
+        target_compile_definitions(BetrockPlusPlus PRIVATE REST_API)
+        target_sources(BetrockPlusPlus PRIVATE src/bpp_server/api/rest_api.cpp)
+        target_link_libraries(BetrockPlusPlus PRIVATE Crow::Crow)
     endif()
 
     if (DISCORD_INTEGRATION)

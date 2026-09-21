@@ -17,6 +17,9 @@ extern std::atomic<bool> shutdownRequested;
 #include "./internet/betacraft_heartbeat.h"
 #include "./internet/online_auth.h"
 #include "BS_thread_pool.hpp"
+#ifdef REST_API
+#include "api/rest_api.h"
+#endif
 #include "blocks/server_block_behaviors.h"
 #include "chunk_io/chunk_broadcaster.h"
 #include "chunk_io/chunk_sender.h"
@@ -132,11 +135,22 @@ public:
 			reply.Serialize(other->stream);
 		}
 		GlobalLogger().msg << StripFormatting(_message) << "\n";
+#ifdef REST_API
+		restApi.PublishChat(_message);
+#endif
 #ifdef DISCORD_INTEGRATION
 		if (_relayToDiscord)
 			GlobalDiscord().SendMessage(_message);
 #else
 		(void)_relayToDiscord;
+#endif
+	}
+
+	void PublishChatMessage(std::string _message) {
+#ifdef REST_API
+		restApi.PublishChat(std::move(_message));
+#else
+		(void)_message;
 #endif
 	}
 
@@ -199,6 +213,9 @@ private:
 	// If every connected player in a dimension is currently sleeping, skip to
 	// morning and wake everyone up. Called once per Tick, per dimension.
 	void ProcessSleeping(Dimension _dimension);
+#ifdef REST_API
+	void ProcessRestApiActions();
+#endif
 
 	// When a player breaks a block
 	void OnPlayerBlockBreak(PlayerSession& _session, WorldManager& _world) {
@@ -277,6 +294,9 @@ private:
 	CommandManager commandManager;
 	bool stopped = false;
 	Config config;
+#ifdef REST_API
+	RestApi restApi;
+#endif
 	// Flushes session write buffers off the main tick thread
 	BS::thread_pool<> writePool{ 1 };
 };
