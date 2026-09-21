@@ -624,37 +624,39 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 	bool needsMovementUpdate = _trackedEntry.updateCounter >= _trackedEntry.profile.updateFrequency ||
 	                           _trackedEntry.ticksSinceTeleport >= forceTeleportTicks;
 
+
+	// Determine if we should send our velocity
+	bool needsVelocityUpdate = false;
+	
+	constexpr double THRESHOLD = 0.01;
+	Vec3 currentMotion;
+	currentMotion.x = std::abs(entity->velocity.x) < THRESHOLD ? 0 : entity->velocity.x;
+	currentMotion.y = std::abs(entity->velocity.y) < THRESHOLD ? 0 : entity->velocity.y;
+	currentMotion.z = std::abs(entity->velocity.z) < THRESHOLD ? 0 : entity->velocity.z;
+	Vec3& lastMotion = _trackedEntry.lastBroadcastMotion;
+	
+	if (_trackedEntry.profile.sendVelocity) {
+		Vec3 delta = currentMotion - lastMotion;
+		const double deltaLen = delta.Length();
+		const double motionThreshold = 0.02;
+
+		needsVelocityUpdate = (deltaLen > motionThreshold && needsMovementUpdate) ||
+		                           (deltaLen > 0.0 && currentMotion.x == 0.0 && currentMotion.y == 0.0 &&
+		                            currentMotion.z == 0.0);
+	}
+
+	if (needsVelocityUpdate) {
+		lastMotion = currentMotion;
+		Packet::EntityVelocity pkt;
+		pkt.entityId = entity->id;
+		pkt.velocity = { QuantizeVelocityComponent(currentMotion.x),
+			             QuantizeVelocityComponent(currentMotion.y),
+			             QuantizeVelocityComponent(currentMotion.z) };
+		SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
+	}
+
 	if (needsMovementUpdate) {
 		_trackedEntry.updateCounter = 0;
-
-		// The threshold-based velocity check
-		if (_trackedEntry.profile.sendVelocity) {
-			constexpr double THRESHOLD = 0.01;
-			Vec3 currentMotion;
-			entity->velocity.x < THRESHOLD ? 0 : currentMotion.x = entity->velocity.x;
-			entity->velocity.y < THRESHOLD ? 0 : currentMotion.y = entity->velocity.y;
-			entity->velocity.z < THRESHOLD ? 0 : currentMotion.z = entity->velocity.z;
-			Vec3& lastMotion = _trackedEntry.lastBroadcastMotion;
-			const double dmx = currentMotion.x - lastMotion.x;
-			const double dmy = currentMotion.y - lastMotion.y;
-			const double dmz = currentMotion.z - lastMotion.z;
-			const double deltaSq = dmx * dmx + dmy * dmy + dmz * dmz;
-			const double motionThreshold = 0.02;
-
-			bool needsVelocityUpdate = deltaSq > motionThreshold * motionThreshold ||
-			                           (deltaSq > 0.0 && currentMotion.x == 0.0 && currentMotion.y == 0.0 &&
-			                            currentMotion.z == 0.0);
-
-			if (needsVelocityUpdate) {
-				lastMotion = currentMotion;
-				Packet::EntityVelocity pkt;
-				pkt.entityId = entity->id;
-				pkt.velocity = { QuantizeVelocityComponent(entity->velocity.x),
-					             QuantizeVelocityComponent(entity->velocity.y),
-					             QuantizeVelocityComponent(entity->velocity.z) };
-				SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
-			}
-		}
 
 		const int32_t qx = QuantizePositionComponent(entity->position.x);
 		const int32_t qy = QuantizePositionComponent(entity->position.y);
