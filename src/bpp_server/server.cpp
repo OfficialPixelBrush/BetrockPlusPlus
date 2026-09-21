@@ -529,11 +529,8 @@ void Server::Stop() {
 		return;
 	stopped = true;
 
-	for (const auto& addon : addonManager.GetAddons()) {
-		if (addon->info.events.shutdown) {
-			addon->info.events.shutdown(&addon->api);
-		}
-	}
+	addonManager.Broadcast(&bp_addon_events::shutdown, {});
+
 #ifdef BETACRAFT_HEARTBEAT
 	betacraftHeartbeat.Stop();
 #endif

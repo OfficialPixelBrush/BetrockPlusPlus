@@ -23,6 +23,23 @@ public:
 		return addons;
 	}
 
+	template <typename EventType, typename HookFn = decltype([] { return false; })>
+	bool Broadcast(void (*bp_addon_events::*_eventMember)(const bp_api*, EventType*), EventType& _event,
+	               HookFn _postHook = {}) const {
+		for (const auto& addon : addons) {
+			auto callback = addon->info.events.*_eventMember;
+			if (!callback)
+				continue;
+
+			callback(&addon->api, &_event);
+
+			if (_postHook()) {
+				return true; // Cancelled
+			}
+		}
+		return false;
+	}
+
 private:
 	// Only if C++ std had handle maps..., maybe we should use a library for that?
 	std::vector<std::unique_ptr<Addon>> addons;

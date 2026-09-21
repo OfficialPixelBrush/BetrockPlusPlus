@@ -47,11 +47,7 @@ bool MatchesDoor(bp_block_pos storedPos, bp_block_pos targetPos, uint8_t targetM
 	return false;
 }
 
-void OnBlockUse(const bp_api* api, bp_block_use_event* ev) {
-	// Wooden door
-	if (ev->block.id != 64)
-		return;
-
+void OnDoorUse(const bp_api* api, bp_block_use_event* ev) {
 	if (IsDoorOpen(api, ev->world, ev->blockPos, ev->block.meta))
 		return;
 
@@ -94,6 +90,19 @@ void OnBlockUse(const bp_api* api, bp_block_use_event* ev) {
 	otherBlock.meta &= ~4; // Closed state
 
 	api->world.sendBlockUpdate(ev->world, otherPos, otherBlock);
+}
+
+void OnStairsUse(const bp_api* api, bp_block_use_event* ev) {
+	//TODO: Spawn item entity and make player ride it
+}
+
+void OnBlockUse(const bp_api* api, bp_block_use_event* ev) {
+	// Wooden door
+	if (ev->block.id == 64)
+		OnDoorUse(api, ev);
+	// Wooden-cobblestone stairs
+	else if (ev->block.id == 53 || ev->block.id == 67)
+		OnStairsUse(api, ev);
 }
 
 void LoadSave(const bp_api* api) {

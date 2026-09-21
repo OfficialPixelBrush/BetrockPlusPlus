@@ -227,35 +227,30 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 	ItemStack* heldItem = _session.inventory.GetHeldItem();
 
 	{
-		const auto& addonMgr = _server.GetAddonManager();
-		bp_block_use_event event{};
-		event.player = &_session.apiPlayer;
-		event.world = &_world.apiWorld;
-		event.blockPos = { position.x, position.y, position.z };
-		event.block = { .id = block, .meta = _world.GetMetadata(position) };
-		if (heldItem) {
-			event.heldItem = { .id = heldItem->id, .count = heldItem->count, .data = heldItem->data };
-		} else {
-			event.heldItem.id = -1;
-		}
+		bp_block_use_event event{ .player = &_session.apiPlayer,
+			                      .world = &_world.apiWorld,
+			                      .heldItem = AddonHelper::ToBpStack(heldItem),
+			                      .blockPos = { position.x, position.y, position.z },
+			                      .block = { block, _world.GetMetadata(position) },
+			                      .cancel = false };
+
 		const auto oldItem = heldItem ? *heldItem : ItemStack{};
-		for (const auto& addon : addonMgr.GetAddons()) {
-			if (addon->info.events.blockUse) {
-				addon->info.events.blockUse(&addon->api, &event);
-				if (heldItem) {
-					heldItem->id = event.heldItem.id;
-					heldItem->count = event.heldItem.count;
-					heldItem->data = event.heldItem.data;
-				}
-				if (event.cancel) {
-					resyncBlock(position);
-					return;
-				}
+
+		const bool cancelled = _server.GetAddonManager().Broadcast(&bp_addon_events::blockUse, event, [&]() {
+			AddonHelper::FromBpStack(heldItem, event.heldItem);
+			if (event.cancel) {
+				resyncBlock(position);
+				return true;
 			}
-		}
-		// Send only if changed
-		if (heldItem && *heldItem != oldItem)
+			return false;
+		});
+
+		if (cancelled)
+			return;
+
+		if (heldItem && *heldItem != oldItem) {
 			PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
+		}
 	}
 
 	// Function returns true if we can place a block after running the function
