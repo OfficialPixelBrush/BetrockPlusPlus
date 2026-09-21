@@ -112,25 +112,25 @@ struct EntityTracker {
 		const EntityType& type = _entity.type;
 		switch (type) {
 		case EntityType::NONE:
-			return { 0, 0, false };
+			return { 0, 0, /*SendVelocity=*/false };
 		case EntityType::PLAYER:
-			return { 128, 2, false };
+			return { 128, 2, /*SendVelocity=*/false };
 		case EntityType::FISH:
-			return { 64, 5, true };
+			return { 64, 5, /*SendVelocity=*/true };
 		case EntityType::ARROW:
-			return { 64, 20, true };
+			return { 64, 20, /*SendVelocity=*/true };
 		case EntityType::FIREBALL:
-			return { 64, 10, true };
+			return { 64, 10, /*SendVelocity=*/true };
 		case EntityType::THROWN_SNOWBALL:
 		case EntityType::THROWN_EGG:
-			return { 64, 10, true };
+			return { 64, 10, /*SendVelocity=*/true };
 		case EntityType::ITEM:
-			return { 64, 20, true };
+			return { 64, 20, /*SendVelocity=*/true };
 		case EntityType::MINECART:
 		case EntityType::BOAT:
-			return { 128, 2, true, /*Apply rotation threshold=*/false };
+			return { 128, 2, /*SendVelocity=*/true, /*Apply rotation threshold=*/false };
 		case EntityType::SQUID:
-			return { 128, 3, true };
+			return { 128, 3, /*SendVelocity=*/true };
 		case EntityType::CHICKEN:
 		case EntityType::COW:
 		case EntityType::PIG:
@@ -144,12 +144,12 @@ struct EntityTracker {
 		case EntityType::GHAST:
 		case EntityType::SLIME:
 		case EntityType::GIANT_ZOMBIE:
-			return { 128, 3, false };
+			return { 128, 3, /*SendVelocity=*/false };
 		case EntityType::LIT_TNT:
-			return { 128, 10, true };
+			return { 128, 10, /*SendVelocity=*/true };
 		case EntityType::FALLING_SAND:
 		case EntityType::FALLING_GRAVEL:
-			return { 128, 20, false };
+			return { 128, 20, /*SendVelocity=*/false };
 		case EntityType::PAINTING:
 			// Paintings never move so there's nothing to resync
 			return { 128, INT_MAX, false };
