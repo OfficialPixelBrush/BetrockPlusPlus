@@ -91,22 +91,28 @@ typedef struct {
 	bool cancel;
 } bp_block_hit_event;
 
+typedef struct {
+	// Not sure what to put here..
+} bp_shutdown_event;
+
 typedef void (*bp_player_join_fn)(const bp_api* _api, const bp_player_join_event* _event);
 typedef void (*bp_item_use_fn)(const bp_api* _api, bp_item_use_event* _event);
 typedef void (*bp_block_use_fn)(const bp_api* _api, bp_block_use_event* _event);
-typedef void (*bp_shutdown_fn)(const bp_api* _api);
+typedef void (*bp_shutdown_fn)(const bp_api* _api, const bp_shutdown_event* _event);
+
+typedef struct {
+	bp_player_join_fn playerJoin;
+	bp_item_use_fn itemUse;
+	bp_block_use_fn blockUse;
+	bp_shutdown_fn shutdown;
+} bp_addon_events;
 
 typedef struct {
 	const char* id;
 	const char* name;
 	const char* version;
 
-	struct {
-		bp_player_join_fn playerJoin;
-		bp_item_use_fn itemUse;
-		bp_block_use_fn blockUse;
-		bp_shutdown_fn shutdown;
-	} events;
+	bp_addon_events events;
 } bp_addon_info;
 
 // Export this as "bp_addon_init" from your addon!
