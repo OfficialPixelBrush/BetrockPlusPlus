@@ -46,7 +46,7 @@ typedef struct {
 
 struct bp_api {
 	uint32_t version;
-	void* internal;
+	void* internal; // Don't touch this.
 
 	struct {
 		void (*info)(const char* message);
@@ -55,13 +55,28 @@ struct bp_api {
 	} log;
 
 	struct {
+		int (*getPlayerCount)(const bp_api* api);
+		// Used with getPlayerCount
+		bp_player* (*getPlayerAt)(const bp_api* api, int index);
+	} server;
+
+	struct {
 		void (*sendMessage)(bp_player* player, const char* message);
+		void (*kick)(bp_player* player);
+		const char* (*getUsername)(bp_player* player);
+		bp_entity* (*getEntity)(bp_player* player);
 	} player;
 
 	struct {
-		void (*setBlock)(bp_world* world, bp_block_pos _pos, bp_block _block);
-		bp_block (*getBlock)(bp_world* world, bp_block_pos _pos);
-		void (*sendBlockUpdate)(bp_world* world, bp_block_pos _pos, bp_block _block);
+		bp_vec3 (*getPosition)(bp_entity* entity);
+		void (*setPosition)(bp_entity* entity, bp_vec3 position);
+		bp_world* (*getWorld)(bp_entity* entity);
+	} entity;
+
+	struct {
+		void (*setBlock)(bp_world* world, bp_block_pos pos, bp_block block);
+		bp_block (*getBlock)(bp_world* world, bp_block_pos pos);
+		void (*sendBlockUpdate)(bp_world* world, bp_block_pos pos, bp_block block);
 	} world;
 
 	struct {
@@ -158,7 +173,7 @@ typedef struct {
 	bp_player_join_fn playerJoin;
 	bp_player_leave_fn playerLeave;
 	bp_player_chat_fn playerChat;
-	bp_player_move_event playerMove;
+	bp_player_move_fn playerMove;
 	bp_item_use_fn itemUse;
 	bp_block_break_fn blockBreak;
 	bp_block_place_fn blockPlace;
