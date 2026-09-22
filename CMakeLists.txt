@@ -218,6 +218,7 @@ set(SHARED_SOURCES
     # Utilities
     src/bpp_utilities/utilities.cpp
     src/bpp_shared/helpers/explosion.cpp
+    src/bpp_shared/helpers/hardware.cpp
     src/bpp_shared/helpers/direction_fixer.cpp
 )
 
