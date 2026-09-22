@@ -22,16 +22,16 @@ EntitySpawner::EntitySpawner() {
 	// Passive (need to make this biome dependent)
 	SpawnCategory passive;
 	passive.spawnListDefault = {
-		{ []() { return std::make_shared<PigEntity>(); }, 10 },
-		{ []() { return std::make_shared<CowEntity>(); }, 8 },
-		{ []() { return std::make_shared<ChickenEntity>(); }, 10 },
-		{ []() { return std::make_shared<SheepEntity>(); }, 12 },
+		{ std::make_shared<PigEntity>(), []() { return std::make_shared<PigEntity>(); }, 10 },
+		{ std::make_shared<CowEntity>(), []() { return std::make_shared<CowEntity>(); }, 8 },
+		{ std::make_shared<ChickenEntity>(), []() { return std::make_shared<ChickenEntity>(); }, 10 },
+		{ std::make_shared<SheepEntity>(), []() { return std::make_shared<SheepEntity>(); }, 12 },
 	};
 	passive.spawnListForest = {
-		{ []() { return std::make_shared<PigEntity>(); }, 10 },
-		{ []() { return std::make_shared<CowEntity>(); }, 8 },
-		{ []() { return std::make_shared<ChickenEntity>(); }, 10 },
-		{ []() { return std::make_shared<SheepEntity>(); }, 12 },
+		{ std::make_shared<PigEntity>(), []() { return std::make_shared<PigEntity>(); }, 10 },
+		{ std::make_shared<CowEntity>(), []() { return std::make_shared<CowEntity>(); }, 8 },
+		{ std::make_shared<ChickenEntity>(), []() { return std::make_shared<ChickenEntity>(); }, 10 },
+		{ std::make_shared<SheepEntity>(), []() { return std::make_shared<SheepEntity>(); }, 12 },
 		// TODO: add wolf
 	};
 	passive.cap = 15;
@@ -40,16 +40,16 @@ EntitySpawner::EntitySpawner() {
 	// Hostile
 	SpawnCategory hostile;
 	hostile.spawnListDefault = {
-		{ []() { return std::make_shared<ZombieEntity>(); }, 10 },
-		{ []() { return std::make_shared<CreeperEntity>(); }, 10 },
-		{ []() { return std::make_shared<SpiderEntity>(); }, 10 },
-		{ []() { return std::make_shared<SkeletonEntity>(); }, 10 },
+		{ std::make_shared<ZombieEntity>(), []() { return std::make_shared<ZombieEntity>(); }, 10 },
+		{ std::make_shared<CreeperEntity>(), []() { return std::make_shared<CreeperEntity>(); }, 10 },
+		{ std::make_shared<SpiderEntity>(), []() { return std::make_shared<SpiderEntity>(); }, 10 },
+		{ std::make_shared<SkeletonEntity>(), []() { return std::make_shared<SkeletonEntity>(); }, 10 },
 	};
 	hostile.spawnListForest = {
-		{ []() { return std::make_shared<ZombieEntity>(); }, 10 },
-		{ []() { return std::make_shared<CreeperEntity>(); }, 10 },
-		{ []() { return std::make_shared<SpiderEntity>(); }, 10 },
-		{ []() { return std::make_shared<SkeletonEntity>(); }, 10 },
+		{ std::make_shared<ZombieEntity>(), []() { return std::make_shared<ZombieEntity>(); }, 10 },
+		{ std::make_shared<CreeperEntity>(), []() { return std::make_shared<CreeperEntity>(); }, 10 },
+		{ std::make_shared<SpiderEntity>(), []() { return std::make_shared<SpiderEntity>(); }, 10 },
+		{ std::make_shared<SkeletonEntity>(), []() { return std::make_shared<SkeletonEntity>(); }, 10 },
 	};
 	hostile.spawnListNether = {
 		// TODO: zombie pigmen and ghast
@@ -87,13 +87,13 @@ int EntitySpawner::GetCategoryCount(WorldManager& _world, SpawnCategory& _catego
 	int count = 0;
 	std::unordered_set<EntityType> types;
 	for (auto& spawnType : _category.GetSpawnSpawnListForBiome(BIOME_FOREST)) {
-		types.insert(spawnType.factory()->type);
+		types.insert(spawnType.entityPtrShared->type);
 	}
 	for (auto& spawnType : _category.GetSpawnSpawnListForBiome(BIOME_HELL)) {
-		types.insert(spawnType.factory()->type);
+		types.insert(spawnType.entityPtrShared->type);
 	}
 	for (auto& spawnType : _category.GetSpawnSpawnListForBiome(BIOME_NONE)) {
-		types.insert(spawnType.factory()->type);
+		types.insert(spawnType.entityPtrShared->type);
 	}
 	for (auto& type : types)
 		count += _world.entityManager.CountEntitiesOfType(type);
@@ -141,7 +141,8 @@ void EntitySpawner::TrySpawnEntities(WorldManager& _world, const std::vector<Cli
 					if (pos.Distance(_world.GetSpawnPoint(false)) < 24.0)
 						continue;
 
-					auto candidate = picked.value().factory();
+					// Reused template instance
+					auto candidate = picked.value().entityPtrShared;
 					candidate->world = &_world;
 					candidate->entityManager = &_world.entityManager;
 
@@ -152,7 +153,13 @@ void EntitySpawner::TrySpawnEntities(WorldManager& _world, const std::vector<Cli
 					if (!candidate->CanSpawnAt())
 						continue;
 
-					_world.entityManager.AddEntity(candidate);
+					// Once we confirm a spawn we actually make the new entity
+					std::shared_ptr<Entity> newMob = picked.value().factory();
+					newMob->world = &_world;
+					newMob->entityManager = &_world.entityManager;
+					newMob->Teleport(position, { rotationYaw, 0.0 });
+
+					_world.entityManager.AddEntity(newMob);
 					spawnedThisCluster++;
 
 					if (spawnedThisCluster >= 4)
