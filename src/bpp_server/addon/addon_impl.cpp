@@ -6,7 +6,6 @@
 */
 
 #include "addon_impl.h"
-#include "addon_api.h"
 #include "base_structs.h"
 #include "blocks.h"
 #include "logger.h"

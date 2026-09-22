@@ -6,8 +6,6 @@
 */
 
 #include "addon_manager.h"
-#include "addon/addon_api.h"
-#include "addon_impl.h"
 #include "logger.h"
 #include <dlfcn.h>
 #include <filesystem>

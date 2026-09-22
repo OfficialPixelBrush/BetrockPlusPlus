@@ -10,7 +10,7 @@
 #include "../blocks/server_block_behaviors.h"
 #include "../commands/command.h"
 #include "../trackers/entity_tracker.h"
-#include "addon/addon_api.h"
+#include "addon/addon_impl.h"
 #include "blocks.h"
 #include "blocks/block_properties.h"
 #include "direction_fixer.h"

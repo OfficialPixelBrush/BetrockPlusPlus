@@ -1,5 +1,5 @@
 #define ADDON_API_IMPLEMENTATION
-#include "addon_api.h"
+#include "../include/addon_api.h"
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -139,7 +139,7 @@ void WriteSave(const bp_api* api) {
 	fclose(file);
 }
 
-void OnShutdown(const bp_api* api) {
+void OnShutdown(const bp_api* api, const bp_shutdown_event* ev) {
 	api->log.info("Test addon shutting down...");
 	WriteSave(api);
 }

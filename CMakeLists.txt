@@ -273,7 +273,6 @@ endif()
 
 # Includes
 include_directories(
-    "${PROJECT_SOURCE_DIR}/external/glad/include"
     "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_SOURCE_DIR}/src/bpp_server"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared"
