@@ -330,6 +330,8 @@ void ClickSlot(Packet::ClickSlot& _pkt, PlayerSession& _session) {
 
 	// Clicked outside the window
 	if (_pkt.slotId == -999) {
+		if (!_session.activeInteraction)
+			return;
 		InventoryInteraction& interaction = _pkt.windowId == 0 ? _session.inventoryInteraction
 		                                                       : *_session.activeInteraction;
 
@@ -388,6 +390,8 @@ void ClickSlot(Packet::ClickSlot& _pkt, PlayerSession& _session) {
 		return;
 	}
 	ItemStack empty{ Items::Id::INVALID };
+	if (!_session.activeInteraction->inventory)
+		return;
 	auto expected = _session.activeInteraction->inventory->GetStackInSlot(_pkt.slotId);
 	ItemStack& slotItem = expected ? *expected : empty;
 	if (slotItem.id != _pkt.item.id || slotItem.data != _pkt.item.data || slotItem.count != _pkt.item.count) {

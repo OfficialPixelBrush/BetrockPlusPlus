@@ -245,9 +245,9 @@ std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbOfType(
 }
 
 std::vector<std::shared_ptr<Entity>> EntityManager::GetLivingEntitiesWithinAabb(const AABB& _box) {
-	auto entities = GetEntitiesWithinAabb(_box);
+	auto entitiesInAabb = GetEntitiesWithinAabb(_box);
 	std::vector<std::shared_ptr<Entity>> living;
-	for (auto& entity : entities) {
+	for (auto& entity : entitiesInAabb) {
 		if (dynamic_cast<MobileEntity*>(entity.get()))
 			living.push_back(entity);
 	}
