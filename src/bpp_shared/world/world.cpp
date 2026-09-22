@@ -645,56 +645,21 @@ void WorldManager::UpdateLoadRadius(const std::vector<ClientPosition>& _players)
 }
 
 void WorldManager::PumpPipeline(const std::vector<ClientPosition>& _players) {
-	// Take a snapshot of all the current chunk positions so we don't have to worry about threads
-	// This is technically a relic from when we had chunks put themselves into the world's chunk map but now the world does it all at the end of the Tick
-	// Still good practice, though
-	std::vector<Int32_2> snapshot;
-	snapshot.reserve(chunks.size());
-	for (auto& [pos, chunk] : chunks)
-		snapshot.push_back(pos);
-
 	const int playerCount = int(_players.size());
 	const int slicePerPlayer = 16;
 
-	std::vector<Int32_2> noPlayerCandidates;
-	std::vector<std::vector<Int32_2>> perPlayerQueues;
-	if (playerCount == 0) {
-		// No players so try and get every chunk within load distance if its not already generating
-		for (const Int32_2& p : snapshot) {
-			auto it = chunks.find(p);
-			if (it == chunks.end())
-				continue;
-			if (it->second->state.load(std::memory_order_acquire) != ChunkState::Unloaded)
-				continue;
-			noPlayerCandidates.push_back(p);
-		}
-		std::sort(noPlayerCandidates.begin(), noPlayerCandidates.end(), [](const Int32_2& _a, const Int32_2& _b) {
-			if (_a.x != _b.x)
-				return _a.x < _b.x;
-			return _a.z < _b.z;
-		});
-	} else {
-		perPlayerQueues.reserve(size_t(playerCount));
-		for (size_t playerIndex = 0; playerIndex < _players.size(); ++playerIndex) {
-			std::vector<Int32_2> candidates;
-			candidates.reserve(snapshot.size());
-			for (const Int32_2& p : snapshot) {
-				auto it = chunks.find(p);
-				if (it == chunks.end())
-					continue;
-				if (it->second->state.load(std::memory_order_acquire) != ChunkState::Unloaded)
-					continue;
-				candidates.push_back(p);
-			}
-			// Sort by load order that beta 1.7.3 seems to use
-			std::sort(candidates.begin(), candidates.end(), [](const Int32_2& _a, const Int32_2& _b) {
-				if (_a.x != _b.x)
-					return _a.x < _b.x;
-				return _a.z < _b.z;
-			});
-			perPlayerQueues.push_back(std::move(candidates));
-		}
+	std::vector<Int32_2> unloadedCandidates;
+	unloadedCandidates.reserve(chunks.size());
+	for (auto& [pos, chunk] : chunks) {
+		if (chunk->state.load(std::memory_order_acquire) == ChunkState::Unloaded)
+			unloadedCandidates.push_back(pos);
 	}
+	// Sort by load order that beta 1.7.3 seems to use
+	std::sort(unloadedCandidates.begin(), unloadedCandidates.end(), [](const Int32_2& _a, const Int32_2& _b) {
+		if (_a.x != _b.x)
+			return _a.x < _b.x;
+		return _a.z < _b.z;
+	});
 
 	std::unordered_set<Int32_2> startedThisTick;
 
@@ -749,7 +714,7 @@ void WorldManager::PumpPipeline(const std::vector<ClientPosition>& _players) {
 
 	if (playerCount == 0) {
 		int started = 0;
-		for (const Int32_2& pos : noPlayerCandidates) {
+		for (const Int32_2& pos : unloadedCandidates) {
 			if (started >= slicePerPlayer)
 				break;
 			if (regionManager->ChunkExists(pos)) {
@@ -761,18 +726,20 @@ void WorldManager::PumpPipeline(const std::vector<ClientPosition>& _players) {
 				++started;
 		}
 	} else {
-		// Make sure everyone gets their share of the budget
-		std::vector<int> cursors(size_t(playerCount), 0);
+		// Make sure everyone gets their share of the budget.
+		// Every player's cursor walks the same shared,
+		// pre-sorted candidate list.
+		std::vector<size_t> cursors(size_t(playerCount), 0);
 		int totalStarted = 0;
 		const int totalBudget = slicePerPlayer * playerCount;
 		bool anyProgress = true;
 		while (totalStarted < totalBudget && anyProgress) {
 			anyProgress = false;
 			for (int i = 0; i < playerCount && totalStarted < totalBudget; ++i) {
-				int& cur = cursors[size_t(i)];
+				size_t& cur = cursors[size_t(i)];
 				int playerConsumed = 0;
-				while (playerConsumed < slicePerPlayer && cur < static_cast<int>(perPlayerQueues[size_t(i)].size())) {
-					Int32_2 cpos = perPlayerQueues[size_t(i)][size_t(cur)];
+				while (playerConsumed < slicePerPlayer && cur < unloadedCandidates.size()) {
+					Int32_2 cpos = unloadedCandidates[cur];
 					++cur;
 					if (regionManager->ChunkExists(cpos)) {
 						if (startLoading(cpos)) {
