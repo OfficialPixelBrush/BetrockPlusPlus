@@ -22,6 +22,12 @@ typedef struct bp_entity bp_entity;
 typedef struct bp_world bp_world;
 
 typedef struct {
+	double x;
+	double y;
+	double z;
+} bp_vec3;
+
+typedef struct {
 	int16_t id;
 	int8_t count;
 	int16_t data;
@@ -43,24 +49,24 @@ struct bp_api {
 	void* internal;
 
 	struct {
-		void (*info)(const char* _message);
-		void (*warning)(const char* _message);
-		void (*error)(const char* _message);
+		void (*info)(const char* message);
+		void (*warning)(const char* message);
+		void (*error)(const char* message);
 	} log;
 
 	struct {
-		void (*sendMessage)(bp_player* _player, const char* _message);
+		void (*sendMessage)(bp_player* player, const char* message);
 	} player;
 
 	struct {
-		void (*setBlock)(bp_world* _world, bp_block_pos _pos, bp_block _block);
-		bp_block (*getBlock)(bp_world* _world, bp_block_pos _pos);
-		void (*sendBlockUpdate)(bp_world* _world, bp_block_pos _pos, bp_block _block);
+		void (*setBlock)(bp_world* world, bp_block_pos _pos, bp_block _block);
+		bp_block (*getBlock)(bp_world* world, bp_block_pos _pos);
+		void (*sendBlockUpdate)(bp_world* world, bp_block_pos _pos, bp_block _block);
 	} world;
 
 	struct {
-		void (*setPlayer)(const bp_api* _api, bp_player* _player, void* _data);
-		void* (*getPlayer)(const bp_api* _api, bp_player* _player);
+		void (*setPlayer)(const bp_api* api, bp_player* player, void* _data);
+		void* (*getPlayer)(const bp_api* api, bp_player* player);
 	} data;
 };
 
@@ -70,40 +76,95 @@ typedef struct {
 
 typedef struct {
 	bp_player* player;
-	bp_item_stack item;
+} bp_player_leave_event;
 
+typedef struct {
+	bp_player* player;
+	const char* message;
+
+	bool cancel;
+} bp_player_chat_event;
+
+typedef struct {
+	bp_player* player;
+	bp_vec3 from;
+	bp_vec3 to;
+
+	bool cancel;
+} bp_player_move_event;
+
+typedef struct {
+	bp_player* player;
+
+	bp_item_stack item;
 	bool cancel;
 } bp_item_use_event;
 
 typedef struct {
 	bp_player* player;
 	bp_world* world;
+
 	bp_item_stack heldItem;
 	bp_block_pos blockPos;
 	bp_block block;
-
 	bool cancel;
 } bp_block_use_event;
 
 typedef struct {
 	bp_player* player;
+	bp_world* world;
+
+	bp_item_stack tool;
 	bp_block_pos blockPos;
+	bp_block block;
 	bool cancel;
-} bp_block_hit_event;
+} bp_block_break_event;
 
 typedef struct {
-	// Not sure what to put here..
+	bp_player* player;
+	bp_world* world;
+
+	bp_block_pos blockPos;
+	bp_block block;
+	bool cancel;
+} bp_block_place_event;
+
+typedef struct {
+	bp_entity* entity;
+
+	int amount;
+	bool cancel;
+} bp_entity_damage_event;
+
+typedef struct {
+} bp_tick_event;
+
+typedef struct {
 } bp_shutdown_event;
 
-typedef void (*bp_player_join_fn)(const bp_api* _api, const bp_player_join_event* _event);
-typedef void (*bp_item_use_fn)(const bp_api* _api, bp_item_use_event* _event);
-typedef void (*bp_block_use_fn)(const bp_api* _api, bp_block_use_event* _event);
-typedef void (*bp_shutdown_fn)(const bp_api* _api, const bp_shutdown_event* _event);
+typedef void (*bp_player_join_fn)(const bp_api* api, const bp_player_join_event* event);
+typedef void (*bp_player_leave_fn)(const bp_api* api, const bp_player_leave_event* event);
+typedef void (*bp_player_chat_fn)(const bp_api* api, bp_player_chat_event* event);
+typedef void (*bp_player_move_fn)(const bp_api* api, bp_player_move_event* event);
+typedef void (*bp_item_use_fn)(const bp_api* api, bp_item_use_event* event);
+typedef void (*bp_block_use_fn)(const bp_api* api, bp_block_use_event* event);
+typedef void (*bp_block_break_fn)(const bp_api* api, bp_block_break_event* event);
+typedef void (*bp_block_place_fn)(const bp_api* api, bp_block_place_event* event);
+typedef void (*bp_entity_damage_fn)(const bp_api* api, bp_entity_damage_event* event);
+typedef void (*bp_tick_fn)(const bp_api* api, const bp_tick_event* event);
+typedef void (*bp_shutdown_fn)(const bp_api* api, const bp_shutdown_event* event);
 
 typedef struct {
 	bp_player_join_fn playerJoin;
+	bp_player_leave_fn playerLeave;
+	bp_player_chat_fn playerChat;
+	bp_player_move_event playerMove;
 	bp_item_use_fn itemUse;
+	bp_block_break_fn blockBreak;
+	bp_block_place_fn blockPlace;
 	bp_block_use_fn blockUse;
+	bp_entity_damage_fn entityDamage;
+	bp_tick_fn tick;
 	bp_shutdown_fn shutdown;
 } bp_addon_events;
 
@@ -116,7 +177,7 @@ typedef struct {
 } bp_addon_info;
 
 // Export this as "bp_addon_init" from your addon!
-typedef bp_addon_info (*bp_addon_init_fn)(const bp_api* _api);
+typedef bp_addon_info (*bp_addon_init_fn)(const bp_api* api);
 
 // Standalone functions
 bool bp_block_pos_equals(bp_block_pos a, bp_block_pos b);

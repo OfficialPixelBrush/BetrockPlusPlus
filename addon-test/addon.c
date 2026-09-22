@@ -1,8 +1,6 @@
 #define ADDON_API_IMPLEMENTATION
 #include "../include/addon_api.h"
-#define _GNU_SOURCE
 #include <stdio.h>
-#include <stdlib.h>
 
 static bool IsDoorOpen(const bp_api* api, bp_world* world, bp_block_pos pos, uint8_t meta) {
 	// If this is the top half, get metadata from the bottom half.
