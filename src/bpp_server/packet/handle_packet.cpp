@@ -639,7 +639,7 @@ void UpdateSign(Packet::UpdateSign& _pkt, PlayerSession& /*_session*/, WorldMana
 		Int2 chunkCoord = Int2{ static_cast<int32_t>(position.x / CHUNK_WIDTH),
 			                    static_cast<int32_t>(position.z / CHUNK_WIDTH) };
 		if (!viewer->sentChunks.contains(chunkCoord))
-			return;
+			continue;
 
 		_pkt.Serialize(viewer->stream);
 	}
