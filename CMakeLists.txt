@@ -258,6 +258,14 @@ add_executable(BetrockPlusPlus
     ${SHARED_SOURCES}
 )
 
+# macOS strips debugger/profiler attach entitlements on every rebuild
+if(APPLE)
+    add_custom_command(TARGET BetrockPlusPlus POST_BUILD
+        COMMAND codesign -s - -f --entitlements ${CMAKE_SOURCE_DIR}/debug.entitlements $<TARGET_FILE:BetrockPlusPlus>
+        COMMENT "Re-signing with debug entitlements for Instruments/LLDB attach"
+    )
+endif()
+
 # Includes
 include_directories(
     "${PROJECT_SOURCE_DIR}/external/glad/include"
@@ -372,14 +380,6 @@ else()
 endif()
 
 # Precompiled headers
-# <format> and nbt.h are pulled in, directly or transitively, by a large
-# fraction of this project's translation units (nbt.h alone by 7+ TUs, and
-# more via headers that include it). Re-parsing/re-instantiating them once
-# per TU is pure overhead, since none of it is per-TU-specific. On the
-# server, server.h is an even bigger win: it's included by ~25 of the
-# server's translation units and itself rolls up packets.h, world.h,
-# block_behaviors.h and friends, so precompiling it amortizes that whole
-# header graph across the build instead of re-parsing it in every file.
 if(BUILD_SERVER)
     target_precompile_headers(BetrockPlusPlus PRIVATE
         <format>
