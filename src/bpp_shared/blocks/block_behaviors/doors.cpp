@@ -127,7 +127,7 @@ void RegisterDoorBehaviors() {
 		    return false;
 		},
 		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
-		                    BlockType _blockId, uint8_t /*_meta*/) -> bool {
+		                    BlockType /*_blockId*/, uint8_t /*_meta*/) -> bool {
 		    // Doors can only be placed against the sides of blocks
 		    if (_face == Direction::Value::Up || _face == Direction::Value::Down)
 			    return false;

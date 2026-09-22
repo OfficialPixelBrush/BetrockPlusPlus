@@ -523,8 +523,7 @@ void RegisterRedstoneBehaviors() {
 
 	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                                      Java::Random& /*_random*/) -> void {
-		auto meta = _world.GetMetadata(_pos);
-		if (meta != 0)
+		if (_meta != 0)
 			SetPressurePlateState(_world, _pos, BLOCK_PRESSURE_PLATE_WOOD);
 	};
 
@@ -562,8 +561,7 @@ void RegisterRedstoneBehaviors() {
 
 	blockBehaviors[BLOCK_PRESSURE_PLATE_STONE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                                       Java::Random& /*_random*/) -> void {
-		auto meta = _world.GetMetadata(_pos);
-		if (meta != 0)
+		if (_meta != 0)
 			SetPressurePlateState(_world, _pos, BLOCK_PRESSURE_PLATE_STONE);
 	};
 
