@@ -122,6 +122,26 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 		return;
 	}
 
+	// Reject duplicate usernames
+	const auto players = _server.GetPlayers();
+
+	// NOTE: We can't just use GetSessionByUsername,
+	// because the session with this username already exists when you're connecting to the server
+	auto it = std::find_if(
+		players.begin(),
+		players.end(),
+		[&incoming, &_session](const std::shared_ptr<PlayerSession>& player) {
+			return player &&
+				player.get() != &_session &&
+				player->username == incoming.username;
+		}
+	);
+
+	if (it != players.end()) {
+		DisconnectPlayer( _session, "Player with same username is already on server!", _server, false);
+		return;
+	}
+
 	GlobalLogger().info << "Player " << _session.username << " is logging in.\n";
 
 #ifdef ONLINE_MODE_AUTHENTICATION
