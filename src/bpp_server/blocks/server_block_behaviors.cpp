@@ -57,6 +57,12 @@ void ServerBlock::Initialize() {
 
 		PacketUtilities::SendInventory(_session, _session.openWindowId, *_session.activeInteraction->inventory);
 
+		Packet::ContainerData cd;
+		cd.windowId = _session.openWindowId;
+		cd.containerData.type = PacketData::ContainerDataType::FUEL_DURATION;
+		cd.containerData.value = furnace->GetMaxBurnTime();
+		cd.Serialize(_session.stream);
+
 		return false;
 	};
 
