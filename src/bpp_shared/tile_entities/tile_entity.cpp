@@ -147,12 +147,6 @@ static bool CanAcceptSmeltResult(Inventory& _inventory, const ItemStack& _result
 void TileEntityFurnace::Tick(WorldManager& _world) {
 	dirtyFlags = FLAG_NONE;
 
-	const int maxBurnTime = GetMaxBurnTime();
-	if (maxBurnTime != lastMaxBurnTime && maxBurnTime != 0) {
-		dirtyFlags |= FLAG_MAX_BURN_TIME;
-		lastMaxBurnTime = maxBurnTime;
-	}
-
 	bool hasInput = inventory.slots[0].id != Items::INVALID && inventory.slots[0].count > 0;
 	ItemStack result = hasInput ? GetSmeltingResult(inventory.slots[0].id) : ItemStack{ Items::INVALID };
 	bool canSmelt = hasInput && result.id != Items::INVALID && CanAcceptSmeltResult(inventory, result);
@@ -165,11 +159,16 @@ void TileEntityFurnace::Tick(WorldManager& _world) {
 		if (burnTime > 0)
 			--burnTime;
 
-		if (burnTime == 0 && hasInput && result.id != Items::INVALID) {
-			burnTime = canSmelt ? maxBurnTime : 0; // 0 if slot 1 is empty or not a valid fuel
-			if (burnTime > 0) {
-				inventory.DecreaseStackSize(1, 1);
+		if (burnTime == 0 && canSmelt) {
+			const int maxBurnTime = GetMaxBurnTime();
+			if (maxBurnTime != lastMaxBurnTime && maxBurnTime != 0) {
+				dirtyFlags |= FLAG_MAX_BURN_TIME;
+				lastMaxBurnTime = maxBurnTime;
 			}
+
+			burnTime = maxBurnTime;
+			if (burnTime > 0)
+				inventory.DecreaseStackSize(1, 1);
 		}
 
 		if (burnTime != oldBurnTime)
