@@ -16,8 +16,6 @@
 #include <vector>
 
 void InventoryTracker::Tick(Server& _server) {
-	std::vector<TileEntityFurnace*> syncedFurnaces;
-
 	for (auto& session : _server.GetPlayers()) {
 		// Check inventory diffs
 		if (session->inventoryInteraction.needsDiff) {
@@ -99,9 +97,5 @@ void InventoryTracker::Tick(Server& _server) {
 			_server.gameRuntime.saveManager.SavePlayerNbt(
 			    std::string(session->username.begin(), session->username.end()), savedNbt);
 		}
-	}
-
-	for (auto furnace : syncedFurnaces) {
-		furnace->dirtyFlags = TileEntityFurnace::FLAG_NONE;
 	}
 }
