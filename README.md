@@ -5,34 +5,41 @@
 [![Pull requests](https://img.shields.io/github/issues-pr/OfficialPixelBrush/BetrockPlusPlus)](https://github.com/OfficialPixelBrush/BetrockPlusPlus/pulls)
 [![OpenBeta](https://img.shields.io/badge/OpenBeta-Discord-purple)](https://discord.gg/JHTz2HSKrf)
 
-A from-scratch rewrite/combination of Beta++/Betrock and BetrockServer to combine their bests parts cleanly.
+A full, from-scratch reimplementation of Minecraft Beta 1.7.3 into C++.
 
 ## Goals
 
-A full, from-scratch reimplementation of Minecraft Beta 1.7.3.
-
-1. Ideally Betrock++ should be capable of acting as a Server
-2. Functionality would be extended where desired or necessary, but generally compatibility and faithfulness will be prioritized
-3. Cross-platform (Windows and Linux)
-4. Fully open-source, anyone can fork, commit and contribute
-5. Unless something requires decompiled code for the sake of accuracy, no decompiled code will be used, reimplemented or referenced. If it **is** used for anything, it'll be very clearly marked as such in the code via comments. At most it'll serve as a reference for what not to do, and what pitfalls we should avoid
+1. Betrock++ should be capable of acting as a drop-in replacement for the Java Server
+2. Functionality may be extended where desired or necessary, but generally compatibility and faithfulness will be prioritized
+3. Cross-platform (Windows, Linux, MacOS, etc.)
+4. Fully open-source: Anyone can fork, commit and contribute however they please
+5. Unless something requires decompiled code for the sake of accuracy, no decompiled code will be used or referenced. If it **is** used for anything, it'll be very clearly marked as such in the code via comments. At most it'll serve as a reference for what not to do, and what architectural or implementation pitfalls we should avoid
 
 ## Community
 
 This is another project that's part of/worked on by the OpenBeta Community. We have a [Discord Server](https://discord.gg/JHTz2HSKrf) and [Website](https://officialpixelbrush.github.io/OpenBeta)!
 
-## Contributing
+## Running
 
-Please read the [CONTRIBUTING](./CONTRIBUTING.md) page.
+Grab the [latest build from the Releases tab](https://github.com/OfficialPixelBrush/BetrockPlusPlus/releases/latest), choose the build that you need for your OS, then just run it wherever you need!
 
-## Building
+## Bug Reporting
+If you encounter a bug, inaccuracy or other issue, please file an issue here on Github. Check if a similar issue has already been reported, and roughly follow the same sort of style we use. Provide as much info as you can!
 
-Please read the [BUILDING](./BUILDING.md) page.
+If you don't have a Github account, please report the issue on Discord, though this is generally discouraged.
 
 ## Hardware Requirements
 
 To find out what's needed to run the project, please see the [recommended hardware requirements on the hardware page](./HARDWARE.md#recommended-specs-server).
 The server can be run on lesser hardware, though the experience may not be ideal.
+
+## Building
+
+Please read the [BUILDING](./BUILDING.md) page.
+
+## Contributing
+
+Please read the [CONTRIBUTING](./CONTRIBUTING.md) page.
 
 ## Related projects
 

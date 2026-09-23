@@ -1,6 +1,6 @@
 > [!NOTE]
 > This whole file, alongside the docker-compose and Dockerfile were AI generated.
-> These and instructions and these files have only been generated because none of
+> These instructions and files have only been generated because none of
 > us have sufficient experience with Docker yet. If anyone wants to rewrite these
 > files in a more approachable or cleaner way,
 > we'd be more than happy to accept those changes instead.
@@ -69,7 +69,7 @@ docker run -it --rm -p 25565:25565 -v "$PWD/data:/data" \
 
 ## Build arguments reference
 
-| Arg            | Values                           | Default   | Effect                                     |
-| -------------- | -------------------------------- | --------- | ------------------------------------------ |
-| `BUILD_TYPE`   | `Release`, `Debug`, `MinSizeRel` | `Release` | CMake build type                           |
-| `COMPILER`     | `clang`, `gcc`                   | `clang`   | Which compiler to use inside the container |
+| Arg          | Values                           | Default   | Effect                                     |
+| ------------ | -------------------------------- | --------- | ------------------------------------------ |
+| `BUILD_TYPE` | `Release`, `Debug`, `MinSizeRel` | `Release` | CMake build type                           |
+| `COMPILER`   | `clang`, `gcc`                   | `clang`   | Which compiler to use inside the container |

@@ -1,6 +1,6 @@
 # Hardware
 
-This page lists all hardware that Betrock++ has been successsfully compiled for and run on. This is also used to help the true hardware requirements.
+This page lists all hardware that Betrock++ has been successfully compiled for and run on. This is also used to help determine the true hardware requirements.
 
 | Commit                                                                            | Architecture | OS                                                 | CPU                                             | Memory (Physical) | Swap/Paged Memory        | Model Name                     | Submitted by |
 | --------------------------------------------------------------------------------- | ------------ | -------------------------------------------------- | ----------------------------------------------- | ----------------- | ------------------------ | ------------------------------ | ------------ |
@@ -26,7 +26,7 @@ As of [`8cb7559`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/8
 > CPU usage is rather minimal for the most part. The biggest bottlenecks, especially on older systems, are compression and world generation. If you plan to play on such a system, try to pregenerate the area you'd like to play in, or reduce the render distance so less chunks get generated at once as players explore.
 
 > [!NOTE]  
-> Memory usage is hugely affected by the servers render distance.
+> Memory usage is hugely affected by the server's render distance.
 > At a low value, such as 3 chunks, we use as little as 10-20MB, and 70-80MB when set to 13 chunks.
 > Some additional memory overhead can come from having a large number of CPU cores, though this is not as common anymore.
 
@@ -37,7 +37,7 @@ As of [`8cb7559`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/8
 - Place, break blocks
 - Mobs can pathfind in a reasonable amount of time
 - Explore with other players
-- A servicable render distance
+- A serviceable render distance
 - Not have the server lag to oblivion
 
 Overall, the metric is very subjective and left vague on purpose. What one person considers unplayable is a fine trade-off to another.

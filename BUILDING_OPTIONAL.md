@@ -2,7 +2,7 @@
 
 Optional Features are settings that we expose at compile-time for people that want specific features, without unnecessarily inflating compile time, binary size or the number of necessary dependencies for those that don't want them.
 
-For example, if you'd like to disable Online Mode Authencation, but enable Discord Integration, you'd type:
+For example, if you'd like to disable Online Mode Authentication, but enable Discord Integration, you'd type:
 
 ```bash
 cmake -S . -B build -DONLINE_MODE_AUTHENTICATION=OFF -DDISCORD_INTEGRATION=ON
@@ -87,8 +87,8 @@ There exist four options, listed from most to least supported/usable.
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `DOUBLE` | Uses a **64-Bit floating point number**. The default, supported mode                                                                                                                                                                                                                                                                                                          | None. This is identical to Vanilla Minecraft                                                                                                                                                                                              |
 | `FLOAT`  | Uses a **32-Bit floating point number**. This shouldn't do much on systems with a dedicated floating-point co-processor, such as an Intel 8087, or integrated floating-point functionality, like most x86 CPUs made after ~1987, as they use the same 80-Bit registers for 32-bit and 64-bit floating-point math, the only difference being potential memory bandwidth usage. | _VERY_ slightly different terrain. The only major difference is that the farlands do not generate, and they just become an infinite ocean with a bedrock floor along the X-Axis, and the same but with a grid of blocks along the Z-Axis. |
-| `LONG`   | Uses a **36.28 Fixed-point number**, removing some floating-point overhead                                                                                                                                                                                                                                                                                                    | Generation is idential to `DOUBLE`, except at the farlands, where they appear more compressed.                                                                                                                                            |
-| `INT`    | Uses a **18.14 Fixed-point number**, removing some floating-point overhead                                                                                                                                                                                                                                                                                                    | Generation can differ noticably under some circumstances, even near 0,0. The farlands do not generate at their usual location.                                                                                                            |
+| `LONG`   | Uses a **36.28 Fixed-point number**, removing some floating-point overhead                                                                                                                                                                                                                                                                                                    | Generation is identical to `DOUBLE`, except at the farlands, where they appear more compressed.                                                                                                                                           |
+| `INT`    | Uses a **18.14 Fixed-point number**, removing some floating-point overhead                                                                                                                                                                                                                                                                                                    | Generation can differ noticeably under some circumstances, even near 0,0. The farlands do not generate at their usual location.                                                                                                           |
 
 The main benefits for this are for some microcontrollers or cost-reduced x86 chips that don't have integrated floating-point support, and thus need to emulate it all in software. Examples for such include RISC-V cores that lack the F (float) and D (double) extensions (e.g. RV32I, RV64IM) or the i486SX.
 
@@ -102,7 +102,7 @@ Simply add `-DGENERATION_PRECISION=`, followed by your desired precision type, t
 > IT IS NOT IN A USABLE STATE!!!
 
 > [!NOTE]
-> When the client *is* in a more workable state again,
+> When the client _is_ in a more workable state again,
 > we'll likely move these instructions back into the
 > main building instructions.
 >
@@ -111,8 +111,8 @@ Simply add `-DGENERATION_PRECISION=`, followed by your desired precision type, t
 > not yet usable.
 > The client is not our main focus right now,
 > the server is, as it'll give us a solid foundation to
-> build the Client ontop of.
-> 
+> build the Client on top of.
+>
 > This is also why the client isn't mentioned at the top
 > of the usable flags, so it hopefully flies under the
 > radar a little until it's in a more usable state.
@@ -129,7 +129,6 @@ sudo apt install git cmake build-essential libdeflate-dev libasan8 libcurl4-open
 ```
 
 > Note: `libsdl3-dev` is only packaged on Debian 13 (trixie) and newer, and Ubuntu 25.10 and newer. On Ubuntu 24.04/22.04 LTS it is not in `apt`, so you'll need a newer release or to build SDL3 from source.
-
 
 ##### RHEL / Fedora
 
