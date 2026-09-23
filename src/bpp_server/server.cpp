@@ -7,9 +7,11 @@
  *
 */
 
+#include "addon/addon_impl.h"
 #include "base_types.h"
 #include "config/list_parser.h"
 #include "dimensions.h"
+#include "gamerules.h"
 #include "logger.h"
 #include "packet/packet_utils.h"
 #include "trackers/inventory_tracker.h"
@@ -17,7 +19,6 @@
 #include <future>
 #include <string>
 #include <thread>
-#include "gamerules.h"
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
 #include <fcntl.h>
@@ -855,6 +856,10 @@ std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {
 #ifdef DISCORD_INTEGRATION
 				                             GlobalDiscord().SendPlayerLeaveMessage(_s->username);
 #endif
+
+				                             const bp_player_join_event event{ &_s->apiPlayer };
+				                             addonManager.Broadcast(&bp_addon_events::playerJoin, event);
+
 				                             if (_s->entity->entityManager)
 					                             _s->entity->entityManager->RemoveEntity(_s->entity->id);
 			                             }
