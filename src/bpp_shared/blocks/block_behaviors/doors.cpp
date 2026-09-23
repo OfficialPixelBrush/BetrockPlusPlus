@@ -215,7 +215,7 @@ void RegisterDoorBehaviors() {
 		BreakDoor(_world, _pos, BLOCK_DOOR_IRON);
 	};
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockDestroyedByExplosion = [](WorldManager& _world, Int3 _pos) {
-		BreakDoor(_world, _pos, BLOCK_DOOR_IRON);
+		BreakDoor(_world, _pos, BLOCK_DOOR_WOOD);
 	};
 
 	blockBehaviors[BLOCK_DOOR_WOOD].onNeighborBlockChange = NeighborUpdateDoor;
