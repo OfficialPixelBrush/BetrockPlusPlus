@@ -65,3 +65,7 @@ Please read the [CONTRIBUTING](./CONTRIBUTING.md) page.
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=OfficialPixelBrush/BetrockPlusPlus&type=timeline&legend=bottom-right&sealed_token=SiCPUTgIUA-J_nSNcOU255DhQcl9bI97c4J8pNGJ9H4SeGNcr2x9AIZCUyciKwnWu5iaPMBpR4jH4zbKPNe2eER55IKQuu1AjYEKt_HRJ0inpQtePnebJMKz9p6VF4Ffj2fBtcVkhnj2OCTm-tGDL_zD4Knq2lWGpJrYml1hH_bRvDJM4I2K_mlmapI9" />
  </picture>
 </a>
+
+## Legal Disclaimer
+
+NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT
