@@ -20,8 +20,8 @@ AddonManager::AddonManager() {
 			continue;
 		}
 
-		auto addonInit = reinterpret_cast<bp_addon_init_fn>(dlsym(handle, "bp_addon_init"));
-		if (!addonInit) {
+		auto addonFn = reinterpret_cast<bp_addon_fn>(dlsym(handle, "bp_addon"));
+		if (!addonFn) {
 			GlobalLogger().error << "Invalid addon (no symbol export): '" << addonPath << "'\n";
 			dlclose(handle);
 			continue;
@@ -32,8 +32,11 @@ AddonManager::AddonManager() {
 		addon->api = MakeAddonAPI();
 		addon->api.internal = addon.get();
 
-		addon->info = addonInit(&addon->api);
+		addon->info = addonFn(&addon->api);
 		addon->dynHandle = handle;
+
+		if (addon->info.events.addonLoad)
+			addon->info.events.addonLoad(&addon->api, {});
 
 		GlobalLogger().info << "Loaded addon '" << addon->info.id << "'\n";
 
@@ -43,6 +46,11 @@ AddonManager::AddonManager() {
 
 AddonManager::~AddonManager() {
 	for (const auto& addon : addons) {
+		if (addon->info.events.addonUnload)
+			addon->info.events.addonUnload(&addon->api, {});
+
+		GlobalLogger().info << "Unloaded addon '" << addon->info.id << "'\n";
+
 		dlclose(addon->dynHandle);
 	}
 }

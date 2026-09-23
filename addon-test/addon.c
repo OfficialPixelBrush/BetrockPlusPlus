@@ -107,7 +107,7 @@ void LoadSave(const bp_api* api) {
 	FILE* file = fopen("keys.txt", "r");
 
 	if (file == NULL) {
-		api->log.info("Couldn't open addon save file! Ignoring...");
+		api->log.info(api, "Couldn't open addon save file! Ignoring...");
 		return;
 	}
 
@@ -125,7 +125,7 @@ void WriteSave(const bp_api* api) {
 	FILE* file = fopen("keys.txt", "w");
 
 	if (file == NULL) {
-		api->log.error("Failed to create addon save file!");
+		api->log.error(api, "Failed to create addon save file!");
 		return;
 	}
 
@@ -137,15 +137,17 @@ void WriteSave(const bp_api* api) {
 	fclose(file);
 }
 
-void OnShutdown(const bp_api* api, const bp_shutdown_event* ev) {
-	api->log.info("Test addon shutting down...");
+void OnLoad(const bp_api* api, const bp_addon_load* ev) {
+	LoadSave(api);
+	api->log.info(api, "Test addon loaded!");
+}
+
+void OnUnload(const bp_api* api, const bp_addon_unload* ev) {
+	api->log.info(api, "Test addon shutting down...");
 	WriteSave(api);
 }
 
-bp_addon_info bp_addon_init(const bp_api* api) {
-	LoadSave(api);
-	api->log.info("Test addon loaded!");
-
+bp_addon_info bp_addon(const bp_api* api) {
 	return (bp_addon_info){
 		.id = "test",
 		.name = "Test",
@@ -153,7 +155,8 @@ bp_addon_info bp_addon_init(const bp_api* api) {
 		.events = {
 			.playerJoin = OnPlayerJoin,
 			.blockUse = OnBlockUse,
-			.shutdown = OnShutdown,
+			.addonLoad = OnLoad,
+			.addonUnload = OnUnload,
 		},
 	};
 }
