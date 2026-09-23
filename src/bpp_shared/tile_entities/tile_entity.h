@@ -62,7 +62,10 @@ public:
 
 	DirtyFlags dirtyFlags = FLAG_NONE;
 
-	TileEntityFurnace(Int3 _pPosition) : TileEntity(TileType::FURNACE, _pPosition) {
+	TileEntityFurnace(Int3 _pPosition) : TileEntityFurnace(_pPosition, 0, 0) {};
+
+	TileEntityFurnace(Int3 _pPosition, int _burnTime, int _cookTime)
+	    : TileEntity(TileType::FURNACE, _pPosition), burnTime(_burnTime), cookTime(_cookTime) {
 		canTick = true;
 	};
 

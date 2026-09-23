@@ -388,12 +388,15 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 			}
 		};
 
+		//TODO: Add de-serialize method to TileEntity instead of this.. thing
 		if (id == "Chest") {
 			auto ent = std::make_shared<TileEntityChest>(pos);
 			loadSlots(ent->inventory.slots);
 			chunk->tileEntities.push_back(std::move(ent));
 		} else if (id == "Furnace") {
-			auto ent = std::make_shared<TileEntityFurnace>(pos);
+			int burnTime = te.Has("BurnTime") ? te.Get("BurnTime").GetShort() : 0;
+			int cookTime = te.Has("CookTime") ? te.Get("CookTime").GetShort() : 0;
+			auto ent = std::make_shared<TileEntityFurnace>(pos, burnTime, cookTime);
 			loadSlots(ent->inventory.slots);
 			chunk->tileEntities.push_back(std::move(ent));
 		} else if (id == "Trap") {
