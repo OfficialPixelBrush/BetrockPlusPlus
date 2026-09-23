@@ -11,6 +11,7 @@
 #include "entities/entity_skeleton.h"
 #include "entities/entity_spider.h"
 #include "entities/entity_zombie.h"
+#include "inventory/inventory.h"
 #include "inventory/item_stack.h"
 #include "items.h"
 #include "items/item_properties.h"
@@ -273,13 +274,10 @@ Tag TileEntity::Serialize() {
 	return root;
 }
 
-Tag TileEntityChest::Serialize() {
-	auto root = TileEntity::Serialize();
-
-	// Construct our inventory
+static void SerializeInventory(Tag& _root, Inventory& _inventory) {
 	auto items = Tag{ .type = TAG_LIST, .name = "Items", .longValue = 0, .listType = TAG_COMPOUND };
 	int8_t currentSlot = 0;
-	for (auto& stack : inventory.slots) {
+	for (auto& stack : _inventory.slots) {
 		if (stack.id != Items::Id::INVALID) {
 			auto item = Tag{ .type = TAG_COMPOUND, .name = "", .longValue = 0 };
 			auto count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
@@ -297,66 +295,34 @@ Tag TileEntityChest::Serialize() {
 		currentSlot++;
 	}
 
-	root.compound["Items"] = items;
+	_root.compound["Items"] = items;
+}
 
+//TODO: Maybe use inheritance (TileEntityContainer)? If that would be nicer
+
+Tag TileEntityChest::Serialize() {
+	auto root = TileEntity::Serialize();
+	SerializeInventory(root, inventory);
 	return root;
 }
 
 Tag TileEntityFurnace::Serialize() {
 	auto root = TileEntity::Serialize();
+	SerializeInventory(root, inventory);
 
-	// Construct our inventory
-	auto items = Tag{ .type = TAG_LIST, .name = "Items", .longValue = 0, .listType = TAG_COMPOUND };
-	int8_t currentSlot = 0;
-	for (auto& stack : inventory.slots) {
-		if (stack.id != Items::Id::INVALID) {
-			auto item = Tag{ .type = TAG_COMPOUND, .name = "", .longValue = 0 };
-			auto count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
-			auto damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
-			auto id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
-			auto slot = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = currentSlot };
-
-			item.compound["Count"] = count;
-			item.compound["Damage"] = damage;
-			item.compound["id"] = id;
-			item.compound["Slot"] = slot;
-
-			items.list.push_back(item);
-		}
-		currentSlot++;
-	}
-
-	root.compound["Items"] = items;
+	root.compound["BurnTime"] = Tag{ .type = TAG_SHORT,
+		                             .name = "BurnTime",
+		                             .shortValue = static_cast<int16_t>(burnTime) };
+	root.compound["CookTime"] = Tag{ .type = TAG_SHORT,
+		                             .name = "CookTime",
+		                             .shortValue = static_cast<int16_t>(cookTime) };
 
 	return root;
 }
 
 Tag TileEntityDispenser::Serialize() {
 	auto root = TileEntity::Serialize();
-
-	// Construct our inventory
-	auto items = Tag{ .type = TAG_LIST, .name = "Items", .longValue = 0, .listType = TAG_COMPOUND };
-	int8_t currentSlot = 0;
-	for (auto& stack : inventory.slots) {
-		if (stack.id != Items::Id::INVALID) {
-			auto item = Tag{ .type = TAG_COMPOUND, .name = "", .longValue = 0 };
-			auto count = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
-			auto damage = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
-			auto id = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
-			auto slot = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = currentSlot };
-
-			item.compound["Count"] = count;
-			item.compound["Damage"] = damage;
-			item.compound["id"] = id;
-			item.compound["Slot"] = slot;
-
-			items.list.push_back(item);
-		}
-		currentSlot++;
-	}
-
-	root.compound["Items"] = items;
-
+	SerializeInventory(root, inventory);
 	return root;
 }
 
