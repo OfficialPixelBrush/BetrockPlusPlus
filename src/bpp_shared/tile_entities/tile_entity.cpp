@@ -17,7 +17,7 @@
 #include "world/world.h"
 #include <string>
 
-//TODO: Move all these into seperate files just like InventoryInteraction
+// TODO: Move all these into separate files just like InventoryInteraction
 void TileEntity::Tick(WorldManager& /*_world*/) {
 	// no-op
 	return;

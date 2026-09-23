@@ -54,7 +54,7 @@ std::string FillArea(const strategos::CmdNode& _cmd, void* _userData) {
 	int64_t depth = int64_t(maxPos.z - minPos.z) + 1;
 	int64_t volume = width * height * depth;
 
-	SendChat(*ctx.session, std::format("Attemping to fill {} block(s)...", volume));
+	SendChat(*ctx.session, std::format("Attempting to fill {} block(s)...", volume));
 
 	Int3 pos;
 	auto fillStart = std::chrono::steady_clock::now();

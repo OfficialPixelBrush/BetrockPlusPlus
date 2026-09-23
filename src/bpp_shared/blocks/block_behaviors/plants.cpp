@@ -82,7 +82,7 @@ static void TryTallPlantGrowth(WorldManager& _world, Int3 _pos, uint8_t _meta, B
 	if (_meta >= 15) {
 		_world.SetBlock(_pos.WithOffset(Direction::Value::Up), _block);
 
-		// So we dont regrown instantly
+		// So we dont regrow instantly
 		// Also updates the new plant block
 		_world.SetMeta(_pos, 0);
 		return;

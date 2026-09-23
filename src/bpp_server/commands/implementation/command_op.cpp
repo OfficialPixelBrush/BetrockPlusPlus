@@ -52,12 +52,12 @@ std::string DeopPlayer(const strategos::CmdNode& _cmd, void* _userData) {
 
 void RegisterOp(strategos::BrigadierContext& _dispatcher) {
 	_dispatcher.add_command(strategos::Node::literal("op")
-	                            .describe("Grants a players operator privilidges")
+	                            .describe("Grants a player's operator privileges")
 	                            .op()
 	                            .executes(OpPlayer)
 	                            .then(strategos::Node::string("username").executes(OpPlayer)));
 	_dispatcher.add_command(strategos::Node::literal("deop")
-	                            .describe("Revokes a players operator privilidges")
+	                            .describe("Revokes a player's operator privileges")
 	                            .op()
 	                            .executes(DeopPlayer)
 	                            .then(strategos::Node::string("username").executes(DeopPlayer)));
