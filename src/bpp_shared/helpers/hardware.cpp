@@ -134,9 +134,9 @@ void ConfigureAllocator() {}
 
 #else // Linux / POSIX
 
+#include <features.h>
 #include <fstream>
 #include <ios>
-#include <malloc.h>
 #include <string>
 #include <unistd.h>
 
@@ -169,6 +169,9 @@ double GetMemoryUsage(const MemoryUnit _unit) {
 	return static_cast<double>(rss * pageSizeBytes) / BytesPerUnit(_unit);
 }
 
+#if defined(__GLIBC__)
+
+#include <malloc.h>
 double GetActiveMemoryUsage(const MemoryUnit _unit) {
 	struct mallinfo2 mi = mallinfo2();
 	return static_cast<double>(mi.uordblks) / BytesPerUnit(_unit);
@@ -182,4 +185,13 @@ void ConfigureAllocator() {
 	mallopt(M_ARENA_MAX, 2);
 }
 
+#else // non-glibc
+
+double GetActiveMemoryUsage(const MemoryUnit _unit) {
+	return GetMemoryUsage(_unit);
+}
+void TrimMemory() {}
+void ConfigureAllocator() {}
+
+#endif
 #endif
