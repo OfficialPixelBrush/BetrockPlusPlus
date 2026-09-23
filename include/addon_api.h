@@ -49,9 +49,9 @@ struct bp_api {
 	void* internal; // Don't touch this.
 
 	struct {
-		void (*info)(const char* message);
-		void (*warning)(const char* message);
-		void (*error)(const char* message);
+		void (*info)(const bp_api* api, const char* message);
+		void (*warning)(const bp_api* api, const char* message);
+		void (*error)(const bp_api* api, const char* message);
 	} log;
 
 	struct {
