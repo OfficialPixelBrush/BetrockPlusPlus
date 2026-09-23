@@ -4,7 +4,7 @@ This pages includes instructions on how to build and compile Betrock++ for vario
 
 ### 1. Clone the Repository
 
-Simply clone the respository with `git`.
+Simply clone the repository with `git`.
 
 ```bash
 git clone https://github.com/OfficialPixelBrush/BetrockPlusPlus.git

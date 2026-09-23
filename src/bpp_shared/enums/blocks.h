@@ -109,7 +109,7 @@ enum BlockType : int8_t {
 	BLOCK_REDSTONE_REPEATER_ON = 94,
 	BLOCK_CHEST_LOCKED = 95,
 	// 95 later got assigned to stained glass,
-	// which did not exist Release 1.7.2
+	// which did not exist until Release 1.7.2
 	BLOCK_TRAPDOOR = 96,
 	// 97 - 109 were added in Beta 1.8 Prerelease
 	// 110 - 115 were added in Beta 1.9 Prerelease
