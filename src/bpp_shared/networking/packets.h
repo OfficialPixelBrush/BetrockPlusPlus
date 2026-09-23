@@ -126,7 +126,7 @@ public:
 		}
 	};
 
-	// Defines a players equipment
+	// Defines a player's equipment
 	struct SetEquipment : BasePacket {
 		SetEquipment() : BasePacket{ PacketId::SetEquipment } {}
 		EntityId entityId;
@@ -193,7 +193,7 @@ public:
 		}
 	};
 
-	// Defines a players health
+	// Defines a player's health
 	struct SetHealth : BasePacket {
 		SetHealth() : BasePacket{ PacketId::SetHealth } {}
 		int16_t health;
@@ -209,7 +209,7 @@ public:
 		}
 	};
 
-	// Defines a players health
+	// Defines a player's health
 	struct Respawn : BasePacket {
 		Respawn() : BasePacket{ PacketId::Respawn } {}
 		Dimension dimension;

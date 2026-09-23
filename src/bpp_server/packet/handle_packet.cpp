@@ -354,7 +354,7 @@ void ClickSlot(Packet::ClickSlot& _pkt, PlayerSession& _session) {
 		return;
 	}
 
-	// The player's inventory is handled seperate
+	// The player's inventory is handled separate
 	if (_pkt.windowId == 0) {
 		// Make sure what the client thinks and what we have line up
 		ItemStack empty{ Items::Id::INVALID };

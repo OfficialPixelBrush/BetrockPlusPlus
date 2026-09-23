@@ -87,7 +87,7 @@ constexpr int GetArmorDamageReduction(ItemId _id) {
 
 	int damageReduceAmounts[4] = { 3, 8, 6, 3 };
 	// ok ok I wanted to explain this because it is a bit convoluted.
-	// Armor starts at id 298, and from there it goes helmet, chestplate, leggings boots
+	// Armor starts at id 298, and from there it goes helmet, chestplate, leggings, boots
 	// Each of the following tiers of armor follow this pattern from then on
 	int pieceIndex = (_id - Items::Id::HELMET_LEATHER) % 4;
 	return damageReduceAmounts[pieceIndex];

@@ -256,7 +256,7 @@ void RegisterMiscBehaviors() {
 	};
 	blockBehaviors[BLOCK_LADDER].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                         Java::Random& /*_random*/) -> void {
-		// Check to make sure we can till exist here
+		// Check to make sure we can still exist here
 		if (!IsSupported(_world, _pos, GetDirectionFromMeta(BLOCK_LADDER, _meta)))
 			BreakAndDropBlock(_world, _pos);
 	};
