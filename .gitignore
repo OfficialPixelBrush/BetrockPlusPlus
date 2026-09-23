@@ -56,3 +56,5 @@ src/bpp_shared/version.h
 /vcpkg_installed
 ops.txt
 /.vscode
+banned-ips.txt
+banned-players.txt
