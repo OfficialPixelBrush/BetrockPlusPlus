@@ -13,7 +13,7 @@ A full, from-scratch reimplementation of Minecraft Beta 1.7.3 into C++.
 2. Functionality may be extended where desired or necessary, but generally compatibility and faithfulness will be prioritized
 3. Cross-platform (Windows, Linux, MacOS, etc.)
 4. Fully open-source: Anyone can fork, commit and contribute however they please
-5. Unless something requires decompiled code for the sake of accuracy, no decompiled code will be used or referenced. If it **is** used for anything, it'll be very clearly marked as such in the code via comments. At most it'll serve as a reference for what not to do, and what architectural or implementation pitfalls we should avoid
+5. Unless something requires decompiled code for the sake of accuracy, none will be used or referenced. If it **is** used for anything, it'll be very clearly marked as such in the code via comments. At most it'll serve as a reference for what not to do, and what architectural or implementation pitfalls we should avoid
 
 ## Community
 
