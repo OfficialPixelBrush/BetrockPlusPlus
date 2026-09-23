@@ -225,6 +225,7 @@ set(SHARED_SOURCES
 # Server-specific source code
 set(SERVER_SOURCES
     src/bpp_server/server.cpp
+    src/bpp_server/gamerules.cpp
     src/bpp_server/internet/online_auth.cpp
     src/bpp_server/internet/betacraft_heartbeat.cpp
     src/bpp_server/packet/handle_packet.cpp

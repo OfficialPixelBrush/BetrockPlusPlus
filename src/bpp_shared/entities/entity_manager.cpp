@@ -19,6 +19,7 @@
 #include "entity_spider.h"
 #include "entity_zombie.h"
 #include "world.h"
+#include "gamerules.h"
 
 void EntityManager::RemoveEntity(EntityId _id) {
 	// Find the entity for this ID
@@ -65,6 +66,11 @@ void EntityManager::AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEn
 		GlobalLogger().error << "Attempted to add an entity before EntityManager was bound to a world!\n";
 		return;
 	}
+	// TODO: Run this on gamerule change too?
+	if (IsAnimal(_entity->type) && !gamerules.spawnAnimals)
+		return;
+	if (IsMonster(_entity->type) && !gamerules.spawnMonsters)
+		return;
 	_entity->id = _forceEntityId == -1 ? GetNextEntityId()
 	                                   : _forceEntityId; // Assign an ID if we weren't forced to use one
 	_entity->world = world; // Bind the world pointer so the entity can interact with the world
