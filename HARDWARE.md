@@ -5,7 +5,7 @@ This page lists all hardware that Betrock++ has been successsfully compiled for 
 | Commit                                                                            | Architecture | OS                                                 | CPU                                             | Memory (Physical) | Swap/Paged Memory        | Model Name                     | Submitted by |
 | --------------------------------------------------------------------------------- | ------------ | -------------------------------------------------- | ----------------------------------------------- | ----------------- | ------------------------ | ------------------------------ | ------------ |
 | [`7b80726`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/7b80726) | x86 (i586)   | Gentoo Linux i586 (Linux 7.1.5)                    | AMD-K5(tm) @ 100MHz                             | 32 MB             | 4GB (swap)               |                                | Pixel Brush  |
-| [`7b80726`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/7b80726) | x86 (i686)   | Gentoo Linux i686 (Linux 7.1.5)                    | Pentium II (Deschutes) @ 337 GHz                | 128 MB            | 4GB (swap)               | Lifetec (modified)             | Pixel Brush  |
+| [`7b80726`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/7b80726) | x86 (i686)   | Gentoo Linux i686 (Linux 7.1.5)                    | Pentium II (Deschutes) @ 337 MHz                | 128 MB            | 4GB (swap)               | Lifetec (modified)             | Pixel Brush  |
 | [`8cb7559`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/8cb7559) | x86 (i686)   | Gentoo Linux i686 (Linux 6.18.38-gentoo)           | mobile AMD Athlon(tm) XP-M 2600+ (1) @ 1.99 GHz | 256 MB            | 1GB (zram) + 4GB (swap)  | Fujitsu AMILO K7600            | Pixel Brush  |
 | [`c5e64f8`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/c5e64f8) | aarch64      | Alpine Linux v3.24 aarch64 (Linux 6.18.35-0-rpi)   | BCM2711 (4) @ 1.50 GHz                          | 2 GB              |                          | Raspberry Pi 4 Model B Rev 1.1 | jwaxy        |
 | [`cf5d238`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/cf5d238) | x86_64       | Alpine Linux v3.24 x86_64 (Linux 6.18.49-0-lts)    | AMD E-450 (2) @ 1.65 GHz                        | 4 GB              |                          | ASUS K73BY                     | Pixel Brush  |
@@ -18,15 +18,17 @@ The conditions to set or lower these requirements are relatively arbitrary, and 
 
 As of [`8cb7559`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/8cb755915b3a9ab2d65ef61670f4d2ad02de3f83) the known minimum requirements are:
 
-- OS: A Linux Distro with Kernel 6.12 or later
+- OS: A Linux Distro with Kernel 6.12 or later (earlier kernels have yet to be tested)
 - Processor: At least 32-Bit capable (e.g. i586 or later) @ >500MHz
-- Memory: ~64MB of available RAM (as in, not used by the operating system or anything else)
+- Memory: ~64MB of available RAM (as in, not used by the operating system or anything else, render distance: 10 chunks)
 
 > [!NOTE]  
 > CPU usage is rather minimal for the most part. The biggest bottlenecks, especially on older systems, are compression and world generation. If you plan to play on such a system, try to pregenerate the area you'd like to play in, or reduce the render distance so less chunks get generated at once as players explore.
 
 > [!NOTE]  
-> Memory usage is affected by how many cores your processor has. A multi-core system can easily reach 100MB of memory usage, while a single-core system with a low render distance can use as little as 10-20MB
+> Memory usage is hugely affected by the servers render distance.
+> At a low value, such as 3 chunks, we use as little as 10-20MB, and 70-80MB when set to 13 chunks.
+> Some additional memory overhead can come from having a large number of CPU cores, though this is not as common anymore.
 
 \*By "without trouble" we mean that you can
 
