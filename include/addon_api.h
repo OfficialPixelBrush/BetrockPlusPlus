@@ -152,10 +152,13 @@ typedef struct {
 } bp_entity_damage_event;
 
 typedef struct {
-} bp_tick_event;
+} bp_server_tick_event;
 
 typedef struct {
-} bp_shutdown_event;
+} bp_addon_load;
+
+typedef struct {
+} bp_addon_unload;
 
 typedef void (*bp_player_join_fn)(const bp_api* api, const bp_player_join_event* event);
 typedef void (*bp_player_leave_fn)(const bp_api* api, const bp_player_leave_event* event);
@@ -166,8 +169,9 @@ typedef void (*bp_block_use_fn)(const bp_api* api, bp_block_use_event* event);
 typedef void (*bp_block_break_fn)(const bp_api* api, bp_block_break_event* event);
 typedef void (*bp_block_place_fn)(const bp_api* api, bp_block_place_event* event);
 typedef void (*bp_entity_damage_fn)(const bp_api* api, bp_entity_damage_event* event);
-typedef void (*bp_tick_fn)(const bp_api* api, const bp_tick_event* event);
-typedef void (*bp_shutdown_fn)(const bp_api* api, const bp_shutdown_event* event);
+typedef void (*bp_server_tick_fn)(const bp_api* api, const bp_server_tick_event* event);
+typedef void (*bp_addon_load_fn)(const bp_api* api, const bp_addon_load* event);
+typedef void (*bp_addon_unload_fn)(const bp_api* api, const bp_addon_unload* event);
 
 typedef struct {
 	bp_player_join_fn playerJoin;
@@ -179,8 +183,9 @@ typedef struct {
 	bp_block_place_fn blockPlace;
 	bp_block_use_fn blockUse;
 	bp_entity_damage_fn entityDamage;
-	bp_tick_fn tick;
-	bp_shutdown_fn shutdown;
+	bp_server_tick_fn serverTick;
+	bp_addon_load_fn addonLoad;
+	bp_addon_unload_fn addonUnload;
 } bp_addon_events;
 
 typedef struct {
@@ -191,8 +196,11 @@ typedef struct {
 	bp_addon_events events;
 } bp_addon_info;
 
-// Export this as "bp_addon_init" from your addon!
-typedef bp_addon_info (*bp_addon_init_fn)(const bp_api* api);
+/* Export this as "bp_addon" from your addon.
+ * Note that you should never call any api functions in here!
+ * Just return your addon's info, nothing else
+ */
+typedef bp_addon_info (*bp_addon_fn)(const bp_api* api);
 
 // Standalone functions
 bool bp_block_pos_equals(bp_block_pos a, bp_block_pos b);
