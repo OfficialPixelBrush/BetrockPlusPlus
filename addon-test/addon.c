@@ -1,6 +1,8 @@
 #define ADDON_API_IMPLEMENTATION
 #include "../include/addon_api.h"
+#include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 static bool IsDoorOpen(const bp_api* api, bp_world* world, bp_block_pos pos, uint8_t meta) {
 	// If this is the top half, get metadata from the bottom half.
@@ -103,6 +105,13 @@ void OnBlockUse(const bp_api* api, bp_block_use_event* ev) {
 		OnStairsUse(api, ev);
 }
 
+void OnPlayerChat(const bp_api* api, bp_player_chat_event* ev) {
+	if (strstr(ev->message, "hate") != NULL) {
+		ev->cancel = true;
+		api->player.sendMessage(ev->player, "You can't use the bad word 'hate'!");
+	}
+}
+
 void LoadSave(const bp_api* api) {
 	FILE* file = fopen("keys.txt", "r");
 
@@ -154,6 +163,7 @@ bp_addon_info bp_addon(const bp_api* api) {
 		.version = "1.0",
 		.events = {
 			.playerJoin = OnPlayerJoin,
+			.playerChat = OnPlayerChat,
 			.blockUse = OnBlockUse,
 			.addonLoad = OnLoad,
 			.addonUnload = OnUnload,

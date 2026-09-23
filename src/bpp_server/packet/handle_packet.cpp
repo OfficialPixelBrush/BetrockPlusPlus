@@ -51,6 +51,15 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
 	if (!_session.entity)
 		return;
 
+	{
+		bp_player_chat_event event{ .player = &_session.apiPlayer, .message = _pkt.message.c_str(), .cancel = false };
+		bool cancelled = _server.GetAddonManager().Broadcast(&bp_addon_events::playerChat, event,
+		                                                     [&]() { return event.cancel; });
+
+		if (cancelled)
+			return;
+	}
+
 	_session.entity->messagesThisTick++;
 	if (_session.entity->messagesThisTick >= 3) {
 		_server.DisconnectPlayer("Chat spamming!", _session);
