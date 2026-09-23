@@ -151,8 +151,8 @@ void Server::LoadConfig() {
 		    //{"pvp", "true"},
 		    // use a random device to seed another prng that gives us our seed
 		    { "level-seed", std::to_string(std::mt19937(std::random_device()())()) },
-		    {"spawn-animals", "true"},
-		    {"spawn-monsters", "true"},
+		    { "spawn-animals", "true" },
+		    { "spawn-monsters", "true" },
 		    { "server-port", "25565" },
 #ifdef DISCORD_INTEGRATION
 		    { "discord-token", "" },
@@ -195,8 +195,8 @@ void Server::LoadConfig() {
 	betacraftHeartbeat.Load(config, serverPort);
 #endif
 	//motd = config.GetAsString("motd");
-	gamerules.spawnAnimals = config.GetAsBoolean("spawn-animals");
-	gamerules.spawnMonsters = config.GetAsBoolean("spawn-monsters");
+	gamerules.spawnAnimals = config.GetAsBoolean("spawn-animals", true);
+	gamerules.spawnMonsters = config.GetAsBoolean("spawn-monsters", true);
 	maximumPlayers = config.GetAsNumber<uint16_t>("max-players", 20);
 	//maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
 	useWhitelist = config.GetAsBoolean("white-list");
