@@ -10,16 +10,23 @@
 #include "blocks.h"
 #include "logger.h"
 
-void LogInfo(const char* _message) {
-	GlobalLogger().info << _message << "\n";
+static constexpr Addon* InternalGetAddon(const bp_api* _api) {
+	return static_cast<Addon*>(_api->internal);
 }
 
-void LogWarning(const char* _message) {
-	GlobalLogger().warn << _message << "\n";
+void LogInfo(const bp_api* _api, const char* _message) {
+	Addon* addon = InternalGetAddon(_api);
+	GlobalLogger().info << "[" << addon->info.name << "] " << _message << "\n";
 }
 
-void LogError(const char* _message) {
-	GlobalLogger().error << _message << "\n";
+void LogWarning(const bp_api* _api, const char* _message) {
+	Addon* addon = InternalGetAddon(_api);
+	GlobalLogger().warn << "[" << addon->info.name << "] " << _message << "\n";
+}
+
+void LogError(const bp_api* _api, const char* _message) {
+	Addon* addon = InternalGetAddon(_api);
+	GlobalLogger().error << "[" << addon->info.name << "] " << _message << "\n";
 }
 
 void PlayerSendMessage(bp_player* _player, const char* _message) {
@@ -53,10 +60,6 @@ void SendBlockUpdate(bp_world* _world, bp_block_pos _pos, bp_block _block) {
 	                                             .blockPos{ _pos.x, _pos.y, _pos.z },
 	                                             .light{ chunk->GetBlockLight(local), chunk->GetSkyLight(local) } },
 	                               chunk->cpos);
-}
-
-constexpr Addon* InternalGetAddon(const bp_api* _api) {
-	return reinterpret_cast<Addon*>(_api->internal);
 }
 
 void* GetPlayerData(const bp_api* _api, bp_player* _player) {
