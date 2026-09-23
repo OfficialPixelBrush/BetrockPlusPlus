@@ -48,6 +48,32 @@ struct EntityManager {
 
 private:
 	void TickEntityAndPassenger(const std::shared_ptr<Entity>& _entity);
+	constexpr bool IsMonster(const EntityType _type) {
+		switch(_type) {
+			case EntityType::CREEPER:
+			case EntityType::ZOMBIE:
+			case EntityType::SKELETON:
+			case EntityType::SPIDER:
+			case EntityType::GIANT_ZOMBIE:
+			case EntityType::SLIME:
+			case EntityType::GHAST:
+			case EntityType::ZOMBIE_PIGMAN:
+				return true;
+			default:
+				return false;
+		}
+	}
+	constexpr bool IsAnimal(const EntityType _type) {
+		switch(_type) {
+			case EntityType::PIG:
+			case EntityType::SHEEP:
+			case EntityType::COW:
+			case EntityType::CHICKEN:
+				return true;
+			default:
+				return false;
+		}
+	}
 
 public:
 	static Int3 ComputeBucketPos(Vec3 _position) {

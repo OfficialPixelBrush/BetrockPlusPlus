@@ -22,7 +22,6 @@ extern std::atomic<bool> shutdownRequested;
 #include "chunk_io/chunk_sender.h"
 #include "commands/command_manager.h"
 #include "config/config.h"
-#include "gamerules.h"
 #include "items/item_properties.h"
 #include "items/tool_properties.h"
 #include "networking/network_stream.h"
@@ -67,7 +66,6 @@ public:
 	Runtime gameRuntime;
 	ChunkSender chunkSender;
 	int flushChunkCount = 10;
-	Gamerules gamerules;
 
 	void SavePlayer(const std::string& _username) {
 		auto PlayerSession = GetSessionByUsername(_username);

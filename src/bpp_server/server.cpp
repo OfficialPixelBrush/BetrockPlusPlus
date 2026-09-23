@@ -17,6 +17,7 @@
 #include <future>
 #include <string>
 #include <thread>
+#include "gamerules.h"
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
 #include <fcntl.h>
@@ -147,10 +148,11 @@ void Server::LoadConfig() {
 		    { "white-list", "false" },
 		    //{"server-ip", ""},
 		    //{"motd", "A Minecraft Server"},
-		    //{"pvp","true"},
+		    //{"pvp", "true"},
 		    // use a random device to seed another prng that gives us our seed
 		    { "level-seed", std::to_string(std::mt19937(std::random_device()())()) },
-		    //{"spawn-animals",true}
+		    {"spawn-animals", "true"},
+		    {"spawn-monsters", "true"},
 		    { "server-port", "25565" },
 #ifdef DISCORD_INTEGRATION
 		    { "discord-token", "" },
@@ -165,7 +167,6 @@ void Server::LoadConfig() {
 		    { "discord-webhook-url", "" },
 #endif
 		    //{"allow-nether",true},
-		    //{"spawn-monsters","true"},
 		    { "max-players", "20" },
 		    { "online-mode", "false" },
 #ifdef BETACRAFT_HEARTBEAT
@@ -194,6 +195,8 @@ void Server::LoadConfig() {
 	betacraftHeartbeat.Load(config, serverPort);
 #endif
 	//motd = config.GetAsString("motd");
+	gamerules.spawnAnimals = config.GetAsBoolean("spawn-animals");
+	gamerules.spawnMonsters = config.GetAsBoolean("spawn-monsters");
 	maximumPlayers = config.GetAsNumber<uint16_t>("max-players", 20);
 	//maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
 	useWhitelist = config.GetAsBoolean("white-list");
