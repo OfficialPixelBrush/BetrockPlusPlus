@@ -505,6 +505,10 @@ std::string Discord::BuildSkinAvatarUrl(const std::string& _username, int _size)
 	}
 	if (safe.empty())
 		safe = "MHF_Steve"; // generic fallback face if the username was unusable
+	// TODO: Add cache-busting measures,
+	// as Discord will keep on reusing the same cached value otherwise
+	// This can be as simple as ?t=<number> or something similar that mc-heads.net can ignore
+	// but Discord will acknowledge as a separate URL
 	return "https://mc-heads.net/avatar/" + safe + "/" + std::to_string(_size);
 }
 
