@@ -152,6 +152,12 @@ void Server::LoadConfig() {
 		    { "level-seed", std::to_string(std::mt19937(std::random_device()())()) },
 		    //{"spawn-animals",true}
 		    { "server-port", "25565" },
+#ifdef REST_API
+		    { "rest-api", "false" },
+		    { "rest-api-address", "0.0.0.0" },
+		    { "rest-api-port", "8080" },
+		    { "rest-api-token", "" },
+#endif
 #ifdef DISCORD_INTEGRATION
 		    { "discord-token", "" },
 		    { "discord-channel-id", "" },
@@ -195,6 +201,9 @@ void Server::LoadConfig() {
 #endif
 	//motd = config.GetAsString("motd");
 	maximumPlayers = config.GetAsNumber<uint16_t>("max-players", 20);
+#ifdef REST_API
+	restApi.Load(config);
+#endif
 	//maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
 	useWhitelist = config.GetAsBoolean("white-list");
 	operatorUsernames = ListParser::Read(ListParser::Target::Operator);
@@ -452,6 +461,12 @@ void Server::Startup() {
 #ifdef BETACRAFT_HEARTBEAT
 	betacraftHeartbeat.Start();
 #endif
+#ifdef REST_API
+	RestApiSnapshot restApiSnapshot;
+	restApiSnapshot.maxPlayers = maximumPlayers;
+	restApi.UpdateSnapshot(std::move(restApiSnapshot));
+	restApi.Start();
+#endif
 }
 
 void Server::Run() {
@@ -525,6 +540,9 @@ void Server::Stop() {
 	if (stopped)
 		return;
 	stopped = true;
+#ifdef REST_API
+	restApi.Stop();
+#endif
 #ifdef BETACRAFT_HEARTBEAT
 	betacraftHeartbeat.Stop();
 #endif
@@ -583,6 +601,9 @@ void Server::Tick() {
 	// owns the session write buffers for the duration of the tick; the write
 	// thread may only touch them after Tick has submitted its flushes.
 	writePool.wait();
+#ifdef REST_API
+	ProcessRestApiActions();
+#endif
 #ifdef DISCORD_INTEGRATION
 	GlobalDiscord().Drain(*this);
 #endif
@@ -676,6 +697,20 @@ void Server::Tick() {
 	if (shutdownTimer == 1)
 		shutdownRequested.store(true);
 
+#ifdef REST_API
+	RestApiSnapshot restApiSnapshot;
+	restApiSnapshot.averageTickMs = averageTickMs;
+	restApiSnapshot.maxPlayers = maximumPlayers;
+	for (const auto& session : players) {
+		if (session->connState != ConnectionState::Playing)
+			continue;
+		restApiSnapshot.onlinePlayers++;
+		if (!session->username.empty())
+			restApiSnapshot.playerNames.push_back(session->username);
+	}
+	restApi.UpdateSnapshot(std::move(restApiSnapshot));
+#endif
+
 #ifdef BETACRAFT_HEARTBEAT
 	if (betacraftHeartbeat.Enabled() && gameRuntime.world.tickScheduler.currentTick % TICKS_PER_SECOND == 0) {
 		BetacraftHeartbeatSnapshot snap;
@@ -694,6 +729,41 @@ void Server::Tick() {
 	}
 #endif
 }
+
+#ifdef REST_API
+void Server::ProcessRestApiActions() {
+	for (auto& action : restApi.DrainActions()) {
+		if (action.type == RestApiActionType::Chat) {
+			SendGlobalChatMessage(action.value);
+			continue;
+		}
+
+		PlayerSession commandSession(-1, gameRuntime);
+		commandSession.username = "Console";
+		commandSession.connState = ConnectionState::Playing;
+		commandSession.hasAllCommandPermissions = true;
+		commandSession.entityTracker = &overworldEntityTracker;
+		const auto spawnPoint = gameRuntime.world.GetSpawnPoint(false);
+		commandSession.position.pos = { static_cast<double>(spawnPoint.x), static_cast<double>(spawnPoint.y),
+		                                static_cast<double>(spawnPoint.z) };
+		commandSession.entity = std::make_shared<EntityMPPlayer>();
+		commandSession.entity->session = &commandSession;
+		commandSession.entity->world = &gameRuntime.world;
+		commandSession.entity->entityManager = &gameRuntime.world.entityManager;
+		commandSession.entity->Teleport(commandSession.position.pos);
+		std::string output;
+		commandSession.commandOutput = [&output](const std::string& _message) {
+			GlobalLogger().info << "REST command: " << StripFormatting(_message) << "\n";
+			if (!output.empty())
+				output += '\n';
+			output += _message;
+		};
+		commandManager.Parse(action.value, commandSession, gameRuntime.world, [](PlayerSession&) {});
+		if (action.completion)
+			action.completion->set_value(std::move(output));
+	}
+}
+#endif
 
 void Server::TryForceBreak(PlayerSession& _session, WorldManager& _world) {
 	if (!_session.pendingBlockBreak.has_value())

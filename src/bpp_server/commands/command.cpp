@@ -11,6 +11,8 @@
 #include <string>
 
 bool IsOperator(PlayerSession& _session, Server& _server) {
+	if (_session.hasAllCommandPermissions)
+		return true;
 	return std::find(_server.operatorUsernames.begin(), _server.operatorUsernames.end(), _session.username) !=
 	       _server.operatorUsernames.end();
 }

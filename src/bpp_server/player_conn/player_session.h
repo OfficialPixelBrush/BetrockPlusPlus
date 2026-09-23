@@ -19,6 +19,7 @@
 #include "world/world.h"
 #include <chrono>
 #include <cstdint>
+#include <functional>
 #include <future>
 #include <unordered_map>
 #include <unordered_set>
@@ -78,6 +79,8 @@ struct PlayerSession {
 	ConnectionState connState = ConnectionState::Handshaking;
 	std::string username = "(username not yet set)";
 	std::string ipAddress;
+	bool hasAllCommandPermissions = false;
+	std::function<void(const std::string&)> commandOutput;
 	std::chrono::steady_clock::time_point lastPacketTime = std::chrono::steady_clock::now();
 
 	std::string serverId;

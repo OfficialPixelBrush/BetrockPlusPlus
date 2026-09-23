@@ -70,6 +70,7 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
 			continue;
 		reply.Serialize(receiver->stream);
 	}
+	_server.PublishChatMessage(reply.message);
 #ifdef DISCORD_INTEGRATION
 	GlobalDiscord().SendPlayerChatMessage(_session.username, _pkt.message);
 #endif

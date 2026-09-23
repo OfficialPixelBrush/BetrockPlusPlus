@@ -14,6 +14,7 @@ Here's a list of all optional flags and their default state:
 | ----------------------------------------------------------- | ------------- |
 | [`ONLINE_MODE_AUTHENTICATION`](#online-mode-authentication) | `ON`          |
 | [`BETACRAFT_HEARTBEAT`](#betacraft-server-list-heartbeat)   | `ON`          |
+| [`REST_API`](#rest-api)                                     | `ON`          |
 | [`DISCORD_INTEGRATION`](#discord-integration)               | `OFF`         |
 | [`EXPERIMENTAL`](#experimental)                             | `OFF`         |
 | [`GENERATION_PRECISION`](#terrain-precision)                | `DOUBLE`      |
@@ -45,6 +46,12 @@ To appear on the list, contact Moresteck on the [Betacraft Discord](https://beta
 | `betacraft-v1-version`   | Version string for Betacraft launcher v1                                               |
 | `betacraft-send-players` | `true` shares online usernames; `false` only shares the player count                   |
 | `betacraft-icon`         | Optional path to a PNG icon (max 128×128 and 64 KiB)                                   |
+
+### REST API
+
+The REST API is **on by default**.
+
+Add `-DREST_API=OFF` to the first build command to exclude it.
 
 ### Discord Integration
 
@@ -96,7 +103,7 @@ Simply add `-DGENERATION_PRECISION=`, followed by your desired precision type, t
 
 ### Client
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > The client is HIGHLY wip and NON-FUNCTIONAL as of now!
 > DO NOT MESSAGE US ABOUT IT IF YOU TRY TO COMPILE IT,
 > IT IS NOT IN A USABLE STATE!!!
@@ -112,7 +119,7 @@ Simply add `-DGENERATION_PRECISION=`, followed by your desired precision type, t
 > The client is not our main focus right now,
 > the server is, as it'll give us a solid foundation to
 > build the Client ontop of.
-> 
+>
 > This is also why the client isn't mentioned at the top
 > of the usable flags, so it hopefully flies under the
 > radar a little until it's in a more usable state.

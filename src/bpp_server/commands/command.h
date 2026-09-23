@@ -36,6 +36,11 @@ bool IsOperator(PlayerSession& _session, Server& _server);
 ItemStack ParseItemStack(const std::string& _itemArg, std::optional<int> _count = std::nullopt);
 
 inline void SendChat(PlayerSession& _session, const std::string& _message) {
+	if (_session.commandOutput) {
+		_session.commandOutput(_message);
+		return;
+	}
+
 	std::u16string ucs2 = ToUCS2(_message);
 	std::u16string colorPrefix;
 	if (ucs2.size() >= 2 && ucs2[0] == u'\u00A7')
