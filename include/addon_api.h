@@ -62,7 +62,7 @@ struct bp_api {
 
 	struct {
 		void (*sendMessage)(bp_player* player, const char* message);
-		void (*kick)(bp_player* player);
+		void (*kick)(const bp_api* api, bp_player* player, const char* reason);
 		const char* (*getUsername)(bp_player* player);
 		bp_entity* (*getEntity)(bp_player* player);
 	} player;

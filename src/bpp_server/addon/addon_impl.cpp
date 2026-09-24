@@ -29,10 +29,38 @@ void LogError(const bp_api* _api, const char* _message) {
 	GlobalLogger().error << "[" << addon->info.name << "] " << _message << "\n";
 }
 
+int GetPlayerCount(const bp_api* _api) {
+	Addon* addon = InternalGetAddon(_api);
+	return addon->server->GetPlayers().size();
+}
+
+bp_player* GetPlayerAt(const bp_api* _api, int _index) {
+	Addon* addon = InternalGetAddon(_api);
+	const auto& players = addon->server->GetPlayers();
+
+	if (_index < 0 || static_cast<size_t>(_index) >= players.size())
+		return nullptr;
+
+	const auto& player = players[_index];
+	if (!player)
+		return nullptr;
+
+	return &player->apiPlayer;
+}
+
 void PlayerSendMessage(bp_player* _player, const char* _message) {
 	Packet::ChatMessage pak;
 	pak.message = std::string(_message);
 	pak.Serialize(_player->session->stream);
+}
+
+void PlayerKick(const bp_api* _api, bp_player* _player, const char* _reason) {
+	Addon* addon = InternalGetAddon(_api);
+	addon->server->DisconnectPlayer(_reason, *_player->session);
+}
+
+const char* PlayerGetUsername(bp_player* _player) {
+	return _player->session->username.c_str();
 }
 
 bp_block GetBlock(bp_world* _world, bp_block_pos _pos) {
@@ -79,7 +107,8 @@ bp_api MakeAddonAPI() {
 	return bp_api{ .version = ADDON_API_VERSION,
 		           .internal = nullptr, // Set by the addon manager
 		           .log = { .info = LogInfo, .warning = LogWarning, .error = LogError },
-		           .player = { .sendMessage = PlayerSendMessage },
+		           .server = { .getPlayerCount = GetPlayerCount, .getPlayerAt = GetPlayerAt },
+		           .player = { .sendMessage = PlayerSendMessage, .kick = PlayerKick, .getUsername = PlayerGetUsername },
 		           .world = { .setBlock = SetBlock, .getBlock = GetBlock, .sendBlockUpdate = SendBlockUpdate },
 		           .data = { .setPlayer = SetPlayerData, .getPlayer = GetPlayerData } };
 }

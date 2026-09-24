@@ -2,6 +2,7 @@
 #include "../include/addon_api.h"
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static bool IsDoorOpen(const bp_api* api, bp_world* world, bp_block_pos pos, uint8_t meta) {
@@ -108,7 +109,22 @@ void OnBlockUse(const bp_api* api, bp_block_use_event* ev) {
 void OnPlayerChat(const bp_api* api, bp_player_chat_event* ev) {
 	if (strstr(ev->message, "hate") != NULL) {
 		ev->cancel = true;
-		api->player.sendMessage(ev->player, "You can't use the bad word 'hate'!");
+		api->player.kick(api, ev->player, "You can't use the bad word 'hate'!");
+		return;
+	}
+	// I yearn for a command api...
+	if (strstr(ev->message, "players") != NULL) {
+		ev->cancel = true;
+		int playerCount = api->server.getPlayerCount(api);
+		char* msg;
+		asprintf(&msg, "There are %d players online:", playerCount);
+		api->player.sendMessage(ev->player, msg);
+		free(msg);
+		for (int i = 0; i < playerCount; ++i) {
+			bp_player* other = api->server.getPlayerAt(api, i);
+			const char* username = api->player.getUsername(other);
+			api->player.sendMessage(ev->player, username);
+		}
 	}
 }
 

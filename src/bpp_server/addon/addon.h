@@ -8,9 +8,12 @@
 
 #include "addon_impl.h"
 
+class Server;
+
 struct Addon {
 	bp_addon_info info;
 	bp_api api;
 	void* dynHandle;
-	std::unordered_map<PlayerSession*, void*> addonData;
+	Server* server;
+	std::unordered_map<PlayerSession*, void*> playerData;
 };

@@ -7,10 +7,11 @@
 
 #include "addon_manager.h"
 #include "logger.h"
+#include "server.h"
 #include <dlfcn.h>
 #include <filesystem>
 
-AddonManager::AddonManager() {
+void AddonManager::Load() {
 	for (const auto& entry : std::filesystem::directory_iterator("addons")) {
 		auto addonPath = entry.path().c_str();
 		void* handle = dlopen(addonPath, RTLD_NOW | RTLD_LOCAL);
@@ -32,6 +33,7 @@ AddonManager::AddonManager() {
 		addon->api = MakeAddonAPI();
 		addon->api.internal = addon.get();
 
+		addon->server = server;
 		addon->info = addonFn(&addon->api);
 		addon->dynHandle = handle;
 
@@ -43,6 +45,8 @@ AddonManager::AddonManager() {
 		addons.push_back(std::move(addon));
 	}
 }
+
+AddonManager::AddonManager(Server* _server) : server(_server) {}
 
 AddonManager::~AddonManager() {
 	for (const auto& addon : addons) {
