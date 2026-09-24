@@ -338,26 +338,29 @@ void ClickSlot(Packet::ClickSlot& _pkt, PlayerSession& _session) {
 
 	// Clicked outside the window
 	if (_pkt.slotId == -999) {
-		if (!_session.activeInteraction)
+		InventoryInteraction* interaction = nullptr;
+		if (_pkt.windowId == 0)
+			interaction = &_session.inventoryInteraction;
+		else if (_session.activeInteraction)
+			interaction = _session.activeInteraction.get();
+		if (!interaction)
 			return;
-		InventoryInteraction& interaction = _pkt.windowId == 0 ? _session.inventoryInteraction
-		                                                       : *_session.activeInteraction;
 
-		if (interaction.carried.id != Items::Id::INVALID) {
+		if (interaction->carried.id != Items::Id::INVALID) {
 			if (_pkt.rightClick) {
 				// Drop just one item, keep the rest held
-				ItemStack dropped = interaction.carried;
+				ItemStack dropped = interaction->carried;
 				dropped.count = 1;
-				interaction.carried.DecrementCount(1);
-				if (interaction.carried.count <= 0)
-					interaction.carried = ItemStack{ Items::Id::INVALID };
+				interaction->carried.DecrementCount(1);
+				if (interaction->carried.count <= 0)
+					interaction->carried = ItemStack{ Items::Id::INVALID };
 				_session.entity->DropItem(dropped);
 			} else {
 				// Drop the entire held stack
-				_session.entity->DropItem(interaction.carried);
-				interaction.carried = ItemStack{ Items::Id::INVALID };
+				_session.entity->DropItem(interaction->carried);
+				interaction->carried = ItemStack{ Items::Id::INVALID };
 			}
-			PacketUtilities::SendSlot(_session, -1, -1, &interaction.carried);
+			PacketUtilities::SendSlot(_session, -1, -1, &interaction->carried);
 		}
 		return;
 	}
@@ -398,7 +401,7 @@ void ClickSlot(Packet::ClickSlot& _pkt, PlayerSession& _session) {
 		return;
 	}
 	ItemStack empty{ Items::Id::INVALID };
-	if (!_session.activeInteraction->inventory)
+	if (!_session.activeInteraction || !_session.activeInteraction->inventory)
 		return;
 	auto expected = _session.activeInteraction->inventory->GetStackInSlot(_pkt.slotId);
 	ItemStack& slotItem = expected ? *expected : empty;
