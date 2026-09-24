@@ -123,7 +123,7 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 	}
 
 	// Reject duplicate usernames
-	const auto players = _server.GetPlayers();
+	const auto& players = _server.GetPlayers();
 
 	// NOTE: We can't just use GetSessionByUsername,
 	// because the session with this username already exists when you're connecting to the server
