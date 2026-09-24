@@ -178,7 +178,9 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 			return;
 		}
 
-		_server.TryForceBreak(_session, _world);
+		// Resync if we missed our break
+		if (!_server.TryForceBreak(_session, _world))
+			resyncBlock(packetPos);
 		return;
 	}
 	case PacketData::MineStatus::DROPPED_ITEM: {
@@ -289,7 +291,13 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		                       heldItem->data);
 		if (result) {
 			heldItem->DecrementCount(1);
+			return;
 		}
+
+		// Result failed so resync
+		resyncBlock(position);
+		resyncBlock(placePosition);
+
 	} else if (Items::IsItem(heldItem->id)) {
 		bool isBucketItem = (heldItem->id == Items::Id::BUCKET || heldItem->id == Items::Id::BUCKET_WATER ||
 		                     heldItem->id == Items::Id::BUCKET_LAVA);

@@ -35,6 +35,35 @@ static bool CanRedstoneComponentStay(WorldManager& _world, Int3 _pos) {
 	return _world.IsBlockNormalCube(_pos.Offset(Direction::Value::Down));
 }
 
+static bool TorchHasAnySupport(WorldManager& _world, Int3 _pos) {
+	for (auto face : { Direction::Value::East, Direction::Value::West, Direction::Value::South, Direction::Value::North,
+	                   Direction::Value::Up }) {
+		if (CanTorchAttachTo(_world, _pos, face))
+			return true;
+	}
+	return false;
+}
+
+static bool PlaceTorchLike(WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
+                           BlockType _blockId) {
+	Int3 target = _pos;
+	Direction::Value attachFace = _face;
+
+	// Snow forces meta 0
+	if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER) {
+		target = _pos.WithOffset(Direction::Opposite(_face));
+		attachFace = Direction::Value::Down;
+	}
+
+	// Is there any support nearby?
+	if (!TorchHasAnySupport(_world, target))
+		return false;
+
+	uint8_t meta = CanTorchAttachTo(_world, target, attachFace) ? GetMetaFromDirection(_blockId, attachFace) : 0;
+
+	return GenericPlace(_world, _pos, _placer, _face, _blockId, meta);
+}
+
 static void NotifyAttachedSupportBlock(WorldManager& _world, Int3 _pos, BlockType _blockId, uint8_t _meta) {
 	Direction::Value dir = GetDirectionFromMeta(_blockId, _meta);
 	Int3 support = _pos.WithOffset(Direction::Opposite(dir));
@@ -192,13 +221,7 @@ void RegisterRedstoneBehaviors() {
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                                           Direction::Value _face, BlockType _blockId,
 	                                                           uint8_t /*_meta*/) -> bool {
-		if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER)
-			_pos = _pos.WithOffset(Direction::Opposite(_face));
-		if (CanTorchAttachTo(_world, _pos, _face)) {
-			return GenericPlace(_world, _pos, _placer, _face, _blockId,
-			                    GetMetaFromDirection(BLOCK_REDSTONE_TORCH_ON, _face));
-		}
-		return false;
+		return PlaceTorchLike(_world, _pos, _placer, _face, _blockId);
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
@@ -382,20 +405,18 @@ void RegisterRedstoneBehaviors() {
 	                                               Direction::Value _face, BlockType _blockId,
 	                                               uint8_t /*_meta*/) -> bool {
 		if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER)
-			_pos = _pos.WithOffset(Direction::Opposite(_face));
-		// TODO: This isn't exactly the best way to do it, as it relies on Metadata fuckery,
-		// but it works, and it's better than bastardizing the Direction system we got!
-		bool isEastWestAligned = false;
-		if (_face == Direction::Value::Up) {
-			auto alignment = Direction::FromAngle(_placer.rotationYaw);
-			if (alignment == Direction::Value::East || alignment == Direction::Value::West)
-				isEastWestAligned = true;
-		}
-		if (CanTorchAttachTo(_world, _pos, _face)) {
-			return GenericPlace(_world, _pos, _placer, _face, _blockId,
-			                    GetMetaFromDirection(BLOCK_LEVER, _face) + isEastWestAligned);
-		}
-		return false;
+			return false;
+
+		if (_face == Direction::Value::Down || _face == Direction::Value::None)
+			return false;
+		if (!_world.IsBlockNormalCube(_pos.WithOffset(Direction::Opposite(_face))))
+			return false;
+
+		uint8_t meta = GetMetaFromDirection(BLOCK_LEVER, _face);
+		if (_face == Direction::Value::Up)
+			meta = 5 + _world.rand.NextInt(2);
+
+		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta);
 	};
 
 	blockBehaviors[BLOCK_LEVER].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
@@ -445,12 +466,7 @@ void RegisterRedstoneBehaviors() {
 	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                               Direction::Value _face, BlockType _blockId,
 	                                               uint8_t /*_meta*/) -> bool {
-		if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER)
-			_pos = _pos.WithOffset(Direction::Opposite(_face));
-		if (CanTorchAttachTo(_world, _pos, _face)) {
-			return GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_TORCH, _face));
-		}
-		return false;
+		return PlaceTorchLike(_world, _pos, _placer, _face, _blockId);
 	};
 
 	blockBehaviors[BLOCK_TORCH].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
