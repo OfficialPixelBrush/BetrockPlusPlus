@@ -698,18 +698,19 @@ void Server::Tick() {
 #endif
 }
 
-void Server::TryForceBreak(PlayerSession& _session, WorldManager& _world) {
+bool Server::TryForceBreak(PlayerSession& _session, WorldManager& _world) {
 	if (!_session.pendingBlockBreak.has_value())
-		return;
+		return false;
 
 	if (_session.pendingBlockBreak->damage < 0.7f) {
 		// We missed the client break, so we need to force it to break on the server side
 		_session.pendingBlockBreak->clientBreakMissed = true;
-		return;
+		return false;
 	}
 
 	// Success!
 	OnPlayerBlockBreak(_session, _world);
+	return true;
 }
 
 void Server::UpdateBlockBreaking(PlayerSession& _session, WorldManager& _world) {

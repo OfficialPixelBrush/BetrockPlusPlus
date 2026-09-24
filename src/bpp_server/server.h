@@ -150,7 +150,7 @@ public:
 		return _dim == Dimension::Nether ? &this->hellEntityTracker : &this->overworldEntityTracker;
 	}
 
-	void TryForceBreak(PlayerSession& _session, WorldManager& _world);
+	bool TryForceBreak(PlayerSession& _session, WorldManager& _world);
 
 	void SendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _entity);
 	void SendPlayerToDimension(Dimension _dim, PlayerSession& _session);

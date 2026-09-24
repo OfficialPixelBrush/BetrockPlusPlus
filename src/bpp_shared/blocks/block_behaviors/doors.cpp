@@ -39,12 +39,12 @@ static void ToggleTrapdoor(WorldManager& _world, Int3 _pos, PlayerSession* _trig
 	return;
 }
 
-static void ToggleDoor(WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) {
+static void ToggleDoor(WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession, BlockType _doorType) {
 	auto meta = _world.GetMetadata(_pos);
 	if (meta & 8) {
-		if (_world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z }) != BLOCK_DOOR_WOOD)
+		if (_world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z }) != _doorType)
 			return;
-		blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated(_world, { _pos.x, _pos.y - 1, _pos.z }, _triggeringSession);
+		blockBehaviors[_doorType].onBlockActivated(_world, { _pos.x, _pos.y - 1, _pos.z }, _triggeringSession);
 		return;
 	}
 
@@ -53,7 +53,7 @@ static void ToggleDoor(WorldManager& _world, Int3 _pos, PlayerSession* _triggeri
 
 	_world.SetMeta(_pos, newBottomMeta);
 
-	if (_world.GetBlockId(top) == BLOCK_DOOR_WOOD && (_world.GetMetadata(top) & 8))
+	if (_world.GetBlockId(top) == _doorType && (_world.GetMetadata(top) & 8))
 		_world.SetMeta(top, uint8_t(newBottomMeta + 8));
 
 	if (_world.onWorldEvent)
@@ -87,6 +87,11 @@ static void NeighborUpdateDoor(WorldManager& _world, Int3 _pos, BlockType _block
 		return;
 
 	const uint8_t meta = _world.GetMetadata(_pos);
+	auto myType = _world.GetBlockId(_pos);
+
+	if (myType != BLOCK_DOOR_IRON && myType != BLOCK_DOOR_WOOD)
+		return;
+
 	if (meta & 8) {
 		// Top half
 		Int3 below = _pos.WithOffset(Direction::Value::Down);
@@ -102,7 +107,7 @@ static void NeighborUpdateDoor(WorldManager& _world, Int3 _pos, BlockType _block
 	const bool powered = RedstoneManager::IsPositionPowered(_world, _pos) ||
 	                     RedstoneManager::IsPositionPowered(_world, above);
 	if (powered != isOpen)
-		ToggleDoor(_world, _pos, nullptr);
+		ToggleDoor(_world, _pos, nullptr, myType);
 }
 
 void RegisterDoorBehaviors() {
@@ -199,10 +204,13 @@ void RegisterDoorBehaviors() {
 
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockActivated = [](WorldManager& _world, Int3 _pos,
 	                                                      PlayerSession* _triggeringSession) -> bool {
-		ToggleDoor(_world, _pos, _triggeringSession);
+		ToggleDoor(_world, _pos, _triggeringSession, BLOCK_DOOR_WOOD);
 		return false;
 	};
-	blockBehaviors[BLOCK_DOOR_WOOD].onBlockClicked = ToggleDoor;
+	blockBehaviors[BLOCK_DOOR_WOOD].onBlockClicked = [](WorldManager& _world, Int3 _pos,
+	                                                    PlayerSession* _triggeringSession) -> void {
+		ToggleDoor(_world, _pos, _triggeringSession, BLOCK_DOOR_WOOD);
+	};
 	blockBehaviors[BLOCK_DOOR_WOOD].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos,
 	                                                              Entity& /*_destroyer*/) {
 		BreakDoor(_world, _pos, BLOCK_DOOR_WOOD);
