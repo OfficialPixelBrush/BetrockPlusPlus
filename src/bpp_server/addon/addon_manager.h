@@ -10,14 +10,18 @@
 #include <memory>
 #include <vector>
 
+class Server;
+
 class AddonManager {
 public:
-	AddonManager();
+	AddonManager(Server* _server);
 	~AddonManager();
 
-	// Prevent copying by mistake, there should only be one instance
+	// Prevent copying by mistake, there should only be one real instance
 	AddonManager(const AddonManager&) = delete;
 	AddonManager& operator=(const AddonManager&) = delete;
+
+	void Load();
 
 	const std::vector<std::unique_ptr<Addon>>& GetAddons() const noexcept {
 		return addons;
@@ -41,6 +45,7 @@ public:
 	}
 
 private:
+	Server* server;
 	// Only if C++ std had handle maps..., maybe we should use a library for that?
 	std::vector<std::unique_ptr<Addon>> addons;
 };

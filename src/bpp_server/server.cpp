@@ -8,6 +8,7 @@
 */
 
 #include "addon/addon_impl.h"
+#include "addon/addon_manager.h"
 #include "base_types.h"
 #include "config/list_parser.h"
 #include "dimensions.h"
@@ -41,7 +42,7 @@
 #include "discord.h"
 #endif
 
-Server::Server() : gameRuntime(), config("server.properties") {
+Server::Server() : gameRuntime(), addonManager(this), config("server.properties") {
 	ServerBlock::Initialize();
 	LoadConfig();
 
@@ -282,6 +283,9 @@ void Server::Startup() {
 
 	// Setup commands
 	commandManager.Init(this);
+
+	// Load addons
+	addonManager.Load();
 
 	// Setup the block callback so we can send it to clients
 	auto makeBlockUpdateCallback = [this](Dimension _dimensionId, auto& _blockChangeMap) {
