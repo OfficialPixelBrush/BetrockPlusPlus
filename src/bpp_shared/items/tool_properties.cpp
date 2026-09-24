@@ -313,10 +313,10 @@ void OnToolFinishMining(ItemStack* _stack, BlockType _targetBlock) {
 }
 
 void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/, Direction::Value /*_face*/) {
-	BlockType b = _world.GetBlockId(_pos);
-	if (b == BLOCK_GRASS || b == BLOCK_DIRT) {
-		_world.SetBlock(_pos, BLOCK_FARMLAND);
-	}
+	BlockType type = _world.GetBlockId(_pos);
+	if (type != BLOCK_GRASS && type != BLOCK_DIRT)
+		return;
+	_world.SetBlock(_pos, BLOCK_FARMLAND);
 	HarmTool(_stack, 1);
 }
 
