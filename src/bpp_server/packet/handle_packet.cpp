@@ -188,8 +188,29 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 			return;
 		}
 
+		//TODO: Extract common bp_block_use_event and bp_block_break_event code to some helper
+		ItemStack* heldItem = _session.inventory.GetHeldItem();
+
+		bp_block_break_event event{ .player = &_session.apiPlayer,
+			                        .world = &_world.apiWorld,
+			                        .tool = AddonHelper::ToBpStack(heldItem),
+			                        .blockPos = { packetPos.x, packetPos.y, packetPos.z },
+			                        .block = { .id = newBlockId, .meta = _world.GetMetadata(packetPos) },
+			                        .cancel = false };
+
+		const auto oldItem = heldItem ? *heldItem : ItemStack{};
+
+		const bool cancelled = _server.GetAddonManager().Broadcast(&bp_addon_events::blockBreak, event, [&]() {
+			AddonHelper::FromBpStack(heldItem, event.tool);
+			return event.cancel;
+		});
+
+		if (heldItem && *heldItem != oldItem) {
+			PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
+		}
+
 		// Resync if we missed our break
-		if (!_server.TryForceBreak(_session, _world))
+		if (cancelled || !_server.TryForceBreak(_session, _world))
 			resyncBlock(packetPos);
 		return;
 	}
@@ -247,18 +268,16 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 
 		const bool cancelled = _server.GetAddonManager().Broadcast(&bp_addon_events::blockUse, event, [&]() {
 			AddonHelper::FromBpStack(heldItem, event.heldItem);
-			if (event.cancel) {
-				resyncBlock(position);
-				return true;
-			}
-			return false;
+			return event.cancel;
 		});
-
-		if (cancelled)
-			return;
 
 		if (heldItem && *heldItem != oldItem) {
 			PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
+		}
+
+		if (cancelled) {
+			resyncBlock(position);
+			return;
 		}
 	}
 
@@ -282,6 +301,24 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 	// NOTE:
 	// Invalid Use packet is sent ANYTIME the client predicts a placement will fail (like placing a block inside of yourself)
 	if (_pkt.face == PacketData::FaceDirection::INVALID_USE) {
+		bp_item_use_event event{ .player = &_session.apiPlayer,
+			                     .item = AddonHelper::ToBpStack(heldItem),
+			                     .cancel = false };
+
+		const auto oldItem = heldItem ? *heldItem : ItemStack{};
+
+		const bool cancelled = _server.GetAddonManager().Broadcast(&bp_addon_events::itemUse, event, [&]() {
+			AddonHelper::FromBpStack(heldItem, event.item);
+			return event.cancel;
+		});
+
+		if (cancelled || (heldItem && *heldItem != oldItem)) {
+			PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
+		}
+
+		if (cancelled)
+			return;
+
 		if (Items::IsFood(heldItem->id)) {
 			if (auto& fn = Items::itemBehavior[heldItem->id].onUse) {
 				fn(_session, heldItem, *_session.entity);
@@ -344,7 +381,7 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		// Result failed so resync
 		resyncBlock(position);
 		resyncBlock(placePosition);
-
+		PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
 	} else if (Items::IsItem(heldItem->id)) {
 		bool isBucketItem = (heldItem->id == Items::Id::BUCKET || heldItem->id == Items::Id::BUCKET_WATER ||
 		                     heldItem->id == Items::Id::BUCKET_LAVA);

@@ -112,6 +112,8 @@ void OnBlockBreak(const bp_api* api, bp_block_break_event* ev) {
 	         ev->blockPos.x, ev->blockPos.y, ev->blockPos.z, ev->tool.id, ev->tool.data, ev->tool.count);
 	api->player.sendMessage(ev->player, msg);
 	free(msg);
+	
+	ev->cancel = true;
 }
 
 void OnBlockPlace(const bp_api* api, bp_block_place_event* ev) {
@@ -119,6 +121,20 @@ void OnBlockPlace(const bp_api* api, bp_block_place_event* ev) {
 	asprintf(&msg, "You placed a %d block at %d %d %d", ev->blockId, ev->blockPos.x, ev->blockPos.y, ev->blockPos.z);
 	api->player.sendMessage(ev->player, msg);
 	free(msg);
+
+	ev->cancel = true;
+}
+
+void OnItemUse(const bp_api* api, bp_item_use_event* ev) {
+	char* msg;
+	asprintf(&msg, "You used item (%d:%d)x%d", ev->item.id, ev->item.data, ev->item.count);
+	api->player.sendMessage(ev->player, msg);
+	free(msg);
+
+	if (ev->item.id == 320) {
+		api->player.sendMessage(ev->player, "Eat something else!");
+		ev->cancel = true;
+	}
 }
 
 void OnPlayerChat(const bp_api* api, bp_player_chat_event* ev) {
@@ -198,6 +214,7 @@ bp_addon_info bp_addon(const bp_api* api) {
 			.blockBreak = OnBlockBreak,
 			.blockPlace = OnBlockPlace,
 			.blockUse = OnBlockUse,
+			.itemUse = OnItemUse,
 			.addonLoad = OnLoad,
 			.addonUnload = OnUnload,
 		},
