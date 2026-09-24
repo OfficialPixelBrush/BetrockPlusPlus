@@ -161,13 +161,13 @@ void TileEntityFurnace::Tick(WorldManager& _world) {
 			--burnTime;
 
 		if (burnTime == 0 && canSmelt) {
-			const int maxBurnTime = GetMaxBurnTime();
-			if (maxBurnTime != lastMaxBurnTime && maxBurnTime != 0) {
+			const int fuelTime = CalculateFuelTime();
+			if (fuelTime != maxBurnTime && fuelTime != 0) {
 				dirtyFlags |= FLAG_MAX_BURN_TIME;
-				lastMaxBurnTime = maxBurnTime;
+				maxBurnTime = fuelTime;
 			}
 
-			burnTime = maxBurnTime;
+			burnTime = fuelTime;
 			if (burnTime > 0)
 				inventory.DecreaseStackSize(1, 1);
 		}
@@ -205,7 +205,7 @@ void TileEntityFurnace::Tick(WorldManager& _world) {
 	}
 }
 
-int TileEntityFurnace::GetMaxBurnTime() const {
+int TileEntityFurnace::CalculateFuelTime() const {
 	const ItemId fuel = inventory.slots[1].id;
 
 	switch (fuel) {
@@ -227,6 +227,10 @@ int TileEntityFurnace::GetMaxBurnTime() const {
 
 int TileEntityFurnace::GetBurnTime() const {
 	return burnTime;
+}
+
+int TileEntityFurnace::GetMaxBurnTime() const {
+	return maxBurnTime;
 }
 
 int TileEntityFurnace::GetCookTime() const {
@@ -313,6 +317,12 @@ Tag TileEntityFurnace::Serialize() {
 	root.compound["BurnTime"] = Tag{ .type = TAG_SHORT,
 		                             .name = "BurnTime",
 		                             .shortValue = static_cast<int16_t>(burnTime) };
+
+	// Vanilla doesn't save this, but it's better if we do.
+	// Prevents a bug where progress bar is displayed wrong after world load
+	root.compound["MaxBurnTime"] = Tag{ .type = TAG_SHORT,
+		                                .name = "MaxBurnTime",
+		                                .shortValue = static_cast<int16_t>(maxBurnTime) };
 	root.compound["CookTime"] = Tag{ .type = TAG_SHORT,
 		                             .name = "CookTime",
 		                             .shortValue = static_cast<int16_t>(cookTime) };
