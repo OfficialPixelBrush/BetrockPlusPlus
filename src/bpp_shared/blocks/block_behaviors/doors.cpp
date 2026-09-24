@@ -83,26 +83,33 @@ static void BreakDoor(WorldManager& _world, Int3 _pos, BlockType _doorType) {
 }
 
 static void NeighborUpdateDoor(WorldManager& _world, Int3 _pos, BlockType _blockId) {
-	if (!RedstoneManager::CanProvidePower(_blockId))
-		return;
-
-	const uint8_t meta = _world.GetMetadata(_pos);
-	auto myType = _world.GetBlockId(_pos);
-
+	const auto myType = _world.GetBlockId(_pos);
 	if (myType != BLOCK_DOOR_IRON && myType != BLOCK_DOOR_WOOD)
 		return;
+	const uint8_t meta = _world.GetMetadata(_pos);
+	const bool fromPower = RedstoneManager::CanProvidePower(_blockId);
 
 	if (meta & 8) {
-		// Top half
-		Int3 below = _pos.WithOffset(Direction::Value::Down);
-		if (_world.GetBlockId(below) != _world.GetBlockId(_pos))
-			return; // bottom half missing, nothing to do
-		NeighborUpdateDoor(_world, below, _blockId);
+		// If the bottom half is gone then break
+		const Int3 below = _pos.WithOffset(Direction::Value::Down);
+		if (_world.GetBlockId(below) != myType) {
+			BreakDoor(_world, _pos, myType);
+			return;
+		}
+		if (fromPower)
+			NeighborUpdateDoor(_world, below, _blockId);
 		return;
 	}
 
-	// Only check power for the bottom
-	Int3 above = _pos.WithOffset(Direction::Value::Up);
+	// If the top half is gone or we don't have support then break
+	const Int3 above = _pos.WithOffset(Direction::Value::Up);
+	if (_world.GetBlockId(above) != myType || !_world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::Down))) {
+		BreakDoor(_world, _pos, myType);
+		return;
+	}
+
+	if (!fromPower)
+		return;
 	const bool isOpen = (meta >> 2) & 1;
 	const bool powered = RedstoneManager::IsPositionPowered(_world, _pos) ||
 	                     RedstoneManager::IsPositionPowered(_world, above);
