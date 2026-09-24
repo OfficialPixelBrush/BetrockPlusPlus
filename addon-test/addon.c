@@ -106,6 +106,21 @@ void OnBlockUse(const bp_api* api, bp_block_use_event* ev) {
 		OnStairsUse(api, ev);
 }
 
+void OnBlockBreak(const bp_api* api, bp_block_break_event* ev) {
+	char* msg;
+	asprintf(&msg, "You broke a %d:%d block at %d %d %d using a (%d:%d)x%d", ev->block.id, ev->block.meta,
+	         ev->blockPos.x, ev->blockPos.y, ev->blockPos.z, ev->tool.id, ev->tool.data, ev->tool.count);
+	api->player.sendMessage(ev->player, msg);
+	free(msg);
+}
+
+void OnBlockPlace(const bp_api* api, bp_block_place_event* ev) {
+	char* msg;
+	asprintf(&msg, "You placed a %d block at %d %d %d", ev->blockId, ev->blockPos.x, ev->blockPos.y, ev->blockPos.z);
+	api->player.sendMessage(ev->player, msg);
+	free(msg);
+}
+
 void OnPlayerChat(const bp_api* api, bp_player_chat_event* ev) {
 	if (strstr(ev->message, "hate") != NULL) {
 		ev->cancel = true;
@@ -180,6 +195,8 @@ bp_addon_info bp_addon(const bp_api* api) {
 		.events = {
 			.playerJoin = OnPlayerJoin,
 			.playerChat = OnPlayerChat,
+			.blockBreak = OnBlockBreak,
+			.blockPlace = OnBlockPlace,
 			.blockUse = OnBlockUse,
 			.addonLoad = OnLoad,
 			.addonUnload = OnUnload,
