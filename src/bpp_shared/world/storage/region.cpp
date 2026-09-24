@@ -395,8 +395,9 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 			chunk->tileEntities.push_back(std::move(ent));
 		} else if (id == "Furnace") {
 			int burnTime = te.Has("BurnTime") ? te.Get("BurnTime").GetShort() : 0;
+			int maxBurnTime = te.Has("MaxBurnTime") ? te.Get("MaxBurnTime").GetShort() : 0;
 			int cookTime = te.Has("CookTime") ? te.Get("CookTime").GetShort() : 0;
-			auto ent = std::make_shared<TileEntityFurnace>(pos, burnTime, cookTime);
+			auto ent = std::make_shared<TileEntityFurnace>(pos, burnTime, maxBurnTime, cookTime);
 			loadSlots(ent->inventory.slots);
 			chunk->tileEntities.push_back(std::move(ent));
 		} else if (id == "Trap") {

@@ -48,7 +48,7 @@ struct TileEntityChest : TileEntity {
 class TileEntityFurnace : public TileEntity {
 private:
 	int burnTime = 0;
-	int lastMaxBurnTime = 0;
+	int maxBurnTime = 0;
 	int cookTime = 0;
 
 public:
@@ -62,10 +62,11 @@ public:
 
 	DirtyFlags dirtyFlags = FLAG_NONE;
 
-	TileEntityFurnace(Int3 _pPosition) : TileEntityFurnace(_pPosition, 0, 0) {};
+	TileEntityFurnace(Int3 _pPosition) : TileEntityFurnace(_pPosition, 0, 0, 0) {};
 
-	TileEntityFurnace(Int3 _pPosition, int _burnTime, int _cookTime)
-	    : TileEntity(TileType::FURNACE, _pPosition), burnTime(_burnTime), cookTime(_cookTime) {
+	TileEntityFurnace(Int3 _pPosition, int _burnTime, int _maxBurnTime, int _cookTime)
+	    : TileEntity(TileType::FURNACE, _pPosition), burnTime(_burnTime), maxBurnTime(_maxBurnTime),
+	      cookTime(_cookTime) {
 		canTick = true;
 	};
 
@@ -75,6 +76,7 @@ public:
 	int GetCookTime() const;
 	int GetBurnTime() const;
 	int GetMaxBurnTime() const;
+	int CalculateFuelTime() const;
 };
 
 // Dispenser (Trap)
