@@ -113,7 +113,6 @@ bool EntityMPPlayer::DropItem(ItemStack _stack) {
 
 	// Register our item with the world
 	this->world->entityManager.AddEntity(std::move(itemEntity));
-	session->inventoryInteraction.needsDiff = true;
 	return true;
 }
 
@@ -125,7 +124,6 @@ bool EntityMPPlayer::PickupItem(ItemStack& _stack, EntityId _entityId) {
 		return false;
 
 	if (this->session->inventory.PickupItem(_stack)) {
-		session->inventoryInteraction.needsDiff = true;
 		Packet::CollectItem pkt;
 		pkt.collectorEntityId = this->id;
 		pkt.itemEntityId = _entityId;
@@ -383,7 +381,6 @@ void EntityMPPlayer::DropInventory() {
 			stack->id = Items::Id::INVALID;
 		}
 	}
-	session->inventoryInteraction.needsDiff = true;
 }
 
 void EntityMPPlayer::OnDeath(Entity* _killer) {

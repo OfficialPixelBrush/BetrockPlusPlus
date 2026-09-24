@@ -17,8 +17,8 @@
 
 void InventoryTracker::Tick(Server& _server) {
 	for (auto& session : _server.GetPlayers()) {
-		// Check inventory diffs
-		if (session->inventoryInteraction.needsDiff) {
+		// Diff window 0 every tick
+		{
 			auto diffs2 = session->inventoryInteraction.TickDiff();
 			if (diffs2.size() <= 5) {
 				for (auto difference : diffs2) {

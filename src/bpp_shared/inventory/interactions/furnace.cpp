@@ -63,8 +63,16 @@ void FurnaceInventoryInteraction::MergeInventories() {
 }
 
 void FurnaceInventoryInteraction::WriteBack() {
-	for (size_t i = 0; i < 3; i++)
+	bool furnaceChanged = false;
+	for (size_t i = 0; i < 3; i++) {
+		if (furnaceInventory->slots[i] == sharedInventory.slots[i])
+			continue;
 		furnaceInventory->slots[i] = sharedInventory.slots[i];
+		furnaceChanged = true;
+	}
+	// Writing slots directly skips OnInventoryChanged, so flag the furnace for saving ourselves
+	if (furnaceChanged)
+		furnaceInventory->OnInventoryChanged();
 	// shared index i (>=3) maps back to playerInventory index i + 6,
 	// since MergeInventories() reads playerInventory[9..44] starting at shared index 3.
 	for (size_t i = 3; i < 39; i++)
@@ -91,6 +99,7 @@ void FurnaceInventoryInteraction::TakeResult() {
 
 	// Clear the result slot
 	furnaceInventory->slots[RESULT_SLOT] = ItemStack{};
+	furnaceInventory->OnInventoryChanged();
 	MergeInventories();
 }
 
@@ -143,6 +152,7 @@ void FurnaceInventoryInteraction::OnShiftClick(int _slot) {
 	// Update the source in the real inventory before re-merging
 	if (_slot < 3) {
 		furnaceInventory->slots[size_t(_slot)] = copy.count == 0 ? ItemStack{} : copy;
+		furnaceInventory->OnInventoryChanged();
 	} else {
 		playerInventory->slots[size_t(_slot) + 6] = copy.count == 0 ? ItemStack{} : copy;
 	}
@@ -164,5 +174,6 @@ void FurnaceInventoryInteraction::ShiftClickResult() {
 		// Couldn't move all, update with remaining
 		furnaceInventory->slots[RESULT_SLOT] = copy.count == 0 ? ItemStack{} : copy;
 	}
+	furnaceInventory->OnInventoryChanged();
 	MergeInventories();
 }

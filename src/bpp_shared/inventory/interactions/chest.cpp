@@ -60,8 +60,16 @@ void ChestInventoryInteraction::MergeInventories() {
 }
 
 void ChestInventoryInteraction::WriteBack() {
-	for (size_t i = 0; i < 27; i++)
+	bool chestChanged = false;
+	for (size_t i = 0; i < 27; i++) {
+		if (chestInventory->slots[i] == sharedInventory.slots[i])
+			continue;
 		chestInventory->slots[i] = sharedInventory.slots[i];
+		chestChanged = true;
+	}
+	// Writing slots directly skips OnInventoryChanged, so flag the chest for saving ourselves
+	if (chestChanged)
+		chestInventory->OnInventoryChanged();
 	for (size_t i = 27; i < 63; i++)
 		playerInventory->slots[i - 27 + 9] = sharedInventory.slots[i];
 }
@@ -84,6 +92,7 @@ void ChestInventoryInteraction::OnShiftClick(int _slot) {
 	// Update the source in the real inventory before re-merging
 	if (_slot <= 26) {
 		chestInventory->slots[size_t(_slot)] = copy.count == 0 ? ItemStack{} : copy;
+		chestInventory->OnInventoryChanged();
 	} else {
 		int playerSlot = _slot - 27 + 9;
 		playerInventory->slots[size_t(playerSlot)] = copy.count == 0 ? ItemStack{} : copy;
