@@ -317,19 +317,28 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 
 		auto blockId = BlockType(heldItem->id.value);
 
-		// We can place the block here
-		auto function = Blocks::blockBehaviors[blockId].onBlockPlaced;
-		if (!function) {
-			return;
-		}
-		auto entityPos = _session.entity->position;
-		if (position.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > MAXIMUM_PLACEMENT_REACH)
-			return;
-		bool result = function(_world, placePosition, *_session.entity, FaceDirectionToDirection(_pkt.face), blockId,
-		                       heldItem->data);
-		if (result) {
-			heldItem->DecrementCount(1);
-			return;
+		bp_block_place_event event{ .player = &_session.apiPlayer,
+			                        .world = &_world.apiWorld,
+			                        .blockPos = { placePosition.x, placePosition.y, placePosition.z },
+			                        .blockId = blockId,
+			                        .cancel = false };
+		auto cancelled = _server.GetAddonManager().Broadcast(&bp_addon_events::blockPlace, event,
+		                                                     [&] { return event.cancel; });
+		if (!cancelled) {
+			// We can place the block here
+			auto function = Blocks::blockBehaviors[blockId].onBlockPlaced;
+			if (!function) {
+				return;
+			}
+			auto entityPos = _session.entity->position;
+			if (position.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > MAXIMUM_PLACEMENT_REACH)
+				return;
+			bool result = function(_world, placePosition, *_session.entity, FaceDirectionToDirection(_pkt.face),
+			                       blockId, heldItem->data);
+			if (result) {
+				heldItem->DecrementCount(1);
+				return;
+			}
 		}
 
 		// Result failed so resync

@@ -13,10 +13,15 @@
 #include "inventory/item_stack.h"
 #include <unordered_map>
 
+class Entity;
 class PlayerSession;
 class WorldManager;
 
 struct Addon;
+
+struct bp_entity {
+	Entity* entity;
+};
 
 struct bp_player {
 	PlayerSession* session;

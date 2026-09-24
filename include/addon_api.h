@@ -140,7 +140,7 @@ typedef struct {
 	bp_world* world;
 
 	bp_block_pos blockPos;
-	bp_block block;
+	int8_t blockId;
 	bool cancel;
 } bp_block_place_event;
 

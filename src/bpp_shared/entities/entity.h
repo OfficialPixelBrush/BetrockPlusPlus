@@ -6,6 +6,7 @@
  *
  */
 #pragma once
+#include "addon/addon_impl.h"
 #include "base_types.h"
 #include "blocks/block_properties.h"
 #include "dimensions.h"
@@ -66,6 +67,8 @@ struct EntityManager;
 // TODO: Reorder some of these. Having a bunch of bools
 // like this between bigger types is bad for alignment
 struct Entity {
+	bp_entity apiEntity;
+
 	// For randomness
 	Java::Random rand;
 
@@ -168,7 +171,7 @@ struct Entity {
 
 	float entityBrightness = 0.0f;
 
-	Entity() {
+	Entity() : apiEntity(this) {
 		RebuildCollider();
 	}
 	virtual ~Entity() = default;
