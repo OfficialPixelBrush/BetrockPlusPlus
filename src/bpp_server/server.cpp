@@ -634,6 +634,10 @@ void Server::Tick() {
 	// Inventory tracker
 	InventoryTracker::Tick(*this);
 
+	// Addon event
+	const bp_server_tick_event event{};
+	addonManager.Broadcast(&bp_addon_events::serverTick, event);
+
 	// Worlds
 	gameRuntime.world.Tick(overworldPositions);
 	gameRuntime.world.Update(overworldPositions);
