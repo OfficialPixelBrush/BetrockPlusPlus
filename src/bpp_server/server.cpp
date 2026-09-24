@@ -709,32 +709,6 @@ void Server::Tick() {
 }
 
 void Server::OnPlayerBlockBreak(PlayerSession& _session, WorldManager& _world) {
-	auto blockId = _session.pendingBlockBreak->lastBlock;
-	auto blockPos = _session.pendingBlockBreak->lastBlockPos;
-	ItemStack* heldItem = _session.inventory.GetHeldItem();
-
-	//TODO: Extract common bp_block_use_event and bp_block_break_event code to some helper
-	bp_block_break_event event{ .player = &_session.apiPlayer,
-		                        .world = &_world.apiWorld,
-		                        .tool = AddonHelper::ToBpStack(heldItem),
-		                        .blockPos = { blockPos.x, blockPos.y, blockPos.z },
-		                        .block = { .id = blockId, .meta = _world.GetMetadata(blockPos) },
-		                        .cancel = false };
-
-	const auto oldItem = heldItem ? *heldItem : ItemStack{};
-
-	const bool cancelled = addonManager.Broadcast(&bp_addon_events::blockBreak, event, [&]() {
-		AddonHelper::FromBpStack(heldItem, event.tool);
-		return event.cancel;
-	});
-
-	if (cancelled)
-		return;
-
-	if (heldItem && *heldItem != oldItem) {
-		PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
-	}
-
 	// Actually break this block
 	auto finishMiningWithTool = [&](ItemStack* _held, BlockType _block) {
 		if (!_held)
@@ -743,6 +717,10 @@ void Server::OnPlayerBlockBreak(PlayerSession& _session, WorldManager& _world) {
 		if (it != Items::toolBehavior.end() && it->second.onBlockFinishMining)
 			it->second.onBlockFinishMining(_held, _block);
 	};
+
+	auto blockId = _session.pendingBlockBreak->lastBlock;
+	auto blockPos = _session.pendingBlockBreak->lastBlockPos;
+	ItemStack* heldItem = _session.inventory.GetHeldItem();
 
 	_session.pendingBlockBreak.reset();
 	if (!Items::CanPlayerHarvest(heldItem, blockId)) {
