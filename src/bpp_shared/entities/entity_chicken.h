@@ -14,6 +14,7 @@ struct ChickenEntity : public AnimalEntity {
 		width = 0.3f;
 		height = 0.4f;
 		SetMaxHealth(/*Health=*/4);
+		RollEggTimer();
 	}
 	~ChickenEntity() = default;
 	void OnDeath(Entity* _killer) override;
