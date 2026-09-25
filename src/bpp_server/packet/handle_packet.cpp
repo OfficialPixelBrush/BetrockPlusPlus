@@ -53,10 +53,9 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
 
 	{
 		bp_player_chat_event event{ .player = &_session.apiPlayer, .message = _pkt.message.c_str(), .cancel = false };
-		bool cancelled = _server.GetAddonManager().Broadcast(&bp_addon_events::playerChat, event,
-		                                                     [&]() { return event.cancel; });
+		_server.GetAddonManager().Broadcast(&bp_addon_events::playerChat, event);
 
-		if (cancelled)
+		if (event.cancel)
 			return;
 	}
 
@@ -200,17 +199,16 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 
 		const auto oldItem = heldItem ? *heldItem : ItemStack{};
 
-		const bool cancelled = _server.GetAddonManager().Broadcast(&bp_addon_events::blockBreak, event, [&]() {
-			AddonHelper::FromBpStack(heldItem, event.tool);
-			return event.cancel;
-		});
+		AddonHelper::FromBpStack(heldItem, event.tool);
+
+		_server.GetAddonManager().Broadcast(&bp_addon_events::blockBreak, event);
 
 		if (heldItem && *heldItem != oldItem) {
 			PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
 		}
 
 		// Resync if we missed our break
-		if (cancelled || !_server.TryForceBreak(_session, _world))
+		if (event.cancel || !_server.TryForceBreak(_session, _world))
 			resyncBlock(packetPos);
 		return;
 	}
@@ -266,16 +264,13 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 
 		const auto oldItem = heldItem ? *heldItem : ItemStack{};
 
-		const bool cancelled = _server.GetAddonManager().Broadcast(&bp_addon_events::blockUse, event, [&]() {
-			AddonHelper::FromBpStack(heldItem, event.heldItem);
-			return event.cancel;
-		});
+		_server.GetAddonManager().Broadcast(&bp_addon_events::blockUse, event);
 
 		if (heldItem && *heldItem != oldItem) {
 			PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
 		}
 
-		if (cancelled) {
+		if (event.cancel) {
 			resyncBlock(position);
 			return;
 		}
@@ -307,16 +302,15 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 
 		const auto oldItem = heldItem ? *heldItem : ItemStack{};
 
-		const bool cancelled = _server.GetAddonManager().Broadcast(&bp_addon_events::itemUse, event, [&]() {
-			AddonHelper::FromBpStack(heldItem, event.item);
-			return event.cancel;
-		});
+		_server.GetAddonManager().Broadcast(&bp_addon_events::itemUse, event);
 
-		if (cancelled || (heldItem && *heldItem != oldItem)) {
+		AddonHelper::FromBpStack(heldItem, event.item);
+
+		if (event.cancel || (heldItem && *heldItem != oldItem)) {
 			PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
 		}
 
-		if (cancelled)
+		if (event.cancel)
 			return;
 
 		if (Items::IsFood(heldItem->id)) {
@@ -359,9 +353,8 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 			                        .blockPos = { placePosition.x, placePosition.y, placePosition.z },
 			                        .blockId = blockId,
 			                        .cancel = false };
-		auto cancelled = _server.GetAddonManager().Broadcast(&bp_addon_events::blockPlace, event,
-		                                                     [&] { return event.cancel; });
-		if (!cancelled) {
+		_server.GetAddonManager().Broadcast(&bp_addon_events::blockPlace, event);
+		if (!event.cancel) {
 			// We can place the block here
 			auto function = Blocks::blockBehaviors[blockId].onBlockPlaced;
 			if (!function) {

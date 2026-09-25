@@ -329,9 +329,6 @@ void MobileEntity::Heal(int _health) {
 }
 
 void MobileEntity::DealDamage(int _damage) {
-	// bp_entity_damage_event event{ .entity = &this->apiEntity, .amount = _damage, .cancel = false };
-	//TODO: Figure out how to access the addon manager from here
-
 	// Mark we have been attacked
 	beenAttacked = true;
 
