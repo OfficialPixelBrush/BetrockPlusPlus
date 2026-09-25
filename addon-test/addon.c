@@ -174,6 +174,24 @@ void OnEntityDamage(const bp_api* api, bp_entity_damage_event* ev) {
 	ev->cancel = true;
 }
 
+void OnPlayerMove(const bp_api* api, bp_player_move_event* ev) {
+	static int counter = 0;
+
+	char* msg;
+	asprintf(&msg, "Moved from %.2f %.2f %.2f to %.2f %.2f %.2f", ev->from.x, ev->from.y, ev->from.z, ev->to.x,
+	         ev->to.y, ev->to.z);
+
+	api->player.sendMessage(ev->player, msg);
+
+	free(msg);
+
+	if (counter++ > 50) {
+		ev->from.y *= 5; // do a funny
+		ev->to.y *= 5; // do a funny
+		counter = 0;
+	}
+}
+
 void LoadSave(const bp_api* api) {
 	FILE* file = fopen("keys.txt", "r");
 
@@ -226,6 +244,7 @@ bp_addon_info bp_addon(const bp_api* api) {
 		.events = {
 			.playerJoin = OnPlayerJoin,
 			.playerChat = OnPlayerChat,
+			.playerMove = OnPlayerMove,
 			.itemUse = OnItemUse,
 			.blockBreak = OnBlockBreak,
 			.blockPlace = OnBlockPlace,

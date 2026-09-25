@@ -91,7 +91,39 @@ void PlayerMovement(Packet::PlayerMovement& _pkt, PlayerSession& _session) {
 	}
 }
 
-void PlayerPosition(Packet::PlayerPosition& _pkt, PlayerSession& _session) {
+static bool HandlePlayerMove(Vec3 _to, PlayerSession& _session, Server& _server) {
+	bp_player_move_event event{ .player = &_session.apiPlayer,
+		                        .from = { _session.position.pos.x, _session.position.pos.y, _session.position.pos.z },
+		                        .to = { _to.x, _to.y, _to.z },
+		                        .cancel = false };
+	_server.GetAddonManager().Broadcast(&bp_addon_events::playerMove, event);
+
+	const Vec3 finalTo = { event.to.x, event.to.y, event.to.z };
+
+	if (event.cancel || finalTo != _to) {
+		Packet::PlayerPosition pkt;
+		pkt.onGround = _session.entity ? _session.entity->onGround : true;
+		pkt.position = { finalTo.x, finalTo.y + PLAYER_EYE_HEIGHT, finalTo.z };
+		pkt.cameraY = finalTo.y; // This is backwards, thanks notch
+		pkt.Serialize(_session.stream);
+	}
+
+	if (event.cancel)
+		return false;
+
+	_session.position.pos = { event.from.x, event.from.y, event.from.z };
+	_session.pendingPosition = finalTo;
+
+	if (_session.entity)
+		_session.entity->position = _session.position.pos;
+
+	return true;
+}
+
+void PlayerPosition(Packet::PlayerPosition& _pkt, PlayerSession& _session, Server& _server) {
+	if (!HandlePlayerMove(_pkt.position, _session, _server))
+		return;
+
 	_session.pendingPosition = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
 	if (_session.entity) {
 		_session.entity->onGround = _pkt.onGround;
@@ -107,10 +139,14 @@ void PlayerRotation(Packet::PlayerRotation& _pkt, PlayerSession& _session) {
 	}
 }
 
-void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& _pkt, PlayerSession& _session) {
-	_session.pendingPosition = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
+void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& _pkt, PlayerSession& _session, Server& _server) {
 	_session.rotation.x = _pkt.yaw;
 	_session.rotation.y = _pkt.pitch;
+
+	if (!HandlePlayerMove(_pkt.position, _session, _server))
+		return;
+
+	_session.pendingPosition = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
 	if (_session.entity) {
 		_session.entity->onGround = _pkt.onGround;
 		_session.entity->HandlePositionChecks();
