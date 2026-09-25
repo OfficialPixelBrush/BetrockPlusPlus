@@ -112,7 +112,7 @@ void OnBlockBreak(const bp_api* api, bp_block_break_event* ev) {
 	         ev->blockPos.x, ev->blockPos.y, ev->blockPos.z, ev->tool.id, ev->tool.data, ev->tool.count);
 	api->player.sendMessage(ev->player, msg);
 	free(msg);
-	
+
 	ev->cancel = true;
 }
 
@@ -157,6 +157,21 @@ void OnPlayerChat(const bp_api* api, bp_player_chat_event* ev) {
 			api->player.sendMessage(ev->player, username);
 		}
 	}
+}
+
+void OnEntityDamage(const bp_api* api, bp_entity_damage_event* ev) {
+	char* msg;
+	asprintf(&msg, "An entity got %d damage!", ev->amount);
+
+	int playerCount = api->server.getPlayerCount(api);
+	for (int i = 0; i < playerCount; ++i) {
+		bp_player* player = api->server.getPlayerAt(api, i);
+		api->player.sendMessage(player, msg);
+	}
+
+	free(msg);
+
+	ev->cancel = true;
 }
 
 void LoadSave(const bp_api* api) {
@@ -211,10 +226,11 @@ bp_addon_info bp_addon(const bp_api* api) {
 		.events = {
 			.playerJoin = OnPlayerJoin,
 			.playerChat = OnPlayerChat,
+			.itemUse = OnItemUse,
 			.blockBreak = OnBlockBreak,
 			.blockPlace = OnBlockPlace,
 			.blockUse = OnBlockUse,
-			.itemUse = OnItemUse,
+			.entityDamage = OnEntityDamage,
 			.addonLoad = OnLoad,
 			.addonUnload = OnUnload,
 		},
