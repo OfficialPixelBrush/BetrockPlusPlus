@@ -52,6 +52,10 @@ struct PaintingEntity : public Entity {
 	void SetDirection(Direction::Value _direction);
 	bool OnValidSurface();
 
+	bool CanBeCollidedWith() override {
+		return true;
+	}
+
 	void Tick() {
 		tickCounter++;
 		if (tickCounter >= 100) {

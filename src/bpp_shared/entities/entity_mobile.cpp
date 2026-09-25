@@ -76,8 +76,8 @@ void MobileEntity::SetGoal(std::optional<Int3> _goal) {
 		currentPathIdx = 0;
 		return;
 	}
-	Int3 start = { MathHelper::FloorDouble(position.x), MathHelper::FloorDouble(position.y),
-		           MathHelper::FloorDouble(position.z) };
+	auto fd = MathHelper::FloorDouble;
+	Int3 start = { fd(collider.minX), fd(collider.minY), fd(collider.minZ) };
 	currentPath = pathFinder.FindPath(start, *_goal, width, height);
 	currentPathIdx = 0;
 }

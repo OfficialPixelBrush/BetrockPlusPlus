@@ -28,6 +28,7 @@ void RegisterAll() {
 	itemBehavior[Items::Id::BUCKET_LAVA] = ItemBehavior{ .onBlockUse = UseLavaBucket };
 	itemBehavior[Items::Id::BUCKET] = ItemBehavior{ .onBlockUse = UseBucket };
 	itemBehavior[Items::Id::BOAT] = ItemBehavior{ .onBlockUse = UseBoat };
+	itemBehavior[Items::Id::BOW] = ItemBehavior{ .onUse = UseBow };
 
 	// Tool Properties
 	// Sword

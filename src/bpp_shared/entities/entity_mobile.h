@@ -65,8 +65,11 @@ public:
 	bool AttackEntityFrom(Entity* _entity, int _damage) override;
 	std::optional<Tag> SerializeToNbt() override;
 	void LoadFromNbt(Tag& _nbt) override;
-	float GetEyeHeight() {
+	virtual float GetEyeHeight() {
 		return height * 0.85f;
+	}
+	bool CanBeCollidedWith() override {
+		return !isDead;
 	}
 	void SetMaxHealth(int _health) {
 		this->health = _health;

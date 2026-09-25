@@ -201,6 +201,19 @@ struct TriNumber {
 		return std::sqrt(DistanceSquared(_other));
 	}
 
+	std::optional<TriNumber> GetIntermediateOnAxis(const TriNumber& _to, int _axis, double _value) const {
+		double dx = double(_to.x) - double(x);
+		double dy = double(_to.y) - double(y);
+		double dz = double(_to.z) - double(z);
+		double delta = _axis == 0 ? dx : (_axis == 1 ? dy : dz);
+		if (delta * delta < 1.0000000116860974E-7)
+			return std::nullopt;
+		double t = (_value - double(data[_axis])) / delta;
+		if (t < 0.0 || t > 1.0)
+			return std::nullopt;
+		return TriNumber(T(double(x) + dx * t), T(double(y) + dy * t), T(double(z) + dz * t));
+	}
+
 	double Length() const {
 		return std::sqrt(x * x + y * y + z * z);
 	}

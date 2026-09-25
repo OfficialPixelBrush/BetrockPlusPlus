@@ -8,13 +8,57 @@
 #pragma once
 #include <vector>
 
+struct AABBIntercept {
+	Vec3 point;
+	Direction::Value face = Direction::Value::None;
+};
+
 struct AABB {
 	double minX, minY, minZ;
 	double maxX, maxY, maxZ;
 
+	std::optional<AABBIntercept> CalculateIntercept(const Vec3& _from, const Vec3& _to) const {
+		const double mins[3] = { minX, minY, minZ };
+		const double maxs[3] = { maxX, maxY, maxZ };
+		// Vanilla side ids 4/5 (x), 0/1 (y), 2/3 (z)
+		const Direction::Value minFaces[3] = { Direction::Value::West, Direction::Value::Down, Direction::Value::North };
+		const Direction::Value maxFaces[3] = { Direction::Value::East, Direction::Value::Up, Direction::Value::South };
+
+		std::optional<AABBIntercept> best;
+		double bestDist = 0.0;
+		for (int axis = 0; axis < 3; axis++) {
+			for (int side = 0; side < 2; side++) {
+				auto point = _from.GetIntermediateOnAxis(_to, axis, side == 0 ? mins[axis] : maxs[axis]);
+				if (!point)
+					continue;
+
+				// Must land on the face
+				bool onFace = true;
+				for (int other = 0; other < 3; other++) {
+					if (other != axis && ((*point)[other] < mins[other] || (*point)[other] > maxs[other]))
+						onFace = false;
+				}
+				if (!onFace)
+					continue;
+
+				double dist = _from.DistanceSquared(*point);
+				if (!best || dist < bestDist) {
+					best = AABBIntercept{ *point, side == 0 ? minFaces[axis] : maxFaces[axis] };
+					bestDist = dist;
+				}
+			}
+		}
+		return best;
+	}
+
 	bool Intersects(const AABB& _other) const {
 		return (_other.maxX > minX && _other.minX < maxX && _other.maxY > minY && _other.minY < maxY &&
 		        _other.maxZ > minZ && _other.minZ < maxZ);
+	}
+
+	bool PointIntersects(const Vec3& _vec) const {
+		return (_vec.x > minX && _vec.x < maxX) && (_vec.y > minY && _vec.y < maxY) &&
+		       (_vec.z > minZ && _vec.z < maxZ);
 	}
 
 	AABB Offset(double _dx, double _dy, double _dz) const {
@@ -130,6 +174,31 @@ struct CollisionShape {
 			}
 		}
 		return false;
+	}
+
+	
+	bool PointIntersects(const Vec3& _vec) const {
+		for (const auto& box1 : boxes) {
+			if (box1.PointIntersects(_vec)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	std::optional<AABB> GetBounds() const {
+		if (boxes.empty())
+			return std::nullopt;
+		AABB bounds = boxes[0];
+		for (const auto& box : boxes) {
+			bounds.minX = std::min(bounds.minX, box.minX);
+			bounds.minY = std::min(bounds.minY, box.minY);
+			bounds.minZ = std::min(bounds.minZ, box.minZ);
+			bounds.maxX = std::max(bounds.maxX, box.maxX);
+			bounds.maxY = std::max(bounds.maxY, box.maxY);
+			bounds.maxZ = std::max(bounds.maxZ, box.maxZ);
+		}
+		return bounds;
 	}
 
 	CollisionShape Expand(double _dx, double _dy, double _dz) const {

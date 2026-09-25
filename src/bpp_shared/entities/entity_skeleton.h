@@ -16,4 +16,5 @@ struct SkeletonEntity : public HostileEntity {
 	}
 	~SkeletonEntity() = default;
 	void OnDeath(Entity* _killer) override;
+	void TryAttackEntity(Entity& _target, float _distance) override;
 };

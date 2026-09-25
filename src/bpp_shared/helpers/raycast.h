@@ -8,12 +8,11 @@
 #include "../direction.h"
 #include "world.h"
 #include <cmath>
-#include <limits>
 
 enum class RayCastMode : uint8_t {
-	IGNORE_FLUIDS,
+	IGNORE_FLUIDS, 
 	ACCEPT_SOURCES,
-	ACCEPT_ANY
+	ACCEPT_ANY     
 };
 
 struct RayCastResult {
@@ -21,72 +20,11 @@ struct RayCastResult {
 	Block hitBlock = {};
 	Int3 blockPosition = {};
 	Direction::Value face = Direction::Value::None;
+	Vec3 hitPosition = {};
 };
 
 // Name is a bit obvious isn't it?
 namespace Raycast {
-
-inline bool ClipRayAABB(const Vec3& _origin, const Vec3& _dir, double _maxDist, const AABB& _box, double& _outT,
-                        Direction::Value& _outFace) {
-	double originArr[3] = { _origin.x, _origin.y, _origin.z };
-	double dirArr[3] = { _dir.x, _dir.y, _dir.z };
-	double boxMin[3] = { _box.minX, _box.minY, _box.minZ };
-	double boxMax[3] = { _box.maxX, _box.maxY, _box.maxZ };
-
-	double tMin = 0.0;
-	double tMax = _maxDist;
-	int hitAxis = -1;
-
-	for (int axis = 0; axis < 3; ++axis) {
-		double o = originArr[axis];
-		double d = dirArr[axis];
-		double mn = boxMin[axis];
-		double mx = boxMax[axis];
-
-		if (std::abs(d) < 1e-12) {
-			// Ray is parallel to this slab; must already be inside it
-			if (o < mn || o > mx)
-				return false;
-			continue;
-		}
-
-		double invD = 1.0 / d;
-		double t1 = (mn - o) * invD;
-		double t2 = (mx - o) * invD;
-		if (t1 > t2)
-			std::swap(t1, t2);
-
-		if (t1 > tMin) {
-			tMin = t1;
-			hitAxis = axis;
-		}
-		if (t2 < tMax)
-			tMax = t2;
-
-		if (tMin > tMax)
-			return false;
-	}
-
-	// hitAxis == -1 means the ray origin started inside the box on every axis
-	if (hitAxis == -1)
-		return false;
-
-	_outT = tMin;
-
-	double d = dirArr[hitAxis];
-	switch (hitAxis) {
-	case 0:
-		_outFace = (d > 0) ? Direction::Value::West : Direction::Value::East;
-		break;
-	case 1:
-		_outFace = (d > 0) ? Direction::Value::Down : Direction::Value::Up;
-		break;
-	default:
-		_outFace = (d > 0) ? Direction::Value::North : Direction::Value::South;
-		break;
-	}
-	return true;
-}
 
 // Whether the fluid block should be treated as solid for this raycast mode.
 inline bool ShouldConsiderFluid(RayCastMode _mode, uint8_t _meta) {
@@ -101,89 +39,128 @@ inline bool ShouldConsiderFluid(RayCastMode _mode, uint8_t _meta) {
 	}
 }
 
-inline RayCastResult Raycast(WorldManager& _world, Vec3 _startPos, Vec3 _endPos, RayCastMode _mode) {
+inline RayCastResult Raycast(WorldManager& _world, Vec3 _startPos, Vec3 _endPos, RayCastMode _mode,
+                             bool _ignoreNonCollidable = false) {
 	RayCastResult result;
+	if (std::isnan(_startPos.x) || std::isnan(_startPos.y) || std::isnan(_startPos.z) || std::isnan(_endPos.x) ||
+	    std::isnan(_endPos.y) || std::isnan(_endPos.z))
+		return result;
 
-	Vec3 dir = _endPos - _startPos;
-	double dist = dir.Length();
-	if (dist < 0.000001)
-		return result; // start == end, nothing to hit
+	auto traceBlock = [&](Int3 _pos, const Vec3& _from) -> bool {
+		BlockType id = _world.GetBlockId(_pos);
+		if (id == BlockType::BLOCK_AIR)
+			return false;
+		uint8_t meta = _world.GetMetadata(_pos);
 
-	dir = dir / dist;
+		if (_ignoreNonCollidable && Blocks::blockBehaviors[id].getCollider(meta).IsEmpty())
+			return false;
 
+		// Fire is never hit
+		if (id == BLOCK_FIRE)
+			return false;
+		if (Blocks::blockProperties[id].material.isLiquid && !ShouldConsiderFluid(_mode, meta))
+			return false;
+
+		Vec3 offset = { double(_pos.x), double(_pos.y), double(_pos.z) };
+		AABB bounds = Blocks::blockBehaviors[id].getRayBounds(meta);
+		auto hit = bounds.CalculateIntercept(_from - offset, _endPos - offset);
+		if (!hit)
+			return false;
+
+		result.hit = true;
+		result.hitBlock = { id, meta };
+		result.blockPosition = _pos;
+		result.face = hit->face;
+		result.hitPosition = hit->point + offset;
+		return true;
+	};
+
+	const int endX = MathHelper::FloorDouble(_endPos.x);
+	const int endY = MathHelper::FloorDouble(_endPos.y);
+	const int endZ = MathHelper::FloorDouble(_endPos.z);
 	int x = MathHelper::FloorDouble(_startPos.x);
 	int y = MathHelper::FloorDouble(_startPos.y);
 	int z = MathHelper::FloorDouble(_startPos.z);
 
-	int stepX = dir.x > 0 ? 1 : -1, stepY = dir.y > 0 ? 1 : -1, stepZ = dir.z > 0 ? 1 : -1;
+	// The block we start in is tested first, so a ray starting inside a block still hits its exit face
+	if (traceBlock({ x, y, z }, _startPos))
+		return result;
 
-	auto tMaxFor = [](double origin, int cell, int step, double dirComp) {
-		if (dirComp == 0)
-			return std::numeric_limits<double>::infinity();
-		double boundary = (step > 0) ? (cell + 1) : cell;
-		return (boundary - origin) / dirComp;
-	};
-	double tMaxX = tMaxFor(_startPos.x, x, stepX, dir.x);
-	double tMaxY = tMaxFor(_startPos.y, y, stepY, dir.y);
-	double tMaxZ = tMaxFor(_startPos.z, z, stepZ, dir.z);
-	double tDeltaX = (dir.x != 0) ? std::abs(1.0 / dir.x) : std::numeric_limits<double>::infinity();
-	double tDeltaY = (dir.y != 0) ? std::abs(1.0 / dir.y) : std::numeric_limits<double>::infinity();
-	double tDeltaZ = (dir.z != 0) ? std::abs(1.0 / dir.z) : std::numeric_limits<double>::infinity();
+	for (int steps = 200; steps-- >= 0;) {
+		if (std::isnan(_startPos.x) || std::isnan(_startPos.y) || std::isnan(_startPos.z))
+			return result;
+		if (x == endX && y == endY && z == endZ)
+			return result;
 
-	while (true) {
-		BlockType id = _world.GetBlockId({ x, y, z });
+		// The next boundary on each axis we still have to cross
+		bool crossX = true, crossY = true, crossZ = true;
+		double boundX = 999.0, boundY = 999.0, boundZ = 999.0;
+		if (endX > x)
+			boundX = double(x) + 1.0;
+		else if (endX < x)
+			boundX = double(x) + 0.0;
+		else
+			crossX = false;
+		if (endY > y)
+			boundY = double(y) + 1.0;
+		else if (endY < y)
+			boundY = double(y) + 0.0;
+		else
+			crossY = false;
+		if (endZ > z)
+			boundZ = double(z) + 1.0;
+		else if (endZ < z)
+			boundZ = double(z) + 0.0;
+		else
+			crossZ = false;
 
-		if (id != BlockType::BLOCK_AIR) {
-			const auto& props = Blocks::blockProperties[id];
-			bool consider = true;
+		// How far along the remaining segment each boundary is
+		double tX = 999.0, tY = 999.0, tZ = 999.0;
+		double dx = _endPos.x - _startPos.x;
+		double dy = _endPos.y - _startPos.y;
+		double dz = _endPos.z - _startPos.z;
+		if (crossX)
+			tX = (boundX - _startPos.x) / dx;
+		if (crossY)
+			tY = (boundY - _startPos.y) / dy;
+		if (crossZ)
+			tZ = (boundZ - _startPos.z) / dz;
 
-			if (props.material.isLiquid) {
-				uint8_t meta = _world.GetMetadata({ x, y, z });
-				consider = ShouldConsiderFluid(_mode, meta);
-			}
-
-			if (consider) {
-				uint8_t meta = _world.GetMetadata({ x, y, z });
-				AABB localBox = Blocks::blockBehaviors[id].getRayBounds(meta);
-
-				// Zero volume shapes
-				if (localBox.maxX > localBox.minX && localBox.maxY > localBox.minY && localBox.maxZ > localBox.minZ) {
-					AABB worldBox = localBox.Offset(x, y, z);
-
-					double hitT;
-					Direction::Value hitFace;
-					if (ClipRayAABB(_startPos, dir, dist, worldBox, hitT, hitFace)) {
-						result.hit = true;
-						result.hitBlock = { id, meta };
-						result.blockPosition = { x, y, z };
-						result.face = hitFace;
-						return result;
-					}
-				}
-			}
-		}
-
-		// Advance to the next candidate cell along the ray
-		double nextT;
-		if (tMaxX <= tMaxY && tMaxX <= tMaxZ) {
-			nextT = tMaxX;
-			x += stepX;
-			tMaxX += tDeltaX;
-		} else if (tMaxY <= tMaxZ) {
-			nextT = tMaxY;
-			y += stepY;
-			tMaxY += tDeltaY;
+		// Move the start point onto the nearest boundary. Vanilla side ids: 4/5 = x, 0/1 = y, 2/3 = z
+		int side;
+		if (tX < tY && tX < tZ) {
+			side = endX > x ? 4 : 5;
+			_startPos.x = boundX;
+			_startPos.y += dy * tX;
+			_startPos.z += dz * tX;
+		} else if (tY < tZ) {
+			side = endY > y ? 0 : 1;
+			_startPos.x += dx * tY;
+			_startPos.y = boundY;
+			_startPos.z += dz * tY;
 		} else {
-			nextT = tMaxZ;
-			z += stepZ;
-			tMaxZ += tDeltaZ;
+			side = endZ > z ? 2 : 3;
+			_startPos.x += dx * tZ;
+			_startPos.y += dy * tZ;
+			_startPos.z = boundZ;
 		}
 
-		if (nextT > dist)
-			break;
+		// Work out which cell we just entered
+		x = MathHelper::FloorDouble(_startPos.x);
+		if (side == 5)
+			x--;
+		y = MathHelper::FloorDouble(_startPos.y);
+		if (side == 1)
+			y--;
+		z = MathHelper::FloorDouble(_startPos.z);
+		if (side == 3)
+			z--;
+
+		if (traceBlock({ x, y, z }, _startPos))
+			return result;
 	}
 
-	return result; // no hit within range
+	return result;
 }
 
 } // namespace Raycast

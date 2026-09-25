@@ -88,7 +88,7 @@ void EatFood(PlayerSession& _session, ItemStack* _stack, Entity& _target) {
 		giveBowlBack = true;
 	_stack->DecrementCount(1);
 	if (giveBowlBack) {
-		ItemStack itemStack = ItemStack{ Items::Id::BOWL, 0, 1 };
+		ItemStack itemStack = ItemStack{ Items::Id::BOWL, 1, 0 };
 		_session.inventory.PickupItem(itemStack);
 	}
 }
