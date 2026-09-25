@@ -8,6 +8,7 @@
 #include "entity_boat.h"
 #include "entity_chicken.h"
 #include "entity_cow.h"
+#include "entity_arrow.h"
 #include "entity_creeper.h"
 #include "entity_falling_block.h"
 #include "entity_item.h"
@@ -324,6 +325,11 @@ void EntityManager::CreateEntityFromNbt(Tag& _nbt) {
 		SpiderEntity entity;
 		entity.LoadFromNbt(_nbt);
 		AddEntity(std::make_shared<SpiderEntity>(entity));
+	}
+	if (id == "Arrow") {
+		ArrowEntity entity;
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<ArrowEntity>(entity));
 	}
 	if (id == "FallingSand") {
 		FallingBlockEntity entity(Vec3{}, BLOCK_AIR);

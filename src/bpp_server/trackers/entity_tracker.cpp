@@ -11,6 +11,7 @@
 #include "entities/entity_item.h"
 #include "entities/entity_mobile.h"
 #include "entities/entity_painting.h"
+#include "entities/entity_arrow.h"
 #include "logger.h"
 #include "packet_data.h"
 #include <algorithm>
@@ -406,6 +407,19 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.entityId = _entityEntry.entity->id;
 		pkt.objectType = PacketData::ObjectType::FALLING_GRAVEL;
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
+		pkt.Serialize(pSession->stream);
+		break;
+	}
+	case EntityType::ARROW: {
+		auto* arrow = dynamic_cast<ArrowEntity*>(_entityEntry.entity);
+		auto owner = arrow ? arrow->GetOwner() : nullptr;
+		Packet::SpawnObject pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.objectType = PacketData::ObjectType::ARROW;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		// Beta sends the owner id, or the arrow's own id if it has none
+		pkt.ownerEntityId = owner ? owner->id : _entityEntry.entity->id;
 		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
 		pkt.Serialize(pSession->stream);
 		break;
