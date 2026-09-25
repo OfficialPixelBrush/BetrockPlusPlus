@@ -27,21 +27,14 @@ public:
 		return addons;
 	}
 
-	template <typename EventType, typename HookFn = decltype([] { return false; })>
-	bool Broadcast(void (*bp_addon_events::*_eventMember)(const bp_api*, EventType*), EventType& _event,
-	               HookFn _postHook = {}) const {
+	template <typename EventType>
+	void Broadcast(void (*bp_addon_events::*_eventMember)(const bp_api*, EventType*), EventType& event) const {
 		for (const auto& addon : addons) {
 			auto callback = addon->info.events.*_eventMember;
-			if (!callback)
-				continue;
-
-			callback(&addon->api, &_event);
-
-			if (_postHook()) {
-				return true; // Cancelled
+			if (callback) {
+				callback(&addon->api, &event);
 			}
 		}
-		return false;
 	}
 
 private:
