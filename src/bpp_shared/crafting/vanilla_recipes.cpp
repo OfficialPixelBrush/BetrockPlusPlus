@@ -164,10 +164,8 @@ void RecipeManager::AddVanillaRecipes() {
 	         Items::Id::AXE_DIAMOND, Items::Id::HOE_DIAMOND);
 
 	// Bows
-	AddShapedRecipe({ "A# ", "A #", "A# " }, { { '#', { Items::Id::STICK } }, { 'A', { Items::Id::STRING } } },
-					{ Items::Id::BOW });
 	AddShapedRecipe({ " #A", "# A", " #A" }, { { '#', { Items::Id::STICK } }, { 'A', { Items::Id::STRING } } },
-					{ Items::Id::BOW });
+	                { Items::Id::BOW, 1 });
 
 	// Blocks -> ingots, ingots -> blocks
 	auto addMaterial = [this](ItemId _material, uint8_t _materialMeta, ItemId _storedMaterial) -> void {
