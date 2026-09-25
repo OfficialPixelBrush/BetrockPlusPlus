@@ -63,6 +63,23 @@ const char* PlayerGetUsername(bp_player* _player) {
 	return _player->session->username.c_str();
 }
 
+bp_entity* PlayerGetEntity(bp_player* _player) {
+	// Peak C++
+	return &_player->session->entity->apiEntity;
+}
+
+bp_vec3 EntityGetPosition(bp_entity* _entity) {
+	return { _entity->entity->position.x, _entity->entity->position.y, _entity->entity->position.z };
+}
+
+void EntitySetPosition(bp_entity* _entity, bp_vec3 _pos) {
+	_entity->entity->Teleport({ _pos.x, _pos.y, _pos.z });
+}
+
+bp_world* EntityGetWorld(bp_entity* _entity) {
+	return &_entity->entity->world->apiWorld;
+}
+
 bp_block GetBlock(bp_world* _world, bp_block_pos _pos) {
 	Int3 blockPos{ _pos.x, _pos.y, _pos.z };
 	auto id = _world->manager->GetBlockId(blockPos);
@@ -104,11 +121,14 @@ void SetPlayerData(const bp_api* _api, bp_player* _player, void* _data) {
 }
 
 bp_api MakeAddonAPI() {
-	return bp_api{ .version = ADDON_API_VERSION,
-		           .internal = nullptr, // Set by the addon manager
-		           .log = { .info = LogInfo, .warning = LogWarning, .error = LogError },
-		           .server = { .getPlayerCount = GetPlayerCount, .getPlayerAt = GetPlayerAt },
-		           .player = { .sendMessage = PlayerSendMessage, .kick = PlayerKick, .getUsername = PlayerGetUsername },
-		           .world = { .setBlock = SetBlock, .getBlock = GetBlock, .sendBlockUpdate = SendBlockUpdate },
-		           .data = { .setPlayer = SetPlayerData, .getPlayer = GetPlayerData } };
+	return bp_api{
+		.version = ADDON_API_VERSION,
+		.internal = nullptr, // Set by the addon manager
+		.log = { .info = LogInfo, .warning = LogWarning, .error = LogError },
+		.server = { .getPlayerCount = GetPlayerCount, .getPlayerAt = GetPlayerAt },
+		.player = { .sendMessage = PlayerSendMessage, .kick = PlayerKick, .getUsername = PlayerGetUsername },
+		.entity = { .getPosition = EntityGetPosition, .setPosition = EntitySetPosition, .getWorld = EntityGetWorld },
+		.world = { .setBlock = SetBlock, .getBlock = GetBlock, .sendBlockUpdate = SendBlockUpdate },
+		.data = { .setPlayer = SetPlayerData, .getPlayer = GetPlayerData }
+	};
 }
