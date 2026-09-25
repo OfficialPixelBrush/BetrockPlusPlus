@@ -132,6 +132,7 @@ void UseShears(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack);
 void UseSaddle(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack);
 void UseBucketOnEntity(WorldManager& _world, Entity& _targetEntity, ItemStack* _stack);
 void UseBow(PlayerSession& _session, ItemStack* /*_stack*/, Entity& /*_target*/);
+void UseThrowable(PlayerSession& _session, ItemStack* _stack, Entity& /*_target*/);
 void UseDye(WorldManager& /*_world*/, Entity& _targetEntity, ItemStack* _stack);
 
 // Attack
