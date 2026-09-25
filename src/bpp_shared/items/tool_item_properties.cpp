@@ -29,6 +29,8 @@ void RegisterAll() {
 	itemBehavior[Items::Id::BUCKET] = ItemBehavior{ .onBlockUse = UseBucket };
 	itemBehavior[Items::Id::BOAT] = ItemBehavior{ .onBlockUse = UseBoat };
 	itemBehavior[Items::Id::BOW] = ItemBehavior{ .onUse = UseBow };
+	itemBehavior[Items::Id::EGG] = ItemBehavior{ .onUse = UseThrowable };
+	itemBehavior[Items::Id::SNOWBALL] = ItemBehavior{ .onUse = UseThrowable };
 
 	// Tool Properties
 	// Sword

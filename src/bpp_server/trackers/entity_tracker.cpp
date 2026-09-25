@@ -12,6 +12,8 @@
 #include "entities/entity_mobile.h"
 #include "entities/entity_painting.h"
 #include "entities/entity_arrow.h"
+#include "entities/entity_egg.h"
+#include "entities/entity_snowball.h"
 #include "logger.h"
 #include "packet_data.h"
 #include <algorithm>
@@ -419,6 +421,30 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.objectType = PacketData::ObjectType::ARROW;
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		// Beta sends the owner id, or the arrow's own id if it has none
+		pkt.ownerEntityId = owner ? owner->id : _entityEntry.entity->id;
+		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
+		pkt.Serialize(pSession->stream);
+		break;
+	}
+	case EntityType::THROWN_EGG: {
+		auto* egg = dynamic_cast<EggEntity*>(_entityEntry.entity);
+		auto owner = egg ? egg->GetOwner() : nullptr;
+		Packet::SpawnObject pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.objectType = PacketData::ObjectType::THROWN_EGG;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.ownerEntityId = owner ? owner->id : _entityEntry.entity->id;
+		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
+		pkt.Serialize(pSession->stream);
+		break;
+	}
+	case EntityType::THROWN_SNOWBALL: {
+		auto* snowball = dynamic_cast<SnowballEntity*>(_entityEntry.entity);
+		auto owner = snowball ? snowball->GetOwner() : nullptr;
+		Packet::SpawnObject pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.objectType = PacketData::ObjectType::THROWN_SNOWBALL;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		pkt.ownerEntityId = owner ? owner->id : _entityEntry.entity->id;
 		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
 		pkt.Serialize(pSession->stream);

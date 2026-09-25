@@ -16,6 +16,8 @@
 #include "entities/entity_player.h"
 #include "entities/entity_sheep.h"
 #include "entities/entity_arrow.h"
+#include "entities/entity_egg.h"
+#include "entities/entity_snowball.h"
 #include "inventory/item_stack.h"
 #include "items.h"
 #include "logger.h"
@@ -338,6 +340,19 @@ void UseBow(PlayerSession& _session, ItemStack* /*_stack*/, Entity& /*_target*/)
 	inv.slots[slot].DecrementCount(1);
 	inv.OnInventoryChanged();
 	_session.entity->world->entityManager.AddEntity(std::make_shared<ArrowEntity>(_session.entity));
+}
+
+void UseThrowable(PlayerSession& _session, ItemStack* _stack, Entity& /*_target*/) {
+	if (_stack->id != Items::EGG && _stack->id != Items::SNOWBALL)
+		return;
+
+	_stack->DecrementCount(1);
+
+	if (_stack->id == Items::EGG) {
+		_session.entity->world->entityManager.AddEntity(std::make_shared<EggEntity>(_session.entity));
+		return;
+	}
+	_session.entity->world->entityManager.AddEntity(std::make_shared<SnowballEntity>(_session.entity));
 }
 
 void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Direction::Value /*_face*/) {

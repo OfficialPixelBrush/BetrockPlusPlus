@@ -259,6 +259,13 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 			return;
 		}
 
+		// Throwable check
+		if (heldItem->id == Items::Id::EGG || heldItem->id == Items::Id::SNOWBALL) {
+			if (auto& fn = Items::itemBehavior[heldItem->id].onUse)
+				fn(_session, heldItem, *_session.entity);
+			return;
+		}
+
 		// Special cases
 		bool isBucketItem = (heldItem->id == Items::Id::BUCKET || heldItem->id == Items::Id::BUCKET_WATER ||
 		                     heldItem->id == Items::Id::BUCKET_LAVA);
