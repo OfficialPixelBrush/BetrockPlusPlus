@@ -32,9 +32,9 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
                  std::vector<std::shared_ptr<PlayerSession>>& _players, WorldManager& _world, CommandManager& _cmdMgr,
                  std::function<void(PlayerSession&)> _transferDimension, Server& _server);
 void PlayerMovement(Packet::PlayerMovement& /*pkt*/, PlayerSession& /*session*/);
-void PlayerPosition(Packet::PlayerPosition& _pkt, PlayerSession& _session);
+void PlayerPosition(Packet::PlayerPosition& _pkt, PlayerSession& _session, Server& _server);
 void PlayerRotation(Packet::PlayerRotation& _pkt, PlayerSession& _session);
-void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& _pkt, PlayerSession& _session);
+void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& _pkt, PlayerSession& _session, Server& _server);
 void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _world, Server& _server);
 void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager& _world, Runtime& _gameRuntime,
                 Server& _server);
