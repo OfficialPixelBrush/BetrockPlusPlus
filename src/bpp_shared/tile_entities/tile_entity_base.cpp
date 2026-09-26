@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
  * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -36,6 +37,10 @@ constexpr std::string GetTileNbtId(TileType _type) {
 		return "Sign";
 	case TileType::SPAWNER:
 		return "MobSpawner";
+	case TileType::JUKEBOX:
+		return "RecordPlayer";
+	case TileType::NOTEBLOCK:
+		return "Music";
 	}
 	// Invalid type, empty string
 	return "";
