@@ -11,6 +11,7 @@
 #include "world.h"
 #include <deque>
 #include <unordered_set>
+#include <vector>
 
 static std::deque<RedstoneUpdateInfo> torchUpdates;
 
@@ -381,13 +382,16 @@ bool RedstoneManager::IsPositionPowered(WorldManager& _world, Int3 _pos) {
 }
 
 static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int3>& _visited,
-                         bool _forceDisableProfileCheck = false) {
+                         std::vector<Int3>& _order, bool _forceDisableProfileCheck = false) {
 	auto thisBlock = _world.GetBlockId(_pos);
 	bool doProfileCheck = false;
 
 	// Only mark visited if we are redstone dust
-	if (thisBlock == BLOCK_REDSTONE)
-		_visited.insert(_pos);
+	if (thisBlock == BLOCK_REDSTONE) {
+		if (!_visited.insert(_pos).second)
+			return;
+		_order.push_back(_pos);
+	}
 
 	ComponentProfile thisProfile;
 	if (thisBlock != BLOCK_REDSTONE && !_forceDisableProfileCheck) {
@@ -397,7 +401,7 @@ static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int
 		doProfileCheck = true;
 	}
 
-	std::unordered_set<Int3> neighbors;
+	std::vector<Int3> neighbors;
 	// Horizontal scan
 	for (int dy = -1 + _pos.y; dy <= 1 + _pos.y; dy++) {
 		int d[4] = { -1, 1, 0, 0 };
@@ -430,19 +434,19 @@ static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int
 
 			if (_world.GetBlockId({ dx, dy, dz }) == BLOCK_REDSTONE && canConnect)
 				if (!_visited.count({ dx, dy, dz }))
-					neighbors.insert({ dx, dy, dz });
+					neighbors.push_back({ dx, dy, dz });
 		}
 	}
 
 	// If we had dust around us there might be dust connecting to them too
 	if (neighbors.size() != 0) {
 		for (auto& neighbor : neighbors) {
-			GetNeighbors(_world, neighbor, _visited);
+			GetNeighbors(_world, neighbor, _visited, _order);
 		}
 	}
 };
 
-static bool ResolvePowerLevels(WorldManager& _world, std::unordered_set<Int3>& _positions) {
+static bool ResolvePowerLevels(WorldManager& _world, const std::vector<Int3>& _positions) {
 	// Returns if values actually changed this time around
 	bool hasChanged = false;
 	for (auto& pos : _positions) {
@@ -460,18 +464,19 @@ static bool ResolvePowerLevels(WorldManager& _world, std::unordered_set<Int3>& _
 // Avoids a ton of redundant updates!
 static void SolveRedstoneNetwork(WorldManager& _world, Int3 _pos) {
 	std::unordered_set<Int3> visited;
-	GetNeighbors(_world, _pos, visited, /*disable profile checks=*/true);
+	std::vector<Int3> order;
+	GetNeighbors(_world, _pos, visited, order, /*disable profile checks=*/true);
 
 	std::unordered_map<Int3, uint8_t> oldLevels;
-	for (auto& pos : visited) {
+	for (auto& pos : order) {
 		oldLevels.insert({ pos, static_cast<uint8_t>(_world.GetMetadata(pos)) });
 	}
 
-	while (ResolvePowerLevels(_world, visited))
+	while (ResolvePowerLevels(_world, order))
 		;
 
 	// Each redstone wire will try and reach further out if it went from 0->powered or powered->0
-	for (auto& pos : visited) {
+	for (auto& pos : order) {
 		auto oldLevel = oldLevels.find(pos)->second;
 		auto newLevel = _world.GetMetadata(pos);
 		if (oldLevel != newLevel && (oldLevel == 0 || newLevel == 0)) {
