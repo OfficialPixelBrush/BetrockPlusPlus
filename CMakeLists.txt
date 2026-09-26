@@ -126,7 +126,12 @@ file(GLOB COMMAND_SOURCES
 set(SHARED_SOURCES
     # Shared files
     src/bpp_shared/tile_entities/tile_entity_manager.cpp
-    src/bpp_shared/tile_entities/tile_entity.cpp
+    src/bpp_shared/tile_entities/tile_entity_base.cpp
+    src/bpp_shared/tile_entities/tile_entity_sign.cpp
+    src/bpp_shared/tile_entities/tile_entity_chest.cpp
+    src/bpp_shared/tile_entities/tile_entity_dispenser.cpp
+    src/bpp_shared/tile_entities/tile_entity_mob_spawner.cpp
+    src/bpp_shared/tile_entities/tile_entity_furnace.cpp
     src/bpp_shared/entities/entity.cpp
     src/bpp_shared/entities/entity_item.cpp
     src/bpp_shared/entities/entity_player.cpp

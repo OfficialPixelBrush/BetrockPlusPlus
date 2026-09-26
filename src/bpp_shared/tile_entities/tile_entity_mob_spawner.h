@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+*/
+
+#pragma once
+#include "tile_entity_base.h"
+
+// MobSpawner
+struct TileEntityMobSpawner : TileEntity {
+	std::string entityId = "";
+	int16_t delay = 20;
+	TileEntityMobSpawner(Int3 _pPosition) : TileEntity(TileType::SPAWNER, _pPosition) {
+		canTick = true;
+	};
+
+	Tag Serialize() override;
+	void Tick(WorldManager& _world) override;
+	bool PlayerInRange(WorldManager& _world);
+};
