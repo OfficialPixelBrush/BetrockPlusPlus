@@ -263,8 +263,8 @@ void RegisterRedstoneBehaviors() {
 		    _world.SetMeta(_pos, newMeta);
 		    NotifyAttachedSupportBlock(_world, _pos, BLOCK_BUTTON_STONE, newMeta);
 		    _world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_BUTTON_STONE, 20);
-		    if (_world.onWorldEvent)
-			    _world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
+		    //if (_world.onWorldEvent)
+			//    _world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
 		},
 		.onBlockActivated = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> bool {
 		    blockBehaviors[BLOCK_BUTTON_STONE].onBlockClicked(_world, _pos, _triggeringSession);
@@ -551,8 +551,8 @@ void RegisterRedstoneBehaviors() {
 		auto newMeta = _world.GetMetadata(_pos) ^ 0b1000;
 		_world.SetMeta(_pos, newMeta);
 		NotifyAttachedSupportBlock(_world, _pos, BLOCK_LEVER, newMeta);
-		if (_world.onWorldEvent)
-			_world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
+		//if (_world.onWorldEvent)
+		//	_world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
 	},
 	blockBehaviors[BLOCK_LEVER].onBlockActivated = [](WorldManager& _world, Int3 _pos,
 	                                                  PlayerSession* _triggeringSession) -> bool {
