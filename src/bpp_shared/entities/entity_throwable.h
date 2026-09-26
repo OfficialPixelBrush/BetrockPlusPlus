@@ -76,7 +76,7 @@ struct ThrowableEntity : public Entity {
 	void Tick() override;
 	std::optional<Tag> SerializeToNbt() override;
 	void LoadFromNbt(Tag& _nbt) override;
-	virtual void OnHit(Vec3 _pos) {};
+	virtual void OnHit(Vec3 /*_pos*/) {};
 
 private:
 	Int3 tilePosition = { -1, -1, -1 };

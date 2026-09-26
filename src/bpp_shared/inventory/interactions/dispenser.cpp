@@ -61,7 +61,7 @@ void TrapInventoryInteraction::WriteBack() {
 		playerInventory->slots[i - 9 + 9] = sharedInventory.slots[i];
 }
 
-void TrapInventoryInteraction::OnShiftClick(int _slot) {
+void TrapInventoryInteraction::OnShiftClick(int /*_slot*/) {
 	// Shift clicking doesn't work on dispensers so no-op
 	return;
 }

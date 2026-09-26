@@ -54,11 +54,11 @@ static void DispenseItemFromDispenser(WorldManager& _world, Int3 _pos, uint8_t _
 		break;
 	}
 
-	auto dispenser = _world.GetTileEntityAs<TileEntityDispenser>(_pos);
-	if (!dispenser)
+	auto dispenserTe = _world.GetTileEntityAs<TileEntityDispenser>(_pos);
+	if (!dispenserTe)
 		return;
 
-	auto randStack = dispenser->GetRandomStackInInventory();
+	auto randStack = dispenserTe->GetRandomStackInInventory();
 	if (!randStack.has_value()) {
 		if (_world.onWorldEvent)
 			_world.onWorldEvent(PacketData::WorldEvent::CLICK1, _pos, 0, nullptr);
@@ -71,6 +71,8 @@ static void DispenseItemFromDispenser(WorldManager& _world, Int3 _pos, uint8_t _
 	outputPos.z = _pos.z + zOffset * 0.6 + 0.5;
 
 	auto randStackPtr = randStack.value();
+	if (!randStackPtr)
+		return;
 	ItemStack newStack = *randStackPtr;
 	randStackPtr->DecrementCount(1);
 	newStack.count = 1;
