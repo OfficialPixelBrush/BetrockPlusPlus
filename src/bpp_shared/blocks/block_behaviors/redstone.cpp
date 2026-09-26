@@ -61,7 +61,7 @@ static void DispenseItemFromDispenser(WorldManager& _world, Int3 _pos, uint8_t _
 	auto randStack = dispenserTe->GetRandomStackInInventory();
 	if (!randStack.has_value()) {
 		if (_world.onWorldEvent)
-			_world.onWorldEvent(PacketData::WorldEvent::CLICK1, _pos, 0, nullptr);
+			_world.onWorldEvent(PacketData::WorldEvent::DISPENSER_CLICK, _pos, 0, nullptr);
 		return;
 	}
 
@@ -84,7 +84,7 @@ static void DispenseItemFromDispenser(WorldManager& _world, Int3 _pos, uint8_t _
 		    entity->arrowBelongsToPlayer = true;
 		    _world.entityManager.AddEntity(entity);
 			if (_world.onWorldEvent)
-				_world.onWorldEvent(PacketData::WorldEvent::BOW_FIRE, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
+				_world.onWorldEvent(PacketData::WorldEvent::DISPENSER_ARROW_FIRE, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
 			break;
 		}
 	    case Items::EGG: {
@@ -92,7 +92,7 @@ static void DispenseItemFromDispenser(WorldManager& _world, Int3 _pos, uint8_t _
 		    entity->SetHeading({ double(xOffset), 0.1, double(zOffset) }, 1.1f, 6.0f);
 		    _world.entityManager.AddEntity(entity);
 		    if (_world.onWorldEvent)
-			    _world.onWorldEvent(PacketData::WorldEvent::BOW_FIRE, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
+			    _world.onWorldEvent(PacketData::WorldEvent::DISPENSER_ARROW_FIRE, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
 		    break;
 		}
 	    case Items::SNOWBALL: {
@@ -100,7 +100,7 @@ static void DispenseItemFromDispenser(WorldManager& _world, Int3 _pos, uint8_t _
 		    entity->SetHeading({ double(xOffset), 0.1, double(zOffset) }, 1.1f, 6.0f);
 		    _world.entityManager.AddEntity(entity);
 		    if (_world.onWorldEvent)
-			    _world.onWorldEvent(PacketData::WorldEvent::BOW_FIRE, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
+			    _world.onWorldEvent(PacketData::WorldEvent::DISPENSER_ARROW_FIRE, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
 		    break;
 		}
 	    default: {
@@ -119,13 +119,13 @@ static void DispenseItemFromDispenser(WorldManager& _world, Int3 _pos, uint8_t _
 			_world.entityManager.AddEntity(item);
 
 			if (_world.onWorldEvent)
-			    _world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
+			    _world.onWorldEvent(PacketData::WorldEvent::DISPENSER_CLICK_EMPTY, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
 		    break;
 		}
 	}
 
 	if (_world.onWorldEvent)
-		_world.onWorldEvent(PacketData::WorldEvent::SMOKE, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
+		_world.onWorldEvent(PacketData::WorldEvent::DISPENSER_PUFF, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
 }
 
 static bool CanRedstoneComponentStay(WorldManager& _world, Int3 _pos) {
@@ -258,13 +258,13 @@ void RegisterRedstoneBehaviors() {
 		    if (!IsSupported(_world, _pos, GetDirectionFromMeta(BLOCK_BUTTON_STONE, _world.GetMetadata(_pos))))
 			    BreakAndDropBlock(_world, _pos);
 		},
-		.onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> void {
+		.onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* /*_triggeringSession*/) -> void {
 		    auto newMeta = _world.GetMetadata(_pos) | 0b1000;
 		    _world.SetMeta(_pos, newMeta);
 		    NotifyAttachedSupportBlock(_world, _pos, BLOCK_BUTTON_STONE, newMeta);
 		    _world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_BUTTON_STONE, 20);
 		    //if (_world.onWorldEvent)
-			//    _world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
+			//    _world.onWorldEvent(PacketData::WorldEvent::DISPENSER_CLICK_EMPTY, _pos, 0, _triggeringSession);
 		},
 		.onBlockActivated = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> bool {
 		    blockBehaviors[BLOCK_BUTTON_STONE].onBlockClicked(_world, _pos, _triggeringSession);
@@ -547,12 +547,12 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_LEVER].onBlockClicked = [](WorldManager& _world, Int3 _pos,
-	                                                PlayerSession* _triggeringSession) -> void {
+	                                                PlayerSession* /*_triggeringSession*/) -> void {
 		auto newMeta = _world.GetMetadata(_pos) ^ 0b1000;
 		_world.SetMeta(_pos, newMeta);
 		NotifyAttachedSupportBlock(_world, _pos, BLOCK_LEVER, newMeta);
 		//if (_world.onWorldEvent)
-		//	_world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
+		//	_world.onWorldEvent(PacketData::WorldEvent::DISPENSER_CLICK_EMPTY, _pos, 0, _triggeringSession);
 	},
 	blockBehaviors[BLOCK_LEVER].onBlockActivated = [](WorldManager& _world, Int3 _pos,
 	                                                  PlayerSession* _triggeringSession) -> bool {
