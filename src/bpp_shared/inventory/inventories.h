@@ -166,24 +166,8 @@ struct InventoryCraftingTable : Inventory {
 };
 
 struct InventoryDispenser : Inventory {
-	// TODO: Maybe use JavaRandom? (does that matter???)
-	std::mt19937 rng{ std::random_device{}() };
-
 	InventoryDispenser() : Inventory(9) {
 		name = "Trap";
-	}
-
-	std::optional<ItemStack> GetRandomStack() {
-		int chosen = -1, weight = 1;
-		for (int i = 0; i < 9; i++) {
-			if (slots[size_t(i)].id == Items::Id::INVALID)
-				continue;
-			if (std::uniform_int_distribution<int>(0, weight++ - 1)(rng) == 0)
-				chosen = i;
-		}
-		if (chosen < 0)
-			return std::nullopt;
-		return DecreaseStackSize(chosen, 1);
 	}
 };
 

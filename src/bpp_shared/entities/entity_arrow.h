@@ -9,6 +9,8 @@
 #include "logger.h"
 
 struct ArrowEntity : public Entity {
+	bool arrowBelongsToPlayer : 1 = false;
+
 	// Default
 	ArrowEntity() : Entity() {
 		this->InitArrowEntity();
@@ -92,7 +94,6 @@ private:
 	float prevRotationPitch = 0.0f;
 
 	bool arrowInGround : 1 = false;
-	bool arrowBelongsToPlayer : 1 = false;
 
 	void InitArrowEntity() {
 		type = EntityType::ARROW;

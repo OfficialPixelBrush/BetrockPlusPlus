@@ -12,6 +12,7 @@
 #include "entities/entity_spider.h"
 #include "entities/entity_zombie.h"
 #include "inventory/interactions/chest.h"
+#include "inventory/interactions/dispenser.h"
 #include "inventory/interactions/crafting_table.h"
 #include "inventory/interactions/furnace.h"
 #include "inventory/interactions/large_chest.h"
@@ -36,6 +37,26 @@ void ServerBlock::Initialize() {
 		_session.activeInteraction = std::make_unique<CraftingTableInventoryInteraction>(&_session.inventory, _world,
 		                                                                                 _gameRuntime, _position);
 		_session.activeInteraction->InitSnapshot();
+		return false;
+	};
+
+	blockBehaviors[BLOCK_DISPENSER].onBlockActivated = [](WorldManager& _world, Int3 _position,
+	                                                           PlayerSession& _session, Runtime& _gameRuntime) -> bool {
+		auto trap = _world.GetTileEntityShared<TileEntityDispenser>(_position);
+		if (!trap)
+			return false;
+			
+		Packet::OpenContainer ow;
+		ow.windowId = _session.GetNextWindowId();
+		ow.slotCount = 9;
+		ow.title = "Dispenser";
+		ow.windowType = PacketData::WindowType::DISPENSER;
+		ow.Serialize(_session.stream);
+
+		_session.activeInteraction = std::make_unique<TrapInventoryInteraction>(&_session.inventory, trap);
+		_session.activeInteraction->InitSnapshot();
+
+		PacketUtilities::SendInventory(_session, _session.openWindowId, *_session.activeInteraction->inventory);
 		return false;
 	};
 
