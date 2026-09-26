@@ -132,6 +132,8 @@ set(SHARED_SOURCES
     src/bpp_shared/tile_entities/tile_entity_dispenser.cpp
     src/bpp_shared/tile_entities/tile_entity_mob_spawner.cpp
     src/bpp_shared/tile_entities/tile_entity_furnace.cpp
+    src/bpp_shared/tile_entities/tile_entity_jukebox.cpp
+    src/bpp_shared/tile_entities/tile_entity_noteblock.cpp
     src/bpp_shared/entities/entity.cpp
     src/bpp_shared/entities/entity_item.cpp
     src/bpp_shared/entities/entity_player.cpp

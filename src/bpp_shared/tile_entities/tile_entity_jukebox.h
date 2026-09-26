@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+*/
+
+#pragma once
+#include "tile_entity_base.h"
+
+struct TileEntityJukebox : TileEntity {
+	ItemId recordItemId = 0;
+	TileEntityJukebox(Int3 _pPosition) : TileEntity(TileType::JUKEBOX, _pPosition) {};
+
+	Tag Serialize() override;
+	void Tick(WorldManager& _world) override;
+};
