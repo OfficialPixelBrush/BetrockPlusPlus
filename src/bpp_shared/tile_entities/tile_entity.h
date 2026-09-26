@@ -1,129 +1,13 @@
 /*
- * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
- * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
 #pragma once
-#include "inventory/inventories.h"
-#include "nbt/nbt.h"
-#include "numeric_structs.h"
-
-enum class TileType : uint8_t {
-	CHEST,
-	FURNACE,
-	DISPENSER,
-	SIGN,
-	SPAWNER
-};
-
-// I hate doing inheritance but its simple to do for this
-struct Chunk;
-class WorldManager;
-struct TileEntity {
-	TileType type;
-	Int3 position{ 0, 0, 0 }; // Global coordinates
-	bool canTick = false;
-	Chunk* chunk =
-	    nullptr; // The chunk this tile entity is in; may not be best practice to have this as a raw pointer but it should be fine since the chunk will always exist while the tile entity exists
-
-	TileEntity(TileType _pType, Int3 _pPosition) : type(_pType), position(_pPosition) {};
-
-	virtual void Tick(WorldManager& _world);
-	virtual Tag Serialize();
-	virtual ~TileEntity() = default;
-};
-
-// Chest
-struct TileEntityChest : TileEntity {
-	InventoryChest inventory;
-	TileEntityChest(Int3 _pPosition) : TileEntity(TileType::CHEST, _pPosition) {};
-
-	Tag Serialize() override;
-	void Tick(WorldManager& _world) override;
-};
-
-// Furnace
-class TileEntityFurnace : public TileEntity {
-private:
-	int burnTime = 0;
-	int maxBurnTime = 0;
-	int cookTime = 0;
-
-public:
-	InventoryFurnace inventory;
-	using DirtyFlags = uint8_t;
-
-	static constexpr DirtyFlags FLAG_NONE = 0;
-	static constexpr DirtyFlags FLAG_BURN_TIME = 1 << 0;
-	static constexpr DirtyFlags FLAG_MAX_BURN_TIME = 1 << 1;
-	static constexpr DirtyFlags FLAG_COOK_TIME = 1 << 2;
-
-	DirtyFlags dirtyFlags = FLAG_NONE;
-
-	TileEntityFurnace(Int3 _pPosition) : TileEntityFurnace(_pPosition, 0, 0, 0) {};
-
-	TileEntityFurnace(Int3 _pPosition, int _burnTime, int _maxBurnTime, int _cookTime)
-	    : TileEntity(TileType::FURNACE, _pPosition), burnTime(_burnTime), maxBurnTime(_maxBurnTime),
-	      cookTime(_cookTime) {
-		canTick = true;
-	};
-
-	Tag Serialize() override;
-	void Tick(WorldManager& _world) override;
-
-	int GetCookTime() const;
-	int GetBurnTime() const;
-	int GetMaxBurnTime() const;
-	int CalculateFuelTime() const;
-};
-
-// Dispenser (Trap)
-struct TileEntityDispenser : TileEntity {
-	Java::Random rand;
-	InventoryDispenser inventory;
-	TileEntityDispenser(Int3 _pPosition) : TileEntity(TileType::DISPENSER, _pPosition) {};
-
-	Tag Serialize() override;
-	void Tick(WorldManager& _world) override;
-
-	std::optional<ItemStack*> GetRandomStackInInventory() {
-		int chosen = -1;
-		int seen = 1;
-
-		// Only non empty slots affect distribution
-		for (int i = 0; i < inventory.GetSizeInventory(); i++) {
-			if (inventory.GetStackInSlot(i) != nullptr && rand.NextInt(seen++) == 0)
-				chosen = i;
-		}
-
-		if (chosen >= 0)
-			return inventory.GetStackInSlot(chosen);
-		return std::nullopt;
-	}
-};
-
-// Sign
-struct TileEntitySign : TileEntity {
-	std::string text1 = "";
-	std::string text2 = "";
-	std::string text3 = "";
-	std::string text4 = "";
-	TileEntitySign(Int3 _pPosition) : TileEntity(TileType::SIGN, _pPosition) {};
-
-	Tag Serialize() override;
-};
-
-// MobSpawner
-struct TileEntityMobSpawner : TileEntity {
-	std::string entityId = "";
-	int16_t delay = 20;
-	TileEntityMobSpawner(Int3 _pPosition) : TileEntity(TileType::SPAWNER, _pPosition) {
-		canTick = true;
-	};
-
-	Tag Serialize() override;
-	void Tick(WorldManager& _world) override;
-	bool PlayerInRange(WorldManager& _world);
-};
+#include "tile_entity_base.h"
+#include "tile_entity_sign.h"
+#include "tile_entity_chest.h"
+#include "tile_entity_furnace.h"
+#include "tile_entity_dispenser.h"
+#include "tile_entity_mob_spawner.h"
