@@ -41,7 +41,7 @@ void ServerBlock::Initialize() {
 	};
 
 	blockBehaviors[BLOCK_DISPENSER].onBlockActivated = [](WorldManager& _world, Int3 _position,
-	                                                           PlayerSession& _session, Runtime& _gameRuntime) -> bool {
+	                                                           PlayerSession& _session, Runtime& /*_gameRuntime*/) -> bool {
 		auto trap = _world.GetTileEntityShared<TileEntityDispenser>(_position);
 		if (!trap)
 			return false;

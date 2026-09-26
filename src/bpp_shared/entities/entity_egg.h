@@ -25,7 +25,7 @@ struct EggEntity : public ThrowableEntity {
 		type = EntityType::THROWN_EGG;
 	}
 
-	void OnHit(Vec3 _pos) override {
+	void OnHit(Vec3 /*_pos*/) override {
 		if (rand.NextInt(8) != 0)
 			return;
 
