@@ -11,22 +11,21 @@ void TickScheduler::Tick() {
 	if (!this->world)
 		return;
 
-	while (!this->scheduledTicks.empty() && scheduledTicks.top().tickDue <= currentTick) {
+	currentTick++;
+
+	size_t budget = std::min(scheduledTicks.size(), MAX_TICKS_PER_TICK);
+	for (size_t i = 0; i < budget; i++) {
+		if (scheduledTicks.top().tickDue > currentTick)
+			break;
+
 		ScheduledTick entry = scheduledTicks.top();
 		scheduledTicks.pop();
+		pending.erase({ entry.pos, entry.expectedBlock }); // Removed before updateTick
 
-		// Reschedule overwrites pending but leaves the old PQ entry behind.
-		// Skip superseded entries so they neither grow work nor double-fire.
-		auto it = pending.find(entry.pos);
-		if (it == pending.end() || it->second.sequence != entry.sequence)
-			continue;
-		pending.erase(it);
-
-		// Has the block changed since we scheduled this Tick?
-		if (world->GetBlockId(entry.pos) == entry.expectedBlock) {
+		// Only fire if the block is still the one that was scheduled
+		if (entry.expectedBlock != BLOCK_AIR && world->GetBlockId(entry.pos) == entry.expectedBlock) {
 			if (auto fn = Blocks::blockBehaviors[entry.expectedBlock].onTick)
 				fn(*world, entry.pos, world->GetMetadata(entry.pos), world->rand);
 		}
 	}
-	currentTick++;
 }
