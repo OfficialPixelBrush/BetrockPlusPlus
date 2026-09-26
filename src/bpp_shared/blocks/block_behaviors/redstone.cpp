@@ -14,6 +14,10 @@
 #include "entities/entity_skeleton.h"
 #include "entities/entity_spider.h"
 #include "entities/entity_zombie.h"
+#include "entities/entity_egg.h"
+#include "entities/entity_snowball.h"
+#include "entities/entity_item.h"
+#include "entities/entity_arrow.h"
 #include "enums/items.h"
 #include "generator/overworld/tree_gen.h"
 #include "helpers/direction_fixer.h"
@@ -30,6 +34,97 @@
 #include "world.h"
 
 namespace Blocks {
+
+static void DispenseItemFromDispenser(WorldManager& _world, Int3 _pos, uint8_t _meta) {
+	int xOffset = 0;
+	int zOffset = 0;
+
+	switch (_meta) { 
+	case 3:
+		zOffset = 1;
+		break;
+	case 2:
+		zOffset = -1;
+		break;
+	case 5:
+		xOffset = 1;
+		break;
+	default:
+		xOffset = -1;
+		break;
+	}
+
+	auto dispenser = _world.GetTileEntityAs<TileEntityDispenser>(_pos);
+	if (!dispenser)
+		return;
+
+	auto randStack = dispenser->GetRandomStackInInventory();
+	if (!randStack.has_value()) {
+		if (_world.onWorldEvent)
+			_world.onWorldEvent(PacketData::WorldEvent::CLICK1, _pos, 0, nullptr);
+		return;
+	}
+
+	Vec3 outputPos;
+	outputPos.x = _pos.x + xOffset * 0.6 + 0.5;
+	outputPos.y = _pos.y + 0.5;
+	outputPos.z = _pos.z + zOffset * 0.6 + 0.5;
+
+	auto randStackPtr = randStack.value();
+	ItemStack newStack = *randStackPtr;
+	randStackPtr->DecrementCount(1);
+	newStack.count = 1;
+
+	switch (newStack.id) { 
+		case Items::ARROW: {
+			std::shared_ptr<ArrowEntity> entity = std::make_shared<ArrowEntity>(outputPos);
+		    entity->SetArrowHeading({ double(xOffset), 0.1, double(zOffset) }, 1.1f, 6.0f);
+		    entity->arrowBelongsToPlayer = true;
+		    _world.entityManager.AddEntity(entity);
+			if (_world.onWorldEvent)
+				_world.onWorldEvent(PacketData::WorldEvent::BOW_FIRE, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
+			break;
+		}
+	    case Items::EGG: {
+		    std::shared_ptr<EggEntity> entity = std::make_shared<EggEntity>(outputPos);
+		    entity->SetHeading({ double(xOffset), 0.1, double(zOffset) }, 1.1f, 6.0f);
+		    _world.entityManager.AddEntity(entity);
+		    if (_world.onWorldEvent)
+			    _world.onWorldEvent(PacketData::WorldEvent::BOW_FIRE, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
+		    break;
+		}
+	    case Items::SNOWBALL: {
+		    std::shared_ptr<SnowballEntity> entity = std::make_shared<SnowballEntity>(outputPos);
+		    entity->SetHeading({ double(xOffset), 0.1, double(zOffset) }, 1.1f, 6.0f);
+		    _world.entityManager.AddEntity(entity);
+		    if (_world.onWorldEvent)
+			    _world.onWorldEvent(PacketData::WorldEvent::BOW_FIRE, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
+		    break;
+		}
+	    default: {
+		    outputPos.y -= 0.3;
+		    std::shared_ptr<ItemEntity> item = std::make_shared<ItemEntity>(outputPos);
+		    item->itemStack = newStack;
+
+			double speed = _world.rand.NextDouble() * 0.1 + 0.2;
+		    item->velocity.x = xOffset * speed;
+		    item->velocity.y = 0.2;
+		    item->velocity.z = zOffset * speed;
+		    item->velocity.x += _world.rand.NextGaussian() * 0.007 * 6.0;
+		    item->velocity.y += _world.rand.NextGaussian() * 0.007 * 6.0;
+		    item->velocity.z += _world.rand.NextGaussian() * 0.007 * 6.0;
+
+			_world.entityManager.AddEntity(item);
+
+			if (_world.onWorldEvent)
+			    _world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
+		    break;
+		}
+	}
+
+	if (_world.onWorldEvent)
+		_world.onWorldEvent(PacketData::WorldEvent::SMOKE, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
+}
 
 static bool CanRedstoneComponentStay(WorldManager& _world, Int3 _pos) {
 	return _world.IsBlockNormalCube(_pos.Offset(Direction::Value::Down));
@@ -586,6 +681,37 @@ void RegisterRedstoneBehaviors() {
 		auto meta = _world.GetMetadata(_pos);
 		if (meta != 1)
 			SetPressurePlateState(_world, _pos, BLOCK_PRESSURE_PLATE_STONE);
+	};
+
+	// Dispensers
+	blockBehaviors[BLOCK_DISPENSER].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		auto te = std::make_shared<TileEntityDispenser>(_pos);
+		_world.CreateTileEntity(std::move(te));
+	};
+
+	blockBehaviors[BLOCK_DISPENSER].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		auto* te = _world.GetTileEntityAs<TileEntityDispenser>(_pos);
+		if (!te)
+			return;
+
+		_world.DropInventory(te->inventory, _pos);
+	};
+
+	blockBehaviors[BLOCK_DISPENSER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                                      BlockType _blockId) -> void {
+		if (!RedstoneManager::CanProvidePower(_blockId))
+			return;
+
+		if (RedstoneManager::IsPositionPowered(_world, _pos) ||
+		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up)))
+			_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_DISPENSER, 4);
+	};
+
+	blockBehaviors[BLOCK_DISPENSER].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                                       Java::Random& /*_random*/) -> void {
+		if (RedstoneManager::IsPositionPowered(_world, _pos) ||
+		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up)))
+			DispenseItemFromDispenser(_world, _pos, _meta);
 	};
 }
 

@@ -32,26 +32,13 @@ bool FurnaceInventoryInteraction::CanExist(PlayerEntity& _player) {
 }
 
 void FurnaceInventoryInteraction::InitSnapshot() {
-	snapshot.resize(size_t(furnaceInventory->GetSizeInventory()));
-	for (size_t i = 0; i < size_t(furnaceInventory->GetSizeInventory()); i++)
-		snapshot[i] = furnaceInventory->slots[i];
+	MergeInventories();
+	snapshot = sharedInventory.slots;
 }
 
-// Analyze the snapshot vs the current furnace inventory
 std::vector<DeltaSlot> FurnaceInventoryInteraction::TickDiff() {
-	std::vector<DeltaSlot> differences;
-	for (size_t i = 0; i < snapshot.size(); i++) {
-		auto& snap = snapshot[i];
-
-		bool changed = snap != furnaceInventory->slots[i];
-		if (!changed)
-			continue;
-
-		snap = furnaceInventory->slots[i];
-		differences.push_back({ snap, int(i) });
-	}
 	MergeInventories();
-	return differences;
+	return InventoryInteraction::TickDiff();
 }
 
 void FurnaceInventoryInteraction::MergeInventories() {
