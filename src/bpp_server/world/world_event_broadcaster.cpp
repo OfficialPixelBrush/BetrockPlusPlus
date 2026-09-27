@@ -8,6 +8,41 @@
 #include "world_event_broadcaster.h"
 
 #include "../server.h"
+void WorldEventBroadcaster::BroadcastNoteEvent(Server& _server, Int3 _position, int _instrumentState, int _instrumentDirection, Dimension _dimension,
+                                               double _rangeSq) {
+	Packet::BlockEvent pkt;
+	pkt.position = { _position.x, int16_t(_position.y), _position.z };
+	pkt.instrumentState = _instrumentState;
+	pkt.pitchDirection = _instrumentDirection;
+
+	// Only players that are actually connected and in the right dimension can hear/see this
+	std::vector<PlayerSession*> inRange;
+	for (auto& session : _server.GetPlayers()) {
+		if (session->connState != ConnectionState::Playing)
+			continue;
+		if (session->dimension != _dimension)
+			continue;
+
+		Vec3 playerPos = session->position.pos;
+		double dx = playerPos.x - (double(_position.x) + 0.5);
+		double dy = playerPos.y - (double(_position.y) + 0.5);
+		double dz = playerPos.z - (double(_position.z) + 0.5);
+		double distSq = dx * dx + dy * dy + dz * dz;
+		if (distSq > _rangeSq)
+			continue;
+
+		inRange.push_back(session.get());
+	}
+
+	if (inRange.empty())
+		return;
+
+	NetworkStream tmpStream(-1);
+	pkt.Serialize(tmpStream);
+	const auto& buf = tmpStream.GetRawWriteBuffer();
+	for (auto* session : inRange)
+		session->stream.WriteRaw(buf.data(), buf.size());
+}
 
 void WorldEventBroadcaster::BroadcastWorldEvent(Server& _server, PacketData::WorldEvent _eventType, Int3 _position,
                                                 int32_t _data, Dimension _dimension, PlayerSession* _triggeringSession,

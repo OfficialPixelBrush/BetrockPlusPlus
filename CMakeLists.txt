@@ -134,6 +134,7 @@ set(SHARED_SOURCES
     src/bpp_shared/tile_entities/tile_entity_furnace.cpp
     src/bpp_shared/tile_entities/tile_entity_jukebox.cpp
     src/bpp_shared/tile_entities/tile_entity_noteblock.cpp
+    src/bpp_shared/tile_entities/tile_entity_piston.cpp
     src/bpp_shared/entities/entity.cpp
     src/bpp_shared/entities/entity_item.cpp
     src/bpp_shared/entities/entity_player.cpp
@@ -185,6 +186,7 @@ set(SHARED_SOURCES
     src/bpp_shared/blocks/block_behaviors/portal.cpp
     src/bpp_shared/blocks/block_behaviors/misc.cpp
     src/bpp_shared/blocks/block_behaviors/drops.cpp
+    src/bpp_shared/blocks/block_behaviors/piston.cpp
     src/bpp_shared/blocks/block_properties.cpp
     src/bpp_shared/items/item_map.cpp
     src/bpp_shared/items/item_properties.cpp

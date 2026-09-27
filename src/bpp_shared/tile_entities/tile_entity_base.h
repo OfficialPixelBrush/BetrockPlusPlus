@@ -17,7 +17,8 @@ enum class TileType : uint8_t {
 	SIGN,
 	SPAWNER,
 	NOTEBLOCK,
-	JUKEBOX
+	JUKEBOX,
+	PISTON_MOVING
 };
 
 // I hate doing inheritance but its simple to do for this

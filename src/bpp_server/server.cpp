@@ -356,6 +356,15 @@ void Server::Startup() {
 		                                           _triggeringSession);
 	};
 
+	gameRuntime.world.onNotePlay = [this](Int3 _pos, int _instrumentState, int _instrumentDirection) {
+		WorldEventBroadcaster::BroadcastNoteEvent(*this, _pos, _instrumentState, _instrumentDirection,
+		                                          Dimension::Overworld);
+	};
+	gameRuntime.worldHell.onNotePlay = [this](Int3 _pos, int _instrumentState, int _instrumentDirection) {
+		WorldEventBroadcaster::BroadcastNoteEvent(*this, _pos, _instrumentState, _instrumentDirection,
+		                                          Dimension::Nether);
+	};
+
 	registerEntityTrackerCallbacks(overworldEntityTracker, gameRuntime.world.entityManager);
 	registerEntityTrackerCallbacks(hellEntityTracker, gameRuntime.worldHell.entityManager);
 

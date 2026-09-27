@@ -1064,7 +1064,7 @@ public:
 	// Used to set a singular block
 	struct BlockEvent : BasePacket {
 		BlockEvent() : BasePacket{ PacketId::BlockEvent } {}
-		SlimInt3<int8_t> position;
+		SlimInt3<int16_t> position;
 		int8_t instrumentState;
 		int8_t pitchDirection;
 
@@ -1080,7 +1080,7 @@ public:
 
 		void Deserialize(NetworkStream& _stream) override {
 			position.x = _stream.Read<int32_t>();
-			position.y = _stream.Read<int8_t>();
+			position.y = _stream.Read<int16_t>();
 			position.z = _stream.Read<int32_t>();
 			instrumentState = _stream.Read<int8_t>();
 			pitchDirection = _stream.Read<int8_t>();

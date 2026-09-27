@@ -422,6 +422,23 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 			if (te.Has("Delay"))
 				ent->delay = te.Get("Delay").GetShort();
 			chunk->tileEntities.push_back(std::move(ent));
+		} else if (id == "Piston") {
+			auto ent = std::make_shared<TileEntityPistonMoving>(pos);
+			if (te.Has("blockId"))
+				ent->storedBlock = BlockType(te.Get("blockId").GetInt());
+			if (te.Has("blockData"))
+				ent->storedMeta = uint8_t(te.Get("blockData").GetInt());
+			if (te.Has("facing"))
+				ent->orientation = te.Get("facing").GetInt();
+			if (te.Has("progress"))
+				ent->lastProgress = ent->progress = te.Get("progress").GetFloat();
+			if (te.Has("extending"))
+				ent->extending = te.Get("extending").GetByte() != 0;
+
+			if (ent->orientation < 0 || ent->orientation > 5)
+				ent->orientation = 0;
+
+			chunk->tileEntities.push_back(std::move(ent));
 		}
 	}
 

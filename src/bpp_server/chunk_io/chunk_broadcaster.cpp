@@ -13,6 +13,21 @@ void ChunkBroadcaster::BroadcastBlockChanges(Server& _server,
                                              std::unordered_map<Int32_2, std::vector<PendingBlock>>& _changes,
                                              Dimension _dimension, WorldManager& _dimWorld) {
 	for (auto& [chunk, blockChanges] : _changes) {
+		{
+			std::vector<PendingBlock> unique;
+			unique.reserve(blockChanges.size());
+			std::unordered_map<int, size_t> indexOf;
+			for (const auto& pb : blockChanges) {
+				int key = (pb.blockPos.x & 15) | ((pb.blockPos.z & 15) << 4) | (pb.blockPos.y << 8);
+				auto [it, inserted] = indexOf.try_emplace(key, unique.size());
+				if (inserted)
+					unique.push_back(pb);
+				else
+					unique[it->second] = pb;
+			}
+			blockChanges.swap(unique);
+		}
+
 		// Find which sessions care about this chunk
 		// Split into flushed (send immediately) and sentOnly (queue).
 		auto indexIt = _server.chunkSessions.find(Server::ChunkKey(chunk, _dimension));

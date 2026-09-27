@@ -71,6 +71,7 @@ public:
 	std::function<void(Vec3, float, std::unordered_set<Int3>&, Entity*)> onExplosion;
 	std::function<void(PendingBlock, Int32_2)> onBlockUpdate;
 	std::function<void(PacketData::WorldEvent, Int3, int32_t, PlayerSession*)> onWorldEvent;
+	std::function<void(Int3, int, int)> onNotePlay;
 	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> chunks;
 	Java::Random rand;
 	int64_t seed = 0;
@@ -119,6 +120,12 @@ public:
 	uint8_t GetMetadata(Int3 _wpos);
 	void RemoveTileEntity(Int3 _pos);
 	void SetViewRadius(int _viewRadius);
+
+	void PlayNoteAt(Int3 _pos, int _instrumentState, int _pitchDirection) const {
+		if (onNotePlay)
+			onNotePlay(_pos, _instrumentState, _pitchDirection);
+	}
+
 	// Is it currently dark enough for players to sleep?
 	bool IsNight() const {
 		TickTime relativeTime = elapsedTicks % DAY_LENGTH;
@@ -170,17 +177,17 @@ public:
 			return skylight;
 	}
 
-	const bool IsDay() {
+	bool IsDay() const {
 		return skylightOffset < 4;
 	}
 
-	const int GetViewRadius() {
+	int GetViewRadius() const {
 		return viewRadius;
 	}
-	const int GetSimulationDistance() {
+	int GetSimulationDistance() const {
 		return simulationRadius;
 	}
-	const Dimension GetDimension() {
+	Dimension GetDimension() const {
 		return thisDimension;
 	}
 	void InitWorldSeed(std::string _pSeed) {
