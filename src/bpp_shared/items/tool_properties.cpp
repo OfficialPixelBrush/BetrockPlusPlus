@@ -346,13 +346,15 @@ void UseThrowable(PlayerSession& _session, ItemStack* _stack, Entity& /*_target*
 	if (_stack->id != Items::EGG && _stack->id != Items::SNOWBALL)
 		return;
 
+	auto type = _stack->id;
 	_stack->DecrementCount(1);
 
-	if (_stack->id == Items::EGG) {
+	if (type == Items::EGG) {
 		_session.entity->world->entityManager.AddEntity(std::make_shared<EggEntity>(_session.entity));
 		return;
 	}
 	_session.entity->world->entityManager.AddEntity(std::make_shared<SnowballEntity>(_session.entity));
+
 }
 
 void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Direction::Value /*_face*/) {
