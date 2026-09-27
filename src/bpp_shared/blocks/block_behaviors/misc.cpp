@@ -207,6 +207,20 @@ void RegisterMiscBehaviors() {
 	// Dispenser
 	blockBehaviors[BLOCK_DISPENSER].onBlockPlaced = onFurnaceDispenserPlace;
 
+	// Jukebox
+	blockBehaviors[BLOCK_JUKEBOX].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		auto jukeboxTileEntity = std::make_shared<TileEntityJukebox>(_pos);
+		_world.CreateTileEntity(std::move(jukeboxTileEntity));
+	};
+
+	blockBehaviors[BLOCK_JUKEBOX].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		auto* te = _world.GetTileEntityAs<TileEntityJukebox>(_pos);
+		if (!te || te->recordItemId == Items::Id::INVALID)
+			return;
+
+		DropItemAt(_world, _pos, static_cast<Items::Id>(int16_t(te->recordItemId)), /*count=*/1, 0);
+	};
+
 	// Stairs
 	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
 	                       uint8_t /*_meta*/) -> bool {
