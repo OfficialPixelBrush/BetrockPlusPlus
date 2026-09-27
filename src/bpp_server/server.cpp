@@ -555,17 +555,21 @@ void Server::Stop() {
 	gameRuntime.worldHell.Shutdown();
 
 	// Save our level file
-	LevelData& curLevelData = gameRuntime.saveManager.GetLevelData();
-	curLevelData.randomSeed = gameRuntime.world.seed;
-	curLevelData.spawnPoint = gameRuntime.world.spawnPoint;
-	curLevelData.time = gameRuntime.world.elapsedTicks;
-	gameRuntime.saveManager.SaveLevelFile(curLevelData);
+	SaveLevelFile();
 
 	// Save operator, whitelist, and ban updates
 	SaveWhitelist();
 	SaveOperators();
 	SaveBannedPlayers();
 	SaveBannedIps();
+}
+
+void Server::SaveLevelFile() {
+	LevelData& curLevelData = gameRuntime.saveManager.GetLevelData();
+	curLevelData.randomSeed = gameRuntime.world.seed;
+	curLevelData.spawnPoint = gameRuntime.world.spawnPoint;
+	curLevelData.time = gameRuntime.world.elapsedTicks;
+	gameRuntime.saveManager.SaveLevelFile(curLevelData);
 }
 
 void Server::AcceptNewPlayers() {
@@ -672,7 +676,7 @@ void Server::Tick() {
 	for (auto& session : players) {
 		if (session->stream.GetRawWriteBuffer().empty())
 			continue;
-		auto sessionRef = session;
+		auto& sessionRef = session;
 		flushFutures.push_back(writePool.submit_task([sessionRef]() { sessionRef->stream.FlushWriteBuffer(); }));
 	}
 
@@ -680,6 +684,11 @@ void Server::Tick() {
 	// pending data is small) before their shared_ptr drops and they are destroyed
 	for (auto& session : removedSessions)
 		session->stream.FlushWriteBuffer();
+
+	// Autosave
+	if (gameRuntime.world.tickScheduler.currentTick % 40 == 0) {
+		SaveLevelFile();
+	}
 
 	// TODO: This is rather fragile!
 	// Countdown

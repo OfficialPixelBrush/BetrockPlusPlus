@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 #elif defined(_WIN32) || defined(_WIN64)
 #include <winsock2.h>
@@ -53,6 +54,9 @@ inline T ByteswapAny(T _value) {
 
 class NetworkStream {
 public:
+	// Max time FlushWriteBufferBlocking() will let a single send() block for
+	static constexpr int SHUTDOWN_FLUSH_TIMEOUT_MS = 2000;
+
 	NetworkStream(int _clientSocket);
 	~NetworkStream();
 	NetworkStream(const NetworkStream&) = delete;
