@@ -140,7 +140,7 @@ public:
 };
 
 // Used by Block Action Packet (0x36)
-enum NoteInstrument : uint8_t {
+enum NoteInstrument : int8_t {
 	HARP = 0,
 	BASS = 1,
 	SNARE_DRUM = 2,
@@ -148,7 +148,7 @@ enum NoteInstrument : uint8_t {
 	BASS_DRUM = 4
 };
 
-enum NotePitch : uint8_t {
+enum NotePitch : int8_t {
 	LOW_F_SHARP = 0,
 	LOW_G = 1,
 	LOW_G_SHARP = 2,

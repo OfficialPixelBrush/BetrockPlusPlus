@@ -356,11 +356,11 @@ void Server::Startup() {
 		                                           _triggeringSession);
 	};
 
-	gameRuntime.world.onNotePlay = [this](Int3 _pos, int _instrumentState, int _instrumentDirection) {
+	gameRuntime.world.onNotePlay = [this](Int3 _pos, int8_t _instrumentState, int8_t _instrumentDirection) {
 		WorldEventBroadcaster::BroadcastNoteEvent(*this, _pos, _instrumentState, _instrumentDirection,
 		                                          Dimension::Overworld);
 	};
-	gameRuntime.worldHell.onNotePlay = [this](Int3 _pos, int _instrumentState, int _instrumentDirection) {
+	gameRuntime.worldHell.onNotePlay = [this](Int3 _pos, int8_t _instrumentState, int8_t _instrumentDirection) {
 		WorldEventBroadcaster::BroadcastNoteEvent(*this, _pos, _instrumentState, _instrumentDirection,
 		                                          Dimension::Nether);
 	};

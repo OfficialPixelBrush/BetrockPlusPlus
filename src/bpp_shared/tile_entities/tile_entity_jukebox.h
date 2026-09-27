@@ -11,7 +11,7 @@
 #include "tile_entity_base.h"
 
 struct TileEntityJukebox : TileEntity {
-	ItemId recordItemId = 0;
+	ItemId recordItemId = Items::Id::INVALID;
 	TileEntityJukebox(Int3 _pPosition) : TileEntity(TileType::JUKEBOX, _pPosition) {};
 
 	Tag Serialize() override;

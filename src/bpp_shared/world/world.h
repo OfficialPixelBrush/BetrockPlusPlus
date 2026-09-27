@@ -71,7 +71,7 @@ public:
 	std::function<void(Vec3, float, std::unordered_set<Int3>&, Entity*)> onExplosion;
 	std::function<void(PendingBlock, Int32_2)> onBlockUpdate;
 	std::function<void(PacketData::WorldEvent, Int3, int32_t, PlayerSession*)> onWorldEvent;
-	std::function<void(Int3, int, int)> onNotePlay;
+	std::function<void(Int3, int8_t, int8_t)> onNotePlay;
 	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> chunks;
 	Java::Random rand;
 	int64_t seed = 0;
@@ -121,7 +121,7 @@ public:
 	void RemoveTileEntity(Int3 _pos);
 	void SetViewRadius(int _viewRadius);
 
-	void PlayNoteAt(Int3 _pos, int _instrumentState, int _pitchDirection) const {
+	void PlayNoteAt(Int3 _pos, int8_t _instrumentState, int8_t _pitchDirection) const {
 		if (onNotePlay)
 			onNotePlay(_pos, _instrumentState, _pitchDirection);
 	}

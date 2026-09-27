@@ -66,7 +66,6 @@ static bool CanPushBlock(WorldManager& _world, BlockType _block, Int3 _pos, bool
 
 static bool CanExtend(WorldManager& _world, Int3 _pos) {
 	auto meta = _world.GetMetadata(_pos);
-	auto orientation = meta & 7;
 
 	auto dirVec = GetDirectionVectorFromMeta(meta);
 	int pushCount = 0;

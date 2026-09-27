@@ -35,6 +35,27 @@
 
 namespace Blocks {
 
+static void PlayNoteblock(WorldManager& _world, Int3 _pos) {
+	auto noteblockTe = _world.GetTileEntityAs<TileEntityNoteblock>(_pos);
+	if (!noteblockTe)
+		return;
+	
+	BlockType belowBlock = _world.GetBlockId(_pos.WithOffset(Direction::Value::Down));
+	switch (Blocks::blockProperties[belowBlock].material.type) {
+		case MaterialType::Wood:
+			_world.PlayNoteAt(_pos, PacketData::NoteInstrument::BASS, noteblockTe->note); break;
+		case MaterialType::Sand:
+			_world.PlayNoteAt(_pos, PacketData::NoteInstrument::SNARE_DRUM, noteblockTe->note); break;
+		case MaterialType::Rock:
+			_world.PlayNoteAt(_pos, PacketData::NoteInstrument::BASS_DRUM, noteblockTe->note); break;
+		case MaterialType::Glass:
+			_world.PlayNoteAt(_pos, PacketData::NoteInstrument::HI_HAT, noteblockTe->note); break;
+		default:
+			_world.PlayNoteAt(_pos, PacketData::NoteInstrument::HARP, noteblockTe->note); break;
+	}
+	
+}
+
 static void DispenseItemFromDispenser(WorldManager& _world, Int3 _pos, uint8_t _meta) {
 	int xOffset = 0;
 	int zOffset = 0;
@@ -714,6 +735,48 @@ void RegisterRedstoneBehaviors() {
 		if (RedstoneManager::IsPositionPowered(_world, _pos) ||
 		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up)))
 			DispenseItemFromDispenser(_world, _pos, _meta);
+	};
+
+	// Noteblocks
+	blockBehaviors[BLOCK_NOTEBLOCK].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		auto te = std::make_shared<TileEntityNoteblock>(_pos);
+		_world.CreateTileEntity(std::move(te));
+	};
+
+	blockBehaviors[BLOCK_NOTEBLOCK].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		auto* te = _world.GetTileEntityAs<TileEntityNoteblock>(_pos);
+		if (!te)
+			return;
+	};
+
+	blockBehaviors[BLOCK_NOTEBLOCK].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
+	                                                       Java::Random& /*_random*/) -> void {
+		if (RedstoneManager::IsPositionPowered(_world, _pos) ||
+		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up)))
+			PlayNoteblock(_world, _pos);
+	};
+
+	blockBehaviors[BLOCK_NOTEBLOCK].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                                      BlockType _blockId) -> void {
+		if (!RedstoneManager::CanProvidePower(_blockId))
+			return;
+
+		if (RedstoneManager::IsPositionPowered(_world, _pos) ||
+		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up)))
+			blockBehaviors[BLOCK_NOTEBLOCK].onTick(_world, _pos, 0, _world.rand);
+	};
+
+	blockBehaviors[BLOCK_NOTEBLOCK].onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* /*_triggeringSession*/) -> void {
+		auto noteblockTe = _world.GetTileEntityAs<TileEntityNoteblock>(_pos);
+		if (!noteblockTe)
+			return;
+		noteblockTe->note = (noteblockTe->note + 1) % 25;
+		PlayNoteblock(_world, _pos);
+	};
+
+	blockBehaviors[BLOCK_NOTEBLOCK].onBlockActivated = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> bool {
+		blockBehaviors[BLOCK_NOTEBLOCK].onBlockClicked(_world, _pos, _triggeringSession);
+		return false;
 	};
 }
 
