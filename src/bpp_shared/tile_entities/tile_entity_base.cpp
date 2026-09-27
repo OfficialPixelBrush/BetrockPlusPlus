@@ -41,6 +41,8 @@ constexpr std::string GetTileNbtId(TileType _type) {
 		return "RecordPlayer";
 	case TileType::NOTEBLOCK:
 		return "Music";
+	case TileType::PISTON_MOVING:
+		return "Piston";
 	}
 	// Invalid type, empty string
 	return "";

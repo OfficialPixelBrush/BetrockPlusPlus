@@ -17,3 +17,4 @@
 #include "tile_entity_mob_spawner.h"
 #include "tile_entity_noteblock.h"
 #include "tile_entity_jukebox.h"
+#include "tile_entity_piston.h"

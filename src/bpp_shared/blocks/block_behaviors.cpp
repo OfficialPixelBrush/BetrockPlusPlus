@@ -29,6 +29,7 @@ void RegisterBlockBehaviors() {
 	RegisterFallingBlockBehaviors();
 	RegisterPortalBehaviors();
 	RegisterMiscBehaviors();
+	RegisterPistonBehaviors();
 	RegisterBlockDrops();
 }
 

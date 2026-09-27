@@ -77,12 +77,6 @@ void RegisterMiscBehaviors() {
 		.getCollider = CakeCollider,
 	};
 
-	blockBehaviors[BlockType::BLOCK_PISTON_HEAD] = {
-		.getSelectionBox = PistonHeadAabb,
-		.getRayBounds = PistonHeadAabb,
-		.getCollider = PistonHeadCollider,
-	};
-
 	blockBehaviors[BLOCK_SOULSAND] = {
 		.getCollider = SoulSandCollider,
 	};
@@ -106,32 +100,6 @@ void RegisterMiscBehaviors() {
 		int meta[] = { 2, 5, 3, 4 };
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
 	};
-
-	// Pistons
-	auto onPistonPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
-	                        BlockType _blockId, uint8_t /*_meta*/) -> bool {
-		uint8_t orientation;
-
-		if (std::abs(_placer.position.x - _pos.x) < 2.0 && std::abs(_placer.position.z - _pos.z) < 2.0) {
-			double eyeY = _placer.position.y + 1.82 - _placer.yOffset;
-			if (eyeY - _pos.y > 2.0) {
-				orientation = 1; // up
-			} else if (_pos.y - eyeY > 0.0) {
-				orientation = 0; // down
-			} else {
-				int meta[] = { 2, 5, 3, 4 };
-				orientation = meta[GetDirectionFromYaw(_placer.rotationYaw, 4)];
-			}
-		} else {
-			int meta[] = { 2, 5, 3, 4 };
-			orientation = meta[GetDirectionFromYaw(_placer.rotationYaw, 4)];
-		}
-
-		return GenericPlace(_world, _pos, _placer, _face, _blockId, orientation);
-	};
-
-	blockBehaviors[BLOCK_PISTON].onBlockPlaced = onPistonPlace;
-	blockBehaviors[BLOCK_PISTON_STICKY].onBlockPlaced = onPistonPlace;
 
 	// Fence
 	blockBehaviors[BLOCK_FENCE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
