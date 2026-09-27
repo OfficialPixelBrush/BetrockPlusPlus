@@ -36,16 +36,16 @@ static int GetDirectionFromYaw(float _yaw, int _directionCount) {
 
 static Int3 GetDirectionVectorFromMeta(uint8_t _meta) {
 	auto orientation = _meta & 7;
-	Int3 LUT[6] = { { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 }, { -1, 0, 0 }, { 1, 0, 0 } };
+	Int3 lut[6] = { { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 }, { -1, 0, 0 }, { 1, 0, 0 } };
 
-	return LUT[orientation % 6];
+	return lut[orientation % 6];
 }
 
 static bool PistonPowered(uint8_t _meta) {
 	return (_meta & 8) != 0;
 }
 
-static bool CanPushBlock(WorldManager& _world, BlockType _block, Int3 _pos, bool allowBreakable = true) {
+static bool CanPushBlock(WorldManager& _world, BlockType _block, Int3 _pos, bool _allowBreakable = true) {
 	if (_block == BLOCK_OBSIDIAN)
 		return false;
 
@@ -56,7 +56,7 @@ static bool CanPushBlock(WorldManager& _world, BlockType _block, Int3 _pos, bool
 
 	auto props = Blocks::blockProperties[_block];
 	if (props.hardness == -1.0f || props.material.mobilityFlag == 2 ||
-	    (!allowBreakable && props.material.mobilityFlag == 1))
+	    (!_allowBreakable && props.material.mobilityFlag == 1))
 		return false;
 
 	// If there is a tile entity here then refuse

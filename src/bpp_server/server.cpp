@@ -10,6 +10,7 @@
 #include "base_types.h"
 #include "config/list_parser.h"
 #include "dimensions.h"
+#include "gamerules.h"
 #include "logger.h"
 #include "packet/packet_utils.h"
 #include "trackers/inventory_tracker.h"
@@ -17,7 +18,6 @@
 #include <future>
 #include <string>
 #include <thread>
-#include "gamerules.h"
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
 #include <fcntl.h>

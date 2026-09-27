@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
-#include "tile_entity.h"
 #include "blocks.h"
 #include "entities/entity_pig.h"
 #include "entities/entity_skeleton.h"
@@ -16,6 +15,7 @@
 #include "inventory/item_stack.h"
 #include "items.h"
 #include "items/item_properties.h"
+#include "tile_entity.h"
 #include "world/world.h"
 #include <string>
 

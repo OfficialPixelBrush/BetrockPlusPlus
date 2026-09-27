@@ -8,11 +8,11 @@
 #include "../server.h"
 #include "direction_fixer.h"
 #include "entities.h"
+#include "entities/entity_arrow.h"
+#include "entities/entity_egg.h"
 #include "entities/entity_item.h"
 #include "entities/entity_mobile.h"
 #include "entities/entity_painting.h"
-#include "entities/entity_arrow.h"
-#include "entities/entity_egg.h"
 #include "entities/entity_snowball.h"
 #include "logger.h"
 #include "packet_data.h"
@@ -664,33 +664,31 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 	bool needsMovementUpdate = _trackedEntry.updateCounter >= _trackedEntry.profile.updateFrequency ||
 	                           _trackedEntry.ticksSinceTeleport >= forceTeleportTicks;
 
-
 	// Determine if we should send our velocity
 	bool needsVelocityUpdate = false;
-	
+
 	constexpr double THRESHOLD = 0.01;
 	Vec3 currentMotion;
 	currentMotion.x = std::abs(entity->velocity.x) < THRESHOLD ? 0 : entity->velocity.x;
 	currentMotion.y = std::abs(entity->velocity.y) < THRESHOLD ? 0 : entity->velocity.y;
 	currentMotion.z = std::abs(entity->velocity.z) < THRESHOLD ? 0 : entity->velocity.z;
 	Vec3& lastMotion = _trackedEntry.lastBroadcastMotion;
-	
+
 	if (_trackedEntry.profile.sendVelocity) {
 		Vec3 delta = currentMotion - lastMotion;
 		const double deltaLen = delta.Length();
 		const double motionThreshold = 0.02;
 
 		needsVelocityUpdate = (deltaLen > motionThreshold && needsMovementUpdate) ||
-		                           (deltaLen > 0.0 && currentMotion.x == 0.0 && currentMotion.y == 0.0 &&
-		                            currentMotion.z == 0.0);
+		                      (deltaLen > 0.0 && currentMotion.x == 0.0 && currentMotion.y == 0.0 &&
+		                       currentMotion.z == 0.0);
 	}
 
 	if (needsVelocityUpdate) {
 		lastMotion = currentMotion;
 		Packet::EntityVelocity pkt;
 		pkt.entityId = entity->id;
-		pkt.velocity = { QuantizeVelocityComponent(currentMotion.x),
-			             QuantizeVelocityComponent(currentMotion.y),
+		pkt.velocity = { QuantizeVelocityComponent(currentMotion.x), QuantizeVelocityComponent(currentMotion.y),
 			             QuantizeVelocityComponent(currentMotion.z) };
 		SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
 	}

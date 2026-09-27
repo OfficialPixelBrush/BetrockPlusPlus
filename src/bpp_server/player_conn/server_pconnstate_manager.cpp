@@ -127,18 +127,13 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 
 	// NOTE: We can't just use GetSessionByUsername,
 	// because the session with this username already exists when you're connecting to the server
-	auto it = std::find_if(
-		players.begin(),
-		players.end(),
-		[&incoming, &_session](const std::shared_ptr<PlayerSession>& player) {
-			return player &&
-				player.get() != &_session &&
-				player->username == incoming.username;
-		}
-	);
+	auto it = std::find_if(players.begin(), players.end(),
+	                       [&incoming, &_session](const std::shared_ptr<PlayerSession>& _player) {
+		                       return _player && _player.get() != &_session && _player->username == incoming.username;
+	                       });
 
 	if (it != players.end()) {
-		DisconnectPlayer( _session, "Player with same username is already on server!", _server, false);
+		DisconnectPlayer(_session, "Player with same username is already on server!", _server, false);
 		return;
 	}
 
