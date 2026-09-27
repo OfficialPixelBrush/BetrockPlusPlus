@@ -15,5 +15,4 @@ struct TileEntityJukebox : TileEntity {
 	TileEntityJukebox(Int3 _pPosition) : TileEntity(TileType::JUKEBOX, _pPosition) {};
 
 	Tag Serialize() override;
-	void Tick(WorldManager& _world) override;
 };
