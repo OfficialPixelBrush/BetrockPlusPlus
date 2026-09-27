@@ -878,6 +878,8 @@ std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {
 void Server::ProcessIncoming(PlayerSession& _session) {
 	WorldManager& sessionWorld = _session.dimension == Dimension::Nether ? gameRuntime.worldHell : gameRuntime.world;
 
+	bool recvPacket = false;
+
 	while (_session.stream.HasData()) {
 		size_t packetMark = _session.stream.Mark();
 
@@ -897,8 +899,10 @@ void Server::ProcessIncoming(PlayerSession& _session) {
 			_session.stream.Rollback(packetMark);
 			break;
 		}
+
+		recvPacket = true;
 	}
 
 	// Update our last packet time for the timeout code
-	_session.lastPacketTime = std::chrono::steady_clock::now();
+	if (recvPacket) _session.lastPacketTime = std::chrono::steady_clock::now();
 }
