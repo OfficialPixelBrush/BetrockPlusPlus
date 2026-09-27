@@ -2,21 +2,21 @@
 
 This page lists all hardware that Betrock++ has been successfully compiled for and run on. This is also used to help determine the true hardware requirements.
 
-| Commit                                                                            | Architecture | OS                                                 | CPU                                             | Memory (Physical) | Swap/Paged Memory        | Model Name                     | Submitted by |
+| Last tested Commit                                                                | Architecture | OS                                                 | CPU                                             | Memory (Physical) | Swap/Paged Memory        | Model Name                     | Submitted by |
 | --------------------------------------------------------------------------------- | ------------ | -------------------------------------------------- | ----------------------------------------------- | ----------------- | ------------------------ | ------------------------------ | ------------ |
 | [`7b80726`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/7b80726) | x86 (i586)   | Gentoo Linux i586 (Linux 7.1.5)                    | AMD-K5(tm) @ 100MHz                             | 32 MB             | 4GB (swap)               |                                | Pixel Brush  |
-| [`7b80726`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/7b80726) | x86 (i686)   | Gentoo Linux i686 (Linux 7.1.5)                    | Pentium II (Deschutes) @ 337 MHz                | 128 MB            | 4GB (swap)               | Lifetec (modified)             | Pixel Brush  |
+| [`9662935`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/9662935) | x86 (i686)   | Gentoo Linux i686 (Linux 7.1.5)                    | Pentium II (Deschutes) @ 337 MHz                | 128 MB            | 4GB (swap)               | Lifetec (modified)             | Pixel Brush  |
 | [`8cb7559`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/8cb7559) | x86 (i686)   | Gentoo Linux i686 (Linux 6.18.38-gentoo)           | mobile AMD Athlon(tm) XP-M 2600+ (1) @ 1.99 GHz | 256 MB            | 1GB (zram) + 4GB (swap)  | Fujitsu AMILO K7600            | Pixel Brush  |
 | [`c5e64f8`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/c5e64f8) | aarch64      | Alpine Linux v3.24 aarch64 (Linux 6.18.35-0-rpi)   | BCM2711 (4) @ 1.50 GHz                          | 2 GB              |                          | Raspberry Pi 4 Model B Rev 1.1 | jwaxy        |
-| [`cf5d238`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/cf5d238) | x86_64       | Alpine Linux v3.24 x86_64 (Linux 6.18.49-0-lts)    | AMD E-450 (2) @ 1.65 GHz                        | 4 GB              |                          | ASUS K73BY                     | Pixel Brush  |
+| [`9662935`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/9662935) | x86_64       | Alpine Linux v3.24 x86_64 (Linux 6.18.49-0-lts)    | AMD E-450 (2) @ 1.65 GHz                        | 4 GB              |                          | ASUS K73BY                     | Pixel Brush  |
 | [`7d4b516`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/7d4b516) | aarch64      | Raspberry Pi OS aarch64 (Linux 6.12.47+rpt-rpi-v8) | BCM2711 (4) @ 1.80 GHz                          | 8 GB              | 512MB (swap)             | Raspberry Pi 4 Model B Rev 1.5 | Pixel Brush  |
-| [`7d4b516`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/7d4b516) | x86_64       | Fedora Linux 44 (Linux 7.1.3-201.fc44.x86_64)      | AMD Ryzen 9 7900X (24) @ 5.74 GHz               | 32 GB             | 8GB (zram) + 16GB (swap) | (Custom)                       | Pixel Brush  |
+| [`e70311a`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/e70311a) | x86_64       | Fedora Linux 44 (Linux 7.1.3-201.fc44.x86_64)      | AMD Ryzen 9 7900X (24) @ 5.74 GHz               | 32 GB             | 8GB (zram) + 16GB (swap) | (Custom)                       | Pixel Brush  |
 
 ## Recommended Specs (Server)
 
 The conditions to set or lower these requirements are relatively arbitrary, and mostly down to what feels right. These are only the lowest specs that have been tested and we can 100% confirm Betrock++ can run on without trouble\*, and reasonable playability. Lesser systems can definitely host a server but they aren't guaranteed to attain a playable level of performance.
 
-As of [`8cb7559`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/8cb755915b3a9ab2d65ef61670f4d2ad02de3f83) the known minimum requirements are:
+As of [`e70311a`](https://github.com/OfficialPixelBrush/BetrockPlusPlus/commit/e70311a) the known minimum requirements are:
 
 - OS: A Linux Distro with Kernel 6.12 or later (earlier kernels have yet to be tested)
 - Processor: At least 32-Bit capable (e.g. i586 or later) @ >500MHz
