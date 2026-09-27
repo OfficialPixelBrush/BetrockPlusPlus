@@ -8,8 +8,8 @@
 #include "world_event_broadcaster.h"
 
 #include "../server.h"
-void WorldEventBroadcaster::BroadcastNoteEvent(Server& _server, Int3 _position, int _instrumentState, int _instrumentDirection, Dimension _dimension,
-                                               double _rangeSq) {
+void WorldEventBroadcaster::BroadcastNoteEvent(Server& _server, Int3 _position, int _instrumentState,
+                                               int _instrumentDirection, Dimension _dimension, double _rangeSq) {
 	Packet::BlockEvent pkt;
 	pkt.position = { _position.x, int16_t(_position.y), _position.z };
 	pkt.instrumentState = _instrumentState;

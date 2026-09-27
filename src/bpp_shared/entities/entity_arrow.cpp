@@ -136,8 +136,8 @@ void ArrowEntity::Tick() {
 		if (ownerPtr && candidate.get() == ownerPtr.get() && this->ticksInAir < 5)
 			continue;
 
-		const double GROW = 0.3;
-		auto intercept = candidate->collider.Expand(GROW, GROW, GROW).CalculateIntercept(start, end);
+		const double grow = 0.3;
+		auto intercept = candidate->collider.Expand(grow, grow, grow).CalculateIntercept(start, end);
 		if (!intercept)
 			continue;
 
@@ -204,13 +204,13 @@ void ArrowEntity::Tick() {
 
 	// Drag and gravity
 	float drag = 0.99f;
-	const float ARROW_GRAVITY = 0.03f;
+	const float arrowGravity = 0.03f;
 	if (this->inWater)
 		drag = 0.8f;
 
 	this->velocity.x *= double(drag);
 	this->velocity.y *= double(drag);
 	this->velocity.z *= double(drag);
-	this->velocity.y -= double(ARROW_GRAVITY);
+	this->velocity.y -= double(arrowGravity);
 	this->RebuildCollider();
 }

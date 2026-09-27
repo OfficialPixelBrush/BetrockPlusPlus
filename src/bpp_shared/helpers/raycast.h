@@ -10,9 +10,9 @@
 #include <cmath>
 
 enum class RayCastMode : uint8_t {
-	IGNORE_FLUIDS, 
+	IGNORE_FLUIDS,
 	ACCEPT_SOURCES,
-	ACCEPT_ANY     
+	ACCEPT_ANY
 };
 
 struct RayCastResult {

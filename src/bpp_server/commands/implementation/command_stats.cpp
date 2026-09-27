@@ -16,37 +16,34 @@
 namespace {
 
 std::string GenerateUsageBar(double _total, double _active, double _overworld, double _nether) {
-    std::string bar = "§f[";
-    if (_total <= 0.0) {
-        return bar + std::string(30, ' ') + "§f]";
-    }
-    // Clamp values to valid ranges.
-    double total = _total;
-    double active = std::clamp(_active, 0.0, total);
-    double overworld = std::clamp(_overworld, 0.0, active);
-    double nether = std::clamp(_nether, 0.0, active - overworld);
-    // Calculate cumulative boundaries.
-    double overworldEnd = overworld / total;
-    double netherEnd = (overworld + nether) / total;
-    double activeEnd = active / total;
+	std::string bar = "§f[";
+	if (_total <= 0.0) {
+		return bar + std::string(30, ' ') + "§f]";
+	}
+	// Clamp values to valid ranges.
+	double total = _total;
+	double active = std::clamp(_active, 0.0, total);
+	double overworld = std::clamp(_overworld, 0.0, active);
+	double nether = std::clamp(_nether, 0.0, active - overworld);
+	// Calculate cumulative boundaries.
+	double overworldEnd = overworld / total;
+	double netherEnd = (overworld + nether) / total;
+	double activeEnd = active / total;
 
-    for (int i = 0; i < 30; i++) {
-        double position = (i + 0.5) / 30.0;
-        if (position < overworldEnd) {
-            bar += "§a#"; // Overworld
-        }
-        else if (position < netherEnd) {
-            bar += "§c#"; // Nether
-        }
-        else if (position < activeEnd) {
-            bar += "§e#"; // Other active usage
-        }
-        else {
-            bar += "§0#"; // Inactive
-        }
-    }
-    bar += "§f]";
-    return bar;
+	for (int i = 0; i < 30; i++) {
+		double position = (i + 0.5) / 30.0;
+		if (position < overworldEnd) {
+			bar += "§a#"; // Overworld
+		} else if (position < netherEnd) {
+			bar += "§c#"; // Nether
+		} else if (position < activeEnd) {
+			bar += "§e#"; // Other active usage
+		} else {
+			bar += "§0#"; // Inactive
+		}
+	}
+	bar += "§f]";
+	return bar;
 }
 
 std::string ShowStats(const strategos::CmdNode&, void* _userData) {
@@ -63,9 +60,11 @@ std::string ShowStats(const strategos::CmdNode&, void* _userData) {
 	const std::array<std::string, 5> lines = {
 		std::format("§7Alloc: {}", GenerateUsageBar(totalUsageMb, activeUsageMb, chunksOverworldMb, chunksNetherMb)),
 		std::format("§7Total: {:.2f} MB, Active: {:.2f} MB", totalUsageMb, activeUsageMb),
-		std::format("§7World: {} (~{:.1f} MB), Hell: {} (~{:.1f} MB)", chunksOverworld, chunksOverworldMb, chunksNether, chunksNetherMb),
+		std::format("§7World: {} (~{:.1f} MB), Hell: {} (~{:.1f} MB)", chunksOverworld, chunksOverworldMb, chunksNether,
+		            chunksNetherMb),
 		std::format("§7{} Players, {} Entities, {} Hell Entities", players.size(),
-		            ctx.server->overworldEntityTracker.trackedEntities.size(), ctx.server->hellEntityTracker.trackedEntities.size()),
+		            ctx.server->overworldEntityTracker.trackedEntities.size(),
+		            ctx.server->hellEntityTracker.trackedEntities.size()),
 		std::format("§7Avg. MSPT: {:.2f} ms", ctx.server->averageTickMs)
 	};
 	for (const auto& line : lines)

@@ -13,8 +13,8 @@
 #include "entities/entity_spider.h"
 #include "entities/entity_zombie.h"
 #include "inventory/interactions/chest.h"
-#include "inventory/interactions/dispenser.h"
 #include "inventory/interactions/crafting_table.h"
+#include "inventory/interactions/dispenser.h"
 #include "inventory/interactions/furnace.h"
 #include "inventory/interactions/large_chest.h"
 #include "items/tool_properties.h"
@@ -42,12 +42,12 @@ void ServerBlock::Initialize() {
 		return false;
 	};
 
-	blockBehaviors[BLOCK_DISPENSER].onBlockActivated = [](WorldManager& _world, Int3 _position,
-	                                                           PlayerSession& _session, Runtime& /*_gameRuntime*/) -> bool {
+	blockBehaviors[BLOCK_DISPENSER].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
+	                                                      Runtime& /*_gameRuntime*/) -> bool {
 		auto trap = _world.GetTileEntityShared<TileEntityDispenser>(_position);
 		if (!trap)
 			return false;
-			
+
 		Packet::OpenContainer ow;
 		ow.windowId = _session.GetNextWindowId();
 		ow.slotCount = 9;
@@ -160,7 +160,8 @@ void ServerBlock::Initialize() {
 		return false;
 	};
 
-	blockBehaviors[BLOCK_JUKEBOX].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session, Runtime& /*_gameRuntime*/) -> bool {
+	blockBehaviors[BLOCK_JUKEBOX].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
+	                                                    Runtime& /*_gameRuntime*/) -> bool {
 		auto jukebox = _world.GetTileEntityAs<TileEntityJukebox>(_position);
 		if (!jukebox)
 			return false;

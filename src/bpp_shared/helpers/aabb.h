@@ -57,8 +57,7 @@ struct AABB {
 	}
 
 	bool PointIntersects(const Vec3& _vec) const {
-		return (_vec.x > minX && _vec.x < maxX) && (_vec.y > minY && _vec.y < maxY) &&
-		       (_vec.z > minZ && _vec.z < maxZ);
+		return (_vec.x > minX && _vec.x < maxX) && (_vec.y > minY && _vec.y < maxY) && (_vec.z > minZ && _vec.z < maxZ);
 	}
 
 	AABB Offset(double _dx, double _dy, double _dz) const {
@@ -176,7 +175,6 @@ struct CollisionShape {
 		return false;
 	}
 
-	
 	bool PointIntersects(const Vec3& _vec) const {
 		for (const auto& box1 : boxes) {
 			if (box1.PointIntersects(_vec)) {

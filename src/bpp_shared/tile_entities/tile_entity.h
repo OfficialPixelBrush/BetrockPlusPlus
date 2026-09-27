@@ -10,11 +10,11 @@
 
 #pragma once
 #include "tile_entity_base.h"
-#include "tile_entity_sign.h"
 #include "tile_entity_chest.h"
-#include "tile_entity_furnace.h"
 #include "tile_entity_dispenser.h"
+#include "tile_entity_furnace.h"
+#include "tile_entity_jukebox.h"
 #include "tile_entity_mob_spawner.h"
 #include "tile_entity_noteblock.h"
-#include "tile_entity_jukebox.h"
 #include "tile_entity_piston.h"
+#include "tile_entity_sign.h"

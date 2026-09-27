@@ -11,8 +11,6 @@
 
 Tag TileEntityNoteblock::Serialize() {
 	auto root = TileEntity::Serialize();
-	root.compound["note"] = Tag{ .type = TAG_BYTE,
-		                             .name = "note",
-		                             .byteValue = static_cast<int8_t>(note) };
+	root.compound["note"] = Tag{ .type = TAG_BYTE, .name = "note", .byteValue = static_cast<int8_t>(note) };
 	return root;
 }

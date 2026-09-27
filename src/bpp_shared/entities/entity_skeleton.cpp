@@ -34,7 +34,7 @@ void SkeletonEntity::TryAttackEntity(Entity& _target, float _distance) {
 		auto self = entityManager->GetEntityByIdShared(this->id);
 		auto mobileSelf = std::dynamic_pointer_cast<MobileEntity>(self);
 		auto mobileTarget = dynamic_cast<MobileEntity*>(&_target);
-		
+
 		auto arrow = std::make_shared<ArrowEntity>(mobileSelf);
 		arrow->position.y++;
 		arrow->RebuildCollider();

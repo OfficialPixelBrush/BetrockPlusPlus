@@ -11,8 +11,6 @@
 
 Tag TileEntityJukebox::Serialize() {
 	auto root = TileEntity::Serialize();
-	root.compound["Record"] = Tag{ .type = TAG_INT,
-		                             .name = "Record",
-		                             .intValue = static_cast<int32_t>(recordItemId) };
+	root.compound["Record"] = Tag{ .type = TAG_INT, .name = "Record", .intValue = static_cast<int32_t>(recordItemId) };
 	return root;
 }

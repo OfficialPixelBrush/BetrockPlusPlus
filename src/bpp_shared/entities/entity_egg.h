@@ -5,8 +5,8 @@
  *
  */
 #pragma once
-#include "entity_throwable.h"
 #include "entity_chicken.h"
+#include "entity_throwable.h"
 #include "logger.h"
 
 struct EggEntity : public ThrowableEntity {

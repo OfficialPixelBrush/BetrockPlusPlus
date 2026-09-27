@@ -381,8 +381,8 @@ bool RedstoneManager::IsPositionPowered(WorldManager& _world, Int3 _pos) {
 	return false;
 }
 
-static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int3>& _visited,
-                         std::vector<Int3>& _order, bool _forceDisableProfileCheck = false) {
+static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int3>& _visited, std::vector<Int3>& _order,
+                         bool _forceDisableProfileCheck = false) {
 	auto thisBlock = _world.GetBlockId(_pos);
 	bool doProfileCheck = false;
 
