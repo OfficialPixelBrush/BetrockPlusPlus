@@ -415,6 +415,16 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 			if (te.Has("Text4"))
 				ent->text4 = te.Get("Text4").GetString();
 			chunk->tileEntities.push_back(std::move(ent));
+		} else if (id == "Music") {
+			auto ent = std::make_shared<TileEntityNoteblock>(pos);
+			if (te.Has("note"))
+				ent->note = te.Get("note").GetByte();
+			chunk->tileEntities.push_back(std::move(ent));
+		} else if (id == "RecordPlayer") {
+			auto ent = std::make_shared<TileEntityJukebox>(pos);
+			if (te.Has("Record"))
+				ent->recordItemId = ItemId(te.Get("Record").GetInt());
+			chunk->tileEntities.push_back(std::move(ent));
 		} else if (id == "MobSpawner") {
 			auto ent = std::make_shared<TileEntityMobSpawner>(pos);
 			if (te.Has("EntityId"))

@@ -9,10 +9,6 @@
 
 #include "tile_entity_jukebox.h"
 
-void TileEntityJukebox::Tick(WorldManager& /*_world*/) {
-    // TODO
-}
-
 Tag TileEntityJukebox::Serialize() {
 	auto root = TileEntity::Serialize();
 	root.compound["Record"] = Tag{ .type = TAG_INT,

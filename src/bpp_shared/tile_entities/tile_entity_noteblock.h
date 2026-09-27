@@ -15,5 +15,4 @@ struct TileEntityNoteblock : TileEntity {
 	TileEntityNoteblock(Int3 _pPosition) : TileEntity(TileType::NOTEBLOCK, _pPosition) {};
 
 	Tag Serialize() override;
-	void Tick(WorldManager& _world) override;
 };
