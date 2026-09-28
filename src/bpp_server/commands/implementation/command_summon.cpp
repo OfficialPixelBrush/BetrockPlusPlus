@@ -18,6 +18,7 @@
 #include "entities/entity_skeleton.h"
 #include "entities/entity_spider.h"
 #include "entities/entity_zombie.h"
+#include "entities/entity_slime.h"
 #include "networking/packets.h"
 #include <memory>
 #include <utility>
@@ -58,6 +59,9 @@ EntityType GetEntityTypeFromString(std::string _name) {
 	if (_name == "painting") {
 		return EntityType::PAINTING;
 	}
+	if (_name == "slime") {
+		return EntityType::SLIME;
+	}
 	return EntityType::NONE;
 }
 
@@ -83,6 +87,8 @@ std::shared_ptr<Entity> GetEntityShared(EntityType _type) {
 		return std::make_shared<BoatEntity>();
 	case EntityType::MINECART:
 		return std::make_shared<MinecartEntity>();
+	case EntityType::SLIME:
+		return std::make_shared<SlimeEntity>();
 	default:
 		return nullptr;
 	}

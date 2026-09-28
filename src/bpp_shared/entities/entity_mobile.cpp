@@ -242,13 +242,13 @@ void MobileEntity::TickPhysics() {
 			velocity.y = 0.2;
 		}
 
+		// Gravity, then drag (Java: motionY -= 0.08; motionY *= 0.98)
+		velocity.y -= 0.08;
+		velocity.y *= 0.98f;
+
 		// Apply friction
 		velocity.x *= friction;
-		velocity.y *= 0.98f;
 		velocity.z *= friction;
-
-		// Gravity
-		velocity.y -= 0.08;
 	}
 }
 
@@ -452,7 +452,13 @@ void MobileEntity::Tick() {
 		isDead = deathTime >= 20;
 	}
 
-	UpdateAIState();
+	// Blocked entities drop their inputs
+	if (IsMovementBlocked()) {
+		jumping = false;
+		input = {};
+	} else {
+		UpdateAIState();
+	}
 
 	// Jump code
 	if (jumping) {

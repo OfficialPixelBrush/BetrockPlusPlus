@@ -45,4 +45,7 @@ struct PlayerEntity : public MobileEntity {
 	float GetEyeHeight() override {
 		return 1.62f;
 	}
+	bool IsMovementBlocked() override {
+		return health <= 0 || isSleeping;
+	}
 };
