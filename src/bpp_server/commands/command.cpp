@@ -6,6 +6,7 @@
 
 #include "command.h"
 #include "../server.h"
+#include "../../bpp_shared/helpers/label.h"
 #include "items.h"
 #include <algorithm>
 #include <string>
@@ -16,20 +17,32 @@ bool IsOperator(PlayerSession& _session, Server& _server) {
 }
 
 ItemStack ParseItemStack(const std::string& _itemArg, std::optional<int> _count) {
-	ItemStack item;
-	size_t colonPos = _itemArg.find(':');
-	std::string idString = _itemArg.substr(0, colonPos);
-	std::string metaString;
-	if (colonPos != std::string::npos) {
-		metaString = _itemArg.substr(colonPos + 1);
-	}
-	item.id = static_cast<int16_t>(std::stoi(idString));
-	if (!metaString.empty()) {
-		item.data = static_cast<int16_t>(std::stoi(metaString));
-	}
-	item.count = Items::GetMaxStack(item.id);
-	if (_count) {
-		item.count = static_cast<int8_t>(*_count);
-	}
-	return item;
+    ItemStack item;
+
+    size_t colonPos = _itemArg.find(':');
+    std::string baseString = _itemArg.substr(0, colonPos);
+    std::string metaString;
+    if (colonPos != std::string::npos) {
+        metaString = _itemArg.substr(colonPos + 1);
+    }
+
+    // Resolve the base. String label first, then numeric ID
+    if (auto it = identifierToId.find(_itemArg); it != identifierToId.end()) {
+        item = it->second;
+        metaString.clear();
+    } else if (auto it2 = identifierToId.find(baseString); it2 != identifierToId.end()) {
+        item = it2->second;
+    } else {
+        item.id = static_cast<int16_t>(std::stoi(baseString));
+    }
+
+    if (!metaString.empty()) {
+        item.data = static_cast<int16_t>(std::stoi(metaString));
+    }
+
+    item.count = Items::GetMaxStack(item.id);
+    if (_count) {
+        item.count = static_cast<int8_t>(*_count);
+    }
+    return item;
 }
