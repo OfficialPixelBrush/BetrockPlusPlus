@@ -26,6 +26,7 @@
 #include "packet_data.h"
 #include "tick_scheduler.h"
 #include "tile_entities/tile_entity_manager.h"
+#include "weather_system.h"
 #include "world/spawner.h"
 #include "world/storage/region_manager.h"
 #include "world_access.h"
@@ -77,6 +78,7 @@ public:
 	int64_t seed = 0;
 	Int3 spawnPoint{ 0, 0, 0 };
 	Dimension thisDimension = Dimension::Overworld;
+	WeatherSystem weatherSystem;
 
 	WorldManager(bool _pIsHell = false) : isHell(_pIsHell) {
 		entityManager.world = this;

@@ -313,6 +313,7 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 	tileEntityManager.TickTileEntities(*this);
 
 	lightManager.ProcessLightQueue(*this, INT_MAX);
+	weatherSystem.Tick(rand);
 
 	// Saving
 	if (this->tickScheduler.currentTick % 40 == 0) {
