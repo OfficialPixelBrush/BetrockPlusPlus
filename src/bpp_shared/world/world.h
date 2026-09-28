@@ -116,6 +116,7 @@ public:
 	float GetCelestialAngle();
 	int GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks = true);
 	Biome GetBiome(Int2 _wpos);
+	void EnsureClimate(Chunk& _chunk);
 	BlockType GetBlockId(Int3 _wpos) override;
 	uint8_t GetMetadata(Int3 _wpos);
 	void RemoveTileEntity(Int3 _pos);
@@ -279,6 +280,7 @@ public:
 		auto* chunk = GetChunkRaw({ _wx >> 4, _wz >> 4 });
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return 0.5;
+		EnsureClimate(*chunk);
 		return double(chunk->GetTemperature({ _wx & 15, _wz & 15 }));
 	}
 
@@ -286,6 +288,7 @@ public:
 		auto* chunk = GetChunkRaw({ _wx >> 4, _wz >> 4 });
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return 0.5;
+		EnsureClimate(*chunk);
 		return double(chunk->GetHumidity({ _wx & 15, _wz & 15 }));
 	}
 

@@ -25,14 +25,37 @@ BiomeGenerator WorldManager::biomeGenerator;
 Biome WorldManager::GetBiome(Int2 _wpos) {
 	if (isHell)
 		return Biome::BIOME_HELL;
-	const Int32_2 cpos = Int32_2{ _wpos.x >> 4, _wpos.z >> 4 };
-	const auto chunk = GetChunkShared(cpos);
-	if (!chunk || chunk->state != ChunkState::Generated)
+	auto chunk = GetChunkShared(Int32_2{ _wpos.x >> 4, _wpos.z >> 4 });
+	if (!chunk || chunk->state.load() < ChunkState::Generated)
 		return biomeGenerator.GetBiomeAtPoint(_wpos);
+	EnsureClimate(*chunk);
 
 	const int32_t localX = _wpos.x & 15;
 	const int32_t localZ = _wpos.z & 15;
 	return static_cast<Biome>(chunk->biomes.Get(localX * CHUNK_WIDTH + localZ));
+}
+
+void WorldManager::EnsureClimate(Chunk& _chunk) {
+	// The Nether has no climate
+	if (isHell || _chunk.climateBaked)
+		return;
+
+	thread_local BiomeGenerator tlBiomeGen(0);
+	thread_local int64_t tlBiomeSeed = std::numeric_limits<int64_t>::min();
+	if (tlBiomeSeed != this->seed) {
+		tlBiomeGen = BiomeGenerator(this->seed);
+		tlBiomeSeed = this->seed;
+	}
+	thread_local double temp[CHUNK_AREA];
+	thread_local double humi[CHUNK_AREA];
+	thread_local double weird[CHUNK_AREA];
+	tlBiomeGen.GenerateBiomeMap(_chunk.biomes, temp, humi, weird,
+	                            Int2{ _chunk.cpos.x * CHUNK_WIDTH, _chunk.cpos.z * CHUNK_WIDTH });
+	for (int i = 0; i < CHUNK_AREA; ++i) {
+		_chunk.temperature[i] = float(temp[i]);
+		_chunk.humidity[i] = float(humi[i]);
+	}
+	_chunk.climateBaked = true;
 }
 
 int WorldManager::GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
@@ -497,23 +520,6 @@ void WorldManager::DrainLoadQueue() {
 
 		bool needsLightingRefresh = chunk->refreshLighting;
 		chunk->refreshLighting = false;
-
-		// Regenerate temp and humidity data
-		thread_local BiomeGenerator tlBiomeGen(0);
-		thread_local int64_t tlBiomeSeed = std::numeric_limits<int64_t>::min();
-		if (tlBiomeSeed != this->seed) {
-			tlBiomeGen = BiomeGenerator(this->seed);
-			tlBiomeSeed = this->seed;
-		}
-		thread_local double temp[CHUNK_AREA];
-		thread_local double humi[CHUNK_AREA];
-		thread_local double weird[CHUNK_AREA];
-		thread_local PackedArray<CHUNK_AREA, 4> ignored;
-		tlBiomeGen.GenerateBiomeMap(ignored, temp, humi, weird, Int2{ pos.x * CHUNK_WIDTH, pos.z * CHUNK_WIDTH });
-		for (int i = 0; i < CHUNK_AREA; ++i) {
-			chunk->temperature[i] = float(temp[i]);
-			chunk->humidity[i] = float(humi[i]);
-		}
 
 		// Replay any writes that arrived while this chunk was loading.
 		auto pit = pendingBleedWrites.find(pos);

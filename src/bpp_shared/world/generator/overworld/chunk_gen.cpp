@@ -55,6 +55,7 @@ void OverworldGenerator::GenerateChunk(Chunk& _chunk) {
 		_chunk.humidity[i] = float(humidity[i]);
 		_chunk.biomes.Set(i, biomeMap.Get(i));
 	}
+	_chunk.climateBaked = true;
 
 	// Generate the Terrain, minus any caves, as just stone
 	GenerateTerrain(_chunk);
