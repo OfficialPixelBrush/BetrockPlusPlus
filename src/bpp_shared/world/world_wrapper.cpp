@@ -69,6 +69,7 @@ double WorldWrapper::GetTemperatureAt(const int _wx, const int _wz) {
 	auto chunk = chunkRegion.GetChunk(GetRegionChunkPos({ _wx, 0, _wz }));
 	if (!chunk || chunk->state.load() < ChunkState::Generated)
 		return 0.5;
+	manager.EnsureClimate(*chunk);
 	return double(chunk->GetTemperature({ _wx & 15, _wz & 15 }));
 }
 
@@ -76,6 +77,7 @@ double WorldWrapper::GetHumidityAt(const int _wx, const int _wz) {
 	auto chunk = chunkRegion.GetChunk(GetRegionChunkPos({ _wx, 0, _wz }));
 	if (!chunk || chunk->state.load() < ChunkState::Generated)
 		return 0.5;
+	manager.EnsureClimate(*chunk);
 	return double(chunk->GetHumidity({ _wx & 15, _wz & 15 }));
 }
 

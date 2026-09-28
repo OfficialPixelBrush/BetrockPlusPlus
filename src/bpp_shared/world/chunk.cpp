@@ -66,6 +66,7 @@ void Chunk::RelightColumn(Int2 _pos) {
 void Chunk::Clear() {
 	isTerrainPopulated = false;
 	isModified = false;
+	climateBaked = false;
 	std::memset(blocks, 0, sizeof(blocks));
 	std::memset(lightNibble, 0, sizeof(lightNibble));
 	std::memset(nibbleBlockMeta, 0, sizeof(nibbleBlockMeta));
