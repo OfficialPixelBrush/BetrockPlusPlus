@@ -73,8 +73,7 @@ static bool CanExtend(WorldManager& _world, Int3 _pos) {
 	Int3 checkPos = _pos + dirVec;
 
 	while (pushCount <= MAX_PUSH_COUNT) {
-		// We would push out of bounds
-		if (!_world.InBounds(checkPos.y))
+		if (checkPos.y <= 0 || checkPos.y >= CHUNK_HEIGHT - 1)
 			return false;
 
 		auto blockId = _world.GetBlockId(checkPos);
@@ -124,8 +123,7 @@ static bool TryExtend(WorldManager& _world, Int3 _pos) {
 	Int3 endPos = _pos + dirVec;
 
 	while (pushCount <= MAX_PUSH_COUNT) {
-		// We would push out of bounds
-		if (!_world.InBounds(endPos.y))
+		if (endPos.y <= 0 || endPos.y >= CHUNK_HEIGHT - 1)
 			return false;
 
 		auto blockId = _world.GetBlockId(endPos);
@@ -383,10 +381,7 @@ void RegisterPistonBehaviors() {
 			orientation = meta[GetDirectionFromYaw(_placer.rotationYaw, 4)];
 		}
 
-		auto success = GenericPlace(_world, _pos, _placer, _face, _blockId, orientation);
-		UpdatePistonState(_world, _pos);
-
-		return success;
+		return GenericPlace(_world, _pos, _placer, _face, _blockId, orientation);
 	};
 
 	blockBehaviors[BLOCK_PISTON].onBlockPlaced = onPistonPlace;

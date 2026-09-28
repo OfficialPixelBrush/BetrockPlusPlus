@@ -898,6 +898,10 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	const auto oldBlock = chunk->GetBlock(local);
 	const auto oldMeta = chunk->GetMeta(local);
 
+	// If nothing changed dont do any updates
+	if (oldBlock == _blockType && oldMeta == _metadata)
+		return;
+
 	// Making the assumption here that certain metadatas of
 	// blocks don't have differing light properties
 	const bool changesLighting = (Blocks::blockProperties[_blockType].lightOpacity !=
@@ -913,6 +917,13 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 
 	// Then finally set the new block
 	chunk->SetBlock(local, _blockType);
+
+	if (oldBlock != BLOCK_AIR && !_keepTileEntity) {
+		auto function = Blocks::blockBehaviors[oldBlock].onBlockRemoval;
+		if (function)
+			function(*this, _wpos);
+	}
+
 	chunk->SetMeta(local, _metadata);
 
 	const Int3 pos = _wpos;
@@ -947,13 +958,6 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 			                                 { pos.x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), pos.z + 1 },
 			                                 LightType::Sky);
 		}
-	}
-
-	if (_blockType == BLOCK_AIR) {
-		// We removed this block effectively
-		auto function = Blocks::blockBehaviors[oldBlock].onBlockRemoval;
-		if (function)
-			function(*this, _wpos);
 	}
 
 	// Remove any tile entities that exist at this spot
@@ -1133,9 +1137,9 @@ void WorldManager::SetViewRadius(int _viewRadius) {
 }
 
 void WorldManager::NotifyNeighborsOfUpdate(Int3 _globalPos, BlockType _blockId) {
-	// Update our six neighbors
-	const Direction::Value dirs[6] = { Direction::Value::West,  Direction::Value::East, Direction::Value::North,
-		                               Direction::Value::South, Direction::Value::Down, Direction::Value::Up };
+	// Update our six neighbors.
+	const Direction::Value dirs[6] = { Direction::Value::West, Direction::Value::East,  Direction::Value::Down,
+		                               Direction::Value::Up,   Direction::Value::North, Direction::Value::South };
 
 	// Notify neighbors
 	for (auto dir : dirs) {
