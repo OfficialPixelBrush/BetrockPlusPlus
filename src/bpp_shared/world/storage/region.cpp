@@ -452,5 +452,11 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 		}
 	}
 
+	// The above stuff marks the chunk as dirty,
+	// which results in it getting resaved immediately after loading.
+	// This is quite wasteful and can harm storage devices long-term,
+	// so it's probably best to not do that.
+	chunk->isModified = false;
+
 	return chunk;
 }

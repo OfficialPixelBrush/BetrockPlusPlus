@@ -116,7 +116,7 @@ void EntityTracker::TrackEntity(Entity* _entity) {
 		if (playerIt == trackedEntities.end())
 			continue;
 		auto& player = playerIt->second;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, player.entity) >
+		if (DistanceBetweenPlayerAndEntity(newEntry.entity, player.entity) >
 		    newEntry.profile.range * newEntry.profile.range)
 			continue;
 		// Register the viewer before spawning
@@ -161,7 +161,7 @@ void EntityTracker::AddPlayer(Entity* _player) {
 	for (auto& [entityId, entityEntry] : trackedEntities) {
 		if (entityId == _player->id)
 			continue;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) >
+		if (DistanceBetweenPlayerAndEntity(entityEntry.entity, newPlayerEntry.entity) >
 		    entityEntry.profile.range * entityEntry.profile.range)
 			continue;
 		// Register the viewer before spawning
@@ -175,7 +175,7 @@ void EntityTracker::AddPlayer(Entity* _player) {
 		auto otherIt = trackedEntities.find(otherPlayerId);
 		if (otherIt == trackedEntities.end())
 			continue;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) >
+		if (DistanceBetweenPlayerAndEntity(newPlayerEntry.entity, otherIt->second.entity) >
 		    newPlayerEntry.profile.range * newPlayerEntry.profile.range)
 			continue;
 		newPlayerEntry.visibleTo.insert(otherPlayerId);
