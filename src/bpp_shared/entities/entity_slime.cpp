@@ -60,9 +60,7 @@ void SlimeEntity::EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEnt
 }
 
 void SlimeEntity::UpdateAIState() {
-	TryDespawn();
-
-	auto nearestPlayer = this->entityManager->GetClosestPlayerWithin(this->position, 8);
+	auto nearestPlayer = this->entityManager->GetClosestPlayerWithin(this->position, 16);
 	if (nearestPlayer)
 		this->FaceEntity(*dynamic_cast<MobileEntity*>(nearestPlayer.get()), 10.0f, 20.0f);
 
@@ -93,4 +91,55 @@ bool SlimeEntity::DecodeMetadata(const std::vector<PacketData::EntityMetadata::D
 		found = true;
 	}
 	return found;
+}
+
+std::optional<Tag> SlimeEntity::SerializeToNbt() {
+	auto tag = HostileEntity::SerializeToNbt();
+	if (!tag)
+		return std::nullopt;
+
+	Tag sizeTag;
+	sizeTag.type = TAG_INT;
+	sizeTag.name = "Size";
+	// NOTE: Notch why do we subtract 1 here and add it back on load??
+	sizeTag.intValue = this->size - 1;
+	tag->compound["Size"] = sizeTag;
+
+	return tag;
+}
+
+void SlimeEntity::LoadFromNbt(Tag& _nbt) {
+	HostileEntity::LoadFromNbt(_nbt);
+
+	int loadedSize = _nbt.Has("Size") ? _nbt.compound["Size"].GetInt() + 1 : 1;
+
+	this->wasMetadataUpdated = true;
+	this->size = loadedSize;
+	this->SetSize({ 0.6f * loadedSize, 0.6f * loadedSize });
+	this->SetMaxHealth(loadedSize * loadedSize);
+}
+
+// Notch java tomfuckery??
+static Java::Random SlimeChunkRandom(int64_t _worldSeed, int32_t _chunkX, int32_t _chunkZ) {
+	auto imul = [](int32_t _a, int32_t _b) {
+		return int32_t(uint32_t(_a) * uint32_t(_b));
+	};
+	uint64_t s = uint64_t(_worldSeed);
+	s += uint64_t(int64_t(imul(imul(_chunkX, _chunkX), 4987142)));
+	s += uint64_t(int64_t(imul(_chunkX, 5947611)));
+	s += uint64_t(int64_t(imul(_chunkZ, _chunkZ)) * 4392871LL);
+	s += uint64_t(int64_t(imul(_chunkZ, 389711)));
+	return Java::Random(int64_t(s ^ 987234911ULL));
+}
+
+bool SlimeEntity::CanSpawnAt() {
+	if (!world)
+		return false;
+	if (rand.NextInt(10) != 0)
+		return false;
+	int32_t chunkX = MathHelper::FloorDouble(position.x) >> 4;
+	int32_t chunkZ = MathHelper::FloorDouble(position.z) >> 4;
+	if (SlimeChunkRandom(world->seed, chunkX, chunkZ).NextInt(10) != 0)
+		return false;
+	return position.y < 16.0;
 }

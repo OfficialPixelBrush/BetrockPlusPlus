@@ -16,6 +16,7 @@
 #include "entities/entity_skeleton.h"
 #include "entities/entity_spider.h"
 #include "entities/entity_zombie.h"
+#include "entities/entity_slime.h"
 #include "world.h"
 
 EntitySpawner::EntitySpawner() {
@@ -44,12 +45,14 @@ EntitySpawner::EntitySpawner() {
 		{ std::make_shared<CreeperEntity>(), []() { return std::make_shared<CreeperEntity>(); }, 10 },
 		{ std::make_shared<SpiderEntity>(), []() { return std::make_shared<SpiderEntity>(); }, 10 },
 		{ std::make_shared<SkeletonEntity>(), []() { return std::make_shared<SkeletonEntity>(); }, 10 },
+		{ std::make_shared<SlimeEntity>(), []() { return std::make_shared<SlimeEntity>(); }, 10 },
 	};
 	hostile.spawnListForest = {
 		{ std::make_shared<ZombieEntity>(), []() { return std::make_shared<ZombieEntity>(); }, 10 },
 		{ std::make_shared<CreeperEntity>(), []() { return std::make_shared<CreeperEntity>(); }, 10 },
 		{ std::make_shared<SpiderEntity>(), []() { return std::make_shared<SpiderEntity>(); }, 10 },
 		{ std::make_shared<SkeletonEntity>(), []() { return std::make_shared<SkeletonEntity>(); }, 10 },
+		{ std::make_shared<SlimeEntity>(), []() { return std::make_shared<SlimeEntity>(); }, 10 },
 	};
 	hostile.spawnListNether = {
 		// TODO: zombie pigmen and ghast

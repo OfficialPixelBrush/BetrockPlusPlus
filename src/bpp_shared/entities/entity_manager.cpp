@@ -21,6 +21,7 @@
 #include "entity_snowball.h"
 #include "entity_spider.h"
 #include "entity_zombie.h"
+#include "entity_slime.h"
 #include "gamerules.h"
 #include "world.h"
 
@@ -337,6 +338,11 @@ void EntityManager::CreateEntityFromNbt(Tag& _nbt) {
 		SnowballEntity entity;
 		entity.LoadFromNbt(_nbt);
 		AddEntity(std::make_shared<SnowballEntity>(entity));
+	}
+	if (id == "Slime") {
+		SlimeEntity entity;
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<SlimeEntity>(entity));
 	}
 	if (id == "FallingSand") {
 		FallingBlockEntity entity(Vec3{}, BLOCK_AIR);
