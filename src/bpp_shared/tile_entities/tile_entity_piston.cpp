@@ -64,10 +64,6 @@ void TileEntityPistonMoving::NudgePushedObjects(WorldManager& _world, float _pro
 
 	auto entities = _world.entityManager.GetEntitiesWithinAabb(*bounds);
 	for (auto& pEntity : entities) {
-		// The client pushes its own player
-		if (pEntity->type == EntityType::PLAYER)
-			continue;
-
 		// We need a new copy each time since entities mutate this vector
 		Vec3 pushVel = { PISTON_DX[orientation] * double(_pushDist), PISTON_DY[orientation] * double(_pushDist),
 			             PISTON_DZ[orientation] * double(_pushDist) };
