@@ -23,7 +23,10 @@ struct SlimeEntity : public HostileEntity {
 	void UpdateAIState() override;
 	void EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;
 	bool DecodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;
+	std::optional<Tag> SerializeToNbt() override;
+	void LoadFromNbt(Tag& _nbt) override;
 	void OnCollideWithPlayer(PlayerEntity& _entity) override;
+	bool CanSpawnAt() override;
 	void SplitSlime();
 
 	// Valid sizes are:
