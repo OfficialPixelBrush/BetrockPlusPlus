@@ -269,6 +269,7 @@ void RegisterBlockProperties() {
 		.lightOpacity = 3,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
+		.ticksOnLoad = true,
 		.enableStats = false,
 	};
 
@@ -290,6 +291,7 @@ void RegisterBlockProperties() {
 		.lightOpacity = 255,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
+		.ticksOnLoad = true,
 		.enableStats = false,
 	};
 
