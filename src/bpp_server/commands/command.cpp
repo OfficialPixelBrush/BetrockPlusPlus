@@ -27,11 +27,11 @@ ItemStack ParseItemStack(const std::string& _itemArg, std::optional<int> _count)
     }
 
     // Resolve the base. String label first, then numeric ID
-    if (auto it = identifierToId.find(_itemArg); it != identifierToId.end()) {
-        item = it->second;
+    if (auto it = IDENTIFIER_TO_ID.find(_itemArg); it != IDENTIFIER_TO_ID.end()) {
+        item = ItemStack{it->second.id, it->second.meta};
         metaString.clear();
-    } else if (auto it2 = identifierToId.find(baseString); it2 != identifierToId.end()) {
-        item = it2->second;
+    } else if (auto it2 = IDENTIFIER_TO_ID.find(baseString); it2 != IDENTIFIER_TO_ID.end()) {
+        item = ItemStack{it2->second.id, it2->second.meta};
     } else {
         item.id = static_cast<int16_t>(std::stoi(baseString));
     }
