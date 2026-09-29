@@ -7,6 +7,7 @@
 */
 
 #include "chunk.h"
+#include <algorithm>
 
 int Chunk::GetHighestPoint() const {
 	int highestPoint = 0;
@@ -81,6 +82,7 @@ void Chunk::Clear() {
 	climateBaked = false;
 	for (auto& sub : subChunks)
 		sub.reset();
+	subChunkFill.fill(BLOCK_AIR);
 	emptySkyLight.fill(0);
 	std::memset(heightMap, 0, sizeof(heightMap));
 	std::memset(temperature, 0, sizeof(temperature));
@@ -89,11 +91,21 @@ void Chunk::Clear() {
 
 SubChunk& Chunk::CreateSubChunk(int _index) {
 	auto& slot = subChunks[size_t(_index)];
+
 	if (!slot) {
 		slot = std::make_unique<SubChunk>();
+
+		if (subChunkFill[size_t(_index)] != BLOCK_AIR)
+			std::fill(
+				std::begin(slot->blocks),
+				std::end(slot->blocks),
+				subChunkFill[size_t(_index)]
+			);
+
 		if (emptySkyLight[size_t(_index)] != 0)
 			slot->FillSkyLight(emptySkyLight[size_t(_index)]);
 	}
+
 	return *slot;
 }
 
@@ -101,18 +113,28 @@ bool Chunk::CompactSubChunk(int _index) {
 	const SubChunk* sub = subChunks[size_t(_index)].get();
 	if (!sub)
 		return false;
+	bool allMatchingBlock = true;
+	BlockType previousBlock = sub->blocks[0];
 
 	const uint8_t sky = uint8_t(sub->lightNibble[0] >> 4);
 	for (int i = 0; i < SubChunk::VOLUME; i++) {
-		// Block light (low nibble) must be 0 and sky light (high nibble) must match everywhere
-		if (sub->blocks[i] != BLOCK_AIR || sub->lightNibble[i] != uint8_t(sky << 4))
+		if (sub->blocks[i] != previousBlock)
+			allMatchingBlock = false;
+
+		// Block light must be zero and sky light must match everywhere
+		if (sub->lightNibble[i] != uint8_t(sky << 4))
 			return false;
 	}
+
 	for (int i = 0; i < SubChunk::META_VOLUME; i++) {
 		if (sub->nibbleBlockMeta[i] != 0)
 			return false;
 	}
 
+	if (!allMatchingBlock)
+		return false;
+
+	subChunkFill[size_t(_index)] = previousBlock;
 	emptySkyLight[size_t(_index)] = sky;
 	subChunks[size_t(_index)].reset();
 	return true;
@@ -131,4 +153,5 @@ void Chunk::CopyStorageFrom(const Chunk& _other) {
 			subChunks[i].reset();
 	}
 	emptySkyLight = _other.emptySkyLight;
+	subChunkFill = _other.subChunkFill;
 }
