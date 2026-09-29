@@ -76,6 +76,10 @@ struct SubChunkFill {
 	uint8_t skyLight : 4 = 15;
 };
 
+// TODO: Check viability of "full chunks", for faster access.
+// Basically how stuff worked before SubChunks,
+// for those that prefer that system for the performance gain.
+// Plus we could fall back to those if all 8 subchunks are filled anyways.
 struct Chunk {
 	static constexpr int VOLUME = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH;
 	static_assert(CHUNK_HEIGHT % SUB_CHUNK_SIZE == 0, "CHUNK_HEIGHT must be a multiple of SUB_CHUNK_SIZE");
