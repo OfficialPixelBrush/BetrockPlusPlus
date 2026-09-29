@@ -70,7 +70,7 @@ struct SubChunk {
 };
 
 // The values an empty subchunk defaults to in its compact form
-struct SubChunkFill {
+struct CompactSubChunk {
 	BlockType type = BLOCK_AIR;
 	uint8_t blockLight : 4 = 0;
 	uint8_t skyLight : 4 = 15;
@@ -91,7 +91,7 @@ struct Chunk {
 	// Block, light and metadata storage, bottom to top. A slot is null until it needs to hold data
 	std::array<std::unique_ptr<SubChunk>, SUB_CHUNK_COUNT> subChunks;
 	// What a null slot reads as (block, block light, sky light). Defaults to air, no block light, full sky light.
-	std::array<SubChunkFill, SUB_CHUNK_COUNT> subChunkFill = {};
+	std::array<CompactSubChunk, SUB_CHUNK_COUNT> compactSubChunks = {};
 
 	std::atomic<ChunkState> state{ ChunkState::Unloaded };
 	uint8_t heightMap[CHUNK_AREA] = {};
@@ -111,15 +111,19 @@ struct Chunk {
 	// Used for loading entities into the world from disk
 	std::vector<Tag> entityTags;
 
+	static constexpr bool InBounds(int _y) {
+		return _y >= 0 && _y < CHUNK_HEIGHT;
+	}
+
 	// Normal subchunk return
 	inline SubChunk* GetSubChunk(int _y) {
-		if (_y >= 0 && _y < CHUNK_HEIGHT)
+		if (InBounds(_y))
 			return subChunks[size_t(_y >> 4)].get();
 		return nullptr;
 	}
 	// Const subchunk return
 	inline const SubChunk* GetSubChunk(int _y) const {
-		if (_y >= 0 && _y < CHUNK_HEIGHT)
+		if (InBounds(_y))
 			return subChunks[size_t(_y >> 4)].get();
 		return nullptr;
 	}
@@ -148,14 +152,18 @@ struct Chunk {
 		heightMap[(_pos.y << 4) | _pos.x] = _val;
 	}
 	inline BlockType GetBlock(Int3 _pos) const {
+		if (!InBounds(_pos.y))
+			return BLOCK_AIR;
 		const SubChunk* sub = GetSubChunk(_pos.y);
-		return sub ? sub->blocks[SubChunk::LocalIndex(_pos)] : subChunkFill[size_t(_pos.y >> 4)].type;
+		return sub ? sub->blocks[SubChunk::LocalIndex(_pos)] : compactSubChunks[size_t(_pos.y >> 4)].type;
 	}
 	// Doesn't flag as modified
 	inline void SetBlockRaw(Int3 _pos, BlockType _id) {
+		if (!InBounds(_pos.y))
+			return;
 		SubChunk* sub = GetSubChunk(_pos.y);
 		if (!sub) {
-			if (_id == subChunkFill[size_t(_pos.y >> 4)].type)
+			if (_id == compactSubChunks[size_t(_pos.y >> 4)].type)
 				return; // Writing what the empty slot already reads as, nothing to do
 			sub = &CreateSubChunk(_pos.y >> 4);
 		}
@@ -166,6 +174,8 @@ struct Chunk {
 		isModified = true;
 	}
 	inline uint8_t GetMeta(Int3 _pos) const {
+		if (!InBounds(_pos.y))
+			return 0;
 		const SubChunk* sub = GetSubChunk(_pos.y);
 		if (!sub)
 			return 0;
@@ -174,6 +184,8 @@ struct Chunk {
 		return (idx & 1) ? GetNibbleHigh(byte) : GetNibbleLow(byte);
 	}
 	inline void SetMeta(Int3 _pos, uint8_t _meta) {
+		if (!InBounds(_pos.y))
+			return;
 		SubChunk* sub = GetSubChunk(_pos.y);
 		if (!sub) {
 			isModified = true;
@@ -187,18 +199,24 @@ struct Chunk {
 		isModified = true;
 	}
 	inline uint8_t GetBlockLight(Int3 _pos) const {
+		if (!InBounds(_pos.y))
+			return 0;
 		const SubChunk* sub = GetSubChunk(_pos.y);
-		return sub ? GetNibbleLow(sub->light[SubChunk::LocalIndex(_pos)]) : subChunkFill[size_t(_pos.y >> 4)].blockLight;
+		return sub ? GetNibbleLow(sub->light[SubChunk::LocalIndex(_pos)]) : compactSubChunks[size_t(_pos.y >> 4)].blockLight;
 	}
 	inline uint8_t GetSkyLight(Int3 _pos) const {
+		if (!InBounds(_pos.y))
+			return 0;
 		const SubChunk* sub = GetSubChunk(_pos.y);
-		return sub ? GetNibbleHigh(sub->light[SubChunk::LocalIndex(_pos)]) : subChunkFill[size_t(_pos.y >> 4)].skyLight;
+		return sub ? GetNibbleHigh(sub->light[SubChunk::LocalIndex(_pos)]) : compactSubChunks[size_t(_pos.y >> 4)].skyLight;
 	}
 	inline void SetBlockLight(Int3 _pos, uint8_t _val) {
+		if (!InBounds(_pos.y))
+			return;
 		SubChunk* sub = GetSubChunk(_pos.y);
 		if (!sub) {
 			isModified = true;
-			if ((_val & 0x0Fu) == subChunkFill[size_t(_pos.y >> 4)].blockLight)
+			if ((_val & 0x0Fu) == compactSubChunks[size_t(_pos.y >> 4)].blockLight)
 				return;
 			sub = &CreateSubChunk(_pos.y >> 4);
 		}
@@ -207,10 +225,12 @@ struct Chunk {
 		isModified = true;
 	}
 	inline void SetSkyLight(Int3 _pos, uint8_t _val) {
+		if (!InBounds(_pos.y))
+			return;
 		SubChunk* sub = GetSubChunk(_pos.y);
 		if (!sub) {
 			isModified = true;
-			if ((_val & 0x0Fu) == subChunkFill[size_t(_pos.y >> 4)].skyLight)
+			if ((_val & 0x0Fu) == compactSubChunks[size_t(_pos.y >> 4)].skyLight)
 				return;
 			sub = &CreateSubChunk(_pos.y >> 4);
 		}
@@ -234,7 +254,7 @@ struct Chunk {
 
 	// Frees a slot if it holds nothing but air, no meta, no block light and a single sky light value.
 	// Returns true if it was freed. Compact() does this for every slot.
-	bool CompactSubChunk(int _index);
+	bool TryToCompactSubChunk(int _index);
 	void Compact();
 	// Deep copies blocks, light and meta
 	void CopyStorageFrom(const Chunk& _other);

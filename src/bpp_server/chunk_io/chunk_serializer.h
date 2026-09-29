@@ -42,7 +42,7 @@ inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _x
 				const int slabEnd = CrossPlatform::Math::Min(_ymax, (y | (SUB_CHUNK_SIZE - 1)) + 1);
 				const SubChunk* sub = _chunk.GetSubChunk(y);
 				if (!sub) {
-					const SubChunkFill& fill = _chunk.subChunkFill[size_t(y >> 4)];
+					const CompactSubChunk& fill = _chunk.compactSubChunks[size_t(y >> 4)];
 					for (; y < slabEnd; y++, i++) {
 						blockData[i] = uint8_t(fill.type);
 						// Meta is always 0 for an empty slab, and the buffer is zero-initialised
