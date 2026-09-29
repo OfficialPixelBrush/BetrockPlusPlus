@@ -80,7 +80,6 @@ struct SubChunk {
 	static constexpr int NIBBLE_BYTES = VOLUME / 2;
 
 	using BlockLayer = std::array<BlockType, VOLUME>;
-	// Two 4-bit values per byte: even voxel indices use the low nibble, odd ones the high nibble
 	using NibbleLayer = std::array<uint8_t, NIBBLE_BYTES>;
 
 	// Null = uniform, see the matching fill below
