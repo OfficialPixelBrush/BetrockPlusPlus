@@ -38,12 +38,30 @@ inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _x
 	int i = 0;
 	for (int x = _xmin; x < _xmax; x++) {
 		for (int z = _zmin; z < _zmax; z++) {
-			for (int y = _ymin; y < _ymax; y++, i++) {
-				Int3 pos{ x, y, z };
-				blockData[i] = uint8_t(_chunk.GetBlock(pos));
-				packNibble(metaData[i >> 1], _chunk.GetMeta(pos), i & 1);
-				packNibble(blockLight[i >> 1], _chunk.GetBlockLight(pos), i & 1);
-				packNibble(skyLight[i >> 1], _chunk.GetSkyLight(pos), i & 1);
+			for (int y = _ymin; y < _ymax;) {
+				const int slabEnd = CrossPlatform::Math::Min(_ymax, (y | (SUB_CHUNK_SIZE - 1)) + 1);
+				const SubChunk& sub = _chunk.subChunks[size_t(y >> 4)];
+
+				const SubChunk::BlockLayer* blockLayer = sub.blocks.get();
+				const SubChunk::NibbleLayer* metaLayer = sub.meta.get();
+				const SubChunk::NibbleLayer* blockLightLayer = sub.blockLight.get();
+				const SubChunk::NibbleLayer* skyLightLayer = sub.skyLight.get();
+				const uint8_t blockFill = uint8_t(sub.blockFill);
+				const uint8_t metaFill = sub.metaFill;
+				const uint8_t blockLightFill = sub.blockLightFill;
+				const uint8_t skyLightFill = sub.skyLightFill;
+
+				for (; y < slabEnd; y++, i++) {
+					const int idx = SubChunk::LocalIndex({ x, y, z });
+					blockData[i] = blockLayer ? uint8_t((*blockLayer)[size_t(idx)]) : blockFill;
+					// The buffer is zero-initialised, so a zero meta fill needs no write
+					if (metaLayer)
+						packNibble(metaData[i >> 1], SubChunk::GetNibble(*metaLayer, idx), i & 1);
+					else if (metaFill != 0)
+						packNibble(metaData[i >> 1], metaFill, i & 1);
+					packNibble(blockLight[i >> 1], blockLightLayer ? SubChunk::GetNibble(*blockLightLayer, idx) : blockLightFill, i & 1);
+					packNibble(skyLight[i >> 1], skyLightLayer ? SubChunk::GetNibble(*skyLightLayer, idx) : skyLightFill, i & 1);
+				}
 			}
 		}
 	}

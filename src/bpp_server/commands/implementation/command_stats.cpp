@@ -53,8 +53,16 @@ std::string ShowStats(const strategos::CmdNode&, void* _userData) {
 	const WorldManager& nether = ctx.server->gameRuntime.worldHell;
 	const size_t chunksOverworld = overworld.chunks.size();
 	const size_t chunksNether = nether.chunks.size();
-	const double chunksOverworldMb = static_cast<double>(chunksOverworld * sizeof(Chunk)) / 1024.0 / 1024.0;
-	const double chunksNetherMb = static_cast<double>(chunksNether * sizeof(Chunk)) / 1024.0 / 1024.0;
+	auto sumChunkBytes = [](const auto& _chunks) {
+		size_t bytes = 0;
+		for (const auto& entry : _chunks) {
+			if (entry.second)
+				bytes += entry.second->GetMemoryUsage();
+		}
+		return bytes;
+	};
+	const double chunksOverworldMb = static_cast<double>(sumChunkBytes(overworld.chunks)) / 1024.0 / 1024.0;
+	const double chunksNetherMb = static_cast<double>(sumChunkBytes(nether.chunks)) / 1024.0 / 1024.0;
 	const double totalUsageMb = GetMemoryUsage(MemoryUnit::Megabyte);
 	const double activeUsageMb = GetActiveMemoryUsage(MemoryUnit::Megabyte);
 	const std::array<std::string, 5> lines = {

@@ -76,7 +76,6 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 	float pitchVel = 0.0f;
 	float yawVel = 0.0f;
 	Java::Random rand2(rand.NextLong());
-	BlockType* blocks = _chunk.blocks;
 
 	if (_tunnelLength <= 0) {
 		int32_t maxTunnelLength = this->M_CARVE_EXTENT_LIMIT * CHUNK_WIDTH - CHUNK_WIDTH;
@@ -150,8 +149,7 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 					for (int32_t blockZ = zMin; !fluidIsPresent && blockZ < zMax; ++blockZ) {
 						for (int32_t blockY = yMax + 1; !fluidIsPresent && blockY >= yMin - 1; --blockY) {
 							if (blockY >= 0 && blockY < CHUNK_HEIGHT) {
-								BlockType blockType =
-								    blocks[(blockY * CHUNK_WIDTH * CHUNK_WIDTH) + (blockZ * CHUNK_WIDTH) + blockX];
+								BlockType blockType = _chunk.GetBlock({ blockX, blockY, blockZ });
 								if (!isNetherCave &&
 								    (blockType == BLOCK_WATER_FLOWING || blockType == BLOCK_WATER_STILL))
 									fluidIsPresent = true;
@@ -178,15 +176,14 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 
 							if (dx2 + centerDz * centerDz < 1.0) {
 								bool isGrass = false;
-								const int32_t xzIndex = (blockZ * CHUNK_WIDTH) + blockX;
 								for (int32_t blockY = yMax - 1; blockY >= yMin; --blockY) {
 									double centerDy = (double(blockY) + 0.5 - _offset.y) / radiusY;
 									if (centerDy > -0.7 && dx2 + centerDy * centerDy + centerDz * centerDz < 1.0) {
-										const int32_t bIndex = ((blockY + 1) * CHUNK_WIDTH * CHUNK_WIDTH) + xzIndex;
-										BlockType blockType = blocks[bIndex];
+										const Int3 blockPos{ blockX, blockY + 1, blockZ };
+										BlockType blockType = _chunk.GetBlock(blockPos);
 										if (isNetherCave && (blockType == BLOCK_NETHERRACK || blockType == BLOCK_DIRT ||
 										                     blockType == BLOCK_GRASS)) {
-											blocks[bIndex] = BLOCK_AIR;
+											_chunk.SetBlockRaw(blockPos, BLOCK_AIR);
 											continue;
 										}
 										if (blockType == BLOCK_GRASS)
@@ -196,15 +193,15 @@ void CaveGenerator::CarveCave(Chunk& _chunk, Vec3 _offset, float _tunnelRadius, 
 											continue;
 										}
 										if (blockY < 10) {
-											blocks[bIndex] = BLOCK_LAVA_FLOWING;
+											_chunk.SetBlockRaw(blockPos, BLOCK_LAVA_FLOWING);
 											continue;
 										}
-										blocks[bIndex] = BLOCK_AIR;
+										_chunk.SetBlockRaw(blockPos, BLOCK_AIR);
 										if (!isGrass)
 											continue;
-										const int32_t belowIndex = (blockY * CHUNK_WIDTH * CHUNK_WIDTH) + xzIndex;
-										if (blocks[belowIndex] == BLOCK_DIRT) {
-											blocks[belowIndex] = BLOCK_GRASS;
+										const Int3 belowPos{ blockX, blockY, blockZ };
+										if (_chunk.GetBlock(belowPos) == BLOCK_DIRT) {
+											_chunk.SetBlockRaw(belowPos, BLOCK_GRASS);
 										}
 									}
 								}
