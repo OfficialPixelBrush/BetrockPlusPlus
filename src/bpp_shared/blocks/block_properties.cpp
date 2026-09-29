@@ -118,9 +118,12 @@ bool CanSugarcaneSurviveAt(WorldAccess& _world, Int3 _pos) {
 	return false;
 }
 
+bool CanCakeSurviveAt(WorldAccess& _world, Int3 _pos) {
+	return _world.GetMaterial(_pos.Offset(Direction::Value::Down)).isSolid;
+}
+
 bool CanCropsSurviveAt(WorldAccess& _world, Int3 _pos) {
-	auto belowBlock = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
-	return belowBlock == BLOCK_FARMLAND;
+	return _world.GetBlockId(_pos.Offset(Direction::Value::Down)) == BLOCK_FARMLAND;
 }
 
 bool CanGenericPlantSurviveAt(WorldAccess& _world, Int3 _pos) {

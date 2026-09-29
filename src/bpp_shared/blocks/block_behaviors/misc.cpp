@@ -35,6 +35,21 @@ static int GetDirectionFromYaw(float _yaw, int _directionCount) {
 	return MathHelper::FloorDouble((_yaw * _directionCount / 360.0f) + 0.5f) & 3;
 }
 
+static bool EatCake(WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) {
+	if (!_triggeringSession || !_triggeringSession->entity)
+		return false;
+	if (_triggeringSession->entity->health >= _triggeringSession->entity->maxHealth)
+		return false;
+	auto meta = _world.GetMetadata(_pos);
+	if (meta >= 6) {
+		_world.SetBlock(_pos, BLOCK_AIR);
+		return false;
+	}
+	_world.SetMeta(_pos, ++meta);
+	_triggeringSession->entity->Heal(Items::GetRegenerationAmount(BLOCK_CAKE));
+	return false;
+}
+
 void RegisterMiscBehaviors() {
 	blockBehaviors[BlockType::BLOCK_COBWEB] = {
 		.getCollider = EmptyCollider,
@@ -75,6 +90,7 @@ void RegisterMiscBehaviors() {
 		.getSelectionBox = CakeAabb,
 		.getRayBounds = CakeAabb,
 		.getCollider = CakeCollider,
+		.onBlockActivated = EatCake
 	};
 
 	blockBehaviors[BLOCK_SOULSAND] = {
