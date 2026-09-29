@@ -18,6 +18,7 @@ struct PlayerSession;
 namespace Blocks {
 
 bool CanSugarcaneSurviveAt(WorldAccess& _world, Int3 _pos);
+bool CanCakeSurviveAt(WorldAccess& _world, Int3 _pos);
 bool CanCropsSurviveAt(WorldAccess& _world, Int3 _pos);
 bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, Direction::Value _face);
 float GetFluidPercentAir(uint8_t _meta);
