@@ -47,7 +47,7 @@ void Chunk::GenerateSkylightMap() {
 		if (subChunks[size_t(i)])
 			subChunks[size_t(i)]->FillSkyLight(15);
 		else
-			emptySkyLight[size_t(i)] = 15;
+			subChunkFillLight[size_t(i)].skyLight = 15;
 	}
 
 	for (int x = 0; x < CHUNK_WIDTH; x++) {
@@ -82,8 +82,8 @@ void Chunk::Clear() {
 	climateBaked = false;
 	for (auto& sub : subChunks)
 		sub.reset();
-	subChunkFill.fill(BLOCK_AIR);
-	emptySkyLight.fill(0);
+	subChunkFillBlock.fill(BLOCK_AIR);
+	subChunkFillLight.fill(CombinedLight{});
 	std::memset(heightMap, 0, sizeof(heightMap));
 	std::memset(temperature, 0, sizeof(temperature));
 	std::memset(humidity, 0, sizeof(humidity));
@@ -95,15 +95,17 @@ SubChunk& Chunk::CreateSubChunk(int _index) {
 	if (!slot) {
 		slot = std::make_unique<SubChunk>();
 
-		if (subChunkFill[size_t(_index)] != BLOCK_AIR)
+		if (subChunkFillBlock[size_t(_index)] != BLOCK_AIR)
 			std::fill(
 				std::begin(slot->blocks),
 				std::end(slot->blocks),
-				subChunkFill[size_t(_index)]
+				subChunkFillBlock[size_t(_index)]
 			);
 
-		if (emptySkyLight[size_t(_index)] != 0)
-			slot->FillSkyLight(emptySkyLight[size_t(_index)]);
+		if (subChunkFillLight[size_t(_index)].skyLight != 0)
+			slot->FillSkyLight(subChunkFillLight[size_t(_index)].skyLight);
+		if (subChunkFillLight[size_t(_index)].blockLight != 0)
+    		slot->FillBlockLight(subChunkFillLight[size_t(_index)].blockLight);
 	}
 
 	return *slot;
@@ -114,15 +116,15 @@ bool Chunk::CompactSubChunk(int _index) {
 	if (!sub)
 		return false;
 	bool allMatchingBlock = true;
-	BlockType previousBlock = sub->blocks[0];
+	const BlockType previousBlock = sub->blocks[0];
 
-	const uint8_t sky = uint8_t(sub->lightNibble[0] >> 4);
+	const uint8_t light = uint8_t(sub->lightNibble[0]);
 	for (int i = 0; i < SubChunk::VOLUME; i++) {
 		if (sub->blocks[i] != previousBlock)
 			allMatchingBlock = false;
 
-		// Block light must be zero and sky light must match everywhere
-		if (sub->lightNibble[i] != uint8_t(sky << 4))
+		// Block and sky light must match everywhere
+		if (sub->lightNibble[i] != light)
 			return false;
 	}
 
@@ -134,8 +136,9 @@ bool Chunk::CompactSubChunk(int _index) {
 	if (!allMatchingBlock)
 		return false;
 
-	subChunkFill[size_t(_index)] = previousBlock;
-	emptySkyLight[size_t(_index)] = sky;
+	subChunkFillBlock[size_t(_index)] = previousBlock;
+	subChunkFillLight[size_t(_index)].skyLight = light >> 4;
+	subChunkFillLight[size_t(_index)].blockLight = light & 0xF;
 	subChunks[size_t(_index)].reset();
 	return true;
 }
@@ -152,6 +155,6 @@ void Chunk::CopyStorageFrom(const Chunk& _other) {
 		else
 			subChunks[i].reset();
 	}
-	emptySkyLight = _other.emptySkyLight;
-	subChunkFill = _other.subChunkFill;
+	subChunkFillLight = _other.subChunkFillLight;
+	subChunkFillBlock = _other.subChunkFillBlock;
 }

@@ -53,12 +53,24 @@ struct SubChunk {
 		std::memset(nibbleBlockMeta, 0, sizeof(nibbleBlockMeta));
 	}
 
-	// Sets the sky light (high nibble) of every block, leaving block light alone
+	// Sets the sky light (high nibble) of every block
 	inline void FillSkyLight(uint8_t _val) {
 		const uint8_t hi = uint8_t((_val & 0x0Fu) << 4);
 		for (uint8_t& b : lightNibble)
 			b = uint8_t((b & 0x0Fu) | hi);
 	}
+
+	// Sets the block light (low nibble) of every block
+	inline void FillBlockLight(uint8_t _val) {
+		const uint8_t lo = uint8_t(_val & 0x0Fu);
+		for (uint8_t& b : lightNibble)
+			b = uint8_t((b & 0xF0u) | lo);
+	}
+};
+
+struct CombinedLight {
+	uint8_t blockLight : 4 = 0;
+	uint8_t skyLight : 4 = 0;
 };
 
 struct Chunk {
@@ -71,9 +83,9 @@ struct Chunk {
 
 	// Block, light and metadata storage, bottom to top. A slot is null until it needs to hold data
 	std::array<std::unique_ptr<SubChunk>, SUB_CHUNK_COUNT> subChunks;
-	std::array<uint8_t, SUB_CHUNK_COUNT> emptySkyLight = {};
+	std::array<CombinedLight, SUB_CHUNK_COUNT> subChunkFillLight = {};
 	// What block the sub-chunk is filled with. Defaults to air.
-	std::array<BlockType, SUB_CHUNK_COUNT> subChunkFill = {};
+	std::array<BlockType, SUB_CHUNK_COUNT> subChunkFillBlock = {};
 
 	std::atomic<ChunkState> state{ ChunkState::Unloaded };
 	uint8_t heightMap[CHUNK_AREA] = {};
@@ -126,7 +138,7 @@ struct Chunk {
 	}
 	inline BlockType GetBlock(Int3 _pos) const {
 		const SubChunk* sub = GetSubChunk(_pos.y);
-		return sub ? sub->blocks[SubChunk::LocalIndex(_pos)] : subChunkFill[size_t(_pos.y >> 4)];
+		return sub ? sub->blocks[SubChunk::LocalIndex(_pos)] : subChunkFillBlock[size_t(_pos.y >> 4)];
 	}
 	// Doesn't flag as modified
 	inline void SetBlockRaw(Int3 _pos, BlockType _id) {
@@ -165,11 +177,11 @@ struct Chunk {
 	}
 	inline uint8_t GetBlockLight(Int3 _pos) const {
 		const SubChunk* sub = GetSubChunk(_pos.y);
-		return sub ? GetNibbleLow(sub->lightNibble[SubChunk::LocalIndex(_pos)]) : uint8_t(0);
+		return sub ? GetNibbleLow(sub->lightNibble[SubChunk::LocalIndex(_pos)]) : subChunkFillLight[size_t(_pos.y >> 4)].blockLight;
 	}
 	inline uint8_t GetSkyLight(Int3 _pos) const {
 		const SubChunk* sub = GetSubChunk(_pos.y);
-		return sub ? GetNibbleHigh(sub->lightNibble[SubChunk::LocalIndex(_pos)]) : emptySkyLight[size_t(_pos.y >> 4)];
+		return sub ? GetNibbleHigh(sub->lightNibble[SubChunk::LocalIndex(_pos)]) : subChunkFillLight[size_t(_pos.y >> 4)].skyLight;
 	}
 	inline void SetBlockLight(Int3 _pos, uint8_t _val) {
 		SubChunk* sub = GetSubChunk(_pos.y);
@@ -187,7 +199,7 @@ struct Chunk {
 		SubChunk* sub = GetSubChunk(_pos.y);
 		if (!sub) {
 			isModified = true;
-			if ((_val & 0x0Fu) == emptySkyLight[size_t(_pos.y >> 4)])
+			if ((_val & 0x0Fu) == subChunkFillLight[size_t(_pos.y >> 4)].skyLight)
 				return;
 			sub = &CreateSubChunk(_pos.y >> 4);
 		}
