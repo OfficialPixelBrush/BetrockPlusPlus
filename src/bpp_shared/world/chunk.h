@@ -12,6 +12,7 @@
 #include "enums/biomes.h"
 #include "helpers/cross_platform.h"
 #include "helpers/packed_array.h"
+#include "helpers/paletted_blocks.h"
 #include "nbt/nbt.h"
 #include "tile_entities/tile_entity.h"
 #include <array>
@@ -33,13 +34,15 @@ enum class ChunkState : uint8_t {
 };
 
 // A 16x16x16 slice of a Chunk. Chunks are stored as a vertical stack of these, and a slice is only
-// allocated once it holds something worth storing
+// allocated once it holds something worth storing.
+// Blocks are palette compressed (see PalettedBlocks), so a slice's real footprint is sizeof(SubChunk)
+// plus blocks.HeapBytes(), which is 0 to 4096 bytes depending on how many block types it holds.
 struct SubChunk {
 	static constexpr int SIZE = SUB_CHUNK_SIZE;
 	static constexpr int VOLUME = SIZE * SIZE * SIZE;
 	static constexpr int META_VOLUME = VOLUME / 2;
 
-	BlockType blocks[VOLUME] = { BLOCK_AIR };
+	PalettedBlocks<VOLUME> blocks; // Starts out all air
 	uint8_t light[VOLUME] = { 0 };
 	uint8_t nibbleBlockMeta[META_VOLUME] = { 0 };
 
@@ -49,7 +52,7 @@ struct SubChunk {
 	}
 
 	inline void Clear() {
-		std::memset(blocks, 0, sizeof(blocks));
+		blocks.Fill(BLOCK_AIR);
 		std::memset(light, 0, sizeof(light));
 		std::memset(nibbleBlockMeta, 0, sizeof(nibbleBlockMeta));
 	}
@@ -155,7 +158,7 @@ struct Chunk {
 		if (!InBounds(_pos.y))
 			return BLOCK_AIR;
 		const SubChunk* sub = GetSubChunk(_pos.y);
-		return sub ? sub->blocks[SubChunk::LocalIndex(_pos)] : compactSubChunks[size_t(_pos.y >> 4)].type;
+		return sub ? sub->blocks.Get(size_t(SubChunk::LocalIndex(_pos))) : compactSubChunks[size_t(_pos.y >> 4)].type;
 	}
 	// Doesn't flag as modified
 	inline void SetBlockRaw(Int3 _pos, BlockType _id) {
@@ -167,7 +170,7 @@ struct Chunk {
 				return; // Writing what the empty slot already reads as, nothing to do
 			sub = &CreateSubChunk(_pos.y >> 4);
 		}
-		sub->blocks[SubChunk::LocalIndex(_pos)] = _id;
+		sub->blocks.Set(size_t(SubChunk::LocalIndex(_pos)), _id);
 	}
 	inline void SetBlock(Int3 _pos, BlockType _id) {
 		SetBlockRaw(_pos, _id);
@@ -252,7 +255,8 @@ struct Chunk {
 	void RelightColumn(Int2 _pos);
 	void Clear();
 
-	// Frees a slot if it holds nothing but air, no meta, no block light and a single sky light value.
+	// Repacks a slot's block palette down to the fewest bits that fit, then frees the slot if what's left
+	// is a single block type with no meta, no block light and a single sky light value.
 	// Returns true if it was freed. Compact() does this for every slot.
 	bool TryToCompactSubChunk(int _index);
 	void Compact();
@@ -267,6 +271,11 @@ struct Chunk {
 	}
 	// Approximate heap + inline footprint. Prefer this over sizeof(Chunk) now that storage is lazy.
 	inline size_t GetMemoryUsage() const {
-		return sizeof(Chunk) + size_t(AllocatedSubChunks()) * sizeof(SubChunk);
+		size_t total = sizeof(Chunk);
+		for (const auto& sub : subChunks) {
+			if (sub)
+				total += sizeof(SubChunk) + sub->blocks.HeapBytes();
+		}
+		return total;
 	}
 };

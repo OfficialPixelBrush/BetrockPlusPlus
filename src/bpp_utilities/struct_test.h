@@ -15,7 +15,7 @@
 #include "world/generator/overworld/chunk_gen.h"
 
 void PrintStructSizes() {
-	GlobalLogger().debug << "Chunk: " << sizeof(Chunk) << " Bytes (+ " << sizeof(SubChunk) << " per allocated sub-chunk)\n";
+	GlobalLogger().debug << "Chunk: " << sizeof(Chunk) << " Bytes (+ " << sizeof(SubChunk) << " per allocated sub-chunk, plus 0-" << SubChunk::VOLUME << " of block palette data)\n";
 	GlobalLogger().debug << "RegionManager: " << sizeof(RegionManager) << " Bytes\n";
 	GlobalLogger().debug << "Region: " << sizeof(Region) << " Bytes\n";
 	GlobalLogger().debug << "Entity: " << sizeof(Entity) << " Bytes\n";

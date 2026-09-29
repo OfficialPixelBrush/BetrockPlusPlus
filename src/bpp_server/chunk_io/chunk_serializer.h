@@ -54,7 +54,7 @@ inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _x
 						const int idx = SubChunk::LocalIndex({ x, y, z });
 						const uint8_t light = sub->light[idx];
 						const uint8_t metaByte = sub->nibbleBlockMeta[idx >> 1];
-						blockData[i] = uint8_t(sub->blocks[idx]);
+						blockData[i] = uint8_t(sub->blocks.Get(size_t(idx)));
 						packNibble(metaData[i >> 1], (idx & 1) ? Chunk::GetNibbleHigh(metaByte) : Chunk::GetNibbleLow(metaByte), i & 1);
 						packNibble(blockLight[i >> 1], Chunk::GetNibbleLow(light), i & 1);
 						packNibble(skyLight[i >> 1], Chunk::GetNibbleHigh(light), i & 1);

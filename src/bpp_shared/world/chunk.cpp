@@ -97,7 +97,7 @@ SubChunk& Chunk::CreateSubChunk(int _index) {
 		const CompactSubChunk& fill = compactSubChunks[size_t(_index)];
 
 		if (fill.type != BLOCK_AIR)
-			std::fill(std::begin(slot->blocks), std::end(slot->blocks), fill.type);
+			slot->blocks.Fill(fill.type);
 		if (fill.skyLight != 0)
 			slot->FillSkyLight(fill.skyLight);
 		if (fill.blockLight != 0)
@@ -108,15 +108,20 @@ SubChunk& Chunk::CreateSubChunk(int _index) {
 }
 
 bool Chunk::TryToCompactSubChunk(int _index) {
-	const SubChunk* sub = subChunks[size_t(_index)].get();
+	SubChunk* sub = subChunks[size_t(_index)].get();
 	if (!sub)
 		return false;
 
-	// Bail out on the first mismatch. Most slabs are mixed, so this usually exits within a few voxels
-	const BlockType firstBlock = sub->blocks[0];
+	// Shrink the palette first, this is where the memory comes back even when the slab stays allocated.
+	// It also makes IsUniform() exact, so no per block comparison is needed below.
+	sub->blocks.Repack();
+	if (!sub->blocks.IsUniform())
+		return false;
+
+	// Bail out on the first mismatch, a lit slab that isn't uniform exits within a few voxels
 	const uint8_t firstLight = sub->light[0];
 	for (int i = 1; i < SubChunk::VOLUME; i++) {
-		if (sub->blocks[i] != firstBlock || sub->light[i] != firstLight)
+		if (sub->light[i] != firstLight)
 			return false;
 	}
 
@@ -126,7 +131,7 @@ bool Chunk::TryToCompactSubChunk(int _index) {
 	}
 
 	CompactSubChunk& fill = compactSubChunks[size_t(_index)];
-	fill.type = firstBlock;
+	fill.type = sub->blocks.UniformType();
 	fill.skyLight = firstLight >> 4;
 	fill.blockLight = firstLight & 0xF;
 	subChunks[size_t(_index)].reset();
