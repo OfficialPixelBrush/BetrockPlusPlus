@@ -360,6 +360,8 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 				}
 			}
 		}
+		if ((y & (SUB_CHUNK_SIZE - 1)) == SUB_CHUNK_SIZE - 1)
+			chunk->CompactSubChunk(y / SUB_CHUNK_SIZE);
 	}
 
 	// Load our entities
