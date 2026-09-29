@@ -47,7 +47,7 @@ void Chunk::GenerateSkylightMap() {
 		if (subChunks[size_t(i)])
 			subChunks[size_t(i)]->FillSkyLight(15);
 		else
-			subChunkFill[size_t(i)].skyLight = 15;
+			compactSubChunks[size_t(i)].skyLight = 15;
 	}
 
 	for (int x = 0; x < CHUNK_WIDTH; x++) {
@@ -82,18 +82,19 @@ void Chunk::Clear() {
 	climateBaked = false;
 	for (auto& sub : subChunks)
 		sub.reset();
-	subChunkFill.fill(SubChunkFill{});
+	compactSubChunks.fill(CompactSubChunk{});
 	std::memset(heightMap, 0, sizeof(heightMap));
 	std::memset(temperature, 0, sizeof(temperature));
 	std::memset(humidity, 0, sizeof(humidity));
 }
 
 SubChunk& Chunk::CreateSubChunk(int _index) {
+	assert(_index >= 0 && _index < SUB_CHUNK_COUNT);
 	auto& slot = subChunks[size_t(_index)];
 
 	if (!slot) {
 		slot = std::make_unique<SubChunk>();
-		const SubChunkFill& fill = subChunkFill[size_t(_index)];
+		const CompactSubChunk& fill = compactSubChunks[size_t(_index)];
 
 		if (fill.type != BLOCK_AIR)
 			std::fill(std::begin(slot->blocks), std::end(slot->blocks), fill.type);
@@ -106,7 +107,7 @@ SubChunk& Chunk::CreateSubChunk(int _index) {
 	return *slot;
 }
 
-bool Chunk::CompactSubChunk(int _index) {
+bool Chunk::TryToCompactSubChunk(int _index) {
 	const SubChunk* sub = subChunks[size_t(_index)].get();
 	if (!sub)
 		return false;
@@ -124,7 +125,7 @@ bool Chunk::CompactSubChunk(int _index) {
 			return false;
 	}
 
-	SubChunkFill& fill = subChunkFill[size_t(_index)];
+	CompactSubChunk& fill = compactSubChunks[size_t(_index)];
 	fill.type = firstBlock;
 	fill.skyLight = firstLight >> 4;
 	fill.blockLight = firstLight & 0xF;
@@ -134,7 +135,7 @@ bool Chunk::CompactSubChunk(int _index) {
 
 void Chunk::Compact() {
 	for (int i = 0; i < SUB_CHUNK_COUNT; i++)
-		CompactSubChunk(i);
+		TryToCompactSubChunk(i);
 }
 
 void Chunk::CopyStorageFrom(const Chunk& _other) {
@@ -144,5 +145,5 @@ void Chunk::CopyStorageFrom(const Chunk& _other) {
 		else
 			subChunks[i].reset();
 	}
-	subChunkFill = _other.subChunkFill;
+	compactSubChunks = _other.compactSubChunks;
 }
