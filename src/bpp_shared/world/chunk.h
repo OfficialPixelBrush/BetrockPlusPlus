@@ -72,6 +72,8 @@ struct Chunk {
 	// Block, light and metadata storage, bottom to top. A slot is null until it needs to hold data
 	std::array<std::unique_ptr<SubChunk>, SUB_CHUNK_COUNT> subChunks;
 	std::array<uint8_t, SUB_CHUNK_COUNT> emptySkyLight = {};
+	// What block the sub-chunk is filled with. Defaults to air.
+	std::array<BlockType, SUB_CHUNK_COUNT> subChunkFill = {};
 
 	std::atomic<ChunkState> state{ ChunkState::Unloaded };
 	uint8_t heightMap[CHUNK_AREA] = {};
@@ -124,7 +126,7 @@ struct Chunk {
 	}
 	inline BlockType GetBlock(Int3 _pos) const {
 		const SubChunk* sub = GetSubChunk(_pos.y);
-		return sub ? sub->blocks[SubChunk::LocalIndex(_pos)] : BLOCK_AIR;
+		return sub ? sub->blocks[SubChunk::LocalIndex(_pos)] : subChunkFill[size_t(_pos.y >> 4)];
 	}
 	// Doesn't flag as modified
 	inline void SetBlockRaw(Int3 _pos, BlockType _id) {
