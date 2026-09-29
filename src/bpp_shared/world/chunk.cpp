@@ -47,7 +47,7 @@ void Chunk::GenerateSkylightMap() {
 		if (subChunks[size_t(i)])
 			subChunks[size_t(i)]->FillSkyLight(15);
 		else
-			subChunkFillLight[size_t(i)].skyLight = 15;
+			subChunkFill[size_t(i)].skyLight = 15;
 	}
 
 	for (int x = 0; x < CHUNK_WIDTH; x++) {
@@ -82,8 +82,7 @@ void Chunk::Clear() {
 	climateBaked = false;
 	for (auto& sub : subChunks)
 		sub.reset();
-	subChunkFillBlock.fill(BLOCK_AIR);
-	subChunkFillLight.fill(CombinedLight{});
+	subChunkFill.fill(SubChunkFill{});
 	std::memset(heightMap, 0, sizeof(heightMap));
 	std::memset(temperature, 0, sizeof(temperature));
 	std::memset(humidity, 0, sizeof(humidity));
@@ -94,18 +93,14 @@ SubChunk& Chunk::CreateSubChunk(int _index) {
 
 	if (!slot) {
 		slot = std::make_unique<SubChunk>();
+		const SubChunkFill& fill = subChunkFill[size_t(_index)];
 
-		if (subChunkFillBlock[size_t(_index)] != BLOCK_AIR)
-			std::fill(
-				std::begin(slot->blocks),
-				std::end(slot->blocks),
-				subChunkFillBlock[size_t(_index)]
-			);
-
-		if (subChunkFillLight[size_t(_index)].skyLight != 0)
-			slot->FillSkyLight(subChunkFillLight[size_t(_index)].skyLight);
-		if (subChunkFillLight[size_t(_index)].blockLight != 0)
-    		slot->FillBlockLight(subChunkFillLight[size_t(_index)].blockLight);
+		if (fill.type != BLOCK_AIR)
+			std::fill(std::begin(slot->blocks), std::end(slot->blocks), fill.type);
+		if (fill.skyLight != 0)
+			slot->FillSkyLight(fill.skyLight);
+		if (fill.blockLight != 0)
+			slot->FillBlockLight(fill.blockLight);
 	}
 
 	return *slot;
@@ -115,16 +110,12 @@ bool Chunk::CompactSubChunk(int _index) {
 	const SubChunk* sub = subChunks[size_t(_index)].get();
 	if (!sub)
 		return false;
-	bool allMatchingBlock = true;
-	const BlockType previousBlock = sub->blocks[0];
 
-	const uint8_t light = uint8_t(sub->lightNibble[0]);
-	for (int i = 0; i < SubChunk::VOLUME; i++) {
-		if (sub->blocks[i] != previousBlock)
-			allMatchingBlock = false;
-
-		// Block and sky light must match everywhere
-		if (sub->lightNibble[i] != light)
+	// Bail out on the first mismatch. Most slabs are mixed, so this usually exits within a few voxels
+	const BlockType firstBlock = sub->blocks[0];
+	const uint8_t firstLight = sub->light[0];
+	for (int i = 1; i < SubChunk::VOLUME; i++) {
+		if (sub->blocks[i] != firstBlock || sub->light[i] != firstLight)
 			return false;
 	}
 
@@ -133,12 +124,10 @@ bool Chunk::CompactSubChunk(int _index) {
 			return false;
 	}
 
-	if (!allMatchingBlock)
-		return false;
-
-	subChunkFillBlock[size_t(_index)] = previousBlock;
-	subChunkFillLight[size_t(_index)].skyLight = light >> 4;
-	subChunkFillLight[size_t(_index)].blockLight = light & 0xF;
+	SubChunkFill& fill = subChunkFill[size_t(_index)];
+	fill.type = firstBlock;
+	fill.skyLight = firstLight >> 4;
+	fill.blockLight = firstLight & 0xF;
 	subChunks[size_t(_index)].reset();
 	return true;
 }
@@ -155,6 +144,5 @@ void Chunk::CopyStorageFrom(const Chunk& _other) {
 		else
 			subChunks[i].reset();
 	}
-	subChunkFillLight = _other.subChunkFillLight;
-	subChunkFillBlock = _other.subChunkFillBlock;
+	subChunkFill = _other.subChunkFill;
 }

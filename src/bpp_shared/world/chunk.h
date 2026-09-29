@@ -15,6 +15,7 @@
 #include "nbt/nbt.h"
 #include "tile_entities/tile_entity.h"
 #include <array>
+#include <cassert>
 #include <atomic>
 #include <cstdint>
 #include <cstring>
@@ -39,7 +40,7 @@ struct SubChunk {
 	static constexpr int META_VOLUME = VOLUME / 2;
 
 	BlockType blocks[VOLUME] = { BLOCK_AIR };
-	uint8_t lightNibble[VOLUME] = { 0 };
+	uint8_t light[VOLUME] = { 0 };
 	uint8_t nibbleBlockMeta[META_VOLUME] = { 0 };
 
 	// Takes chunk-relative coordinates, only the low 4 bits of y are used.
@@ -49,28 +50,30 @@ struct SubChunk {
 
 	inline void Clear() {
 		std::memset(blocks, 0, sizeof(blocks));
-		std::memset(lightNibble, 0, sizeof(lightNibble));
+		std::memset(light, 0, sizeof(light));
 		std::memset(nibbleBlockMeta, 0, sizeof(nibbleBlockMeta));
 	}
 
 	// Sets the sky light (high nibble) of every block
 	inline void FillSkyLight(uint8_t _val) {
 		const uint8_t hi = uint8_t((_val & 0x0Fu) << 4);
-		for (uint8_t& b : lightNibble)
+		for (uint8_t& b : light)
 			b = uint8_t((b & 0x0Fu) | hi);
 	}
 
 	// Sets the block light (low nibble) of every block
 	inline void FillBlockLight(uint8_t _val) {
 		const uint8_t lo = uint8_t(_val & 0x0Fu);
-		for (uint8_t& b : lightNibble)
+		for (uint8_t& b : light)
 			b = uint8_t((b & 0xF0u) | lo);
 	}
 };
 
-struct CombinedLight {
+// The values an empty subchunk defaults to in its compact form
+struct SubChunkFill {
+	BlockType type = BLOCK_AIR;
 	uint8_t blockLight : 4 = 0;
-	uint8_t skyLight : 4 = 0;
+	uint8_t skyLight : 4 = 15;
 };
 
 struct Chunk {
@@ -83,9 +86,8 @@ struct Chunk {
 
 	// Block, light and metadata storage, bottom to top. A slot is null until it needs to hold data
 	std::array<std::unique_ptr<SubChunk>, SUB_CHUNK_COUNT> subChunks;
-	std::array<CombinedLight, SUB_CHUNK_COUNT> subChunkFillLight = {};
-	// What block the sub-chunk is filled with. Defaults to air.
-	std::array<BlockType, SUB_CHUNK_COUNT> subChunkFillBlock = {};
+	// What a null slot reads as (block, block light, sky light). Defaults to air, no block light, full sky light.
+	std::array<SubChunkFill, SUB_CHUNK_COUNT> subChunkFill = {};
 
 	std::atomic<ChunkState> state{ ChunkState::Unloaded };
 	uint8_t heightMap[CHUNK_AREA] = {};
@@ -107,21 +109,23 @@ struct Chunk {
 
 	// Sub-chunk containing chunk-relative height _y, or nullptr if it isn't allocated
 	inline SubChunk* GetSubChunk(int _y) {
+		assert(_y >= 0 && _y < CHUNK_HEIGHT);
 		return subChunks[size_t(_y >> 4)].get();
 	}
 	inline const SubChunk* GetSubChunk(int _y) const {
+		assert(_y >= 0 && _y < CHUNK_HEIGHT);
 		return subChunks[size_t(_y >> 4)].get();
 	}
 	// Allocates slot _index (if needed) holding what a null slot reads as
 	SubChunk& CreateSubChunk(int _index);
 
-	inline uint8_t SetNibble(uint8_t _hi, uint8_t _lo) const {
+	static inline uint8_t SetNibble(uint8_t _hi, uint8_t _lo) {
 		return uint8_t(((_hi & 0x0Fu) << 4) | (_lo & 0x0Fu));
 	}
-	inline uint8_t GetNibbleLow(uint8_t _byte) const {
+	static inline uint8_t GetNibbleLow(uint8_t _byte) {
 		return _byte & 0x0Fu;
 	}
-	inline uint8_t GetNibbleHigh(uint8_t _byte) const {
+	static inline uint8_t GetNibbleHigh(uint8_t _byte) {
 		return (_byte >> 4) & 0x0Fu;
 	}
 	inline float GetTemperature(Int2 _pos) const {
@@ -138,14 +142,14 @@ struct Chunk {
 	}
 	inline BlockType GetBlock(Int3 _pos) const {
 		const SubChunk* sub = GetSubChunk(_pos.y);
-		return sub ? sub->blocks[SubChunk::LocalIndex(_pos)] : subChunkFillBlock[size_t(_pos.y >> 4)];
+		return sub ? sub->blocks[SubChunk::LocalIndex(_pos)] : subChunkFill[size_t(_pos.y >> 4)].type;
 	}
 	// Doesn't flag as modified
 	inline void SetBlockRaw(Int3 _pos, BlockType _id) {
 		SubChunk* sub = GetSubChunk(_pos.y);
 		if (!sub) {
-			if (_id == BLOCK_AIR)
-				return; // Writing air into nothing, nothing to do
+			if (_id == subChunkFill[size_t(_pos.y >> 4)].type)
+				return; // Writing what the empty slot already reads as, nothing to do
 			sub = &CreateSubChunk(_pos.y >> 4);
 		}
 		sub->blocks[SubChunk::LocalIndex(_pos)] = _id;
@@ -177,21 +181,21 @@ struct Chunk {
 	}
 	inline uint8_t GetBlockLight(Int3 _pos) const {
 		const SubChunk* sub = GetSubChunk(_pos.y);
-		return sub ? GetNibbleLow(sub->lightNibble[SubChunk::LocalIndex(_pos)]) : subChunkFillLight[size_t(_pos.y >> 4)].blockLight;
+		return sub ? GetNibbleLow(sub->light[SubChunk::LocalIndex(_pos)]) : subChunkFill[size_t(_pos.y >> 4)].blockLight;
 	}
 	inline uint8_t GetSkyLight(Int3 _pos) const {
 		const SubChunk* sub = GetSubChunk(_pos.y);
-		return sub ? GetNibbleHigh(sub->lightNibble[SubChunk::LocalIndex(_pos)]) : subChunkFillLight[size_t(_pos.y >> 4)].skyLight;
+		return sub ? GetNibbleHigh(sub->light[SubChunk::LocalIndex(_pos)]) : subChunkFill[size_t(_pos.y >> 4)].skyLight;
 	}
 	inline void SetBlockLight(Int3 _pos, uint8_t _val) {
 		SubChunk* sub = GetSubChunk(_pos.y);
 		if (!sub) {
 			isModified = true;
-			if ((_val & 0x0Fu) == 0)
+			if ((_val & 0x0Fu) == subChunkFill[size_t(_pos.y >> 4)].blockLight)
 				return;
 			sub = &CreateSubChunk(_pos.y >> 4);
 		}
-		uint8_t& byte = sub->lightNibble[SubChunk::LocalIndex(_pos)];
+		uint8_t& byte = sub->light[SubChunk::LocalIndex(_pos)];
 		byte = SetNibble(GetNibbleHigh(byte), _val);
 		isModified = true;
 	}
@@ -199,11 +203,11 @@ struct Chunk {
 		SubChunk* sub = GetSubChunk(_pos.y);
 		if (!sub) {
 			isModified = true;
-			if ((_val & 0x0Fu) == subChunkFillLight[size_t(_pos.y >> 4)].skyLight)
+			if ((_val & 0x0Fu) == subChunkFill[size_t(_pos.y >> 4)].skyLight)
 				return;
 			sub = &CreateSubChunk(_pos.y >> 4);
 		}
-		uint8_t& byte = sub->lightNibble[SubChunk::LocalIndex(_pos)];
+		uint8_t& byte = sub->light[SubChunk::LocalIndex(_pos)];
 		byte = SetNibble(_val, GetNibbleLow(byte));
 		isModified = true;
 	}
