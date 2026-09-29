@@ -107,14 +107,17 @@ struct Chunk {
 	// Used for loading entities into the world from disk
 	std::vector<Tag> entityTags;
 
-	// Sub-chunk containing chunk-relative height _y, or nullptr if it isn't allocated
+	// Normal subchunk return
 	inline SubChunk* GetSubChunk(int _y) {
-		assert(_y >= 0 && _y < CHUNK_HEIGHT);
-		return subChunks[size_t(_y >> 4)].get();
+		if (_y >= 0 && _y < CHUNK_HEIGHT)
+			return subChunks[size_t(_y >> 4)].get();
+		return nullptr;
 	}
+	// Const subchunk return
 	inline const SubChunk* GetSubChunk(int _y) const {
-		assert(_y >= 0 && _y < CHUNK_HEIGHT);
-		return subChunks[size_t(_y >> 4)].get();
+		if (_y >= 0 && _y < CHUNK_HEIGHT)
+			return subChunks[size_t(_y >> 4)].get();
+		return nullptr;
 	}
 	// Allocates slot _index (if needed) holding what a null slot reads as
 	SubChunk& CreateSubChunk(int _index);
