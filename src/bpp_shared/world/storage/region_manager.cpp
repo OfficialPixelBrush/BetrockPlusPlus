@@ -131,8 +131,6 @@ void RegionManager::SaveChunk(const std::shared_ptr<Chunk> _chunk, bool _unloadE
 	std::memcpy(snapshot->lightNibble, _chunk->lightNibble, sizeof(_chunk->lightNibble));
 	std::memcpy(snapshot->nibbleBlockMeta, _chunk->nibbleBlockMeta, sizeof(_chunk->nibbleBlockMeta));
 	std::memcpy(snapshot->heightMap, _chunk->heightMap, sizeof(_chunk->heightMap));
-	std::memcpy(snapshot->temperature, _chunk->temperature, sizeof(_chunk->temperature));
-	std::memcpy(snapshot->humidity, _chunk->humidity, sizeof(_chunk->humidity));
 	snapshot->tileEntities = _chunk->tileEntities;
 
 	// Entities are wrapped in a shared_ptr<const vector>

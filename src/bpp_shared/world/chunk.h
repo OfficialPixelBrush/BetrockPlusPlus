@@ -8,15 +8,16 @@
 
 #pragma once
 #include "blocks/block_properties.h"
+#include "chunk_biome.h"
 #include "constants.h"
 #include "enums/biomes.h"
 #include "helpers/cross_platform.h"
-#include "helpers/packed_array.h"
 #include "nbt/nbt.h"
 #include "tile_entities/tile_entity.h"
 #include <atomic>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <numeric_structs.h>
 
 enum class ChunkState : uint8_t {
@@ -43,15 +44,16 @@ struct Chunk {
 
 	std::atomic<ChunkState> state{ ChunkState::Unloaded };
 	uint8_t heightMap[CHUNK_AREA] = {};
-	float temperature[CHUNK_AREA] = {};
-	float humidity[CHUNK_AREA] = {};
-	PackedArray<CHUNK_AREA, 4> biomes;
+
+	// Climate data (~2 KB per chunk). Allocated lazily, and never for the Nether.
+	// Only read it after climateBaked is true (see WorldManager::EnsureClimate).
+	std::unique_ptr<ChunkBiome> chunkBiome;
+	std::atomic_bool climateBaked{ false };
 
 	bool isTerrainPopulated : 1 = false;
 	bool isModified : 1 = false;
 	bool spawnChunk : 1 = false;
 	bool refreshLighting : 1 = false;
-	bool climateBaked : 1 = false;
 
 	// Tile entities
 	std::vector<std::shared_ptr<TileEntity>> tileEntities;
@@ -73,10 +75,15 @@ struct Chunk {
 		return (_byte >> 4) & 0x0Fu;
 	}
 	inline float GetTemperature(Int2 _pos) const {
-		return temperature[(_pos.x << 4) | _pos.y];
+		// No climate data (e.g. the Nether) reads as 0, same as the old zeroed arrays
+		if (!chunkBiome)
+			return 0.0f;
+		return chunkBiome->temperature[(_pos.x << 4) | _pos.y];
 	}
 	inline float GetHumidity(Int2 _pos) const {
-		return humidity[(_pos.x << 4) | _pos.y];
+		if (!chunkBiome)
+			return 0.0f;
+		return chunkBiome->humidity[(_pos.x << 4) | _pos.y];
 	}
 	inline uint8_t GetHeightValue(Int2 _pos) const {
 		return heightMap[(_pos.y << 4) | _pos.x];
@@ -122,6 +129,9 @@ struct Chunk {
 		int sky = CrossPlatform::Math::Max(0, int(GetSkyLight(_pos)) - _skySubtracted);
 		int block = int(GetBlockLight(_pos));
 		return CrossPlatform::Math::Min(15, CrossPlatform::Math::Max(sky, block));
+	}
+	size_t GetSize() {
+		return sizeof(Chunk) + (climateBaked ? sizeof(ChunkBiome) : 0);
 	}
 
 	int GetHighestPoint() const;

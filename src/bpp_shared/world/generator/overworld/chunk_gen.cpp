@@ -50,12 +50,14 @@ void OverworldGenerator::GenerateChunk(Chunk& _chunk) {
 	// Store the final temperature and humidity in the chunk so PopulateChunk
 	// (which runs on a different thread_local OverworldGenerator) can reconstruct the
 	// biome map via GetBiomeFromLookup without re-running the noise generators.
+	_chunk.chunkBiome = std::make_unique<ChunkBiome>();
+	ChunkBiome& climate = *_chunk.chunkBiome;
 	for (size_t i = 0; i < CHUNK_AREA; ++i) {
-		_chunk.temperature[i] = float(temperature[i]);
-		_chunk.humidity[i] = float(humidity[i]);
-		_chunk.biomes.Set(i, biomeMap.Get(i));
+		climate.temperature[i] = float(temperature[i]);
+		climate.humidity[i] = float(humidity[i]);
+		climate.biomes.Set(i, biomeMap.Get(i));
 	}
-	_chunk.climateBaked = true;
+	_chunk.climateBaked.store(true, std::memory_order_release);
 
 	// Generate the Terrain, minus any caves, as just stone
 	GenerateTerrain(_chunk);

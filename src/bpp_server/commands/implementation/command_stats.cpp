@@ -51,16 +51,20 @@ std::string ShowStats(const strategos::CmdNode&, void* _userData) {
 	const auto& players = ctx.server->GetPlayers();
 	const WorldManager& overworld = ctx.server->gameRuntime.world;
 	const WorldManager& nether = ctx.server->gameRuntime.worldHell;
-	const size_t chunksOverworld = overworld.chunks.size();
-	const size_t chunksNether = nether.chunks.size();
-	const double chunksOverworldMb = static_cast<double>(chunksOverworld * sizeof(Chunk)) / 1024.0 / 1024.0;
-	const double chunksNetherMb = static_cast<double>(chunksNether * sizeof(Chunk)) / 1024.0 / 1024.0;
+	double chunksOverworldMb = 0.0;
+	for (auto& c : overworld.chunks)
+		chunksOverworldMb += c.second->GetSize();
+	chunksOverworldMb = chunksOverworldMb / 1024.0 / 1024.0;
+	double chunksNetherMb = 0.0;
+	for (auto& c : nether.chunks)
+		chunksNetherMb += c.second->GetSize();
+	chunksNetherMb = chunksNetherMb / 1024.0 / 1024.0;
 	const double totalUsageMb = GetMemoryUsage(MemoryUnit::Megabyte);
 	const double activeUsageMb = GetActiveMemoryUsage(MemoryUnit::Megabyte);
 	const std::array<std::string, 5> lines = {
 		std::format("§7Alloc: {}", GenerateUsageBar(totalUsageMb, activeUsageMb, chunksOverworldMb, chunksNetherMb)),
 		std::format("§7Total: {:.2f} MB, Active: {:.2f} MB", totalUsageMb, activeUsageMb),
-		std::format("§7World: {} (~{:.1f} MB), Hell: {} (~{:.1f} MB)", chunksOverworld, chunksOverworldMb, chunksNether,
+		std::format("§7World: {} (~{:.1f} MB), Hell: {} (~{:.1f} MB)", overworld.chunks.size(), chunksOverworldMb, nether.chunks.size(),
 		            chunksNetherMb),
 		std::format("§7{} Players, {} Entities, {} Hell Entities", players.size(),
 		            ctx.server->overworldEntityTracker.trackedEntities.size(),

@@ -18,6 +18,8 @@
 #include "redstone_manager.h"
 #include "world_wrapper.h"
 #include <limits>
+#include <memory>
+#include <mutex>
 #include <unordered_set>
 
 BiomeGenerator WorldManager::biomeGenerator;
@@ -29,15 +31,23 @@ Biome WorldManager::GetBiome(Int2 _wpos) {
 	if (!chunk || chunk->state.load() < ChunkState::Generated)
 		return biomeGenerator.GetBiomeAtPoint(_wpos);
 	EnsureClimate(*chunk);
+	if (!chunk->chunkBiome)
+		return biomeGenerator.GetBiomeAtPoint(_wpos);
 
 	const int32_t localX = _wpos.x & 15;
 	const int32_t localZ = _wpos.z & 15;
-	return static_cast<Biome>(chunk->biomes.Get(localX * CHUNK_WIDTH + localZ));
+	return static_cast<Biome>(chunk->chunkBiome->biomes.Get(localX * CHUNK_WIDTH + localZ));
 }
 
 void WorldManager::EnsureClimate(Chunk& _chunk) {
 	// The Nether has no climate
-	if (isHell || _chunk.climateBaked)
+	if (isHell || _chunk.climateBaked.load(std::memory_order_acquire))
+		return;
+
+	// Several threads can ask for the same chunk's climate; only one may allocate it.
+	static std::mutex climateMutex;
+	std::lock_guard lock(climateMutex);
+	if (_chunk.climateBaked.load(std::memory_order_relaxed))
 		return;
 
 	thread_local BiomeGenerator tlBiomeGen(0);
@@ -49,13 +59,15 @@ void WorldManager::EnsureClimate(Chunk& _chunk) {
 	thread_local double temp[CHUNK_AREA];
 	thread_local double humi[CHUNK_AREA];
 	thread_local double weird[CHUNK_AREA];
-	tlBiomeGen.GenerateBiomeMap(_chunk.biomes, temp, humi, weird,
+	auto climate = std::make_unique<ChunkBiome>();
+	tlBiomeGen.GenerateBiomeMap(climate->biomes, temp, humi, weird,
 	                            Int2{ _chunk.cpos.x * CHUNK_WIDTH, _chunk.cpos.z * CHUNK_WIDTH });
 	for (int i = 0; i < CHUNK_AREA; ++i) {
-		_chunk.temperature[i] = float(temp[i]);
-		_chunk.humidity[i] = float(humi[i]);
+		climate->temperature[i] = float(temp[i]);
+		climate->humidity[i] = float(humi[i]);
 	}
-	_chunk.climateBaked = true;
+	_chunk.chunkBiome = std::move(climate);
+	_chunk.climateBaked.store(true, std::memory_order_release);
 }
 
 int WorldManager::GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {

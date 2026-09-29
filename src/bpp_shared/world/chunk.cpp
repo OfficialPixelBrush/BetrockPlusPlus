@@ -66,11 +66,10 @@ void Chunk::RelightColumn(Int2 _pos) {
 void Chunk::Clear() {
 	isTerrainPopulated = false;
 	isModified = false;
-	climateBaked = false;
+	climateBaked.store(false, std::memory_order_relaxed);
+	chunkBiome.reset();
 	std::memset(blocks, 0, sizeof(blocks));
 	std::memset(lightNibble, 0, sizeof(lightNibble));
 	std::memset(nibbleBlockMeta, 0, sizeof(nibbleBlockMeta));
 	std::memset(heightMap, 0, sizeof(heightMap));
-	std::memset(temperature, 0, sizeof(temperature));
-	std::memset(humidity, 0, sizeof(humidity));
 }
