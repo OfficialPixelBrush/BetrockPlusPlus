@@ -492,9 +492,9 @@ void Server::Run() {
 		++avgTickCount;
 
 		// NOTE: Currently unused, doesn't really do anything meaningful.
-		// Trim excess every 30 seconds
+		// Trim excess every 5 minutes
 		/*
-		if (ticks % (TICKS_PER_SECOND * 30) == 0) {
+		if (ticks % (TICKS_PER_SECOND * 60 * 5) == 0) {
 			TrimMemory();
 			GlobalLogger().debug << "Trimmed!\n";
 		}
