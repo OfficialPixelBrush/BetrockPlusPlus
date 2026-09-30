@@ -41,13 +41,13 @@ Biome WorldManager::GetBiome(Int2 _wpos) {
 
 void WorldManager::EnsureClimate(Chunk& _chunk) {
 	// The Nether has no climate
-	if (isHell || _chunk.climateBaked.load(std::memory_order_acquire))
+	if (isHell || _chunk.climateBaked)
 		return;
 
 	// Several threads can ask for the same chunk's climate; only one may allocate it.
 	static std::mutex climateMutex;
 	std::lock_guard lock(climateMutex);
-	if (_chunk.climateBaked.load(std::memory_order_relaxed))
+	if (_chunk.climateBaked)
 		return;
 
 	thread_local BiomeGenerator tlBiomeGen(0);
@@ -67,7 +67,7 @@ void WorldManager::EnsureClimate(Chunk& _chunk) {
 		climate->humidity[i] = float(humi[i]);
 	}
 	_chunk.chunkClimate = std::move(climate);
-	_chunk.climateBaked.store(true, std::memory_order_release);
+	_chunk.climateBaked = true;
 }
 
 int WorldManager::GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {

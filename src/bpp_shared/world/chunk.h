@@ -228,12 +228,12 @@ struct Chunk {
 
 	// Climate data, allocated lazily
 	std::unique_ptr<ChunkClimate> chunkClimate;
-	std::atomic_bool climateBaked{ false };
 
 	bool isTerrainPopulated : 1 = false;
 	bool isModified : 1 = false;
 	bool spawnChunk : 1 = false;
 	bool refreshLighting : 1 = false;
+	bool climateBaked : 1 = false;
 
 	// Tile entities
 	std::vector<std::shared_ptr<TileEntity>> tileEntities;
