@@ -17,6 +17,7 @@
 void PrintStructSizes() {
 	GlobalLogger().debug << "Chunk: " << sizeof(Chunk) << " Bytes (includes " << SUB_CHUNK_COUNT << " x " << sizeof(SubChunk) << " Byte sub-chunk headers)\n";
 	GlobalLogger().debug << "SubChunk layers, allocated independently: Blocks " << sizeof(SubChunk::BlockLayer) << " Bytes, Meta/BlockLight/SkyLight " << sizeof(SubChunk::NibbleLayer) << " Bytes each\n";
+	GlobalLogger().debug << "ChunkBiome: " << sizeof(ChunkBiome) << " Bytes (Temp/Humi: " << sizeof(ChunkBiome::temperature) << " Bytes x2, Biomes: " << sizeof(ChunkBiome::biomes) << " Bytes)\n";
 	GlobalLogger().debug << "RegionManager: " << sizeof(RegionManager) << " Bytes\n";
 	GlobalLogger().debug << "Region: " << sizeof(Region) << " Bytes\n";
 	GlobalLogger().debug << "Entity: " << sizeof(Entity) << " Bytes\n";

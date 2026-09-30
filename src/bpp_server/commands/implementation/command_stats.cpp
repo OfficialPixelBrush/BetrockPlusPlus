@@ -59,15 +59,6 @@ std::string ShowStats(const strategos::CmdNode&, void* _userData) {
 		}
 		return bytes;
 	};
-
-	auto biomeChunks = [](const auto& _chunks) {
-		size_t subChunks = 0;
-		for (const auto& entry : _chunks) {
-			if (entry.second)
-				subChunks += entry.second->GetMemoryUsage();
-		}
-		return subChunks;
-	};
 	const double chunksOverworldMb = static_cast<double>(sumChunkBytes(overworld.chunks)) / 1024.0 / 1024.0;
 	const double chunksNetherMb = static_cast<double>(sumChunkBytes(nether.chunks)) / 1024.0 / 1024.0;
 	const double totalUsageMb = GetMemoryUsage(MemoryUnit::Megabyte);
