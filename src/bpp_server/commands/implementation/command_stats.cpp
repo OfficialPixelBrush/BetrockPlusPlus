@@ -51,8 +51,6 @@ std::string ShowStats(const strategos::CmdNode&, void* _userData) {
 	const auto& players = ctx.server->GetPlayers();
 	const WorldManager& overworld = ctx.server->gameRuntime.world;
 	const WorldManager& nether = ctx.server->gameRuntime.worldHell;
-	const size_t chunksOverworld = overworld.chunks.size();
-	const size_t chunksNether = nether.chunks.size();
 	auto sumChunkBytes = [](const auto& _chunks) {
 		size_t bytes = 0;
 		for (const auto& entry : _chunks) {
@@ -60,6 +58,15 @@ std::string ShowStats(const strategos::CmdNode&, void* _userData) {
 				bytes += entry.second->GetMemoryUsage();
 		}
 		return bytes;
+	};
+
+	auto biomeChunks = [](const auto& _chunks) {
+		size_t subChunks = 0;
+		for (const auto& entry : _chunks) {
+			if (entry.second)
+				subChunks += entry.second->GetMemoryUsage();
+		}
+		return subChunks;
 	};
 	const double chunksOverworldMb = static_cast<double>(sumChunkBytes(overworld.chunks)) / 1024.0 / 1024.0;
 	const double chunksNetherMb = static_cast<double>(sumChunkBytes(nether.chunks)) / 1024.0 / 1024.0;
