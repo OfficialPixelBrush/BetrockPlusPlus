@@ -236,6 +236,17 @@ void RegisterAll() {
 		_stack->DecrementCount(1);
 	};
 
+	// Happy 23rd Birthday to me! (Pixel Brush)
+	itemBehavior[CAKE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/,
+	                                        Direction::Value _face) {
+		Int3 placePos = _pos.WithOffset(_face);
+		if (!Blocks::CanCakeSurviveAt(_world, placePos))
+			return;
+
+		_world.SetBlock(placePos, BLOCK_CAKE);
+		_stack->DecrementCount(1);
+	};
+
 	itemBehavior[SEEDS_WHEAT].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/,
 	                                          Direction::Value _face) {
 		Int3 placePos = _pos.WithOffset(_face);

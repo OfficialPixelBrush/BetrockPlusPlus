@@ -120,6 +120,8 @@ EntityHealth GetRegenerationAmount(const ItemId _id) {
 		return 10;
 	case Items::Id::COOKIE:
 		return 1;
+	case BLOCK_CAKE:
+		return 3;
 	default:
 		return 0;
 	}
