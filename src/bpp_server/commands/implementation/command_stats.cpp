@@ -51,6 +51,8 @@ std::string ShowStats(const strategos::CmdNode&, void* _userData) {
 	const auto& players = ctx.server->GetPlayers();
 	const WorldManager& overworld = ctx.server->gameRuntime.world;
 	const WorldManager& nether = ctx.server->gameRuntime.worldHell;
+	const size_t chunksOverworld = overworld.chunks.size();
+	const size_t chunksNether = nether.chunks.size();
 	auto sumChunkBytes = [](const auto& _chunks) {
 		size_t bytes = 0;
 		for (const auto& entry : _chunks) {
@@ -66,7 +68,7 @@ std::string ShowStats(const strategos::CmdNode&, void* _userData) {
 	const std::array<std::string, 5> lines = {
 		std::format("§7Alloc: {}", GenerateUsageBar(totalUsageMb, activeUsageMb, chunksOverworldMb, chunksNetherMb)),
 		std::format("§7Total: {:.2f} MB, Active: {:.2f} MB", totalUsageMb, activeUsageMb),
-		std::format("§7World: {} (~{:.1f} MB), Hell: {} (~{:.1f} MB)", overworld.chunks.size(), chunksOverworldMb, nether.chunks.size(),
+		std::format("§7World: {} (~{:.1f} MB), Hell: {} (~{:.1f} MB)", chunksOverworld, chunksOverworldMb, chunksNether,
 		            chunksNetherMb),
 		std::format("§7{} Players, {} Entities, {} Hell Entities", players.size(),
 		            ctx.server->overworldEntityTracker.trackedEntities.size(),
