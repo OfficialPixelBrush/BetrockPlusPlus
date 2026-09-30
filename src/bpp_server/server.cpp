@@ -16,6 +16,7 @@
 #include "trackers/inventory_tracker.h"
 #include "world.h"
 #include <future>
+#include "helpers/hardware.h"
 #include <string>
 #include <thread>
 
@@ -489,6 +490,15 @@ void Server::Run() {
 		// Sample and print average Tick data
 		avgTotalTickDuration += (tickEnd - tickStart);
 		++avgTickCount;
+
+		// NOTE: Currently unused, doesn't really do anything meaningful.
+		// Trim excess every 30 seconds
+		/*
+		if (ticks % (TICKS_PER_SECOND * 30) == 0) {
+			TrimMemory();
+			GlobalLogger().debug << "Trimmed!\n";
+		}
+		*/
 
 		if (ticks % (TICKS_PER_SECOND * 2) == 0) {
 			averageTickMs = std::chrono::duration<double, std::milli>(avgTotalTickDuration).count() /
