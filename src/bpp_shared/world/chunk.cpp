@@ -80,9 +80,9 @@ void Chunk::Clear() {
 	for (auto& sub : subChunks)
 		sub.Reset();
 	std::memset(heightMap, 0, sizeof(heightMap));
-	if (!chunkBiome)
+	if (!chunkClimate)
 		return;
-    chunkBiome.reset();
+    chunkClimate.reset();
 }
 
 namespace {

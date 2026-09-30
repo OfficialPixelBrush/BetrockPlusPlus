@@ -8,7 +8,7 @@
 
 #pragma once
 #include "blocks/block_properties.h"
-#include "chunk_biome.h"
+#include "chunk_climate.h"
 #include "constants.h"
 #include "enums/biomes.h"
 #include "helpers/cross_platform.h"
@@ -226,9 +226,8 @@ struct Chunk {
 	std::atomic<ChunkState> state{ ChunkState::Unloaded };
 	uint8_t heightMap[CHUNK_AREA] = {};
 
-	// Climate data (~2 KB per chunk). Allocated lazily, and never for the Nether.
-	// Only read it after climateBaked is true (see WorldManager::EnsureClimate).
-	std::unique_ptr<ChunkBiome> chunkBiome;
+	// Climate data, allocated lazily
+	std::unique_ptr<ChunkClimate> chunkClimate;
 	std::atomic_bool climateBaked{ false };
 
 	bool isTerrainPopulated : 1 = false;
@@ -269,15 +268,14 @@ struct Chunk {
 		return (_byte >> 4) & 0x0Fu;
 	}
 	inline float GetTemperature(Int2 _pos) const {
-		// No climate data (e.g. the Nether) reads as 0, same as the old zeroed arrays
-		if (!chunkBiome)
+		if (!chunkClimate)
 			return 0.0f;
-		return chunkBiome->temperature[(_pos.x << 4) | _pos.y];
+		return chunkClimate->temperature[(_pos.x << 4) | _pos.y];
 	}
 	inline float GetHumidity(Int2 _pos) const {
-		if (!chunkBiome)
+		if (!chunkClimate)
 			return 0.0f;
-		return chunkBiome->humidity[(_pos.x << 4) | _pos.y];
+		return chunkClimate->humidity[(_pos.x << 4) | _pos.y];
 	}
 	inline uint8_t GetHeightValue(Int2 _pos) const {
 		return heightMap[(_pos.y << 4) | _pos.x];
@@ -338,9 +336,6 @@ struct Chunk {
 		int block = int(GetBlockLight(_pos));
 		return CrossPlatform::Math::Min(15, CrossPlatform::Math::Max(sky, block));
 	}
-	size_t GetSize() {
-		return sizeof(Chunk) + (climateBaked ? sizeof(ChunkBiome) : 0);
-	}
 
 	int GetHighestPoint() const;
 	bool CanBlockSeeSky(Int3 _pos) const;
@@ -368,7 +363,7 @@ struct Chunk {
 	// Approximate heap + inline footprint. Prefer this over sizeof(Chunk) now that storage is lazy.
 	inline size_t GetMemoryUsage() const {
 		size_t bytes = sizeof(Chunk);
-		bytes += chunkBiome ? sizeof(ChunkBiome) : 0;
+		bytes += chunkClimate ? sizeof(ChunkClimate) : 0;
 		for (const auto& sub : subChunks)
 			bytes += sub.GetHeapUsage();
 		return bytes;

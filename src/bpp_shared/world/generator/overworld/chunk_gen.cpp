@@ -50,8 +50,8 @@ void OverworldGenerator::GenerateChunk(Chunk& _chunk) {
 	// Store the final temperature and humidity in the chunk so PopulateChunk
 	// (which runs on a different thread_local OverworldGenerator) can reconstruct the
 	// biome map via GetBiomeFromLookup without re-running the noise generators.
-	_chunk.chunkBiome = std::make_unique<ChunkBiome>();
-	ChunkBiome& climate = *_chunk.chunkBiome;
+	_chunk.chunkClimate = std::make_unique<ChunkClimate>();
+	ChunkClimate& climate = *_chunk.chunkClimate;
 	for (size_t i = 0; i < CHUNK_AREA; ++i) {
 		climate.temperature[i] = float(temperature[i]);
 		climate.humidity[i] = float(humidity[i]);

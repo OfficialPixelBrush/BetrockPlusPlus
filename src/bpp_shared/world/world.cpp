@@ -31,12 +31,12 @@ Biome WorldManager::GetBiome(Int2 _wpos) {
 	if (!chunk || chunk->state.load() < ChunkState::Generated)
 		return biomeGenerator.GetBiomeAtPoint(_wpos);
 	EnsureClimate(*chunk);
-	if (!chunk->chunkBiome)
+	if (!chunk->chunkClimate)
 		return biomeGenerator.GetBiomeAtPoint(_wpos);
 
 	const int32_t localX = _wpos.x & 15;
 	const int32_t localZ = _wpos.z & 15;
-	return static_cast<Biome>(chunk->chunkBiome->biomes.Get(localX * CHUNK_WIDTH + localZ));
+	return static_cast<Biome>(chunk->chunkClimate->biomes.Get(localX * CHUNK_WIDTH + localZ));
 }
 
 void WorldManager::EnsureClimate(Chunk& _chunk) {
@@ -59,14 +59,14 @@ void WorldManager::EnsureClimate(Chunk& _chunk) {
 	thread_local double temp[CHUNK_AREA];
 	thread_local double humi[CHUNK_AREA];
 	thread_local double weird[CHUNK_AREA];
-	auto climate = std::make_unique<ChunkBiome>();
+	auto climate = std::make_unique<ChunkClimate>();
 	tlBiomeGen.GenerateBiomeMap(climate->biomes, temp, humi, weird,
 	                            Int2{ _chunk.cpos.x * CHUNK_WIDTH, _chunk.cpos.z * CHUNK_WIDTH });
 	for (int i = 0; i < CHUNK_AREA; ++i) {
 		climate->temperature[i] = float(temp[i]);
 		climate->humidity[i] = float(humi[i]);
 	}
-	_chunk.chunkBiome = std::move(climate);
+	_chunk.chunkClimate = std::move(climate);
 	_chunk.climateBaked.store(true, std::memory_order_release);
 }
 
