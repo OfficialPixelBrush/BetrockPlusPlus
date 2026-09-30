@@ -75,8 +75,6 @@ void TrimMemory() {
 	EmptyWorkingSet(GetCurrentProcess());
 }
 
-void ConfigureAllocator() {}
-
 #elif defined(__APPLE__)
 
 #include <mach/mach.h>
@@ -129,8 +127,6 @@ void TrimMemory() {
 	}
 }
 
-void ConfigureAllocator() {}
-
 #else // Linux / POSIX
 
 #include <features.h>
@@ -180,17 +176,12 @@ void TrimMemory() {
 	malloc_trim(0);
 }
 
-void ConfigureAllocator() {
-	mallopt(M_ARENA_MAX, 2);
-}
-
 #else // non-glibc
 
 double GetActiveMemoryUsage(const MemoryUnit _unit) {
 	return GetMemoryUsage(_unit);
 }
 void TrimMemory() {}
-void ConfigureAllocator() {}
 
 #endif
 #endif
