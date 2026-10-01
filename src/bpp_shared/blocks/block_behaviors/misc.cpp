@@ -14,6 +14,7 @@
 #include "entities/entity_skeleton.h"
 #include "entities/entity_spider.h"
 #include "entities/entity_zombie.h"
+#include "entities/entity_tnt.h"
 #include "enums/items.h"
 #include "generator/overworld/tree_gen.h"
 #include "helpers/direction_fixer.h"
@@ -246,6 +247,41 @@ void RegisterMiscBehaviors() {
 
 	blockBehaviors[BLOCK_STAIRS_COBBLESTONE].onBlockPlaced = onStairPlace;
 	blockBehaviors[BLOCK_STAIRS_WOOD].onBlockPlaced = onStairPlace;
+
+	// Tnt
+	blockBehaviors[BLOCK_TNT].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                        BlockType _blockId) -> void {
+		if (RedstoneManager::CanProvidePower(_blockId) && RedstoneManager::IsPositionPowered(_world, _pos)) {
+			_world.SetBlock(_pos, BLOCK_AIR);
+			
+			Vec3 newPos = { _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 };
+			std::shared_ptr<TntEntity> tnt = std::make_shared<TntEntity>(newPos);
+
+			_world.entityManager.AddEntity(tnt);
+		}
+	};
+
+	blockBehaviors[BLOCK_TNT].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		if (RedstoneManager::IsPositionPowered(_world, _pos)) {
+			_world.SetBlock(_pos, BLOCK_AIR);
+
+			Vec3 newPos = { _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 };
+			std::shared_ptr<TntEntity> tnt = std::make_shared<TntEntity>(newPos);
+
+			_world.entityManager.AddEntity(tnt);
+		}
+	};
+
+	blockBehaviors[BLOCK_TNT].onBlockDestroyedByExplosion = [](WorldManager& _world, Int3 _pos) -> void {
+		_world.SetBlock(_pos, BLOCK_AIR);
+
+		Vec3 newPos = { _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 };
+		std::shared_ptr<TntEntity> tnt = std::make_shared<TntEntity>(newPos);
+
+		tnt->fuse = _world.rand.NextInt(tnt->fuse / 4) + tnt->fuse / 8;
+
+		_world.entityManager.AddEntity(tnt);
+	};
 
 	// Ladder
 	blockBehaviors[BLOCK_LADDER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,

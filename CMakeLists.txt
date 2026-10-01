@@ -158,6 +158,7 @@ set(SHARED_SOURCES
     src/bpp_shared/entities/entity_arrow.cpp
     src/bpp_shared/entities/entity_throwable.cpp
     src/bpp_shared/entities/entity_slime.cpp
+    src/bpp_shared/entities/entity_tnt.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/strings/ucs2.cpp
     src/bpp_shared/strings/labels.cpp
