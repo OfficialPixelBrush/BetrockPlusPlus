@@ -13,7 +13,8 @@
 
 struct EntityBucket {
 	// 16 blocks tall
-	std::vector<std::weak_ptr<Entity>> entities;
+	std::vector<Entity*> entities;
+	std::vector<Entity*> worldCollidableEntities;
 };
 
 struct EntityContainer {
@@ -34,10 +35,13 @@ struct EntityManager {
 	std::function<void(std::shared_ptr<Entity>)> onEntitySpawn;
 	std::function<void(std::shared_ptr<Entity>)> onEntityDespawn;
 
-	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbExcluding(const AABB& _box, const EntityId _entityId);
-	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabb(const AABB& _box);
-	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbOfType(const AABB& _box, EntityType& _type);
-	std::vector<std::shared_ptr<Entity>> GetEntitiesWithinAabbExcludingTypes(
+	// For quick collider lookups
+	std::vector<Entity*> GetCollidablesWithinAabb(const AABB& _box, EntityId _excludedId = -1);
+
+	std::vector<Entity*> GetEntitiesWithinAabbExcluding(const AABB& _box, const EntityId _entityId);
+	std::vector<Entity*> GetEntitiesWithinAabb(const AABB& _box);
+	std::vector<Entity*> GetEntitiesWithinAabbOfType(const AABB& _box, EntityType& _type);
+	std::vector<Entity*> GetEntitiesWithinAabbExcludingTypes(
 	    const AABB& _box, const std::vector<EntityType>& _excludedTypes);
 	std::vector<Tag> CollectEntitiesForSave(Int2 _cpos, bool _clearCollectedEntities = false);
 	std::optional<std::string> GetEntityNbtId(EntityType _type);
@@ -150,5 +154,5 @@ public:
 		return closestPlayer;
 	}
 
-	std::vector<std::shared_ptr<Entity>> GetLivingEntitiesWithinAabb(const AABB& _box);
+	std::vector<Entity*> GetLivingEntitiesWithinAabb(const AABB& _box);
 };

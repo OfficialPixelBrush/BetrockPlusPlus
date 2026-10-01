@@ -41,11 +41,12 @@ void EntityManager::RemoveEntity(EntityId _id) {
 	if (containerIt != entityContainers.end()) {
 		auto& bucket = containerIt->second.buckets[entity->bucketPos.z];
 		bucket.entities.erase(std::remove_if(bucket.entities.begin(), bucket.entities.end(),
-		                                     [&entity](const std::weak_ptr<Entity>& _weak) {
-			                                     auto locked = _weak.lock();
-			                                     return !locked || locked == entity;
-		                                     }),
+		                                     [&entity](const Entity* _entity) { return _entity == entity.get(); }),
 		                      bucket.entities.end());
+		bucket.worldCollidableEntities.erase(
+		    std::remove_if(bucket.worldCollidableEntities.begin(), bucket.worldCollidableEntities.end(),
+		                   [&entity](const Entity* _entity) { return _entity == entity.get(); }),
+		    bucket.worldCollidableEntities.end());
 		PruneEmptyContainer(cpos);
 	}
 
@@ -84,7 +85,9 @@ void EntityManager::AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEn
 	// Register the entity into its initial bucket
 	_entity->bucketPos = ComputeBucketPos(_entity->position);
 	auto& container = entityContainers[{ _entity->bucketPos.x, _entity->bucketPos.y }];
-	container.buckets[_entity->bucketPos.z].entities.push_back(_entity);
+	container.buckets[_entity->bucketPos.z].entities.push_back(_entity.get());
+	if (_entity->actsAsWorldCollider)
+		container.buckets[_entity->bucketPos.z].worldCollidableEntities.push_back(_entity.get());
 
 	// If we are a player register for easy lookup
 	if (_entity->type == EntityType::PLAYER) {
@@ -102,6 +105,7 @@ void EntityManager::TickEntityAndPassenger(const std::shared_ptr<Entity>& _entit
 
 	// Check to see if this entity went into another container or bucket
 	Int3 newBucketPos = ComputeBucketPos(_entity->position);
+	Entity* raw = _entity.get();
 
 	if (newBucketPos != _entity->bucketPos) {
 		Int2 oldCpos{ _entity->bucketPos.x, _entity->bucketPos.y };
@@ -111,25 +115,29 @@ void EntityManager::TickEntityAndPassenger(const std::shared_ptr<Entity>& _entit
 		auto& oldContainer = entityContainers[oldCpos];
 		auto& b = oldContainer.buckets[_entity->bucketPos.z];
 		b.entities.erase(std::remove_if(b.entities.begin(), b.entities.end(),
-		                                [&_entity](const std::weak_ptr<Entity>& _weak) {
-			                                auto locked = _weak.lock();
-			                                return !locked ||
-			                                       locked == _entity; // Remove if expired or matches our entity
+		                                [&_entity](Entity* _ptr) {
+			                                return _ptr == _entity.get(); 
 		                                }),
 		                 b.entities.end());
+		b.worldCollidableEntities.erase(std::remove_if(b.worldCollidableEntities.begin(),
+		                                               b.worldCollidableEntities.end(),
+		                                               [&_entity](Entity* _ptr) { return _ptr == _entity.get(); }),
+		                                b.worldCollidableEntities.end());
 		PruneEmptyContainer(oldCpos);
 
 		// Put in the new bucket
 		auto& newContainer = entityContainers[{ newBucketPos.x, newBucketPos.y }];
 		auto& newB = newContainer.buckets[newBucketPos.z];
-		newB.entities.push_back(_entity);
+		newB.entities.push_back(raw);
+		if (_entity->actsAsWorldCollider)
+			newB.worldCollidableEntities.push_back(raw);
 		_entity->bucketPos = newBucketPos;
 	}
 
 	// If something is riding us, tick it
 	if (auto lockPassenger = _entity->passenger.lock()) {
 		auto passengersVehicle = lockPassenger->vehicle.lock();
-		if (!lockPassenger->isDead && passengersVehicle.get() == _entity.get()) {
+		if (!lockPassenger->isDead && passengersVehicle.get() == raw) {
 			TickEntityAndPassenger(lockPassenger);
 		} else {
 			_entity->passenger.reset();
@@ -178,21 +186,21 @@ void EntityManager::Tick() {
 	}
 }
 
-std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbExcluding(const AABB& _box,
+std::vector<Entity*> EntityManager::GetEntitiesWithinAabbExcluding(const AABB& _box,
                                                                                    const EntityId _entityId) {
 	// Get all entities within an AABB excluding this entity id
 	auto entitiesInAABB = GetEntitiesWithinAabb(_box);
 	entitiesInAABB.erase(std::remove_if(entitiesInAABB.begin(), entitiesInAABB.end(),
-	                                    [_entityId](std::shared_ptr<Entity> _entity) {
+	                                    [_entityId](Entity* _entity) {
 		                                    return _entity->id == _entityId;
 	                                    }),
 	                     entitiesInAABB.end());
 	return entitiesInAABB;
 }
 
-std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbExcludingTypes(
+std::vector<Entity*> EntityManager::GetEntitiesWithinAabbExcludingTypes(
     const AABB& _box, const std::vector<EntityType>& _excludedTypes) {
-	std::vector<std::shared_ptr<Entity>> exclusiveEntities;
+	std::vector<Entity*> exclusiveEntities;
 	auto entitiesInAABB = GetEntitiesWithinAabb(_box);
 	for (auto& entity : entitiesInAABB) {
 		if (std::find(_excludedTypes.begin(), _excludedTypes.end(), entity->type) == _excludedTypes.end()) {
@@ -202,9 +210,47 @@ std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbExcludi
 	return exclusiveEntities;
 }
 
-std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabb(const AABB& _box) {
+std::vector<Entity*> EntityManager::GetCollidablesWithinAabb(const AABB& _box, EntityId _excludedId) {
 	// Get all entities within an AABB
-	std::vector<std::shared_ptr<Entity>> collidingEntities;
+	std::vector<Entity*> collidingEntities;
+
+	// Normalize to block coordinates
+	int blockMinX = MathHelper::FloorDouble((_box.minX - 2.0) / 16.0);
+	int blockMinZ = MathHelper::FloorDouble((_box.minZ - 2.0) / 16.0);
+	int blockMaxX = MathHelper::FloorDouble((_box.maxX + 2.0) / 16.0);
+	int blockMaxZ = MathHelper::FloorDouble((_box.maxZ + 2.0) / 16.0);
+
+	// Get our start and end bucket
+	int bucketMinY = MathHelper::FloorDouble((_box.minY - 2.0) / 16.0);
+	int bucketMaxY = MathHelper::FloorDouble((_box.maxY + 2.0) / 16.0);
+	bucketMinY = std::max(0, bucketMinY);
+	bucketMinY = std::min(9, bucketMinY);
+	bucketMaxY = std::max(0, bucketMaxY);
+	bucketMaxY = std::min(9, bucketMaxY);
+
+	// Go through each block position
+	for (int x = blockMinX; x <= blockMaxX; x++) {
+		for (int z = blockMinZ; z <= blockMaxZ; z++) {
+			auto it = entityContainers.find({ x, z });
+			if (it == entityContainers.end())
+				continue;
+			auto& container = it->second;
+			for (int by = bucketMinY; by <= bucketMaxY; by++) {
+				// Get every entity within every bucket
+				for (size_t i = 0; i < container.buckets[by].worldCollidableEntities.size(); i++) {
+					auto& entityPtr = container.buckets[by].worldCollidableEntities[i];
+					if (entityPtr->collider.Intersects(_box) && entityPtr->id != _excludedId)
+						collidingEntities.push_back(entityPtr);
+				}
+			}
+		}
+	}
+	return collidingEntities;
+}
+
+std::vector<Entity*> EntityManager::GetEntitiesWithinAabb(const AABB& _box) {
+	// Get all entities within an AABB
+	std::vector<Entity*> collidingEntities;
 
 	// Normalize to block coordinates
 	int blockMinX = MathHelper::FloorDouble((_box.minX - 2.0) / 16.0);
@@ -231,11 +277,9 @@ std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabb(const 
 				// Get every entity within every bucket
 				for (size_t i = 0; i < container.buckets[by].entities.size(); i++) {
 					// Make sure the weak ptr is still valid
-					auto& entityPtrWeak = container.buckets[by].entities[i];
-					if (auto entityPtrShared = entityPtrWeak.lock()) {
-						if (entityPtrShared->collider.Intersects(_box))
-							collidingEntities.push_back(entityPtrShared);
-					}
+					auto& entityPtr = container.buckets[by].entities[i];
+					if (entityPtr->collider.Intersects(_box))
+						collidingEntities.push_back(entityPtr);
 				}
 			}
 		}
@@ -243,9 +287,9 @@ std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabb(const 
 	return collidingEntities;
 }
 
-std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbOfType(const AABB& _box, EntityType& _type) {
+std::vector<Entity*> EntityManager::GetEntitiesWithinAabbOfType(const AABB& _box, EntityType& _type) {
 	auto e = GetEntitiesWithinAabb(_box);
-	std::vector<std::shared_ptr<Entity>> typedEntities;
+	std::vector<Entity*> typedEntities;
 
 	for (auto& entity : e) {
 		if (entity->type == _type)
@@ -254,11 +298,11 @@ std::vector<std::shared_ptr<Entity>> EntityManager::GetEntitiesWithinAabbOfType(
 	return typedEntities;
 }
 
-std::vector<std::shared_ptr<Entity>> EntityManager::GetLivingEntitiesWithinAabb(const AABB& _box) {
+std::vector<Entity*> EntityManager::GetLivingEntitiesWithinAabb(const AABB& _box) {
 	auto entitiesInAabb = GetEntitiesWithinAabb(_box);
-	std::vector<std::shared_ptr<Entity>> living;
+	std::vector<Entity*> living;
 	for (auto& entity : entitiesInAabb) {
-		if (dynamic_cast<MobileEntity*>(entity.get()))
+		if (dynamic_cast<MobileEntity*>(entity))
 			living.push_back(entity);
 	}
 	return living;
@@ -368,20 +412,18 @@ std::vector<Tag> EntityManager::CollectEntitiesForSave(Int2 _cpos, bool _clearCo
 	auto& container = it->second;
 	for (size_t i = 0; i < container.buckets.size(); i++) {
 		auto& bucket = container.buckets[i];
-		for (auto& entityPtrWeak : bucket.entities) {
+		for (auto& entityPtr : bucket.entities) {
 			// Is this entity dead but not collected?
-			if (auto entityPtrShared = entityPtrWeak.lock()) {
-				if (entityPtrShared->isDead)
-					continue; // We are dead so no save
-				if (entityPtrShared->type == EntityType::PLAYER)
-					continue; // players cannot be saved
-				if (_clearCollectedEntities)
-					entityPtrShared->isDead = true; // Mark the entity as dead for cleanup
-				auto compound = entityPtrShared->SerializeToNbt();
-				if (!compound)
-					continue; // If something went wrong abort save
-				collectedEntities.push_back(*compound);
-			}
+			if (entityPtr->isDead)
+				continue; // We are dead so no save
+			if (entityPtr->type == EntityType::PLAYER)
+				continue; // players cannot be saved
+			if (_clearCollectedEntities)
+				entityPtr->isDead = true; // Mark the entity as dead for cleanup
+			auto compound = entityPtr->SerializeToNbt();
+			if (!compound)
+				continue; // If something went wrong abort save
+			collectedEntities.push_back(*compound);
 		}
 	}
 

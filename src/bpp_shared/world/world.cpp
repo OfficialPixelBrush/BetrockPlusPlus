@@ -239,7 +239,6 @@ std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area, Ent
 	int minZ = Java::DoubleToInt32(std::floor(_area.minZ));
 	int maxZ = Java::DoubleToInt32(std::floor(_area.maxZ + 1.0));
 
-	// Java iterates Y from var5-1 to var6 (exclusive)
 	int startY = CrossPlatform::Math::Max(0, minY - 1);
 	int endY = CrossPlatform::Math::Min(127, maxY);
 
@@ -275,17 +274,22 @@ std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area, Ent
 			}
 		}
 	}
+	// Do we have the mover flag set?
+	bool needsFullEntityScan = _mover ? _mover->GetMoverCollisionOverride(*_mover).has_value() : false;
 
 	// Collect entities in this area, excluding the mover itself
 	AABB entitySearchArea = { double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ) };
-	auto entitiesInArea = _mover ? entityManager.GetEntitiesWithinAabbExcluding(entitySearchArea, _mover->id)
-	                             : entityManager.GetEntitiesWithinAabb(entitySearchArea);
+	std::vector<Entity*> entitiesInArea;
+	
+	entitiesInArea = needsFullEntityScan
+	                     ? entityManager.GetEntitiesWithinAabbExcluding(entitySearchArea, _mover->id)
+	                     : entityManager.GetCollidablesWithinAabb(entitySearchArea, _mover ? _mover->id : EntityId(-1));
 
 	for (auto& entity : entitiesInArea) {
 		if (entity->actsAsWorldCollider && entity->collider.Intersects(_area))
 			collidingBoxes.push_back(entity->collider.Expand(-0.1, -0.1, -0.1));
 
-		if (_mover) {
+		if (needsFullEntityScan) {
 			auto moverOverrideBox = _mover->GetMoverCollisionOverride(*entity);
 			if (moverOverrideBox && moverOverrideBox->Intersects(_area))
 				collidingBoxes.push_back(*moverOverrideBox);

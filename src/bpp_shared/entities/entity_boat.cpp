@@ -137,7 +137,7 @@ void BoatEntity::Tick() {
 	auto nearby = entityManager->GetEntitiesWithinAabbExcluding(collider.Expand(0.2, 0.0, 0.2), id);
 	auto rider = passenger.lock();
 	for (auto& other : nearby) {
-		if (rider && other.get() == rider.get())
+		if (rider && other == rider.get())
 			continue;
 		if (other->type != EntityType::BOAT || !other->CanBePushed())
 			continue;

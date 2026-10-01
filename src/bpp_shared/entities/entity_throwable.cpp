@@ -113,7 +113,7 @@ void ThrowableEntity::Tick() {
 
 	// Then against entities, only up to the block we hit
 	auto ownerPtr = this->owner.lock();
-	std::shared_ptr<Entity> hitEntity = nullptr;
+	Entity* hitEntity = nullptr;
 	double closestDistance = 0.0;
 	AABB searchBox = this->collider.AddCoord(this->velocity.x, this->velocity.y, this->velocity.z).Expand(1.0, 1.0, 1.0);
 	for (const auto& candidate : entityManager->GetEntitiesWithinAabbExcluding(searchBox, this->id)) {
@@ -121,7 +121,7 @@ void ThrowableEntity::Tick() {
 			continue;
 
 		// Don't shoot ourselves on the way out
-		if (ownerPtr && candidate.get() == ownerPtr.get() && this->ticksInAir < 5)
+		if (ownerPtr && candidate == ownerPtr.get() && this->ticksInAir < 5)
 			continue;
 
 		const double grow = 0.3;

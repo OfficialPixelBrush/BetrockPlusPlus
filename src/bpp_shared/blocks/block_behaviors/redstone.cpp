@@ -218,7 +218,7 @@ static void SetPressurePlateState(WorldManager& _world, Int3 _pos, BlockType _ty
 		                  (_pos.x + 1) - horizontalInset, _pos.y + veritcalInset,      (_pos.z + 1) - horizontalInset };
 
 	// Collect entities
-	std::vector<std::shared_ptr<Entity>> entities;
+	std::vector<Entity*> entities;
 
 	// Wooden pressure plates grab everything
 	if (_type == BLOCK_PRESSURE_PLATE_WOOD)
