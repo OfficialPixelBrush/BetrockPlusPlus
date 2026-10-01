@@ -57,10 +57,10 @@ static bool IsPoweredByAttachedLeverOrButton(WorldManager& _world, Int3 _pos) {
 }
 
 bool RedstoneManager::CanBridgeVertical(WorldManager& _world, Int3 _pos, int _dx, int _dz, int _dyOffset) {
-	bool sideIsSolid = Blocks::blockProperties[_world.GetBlockId({ _pos.x + _dx, _pos.y, _pos.z + _dz })].isNormalCube;
+	bool sideIsSolid = _world.IsBlockNormalCube({ _pos.x + _dx, _pos.y, _pos.z + _dz });
 
 	if (_dyOffset > 0) {
-		bool openAboveUs = !Blocks::blockProperties[_world.GetBlockId({ _pos.x, _pos.y + 1, _pos.z })].isNormalCube;
+		bool openAboveUs = !_world.IsBlockNormalCube({ _pos.x, _pos.y + 1, _pos.z });
 		return sideIsSolid && openAboveUs;
 	}
 
@@ -131,10 +131,8 @@ ComponentProfile RedstoneManager::GetRedstoneDustConnectivity(WorldManager& _wor
 }
 
 PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _pos) {
-	auto thisBlock = _world.GetBlockId(_pos);
-
-	// Non opaque blocks cant have power travel through them
-	if (!Blocks::blockProperties[thisBlock].isOpaqueCube)
+	// Only normal cubes conduct power
+	if (!_world.IsBlockNormalCube(_pos))
 		return {};
 
 	bool softPowered = false;

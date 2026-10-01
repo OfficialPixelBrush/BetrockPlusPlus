@@ -385,6 +385,8 @@ void RegisterBlockProperties() {
 		.hardness = 0.3f,
 		.lightOpacity = 0,
 		.stepSound = StepSound::Glass,
+		.isOpaqueCube = false,
+		.isNormalCube = false,
 	};
 
 	// Lapis Lazuli Ore
