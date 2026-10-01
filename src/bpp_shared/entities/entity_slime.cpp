@@ -47,7 +47,7 @@ void SlimeEntity::Tick() {
 	this->age = 0;
 	HostileEntity::Tick();
 
-	if (this->isDead && this->deathTime >= 20 && this->size > 1)
+	if (this->isDead && this->deathTime >= 20 && this->health == 0 && this->size > 1)
 		SplitSlime();
 }
 
