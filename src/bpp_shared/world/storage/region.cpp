@@ -348,6 +348,12 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 		for (int x = 0; x < CHUNK_WIDTH; x++) {
 			for (int z = 0; z < CHUNK_WIDTH; z++) {
 				size_t idx = size_t(y + (z * CHUNK_HEIGHT) + (x * CHUNK_HEIGHT * CHUNK_WIDTH));
+				BlockType thisBlock = BlockType(blocks[idx]);
+
+				// Make sure this block is valid
+				if (!Items::IsBlock(thisBlock)) {
+					continue;
+				}
 				chunk->SetBlock({ x, y, z }, BlockType(blocks[idx]));
 				if (y % 2 == 0) {
 					chunk->SetMeta({ x, y, z }, data[idx / 2] & 0xF);
