@@ -9,9 +9,13 @@
 #include "blocks/block_behaviors.h"
 #include "blocks/block_properties.h"
 #include "dimensions.h"
+#include "entities/entity_arrow.h"
+#include "entities/entity_egg.h"
 #include "entities/entity_falling_block.h"
+#include "entities/entity_item.h"
 #include "entities/entity_player.h"
 #include "entities/entity_skeleton.h"
+#include "entities/entity_snowball.h"
 #include "entities/entity_spider.h"
 #include "entities/entity_zombie.h"
 #include "enums/items.h"
@@ -30,6 +34,128 @@
 #include "world.h"
 
 namespace Blocks {
+
+static void PlayNoteblock(WorldManager& _world, Int3 _pos) {
+	auto noteblockTe = _world.GetTileEntityAs<TileEntityNoteblock>(_pos);
+	if (!noteblockTe)
+		return;
+
+	BlockType belowBlock = _world.GetBlockId(_pos.WithOffset(Direction::Value::Down));
+	switch (Blocks::blockProperties[belowBlock].material.type) {
+	case MaterialType::Wood:
+		_world.PlayNoteAt(_pos, PacketData::NoteInstrument::BASS, noteblockTe->note);
+		break;
+	case MaterialType::Sand:
+		_world.PlayNoteAt(_pos, PacketData::NoteInstrument::SNARE_DRUM, noteblockTe->note);
+		break;
+	case MaterialType::Rock:
+		_world.PlayNoteAt(_pos, PacketData::NoteInstrument::BASS_DRUM, noteblockTe->note);
+		break;
+	case MaterialType::Glass:
+		_world.PlayNoteAt(_pos, PacketData::NoteInstrument::HI_HAT, noteblockTe->note);
+		break;
+	default:
+		_world.PlayNoteAt(_pos, PacketData::NoteInstrument::HARP, noteblockTe->note);
+		break;
+	}
+}
+
+static void DispenseItemFromDispenser(WorldManager& _world, Int3 _pos, uint8_t _meta) {
+	int xOffset = 0;
+	int zOffset = 0;
+
+	switch (_meta) {
+	case 3:
+		zOffset = 1;
+		break;
+	case 2:
+		zOffset = -1;
+		break;
+	case 5:
+		xOffset = 1;
+		break;
+	default:
+		xOffset = -1;
+		break;
+	}
+
+	auto dispenserTe = _world.GetTileEntityAs<TileEntityDispenser>(_pos);
+	if (!dispenserTe)
+		return;
+
+	auto randStack = dispenserTe->GetRandomStackInInventory();
+	if (!randStack.has_value()) {
+		if (_world.onWorldEvent)
+			_world.onWorldEvent(PacketData::WorldEvent::DISPENSER_CLICK, _pos, 0, nullptr);
+		return;
+	}
+
+	Vec3 outputPos;
+	outputPos.x = _pos.x + xOffset * 0.6 + 0.5;
+	outputPos.y = _pos.y + 0.5;
+	outputPos.z = _pos.z + zOffset * 0.6 + 0.5;
+
+	auto randStackPtr = randStack.value();
+	if (!randStackPtr)
+		return;
+	ItemStack newStack = *randStackPtr;
+	randStackPtr->DecrementCount(1);
+	newStack.count = 1;
+
+	switch (newStack.id) {
+	case Items::ARROW: {
+		std::shared_ptr<ArrowEntity> entity = std::make_shared<ArrowEntity>(outputPos);
+		entity->SetArrowHeading({ double(xOffset), 0.1, double(zOffset) }, 1.1f, 6.0f);
+		entity->arrowBelongsToPlayer = true;
+		_world.entityManager.AddEntity(entity);
+		if (_world.onWorldEvent)
+			_world.onWorldEvent(PacketData::WorldEvent::DISPENSER_ARROW_FIRE, _pos, (xOffset + 1) + (zOffset + 1) * 3,
+			                    nullptr);
+		break;
+	}
+	case Items::EGG: {
+		std::shared_ptr<EggEntity> entity = std::make_shared<EggEntity>(outputPos);
+		entity->SetHeading({ double(xOffset), 0.1, double(zOffset) }, 1.1f, 6.0f);
+		_world.entityManager.AddEntity(entity);
+		if (_world.onWorldEvent)
+			_world.onWorldEvent(PacketData::WorldEvent::DISPENSER_ARROW_FIRE, _pos, (xOffset + 1) + (zOffset + 1) * 3,
+			                    nullptr);
+		break;
+	}
+	case Items::SNOWBALL: {
+		std::shared_ptr<SnowballEntity> entity = std::make_shared<SnowballEntity>(outputPos);
+		entity->SetHeading({ double(xOffset), 0.1, double(zOffset) }, 1.1f, 6.0f);
+		_world.entityManager.AddEntity(entity);
+		if (_world.onWorldEvent)
+			_world.onWorldEvent(PacketData::WorldEvent::DISPENSER_ARROW_FIRE, _pos, (xOffset + 1) + (zOffset + 1) * 3,
+			                    nullptr);
+		break;
+	}
+	default: {
+		outputPos.y -= 0.3;
+		std::shared_ptr<ItemEntity> item = std::make_shared<ItemEntity>(outputPos);
+		item->itemStack = newStack;
+
+		double speed = _world.rand.NextDouble() * 0.1 + 0.2;
+		item->velocity.x = xOffset * speed;
+		item->velocity.y = 0.2;
+		item->velocity.z = zOffset * speed;
+		item->velocity.x += _world.rand.NextGaussian() * 0.007 * 6.0;
+		item->velocity.y += _world.rand.NextGaussian() * 0.007 * 6.0;
+		item->velocity.z += _world.rand.NextGaussian() * 0.007 * 6.0;
+
+		_world.entityManager.AddEntity(item);
+
+		if (_world.onWorldEvent)
+			_world.onWorldEvent(PacketData::WorldEvent::DISPENSER_CLICK_EMPTY, _pos, (xOffset + 1) + (zOffset + 1) * 3,
+			                    nullptr);
+		break;
+	}
+	}
+
+	if (_world.onWorldEvent)
+		_world.onWorldEvent(PacketData::WorldEvent::DISPENSER_PUFF, _pos, (xOffset + 1) + (zOffset + 1) * 3, nullptr);
+}
 
 static bool CanRedstoneComponentStay(WorldManager& _world, Int3 _pos) {
 	return _world.IsBlockNormalCube(_pos.Offset(Direction::Value::Down));
@@ -92,7 +218,7 @@ static void SetPressurePlateState(WorldManager& _world, Int3 _pos, BlockType _ty
 		                  (_pos.x + 1) - horizontalInset, _pos.y + veritcalInset,      (_pos.z + 1) - horizontalInset };
 
 	// Collect entities
-	std::vector<std::shared_ptr<Entity>> entities;
+	std::vector<Entity*> entities;
 
 	// Wooden pressure plates grab everything
 	if (_type == BLOCK_PRESSURE_PLATE_WOOD)
@@ -161,13 +287,13 @@ void RegisterRedstoneBehaviors() {
 		    if (!IsSupported(_world, _pos, GetDirectionFromMeta(BLOCK_BUTTON_STONE, _world.GetMetadata(_pos))))
 			    BreakAndDropBlock(_world, _pos);
 		},
-		.onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> void {
+		.onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* /*_triggeringSession*/) -> void {
 		    auto newMeta = _world.GetMetadata(_pos) | 0b1000;
 		    _world.SetMeta(_pos, newMeta);
 		    NotifyAttachedSupportBlock(_world, _pos, BLOCK_BUTTON_STONE, newMeta);
 		    _world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_BUTTON_STONE, 20);
-		    if (_world.onWorldEvent)
-			    _world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
+		    //if (_world.onWorldEvent)
+		    //    _world.onWorldEvent(PacketData::WorldEvent::DISPENSER_CLICK_EMPTY, _pos, 0, _triggeringSession);
 		},
 		.onBlockActivated = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> bool {
 		    blockBehaviors[BLOCK_BUTTON_STONE].onBlockClicked(_world, _pos, _triggeringSession);
@@ -450,12 +576,12 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_LEVER].onBlockClicked = [](WorldManager& _world, Int3 _pos,
-	                                                PlayerSession* _triggeringSession) -> void {
+	                                                PlayerSession* /*_triggeringSession*/) -> void {
 		auto newMeta = _world.GetMetadata(_pos) ^ 0b1000;
 		_world.SetMeta(_pos, newMeta);
 		NotifyAttachedSupportBlock(_world, _pos, BLOCK_LEVER, newMeta);
-		if (_world.onWorldEvent)
-			_world.onWorldEvent(PacketData::WorldEvent::CLICK2, _pos, 0, _triggeringSession);
+		//if (_world.onWorldEvent)
+		//	_world.onWorldEvent(PacketData::WorldEvent::DISPENSER_CLICK_EMPTY, _pos, 0, _triggeringSession);
 	},
 	blockBehaviors[BLOCK_LEVER].onBlockActivated = [](WorldManager& _world, Int3 _pos,
 	                                                  PlayerSession* _triggeringSession) -> bool {
@@ -586,6 +712,81 @@ void RegisterRedstoneBehaviors() {
 		auto meta = _world.GetMetadata(_pos);
 		if (meta != 1)
 			SetPressurePlateState(_world, _pos, BLOCK_PRESSURE_PLATE_STONE);
+	};
+
+	// Dispensers
+	blockBehaviors[BLOCK_DISPENSER].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		auto te = std::make_shared<TileEntityDispenser>(_pos);
+		_world.CreateTileEntity(std::move(te));
+	};
+
+	blockBehaviors[BLOCK_DISPENSER].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		auto* te = _world.GetTileEntityAs<TileEntityDispenser>(_pos);
+		if (!te)
+			return;
+
+		_world.DropInventory(te->inventory, _pos);
+	};
+
+	blockBehaviors[BLOCK_DISPENSER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                           BlockType _blockId) -> void {
+		if (!RedstoneManager::CanProvidePower(_blockId))
+			return;
+
+		if (RedstoneManager::IsPositionPowered(_world, _pos) ||
+		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up)))
+			_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_DISPENSER, 4);
+	};
+
+	blockBehaviors[BLOCK_DISPENSER].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                            Java::Random& /*_random*/) -> void {
+		if (RedstoneManager::IsPositionPowered(_world, _pos) ||
+		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up)))
+			DispenseItemFromDispenser(_world, _pos, _meta);
+	};
+
+	// Noteblocks
+	blockBehaviors[BLOCK_NOTEBLOCK].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		auto te = std::make_shared<TileEntityNoteblock>(_pos);
+		_world.CreateTileEntity(std::move(te));
+	};
+
+	blockBehaviors[BLOCK_NOTEBLOCK].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		auto* te = _world.GetTileEntityAs<TileEntityNoteblock>(_pos);
+		if (!te)
+			return;
+	};
+
+	blockBehaviors[BLOCK_NOTEBLOCK].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
+	                                            Java::Random& /*_random*/) -> void {
+		if (RedstoneManager::IsPositionPowered(_world, _pos) ||
+		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up)))
+			PlayNoteblock(_world, _pos);
+	};
+
+	blockBehaviors[BLOCK_NOTEBLOCK].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                           BlockType _blockId) -> void {
+		if (!RedstoneManager::CanProvidePower(_blockId))
+			return;
+
+		if (RedstoneManager::IsPositionPowered(_world, _pos) ||
+		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up)))
+			blockBehaviors[BLOCK_NOTEBLOCK].onTick(_world, _pos, 0, _world.rand);
+	};
+
+	blockBehaviors[BLOCK_NOTEBLOCK].onBlockClicked = [](WorldManager& _world, Int3 _pos,
+	                                                    PlayerSession* /*_triggeringSession*/) -> void {
+		auto noteblockTe = _world.GetTileEntityAs<TileEntityNoteblock>(_pos);
+		if (!noteblockTe)
+			return;
+		noteblockTe->note = (noteblockTe->note + 1) % 25;
+		PlayNoteblock(_world, _pos);
+	};
+
+	blockBehaviors[BLOCK_NOTEBLOCK].onBlockActivated = [](WorldManager& _world, Int3 _pos,
+	                                                      PlayerSession* _triggeringSession) -> bool {
+		blockBehaviors[BLOCK_NOTEBLOCK].onBlockClicked(_world, _pos, _triggeringSession);
+		return false;
 	};
 }
 

@@ -277,23 +277,25 @@ void Entity::ApplyKnockback(Vec3 _direction) {
 }
 
 void Entity::ApplyInput(float _acceleration) {
-	float length = std::sqrt((input.x * input.x) + (input.y * input.y));
+	float strafe = input.x;
+	float forward = input.y;
 
+	float length = MathHelper::SqrtFloat(strafe * strafe + forward * forward);
 	if (length < 0.01f)
 		return;
 
 	if (length < 1.0f)
 		length = 1.0f;
 
-	input.x /= length;
-	input.y /= length;
+	length = _acceleration / length;
+	strafe *= length;
+	forward *= length;
 
-	float yaw = rotationYaw * (JavaMath::PI / 180.0f);
-	float sinYaw = std::sin(yaw);
-	float cosYaw = std::cos(yaw);
+	float sinYaw = MathHelper::Sin(rotationYaw * JavaMath::PI_FLOAT / 180.0f);
+	float cosYaw = MathHelper::Cos(rotationYaw * JavaMath::PI_FLOAT / 180.0f);
 
-	velocity.x += (input.x * cosYaw - input.y * sinYaw) * _acceleration;
-	velocity.z += (input.y * cosYaw + input.x * sinYaw) * _acceleration;
+	velocity.x += double(strafe * cosYaw - forward * sinYaw);
+	velocity.z += double(forward * cosYaw + strafe * sinYaw);
 }
 
 void Entity::Move(Vec3& _velocity) {

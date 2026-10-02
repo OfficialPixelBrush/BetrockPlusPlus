@@ -349,10 +349,25 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		if (event.cancel)
 			return;
 
+		// Food check
 		if (Items::IsFood(heldItem->id)) {
 			if (auto& fn = Items::itemBehavior[heldItem->id].onUse) {
 				fn(_session, heldItem, *_session.entity);
 			}
+			return;
+		}
+
+		// Bow check
+		if (heldItem->id == Items::Id::BOW) {
+			if (auto& fn = Items::itemBehavior[heldItem->id].onUse)
+				fn(_session, heldItem, *_session.entity);
+			return;
+		}
+
+		// Throwable check
+		if (heldItem->id == Items::Id::EGG || heldItem->id == Items::Id::SNOWBALL) {
+			if (auto& fn = Items::itemBehavior[heldItem->id].onUse)
+				fn(_session, heldItem, *_session.entity);
 			return;
 		}
 

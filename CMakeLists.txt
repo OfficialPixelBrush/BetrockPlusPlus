@@ -38,7 +38,7 @@ if(NOT BUILD_SERVER)
     endif()
 endif()
 
-project(Betrock++ VERSION 0.1.7)
+project(Betrock++ VERSION 0.2.1)
 
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
@@ -126,7 +126,15 @@ file(GLOB COMMAND_SOURCES
 set(SHARED_SOURCES
     # Shared files
     src/bpp_shared/tile_entities/tile_entity_manager.cpp
-    src/bpp_shared/tile_entities/tile_entity.cpp
+    src/bpp_shared/tile_entities/tile_entity_base.cpp
+    src/bpp_shared/tile_entities/tile_entity_sign.cpp
+    src/bpp_shared/tile_entities/tile_entity_chest.cpp
+    src/bpp_shared/tile_entities/tile_entity_dispenser.cpp
+    src/bpp_shared/tile_entities/tile_entity_mob_spawner.cpp
+    src/bpp_shared/tile_entities/tile_entity_furnace.cpp
+    src/bpp_shared/tile_entities/tile_entity_jukebox.cpp
+    src/bpp_shared/tile_entities/tile_entity_noteblock.cpp
+    src/bpp_shared/tile_entities/tile_entity_piston.cpp
     src/bpp_shared/entities/entity.cpp
     src/bpp_shared/entities/entity_item.cpp
     src/bpp_shared/entities/entity_player.cpp
@@ -147,12 +155,17 @@ set(SHARED_SOURCES
     src/bpp_shared/entities/entity_boat.cpp
     src/bpp_shared/entities/entity_minecart.cpp
     src/bpp_shared/entities/entity_painting.cpp
+    src/bpp_shared/entities/entity_arrow.cpp
+    src/bpp_shared/entities/entity_throwable.cpp
+    src/bpp_shared/entities/entity_slime.cpp
+    src/bpp_shared/entities/entity_tnt.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/strings/ucs2.cpp
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
     src/bpp_shared/networking/server_manager.cpp
     src/bpp_shared/world/chunk.cpp
+    src/bpp_shared/world/weather_system.cpp
     src/bpp_shared/world/world_wrapper.cpp
     src/bpp_shared/world/world.cpp
     src/bpp_shared/world/spawner.cpp
@@ -176,6 +189,7 @@ set(SHARED_SOURCES
     src/bpp_shared/blocks/block_behaviors/portal.cpp
     src/bpp_shared/blocks/block_behaviors/misc.cpp
     src/bpp_shared/blocks/block_behaviors/drops.cpp
+    src/bpp_shared/blocks/block_behaviors/piston.cpp
     src/bpp_shared/blocks/block_properties.cpp
     src/bpp_shared/items/item_map.cpp
     src/bpp_shared/items/item_properties.cpp
@@ -188,6 +202,7 @@ set(SHARED_SOURCES
     src/bpp_shared/inventory/interactions/furnace.cpp
     src/bpp_shared/inventory/interactions/player.cpp
     src/bpp_shared/inventory/interactions/crafting_table.cpp
+    src/bpp_shared/inventory/interactions/dispenser.cpp
     src/bpp_shared/crafting/recipe_manager.cpp
     src/bpp_shared/crafting/vanilla_recipes.cpp
     src/bpp_shared/pathfinding/pathfinder.cpp

@@ -28,6 +28,9 @@ void RegisterAll() {
 	itemBehavior[Items::Id::BUCKET_LAVA] = ItemBehavior{ .onBlockUse = UseLavaBucket };
 	itemBehavior[Items::Id::BUCKET] = ItemBehavior{ .onBlockUse = UseBucket };
 	itemBehavior[Items::Id::BOAT] = ItemBehavior{ .onBlockUse = UseBoat };
+	itemBehavior[Items::Id::BOW] = ItemBehavior{ .onUse = UseBow };
+	itemBehavior[Items::Id::EGG] = ItemBehavior{ .onUse = UseThrowable };
+	itemBehavior[Items::Id::SNOWBALL] = ItemBehavior{ .onUse = UseThrowable };
 
 	// Tool Properties
 	// Sword
@@ -230,6 +233,17 @@ void RegisterAll() {
 			return;
 
 		_world.SetBlock(placePos, BLOCK_SUGARCANE);
+		_stack->DecrementCount(1);
+	};
+
+	// Happy 23rd Birthday to me! (Pixel Brush)
+	itemBehavior[CAKE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/,
+	                                        Direction::Value _face) {
+		Int3 placePos = _pos.WithOffset(_face);
+		if (!Blocks::CanCakeSurviveAt(_world, placePos))
+			return;
+
+		_world.SetBlock(placePos, BLOCK_CAKE);
 		_stack->DecrementCount(1);
 	};
 

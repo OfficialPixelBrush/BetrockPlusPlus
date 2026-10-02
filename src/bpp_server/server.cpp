@@ -328,22 +328,11 @@ void Server::Startup() {
 		_entityTracker.server = this;
 	};
 
-	auto registerExplosionCallback = [this](WorldManager& _world, EntityTracker& _entityTracker) {
-		_world.onExplosion = [&](Vec3 _pos, float _size, std::unordered_set<Int3>& _blockPositions, Entity* _exploder) {
-			if (!_exploder)
-				return;
-			Packet::Explosion pkt;
-			pkt.position = _pos;
-			pkt.numberOfDestroyedBlocks = _blockPositions.size();
-			pkt.radius = _size;
-
-			Int3 blockPos = { int(_pos.x), int(_pos.y), int(_pos.z) };
-			for (auto& pos : _blockPositions) {
-				pkt.destroyedBlocks.push_back(static_cast<int8_t>(pos.x - blockPos.x));
-				pkt.destroyedBlocks.push_back(static_cast<int8_t>(pos.y - blockPos.y));
-				pkt.destroyedBlocks.push_back(static_cast<int8_t>(pos.z - blockPos.z));
-			}
-			_entityTracker.SendPacketToViewers(pkt, _exploder->id);
+	auto registerExplosionCallback = [this](WorldManager& _world, Dimension _dimension) {
+		// Sent by position, not by who can see the exploder: TNT and beds explode with no exploder
+		_world.onExplosion = [this, _dimension](Vec3 _pos, float _size, std::unordered_set<Int3>& _blockPositions,
+		                                        Entity* /*_exploder*/) {
+			WorldEventBroadcaster::BroadcastExplosion(*this, _pos, _size, _blockPositions, _dimension);
 		};
 	};
 
@@ -361,11 +350,20 @@ void Server::Startup() {
 		                                           _triggeringSession);
 	};
 
+	gameRuntime.world.onNotePlay = [this](Int3 _pos, int8_t _instrumentState, int8_t _instrumentDirection) {
+		WorldEventBroadcaster::BroadcastNoteEvent(*this, _pos, _instrumentState, _instrumentDirection,
+		                                          Dimension::Overworld);
+	};
+	gameRuntime.worldHell.onNotePlay = [this](Int3 _pos, int8_t _instrumentState, int8_t _instrumentDirection) {
+		WorldEventBroadcaster::BroadcastNoteEvent(*this, _pos, _instrumentState, _instrumentDirection,
+		                                          Dimension::Nether);
+	};
+
 	registerEntityTrackerCallbacks(overworldEntityTracker, gameRuntime.world.entityManager);
 	registerEntityTrackerCallbacks(hellEntityTracker, gameRuntime.worldHell.entityManager);
 
-	registerExplosionCallback(gameRuntime.world, overworldEntityTracker);
-	registerExplosionCallback(gameRuntime.worldHell, hellEntityTracker);
+	registerExplosionCallback(gameRuntime.world, Dimension::Overworld);
+	registerExplosionCallback(gameRuntime.worldHell, Dimension::Nether);
 
 	// Get spawn ready
 	int spawnChunkDistance = this->spawnChunkRadius;
@@ -486,6 +484,15 @@ void Server::Run() {
 		avgTotalTickDuration += (tickEnd - tickStart);
 		++avgTickCount;
 
+		// NOTE: Currently unused, doesn't really do anything meaningful.
+		// Trim excess every 5 minutes
+		/*
+		if (ticks % (TICKS_PER_SECOND * 60 * 5) == 0) {
+			TrimMemory();
+			GlobalLogger().debug << "Trimmed!\n";
+		}
+		*/
+
 		if (ticks % (TICKS_PER_SECOND * 2) == 0) {
 			averageTickMs = std::chrono::duration<double, std::milli>(avgTotalTickDuration).count() /
 			                double(avgTickCount);
@@ -552,17 +559,21 @@ void Server::Stop() {
 	gameRuntime.worldHell.Shutdown();
 
 	// Save our level file
-	LevelData& curLevelData = gameRuntime.saveManager.GetLevelData();
-	curLevelData.randomSeed = gameRuntime.world.seed;
-	curLevelData.spawnPoint = gameRuntime.world.spawnPoint;
-	curLevelData.time = gameRuntime.world.elapsedTicks;
-	gameRuntime.saveManager.SaveLevelFile(curLevelData);
+	SaveLevelFile();
 
 	// Save operator, whitelist, and ban updates
 	SaveWhitelist();
 	SaveOperators();
 	SaveBannedPlayers();
 	SaveBannedIps();
+}
+
+void Server::SaveLevelFile() {
+	LevelData& curLevelData = gameRuntime.saveManager.GetLevelData();
+	curLevelData.randomSeed = gameRuntime.world.seed;
+	curLevelData.spawnPoint = gameRuntime.world.spawnPoint;
+	curLevelData.time = gameRuntime.world.elapsedTicks;
+	gameRuntime.saveManager.SaveLevelFile(curLevelData);
 }
 
 void Server::AcceptNewPlayers() {
@@ -673,7 +684,7 @@ void Server::Tick() {
 	for (auto& session : players) {
 		if (session->stream.GetRawWriteBuffer().empty())
 			continue;
-		auto sessionRef = session;
+		auto& sessionRef = session;
 		flushFutures.push_back(writePool.submit_task([sessionRef]() { sessionRef->stream.FlushWriteBuffer(); }));
 	}
 
@@ -681,6 +692,11 @@ void Server::Tick() {
 	// pending data is small) before their shared_ptr drops and they are destroyed
 	for (auto& session : removedSessions)
 		session->stream.FlushWriteBuffer();
+
+	// Autosave
+	if (gameRuntime.world.tickScheduler.currentTick % 40 == 0) {
+		SaveLevelFile();
+	}
 
 	// TODO: This is rather fragile!
 	// Countdown
@@ -921,6 +937,8 @@ std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {
 void Server::ProcessIncoming(PlayerSession& _session) {
 	WorldManager& sessionWorld = _session.dimension == Dimension::Nether ? gameRuntime.worldHell : gameRuntime.world;
 
+	bool recvPacket = false;
+
 	while (_session.stream.HasData()) {
 		size_t packetMark = _session.stream.Mark();
 
@@ -940,8 +958,11 @@ void Server::ProcessIncoming(PlayerSession& _session) {
 			_session.stream.Rollback(packetMark);
 			break;
 		}
+
+		recvPacket = true;
 	}
 
 	// Update our last packet time for the timeout code
-	_session.lastPacketTime = std::chrono::steady_clock::now();
+	if (recvPacket)
+		_session.lastPacketTime = std::chrono::steady_clock::now();
 }

@@ -360,6 +360,8 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 				}
 			}
 		}
+		if ((y & (SUB_CHUNK_SIZE - 1)) == SUB_CHUNK_SIZE - 1)
+			chunk->TryToCompactSubChunk(y / SUB_CHUNK_SIZE);
 	}
 
 	// Load our entities
@@ -415,6 +417,16 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 			if (te.Has("Text4"))
 				ent->text4 = te.Get("Text4").GetString();
 			chunk->tileEntities.push_back(std::move(ent));
+		} else if (id == "Music") {
+			auto ent = std::make_shared<TileEntityNoteblock>(pos);
+			if (te.Has("note"))
+				ent->note = te.Get("note").GetByte();
+			chunk->tileEntities.push_back(std::move(ent));
+		} else if (id == "RecordPlayer") {
+			auto ent = std::make_shared<TileEntityJukebox>(pos);
+			if (te.Has("Record"))
+				ent->recordItemId = ItemId(te.Get("Record").GetInt());
+			chunk->tileEntities.push_back(std::move(ent));
 		} else if (id == "MobSpawner") {
 			auto ent = std::make_shared<TileEntityMobSpawner>(pos);
 			if (te.Has("EntityId"))
@@ -422,8 +434,31 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 			if (te.Has("Delay"))
 				ent->delay = te.Get("Delay").GetShort();
 			chunk->tileEntities.push_back(std::move(ent));
+		} else if (id == "Piston") {
+			auto ent = std::make_shared<TileEntityPistonMoving>(pos);
+			if (te.Has("blockId"))
+				ent->storedBlock = BlockType(te.Get("blockId").GetInt());
+			if (te.Has("blockData"))
+				ent->storedMeta = uint8_t(te.Get("blockData").GetInt());
+			if (te.Has("facing"))
+				ent->orientation = te.Get("facing").GetInt();
+			if (te.Has("progress"))
+				ent->lastProgress = ent->progress = te.Get("progress").GetFloat();
+			if (te.Has("extending"))
+				ent->extending = te.Get("extending").GetByte() != 0;
+
+			if (ent->orientation < 0 || ent->orientation > 5)
+				ent->orientation = 0;
+
+			chunk->tileEntities.push_back(std::move(ent));
 		}
 	}
+
+	// The above stuff marks the chunk as dirty,
+	// which results in it getting resaved immediately after loading.
+	// This is quite wasteful and can harm storage devices long-term,
+	// so it's probably best to not do that.
+	chunk->isModified = false;
 
 	return chunk;
 }

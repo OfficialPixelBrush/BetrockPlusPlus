@@ -8,13 +8,16 @@
 #include "../../bpp_shared/helpers/direction_fixer.h"
 #include "../commands/command.h"
 #include "blocks.h"
+#include "blocks/block_properties.h"
 #include "entities/entity_skeleton.h"
 #include "entities/entity_spider.h"
 #include "entities/entity_zombie.h"
 #include "inventory/interactions/chest.h"
 #include "inventory/interactions/crafting_table.h"
+#include "inventory/interactions/dispenser.h"
 #include "inventory/interactions/furnace.h"
 #include "inventory/interactions/large_chest.h"
+#include "items/tool_properties.h"
 #include "pathfinding/pathfinder.hpp"
 #include "tile_entities/tile_entity.h"
 
@@ -36,6 +39,26 @@ void ServerBlock::Initialize() {
 		_session.activeInteraction = std::make_unique<CraftingTableInventoryInteraction>(&_session.inventory, _world,
 		                                                                                 _gameRuntime, _position);
 		_session.activeInteraction->InitSnapshot();
+		return false;
+	};
+
+	blockBehaviors[BLOCK_DISPENSER].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
+	                                                      Runtime& /*_gameRuntime*/) -> bool {
+		auto trap = _world.GetTileEntityShared<TileEntityDispenser>(_position);
+		if (!trap)
+			return false;
+
+		Packet::OpenContainer ow;
+		ow.windowId = _session.GetNextWindowId();
+		ow.slotCount = 9;
+		ow.title = "Dispenser";
+		ow.windowType = PacketData::WindowType::DISPENSER;
+		ow.Serialize(_session.stream);
+
+		_session.activeInteraction = std::make_unique<TrapInventoryInteraction>(&_session.inventory, trap);
+		_session.activeInteraction->InitSnapshot();
+
+		PacketUtilities::SendInventory(_session, _session.openWindowId, *_session.activeInteraction->inventory);
 		return false;
 	};
 
@@ -137,18 +160,33 @@ void ServerBlock::Initialize() {
 		return false;
 	};
 
-	blockBehaviors[BLOCK_JUKEBOX].onBlockActivated =
-	    [](WorldManager& _world, Int3 _position, PlayerSession& /*_session*/, Runtime& /*_gameRuntime*/) -> bool {
-		//ItemStack* heldItem = _session.inventory.GetHeldItem();
-		//if (!heldItem)
-		//	return false;
-		// TODO: Check if jukebox is already playing
-		//if (!IsRecord(heldItem.id) && )
-		//	return false;
-		if (auto& fn = _world.onWorldEvent) {
-			fn(PacketData::WorldEvent::RECORD_PLAY, _position, Items::Id::RECORD_CAT, nullptr);
-			//fn(PacketData::WorldEvent::RECORD_PLAY, _position, 0);
+	blockBehaviors[BLOCK_JUKEBOX].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,
+	                                                    Runtime& /*_gameRuntime*/) -> bool {
+		auto jukebox = _world.GetTileEntityAs<TileEntityJukebox>(_position);
+		if (!jukebox)
+			return false;
+
+		// Pop out item if already playing something
+		if (jukebox->recordItemId != Items::Id::INVALID) {
+			auto ejectedRecord = static_cast<Items::Id>(int16_t(jukebox->recordItemId));
+			jukebox->recordItemId = Items::Id::INVALID;
+
+			Blocks::DropItemAt(_world, _position, ejectedRecord, /*count=*/1, 0);
+
+			if (auto& fn = _world.onWorldEvent)
+				fn(PacketData::WorldEvent::RECORD_PLAY, _position, 0, nullptr);
+			return false;
 		}
+
+		ItemStack* heldItem = _session.inventory.GetHeldItem();
+		if (!heldItem || !Items::IsRecord(heldItem->id))
+			return false;
+
+		jukebox->recordItemId = heldItem->id;
+		heldItem->DecrementCount(1);
+
+		if (auto& fn = _world.onWorldEvent)
+			fn(PacketData::WorldEvent::RECORD_PLAY, _position, int32_t(int16_t(jukebox->recordItemId)), nullptr);
 		return false;
 	};
 	blockBehaviors[BLOCK_BED].onBlockActivated = [](WorldManager& _world, Int3 _position, PlayerSession& _session,

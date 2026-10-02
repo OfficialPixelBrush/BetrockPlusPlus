@@ -118,7 +118,7 @@ struct EntityTracker {
 		case EntityType::FISH:
 			return { 64, 5, /*SendVelocity=*/true };
 		case EntityType::ARROW:
-			return { 64, 20, /*SendVelocity=*/true };
+			return { 64, 20, /*SendVelocity=*/false };
 		case EntityType::FIREBALL:
 			return { 64, 10, /*SendVelocity=*/true };
 		case EntityType::THROWN_SNOWBALL:
@@ -142,11 +142,12 @@ struct EntityTracker {
 		case EntityType::CREEPER:
 		case EntityType::SPIDER:
 		case EntityType::GHAST:
-		case EntityType::SLIME:
 		case EntityType::GIANT_ZOMBIE:
 			return { 128, 3, /*SendVelocity=*/false };
+		case EntityType::SLIME:
+			return { 128, 3, /*SendVelocity=*/false };
 		case EntityType::LIT_TNT:
-			return { 128, 10, /*SendVelocity=*/true };
+			return { 160, 10, /*SendVelocity=*/true };
 		case EntityType::FALLING_SAND:
 		case EntityType::FALLING_GRAVEL:
 			return { 128, 20, /*SendVelocity=*/false };

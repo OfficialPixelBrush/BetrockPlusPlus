@@ -69,6 +69,7 @@ enum ObjectType : int8_t {
 	ARROW = 60,
 	THROWN_SNOWBALL = 61,
 	THROWN_EGG = 62,
+	FIREBALL = 63,
 	FALLING_SAND = 70,
 	FALLING_GRAVEL = 71,
 	FISHING_BOBBER = 90
@@ -140,7 +141,7 @@ public:
 };
 
 // Used by Block Action Packet (0x36)
-enum NoteInstrument : uint8_t {
+enum NoteInstrument : int8_t {
 	HARP = 0,
 	BASS = 1,
 	SNARE_DRUM = 2,
@@ -148,7 +149,7 @@ enum NoteInstrument : uint8_t {
 	BASS_DRUM = 4
 };
 
-enum NotePitch : uint8_t {
+enum NotePitch : int8_t {
 	LOW_F_SHARP = 0,
 	LOW_G = 1,
 	LOW_G_SHARP = 2,
@@ -192,20 +193,20 @@ enum PistonDirection : int8_t {
 
 // Used by the World Event Packet (0x3D)
 enum WorldEvent : int32_t {
-	// Button click sound
-	CLICK2 = 1000,
-	// Alt. button click sound
-	CLICK1 = 1001,
+	// Dispenser Click (Empty)
+	DISPENSER_CLICK_EMPTY = 1000,
+	// Dispenser Click
+	DISPENSER_CLICK = 1001,
 	// Bow shooting sound
-	BOW_FIRE = 1002,
+	DISPENSER_ARROW_FIRE = 1002,
 	// Door opening/closing sound
 	DOOR_TOGGLE = 1003,
 	// Extinguish fire sound
-	EXTINGUISH = 1004,
+	FIRE_EXTINGUISH = 1004,
 	// Record playing sound, requires music disc item id as parameter
 	RECORD_PLAY = 1005,
-	// Smoke particle effect, requires index for a position
-	SMOKE = 2000,
+	// Dispenser Puff effect, requires index for a position
+	DISPENSER_PUFF = 2000,
 	// Block breaking particle effect, requires block id
 	BLOCK_BREAK = 2001
 };

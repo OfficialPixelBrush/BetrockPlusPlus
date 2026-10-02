@@ -13,6 +13,7 @@
 #include "entities/entity_player.h"
 #include "entities/entity_skeleton.h"
 #include "entities/entity_spider.h"
+#include "entities/entity_tnt.h"
 #include "entities/entity_zombie.h"
 #include "enums/items.h"
 #include "generator/overworld/tree_gen.h"
@@ -30,9 +31,29 @@
 #include "world.h"
 
 namespace Blocks {
+static void IgniteTnt(WorldManager& _world, Int3 _pos, int _fuse = 80) {
+	auto tnt = std::make_shared<TntEntity>(Vec3{ _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 });
+	tnt->fuse = _fuse;
+	_world.entityManager.AddEntity(tnt);
+}
 
 static int GetDirectionFromYaw(float _yaw, int _directionCount) {
 	return MathHelper::FloorDouble((_yaw * _directionCount / 360.0f) + 0.5f) & 3;
+}
+
+static bool EatCake(WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) {
+	if (!_triggeringSession || !_triggeringSession->entity)
+		return false;
+	if (_triggeringSession->entity->health >= _triggeringSession->entity->maxHealth)
+		return false;
+	auto meta = _world.GetMetadata(_pos);
+	if (meta >= 6) {
+		_world.SetBlock(_pos, BLOCK_AIR);
+		return false;
+	}
+	_world.SetMeta(_pos, ++meta);
+	_triggeringSession->entity->Heal(Items::GetRegenerationAmount(BLOCK_CAKE));
+	return false;
 }
 
 void RegisterMiscBehaviors() {
@@ -71,17 +92,10 @@ void RegisterMiscBehaviors() {
 		// ray/selection stay as defaultAABB (full cube)
 	};
 
-	blockBehaviors[BlockType::BLOCK_CAKE] = {
-		.getSelectionBox = CakeAabb,
-		.getRayBounds = CakeAabb,
-		.getCollider = CakeCollider,
-	};
-
-	blockBehaviors[BlockType::BLOCK_PISTON_HEAD] = {
-		.getSelectionBox = PistonHeadAabb,
-		.getRayBounds = PistonHeadAabb,
-		.getCollider = PistonHeadCollider,
-	};
+	blockBehaviors[BlockType::BLOCK_CAKE] = { .getSelectionBox = CakeAabb,
+		                                      .getRayBounds = CakeAabb,
+		                                      .getCollider = CakeCollider,
+		                                      .onBlockActivated = EatCake };
 
 	blockBehaviors[BLOCK_SOULSAND] = {
 		.getCollider = SoulSandCollider,
@@ -106,32 +120,6 @@ void RegisterMiscBehaviors() {
 		int meta[] = { 2, 5, 3, 4 };
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
 	};
-
-	// Pistons
-	auto onPistonPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
-	                        BlockType _blockId, uint8_t /*_meta*/) -> bool {
-		uint8_t orientation;
-
-		if (std::abs(_placer.position.x - _pos.x) < 2.0 && std::abs(_placer.position.z - _pos.z) < 2.0) {
-			double eyeY = _placer.position.y + 1.82 - _placer.yOffset;
-			if (eyeY - _pos.y > 2.0) {
-				orientation = 1; // up
-			} else if (_pos.y - eyeY > 0.0) {
-				orientation = 0; // down
-			} else {
-				int meta[] = { 2, 5, 3, 4 };
-				orientation = meta[GetDirectionFromYaw(_placer.rotationYaw, 4)];
-			}
-		} else {
-			int meta[] = { 2, 5, 3, 4 };
-			orientation = meta[GetDirectionFromYaw(_placer.rotationYaw, 4)];
-		}
-
-		return GenericPlace(_world, _pos, _placer, _face, _blockId, orientation);
-	};
-
-	blockBehaviors[BLOCK_PISTON].onBlockPlaced = onPistonPlace;
-	blockBehaviors[BLOCK_PISTON_STICKY].onBlockPlaced = onPistonPlace;
 
 	// Fence
 	blockBehaviors[BLOCK_FENCE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
@@ -239,6 +227,20 @@ void RegisterMiscBehaviors() {
 	// Dispenser
 	blockBehaviors[BLOCK_DISPENSER].onBlockPlaced = onFurnaceDispenserPlace;
 
+	// Jukebox
+	blockBehaviors[BLOCK_JUKEBOX].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		auto jukeboxTileEntity = std::make_shared<TileEntityJukebox>(_pos);
+		_world.CreateTileEntity(std::move(jukeboxTileEntity));
+	};
+
+	blockBehaviors[BLOCK_JUKEBOX].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		auto* te = _world.GetTileEntityAs<TileEntityJukebox>(_pos);
+		if (!te || te->recordItemId == Items::Id::INVALID)
+			return;
+
+		DropItemAt(_world, _pos, static_cast<Items::Id>(int16_t(te->recordItemId)), /*count=*/1, 0);
+	};
+
 	// Stairs
 	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
 	                       uint8_t /*_meta*/) -> bool {
@@ -248,6 +250,42 @@ void RegisterMiscBehaviors() {
 
 	blockBehaviors[BLOCK_STAIRS_COBBLESTONE].onBlockPlaced = onStairPlace;
 	blockBehaviors[BLOCK_STAIRS_WOOD].onBlockPlaced = onStairPlace;
+
+	// Tnt
+	// Powered when placed
+	blockBehaviors[BLOCK_TNT].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		if (RedstoneManager::IsPositionPowered(_world, _pos)) {
+			_world.SetBlock(_pos, BLOCK_AIR);
+			IgniteTnt(_world, _pos);
+		}
+	};
+	// Powered by a neighbor
+	blockBehaviors[BLOCK_TNT].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
+		if (RedstoneManager::CanProvidePower(_blockId) && RedstoneManager::IsPositionPowered(_world, _pos)) {
+			_world.SetBlock(_pos, BLOCK_AIR);
+			IgniteTnt(_world, _pos);
+		}
+	};
+	// Chain reactions
+	blockBehaviors[BLOCK_TNT].onBlockDestroyedByExplosion = [](WorldManager& _world, Int3 _pos) -> void {
+		_world.SetBlock(_pos, BLOCK_AIR);
+		IgniteTnt(_world, _pos, _world.rand.NextInt(80 / 4) + 80 / 8);
+	};
+
+	// Light when punched and the player is holding flint and steel
+	blockBehaviors[BLOCK_TNT].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos,
+	                                                        Entity& _destroyer) -> void {
+		auto& player = dynamic_cast<PlayerEntity&>(_destroyer);
+		auto heldItem = player.GetHeldItem();
+
+		if (heldItem && heldItem->id == Items::Id::FLINT_AND_STEEL) {
+			_world.SetBlock(_pos, BLOCK_AIR);
+			IgniteTnt(_world, _pos);
+			return;
+		}
+
+		GenericBreak(_world, _pos, _destroyer);
+	};
 
 	// Ladder
 	blockBehaviors[BLOCK_LADDER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
@@ -296,5 +334,4 @@ void RegisterMiscBehaviors() {
 		.getCollider = EmptyCollider,
 	};
 }
-
 }; // namespace Blocks

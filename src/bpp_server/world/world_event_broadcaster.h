@@ -10,6 +10,7 @@
 #include "enums/network/packet_data.h"
 #include "numeric_structs.h"
 #include <cstdint>
+#include <unordered_set>
 
 class Server;
 struct PlayerSession;
@@ -24,4 +25,8 @@ constexpr double kDefaultRangeSq = 64.0 * 64.0;
 void BroadcastWorldEvent(Server& _server, PacketData::WorldEvent _eventType, Int3 _position, int32_t _data,
                          Dimension _dimension, PlayerSession* _triggeringSession = nullptr,
                          double _rangeSq = kDefaultRangeSq);
+void BroadcastNoteEvent(Server& _server, Int3 _position, int _instrumentState, int _instrumentDirection,
+                        Dimension _dimension, double _rangeSq = kDefaultRangeSq);
+void BroadcastExplosion(Server& _server, Vec3 _position, float _size, const std::unordered_set<Int3>& _blocks,
+                        Dimension _dimension, double _rangeSq = kDefaultRangeSq);
 } // namespace WorldEventBroadcaster

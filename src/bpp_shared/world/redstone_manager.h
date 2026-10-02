@@ -42,6 +42,8 @@ void RefreshWireAt(WorldManager& _world, Int3 _pos);
 bool CanBridgeVertical(WorldManager& _world, Int3 _pos, int _dx, int _dz, int _dyOffset);
 bool IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, uint8_t _meta);
 ComponentProfile GetRedstoneDustConnectivity(WorldManager& _world, Int3 _pos);
+// Does powered dust at _dustPos power the block beside it? (_dx, _dz) is the offset FROM that block TO the dust.
+bool DustPowersToward(WorldManager& _world, Int3 _dustPos, int _dx, int _dz);
 PowerProfile GetBlockPowerProfile(WorldManager& _world, Int3 _pos);
 bool IsPositionPowered(WorldManager& _world, Int3 _pos);
 void PruneTorchUpdates(WorldManager& _world);

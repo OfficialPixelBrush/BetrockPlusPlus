@@ -142,9 +142,6 @@ std::vector<Int3> Pathfinder::FindPath(Int3 _start, Int3 _goal, float _width, fl
 	footprint = { std::max(1, int(std::floor(_width + 1.0f))), std::max(1, int(std::floor(_height + 1.0f))),
 		          std::max(1, int(std::floor(_width + 1.0f))) };
 
-	if (GetVerticalOffset(_start) == ColumnResult::Blocked)
-		return {};
-
 	Node* startNode = OpenNode(_start);
 	startNode->g = 0.0f;
 	startNode->f = _start.Distance(_goal);

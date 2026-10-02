@@ -29,28 +29,13 @@ bool LargeChestInventoryInteraction::CanExist(PlayerEntity& _player) {
 }
 
 void LargeChestInventoryInteraction::InitSnapshot() {
-	snapshot.resize(size_t(chestInventory.GetSizeInventory()));
-	for (size_t i = 0; i < size_t(chestInventory.GetSizeInventory()); i++) {
-		auto* stack = chestInventory.GetStackInSlot(i);
-		snapshot[i] = stack ? *stack : ItemStack{};
-	}
+	MergeInventories();
+	snapshot = sharedInventory.slots;
 }
 
-// Analyze the snapshot vs the current chest inventory
 std::vector<DeltaSlot> LargeChestInventoryInteraction::TickDiff() {
-	std::vector<DeltaSlot> differences;
-	for (size_t i = 0; i < snapshot.size(); i++) {
-		auto* currentPtr = chestInventory.GetStackInSlot(int(i));
-		auto current = currentPtr ? *currentPtr : ItemStack{};
-
-		if (snapshot[i] == current)
-			continue;
-
-		snapshot[i] = current;
-		differences.push_back({ snapshot[i], int(i) });
-	}
 	MergeInventories();
-	return differences;
+	return InventoryInteraction::TickDiff();
 }
 
 void LargeChestInventoryInteraction::MergeInventories() {

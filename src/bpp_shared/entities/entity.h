@@ -200,6 +200,10 @@ struct Entity {
 		return false;
 	}
 
+	virtual bool CanBeCollidedWith() {
+		return false;
+	}
+
 	virtual std::optional<AABB> GetMoverCollisionOverride(Entity& /*_candidate*/) {
 		return std::nullopt;
 	}

@@ -62,11 +62,17 @@ public:
 	bool FollowPath();
 	void DealDamage(int _damage);
 	int GetArmorValue();
-	bool AttackEntityFrom(Entity* _entity, int _damage) override;
+	virtual bool AttackEntityFrom(Entity* _entity, int _damage) override;
 	std::optional<Tag> SerializeToNbt() override;
 	void LoadFromNbt(Tag& _nbt) override;
-	float GetEyeHeight() {
+	virtual bool IsMovementBlocked() {
+		return health <= 0;
+	}
+	virtual float GetEyeHeight() {
 		return height * 0.85f;
+	}
+	bool CanBeCollidedWith() override {
+		return !isDead;
 	}
 	void SetMaxHealth(int _health) {
 		this->health = _health;
