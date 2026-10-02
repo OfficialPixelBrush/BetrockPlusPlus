@@ -272,6 +272,21 @@ void RegisterMiscBehaviors() {
 		IgniteTnt(_world, _pos, _world.rand.NextInt(80 / 4) + 80 / 8);
 	};
 
+	// Light when punched and the player is holding flint and steel
+	blockBehaviors[BLOCK_TNT].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos,
+	                                                        Entity& _destroyer) -> void {
+		auto& player = dynamic_cast<PlayerEntity&>(_destroyer);
+		auto heldItem = player.GetHeldItem();
+
+		if (heldItem && heldItem->id == Items::Id::FLINT_AND_STEEL) {
+			_world.SetBlock(_pos, BLOCK_AIR);
+			IgniteTnt(_world, _pos);
+			return;
+		}
+
+		GenericBreak(_world, _pos, _destroyer);
+	};
+
 	// Ladder
 	blockBehaviors[BLOCK_LADDER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                        BlockType /*_blockId*/) -> void {
