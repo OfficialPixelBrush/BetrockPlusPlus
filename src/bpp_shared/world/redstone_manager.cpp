@@ -130,6 +130,25 @@ ComponentProfile RedstoneManager::GetRedstoneDustConnectivity(WorldManager& _wor
 	return thisProfile;
 }
 
+bool RedstoneManager::DustPowersToward(WorldManager& _world, Int3 _dustPos, int _dx, int _dz) {
+	if (_world.GetBlockId(_dustPos) != BLOCK_REDSTONE || _world.GetMetadata(_dustPos) == 0)
+		return false;
+
+	auto c = GetRedstoneDustConnectivity(_world, _dustPos);
+
+	// A lone dot powers every side
+	if (!c.powerNX && !c.powerX && !c.powerNZ && !c.powerZ)
+		return true;
+
+	// Otherwise the line has to run straight into the block
+	if (_dx != 0) {
+		bool farSide = _dx < 0 ? c.powerNX : c.powerX;
+		return farSide && !c.powerNZ && !c.powerZ;
+	}
+	bool farSide = _dz < 0 ? c.powerNZ : c.powerZ;
+	return farSide && !c.powerNX && !c.powerX;
+}
+
 PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _pos) {
 	// Only normal cubes conduct power
 	if (!_world.IsBlockNormalCube(_pos))
@@ -170,25 +189,9 @@ PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _p
 
 		Int3 thisPos = { dx, _pos.y, dz };
 
-		// This is redstone dust, see if it is connecting to this block
-		if (_world.GetBlockId(thisPos) == BLOCK_REDSTONE && _world.GetMetadata(thisPos) > 0) {
-			auto grdc = GetRedstoneDustConnectivity(_world, thisPos);
-			if (rdx == 1 || rdx == -1) {
-				if (grdc.powerX || grdc.powerNX) {
-					bool redirected = grdc.powerNZ || grdc.powerZ;
-					if (!redirected)
-						softPowered = true;
-				}
-			} else if (rdz == 1 || rdz == -1) {
-				if (grdc.powerZ || grdc.powerNZ) {
-					bool redirected = grdc.powerNX || grdc.powerX;
-					if (!redirected)
-						softPowered = true;
-				}
-			}
-			if (!grdc.powerNX && !grdc.powerNZ && !grdc.powerX && !grdc.powerZ)
-				softPowered = true;
-		}
+		// Redstone dust only soft powers us if it points into us
+		if (DustPowersToward(_world, thisPos, rdx, rdz))
+			softPowered = true;
 
 		// This is a repeater, see if it is facing us and powered
 		if (_world.GetBlockId(thisPos) == BLOCK_REDSTONE_REPEATER_ON) {
@@ -372,7 +375,8 @@ bool RedstoneManager::IsPositionPowered(WorldManager& _world, Int3 _pos) {
 				return true;
 		}
 
-		if (neighborBlock == BLOCK_REDSTONE && _world.GetMetadata(dPos) > 0)
+		// Dust beside us only counts if it points into us, not if it just runs past
+		if (neighborBlock == BLOCK_REDSTONE && DustPowersToward(_world, dPos, rdx, rdz))
 			return true;
 	}
 

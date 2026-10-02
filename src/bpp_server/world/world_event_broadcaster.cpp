@@ -44,6 +44,51 @@ void WorldEventBroadcaster::BroadcastNoteEvent(Server& _server, Int3 _position, 
 		session->stream.WriteRaw(buf.data(), buf.size());
 }
 
+void WorldEventBroadcaster::BroadcastExplosion(Server& _server, Vec3 _position, float _size,
+                                               const std::unordered_set<Int3>& _blocks, Dimension _dimension,
+                                               double _rangeSq) {
+	Packet::Explosion pkt;
+	pkt.position = _position;
+	pkt.radius = _size;
+	pkt.numberOfDestroyedBlocks = int32_t(_blocks.size());
+
+	// Offsets are relative to the truncated explosion position, like Java's (int) cast
+	Int3 origin = { int(_position.x), int(_position.y), int(_position.z) };
+	pkt.destroyedBlocks.reserve(_blocks.size() * 3);
+	for (const auto& pos : _blocks) {
+		pkt.destroyedBlocks.push_back(static_cast<int8_t>(pos.x - origin.x));
+		pkt.destroyedBlocks.push_back(static_cast<int8_t>(pos.y - origin.y));
+		pkt.destroyedBlocks.push_back(static_cast<int8_t>(pos.z - origin.z));
+	}
+
+	std::vector<PlayerSession*> inRange;
+	for (auto& session : _server.GetPlayers()) {
+		if (session->connState != ConnectionState::Playing)
+			continue;
+		if (session->dimension != _dimension)
+			continue;
+
+		Vec3 playerPos = session->position.pos;
+		double dx = _position.x - playerPos.x;
+		double dy = _position.y - playerPos.y;
+		double dz = _position.z - playerPos.z;
+		// Strictly less than, same as ServerConfigurationManager.sendPacketToPlayersAroundPoint
+		if (dx * dx + dy * dy + dz * dz >= _rangeSq)
+			continue;
+
+		inRange.push_back(session.get());
+	}
+
+	if (inRange.empty())
+		return;
+
+	NetworkStream tmpStream(-1);
+	pkt.Serialize(tmpStream);
+	const auto& buf = tmpStream.GetRawWriteBuffer();
+	for (auto* session : inRange)
+		session->stream.WriteRaw(buf.data(), buf.size());
+}
+
 void WorldEventBroadcaster::BroadcastWorldEvent(Server& _server, PacketData::WorldEvent _eventType, Int3 _position,
                                                 int32_t _data, Dimension _dimension, PlayerSession* _triggeringSession,
                                                 double _rangeSq) {

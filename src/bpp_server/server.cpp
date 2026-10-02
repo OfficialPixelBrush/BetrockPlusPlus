@@ -11,12 +11,12 @@
 #include "config/list_parser.h"
 #include "dimensions.h"
 #include "gamerules.h"
+#include "helpers/hardware.h"
 #include "logger.h"
 #include "packet/packet_utils.h"
 #include "trackers/inventory_tracker.h"
 #include "world.h"
 #include <future>
-#include "helpers/hardware.h"
 #include <string>
 #include <thread>
 
@@ -324,22 +324,11 @@ void Server::Startup() {
 		_entityTracker.server = this;
 	};
 
-	auto registerExplosionCallback = [this](WorldManager& _world, EntityTracker& _entityTracker) {
-		_world.onExplosion = [&](Vec3 _pos, float _size, std::unordered_set<Int3>& _blockPositions, Entity* _exploder) {
-			if (!_exploder)
-				return;
-			Packet::Explosion pkt;
-			pkt.position = _pos;
-			pkt.numberOfDestroyedBlocks = _blockPositions.size();
-			pkt.radius = _size;
-
-			Int3 blockPos = { int(_pos.x), int(_pos.y), int(_pos.z) };
-			for (auto& pos : _blockPositions) {
-				pkt.destroyedBlocks.push_back(static_cast<int8_t>(pos.x - blockPos.x));
-				pkt.destroyedBlocks.push_back(static_cast<int8_t>(pos.y - blockPos.y));
-				pkt.destroyedBlocks.push_back(static_cast<int8_t>(pos.z - blockPos.z));
-			}
-			_entityTracker.SendPacketToViewers(pkt, _exploder->id);
+	auto registerExplosionCallback = [this](WorldManager& _world, Dimension _dimension) {
+		// Sent by position, not by who can see the exploder: TNT and beds explode with no exploder
+		_world.onExplosion = [this, _dimension](Vec3 _pos, float _size, std::unordered_set<Int3>& _blockPositions,
+		                                        Entity* /*_exploder*/) {
+			WorldEventBroadcaster::BroadcastExplosion(*this, _pos, _size, _blockPositions, _dimension);
 		};
 	};
 
@@ -369,8 +358,8 @@ void Server::Startup() {
 	registerEntityTrackerCallbacks(overworldEntityTracker, gameRuntime.world.entityManager);
 	registerEntityTrackerCallbacks(hellEntityTracker, gameRuntime.worldHell.entityManager);
 
-	registerExplosionCallback(gameRuntime.world, overworldEntityTracker);
-	registerExplosionCallback(gameRuntime.worldHell, hellEntityTracker);
+	registerExplosionCallback(gameRuntime.world, Dimension::Overworld);
+	registerExplosionCallback(gameRuntime.worldHell, Dimension::Nether);
 
 	// Get spawn ready
 	int spawnChunkDistance = this->spawnChunkRadius;
@@ -923,5 +912,6 @@ void Server::ProcessIncoming(PlayerSession& _session) {
 	}
 
 	// Update our last packet time for the timeout code
-	if (recvPacket) _session.lastPacketTime = std::chrono::steady_clock::now();
+	if (recvPacket)
+		_session.lastPacketTime = std::chrono::steady_clock::now();
 }

@@ -13,8 +13,8 @@
 #include "entities/entity_player.h"
 #include "entities/entity_skeleton.h"
 #include "entities/entity_spider.h"
-#include "entities/entity_zombie.h"
 #include "entities/entity_tnt.h"
+#include "entities/entity_zombie.h"
 #include "enums/items.h"
 #include "generator/overworld/tree_gen.h"
 #include "helpers/direction_fixer.h"
@@ -31,6 +31,11 @@
 #include "world.h"
 
 namespace Blocks {
+static void IgniteTnt(WorldManager& _world, Int3 _pos, int _fuse = 80) {
+	auto tnt = std::make_shared<TntEntity>(Vec3{ _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 });
+	tnt->fuse = _fuse;
+	_world.entityManager.AddEntity(tnt);
+}
 
 static int GetDirectionFromYaw(float _yaw, int _directionCount) {
 	return MathHelper::FloorDouble((_yaw * _directionCount / 360.0f) + 0.5f) & 3;
@@ -87,12 +92,10 @@ void RegisterMiscBehaviors() {
 		// ray/selection stay as defaultAABB (full cube)
 	};
 
-	blockBehaviors[BlockType::BLOCK_CAKE] = {
-		.getSelectionBox = CakeAabb,
-		.getRayBounds = CakeAabb,
-		.getCollider = CakeCollider,
-		.onBlockActivated = EatCake
-	};
+	blockBehaviors[BlockType::BLOCK_CAKE] = { .getSelectionBox = CakeAabb,
+		                                      .getRayBounds = CakeAabb,
+		                                      .getCollider = CakeCollider,
+		                                      .onBlockActivated = EatCake };
 
 	blockBehaviors[BLOCK_SOULSAND] = {
 		.getCollider = SoulSandCollider,
@@ -249,38 +252,24 @@ void RegisterMiscBehaviors() {
 	blockBehaviors[BLOCK_STAIRS_WOOD].onBlockPlaced = onStairPlace;
 
 	// Tnt
-	blockBehaviors[BLOCK_TNT].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                        BlockType _blockId) -> void {
-		if (RedstoneManager::CanProvidePower(_blockId) && RedstoneManager::IsPositionPowered(_world, _pos)) {
-			_world.SetBlock(_pos, BLOCK_AIR);
-			
-			Vec3 newPos = { _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 };
-			std::shared_ptr<TntEntity> tnt = std::make_shared<TntEntity>(newPos);
-
-			_world.entityManager.AddEntity(tnt);
-		}
-	};
-
+	// Powered when placed
 	blockBehaviors[BLOCK_TNT].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		if (RedstoneManager::IsPositionPowered(_world, _pos)) {
 			_world.SetBlock(_pos, BLOCK_AIR);
-
-			Vec3 newPos = { _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 };
-			std::shared_ptr<TntEntity> tnt = std::make_shared<TntEntity>(newPos);
-
-			_world.entityManager.AddEntity(tnt);
+			IgniteTnt(_world, _pos);
 		}
 	};
-
+	// Powered by a neighbor
+	blockBehaviors[BLOCK_TNT].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
+		if (RedstoneManager::CanProvidePower(_blockId) && RedstoneManager::IsPositionPowered(_world, _pos)) {
+			_world.SetBlock(_pos, BLOCK_AIR);
+			IgniteTnt(_world, _pos);
+		}
+	};
+	// Chain reactions
 	blockBehaviors[BLOCK_TNT].onBlockDestroyedByExplosion = [](WorldManager& _world, Int3 _pos) -> void {
 		_world.SetBlock(_pos, BLOCK_AIR);
-
-		Vec3 newPos = { _pos.x + 0.5, _pos.y + 0.5, _pos.z + 0.5 };
-		std::shared_ptr<TntEntity> tnt = std::make_shared<TntEntity>(newPos);
-
-		tnt->fuse = _world.rand.NextInt(tnt->fuse / 4) + tnt->fuse / 8;
-
-		_world.entityManager.AddEntity(tnt);
+		IgniteTnt(_world, _pos, _world.rand.NextInt(80 / 4) + 80 / 8);
 	};
 
 	// Ladder
@@ -330,5 +319,4 @@ void RegisterMiscBehaviors() {
 		.getCollider = EmptyCollider,
 	};
 }
-
 }; // namespace Blocks
