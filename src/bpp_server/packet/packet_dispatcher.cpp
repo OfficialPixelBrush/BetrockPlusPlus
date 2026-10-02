@@ -68,7 +68,7 @@ bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, Wor
 		pkt.Deserialize(_session.stream);
 		if (_session.stream.IsShortRead())
 			return true;
-		HandlePacket::PlayerPosition(pkt, _session);
+		HandlePacket::PlayerPosition(pkt, _session, _server);
 		break;
 	}
 	case PacketId::PlayerRotation: {
@@ -84,7 +84,7 @@ bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, Wor
 		pkt.Deserialize(_session.stream);
 		if (_session.stream.IsShortRead())
 			return true;
-		HandlePacket::PlayerPositionAndRotation(pkt, _session);
+		HandlePacket::PlayerPositionAndRotation(pkt, _session, _server);
 		break;
 	}
 	case PacketId::MineBlock: {

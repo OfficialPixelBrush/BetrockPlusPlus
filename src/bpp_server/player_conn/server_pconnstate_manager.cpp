@@ -6,6 +6,7 @@
 */
 #include "../packet/packet_utils.h"
 #include "../server.h"
+#include "addon/addon_impl.h"
 #include "username.h"
 #include "version.h"
 
@@ -193,6 +194,11 @@ void PlayerConnStateManager::FinishLogin(PlayerSession& _session, Server& _serve
 	_session.entity->session = &_session;
 	_session.entity->id = sessionWorld.entityManager.GetNextEntityId();
 	_session.entity->dim = _session.dimension == Dimension::Nether ? Dimension::Nether : Dimension::Overworld;
+
+	{
+		const bp_player_join_event event{ &_session.apiPlayer };
+		_server.GetAddonManager().Broadcast(&bp_addon_events::playerJoin, event);
+	}
 
 	Packet::Login response;
 	response.entityId = _session.entity->id;

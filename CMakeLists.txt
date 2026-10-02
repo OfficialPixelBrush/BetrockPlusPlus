@@ -257,6 +257,9 @@ set(SERVER_SOURCES
     src/bpp_server/commands/command.cpp
     src/bpp_server/commands/command_manager.cpp
 
+    src/bpp_server/addon/addon_manager.cpp
+    src/bpp_server/addon/addon_impl.cpp
+
     ${COMMAND_SOURCES}
 )
 
@@ -285,7 +288,6 @@ endif()
 
 # Includes
 include_directories(
-    "${PROJECT_SOURCE_DIR}/external/glad/include"
     "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_SOURCE_DIR}/src/bpp_server"
     "${PROJECT_SOURCE_DIR}/src/bpp_shared"
