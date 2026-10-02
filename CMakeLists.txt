@@ -187,6 +187,7 @@ set(SHARED_SOURCES
     src/bpp_shared/blocks/block_behaviors/chests.cpp
     src/bpp_shared/blocks/block_behaviors/falling_blocks.cpp
     src/bpp_shared/blocks/block_behaviors/portal.cpp
+    src/bpp_shared/blocks/block_behaviors/fire.cpp
     src/bpp_shared/blocks/block_behaviors/misc.cpp
     src/bpp_shared/blocks/block_behaviors/drops.cpp
     src/bpp_shared/blocks/block_behaviors/piston.cpp
