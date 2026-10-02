@@ -6,6 +6,7 @@
  */
 
 #include "entity_mobile.h"
+#include "addon/addon_impl.h"
 #include "entities/entity.h"
 #include "entities/entity_player.h"
 #include "inventory/item_stack.h"

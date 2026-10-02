@@ -7,11 +7,12 @@
  *
 */
 
+#include "addon/addon_impl.h"
+#include "addon/addon_manager.h"
 #include "base_types.h"
 #include "config/list_parser.h"
 #include "dimensions.h"
 #include "gamerules.h"
-#include "helpers/hardware.h"
 #include "logger.h"
 #include "packet/packet_utils.h"
 #include "trackers/inventory_tracker.h"
@@ -41,7 +42,7 @@
 #include "discord.h"
 #endif
 
-Server::Server() : gameRuntime(), config("server.properties") {
+Server::Server() : gameRuntime(), addonManager(this), config("server.properties") {
 	ServerBlock::Initialize();
 	LoadConfig();
 
@@ -282,6 +283,9 @@ void Server::Startup() {
 
 	// Setup commands
 	commandManager.Init(this);
+
+	// Load addons
+	addonManager.Load();
 
 	// Setup the block callback so we can send it to clients
 	auto makeBlockUpdateCallback = [this](Dimension _dimensionId, auto& _blockChangeMap) {
@@ -536,6 +540,7 @@ void Server::Stop() {
 	if (stopped)
 		return;
 	stopped = true;
+
 #ifdef BETACRAFT_HEARTBEAT
 	betacraftHeartbeat.Stop();
 #endif
@@ -640,6 +645,10 @@ void Server::Tick() {
 	// Inventory tracker
 	InventoryTracker::Tick(*this);
 
+	// Addon event
+	const bp_server_tick_event event{};
+	addonManager.Broadcast(&bp_addon_events::serverTick, event);
+
 	// Worlds
 	gameRuntime.world.Tick(overworldPositions);
 	gameRuntime.world.Update(overworldPositions);
@@ -713,6 +722,44 @@ void Server::Tick() {
 		betacraftHeartbeat.UpdateSnapshot(snap);
 	}
 #endif
+}
+
+void Server::OnPlayerBlockBreak(PlayerSession& _session, WorldManager& _world) {
+	// Actually break this block
+	auto finishMiningWithTool = [&](ItemStack* _held, BlockType _block) {
+		if (!_held)
+			return;
+		auto it = Items::toolBehavior.find(_held->id);
+		if (it != Items::toolBehavior.end() && it->second.onBlockFinishMining)
+			it->second.onBlockFinishMining(_held, _block);
+	};
+
+	auto blockId = _session.pendingBlockBreak->lastBlock;
+	auto blockPos = _session.pendingBlockBreak->lastBlockPos;
+	ItemStack* heldItem = _session.inventory.GetHeldItem();
+
+	_session.pendingBlockBreak.reset();
+	if (!Items::CanPlayerHarvest(heldItem, blockId)) {
+		_world.SetBlock(blockPos, BLOCK_AIR);
+		return;
+	}
+
+	if (_session.entity) {
+		if (auto func = Blocks::blockBehaviors[blockId].onBlockDestroyedByPlayer) {
+			func(_world, blockPos, *_session.entity);
+		} else {
+			Blocks::GenericBreak(_world, blockPos, *_session.entity);
+		}
+	}
+
+	finishMiningWithTool(heldItem, blockId);
+
+	// Send the particle packet
+	Packet::WorldEvent pkt;
+	pkt.eventType = PacketData::WorldEvent::BLOCK_BREAK;
+	pkt.data = blockId;
+	pkt.position = { blockPos.x, int8_t(blockPos.y), blockPos.z };
+	_session.entityTracker->SendPacketToViewers(pkt, _session.entity->id);
 }
 
 bool Server::TryForceBreak(PlayerSession& _session, WorldManager& _world) {
@@ -869,6 +916,10 @@ std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {
 #ifdef DISCORD_INTEGRATION
 				                             GlobalDiscord().SendPlayerLeaveMessage(_s->username);
 #endif
+
+				                             const bp_player_join_event event{ &_s->apiPlayer };
+				                             addonManager.Broadcast(&bp_addon_events::playerJoin, event);
+
 				                             if (_s->entity->entityManager)
 					                             _s->entity->entityManager->RemoveEntity(_s->entity->id);
 			                             }

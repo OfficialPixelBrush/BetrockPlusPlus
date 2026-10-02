@@ -7,6 +7,7 @@
 */
 #pragma once
 
+#include "addon/addon_manager.h"
 #include <atomic>
 extern std::atomic<bool> shutdownRequested;
 
@@ -142,6 +143,10 @@ public:
 		return players;
 	}
 
+	const AddonManager& GetAddonManager() noexcept {
+		return addonManager;
+	}
+
 	WorldManager* GetWorldForDimension(Dimension _dim) {
 		return _dim == Dimension::Nether ? &this->gameRuntime.worldHell : &this->gameRuntime.world;
 	}
@@ -200,43 +205,7 @@ private:
 	void ProcessSleeping(Dimension _dimension);
 
 	// When a player breaks a block
-	void OnPlayerBlockBreak(PlayerSession& _session, WorldManager& _world) {
-		// Actually break this block
-		auto finishMiningWithTool = [&](ItemStack* _held, BlockType _block) {
-			if (!_held)
-				return;
-			auto it = Items::toolBehavior.find(_held->id);
-			if (it != Items::toolBehavior.end() && it->second.onBlockFinishMining)
-				it->second.onBlockFinishMining(_held, _block);
-		};
-
-		auto blockId = _session.pendingBlockBreak->lastBlock;
-		auto blockPos = _session.pendingBlockBreak->lastBlockPos;
-		ItemStack* heldItem = _session.inventory.GetHeldItem();
-
-		_session.pendingBlockBreak.reset();
-		if (!Items::CanPlayerHarvest(heldItem, blockId)) {
-			_world.SetBlock(blockPos, BLOCK_AIR);
-			return;
-		}
-
-		if (_session.entity) {
-			if (auto func = Blocks::blockBehaviors[blockId].onBlockDestroyedByPlayer) {
-				func(_world, blockPos, *_session.entity);
-			} else {
-				Blocks::GenericBreak(_world, blockPos, *_session.entity);
-			}
-		}
-
-		finishMiningWithTool(heldItem, blockId);
-
-		// Send the particle packet
-		Packet::WorldEvent pkt;
-		pkt.eventType = PacketData::WorldEvent::BLOCK_BREAK;
-		pkt.data = blockId;
-		pkt.position = { blockPos.x, int8_t(blockPos.y), blockPos.z };
-		_session.entityTracker->SendPacketToViewers(pkt, _session.entity->id);
-	}
+	void OnPlayerBlockBreak(PlayerSession& _session, WorldManager& _world);
 
 	// Config file stuff
 	void LoadConfig();
@@ -274,6 +243,7 @@ private:
 	int64_t timeoutSeconds = 60;
 	uint16_t maximumPlayers = 20;
 	CommandManager commandManager;
+	AddonManager addonManager;
 	bool stopped = false;
 	Config config;
 	// Flushes session write buffers off the main tick thread

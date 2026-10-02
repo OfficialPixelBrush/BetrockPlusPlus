@@ -10,6 +10,7 @@
 #include "../blocks/server_block_behaviors.h"
 #include "../commands/command.h"
 #include "../trackers/entity_tracker.h"
+#include "addon/addon_impl.h"
 #include "blocks.h"
 #include "blocks/block_properties.h"
 #include "direction_fixer.h"
@@ -50,6 +51,14 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
 	if (!_session.entity)
 		return;
 
+	{
+		bp_player_chat_event event{ .player = &_session.apiPlayer, .message = _pkt.message.c_str(), .cancel = false };
+		_server.GetAddonManager().Broadcast(&bp_addon_events::playerChat, event);
+
+		if (event.cancel)
+			return;
+	}
+
 	_session.entity->messagesThisTick++;
 	if (_session.entity->messagesThisTick >= 3) {
 		_server.DisconnectPlayer("Chat spamming!", _session);
@@ -82,7 +91,39 @@ void PlayerMovement(Packet::PlayerMovement& _pkt, PlayerSession& _session) {
 	}
 }
 
-void PlayerPosition(Packet::PlayerPosition& _pkt, PlayerSession& _session) {
+static bool HandlePlayerMove(Vec3 _to, PlayerSession& _session, Server& _server) {
+	bp_player_move_event event{ .player = &_session.apiPlayer,
+		                        .from = { _session.position.pos.x, _session.position.pos.y, _session.position.pos.z },
+		                        .to = { _to.x, _to.y, _to.z },
+		                        .cancel = false };
+	_server.GetAddonManager().Broadcast(&bp_addon_events::playerMove, event);
+
+	const Vec3 finalTo = { event.to.x, event.to.y, event.to.z };
+
+	if (event.cancel || finalTo != _to) {
+		Packet::PlayerPosition pkt;
+		pkt.onGround = _session.entity ? _session.entity->onGround : true;
+		pkt.position = { finalTo.x, finalTo.y + PLAYER_EYE_HEIGHT, finalTo.z };
+		pkt.cameraY = finalTo.y; // This is backwards, thanks notch
+		pkt.Serialize(_session.stream);
+	}
+
+	if (event.cancel)
+		return false;
+
+	_session.position.pos = { event.from.x, event.from.y, event.from.z };
+	_session.pendingPosition = finalTo;
+
+	if (_session.entity)
+		_session.entity->position = _session.position.pos;
+
+	return true;
+}
+
+void PlayerPosition(Packet::PlayerPosition& _pkt, PlayerSession& _session, Server& _server) {
+	if (!HandlePlayerMove(_pkt.position, _session, _server))
+		return;
+
 	_session.pendingPosition = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
 	if (_session.entity) {
 		_session.entity->onGround = _pkt.onGround;
@@ -98,10 +139,14 @@ void PlayerRotation(Packet::PlayerRotation& _pkt, PlayerSession& _session) {
 	}
 }
 
-void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& _pkt, PlayerSession& _session) {
-	_session.pendingPosition = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
+void PlayerPositionAndRotation(Packet::PlayerPositionAndRotation& _pkt, PlayerSession& _session, Server& _server) {
 	_session.rotation.x = _pkt.yaw;
 	_session.rotation.y = _pkt.pitch;
+
+	if (!HandlePlayerMove(_pkt.position, _session, _server))
+		return;
+
+	_session.pendingPosition = { _pkt.position.x, _pkt.position.y, _pkt.position.z };
 	if (_session.entity) {
 		_session.entity->onGround = _pkt.onGround;
 		_session.entity->HandlePositionChecks();
@@ -178,8 +223,28 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 			return;
 		}
 
+		//TODO: Extract common bp_block_use_event and bp_block_break_event code to some helper
+		ItemStack* heldItem = _session.inventory.GetHeldItem();
+
+		bp_block_break_event event{ .player = &_session.apiPlayer,
+			                        .world = &_world.apiWorld,
+			                        .tool = AddonHelper::ToBpStack(heldItem),
+			                        .blockPos = { packetPos.x, packetPos.y, packetPos.z },
+			                        .block = { .id = newBlockId, .meta = _world.GetMetadata(packetPos) },
+			                        .cancel = false };
+
+		const auto oldItem = heldItem ? *heldItem : ItemStack{};
+
+		AddonHelper::FromBpStack(heldItem, event.tool);
+
+		_server.GetAddonManager().Broadcast(&bp_addon_events::blockBreak, event);
+
+		if (heldItem && *heldItem != oldItem) {
+			PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
+		}
+
 		// Resync if we missed our break
-		if (!_server.TryForceBreak(_session, _world))
+		if (event.cancel || !_server.TryForceBreak(_session, _world))
 			resyncBlock(packetPos);
 		return;
 	}
@@ -223,6 +288,30 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		                     chunk->cpos);
 	};
 
+	ItemStack* heldItem = _session.inventory.GetHeldItem();
+
+	{
+		bp_block_use_event event{ .player = &_session.apiPlayer,
+			                      .world = &_world.apiWorld,
+			                      .heldItem = AddonHelper::ToBpStack(heldItem),
+			                      .blockPos = { position.x, position.y, position.z },
+			                      .block = { block, _world.GetMetadata(position) },
+			                      .cancel = false };
+
+		const auto oldItem = heldItem ? *heldItem : ItemStack{};
+
+		_server.GetAddonManager().Broadcast(&bp_addon_events::blockUse, event);
+
+		if (heldItem && *heldItem != oldItem) {
+			PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
+		}
+
+		if (event.cancel) {
+			resyncBlock(position);
+			return;
+		}
+	}
+
 	// Function returns true if we can place a block after running the function
 	if (ServerBlock::blockBehaviors[block].onBlockActivated) {
 		if (!ServerBlock::blockBehaviors[block].onBlockActivated(_world, position, _session, _gameRuntime)) {
@@ -236,7 +325,6 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 		}
 	}
 
-	ItemStack* heldItem = _session.inventory.GetHeldItem();
 	if (!heldItem) {
 		return;
 	}
@@ -244,6 +332,23 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 	// NOTE:
 	// Invalid Use packet is sent ANYTIME the client predicts a placement will fail (like placing a block inside of yourself)
 	if (_pkt.face == PacketData::FaceDirection::INVALID_USE) {
+		bp_item_use_event event{ .player = &_session.apiPlayer,
+			                     .item = AddonHelper::ToBpStack(heldItem),
+			                     .cancel = false };
+
+		const auto oldItem = heldItem ? *heldItem : ItemStack{};
+
+		_server.GetAddonManager().Broadcast(&bp_addon_events::itemUse, event);
+
+		AddonHelper::FromBpStack(heldItem, event.item);
+
+		if (event.cancel || (heldItem && *heldItem != oldItem)) {
+			PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
+		}
+
+		if (event.cancel)
+			return;
+
 		// Food check
 		if (Items::IsFood(heldItem->id)) {
 			if (auto& fn = Items::itemBehavior[heldItem->id].onUse) {
@@ -294,25 +399,33 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 
 		auto blockId = BlockType(heldItem->id.value);
 
-		// We can place the block here
-		auto function = Blocks::blockBehaviors[blockId].onBlockPlaced;
-		if (!function) {
-			return;
-		}
-		auto entityPos = _session.entity->position;
-		if (position.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > MAXIMUM_PLACEMENT_REACH)
-			return;
-		bool result = function(_world, placePosition, *_session.entity, FaceDirectionToDirection(_pkt.face), blockId,
-		                       heldItem->data);
-		if (result) {
-			heldItem->DecrementCount(1);
-			return;
+		bp_block_place_event event{ .player = &_session.apiPlayer,
+			                        .world = &_world.apiWorld,
+			                        .blockPos = { placePosition.x, placePosition.y, placePosition.z },
+			                        .blockId = blockId,
+			                        .cancel = false };
+		_server.GetAddonManager().Broadcast(&bp_addon_events::blockPlace, event);
+		if (!event.cancel) {
+			// We can place the block here
+			auto function = Blocks::blockBehaviors[blockId].onBlockPlaced;
+			if (!function) {
+				return;
+			}
+			auto entityPos = _session.entity->position;
+			if (position.Distance({ int(entityPos.x), int(entityPos.y), int(entityPos.z) }) > MAXIMUM_PLACEMENT_REACH)
+				return;
+			bool result = function(_world, placePosition, *_session.entity, FaceDirectionToDirection(_pkt.face),
+			                       blockId, heldItem->data);
+			if (result) {
+				heldItem->DecrementCount(1);
+				return;
+			}
 		}
 
 		// Result failed so resync
 		resyncBlock(position);
 		resyncBlock(placePosition);
-
+		PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
 	} else if (Items::IsItem(heldItem->id)) {
 		bool isBucketItem = (heldItem->id == Items::Id::BUCKET || heldItem->id == Items::Id::BUCKET_WATER ||
 		                     heldItem->id == Items::Id::BUCKET_LAVA);
