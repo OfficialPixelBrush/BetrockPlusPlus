@@ -106,7 +106,7 @@ const std::array<std::string, BLOCK_MAX> BLOCK_LABELS = { "Air",
 	                                                      "Cake",
 	                                                      "Repeater (off)",
 	                                                      "Repeater (on)",
-	                                                      "White Stained Glass", // did not exist yet
+	                                                      "Locked Chest", // did not exist yet
 	                                                      "Trapdoor" };
 
 const std::array<std::string, Items::MAX - Items::THRESHOLD> ITEM_LABELS = { "Iron Shovel",

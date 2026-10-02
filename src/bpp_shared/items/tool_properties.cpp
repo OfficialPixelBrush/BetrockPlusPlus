@@ -8,13 +8,16 @@
 #include "blocks.h"
 #include "blocks/block_properties.h"
 #include "entities/entity.h"
+#include "entities/entity_arrow.h"
 #include "entities/entity_boat.h"
 #include "entities/entity_cow.h"
+#include "entities/entity_egg.h"
 #include "entities/entity_item.h"
 #include "entities/entity_mobile.h"
 #include "entities/entity_pig.h"
 #include "entities/entity_player.h"
 #include "entities/entity_sheep.h"
+#include "entities/entity_snowball.h"
 #include "inventory/item_stack.h"
 #include "items.h"
 #include "logger.h"
@@ -318,6 +321,40 @@ void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*
 		return;
 	_world.SetBlock(_pos, BLOCK_FARMLAND);
 	HarmTool(_stack, 1);
+}
+
+void UseBow(PlayerSession& _session, ItemStack* /*_stack*/, Entity& /*_target*/) {
+	auto& inv = _session.inventory;
+	int slot = -1;
+
+	// Check hotbar then main inventory
+	for (int i = 36; i <= 44 && slot < 0; i++)
+		if (inv.slots[i].id == Items::Id::ARROW)
+			slot = i;
+	for (int i = 9; i <= 35 && slot < 0; i++)
+		if (inv.slots[i].id == Items::Id::ARROW)
+			slot = i;
+	if (slot < 0 || !_session.entity || !_session.entity->world)
+		return;
+
+	inv.slots[slot].DecrementCount(1);
+	inv.OnInventoryChanged();
+	_session.entity->world->entityManager.AddEntity(std::make_shared<ArrowEntity>(_session.entity));
+}
+
+void UseThrowable(PlayerSession& _session, ItemStack* _stack, Entity& /*_target*/) {
+	if (_stack->id != Items::EGG && _stack->id != Items::SNOWBALL)
+		return;
+
+	auto type = _stack->id;
+	_stack->DecrementCount(1);
+
+	if (type == Items::EGG) {
+		_session.entity->world->entityManager.AddEntity(std::make_shared<EggEntity>(_session.entity));
+		return;
+	}
+	_session.entity->world->entityManager.AddEntity(std::make_shared<SnowballEntity>(_session.entity));
+
 }
 
 void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Direction::Value /*_face*/) {

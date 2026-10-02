@@ -9,12 +9,12 @@
 #include "blocks.h"
 #include "logger.h"
 #include <cstdint>
+#include <functional>
 #include <numeric_structs.h>
 #include <queue>
-#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
-// For scheduling Tick events in the world
 struct ScheduledTick {
 	int64_t tickDue;
 	int64_t sequence; // Insertion order
@@ -28,30 +28,39 @@ struct ScheduledTick {
 	}
 };
 
-struct PendingEntry {
-	TickTime dueTick;
-	int64_t sequence;
-	BlockType expectedBlock; // what this entry will actually do when it fires
+struct PendingKey {
+	Int3 pos;
+	BlockType block;
+
+	bool operator==(const PendingKey& _other) const {
+		return pos == _other.pos && block == _other.block;
+	}
+};
+
+struct PendingKeyHash {
+	size_t operator()(const PendingKey& _key) const noexcept {
+		size_t h = std::hash<Int3>{}(_key.pos);
+		h ^= std::hash<int>{}(int(_key.block)) + 0x9e3779b9u + (h << 6) + (h >> 2);
+		return h;
+	}
 };
 
 class WorldManager;
 struct TickScheduler {
+	static constexpr size_t MAX_TICKS_PER_TICK = 1000;
+
 	WorldManager* world = nullptr;
 	std::priority_queue<ScheduledTick, std::vector<ScheduledTick>, std::greater<ScheduledTick>> scheduledTicks;
-	std::unordered_map<Int3, PendingEntry> pending;
+	std::unordered_set<PendingKey, PendingKeyHash> pending;
 
 	TickTime currentTick = 0;
 	int64_t nextSequence = 0;
 
 	void ScheduleUpdateTick(Int3 _pos, BlockType _block, int _tickDelay) {
-		TickTime dueTick = currentTick + TickTime(_tickDelay);
-		auto it = pending.find(_pos);
-		if (it != pending.end() && it->second.expectedBlock == _block) {
-			return; // an equivalent update is already pending for this block
-		}
-		auto sequence = nextSequence++;
-		scheduledTicks.push({ dueTick, sequence, _pos, _block });
-		pending[_pos] = { dueTick, sequence, _block };
+		// An equivalent update is already pending for this block
+		if (!pending.insert({ _pos, _block }).second)
+			return;
+		scheduledTicks.push({ currentTick + TickTime(_tickDelay), nextSequence++, _pos, _block });
 	}
 
 	void Tick();

@@ -127,9 +127,7 @@ void RegionManager::SaveChunk(const std::shared_ptr<Chunk> _chunk, bool _unloadE
 	snapshot->refreshLighting = _chunk->refreshLighting;
 	snapshot->state.store(_chunk->state.load(std::memory_order_acquire));
 	snapshot->inUse.store(false);
-	std::memcpy(snapshot->blocks, _chunk->blocks, sizeof(_chunk->blocks));
-	std::memcpy(snapshot->lightNibble, _chunk->lightNibble, sizeof(_chunk->lightNibble));
-	std::memcpy(snapshot->nibbleBlockMeta, _chunk->nibbleBlockMeta, sizeof(_chunk->nibbleBlockMeta));
+	snapshot->CopyStorageFrom(*_chunk);
 	std::memcpy(snapshot->heightMap, _chunk->heightMap, sizeof(_chunk->heightMap));
 	std::memcpy(snapshot->temperature, _chunk->temperature, sizeof(_chunk->temperature));
 	std::memcpy(snapshot->humidity, _chunk->humidity, sizeof(_chunk->humidity));

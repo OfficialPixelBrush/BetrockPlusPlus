@@ -11,6 +11,7 @@
 #include "world.h"
 #include <deque>
 #include <unordered_set>
+#include <vector>
 
 static std::deque<RedstoneUpdateInfo> torchUpdates;
 
@@ -56,10 +57,10 @@ static bool IsPoweredByAttachedLeverOrButton(WorldManager& _world, Int3 _pos) {
 }
 
 bool RedstoneManager::CanBridgeVertical(WorldManager& _world, Int3 _pos, int _dx, int _dz, int _dyOffset) {
-	bool sideIsSolid = Blocks::blockProperties[_world.GetBlockId({ _pos.x + _dx, _pos.y, _pos.z + _dz })].isNormalCube;
+	bool sideIsSolid = _world.IsBlockNormalCube({ _pos.x + _dx, _pos.y, _pos.z + _dz });
 
 	if (_dyOffset > 0) {
-		bool openAboveUs = !Blocks::blockProperties[_world.GetBlockId({ _pos.x, _pos.y + 1, _pos.z })].isNormalCube;
+		bool openAboveUs = !_world.IsBlockNormalCube({ _pos.x, _pos.y + 1, _pos.z });
 		return sideIsSolid && openAboveUs;
 	}
 
@@ -129,11 +130,28 @@ ComponentProfile RedstoneManager::GetRedstoneDustConnectivity(WorldManager& _wor
 	return thisProfile;
 }
 
-PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _pos) {
-	auto thisBlock = _world.GetBlockId(_pos);
+bool RedstoneManager::DustPowersToward(WorldManager& _world, Int3 _dustPos, int _dx, int _dz) {
+	if (_world.GetBlockId(_dustPos) != BLOCK_REDSTONE || _world.GetMetadata(_dustPos) == 0)
+		return false;
 
-	// Non opaque blocks cant have power travel through them
-	if (!Blocks::blockProperties[thisBlock].isOpaqueCube)
+	auto c = GetRedstoneDustConnectivity(_world, _dustPos);
+
+	// A lone dot powers every side
+	if (!c.powerNX && !c.powerX && !c.powerNZ && !c.powerZ)
+		return true;
+
+	// Otherwise the line has to run straight into the block
+	if (_dx != 0) {
+		bool farSide = _dx < 0 ? c.powerNX : c.powerX;
+		return farSide && !c.powerNZ && !c.powerZ;
+	}
+	bool farSide = _dz < 0 ? c.powerNZ : c.powerZ;
+	return farSide && !c.powerNX && !c.powerX;
+}
+
+PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _pos) {
+	// Only normal cubes conduct power
+	if (!_world.IsBlockNormalCube(_pos))
 		return {};
 
 	bool softPowered = false;
@@ -171,25 +189,9 @@ PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _p
 
 		Int3 thisPos = { dx, _pos.y, dz };
 
-		// This is redstone dust, see if it is connecting to this block
-		if (_world.GetBlockId(thisPos) == BLOCK_REDSTONE && _world.GetMetadata(thisPos) > 0) {
-			auto grdc = GetRedstoneDustConnectivity(_world, thisPos);
-			if (rdx == 1 || rdx == -1) {
-				if (grdc.powerX || grdc.powerNX) {
-					bool redirected = grdc.powerNZ || grdc.powerZ;
-					if (!redirected)
-						softPowered = true;
-				}
-			} else if (rdz == 1 || rdz == -1) {
-				if (grdc.powerZ || grdc.powerNZ) {
-					bool redirected = grdc.powerNX || grdc.powerX;
-					if (!redirected)
-						softPowered = true;
-				}
-			}
-			if (!grdc.powerNX && !grdc.powerNZ && !grdc.powerX && !grdc.powerZ)
-				softPowered = true;
-		}
+		// Redstone dust only soft powers us if it points into us
+		if (DustPowersToward(_world, thisPos, rdx, rdz))
+			softPowered = true;
 
 		// This is a repeater, see if it is facing us and powered
 		if (_world.GetBlockId(thisPos) == BLOCK_REDSTONE_REPEATER_ON) {
@@ -373,21 +375,25 @@ bool RedstoneManager::IsPositionPowered(WorldManager& _world, Int3 _pos) {
 				return true;
 		}
 
-		if (neighborBlock == BLOCK_REDSTONE && _world.GetMetadata(dPos) > 0)
+		// Dust beside us only counts if it points into us, not if it just runs past
+		if (neighborBlock == BLOCK_REDSTONE && DustPowersToward(_world, dPos, rdx, rdz))
 			return true;
 	}
 
 	return false;
 }
 
-static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int3>& _visited,
+static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int3>& _visited, std::vector<Int3>& _order,
                          bool _forceDisableProfileCheck = false) {
 	auto thisBlock = _world.GetBlockId(_pos);
 	bool doProfileCheck = false;
 
 	// Only mark visited if we are redstone dust
-	if (thisBlock == BLOCK_REDSTONE)
-		_visited.insert(_pos);
+	if (thisBlock == BLOCK_REDSTONE) {
+		if (!_visited.insert(_pos).second)
+			return;
+		_order.push_back(_pos);
+	}
 
 	ComponentProfile thisProfile;
 	if (thisBlock != BLOCK_REDSTONE && !_forceDisableProfileCheck) {
@@ -397,7 +403,7 @@ static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int
 		doProfileCheck = true;
 	}
 
-	std::unordered_set<Int3> neighbors;
+	std::vector<Int3> neighbors;
 	// Horizontal scan
 	for (int dy = -1 + _pos.y; dy <= 1 + _pos.y; dy++) {
 		int d[4] = { -1, 1, 0, 0 };
@@ -430,19 +436,19 @@ static void GetNeighbors(WorldManager& _world, Int3 _pos, std::unordered_set<Int
 
 			if (_world.GetBlockId({ dx, dy, dz }) == BLOCK_REDSTONE && canConnect)
 				if (!_visited.count({ dx, dy, dz }))
-					neighbors.insert({ dx, dy, dz });
+					neighbors.push_back({ dx, dy, dz });
 		}
 	}
 
 	// If we had dust around us there might be dust connecting to them too
 	if (neighbors.size() != 0) {
 		for (auto& neighbor : neighbors) {
-			GetNeighbors(_world, neighbor, _visited);
+			GetNeighbors(_world, neighbor, _visited, _order);
 		}
 	}
 };
 
-static bool ResolvePowerLevels(WorldManager& _world, std::unordered_set<Int3>& _positions) {
+static bool ResolvePowerLevels(WorldManager& _world, const std::vector<Int3>& _positions) {
 	// Returns if values actually changed this time around
 	bool hasChanged = false;
 	for (auto& pos : _positions) {
@@ -460,18 +466,19 @@ static bool ResolvePowerLevels(WorldManager& _world, std::unordered_set<Int3>& _
 // Avoids a ton of redundant updates!
 static void SolveRedstoneNetwork(WorldManager& _world, Int3 _pos) {
 	std::unordered_set<Int3> visited;
-	GetNeighbors(_world, _pos, visited, /*disable profile checks=*/true);
+	std::vector<Int3> order;
+	GetNeighbors(_world, _pos, visited, order, /*disable profile checks=*/true);
 
 	std::unordered_map<Int3, uint8_t> oldLevels;
-	for (auto& pos : visited) {
+	for (auto& pos : order) {
 		oldLevels.insert({ pos, static_cast<uint8_t>(_world.GetMetadata(pos)) });
 	}
 
-	while (ResolvePowerLevels(_world, visited))
+	while (ResolvePowerLevels(_world, order))
 		;
 
 	// Each redstone wire will try and reach further out if it went from 0->powered or powered->0
-	for (auto& pos : visited) {
+	for (auto& pos : order) {
 		auto oldLevel = oldLevels.find(pos)->second;
 		auto newLevel = _world.GetMetadata(pos);
 		if (oldLevel != newLevel && (oldLevel == 0 || newLevel == 0)) {

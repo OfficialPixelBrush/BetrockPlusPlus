@@ -26,6 +26,7 @@
 #include "packet_data.h"
 #include "tick_scheduler.h"
 #include "tile_entities/tile_entity_manager.h"
+#include "weather_system.h"
 #include "world/spawner.h"
 #include "world/storage/region_manager.h"
 #include "world_access.h"
@@ -73,11 +74,13 @@ public:
 	std::function<void(Vec3, float, std::unordered_set<Int3>&, Entity*)> onExplosion;
 	std::function<void(PendingBlock, Int32_2)> onBlockUpdate;
 	std::function<void(PacketData::WorldEvent, Int3, int32_t, PlayerSession*)> onWorldEvent;
+	std::function<void(Int3, int8_t, int8_t)> onNotePlay;
 	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> chunks;
 	Java::Random rand;
 	int64_t seed = 0;
 	Int3 spawnPoint{ 0, 0, 0 };
 	Dimension thisDimension = Dimension::Overworld;
+	WeatherSystem weatherSystem;
 
 	WorldManager(bool _pIsHell = false) : apiWorld(this), isHell(_pIsHell) {
 		entityManager.world = this;
@@ -117,10 +120,17 @@ public:
 	float GetCelestialAngle();
 	int GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks = true);
 	Biome GetBiome(Int2 _wpos);
+	void EnsureClimate(Chunk& _chunk);
 	BlockType GetBlockId(Int3 _wpos) override;
 	uint8_t GetMetadata(Int3 _wpos);
 	void RemoveTileEntity(Int3 _pos);
 	void SetViewRadius(int _viewRadius);
+
+	void PlayNoteAt(Int3 _pos, int8_t _instrumentState, int8_t _pitchDirection) const {
+		if (onNotePlay)
+			onNotePlay(_pos, _instrumentState, _pitchDirection);
+	}
+
 	// Is it currently dark enough for players to sleep?
 	bool IsNight() const {
 		TickTime relativeTime = elapsedTicks % DAY_LENGTH;
@@ -172,17 +182,17 @@ public:
 			return skylight;
 	}
 
-	const bool IsDay() {
+	bool IsDay() const {
 		return skylightOffset < 4;
 	}
 
-	const int GetViewRadius() {
+	int GetViewRadius() const {
 		return viewRadius;
 	}
-	const int GetSimulationDistance() {
+	int GetSimulationDistance() const {
 		return simulationRadius;
 	}
-	const Dimension GetDimension() {
+	Dimension GetDimension() const {
 		return thisDimension;
 	}
 	void InitWorldSeed(std::string _pSeed) {
@@ -274,6 +284,7 @@ public:
 		auto* chunk = GetChunkRaw({ _wx >> 4, _wz >> 4 });
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return 0.5;
+		EnsureClimate(*chunk);
 		return double(chunk->GetTemperature({ _wx & 15, _wz & 15 }));
 	}
 
@@ -281,6 +292,7 @@ public:
 		auto* chunk = GetChunkRaw({ _wx >> 4, _wz >> 4 });
 		if (!chunk || chunk->state.load() < ChunkState::Generated)
 			return 0.5;
+		EnsureClimate(*chunk);
 		return double(chunk->GetHumidity({ _wx & 15, _wz & 15 }));
 	}
 

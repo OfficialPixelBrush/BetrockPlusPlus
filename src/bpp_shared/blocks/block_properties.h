@@ -18,11 +18,14 @@ struct PlayerSession;
 namespace Blocks {
 
 bool CanSugarcaneSurviveAt(WorldAccess& _world, Int3 _pos);
+bool CanCakeSurviveAt(WorldAccess& _world, Int3 _pos);
 bool CanCropsSurviveAt(WorldAccess& _world, Int3 _pos);
 bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, Direction::Value _face);
 float GetFluidPercentAir(uint8_t _meta);
 void BreakAndDropBlock(WorldManager& _world, Int3 _pos);
 void BreakAndDropBlockWithChance(WorldManager& _world, Int3 _pos, float _chance);
+// What the block would drop when broken, without touching the world (for blocks that are already gone)
+void DropBlockItemsWithChance(WorldManager& _world, Int3 _pos, BlockType _blockId, uint8_t _meta, float _chance);
 void DropBlockAt(WorldManager& _world, Int3 _pos, BlockType _id, ItemAmount _count, int16_t _data);
 void DropItemAt(WorldManager& _world, Int3 _pos, Items::Id _id, ItemAmount _count, int16_t _data);
 bool CanFallAt(WorldAccess& _world, Int3 _position);

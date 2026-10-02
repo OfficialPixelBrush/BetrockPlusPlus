@@ -40,7 +40,3 @@ double GetActiveMemoryUsage(MemoryUnit _unit);
 
 // Asks the allocator to release freed-but-unused memory back to the OS
 void TrimMemory();
-
-// Linux only: Should be called once, as early as possible in main(),
-// before any worker threads are spawned
-void ConfigureAllocator();

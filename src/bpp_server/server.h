@@ -183,6 +183,7 @@ public:
 	bool SaveBannedPlayers();
 	bool SaveBannedIps();
 	void ReloadWhitelist();
+	void SaveLevelFile();
 
 private:
 	bool whitelistLoaded = false;

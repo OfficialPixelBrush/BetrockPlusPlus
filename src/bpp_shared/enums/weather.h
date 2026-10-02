@@ -11,7 +11,7 @@
 // Used as the identifier for the current weather
 
 enum class Weather : int8_t {
-    Clear,
-    Raining,
-    Thundering
+	Clear,
+	Raining,
+	Thundering
 };

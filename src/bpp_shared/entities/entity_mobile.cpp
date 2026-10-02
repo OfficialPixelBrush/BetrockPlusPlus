@@ -77,8 +77,8 @@ void MobileEntity::SetGoal(std::optional<Int3> _goal) {
 		currentPathIdx = 0;
 		return;
 	}
-	Int3 start = { MathHelper::FloorDouble(position.x), MathHelper::FloorDouble(position.y),
-		           MathHelper::FloorDouble(position.z) };
+	auto fd = MathHelper::FloorDouble;
+	Int3 start = { fd(collider.minX), fd(collider.minY), fd(collider.minZ) };
 	currentPath = pathFinder.FindPath(start, *_goal, width, height);
 	currentPathIdx = 0;
 }
@@ -243,13 +243,13 @@ void MobileEntity::TickPhysics() {
 			velocity.y = 0.2;
 		}
 
+		// Gravity, then drag (Java: motionY -= 0.08; motionY *= 0.98)
+		velocity.y -= 0.08;
+		velocity.y *= 0.98f;
+
 		// Apply friction
 		velocity.x *= friction;
-		velocity.y *= 0.98f;
 		velocity.z *= friction;
-
-		// Gravity
-		velocity.y -= 0.08;
 	}
 }
 
@@ -453,7 +453,13 @@ void MobileEntity::Tick() {
 		isDead = deathTime >= 20;
 	}
 
-	UpdateAIState();
+	// Blocked entities drop their inputs
+	if (IsMovementBlocked()) {
+		jumping = false;
+		input = {};
+	} else {
+		UpdateAIState();
+	}
 
 	// Jump code
 	if (jumping) {

@@ -25,14 +25,37 @@ BiomeGenerator WorldManager::biomeGenerator;
 Biome WorldManager::GetBiome(Int2 _wpos) {
 	if (isHell)
 		return Biome::BIOME_HELL;
-	const Int32_2 cpos = Int32_2{ _wpos.x >> 4, _wpos.z >> 4 };
-	const auto chunk = GetChunkShared(cpos);
-	if (!chunk || chunk->state != ChunkState::Generated)
+	auto chunk = GetChunkShared(Int32_2{ _wpos.x >> 4, _wpos.z >> 4 });
+	if (!chunk || chunk->state.load() < ChunkState::Generated)
 		return biomeGenerator.GetBiomeAtPoint(_wpos);
+	EnsureClimate(*chunk);
 
 	const int32_t localX = _wpos.x & 15;
 	const int32_t localZ = _wpos.z & 15;
 	return static_cast<Biome>(chunk->biomes.Get(localX * CHUNK_WIDTH + localZ));
+}
+
+void WorldManager::EnsureClimate(Chunk& _chunk) {
+	// The Nether has no climate
+	if (isHell || _chunk.climateBaked)
+		return;
+
+	thread_local BiomeGenerator tlBiomeGen(0);
+	thread_local int64_t tlBiomeSeed = std::numeric_limits<int64_t>::min();
+	if (tlBiomeSeed != this->seed) {
+		tlBiomeGen = BiomeGenerator(this->seed);
+		tlBiomeSeed = this->seed;
+	}
+	thread_local double temp[CHUNK_AREA];
+	thread_local double humi[CHUNK_AREA];
+	thread_local double weird[CHUNK_AREA];
+	tlBiomeGen.GenerateBiomeMap(_chunk.biomes, temp, humi, weird,
+	                            Int2{ _chunk.cpos.x * CHUNK_WIDTH, _chunk.cpos.z * CHUNK_WIDTH });
+	for (int i = 0; i < CHUNK_AREA; ++i) {
+		_chunk.temperature[i] = float(temp[i]);
+		_chunk.humidity[i] = float(humi[i]);
+	}
+	_chunk.climateBaked = true;
 }
 
 int WorldManager::GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
@@ -216,7 +239,6 @@ std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area, Ent
 	int minZ = Java::DoubleToInt32(std::floor(_area.minZ));
 	int maxZ = Java::DoubleToInt32(std::floor(_area.maxZ + 1.0));
 
-	// Java iterates Y from var5-1 to var6 (exclusive)
 	int startY = CrossPlatform::Math::Max(0, minY - 1);
 	int endY = CrossPlatform::Math::Min(127, maxY);
 
@@ -252,17 +274,22 @@ std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area, Ent
 			}
 		}
 	}
+	// Do we have the mover flag set?
+	bool needsFullEntityScan = _mover ? _mover->GetMoverCollisionOverride(*_mover).has_value() : false;
 
 	// Collect entities in this area, excluding the mover itself
 	AABB entitySearchArea = { double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ) };
-	auto entitiesInArea = _mover ? entityManager.GetEntitiesWithinAabbExcluding(entitySearchArea, _mover->id)
-	                             : entityManager.GetEntitiesWithinAabb(entitySearchArea);
+	std::vector<Entity*> entitiesInArea;
+	
+	entitiesInArea = needsFullEntityScan
+	                     ? entityManager.GetEntitiesWithinAabbExcluding(entitySearchArea, _mover->id)
+	                     : entityManager.GetCollidablesWithinAabb(entitySearchArea, _mover ? _mover->id : EntityId(-1));
 
 	for (auto& entity : entitiesInArea) {
 		if (entity->actsAsWorldCollider && entity->collider.Intersects(_area))
 			collidingBoxes.push_back(entity->collider.Expand(-0.1, -0.1, -0.1));
 
-		if (_mover) {
+		if (needsFullEntityScan) {
 			auto moverOverrideBox = _mover->GetMoverCollisionOverride(*entity);
 			if (moverOverrideBox && moverOverrideBox->Intersects(_area))
 				collidingBoxes.push_back(*moverOverrideBox);
@@ -290,6 +317,7 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
 	tileEntityManager.TickTileEntities(*this);
 
 	lightManager.ProcessLightQueue(*this, INT_MAX);
+	weatherSystem.Tick(rand);
 
 	// Saving
 	if (this->tickScheduler.currentTick % 40 == 0) {
@@ -497,23 +525,6 @@ void WorldManager::DrainLoadQueue() {
 
 		bool needsLightingRefresh = chunk->refreshLighting;
 		chunk->refreshLighting = false;
-
-		// Regenerate temp and humidity data
-		thread_local BiomeGenerator tlBiomeGen(0);
-		thread_local int64_t tlBiomeSeed = std::numeric_limits<int64_t>::min();
-		if (tlBiomeSeed != this->seed) {
-			tlBiomeGen = BiomeGenerator(this->seed);
-			tlBiomeSeed = this->seed;
-		}
-		thread_local double temp[CHUNK_AREA];
-		thread_local double humi[CHUNK_AREA];
-		thread_local double weird[CHUNK_AREA];
-		thread_local PackedArray<CHUNK_AREA, 4> ignored;
-		tlBiomeGen.GenerateBiomeMap(ignored, temp, humi, weird, Int2{ pos.x * CHUNK_WIDTH, pos.z * CHUNK_WIDTH });
-		for (int i = 0; i < CHUNK_AREA; ++i) {
-			chunk->temperature[i] = float(temp[i]);
-			chunk->humidity[i] = float(humi[i]);
-		}
 
 		// Replay any writes that arrived while this chunk was loading.
 		auto pit = pendingBleedWrites.find(pos);
@@ -891,6 +902,10 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	const auto oldBlock = chunk->GetBlock(local);
 	const auto oldMeta = chunk->GetMeta(local);
 
+	// If nothing changed dont do any updates
+	if (oldBlock == _blockType && oldMeta == _metadata)
+		return;
+
 	// Making the assumption here that certain metadatas of
 	// blocks don't have differing light properties
 	const bool changesLighting = (Blocks::blockProperties[_blockType].lightOpacity !=
@@ -906,6 +921,13 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 
 	// Then finally set the new block
 	chunk->SetBlock(local, _blockType);
+
+	if (oldBlock != BLOCK_AIR && !_keepTileEntity) {
+		auto function = Blocks::blockBehaviors[oldBlock].onBlockRemoval;
+		if (function)
+			function(*this, _wpos);
+	}
+
 	chunk->SetMeta(local, _metadata);
 
 	const Int3 pos = _wpos;
@@ -940,13 +962,6 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 			                                 { pos.x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), pos.z + 1 },
 			                                 LightType::Sky);
 		}
-	}
-
-	if (_blockType == BLOCK_AIR) {
-		// We removed this block effectively
-		auto function = Blocks::blockBehaviors[oldBlock].onBlockRemoval;
-		if (function)
-			function(*this, _wpos);
 	}
 
 	// Remove any tile entities that exist at this spot
@@ -1126,9 +1141,9 @@ void WorldManager::SetViewRadius(int _viewRadius) {
 }
 
 void WorldManager::NotifyNeighborsOfUpdate(Int3 _globalPos, BlockType _blockId) {
-	// Update our six neighbors
-	const Direction::Value dirs[6] = { Direction::Value::West,  Direction::Value::East, Direction::Value::North,
-		                               Direction::Value::South, Direction::Value::Down, Direction::Value::Up };
+	// Update our six neighbors.
+	const Direction::Value dirs[6] = { Direction::Value::West, Direction::Value::East,  Direction::Value::Down,
+		                               Direction::Value::Up,   Direction::Value::North, Direction::Value::South };
 
 	// Notify neighbors
 	for (auto dir : dirs) {

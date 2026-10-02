@@ -8,9 +8,12 @@
 #include "../server.h"
 #include "direction_fixer.h"
 #include "entities.h"
+#include "entities/entity_arrow.h"
+#include "entities/entity_egg.h"
 #include "entities/entity_item.h"
 #include "entities/entity_mobile.h"
 #include "entities/entity_painting.h"
+#include "entities/entity_snowball.h"
 #include "logger.h"
 #include "packet_data.h"
 #include <algorithm>
@@ -113,7 +116,7 @@ void EntityTracker::TrackEntity(Entity* _entity) {
 		if (playerIt == trackedEntities.end())
 			continue;
 		auto& player = playerIt->second;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, player.entity) >
+		if (DistanceBetweenPlayerAndEntity(newEntry.entity, player.entity) >
 		    newEntry.profile.range * newEntry.profile.range)
 			continue;
 		// Register the viewer before spawning
@@ -158,7 +161,7 @@ void EntityTracker::AddPlayer(Entity* _player) {
 	for (auto& [entityId, entityEntry] : trackedEntities) {
 		if (entityId == _player->id)
 			continue;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) >
+		if (DistanceBetweenPlayerAndEntity(entityEntry.entity, newPlayerEntry.entity) >
 		    entityEntry.profile.range * entityEntry.profile.range)
 			continue;
 		// Register the viewer before spawning
@@ -172,7 +175,7 @@ void EntityTracker::AddPlayer(Entity* _player) {
 		auto otherIt = trackedEntities.find(otherPlayerId);
 		if (otherIt == trackedEntities.end())
 			continue;
-		if (DistanceBetweenPlayerAndEntity(entry.entity, newPlayerEntry.entity) >
+		if (DistanceBetweenPlayerAndEntity(newPlayerEntry.entity, otherIt->second.entity) >
 		    newPlayerEntry.profile.range * newPlayerEntry.profile.range)
 			continue;
 		newPlayerEntry.visibleTo.insert(otherPlayerId);
@@ -348,6 +351,17 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.Serialize(pSession->stream);
 		break;
 	}
+	case EntityType::SLIME: {
+		Packet::SpawnMob pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.mobType = PacketData::MobType::SLIME;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qRotation = { int8_t(QuantizeRotation(_entityEntry.entity->rotationYaw)),
+			              int8_t(QuantizeRotation(_entityEntry.entity->rotationPitch)) };
+		_entityEntry.entity->EncodeMetadata(pkt.metadata);
+		pkt.Serialize(pSession->stream);
+		break;
+	}
 	case EntityType::BOAT: {
 		Packet::SpawnObject pkt;
 		pkt.entityId = _entityEntry.entity->id;
@@ -405,6 +419,52 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		Packet::SpawnObject pkt;
 		pkt.entityId = _entityEntry.entity->id;
 		pkt.objectType = PacketData::ObjectType::FALLING_GRAVEL;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
+		pkt.Serialize(pSession->stream);
+		break;
+	}
+	case EntityType::ARROW: {
+		auto* arrow = dynamic_cast<ArrowEntity*>(_entityEntry.entity);
+		auto owner = arrow ? arrow->GetOwner() : nullptr;
+		Packet::SpawnObject pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.objectType = PacketData::ObjectType::ARROW;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		// Beta sends the owner id, or the arrow's own id if it has none
+		pkt.ownerEntityId = owner ? owner->id : _entityEntry.entity->id;
+		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
+		pkt.Serialize(pSession->stream);
+		break;
+	}
+	case EntityType::THROWN_EGG: {
+		auto* egg = dynamic_cast<EggEntity*>(_entityEntry.entity);
+		auto owner = egg ? egg->GetOwner() : nullptr;
+		Packet::SpawnObject pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.objectType = PacketData::ObjectType::THROWN_EGG;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.ownerEntityId = owner ? owner->id : _entityEntry.entity->id;
+		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
+		pkt.Serialize(pSession->stream);
+		break;
+	}
+	case EntityType::THROWN_SNOWBALL: {
+		auto* snowball = dynamic_cast<SnowballEntity*>(_entityEntry.entity);
+		auto owner = snowball ? snowball->GetOwner() : nullptr;
+		Packet::SpawnObject pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.objectType = PacketData::ObjectType::THROWN_SNOWBALL;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.ownerEntityId = owner ? owner->id : _entityEntry.entity->id;
+		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
+		pkt.Serialize(pSession->stream);
+		break;
+	}
+	case EntityType::LIT_TNT: {
+		Packet::SpawnObject pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.objectType = PacketData::ObjectType::LIT_TNT;
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
 		pkt.Serialize(pSession->stream);
@@ -624,33 +684,31 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 	bool needsMovementUpdate = _trackedEntry.updateCounter >= _trackedEntry.profile.updateFrequency ||
 	                           _trackedEntry.ticksSinceTeleport >= forceTeleportTicks;
 
-
 	// Determine if we should send our velocity
 	bool needsVelocityUpdate = false;
-	
+
 	constexpr double THRESHOLD = 0.01;
 	Vec3 currentMotion;
 	currentMotion.x = std::abs(entity->velocity.x) < THRESHOLD ? 0 : entity->velocity.x;
 	currentMotion.y = std::abs(entity->velocity.y) < THRESHOLD ? 0 : entity->velocity.y;
 	currentMotion.z = std::abs(entity->velocity.z) < THRESHOLD ? 0 : entity->velocity.z;
 	Vec3& lastMotion = _trackedEntry.lastBroadcastMotion;
-	
+
 	if (_trackedEntry.profile.sendVelocity) {
 		Vec3 delta = currentMotion - lastMotion;
 		const double deltaLen = delta.Length();
 		const double motionThreshold = 0.02;
 
 		needsVelocityUpdate = (deltaLen > motionThreshold && needsMovementUpdate) ||
-		                           (deltaLen > 0.0 && currentMotion.x == 0.0 && currentMotion.y == 0.0 &&
-		                            currentMotion.z == 0.0);
+		                      (deltaLen > 0.0 && currentMotion.x == 0.0 && currentMotion.y == 0.0 &&
+		                       currentMotion.z == 0.0);
 	}
 
 	if (needsVelocityUpdate) {
 		lastMotion = currentMotion;
 		Packet::EntityVelocity pkt;
 		pkt.entityId = entity->id;
-		pkt.velocity = { QuantizeVelocityComponent(currentMotion.x),
-			             QuantizeVelocityComponent(currentMotion.y),
+		pkt.velocity = { QuantizeVelocityComponent(currentMotion.x), QuantizeVelocityComponent(currentMotion.y),
 			             QuantizeVelocityComponent(currentMotion.z) };
 		SendPacketToPlayersInTrackedEntry(pkt, _trackedEntry);
 	}
