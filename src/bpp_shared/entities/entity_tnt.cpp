@@ -19,13 +19,13 @@ void TntEntity::Tick() {
 	if (!world)
 		return;
 
-	this->velocity.y -= 0.04;
+	this->velocity.y -= double(0.04f);
 	this->Move(this->velocity);
-	this->velocity *= 0.98;
+	this->velocity *= double(0.98f);
 	if (this->onGround) {
-		this->velocity.x *= 0.7;
+		this->velocity.x *= double(0.7f);
 		this->velocity.y *= -0.5;
-		this->velocity.z *= 0.7;
+		this->velocity.z *= double(0.7f);
 	}
 
 	if (this->fuse-- <= 0) {

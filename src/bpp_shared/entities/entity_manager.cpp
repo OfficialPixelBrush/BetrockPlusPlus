@@ -18,10 +18,11 @@
 #include "entity_pig.h"
 #include "entity_sheep.h"
 #include "entity_skeleton.h"
+#include "entity_slime.h"
 #include "entity_snowball.h"
 #include "entity_spider.h"
+#include "entity_tnt.h"
 #include "entity_zombie.h"
-#include "entity_slime.h"
 #include "gamerules.h"
 #include "world.h"
 
@@ -115,9 +116,7 @@ void EntityManager::TickEntityAndPassenger(const std::shared_ptr<Entity>& _entit
 		auto& oldContainer = entityContainers[oldCpos];
 		auto& b = oldContainer.buckets[_entity->bucketPos.z];
 		b.entities.erase(std::remove_if(b.entities.begin(), b.entities.end(),
-		                                [&_entity](Entity* _ptr) {
-			                                return _ptr == _entity.get(); 
-		                                }),
+		                                [&_entity](Entity* _ptr) { return _ptr == _entity.get(); }),
 		                 b.entities.end());
 		b.worldCollidableEntities.erase(std::remove_if(b.worldCollidableEntities.begin(),
 		                                               b.worldCollidableEntities.end(),
@@ -186,20 +185,17 @@ void EntityManager::Tick() {
 	}
 }
 
-std::vector<Entity*> EntityManager::GetEntitiesWithinAabbExcluding(const AABB& _box,
-                                                                                   const EntityId _entityId) {
+std::vector<Entity*> EntityManager::GetEntitiesWithinAabbExcluding(const AABB& _box, const EntityId _entityId) {
 	// Get all entities within an AABB excluding this entity id
 	auto entitiesInAABB = GetEntitiesWithinAabb(_box);
 	entitiesInAABB.erase(std::remove_if(entitiesInAABB.begin(), entitiesInAABB.end(),
-	                                    [_entityId](Entity* _entity) {
-		                                    return _entity->id == _entityId;
-	                                    }),
+	                                    [_entityId](Entity* _entity) { return _entity->id == _entityId; }),
 	                     entitiesInAABB.end());
 	return entitiesInAABB;
 }
 
-std::vector<Entity*> EntityManager::GetEntitiesWithinAabbExcludingTypes(
-    const AABB& _box, const std::vector<EntityType>& _excludedTypes) {
+std::vector<Entity*> EntityManager::GetEntitiesWithinAabbExcludingTypes(const AABB& _box,
+                                                                        const std::vector<EntityType>& _excludedTypes) {
 	std::vector<Entity*> exclusiveEntities;
 	auto entitiesInAABB = GetEntitiesWithinAabb(_box);
 	for (auto& entity : entitiesInAABB) {
@@ -311,8 +307,6 @@ std::vector<Entity*> EntityManager::GetLivingEntitiesWithinAabb(const AABB& _box
 void EntityManager::CreateEntityFromNbt(Tag& _nbt) {
 	// Load an entity from the nbt list
 	std::string id = _nbt.compound["id"].GetString();
-
-	// TODO: load other entity type
 	if (id == "Painting") {
 		PaintingEntity entity;
 		entity.LoadFromNbt(_nbt);
@@ -396,6 +390,11 @@ void EntityManager::CreateEntityFromNbt(Tag& _nbt) {
 		else if (entity.block == BLOCK_GRAVEL)
 			entity.type = EntityType::FALLING_GRAVEL;
 		AddEntity(std::make_shared<FallingBlockEntity>(entity));
+	}
+	if (id == "PrimedTnt") {
+		TntEntity entity;
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<TntEntity>(entity));
 	}
 }
 

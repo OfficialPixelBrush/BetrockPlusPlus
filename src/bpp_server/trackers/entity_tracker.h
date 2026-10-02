@@ -147,7 +147,7 @@ struct EntityTracker {
 		case EntityType::SLIME:
 			return { 128, 3, /*SendVelocity=*/false };
 		case EntityType::LIT_TNT:
-			return { 128, 10, /*SendVelocity=*/true };
+			return { 160, 10, /*SendVelocity=*/true };
 		case EntityType::FALLING_SAND:
 		case EntityType::FALLING_GRAVEL:
 			return { 128, 20, /*SendVelocity=*/false };

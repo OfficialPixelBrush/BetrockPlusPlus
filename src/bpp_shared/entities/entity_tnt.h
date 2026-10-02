@@ -7,23 +7,28 @@
 #pragma once
 
 #include "entity.h"
-#include "logger.h"
 #include "explosion.h"
+#include "logger.h"
 
 struct TntEntity : public Entity {
 	int fuse = 0;
 
-	TntEntity(Vec3 _pos) : Entity() {
+	// Used when loading from NBT
+	TntEntity() : Entity() {
 		type = EntityType::LIT_TNT;
 		fuse = 80;
+		SetSize({ 0.98f, 0.98f });
+		yOffset = height / 2.0f;
+	}
 
-		this->Teleport(_pos);
+	explicit TntEntity(Vec3 _pos) : TntEntity() {
+		Teleport(_pos);
 
-		// Randomness in the direction
-		float randomDirection = this->rand.NextDouble() * JavaMath::PI * 2.0;
-		velocity.x = -MathHelper::Sin(randomDirection * JavaMath::PI / 180.0) * 0.02;
-		velocity.y = 0.2;
-		velocity.z = -MathHelper::Cos(randomDirection * JavaMath::PI / 180.0) * 0.02;
+		// Small random horizontal nudge plus a hop
+		float randomDirection = float(this->rand.NextDouble() * JavaMath::PI * 2.0);
+		velocity.x = -MathHelper::Sin(randomDirection * JavaMath::PI / 180.0) * 0.02f;
+		velocity.y = double(0.2f);
+		velocity.z = -MathHelper::Cos(randomDirection * JavaMath::PI / 180.0) * 0.02f;
 	}
 
 	void Tick() override;
@@ -37,6 +42,6 @@ struct TntEntity : public Entity {
 	void Explode() {
 		if (!world)
 			return;
-		world->DoExplosion(this, this->position, /*power=*/4, /*doFire=*/false);
+		world->DoExplosion(nullptr, this->position, /*power=*/4.0f, /*doFire=*/false);
 	}
 };

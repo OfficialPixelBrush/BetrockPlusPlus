@@ -224,8 +224,8 @@ static bool IsProvidingPowerTo(WorldManager& _world, Int3 _src, int _dx, int _dy
 	if (id == BLOCK_AIR)
 		return false;
 
-	// Solid blocks pass on whatever power they are receiving
-	if (Blocks::blockProperties[id].isNormalCube)
+	// Normal cubes pass on whatever power they are receiving
+	if (_world.IsBlockNormalCube(_src))
 		return RedstoneManager::GetBlockPowerProfile(_world, _src).powered;
 
 	const uint8_t meta = _world.GetMetadata(_src);
@@ -435,6 +435,21 @@ void RegisterPistonBehaviors() {
 		BlockType baseId = _world.GetBlockId(basePos);
 		if ((baseId == BLOCK_PISTON || baseId == BLOCK_PISTON_STICKY) && PistonPowered(_world.GetMetadata(basePos)))
 			BreakAndDropBlock(_world, basePos);
+	};
+
+	// So moving blocks still drop
+	blockBehaviors[BLOCK_PISTON_MOVING].onBlockDestroyedByExplosion = [](WorldManager& _world, Int3 _pos) -> void {
+		BlockType stored = BLOCK_AIR;
+		uint8_t storedMeta = 0;
+		if (auto te = _world.GetTileEntityAs<TileEntityPistonMoving>(_pos)) {
+			stored = te->storedBlock;
+			storedMeta = te->storedMeta;
+		}
+
+		_world.SetBlock(_pos, BLOCK_AIR);
+
+		if (stored != BLOCK_AIR && stored != BLOCK_PISTON_MOVING)
+			DropBlockItemsWithChance(_world, _pos, stored, storedMeta, 1.0f);
 	};
 }
 }; // namespace Blocks
