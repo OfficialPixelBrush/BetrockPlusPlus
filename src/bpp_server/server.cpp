@@ -917,8 +917,8 @@ std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {
 				                             GlobalDiscord().SendPlayerLeaveMessage(_s->username);
 #endif
 
-				                             const bp_player_join_event event{ &_s->apiPlayer };
-				                             addonManager.Broadcast(&bp_addon_events::playerJoin, event);
+				                             const bp_player_leave_event event{ &_s->apiPlayer };
+				                             addonManager.Broadcast(&bp_addon_events::playerLeave, event);
 
 				                             if (_s->entity->entityManager)
 					                             _s->entity->entityManager->RemoveEntity(_s->entity->id);

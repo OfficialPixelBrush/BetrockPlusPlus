@@ -30,6 +30,7 @@ void CommandManager::Init(Server* _server) {
 	RegisterWhitelist(dispatcher);
 	RegisterKick(dispatcher);
 	RegisterBan(dispatcher);
+	RegisterAddon(dispatcher);
 	GlobalLogger().info << "Registered " << dispatcher.root().children.size() << " command(s)!" << "\n";
 }
 

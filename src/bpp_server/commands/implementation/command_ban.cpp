@@ -40,22 +40,6 @@ bool IsValidIpAddress(const std::string& _ip) {
 	return segments == 4;
 }
 
-void SendChunkedList(PlayerSession& _session, const std::string& _header, const std::vector<std::string>& _entries) {
-	SendChat(_session, _header);
-	std::string line = "§7";
-	for (size_t i = 0; i < _entries.size(); i++) {
-		auto& entry = _entries[i];
-		const std::string suffix = (i < (_entries.size() - 1)) ? ", " : "";
-		if (line.size() + entry.size() + suffix.size() > 64 && line != "§7") {
-			SendChat(_session, line);
-			line = "§7";
-		}
-		line += entry + suffix;
-	}
-	if (line != "§7")
-		SendChat(_session, line);
-}
-
 std::string BanPlayer(const strategos::CmdNode& _cmd, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
 	std::string name = TargetName(_cmd, ctx);
