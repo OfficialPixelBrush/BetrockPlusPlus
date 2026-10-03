@@ -34,6 +34,7 @@ class Server;
 
 bool IsOperator(PlayerSession& _session, Server& _server);
 ItemStack ParseItemStack(const std::string& _itemArg, std::optional<int> _count = std::nullopt);
+void SendChunkedList(PlayerSession& _session, const std::string& _header, const std::vector<std::string>& _entries);
 
 inline void SendChat(PlayerSession& _session, const std::string& _message) {
 	std::u16string ucs2 = ToUCS2(_message);
