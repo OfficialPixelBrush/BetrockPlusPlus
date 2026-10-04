@@ -19,31 +19,36 @@ bool IsOperator(PlayerSession& _session, Server& _server) {
 ItemStack ParseItemStack(const std::string& _itemArg, std::optional<int> _count) {
     ItemStack item;
 
-    size_t colonPos = _itemArg.find(':');
-    std::string baseString = _itemArg.substr(0, colonPos);
-    std::string metaString;
-    if (colonPos != std::string::npos) {
-        metaString = _itemArg.substr(colonPos + 1);
-    }
-
-    // Resolve the base. String label first, then numeric ID
     if (auto it = IDENTIFIER_TO_ID.find(_itemArg); it != IDENTIFIER_TO_ID.end()) {
-        item = ItemStack{it->second.id, it->second.meta};
-        metaString.clear();
-    } else if (auto it2 = IDENTIFIER_TO_ID.find(baseString); it2 != IDENTIFIER_TO_ID.end()) {
-        item = ItemStack{it2->second.id, it2->second.meta};
+        item.id   = it->second.id;
+        item.data = it->second.meta;
     } else {
-        item.id = static_cast<int16_t>(std::stoi(baseString));
+        const size_t colonPos = _itemArg.find(':');
+        const std::string baseString = _itemArg.substr(0, colonPos);
+
+        std::optional<int16_t> explicitMeta;
+        if (colonPos != std::string::npos) {
+            const std::string metaString = _itemArg.substr(colonPos + 1);
+            if (!metaString.empty()) {
+                explicitMeta = static_cast<int16_t>(std::stoi(metaString));
+            }
+        }
+
+        if (auto it2 = IDENTIFIER_TO_ID.find(baseString); it2 != IDENTIFIER_TO_ID.end()) {
+            item.id   = it2->second.id;
+            item.data = it2->second.meta;
+        } else {
+            item.id   = static_cast<int16_t>(std::stoi(baseString));
+            item.data = 0;
+        }
+
+        // Explicit meta, if given, overrides the default
+        if (explicitMeta) {
+            item.data = *explicitMeta;
+        }
     }
 
-    if (!metaString.empty()) {
-        item.data = static_cast<int16_t>(std::stoi(metaString));
-    }
-
-    item.count = Items::GetMaxStack(item.id);
-    if (_count) {
-        item.count = static_cast<int8_t>(*_count);
-    }
+    item.count = _count ? static_cast<int8_t>(*_count) : Items::GetMaxStack(item.id);
     return item;
 }
 
