@@ -41,13 +41,16 @@ void TryCreatePortal(WorldManager& _world, Int3 _pos) {
 	if (!isXAligned && !isZAligned)
 		return;
 
+	if (isXAligned && isZAligned)
+		return;
+
 	std::array<Int3, 4> neighbors =
 	    isXAligned ? std::array<Int3, 4>{ { { 0, 1, 0 }, { 0, -1, 0 }, { 1, 0, 0 }, { -1, 0, 0 } } }
 	               : std::array<Int3, 4>{ { { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } } };
 
 	std::vector<Int3> queue = { _pos };
 	size_t head = 0;
-	constexpr size_t MAX_PORTAL_BLOCKS = 21 * 21;
+	constexpr size_t MAX_PORTAL_BLOCKS = 6;
 
 	while (head < queue.size()) {
 		Int3 curr = queue[head++];
@@ -71,7 +74,7 @@ void TryCreatePortal(WorldManager& _world, Int3 _pos) {
 		}
 	}
 
-	if (queue.empty())
+	if (queue.empty() || queue.size() != 6)
 		return;
 
 	int minX = queue[0].x, maxX = queue[0].x;
@@ -98,12 +101,73 @@ void TryCreatePortal(WorldManager& _world, Int3 _pos) {
 
 	constexpr int MIN_WIDTH = 2;
 	constexpr int MIN_HEIGHT = 3;
+	constexpr int MAX_WIDTH = 2;
+	constexpr int MAX_HEIGHT = 3;
 
-	if (width < MIN_WIDTH || height < MIN_HEIGHT)
+	if (width < MIN_WIDTH || height < MIN_HEIGHT || height > MAX_HEIGHT || width > MAX_WIDTH)
 		return;
 
 	for (const auto& innerPos : queue)
-		_world.SetBlock(innerPos, BLOCK_NETHER_PORTAL);
+		_world.SetBlock(innerPos, BLOCK_NETHER_PORTAL, /*meta=*/0, /*keepTileEntity=*/false, /*notifyNeighbors=*/false);
+}
+
+static void GetConnectedPortals(WorldManager& _world, Int3 _pos, std::unordered_set<Int3>& _portals) {
+	if (_world.GetBlockId(_pos) != BLOCK_NETHER_PORTAL)
+		return;
+
+	bool xAligned = _world.GetBlockId(_pos.WithOffset(Direction::Value::West)) == BLOCK_NETHER_PORTAL ||
+	                _world.GetBlockId(_pos.WithOffset(Direction::Value::East)) == BLOCK_NETHER_PORTAL;
+	bool zAligned = _world.GetBlockId(_pos.WithOffset(Direction::Value::North)) == BLOCK_NETHER_PORTAL ||
+	                _world.GetBlockId(_pos.WithOffset(Direction::Value::South)) == BLOCK_NETHER_PORTAL;
+	if (xAligned == zAligned)
+		return;
+
+	if (!_portals.insert(_pos).second)
+		return; // already visited
+
+	auto neighbors = xAligned ? std::array<Direction::Value, 4>{ Direction::Value::East, Direction::Value::West,
+		                                                         Direction::Value::Up, Direction::Value::Down }
+	                          : std::array<Direction::Value, 4>{ Direction::Value::Up, Direction::Value::Down,
+		                                                         Direction::Value::North, Direction::Value::South };
+
+	for (auto offset : neighbors)
+		GetConnectedPortals(_world, _pos.WithOffset(offset), _portals);
+}
+
+void RegisterPortalBehaviors() { 
+	// Check if this portal block is still valid
+	blockBehaviors[BLOCK_NETHER_PORTAL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
+	                                                               BlockType _blockId) -> void {
+		BlockType thisBlock = BLOCK_NETHER_PORTAL;
+		bool xAligned = _world.GetBlockId(_pos.WithOffset(Direction::Value::West)) == thisBlock ||
+		                _world.GetBlockId(_pos.WithOffset(Direction::Value::East)) == thisBlock;
+		bool zAligned = _world.GetBlockId(_pos.WithOffset(Direction::Value::North)) == thisBlock ||
+		                _world.GetBlockId(_pos.WithOffset(Direction::Value::South)) == thisBlock;
+		if ((xAligned && zAligned) || (!xAligned && !zAligned)) {
+			_world.SetBlock(_pos, BLOCK_AIR);
+		}
+	};
+
+	// Remove the existing portals that depend on this obsidian
+	blockBehaviors[BLOCK_OBSIDIAN].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		Direction::Value neighbors[6] = { Direction::Value::East,  Direction::Value::West, Direction::Value::North,
+			                              Direction::Value::South, Direction::Value::Up,   Direction::Value::Down };
+		for (auto offset : neighbors) {
+			auto checkPos = _pos.WithOffset(offset);
+			auto checkBlock = _world.GetBlockId(checkPos);
+
+			if (checkBlock != BLOCK_NETHER_PORTAL)
+				continue;
+
+			std::unordered_set<Int3> portalPositions;
+
+			GetConnectedPortals(_world, checkPos, portalPositions);
+
+			for (auto pos : portalPositions) {
+				_world.SetBlock(pos, BLOCK_AIR);
+			}
+		}
+	};
 }
 
 }; // namespace Blocks

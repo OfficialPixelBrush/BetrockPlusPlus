@@ -473,17 +473,10 @@ void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entit
 	_stack->id = Items::Id::BUCKET;
 }
 
-void UseFlintAndSteel(WorldManager& /*_world*/, ItemStack* _stack, Int3 /*_pos*/, Entity& /*_user*/,
-                      Direction::Value /*_face*/) {
-	// *** DISABLED FOR FIRST RELEASE ***
-#ifdef EXPERIMENTAL
-	if (_user.flags.isSneaking) {
-		TestSetGoal(_world, _stack, _pos, _face);
-		return;
-	}
+void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+                      Direction::Value _face) {
 	_pos.Offset(_face);
 	_world.SetBlock(_pos, BLOCK_FIRE);
-#endif
 	HarmTool(_stack, 1);
 }
 
