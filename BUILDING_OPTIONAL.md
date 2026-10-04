@@ -13,6 +13,7 @@ Here's a list of all optional flags and their default state:
 | Flag                                                        | Default State |
 | ----------------------------------------------------------- | ------------- |
 | [`ONLINE_MODE_AUTHENTICATION`](#online-mode-authentication) | `ON`          |
+| `CRASH_LOGGING`                                             | `ON`          |
 | [`BETACRAFT_HEARTBEAT`](#betacraft-server-list-heartbeat)   | `ON`          |
 | [`DISCORD_INTEGRATION`](#discord-integration)               | `OFF`         |
 | [`EXPERIMENTAL`](#experimental)                             | `OFF`         |
