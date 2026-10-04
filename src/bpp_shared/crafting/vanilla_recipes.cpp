@@ -75,6 +75,8 @@ void RecipeManager::AddVanillaRecipes() {
 	AddShapedRecipe({ "# #", " # " }, { { '#', { Items::Id::IRON } } }, { Items::Id::BUCKET, 1 });
 	AddShapedRecipe({ "A ", " B" }, { { 'A', { Items::Id::IRON } }, { 'B', { Items::Id::FLINT } } },
 	                { Items::Id::FLINT_AND_STEEL, 1 });
+	AddShapedRecipe({ " A", "B " }, { { 'A', { Items::Id::IRON } }, { 'B', { Items::Id::FLINT } } },
+	                { Items::Id::FLINT_AND_STEEL, 1 });
 	AddShapedRecipe({ "###" }, { { '#', { Items::Id::WHEAT } } }, { Items::Id::BREAD, 1 });
 	AddShapedRecipe({ "  #", " #X", "# X" }, { { '#', { Items::Id::STICK } }, { 'X', { Items::Id::STRING } } },
 	                { Items::Id::FISHING_ROD, 1 });
