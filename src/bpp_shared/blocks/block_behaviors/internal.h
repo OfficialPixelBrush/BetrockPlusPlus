@@ -24,6 +24,7 @@ void RegisterMiscBehaviors();
 void RegisterFireBehaviors();
 void RegisterBlockDrops();
 void RegisterPistonBehaviors();
+void RegisterPortalBehaviors();
 
 // Defined in common.cpp
 bool IsReplaceable(WorldManager& _world, Int3 _pos);

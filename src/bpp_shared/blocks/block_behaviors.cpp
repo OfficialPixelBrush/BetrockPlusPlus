@@ -31,6 +31,7 @@ void RegisterBlockBehaviors() {
 	RegisterMiscBehaviors();
 	RegisterPistonBehaviors();
 	RegisterBlockDrops();
+	RegisterPortalBehaviors();
 }
 
 }; // namespace Blocks
