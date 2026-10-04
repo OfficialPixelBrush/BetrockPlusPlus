@@ -101,7 +101,6 @@ struct Material {
 	bool isLiquid : 1 = false;
 	bool isSolid : 1 = true;
 	bool isOpaque : 1 = true;
-	bool canBurn : 1 = false;
 	bool isGroundCover : 1 = false;
 	bool canBlockGrass : 1 = true;
 	bool isHarvestable : 1 = true;
@@ -142,7 +141,6 @@ struct Material {
 		Material m{};
 		m.type = MaterialType::Wood;
 		m.mapColor = MapColor::Wood();
-		m.canBurn = true;
 		return m;
 	}
 
@@ -188,7 +186,6 @@ struct Material {
 		Material m{};
 		m.type = MaterialType::Leaves;
 		m.mapColor = MapColor::Foliage();
-		m.canBurn = true;
 		m.isOpaque = false;
 		m.mobilityFlag = PushabilityFlag::NoPush;
 		return m;
@@ -216,7 +213,6 @@ struct Material {
 		Material m{};
 		m.type = MaterialType::Cloth;
 		m.mapColor = MapColor::Cloth();
-		m.canBurn = true;
 		return m;
 	}
 
@@ -263,7 +259,6 @@ struct Material {
 		Material m{};
 		m.type = MaterialType::TNT;
 		m.mapColor = MapColor::TNT();
-		m.canBurn = true;
 		m.isOpaque = false;
 		return m;
 	}
