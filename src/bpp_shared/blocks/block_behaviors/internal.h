@@ -20,8 +20,8 @@ void RegisterDoorBehaviors();
 void RegisterBedBehaviors();
 void RegisterChestBehaviors();
 void RegisterFallingBlockBehaviors();
-void RegisterPortalBehaviors();
 void RegisterMiscBehaviors();
+void RegisterFireBehaviors();
 void RegisterBlockDrops();
 void RegisterPistonBehaviors();
 
@@ -32,4 +32,11 @@ bool IsSupported(WorldManager& _world, Int3 _pos, Direction::Value _dir);
 // Defined in plants.cpp
 void TryGrowTree(WorldManager& _world, Int3 _pos);
 
+// Defined in portal.cpp
+void TryCreatePortal(WorldManager& _world, Int3 _pos);
+
+// Defined in fire.cpp
+bool CanBlockCatchFire(WorldManager& _world, Int3 _pos);
+bool CanNeighborBurn(WorldManager& _world, Int3 _pos);
+bool CanFireStay(WorldManager& _world, Int3 _pos);
 }; // namespace Blocks
