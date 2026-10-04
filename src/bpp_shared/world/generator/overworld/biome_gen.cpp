@@ -54,7 +54,7 @@ void BiomeGenerator::GenerateBiomeMap(PackedArray<CHUNK_AREA, 4>& _biomeMap, std
 	// Iterate over each block column
 	for (int32_t iX = 0; iX < CHUNK_WIDTH; ++iX) {
 		for (int32_t iZ = 0; iZ < CHUNK_WIDTH; ++iZ) {
-			double weird = _weirdness[index] * 1.1 + 0.5;
+			const double weird = _weirdness[index] * 1.1 + 0.5;
 			double scale = 0.01;
 			double limit = 1.0 - scale;
 			double temp = (_temperature[index] * 0.15 + 0.7) * limit + weird * scale;
@@ -91,7 +91,7 @@ Biome BiomeGenerator::GetBiomeAtPoint(Int2 _worldPos) {
 	this->weirdnessNoiseGen.GenerateOctaves(weird, Int2{ _worldPos.x, _worldPos.y }, Int32_2{ 1, 1 },
 	                                        Vec2{ 0.25, 0.25 }, 0.5882352941176471);
 
-	double w = weird[0] * 1.1 + 0.5;
+	const double w = weird[0] * 1.1 + 0.5;
 	double t = (temp[0] * 0.15 + 0.7) * 0.99 + w * 0.01;
 	double h = (humi[0] * 0.15 + 0.5) * 0.998 + w * 0.002;
 	t = 1.0 - (1.0 - t) * (1.0 - t);
@@ -130,9 +130,9 @@ void BiomeGenerator::GenerateTemperature(std::span<double> _temperature, std::sp
 	// Iterate over each block column
 	for (int32_t x = 0; x < _max.x; ++x) {
 		for (int32_t z = 0; z < _max.y; ++z) {
-			double weird = _weirdness[index] * 1.1 + 0.5;
-			double scale = 0.01;
-			double limit = 1.0 - scale;
+			const double weird = _weirdness[index] * 1.1 + 0.5;
+			const double scale = 0.01;
+			const double limit = 1.0 - scale;
 			double temp = (_temperature[index] * 0.15 + 0.7) * limit + weird * scale;
 			temp = 1.0 - (1.0 - temp) * (1.0 - temp);
 			// Limit values to 0.0 - 1.0
