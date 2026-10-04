@@ -630,13 +630,6 @@ void WorldManager::UpdateLoadRadius(const std::vector<ClientPosition>& _players)
 			continue;
 		}
 
-		// If we are generated then apply these bleed writes immediately
-		if (auto pit = pendingBleedWrites.find(it->first); pit != pendingBleedWrites.end()) {
-			for (auto& [wpos, block] : pit->second)
-				SetBlock(wpos, block.type, block.data);
-			pendingBleedWrites.erase(pit);
-		}
-
 		// This chunk is actually leaving simulation so force unload entities
 		if (it->second->isModified || this->entityManager.ChunkHasEntities(it->second->cpos)) {
 			regionManager->SaveChunk(it->second, /*unloadingEntities=*/true);
