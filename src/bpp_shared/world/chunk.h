@@ -358,6 +358,10 @@ struct Chunk {
 			std::swap(_ya, _yb);
 		const int8_t top = Math::FloorDiv(_ya, int8_t(SUB_CHUNK_SIZE));
 		const int8_t bottom = Math::CeilDiv(_yb, int8_t(SUB_CHUNK_SIZE));
+		for (int8_t subY = top; subY >= bottom; subY++) {
+			subChunks[size_t(subY)].FillBlocks(_type);
+			subChunks[size_t(subY)].FillMeta(_meta);
+		}
 		std::cout << "SubC: " << int(top) << " -> " << int(bottom) << "\n";
 	}
 
