@@ -623,16 +623,18 @@ void WorldManager::UpdateLoadRadius(const std::vector<ClientPosition>& _players)
 
 		ChunkState s = it->second->state.load();
 		if (s < ChunkState::Generated) {
-			// Cancel incomplete work: late gen/load results are discarded when
-			// the position is no longer in the chunk map.
 			if (regionManager)
 				regionManager->DiscardChunk(it->first);
-			pendingBleedWrites.erase(it->first);
-			// Do not erase entity containers here — entities may still occupy
-			// this position while the chunk placeholder is incomplete.
 			entityManager.PruneEmptyContainer(it->first);
 			it = chunks.erase(it);
 			continue;
+		}
+
+		// If we are generated then apply these bleed writes immediately
+		if (auto pit = pendingBleedWrites.find(it->first); pit != pendingBleedWrites.end()) {
+			for (auto& [wpos, block] : pit->second)
+				SetBlock(wpos, block.type, block.data);
+			pendingBleedWrites.erase(pit);
 		}
 
 		// This chunk is actually leaving simulation so force unload entities
@@ -642,7 +644,6 @@ void WorldManager::UpdateLoadRadius(const std::vector<ClientPosition>& _players)
 		}
 
 		entityManager.EraseContainer(it->first);
-		pendingBleedWrites.erase(it->first);
 		it = chunks.erase(it);
 	}
 
@@ -1091,7 +1092,7 @@ void WorldManager::FillVolume(Int3 _posA, Int3 _posB, BlockType _type, uint8_t _
 			chunk->FillBlockLightRegion({ x0, mn.y, z0 }, { x1, mx.y, z1 }, emission);
 			for (int x = x0; x <= x1; x++)
 				for (int z = z0; z <= z1; z++)
-					chunk->RecalcSkyLightColumn({ x, z });
+					chunk->RecalculateSkyLightColumn({ x, z });
 			chunk->Compact();
 			chunk->isModified = true;
 
