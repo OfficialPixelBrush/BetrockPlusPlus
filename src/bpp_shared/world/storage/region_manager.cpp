@@ -148,9 +148,6 @@ void RegionManager::SaveChunk(const std::shared_ptr<Chunk> _chunk, bool _unloadE
 			return;
 		}
 	}
-	if (saveQueue.size() >= MAX_SAVE_QUEUE) {
-		saveQueue.erase(saveQueue.begin());
-	}
 	saveQueue.push_back(std::move(container));
 }
 

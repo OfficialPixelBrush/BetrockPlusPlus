@@ -483,6 +483,11 @@ void WorldManager::DrainGenQueue() {
 	for (auto& c : ready) {
 		Int32_2 pos = c->cpos;
 		auto it = chunks.find(pos);
+
+		// Something overwrote our placeholder
+		if (it->second->state.load(std::memory_order_acquire) != ChunkState::Generating)
+			continue;
+
 		if (it != chunks.end()) {
 			bool wasSpawnChunk = it->second->spawnChunk;
 			it->second = std::move(c);
@@ -638,14 +643,6 @@ void WorldManager::UpdateLoadRadius(const std::vector<ClientPosition>& _players)
 
 		entityManager.EraseContainer(it->first);
 		it = chunks.erase(it);
-	}
-
-	// Drop bleed writes for coordinates that are no longer in the load set.
-	for (auto it = pendingBleedWrites.begin(); it != pendingBleedWrites.end();) {
-		if (!wanted.contains(it->first) && !chunks.contains(it->first))
-			it = pendingBleedWrites.erase(it);
-		else
-			++it;
 	}
 }
 

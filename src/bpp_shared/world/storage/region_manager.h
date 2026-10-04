@@ -24,7 +24,6 @@ class WorldManager;
 struct RegionManager {
 	BS::thread_pool<> iopool{ 2 };
 
-	static constexpr size_t MAX_SAVE_QUEUE = 512;
 	static constexpr size_t MAX_PENDING_REGIONS = 32;
 
 	std::mutex saveQueueMutex;
