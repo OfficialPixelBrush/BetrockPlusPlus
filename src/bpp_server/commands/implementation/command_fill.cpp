@@ -57,14 +57,14 @@ std::string FillArea(const strategos::CmdNode& _cmd, void* _userData) {
 	SendChat(*ctx.session, std::format("Attempting to fill {} block(s)...", volume));
 
 	Int3 pos;
-	auto fillStart = std::chrono::steady_clock::now();
-	for (pos.x = minPos.x; pos.x <= maxPos.x; ++pos.x) {
+	auto fillStart = std::chrono::steady_clock::now();	for (pos.x = minPos.x; pos.x <= maxPos.x; ++pos.x) {
 		for (pos.y = minPos.y; pos.y <= maxPos.y; ++pos.y) {
 			for (pos.z = minPos.z; pos.z <= maxPos.z; ++pos.z) {
 				ctx.world->SetBlock(pos, static_cast<BlockType>(item.id.value), static_cast<uint8_t>(item.data));
 			}
 		}
 	}
+	//ctx.world->FillVolume(minPos, maxPos, static_cast<BlockType>(item.id.value), static_cast<uint8_t>(item.data));
 	float fillSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - fillStart).count();
 	SendChat(*ctx.session, std::format("Filled {} block(s) in {:.2f} seconds!", volume, fillSeconds));
 	return "";
