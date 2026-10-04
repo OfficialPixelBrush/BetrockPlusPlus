@@ -296,14 +296,6 @@ void RegisterPlantBehaviors() {
 		return false;
 	};
 
-	auto onMushroomPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
-	                          BlockType _blockId, uint8_t _meta) -> bool {
-		if (CanMushroomSurviveAt(_world, _pos)) {
-			return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
-		}
-		return false;
-	};
-
 	auto onCactusPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
 	                        BlockType _blockId, uint8_t _meta) -> bool {
 		if (CanCactusSurviveAt(_world, _pos)) {
@@ -371,8 +363,6 @@ void RegisterPlantBehaviors() {
 
 	// Plants
 	blockBehaviors[BLOCK_CACTUS].onBlockPlaced = onCactusPlace;
-	blockBehaviors[BLOCK_MUSHROOM_BROWN].onBlockPlaced = onMushroomPlace;
-	blockBehaviors[BLOCK_MUSHROOM_RED].onBlockPlaced = onMushroomPlace;
 	blockBehaviors[BLOCK_DANDELION].onBlockPlaced = onPlantPlace;
 	blockBehaviors[BLOCK_ROSE].onBlockPlaced = onPlantPlace;
 	blockBehaviors[BLOCK_SAPLING].onBlockPlaced = onPlantPlace;
