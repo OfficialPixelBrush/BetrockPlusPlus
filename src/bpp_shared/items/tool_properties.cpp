@@ -473,7 +473,7 @@ void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entit
 	_stack->id = Items::Id::BUCKET;
 }
 
-void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
+void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/,
                       Direction::Value _face) {
 	_pos.Offset(_face);
 	_world.SetBlock(_pos, BLOCK_FIRE);

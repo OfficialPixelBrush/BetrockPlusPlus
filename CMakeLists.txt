@@ -163,7 +163,6 @@ set(SHARED_SOURCES
     src/bpp_shared/strings/ucs2.cpp
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
-    src/bpp_shared/networking/server_manager.cpp
     src/bpp_shared/world/chunk.cpp
     src/bpp_shared/world/weather_system.cpp
     src/bpp_shared/world/world_wrapper.cpp

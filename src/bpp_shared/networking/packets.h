@@ -22,8 +22,7 @@
 // This class serves as a nice, convenient wrapper
 // around the networking packets
 
-class Packet {
-public:
+namespace Packet {
 	// NOTE: The base packet should never be used directly!!
 	// Only public so that packets can be passed through functions
 	struct BasePacket {

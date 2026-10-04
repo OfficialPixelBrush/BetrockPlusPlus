@@ -100,10 +100,10 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 			// This is intentional, to match b1.7.3 behavior!
 			std::size_t bindex = size_t(x + z * CHUNK_WIDTH);
 			// Get values from noise maps
-			Biome biome = static_cast<Biome>(biomeMap.Get(bindex));
-			bool sandActive = sandNoise[bindex] + rand.NextDouble() * 0.2 > 0.0;
-			bool gravelActive = gravelNoise[bindex] + rand.NextDouble() * 0.2 > 3.0;
-			int32_t stoneActive = Java::DoubleToInt32(stoneNoise[bindex] / 3.0 + 3.0 + rand.NextDouble() * 0.25);
+			const Biome biome = static_cast<Biome>(biomeMap.Get(bindex));
+			const bool sandActive = sandNoise[bindex] + rand.NextDouble() * 0.2 > 0.0;
+			const bool gravelActive = gravelNoise[bindex] + rand.NextDouble() * 0.2 > 3.0;
+			const int32_t stoneActive = Java::DoubleToInt32(stoneNoise[bindex] / 3.0 + 3.0 + rand.NextDouble() * 0.25);
 			int32_t stoneDepth = -1;
 			// Get biome-appropriate top and filler blocks
 			BlockType topBlock = GetTopBlock(biome);
@@ -112,14 +112,14 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 			// Iterate over column top to bottom
 			for (int32_t y = CHUNK_HEIGHT - 1; y >= 0; --y) {
 				// This is intentional, to match b1.7.3 behavior!
-				Int3 bpos{ z, y, x };
+				const Int3 bpos{ z, y, x };
 				// Place Bedrock at bottom with some randomness
 				if (y <= 0 + rand.NextInt(5)) {
 					_chunk.SetBlockRaw(bpos, BLOCK_BEDROCK);
 					continue;
 				}
 
-				BlockType currentBlock = _chunk.GetBlock(bpos);
+				const BlockType currentBlock = _chunk.GetBlock(bpos);
 				// Ignore air
 				if (currentBlock == BLOCK_AIR) {
 					stoneDepth = -1;
@@ -191,42 +191,42 @@ void OverworldGenerator::GenerateTerrain(Chunk& _chunk) {
 	for (int32_t sampleX = 0; sampleX < 4; ++sampleX) {
 		for (int32_t sampleZ = 0; sampleZ < 4; ++sampleZ) {
 			for (int32_t sampleY = 0; sampleY < 16; ++sampleY) {
-				double verticalLerpStep = 0.125;
+				const double verticalLerpStep = 0.125;
 
 				// Get noise cube corners
 				double corner000 = terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 0)];
 				double corner010 = terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 0)];
 				double corner100 = terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 0)];
 				double corner110 = terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 0)];
-				double corner001 =
+				const double corner001 =
 				    (terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 1)] -
 				     corner000) *
 				    verticalLerpStep;
-				double corner011 =
+				const double corner011 =
 				    (terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 1)] -
 				     corner010) *
 				    verticalLerpStep;
-				double corner101 =
+				const double corner101 =
 				    (terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 1)] -
 				     corner100) *
 				    verticalLerpStep;
-				double corner111 =
+				const double corner111 =
 				    (terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 1)] -
 				     corner110) *
 				    verticalLerpStep;
 
 				// Interpolate the 1/4th scale noise
 				for (int32_t subY = 0; subY < 8; ++subY) {
-					double horizontalLerpStep = 0.25;
+					const double horizontalLerpStep = 0.25;
 					double terrainX0 = corner000;
 					double terrainX1 = corner010;
-					double terrainStepX0 = (corner100 - corner000) * horizontalLerpStep;
-					double terrainStepX1 = (corner110 - corner010) * horizontalLerpStep;
+					const double terrainStepX0 = (corner100 - corner000) * horizontalLerpStep;
+					const double terrainStepX1 = (corner110 - corner010) * horizontalLerpStep;
 
 					for (int32_t subX = 0; subX < 4; ++subX) {
 						Int3 bpos{ (subX + sampleX * 4), ((sampleY * 8) + subY), (sampleZ * 4) };
 						double terrainDensity = terrainX0;
-						double densityStepZ = (terrainX1 - terrainX0) * horizontalLerpStep;
+						const double densityStepZ = (terrainX1 - terrainX0) * horizontalLerpStep;
 
 						for (int32_t subZ = 0; subZ < 4; ++subZ) {
 							// If the terrain density falls below,
@@ -260,8 +260,8 @@ void OverworldGenerator::GenerateTerrain(Chunk& _chunk) {
  * @param max Defines the area of the terrainMap
  */
 void OverworldGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
-	double horiScale = 684.412;
-	double vertScale = 684.412;
+	const double horiScale = 684.412;
+	const double vertScale = 684.412;
 
 	// We do this to need to generate noise as often
 	continentalnessNoiseGen.GenerateOctaves(continentalnessNoiseField, Int32_2{ _cpos.x, _cpos.z },
@@ -278,17 +278,17 @@ void OverworldGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
 	size_t xyzIndex = 0;
 	// Used to iterate 2D Noise maps (depth, continentalness)
 	size_t xzIndex = 0;
-	int32_t scaleFraction = 16 / _max.x;
+	const int32_t scaleFraction = 16 / _max.x;
 
 	for (int32_t iX = 0; iX < _max.x; ++iX) {
-		int32_t sampleX = iX * scaleFraction + scaleFraction / 2;
+		const int32_t sampleX = iX * scaleFraction + scaleFraction / 2;
 
 		for (int32_t iZ = 0; iZ < _max.z; ++iZ) {
 			// Sample 2D noises
-			int32_t sampleZ = iZ * scaleFraction + scaleFraction / 2;
+			const int32_t sampleZ = iZ * scaleFraction + scaleFraction / 2;
 			// Apply biome-noise-dependent variety
-			size_t sampleIndex = size_t(sampleX * CHUNK_WIDTH + sampleZ);
-			double temp = temperature[sampleIndex];
+			const size_t sampleIndex = size_t(sampleX * CHUNK_WIDTH + sampleZ);
+			const double temp = temperature[sampleIndex];
 			double humi = humidity[sampleIndex] * temp;
 			humi = 1.0 - humi;
 			humi *= humi;
@@ -320,7 +320,7 @@ void OverworldGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
 				continentalness = 0.0;
 			continentalness += 0.5;
 			depthNoise = depthNoise * double(_max.y) / 16.0;
-			double elevationOffset = double(_max.y) / 2.0 + depthNoise * 4.0;
+			const double elevationOffset = double(_max.y) / 2.0 + depthNoise * 4.0;
 			++xzIndex;
 
 			for (int32_t iY = 0; iY < _max.y; ++iY) {
@@ -331,11 +331,11 @@ void OverworldGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
 					densityOffset *= 4.0;
 				}
 				// Sample low noise
-				double lowNoise = lowNoiseField[xyzIndex] / 512.0;
+				const double lowNoise = lowNoiseField[xyzIndex] / 512.0;
 				// Sample high noise
-				double highNoise = highNoiseField[xyzIndex] / 512.0;
+				const double highNoise = highNoiseField[xyzIndex] / 512.0;
 				// Sample selector noise
-				double selectorNoise = (selectorNoiseField[xyzIndex] / 10.0 + 1.0) / 2.0;
+				const double selectorNoise = (selectorNoiseField[xyzIndex] / 10.0 + 1.0) / 2.0;
 				if (selectorNoise < 0.0) {
 					terrainDensity = lowNoise;
 				} else if (selectorNoise > 1.0) {
@@ -367,8 +367,8 @@ void OverworldGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
 Biome OverworldGenerator::GetBiomeAt(Int2 _worldPos) {
 	// biomeMap is always for the chunk whose origin is (cpos.x*16, cpos.z*16).
 	// Convert world coords to chunk-local [0,15] and index directly.
-	int32_t localX = ((_worldPos.x % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH;
-	int32_t localZ = ((_worldPos.z % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH;
+	const int32_t localX = ((_worldPos.x % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH;
+	const int32_t localZ = ((_worldPos.z % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH;
 	return static_cast<Biome>(biomeMap.Get(localX * CHUNK_WIDTH + localZ));
 }
 

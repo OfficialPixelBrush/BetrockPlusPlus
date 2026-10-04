@@ -163,7 +163,7 @@ static bool SearchForLog(int _sLength, Int3 _pos, Int3 _cameFrom, WorldManager& 
 	return false;
 }
 
-static void OnMushroomTick(WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& _random) {
+static void OnMushroomTick(WorldManager& _world, Int3 _pos, uint8_t /*_meta*/, Java::Random& _random) {
 	auto thisBlock = _world.GetBlockId(_pos);
 
 	if (thisBlock != BLOCK_MUSHROOM_BROWN && thisBlock != BLOCK_MUSHROOM_RED)
