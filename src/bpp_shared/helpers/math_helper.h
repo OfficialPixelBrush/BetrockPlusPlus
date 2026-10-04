@@ -5,6 +5,7 @@
  *
 */
 
+#pragma once
 // Some math helper functions for specific rounding behaviors
 
 namespace Math {

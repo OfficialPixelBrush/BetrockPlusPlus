@@ -24,6 +24,8 @@ namespace Blocks {
 
 bool GenericPlace(WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
                   uint8_t _meta);
+Int3 CanPlace(WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+              uint8_t _meta);
 void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer);
 void GenericExplode(WorldManager& _world, Int3 _pos);
 bool CanOpenChest(WorldManager& _world, Int3 _pos);
