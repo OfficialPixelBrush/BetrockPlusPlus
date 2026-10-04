@@ -163,6 +163,23 @@ static bool SearchForLog(int _sLength, Int3 _pos, Int3 _cameFrom, WorldManager& 
 	return false;
 }
 
+static void OnMushroomTick(WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& _random) {
+	auto thisBlock = _world.GetBlockId(_pos);
+
+	if (thisBlock != BLOCK_MUSHROOM_BROWN && thisBlock != BLOCK_MUSHROOM_RED)
+		return;
+
+	if (_random.NextInt(100) != 0)
+		return;
+
+	int cx = _pos.x + _random.NextInt(3) - 1;
+	int cy = _pos.y + _random.NextInt(2) - _random.NextInt(2);
+	int cz = _pos.z + _random.NextInt(3) - 1;
+	Int3 nPos = { cx, cy, cz };
+	if (_world.IsAirBlock(nPos) && CanMushroomSurviveAt(_world, nPos))
+		_world.SetBlock(nPos, thisBlock);
+}
+
 void RegisterPlantBehaviors() {
 	// Farmland
 	blockBehaviors[BlockType::BLOCK_FARMLAND] = {
@@ -235,6 +252,10 @@ void RegisterPlantBehaviors() {
 		.getRayBounds = CactusAabb,
 		.getCollider = CactusCollider,
 	};
+
+	// Mushroom growth
+	blockBehaviors[BLOCK_MUSHROOM_BROWN].onTick = OnMushroomTick;
+	blockBehaviors[BLOCK_MUSHROOM_RED].onTick = OnMushroomTick;
 
 	blockBehaviors[BLOCK_CACTUS].onEntityCollidedWithBlock = [](WorldManager& /*_world*/, Int3 /*_pos*/,
 	                                                            Entity& _entity) -> void {
