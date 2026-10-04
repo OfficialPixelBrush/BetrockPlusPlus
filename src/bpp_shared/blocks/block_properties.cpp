@@ -142,7 +142,7 @@ bool CanMushroomSurviveAt(WorldAccess& _world, Int3 _pos) {
 	auto lightLevel = _world.GetBlockLightRaw(_pos);
 	auto belowBlock = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
 	bool canGrowOnBlock = blockProperties[belowBlock].isOpaqueCube;
-	return lightLevel <= 13 && canGrowOnBlock;
+	return lightLevel < 13 && canGrowOnBlock;
 }
 
 bool CanCactusSurviveAt(WorldAccess& _world, Int3 _pos) {
@@ -577,6 +577,7 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
+		.ticksOnLoad = true
 	};
 
 	// Red Mushroom
@@ -588,6 +589,7 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
+		.ticksOnLoad = true
 	};
 
 	// Gold Block
