@@ -484,6 +484,10 @@ void WorldManager::DrainGenQueue() {
 		Int32_2 pos = c->cpos;
 		auto it = chunks.find(pos);
 
+		// Chunk was unloaded while generating, or placeholder was replaced
+		if (it == chunks.end() || !it->second)
+			continue;
+
 		// Something overwrote our placeholder
 		if (it->second->state.load(std::memory_order_acquire) != ChunkState::Generating)
 			continue;
