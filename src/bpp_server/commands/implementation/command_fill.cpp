@@ -10,6 +10,7 @@
 #include "blocks.h"
 #include "server.h"
 #include <chrono>
+#include <cmath>
 #include <cstdlib>
 #include <format>
 
@@ -35,8 +36,10 @@ std::string FillArea(const strategos::CmdNode& _cmd, void* _userData) {
 
 	Vec3 from = ResolveCmdVec3(*fromCmd, ctx.session->position.pos);
 	Vec3 to = ResolveCmdVec3(*toCmd, ctx.session->position.pos);
-	Int3 pos0{ static_cast<int32_t>(from.x), static_cast<int32_t>(from.y), static_cast<int32_t>(from.z) };
-	Int3 pos1{ static_cast<int32_t>(to.x), static_cast<int32_t>(to.y), static_cast<int32_t>(to.z) };
+	Int3 pos0{ static_cast<int32_t>(std::floor(from.x)), static_cast<int32_t>(std::floor(from.y)),
+	           static_cast<int32_t>(std::floor(from.z)) };
+	Int3 pos1{ static_cast<int32_t>(std::floor(to.x)), static_cast<int32_t>(std::floor(to.y)),
+	           static_cast<int32_t>(std::floor(to.z)) };
 
 	if (pos0.y >= CHUNK_HEIGHT || pos0.y < 0 || pos1.y >= CHUNK_HEIGHT || pos1.y < 0)
 		return ERROR_REASON_PARAMETERS;
@@ -56,15 +59,8 @@ std::string FillArea(const strategos::CmdNode& _cmd, void* _userData) {
 
 	SendChat(*ctx.session, std::format("Attempting to fill {} block(s)...", volume));
 
-	Int3 pos;
-	auto fillStart = std::chrono::steady_clock::now();	for (pos.x = minPos.x; pos.x <= maxPos.x; ++pos.x) {
-		for (pos.y = minPos.y; pos.y <= maxPos.y; ++pos.y) {
-			for (pos.z = minPos.z; pos.z <= maxPos.z; ++pos.z) {
-				ctx.world->SetBlock(pos, static_cast<BlockType>(item.id.value), static_cast<uint8_t>(item.data));
-			}
-		}
-	}
-	//ctx.world->FillVolume(minPos, maxPos, static_cast<BlockType>(item.id.value), static_cast<uint8_t>(item.data));
+	auto fillStart = std::chrono::steady_clock::now();
+	ctx.world->FillVolume(minPos, maxPos, static_cast<BlockType>(item.id.value), static_cast<uint8_t>(item.data));
 	float fillSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - fillStart).count();
 	SendChat(*ctx.session, std::format("Filled {} block(s) in {:.2f} seconds!", volume, fillSeconds));
 	return "";

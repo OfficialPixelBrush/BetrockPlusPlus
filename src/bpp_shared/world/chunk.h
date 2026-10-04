@@ -177,6 +177,7 @@ struct SubChunk {
 		skyLight.reset();
 		skyLightFill = _val & 0x0Fu;
 	}
+	void FillRegion(Int3 _posA, Int3 _posB, BlockType _type = BLOCK_AIR, uint8_t _meta = 0);
 
 	// Allocates a layer holding its current fill value in every voxel. Only meant for null layers
 	void AllocBlocks();
@@ -339,31 +340,16 @@ struct Chunk {
 		return CrossPlatform::Math::Min(15, CrossPlatform::Math::Max(sky, block));
 	}
 
-	inline void FillColumn(int8_t _ya, int8_t _yb, Int2 xz, BlockType _type = BLOCK_AIR, uint8_t _meta = 0) {
-		if (_ya < _yb)
-			std::swap(_ya, _yb);
-		_ya = std::clamp(int8_t(CHUNK_HEIGHT), int8_t(0), _ya);
-		_yb = std::clamp(int8_t(CHUNK_HEIGHT), int8_t(0), _yb);
-		for (int8_t y = _ya; y >= _yb; y--) {
-			SetBlockRaw({xz.x, y, xz.z}, _type);
-			SetMetaRaw({xz.x, y, xz.z}, _meta);
-		}
-		isModified = true;
+	void FillRegion(Int3 _a, Int3 _b, BlockType _type = BLOCK_AIR, uint8_t _meta = 0);
+	inline void FillColumn(int _ya, int _yb, Int2 xz, BlockType _type = BLOCK_AIR, uint8_t _meta = 0) {
+		FillRegion({ xz.x, _ya, xz.z }, { xz.x, _yb, xz.z }, _type, _meta);
+	}
+	inline void FillSlices(int _ya, int _yb, BlockType _type = BLOCK_AIR, uint8_t _meta = 0) {
+		FillRegion({ 0, _ya, 0 }, { CHUNK_WIDTH - 1, _yb, CHUNK_WIDTH - 1 }, _type, _meta);
 	}
 
-	inline void FillSlices(int8_t _ya, int8_t _yb, BlockType _type = BLOCK_AIR, uint8_t _meta = 0) {
-		if (!InBounds(_ya) || !InBounds(_yb))
-			return;
-		if (_ya < _yb)
-			std::swap(_ya, _yb);
-		const int8_t top = Math::FloorDiv(_ya, int8_t(SUB_CHUNK_SIZE));
-		const int8_t bottom = Math::CeilDiv(_yb, int8_t(SUB_CHUNK_SIZE));
-		for (int8_t subY = top; subY >= bottom; subY++) {
-			subChunks[size_t(subY)].FillBlocks(_type);
-			subChunks[size_t(subY)].FillMeta(_meta);
-		}
-		std::cout << "SubC: " << int(top) << " -> " << int(bottom) << "\n";
-	}
+	void FillBlockLightRegion(Int3 _a, Int3 _b, uint8_t _val);
+	void RecalculateSkyLightColumn(Int2 _pos);
 
 	int GetHighestPoint() const;
 	bool CanBlockSeeSky(Int3 _pos) const;

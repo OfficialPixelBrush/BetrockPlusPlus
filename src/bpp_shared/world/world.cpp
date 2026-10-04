@@ -1003,20 +1003,120 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 		              chunk->cpos);
 }
 
+void WorldManager::NotifyRegionChanged(Chunk& _chunk, Int3 _localMin, Int3 _localMax) {
+	if (!onBlockUpdate)
+		return;
+	
+	std::vector<Int3> picked;
+	auto add = [&](int _x, int _y, int _z) {
+		for (const auto& p : picked)
+			if (p.x == _x && p.y == _y && p.z == _z)
+				return;
+		picked.push_back({ _x, _y, _z });
+	};
+	for (int y : { _localMin.y, _localMax.y })
+		for (int z : { _localMin.z, _localMax.z })
+			for (int x : { _localMin.x, _localMax.x })
+				add(x, y, z);
+	for (int y = _localMin.y; y <= _localMax.y && picked.size() < 10; y++)
+		for (int z = _localMin.z; z <= _localMax.z && picked.size() < 10; z++)
+			for (int x = _localMin.x; x <= _localMax.x && picked.size() < 10; x++)
+				add(x, y, z);
+
+	for (const auto& p : picked) {
+		const Int3 local{ p.x, p.y, p.z };
+		onBlockUpdate(PendingBlock{ .block{ _chunk.GetBlock(local), _chunk.GetMeta(local) },
+		                            .blockPos{ _chunk.cpos.x * CHUNK_WIDTH + p.x, p.y, _chunk.cpos.z * CHUNK_WIDTH + p.z },
+		                            .light{ _chunk.GetBlockLight(local), _chunk.GetSkyLight(local) } },
+		              _chunk.cpos);
+	}
+}
+
 void WorldManager::FillVolume(Int3 _posA, Int3 _posB, BlockType _type, uint8_t _meta) {
-	if (!InBounds(_posA.y))
+	const Int3 mn{ CrossPlatform::Math::Min(_posA.x, _posB.x), CrossPlatform::Math::Max(CrossPlatform::Math::Min(_posA.y, _posB.y), 0),
+	               CrossPlatform::Math::Min(_posA.z, _posB.z) };
+	const Int3 mx{ CrossPlatform::Math::Max(_posA.x, _posB.x),
+	               CrossPlatform::Math::Min(CrossPlatform::Math::Max(_posA.y, _posB.y), CHUNK_HEIGHT - 1),
+	               CrossPlatform::Math::Max(_posA.z, _posB.z) };
+	if (mn.y > mx.y)
 		return;
-	if (!InBounds(_posB.y))
+
+	// Not worth the bulk path, and this keeps neighbor updates, block callbacks and lighting exact
+	constexpr int64_t SMALL_FILL_VOLUME = 64;
+	const int64_t volume = int64_t(mx.x - mn.x + 1) * (mx.y - mn.y + 1) * (mx.z - mn.z + 1);
+	if (volume <= SMALL_FILL_VOLUME) {
+		for (int y = mn.y; y <= mx.y; y++)
+			for (int z = mn.z; z <= mx.z; z++)
+				for (int x = mn.x; x <= mx.x; x++)
+					SetBlock({ x, y, z }, _type, _meta);
 		return;
-	Int32_2 cpA{ _posA.x >> 4, _posA.z >> 4 };
-	Int32_2 cpB{ _posB.x >> 4, _posB.z >> 4 };
-	for (int cx = cpA.x; cx < cpB.x; cx++) {
-		for (int cz = cpA.z; cz < cpB.z; cz++) {
-			const Int2 cp{cx,cz};
-			auto* chunk = GetChunkRaw(cp);
+	}
+
+	const uint8_t emission = uint8_t(Blocks::blockProperties[_type].lightEmission);
+
+	for (int cx = mn.x >> 4; cx <= (mx.x >> 4); cx++) {
+		for (int cz = mn.z >> 4; cz <= (mx.z >> 4); cz++) {
+			const Int32_2 cp{ cx, cz };
 			if (!IsChunkValid(cp))
 				continue;
-			chunk->FillSlices(_posA.y, _posB.y, _type, _meta);
+			Chunk* chunk = GetChunkRaw(cp);
+
+			// This chunk's share of the box, chunk-local and inclusive
+			const int baseX = cx * CHUNK_WIDTH, baseZ = cz * CHUNK_WIDTH;
+			const int x0 = CrossPlatform::Math::Max(mn.x, baseX) - baseX;
+			const int x1 = CrossPlatform::Math::Min(mx.x, baseX + CHUNK_WIDTH - 1) - baseX;
+			const int z0 = CrossPlatform::Math::Max(mn.z, baseZ) - baseZ;
+			const int z1 = CrossPlatform::Math::Min(mx.z, baseZ + CHUNK_WIDTH - 1) - baseZ;
+
+			// Blocks
+			if (x0 == 0 && x1 == CHUNK_WIDTH - 1 && z0 == 0 && z1 == CHUNK_WIDTH - 1)
+				chunk->FillSlices(mn.y, mx.y, _type, _meta);
+			else if (x0 == x1 && z0 == z1)
+				chunk->FillColumn(mn.y, mx.y, { x0, z0 }, _type, _meta);
+			else
+				chunk->FillRegion({ x0, mn.y, z0 }, { x1, mx.y, z1 }, _type, _meta);
+
+			// Tile entities in the box no longer have a block, same as SetBlock without _keepTileEntity
+			auto& tes = chunk->tileEntities;
+			tes.erase(std::remove_if(tes.begin(), tes.end(),
+			                         [&](const std::shared_ptr<TileEntity>& _te) {
+				                         return _te && _te->position.x >= mn.x && _te->position.x <= mx.x &&
+				                                _te->position.y >= mn.y && _te->position.y <= mx.y &&
+				                                _te->position.z >= mn.z && _te->position.z <= mx.z &&
+				                                (_te->position.x >> 4) == cx && (_te->position.z >> 4) == cz;
+			                         }),
+			          tes.end());
+
+			// Light. Whatever was in the box before is meaningless now, so set what the new block implies
+			chunk->FillBlockLightRegion({ x0, mn.y, z0 }, { x1, mx.y, z1 }, emission);
+			for (int x = x0; x <= x1; x++)
+				for (int z = z0; z <= z1; z++)
+					chunk->RecalcSkyLightColumn({ x, z });
+			chunk->Compact();
+			chunk->isModified = true;
+
+			// Let the light engine fix up whatever borders the fill. Faces between two chunks that are both
+			// part of the fill are skipped, those are filled anyway.
+			auto scheduleBoth = [&](Int3 _a, Int3 _b) {
+				lightManager.ScheduleLightRegion(_a, _b, LightType::Sky);
+				lightManager.ScheduleLightRegion(_a, _b, LightType::Block);
+			};
+			const int wx0 = baseX + x0, wx1 = baseX + x1, wz0 = baseZ + z0, wz1 = baseZ + z1;
+			if (wx0 == mn.x)
+				scheduleBoth({ wx0 - 1, mn.y, wz0 }, { wx0 - 1, mx.y, wz1 });
+			if (wx1 == mx.x)
+				scheduleBoth({ wx1 + 1, mn.y, wz0 }, { wx1 + 1, mx.y, wz1 });
+			if (wz0 == mn.z)
+				scheduleBoth({ wx0, mn.y, wz0 - 1 }, { wx1, mx.y, wz0 - 1 });
+			if (wz1 == mx.z)
+				scheduleBoth({ wx0, mn.y, wz1 + 1 }, { wx1, mx.y, wz1 + 1 });
+			if (mx.y + 1 < CHUNK_HEIGHT)
+				scheduleBoth({ wx0, mx.y + 1, wz0 }, { wx1, mx.y + 1, wz1 });
+			if (mn.y > 0)
+				scheduleBoth({ wx0, mn.y - 1, wz0 }, { wx1, mn.y - 1, wz1 });
+
+			// Sky light can change anywhere in the column, so resend the full height
+			NotifyRegionChanged(*chunk, { x0, 0, z0 }, { x1, CHUNK_HEIGHT - 1, z1 });
 		}
 	}
 }
