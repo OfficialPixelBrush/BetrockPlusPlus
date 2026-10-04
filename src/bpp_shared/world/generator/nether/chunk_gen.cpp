@@ -95,10 +95,10 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 				Int3 bpos{ z, y, x };
 				// Place Bedrock at bottom and top with some randomness
 				if (y >= (CHUNK_HEIGHT - 1) - rand.NextInt(5)) {
-					_chunk.SetBlock(bpos, BLOCK_BEDROCK);
+					_chunk.SetBlockRaw(bpos, BLOCK_BEDROCK);
 					continue;
 				} else if (y <= 0 + rand.NextInt(5)) {
-					_chunk.SetBlock(bpos, BLOCK_BEDROCK);
+					_chunk.SetBlockRaw(bpos, BLOCK_BEDROCK);
 					continue;
 				}
 
@@ -137,10 +137,10 @@ void NetherGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 
 						stoneDepth = stoneActive;
 						// Place filler block if we're under lava
-						_chunk.SetBlock(bpos, (y >= NETHER_BIOME_LAVA_LEVEL - 1) ? topBlock : fillerBlock);
+						_chunk.SetBlockRaw(bpos, (y >= NETHER_BIOME_LAVA_LEVEL - 1) ? topBlock : fillerBlock);
 					} else if (stoneDepth > 0) {
 						--stoneDepth;
-						_chunk.SetBlock(bpos, fillerBlock);
+						_chunk.SetBlockRaw(bpos, fillerBlock);
 					}
 				}
 			}
@@ -214,7 +214,7 @@ void NetherGenerator::GenerateTerrain(Chunk& _chunk) {
 							if (terrainDensity > 0.0)
 								blockType = BLOCK_NETHERRACK;
 
-							_chunk.SetBlock(bpos, blockType);
+							_chunk.SetBlockRaw(bpos, blockType);
 							// Prep for next iteration
 							bpos.z += 1;
 							terrainDensity += densityStepZ;

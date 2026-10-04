@@ -354,13 +354,13 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 				if (!Items::IsBlock(thisBlock)) {
 					continue;
 				}
-				chunk->SetBlock({ x, y, z }, BlockType(blocks[idx]));
+				chunk->SetBlockRaw({ x, y, z }, BlockType(blocks[idx]));
 				if (y % 2 == 0) {
-					chunk->SetMeta({ x, y, z }, data[idx / 2] & 0xF);
+					chunk->SetMetaRaw({ x, y, z }, data[idx / 2] & 0xF);
 					chunk->SetBlockLight({ x, y, z }, blockLight[idx / 2] & 0xF);
 					chunk->SetSkyLight({ x, y, z }, skyLight[idx / 2] & 0xF);
 				} else {
-					chunk->SetMeta({ x, y, z }, (data[idx / 2] >> 4) & 0xF);
+					chunk->SetMetaRaw({ x, y, z }, (data[idx / 2] >> 4) & 0xF);
 					chunk->SetBlockLight({ x, y, z }, (blockLight[idx / 2] >> 4) & 0xF);
 					chunk->SetSkyLight({ x, y, z }, (skyLight[idx / 2] >> 4) & 0xF);
 				}

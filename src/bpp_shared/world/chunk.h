@@ -13,7 +13,9 @@
 #include "helpers/cross_platform.h"
 #include "helpers/packed_array.h"
 #include "nbt/nbt.h"
+#include "helpers/math.h"
 #include "tile_entities/tile_entity.h"
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <atomic>
@@ -158,7 +160,6 @@ struct SubChunk {
 		}
 		SetNibble(*skyLight, _idx, _val);
 	}
-
 	// Sets every voxel in the slice, releasing that layer's storage
 	inline void FillBlocks(BlockType _val) {
 		blocks.reset();
@@ -279,41 +280,25 @@ struct Chunk {
 	inline void SetHeightValue(Int2 _pos, uint8_t _val) {
 		heightMap[(_pos.y << 4) | _pos.x] = _val;
 	}
-	inline BlockType GetBlock(Int3 _pos) const {
-		if (!InBounds(_pos.y))
-			return BLOCK_AIR;
-		return subChunks[size_t(_pos.y >> 4)].GetBlock(SubChunk::LocalIndex(_pos));
-	}
-	// Doesn't flag as modified
+	// Raw Setters: Doesn't flag as modified + no bounds check
 	inline void SetBlockRaw(Int3 _pos, BlockType _id) {
-		if (!InBounds(_pos.y))
-			return;
 		subChunks[size_t(_pos.y >> 4)].SetBlock(SubChunk::LocalIndex(_pos), _id);
 	}
+	inline void SetMetaRaw(Int3 _pos, uint8_t _meta) {
+		subChunks[size_t(_pos.y >> 4)].SetMeta(SubChunk::LocalIndex(_pos), _meta);
+	}
+	// Safe setters
 	inline void SetBlock(Int3 _pos, BlockType _id) {
+		if (!InBounds(_pos.y))
+			return;
 		SetBlockRaw(_pos, _id);
 		isModified = true;
-	}
-	inline uint8_t GetMeta(Int3 _pos) const {
-		if (!InBounds(_pos.y))
-			return 0;
-		return subChunks[size_t(_pos.y >> 4)].GetMeta(SubChunk::LocalIndex(_pos));
 	}
 	inline void SetMeta(Int3 _pos, uint8_t _meta) {
 		if (!InBounds(_pos.y))
 			return;
-		subChunks[size_t(_pos.y >> 4)].SetMeta(SubChunk::LocalIndex(_pos), _meta);
+		SetMetaRaw(_pos, _meta);
 		isModified = true;
-	}
-	inline uint8_t GetBlockLight(Int3 _pos) const {
-		if (!InBounds(_pos.y))
-			return 0;
-		return subChunks[size_t(_pos.y >> 4)].GetBlockLight(SubChunk::LocalIndex(_pos));
-	}
-	inline uint8_t GetSkyLight(Int3 _pos) const {
-		if (!InBounds(_pos.y))
-			return 0;
-		return subChunks[size_t(_pos.y >> 4)].GetSkyLight(SubChunk::LocalIndex(_pos));
 	}
 	inline void SetBlockLight(Int3 _pos, uint8_t _val) {
 		if (!InBounds(_pos.y))
@@ -327,10 +312,53 @@ struct Chunk {
 		subChunks[size_t(_pos.y >> 4)].SetSkyLight(SubChunk::LocalIndex(_pos), _val);
 		isModified = true;
 	}
+	// Getters
+	inline BlockType GetBlock(Int3 _pos) const {
+		if (!InBounds(_pos.y))
+			return BLOCK_AIR;
+		return subChunks[size_t(_pos.y >> 4)].GetBlock(SubChunk::LocalIndex(_pos));
+	}
+	inline uint8_t GetMeta(Int3 _pos) const {
+		if (!InBounds(_pos.y))
+			return 0;
+		return subChunks[size_t(_pos.y >> 4)].GetMeta(SubChunk::LocalIndex(_pos));
+	}
+	inline uint8_t GetBlockLight(Int3 _pos) const {
+		if (!InBounds(_pos.y))
+			return 0;
+		return subChunks[size_t(_pos.y >> 4)].GetBlockLight(SubChunk::LocalIndex(_pos));
+	}
+	inline uint8_t GetSkyLight(Int3 _pos) const {
+		if (!InBounds(_pos.y))
+			return 0;
+		return subChunks[size_t(_pos.y >> 4)].GetSkyLight(SubChunk::LocalIndex(_pos));
+	}
 	inline int GetBlockLightValue(Int3 _pos, int _skySubtracted) const {
 		int sky = CrossPlatform::Math::Max(0, int(GetSkyLight(_pos)) - _skySubtracted);
 		int block = int(GetBlockLight(_pos));
 		return CrossPlatform::Math::Min(15, CrossPlatform::Math::Max(sky, block));
+	}
+
+	inline void FillColumn(int8_t _ya, int8_t _yb, Int2 xz, BlockType _type = BLOCK_AIR, uint8_t _meta = 0) {
+		if (_ya < _yb)
+			std::swap(_ya, _yb);
+		_ya = std::clamp(int8_t(CHUNK_HEIGHT), int8_t(0), _ya);
+		_yb = std::clamp(int8_t(CHUNK_HEIGHT), int8_t(0), _yb);
+		for (int8_t y = _ya; y >= _yb; y--) {
+			SetBlockRaw({xz.x, y, xz.z}, _type);
+			SetMetaRaw({xz.x, y, xz.z}, _meta);
+		}
+		isModified = true;
+	}
+
+	inline void FillSlices(int8_t _ya, int8_t _yb, BlockType _type = BLOCK_AIR, uint8_t _meta = 0) {
+		if (!InBounds(_ya) || !InBounds(_yb))
+			return;
+		if (_ya < _yb)
+			std::swap(_ya, _yb);
+		const int8_t top = Math::FloorDiv(_ya, int8_t(SUB_CHUNK_SIZE));
+		const int8_t bottom = Math::CeilDiv(_yb, int8_t(SUB_CHUNK_SIZE));
+		std::cout << "SubC: " << int(top) << " -> " << int(bottom) << "\n";
 	}
 
 	int GetHighestPoint() const;

@@ -132,8 +132,9 @@ void WorldWrapper::SetBlock(const Int3 _wpos, const BlockType _type, const uint8
 	}
 
 	// Then finally set the new block
-	chunk->SetBlock(local, _type);
-	chunk->SetMeta(local, _meta);
+	chunk->SetBlockRaw(local, _type);
+	chunk->SetMetaRaw(local, _meta);
+	chunk->isModified = true;
 
 	const int oldHeight = chunk->GetHeightValue(localXz);
 
