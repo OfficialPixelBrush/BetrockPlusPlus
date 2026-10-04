@@ -474,6 +474,7 @@ void RegisterBlockProperties() {
 		.lightOpacity = 0,
 		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
+		.isNormalCube = false,
 	};
 
 	// Cobweb
@@ -515,6 +516,7 @@ void RegisterBlockProperties() {
 		.lightOpacity = 0,
 		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
+		.isNormalCube = false,
 	};
 
 	// Piston Extension (head)
