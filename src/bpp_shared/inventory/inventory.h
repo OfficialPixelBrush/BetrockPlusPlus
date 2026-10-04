@@ -76,6 +76,18 @@ struct Inventory {
 		OnInventoryChanged();
 	}
 
+	// Returns number of items that were deleted
+	size_t Clear() {
+		size_t count = 0;
+		for (auto& slot : slots) {
+			if (Items::IsValidId(slot.id))
+				count += slot.count;
+			slot = ItemStack{};
+		}
+		OnInventoryChanged();
+		return count;
+	}
+
 	// Take in the original item stack, try and merge it with our inventory. Returns if it was successful
 	// Start slot and end slot are inclusive
 	virtual bool MergeItemStackInInventory(ItemStack& _stack, bool _reverse = false, int _startSlot = 0,
