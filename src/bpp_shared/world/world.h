@@ -107,6 +107,7 @@ public:
 	              const bool _keepTileEntity = false, const bool _updateNeighbors = true) override;
 	void SetBlockRaw(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata = 0);
 	void FillVolume(Int3 _posA, Int3 _posB, BlockType _type = BLOCK_AIR, uint8_t _meta = 0);
+	void NotifyRegionChanged(Chunk& _chunk, Int3 _localMin, Int3 _localMax);
 	void DrainGenQueue();
 	bool IsLiquidInAabb(AABB _collider);
 	void InitSpawn();

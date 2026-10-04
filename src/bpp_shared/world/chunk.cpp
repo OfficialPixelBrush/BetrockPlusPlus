@@ -73,6 +73,21 @@ void Chunk::RelightColumn(Int2 _pos) {
 		SetSkyLight({ _pos.x, y, _pos.z }, 15);
 }
 
+void Chunk::RecalculateSkyLightColumn(Int2 _pos) {
+	GenerateHeightMapColumn(_pos);
+	const int height = GetHeightValue(_pos);
+
+	for (int y = CHUNK_HEIGHT - 1; y >= height; y--)
+		SetSkyLight({ _pos.x, y, _pos.z }, 15);
+
+	int skyLight = 15;
+	for (int y = height - 1; y >= 0; y--) {
+		skyLight -= CrossPlatform::Math::Max(1, int(Blocks::blockProperties[GetBlock({ _pos.x, y, _pos.z })].lightOpacity));
+		skyLight = CrossPlatform::Math::Max(0, skyLight);
+		SetSkyLight({ _pos.x, y, _pos.z }, uint8_t(skyLight));
+	}
+}
+
 void Chunk::Clear() {
 	isTerrainPopulated = false;
 	isModified = false;
@@ -88,7 +103,7 @@ namespace {
 std::unique_ptr<SubChunk::NibbleLayer> MakeNibbleLayer(uint8_t _fill) {
 	// Every byte is about to be overwritten, so skip the zeroing
 	auto layer = std::make_unique_for_overwrite<SubChunk::NibbleLayer>();
-	layer->fill(uint8_t(((_fill & 0x0Fu) << 4) | (_fill & 0x0Fu)));
+	layer->fill(uint8_t(((_fill & 0xF) << 4) | (_fill & 0xF)));
 	return layer;
 }
 
@@ -99,14 +114,14 @@ bool CompactNibbleLayer(std::unique_ptr<SubChunk::NibbleLayer>& _layer, uint8_t&
 
 	// Most layers are mixed, so this usually exits within a few voxels
 	const uint8_t first = (*_layer)[0];
-	if ((first >> 4) != (first & 0x0Fu))
+	if ((first >> 4) != (first & 0xF))
 		return false;
 	for (size_t i = 1; i < SubChunk::NIBBLE_BYTES; i++) {
 		if ((*_layer)[i] != first)
 			return false;
 	}
 
-	_fill = first & 0x0Fu;
+	_fill = first & 0xF;
 	_layer.reset();
 	return true;
 }
@@ -132,6 +147,94 @@ void SubChunk::AllocBlockLight() {
 
 void SubChunk::AllocSkyLight() {
 	skyLight = MakeNibbleLayer(skyLightFill);
+}
+
+void SubChunk::FillRegion(Int3 _a, Int3 _b, BlockType _type, uint8_t _meta) {
+	_meta &= 0xF;
+	const bool fullFootprint = _a.x == 0 && _b.x == SIZE - 1 && _a.z == 0 && _b.z == SIZE - 1;
+
+	if (fullFootprint && _a.y == 0 && _b.y == SIZE - 1) {
+		FillBlocks(_type);
+		FillMeta(_meta);
+		return;
+	}
+
+	if (blocks || _type != blockFill) {
+		if (!blocks)
+			AllocBlocks();
+		if (fullFootprint) {
+			std::fill_n(blocks->data() + size_t(_a.y) * SIZE * SIZE, size_t(_b.y - _a.y + 1) * SIZE * SIZE, _type);
+		} else {
+			for (int y = _a.y; y <= _b.y; y++)
+				for (int z = _a.z; z <= _b.z; z++)
+					std::fill_n(blocks->data() + LocalIndex({ _a.x, y, z }), size_t(_b.x - _a.x + 1), _type);
+		}
+	}
+
+	if (meta || _meta != metaFill) {
+		if (!meta)
+			AllocMeta();
+		if (fullFootprint) {
+			const uint8_t packed = uint8_t(_meta | (_meta << 4));
+			std::memset(meta->data() + size_t(_a.y) * SIZE * SIZE / 2, packed, size_t(_b.y - _a.y + 1) * SIZE * SIZE / 2);
+		} else {
+			for (int y = _a.y; y <= _b.y; y++)
+				for (int z = _a.z; z <= _b.z; z++)
+					for (int x = _a.x; x <= _b.x; x++)
+						SetNibble(*meta, LocalIndex({ x, y, z }), _meta);
+		}
+	}
+}
+
+namespace {
+// Normalizes and clamps a chunk-local box. Returns false if nothing of it is inside the chunk.
+bool ClampChunkBox(Int3 _a, Int3 _b, Int3& _lo, Int3& _hi) {
+	const int loX = CrossPlatform::Math::Min(_a.x, _b.x), hiX = CrossPlatform::Math::Max(_a.x, _b.x);
+	const int loY = CrossPlatform::Math::Min(_a.y, _b.y), hiY = CrossPlatform::Math::Max(_a.y, _b.y);
+	const int loZ = CrossPlatform::Math::Min(_a.z, _b.z), hiZ = CrossPlatform::Math::Max(_a.z, _b.z);
+	if (hiX < 0 || loX >= CHUNK_WIDTH || hiY < 0 || loY >= CHUNK_HEIGHT || hiZ < 0 || loZ >= CHUNK_WIDTH)
+		return false;
+	_lo = { CrossPlatform::Math::Max(loX, 0), CrossPlatform::Math::Max(loY, 0), CrossPlatform::Math::Max(loZ, 0) };
+	_hi = { CrossPlatform::Math::Min(hiX, CHUNK_WIDTH - 1), CrossPlatform::Math::Min(hiY, CHUNK_HEIGHT - 1),
+	        CrossPlatform::Math::Min(hiZ, CHUNK_WIDTH - 1) };
+	return true;
+}
+} // namespace
+
+void Chunk::FillRegion(Int3 _a, Int3 _b, BlockType _type, uint8_t _meta) {
+	Int3 lo, hi;
+	if (!ClampChunkBox(_a, _b, lo, hi))
+		return;
+	for (int sub = lo.y >> 4; sub <= (hi.y >> 4); sub++) {
+		const int base = sub * SUB_CHUNK_SIZE;
+		const int y0 = CrossPlatform::Math::Max(lo.y, base) - base;
+		const int y1 = CrossPlatform::Math::Min(hi.y, base + SUB_CHUNK_SIZE - 1) - base;
+		subChunks[size_t(sub)].FillRegion({ lo.x, y0, lo.z }, { hi.x, y1, hi.z }, _type, _meta);
+	}
+	isModified = true;
+}
+
+void Chunk::FillBlockLightRegion(Int3 _a, Int3 _b, uint8_t _val) {
+	Int3 lo, hi;
+	if (!ClampChunkBox(_a, _b, lo, hi))
+		return;
+	_val &= 0xF;
+	const bool fullFootprint = lo.x == 0 && hi.x == CHUNK_WIDTH - 1 && lo.z == 0 && hi.z == CHUNK_WIDTH - 1;
+	for (int sub = lo.y >> 4; sub <= (hi.y >> 4); sub++) {
+		const int base = sub * SUB_CHUNK_SIZE;
+		const int y0 = CrossPlatform::Math::Max(lo.y, base) - base;
+		const int y1 = CrossPlatform::Math::Min(hi.y, base + SUB_CHUNK_SIZE - 1) - base;
+		SubChunk& s = subChunks[size_t(sub)];
+		if (fullFootprint && y0 == 0 && y1 == SUB_CHUNK_SIZE - 1) {
+			s.FillBlockLight(_val);
+			continue;
+		}
+		for (int y = y0; y <= y1; y++)
+			for (int z = lo.z; z <= hi.z; z++)
+				for (int x = lo.x; x <= hi.x; x++)
+					s.SetBlockLight(SubChunk::LocalIndex({ x, y, z }), _val);
+	}
+	isModified = true;
 }
 
 bool SubChunk::CompactBlocks() {

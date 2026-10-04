@@ -137,7 +137,7 @@ static void GetConnectedPortals(WorldManager& _world, Int3 _pos, std::unordered_
 void RegisterPortalBehaviors() { 
 	// Check if this portal block is still valid
 	blockBehaviors[BLOCK_NETHER_PORTAL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
-	                                                               BlockType _blockId) -> void {
+	                                                               BlockType /*_blockId*/) -> void {
 		BlockType thisBlock = BLOCK_NETHER_PORTAL;
 		bool xAligned = _world.GetBlockId(_pos.WithOffset(Direction::Value::West)) == thisBlock ||
 		                _world.GetBlockId(_pos.WithOffset(Direction::Value::East)) == thisBlock;
