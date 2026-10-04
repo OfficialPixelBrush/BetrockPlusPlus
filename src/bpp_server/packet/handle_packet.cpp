@@ -185,7 +185,26 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 
 	switch (_pkt.status) {
 	case PacketData::MineStatus::DIGGING_STARTED: {
+		// invoke fire extinguish if matched
+		Direction::Value clickFace = FaceDirectionToDirection(_pkt.face);
+		if (clickFace != Direction::Value::None) {
+			Int3 adjacentPos = packetPos.WithOffset(clickFace);
+			if (_world.GetBlockId(adjacentPos) == BLOCK_FIRE) {
+				if (auto fn = Blocks::blockBehaviors[BLOCK_FIRE].onBlockClicked) {
+					fn(_world, adjacentPos, &_session);
+				}
+			}
+		}
+
+		// to support clients that implement fire collision
 		BlockType blockId = _world.GetBlockId(packetPos);
+		if (blockId == BLOCK_FIRE) {
+			if (auto fn = Blocks::blockBehaviors[BLOCK_FIRE].onBlockClicked) {
+				fn(_world, packetPos, &_session);
+			}
+			return;
+		}
+
 		_session.pendingBlockBreak = { .lastBlock = blockId, .lastBlockPos = packetPos };
 
 		float hardness = Blocks::blockProperties[blockId].hardness;
