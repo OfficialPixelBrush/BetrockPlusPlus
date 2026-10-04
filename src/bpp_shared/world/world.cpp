@@ -876,8 +876,9 @@ void WorldManager::SetBlockRaw(const Int3 _wpos, const BlockType _blockType, con
 	}
 	Int3 local{ _wpos.x & 15, _wpos.y, _wpos.z & 15 };
 
-	chunk->SetBlock(local, _blockType);
-	chunk->SetMeta(local, _metadata);
+	chunk->SetBlockRaw(local, _blockType);
+	chunk->SetMetaRaw(local, _metadata);
+	chunk->isModified = true;
 }
 
 void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata,
@@ -920,7 +921,7 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 	}
 
 	// Then finally set the new block
-	chunk->SetBlock(local, _blockType);
+	chunk->SetBlockRaw(local, _blockType);
 
 	if (oldBlock != BLOCK_AIR && !_keepTileEntity) {
 		auto function = Blocks::blockBehaviors[oldBlock].onBlockRemoval;
@@ -928,7 +929,8 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 			function(*this, _wpos);
 	}
 
-	chunk->SetMeta(local, _metadata);
+	chunk->SetMetaRaw(local, _metadata);
+	chunk->isModified = true;
 
 	const Int3 pos = _wpos;
 	const int oldHeight = chunk->GetHeightValue(localXz);

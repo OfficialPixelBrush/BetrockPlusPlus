@@ -115,7 +115,7 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 				Int3 bpos{ z, y, x };
 				// Place Bedrock at bottom with some randomness
 				if (y <= 0 + rand.NextInt(5)) {
-					_chunk.SetBlock(bpos, BLOCK_BEDROCK);
+					_chunk.SetBlockRaw(bpos, BLOCK_BEDROCK);
 					continue;
 				}
 
@@ -137,14 +137,14 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 							topBlock = GetTopBlock(biome);
 							fillerBlock = GetFillerBlock(biome);
 
-							if (gravelActive)
+							if (gravelActive) {
 								topBlock = BLOCK_AIR;
-							if (gravelActive)
 								fillerBlock = BLOCK_GRAVEL;
-							if (sandActive)
+							}
+							if (sandActive) {
 								topBlock = BLOCK_SAND;
-							if (sandActive)
 								fillerBlock = BLOCK_SAND;
+							}
 						}
 
 						// Add water if we're below water level
@@ -154,10 +154,10 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 
 						stoneDepth = stoneActive;
 						// Place filler block if we're underwater
-						_chunk.SetBlock(bpos, (y >= WATER_LEVEL - 1) ? topBlock : fillerBlock);
+						_chunk.SetBlockRaw(bpos, (y >= WATER_LEVEL - 1) ? topBlock : fillerBlock);
 					} else if (stoneDepth > 0) {
 						--stoneDepth;
-						_chunk.SetBlock(bpos, fillerBlock);
+						_chunk.SetBlockRaw(bpos, fillerBlock);
 						if (stoneDepth == 0 && fillerBlock == BLOCK_SAND) {
 							stoneDepth = rand.NextInt(4);
 							fillerBlock = BLOCK_SANDSTONE;
@@ -178,6 +178,14 @@ void OverworldGenerator::ReplaceBlocksForBiome(Chunk& _chunk) {
 void OverworldGenerator::GenerateTerrain(Chunk& _chunk) {
 	// Generate 4x16x4 low resolution noise map
 	GenerateTerrainNoise(Int3{ _chunk.cpos.x * 4, 0, _chunk.cpos.z * 4 }, MAX);
+
+	for (int32_t x = 0; x < CHUNK_WIDTH; ++x) {
+		for (int32_t z = 0; z < CHUNK_WIDTH; ++z) {
+			const bool frozen = temperature[size_t(x * CHUNK_WIDTH + z)] < 0.5;
+			_chunk.FillColumn(0, WATER_LEVEL - 2, Int2{ x, z }, BLOCK_WATER_STILL);
+			_chunk.SetBlockRaw(Int3{ x, WATER_LEVEL - 1, z }, frozen ? BLOCK_ICE : BLOCK_WATER_STILL);
+		}
+	}
 
 	// Terrain noise is interpolated and only sampled every 4 blocks
 	for (int32_t sampleX = 0; sampleX < 4; ++sampleX) {
@@ -221,28 +229,10 @@ void OverworldGenerator::GenerateTerrain(Chunk& _chunk) {
 						double densityStepZ = (terrainX1 - terrainX0) * horizontalLerpStep;
 
 						for (int32_t subZ = 0; subZ < 4; ++subZ) {
-							// Here the actual block is determined
-							// Default to air block
-							BlockType blockType = BLOCK_AIR;
-
-							// If water is too cold, turn into ice
-							double temp = temperature[size_t((sampleX * 4 + subX) * 16 + sampleZ * 4 + subZ)];
-							int32_t yLevel = sampleY * 8 + subY;
-							if (yLevel < WATER_LEVEL) {
-								if (temp < 0.5 && yLevel >= WATER_LEVEL - 1) {
-									blockType = BLOCK_ICE;
-								} else {
-									blockType = BLOCK_WATER_STILL;
-								}
-							}
-
 							// If the terrain density falls below,
 							// replace block with stone
-							if (terrainDensity > 0.0) {
-								blockType = BLOCK_STONE;
-							}
-
-							_chunk.SetBlock(bpos, blockType);
+							if (terrainDensity > 0.0)
+								_chunk.SetBlockRaw(bpos, BLOCK_STONE);
 							// Prep for next iteration
 							bpos.z += 1;
 							terrainDensity += densityStepZ;
