@@ -87,30 +87,154 @@ static bool IsOpenForFlow(WorldManager& _world, Int3 _pos, MaterialType _fluidMa
 	return !BlocksFlow(block) && (material.type != _fluidMaterialType || _world.GetMetadata(_pos) != 0);
 }
 
-static int CalculateFlowCost(WorldManager& _world, Int3 _pos, Int2 _cameFrom, int _depth,
+static constexpr int FLOW_DX[4] = { -1, 1, 0, 0 };
+static constexpr int FLOW_DZ[4] = { 0, 0, -1, 1 };
+
+static int CalculateFlowCost(WorldManager& _world, Int3 _pos, int _depth, int _cameFrom,
                              MaterialType _fluidMaterialType) {
 	int lowest = 1000;
-	Int2 opposite = _cameFrom * Int2{ -1, -1 };
-	int d[4] = { -1, 1, 0, 0 };
 	for (int i = 0; i < 4; i++) {
-		int dx = d[i];
-		int dz = d[3 - i];
-		if (Int2{ dx, dz } == opposite)
+		if ((i == 0 && _cameFrom == 1) || (i == 1 && _cameFrom == 0) || (i == 2 && _cameFrom == 3) ||
+		    (i == 3 && _cameFrom == 2))
 			continue;
 
-		Int3 neighborPos = { _pos.x + dx, _pos.y, _pos.z + dz };
-		if (IsOpenForFlow(_world, neighborPos, _fluidMaterialType)) {
-			Int3 belowNeighbor = neighborPos;
-			belowNeighbor.y--;
-			if (!BlocksFlow(_world.GetBlockId(belowNeighbor))) {
-				return _depth;
-			} else if (_depth < 4) {
-				lowest = std::min(lowest,
-				                  CalculateFlowCost(_world, neighborPos, { dx, dz }, _depth + 1, _fluidMaterialType));
-			}
-		}
+		Int3 neighborPos = { _pos.x + FLOW_DX[i], _pos.y, _pos.z + FLOW_DZ[i] };
+		if (!IsOpenForFlow(_world, neighborPos, _fluidMaterialType))
+			continue;
+
+		if (!BlocksFlow(_world.GetBlockId({ neighborPos.x, neighborPos.y - 1, neighborPos.z })))
+			return _depth;
+
+		if (_depth >= 4)
+			continue;
+
+		int cost = CalculateFlowCost(_world, neighborPos, _depth + 1, i, _fluidMaterialType);
+		if (cost < lowest)
+			lowest = cost;
 	}
 	return lowest;
+}
+
+// Vanilla getFlowDecay: -1 if the block isn't this fluid, otherwise its metadata
+static int GetFlowDecay(WorldManager& _world, Int3 _pos, MaterialType _fluidMaterialType) {
+	if (_world.GetMaterial(_pos).type != _fluidMaterialType)
+		return -1;
+	return _world.GetMetadata(_pos);
+}
+
+static void FlowingFluidTick(WorldManager& _world, Int3 _pos, BlockType _flowingId, BlockType _stillId,
+                             MaterialType _fluid, int _tickRate, Java::Random& _random) {
+	const bool isLava = _fluid == MaterialType::Lava;
+	const int decayStep = (isLava && _world.GetDimension() != Dimension::Nether) ? 2 : 1;
+	const Int3 belowPos = { _pos.x, _pos.y - 1, _pos.z };
+
+	int level = GetFlowDecay(_world, _pos, _fluid);
+	if (level < 0)
+		return; // not this fluid anymore
+	bool settle = true;
+
+	if (level > 0) {
+		// getSmallestFlowDecay over the four sides, counting adjacent sources
+		int smallest = -100;
+		int adjacentSources = 0;
+		for (int i = 0; i < 4; i++) {
+			int decay = GetFlowDecay(_world, { _pos.x + FLOW_DX[i], _pos.y, _pos.z + FLOW_DZ[i] }, _fluid);
+			if (decay < 0)
+				continue;
+			if (decay == 0)
+				adjacentSources++;
+			if (decay >= 8)
+				decay = 0;
+			if (!(smallest >= 0 && decay >= smallest))
+				smallest = decay;
+		}
+
+		int newLevel = smallest + decayStep;
+		if (newLevel >= 8 || smallest < 0)
+			newLevel = -1;
+
+		// Fed from above
+		int above = GetFlowDecay(_world, { _pos.x, _pos.y + 1, _pos.z }, _fluid);
+		if (above >= 0)
+			newLevel = above >= 8 ? above : above + 8;
+
+		// Infinite water
+		if (adjacentSources >= 2 && !isLava) {
+			Material belowMaterial = _world.GetMaterial(belowPos);
+			if (belowMaterial.isSolid)
+				newLevel = 0;
+			else if (belowMaterial.type == _fluid && _world.GetMetadata(_pos) == 0)
+				newLevel = 0;
+		}
+
+		// Lava hesitation
+		if (isLava && level < 8 && newLevel < 8 && newLevel > level && _random.NextInt(4) != 0) {
+			newLevel = level;
+			settle = false;
+		}
+
+		if (newLevel != level) {
+			level = newLevel;
+			if (level < 0) {
+				_world.SetBlock(_pos, BLOCK_AIR);
+				// Vanilla keeps going with level == -1 (see the downward flow below)
+			} else {
+				_world.SetMeta(_pos, uint8_t(level));
+				_world.tickScheduler.ScheduleUpdateTick(_pos, _flowingId, _tickRate);
+				_world.NotifyNeighborsOfUpdate(_pos, _flowingId);
+			}
+		} else if (settle) {
+			_world.SetBlockRaw(_pos, _stillId, uint8_t(level));
+			if (isLava)
+				TryLavaHarden(_world, _pos);
+		}
+	} else {
+		_world.SetBlockRaw(_pos, _stillId, uint8_t(level));
+		if (isLava)
+			TryLavaHarden(_world, _pos);
+	}
+
+	// Flow down
+	if (IsDisplaceable(_world.GetBlockId(belowPos), _fluid)) {
+		_world.SetBlock(belowPos, _flowingId, uint8_t(level >= 8 ? level : level + 8));
+		return;
+	}
+
+	// Spread sideways if we're a source or something below us blocks the flow
+	if (level < 0 || (level != 0 && !BlocksFlow(_world.GetBlockId(belowPos))))
+		return;
+
+	// getOptimalFlowDirections
+	int costs[4];
+	for (int i = 0; i < 4; i++) {
+		costs[i] = 1000;
+		Int3 neighborPos = { _pos.x + FLOW_DX[i], _pos.y, _pos.z + FLOW_DZ[i] };
+		if (!IsOpenForFlow(_world, neighborPos, _fluid))
+			continue;
+		if (!BlocksFlow(_world.GetBlockId({ neighborPos.x, neighborPos.y - 1, neighborPos.z })))
+			costs[i] = 0;
+		else
+			costs[i] = CalculateFlowCost(_world, neighborPos, 1, i, _fluid);
+	}
+	int minCost = costs[0];
+	for (int i = 1; i < 4; i++)
+		if (costs[i] < minCost)
+			minCost = costs[i];
+
+	int outLevel = level >= 8 ? 1 : level + decayStep;
+	if (outLevel >= 8)
+		return;
+
+	for (int i = 0; i < 4; i++) {
+		if (costs[i] != minCost)
+			continue;
+		Int3 newPos = { _pos.x + FLOW_DX[i], _pos.y, _pos.z + FLOW_DZ[i] };
+		if (!IsDisplaceable(_world.GetBlockId(newPos), _fluid))
+			continue;
+		if (!isLava)
+			BreakAndDropBlock(_world, newPos);
+		_world.SetBlock(newPos, _flowingId, uint8_t(outLevel));
+	}
 }
 
 static Vec3 GetFluidFlowVector(WorldManager& _world, Int3 _pos) {
@@ -261,135 +385,10 @@ void RegisterFluidBehaviors() {
 	blockBehaviors[BLOCK_LAVA_STILL].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
 		TryLavaHarden(_world, _pos);
 	};
-	blockBehaviors[BLOCK_LAVA_FLOWING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                               Java::Random& /*_random*/) -> void {
-		auto level = _meta % 8;
-		bool isFalling = _meta >= 8;
-		bool isSource = _meta == 0;
-		auto candidateLevel = -1;
-		Int3 belowPos = { _pos.x, _pos.y - 1, _pos.z };
-
-		int stepDecay = _world.GetDimension() == Dimension::Nether ? 1 : 2;
-
-		// Are we a source block?
-		if (!isSource) {
-			// We aren't a source block so we need to update our level
-			// TODO: adjacentSourceCount isn't used?
-			//int8_t adjacentSourceCount = 0;
-			int lowestNeighborLevel = 999;
-			int d[4] = { -1, 1, 0, 0 };
-			for (int i = 0; i < 4; i++) {
-				auto dx = _pos.x + d[i];
-				auto dz = _pos.z + d[3 - i];
-				Int3 neighborPos = { dx, _pos.y, dz };
-				if (_world.GetMaterial(neighborPos).type == MaterialType::Lava) {
-					// Falling water (>= 8) is treated as level 0
-					auto neighborLevel = _world.GetMetadata({ dx, _pos.y, dz });
-					auto effectiveLevel = neighborLevel >= 8 ? 0 : neighborLevel;
-					// Yes !neighborLevel would work here but this is more explicit
-					//if (neighborLevel == 0)
-					//	adjacentSourceCount++;
-					if (effectiveLevel < lowestNeighborLevel)
-						lowestNeighborLevel = effectiveLevel;
-				}
-
-				// If lowestNeighborLevel is 999, then no neighbors were liquids
-				// If we are level 8 or higher we are fully exhausted, so remove ourselves
-				candidateLevel = lowestNeighborLevel + stepDecay;
-				bool invalid = lowestNeighborLevel == 999 || candidateLevel >= 8;
-				if (invalid)
-					candidateLevel = -1;
-			}
-
-			// Check for vertical feed
-			if (_world.GetMaterial({ _pos.x, _pos.y + 1, _pos.z }).type == MaterialType::Lava) {
-				// If our above level is already falling, then just copy it
-				// If it isn't, convert ourselves to falling by adding 8
-				auto aboveLevel = _world.GetMetadata({ _pos.x, _pos.y + 1, _pos.z });
-				candidateLevel = (aboveLevel >= 8) ? aboveLevel : aboveLevel + 8;
-			}
-
-			// Lava has some flow hesitation behavior
-			bool heldByHesitation = false;
-			if (_meta < 8 && candidateLevel < 8 && candidateLevel > _meta) {
-				if (_world.rand.NextInt(4) != 0) {
-					candidateLevel = _meta;
-					heldByHesitation = true;
-				}
-			}
-
-			if (candidateLevel == -1) {
-				_world.SetBlock(_pos, BLOCK_AIR);
-				return;
-			} else if (candidateLevel != _meta) {
-				_world.SetMeta(_pos, candidateLevel);
-				level = candidateLevel;
-				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING,
-				                                        _world.GetDimension() == Dimension::Nether ? 10 : 30);
-			} else if (heldByHesitation) {
-				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_LAVA_FLOWING,
-				                                        _world.GetDimension() == Dimension::Nether ? 10 : 30);
-			} else {
-				_world.SetBlockRaw(_pos, BLOCK_LAVA_STILL, _meta);
-			}
-		} else {
-			// We are a source so convert ourselves
-			_world.SetBlockRaw(_pos, BLOCK_LAVA_STILL, level);
-		}
-
-		auto belowBlock = _world.GetBlockId(belowPos);
-		if (IsDisplaceable(belowBlock, MaterialType::Lava)) {
-			_world.SetBlock(belowPos, BLOCK_LAVA_FLOWING, (level >= 8) ? level : level + 8);
-			return;
-		}
-
-		// Only spread sideways if we're a source, or what's below us actually blocks flow.
-		if (level != 0 && !BlocksFlow(belowBlock)) {
-			return;
-		}
-
-		// We only reach the horizontal spread if we are a source
-		// or we couldn't fall down
-		int directionalCosts[4] = { 1000, 1000, 1000, 1000 };
-		int minDirectionalCost = 1000;
-		int directions[4] = { -1, 1, 0, 0 };
-		for (int i = 0; i < 4; i++) {
-			// Check if we can find a close hole to flow towards
-			auto dx = _pos.x + directions[i];
-			auto dz = _pos.z + directions[3 - i];
-
-			// We can flow in this direction
-			Int3 neighborPos = { dx, _pos.y, dz };
-			if (IsOpenForFlow(_world, neighborPos, MaterialType::Lava)) {
-				Int3 belowNeighborPos = { dx, _pos.y - 1, dz };
-				if (!BlocksFlow(_world.GetBlockId(belowNeighborPos))) {
-					directionalCosts[i] = 0; // Immediate drop off
-				} else {
-					int initialStep = 1;
-					directionalCosts[i] = CalculateFlowCost(_world, neighborPos, { dx, dz }, initialStep,
-					                                        MaterialType::Lava);
-				}
-				if (directionalCosts[i] < minDirectionalCost)
-					minDirectionalCost = directionalCosts[i];
-			}
-		}
-
-		// Spread outwards
-		int outLevel = isFalling ? 1 : level + stepDecay;
-		if (outLevel >= 8)
-			return;
-
-		for (int i = 0; i < 4; i++) {
-			if (directionalCosts[i] > minDirectionalCost)
-				continue;
-			auto dx = _pos.x + directions[i];
-			auto dz = _pos.z + directions[3 - i];
-			Int3 newPos = { dx, _pos.y, dz };
-			if (IsDisplaceable(_world.GetBlockId(newPos), MaterialType::Lava)) {
-				// Lava never drops what it displaces
-				_world.SetBlock(newPos, BLOCK_LAVA_FLOWING, outLevel);
-			}
-		}
+	blockBehaviors[BLOCK_LAVA_FLOWING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
+	                                               Java::Random& _random) -> void {
+		FlowingFluidTick(_world, _pos, BLOCK_LAVA_FLOWING, BLOCK_LAVA_STILL, MaterialType::Lava,
+		                 _world.GetDimension() == Dimension::Nether ? 10 : 30, _random);
 	};
 
 	// FLUID PHYSICS (water)
@@ -408,130 +407,9 @@ void RegisterFluidBehaviors() {
 		_world.SetBlockRaw(_pos, BLOCK_WATER_FLOWING, _world.GetMetadata(_pos));
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_WATER_FLOWING, 5);
 	};
-	blockBehaviors[BLOCK_WATER_FLOWING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
-	                                                Java::Random& /*_random*/) -> void {
-		auto level = _meta % 8;
-		bool isFalling = _meta >= 8;
-		bool isSource = _meta == 0;
-		auto candidateLevel = -1;
-		Int3 belowPos = { _pos.x, _pos.y - 1, _pos.z };
-
-		int stepDecay = 1;
-
-		// Are we a source block?
-		if (!isSource) {
-			// We aren't a source block so we need to update our level
-			int8_t adjacentSourceCount = 0;
-			int lowestNeighborLevel = 999;
-			int d[4] = { -1, 1, 0, 0 };
-			for (int i = 0; i < 4; i++) {
-				auto dx = _pos.x + d[i];
-				auto dz = _pos.z + d[3 - i];
-				Int3 neighborPos = { dx, _pos.y, dz };
-				if (_world.GetMaterial(neighborPos).type == MaterialType::Water) {
-					// Falling water (>= 8) is treated as level 0
-					auto neighborLevel = _world.GetMetadata({ dx, _pos.y, dz });
-					auto effectiveLevel = neighborLevel >= 8 ? 0 : neighborLevel;
-					// Yes !neighborLevel would work here but this is more explicit
-					if (neighborLevel == 0)
-						adjacentSourceCount++;
-					if (effectiveLevel < lowestNeighborLevel)
-						lowestNeighborLevel = effectiveLevel;
-				}
-
-				// If lowestNeighborLevel is 999, then no neighbors were liquids
-				// If we are level 8 or higher we are fully exhausted, so remove ourselves
-				candidateLevel = lowestNeighborLevel + stepDecay;
-				bool invalid = lowestNeighborLevel == 999 || candidateLevel >= 8;
-				if (invalid)
-					candidateLevel = -1;
-			}
-
-			// Check for vertical feed
-			if (_world.GetMaterial({ _pos.x, _pos.y + 1, _pos.z }).type == MaterialType::Water) {
-				// If our above level is already falling, then just copy it
-				// If it isn't, convert ourselves to falling by adding 8
-				auto aboveLevel = _world.GetMetadata({ _pos.x, _pos.y + 1, _pos.z });
-				candidateLevel = (aboveLevel >= 8) ? aboveLevel : aboveLevel + 8;
-			}
-
-			// Source regeneration
-			// Only turn into a source if the block below us is also water or isSolid is true
-			auto belowMaterial = _world.GetMaterial(belowPos);
-			bool belowValid = belowMaterial.type == MaterialType::Water || belowMaterial.isSolid;
-			if (adjacentSourceCount >= 2 && belowValid)
-				candidateLevel = 0;
-
-			// Check if we are valid and update our level
-			if (candidateLevel == -1) {
-				_world.SetBlock(_pos, BLOCK_AIR);
-				return;
-			} else if (candidateLevel != _meta) {
-				_world.SetMeta(_pos, candidateLevel);
-				level = candidateLevel;
-				_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_WATER_FLOWING, 5);
-			} else {
-				_world.SetBlockRaw(_pos, BLOCK_WATER_STILL, _meta);
-			}
-		} else {
-			// We are a source so convert ourselves
-			_world.SetBlockRaw(_pos, BLOCK_WATER_STILL, level);
-		}
-
-		auto belowBlock = _world.GetBlockId(belowPos);
-		if (IsDisplaceable(belowBlock, MaterialType::Water)) {
-			_world.SetBlock(belowPos, BLOCK_WATER_FLOWING, (level >= 8) ? level : level + 8);
-			return;
-		}
-
-		// Only spread sideways if we're a source, or what's below us actually blocks flow.
-		if (level != 0 && !BlocksFlow(belowBlock)) {
-			return;
-		}
-
-		// We only reach the horizontal spread if we are a source
-		// or we couldn't fall down
-		int directionalCosts[4] = { 1000, 1000, 1000, 1000 };
-		int minDirectionalCost = 1000;
-		int directions[4] = { -1, 1, 0, 0 };
-		for (int i = 0; i < 4; i++) {
-			// Check if we can find a close hole to flow towards
-			auto dx = _pos.x + directions[i];
-			auto dz = _pos.z + directions[3 - i];
-
-			// We can flow in this direction
-			Int3 neighborPos = { dx, _pos.y, dz };
-			if (IsOpenForFlow(_world, neighborPos, MaterialType::Water)) {
-				Int3 belowNeighborPos = { dx, _pos.y - 1, dz };
-				auto below = _world.GetBlockId(belowNeighborPos);
-				if (!BlocksFlow(below)) {
-					directionalCosts[i] = 0; // Immediate drop off
-				} else {
-					int initialStep = 1;
-					directionalCosts[i] = CalculateFlowCost(_world, neighborPos, { dx, dz }, initialStep,
-					                                        MaterialType::Water);
-				}
-				if (directionalCosts[i] < minDirectionalCost)
-					minDirectionalCost = directionalCosts[i];
-			}
-		}
-
-		// Spread outwards
-		int outLevel = isFalling ? 1 : level + stepDecay;
-		if (outLevel >= 8)
-			return;
-
-		for (int i = 0; i < 4; i++) {
-			if (directionalCosts[i] > minDirectionalCost)
-				continue;
-			auto dx = _pos.x + directions[i];
-			auto dz = _pos.z + directions[3 - i];
-			Int3 newPos = { dx, _pos.y, dz };
-			if (IsDisplaceable(_world.GetBlockId(newPos), MaterialType::Water)) {
-				BreakAndDropBlock(_world, newPos);
-				_world.SetBlock(newPos, BLOCK_WATER_FLOWING, outLevel);
-			}
-		}
+	blockBehaviors[BLOCK_WATER_FLOWING].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
+	                                                Java::Random& _random) -> void {
+		FlowingFluidTick(_world, _pos, BLOCK_WATER_FLOWING, BLOCK_WATER_STILL, MaterialType::Water, 5, _random);
 	};
 }
 
