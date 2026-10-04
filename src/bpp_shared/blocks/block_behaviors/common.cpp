@@ -51,10 +51,12 @@ void GenericBreak(WorldManager& _world, Int3 _pos, Entity& /*_destroyer*/) {
 	BreakAndDropBlock(_world, _pos);
 }
 
-bool GenericPlace(WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Direction::Value _face, BlockType _blockId,
-                  uint8_t _meta) {
+// Returns the position the block could be placed at; (-1, -1, -1) if invalid 
+Int3 CanPlace(WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+	uint8_t _meta) {
+	Int3 invalid = { -1, -1, -1 };
 	if (!_world.InBounds(_pos.y))
-		return false;
+		return invalid;
 
 	BlockType existing = _world.GetBlockId(_pos);
 	Int3 sourceBlock = _pos.WithOffset(Direction::Opposite(_face));
@@ -70,7 +72,7 @@ bool GenericPlace(WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Directio
 		                   existing == BLOCK_LAVA_FLOWING || existing == BLOCK_LAVA_STILL || existing == BLOCK_FIRE ||
 		                   existing == BLOCK_SNOW_LAYER;
 		if (!replaceable)
-			return false;
+			return invalid;
 	}
 
 	// Check to see if any entities overlap our block's collider
@@ -83,12 +85,22 @@ bool GenericPlace(WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Directio
 		      double(targetPos.y) + 1.0, double(targetPos.z) + 1.0 });
 		for (auto& entity : entitiesInBlock) {
 			if (blockCollider.Intersects(entity->collider) && entity->preventEntitySpawning) {
-				return false;
+				return invalid;
 			}
 		}
 	}
 
-	_world.SetBlock(targetPos, _blockId, _meta);
+	return targetPos;
+}
+
+bool GenericPlace(WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+                  uint8_t _meta) {
+	Int3 placePos = CanPlace(_world, _pos, _placer, _face, _blockId, _meta);
+
+	if (placePos == Int3{ -1, -1, -1 })
+		return false;
+
+	_world.SetBlock(placePos, _blockId, _meta);
 	return true;
 }
 

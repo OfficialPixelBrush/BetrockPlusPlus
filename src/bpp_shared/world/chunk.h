@@ -13,7 +13,7 @@
 #include "helpers/cross_platform.h"
 #include "helpers/packed_array.h"
 #include "nbt/nbt.h"
-#include "helpers/math.h"
+#include "helpers/math_helper.h"
 #include "tile_entities/tile_entity.h"
 #include <algorithm>
 #include <array>

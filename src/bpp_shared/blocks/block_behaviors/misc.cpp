@@ -139,8 +139,16 @@ void RegisterMiscBehaviors() {
 		auto sourceBlock = _world.GetBlockId(sourcePos);
 		auto sourceMeta = _world.GetMetadata(sourcePos);
 		if (sourceBlock == BLOCK_SLAB && _face == Direction::Value::Up && sourceMeta == _meta) {
-			_world.SetBlock(sourcePos, BLOCK_AIR);
-			return GenericPlace(_world, sourcePos, _placer, _face, BLOCK_DOUBLE_SLAB, _meta);
+			// Vanilla does this weird but this seems to match its behavior
+			auto slabPlacePos = CanPlace(_world, _pos, _placer, _face, BLOCK_SLAB, _meta);
+			if (slabPlacePos != Int3{ -1, -1, -1 }) {
+				_world.SetBlock(sourcePos, BLOCK_AIR, /*meta=*/0, /*KeepTileEntity=*/true, /*updateNeighbors=*/false);
+				bool successfulPlace = GenericPlace(_world, sourcePos, _placer, _face, BLOCK_DOUBLE_SLAB, _meta);
+				if (successfulPlace)
+					return true;
+
+				_world.SetBlock(sourcePos, BLOCK_SLAB, _meta, /*KeepTileEntity=*/true, /*updateNeighbors=*/ false);
+			}
 		}
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
 	};
