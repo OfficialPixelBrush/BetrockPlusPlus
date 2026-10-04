@@ -1003,6 +1003,24 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 		              chunk->cpos);
 }
 
+void WorldManager::FillVolume(Int3 _posA, Int3 _posB, BlockType _type, uint8_t _meta) {
+	if (!InBounds(_posA.y))
+		return;
+	if (!InBounds(_posB.y))
+		return;
+	Int32_2 cpA{ _posA.x >> 4, _posA.z >> 4 };
+	Int32_2 cpB{ _posB.x >> 4, _posB.z >> 4 };
+	for (int cx = cpA.x; cx < cpB.x; cx++) {
+		for (int cz = cpA.z; cz < cpB.z; cz++) {
+			const Int2 cp{cx,cz};
+			auto* chunk = GetChunkRaw(cp);
+			if (!IsChunkValid(cp))
+				continue;
+			chunk->FillSlices(_posA.y, _posB.y, _type, _meta);
+		}
+	}
+}
+
 int WorldManager::FindTopSolidBlock(int _wx, int _wz) {
 	auto* chunk = GetChunkRaw({ _wx >> 4, _wz >> 4 });
 	if (!chunk || chunk->state.load() < ChunkState::Generated)
