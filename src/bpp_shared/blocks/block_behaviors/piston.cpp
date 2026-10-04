@@ -333,6 +333,7 @@ static void UpdatePistonState(WorldManager& _world, Int3 _pos) {
 	// Extend
 	if (shouldBeExtended && !PistonPowered(meta)) {
 		if (CanExtend(_world, _pos)) {
+			_world.SetBlockRaw(_pos, myId, uint8_t(orientation | 8));
 			ignore = true;
 			if (TryExtend(_world, _pos))
 				_world.SetMeta(_pos, orientation | 8);
@@ -344,6 +345,7 @@ static void UpdatePistonState(WorldManager& _world, Int3 _pos) {
 
 	// Retract
 	if (!shouldBeExtended && PistonPowered(meta)) {
+		_world.SetBlockRaw(_pos, myId, uint8_t(orientation));
 		ignore = true;
 		Retract(_world, _pos);
 		ignore = false;
@@ -388,10 +390,12 @@ void RegisterPistonBehaviors() {
 	blockBehaviors[BLOCK_PISTON_STICKY].onBlockPlaced = onPistonPlace;
 
 	blockBehaviors[BLOCK_PISTON].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
-		UpdatePistonState(_world, _pos);
+		if (_world.GetTileEntity(_pos) == nullptr)
+			UpdatePistonState(_world, _pos);
 	};
 	blockBehaviors[BLOCK_PISTON_STICKY].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
-		UpdatePistonState(_world, _pos);
+		if (_world.GetTileEntity(_pos) == nullptr)
+			UpdatePistonState(_world, _pos);
 	};
 
 	// Neighbor updates

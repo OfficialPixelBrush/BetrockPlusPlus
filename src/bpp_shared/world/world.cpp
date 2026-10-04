@@ -1267,6 +1267,13 @@ void WorldManager::NotifyNeighborsOfUpdate(Int3 _globalPos, BlockType _blockId) 
 }
 
 void WorldManager::CreateTileEntity(std::shared_ptr<TileEntity> _tileEntity) {
+	// While tile entities are ticking we defer them
+	// This is what vanilla does!
+	if (tileEntityManager.scanning) {
+		tileEntityManager.pendingAdd.push_back(std::move(_tileEntity));
+		return;
+	}
+
 	Int32_2 cpos{ _tileEntity->position.x >> 4, _tileEntity->position.z >> 4 };
 	Chunk* chunk = GetChunkRaw(cpos);
 	if (!chunk)
