@@ -234,7 +234,8 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& _chunk,
 	tileEntities.name = "TileEntities";
 	tileEntities.listType = TAG_COMPOUND;
 	for (auto& te : _chunk->tileEntities) {
-		if (te)
+		// Invalid ones can still be mapped until they're looked up
+		if (te && !te->invalid)
 			tileEntities.list.push_back(te->Serialize());
 	}
 

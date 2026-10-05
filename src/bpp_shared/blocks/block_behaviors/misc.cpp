@@ -217,6 +217,9 @@ void RegisterMiscBehaviors() {
 	blockBehaviors[BLOCK_FURNACE_LIT].onBlockPlaced = onFurnaceDispenserPlace;
 
 	blockBehaviors[BLOCK_FURNACE].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
+		// The lit/unlit swap keeps its tile entity. Making a new one here would replace it with an empty furnace
+		if (_world.GetTileEntityAs<TileEntityFurnace>(_pos))
+			return;
 		auto furnaceTileEntity = std::make_shared<TileEntityFurnace>(_pos);
 		_world.CreateTileEntity(std::move(furnaceTileEntity));
 	};

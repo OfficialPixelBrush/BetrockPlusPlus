@@ -11,6 +11,7 @@
 #include "blocks.h"
 #include "blocks/block_behaviors.h"
 #include "blocks/block_properties_behaviors.h"
+#include "helpers/java/java_hash_set.h"
 
 // For redstone!
 struct WorldManager;
@@ -35,7 +36,13 @@ struct RedstoneUpdateInfo {
 };
 
 namespace RedstoneManager {
-void TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos, BlockType _newBlock, BlockType _oldBlock);
+// Which JVM's HashMap to imitate when ordering wire updates. This is what makes Java redstone
+// directional/locational, and it differs between Java 6, 7 and 8+. Defaults to Java 8+.
+void SetJavaHashMapVersion(Java::HashMapVersion _version);
+
+// Call this before SetBlock notifies direct neighbors (Java runs these from onBlockAdded / onBlockRemoval)
+void TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos, BlockType _newBlock, BlockType _oldBlock,
+                           uint8_t _oldMeta = 0);
 
 // Call this from redstone dust's onNeighborBlockChange
 void RefreshWireAt(WorldManager& _world, Int3 _pos);
@@ -48,7 +55,6 @@ PowerProfile GetBlockPowerProfile(WorldManager& _world, Int3 _pos);
 bool IsPositionPowered(WorldManager& _world, Int3 _pos);
 void PruneTorchUpdates(WorldManager& _world);
 bool CheckTorchBurnout(WorldManager& _world, Int3 _pos, bool _logUpdate);
-bool GetProfileInDirection(const ComponentProfile _profile, const Direction::Value _dir);
 
 inline bool CanProvidePower(BlockType _block) {
 	// Repeaters are excluded for some reason in vanilla

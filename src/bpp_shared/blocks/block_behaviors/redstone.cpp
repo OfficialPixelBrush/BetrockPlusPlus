@@ -190,23 +190,37 @@ static bool PlaceTorchLike(WorldManager& _world, Int3 _pos, Entity& _placer, Dir
 	return GenericPlace(_world, _pos, _placer, _face, _blockId, meta);
 }
 
-static void NotifyAttachedSupportBlock(WorldManager& _world, Int3 _pos, BlockType _blockId, uint8_t _meta) {
-	Direction::Value dir = GetDirectionFromMeta(_blockId, _meta);
-	Int3 support = _pos.WithOffset(Direction::Opposite(dir));
-
-	static constexpr Direction::Value ALL_DIRS[6] = {
-		Direction::Value::North, Direction::Value::South, Direction::Value::East,
-		Direction::Value::West,  Direction::Value::Up,    Direction::Value::Down,
-	};
-	for (auto d : ALL_DIRS) {
-		if (d == dir)
-			continue;
-		Int3 neighborPos = support.WithOffset(d);
-		auto block = _world.GetBlockId(neighborPos);
-		auto updateFunction = Blocks::blockBehaviors[block].onNeighborBlockChange;
-		if (updateFunction)
-			updateFunction(_world, neighborPos, _blockId);
+// BlockLever / BlockButton: notify around ourselves again, then around the block we're mounted on.
+// Java does this on top of the notification from setBlockMetadataWithNotify, so our direct
+// neighbors really do get updated twice.
+static void NotifySwitchAndSupport(WorldManager& _world, Int3 _pos, BlockType _blockId, uint8_t _meta) {
+	_world.NotifyNeighborsOfUpdate(_pos, _blockId);
+	switch (_meta & 7) {
+	case 1:
+		_world.NotifyNeighborsOfUpdate({ _pos.x - 1, _pos.y, _pos.z }, _blockId);
+		break;
+	case 2:
+		_world.NotifyNeighborsOfUpdate({ _pos.x + 1, _pos.y, _pos.z }, _blockId);
+		break;
+	case 3:
+		_world.NotifyNeighborsOfUpdate({ _pos.x, _pos.y, _pos.z - 1 }, _blockId);
+		break;
+	case 4:
+		_world.NotifyNeighborsOfUpdate({ _pos.x, _pos.y, _pos.z + 1 }, _blockId);
+		break;
+	default:
+		_world.NotifyNeighborsOfUpdate({ _pos.x, _pos.y - 1, _pos.z }, _blockId);
+		break;
 	}
+}
+
+// BlockLever.onBlockRemoval / BlockButton.onBlockRemoval
+template <BlockType SWITCH>
+static void OnSwitchRemoved(WorldManager& _world, Int3 _pos) {
+	// Runs after the id changed but before the meta did, so this is still our meta
+	uint8_t meta = _world.GetMetadata(_pos);
+	if (meta & 8)
+		NotifySwitchAndSupport(_world, _pos, SWITCH, meta);
 }
 
 static void SetPressurePlateState(WorldManager& _world, Int3 _pos, BlockType _type) {
@@ -253,12 +267,14 @@ void RegisterRedstoneBehaviors() {
 		.getSelectionBox = RedstoneDustAabb,
 		.getRayBounds = RedstoneDustAabb,
 		.getCollider = EmptyCollider,
-		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType _blockId) -> void {
-		    if (_blockId != BLOCK_REDSTONE)
-			    RedstoneManager::RefreshWireAt(_world, _pos);
+		// Java recalculates no matter what sent the update. RefreshWireAt bails out cheaply
+		// when this wire's own strength wouldn't change
+		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType /*_blockId*/) -> void {
 		    if (!CanRedstoneComponentStay(_world, _pos)) {
 			    BreakAndDropBlock(_world, _pos);
+			    return;
 		    }
+		    RedstoneManager::RefreshWireAt(_world, _pos);
 		},
 	};
 
@@ -280,7 +296,7 @@ void RegisterRedstoneBehaviors() {
 		.onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta, Java::Random& /*_random*/) -> void {
 		    if (_meta & 0b1000) {
 			    _world.SetMeta(_pos, _meta & 0b111);
-			    NotifyAttachedSupportBlock(_world, _pos, BLOCK_BUTTON_STONE, _meta);
+			    NotifySwitchAndSupport(_world, _pos, BLOCK_BUTTON_STONE, _meta);
 		    }
 		},
 		.onNeighborBlockChange = [](WorldManager& _world, Int3 _pos, BlockType /*_blockId*/) -> void {
@@ -288,9 +304,12 @@ void RegisterRedstoneBehaviors() {
 			    BreakAndDropBlock(_world, _pos);
 		},
 		.onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* /*_triggeringSession*/) -> void {
-		    auto newMeta = _world.GetMetadata(_pos) | 0b1000;
+		    auto meta = _world.GetMetadata(_pos);
+		    if (meta & 0b1000)
+			    return; // Already pressed, Java does nothing
+		    auto newMeta = uint8_t(meta | 0b1000);
 		    _world.SetMeta(_pos, newMeta);
-		    NotifyAttachedSupportBlock(_world, _pos, BLOCK_BUTTON_STONE, newMeta);
+		    NotifySwitchAndSupport(_world, _pos, BLOCK_BUTTON_STONE, newMeta);
 		    _world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_BUTTON_STONE, 20);
 		    //if (_world.onWorldEvent)
 		    //    _world.onWorldEvent(PacketData::WorldEvent::DISPENSER_CLICK_EMPTY, _pos, 0, _triggeringSession);
@@ -566,6 +585,9 @@ void RegisterRedstoneBehaviors() {
 		BreakAndDropBlock(_world, _pos);
 	};
 
+	blockBehaviors[BLOCK_LEVER].onBlockRemoval = OnSwitchRemoved<BLOCK_LEVER>;
+	blockBehaviors[BLOCK_BUTTON_STONE].onBlockRemoval = OnSwitchRemoved<BLOCK_BUTTON_STONE>;
+
 	blockBehaviors[BLOCK_LEVER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                       BlockType /*_blockId*/) -> void {
 		auto dir = GetDirectionFromMeta(BLOCK_LEVER, _world.GetMetadata(_pos));
@@ -577,9 +599,9 @@ void RegisterRedstoneBehaviors() {
 
 	blockBehaviors[BLOCK_LEVER].onBlockClicked = [](WorldManager& _world, Int3 _pos,
 	                                                PlayerSession* /*_triggeringSession*/) -> void {
-		auto newMeta = _world.GetMetadata(_pos) ^ 0b1000;
+		auto newMeta = uint8_t(_world.GetMetadata(_pos) ^ 0b1000);
 		_world.SetMeta(_pos, newMeta);
-		NotifyAttachedSupportBlock(_world, _pos, BLOCK_LEVER, newMeta);
+		NotifySwitchAndSupport(_world, _pos, BLOCK_LEVER, newMeta);
 		//if (_world.onWorldEvent)
 		//	_world.onWorldEvent(PacketData::WorldEvent::DISPENSER_CLICK_EMPTY, _pos, 0, _triggeringSession);
 	},

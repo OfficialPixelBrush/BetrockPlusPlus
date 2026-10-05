@@ -331,6 +331,7 @@ static void UpdatePistonState(WorldManager& _world, Int3 _pos) {
 	// Extend
 	if (shouldBeExtended && !PistonPowered(meta)) {
 		if (CanExtend(_world, _pos)) {
+			_world.SetBlockRaw(_pos, myId, uint8_t(orientation | 8));
 			ignore = true;
 			if (TryExtend(_world, _pos))
 				_world.SetMeta(_pos, orientation | 8);
@@ -439,6 +440,17 @@ void RegisterPistonBehaviors() {
 	};
 
 	// So moving blocks still drop
+	// BlockPistonMoving.onBlockRemoval. Overwriting a moving block finishes its tile entity on the spot,
+	// which places the stored block *before* SetBlock writes the new metadata. Replacing a moving block
+	// with another moving block therefore leaves the old block's id with the new block's metadata.
+	// That, plus orphaned piston tile entities, is block transmutation.
+	blockBehaviors[BLOCK_PISTON_MOVING].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		if (auto te = _world.GetTileEntityShared<TileEntityPistonMoving>(_pos))
+			te->InstantFinish(_world);
+		else
+			_world.RemoveTileEntity(_pos); // BlockContainer.onBlockRemoval
+	};
+
 	blockBehaviors[BLOCK_PISTON_MOVING].onBlockDestroyedByExplosion = [](WorldManager& _world, Int3 _pos) -> void {
 		BlockType stored = BLOCK_AIR;
 		uint8_t storedMeta = 0;

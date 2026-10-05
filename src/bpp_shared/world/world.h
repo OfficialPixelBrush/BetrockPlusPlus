@@ -134,6 +134,30 @@ public:
 	void RegisterChunkTileEntities(Chunk* _chunk);
 	// Returns the tile entity at world position `pos`, or nullptr if none.
 	TileEntity* GetTileEntity(Int3 _pos);
+	std::shared_ptr<TileEntity> LookupTileEntity(Int3 _pos);
+	// Maps a tile entity into its chunk, replacing whatever was mapped there (Chunk.setChunkBlockTileEntity)
+	void IndexTileEntity(std::shared_ptr<TileEntity> _tileEntity);
+	// Unmaps and invalidates whatever tile entity is at this spot (Chunk.removeChunkBlockTileEntity)
+	void RemoveIndexedTileEntity(Int3 _pos);
+
+	// Blocks that extend BlockContainer in Java
+	static bool IsContainerBlock(BlockType _block) {
+		switch (_block) {
+		case BLOCK_CHEST:
+		case BLOCK_DISPENSER:
+		case BLOCK_FURNACE:
+		case BLOCK_FURNACE_LIT:
+		case BLOCK_JUKEBOX:
+		case BLOCK_MOB_SPAWNER:
+		case BLOCK_NOTEBLOCK:
+		case BLOCK_PISTON_MOVING:
+		case BLOCK_SIGN_STANDING:
+		case BLOCK_SIGN_WALL:
+			return true;
+		default:
+			return false;
+		}
+	}
 
 	void PlayNoteAt(Int3 _pos, int8_t _instrumentState, int8_t _pitchDirection) const {
 		if (onNotePlay)
@@ -222,14 +246,7 @@ public:
 
 	template <typename T>
 	std::shared_ptr<T> GetTileEntityShared(Int3 _pos) {
-		Chunk* chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
-		if (!chunk)
-			return nullptr;
-		for (auto& te : chunk->tileEntities) {
-			if (te && te->position.x == _pos.x && te->position.y == _pos.y && te->position.z == _pos.z)
-				return std::dynamic_pointer_cast<T>(te);
-		}
-		return nullptr;
+		return std::dynamic_pointer_cast<T>(LookupTileEntity(_pos));
 	}
 
 	// Called from pool gen threads

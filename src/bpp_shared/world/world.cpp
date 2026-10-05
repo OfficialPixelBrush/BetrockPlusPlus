@@ -922,6 +922,11 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 		auto function = Blocks::blockBehaviors[oldBlock].onBlockRemoval;
 		if (function)
 			function(*this, _wpos);
+
+		// BlockContainer.onBlockRemoval. Moving pistons handle their own tile entity, and that's
+		// where block transmutation comes from (see BLOCK_PISTON_MOVING's onBlockRemoval)
+		if (IsContainerBlock(oldBlock) && oldBlock != BLOCK_PISTON_MOVING)
+			RemoveTileEntity(_wpos);
 	}
 
 	chunk->SetMetaRaw(local, _metadata);
@@ -961,14 +966,6 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 		}
 	}
 
-	// Remove any tile entities that exist at this spot
-	if (!_keepTileEntity) {
-		auto& tes = chunk->tileEntities;
-		tes.erase(std::remove_if(tes.begin(), tes.end(),
-		                         [&](const std::shared_ptr<TileEntity>& _te) { return _te && _te->position == _wpos; }),
-		          tes.end());
-	}
-
 	// Call our on placed function
 	if (_blockType != BLOCK_AIR) {
 		// Java has this functionality in the chunk setters themselves, but
@@ -978,14 +975,15 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 			function(*this, _wpos);
 	}
 
-	// Update our neighbors
+	// Redstone fan-out. Java does this inside the chunk setter (onBlockAdded / onBlockRemoval),
+	// so it has to happen before the direct neighbor notification below
+	if (_updateNeighbors &&
+	    (RedstoneManager::CanTriggerRedstoneUpdate(_blockType) || RedstoneManager::CanTriggerRedstoneUpdate(oldBlock)))
+		RedstoneManager::TriggerRedstoneUpdate(*this, _wpos, _blockType, oldBlock, oldMeta);
+
+	// Update our neighbors (World.notifyBlockChange)
 	if (_updateNeighbors)
 		this->NotifyNeighborsOfUpdate(_wpos, _blockType);
-
-	// Trigger redstone updates
-	if (RedstoneManager::CanTriggerRedstoneUpdate(_blockType) || RedstoneManager::CanTriggerRedstoneUpdate(oldBlock))
-		if (_updateNeighbors)
-			RedstoneManager::TriggerRedstoneUpdate(*this, _wpos, _blockType, oldBlock);
 
 	// Callback for the client and server to know about this block update
 	const auto newBlock = chunk->GetBlock(local);
@@ -1272,7 +1270,11 @@ void WorldManager::NotifyNeighborsOfUpdate(Int3 _globalPos, BlockType _blockId) 
 	}
 }
 
+// World.setBlockTileEntity
 void WorldManager::CreateTileEntity(std::shared_ptr<TileEntity> _tileEntity) {
+	if (!_tileEntity || _tileEntity->invalid)
+		return;
+
 	// While tile entities are ticking we defer them
 	// This is what vanilla does!
 	if (tileEntityManager.scanning) {
@@ -1281,11 +1283,44 @@ void WorldManager::CreateTileEntity(std::shared_ptr<TileEntity> _tileEntity) {
 	}
 
 	Int32_2 cpos{ _tileEntity->position.x >> 4, _tileEntity->position.z >> 4 };
-	Chunk* chunk = GetChunkRaw(cpos);
-	if (!chunk)
+	if (!GetChunkRaw(cpos))
 		return;
+	tileEntityManager.InitializeTileEntity(_tileEntity); // weak_ptr added if canTick
+	IndexTileEntity(std::move(_tileEntity));
+}
+
+// Chunk.setChunkBlockTileEntity
+void WorldManager::IndexTileEntity(std::shared_ptr<TileEntity> _tileEntity) {
+	Int32_2 cpos{ _tileEntity->position.x >> 4, _tileEntity->position.z >> 4 };
+	Chunk* chunk = GetChunkRaw(cpos);
 	_tileEntity->chunk = chunk;
-	tileEntityManager.InitializeTileEntity(_tileEntity);   // weak_ptr added if canTick
+	if (!chunk) {
+		tileEntityManager.KeepAlive(std::move(_tileEntity));
+		return;
+	}
+
+	// Java only maps it if the block is a container. Otherwise it prints "Attempted to place a tile
+	// entity where there was no entity tile!" but the tile entity is already in the ticking list
+	// Read the chunk directly: world generation creates tile entities before the chunk counts as generated
+	const Int3 local{ _tileEntity->position.x & 15, _tileEntity->position.y, _tileEntity->position.z & 15 };
+	if (!InBounds(local.y) || !IsContainerBlock(chunk->GetBlock(local))) {
+		tileEntityManager.KeepAlive(std::move(_tileEntity));
+		return;
+	}
+
+	_tileEntity->invalid = false; // TileEntity.validate()
+	for (auto& existing : chunk->tileEntities) {
+		if (existing && existing->position == _tileEntity->position) {
+			if (existing == _tileEntity)
+				return;
+			// HashMap.put just drops the old mapping. The old tile entity is never invalidated,
+			// so it stays in the ticking list and keeps running without being reachable
+			if (!existing->invalid)
+				tileEntityManager.KeepAlive(existing);
+			existing = std::move(_tileEntity);
+			return;
+		}
+	}
 	chunk->tileEntities.push_back(std::move(_tileEntity)); // chunk takes ownership
 }
 
@@ -1298,28 +1333,58 @@ void WorldManager::RegisterChunkTileEntities(Chunk* _chunk) {
 	}
 }
 
-TileEntity* WorldManager::GetTileEntity(Int3 _pos) {
+// Chunk.getChunkBlockTileEntity (without the lazy re-creation for containers)
+std::shared_ptr<TileEntity> WorldManager::LookupTileEntity(Int3 _pos) {
 	Chunk* chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
 	if (!chunk)
 		return nullptr;
-	for (auto& te : chunk->tileEntities) {
-		if (te && te->position.x == _pos.x && te->position.y == _pos.y && te->position.z == _pos.z)
-			return te.get();
+	auto& tes = chunk->tileEntities;
+	for (auto it = tes.begin(); it != tes.end(); ++it) {
+		if (*it && (*it)->position == _pos) {
+			// Invalid tile entities stay mapped until someone looks them up
+			if ((*it)->invalid) {
+				tes.erase(it);
+				return nullptr;
+			}
+			return *it;
+		}
 	}
 	return nullptr;
 }
 
+TileEntity* WorldManager::GetTileEntity(Int3 _pos) {
+	return LookupTileEntity(_pos).get();
+}
+
+// World.removeBlockTileEntity
 void WorldManager::RemoveTileEntity(Int3 _pos) {
+	auto te = LookupTileEntity(_pos);
+
+	// Mid-scan Java only invalidates it, and it stays mapped. Note this is whatever tile entity is
+	// mapped here, which isn't necessarily the one asking for the removal
+	if (te && tileEntityManager.scanning) {
+		te->invalid = true;
+		return;
+	}
+
+	if (te)
+		tileEntityManager.Unlist(te.get());
+	RemoveIndexedTileEntity(_pos);
+}
+
+// Chunk.removeChunkBlockTileEntity: unmaps and invalidates whatever is at this spot
+void WorldManager::RemoveIndexedTileEntity(Int3 _pos) {
 	Chunk* chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
 	if (!chunk)
 		return;
 	auto& tes = chunk->tileEntities;
-	tes.erase(std::remove_if(tes.begin(), tes.end(),
-	                         [&](const std::shared_ptr<TileEntity>& _te) {
-		                         return _te && _te->position.x == _pos.x && _te->position.y == _pos.y &&
-		                                _te->position.z == _pos.z;
-	                         }),
-	          tes.end());
+	for (auto it = tes.begin(); it != tes.end(); ++it) {
+		if (*it && (*it)->position == _pos) {
+			(*it)->invalid = true;
+			tes.erase(it);
+			return;
+		}
+	}
 }
 
 BlockType WorldManager::GetBlockId(Int3 _wpos) {

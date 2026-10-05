@@ -7,6 +7,7 @@
 
 #include "redstone_manager.h"
 #include "helpers/direction_fixer.h"
+#include "helpers/java/java_hash_set.h"
 #include "logger/logger.h"
 #include "world.h"
 #include <deque>
@@ -14,6 +15,14 @@
 #include <vector>
 
 static std::deque<RedstoneUpdateInfo> torchUpdates;
+
+// BlockRedstoneWire.blocksNeedingUpdate. Java has one of these on the single wire Block instance,
+// so it is shared by every dimension and keeps its grown capacity for the life of the server.
+static Java::ChunkPositionHashSet blocksNeedingUpdate;
+
+void RedstoneManager::SetJavaHashMapVersion(Java::HashMapVersion _version) {
+	blocksNeedingUpdate.SetVersion(_version);
+}
 
 void RedstoneManager::PruneTorchUpdates(WorldManager& _world) {
 	while (!torchUpdates.empty() && _world.elapsedTicks - torchUpdates.front().updateTime > 100)
@@ -182,7 +191,6 @@ PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _p
 	// Check sides
 	int d[4] = { -1, 1, 0, 0 };
 	for (int i = 0; i < 4; i++) {
-		// TODO: Direction System
 		auto rdx = d[i];
 		auto rdz = d[3 - i];
 		auto dx = rdx + _pos.x;
@@ -219,26 +227,26 @@ PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _p
 	return {}; // Block isn't powered
 }
 
-static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
+// Java's isBlockIndirectlyGettingPowered for a wire, with wiresProvidePower off
+static bool DustHasExternalPower(WorldManager& _world, Int3 _pos) {
 	//auto thisBlock = _world.GetBlockId(_pos);
 	//auto thisMeta = _world.GetMetadata(_pos);
 
 	// Is the block under us being hard powered?
 	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Direction::Value::Down)).hardPowered)
-		return 15;
+		return true;
 
 	// Is the block above us being hard powered?
 	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Direction::Value::Up)).hardPowered)
-		return 15;
+		return true;
 
 	// Can the block above us power us?
 	if (RedstoneManager::GetComponentProfile(_world.GetBlockId(_pos.WithOffset(Direction::Value::Up)),
 	                                         _world.GetMetadata(_pos.WithOffset(Direction::Value::Up)))
 	        .powerBelow)
-		return 15;
+		return true;
 
 	// Check the blocks to the side of us
-	int best = 0;
 	int d[4] = { -1, 1, 0, 0 };
 	for (int i = 0; i < 4; i++) {
 		auto rdx = d[i];
@@ -252,7 +260,7 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 			auto checkMeta = _world.GetMetadata(dPos);
 			// We only care if we are being hard powered from the same Y level
 			if (dy == _pos.y && RedstoneManager::GetBlockPowerProfile(_world, dPos).hardPowered)
-				return 15;
+				return true;
 
 			// A torch sitting directly beside us
 			if (dy == _pos.y && checkId == BLOCK_REDSTONE_TORCH_ON) {
@@ -271,7 +279,7 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 					torchPowersUs = torchProfile.powerZ;
 
 				if (torchPowersUs)
-					return 15;
+					return true;
 			}
 
 			// A repeater sitting directly beside us
@@ -291,7 +299,7 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 					repeaterPowersUs = repeaterProfile.powerZ;
 
 				if (repeaterPowersUs)
-					return 15;
+					return true;
 			}
 
 			// A lever or button or pressure plate sitting directly beside us
@@ -313,20 +321,39 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 					poweredTowardUs = neighborProfile.powerZ;
 
 				if (poweredTowardUs)
-					return 15;
+					return true;
 			}
 
-			// Check if we are a valid connection (same level, or a valid vertical bridge)
+		}
+	}
+
+	return false;
+}
+
+// The strongest wire this one connects to (same level, or a valid vertical bridge)
+static int GetDustNeighborLevel(WorldManager& _world, Int3 _pos) {
+	int best = 0;
+	int d[4] = { -1, 1, 0, 0 };
+	for (int i = 0; i < 4; i++) {
+		auto rdx = d[i];
+		auto rdz = d[3 - i];
+		for (int dy = _pos.y - 1; dy <= _pos.y + 1; dy++) {
+			Int3 dPos = { rdx + _pos.x, dy, rdz + _pos.z };
 			bool canConnect = (dy == _pos.y) || RedstoneManager::CanBridgeVertical(_world, _pos, rdx, rdz, dy - _pos.y);
-			if (_world.GetBlockId(dPos) == BLOCK_REDSTONE && canConnect) {
-				// This is a dust so use its current power level directly
+			if (canConnect && _world.GetBlockId(dPos) == BLOCK_REDSTONE) {
 				auto neighborLevel = _world.GetMetadata(dPos);
 				if (neighborLevel > best)
 					best = neighborLevel;
 			}
 		}
 	}
+	return best;
+}
 
+static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
+	if (DustHasExternalPower(_world, _pos))
+		return 15;
+	int best = GetDustNeighborLevel(_world, _pos);
 	return best > 0 ? best - 1 : 0;
 }
 
@@ -463,6 +490,28 @@ static bool ResolvePowerLevels(WorldManager& _world, const std::vector<Int3>& _p
 	return hasChanged;
 }
 
+// The end of BlockRedstoneWire.calculateCurrentChanges. Java's check is "old == 0 || (new - 1) == 0",
+// so a wire that ends at 1 also counts
+static void MarkWireChanged(Int3 _wire, uint8_t _oldLevel, uint8_t _newLevel) {
+	if (_oldLevel != 0 && _newLevel > 1)
+		return;
+	blocksNeedingUpdate.Add(_wire);
+	blocksNeedingUpdate.Add({ _wire.x - 1, _wire.y, _wire.z });
+	blocksNeedingUpdate.Add({ _wire.x + 1, _wire.y, _wire.z });
+	blocksNeedingUpdate.Add({ _wire.x, _wire.y - 1, _wire.z });
+	blocksNeedingUpdate.Add({ _wire.x, _wire.y + 1, _wire.z });
+	blocksNeedingUpdate.Add({ _wire.x, _wire.y, _wire.z - 1 });
+	blocksNeedingUpdate.Add({ _wire.x, _wire.y, _wire.z + 1 });
+}
+
+// The end of updateAndPropagateCurrentStrength. Copy out in HashSet iteration order and clear
+// before notifying, since the notifications re-enter us (Java does the same)
+static void DispatchWireUpdates(WorldManager& _world) {
+	const std::vector<Int3> toNotify = blocksNeedingUpdate.DrainInIterationOrder();
+	for (const Int3& pos : toNotify)
+		_world.NotifyNeighborsOfUpdate(pos, BLOCK_REDSTONE);
+}
+
 // Flood fill solver
 // Avoids a ton of redundant updates!
 static void SolveRedstoneNetwork(WorldManager& _world, Int3 _pos) {
@@ -478,116 +527,349 @@ static void SolveRedstoneNetwork(WorldManager& _world, Int3 _pos) {
 	while (ResolvePowerLevels(_world, order))
 		;
 
-	// Each redstone wire will try and reach further out if it went from 0->powered or powered->0
+	std::unordered_set<Int3> changed;
 	for (auto& pos : order) {
-		auto oldLevel = oldLevels.find(pos)->second;
-		auto newLevel = _world.GetMetadata(pos);
-		if (oldLevel != newLevel && (oldLevel == 0 || newLevel == 0)) {
-			// Always notify this wire tile's own direct neighbors
-			_world.NotifyNeighborsOfUpdate(pos, BLOCK_REDSTONE);
+		if (oldLevels.find(pos)->second != _world.GetMetadata(pos))
+			changed.insert(pos);
+	}
+	if (changed.empty())
+		return;
 
-			// Reach one hop further
-			Int3 neighbors[6] = {
-				{ pos.x - 1, pos.y, pos.z }, { pos.x + 1, pos.y, pos.z }, { pos.x, pos.y - 1, pos.z },
-				{ pos.x, pos.y + 1, pos.z }, { pos.x, pos.y, pos.z - 1 }, { pos.x, pos.y, pos.z + 1 },
-			};
-			for (auto& npos : neighbors) {
-				if (_world.GetBlockId(npos) != BLOCK_REDSTONE) {
-					_world.NotifyNeighborsOfUpdate(npos, BLOCK_REDSTONE);
-				}
+	// Java fills blocksNeedingUpdate from inside calculateCurrentChanges, which recurses into
+	// neighboring wires before it adds its own entries. Walk the changed wires the same way
+	// (post-order, same neighbor order) so the insertion order matches as closely as we can
+	// without running Java's algorithm.
+	std::unordered_set<Int3> walked;
+	auto visit = [&](auto& _self, Int3 _wire) -> void {
+		walked.insert(_wire);
+
+		static constexpr int DX[4] = { -1, 1, 0, 0 };
+		static constexpr int DZ[4] = { 0, 0, -1, 1 };
+		for (int i = 0; i < 4; i++) {
+			Int3 side = { _wire.x + DX[i], _wire.y, _wire.z + DZ[i] };
+			if (changed.contains(side) && !walked.contains(side))
+				_self(_self, side);
+
+			// Java's second loop goes up a level beside solid blocks, otherwise down
+			Int3 vertical = { side.x, side.y + (_world.IsBlockNormalCube(side) ? 1 : -1), side.z };
+			if (changed.contains(vertical) && !walked.contains(vertical))
+				_self(_self, vertical);
+		}
+
+		MarkWireChanged(_wire, oldLevels.find(_wire)->second, _world.GetMetadata(_wire));
+	};
+
+	if (changed.contains(_pos))
+		visit(visit, _pos);
+	for (auto& pos : order) {
+		if (changed.contains(pos) && !walked.contains(pos))
+			visit(visit, pos);
+	}
+
+	DispatchWireUpdates(_world);
+}
+
+// One BlockRedstoneWire.updateAndPropagateCurrentStrength batch, run exactly the way Java runs it
+// but against an in-memory copy of the wires it touches.
+//
+// Java's recursion decides which wires change in a batch, in what order they're added to
+// blocksNeedingUpdate, and sometimes leaves a network in a half-updated state that later
+// updates depend on. None of that can be recovered from the final levels, so we run the
+// same recursion. What we skip is everything that makes it slow in Java: there are no world
+// writes, notifications or client updates mid-cascade, each wire's final level is written
+// once, and wires are only loaded from the world when the recursion first reaches them.
+namespace {
+struct JavaWireBatch {
+	static constexpr int STEP_BUDGET = 1 << 16;
+
+	struct Node {
+		Int3 pos;
+		bool isWire = true;
+		bool expanded = false;
+		bool external = false; // isBlockIndirectlyGettingPowered with wires not providing power
+		uint8_t level = 0;
+		uint8_t originalLevel = 0;
+		// Per direction (x-1, x+1, z-1, z+1): wire indices, or -1
+		int side[4] = { -1, -1, -1, -1 };     // read and recursed into
+		int readDiag[4] = { -1, -1, -1, -1 }; // read: up a level beside solid blocks, else down
+		int recurse[4] = { -1, -1, -1, -1 };  // recursed into: up beside solid blocks, else down
+	};
+
+	WorldManager& world;
+	std::deque<Node> nodes; // deque so references stay valid while we add nodes
+	std::unordered_map<Int3, int> index;
+	int steps = 0;
+	bool overBudget = false;
+
+	explicit JavaWireBatch(WorldManager& _world) : world(_world) {}
+
+	// Returns the node index for a wire, or -1 if there's no wire here
+	int WireAt(Int3 _pos) {
+		if (auto it = index.find(_pos); it != index.end())
+			return nodes[size_t(it->second)].isWire ? it->second : -1;
+		if (world.GetBlockId(_pos) != BLOCK_REDSTONE)
+			return -1;
+		return AddNode(_pos, true, world.GetMetadata(_pos));
+	}
+
+	int AddNode(Int3 _pos, bool _isWire, uint8_t _level) {
+		Node node;
+		node.pos = _pos;
+		node.isWire = _isWire;
+		node.level = node.originalLevel = _level;
+		nodes.push_back(node);
+		const int i = int(nodes.size() - 1);
+		index[_pos] = i;
+		return i;
+	}
+
+	void Expand(int _i) {
+		if (nodes[size_t(_i)].expanded)
+			return;
+		const Int3 p = nodes[size_t(_i)].pos;
+		const bool external = DustHasExternalPower(world, p);
+		const bool solidAbove = world.IsBlockNormalCube({ p.x, p.y + 1, p.z });
+
+		static constexpr int DX[4] = { -1, 1, 0, 0 };
+		static constexpr int DZ[4] = { 0, 0, -1, 1 };
+		int side[4], readDiag[4], recurse[4];
+		for (int d = 0; d < 4; d++) {
+			const Int3 s = { p.x + DX[d], p.y, p.z + DZ[d] };
+			const bool solidSide = world.IsBlockNormalCube(s);
+			side[d] = WireAt(s);
+			if (solidSide && !solidAbove)
+				readDiag[d] = WireAt({ s.x, s.y + 1, s.z });
+			else if (!solidSide)
+				readDiag[d] = WireAt({ s.x, s.y - 1, s.z });
+			else
+				readDiag[d] = -1;
+			recurse[d] = WireAt({ s.x, s.y + (solidSide ? 1 : -1), s.z });
+		}
+
+		Node& n = nodes[size_t(_i)];
+		n.expanded = true;
+		n.external = external;
+		for (int d = 0; d < 4; d++) {
+			n.side[d] = side[d];
+			n.readDiag[d] = readDiag[d];
+			n.recurse[d] = recurse[d];
+		}
+	}
+
+	// BlockRedstoneWire.calculateCurrentChanges. _source is the node that triggered this one,
+	// and is skipped when reading neighbor strengths
+	void Calculate(int _i, int _source) {
+		if (overBudget || ++steps > STEP_BUDGET) {
+			overBudget = true;
+			return;
+		}
+		Expand(_i);
+
+		const int oldLevel = nodes[size_t(_i)].level;
+		int newLevel = 0;
+		if (nodes[size_t(_i)].external) {
+			newLevel = 15;
+		} else {
+			const Node& n = nodes[size_t(_i)];
+			for (int d = 0; d < 4; d++) {
+				if (n.side[d] >= 0 && n.side[d] != _source)
+					newLevel = std::max<int>(newLevel, nodes[size_t(n.side[d])].level);
+				if (n.readDiag[d] >= 0 && n.readDiag[d] != _source)
+					newLevel = std::max<int>(newLevel, nodes[size_t(n.readDiag[d])].level);
+			}
+			newLevel = newLevel > 0 ? newLevel - 1 : 0;
+		}
+
+		if (oldLevel == newLevel)
+			return;
+		nodes[size_t(_i)].level = uint8_t(newLevel);
+
+		int levelBelowUs = 0;
+		for (int d = 0; d < 4; d++) {
+			for (int other : { nodes[size_t(_i)].side[d], nodes[size_t(_i)].recurse[d] }) {
+				levelBelowUs = nodes[size_t(_i)].level;
+				if (levelBelowUs > 0)
+					--levelBelowUs;
+				if (other >= 0 && nodes[size_t(other)].level != levelBelowUs)
+					Calculate(other, _i);
+				if (overBudget)
+					return;
 			}
 		}
+
+		// Uses whatever the strength is now, after the recursion
+		levelBelowUs = nodes[size_t(_i)].level;
+		if (levelBelowUs > 0)
+			--levelBelowUs;
+		if (oldLevel == 0 || levelBelowUs == 0) {
+			const Int3 p = nodes[size_t(_i)].pos;
+			blocksNeedingUpdate.Add(p);
+			blocksNeedingUpdate.Add({ p.x - 1, p.y, p.z });
+			blocksNeedingUpdate.Add({ p.x + 1, p.y, p.z });
+			blocksNeedingUpdate.Add({ p.x, p.y - 1, p.z });
+			blocksNeedingUpdate.Add({ p.x, p.y + 1, p.z });
+			blocksNeedingUpdate.Add({ p.x, p.y, p.z - 1 });
+			blocksNeedingUpdate.Add({ p.x, p.y, p.z + 1 });
+		}
+	}
+
+	// Returns false if the cascade blew the step budget and nothing was applied
+	bool Run(Int3 _pos, bool _isWire, uint8_t _level) {
+		const int root = AddNode(_pos, _isWire, _level);
+		Calculate(root, root);
+		if (overBudget) {
+			blocksNeedingUpdate.DrainInIterationOrder(); // discard
+			return false;
+		}
+
+		// Java writes each step with editingBlocks set, so nothing is notified until the batch is done
+		for (const Node& n : nodes) {
+			if (n.isWire && n.level != n.originalLevel)
+				world.SetBlock(n.pos, BLOCK_REDSTONE, n.level, false, false);
+		}
+		DispatchWireUpdates(world);
+		return true;
+	}
+};
+} // namespace
+
+// BlockRedstoneWire.notifyWireNeighborsOfNeighborChange
+static void NotifyWireNeighborsOfNeighborChange(WorldManager& _world, Int3 _pos) {
+	if (_world.GetBlockId(_pos) != BLOCK_REDSTONE)
+		return;
+	_world.NotifyNeighborsOfUpdate(_pos, BLOCK_REDSTONE);
+	_world.NotifyNeighborsOfUpdate({ _pos.x - 1, _pos.y, _pos.z }, BLOCK_REDSTONE);
+	_world.NotifyNeighborsOfUpdate({ _pos.x + 1, _pos.y, _pos.z }, BLOCK_REDSTONE);
+	_world.NotifyNeighborsOfUpdate({ _pos.x, _pos.y, _pos.z - 1 }, BLOCK_REDSTONE);
+	_world.NotifyNeighborsOfUpdate({ _pos.x, _pos.y, _pos.z + 1 }, BLOCK_REDSTONE);
+	_world.NotifyNeighborsOfUpdate({ _pos.x, _pos.y - 1, _pos.z }, BLOCK_REDSTONE);
+	_world.NotifyNeighborsOfUpdate({ _pos.x, _pos.y + 1, _pos.z }, BLOCK_REDSTONE);
+}
+
+// The tail of BlockRedstoneWire.onBlockAdded / onBlockRemoval
+static void NotifyWireFanOut(WorldManager& _world, Int3 _pos) {
+	static constexpr int DX[4] = { -1, 1, 0, 0 };
+	static constexpr int DZ[4] = { 0, 0, -1, 1 };
+	for (int i = 0; i < 4; i++)
+		NotifyWireNeighborsOfNeighborChange(_world, { _pos.x + DX[i], _pos.y, _pos.z + DZ[i] });
+	for (int i = 0; i < 4; i++) {
+		Int3 side = { _pos.x + DX[i], _pos.y, _pos.z + DZ[i] };
+		NotifyWireNeighborsOfNeighborChange(_world,
+		                                    { side.x, side.y + (_world.IsBlockNormalCube(side) ? 1 : -1), side.z });
 	}
 }
 
-void RedstoneManager::TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos, BlockType _newBlock, BlockType _oldBlock) {
-	// Vanilla has some weird update quirks so we replicate that here in one pass
-	// This avoids vanilla's tendency to spam block updates
-	SolveRedstoneNetwork(_world, _pos);
+// Java's neighbor-of-neighbor orders. These run from onBlockAdded / onBlockRemoval, which is
+// before SetBlock notifies the direct neighbors.
+static constexpr Int3 TORCH_FANOUT_ORDER[6] = { { 0, -1, 0 }, { 0, 1, 0 },  { -1, 0, 0 },
+	                                            { 1, 0, 0 },  { 0, 0, -1 }, { 0, 0, 1 } };
+static constexpr Int3 REPEATER_FANOUT_ORDER[6] = { { 1, 0, 0 },  { -1, 0, 0 }, { 0, 0, 1 },
+	                                               { 0, 0, -1 }, { 0, -1, 0 }, { 0, 1, 0 } };
 
+void RedstoneManager::TriggerRedstoneUpdate(WorldManager& _world, Int3 _pos, BlockType _newBlock, BlockType _oldBlock,
+                                            uint8_t _oldMeta) {
 	// DUST:
-	if (_newBlock == BLOCK_REDSTONE || _oldBlock == BLOCK_REDSTONE) {
-		// Vertical updates happen no matter what
-		_world.NotifyNeighborsOfUpdate({ _pos.x, _pos.y - 1, _pos.z }, BLOCK_REDSTONE);
+	if (_newBlock == BLOCK_REDSTONE) {
+		// BlockRedstoneWire.onBlockAdded: propagate first, then fan out
+		RefreshWireAt(_world, _pos);
 		_world.NotifyNeighborsOfUpdate({ _pos.x, _pos.y + 1, _pos.z }, BLOCK_REDSTONE);
-
-		auto notifyWireNeighbor = [&_world](Int3 _neighborPos) -> void {
-			if (_world.GetBlockId(_neighborPos) != BLOCK_REDSTONE)
-				return;
-
-			_world.NotifyNeighborsOfUpdate(_neighborPos, BLOCK_REDSTONE); // the neighbor itself
-			_world.NotifyNeighborsOfUpdate({ _neighborPos.x - 1, _neighborPos.y, _neighborPos.z }, BLOCK_REDSTONE);
-			_world.NotifyNeighborsOfUpdate({ _neighborPos.x + 1, _neighborPos.y, _neighborPos.z }, BLOCK_REDSTONE);
-			_world.NotifyNeighborsOfUpdate({ _neighborPos.x, _neighborPos.y - 1, _neighborPos.z }, BLOCK_REDSTONE);
-			_world.NotifyNeighborsOfUpdate({ _neighborPos.x, _neighborPos.y + 1, _neighborPos.z }, BLOCK_REDSTONE);
-			_world.NotifyNeighborsOfUpdate({ _neighborPos.x, _neighborPos.y, _neighborPos.z - 1 }, BLOCK_REDSTONE);
-			_world.NotifyNeighborsOfUpdate({ _neighborPos.x, _neighborPos.y, _neighborPos.z + 1 }, BLOCK_REDSTONE);
-		};
-
-		notifyWireNeighbor({ _pos.x - 1, _pos.y, _pos.z });
-		notifyWireNeighbor({ _pos.x + 1, _pos.y, _pos.z });
-		notifyWireNeighbor({ _pos.x, _pos.y, _pos.z - 1 });
-		notifyWireNeighbor({ _pos.x, _pos.y, _pos.z + 1 });
+		_world.NotifyNeighborsOfUpdate({ _pos.x, _pos.y - 1, _pos.z }, BLOCK_REDSTONE);
+		NotifyWireFanOut(_world, _pos);
+	} else if (_oldBlock == BLOCK_REDSTONE) {
+		// BlockRedstoneWire.onBlockRemoval: vertical updates come before the propagation
+		_world.NotifyNeighborsOfUpdate({ _pos.x, _pos.y + 1, _pos.z }, BLOCK_REDSTONE);
+		_world.NotifyNeighborsOfUpdate({ _pos.x, _pos.y - 1, _pos.z }, BLOCK_REDSTONE);
+		// Java runs this while the removed wire's strength is still in the metadata, so the
+		// air left behind acts as the root of the batch
+		if (!JavaWireBatch(_world).Run(_pos, /*isWire=*/false, _oldMeta))
+			SolveRedstoneNetwork(_world, _pos);
+		NotifyWireFanOut(_world, _pos);
 	}
 
-	// REDSTONE TORCH:
+	// Torches, repeaters, levers, buttons and plates don't solve anything up front. In Java a wire
+	// only recalculates when an update actually reaches it, and the order those updates arrive in
+	// decides what nearby pistons see.
+
+	// REDSTONE TORCH: onBlockAdded when it turns on, onBlockRemoval when it turns off
 	if (_newBlock == BLOCK_REDSTONE_TORCH_ON || _oldBlock == BLOCK_REDSTONE_TORCH_ON) {
-		Int3 sixNeighbors[6] = {
-			{ _pos.x - 1, _pos.y, _pos.z }, { _pos.x + 1, _pos.y, _pos.z }, { _pos.x, _pos.y - 1, _pos.z },
-			{ _pos.x, _pos.y + 1, _pos.z }, { _pos.x, _pos.y, _pos.z - 1 }, { _pos.x, _pos.y, _pos.z + 1 },
-		};
-		for (auto& n : sixNeighbors)
-			_world.NotifyNeighborsOfUpdate(n, BLOCK_REDSTONE_TORCH_ON);
+		for (const Int3& o : TORCH_FANOUT_ORDER)
+			_world.NotifyNeighborsOfUpdate(_pos + o, BLOCK_REDSTONE_TORCH_ON);
 	}
 
-	// REDSTONE REPEATER:
+	// REDSTONE REPEATER: onBlockAdded, which runs for every on/off swap
 	if (_newBlock == BLOCK_REDSTONE_REPEATER_ON || _newBlock == BLOCK_REDSTONE_REPEATER_OFF) {
-		Int3 sixNeighbors[6] = {
-			{ _pos.x - 1, _pos.y, _pos.z }, { _pos.x + 1, _pos.y, _pos.z }, { _pos.x, _pos.y - 1, _pos.z },
-			{ _pos.x, _pos.y + 1, _pos.z }, { _pos.x, _pos.y, _pos.z - 1 }, { _pos.x, _pos.y, _pos.z + 1 },
-		};
-		for (auto& n : sixNeighbors)
-			_world.NotifyNeighborsOfUpdate(n, _newBlock);
+		for (const Int3& o : REPEATER_FANOUT_ORDER)
+			_world.NotifyNeighborsOfUpdate(_pos + o, _newBlock);
 	}
 }
 
 void RedstoneManager::RefreshWireAt(WorldManager& _world, Int3 _pos) {
-	// Redstone wires on neighbor change gets called independently of whether the update was caused by a redstone component
-	SolveRedstoneNetwork(_world, _pos);
-}
+	// Cheap early out: if this wire's own strength wouldn't change, Java does nothing at all
+	const uint8_t oldLevel = _world.GetMetadata(_pos);
+	if (uint8_t(GetDustPowerLevel(_world, _pos)) == oldLevel)
+		return;
 
-bool RedstoneManager::GetProfileInDirection(const ComponentProfile _profile, const Direction::Value _dir) {
-	switch(_dir) {
-		case Direction::Value::North:
-			return _profile.powerNZ;
-		case Direction::Value::South:
-			return _profile.powerZ;
-		case Direction::Value::West:
-			return _profile.powerNX;
-		case Direction::Value::East:
-			return _profile.powerX;	
-		case Direction::Value::Down:
-			return _profile.powerBelow;	
-		default:
-			return false;
-	}
-}
-
-// TODO: 
-bool IsValidPoweringComponent(BlockType _block) {
-	return _block == BLOCK_REDSTONE_TORCH_ON || _block == BLOCK_REDSTONE_REPEATER_ON || _block == BLOCK_LEVER ||
-		     _block == BLOCK_BUTTON_STONE || _block == BLOCK_PRESSURE_PLATE_STONE || _block == BLOCK_PRESSURE_PLATE_WOOD ||
-		     _block == BLOCK_RAIL_DETECTOR;
+	// Run Java's batch. If a cascade is too big (the kind that lags vanilla), solve it in one pass
+	// instead. Levels still come out right, but the update order is only approximated then.
+	if (!JavaWireBatch(_world).Run(_pos, /*isWire=*/true, oldLevel))
+		SolveRedstoneNetwork(_world, _pos);
 }
 
 bool RedstoneManager::IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, uint8_t _meta) {
-	const auto dir = GetDirectionFromMeta(BLOCK_REDSTONE_REPEATER_OFF, _meta & 3);
-	Int3 inputPos = _pos.WithOffset(Direction::Opposite(dir));
-	auto block = _world.GetBlockId(inputPos);
-	auto meta = _world.GetMetadata(inputPos);
-	if (IsValidPoweringComponent(block) && GetProfileInDirection(RedstoneManager::GetComponentProfile(block, meta), dir))
-		return true;
-	if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
-		return true;
-	return block == BLOCK_REDSTONE && meta > 0;
+	int facing = _meta & 3;
+	switch (facing) {
+	case 0: {
+		Int3 inputPos = { _pos.x, _pos.y, _pos.z + 1 };
+		auto block = _world.GetBlockId(inputPos);
+		auto meta = _world.GetMetadata(inputPos);
+		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
+		     block == BLOCK_BUTTON_STONE || block == BLOCK_PRESSURE_PLATE_STONE || block == BLOCK_PRESSURE_PLATE_WOOD || block == BLOCK_RAIL_DETECTOR) &&
+		    RedstoneManager::GetComponentProfile(block, meta).powerNZ)
+			return true;
+		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
+			return true;
+		return block == BLOCK_REDSTONE && meta > 0;
+	}
+	case 1: {
+		Int3 inputPos = { _pos.x - 1, _pos.y, _pos.z };
+		auto block = _world.GetBlockId(inputPos);
+		auto meta = _world.GetMetadata(inputPos);
+		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
+		     block == BLOCK_BUTTON_STONE || block == BLOCK_PRESSURE_PLATE_STONE || block == BLOCK_PRESSURE_PLATE_WOOD ||
+		     block == BLOCK_RAIL_DETECTOR) &&
+		    RedstoneManager::GetComponentProfile(block, meta).powerX)
+			return true;
+		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
+			return true;
+		return block == BLOCK_REDSTONE && meta > 0;
+	}
+	case 2: {
+		Int3 inputPos = { _pos.x, _pos.y, _pos.z - 1 };
+		auto block = _world.GetBlockId(inputPos);
+		auto meta = _world.GetMetadata(inputPos);
+		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
+		     block == BLOCK_BUTTON_STONE || block == BLOCK_PRESSURE_PLATE_STONE || block == BLOCK_PRESSURE_PLATE_WOOD ||
+		     block == BLOCK_RAIL_DETECTOR) &&
+		    RedstoneManager::GetComponentProfile(block, meta).powerZ)
+			return true;
+		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
+			return true;
+		return block == BLOCK_REDSTONE && meta > 0;
+	}
+	case 3: {
+		Int3 inputPos = { _pos.x + 1, _pos.y, _pos.z };
+		auto block = _world.GetBlockId(inputPos);
+		auto meta = _world.GetMetadata(inputPos);
+		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
+		     block == BLOCK_BUTTON_STONE || block == BLOCK_PRESSURE_PLATE_STONE || block == BLOCK_PRESSURE_PLATE_WOOD ||
+		     block == BLOCK_RAIL_DETECTOR) &&
+		    RedstoneManager::GetComponentProfile(block, meta).powerNX)
+			return true;
+		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
+			return true;
+		return block == BLOCK_REDSTONE && meta > 0;
+	}
+	default:
+		return false;
+	}
 }
