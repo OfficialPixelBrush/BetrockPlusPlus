@@ -52,19 +52,19 @@ std::string ClearOwnInventory(const strategos::CmdNode& /*_cmd*/, void* _userDat
 }
 
 std::string ClearOtherInventory(const strategos::CmdNode& _cmd, void* _userData) {
-    auto& ctx = CmdCtx(_userData);
-    auto playerName = _cmd.get_arg<std::string>("player");
-    if (!playerName)
-        return ERROR_REASON_PARAMETERS;
+	auto& ctx = CmdCtx(_userData);
+	auto playerName = _cmd.get_arg<std::string>("player");
+	if (!playerName)
+		return ERROR_REASON_PARAMETERS;
 
-    auto target = ctx.server->GetSessionByUsername(*playerName);
-    if (!target)
-        return *playerName + " does not exist!";
+	auto target = ctx.server->GetSessionByUsername(*playerName);
+	if (!target)
+		return *playerName + " does not exist!";
 
-    const auto count = target->inventory.Clear();
-    PacketUtilities::SendInventory(*target, target->openWindowId, target->inventory);
-    SendChat(*ctx.session, std::format("§eRemoved {} Item(s) from player {}", count, *playerName));
-    return "";
+	const auto count = target->inventory.Clear();
+	PacketUtilities::SendInventory(*target, target->openWindowId, target->inventory);
+	SendChat(*ctx.session, std::format("§eRemoved {} Item(s) from player {}", count, *playerName));
+	return "";
 }
 
 } // namespace
@@ -78,6 +78,6 @@ void RegisterGive(strategos::BrigadierContext& _dispatcher) {
 	_dispatcher.add_command(strategos::Node::literal("clear")
 	                            .describe("Give yourself a block or item")
 	                            .op()
-								.executes(ClearOwnInventory)
+	                            .executes(ClearOwnInventory)
 	                            .then(strategos::Node::string("player").executes(ClearOtherInventory)));
 }

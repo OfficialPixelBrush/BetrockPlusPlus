@@ -147,7 +147,7 @@ void RegisterMiscBehaviors() {
 				if (successfulPlace)
 					return true;
 
-				_world.SetBlock(sourcePos, BLOCK_SLAB, _meta, /*KeepTileEntity=*/true, /*updateNeighbors=*/ false);
+				_world.SetBlock(sourcePos, BLOCK_SLAB, _meta, /*KeepTileEntity=*/true, /*updateNeighbors=*/false);
 			}
 		}
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);

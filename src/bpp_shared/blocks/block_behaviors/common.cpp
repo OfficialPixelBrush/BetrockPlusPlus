@@ -51,9 +51,9 @@ void GenericBreak(WorldManager& _world, Int3 _pos, Entity& /*_destroyer*/) {
 	BreakAndDropBlock(_world, _pos);
 }
 
-// Returns the position the block could be placed at; (-1, -1, -1) if invalid 
+// Returns the position the block could be placed at; (-1, -1, -1) if invalid
 Int3 CanPlace(WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Direction::Value _face, BlockType _blockId,
-	uint8_t _meta) {
+              uint8_t _meta) {
 	Int3 invalid = { -1, -1, -1 };
 	if (!_world.InBounds(_pos.y))
 		return invalid;

@@ -16,9 +16,9 @@
 #include "entities/entity_pig.h"
 #include "entities/entity_sheep.h"
 #include "entities/entity_skeleton.h"
+#include "entities/entity_slime.h"
 #include "entities/entity_spider.h"
 #include "entities/entity_zombie.h"
-#include "entities/entity_slime.h"
 #include "networking/packets.h"
 #include <memory>
 #include <utility>

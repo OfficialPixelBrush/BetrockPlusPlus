@@ -238,7 +238,7 @@ void RegisterAll() {
 
 	// Happy 23rd Birthday to me! (Pixel Brush)
 	itemBehavior[CAKE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/,
-	                                        Direction::Value _face) {
+	                                   Direction::Value _face) {
 		Int3 placePos = _pos.WithOffset(_face);
 		if (!Blocks::CanCakeSurviveAt(_world, placePos))
 			return;

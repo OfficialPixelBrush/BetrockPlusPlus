@@ -11,14 +11,14 @@
 #include "constants.h"
 #include "enums/biomes.h"
 #include "helpers/cross_platform.h"
+#include "helpers/math_helper.h"
 #include "helpers/packed_array.h"
 #include "nbt/nbt.h"
-#include "helpers/math_helper.h"
 #include "tile_entities/tile_entity.h"
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <atomic>
+#include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -29,7 +29,7 @@
 // some optimizations that're common in modern voxel engines.
 // One of these is either called sub-chunks or palettes.
 // Sub-chunks is less confusing for this situation, so we'll call it that here.
-// 
+//
 // Simply put, a normal chunk is 16x128x16, and contains 4 kinds of data:
 // The Block type, the metadata value, the block light and sky light.
 // Separately, these take up 81920 Bytes, since even air with no metadata is stored as is. With 1k chunks, that's ~80MB!
@@ -41,7 +41,7 @@
 // Instead we can store a single byte that represents that sub-chunk that says "Yup, this whole thing is air."
 // We can do the same with the other kinds of data, such as metadata and lighting,
 // which results in significant savings (~2/3 on average)
-// 
+//
 // This already reduces memory usage significantly, but we can do better.
 // If we handle each kind of data separately, via layers,
 // we can further reduce the amount of excess usage.
@@ -51,7 +51,7 @@
 //
 // The final layout becomes:
 // Chunk (16x128x16 b,m,bl,sl)
-//  -> Sub-Chunk (16x16x16 b,m,bl,sl) 
+//  -> Sub-Chunk (16x16x16 b,m,bl,sl)
 //    -> Layer (Block Type)
 //    -> Layer (Metadata)
 //    -> Layer (Block Light)

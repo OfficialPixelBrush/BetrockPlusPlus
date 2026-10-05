@@ -19,7 +19,7 @@ std::string ListAddons(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
 	const auto& addons = ctx.server->GetAddonManager().GetAddons();
 	std::vector<std::string> addonLabels;
-    addonLabels.reserve(addons.size());
+	addonLabels.reserve(addons.size());
 	for (const auto& addon : addons) {
 		if (!addon)
 			continue;
@@ -35,5 +35,5 @@ void RegisterAddon(strategos::BrigadierContext& _dispatcher) {
 	_dispatcher.add_command(strategos::Node::literal("addon")
 	                            .describe("Addon managing commands")
 	                            .op()
-	        					.then(strategos::Node::literal("list").executes(ListAddons)));
+	                            .then(strategos::Node::literal("list").executes(ListAddons)));
 }

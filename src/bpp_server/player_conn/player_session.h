@@ -9,6 +9,7 @@
 #pragma once
 #include "../entities/entity_mp_player.h"
 #include "../trackers/entity_tracker.h"
+#include "addon/addon_impl.h"
 #include "dimensions.h"
 #include "inventory/interactions/player.h"
 #include "inventory/inventory_interaction.h"
@@ -17,7 +18,6 @@
 #include "networking/network_stream.h"
 #include "world/client_pos.h"
 #include "world/world.h"
-#include "addon/addon_impl.h"
 #include <chrono>
 #include <cstdint>
 #include <future>

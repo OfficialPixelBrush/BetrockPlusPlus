@@ -570,29 +570,25 @@ void RegisterBlockProperties() {
 	};
 
 	// Brown Mushroom
-	blockProperties[BlockType::BLOCK_MUSHROOM_BROWN] = {
-		.material = Material::Plants(),
-		.hardness = 0.0f,
-		.lightEmission = 1,
-		.lightOpacity = 0,
-		.stepSound = StepSound::Grass,
-		.isCollidable = false,
-		.isOpaqueCube = false,
-		.isNormalCube = false,
-		.ticksOnLoad = true
-	};
+	blockProperties[BlockType::BLOCK_MUSHROOM_BROWN] = { .material = Material::Plants(),
+		                                                 .hardness = 0.0f,
+		                                                 .lightEmission = 1,
+		                                                 .lightOpacity = 0,
+		                                                 .stepSound = StepSound::Grass,
+		                                                 .isCollidable = false,
+		                                                 .isOpaqueCube = false,
+		                                                 .isNormalCube = false,
+		                                                 .ticksOnLoad = true };
 
 	// Red Mushroom
-	blockProperties[BlockType::BLOCK_MUSHROOM_RED] = {
-		.material = Material::Plants(),
-		.hardness = 0.0f,
-		.lightOpacity = 0,
-		.stepSound = StepSound::Grass,
-		.isCollidable = false,
-		.isOpaqueCube = false,
-		.isNormalCube = false,
-		.ticksOnLoad = true
-	};
+	blockProperties[BlockType::BLOCK_MUSHROOM_RED] = { .material = Material::Plants(),
+		                                               .hardness = 0.0f,
+		                                               .lightOpacity = 0,
+		                                               .stepSound = StepSound::Grass,
+		                                               .isCollidable = false,
+		                                               .isOpaqueCube = false,
+		                                               .isNormalCube = false,
+		                                               .ticksOnLoad = true };
 
 	// Gold Block
 	blockProperties[BlockType::BLOCK_GOLD] = {
