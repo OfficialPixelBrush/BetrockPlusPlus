@@ -696,6 +696,7 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
+		.ticksOnLoad = true,
 		.canBlockGrass = false,
 		.enableStats = false,
 	};
