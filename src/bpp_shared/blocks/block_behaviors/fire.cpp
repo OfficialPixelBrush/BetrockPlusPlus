@@ -21,7 +21,7 @@ struct BurnProfile {
 };
 
 std::unordered_map<BlockType, BurnProfile> flammables;
-}
+} // namespace
 
 namespace Blocks {
 
@@ -31,14 +31,9 @@ bool CanBlockCatchFire(WorldManager& _world, Int3 _pos) {
 }
 
 bool CanNeighborBurn(WorldManager& _world, Int3 _pos) {
-	static constexpr std::array<Direction::Value, 6> ALL_DIRS = {
-	    Direction::Value::West,
-		Direction::Value::East,
-		Direction::Value::Down,
-		Direction::Value::Up,
-		Direction::Value::North,
-		Direction::Value::South
-	};
+	static constexpr std::array<Direction::Value, 6> ALL_DIRS = { Direction::Value::West,  Direction::Value::East,
+		                                                          Direction::Value::Down,  Direction::Value::Up,
+		                                                          Direction::Value::North, Direction::Value::South };
 	for (Direction::Value dir : ALL_DIRS) {
 		if (CanBlockCatchFire(_world, _pos.WithOffset(dir)))
 			return true;
@@ -47,8 +42,7 @@ bool CanNeighborBurn(WorldManager& _world, Int3 _pos) {
 }
 
 bool CanFireStay(WorldManager& _world, Int3 _pos) {
-	return _world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::Down))
-	|| CanNeighborBurn(_world, _pos);
+	return _world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::Down)) || CanNeighborBurn(_world, _pos);
 }
 
 static void RegisterFlammable(BlockType _block, int _encouragement, int _ability) {
@@ -136,7 +130,8 @@ void RegisterFireBehaviors() {
 	};
 
 	// Extinguish
-	blockBehaviors[BLOCK_FIRE].onBlockClicked = [](WorldManager& _world, Int3 _pos, PlayerSession* _triggeringSession) -> void {
+	blockBehaviors[BLOCK_FIRE].onBlockClicked = [](WorldManager& _world, Int3 _pos,
+	                                               PlayerSession* _triggeringSession) -> void {
 		_world.SetBlock(_pos, BLOCK_AIR);
 		if (_world.onWorldEvent) {
 			_world.onWorldEvent(PacketData::WorldEvent::FIRE_EXTINGUISH, _pos, 0, _triggeringSession);
@@ -151,7 +146,8 @@ void RegisterFireBehaviors() {
 		// TODO: Weather
 		const int meta = _world.GetMetadata(_pos);
 		if (meta < 15)
-			_world.SetBlock(_pos, BLOCK_FIRE, meta + _random.NextInt(3) / 2, /*KeepTE=*/false, /*updateNeighbors*/ false);
+			_world.SetBlock(_pos, BLOCK_FIRE, meta + _random.NextInt(3) / 2, /*KeepTE=*/false,
+			                /*updateNeighbors*/ false);
 
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_FIRE, 40);
 

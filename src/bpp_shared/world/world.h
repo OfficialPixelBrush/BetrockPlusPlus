@@ -10,6 +10,7 @@
 // It handles all world-related operations and provides a simple interface for the rest of the code to interact with the world.
 #pragma once
 #include "BS_thread_pool.hpp"
+#include "addon/addon_impl.h"
 #include "base_structs.h"
 #include "blocks.h"
 #include "blocks/block_behaviors.h"
@@ -30,7 +31,6 @@
 #include "world/spawner.h"
 #include "world/storage/region_manager.h"
 #include "world_access.h"
-#include "addon/addon_impl.h"
 #include <algorithm>
 #include <atomic>
 #include <cstdint>

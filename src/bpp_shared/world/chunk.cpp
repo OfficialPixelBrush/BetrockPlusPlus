@@ -42,8 +42,9 @@ void Chunk::GenerateSkylightMap() {
 	GenerateHeightMap();
 
 	// Every slot that starts at or above the tallest column is open sky in every column, so light it in one go
-	const int bulkStart = CrossPlatform::Math::Min(CHUNK_HEIGHT, (GetHighestPoint() + SUB_CHUNK_SIZE - 1) & ~(SUB_CHUNK_SIZE - 1));
-	
+	const int bulkStart = CrossPlatform::Math::Min(CHUNK_HEIGHT,
+	                                               (GetHighestPoint() + SUB_CHUNK_SIZE - 1) & ~(SUB_CHUNK_SIZE - 1));
+
 	for (int i = bulkStart / SUB_CHUNK_SIZE; i < SUB_CHUNK_COUNT; i++)
 		subChunks[size_t(i)].FillSkyLight(15);
 
@@ -82,7 +83,8 @@ void Chunk::RecalculateSkyLightColumn(Int2 _pos) {
 
 	int skyLight = 15;
 	for (int y = height - 1; y >= 0; y--) {
-		skyLight -= CrossPlatform::Math::Max(1, int(Blocks::blockProperties[GetBlock({ _pos.x, y, _pos.z })].lightOpacity));
+		skyLight -= CrossPlatform::Math::Max(1,
+		                                     int(Blocks::blockProperties[GetBlock({ _pos.x, y, _pos.z })].lightOpacity));
 		skyLight = CrossPlatform::Math::Max(0, skyLight);
 		SetSkyLight({ _pos.x, y, _pos.z }, uint8_t(skyLight));
 	}
@@ -176,7 +178,8 @@ void SubChunk::FillRegion(Int3 _a, Int3 _b, BlockType _type, uint8_t _meta) {
 			AllocMeta();
 		if (fullFootprint) {
 			const uint8_t packed = uint8_t(_meta | (_meta << 4));
-			std::memset(meta->data() + size_t(_a.y) * SIZE * SIZE / 2, packed, size_t(_b.y - _a.y + 1) * SIZE * SIZE / 2);
+			std::memset(meta->data() + size_t(_a.y) * SIZE * SIZE / 2, packed,
+			            size_t(_b.y - _a.y + 1) * SIZE * SIZE / 2);
 		} else {
 			for (int y = _a.y; y <= _b.y; y++)
 				for (int z = _a.z; z <= _b.z; z++)
@@ -196,7 +199,7 @@ bool ClampChunkBox(Int3 _a, Int3 _b, Int3& _lo, Int3& _hi) {
 		return false;
 	_lo = { CrossPlatform::Math::Max(loX, 0), CrossPlatform::Math::Max(loY, 0), CrossPlatform::Math::Max(loZ, 0) };
 	_hi = { CrossPlatform::Math::Min(hiX, CHUNK_WIDTH - 1), CrossPlatform::Math::Min(hiY, CHUNK_HEIGHT - 1),
-	        CrossPlatform::Math::Min(hiZ, CHUNK_WIDTH - 1) };
+		    CrossPlatform::Math::Min(hiZ, CHUNK_WIDTH - 1) };
 	return true;
 }
 } // namespace

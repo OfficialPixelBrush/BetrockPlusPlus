@@ -280,7 +280,7 @@ std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area, Ent
 	// Collect entities in this area, excluding the mover itself
 	AABB entitySearchArea = { double(minX), double(minY), double(minZ), double(maxX), double(maxY), double(maxZ) };
 	std::vector<Entity*> entitiesInArea;
-	
+
 	entitiesInArea = needsFullEntityScan
 	                     ? entityManager.GetEntitiesWithinAabbExcluding(entitySearchArea, _mover->id)
 	                     : entityManager.GetCollidablesWithinAabb(entitySearchArea, _mover ? _mover->id : EntityId(-1));
@@ -1001,7 +1001,7 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 void WorldManager::NotifyRegionChanged(Chunk& _chunk, Int3 _localMin, Int3 _localMax) {
 	if (!onBlockUpdate)
 		return;
-	
+
 	std::vector<Int3> picked;
 	auto add = [&](int _x, int _y, int _z) {
 		for (const auto& p : picked)
@@ -1021,18 +1021,20 @@ void WorldManager::NotifyRegionChanged(Chunk& _chunk, Int3 _localMin, Int3 _loca
 	for (const auto& p : picked) {
 		const Int3 local{ p.x, p.y, p.z };
 		onBlockUpdate(PendingBlock{ .block{ _chunk.GetBlock(local), _chunk.GetMeta(local) },
-		                            .blockPos{ _chunk.cpos.x * CHUNK_WIDTH + p.x, p.y, _chunk.cpos.z * CHUNK_WIDTH + p.z },
+		                            .blockPos{ _chunk.cpos.x * CHUNK_WIDTH + p.x, p.y,
+		                                       _chunk.cpos.z * CHUNK_WIDTH + p.z },
 		                            .light{ _chunk.GetBlockLight(local), _chunk.GetSkyLight(local) } },
 		              _chunk.cpos);
 	}
 }
 
 void WorldManager::FillVolume(Int3 _posA, Int3 _posB, BlockType _type, uint8_t _meta) {
-	const Int3 mn{ CrossPlatform::Math::Min(_posA.x, _posB.x), CrossPlatform::Math::Max(CrossPlatform::Math::Min(_posA.y, _posB.y), 0),
-	               CrossPlatform::Math::Min(_posA.z, _posB.z) };
+	const Int3 mn{ CrossPlatform::Math::Min(_posA.x, _posB.x),
+		           CrossPlatform::Math::Max(CrossPlatform::Math::Min(_posA.y, _posB.y), 0),
+		           CrossPlatform::Math::Min(_posA.z, _posB.z) };
 	const Int3 mx{ CrossPlatform::Math::Max(_posA.x, _posB.x),
-	               CrossPlatform::Math::Min(CrossPlatform::Math::Max(_posA.y, _posB.y), CHUNK_HEIGHT - 1),
-	               CrossPlatform::Math::Max(_posA.z, _posB.z) };
+		           CrossPlatform::Math::Min(CrossPlatform::Math::Max(_posA.y, _posB.y), CHUNK_HEIGHT - 1),
+		           CrossPlatform::Math::Max(_posA.z, _posB.z) };
 	if (mn.y > mx.y)
 		return;
 

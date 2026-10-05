@@ -174,9 +174,9 @@ void EntityMPPlayer::HandlePositionChecks() {
 		onGround = true;
 		Vec3 delta = *session->pendingPosition - *session->pendingTeleport;
 		auto dist = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
-		const int CHECK_RANGE = 32;
+		const int checkRange = 32;
 
-		if (dist > 0.0625 || !world->AABBinValidChunks(this->collider.Expand(CHECK_RANGE, CHECK_RANGE, CHECK_RANGE))) {
+		if (dist > 0.0625 || !world->AABBinValidChunks(this->collider.Expand(checkRange, checkRange, checkRange))) {
 			// Player isn't at the teleported position or we are out of bounds, so send another tp packet
 			// Also reset our position
 			this->Teleport(*session->pendingTeleport, { rotationYaw, rotationPitch });

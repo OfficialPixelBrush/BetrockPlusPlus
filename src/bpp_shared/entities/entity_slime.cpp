@@ -42,7 +42,7 @@ void SlimeEntity::OnCollideWithPlayer(PlayerEntity& _player) {
 
 void SlimeEntity::Tick() {
 	// NOTE:
-	// Notch is a dummy. Also this applies for ghast and squids too, 
+	// Notch is a dummy. Also this applies for ghast and squids too,
 	// They never increment their age so we reset it every tick
 	this->age = 0;
 	HostileEntity::Tick();
@@ -59,8 +59,7 @@ void SlimeEntity::OnDeath(Entity* /*_killer*/) {
 void SlimeEntity::EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) {
 	Entity::EncodeMetadata(_metadata);
 
-	_metadata.push_back(
-	    { .type = PacketData::EntityMetadata::BYTE, .index = 16, .value = static_cast<int8_t>(size) });
+	_metadata.push_back({ .type = PacketData::EntityMetadata::BYTE, .index = 16, .value = static_cast<int8_t>(size) });
 }
 
 void SlimeEntity::UpdateAIState() {

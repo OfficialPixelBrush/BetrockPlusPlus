@@ -41,8 +41,8 @@ struct EntityManager {
 	std::vector<Entity*> GetEntitiesWithinAabbExcluding(const AABB& _box, const EntityId _entityId);
 	std::vector<Entity*> GetEntitiesWithinAabb(const AABB& _box);
 	std::vector<Entity*> GetEntitiesWithinAabbOfType(const AABB& _box, EntityType& _type);
-	std::vector<Entity*> GetEntitiesWithinAabbExcludingTypes(
-	    const AABB& _box, const std::vector<EntityType>& _excludedTypes);
+	std::vector<Entity*> GetEntitiesWithinAabbExcludingTypes(const AABB& _box,
+	                                                         const std::vector<EntityType>& _excludedTypes);
 	std::vector<Tag> CollectEntitiesForSave(Int2 _cpos, bool _clearCollectedEntities = false);
 	std::optional<std::string> GetEntityNbtId(EntityType _type);
 	void Tick();

@@ -87,7 +87,8 @@ static bool IsOpenForFlow(WorldManager& _world, Int3 _pos, MaterialType _fluidMa
 	return !BlocksFlow(block) && (material.type != _fluidMaterialType || _world.GetMetadata(_pos) != 0);
 }
 
-static constexpr Direction::Value FLOW_DIR[4] = { Direction::Value::West, Direction::Value::East, Direction::Value::North, Direction::Value::South };
+static constexpr Direction::Value FLOW_DIR[4] = { Direction::Value::West, Direction::Value::East,
+	                                              Direction::Value::North, Direction::Value::South };
 
 static int CalculateFlowCost(WorldManager& _world, Int3 _pos, int _depth, int _cameFrom,
                              MaterialType _fluidMaterialType) {
@@ -252,7 +253,8 @@ static Vec3 GetFluidFlowVector(WorldManager& _world, Int3 _pos) {
 	int myFlowContribution = getEffectiveFlowDecay(_world, _pos, waterMaterial);
 
 	// Same as FLOW_DIR, so could maybe be reused for that?
-	static constexpr Direction::Value NEIGHBOR_BLOCKS[4] = { Direction::Value::West, Direction::Value::East, Direction::Value::North, Direction::Value::South };
+	static constexpr Direction::Value NEIGHBOR_BLOCKS[4] = { Direction::Value::West, Direction::Value::East,
+		                                                     Direction::Value::North, Direction::Value::South };
 	// Get the contribution of our horizontal neighbors
 	for (int i = 0; i < 4; i++) {
 		Int3 neighborPos = _pos.WithOffset(NEIGHBOR_BLOCKS[i]);
@@ -262,7 +264,8 @@ static Vec3 GetFluidFlowVector(WorldManager& _world, Int3 _pos) {
 		if (neighborFlowContribution < 0) {
 			if (!_world.GetMaterial(neighborPos).isSolid) {
 				// Check the block below us to see if its water, if it is, STRONGLY pull down
-				int belowFlowContribution = getEffectiveFlowDecay(_world, neighborPos.WithOffset(Direction::Value::Down), waterMaterial);
+				int belowFlowContribution = getEffectiveFlowDecay(_world, neighborPos.WithOffset(Direction::Value::Down),
+				                                                  waterMaterial);
 				if (belowFlowContribution >= 0) {
 					flowDifference = belowFlowContribution - (myFlowContribution - 8);
 					flowVector.x += double((neighborPos.x - _pos.x) * flowDifference);

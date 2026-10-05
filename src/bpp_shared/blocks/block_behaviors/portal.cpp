@@ -134,7 +134,7 @@ static void GetConnectedPortals(WorldManager& _world, Int3 _pos, std::unordered_
 		GetConnectedPortals(_world, _pos.WithOffset(offset), _portals);
 }
 
-void RegisterPortalBehaviors() { 
+void RegisterPortalBehaviors() {
 	// Check if this portal block is still valid
 	blockBehaviors[BLOCK_NETHER_PORTAL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                               BlockType /*_blockId*/) -> void {

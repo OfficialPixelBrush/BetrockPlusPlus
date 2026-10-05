@@ -59,8 +59,10 @@ inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _x
 						packNibble(metaData[i >> 1], SubChunk::GetNibble(*metaLayer, idx), i & 1);
 					else if (metaFill != 0)
 						packNibble(metaData[i >> 1], metaFill, i & 1);
-					packNibble(blockLight[i >> 1], blockLightLayer ? SubChunk::GetNibble(*blockLightLayer, idx) : blockLightFill, i & 1);
-					packNibble(skyLight[i >> 1], skyLightLayer ? SubChunk::GetNibble(*skyLightLayer, idx) : skyLightFill, i & 1);
+					packNibble(blockLight[i >> 1],
+					           blockLightLayer ? SubChunk::GetNibble(*blockLightLayer, idx) : blockLightFill, i & 1);
+					packNibble(skyLight[i >> 1],
+					           skyLightLayer ? SubChunk::GetNibble(*skyLightLayer, idx) : skyLightFill, i & 1);
 				}
 			}
 		}

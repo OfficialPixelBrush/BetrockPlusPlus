@@ -10,14 +10,12 @@
 
 namespace Math {
 template <typename T = int>
-constexpr T CeilDiv(T _x, T _d)
-{
-    return _x / _d + (_x % _d != 0 && _x > 0);
+constexpr T CeilDiv(T _x, T _d) {
+	return _x / _d + (_x % _d != 0 && _x > 0);
 }
 
 template <typename T = int>
-constexpr T FloorDiv(T _x, T _d)
-{
-    return _x / _d - (_x % _d != 0 && _x < 0);
+constexpr T FloorDiv(T _x, T _d) {
+	return _x / _d - (_x % _d != 0 && _x < 0);
 }
-};
+}; // namespace Math

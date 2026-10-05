@@ -37,9 +37,9 @@ std::string FillArea(const strategos::CmdNode& _cmd, void* _userData) {
 	Vec3 from = ResolveCmdVec3(*fromCmd, ctx.session->position.pos);
 	Vec3 to = ResolveCmdVec3(*toCmd, ctx.session->position.pos);
 	Int3 pos0{ static_cast<int32_t>(std::floor(from.x)), static_cast<int32_t>(std::floor(from.y)),
-	           static_cast<int32_t>(std::floor(from.z)) };
+		       static_cast<int32_t>(std::floor(from.z)) };
 	Int3 pos1{ static_cast<int32_t>(std::floor(to.x)), static_cast<int32_t>(std::floor(to.y)),
-	           static_cast<int32_t>(std::floor(to.z)) };
+		       static_cast<int32_t>(std::floor(to.z)) };
 
 	if (pos0.y >= CHUNK_HEIGHT || pos0.y < 0 || pos1.y >= CHUNK_HEIGHT || pos1.y < 0)
 		return ERROR_REASON_PARAMETERS;

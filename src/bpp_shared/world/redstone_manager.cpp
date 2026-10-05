@@ -87,8 +87,8 @@ ComponentProfile RedstoneManager::GetRedstoneDustConnectivity(WorldManager& _wor
 			bool continuesHere = RedstoneManager::CanProvidePower(neighborBlock);
 
 			// Repeaters depend on facing direction
-			if (dy == _pos.y && 
-				(neighborBlock == BLOCK_REDSTONE_REPEATER_ON || neighborBlock == BLOCK_REDSTONE_REPEATER_OFF)) {
+			if (dy == _pos.y &&
+			    (neighborBlock == BLOCK_REDSTONE_REPEATER_ON || neighborBlock == BLOCK_REDSTONE_REPEATER_OFF)) {
 				continuesHere = false;
 				auto profile = RedstoneManager::GetComponentProfile(BLOCK_REDSTONE_REPEATER_ON,
 				                                                    _world.GetMetadata({ dx, dy, dz }));
