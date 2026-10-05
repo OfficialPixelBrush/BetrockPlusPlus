@@ -182,6 +182,7 @@ PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _p
 	// Check sides
 	int d[4] = { -1, 1, 0, 0 };
 	for (int i = 0; i < 4; i++) {
+		// TODO: Direction System
 		auto rdx = d[i];
 		auto rdz = d[3 - i];
 		auto dx = rdx + _pos.x;
@@ -555,61 +556,38 @@ void RedstoneManager::RefreshWireAt(WorldManager& _world, Int3 _pos) {
 	SolveRedstoneNetwork(_world, _pos);
 }
 
+bool RedstoneManager::GetProfileInDirection(const ComponentProfile _profile, const Direction::Value _dir) {
+	switch(_dir) {
+		case Direction::Value::North:
+			return _profile.powerNZ;
+		case Direction::Value::South:
+			return _profile.powerZ;
+		case Direction::Value::West:
+			return _profile.powerNX;
+		case Direction::Value::East:
+			return _profile.powerX;	
+		case Direction::Value::Down:
+			return _profile.powerBelow;	
+		default:
+			return false;
+	}
+}
+
+// TODO: 
+bool IsValidPoweringComponent(BlockType _block) {
+	return _block == BLOCK_REDSTONE_TORCH_ON || _block == BLOCK_REDSTONE_REPEATER_ON || _block == BLOCK_LEVER ||
+		     _block == BLOCK_BUTTON_STONE || _block == BLOCK_PRESSURE_PLATE_STONE || _block == BLOCK_PRESSURE_PLATE_WOOD ||
+		     _block == BLOCK_RAIL_DETECTOR;
+}
+
 bool RedstoneManager::IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, uint8_t _meta) {
-	int facing = _meta & 3;
-	switch (facing) {
-	case 0: {
-		Int3 inputPos = { _pos.x, _pos.y, _pos.z + 1 };
-		auto block = _world.GetBlockId(inputPos);
-		auto meta = _world.GetMetadata(inputPos);
-		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
-		     block == BLOCK_BUTTON_STONE || block == BLOCK_PRESSURE_PLATE_STONE || block == BLOCK_PRESSURE_PLATE_WOOD || block == BLOCK_RAIL_DETECTOR) &&
-		    RedstoneManager::GetComponentProfile(block, meta).powerNZ)
-			return true;
-		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
-			return true;
-		return block == BLOCK_REDSTONE && meta > 0;
-	}
-	case 1: {
-		Int3 inputPos = { _pos.x - 1, _pos.y, _pos.z };
-		auto block = _world.GetBlockId(inputPos);
-		auto meta = _world.GetMetadata(inputPos);
-		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
-		     block == BLOCK_BUTTON_STONE || block == BLOCK_PRESSURE_PLATE_STONE || block == BLOCK_PRESSURE_PLATE_WOOD ||
-		     block == BLOCK_RAIL_DETECTOR) &&
-		    RedstoneManager::GetComponentProfile(block, meta).powerX)
-			return true;
-		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
-			return true;
-		return block == BLOCK_REDSTONE && meta > 0;
-	}
-	case 2: {
-		Int3 inputPos = { _pos.x, _pos.y, _pos.z - 1 };
-		auto block = _world.GetBlockId(inputPos);
-		auto meta = _world.GetMetadata(inputPos);
-		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
-		     block == BLOCK_BUTTON_STONE || block == BLOCK_PRESSURE_PLATE_STONE || block == BLOCK_PRESSURE_PLATE_WOOD ||
-		     block == BLOCK_RAIL_DETECTOR) &&
-		    RedstoneManager::GetComponentProfile(block, meta).powerZ)
-			return true;
-		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
-			return true;
-		return block == BLOCK_REDSTONE && meta > 0;
-	}
-	case 3: {
-		Int3 inputPos = { _pos.x + 1, _pos.y, _pos.z };
-		auto block = _world.GetBlockId(inputPos);
-		auto meta = _world.GetMetadata(inputPos);
-		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
-		     block == BLOCK_BUTTON_STONE || block == BLOCK_PRESSURE_PLATE_STONE || block == BLOCK_PRESSURE_PLATE_WOOD ||
-		     block == BLOCK_RAIL_DETECTOR) &&
-		    RedstoneManager::GetComponentProfile(block, meta).powerNX)
-			return true;
-		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
-			return true;
-		return block == BLOCK_REDSTONE && meta > 0;
-	}
-	default:
-		return false;
-	}
+	const auto dir = GetDirectionFromMeta(BLOCK_REDSTONE_REPEATER_OFF, _meta & 3);
+	Int3 inputPos = _pos.WithOffset(Direction::Opposite(dir));
+	auto block = _world.GetBlockId(inputPos);
+	auto meta = _world.GetMetadata(inputPos);
+	if (IsValidPoweringComponent(block) && GetProfileInDirection(RedstoneManager::GetComponentProfile(block, meta), dir))
+		return true;
+	if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
+		return true;
+	return block == BLOCK_REDSTONE && meta > 0;
 }

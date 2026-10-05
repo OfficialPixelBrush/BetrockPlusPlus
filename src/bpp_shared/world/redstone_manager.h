@@ -48,6 +48,7 @@ PowerProfile GetBlockPowerProfile(WorldManager& _world, Int3 _pos);
 bool IsPositionPowered(WorldManager& _world, Int3 _pos);
 void PruneTorchUpdates(WorldManager& _world);
 bool CheckTorchBurnout(WorldManager& _world, Int3 _pos, bool _logUpdate);
+bool GetProfileInDirection(const ComponentProfile _profile, const Direction::Value _dir);
 
 inline bool CanProvidePower(BlockType _block) {
 	// Repeaters are excluded for some reason in vanilla
