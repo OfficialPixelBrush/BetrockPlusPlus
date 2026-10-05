@@ -81,13 +81,13 @@ struct Runtime {
 			};
 
 			if (initResult == LevelInitFailureReason::ALPHA_FORMATTED) {
-				GlobalLogger().info << "MCA Formatted world detected! Attempting to convert...\n";
+				GlobalLogger().info << "Alpha Formatted world detected! Attempting to convert...\n";
 				saveManager.Release();
 				auto conversionResult = Utilities::convertAlphaLevel(_levelPath);
 
 				if (!conversionResult) {
 					// We failed to convert
-					GlobalLogger().info << "Failed to convert MCA world! Falling back.\n";
+					GlobalLogger().info << "Failed to convert Alpha world! Falling back.\n";
 					tryNewSave();
 				} else {
 					// Re-init our level
