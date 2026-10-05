@@ -31,6 +31,18 @@
 
 namespace Blocks {
 
+static bool IsBurningMaterial(WorldManager& _world, Int3 _pos) {
+	switch (_world.GetMaterial(_pos).type) {
+	case MaterialType::Wood:
+	case MaterialType::Leaves:
+	case MaterialType::Cloth:
+	case MaterialType::TNT:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static void TryLavaHarden(WorldManager& _world, Int3 _pos) {
 	// Make sure we are lava
 	if (_world.GetMaterial(_pos).type != MaterialType::Lava)
@@ -390,6 +402,30 @@ void RegisterFluidBehaviors() {
 	                                               Java::Random& _random) -> void {
 		FlowingFluidTick(_world, _pos, BLOCK_LAVA_FLOWING, BLOCK_LAVA_STILL, MaterialType::Lava,
 		                 _world.GetDimension() == Dimension::Nether ? 10 : 30, _random);
+	};
+	blockBehaviors[BLOCK_LAVA_STILL].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
+	                                             Java::Random& _random) -> void {
+		Int3 p = _pos;
+		int tries = _random.NextInt(3);
+		for (int i = 0; i < tries; i++) {
+			p.x += _random.NextInt(3) - 1;
+			p.y += 1;
+			p.z += _random.NextInt(3) - 1;
+			BlockType id = _world.GetBlockId(p);
+			if (id == BLOCK_AIR) {
+				if (IsBurningMaterial(_world, p.WithOffset(Direction::Value::West)) ||
+				    IsBurningMaterial(_world, p.WithOffset(Direction::Value::East)) ||
+				    IsBurningMaterial(_world, p.WithOffset(Direction::Value::North)) ||
+				    IsBurningMaterial(_world, p.WithOffset(Direction::Value::South)) ||
+				    IsBurningMaterial(_world, p.WithOffset(Direction::Value::Down)) ||
+				    IsBurningMaterial(_world, p.WithOffset(Direction::Value::Up))) {
+					_world.SetBlock(p, BLOCK_FIRE);
+					return;
+				}
+			} else if (Blocks::blockProperties[id].material.isSolid) {
+				return;
+			}
+		}
 	};
 
 	// FLUID PHYSICS (water)
