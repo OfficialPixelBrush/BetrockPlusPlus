@@ -563,7 +563,7 @@ bool RedstoneManager::IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, ui
 		auto block = _world.GetBlockId(inputPos);
 		auto meta = _world.GetMetadata(inputPos);
 		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
-		     block == BLOCK_BUTTON_STONE) &&
+		     block == BLOCK_BUTTON_STONE || block == BLOCK_PRESSURE_PLATE_STONE || block == BLOCK_PRESSURE_PLATE_WOOD || block == BLOCK_RAIL_DETECTOR) &&
 		    RedstoneManager::GetComponentProfile(block, meta).powerNZ)
 			return true;
 		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
@@ -575,7 +575,8 @@ bool RedstoneManager::IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, ui
 		auto block = _world.GetBlockId(inputPos);
 		auto meta = _world.GetMetadata(inputPos);
 		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
-		     block == BLOCK_BUTTON_STONE) &&
+		     block == BLOCK_BUTTON_STONE || block == BLOCK_PRESSURE_PLATE_STONE || block == BLOCK_PRESSURE_PLATE_WOOD ||
+		     block == BLOCK_RAIL_DETECTOR) &&
 		    RedstoneManager::GetComponentProfile(block, meta).powerX)
 			return true;
 		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
@@ -587,7 +588,8 @@ bool RedstoneManager::IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, ui
 		auto block = _world.GetBlockId(inputPos);
 		auto meta = _world.GetMetadata(inputPos);
 		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
-		     block == BLOCK_BUTTON_STONE) &&
+		     block == BLOCK_BUTTON_STONE || block == BLOCK_PRESSURE_PLATE_STONE || block == BLOCK_PRESSURE_PLATE_WOOD ||
+		     block == BLOCK_RAIL_DETECTOR) &&
 		    RedstoneManager::GetComponentProfile(block, meta).powerZ)
 			return true;
 		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
@@ -599,7 +601,8 @@ bool RedstoneManager::IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, ui
 		auto block = _world.GetBlockId(inputPos);
 		auto meta = _world.GetMetadata(inputPos);
 		if ((block == BLOCK_REDSTONE_TORCH_ON || block == BLOCK_REDSTONE_REPEATER_ON || block == BLOCK_LEVER ||
-		     block == BLOCK_BUTTON_STONE) &&
+		     block == BLOCK_BUTTON_STONE || block == BLOCK_PRESSURE_PLATE_STONE || block == BLOCK_PRESSURE_PLATE_WOOD ||
+		     block == BLOCK_RAIL_DETECTOR) &&
 		    RedstoneManager::GetComponentProfile(block, meta).powerNX)
 			return true;
 		if (RedstoneManager::GetBlockPowerProfile(_world, inputPos).powered)
