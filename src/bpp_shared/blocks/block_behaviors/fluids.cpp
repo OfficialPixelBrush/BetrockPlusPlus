@@ -87,8 +87,7 @@ static bool IsOpenForFlow(WorldManager& _world, Int3 _pos, MaterialType _fluidMa
 	return !BlocksFlow(block) && (material.type != _fluidMaterialType || _world.GetMetadata(_pos) != 0);
 }
 
-static constexpr int FLOW_DX[4] = { -1, 1, 0, 0 };
-static constexpr int FLOW_DZ[4] = { 0, 0, -1, 1 };
+static constexpr Direction::Value FLOW_DIR[4] = { Direction::Value::West, Direction::Value::East, Direction::Value::North, Direction::Value::South };
 
 static int CalculateFlowCost(WorldManager& _world, Int3 _pos, int _depth, int _cameFrom,
                              MaterialType _fluidMaterialType) {
@@ -98,11 +97,11 @@ static int CalculateFlowCost(WorldManager& _world, Int3 _pos, int _depth, int _c
 		    (i == 3 && _cameFrom == 2))
 			continue;
 
-		Int3 neighborPos = { _pos.x + FLOW_DX[i], _pos.y, _pos.z + FLOW_DZ[i] };
+		Int3 neighborPos = _pos.WithOffset(FLOW_DIR[i]);
 		if (!IsOpenForFlow(_world, neighborPos, _fluidMaterialType))
 			continue;
 
-		if (!BlocksFlow(_world.GetBlockId({ neighborPos.x, neighborPos.y - 1, neighborPos.z })))
+		if (!BlocksFlow(_world.GetBlockId(neighborPos.WithOffset(Direction::Value::Down))))
 			return _depth;
 
 		if (_depth >= 4)
@@ -126,7 +125,7 @@ static void FlowingFluidTick(WorldManager& _world, Int3 _pos, BlockType _flowing
                              MaterialType _fluid, int _tickRate, Java::Random& _random) {
 	const bool isLava = _fluid == MaterialType::Lava;
 	const int decayStep = (isLava && _world.GetDimension() != Dimension::Nether) ? 2 : 1;
-	const Int3 belowPos = { _pos.x, _pos.y - 1, _pos.z };
+	const Int3 belowPos = _pos.WithOffset(Direction::Value::Down);
 
 	int level = GetFlowDecay(_world, _pos, _fluid);
 	if (level < 0)
@@ -138,7 +137,7 @@ static void FlowingFluidTick(WorldManager& _world, Int3 _pos, BlockType _flowing
 		int smallest = -100;
 		int adjacentSources = 0;
 		for (int i = 0; i < 4; i++) {
-			int decay = GetFlowDecay(_world, { _pos.x + FLOW_DX[i], _pos.y, _pos.z + FLOW_DZ[i] }, _fluid);
+			int decay = GetFlowDecay(_world, _pos.WithOffset(FLOW_DIR[i]), _fluid);
 			if (decay < 0)
 				continue;
 			if (decay == 0)
@@ -154,7 +153,7 @@ static void FlowingFluidTick(WorldManager& _world, Int3 _pos, BlockType _flowing
 			newLevel = -1;
 
 		// Fed from above
-		int above = GetFlowDecay(_world, { _pos.x, _pos.y + 1, _pos.z }, _fluid);
+		int above = GetFlowDecay(_world, _pos.WithOffset(Direction::Value::Up), _fluid);
 		if (above >= 0)
 			newLevel = above >= 8 ? above : above + 8;
 
@@ -208,10 +207,10 @@ static void FlowingFluidTick(WorldManager& _world, Int3 _pos, BlockType _flowing
 	int costs[4];
 	for (int i = 0; i < 4; i++) {
 		costs[i] = 1000;
-		Int3 neighborPos = { _pos.x + FLOW_DX[i], _pos.y, _pos.z + FLOW_DZ[i] };
+		Int3 neighborPos = _pos.WithOffset(FLOW_DIR[i]);
 		if (!IsOpenForFlow(_world, neighborPos, _fluid))
 			continue;
-		if (!BlocksFlow(_world.GetBlockId({ neighborPos.x, neighborPos.y - 1, neighborPos.z })))
+		if (!BlocksFlow(_world.GetBlockId(neighborPos.WithOffset(Direction::Value::Down))))
 			costs[i] = 0;
 		else
 			costs[i] = CalculateFlowCost(_world, neighborPos, 1, i, _fluid);
@@ -228,7 +227,7 @@ static void FlowingFluidTick(WorldManager& _world, Int3 _pos, BlockType _flowing
 	for (int i = 0; i < 4; i++) {
 		if (costs[i] != minCost)
 			continue;
-		Int3 newPos = { _pos.x + FLOW_DX[i], _pos.y, _pos.z + FLOW_DZ[i] };
+		Int3 newPos = _pos.WithOffset(FLOW_DIR[i]);
 		if (!IsDisplaceable(_world.GetBlockId(newPos), _fluid))
 			continue;
 		if (!isLava)
@@ -252,29 +251,28 @@ static Vec3 GetFluidFlowVector(WorldManager& _world, Int3 _pos) {
 
 	int myFlowContribution = getEffectiveFlowDecay(_world, _pos, waterMaterial);
 
+	// Same as FLOW_DIR, so could maybe be reused for that?
+	static constexpr Direction::Value NEIGHBOR_BLOCKS[4] = { Direction::Value::West, Direction::Value::East, Direction::Value::North, Direction::Value::South };
 	// Get the contribution of our horizontal neighbors
-	int ndx[] = { -1, 1, 0, 0 };
-	int ndz[] = { 0, 0, -1, 1 };
 	for (int i = 0; i < 4; i++) {
-		int dx = _pos.x + ndx[i];
-		int dz = _pos.z + ndz[i];
-		int neighborFlowContribution = getEffectiveFlowDecay(_world, { dx, _pos.y, dz }, waterMaterial);
+		Int3 neighborPos = _pos.WithOffset(NEIGHBOR_BLOCKS[i]);
+		int neighborFlowContribution = getEffectiveFlowDecay(_world, neighborPos, waterMaterial);
 		int flowDifference = 0;
 		// Our neighbor block didn't have the same material
 		if (neighborFlowContribution < 0) {
-			if (!_world.GetMaterial({ dx, _pos.y, dz }).isSolid) {
+			if (!_world.GetMaterial(neighborPos).isSolid) {
 				// Check the block below us to see if its water, if it is, STRONGLY pull down
-				int belowFlowContribution = getEffectiveFlowDecay(_world, { dx, _pos.y - 1, dz }, waterMaterial);
+				int belowFlowContribution = getEffectiveFlowDecay(_world, neighborPos.WithOffset(Direction::Value::Down), waterMaterial);
 				if (belowFlowContribution >= 0) {
 					flowDifference = belowFlowContribution - (myFlowContribution - 8);
-					flowVector.x += double((dx - _pos.x) * flowDifference);
-					flowVector.z += double((dz - _pos.z) * flowDifference);
+					flowVector.x += double((neighborPos.x - _pos.x) * flowDifference);
+					flowVector.z += double((neighborPos.z - _pos.z) * flowDifference);
 				}
 			}
 		} else {
 			flowDifference = neighborFlowContribution - myFlowContribution;
-			flowVector.x += double((dx - _pos.x) * flowDifference);
-			flowVector.z += double((dz - _pos.z) * flowDifference);
+			flowVector.x += double((neighborPos.x - _pos.x) * flowDifference);
+			flowVector.z += double((neighborPos.z - _pos.z) * flowDifference);
 		}
 	}
 
