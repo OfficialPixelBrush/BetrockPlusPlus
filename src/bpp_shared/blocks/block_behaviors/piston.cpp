@@ -331,7 +331,6 @@ static void UpdatePistonState(WorldManager& _world, Int3 _pos) {
 	// Extend
 	if (shouldBeExtended && !PistonPowered(meta)) {
 		if (CanExtend(_world, _pos)) {
-			_world.SetBlockRaw(_pos, myId, uint8_t(orientation | 8));
 			ignore = true;
 			if (TryExtend(_world, _pos))
 				_world.SetMeta(_pos, orientation | 8);
