@@ -126,7 +126,7 @@ bp_api MakeAddonAPI() {
 		.internal = nullptr, // Set by the addon manager
 		.log = { .info = LogInfo, .warning = LogWarning, .error = LogError },
 		.server = { .getPlayerCount = GetPlayerCount, .getPlayerAt = GetPlayerAt },
-		.player = { .sendMessage = PlayerSendMessage, .kick = PlayerKick, .getUsername = PlayerGetUsername },
+		.player = { .sendMessage = PlayerSendMessage, .kick = PlayerKick, .getUsername = PlayerGetUsername, .getEntity = PlayerGetEntity, },
 		.entity = { .getPosition = EntityGetPosition, .setPosition = EntitySetPosition, .getWorld = EntityGetWorld },
 		.world = { .setBlock = SetBlock, .getBlock = GetBlock, .sendBlockUpdate = SendBlockUpdate },
 		.data = { .setPlayer = SetPlayerData, .getPlayer = GetPlayerData }
