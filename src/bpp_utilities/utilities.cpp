@@ -290,7 +290,7 @@ bool convertAlphaLevel(std::string& _dir) {
 			// Alpha lighting tends to be buggy..
 			chunk->refreshLighting = true;
 
-			registerChunk(world, chunk);
+			registerChunk(hellWorld, chunk);
 
 			if (++sinceFlush >= FLUSH_BATCH_SIZE) {
 				hellWorld.SaveChunks(/*saveIfEntities=*/true);
@@ -319,6 +319,9 @@ bool convertAlphaLevel(std::string& _dir) {
 	// Release the region managers
 	overworldRegionManager.Release();
 	hellRegionManager.Release();
+
+	world.chunks.clear();
+	hellWorld.chunks.clear();
 
 	// Move the original world
 	std::string oldDir = _dir + "_old";
