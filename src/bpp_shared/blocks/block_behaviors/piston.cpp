@@ -24,10 +24,6 @@
 
 namespace Blocks {
 
-static constexpr int PISTON_DX[6] = { 0, 0, 0, 0, -1, 1 };
-static constexpr int PISTON_DY[6] = { -1, 1, 0, 0, 0, 0 };
-static constexpr int PISTON_DZ[6] = { 0, 0, -1, 1, 0, 0 };
-
 static constexpr int MAX_PUSH_COUNT = 12;
 
 static int GetDirectionFromYaw(float _yaw, int _directionCount) {
@@ -219,7 +215,7 @@ static void Retract(WorldManager& _world, Int3 _pos) {
 }
 
 // Had to port this SPECIFICALLY for pistons, thanks notch
-static bool IsProvidingPowerTo(WorldManager& _world, Int3 _src, int _dx, int _dy, int _dz) {
+static bool IsProvidingPowerTo(WorldManager& _world, Int3 _src, Direction::Value _dir) {
 	const BlockType id = _world.GetBlockId(_src);
 	if (id == BLOCK_AIR)
 		return false;
@@ -232,27 +228,27 @@ static bool IsProvidingPowerTo(WorldManager& _world, Int3 _src, int _dx, int _dy
 	switch (id) {
 	case BLOCK_REDSTONE_TORCH_ON: {
 		// Powers every side except the block it's attached to
-		int ax = 0, ay = 0, az = 0;
+		Direction::Value adir = Direction::Value::None;
 		switch (meta) {
 		case 1:
-			ax = -1;
+			adir = Direction::Value::West;
 			break;
 		case 2:
-			ax = 1;
+			adir = Direction::Value::East;
 			break;
 		case 3:
-			az = -1;
+			adir = Direction::Value::North;
 			break;
 		case 4:
-			az = 1;
+			adir = Direction::Value::South;
 			break;
 		case 5:
-			ay = -1;
+			adir = Direction::Value::Down;
 			break;
 		default:
 			break;
 		}
-		return !(_dx == ax && _dy == ay && _dz == az);
+		return !(_dir == adir);
 	}
 	case BLOCK_LEVER:
 	case BLOCK_BUTTON_STONE:
@@ -264,32 +260,32 @@ static bool IsProvidingPowerTo(WorldManager& _world, Int3 _src, int _dx, int _dy
 		// Only powers the block it's facing
 		switch (meta & 3) {
 		case 0:
-			return _dx == 0 && _dy == 0 && _dz == -1;
+			return _dir == Direction::Value::North;
 		case 1:
-			return _dx == 1 && _dy == 0 && _dz == 0;
+			return _dir == Direction::Value::East;
 		case 2:
-			return _dx == 0 && _dy == 0 && _dz == 1;
+			return _dir == Direction::Value::South;
 		default:
-			return _dx == -1 && _dy == 0 && _dz == 0;
+			return _dir == Direction::Value::West;
 		}
 	case BLOCK_REDSTONE: {
 		if (meta == 0)
 			return false;
-		if (_dy == -1)
+		if (_dir == Direction::Value::Down)
 			return true; // Dust always powers the block it sits on
-		if (_dy != 0)
+		if (Direction::IsVertical(_dir))
 			return false;
 		auto c = RedstoneManager::GetRedstoneDustConnectivity(_world, _src);
 		if (!c.powerX && !c.powerNX && !c.powerZ && !c.powerNZ)
 			return true; // A dot powers all sides
 		// A line powers the block it points into, unless it also turns sideways
-		if (_dx == 1)
+		if (_dir == Direction::Value::East)
 			return c.powerNX && !c.powerZ && !c.powerNZ;
-		if (_dx == -1)
+		if (_dir == Direction::Value::West)
 			return c.powerX && !c.powerZ && !c.powerNZ;
-		if (_dz == 1)
+		if (_dir == Direction::Value::South)
 			return c.powerNZ && !c.powerX && !c.powerNX;
-		if (_dz == -1)
+		if (_dir == Direction::Value::North)
 			return c.powerZ && !c.powerX && !c.powerNX;
 		return false;
 	}
@@ -303,16 +299,18 @@ static bool ShouldPistonBePowered(WorldManager& _world, Int3 _pos, int _orientat
 	for (int side = 0; side < 6; side++) {
 		if (side == _orientation)
 			continue;
-		Int3 src{ _pos.x + PISTON_DX[side], _pos.y + PISTON_DY[side], _pos.z + PISTON_DZ[side] };
-		if (IsProvidingPowerTo(_world, src, -PISTON_DX[side], -PISTON_DY[side], -PISTON_DZ[side]))
+		const auto dir = GetDirectionFromMeta(BLOCK_PISTON, side);
+		Int3 src = _pos.WithOffset(dir);
+		if (IsProvidingPowerTo(_world, src, Direction::Opposite(dir)))
 			return true;
 	}
 
 	// Anything that would power the block above the piston
-	const Int3 above{ _pos.x, _pos.y + 1, _pos.z };
+	const Int3 above = _pos.WithOffset(Direction::Value::Up);
 	for (int side = 1; side < 6; side++) {
-		Int3 src{ above.x + PISTON_DX[side], above.y + PISTON_DY[side], above.z + PISTON_DZ[side] };
-		if (IsProvidingPowerTo(_world, src, -PISTON_DX[side], -PISTON_DY[side], -PISTON_DZ[side]))
+		const auto dir = GetDirectionFromMeta(BLOCK_PISTON, side);
+		Int3 src = above.WithOffset(dir);
+		if (IsProvidingPowerTo(_world, src, Direction::Opposite(dir)))
 			return true;
 	}
 

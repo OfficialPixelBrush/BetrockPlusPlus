@@ -57,7 +57,7 @@ constexpr Direction::Value META_TO_DIRECTION_LUT[MAX_DIRECTION_BLOCK_TYPE][0b111
 	  Direction::Value::West, Direction::Value::East, Direction::Value::None },
 	// Pistons
 	{ Direction::Value::Down, Direction::Value::Up, Direction::Value::North, Direction::Value::South,
-	  Direction::Value::East, Direction::Value::West, Direction::Value::None },
+	  Direction::Value::West, Direction::Value::East, Direction::Value::None },
 	// Beds
 	{ Direction::Value::South, Direction::Value::West, Direction::Value::North, Direction::Value::East,
 	  Direction::Value::None, Direction::Value::None, Direction::Value::None },
@@ -220,9 +220,9 @@ uint8_t GetMetaFromDirection(const BlockType _type, const Direction::Value _dir)
 			return 2;
 		case Direction::Value::South:
 			return 3;
-		case Direction::Value::East:
-			return 4;
 		case Direction::Value::West:
+			return 4;
+		case Direction::Value::East:
 			return 5;
 		case Direction::Value::Up:
 			return 1;
