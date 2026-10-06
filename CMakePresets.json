@@ -53,6 +53,7 @@
       "name": "server-release",
       "inherits": "base",
       "cacheVariables": {
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
         "BUILD_SERVER": "ON",
         "CMAKE_BUILD_TYPE": "Release"
       }
@@ -61,6 +62,7 @@
       "name": "server-release-with-debug-info",
       "inherits": "base",
       "cacheVariables": {
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
         "BUILD_SERVER": "ON",
         "CMAKE_BUILD_TYPE": "RelWithDebInfo"
       }
@@ -69,6 +71,7 @@
       "name": "server-release-with-debug-info-optionals",
       "inherits": "base",
       "cacheVariables": {
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
         "BUILD_SERVER": "ON",
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "DISCORD_INTEGRATION": "ON",
@@ -80,6 +83,7 @@
       "name": "server-minsize",
       "inherits": "base",
       "cacheVariables": {
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
         "BUILD_SERVER": "ON",
         "CMAKE_BUILD_TYPE": "MinSizeRel"
       }
