@@ -31,7 +31,7 @@ void CommandManager::Init(Server* _server) {
 	RegisterKick(dispatcher);
 	RegisterBan(dispatcher);
 	RegisterAddon(dispatcher);
-	GlobalLogger().info << "Registered " << dispatcher.root().children.size() << " command(s)!" << "\n";
+	RegisterTick(dispatcher);
 }
 
 void CommandManager::Parse(std::string& _cmdString, PlayerSession& _session, WorldManager& _world,

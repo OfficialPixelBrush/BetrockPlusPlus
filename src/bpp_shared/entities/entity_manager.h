@@ -8,6 +8,7 @@
 #include "entity.h"
 #include "helpers/java/java_math.h"
 #include "logger/logger.h"
+#include "tick_profiler.h"
 #include <functional>
 #include <memory>
 
@@ -45,13 +46,13 @@ struct EntityManager {
 	                                                         const std::vector<EntityType>& _excludedTypes);
 	std::vector<Tag> CollectEntitiesForSave(Int2 _cpos, bool _clearCollectedEntities = false);
 	std::optional<std::string> GetEntityNbtId(EntityType _type);
-	void Tick();
+	void Tick(TickProfiler* _profiler = nullptr);
 	void AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEntityId = -1);
 	void RemoveEntity(EntityId _id);
 	void CreateEntityFromNbt(Tag& _nbt);
 
 private:
-	void TickEntityAndPassenger(const std::shared_ptr<Entity>& _entity);
+	void TickEntityAndPassenger(const std::shared_ptr<Entity>& _entity, TickProfiler* _profiler);
 	constexpr bool IsMonster(const EntityType _type) {
 		switch (_type) {
 		case EntityType::CREEPER:

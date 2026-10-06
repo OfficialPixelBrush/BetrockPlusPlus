@@ -29,3 +29,4 @@ void RegisterWhitelist(strategos::BrigadierContext& _dispatcher);
 void RegisterKick(strategos::BrigadierContext& _dispatcher);
 void RegisterBan(strategos::BrigadierContext& _dispatcher);
 void RegisterAddon(strategos::BrigadierContext& _dispatcher);
+void RegisterTick(strategos::BrigadierContext& _dispatcher);

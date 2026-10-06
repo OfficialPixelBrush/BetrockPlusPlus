@@ -2,6 +2,7 @@
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
  * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -17,9 +18,13 @@
 #include "packet/packet_utils.h"
 #include "trackers/inventory_tracker.h"
 #include "world.h"
+#include "commands/command.h"
+#include <algorithm>
+#include <cmath>
+#include <format>
 #include <future>
+#include <climits>
 #include <string>
-#include <thread>
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
 #include <fcntl.h>
@@ -462,16 +467,12 @@ void Server::Startup() {
 
 void Server::Run() {
 	Startup();
-
-	static constexpr auto TICK_DURATION = std::chrono::nanoseconds(std::chrono::seconds{ 1 }) / TICKS_PER_SECOND;
-
 	using Clock = std::chrono::steady_clock;
 
 	std::chrono::nanoseconds avgTotalTickDuration{ 0 };
 	int avgTickCount = 0;
-
 	uint64_t ticks = 0;
-	auto baseTime = Clock::now();
+	auto nextTickTime = Clock::now();
 
 	// Main Tick loop
 	// Heavily based on https://github.com/Minestom/Minestom/blob/59406d5b54d5221df85f381f204fbc07fd861a43/src/main/java/net/minestom/server/thread/TickSchedulerThread.java
@@ -501,7 +502,8 @@ void Server::Run() {
 		}
 
 		++ticks;
-		auto nextTickTime = baseTime + ticks * TICK_DURATION;
+		const auto period = std::chrono::duration_cast<Clock::duration>(std::chrono::duration<double>(1.0 / tickRate));
+		nextTickTime += period;
 		// Slice the wait so shutdownRequested is observed even if libc++
 		// restarts sleep_until() after EINTR (musl + libcurl).
 		while (!shutdownRequested.load() && Clock::now() < nextTickTime) {
@@ -515,13 +517,12 @@ void Server::Run() {
 		// Check if the server can not keep up with the tickrate
 		// if it gets too far behind, reset the ticks & baseTime
 		// to avoid running too many ticks at once
-		if (Clock::now() > nextTickTime + MAX_TICK_CATCH_UP * TICK_DURATION) {
-			baseTime = Clock::now();
-			ticks = 0;
+		if (Clock::now() > nextTickTime + MAX_TICK_CATCH_UP * period) {
 			auto overshoot = std::chrono::duration<double, std::milli>(Clock::now() - nextTickTime).count();
+			nextTickTime = Clock::now();
 			GlobalLogger().warn << "Can't keep up with ticks! (tick avg " << averageTickMs << "ms, overshoot "
 			                    << overshoot << "ms, budget "
-			                    << std::chrono::duration<double, std::milli>(TICK_DURATION).count() << "ms)\n";
+			                    << std::chrono::duration<double, std::milli>(period).count() << "ms)\n";
 		}
 	}
 
@@ -598,14 +599,76 @@ void Server::ResetTimeout() {
 	shutdownTimer = 0;
 }
 
+void Server::SetTickRate(double _rate) {
+	using Clock = std::chrono::steady_clock;
+	if (!std::isfinite(_rate) || _rate <= 0.0)
+		return;
+	const auto period = std::chrono::duration<double>(1.0 / _rate);
+	const auto minPeriod = std::chrono::duration<double>(Clock::duration{ 1 });
+	const auto maxPeriod = std::chrono::duration<double>(Clock::duration::max());
+	if (period < minPeriod || period > maxPeriod)
+		return;
+	tickRate = _rate;
+}
+
+bool Server::ToggleTickFreeze() {
+	tickFrozen = !tickFrozen;
+	if (!tickFrozen)
+		pendingTickSteps = 0;
+	gameRuntime.world.SetFrozen(tickFrozen);
+	gameRuntime.worldHell.SetFrozen(tickFrozen);
+	return tickFrozen;
+}
+
+void Server::QueueTickSteps(int _steps) {
+	if (_steps > 0 && tickFrozen && pendingTickSteps <= INT_MAX - _steps)
+		pendingTickSteps += _steps;
+}
+
+bool Server::BeginTickSample(SampleMode _mode, int _ticks, PlayerSession& _requester) {
+	if (pendingSampleMode != SampleMode::None || activeSampleMode != SampleMode::None)
+		return false;
+	for (const auto& session : players) {
+		if (session.get() == &_requester) {
+			sampleRequester = session;
+			break;
+		}
+	}
+	if (sampleRequester.expired())
+		return false;
+	pendingSampleMode = _mode;
+	requestedSampleTicks = _ticks;
+	collectedSampleTicks = 0;
+	samplingStartsNextTick = true;
+	return true;
+}
 void Server::Tick() {
 	// Wait for the previous tick's write flushes to finish. The main thread
 	// owns the session write buffers for the duration of the tick; the write
 	// thread may only touch them after Tick has submitted its flushes.
+	using Clock = std::chrono::steady_clock;
+	Clock::time_point totalStart{};
+	if (samplingStartsNextTick) {
+		tickProfiler.Reset();
+		tickProfiler.EnableEntityProfiling(pendingSampleMode == SampleMode::Entities);
+		activeSampleMode = pendingSampleMode;
+		pendingSampleMode = SampleMode::None;
+		samplingStartsNextTick = false;
+		collectedSampleTicks = 0;
+	}
+	const bool advanceSimulation = !tickFrozen || pendingTickSteps > 0;
+	const bool sampling = activeSampleMode != SampleMode::None;
+	if (sampling)
+		totalStart = Clock::now();
+	auto offTickStart = Clock::now();
 	writePool.wait();
 #ifdef DISCORD_INTEGRATION
 	GlobalDiscord().Drain(*this);
 #endif
+	if (sampling)
+		tickProfiler.Record(TickTask::OffTickTasks, Clock::now() - offTickStart);
+	std::chrono::nanoseconds autosaveElapsed{ 0 };
+	auto networkStart = Clock::now();
 	AcceptNewPlayers();
 
 	std::vector<ClientPosition> overworldPositions;
@@ -626,12 +689,17 @@ void Server::Tick() {
 			// Update our break state
 			this->UpdateBlockBreaking(*session, *GetWorldForDimension(session->dimension));
 
-			// Autosave every 2 seconds
-			if (gameRuntime.world.tickScheduler.currentTick % 40 == 0) {
+			// Autosave every 2 seconds on sim ticks.
+			if (advanceSimulation && gameRuntime.world.tickScheduler.currentTick % 40 == 0) {
+				auto saveStart = Clock::now();
 				SavePlayer(session->username);
+				const auto saveElapsed = Clock::now() - saveStart;
+				autosaveElapsed += saveElapsed;
+				if (sampling)
+					tickProfiler.Record(TickTask::Autosave, saveElapsed);
 			}
-		}
 
+		}
 		connStateManager.HandleConnectionState(*session, *this);
 
 		// Drain chunk-session index updates that ChunkSender recorded
@@ -642,29 +710,36 @@ void Server::Tick() {
 			IndexRemoveChunk(*session, pos);
 		session->newlyUnloaded.clear();
 	}
-	// Inventory tracker
+	const auto networkInputElapsed = Clock::now() - networkStart - autosaveElapsed;
+	auto inventoryStart = Clock::now();
 	InventoryTracker::Tick(*this);
-
-	// Addon event
-	const bp_server_tick_event event{};
-	addonManager.Broadcast(&bp_addon_events::serverTick, event);
-
-	// Worlds
-	gameRuntime.world.Tick(overworldPositions);
+	if (advanceSimulation) {
+		const bp_server_tick_event event{};
+		addonManager.Broadcast(&bp_addon_events::serverTick, event);
+	}
+	if (sampling)
+		tickProfiler.Record(TickTask::OffTickTasks, Clock::now() - inventoryStart);
+	gameRuntime.world.Tick(overworldPositions, advanceSimulation, sampling ? &tickProfiler : nullptr);
 	gameRuntime.world.Update(overworldPositions);
-	gameRuntime.worldHell.Tick(netherPositions);
+	gameRuntime.worldHell.Tick(netherPositions, advanceSimulation, sampling ? &tickProfiler : nullptr);
 	gameRuntime.worldHell.Update(netherPositions);
 
-	// If everyone in a dimension is asleep, skip the night.
-	// (Beds can currently only be used in the Overworld, but this stays generic.)
-	ProcessSleeping(Dimension::Overworld);
-	ProcessSleeping(Dimension::Nether);
+	if (advanceSimulation && pendingTickSteps > 0)
+		--pendingTickSteps;
+	if (advanceSimulation) {
+		// If everyone in a dimension is asleep, skip the night.
+		// (Beds can currently only be used in the Overworld, but this stays generic.)
+		ProcessSleeping(Dimension::Overworld);
+		ProcessSleeping(Dimension::Nether);
+	}
 
 	// Send all of the block changes that have accumulated since the last Tick, then clear the list.
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChanges;
 	std::unordered_map<Int32_2, std::vector<PendingBlock>> localBlockChangesHell;
 	localBlockChanges.swap(chunkBlockChanges);
 	localBlockChangesHell.swap(chunkBlockChangesHell);
+
+	auto networkOutputStart = Clock::now();
 
 	// Entity trackers
 	overworldEntityTracker.Tick();
@@ -692,10 +767,15 @@ void Server::Tick() {
 	// pending data is small) before their shared_ptr drops and they are destroyed
 	for (auto& session : removedSessions)
 		session->stream.FlushWriteBuffer();
+	if (sampling)
+		tickProfiler.Record(TickTask::Network, networkInputElapsed + Clock::now() - networkOutputStart);
 
 	// Autosave
-	if (gameRuntime.world.tickScheduler.currentTick % 40 == 0) {
+	if (advanceSimulation && gameRuntime.world.tickScheduler.currentTick % 40 == 0) {
+		auto saveStart = Clock::now();
 		SaveLevelFile();
+		if (sampling)
+			tickProfiler.Record(TickTask::Autosave, Clock::now() - saveStart);
 	}
 
 	// TODO: This is rather fragile!
@@ -722,6 +802,57 @@ void Server::Tick() {
 		betacraftHeartbeat.UpdateSnapshot(snap);
 	}
 #endif
+	if (sampling) {
+		tickProfiler.Record(TickTask::TotalTick, Clock::now() - totalStart);
+		++collectedSampleTicks;
+		if (collectedSampleTicks >= requestedSampleTicks) {
+			auto requester = sampleRequester.lock();
+			const bool connected = requester &&
+			    std::any_of(players.begin(), players.end(), [&](const auto& player) { return player == requester; });
+			if (connected) {
+				if (activeSampleMode == SampleMode::Health) {
+					const std::array<std::pair<TickTask, const char*>, 12> tasks = {{
+						{ TickTask::TotalTick, "Total Tick" },
+						{ TickTask::Network, "Network" },
+						{ TickTask::Autosave, "Autosave" },
+						{ TickTask::OffTickTasks, "Off-Tick Tasks" },
+						{ TickTask::MobSpawning, "Mob Spawning" },
+						{ TickTask::ChunkLoading, "Chunk Loading" },
+						{ TickTask::ChunkUnloading, "Chunk Unloading" },
+						{ TickTask::BlockUpdates, "Block Updates" },
+						{ TickTask::EntityTicks, "Entity Ticks" },
+						{ TickTask::BlockEntityTicks, "Block Entity Ticks" },
+						{ TickTask::VillagesAndRaids, "Villages & Raids" },
+						{ TickTask::Environment, "Environment" }
+					}};
+					for (const auto& [task, name] : tasks) {
+						const double mean = std::chrono::duration<double, std::milli>(tickProfiler.Get(task)).count() /
+						                    collectedSampleTicks;
+						SendChat(*requester, std::format("§7{}: {:.2f} ms/tick", name, mean));
+					}
+				} else {
+					std::vector<std::pair<TickEntityKey, TickProfiler::EntitySample>> entities(
+					    tickProfiler.EntitySamples().begin(), tickProfiler.EntitySamples().end());
+					std::sort(entities.begin(), entities.end(), [](const auto& a, const auto& b) {
+						return a.second.elapsed > b.second.elapsed;
+					});
+					SendChat(*requester, "§7Entity tick cost (top 10):");
+					for (size_t i = 0; i < std::min<size_t>(10, entities.size()); ++i) {
+						const auto& [key, sample] = entities[i];
+						SendChat(*requester, std::format("§7dim {} entity {} type {}: {} ticks, {:.3f} ms",
+						                                    int(static_cast<int8_t>(key.dimension)),
+						                                    int32_t(key.id), int(static_cast<uint8_t>(key.type)),
+						                                    sample.count,
+						                                    std::chrono::duration<double, std::milli>(sample.elapsed).count()));
+					}
+				}
+			}
+			activeSampleMode = SampleMode::None;
+			tickProfiler.Reset();
+			sampleRequester.reset();
+			requestedSampleTicks = collectedSampleTicks = 0;
+		}
+	}
 }
 
 void Server::OnPlayerBlockBreak(PlayerSession& _session, WorldManager& _world) {

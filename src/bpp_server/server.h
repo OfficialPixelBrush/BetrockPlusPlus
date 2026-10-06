@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -36,6 +37,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "strings/ucs2.h"
 #include "trackers/entity_tracker.h"
 #include "world/world_event_broadcaster.h"
+#include "tick_profiler.h"
 #include <chrono>
 #include <memory>
 #include <thread>
@@ -156,6 +158,13 @@ public:
 	}
 
 	bool TryForceBreak(PlayerSession& _session, WorldManager& _world);
+	double GetTickRate() const noexcept { return tickRate; }
+	void SetTickRate(double _rate);
+	bool IsTickFrozen() const noexcept { return tickFrozen; }
+	bool ToggleTickFreeze();
+	void QueueTickSteps(int _steps);
+	enum class SampleMode : uint8_t { None, Health, Entities };
+	bool BeginTickSample(SampleMode _mode, int _ticks, PlayerSession& _requester);
 
 	void SendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _entity);
 	void SendPlayerToDimension(Dimension _dim, PlayerSession& _session);
@@ -246,6 +255,17 @@ private:
 	AddonManager addonManager;
 	bool stopped = false;
 	Config config;
-	// Flushes session write buffers off the main tick thread
+	double tickRate = 20.0;
+	bool tickFrozen = false;
+	int pendingTickSteps = 0;
+	TickProfiler tickProfiler;
+	SampleMode pendingSampleMode = SampleMode::None;
+	SampleMode activeSampleMode = SampleMode::None;
+	int requestedSampleTicks = 0;
+	int collectedSampleTicks = 0;
+	std::weak_ptr<PlayerSession> sampleRequester;
+	bool samplingStartsNextTick = false;
+
+	// Flushes session write buffers off the main tick thread.
 	BS::thread_pool<> writePool{ 1 };
 };
