@@ -656,7 +656,6 @@ void Server::Tick() {
 		samplingStartsNextTick = false;
 		collectedSampleTicks = 0;
 	}
-	const bool advanceSimulation = !tickFrozen || pendingTickSteps > 0;
 	const bool sampling = activeSampleMode != SampleMode::None;
 	if (sampling)
 		totalStart = Clock::now();
@@ -674,8 +673,6 @@ void Server::Tick() {
 	std::vector<ClientPosition> overworldPositions;
 	std::vector<ClientPosition> netherPositions;
 	for (auto& session : players) {
-		if (session->entity)
-			session->entity->messagesThisTick = 0;
 		session->stream.DrainToBuffer();
 		if (session->connState == ConnectionState::WaitingForSpawnChunks ||
 		    session->connState == ConnectionState::Playing) {
@@ -691,15 +688,6 @@ void Server::Tick() {
 			// Update our break state
 			this->UpdateBlockBreaking(*session, *GetWorldForDimension(session->dimension));
 
-			// Autosave every 2 seconds on sim ticks.
-			if (advanceSimulation && gameRuntime.world.tickScheduler.currentTick % 40 == 0) {
-				auto saveStart = Clock::now();
-				SavePlayer(session->username);
-				const auto saveElapsed = Clock::now() - saveStart;
-				autosaveElapsed += saveElapsed;
-				if (sampling)
-					tickProfiler.Record(TickTask::Autosave, saveElapsed);
-			}
 
 		}
 		connStateManager.HandleConnectionState(*session, *this);
@@ -711,6 +699,20 @@ void Server::Tick() {
 		for (const auto& pos : session->newlyUnloaded)
 			IndexRemoveChunk(*session, pos);
 		session->newlyUnloaded.clear();
+	}
+	const bool advanceSimulation = !tickFrozen || pendingTickSteps > 0;
+	if (advanceSimulation && gameRuntime.world.tickScheduler.currentTick % 40 == 0) {
+		for (const auto& session : players) {
+			if (session->connState != ConnectionState::WaitingForSpawnChunks &&
+			    session->connState != ConnectionState::Playing)
+				continue;
+			auto saveStart = Clock::now();
+			SavePlayer(session->username);
+			const auto saveElapsed = Clock::now() - saveStart;
+			autosaveElapsed += saveElapsed;
+			if (sampling)
+				tickProfiler.Record(TickTask::Autosave, saveElapsed);
+		}
 	}
 	const auto networkInputElapsed = Clock::now() - networkStart - autosaveElapsed;
 	auto inventoryStart = Clock::now();
