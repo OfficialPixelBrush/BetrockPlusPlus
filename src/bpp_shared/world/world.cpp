@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -300,33 +301,83 @@ std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area, Ent
 }
 
 // Tick
-void WorldManager::Tick(const std::vector<ClientPosition>& _players) {
-	elapsedTicks++;
+void WorldManager::Tick(const std::vector<ClientPosition>& _players, bool _advanceSimulation, TickProfiler* _profiler) {
+	using Clock = std::chrono::steady_clock;
+
+	if (_advanceSimulation) {
+		auto environmentStart = _profiler ? Clock::now() : Clock::time_point{};
+		++elapsedTicks;
+		if (_profiler)
+			_profiler->Record(TickTask::Environment, Clock::now() - environmentStart);
+	}
 	if (!regionManager) {
 		GlobalLogger().error << "No region manager while trying to Tick!\n";
 		return;
 	}
-	UpdateSkylightOffset();
-	DrainGenQueue();  // process generation results first
-	DrainLoadQueue(); // integrate finished loads
-
-	tickScheduler.Tick();
-	entitySpawner.TrySpawnEntities(*this, _players);
-	PerformRandomTicks(_players);
-	entityManager.Tick();
-	tileEntityManager.TickTileEntities(*this);
-
-	lightManager.ProcessLightQueue(*this, INT_MAX);
-	weatherSystem.Tick(rand);
-
-	// Saving
-	if (this->tickScheduler.currentTick % 40 == 0) {
-		SaveChunks(/*SaveIfEntities=*/this->tickScheduler.currentTick % 600 == 0);
+	if (_advanceSimulation) {
+		auto environmentStart = _profiler ? Clock::now() : Clock::time_point{};
+		UpdateSkylightOffset();
+		if (_profiler)
+			_profiler->Record(TickTask::Environment, Clock::now() - environmentStart);
 	}
 
+	auto loadingStart = _profiler ? Clock::now() : Clock::time_point{};
+	DrainGenQueue();  // process generation results first
+	DrainLoadQueue(); // integrate finished loads
+	
+	if (_profiler)
+		_profiler->Record(TickTask::ChunkLoading, Clock::now() - loadingStart);
+	if (_advanceSimulation) {
+		auto blockStart = _profiler ? Clock::now() : Clock::time_point{};
+		replayingDeferred = true;
+		while (!deferredUpdates.empty()) {
+			auto update = deferredUpdates.front();
+			deferredUpdates.pop_front();
+			if (update.type == DeferredUpdateType::Neighbors)
+				NotifyNeighborsOfUpdate(update.position, update.block);
+			else
+				RedstoneManager::TriggerRedstoneUpdate(*this, update.position, update.block, update.oldBlock);
+		}
+		replayingDeferred = false;
+		tickScheduler.Tick();
+		if (_profiler)
+			_profiler->Record(TickTask::BlockUpdates, Clock::now() - blockStart);
+		auto start = _profiler ? Clock::now() : Clock::time_point{};
+		entitySpawner.TrySpawnEntities(*this, _players);
+		if (_profiler)
+			_profiler->Record(TickTask::MobSpawning, Clock::now() - start);
+		blockStart = _profiler ? Clock::now() : Clock::time_point{};
+		PerformRandomTicks(_players);
+		if (_profiler)
+			_profiler->Record(TickTask::BlockUpdates, Clock::now() - blockStart);
+		start = _profiler ? Clock::now() : Clock::time_point{};
+		entityManager.Tick(_profiler && _profiler->EntityProfilingEnabled() ? _profiler : nullptr);
+		if (_profiler)
+			_profiler->Record(TickTask::EntityTicks, Clock::now() - start);
+		start = _profiler ? Clock::now() : Clock::time_point{};
+		tileEntityManager.TickTileEntities(*this);
+		if (_profiler)
+			_profiler->Record(TickTask::BlockEntityTicks, Clock::now() - start);
+		start = _profiler ? Clock::now() : Clock::time_point{};
+		weatherSystem.Tick(rand);
+		// Saving
+		if (tickScheduler.currentTick % 40 == 0) {
+			auto saveStart = _profiler ? Clock::now() : Clock::time_point{};
+			SaveChunks(tickScheduler.currentTick % 600 == 0);
+			if (_profiler)
+				_profiler->Record(TickTask::Autosave, Clock::now() - saveStart);
+		}
+	}
+	lightManager.ProcessLightQueue(*this, INT_MAX);
+	auto unloadingStart = _profiler ? Clock::now() : Clock::time_point{};
 	UpdateLoadRadius(_players);
+	if (_profiler)
+		_profiler->Record(TickTask::ChunkUnloading, Clock::now() - unloadingStart);
+	auto pipelineStart = _profiler ? Clock::now() : Clock::time_point{};
 	regionManager->PumpPipeline();
 	PopulateReady();
+	if (_profiler)
+		_profiler->Record(TickTask::ChunkLoading, Clock::now() - pipelineStart);
 }
 
 void WorldManager::PerformRandomTicks(const std::vector<ClientPosition>& _players) {
@@ -983,9 +1034,13 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 		this->NotifyNeighborsOfUpdate(_wpos, _blockType);
 
 	// Trigger redstone updates
-	if (RedstoneManager::CanTriggerRedstoneUpdate(_blockType) || RedstoneManager::CanTriggerRedstoneUpdate(oldBlock))
-		if (_updateNeighbors)
+	if ((RedstoneManager::CanTriggerRedstoneUpdate(_blockType) || RedstoneManager::CanTriggerRedstoneUpdate(oldBlock)) &&
+	    _updateNeighbors) {
+		if (frozen && !replayingDeferred)
+			deferredUpdates.push_back({ DeferredUpdateType::Redstone, _wpos, _blockType, oldBlock });
+		else
 			RedstoneManager::TriggerRedstoneUpdate(*this, _wpos, _blockType, oldBlock);
+	}
 
 	// Callback for the client and server to know about this block update
 	const auto newBlock = chunk->GetBlock(local);
@@ -1258,6 +1313,10 @@ void WorldManager::SetViewRadius(int _viewRadius) {
 }
 
 void WorldManager::NotifyNeighborsOfUpdate(Int3 _globalPos, BlockType _blockId) {
+	if (frozen && !replayingDeferred) {
+		deferredUpdates.push_back({ DeferredUpdateType::Neighbors, _globalPos, _blockId, BLOCK_AIR });
+		return;
+	}
 	// Update our six neighbors.
 	const Direction::Value dirs[6] = { Direction::Value::West, Direction::Value::East,  Direction::Value::Down,
 		                               Direction::Value::Up,   Direction::Value::North, Direction::Value::South };
