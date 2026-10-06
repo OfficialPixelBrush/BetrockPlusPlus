@@ -674,6 +674,8 @@ void Server::Tick() {
 	std::vector<ClientPosition> overworldPositions;
 	std::vector<ClientPosition> netherPositions;
 	for (auto& session : players) {
+		if (session->entity)
+			session->entity->messagesThisTick = 0;
 		session->stream.DrainToBuffer();
 		if (session->connState == ConnectionState::WaitingForSpawnChunks ||
 		    session->connState == ConnectionState::Playing) {

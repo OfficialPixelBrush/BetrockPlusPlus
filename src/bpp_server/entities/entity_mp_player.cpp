@@ -420,7 +420,6 @@ void EntityMPPlayer::Tick() {
 		onGround = savedOnGround;
 	}
 
-	this->messagesThisTick = 0;
 
 	// Always trust rotations
 	this->rotationYaw = session->rotation.x;
