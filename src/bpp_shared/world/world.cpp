@@ -360,6 +360,8 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players, bool _advan
 			_profiler->Record(TickTask::BlockEntityTicks, Clock::now() - start);
 		start = _profiler ? Clock::now() : Clock::time_point{};
 		weatherSystem.Tick(rand);
+		if (_profiler)
+			_profiler->Record(TickTask::Environment, Clock::now() - start);
 		// Saving
 		if (tickScheduler.currentTick % 40 == 0) {
 			auto saveStart = _profiler ? Clock::now() : Clock::time_point{};
