@@ -8,6 +8,7 @@
 
 #pragma once
 #include "chunk.h"
+#include "subchunk.h"
 #include <libdeflate.h>
 #include <vector>
 

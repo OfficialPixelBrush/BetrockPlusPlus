@@ -17,8 +17,8 @@
 #include "logger.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
-#include "redstone_manager.h"
-#include "tick_scheduler.h"
+#include "managers/redstone_manager.h"
+#include "managers/tick_scheduler.h"
 #include "tile_entities/tile_entity.h"
 #include "world.h"
 
