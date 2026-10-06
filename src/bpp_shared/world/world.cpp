@@ -15,7 +15,7 @@
 #include "generator/nether/chunk_gen.h"
 #include "generator/overworld/chunk_gen.h"
 #include "generator/shared/cave_gen.h"
-#include "redstone_manager.h"
+#include "managers/redstone_manager.h"
 #include "world_wrapper.h"
 #include <limits>
 #include <unordered_set>

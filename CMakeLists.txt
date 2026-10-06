@@ -164,16 +164,16 @@ set(SHARED_SOURCES
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
     src/bpp_shared/world/chunk.cpp
-    src/bpp_shared/world/weather_system.cpp
     src/bpp_shared/world/world_wrapper.cpp
     src/bpp_shared/world/world.cpp
     src/bpp_shared/world/spawner.cpp
     src/bpp_shared/world/lighter.cpp
     src/bpp_shared/world/storage/region.cpp
     src/bpp_shared/world/storage/region_manager.cpp
-    src/bpp_shared/world/tick_scheduler.cpp
-    src/bpp_shared/world/redstone_manager.cpp
-    src/bpp_shared/world/rail_manager.cpp
+    src/bpp_shared/world/managers/weather_system.cpp
+    src/bpp_shared/world/managers/tick_scheduler.cpp
+    src/bpp_shared/world/managers/redstone_manager.cpp
+    src/bpp_shared/world/managers/rail_manager.cpp
     src/bpp_shared/blocks/block_properties_behaviors.cpp
     src/bpp_shared/blocks/block_behaviors.cpp
     src/bpp_shared/blocks/block_behaviors/common.cpp
