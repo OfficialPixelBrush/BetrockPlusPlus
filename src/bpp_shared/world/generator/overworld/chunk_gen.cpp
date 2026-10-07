@@ -473,7 +473,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator::GenerateMinable(BLOCK_DIRT, _world, rand, coord, 32);
+		FeatureGenerator::GenerateOre(BLOCK_DIRT, _world, rand, coord, 32);
 	}
 
 	// Gravel blobs
@@ -481,7 +481,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator::GenerateMinable(BLOCK_GRAVEL, _world, rand, coord, 32);
+		FeatureGenerator::GenerateOre(BLOCK_GRAVEL, _world, rand, coord, 32);
 	}
 
 	// Coal Ore blobs
@@ -489,7 +489,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator::GenerateMinable(BLOCK_ORE_COAL, _world, rand, coord, 16);
+		FeatureGenerator::GenerateOre(BLOCK_ORE_COAL, _world, rand, coord, 16);
 	}
 
 	// Iron Ore blobs
@@ -497,7 +497,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT / 2);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator::GenerateMinable(BLOCK_ORE_IRON, _world, rand, coord, 8);
+		FeatureGenerator::GenerateOre(BLOCK_ORE_IRON, _world, rand, coord, 8);
 	}
 
 	// Gold Ore blobs
@@ -505,7 +505,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT / 4);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator::GenerateMinable(BLOCK_ORE_GOLD, _world, rand, coord, 8);
+		FeatureGenerator::GenerateOre(BLOCK_ORE_GOLD, _world, rand, coord, 8);
 	}
 
 	// Redstone Ore blobs
@@ -513,7 +513,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT / 8);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator::GenerateMinable(BLOCK_ORE_REDSTONE_OFF, _world, rand, coord, 7);
+		FeatureGenerator::GenerateOre(BLOCK_ORE_REDSTONE_OFF, _world, rand, coord, 7);
 	}
 
 	// Diamond Ore blobs
@@ -521,7 +521,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT / 8);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator::GenerateMinable(BLOCK_ORE_DIAMOND, _world, rand, coord, 7);
+		FeatureGenerator::GenerateOre(BLOCK_ORE_DIAMOND, _world, rand, coord, 7);
 	}
 
 	// Lapis lazuli Ore blobs
@@ -529,7 +529,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH);
 		coord.y = rand.NextInt(CHUNK_HEIGHT / 8) + rand.NextInt(CHUNK_HEIGHT / 8);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH);
-		FeatureGenerator::GenerateMinable(BLOCK_ORE_LAPIS_LAZULI, _world, rand, coord, 6);
+		FeatureGenerator::GenerateOre(BLOCK_ORE_LAPIS_LAZULI, _world, rand, coord, 6);
 	}
 
 	// Tree count
@@ -701,7 +701,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 		coord.y = rand.NextInt(rand.NextInt(120) + 8);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator::GenerateLiquid(BLOCK_WATER_FLOWING, _world, rand, coord);
+		FeatureGenerator::GenerateLiquid(BLOCK_WATER_FLOWING, _world, rand, coord, false);
 	}
 
 	// Lava springs
@@ -709,7 +709,7 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + 8;
 		coord.y = rand.NextInt(rand.NextInt(rand.NextInt(112) + 8) + 8);
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + 8;
-		FeatureGenerator::GenerateLiquid(BLOCK_LAVA_FLOWING, _world, rand, coord);
+		FeatureGenerator::GenerateLiquid(BLOCK_LAVA_FLOWING, _world, rand, coord, false);
 	}
 
 	// Snow/ice placement for cold biomes

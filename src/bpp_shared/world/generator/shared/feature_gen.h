@@ -29,16 +29,15 @@ namespace FeatureGenerator {
 bool GenerateLake(BlockType _type, WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 bool GenerateDungeon(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 bool GenerateClay(WorldWrapper& _world, Java::Random& _rand, Int3 _pos, int32_t _blobSize = 0);
-bool GenerateMinable(BlockType _type, WorldWrapper& _world, Java::Random& _rand, Int3 _pos, int32_t _blobSize = 0);
+bool GenerateOre(BlockType _type, WorldWrapper& _world, Java::Random& _rand, Int3 _pos, int32_t _blobSize = 0);
 bool GenerateFlowers(BlockType _type, WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 bool GenerateTallgrass(uint8_t _meta, WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 bool GenerateDeadbush(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 bool GenerateSugarcane(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 bool GeneratePumpkins(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 bool GenerateCacti(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
-bool GenerateLiquid(BlockType _type, WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
+bool GenerateLiquid(BlockType _type, WorldWrapper& _world, Java::Random& _rand, Int3 _pos, bool _nether);
 // Nether Features
-bool GenerateNetherLiquid(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 bool GenerateNetherFire(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 bool GenerateNetherGlowstone(WorldWrapper& _world, Java::Random& _rand, Int3 _pos);
 
