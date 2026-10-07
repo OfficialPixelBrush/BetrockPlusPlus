@@ -37,6 +37,10 @@ The server can be run on lesser hardware, though the experience may not be ideal
 
 Please read the [BUILDING](./BUILDING.md) page.
 
+## FAQ
+
+Please read the [FAQ](./FAQ.md) page.
+
 ## Contributing
 
 Please read the [CONTRIBUTING](./CONTRIBUTING.md) page.
