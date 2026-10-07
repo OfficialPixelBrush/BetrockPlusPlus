@@ -18,6 +18,7 @@
 #include "networking/network_stream.h"
 #include "world/client_pos.h"
 #include "world/world.h"
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <future>
@@ -81,6 +82,10 @@ struct PlayerSession {
 	std::string username = "(username not yet set)";
 	std::string ipAddress;
 	std::chrono::steady_clock::time_point lastPacketTime = std::chrono::steady_clock::now();
+	static constexpr size_t CHAT_MESSAGE_LIMIT = 3;
+	std::array<std::chrono::steady_clock::time_point, CHAT_MESSAGE_LIMIT> recentChatMessageTimes{};
+	size_t nextChatMessageTime = 0;
+	size_t recentChatMessageCount = 0;
 
 	std::string serverId;
 	std::future<bool> pendingAuthFuture;

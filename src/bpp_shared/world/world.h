@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -59,6 +60,11 @@ private:
 	std::deque<std::shared_ptr<Chunk>> genDoneQueue;
 	TileEntityManager tileEntityManager;
 	EntitySpawner entitySpawner;
+	enum class DeferredUpdateType : uint8_t { Neighbors, Redstone };
+	struct DeferredUpdate { DeferredUpdateType type; Int3 position; BlockType block; BlockType oldBlock; };
+	std::deque<DeferredUpdate> deferredUpdates;
+	bool frozen = false;
+	bool replayingDeferred = false;
 	int skylightOffset = 0;
 	static BiomeGenerator biomeGenerator;
 
@@ -91,7 +97,8 @@ public:
 
 	~WorldManager() override {}
 
-	void Tick(const std::vector<ClientPosition>& _players);
+	void Tick(const std::vector<ClientPosition>& _players, bool _advanceSimulation = true,
+	          TickProfiler* _profiler = nullptr);
 	void Update(const std::vector<ClientPosition>& _players);
 	void SaveChunks(const bool _saveIfEntities = false, const bool _deleteEntities = false);
 	void Shutdown();
@@ -128,6 +135,7 @@ public:
 	void RemoveTileEntity(Int3 _pos);
 	void SetViewRadius(int _viewRadius);
 	void NotifyNeighborsOfUpdate(Int3 _globalPos, BlockType _blockId);
+	void SetFrozen(bool _frozen) noexcept { frozen = _frozen; }
 	// For creating a fresh tile entity for generation etc
 	void CreateTileEntity(std::shared_ptr<TileEntity> _tileEntity);
 	// For registering a tile entity that already exists in the world (e.g. loaded from disk)
