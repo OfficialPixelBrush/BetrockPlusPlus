@@ -826,7 +826,6 @@ void Server::Tick() {
 						{ TickTask::BlockUpdates, "Block Updates" },
 						{ TickTask::EntityTicks, "Entity Ticks" },
 						{ TickTask::BlockEntityTicks, "Block Entity Ticks" },
-						{ TickTask::VillagesAndRaids, "Villages & Raids" },
 						{ TickTask::Environment, "Environment" }
 					}};
 					for (const auto& [task, name] : tasks) {

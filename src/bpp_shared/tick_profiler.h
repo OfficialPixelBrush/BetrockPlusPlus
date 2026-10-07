@@ -32,7 +32,7 @@ struct TickEntityKeyHash {
 
 enum class TickTask : uint8_t {
 	TotalTick, Network, Autosave, OffTickTasks, MobSpawning, ChunkLoading, ChunkUnloading,
-	BlockUpdates, EntityTicks, BlockEntityTicks, VillagesAndRaids, Environment, Count
+	BlockUpdates, EntityTicks, BlockEntityTicks, Environment, Count
 };
 
 class TickProfiler {
