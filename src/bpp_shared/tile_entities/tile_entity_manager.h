@@ -14,15 +14,6 @@ class WorldManager;
 struct TileEntityManager {
 	std::vector<std::weak_ptr<TileEntity>> tickableTileEntities;
 
-	// This flag is set while the manager ticks tile entities
-	// Tile entity additions are deferred until all tile entities are done ticking
-	bool scanning = false;
-	std::vector<std::shared_ptr<TileEntity>> pendingAdd;
-
-	// Tile entities that were deferred, but whose block was gone by the end of the scan.
-	// They are still ticked even if they aren't in the chunk
-	std::vector<std::shared_ptr<TileEntity>> orphans;
-
 	// Initialize a tile entity into the world
 	void InitializeTileEntity(const std::shared_ptr<TileEntity>& _tileEntity) {
 		if (_tileEntity->canTick) {

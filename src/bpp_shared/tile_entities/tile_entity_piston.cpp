@@ -19,7 +19,6 @@ void TileEntityPistonMoving::Tick(WorldManager& _world) {
 	if (this->lastProgress >= 1.0f) {
 		NudgePushedObjects(_world, 1.0f, 0.25f);
 		_world.RemoveTileEntity(this->position);
-		this->invalid = true;
 		if (this->chunk)
 			chunk->isModified = true;
 
@@ -78,7 +77,6 @@ void TileEntityPistonMoving::InstantFinish(WorldManager& _world) {
 
 	this->lastProgress = this->progress = 1.0f;
 	_world.RemoveTileEntity(this->position);
-	this->invalid = true;
 
 	if (this->chunk)
 		chunk->isModified = true;
