@@ -101,7 +101,7 @@ std::string SummonEntity(const strategos::CmdNode& _cmd, void* _userData) {
 		return ERROR_REASON_PARAMETERS;
 
 	Vec3 spawnPos = ctx.session->position.pos;
-	spawnPos.y += 1.0f; // Spawn above the player
+	spawnPos.y += 1.0; // Spawn above the player
 
 	auto eTypeEnum = GetEntityTypeFromString(*entityType);
 	if (eTypeEnum == EntityType::NONE)

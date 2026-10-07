@@ -20,7 +20,7 @@ struct ChickenEntity : public AnimalEntity {
 	void OnDeath(Entity* _killer) override;
 	void UpdateFallState(float _movedY) override;
 	void RollEggTimer() {
-		ticksUntilEgg = this->rand.NextInt(6000) + 6000;
+		ticksUntilEgg = uint32_t(this->rand.NextInt(6000) + 6000);
 	}
 	void Tick() override {
 		AnimalEntity::Tick();

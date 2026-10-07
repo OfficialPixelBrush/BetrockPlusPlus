@@ -44,10 +44,10 @@ struct MobEntity : public MobileEntity {
 
 	double GetDesiredRotation(double _rotation, double _desired, double _max) {
 		auto delta = _desired - _rotation;
-		while (delta < -180.0F)
-			delta += 360.0F;
-		while (delta >= 180.0F)
-			delta -= 360.0F;
+		while (delta < -180.0)
+			delta += 360.0;
+		while (delta >= 180.0)
+			delta -= 360.0;
 		return _rotation + std::clamp(delta, -_max, _max);
 	}
 };

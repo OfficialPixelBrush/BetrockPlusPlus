@@ -107,9 +107,9 @@ bool EntityMPPlayer::DropItem(ItemStack _stack) {
 	initVelocity = 0.02f;
 	float angle = rand.NextFloat() * JavaMath::PI_FLOAT * 2.0f;
 	initVelocity *= rand.NextFloat();
-	itemEntity->velocity.x += std::cos(angle) * initVelocity;
-	itemEntity->velocity.y += (rand.NextFloat() - rand.NextFloat()) * 0.1f;
-	itemEntity->velocity.z += std::sin(angle) * initVelocity;
+	itemEntity->velocity.x += double(std::cos(angle) * initVelocity);
+	itemEntity->velocity.y += double((rand.NextFloat() - rand.NextFloat()) * 0.1f);
+	itemEntity->velocity.z += double(std::sin(angle) * initVelocity);
 
 	// Register our item with the world
 	this->world->entityManager.AddEntity(std::move(itemEntity));
