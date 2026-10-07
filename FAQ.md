@@ -34,3 +34,7 @@ Very few sounds were networked by the time Beta 1.7.3 rolled around. A few examp
 - Players taking damage/dying
 - Other players walking around
 - Block placements done by other players
+
+### I can't craft
+
+This often happens when a mod is used that modifies the Clients crafting recipies. The client tends to prefer it's own crafting recipe results over whatever the server thinks.
