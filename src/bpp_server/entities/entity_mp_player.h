@@ -15,7 +15,6 @@ struct EntityMPPlayer : public PlayerEntity {
 	EntityHealth lastNotifiedHealth = health;
 	bool movedThisTick : 1 = false;
 	int ticksInAir = 0;
-	uint64_t messagesThisTick = 0;
 	double accumulatedUpDistance = 0.0;
 	double simulatedFallDistance = 0.0;
 	Vec3 firstUpPosition = {};

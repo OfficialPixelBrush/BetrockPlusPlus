@@ -24,7 +24,7 @@
 #include "packet_utils.h"
 #include "server.h"
 #include "tile_entities/tile_entity.h"
-#include <cmath>
+#include <chrono>
 #include <cstring>
 #include <iomanip>
 #include <memory>
@@ -60,12 +60,17 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
 			return;
 	}
 
-	// there is almost certainly a better way to do this
-	const double messagesPerLoop = std::ceil(3.0 * Server::TICKS_PER_SECOND / _server.GetTickRate());
-	if (++_session.entity->messagesThisTick >= messagesPerLoop) {
+	const auto now = std::chrono::steady_clock::now();
+	if (_session.recentChatMessageCount == _session.recentChatMessageTimes.size() &&
+	    now - _session.recentChatMessageTimes[_session.nextChatMessageTime] < std::chrono::seconds(1)) {
 		_server.DisconnectPlayer("Chat spamming!", _session);
 		return;
 	}
+	_session.recentChatMessageTimes[_session.nextChatMessageTime] = now;
+	_session.nextChatMessageTime =
+	    (_session.nextChatMessageTime + 1) % _session.recentChatMessageTimes.size();
+	if (_session.recentChatMessageCount < _session.recentChatMessageTimes.size())
+		++_session.recentChatMessageCount;
 
 	GlobalLogger().chat << "<" << _session.username << "> " << _pkt.message << "\n";
 	if (_pkt.message.size() > 0 && _pkt.message[0] == '/') {
