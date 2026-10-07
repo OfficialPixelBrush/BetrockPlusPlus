@@ -78,7 +78,8 @@ struct PaintingEntity : public Entity {
 		if (validPaintings.empty())
 			return false;
 
-		this->art = validPaintings[this->rand.NextInt(validPaintings.size())];
+		// TODO: Can these turn out negative?
+		this->art = validPaintings[size_t(this->rand.NextInt(validPaintings.size()))];
 		this->SetDirection(direction);
 		return true;
 	}

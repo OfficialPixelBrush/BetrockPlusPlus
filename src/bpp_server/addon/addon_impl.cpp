@@ -41,7 +41,7 @@ bp_player* GetPlayerAt(const bp_api* _api, int _index) {
 	if (_index < 0 || static_cast<size_t>(_index) >= players.size())
 		return nullptr;
 
-	const auto& player = players[_index];
+	const auto& player = players[size_t(_index)];
 	if (!player)
 		return nullptr;
 

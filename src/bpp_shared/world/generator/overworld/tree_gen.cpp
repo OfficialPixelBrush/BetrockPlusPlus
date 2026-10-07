@@ -266,7 +266,7 @@ void BigTree::PlaceCircularLayer(Int3 _centerPos, float _radius, BranchAxis _axi
  * @return Radius in blocks
  */
 float BigTree::GetCanopyRadius(int32_t _y) {
-	if (double(_y) < double(float(totalHeight) * 0.3)) {
+	if (double(_y) < double(float(totalHeight) * 0.3f)) {
 		return -1.618F;
 	} else {
 		float halfHeight = float(totalHeight) / 2.0F;
