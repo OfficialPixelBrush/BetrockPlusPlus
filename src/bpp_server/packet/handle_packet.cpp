@@ -92,6 +92,12 @@ void PlayerMovement(Packet::PlayerMovement& _pkt, PlayerSession& _session) {
 }
 
 static bool HandlePlayerMove(Vec3 _to, PlayerSession& _session, Server& _server) {
+	// We are in a vehicle!
+	if (_to.y == -999.0 || (_session.entity && !_session.entity->vehicle.expired())) {
+		_session.pendingPosition = _to;
+		return true;
+	}
+
 	bp_player_move_event event{ .player = &_session.apiPlayer,
 		                        .from = { _session.position.pos.x, _session.position.pos.y, _session.position.pos.z },
 		                        .to = { _to.x, _to.y, _to.z },

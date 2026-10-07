@@ -76,6 +76,8 @@ void EntityMPPlayer::OnMountEntity() {
 }
 
 void EntityMPPlayer::OnDismountEntity() {
+	if (this->session)
+		this->session->position.pos = this->position;
 	if (this->session->entityTracker) {
 		Packet::AddPassenger pkt;
 		pkt.passengerEntityId = this->id;
@@ -154,8 +156,10 @@ void EntityMPPlayer::HandlePositionChecks() {
 		this->velocity.y = 0;
 
 		// Leave the vehicle on teleport
-		if (session->pendingTeleport)
+		if (session->pendingTeleport) {
 			this->UnmountEntity();
+			return;
+		}
 
 		// Update our position to the session
 		if (!this->session)
