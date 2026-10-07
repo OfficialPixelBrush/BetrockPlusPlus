@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -101,8 +102,14 @@ void EntityManager::AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEn
 		onEntitySpawn(entities.back());
 }
 
-void EntityManager::TickEntityAndPassenger(const std::shared_ptr<Entity>& _entity) {
-	_entity->Tick();
+void EntityManager::TickEntityAndPassenger(const std::shared_ptr<Entity>& _entity, TickProfiler* _profiler) {
+	if (_profiler) {
+		auto start = std::chrono::steady_clock::now();
+		_entity->Tick();
+		_profiler->RecordEntity(_entity->dim, _entity->id, _entity->type, std::chrono::steady_clock::now() - start);
+	} else {
+		_entity->Tick();
+	}
 
 	// Check to see if this entity went into another container or bucket
 	Int3 newBucketPos = ComputeBucketPos(_entity->position);
@@ -137,14 +144,14 @@ void EntityManager::TickEntityAndPassenger(const std::shared_ptr<Entity>& _entit
 	if (auto lockPassenger = _entity->passenger.lock()) {
 		auto passengersVehicle = lockPassenger->vehicle.lock();
 		if (!lockPassenger->isDead && passengersVehicle.get() == raw) {
-			TickEntityAndPassenger(lockPassenger);
+			TickEntityAndPassenger(lockPassenger, _profiler);
 		} else {
 			_entity->passenger.reset();
 		}
 	}
 }
 
-void EntityManager::Tick() {
+void EntityManager::Tick(TickProfiler* _profiler) {
 	// Snapshot weak refs so mid-tick spawn/despawn cannot invalidate iteration,
 	// without the full shared_ptr vector copy every tick.
 	std::vector<std::weak_ptr<Entity>> toTick;
@@ -164,7 +171,7 @@ void EntityManager::Tick() {
 			entity->vehicle.reset();
 		}
 
-		TickEntityAndPassenger(entity);
+		TickEntityAndPassenger(entity, _profiler);
 	}
 
 	// Remove dead entities after ticking so iteration stays stable
