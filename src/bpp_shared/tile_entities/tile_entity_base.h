@@ -28,7 +28,6 @@ struct TileEntity {
 	TileType type;
 	Int3 position{ 0, 0, 0 }; // Global coordinates
 	bool canTick = false;
-	bool invalid = false; // Never ticks again once set
 	Chunk* chunk =
 	    nullptr; // The chunk this tile entity is in; may not be best practice to have this as a raw pointer but it should be fine since the chunk will always exist while the tile entity exists
 
