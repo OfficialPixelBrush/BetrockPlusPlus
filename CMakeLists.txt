@@ -218,7 +218,14 @@ set(SHARED_SOURCES
     src/bpp_shared/world/generator/overworld/tree_gen.cpp
     src/bpp_shared/world/generator/overworld/biome_gen.cpp
     src/bpp_shared/world/generator/shared/cave_gen.cpp
-    src/bpp_shared/world/generator/shared/feature_gen.cpp
+    src/bpp_shared/world/generator/shared/features/feature_clay.cpp
+    src/bpp_shared/world/generator/shared/features/feature_dungeon.cpp
+    src/bpp_shared/world/generator/shared/features/feature_fire.cpp
+    src/bpp_shared/world/generator/shared/features/feature_glowstone.cpp
+    src/bpp_shared/world/generator/shared/features/feature_lake.cpp
+    src/bpp_shared/world/generator/shared/features/feature_liquid.cpp
+    src/bpp_shared/world/generator/shared/features/feature_ore.cpp
+    src/bpp_shared/world/generator/shared/features/feature_plants.cpp
 
     # Nether generator
     src/bpp_shared/world/generator/nether/chunk_gen.cpp

@@ -373,7 +373,7 @@ bool NetherGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		coord.x = blockX + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
 		coord.y = rand.NextInt(CHUNK_HEIGHT - 8) + 4; // 120
 		coord.z = blockZ + rand.NextInt(CHUNK_WIDTH) + (CHUNK_WIDTH * 0.5);
-		FeatureGenerator::GenerateNetherLiquid(_world, rand, coord);
+		FeatureGenerator::GenerateLiquid(BLOCK_LAVA_FLOWING, _world, rand, coord, true);
 	}
 
 	// Generate fire patch
