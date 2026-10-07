@@ -33,7 +33,7 @@ void PlayerConnStateManager::HandleConnectionState(PlayerSession& _session, Serv
 		                                                                     : _server.gameRuntime.world;
 		_server.chunkSender.Enqueue(_session, sessionWorld, 16);
 		_server.chunkSender.Flush(_session);
-		if (sessionWorld.elapsedTicks % 20 == 0) {
+		if (_server.IsTickFrozen() || sessionWorld.elapsedTicks % 20 == 0) {
 			// Update the server time so client's don't desync
 			Packet::SetTime time;
 			time.time = sessionWorld.elapsedTicks;
