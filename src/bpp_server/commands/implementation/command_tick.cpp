@@ -7,8 +7,11 @@
 #include "../command_manager.h"
 #include "../command_registry.h"
 #include "server.h"
+#include <cerrno>
 #include <charconv>
+#include <cctype>
 #include <cmath>
+#include <cstdlib>
 #include <string>
 #include <system_error>
 
@@ -20,6 +23,20 @@ bool ParsePositiveInt(const std::string& value, int& result) {
 
 	const auto parsed = std::from_chars(value.data(), value.data() + value.size(), result);
 	return parsed.ec == std::errc{} && parsed.ptr == value.data() + value.size() && result > 0;
+}
+
+bool ParseDouble(const std::string& value, double& result) {
+	if (value.empty() || std::isspace(static_cast<unsigned char>(value.front())))
+		return false;
+
+	errno = 0;
+	char* end = nullptr;
+	const double parsed = std::strtod(value.c_str(), &end);
+	if (errno == ERANGE || end != value.c_str() + value.size() || !std::isfinite(parsed))
+		return false;
+
+	result = parsed;
+	return true;
 }
 
 std::string RequestSample(void* userData, Server::SampleMode mode, int ticks) {
@@ -109,9 +126,7 @@ std::string SetRate(const strategos::CmdNode& node, void* userData) {
 		return ERROR_REASON_PARAMETERS;
 
 	double rate = 0.0;
-	const auto parsed = std::from_chars(token->data(), token->data() + token->size(), rate);
-
-	if (parsed.ec != std::errc{} || parsed.ptr != token->data() + token->size() || !std::isfinite(rate) || rate <= 0.0)
+	if (!ParseDouble(*token, rate) || rate <= 0.0)
 		return ERROR_REASON_PARAMETERS;
 	ctx.server->SetTickRate(rate);
 	if (ctx.server->GetTickRate() != rate)
