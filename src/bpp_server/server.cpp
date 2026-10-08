@@ -43,19 +43,9 @@
 #include "version.h"
 #include <chrono>
 
-#ifdef DISCORD_INTEGRATION
-#include "discord.h"
-#endif
-
 Server::Server() : gameRuntime(), addonManager(this), config("server.properties") {
 	ServerBlock::Initialize();
 	LoadConfig();
-
-#ifdef DISCORD_INTEGRATION
-	GlobalDiscord().Init(config.GetAsString("discord-token"), config.GetAsString("discord-channel-id"),
-	                     config.GetAsString("discord-guild-id"), config.GetAsString("discord-admin-role-id"),
-	                     config.GetAsString("discord-webhook-url"));
-#endif
 
 	serverSocket = ServerSocketManager::CreateServerSocket(serverPort);
 	if (serverSocket < 0) {
@@ -161,18 +151,6 @@ void Server::LoadConfig() {
 		    { "spawn-animals", "true" },
 		    { "spawn-monsters", "true" },
 		    { "server-port", "25565" },
-#ifdef DISCORD_INTEGRATION
-		    { "discord-token", "" },
-		    { "discord-channel-id", "" },
-		    // Optional: register slash commands to one guild instantly. Leave empty for global.
-		    { "discord-guild-id", "" },
-		    // Role required for privileged slash commands (e.g. /stop). Empty denies them.
-		    { "discord-admin-role-id", "" },
-		    // Optional: a channel webhook URL (Channel Settings -> Integrations -> Webhooks).
-		    // When set, in-game chat is relayed under each player's own name + skin face
-		    // instead of the bot's. Leave empty to relay chat as the bot instead.
-		    { "discord-webhook-url", "" },
-#endif
 		    //{"allow-nether",true},
 		    { "max-players", "20" },
 		    { "online-mode", "false" },
@@ -457,9 +435,6 @@ void Server::Startup() {
 
 	float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
 	GlobalLogger().info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";
-#ifdef DISCORD_INTEGRATION
-	GlobalDiscord().SendServerNotice("Server started!", Discord::EmbedColor::Green);
-#endif
 #ifdef BETACRAFT_HEARTBEAT
 	betacraftHeartbeat.Start();
 #endif
@@ -544,11 +519,6 @@ void Server::Stop() {
 
 #ifdef BETACRAFT_HEARTBEAT
 	betacraftHeartbeat.Stop();
-#endif
-#ifdef DISCORD_INTEGRATION
-	//GlobalDiscord().SendServerNotice("Server stopped!", Discord::EmbedColor::Red);
-	// TODO: The server often shuts down too fast for the embed to get sent!
-	GlobalDiscord().Shutdown("Server stopped!");
 #endif
 	GlobalLogger().info << "Server shutting down...\n";
 	for (auto& session : players) {
@@ -661,9 +631,6 @@ void Server::Tick() {
 		totalStart = Clock::now();
 	auto offTickStart = Clock::now();
 	writePool.wait();
-#ifdef DISCORD_INTEGRATION
-	GlobalDiscord().Drain(*this);
-#endif
 	if (sampling)
 		tickProfiler.Record(TickTask::OffTickTasks, Clock::now() - offTickStart);
 	std::chrono::nanoseconds autosaveElapsed{ 0 };
@@ -1046,10 +1013,7 @@ std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {
 			                             if (_s->entity) {
 				                             GlobalLogger().info << "Disconnected client " << _s->username
 				                                                 << " with entity id " << _s->entity->id << "\n";
-				                             SendGlobalChatMessage("§e" + _s->username + " left the game.", false);
-#ifdef DISCORD_INTEGRATION
-				                             GlobalDiscord().SendPlayerLeaveMessage(_s->username);
-#endif
+				                             SendGlobalChatMessage("§e" + _s->username + " left the game.");
 
 				                             const bp_player_leave_event event{ &_s->apiPlayer };
 				                             addonManager.Broadcast(&bp_addon_events::playerLeave, event);

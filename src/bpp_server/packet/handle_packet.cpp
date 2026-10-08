@@ -87,9 +87,6 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
 			continue;
 		reply.Serialize(receiver->stream);
 	}
-#ifdef DISCORD_INTEGRATION
-	GlobalDiscord().SendPlayerChatMessage(_session.username, _pkt.message);
-#endif
 }
 
 void PlayerMovement(Packet::PlayerMovement& _pkt, PlayerSession& _session) {

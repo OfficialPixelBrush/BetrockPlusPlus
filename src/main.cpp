@@ -22,9 +22,6 @@
 #ifndef BUILD_SERVER
 #include "bpp_client/client.h"
 #else
-#ifdef DISCORD_INTEGRATION
-#include "discord.h"
-#endif
 #if defined(ONLINE_MODE_AUTHENTICATION) || defined(BETACRAFT_HEARTBEAT)
 #include "internet/curl_runtime.h"
 #endif
@@ -164,12 +161,6 @@ void InitCrashHandler(std::string _platformString) {
 			std::ifstream file(_ctx.logFilePath);
 			if (!file) {
 				GlobalLogger().error << "Failed to open crash report file!\n";
-#ifdef DISCORD_INTEGRATION
-				std::ostringstream summary;
-				summary << "**Server crashed!** Signal/Code: " << _ctx.signalOrCode
-				        << "\n(crash report file could not be opened for upload)";
-				GlobalDiscord().SendMessageSync(summary.str());
-#endif
 				return;
 			}
 
@@ -178,21 +169,7 @@ void InitCrashHandler(std::string _platformString) {
 			while (std::getline(file, line)) {
 				GlobalLogger().error << line << "\n";
 			}
-
-#ifdef DISCORD_INTEGRATION
-			std::ostringstream summary;
-			summary << "**Server crashed!** Signal/Code: " << _ctx.signalOrCode;
-			GlobalDiscord().SendFileSync(std::string(_ctx.logFilePath), summary.str());
-#endif
 		}
-#ifdef DISCORD_INTEGRATION
-		else {
-			std::ostringstream summary;
-			summary << "**Server crashed!** Signal/Code: " << _ctx.signalOrCode
-			        << "\n(no crash report file was produced)";
-			GlobalDiscord().SendMessageSync(summary.str());
-		}
-#endif
 	};
 	CrashCatch::initialize(config);
 }
