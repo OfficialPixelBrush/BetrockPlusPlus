@@ -152,6 +152,7 @@ set(SHARED_SOURCES
     src/bpp_shared/entities/entity_minecart.cpp
     src/bpp_shared/entities/entity_painting.cpp
     src/bpp_shared/entities/entity_arrow.cpp
+    src/bpp_shared/entities/entity_fishing_bobber.cpp
     src/bpp_shared/entities/entity_throwable.cpp
     src/bpp_shared/entities/entity_slime.cpp
     src/bpp_shared/entities/entity_tnt.cpp

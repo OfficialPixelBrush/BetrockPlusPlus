@@ -115,6 +115,7 @@ struct EntityTracker {
 			return { 0, 0, /*SendVelocity=*/false };
 		case EntityType::PLAYER:
 			return { 128, 2, /*SendVelocity=*/false };
+		case EntityType::FISHING_BOBBER:
 		case EntityType::FISH:
 			return { 64, 5, /*SendVelocity=*/true };
 		case EntityType::ARROW:
