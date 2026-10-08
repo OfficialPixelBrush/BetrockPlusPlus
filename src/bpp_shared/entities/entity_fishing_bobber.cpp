@@ -128,11 +128,14 @@ void FishingBobberEntity::Tick() {
 	}
 
 	if (hitEntity && (!blockHit.hit || closest < start.Distance(blockHit.hitPosition))) {
-		hookedEntity = entityManager->GetEntityByIdShared(hitEntity->id);
-		velocity = {};
-		position = end;
-		RebuildCollider();
-		return;
+		if (hitEntity->AttackEntityFrom(player.get(), 0)) {
+			hookedEntity = entityManager->GetEntityByIdShared(hitEntity->id);
+			velocity = {};
+			position = end;
+			RebuildCollider();
+			return;
+		}
+		blockHit.hit = false;
 	}
 
 	if (blockHit.hit) {
