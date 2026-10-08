@@ -134,6 +134,32 @@ float WorldManager::GetCelestialAngle() {
 	return timePercent;
 }
 
+bool WorldManager::IsAabbInFluidLevel(AABB _collider, Material _material) {
+	int minX = MathHelper::FloorDouble(_collider.minX);
+	int maxX = MathHelper::FloorDouble(_collider.maxX + 1.0);
+	int minY = MathHelper::FloorDouble(_collider.minY);
+	int maxY = MathHelper::FloorDouble(_collider.maxY + 1.0);
+	int minZ = MathHelper::FloorDouble(_collider.minZ);
+	int maxZ = MathHelper::FloorDouble(_collider.maxZ + 1.0);
+
+	for (int x = minX; x < maxX; x++)
+		for (int y = minY; y < maxY; y++)
+			for (int z = minZ; z < maxZ; z++) {
+				auto blockId = this->GetBlockId({ x, y, z });
+				if (!(Blocks::blockProperties[blockId].material == _material))
+					continue;
+
+				uint8_t meta = this->GetMetadata({ x, y, z });
+				double surface = double(y + 1);
+				if (meta < 8)
+					surface -= double(meta) / 8.0;
+
+				if (surface >= _collider.minY)
+					return true;
+			}
+	return false;
+}
+
 bool WorldManager::IsMaterialInAabb(AABB _collider, Material _material) {
 	int minX = MathHelper::FloorDouble(_collider.minX);
 	int maxX = MathHelper::FloorDouble(_collider.maxX + 1.0);

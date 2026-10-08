@@ -212,6 +212,10 @@ struct Entity {
 		return this->height * 0.75;
 	}
 
+	virtual float GetRidingYOffset() {
+		return yOffset;
+	}
+
 	virtual Vec3 GetRiderSeatOffset() {
 		return { 0.0, 0.0, 0.0 };
 	}
