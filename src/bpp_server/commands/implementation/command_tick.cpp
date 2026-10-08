@@ -44,7 +44,7 @@ std::string RequestSample(void* userData, Server::SampleMode mode, int ticks) {
 	if (!ctx.server->BeginTickSample(mode, ticks, *ctx.session))
 		return "A tick sample is already pending or active.";
 
-	SendChat(*ctx.session, "§7Tick sample started; report in " + std::to_string(ticks) + " ticks.");
+	SendChat(*ctx.session, std::format("§7Tick sample started; report in {} ticks.", ticks));
 	return {};
 }
 
@@ -107,14 +107,14 @@ std::string StepCount(int count, void* userData) {
 		return "Tick stepping requires freeze.";
 
 	ctx.server->QueueTickSteps(count);
-	SendChat(*ctx.session, "§eQueued " + std::to_string(count) + " simulation tick(s).");
+	SendChat(*ctx.session, std::format("§eQueued {} simulation tick(s).", count));
 	return {};
 }
 
 std::string Rate(const strategos::CmdNode&, void* userData) {
 	auto& ctx = CmdCtx(userData);
 
-	SendChat(*ctx.session, "§eTarget tick rate: " + std::to_string(ctx.server->GetTickRate()) + " TPS.");
+	SendChat(*ctx.session, std::format("§eTarget tick rate: {:.2f} TPS.", ctx.server->GetTickRate()));
 	return {};
 }
 
@@ -132,7 +132,7 @@ std::string SetRate(const strategos::CmdNode& node, void* userData) {
 	if (ctx.server->GetTickRate() != rate)
 		return ERROR_REASON_PARAMETERS;
 	
-	SendChat(*ctx.session, "§eTarget tick rate set to " + std::to_string(rate) + " TPS.");
+	SendChat(*ctx.session, std::format("§eTarget tick rate set to {:.2f} TPS.", rate));
 	return {};
 }
 

@@ -2,10 +2,10 @@
 
 Optional Features are settings that we expose at compile-time for people that want specific features, without unnecessarily inflating compile time, binary size or the number of necessary dependencies for those that don't want them.
 
-For example, if you'd like to disable Online Mode Authentication, but enable Discord Integration, you'd type:
+For example, if you'd like to disable Online Mode Authentication, but enable Experimental features, you'd type:
 
 ```bash
-cmake -S . -B build -DONLINE_MODE_AUTHENTICATION=OFF -DDISCORD_INTEGRATION=ON
+cmake -S . -B build -DONLINE_MODE_AUTHENTICATION=OFF -DEXPERIMENTAL=ON
 ```
 
 Here's a list of all optional flags and their default state:
@@ -15,7 +15,6 @@ Here's a list of all optional flags and their default state:
 | [`ONLINE_MODE_AUTHENTICATION`](#online-mode-authentication) | `ON`          |
 | `CRASH_LOGGING`                                             | `ON`          |
 | [`BETACRAFT_HEARTBEAT`](#betacraft-server-list-heartbeat)   | `ON`          |
-| [`DISCORD_INTEGRATION`](#discord-integration)               | `OFF`         |
 | [`EXPERIMENTAL`](#experimental)                             | `OFF`         |
 | [`GENERATION_PRECISION`](#terrain-precision)                | `DOUBLE`      |
 
@@ -46,26 +45,6 @@ To appear on the list, contact Moresteck on the [Betacraft Discord](https://beta
 | `betacraft-v1-version`   | Version string for Betacraft launcher v1                                               |
 | `betacraft-send-players` | `true` shares online usernames; `false` only shares the player count                   |
 | `betacraft-icon`         | Optional path to a PNG icon (max 128×128 and 64 KiB)                                   |
-
-### Discord Integration
-
-Discord support is **off by default**. Enabling it pulls in [DPP](https://dpp.dev/) (Gateway WebSocket bot) via `vcpkg` or `FetchContent`, and requires OpenSSL.
-
-Simply add `-DDISCORD_INTEGRATION=ON` to the first build command, then resume as normal.
-
-In `server.properties`:
-
-| Key                     | Purpose                                                                                      |
-| ----------------------- | -------------------------------------------------------------------------------------------- |
-| `discord-token`         | Bot token                                                                                    |
-| `discord-channel-id`    | Channel used for chat bridge + crash uploads                                                 |
-| `discord-webhook-url`   | Makes it so player PFPs and names are used in messages, integrating them better with Discord |
-| `discord-admin-role-id` | Optional. Allows for more invasive commands to be run from Discord (i.e. `stop`)             |
-| `discord-guild-id`      | Optional. When set, slash commands register to that guild instantly                          |
-
-In the [Discord Developer Portal](https://discord.com/developers/applications), enable the **Message Content Intent**, invite the bot with `applications.commands` + `bot` scopes, and grant read/send message permissions in the bridge channel.
-
-> **Windows note:** if installing DPP through `vcpkg`, use a non-static triplet (`x64-windows`, not `x64-windows-static`).
 
 ### Experimental
 

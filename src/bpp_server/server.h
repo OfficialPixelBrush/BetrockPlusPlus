@@ -12,10 +12,6 @@
 #include <atomic>
 extern std::atomic<bool> shutdownRequested;
 
-#ifdef DISCORD_INTEGRATION
-#include "discord.h"
-#endif
-
 #include "./internet/betacraft_heartbeat.h"
 #include "./internet/online_auth.h"
 #include "BS_thread_pool.hpp"
@@ -122,9 +118,8 @@ public:
 		return "";
 	}
 
-	// Send a message to all players. Set _relayToDiscord false for Discord→Minecraft
-	// traffic to avoid echo loops.
-	void SendGlobalChatMessage(std::string _message, bool _relayToDiscord = true) {
+	// Send a message to all players
+	void SendGlobalChatMessage(std::string _message) {
 		for (auto& other : players) {
 			if (other && other->connState != ConnectionState::Playing)
 				continue;
@@ -133,12 +128,6 @@ public:
 			reply.Serialize(other->stream);
 		}
 		GlobalLogger().msg << StripFormatting(_message) << "\n";
-#ifdef DISCORD_INTEGRATION
-		if (_relayToDiscord)
-			GlobalDiscord().SendMessage(_message);
-#else
-		(void)_relayToDiscord;
-#endif
 	}
 
 	const std::vector<std::shared_ptr<PlayerSession>>& GetPlayers() noexcept {

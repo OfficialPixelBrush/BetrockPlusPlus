@@ -74,9 +74,8 @@
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
         "BUILD_SERVER": "ON",
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "DISCORD_INTEGRATION": "ON",
         "BETACRAFT_HEARTBEAT": "ON",
-        "VCPKG_MANIFEST_FEATURES": "discord betacraft-heartbeat"
+        "VCPKG_MANIFEST_FEATURES": "betacraft-heartbeat"
       }
     },
     {
