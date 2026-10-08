@@ -45,6 +45,11 @@ Please read the [FAQ](./FAQ.md) page.
 
 Please read the [CONTRIBUTING](./CONTRIBUTING.md) page.
 
+## Addons
+
+- [bpa_luau](https://officialpixelbrush.github.io/bpa_luau): A simplified luau plugin API
+- [bpa_discord](https://officialpixelbrush.github.io/bpa_discord): Discord chat integration
+
 ## Related projects
 
 - Beta++ by JcbbcEnjoyer: Minecraft Beta 1.7.3 Client written in C++
