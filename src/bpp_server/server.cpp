@@ -782,7 +782,7 @@ void Server::Tick() {
 			    std::any_of(players.begin(), players.end(), [&](const auto& player) { return player == requester; });
 			if (connected) {
 				if (activeSampleMode == SampleMode::Health) {
-					const std::array<std::pair<TickTask, const char*>, 12> tasks = {{
+					const std::array<std::pair<TickTask, const char*>, 11> tasks = {{
 						{ TickTask::TotalTick, "Total Tick" },
 						{ TickTask::Network, "Network" },
 						{ TickTask::Autosave, "Autosave" },
