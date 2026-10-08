@@ -11,7 +11,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(ONLINE_MODE_AUTHENTICATION "Allows authentication with Mojang servers (requires libcurl)" ON)
 option(BETACRAFT_HEARTBEAT "Ping the Betacraft server list (requires libcurl and nlohmann_json)" OFF)
 option(CRASH_LOGGING "Lets the server catch crashes and create crash reports" ON)
-option(DISCORD_INTEGRATION "Enable Discord bot integration via D++ (server only)" OFF)
 option(EXPERIMENTAL "Experimental or work-in-progress features/changes" OFF)
 set(GENERATION_PRECISION "DOUBLE" CACHE STRING "Reduces perlin and simplex noise precision (all values other than DOUBLE are experimental and not really supported)")
 set_property(CACHE GENERATION_PRECISION PROPERTY STRINGS "DOUBLE" "FLOAT" "INT64" "INT32")
@@ -19,9 +18,6 @@ set_property(CACHE GENERATION_PRECISION PROPERTY STRINGS "DOUBLE" "FLOAT" "INT64
 option(BUILD_SERVER "Build as server" ON)
 option(SDL_VENDORED "Use vendored (locally built) SDL library" ON)
 
-if(DISCORD_INTEGRATION)
-    list(APPEND VCPKG_MANIFEST_FEATURES "discord")
-endif()
 if(BETACRAFT_HEARTBEAT)
     list(APPEND VCPKG_MANIFEST_FEATURES "betacraft-heartbeat")
 endif()
@@ -353,37 +349,7 @@ if(BUILD_SERVER)
         target_compile_definitions(BetrockPlusPlus PRIVATE BETACRAFT_HEARTBEAT)
         target_link_libraries(BetrockPlusPlus PRIVATE nlohmann_json::nlohmann_json)
     endif()
-
-    if (DISCORD_INTEGRATION)
-        # Prefer a preinstalled D++ (e.g. vcpkg feature "discord"); otherwise fetch it.
-        find_package(dpp CONFIG QUIET)
-        if(NOT dpp_FOUND)
-            message(STATUS "dpp package not found; fetching D++ via FetchContent (requires OpenSSL)")
-            find_package(OpenSSL REQUIRED)
-            include(FetchContent)
-            FetchContent_Declare(
-                dpp
-                GIT_REPOSITORY https://github.com/brainboxdotcc/DPP.git
-                GIT_TAG        v10.1.3
-                GIT_SHALLOW    TRUE
-            )
-            set(DPP_BUILD_TEST OFF CACHE BOOL "" FORCE)
-            FetchContent_MakeAvailable(dpp)
-        endif()
-        target_compile_definitions(BetrockPlusPlus PRIVATE DISCORD_INTEGRATION)
-        if(TARGET dpp::dpp)
-            target_link_libraries(BetrockPlusPlus PRIVATE dpp::dpp)
-        else()
-            target_link_libraries(BetrockPlusPlus PRIVATE dpp)
-        endif()
-        target_sources(BetrockPlusPlus PRIVATE
-            src/bpp_shared/helpers/discord.cpp
-        )
-    endif()
 else()
-    if (DISCORD_INTEGRATION)
-        message(WARNING "DISCORD_INTEGRATION has no effect when BUILD_SERVER is OFF; ignoring it")
-    endif()
     if (BETACRAFT_HEARTBEAT)
         message(WARNING "BETACRAFT_HEARTBEAT has no effect when BUILD_SERVER is OFF; ignoring it")
     endif()
