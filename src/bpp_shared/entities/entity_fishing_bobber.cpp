@@ -153,25 +153,25 @@ void FishingBobberEntity::Tick() {
 		} else {
 			const Int3 above{ MathHelper::FloorDouble(position.x), MathHelper::FloorDouble(position.y) + 1,
 			                  MathHelper::FloorDouble(position.z) };
-			int wait = world->weatherSystem.isRaining && world->CanBlockSeeSky(above) ? 300 : 500;
+			int wait = world->CanRainHitSpot(above) ? 300 : 500;
 			if (world->rand.NextInt(wait) == 0) {
 				catchableTicks = world->rand.NextInt(30) + 10;
 				velocity.y -= 0.2;
 			}
 		}
 
-		// scales with how much of the bobber is submerged, needs review
-		double fraction = 1.0;
+		// scales with how much of the bobber is submerged
+		double fraction = 0.0;
 		constexpr int slices = 5;
 		for (int i = 0; i < slices; ++i) {
 			double minY = collider.minY + (collider.maxY - collider.minY) * double(i) / slices;
 			double maxY = collider.minY + (collider.maxY - collider.minY) * double(i + 1) / slices;
 			if (world->IsAabbInFluidLevel({ collider.minX, minY, collider.minZ, collider.maxX, maxY, collider.maxZ },
 			                              Material::Water()))
-				fraction -= 1.0 / slices;
+				fraction += 1.0 / slices;
 		}
 
-		double waterFraction = 1.0 - fraction;
+		double waterFraction = fraction;
 		velocity.y += 0.04 * (waterFraction * 2.0 - 1.0);
 		if (waterFraction > 0.0) {
 			drag *= 0.9f;

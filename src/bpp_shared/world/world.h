@@ -144,25 +144,32 @@ public:
 	// Returns the tile entity at world position `pos`, or nullptr if none.
 	TileEntity* GetTileEntity(Int3 _pos);
 
+	// Plays the note packet to the client
 	void PlayNoteAt(Int3 _pos, int8_t _instrumentState, int8_t _pitchDirection) const {
 		if (onNotePlay)
 			onNotePlay(_pos, _instrumentState, _pitchDirection);
 	}
 
-	// Is it currently dark enough for players to sleep?
+	bool CanRainHitSpot(Int3 _pos) {
+		return CanBlockSeeSky(_pos) && weatherSystem.isRaining;
+	}
+
 	bool IsNight() const {
 		TickTime relativeTime = elapsedTicks % DAY_LENGTH;
 		return relativeTime >= NIGHT_START_TICK && relativeTime < NIGHT_END_TICK;
 	}
+
 	bool IsOpenGroundSpot(Int3 _pos) {
 		return IsBlockNormalCube(_pos.WithOffset(Direction::Value::Down)) && IsAirBlock(_pos) &&
 		       IsAirBlock(_pos.WithOffset(Direction::Value::Up));
 	}
+
 	void DoExplosion(Entity* _exploder, Vec3 _position, float _size, bool _doFire) {
 		auto result = Explosion::DoExplosion(*this, _exploder, _position, _size, _doFire);
 		if (onExplosion)
 			onExplosion(_position, _size, result, _exploder);
 	}
+
 	bool CanBlockSeeSky(const Int3 _pos) {
 		auto chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
 		if (!chunk)

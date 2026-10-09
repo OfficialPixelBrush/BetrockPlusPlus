@@ -365,6 +365,8 @@ void UseFishingRod(PlayerSession& _session, ItemStack* _stack, Entity& /*_target
 	if (!_session.entity || !_session.entity->world || !_stack || _stack->id != Items::Id::FISHING_ROD)
 		return;
 
+	constexpr double PULL_STRENGTH = 0.1;
+
 	auto player = std::static_pointer_cast<PlayerEntity>(_session.entity);
 	auto bobber = player->fishingBobber.lock();
 
@@ -379,20 +381,21 @@ void UseFishingRod(PlayerSession& _session, ItemStack* _stack, Entity& /*_target
 	int duraCost = 0;
 	if (auto hooked = bobber->hookedEntity.lock()) {
 		Vec3 delta = player->position - bobber->position;
-		double length = std::sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
+		double length = delta.Length();
 
-		hooked->velocity.x += delta.x * 0.1;
-		hooked->velocity.y += delta.y * 0.1 + length * 0.08;
-		hooked->velocity.z += delta.z * 0.1;
+		hooked->velocity.x += delta.x * PULL_STRENGTH;
+		hooked->velocity.y += delta.y * PULL_STRENGTH + MathHelper::SqrtDouble(length) * 0.08;
+		hooked->velocity.z += delta.z * PULL_STRENGTH;
 		duraCost = 3;
 	} else if (bobber->IsCatchable()) {
 		Vec3 delta = player->position - bobber->position;
-		double length = std::sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
+		double length = delta.Length();
 		auto fish = std::make_shared<ItemEntity>(bobber->position);
 
 		fish->itemStack = { Items::Id::FISH, 1, 0 };
 		fish->dim = player->dim;
-		fish->velocity = { delta.x * 0.1, delta.y * 0.1 + length * 0.08, delta.z * 0.1 };
+		fish->velocity = { delta.x * PULL_STRENGTH, delta.y * PULL_STRENGTH + MathHelper::SqrtDouble(length) * 0.08,
+			               delta.z * PULL_STRENGTH };
 		
 		player->world->entityManager.AddEntity(fish);
 		duraCost = 1;
