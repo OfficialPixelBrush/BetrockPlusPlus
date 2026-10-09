@@ -327,8 +327,6 @@ public:
 		return chunk->GetBlockLight({ _pos.x & 15, _pos.y, _pos.z & 15 });
 	}
 
-	// Must be called whenever an element is erased from `chunks` or the map is cleared.
-	// (Replacing a value in place, or inserting, is fine: the cache points at the map slot, not the chunk.)
 	void InvalidateChunkCache() {
 		lastChunkSlot = nullptr;
 	}

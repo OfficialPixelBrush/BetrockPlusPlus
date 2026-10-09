@@ -29,7 +29,7 @@ public:
 	uint8_t GetSkyLight(const Int3 _wpos) override;
 	int GetBlockLightRaw(const Int3 _wpos) override;
 
-	// Must be called whenever an element is erased from `chunks` or the map is cleared.
+	// Must be called whenever a chunk is erased
 	void InvalidateChunkCache() {
 		lastChunkSlot = nullptr;
 	}
@@ -75,7 +75,6 @@ public:
 	}
 
 private:
-	// Points INTO `chunks`; stays valid across rehash/insert/value-replace, dies only on erase/clear.
 	Int32_2 lastChunkPos = { 0, 0 };
 	std::shared_ptr<Chunk>* lastChunkSlot = nullptr;
 
