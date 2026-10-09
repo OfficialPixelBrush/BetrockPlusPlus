@@ -374,11 +374,13 @@ void RegisterPlantBehaviors() {
 	};
 	blockBehaviors[BLOCK_MUSHROOM_BROWN].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                                BlockType /*_blockId*/) -> void {
-		blockBehaviors[BLOCK_MUSHROOM_BROWN].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+		if (!CanMushroomSurviveAt(_world, _pos))
+			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_MUSHROOM_RED].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                              BlockType /*_blockId*/) -> void {
-		blockBehaviors[BLOCK_MUSHROOM_RED].onTick(_world, _pos, _world.GetMetadata(_pos), _world.rand);
+		if (!CanMushroomSurviveAt(_world, _pos))
+			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_DANDELION].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                           BlockType /*_blockId*/) -> void {
@@ -394,7 +396,8 @@ void RegisterPlantBehaviors() {
 	};
 	blockBehaviors[BLOCK_SAPLING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                         BlockType /*_blockId*/) -> void {
-		if (!CanGenericPlantSurviveAt(_world, _pos))
+		const BlockType base = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
+		if (base != BLOCK_FARMLAND && base != BLOCK_DIRT && base != BLOCK_GRASS)
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_DANDELION].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
@@ -410,16 +413,6 @@ void RegisterPlantBehaviors() {
 	blockBehaviors[BLOCK_TALLGRASS].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
 	                                            Java::Random& /*_random*/) -> void {
 		if (!CanGenericPlantSurviveAt(_world, _pos))
-			BreakAndDropBlock(_world, _pos);
-	};
-	blockBehaviors[BLOCK_MUSHROOM_BROWN].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
-	                                                 Java::Random& /*_random*/) -> void {
-		if (!CanMushroomSurviveAt(_world, _pos))
-			BreakAndDropBlock(_world, _pos);
-	};
-	blockBehaviors[BLOCK_MUSHROOM_RED].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
-	                                               Java::Random& /*_random*/) -> void {
-		if (!CanMushroomSurviveAt(_world, _pos))
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_CACTUS].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
