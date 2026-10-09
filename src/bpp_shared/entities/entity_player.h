@@ -16,7 +16,9 @@ enum SleepFailureReason : uint8_t {
 	SUCCESS
 };
 
+struct FishingBobberEntity;
 struct PlayerEntity : public MobileEntity {
+	std::weak_ptr<FishingBobberEntity> fishingBobber;
 	bool isSleeping = false;
 
 	// Position of the bed (headboard) the player is currently sleeping in.

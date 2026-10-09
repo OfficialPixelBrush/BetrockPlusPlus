@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -10,6 +11,7 @@
 #include "entities.h"
 #include "entities/entity_arrow.h"
 #include "entities/entity_egg.h"
+#include "entities/entity_fishing_bobber.h"
 #include "entities/entity_item.h"
 #include "entities/entity_mobile.h"
 #include "entities/entity_painting.h"
@@ -420,6 +422,23 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.entityId = _entityEntry.entity->id;
 		pkt.objectType = PacketData::ObjectType::FALLING_GRAVEL;
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
+		pkt.Serialize(pSession->stream);
+		break;
+	}
+	case EntityType::FISHING_BOBBER: {
+		auto* bobber = dynamic_cast<FishingBobberEntity*>(_entityEntry.entity);
+		auto owner = bobber ? bobber->owner.lock() : nullptr;
+
+		if (!owner || owner->isDead) break;
+		auto* mpOwner = dynamic_cast<EntityMPPlayer*>(owner.get());
+		if (!mpOwner || !mpOwner->session) break;
+
+		Packet::SpawnObject pkt;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.objectType = PacketData::ObjectType::FISHING_BOBBER;
+		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
+		pkt.ownerEntityId = owner->id;
 		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
 		pkt.Serialize(pSession->stream);
 		break;
