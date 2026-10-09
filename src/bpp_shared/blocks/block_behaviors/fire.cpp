@@ -83,7 +83,7 @@ static void TryCatchBlockOnFire(WorldManager& _world, Int3 _pos, int _chance, ui
 		return;
 
 	bool isTnt = thisBlock == BLOCK_TNT;
-	if (rand.NextInt(_meta + 10) < 5 && /*doWeatherCheckHere*/ true) {
+	if (rand.NextInt(_meta + 10) < 5 && !_world.CanRainHitSpot(_pos)) {
 		int randomMeta = _meta + rand.NextInt(5) / 4;
 		if (randomMeta > 15)
 			randomMeta = 15;
@@ -143,7 +143,17 @@ void RegisterFireBehaviors() {
 	                                       Java::Random& _random) -> void {
 		const bool onNetherrack = _world.GetBlockId(_pos.WithOffset(Direction::Value::Down)) == BLOCK_NETHERRACK;
 
-		// TODO: Weather
+		auto CanRainSeeAroundPosition = [&](Int3 _pos) -> bool {
+			return _world.CanRainHitSpot(_pos) || _world.CanRainHitSpot(_pos.WithOffset(Direction::Value::East)) ||
+			       _world.CanRainHitSpot(_pos.WithOffset(Direction::Value::West)) ||
+			       _world.CanRainHitSpot(_pos.WithOffset(Direction::Value::North)) ||
+			       _world.CanRainHitSpot(_pos.WithOffset(Direction::Value::South));
+		};
+
+		if (!onNetherrack && CanRainSeeAroundPosition(_pos)) {
+			_world.SetBlock(_pos, BLOCK_AIR);
+		}
+
 		const int meta = _world.GetMetadata(_pos);
 		if (meta < 15)
 			_world.SetBlock(_pos, BLOCK_FIRE, meta + _random.NextInt(3) / 2, /*KeepTE=*/false,
@@ -187,8 +197,8 @@ void RegisterFireBehaviors() {
 						continue;
 
 					int spreadChance = (chance + 40) / (meta + 30);
-					if (spreadChance > 0 && _random.NextInt(spreadDifficulty) <= spreadChance
-					    // TODO: Weather
+					if (spreadChance > 0 && _random.NextInt(spreadDifficulty) <= spreadChance &&
+					    !CanRainSeeAroundPosition({ x, y, z })
 					) {
 						int newMeta = meta + _random.NextInt(5) / 4;
 						if (newMeta > 15)
