@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -12,17 +13,21 @@
 #include "entities/entity_boat.h"
 #include "entities/entity_cow.h"
 #include "entities/entity_egg.h"
+#include "entities/entity_fishing_bobber.h"
 #include "entities/entity_item.h"
+#include "entities/entity_manager.h"
 #include "entities/entity_mobile.h"
 #include "entities/entity_pig.h"
 #include "entities/entity_player.h"
 #include "entities/entity_sheep.h"
 #include "entities/entity_snowball.h"
 #include "inventory/item_stack.h"
+#include "items/item_properties.h"
 #include "items.h"
+#include "packet/packet_utils.h"
 #include "logger.h"
 #include "raycast.h"
-
+ 
 namespace Items {
 std::unordered_map<ItemId, ToolProperties> toolProperties = {};
 std::unordered_map<ItemId, ToolBehavior> toolBehavior = {};
@@ -354,6 +359,54 @@ void UseThrowable(PlayerSession& _session, ItemStack* _stack, Entity& /*_target*
 		return;
 	}
 	_session.entity->world->entityManager.AddEntity(std::make_shared<SnowballEntity>(_session.entity));
+}
+
+void UseFishingRod(PlayerSession& _session, ItemStack* _stack, Entity& /*_target*/) {
+	if (!_session.entity || !_session.entity->world || !_stack || _stack->id != Items::Id::FISHING_ROD)
+		return;
+
+	auto player = std::static_pointer_cast<PlayerEntity>(_session.entity);
+	auto bobber = player->fishingBobber.lock();
+
+	if (!bobber || bobber->isDead) {
+		Vec3 direction = player->GetLookVector(player->rotationYaw, player->rotationPitch);
+		auto cast = std::make_shared<FishingBobberEntity>(player, direction);
+		player->fishingBobber = cast;
+		player->world->entityManager.AddEntity(cast);
+		return;
+	}
+
+	int duraCost = 0;
+	if (auto hooked = bobber->hookedEntity.lock()) {
+		Vec3 delta = player->position - bobber->position;
+		double length = std::sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
+
+		hooked->velocity.x += delta.x * 0.1;
+		hooked->velocity.y += delta.y * 0.1 + length * 0.08;
+		hooked->velocity.z += delta.z * 0.1;
+		duraCost = 3;
+	} else if (bobber->IsCatchable()) {
+		Vec3 delta = player->position - bobber->position;
+		double length = std::sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
+		auto fish = std::make_shared<ItemEntity>(bobber->position);
+
+		fish->itemStack = { Items::Id::FISH, 1, 0 };
+		fish->dim = player->dim;
+		fish->velocity = { delta.x * 0.1, delta.y * 0.1 + length * 0.08, delta.z * 0.1 };
+		
+		player->world->entityManager.AddEntity(fish);
+		duraCost = 1;
+	} else if (bobber->IsInGround()) { duraCost = 2; }
+
+	bobber->isDead = true;
+	player->fishingBobber.reset();
+
+	if (duraCost > 0) {
+		ItemStack before = *_stack;
+		DamageItem(*_stack, duraCost);
+		if (*_stack != before)
+			PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, _stack);
+	}
 }
 
 void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Direction::Value /*_face*/) {

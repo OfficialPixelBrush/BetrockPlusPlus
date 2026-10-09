@@ -223,6 +223,7 @@ void RegisterAll() {
 	itemBehavior[APPLE_GOLDEN].onUse = EatFood;
 	itemBehavior[COOKIE].onUse = EatFood;
 	itemBehavior[FISH].onUse = EatFood;
+	itemBehavior[FISHING_ROD].onUse = UseFishingRod;
 	itemBehavior[FISH_COOKED].onUse = EatFood;
 	itemBehavior[MUSHROOM_STEW].onUse = EatFood;
 
