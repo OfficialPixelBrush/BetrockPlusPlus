@@ -51,8 +51,8 @@ We provide a C ABI that allows for the creation of addons.
 This feature is still in its infancy, so don't expect it to be reliable or stable just yet.
 None the less, a few addons exist to demonstrate what's possible.
 
-- [bpa_luau](https://officialpixelbrush.github.io/bpa_luau): A luau plugin API for easier plugin development
-- [bpa_discord](https://officialpixelbrush.github.io/bpa_discord): Discord chat integration
+- [bpa_luau](https://github.com/OfficialPixelBrush/bpa_luau): A luau plugin API for easier plugin development
+- [bpa_discord](https://github.com/OfficialPixelBrush/bpa_discord): Discord chat integration
 
 For anyone curious in how to use the addon C ABI, check our [addon_api.h](./include/addon_api.h) file to see what interfaces are available.
 
