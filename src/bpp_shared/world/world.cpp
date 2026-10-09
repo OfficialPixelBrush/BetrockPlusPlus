@@ -142,14 +142,19 @@ bool WorldManager::IsAabbInFluidLevel(AABB _collider, Material _material) {
 	int minZ = MathHelper::FloorDouble(_collider.minZ);
 	int maxZ = MathHelper::FloorDouble(_collider.maxZ + 1.0);
 
-	for (int x = minX; x < maxX; x++)
-		for (int y = minY; y < maxY; y++)
-			for (int z = minZ; z < maxZ; z++) {
-				auto blockId = this->GetBlockId({ x, y, z });
+	for (int x = minX; x < maxX; x++) {
+		for (int z = minZ; z < maxZ; z++) {
+			Chunk* chunk = GetChunkRaw({x/CHUNK_WIDTH,z/CHUNK_WIDTH});
+			if (!IsChunkValid(chunk))
+				continue;
+			const int lx = x & 15;
+			const int lz = z & 15;
+			for (int y = minY; y < maxY; y++) {
+				BlockType blockId = chunk->GetBlock({ lx, y, lz });
 				if (!(Blocks::blockProperties[blockId].material == _material))
 					continue;
 
-				uint8_t meta = this->GetMetadata({ x, y, z });
+				uint8_t meta = chunk->GetMeta({ lx, y, lz });
 				double surface = double(y + 1);
 				if (meta < 8)
 					surface -= double(meta) / 8.0;
@@ -157,6 +162,8 @@ bool WorldManager::IsAabbInFluidLevel(AABB _collider, Material _material) {
 				if (surface >= _collider.minY)
 					return true;
 			}
+		}
+	}
 	return false;
 }
 
@@ -170,18 +177,26 @@ bool WorldManager::IsMaterialInAabb(AABB _collider, Material _material) {
 
 	// Check every block within the collider
 	// We are looking to see if the materials match
-	for (int x = minX; x < maxX; x++)
-		for (int y = minY; y < maxY; y++)
-			for (int z = minZ; z < maxZ; z++) {
-				auto blockId = this->GetBlockId({ x, y, z });
-				auto block = Blocks::blockProperties[blockId];
+	for (int x = minX; x < maxX; x++) {
+		for (int z = minZ; z < maxZ; z++) {
+			Chunk* chunk = GetChunkRaw({x/CHUNK_WIDTH,z/CHUNK_WIDTH});
+			if (!IsChunkValid(chunk))
+				continue;
+			const int lx = x & 15;
+			const int lz = z & 15;
+			for (int y = minY; y < maxY; y++) {
+				BlockType blockId = this->GetBlockId({ lx, y, lz });
+				const auto& block = Blocks::blockProperties[blockId];
 				if (block.material == _material) {
 					return true;
 				}
 			}
+		}
+	}
 	return false;
 }
 
+// TODO: Duplicated code, merge with IsMaterialInAabb and IsAabbInFluidLevel
 bool WorldManager::IsLiquidInAabb(AABB _collider) {
 	int minX = MathHelper::FloorDouble(_collider.minX);
 	int maxX = MathHelper::FloorDouble(_collider.maxX + 1.0);
@@ -191,15 +206,22 @@ bool WorldManager::IsLiquidInAabb(AABB _collider) {
 	int maxZ = MathHelper::FloorDouble(_collider.maxZ + 1.0);
 
 	// Check every block within the collider
-	for (int x = minX; x < maxX; x++)
-		for (int y = minY; y < maxY; y++)
-			for (int z = minZ; z < maxZ; z++) {
-				auto blockId = this->GetBlockId({ x, y, z });
-				auto block = Blocks::blockProperties[blockId];
+	for (int x = minX; x < maxX; x++) {
+		for (int z = minZ; z < maxZ; z++) {
+			Chunk* chunk = GetChunkRaw({x/CHUNK_WIDTH,z/CHUNK_WIDTH});
+			if (!IsChunkValid(chunk))
+				continue;
+			const int lx = x & 15;
+			const int lz = z & 15;
+			for (int y = minY; y < maxY; y++) {
+				BlockType blockId = this->GetBlockId({ lx, y, lz });
+				const auto& block = Blocks::blockProperties[blockId];
 				if (block.material.isLiquid) {
 					return true;
 				}
 			}
+		}
+	}
 	return false;
 }
 
@@ -225,7 +247,7 @@ bool WorldManager::HandleFluidAcceleration(AABB _collider, Material _material, E
 		for (int y = minY; y < maxY; y++)
 			for (int z = minZ; z < maxZ; z++) {
 				auto blockId = this->GetBlockId({ x, y, z });
-				auto block = Blocks::blockProperties[blockId];
+				const auto& block = Blocks::blockProperties[blockId];
 				if (block.material == _material) {
 					double fluidHeight = double(float(y + 1) -
 					                            Blocks::GetFluidPercentAir(this->GetMetadata({ x, y, z })));
