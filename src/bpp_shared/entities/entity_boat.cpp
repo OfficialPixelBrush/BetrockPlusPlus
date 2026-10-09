@@ -74,7 +74,7 @@ void BoatEntity::Tick() {
 		double sliceMinY = collider.minY + (collider.maxY - collider.minY) * double(i + 0) / double(sliceCount) - 0.125;
 		double sliceMaxY = collider.minY + (collider.maxY - collider.minY) * double(i + 1) / double(sliceCount) - 0.125;
 		AABB slice = { collider.minX, sliceMinY, collider.minZ, collider.maxX, sliceMaxY, collider.maxZ };
-		if (world->IsMaterialInAabb(slice, Material::Water()))
+		if (world->IsAabbInFluidLevel(slice, Material::Water()))
 			submersion += 1.0 / double(sliceCount);
 	}
 
