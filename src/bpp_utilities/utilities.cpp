@@ -268,6 +268,7 @@ bool convertAlphaLevel(std::string& _dir) {
 				overworldRegionManager.FlushAll();
 				sinceFlush = 0;
 				world.chunks.clear();
+				world.InvalidateChunkCache();
 			}
 		}
 		chunksProcessed++;
@@ -297,6 +298,7 @@ bool convertAlphaLevel(std::string& _dir) {
 				hellRegionManager.FlushAll();
 				sinceFlush = 0;
 				hellWorld.chunks.clear();
+				hellWorld.InvalidateChunkCache();
 			}
 		}
 		chunksProcessed++;
@@ -321,7 +323,9 @@ bool convertAlphaLevel(std::string& _dir) {
 	hellRegionManager.Release();
 
 	world.chunks.clear();
+	world.InvalidateChunkCache();
 	hellWorld.chunks.clear();
+	hellWorld.InvalidateChunkCache();
 
 	// Move the original world
 	std::string oldDir = _dir + "_old";
@@ -562,6 +566,7 @@ bool convertBetrockServerLevel(std::string& _dir) {
 				world.SaveChunks(true);
 				regionManager.FlushAll();
 				world.chunks.clear();
+				world.InvalidateChunkCache();
 			}
 		}
 	}
@@ -601,6 +606,7 @@ bool convertBetrockServerLevel(std::string& _dir) {
 				world.SaveChunks(true);
 				regionManager.FlushAll();
 				world.chunks.clear();
+				world.InvalidateChunkCache();
 			}
 		}
 	}

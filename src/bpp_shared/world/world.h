@@ -55,6 +55,8 @@ constexpr TickTime NIGHT_END_TICK = 23458;
 
 class WorldManager : public WorldAccess {
 private:
+	Int32_2 lastChunkPos = {0,0};
+	std::shared_ptr<Chunk>* lastChunkSlot = nullptr;
 	std::unordered_map<Int32_2, std::vector<std::pair<Int3, Block>>> pendingBleedWrites;
 	std::mutex genDoneMutex;
 	std::deque<std::shared_ptr<Chunk>> genDoneQueue;
@@ -325,16 +327,21 @@ public:
 		return chunk->GetBlockLight({ _pos.x & 15, _pos.y, _pos.z & 15 });
 	}
 
-	Chunk* GetChunkRaw(Int32_2 _pos) {
-		auto it = chunks.find(_pos);
-		return (it != chunks.end()) ? it->second.get() : nullptr;
+	// Must be called whenever an element is erased from `chunks` or the map is cleared.
+	// (Replacing a value in place, or inserting, is fine: the cache points at the map slot, not the chunk.)
+	void InvalidateChunkCache() {
+		lastChunkSlot = nullptr;
 	}
 
-	bool IsChunkValid(Int32_2 _pos) {
-		auto* chunk = GetChunkRaw({ _pos.x, _pos.z });
-		if (!chunk)
+	Chunk* GetChunkRaw(Int32_2 _pos) {
+		auto* slot = FindChunkSlot(_pos);
+		return slot ? slot->get() : nullptr;
+	}
+
+	bool IsChunkValid(Chunk* _chunk) {
+		if (!_chunk)
 			return false;
-		if (chunk->state.load() >= ChunkState::Generated)
+		if (_chunk->state.load() >= ChunkState::Generated)
 			return true;
 		return false;
 	}
@@ -347,7 +354,7 @@ public:
 
 		for (int cx = minCX; cx <= maxCX; cx++) {
 			for (int cz = minCZ; cz <= maxCZ; cz++) {
-				if (!IsChunkValid({ cx, cz }))
+				if (!IsChunkValid(GetChunkRaw({ cx, cz })))
 					return false;
 			}
 		}
@@ -370,9 +377,20 @@ private:
 
 	bool isHell = false; // for the nether
 
-	std::shared_ptr<Chunk> GetChunkShared(Int32_2 _pos) {
+	std::shared_ptr<Chunk>* FindChunkSlot(Int32_2 _pos) {
+		if (lastChunkSlot && _pos == lastChunkPos)
+			return lastChunkSlot;
 		auto it = chunks.find(_pos);
-		return (it != chunks.end()) ? it->second : nullptr;
+		if (it == chunks.end())
+			return nullptr;
+		lastChunkSlot = &it->second;
+		lastChunkPos = _pos;
+		return lastChunkSlot;
+	}
+
+	std::shared_ptr<Chunk> GetChunkShared(Int32_2 _pos) {
+		auto* slot = FindChunkSlot(_pos);
+		return slot ? *slot : nullptr;
 	}
 
 	// Check if a chunk can be populated
