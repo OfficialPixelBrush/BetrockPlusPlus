@@ -8,8 +8,6 @@
 #include "entity_manager.h"
 #include "entity_mobile.h"
 #include "entity_player.h"
-#include "entities/entity_mp_player.h"
-#include "player_conn/player_session.h"
 #include "items.h"
 #include "raycast.h"
 #include "world/world.h"
@@ -31,7 +29,7 @@ FishingBobberEntity::FishingBobberEntity(std::shared_ptr<PlayerEntity> _owner, V
 	position.z -= double(std::sin(yaw) * 0.16f);
 
 	RebuildCollider();
-	float length = MathHelper::SqrtDouble(_direction.x * _direction.x + _direction.y * _direction.y + _direction.z * _direction.z);
+	float length = _direction.Length();
 	if (length == 0.0f) return;
 
 	_direction.x /= length;
@@ -56,12 +54,10 @@ void FishingBobberEntity::Tick() {
 		return;
 	}
 
-	auto mpPlayer = std::dynamic_pointer_cast<EntityMPPlayer>(player);
-	auto heldStack = mpPlayer && mpPlayer->session ? mpPlayer->session->inventory.GetHeldItem() : nullptr;
+	auto heldStack = player->GetHeldItem();
 
-	// detach if player has died/left/bad held item/moved too far
-	if (player->isDead || !mpPlayer || !mpPlayer->session ||
-		!heldStack || heldStack->id != Items::Id::FISHING_ROD ||
+	// detach if player has died/bad held item/moved too far
+	if (player->isDead || !heldStack || heldStack->id != Items::Id::FISHING_ROD ||
 		player->position.DistanceSquared(position) > 1024.0) {
 
 		if (player->fishingBobber.lock().get() == this)
@@ -148,7 +144,7 @@ void FishingBobberEntity::Tick() {
 
 	position = end;
 	RebuildCollider();
-	const bool submerged = world->IsMaterialInAabb(collider, Material::Water());
+	const bool submerged = world->IsAabbInFluidLevel(collider, Material::Water());
 	float drag = 0.92f;
 
 	if (submerged) {
@@ -170,7 +166,8 @@ void FishingBobberEntity::Tick() {
 		for (int i = 0; i < slices; ++i) {
 			double minY = collider.minY + (collider.maxY - collider.minY) * double(i) / slices;
 			double maxY = collider.minY + (collider.maxY - collider.minY) * double(i + 1) / slices;
-			if (world->IsMaterialInAabb({ collider.minX, minY, collider.minZ, collider.maxX, maxY, collider.maxZ }, Material::Water()))
+			if (world->IsAabbInFluidLevel({ collider.minX, minY, collider.minZ, collider.maxX, maxY, collider.maxZ },
+			                              Material::Water()))
 				fraction -= 1.0 / slices;
 		}
 
