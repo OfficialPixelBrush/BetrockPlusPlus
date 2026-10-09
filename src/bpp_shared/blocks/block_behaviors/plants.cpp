@@ -396,7 +396,8 @@ void RegisterPlantBehaviors() {
 	};
 	blockBehaviors[BLOCK_SAPLING].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                         BlockType /*_blockId*/) -> void {
-		if (!CanGenericPlantSurviveAt(_world, _pos))
+		const BlockType base = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
+		if (base != BLOCK_FARMLAND && base != BLOCK_DIRT && base != BLOCK_GRASS)
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_DANDELION].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
