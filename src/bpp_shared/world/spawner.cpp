@@ -182,7 +182,7 @@ void EntitySpawner::BuildActiveSet(WorldManager& _world, const std::vector<Clien
 		for (int dx = -range; dx <= range; dx++) {
 			for (int dz = -range; dz <= range; dz++) {
 				Int2 chunkPos = { playerChunkPos.x + dx, playerChunkPos.z + dz };
-				auto chunk = _world.GetChunk(chunkPos);
+				auto* chunk = _world.GetChunkRaw(chunkPos);
 				if (chunk && chunk->state.load() == ChunkState::Populated)
 					chunksToSpawnIn.insert(chunkPos);
 			}

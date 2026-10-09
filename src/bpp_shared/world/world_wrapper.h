@@ -14,10 +14,12 @@
 struct ChunkPtrRegion {
 	std::shared_ptr<Chunk> chunks[3][3];
 
-	std::shared_ptr<Chunk> GetChunk(Int2 _pos) const {
+	// Returns a non-owning pointer: the region itself keeps the chunks alive, and returning a
+	// shared_ptr by value would cost an atomic inc/dec on every single block access.
+	Chunk* GetChunk(Int2 _pos) const {
 		if (_pos.x < -1 || _pos.x > 1 || _pos.z < -1 || _pos.z > 1)
 			return nullptr;
-		return chunks[_pos.x + 1][_pos.z + 1];
+		return chunks[_pos.x + 1][_pos.z + 1].get();
 	}
 };
 

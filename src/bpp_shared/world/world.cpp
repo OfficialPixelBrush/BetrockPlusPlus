@@ -277,9 +277,8 @@ std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area, Ent
 			Chunk* chunk = GetChunkRaw(cpos);
 
 			// If chunk isn't loaded, treat it as air
-			if (!IsChunkValid(cpos) || !chunk) {
+			if (!IsChunkValid(chunk))
 				continue;
-			}
 
 			// local coords inside the chunk
 			int localX = x & 15;
@@ -714,6 +713,7 @@ void WorldManager::UpdateLoadRadius(const std::vector<ClientPosition>& _players)
 			if (regionManager)
 				regionManager->DiscardChunk(it->first);
 			entityManager.PruneEmptyContainer(it->first);
+			InvalidateChunkCache();
 			it = chunks.erase(it);
 			continue;
 		}
@@ -725,6 +725,7 @@ void WorldManager::UpdateLoadRadius(const std::vector<ClientPosition>& _players)
 		}
 
 		entityManager.EraseContainer(it->first);
+		InvalidateChunkCache();
 		it = chunks.erase(it);
 	}
 }
@@ -920,7 +921,7 @@ void WorldManager::SetMeta(const Int3 _wpos, const uint8_t _metadata) {
 		return;
 	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
 	auto* chunk = GetChunkRaw(cp);
-	if (!IsChunkValid(cp))
+	if (!IsChunkValid(chunk))
 		return;
 	Int3 local{ _wpos.x & 15, _wpos.y, _wpos.z & 15 };
 	auto oldMeta = chunk->GetMeta(local);
@@ -944,7 +945,7 @@ void WorldManager::SetBlockRaw(const Int3 _wpos, const BlockType _blockType, con
 		return;
 	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
 	auto* chunk = GetChunkRaw(cp);
-	if (!IsChunkValid(cp)) {
+	if (!IsChunkValid(chunk)) {
 		// Target chunk isn't valid
 		return;
 	}
@@ -961,7 +962,7 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 		return;
 	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
 	auto* chunk = GetChunkRaw(cp);
-	if (!IsChunkValid(cp)) {
+	if (!IsChunkValid(chunk)) {
 		// Target chunk isn't ready; cache the write for replay (bounded).
 		constexpr size_t MAX_BLEED_WRITES_PER_CHUNK = 1024;
 		auto& queue = pendingBleedWrites[cp];
@@ -1137,9 +1138,9 @@ void WorldManager::FillVolume(Int3 _posA, Int3 _posB, BlockType _type, uint8_t _
 	for (int cx = mn.x >> 4; cx <= (mx.x >> 4); cx++) {
 		for (int cz = mn.z >> 4; cz <= (mx.z >> 4); cz++) {
 			const Int32_2 cp{ cx, cz };
-			if (!IsChunkValid(cp))
-				continue;
 			Chunk* chunk = GetChunkRaw(cp);
+			if (!IsChunkValid(chunk))
+				continue;
 
 			// This chunk's share of the box, chunk-local and inclusive
 			const int baseX = cx * CHUNK_WIDTH, baseZ = cz * CHUNK_WIDTH;
@@ -1262,6 +1263,7 @@ void WorldManager::InitSpawn() {
 	}
 	this->spawnPoint = { sx, 64, sz };
 	chunks.clear(); // Clear all chunks so we can start fresh from the spawn area
+	InvalidateChunkCache();
 }
 
 void WorldManager::PropagateChunkLightBorders(Int32_2 _cpos) {
