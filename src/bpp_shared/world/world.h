@@ -120,6 +120,7 @@ public:
 	void InitSpawn();
 	bool HandleFluidAcceleration(AABB _collider, Material _material, Entity& _entity);
 	bool IsMaterialInAabb(AABB _collider, Material _material);
+	bool IsAabbInFluidLevel(AABB _collider, Material _material);
 	void UpdateLoadRadius(const std::vector<ClientPosition>& _players);
 	void PumpPipeline(const std::vector<ClientPosition>& _players);
 	void PopulateReady(int _maxPopulates = 16);

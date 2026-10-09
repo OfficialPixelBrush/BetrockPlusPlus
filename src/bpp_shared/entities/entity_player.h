@@ -42,9 +42,15 @@ struct PlayerEntity : public MobileEntity {
 	virtual void OnDismountEntity() override;
 	virtual SleepFailureReason TrySleep(Int3 _pos);
 	virtual void WakeUp(bool _confirmSpawn = true);
+	
 	float GetEyeHeight() override {
 		return 1.62f;
 	}
+	
+	float GetRidingYOffset() override {
+		return yOffset - 0.5f;
+	}
+
 	bool IsMovementBlocked() override {
 		return health <= 0 || isSleeping;
 	}

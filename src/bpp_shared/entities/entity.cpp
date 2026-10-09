@@ -217,7 +217,7 @@ void Entity::TickPassengerEntity() {
 
 	Vec3 seatOffset = lockVehicle->GetRiderSeatOffset();
 	Vec3 newPos = { lockVehicle->position.x + seatOffset.x,
-		            lockVehicle->position.y + lockVehicle->GetMountOffset() + this->yOffset,
+		            lockVehicle->position.y + lockVehicle->GetMountOffset() + this->GetRidingYOffset(),
 		            lockVehicle->position.z + seatOffset.z };
 
 	// Look direction smoothing
@@ -301,14 +301,13 @@ void Entity::ApplyInput(float _acceleration) {
 void Entity::Move(Vec3& _velocity) {
 	ySize *= 0.4f;
 
+	bool clearMotionAfterMove = false;
 	if (inWeb) {
 		inWeb = false;
 		_velocity.x *= COBWEB_HORIZONTAL_DRAG;
 		_velocity.y *= COBWEB_VERTICAL_DRAG;
 		_velocity.z *= COBWEB_HORIZONTAL_DRAG;
-		_velocity.x = 0.0;
-		_velocity.y = 0.0;
-		_velocity.z = 0.0;
+		clearMotionAfterMove = true;
 	}
 
 	Vec3 original = _velocity;
@@ -434,6 +433,9 @@ void Entity::Move(Vec3& _velocity) {
 		_velocity.y = 0.0;
 	if (original.z != _velocity.z)
 		_velocity.z = 0.0;
+
+	if (clearMotionAfterMove)
+		velocity = {};
 
 	UpdateFallState(_velocity.y);
 
