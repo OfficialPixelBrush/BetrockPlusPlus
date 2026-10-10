@@ -34,7 +34,7 @@ if(NOT BUILD_SERVER)
     endif()
 endif()
 
-project(Betrock++ VERSION 0.2.5)
+project(Betrock++ VERSION 0.2.6)
 
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
