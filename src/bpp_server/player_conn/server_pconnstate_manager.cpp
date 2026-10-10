@@ -259,8 +259,11 @@ void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std
 	kick.Serialize(_session.stream);
 	_session.stream.FlushWriteBuffer();
 	_session.stream.SetConnected(false);
-	if (_doSave)
+	if (_doSave) {
+		if (_session.entity)
+			_session.entity->UnmountEntity();
 		_server.SavePlayer(_session.username);
+	}
 	GlobalLogger().info << "Player " << _session.username << " disconnected: " << _reason << "\n";
 }
 
