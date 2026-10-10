@@ -59,7 +59,7 @@ void EntityManager::RemoveEntity(EntityId _id) {
 	entity->entityManager = nullptr;
 
 	// Mark the chunk we died in as dirty
-	if (auto chunk = world->GetChunk({ entity->bucketPos.x, entity->bucketPos.y }))
+	if (auto chunk = world->GetChunkRaw({ entity->bucketPos.x, entity->bucketPos.y }))
 		chunk->isModified = true;
 
 	// Set as dead for cleanup
@@ -118,7 +118,7 @@ void EntityManager::TickEntityAndPassenger(const std::shared_ptr<Entity>& _entit
 	if (newBucketPos != _entity->bucketPos) {
 		Int2 oldCpos{ _entity->bucketPos.x, _entity->bucketPos.y };
 		// Remove from the old bucket and mark the old chunk as modified
-		if (auto chunk = world->GetChunk(oldCpos))
+		if (auto chunk = world->GetChunkRaw(oldCpos))
 			chunk->isModified = true;
 		auto& oldContainer = entityContainers[oldCpos];
 		auto& b = oldContainer.buckets[_entity->bucketPos.z];

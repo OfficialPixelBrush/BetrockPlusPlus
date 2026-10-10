@@ -14,10 +14,10 @@
 struct ChunkPtrRegion {
 	std::shared_ptr<Chunk> chunks[3][3];
 
-	std::shared_ptr<Chunk> GetChunk(Int2 _pos) const {
+	Chunk* GetChunk(Int2 _pos) const {
 		if (_pos.x < -1 || _pos.x > 1 || _pos.z < -1 || _pos.z > 1)
 			return nullptr;
-		return chunks[_pos.x + 1][_pos.z + 1];
+		return chunks[_pos.x + 1][_pos.z + 1].get();
 	}
 };
 

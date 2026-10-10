@@ -29,14 +29,19 @@ public:
 	uint8_t GetSkyLight(const Int3 _wpos) override;
 	int GetBlockLightRaw(const Int3 _wpos) override;
 
+	// Must be called whenever a chunk is erased
+	void InvalidateChunkCache() {
+		lastChunkSlot = nullptr;
+	}
+
 	std::shared_ptr<Chunk> GetChunkShared(Int2 _pos) {
-		auto it = chunks.find(_pos);
-		return (it != chunks.end()) ? it->second : nullptr;
+		auto* slot = FindChunkSlot(_pos);
+		return slot ? *slot : nullptr;
 	}
 
 	Chunk* GetChunkRaw(Int32_2 _pos) {
-		auto it = chunks.find(_pos);
-		return (it != chunks.end()) ? it->second.get() : nullptr;
+		auto* slot = FindChunkSlot(_pos);
+		return slot ? slot->get() : nullptr;
 	}
 
 	bool IsChunkValid(Int32_2 _pos) {
@@ -67,5 +72,20 @@ public:
 
 	Int32_2 BlockToChunkPos(Int32_2 _blockPos) {
 		return { _blockPos.x >> 4, _blockPos.z >> 4 };
+	}
+
+private:
+	Int32_2 lastChunkPos = { 0, 0 };
+	std::shared_ptr<Chunk>* lastChunkSlot = nullptr;
+
+	std::shared_ptr<Chunk>* FindChunkSlot(Int32_2 _pos) {
+		if (lastChunkSlot && _pos == lastChunkPos)
+			return lastChunkSlot;
+		auto it = chunks.find(_pos);
+		if (it == chunks.end())
+			return nullptr;
+		lastChunkSlot = &it->second;
+		lastChunkPos = _pos;
+		return lastChunkSlot;
 	}
 };
