@@ -21,8 +21,6 @@
 #include "internal.h"
 #include "items/item_properties.h"
 #include "logger.h"
-#include "numeric_structs.h"
-#include "packet_data.h"
 #include "managers/rail_manager.h"
 #include "managers/redstone_manager.h"
 #include "managers/tick_scheduler.h"
@@ -126,7 +124,6 @@ void RegisterRailBehaviors() {
 			BreakAndDropBlock(_world, _pos);
 			return;
 		}
-		RailManager::RefreshRail(_world, _pos, BLOCK_RAIL_POWERED, /*_forceWrite=*/false);
 		RailManager::UpdateRailPower(_world, _pos, BLOCK_RAIL_POWERED);
 	};
 	blockBehaviors[BLOCK_RAIL_POWERED].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {

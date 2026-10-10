@@ -13,6 +13,7 @@
 #include "entities/entity_egg.h"
 #include "entities/entity_fishing_bobber.h"
 #include "entities/entity_item.h"
+#include "entities/entity_minecart.h"
 #include "entities/entity_mobile.h"
 #include "entities/entity_painting.h"
 #include "entities/entity_snowball.h"
@@ -383,7 +384,9 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 	case EntityType::MINECART: {
 		Packet::SpawnObject pkt;
 		pkt.entityId = _entityEntry.entity->id;
-		pkt.objectType = PacketData::ObjectType::MINECART;
+		// vanilla: object type is 10 + minecartType (10 = minecart, 11 = chest, 12 = furnace)
+		auto cartType = static_cast<MinecartEntity*>(_entityEntry.entity)->cartType;
+		pkt.objectType = PacketData::ObjectType(int(PacketData::ObjectType::MINECART) + int(cartType));
 		pkt.qPosition = QuantizePosition(_entityEntry.entity->position);
 		pkt.qVelocity = QuantizeVelocity(_entityEntry.entity->velocity);
 		pkt.Serialize(pSession->stream);
@@ -430,9 +433,11 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		auto* bobber = dynamic_cast<FishingBobberEntity*>(_entityEntry.entity);
 		auto owner = bobber ? bobber->owner.lock() : nullptr;
 
-		if (!owner || owner->isDead) break;
+		if (!owner || owner->isDead)
+			break;
 		auto* mpOwner = dynamic_cast<EntityMPPlayer*>(owner.get());
-		if (!mpOwner || !mpOwner->session) break;
+		if (!mpOwner || !mpOwner->session)
+			break;
 
 		Packet::SpawnObject pkt;
 		pkt.entityId = _entityEntry.entity->id;
@@ -760,7 +765,9 @@ void EntityTracker::Update(TrackedEntry& _trackedEntry) {
 			_trackedEntry.lastEncodedYaw = qYaw;
 			_trackedEntry.lastEncodedPitch = qPitch;
 		} else {
-			const bool needsRelMove = std::abs(dx) > MINIMUM_POSITION_DELTA || std::abs(dy) > MINIMUM_POSITION_DELTA ||
+			// Vehicles always get a position packet, even when they haven't moved
+			const bool needsRelMove = _trackedEntry.profile.alwaysSendPosition ||
+			                          std::abs(dx) > MINIMUM_POSITION_DELTA || std::abs(dy) > MINIMUM_POSITION_DELTA ||
 			                          std::abs(dz) > MINIMUM_POSITION_DELTA;
 			// Only apply rotation threshold if tracked entity profile allows it
 			const auto rotationThreshold = _trackedEntry.profile.applyRotationThreshold ? MINIMUM_ROTATION_DELTA : 0;

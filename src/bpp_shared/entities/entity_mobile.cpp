@@ -257,9 +257,14 @@ void MobileEntity::ResolveEntityPushes() {
 	auto collidingEntities = world->entityManager.GetEntitiesWithinAabbExcluding(collider.Expand(0.2, 0.0, 0.2), id);
 
 	for (const auto& entity : collidingEntities) {
-		if (entity->CanBePushed()) {
-			this->ResolveEntityCollision(*entity);
-		}
+		if (!entity->CanBePushed())
+			continue;
+
+		// This is what lets minecarts pick up mobs and give them a quarter push
+		if (auto* mobile = dynamic_cast<MobileEntity*>(entity))
+			mobile->ResolveEntityCollision(*this);
+		else
+			this->ResolveEntityCollision(*entity); // Generic push is symmetric
 	}
 }
 

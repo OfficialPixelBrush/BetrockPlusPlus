@@ -16,18 +16,20 @@
 #include "entities/entity_fishing_bobber.h"
 #include "entities/entity_item.h"
 #include "entities/entity_manager.h"
+#include "entities/entity_minecart.h"
 #include "entities/entity_mobile.h"
 #include "entities/entity_pig.h"
 #include "entities/entity_player.h"
 #include "entities/entity_sheep.h"
 #include "entities/entity_snowball.h"
 #include "inventory/item_stack.h"
-#include "items/item_properties.h"
 #include "items.h"
-#include "packet/packet_utils.h"
+#include "items/item_properties.h"
 #include "logger.h"
+#include "packet/packet_utils.h"
 #include "raycast.h"
- 
+#include "world/managers/rail_manager.h"
+
 namespace Items {
 std::unordered_map<ItemId, ToolProperties> toolProperties = {};
 std::unordered_map<ItemId, ToolBehavior> toolBehavior = {};
@@ -396,10 +398,12 @@ void UseFishingRod(PlayerSession& _session, ItemStack* _stack, Entity& /*_target
 		fish->dim = player->dim;
 		fish->velocity = { delta.x * PULL_STRENGTH, delta.y * PULL_STRENGTH + MathHelper::SqrtDouble(length) * 0.08,
 			               delta.z * PULL_STRENGTH };
-		
+
 		player->world->entityManager.AddEntity(fish);
 		duraCost = 1;
-	} else if (bobber->IsInGround()) { duraCost = 2; }
+	} else if (bobber->IsInGround()) {
+		duraCost = 2;
+	}
 
 	bobber->isDead = true;
 	player->fishingBobber.reset();
@@ -438,6 +442,25 @@ void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _us
 	boat.Teleport(
 	    { result.blockPosition.x + 0.5f, result.blockPosition.y + 1.0f + boat.yOffset, result.blockPosition.z + 0.5f });
 	_world.entityManager.AddEntity(std::make_shared<BoatEntity>(boat));
+	_stack->DecrementCount(1);
+}
+
+void UseMinecart(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/, Direction::Value /*_face*/) {
+	if (!RailManager::IsRail(_world.GetBlockId(_pos)))
+		return;
+
+	auto cart = std::make_shared<MinecartEntity>();
+	if (_stack->id == Items::Id::MINECART_CHEST)
+		cart->cartType = MinecartType::Chest;
+	else if (_stack->id == Items::Id::MINECART_FURNACE)
+		cart->cartType = MinecartType::Furnace;
+
+	Vec3 spawnPos = { double(float(_pos.x) + 0.5f), double(float(_pos.y) + 0.5f) + double(cart->yOffset),
+		              double(float(_pos.z) + 0.5f) };
+	cart->Teleport(spawnPos);
+	cart->prevPosition = { spawnPos.x, double(float(_pos.y) + 0.5f), spawnPos.z }; // vanilla prevPos skips yOffset
+	_world.entityManager.AddEntity(cart);
+
 	_stack->DecrementCount(1);
 }
 

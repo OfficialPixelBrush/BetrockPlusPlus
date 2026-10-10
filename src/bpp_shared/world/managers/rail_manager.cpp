@@ -233,91 +233,128 @@ bool RailManager::IsRailPowered(WorldManager& _world, Int3 _pos) {
 	return false;
 }
 
-static bool CanPoweredRailContinuePower(WorldManager& _world, Int3 _pos, Int3 _from, int8_t& _distance) {
-	// I love recursion
-	if (_distance >= 8)
+static bool IsRailDirectlyPowered(WorldManager& _world, Int3 _pos) {
+	return RedstoneManager::IsPositionPowered(_world, _pos) ||
+	       RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up));
+}
+
+// Axis a rail runs along; 0 = along Z, 1 = along X
+enum : int {
+	AXIS_Z = 0,
+	AXIS_X = 1
+};
+
+static bool SearchPoweredLine(WorldManager& _world, Int3 _pos, uint8_t _meta, bool _forward, int _depth);
+
+static bool IsFeedingRail(WorldManager& _world, Int3 _pos, bool _forward, int _depth, int _axis) {
+	if (_world.GetBlockId(_pos) != BLOCK_RAIL_POWERED)
 		return false;
 
-	_distance++;
+	uint8_t meta = _world.GetMetadata(_pos);
+	int shape = meta & 7;
 
-	if (RedstoneManager::IsPositionPowered(_world, _pos)) {
-		// We are directly powered so return here
+	// Must run along the same axis as us (vanilla doesn't care whether the track actually connects)
+	if (_axis == AXIS_X && (shape == 0 || shape == 4 || shape == 5))
+		return false;
+	if (_axis == AXIS_Z && (shape == 1 || shape == 2 || shape == 3))
+		return false;
+
+	// Only rails that are currently on can pass power along
+	if ((meta & 8) == 0)
+		return false;
+
+	if (IsRailDirectlyPowered(_world, _pos))
 		return true;
-	}
 
-	auto connections = RailManager::GetImpliedConnections(
-	    RailManager::GetRailShape(_world.GetMetadata(_pos), BLOCK_RAIL_POWERED));
-	for (auto& connection : connections) {
-		if (!RailManager::IsActuallyConnected(_world, _pos, connection))
-			continue;
+	// Keep walking in the SAME direction, so the search can never loop back on itself
+	return SearchPoweredLine(_world, _pos, meta, _forward, _depth + 1);
+}
 
-		Int3 neighborPos = RailManager::FindRailConnection(_world, _pos, connection);
-		if (neighborPos == _pos || neighborPos == _from)
-			continue;
+// Step one block along our rail in one direction and look for a feeding rail.
+// Reaches up to 8 rails away from the rail being updated.
+static bool SearchPoweredLine(WorldManager& _world, Int3 _pos, uint8_t _meta, bool _forward, int _depth) {
+	if (_depth >= 8)
+		return false;
 
-		if (!RailManager::IsRailPowered(_world, neighborPos))
-			continue;
+	int axis = _meta & 7;
+	bool alsoCheckBelow = true; // flat rails and the low end of slopes also look one block down
 
-		if (CanPoweredRailContinuePower(_world, neighborPos, _pos, _distance)) {
-			// If this neighbor is directly powered then great! Return here
-			return true;
+	switch (_meta & 7) {
+	case 0: // flat, along Z
+		_pos.z += _forward ? 1 : -1;
+		break;
+	case 1: // flat, along X
+		_pos.x += _forward ? -1 : 1;
+		break;
+	case 2: // rises toward +X
+		if (_forward) {
+			_pos.x--;
+		} else {
+			_pos.x++;
+			_pos.y++;
+			alsoCheckBelow = false;
 		}
+		axis = AXIS_X;
+		break;
+	case 3: // rises toward -X
+		if (_forward) {
+			_pos.x--;
+			_pos.y++;
+			alsoCheckBelow = false;
+		} else {
+			_pos.x++;
+		}
+		axis = AXIS_X;
+		break;
+	case 4: // rises toward -Z
+		if (_forward) {
+			_pos.z++;
+		} else {
+			_pos.z--;
+			_pos.y++;
+			alsoCheckBelow = false;
+		}
+		axis = AXIS_Z;
+		break;
+	case 5: // rises toward +Z
+		if (_forward) {
+			_pos.z++;
+			_pos.y++;
+			alsoCheckBelow = false;
+		} else {
+			_pos.z--;
+		}
+		axis = AXIS_Z;
+		break;
+	default:
+		// Not a valid powered rail shape
+		return false;
 	}
 
-	// We couldn't find any power within 8 blocks :(
-	return false;
+	if (IsFeedingRail(_world, _pos, _forward, _depth, axis))
+		return true;
+	return alsoCheckBelow && IsFeedingRail(_world, _pos.WithOffset(Direction::Value::Down), _forward, _depth, axis);
 }
 
 void RailManager::UpdateRailPower(WorldManager& _world, Int3 _pos, BlockType _block) {
 	if (_block != BLOCK_RAIL_POWERED)
 		return;
 
-	// Check if we are powered directly
-	auto meta = _world.GetMetadata(_pos);
-	bool currentlyPowered = (meta & 0x8) != 0;
-	bool shouldBePowered = RedstoneManager::IsPositionPowered(_world, _pos);
+	uint8_t meta = _world.GetMetadata(_pos);
+	uint8_t shape = meta & 7;
 
-	// Check our neighbor rails
-	if (!shouldBePowered) {
-		auto connections = GetImpliedConnections(GetRailShape(_world.GetMetadata(_pos), _block));
-		for (auto& connection : connections) {
-			if (!IsActuallyConnected(_world, _pos, connection))
-				continue;
+	bool shouldBePowered = IsRailDirectlyPowered(_world, _pos) || SearchPoweredLine(_world, _pos, meta, true, 0) ||
+	                       SearchPoweredLine(_world, _pos, meta, false, 0);
+	bool currentlyPowered = (meta & 8) != 0;
+	if (shouldBePowered == currentlyPowered)
+		return;
 
-			Int3 neighborPos = FindRailConnection(_world, _pos, connection);
-			if (neighborPos == _pos)
-				continue;
-			if (!IsRailPowered(_world, neighborPos))
-				continue;
+	// SetMeta notifies our neighbours, which is what makes the next rail in the line re-check itself
+	_world.SetMeta(_pos, shouldBePowered ? uint8_t(shape | 8) : shape);
 
-			if (!RedstoneManager::IsPositionPowered(_world, neighborPos)) {
-				// If the neighbor is powered but not by redstone,
-				// That means its apart of a longer chain of powered rails
-				// So we look up to 8 rails away for a proper source of power
-				int8_t distance = 0;
-				if (CanPoweredRailContinuePower(_world, neighborPos, _pos, distance)) {
-					shouldBePowered = true;
-				}
-				continue;
-			}
-
-			shouldBePowered = true;
-			if (shouldBePowered)
-				break;
-		}
-	}
-
-	// Update our power state
-	if (shouldBePowered != currentlyPowered) {
-		uint8_t newMeta = shouldBePowered ? (meta | 0x8) : (meta & ~0x8);
-		_world.SetMeta(_pos, newMeta);
-		_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Direction::Value::Down), BLOCK_RAIL_POWERED);
-		auto shape = GetRailShape(newMeta, _block);
-		if (shape == Blocks::RailShape::AscendingEast || shape == Blocks::RailShape::AscendingWest ||
-		    shape == Blocks::RailShape::AscendingNorth || shape == Blocks::RailShape::AscendingSouth) {
-			_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Direction::Value::Up), BLOCK_RAIL_POWERED);
-		}
-	}
+	_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Direction::Value::Down), BLOCK_RAIL_POWERED);
+	if (shape >= 2 && shape <= 5)
+		_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Direction::Value::Up), BLOCK_RAIL_POWERED);
 }
 
 static uint8_t EncodeMeta(WorldManager& _world, Int3 _pos, BlockType _block, Blocks::RailShape _shape) {

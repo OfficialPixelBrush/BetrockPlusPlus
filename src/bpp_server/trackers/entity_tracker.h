@@ -26,6 +26,7 @@ struct TrackingProfile {
 	int updateFrequency = 0; // ticks between movement-sync packets
 	bool sendVelocity = false;
 	bool applyRotationThreshold = true;
+	bool alwaysSendPosition = false; // send a move every updateFrequency ticks even if unchanged
 };
 
 struct EquipmentProfile {
@@ -129,7 +130,7 @@ struct EntityTracker {
 			return { 64, 20, /*SendVelocity=*/true };
 		case EntityType::MINECART:
 		case EntityType::BOAT:
-			return { 128, 2, /*SendVelocity=*/true, /*Apply rotation threshold=*/false };
+			return { 128, 2, /*SendVelocity=*/true, /*Apply rotation threshold=*/false, /*Always send position=*/true };
 		case EntityType::SQUID:
 			return { 128, 3, /*SendVelocity=*/true };
 		case EntityType::CHICKEN:
