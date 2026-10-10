@@ -10,6 +10,15 @@ In this category go some commonly asked questions. These won't cover questions r
 
 Whenever we get to it. There's no set timeline on this yet. As it stands its not a priority until the Server is feature-complete.
 
+### Why does this crafting recipe not work?
+
+There are two options.
+
+1. We haven't implemented the recipe yet (VERY unlikely at this point)
+2. You're running a modified client that changes the crafting recipe
+
+#2 is the most common reason, as the client tends to (visually) prioritize what it thinks is right, even if the server disagrees.
+
 ### Support for older Operating Systems (e.g. WinXP or 9x)
 
 While this isn't impossible, these older OS' lack features we rely on at a fundamental level, such as sockets. It'd require a very extensive rewrite, or at least one that'd force us to use an older C++ version, which would just make the codebase a lot more painful to work with.
