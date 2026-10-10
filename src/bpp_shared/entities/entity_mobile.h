@@ -22,10 +22,6 @@ public:
 
 	int64_t age = 0;
 
-	void ResolveEntityCollision(Entity& _other);
-	void TickPhysics();
-	void ResolveEntityPushes();
-
 	MobileEntity();
 
 	int health = 20;
@@ -47,6 +43,9 @@ public:
 	int nextStepDistance = 1;
 	bool canTriggerWalking = true;
 
+	virtual void ResolveEntityCollision(Entity& _other);
+	virtual void TickPhysics();
+	virtual void ResolveEntityPushes();
 	virtual void Tick() override;
 	virtual void OnDeath(Entity* _killer);
 	virtual void SetGoal(std::optional<Int3> _goal);
@@ -82,7 +81,7 @@ public:
 	bool CanBePushed() override {
 		return true;
 	}
-	const int GetHeartsHealth() {
+	int GetHeartsHealth() const {
 		return this->health;
 	}
 	bool EntityAlive() {

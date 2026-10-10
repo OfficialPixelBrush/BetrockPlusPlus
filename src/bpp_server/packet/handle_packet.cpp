@@ -680,6 +680,10 @@ void InteractWithEntity(Packet::InteractWithEntity& _pkt, PlayerSession& _sessio
 	} else {
 		if (behavior.onEntityUse)
 			behavior.onEntityUse(_world, *entity, heldItem);
+		else {
+			PlayerEntity* playerPtr = dynamic_cast<PlayerEntity*>(sourceEntity.get());
+			entity->OnPlayerInteract(playerPtr);
+		}
 	}
 }
 

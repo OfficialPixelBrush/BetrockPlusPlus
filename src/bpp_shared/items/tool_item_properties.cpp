@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  *
@@ -28,6 +27,9 @@ void RegisterAll() {
 	itemBehavior[Items::Id::BUCKET_LAVA] = ItemBehavior{ .onBlockUse = UseLavaBucket };
 	itemBehavior[Items::Id::BUCKET] = ItemBehavior{ .onBlockUse = UseBucket };
 	itemBehavior[Items::Id::BOAT] = ItemBehavior{ .onBlockUse = UseBoat };
+	itemBehavior[Items::Id::MINECART] = ItemBehavior{ .onBlockUse = UseMinecart };
+	itemBehavior[Items::Id::MINECART_CHEST] = ItemBehavior{ .onBlockUse = UseMinecart };
+	itemBehavior[Items::Id::MINECART_FURNACE] = ItemBehavior{ .onBlockUse = UseMinecart };
 	itemBehavior[Items::Id::BOW] = ItemBehavior{ .onUse = UseBow };
 	itemBehavior[Items::Id::EGG] = ItemBehavior{ .onUse = UseThrowable };
 	itemBehavior[Items::Id::SNOWBALL] = ItemBehavior{ .onUse = UseThrowable };
