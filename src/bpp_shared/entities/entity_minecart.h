@@ -52,11 +52,6 @@ struct MinecartEntity : public MobileEntity {
 		return -0.3f;
 	}
 
-	Vec3 GetRiderSeatOffset() override {
-		double yawRad = double(rotationYaw) * (JavaMath::PI / 180.0);
-		return { std::cos(yawRad) * 0.4, 0.0, std::sin(yawRad) * 0.4 };
-	}
-
 	bool AttackEntityFrom(Entity* _entity, int _damage) override;
 	void Tick() override;
 	void OnPlayerInteract(PlayerEntity* _entity) override;
