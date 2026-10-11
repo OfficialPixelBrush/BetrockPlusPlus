@@ -7,6 +7,8 @@
 #pragma once
 #include "entities/entity.h"
 
+// Responsible for handling portal placement validation and creation
+
 struct WorldManager;
 namespace Teleporter {
 void PlaceAtValidTransferSpot(WorldManager& _world, Entity& _entity);

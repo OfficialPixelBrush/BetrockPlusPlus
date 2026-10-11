@@ -6,6 +6,7 @@
 */
 
 #include "world/world.h"
+#include "constants.h"
 #include <algorithm>
 
 namespace Teleporter {
@@ -17,6 +18,8 @@ bool PlaceInExistingPortal(WorldManager& _world, Entity& _entity);
 bool CreatePortal(WorldManager& _world, Entity& _entity);
 
 namespace {
+// TODO: Turn facing into an Enum, so we can avoid this sorta stuff, especially because a lot of parts of the code,
+// especially redstone manager have their own unique ways of doing this themselves, which is stupid.
 Int2 FacingToAxis(int _facing) {
 	int ax = _facing % 2;
 	int az = 1 - ax;
@@ -43,16 +46,18 @@ bool HasRoomForPortal(WorldManager& _world, Int3 _base, Int2 _axis, int _depth) 
 
 bool FindPortalSite(WorldManager& _world, const Vec3& _origin, int _startFacing, int _facingCount, int _depth,
                     Int3& _bestPos, int& _bestFacing) {
-	auto fd = MathHelper::FloorDouble;
-	Int2 center = { fd(_origin.x), fd(_origin.z) };
+	const Int2 center = {
+		MathHelper::FloorDouble(_origin.x),
+		MathHelper::FloorDouble(_origin.z)
+	};
 	double closest = -1.0;
 
 	for (int x = center.x - NEW_PORTAL_SEARCH_RADIUS; x <= center.x + NEW_PORTAL_SEARCH_RADIUS; x++) {
-		double dx = x + 0.5 - _origin.x;
+		const double dx = x + 0.5 - _origin.x;
 		for (int z = center.z - NEW_PORTAL_SEARCH_RADIUS; z <= center.z + NEW_PORTAL_SEARCH_RADIUS; z++) {
-			double dz = z + 0.5 - _origin.z;
+			const double dz = z + 0.5 - _origin.z;
 
-			for (int y = 127; y >= 0; y--) {
+			for (int y = CHUNK_HEIGHT - 1; y >= 0; y--) {
 				if (!_world.IsAirBlock({ x, y, z }))
 					continue;
 
@@ -66,8 +71,8 @@ bool FindPortalSite(WorldManager& _world, const Vec3& _origin, int _startFacing,
 					if (!HasRoomForPortal(_world, { x, y, z }, FacingToAxis(facing), _depth))
 						break;
 
-					double dy = y + 0.5 - _origin.y;
-					double distSq = dx * dx + dy * dy + dz * dz;
+					const double dy = y + 0.5 - _origin.y;
+					const double distSq = dx * dx + dy * dy + dz * dz;
 					if (closest < 0.0 || distSq < closest) {
 						closest = distSq;
 						_bestPos = { x, y, z };
@@ -91,36 +96,36 @@ void PlaceAtValidTransferSpot(WorldManager& _world, Entity& _entity) {
 
 bool PlaceInExistingPortal(WorldManager& _world, Entity& _entity) {
 	const Vec3& pos = _entity.position;
-	int ex = MathHelper::FloorDouble(pos.x);
-	int ez = MathHelper::FloorDouble(pos.z);
-	int minX = ex - EXISTING_PORTAL_SEARCH_RADIUS, maxX = ex + EXISTING_PORTAL_SEARCH_RADIUS;
-	int minZ = ez - EXISTING_PORTAL_SEARCH_RADIUS, maxZ = ez + EXISTING_PORTAL_SEARCH_RADIUS;
+	const int ex = MathHelper::FloorDouble(pos.x);
+	const int ez = MathHelper::FloorDouble(pos.z);
+	const int minX = ex - EXISTING_PORTAL_SEARCH_RADIUS, maxX = ex + EXISTING_PORTAL_SEARCH_RADIUS;
+	const int minZ = ez - EXISTING_PORTAL_SEARCH_RADIUS, maxZ = ez + EXISTING_PORTAL_SEARCH_RADIUS;
 
 	double closest = -1.0;
 	Int3 portalPos = {};
 
-	for (int cx = minX >> 4; cx <= maxX >> 4; cx++) {
-		for (int cz = minZ >> 4; cz <= maxZ >> 4; cz++) {
+	for (int cx = minX / CHUNK_WIDTH; cx <= maxX / CHUNK_WIDTH; cx++) {
+		for (int cz = minZ / CHUNK_WIDTH; cz <= maxZ  / CHUNK_WIDTH; cz++) {
 			Chunk* chunk = _world.GetChunkRaw({ cx, cz });
 			if (!_world.IsChunkValid(chunk))
 				continue;
 
 			// Clip the search box to this chunk
-			int x0 = std::max(minX, cx * 16), x1 = std::min(maxX, cx * 16 + 15);
-			int z0 = std::max(minZ, cz * 16), z1 = std::min(maxZ, cz * 16 + 15);
+			const int x0 = std::max(minX, cx * CHUNK_WIDTH), x1 = std::min(maxX, cx * CHUNK_WIDTH + 15);
+			const int z0 = std::max(minZ, cz * CHUNK_WIDTH), z1 = std::min(maxZ, cz * CHUNK_WIDTH + 15);
 
 			for (int x = x0; x <= x1; x++) {
 				double dx = x + 0.5 - pos.x;
 				for (int z = z0; z <= z1; z++) {
 					double dz = z + 0.5 - pos.z;
-					for (int y = 127; y >= 0; y--) {
+					for (int y = CHUNK_HEIGHT - 1; y >= 0; y--) {
 						if (chunk->GetBlock({ x & 15, y, z & 15 }) != BLOCK_NETHER_PORTAL)
 							continue;
 						while (y > 0 && chunk->GetBlock({ x & 15, y - 1, z & 15 }) == BLOCK_NETHER_PORTAL)
 							y--;
 
-						double dy = y + 0.5 - pos.y;
-						double distSq = dx * dx + dy * dy + dz * dz;
+						const double dy = y + 0.5 - pos.y;
+						const double distSq = dx * dx + dy * dy + dz * dz;
 
 						bool better = closest < 0.0 || distSq < closest ||
 						              (distSq == closest &&
@@ -142,9 +147,9 @@ bool PlaceInExistingPortal(WorldManager& _world, Entity& _entity) {
 		return false;
 
 	// TP our entity to the center of the portal
-	Direction::Value neighbors[4] = { Direction::Value::West, Direction::Value::East, Direction::Value::North,
+	const Direction::Value neighbors[4] = { Direction::Value::West, Direction::Value::East, Direction::Value::North,
 		                              Direction::Value::South };
-	double offsets[4][2] = { { -0.5, 0.0 }, { 0.5, 0.0 }, { 0.0, -0.5 }, { 0.0, 0.5 } };
+	const double offsets[4][2] = { { -0.5, 0.0 }, { 0.5, 0.0 }, { 0.0, -0.5 }, { 0.0, 0.5 } };
 
 	Vec3 targetPos = portalPos + 0.5;
 	for (int i = 0; i < 4; i++) {
@@ -160,15 +165,19 @@ bool PlaceInExistingPortal(WorldManager& _world, Entity& _entity) {
 }
 
 bool CreatePortal(WorldManager& _world, Entity& _entity) {
-	auto fd = MathHelper::FloorDouble;
-	Int3 bestPos = { fd(_entity.position.x), fd(_entity.position.y), fd(_entity.position.z) };
+	Int3 bestPos = {
+		MathHelper::FloorDouble(_entity.position.x),
+		MathHelper::FloorDouble(_entity.position.y),
+		MathHelper::FloorDouble(_entity.position.z)
+	};
 	int bestFacing = 0;
-	int startFacing = _world.rand.NextInt(4);
+	const int startFacing = _world.rand.NextInt(4);
 
 	bool foundSite = FindPortalSite(_world, _entity.position, startFacing, 4, 3, bestPos, bestFacing) ||
 	                 FindPortalSite(_world, _entity.position, startFacing, 2, 1, bestPos, bestFacing);
 
 	Int2 axis = FacingToAxis(bestFacing);
+	// TODO: Couldn't bestPos be reused for this, since it's only used once for the operation above?
 	Int3 base = bestPos;
 
 	if (!foundSite) {
