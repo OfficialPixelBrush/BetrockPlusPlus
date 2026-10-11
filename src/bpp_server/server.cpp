@@ -108,6 +108,7 @@ void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
 		dest.z *= 8.0;
 	}
 	_session.entity->Teleport(dest);
+	_session.inventory.activeHotbarSlot = 0;
 	_session.pendingPortalPlacement = true;
 	_session.portalAreaLoaded = false;
 

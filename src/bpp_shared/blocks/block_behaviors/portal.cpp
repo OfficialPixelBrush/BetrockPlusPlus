@@ -147,7 +147,7 @@ void RegisterPortalBehaviors() {
 			_world.SetBlock(_pos, BLOCK_AIR);
 		}
 	};
-	blockBehaviors[BLOCK_NETHER_PORTAL].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos,
+	blockBehaviors[BLOCK_NETHER_PORTAL].onEntityCollidedWithBlock = [](WorldManager& /*_world*/, Int3 /*_pos*/,
 	                                                                   Entity& _entity) -> void {
 		if (_entity.passenger.lock() || _entity.vehicle.lock())
 			return;

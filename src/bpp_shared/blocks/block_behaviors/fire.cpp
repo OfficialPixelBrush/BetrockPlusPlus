@@ -143,11 +143,11 @@ void RegisterFireBehaviors() {
 	                                       Java::Random& _random) -> void {
 		const bool onNetherrack = _world.GetBlockId(_pos.WithOffset(Direction::Value::Down)) == BLOCK_NETHERRACK;
 
-		auto CanRainSeeAroundPosition = [&](Int3 _pos) -> bool {
-			return _world.CanRainHitSpot(_pos) || _world.CanRainHitSpot(_pos.WithOffset(Direction::Value::East)) ||
-			       _world.CanRainHitSpot(_pos.WithOffset(Direction::Value::West)) ||
-			       _world.CanRainHitSpot(_pos.WithOffset(Direction::Value::North)) ||
-			       _world.CanRainHitSpot(_pos.WithOffset(Direction::Value::South));
+		auto CanRainSeeAroundPosition = [&](Int3 _checkPos) -> bool {
+			return _world.CanRainHitSpot(_checkPos) || _world.CanRainHitSpot(_checkPos.WithOffset(Direction::Value::East)) ||
+			       _world.CanRainHitSpot(_checkPos.WithOffset(Direction::Value::West)) ||
+			       _world.CanRainHitSpot(_checkPos.WithOffset(Direction::Value::North)) ||
+			       _world.CanRainHitSpot(_checkPos.WithOffset(Direction::Value::South));
 		};
 
 		if (!onNetherrack && CanRainSeeAroundPosition(_pos)) {
