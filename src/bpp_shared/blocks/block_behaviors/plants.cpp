@@ -343,7 +343,7 @@ void RegisterPlantBehaviors() {
 		};
 
 		// There is water so max hydration
-		if (waterNearby(_world, _pos)) {
+		if (waterNearby(_world, _pos) || _world.CanRainHitSpot(_pos + Int3{0, 1, 0})) {
 			if (_meta < 7) {
 				_world.SetMeta(_pos, 7);
 			}

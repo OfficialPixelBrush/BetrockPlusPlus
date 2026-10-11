@@ -67,7 +67,6 @@ private:
 	std::deque<DeferredUpdate> deferredUpdates;
 	bool frozen = false;
 	bool replayingDeferred = false;
-	int skylightOffset = 0;
 	static BiomeGenerator biomeGenerator;
 
 public:
@@ -75,6 +74,7 @@ public:
 	BS::thread_pool<> pool{ 2 };
 	RegionManager* regionManager = nullptr;
 	TickTime elapsedTicks = 0;
+	int skylightOffset = 0;
 	EntityManager entityManager;
 	TickScheduler tickScheduler;
 	Lighter lightManager;

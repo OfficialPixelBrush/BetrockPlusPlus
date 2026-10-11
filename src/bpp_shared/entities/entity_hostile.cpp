@@ -153,7 +153,16 @@ bool HostileEntity::CanSpawnAt() {
 		return false;
 
 	// This checks the ACTUAL light level given the time of day
-	int combinedLight = world->GetBlockLightFull(footPos);
+	// Thunderstorms darken skylight
+	int combinedLight;
+	if (world->weatherSystem.IsThundering()) {
+		int savedOffset = world->skylightOffset;
+		world->skylightOffset = 10;
+		combinedLight = world->GetBlockLightFull(footPos);
+		world->skylightOffset = savedOffset;
+	} else {
+		combinedLight = world->GetBlockLightFull(footPos);
+	}
 	if (combinedLight > rand.NextInt(8))
 		return false;
 

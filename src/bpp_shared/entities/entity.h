@@ -147,8 +147,7 @@ struct Entity {
 	bool jumping = false;
 
 	// Fire
-	int fireTicks = 0;           // Ticks remaining on fire; 0 = not on fire
-	bool inFire = false;         // Currently touching a fire/lava block
+	int fireTicks = 0; // > 0: burning ticks left; <= 0: not burning (negative = grace period, see fireResistance)	bool inFire = false;         // Currently touching a fire/lava block
 	int fireResistance = 1;      // Ticks of immunity after catching fire
 	bool isImmuneToFire = false; // Total fire immunity
 
@@ -204,6 +203,8 @@ struct Entity {
 	virtual bool CanBeCollidedWith() {
 		return false;
 	}
+
+	bool IsWet();
 
 	virtual std::optional<AABB> GetMoverCollisionOverride(Entity& /*_candidate*/) {
 		return std::nullopt;

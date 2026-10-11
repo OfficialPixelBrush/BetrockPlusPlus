@@ -138,11 +138,9 @@ void Entity::UpdateEntityPhysicsState() {
 		inWater = false;
 	}
 
-	// If we are in fire decrement the fire
 	if (fireTicks > 0) {
 		if (isImmuneToFire) {
-			fireTicks -= 4;
-			fireTicks = std::max(0, fireTicks);
+			fireTicks = std::max(0, fireTicks - 4);
 		} else {
 			if (fireTicks % 20 == 0)
 				AttackEntityFrom(nullptr, 1);
@@ -152,21 +150,32 @@ void Entity::UpdateEntityPhysicsState() {
 
 	// Returns if we are in lava
 	inLava = world->IsMaterialInAabb(GetLavaCollider(), Material::Lava());
-	if (inLava) {
-		if (!isImmuneToFire) {
-			AttackEntityFrom(nullptr, 4);
-			fireTicks = 600;
-		}
+	if (inLava && !isImmuneToFire) {
+		AttackEntityFrom(nullptr, 4);
+		fireTicks = 600;
 	}
 
-	inFire = inLava || world->IsMaterialInAabb(GetFireCollider(), Material::Fire());
+	const bool wet = IsWet();
+
+	bool inFire = inLava || world->IsMaterialInAabb(GetFireCollider(), Material::Fire());
 	if (inFire) {
-		// 1 damage per tick while actually touching
-		AttackEntityFrom(nullptr, 1);
-		if (!isImmuneToFire && fireTicks == 0) {
-			fireTicks = 300;
+		if (!isImmuneToFire)
+			AttackEntityFrom(nullptr, 1); // dealFireDamage
+		if (!wet && !isImmuneToFire) {
+			// Count up through the grace period; catch fire when it reaches 0
+			// While already burning this cancels the decrement above, so fire keeps us lit
+			fireTicks++;
+			if (fireTicks == 0)
+				fireTicks = 300;
 		}
+	} else if (fireTicks <= 0) {
+		// Out of fire and not burning
+		fireTicks = -fireResistance;
 	}
+
+	// Rain or water puts us out and starts a fresh grace period
+	if (wet && fireTicks > 0)
+		fireTicks = -fireResistance;
 
 	// Kill our entity if its below the world
 	if (position.y < -64.0 && (type != EntityType::PLAYER))
@@ -174,6 +183,11 @@ void Entity::UpdateEntityPhysicsState() {
 
 	isFirstUpdate = false;
 	UpdateMetadata(flags.isBurning, fireTicks > 0);
+}
+
+bool Entity::IsWet() {
+	auto fd = MathHelper::FloorDouble;
+	return inWater || world->CanRainHitSpot({ fd(position.x), fd(position.y), fd(position.z) });
 }
 
 void Entity::MountEntity(std::shared_ptr<Entity> _entity) {
