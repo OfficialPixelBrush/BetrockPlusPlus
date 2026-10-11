@@ -95,6 +95,7 @@ public:
 		tickScheduler.world = this;
 		if (isHell)
 			thisDimension = Dimension::Nether;
+		distHashCounter = uint32_t(rand.NextInt());
 	}
 
 	~WorldManager() override {}
@@ -159,8 +160,7 @@ public:
 			return false;
 		if (FindTopSolidBlock(_pos.x, _pos.z) > _pos.y)
 			return false;
-		auto biome = biomeGenerator.GetBiomeAtPoint({ _pos.x, _pos.z });
-		return biomeGenerator.BiomeHasSnow(biome) ? false : biomeGenerator.BiomeHasLightning(biome);
+		return BiomeGenerator::BiomeHasLightning(GetBiome({ _pos.x, _pos.z }));
 	}
 
 	bool IsNight() const {
@@ -386,7 +386,7 @@ private:
 	// I believe the vanilla default is
 	int viewRadius = 9;
 	int simulationRadius = 9;
-
+	uint32_t distHashCounter = 0;
 	bool isHell = false; // for the nether
 
 	std::shared_ptr<Chunk>* FindChunkSlot(Int32_2 _pos) {

@@ -11,6 +11,9 @@ void WeatherSystem::Init(int32_t _rainTimer, int32_t _thunderTimer, bool _isRain
 	thunderTimer = _thunderTimer;
 	isRaining = _isRaining;
 	isThundering = _isThundering;
+
+	rainStrength = prevRainStrength = isRaining ? 1.0f : 0.0f;
+	thunderStrength = prevThunderStrength = (isRaining && isThundering) ? 1.0f : 0.0f;
 }
 
 void WeatherSystem::Tick(Java::Random& _rand) {
