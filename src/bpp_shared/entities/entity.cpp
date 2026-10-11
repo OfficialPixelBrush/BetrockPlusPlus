@@ -28,6 +28,11 @@ void Entity::OnPlayerInteract(PlayerEntity* /*_entity*/) {
 	return;
 }
 
+void Entity::OnEnterPortal() {
+	// stub
+	return;
+}
+
 void Entity::DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data, int _pickupTime) {
 	Vec3 itemPos = position;
 	std::shared_ptr<ItemEntity> itemEntity = std::make_shared<ItemEntity>(itemPos);

@@ -35,6 +35,8 @@ struct EntityMPPlayer : public PlayerEntity {
 	void DropInventory() override;
 	void OnMountEntity() override;
 	void OnDismountEntity() override;
+	void UsePortal() override;
+	void OnEnterPortal() override;
 	virtual SleepFailureReason TrySleep(Int3 _pos);
 	virtual void WakeUp(bool _confirmSpawn = true) override;
 };

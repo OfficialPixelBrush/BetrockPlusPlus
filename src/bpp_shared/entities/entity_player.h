@@ -19,7 +19,10 @@ enum SleepFailureReason : uint8_t {
 struct FishingBobberEntity;
 struct PlayerEntity : public MobileEntity {
 	std::weak_ptr<FishingBobberEntity> fishingBobber;
-	bool isSleeping = false;
+	bool isSleeping : 1 = false;
+	bool isInPortal : 1 = false;
+	float timeInPortal = 0.0f;
+	int portalCooldown = 0;
 
 	// Position of the bed (headboard) the player is currently sleeping in.
 	// Only meaningful while isSleeping is true.
@@ -35,6 +38,7 @@ struct PlayerEntity : public MobileEntity {
 	}
 	~PlayerEntity() = default;
 	bool AttackEntityFrom(Entity* _entity, int _damage) override;
+	virtual void OnEnterPortal() override;
 	virtual void Tick() override;
 	virtual bool PickupItem(ItemStack& _stack, EntityId _entityId);
 	virtual bool DropItem(ItemStack _stack);
@@ -44,6 +48,7 @@ struct PlayerEntity : public MobileEntity {
 	virtual void OnDismountEntity() override;
 	virtual SleepFailureReason TrySleep(Int3 _pos);
 	virtual void WakeUp(bool _confirmSpawn = true);
+	virtual void UsePortal();
 	
 	float GetEyeHeight() override {
 		return 1.62f;

@@ -147,9 +147,35 @@ void RegisterPortalBehaviors() {
 			_world.SetBlock(_pos, BLOCK_AIR);
 		}
 	};
+	blockBehaviors[BLOCK_NETHER_PORTAL].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos,
+	                                                                   Entity& _entity) -> void {
+		if (_entity.passenger.lock() || _entity.vehicle.lock())
+			return;
+		_entity.OnEnterPortal();
+	};
 
 	// Remove the existing portals that depend on this obsidian
 	blockBehaviors[BLOCK_OBSIDIAN].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
+		Direction::Value neighbors[6] = { Direction::Value::East,  Direction::Value::West, Direction::Value::North,
+			                              Direction::Value::South, Direction::Value::Up,   Direction::Value::Down };
+		for (auto offset : neighbors) {
+			auto checkPos = _pos.WithOffset(offset);
+			auto checkBlock = _world.GetBlockId(checkPos);
+
+			if (checkBlock != BLOCK_NETHER_PORTAL)
+				continue;
+
+			std::unordered_set<Int3> portalPositions;
+
+			GetConnectedPortals(_world, checkPos, portalPositions);
+
+			for (auto pos : portalPositions) {
+				_world.SetBlock(pos, BLOCK_AIR);
+			}
+		}
+	};
+
+	blockBehaviors[BLOCK_NETHER_PORTAL].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
 		Direction::Value neighbors[6] = { Direction::Value::East,  Direction::Value::West, Direction::Value::North,
 			                              Direction::Value::South, Direction::Value::Up,   Direction::Value::Down };
 		for (auto offset : neighbors) {

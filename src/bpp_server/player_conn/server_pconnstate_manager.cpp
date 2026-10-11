@@ -9,6 +9,7 @@
 #include "addon/addon_impl.h"
 #include "username.h"
 #include "version.h"
+#include "teleporter.h"
 
 void PlayerConnStateManager::HandleConnectionState(PlayerSession& _session, Server& _server) {
 	switch (_session.connState) {
@@ -253,18 +254,44 @@ void PlayerConnStateManager::FinishLogin(PlayerSession& _session, Server& _serve
 
 void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std::string& _reason, Server& _server,
                                               bool _doSave) {
+	// Force close our window
+	if (_session.activeInteraction)
+		_session.activeInteraction->OnInteractionClosed(*_session.entity);
+	if (_doSave) {
+		if (_session.entity)
+			_session.entity->UnmountEntity();
+		_server.SavePlayer(_session.username);
+	}
+
 	// Send disconnect reason to the leaving player
 	Packet::Disconnect kick;
 	kick.reason = _reason;
 	kick.Serialize(_session.stream);
 	_session.stream.FlushWriteBuffer();
 	_session.stream.SetConnected(false);
-	if (_doSave) {
-		if (_session.entity)
-			_session.entity->UnmountEntity();
-		_server.SavePlayer(_session.username);
-	}
+	_session.server = nullptr;
 	GlobalLogger().info << "Player " << _session.username << " disconnected: " << _reason << "\n";
+}
+
+static constexpr int PORTAL_SEARCH_CHUNK_RADIUS = 8; // 128 blocks
+static constexpr int PORTAL_BUILD_CHUNK_RADIUS = 2;
+
+static bool PortalAreaReady(WorldManager& _world, const Vec3& _pos) {
+	int cx = MathHelper::FloorDouble(_pos.x) >> 4;
+	int cz = MathHelper::FloorDouble(_pos.z) >> 4;
+
+	for (int dx = -PORTAL_SEARCH_CHUNK_RADIUS; dx <= PORTAL_SEARCH_CHUNK_RADIUS; dx++) {
+		for (int dz = -PORTAL_SEARCH_CHUNK_RADIUS; dz <= PORTAL_SEARCH_CHUNK_RADIUS; dz++) {
+			Chunk* c = _world.GetChunkRaw({ cx + dx, cz + dz });
+			if (!_world.IsChunkValid(c))
+				return false; // not generated/loaded yet
+
+			bool inBuildArea = std::abs(dx) <= PORTAL_BUILD_CHUNK_RADIUS && std::abs(dz) <= PORTAL_BUILD_CHUNK_RADIUS;
+			if (inBuildArea && !c->isTerrainPopulated)
+				return false; // population could overwrite a portal
+		}
+	}
+	return true;
 }
 
 void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server& _server) {
@@ -273,8 +300,22 @@ void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server&
 	_server.chunkSender.Enqueue(_session, sessionWorld, _server.flushChunkCount);
 	_server.chunkSender.Flush(_session);
 
+	if (_session.pendingPortalPlacement) {
+		// Load the search area
+		_session.position.viewDistanceOverride = PORTAL_SEARCH_CHUNK_RADIUS + 1;
+		if (!PortalAreaReady(sessionWorld, _session.position.pos))
+			return;
+
+		Teleporter::PlaceAtValidTransferSpot(sessionWorld, *_session.entity);
+		_session.position.pos = _session.entity->position;
+		_session.pendingTeleport = _session.position.pos;
+		_session.pendingPortalPlacement = false;
+		_session.portalAreaLoaded = true;
+	}
+
 	// Force a tiny view distance for players trying to spawn in
-	_session.position.viewDistanceOverride = 3;
+	if (!_session.portalAreaLoaded)
+		_session.position.viewDistanceOverride = 3;
 
 	// Spawn chunk radius; 3 chunks in each direction
 	int spawnChunkX = int(std::floor(_session.position.pos.x)) >> 4;
@@ -317,6 +358,8 @@ void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server&
 
 	// Set view distance to server default
 	_session.position.viewDistanceOverride = 0;
+	_session.portalAreaLoaded = false;
+	_session.pendingPortalPlacement = false;
 
 	GlobalLogger().info << "Client connected\n";
 	_session.connState = ConnectionState::Playing;

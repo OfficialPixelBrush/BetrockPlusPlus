@@ -18,6 +18,7 @@
 #include "packet/packet_utils.h"
 #include "trackers/inventory_tracker.h"
 #include "world.h"
+#include "teleporter.h"
 #include "commands/command.h"
 #include <algorithm>
 #include <cmath>
@@ -79,11 +80,7 @@ void Server::SendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _enti
 	newWorld->entityManager.AddEntity(_entity, oldId);
 }
 
-void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
-	if (_dim == _session.dimension)
-		return;
-
-	// Flush all of our dimension dependent data
+void Server::ResetDimensionState(PlayerSession& _session, Dimension _dim) {
 	IndexRemoveSession(_session);
 	_session.dimension = _dim;
 	_session.flushedChunks.clear();
@@ -91,26 +88,42 @@ void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
 	_session.pendingBlockChanges.clear();
 	_session.newlyFlushed.clear();
 	_session.newlyUnloaded.clear();
-	_session.entityTracker = _session.dimension == Dimension::Overworld ? &overworldEntityTracker : &hellEntityTracker;
-
-	// Make sure we don't send any pending chunk updates
+	_session.entityTracker = _dim == Dimension::Overworld ? &overworldEntityTracker : &hellEntityTracker;
 	chunkSender.inFlight.erase(&_session);
 	chunkSender.subRegionFlight.erase(&_session);
+}
 
-	// Send a respawn packet
+void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
+	if (_dim == _session.dimension)
+		return;
+
+	ResetDimensionState(_session, _dim);
+
+	Vec3 dest = _session.entity->position;
+	if (_dim == Dimension::Nether) {
+		dest.x /= 8.0;
+		dest.z /= 8.0;
+	} else {
+		dest.x *= 8.0;
+		dest.z *= 8.0;
+	}
+	_session.entity->Teleport(dest);
+	_session.pendingPortalPlacement = true;
+	_session.portalAreaLoaded = false;
+
 	Packet::Respawn pkt;
 	pkt.dimension = _dim;
 	pkt.Serialize(_session.stream);
 	_session.connState = ConnectionState::WaitingForSpawnChunks;
+	_session.position.pos = _session.entity->position;
+	_session.pendingTeleport = _session.entity->position;
+	_session.pendingPosition.reset();
+	SendEntityToDimension(_dim, _session.entity);
 
-	// Update our state
 	Packet::SetHealth sh;
 	sh.health = _session.entity->health;
 	sh.Serialize(_session.stream);
 	PacketUtilities::SendInventory(_session, 0, _session.inventory);
-
-	// Transfer our entity
-	SendEntityToDimension(_dim, _session.entity);
 }
 
 void Server::IndexAddChunk(PlayerSession& _session, const Int32_2& _pos) {
@@ -558,6 +571,7 @@ void Server::AcceptNewPlayers() {
 		return;
 	}
 	session->ipAddress = clientIp;
+	session->server = this;
 	players.push_back(std::move(session));
 }
 
