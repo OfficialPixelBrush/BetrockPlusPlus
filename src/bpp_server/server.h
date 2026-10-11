@@ -235,6 +235,8 @@ private:
 	// Which sessions currently have a given chunk loaded?
 	std::unordered_map<Int32_3, std::vector<PlayerSession*>> chunkSessions;
 
+	Weather lastSentWeather = Weather::Clear;
+
 	// Server specifics
 	int serverSocket = -1;
 	int serverPort = 25565;

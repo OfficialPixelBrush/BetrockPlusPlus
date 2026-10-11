@@ -30,4 +30,31 @@ public:
 	void GenerateBiomeMap(PackedArray<CHUNK_AREA, 4>& _biomeMap, std::span<double> _temperature,
 	                      std::span<double> _humidity, std::span<double> _weirdness, Int2 _blockPos);
 	void GenerateTemperature(std::span<double> _temperature, std::span<double> _weirdness, Int2 _chunkPos, Int2 _max);
+	
+	static bool BiomeHasRain(Biome _biome) {
+		switch (_biome) {
+		case BIOME_DESERT:
+		case BIOME_ICEDESERT:
+		case BIOME_HELL:
+		case BIOME_SKY:
+			return false;
+		default:
+			return true;
+		}
+	}
+
+	static bool BiomeHasSnow(Biome _biome) {
+		switch (_biome) {
+		case BIOME_TAIGA:
+		case BIOME_TUNDRA:
+		case BIOME_ICEDESERT:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	static bool BiomeHasLightning(Biome _biome) {
+		return BiomeHasRain(_biome) && !BiomeHasSnow(_biome);
+	}
 };

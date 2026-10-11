@@ -529,6 +529,15 @@ void EntityTracker::SendPacketToPlayersInTrackedEntry(Packet::BasePacket& _pkt, 
 	}
 }
 
+void EntityTracker::SendPacketToAllPlayers(Packet::BasePacket& _pkt) {
+	for (auto& player : this->playerIds) {
+		auto session = server->GetSessionById(player);
+		if (!session)
+			continue;
+		_pkt.Serialize(session->stream);
+	}
+}
+
 TrackedEntry* EntityTracker::GetTrackerForEntityId(EntityId _id) {
 	auto it = trackedEntities.find(_id);
 	return it != trackedEntities.end() ? &it->second : nullptr;

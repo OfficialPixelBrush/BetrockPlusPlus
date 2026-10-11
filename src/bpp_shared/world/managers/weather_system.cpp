@@ -13,10 +13,6 @@ void WeatherSystem::Init(int32_t _rainTimer, int32_t _thunderTimer, bool _isRain
 	isThundering = _isThundering;
 }
 
-// TODO: Add a hook here that can be passed in via Init
-// so the weather system can inform systems directly if they need to be updated
-// This could be useful later down the line for the client,
-// so it doesn't need to do a weather check every tick.
 void WeatherSystem::Tick(Java::Random& _rand) {
 	if (thunderTimer <= 0) {
 		thunderTimer = isThundering ? _rand.NextInt(12000) + 3600 : _rand.NextInt(168000) + 12000;
@@ -29,14 +25,9 @@ void WeatherSystem::Tick(Java::Random& _rand) {
 	} else if (--rainTimer <= 0) {
 		isRaining = !isRaining;
 	}
-}
 
-Weather WeatherSystem::GetActive() const noexcept {
-	if (isRaining) {
-		if (isThundering) {
-			return Weather::Thundering;
-		}
-		return Weather::Raining;
-	}
-	return Weather::Clear;
+	prevRainStrength = rainStrength;
+	rainStrength = std::clamp(rainStrength + (isRaining ? 0.01f : -0.01f), 0.0f, 1.0f);
+	prevThunderStrength = thunderStrength;
+	thunderStrength = std::clamp(thunderStrength + (isThundering ? 0.01f : -0.01f), 0.0f, 1.0f);
 }

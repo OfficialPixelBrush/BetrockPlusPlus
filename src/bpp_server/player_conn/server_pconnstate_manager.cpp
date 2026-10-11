@@ -245,8 +245,7 @@ void PlayerConnStateManager::FinishLogin(PlayerSession& _session, Server& _serve
 	// Send our inventory
 	PacketUtilities::SendInventory(_session, 0, _session.inventory);
 
-	// Snapshot current contents so the Tick loop's diffing (TickDiff) has a real baseline
-	// to compare against, instead of starting from an empty snapshot for the whole session.
+	// Snapshot current contents
 	_session.inventoryInteraction.InitSnapshot();
 
 	_session.connState = ConnectionState::WaitingForSpawnChunks;
@@ -360,6 +359,14 @@ void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server&
 	_session.position.viewDistanceOverride = 0;
 	_session.portalAreaLoaded = false;
 	_session.pendingPortalPlacement = false;
+
+	// Send weather
+	PacketUtilities::SendWeatherToPlayer(_session, sessionWorld.weatherSystem.GetWeatherState());
+
+	// Send time
+	Packet::SetTime tPkt;
+	tPkt.time = sessionWorld.elapsedTicks;
+	tPkt.Serialize(_session.stream);
 
 	GlobalLogger().info << "Client connected\n";
 	_session.connState = ConnectionState::Playing;
