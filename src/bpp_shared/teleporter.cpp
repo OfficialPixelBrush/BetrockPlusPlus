@@ -36,8 +36,13 @@ bool HasRoomForPortal(WorldManager& _world, Int3 _base, Int2 _axis, int _depth) 
 			for (int h = -1; h < 4; h++) {
 				Int3 p = { _base.x + (w - 1) * _axis.x + d * _axis.z, _base.y + h,
 					       _base.z + (w - 1) * _axis.z - d * _axis.x };
-				if (h < 0 ? !_world.GetMaterial(p).isSolid : !_world.IsAirBlock(p))
-					return false;
+				if (h < 0) {
+					if (!_world.GetMaterial(p).isSolid)
+						return false;
+				} else {
+					if (!_world.IsAirBlock(p))
+						return false;
+				}
 			}
 		}
 	}
@@ -104,15 +109,15 @@ bool PlaceInExistingPortal(WorldManager& _world, Entity& _entity) {
 	double closest = -1.0;
 	Int3 portalPos = {};
 
-	for (int cx = minX / CHUNK_WIDTH; cx <= maxX / CHUNK_WIDTH; cx++) {
-		for (int cz = minZ / CHUNK_WIDTH; cz <= maxZ  / CHUNK_WIDTH; cz++) {
+	for (int cx = minX >> 4; cx <= maxX >> 4; cx++) {
+		for (int cz = minZ >> 4; cz <= maxZ >> 4; cz++) {
 			Chunk* chunk = _world.GetChunkRaw({ cx, cz });
 			if (!_world.IsChunkValid(chunk))
 				continue;
 
 			// Clip the search box to this chunk
-			const int x0 = std::max(minX, cx * CHUNK_WIDTH), x1 = std::min(maxX, cx * CHUNK_WIDTH + 15);
-			const int z0 = std::max(minZ, cz * CHUNK_WIDTH), z1 = std::min(maxZ, cz * CHUNK_WIDTH + 15);
+			const int x0 = std::max(minX, cx * CHUNK_WIDTH), x1 = std::min(maxX, cx * CHUNK_WIDTH + (CHUNK_WIDTH-1));
+			const int z0 = std::max(minZ, cz * CHUNK_WIDTH), z1 = std::min(maxZ, cz * CHUNK_WIDTH + (CHUNK_WIDTH-1));
 
 			for (int x = x0; x <= x1; x++) {
 				double dx = x + 0.5 - pos.x;
