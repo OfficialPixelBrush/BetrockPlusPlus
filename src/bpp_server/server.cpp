@@ -740,13 +740,11 @@ void Server::Tick() {
 	ChunkBroadcaster::BroadcastBlockChanges(*this, localBlockChangesHell, Dimension::Nether, gameRuntime.worldHell);
 
 	// Send weather updates
-	auto currentWeather = gameRuntime.world.weatherSystem.GetWeatherState();
-	if (currentWeather != this->lastSentWeather) {
-		this->lastSentWeather = currentWeather;
+	bool raining = gameRuntime.world.weatherSystem.IsRaining();
+	if (raining != lastSentRaining) {
+		lastSentRaining = raining;
 		Packet::GameEvent pkt;
-		pkt.eventId = PacketData::GameEvent::STOP_RAINING;
-		if (currentWeather == Weather::Raining || currentWeather == Weather::Thundering)
-			pkt.eventId = PacketData::GameEvent::START_RAINING;
+		pkt.eventId = raining ? PacketData::GameEvent::START_RAINING : PacketData::GameEvent::STOP_RAINING;
 		overworldEntityTracker.SendPacketToAllPlayers(pkt);
 	}
 
@@ -1009,6 +1007,7 @@ void Server::ProcessSleeping(Dimension _dimension) {
 
 	// Fast-forward to the next morning.
 	world->elapsedTicks = ((world->elapsedTicks / DAY_LENGTH) + 1) * DAY_LENGTH;
+	world->weatherSystem.ClearWeather();
 
 	// Wake everyone up.
 	for (auto& session : sleepingSessions)

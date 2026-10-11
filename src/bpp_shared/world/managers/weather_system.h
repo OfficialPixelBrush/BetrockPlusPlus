@@ -26,23 +26,33 @@ struct WeatherSystem {
 		float weightedStrength = prevRainStrength + (rainStrength - prevRainStrength);
 		return weightedStrength > 0.2f;
 	}
+
 	bool IsThundering() const {
 		float weightedStrengthRain = prevRainStrength + (rainStrength - prevRainStrength);
 		float weightedStrength = prevThunderStrength + (thunderStrength - prevThunderStrength);
 
 		return weightedStrength * weightedStrengthRain > 0.9f;
 	}
+
 	void SetRaining(int _timer) {
 		isRaining = true;
 		rainStrength = 1.0f;
 		rainTimer = _timer;
 	}
+
 	void SetThundering(int _timer) {
 		isRaining = true;
 		isThundering = true;
 		rainStrength = 1.0f;
 		thunderStrength = 1.0f;
 		thunderTimer = _timer;
+	}
+
+	void ClearWeather() {
+		rainTimer = 0;
+		isRaining = false;
+		thunderTimer = 0;
+		isThundering = false;
 	}
 
 	Weather GetWeatherState() const {

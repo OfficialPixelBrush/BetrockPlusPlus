@@ -120,8 +120,10 @@ struct Runtime {
 		worldHell.elapsedTicks = thisLevelData.time;
 
 		// Initialize weather
-		world.weatherSystem.SetRaining(thisLevelData.rainTime);
-		world.weatherSystem.SetThundering(thisLevelData.thunderTime);
+		world.weatherSystem.isRaining = thisLevelData.raining;
+		world.weatherSystem.isThundering = thisLevelData.thundering;
+		world.weatherSystem.thunderTimer = thisLevelData.thunderTime;
+		world.weatherSystem.rainTimer = thisLevelData.rainTime;
 
 		// Bind the region managers with the world objects
 		world.regionManager = &overworldRegionManager;

@@ -449,23 +449,49 @@ void WorldManager::PerformRandomTicks(const std::vector<ClientPosition>& _player
 		}
 	}
 
-	uint32_t hashCounter = rand.NextInt();
-	for (auto& it : wanted) {
-		int attempts = 80;
-		Int2 chunkOrigin = { it.first.x * 16, it.first.z * 16 };
-		for (int i = 0; i < attempts; i++) {
-			hashCounter = hashCounter * 3 + 1013904223;
-			int randomBlockPos = hashCounter >> 2;
-			int posX = randomBlockPos & 15;
-			int posZ = randomBlockPos >> 8 & 15;
-			int posY = randomBlockPos >> 16 & 127;
-			auto block = it.second->GetBlock({ posX, posY, posZ });
-			auto meta = it.second->GetMeta({ posX, posY, posZ });
-			if (Blocks::blockProperties[block].ticksOnLoad) {
-				if (auto func = Blocks::blockBehaviors[block].onTick) {
-					Int3 worldPos = { chunkOrigin.x + posX, posY, chunkOrigin.z + posZ };
-					func(*this, worldPos, meta, this->rand);
-				}
+	for (auto& [cpos, chunk] : wanted) {
+		Int2 chunkOrigin = { cpos.x * 16, cpos.z * 16 };
+
+		// Snowfall and freezing
+		if (!isHell && rand.NextInt(16) == 0) {
+			distHashCounter = distHashCounter * 3 + 1013904223;
+			uint32_t r = distHashCounter >> 2;
+			int lx = int(r & 15);
+			int lz = int((r >> 8) & 15);
+			Int2 column = { chunkOrigin.x + lx, chunkOrigin.z + lz };
+
+			// y is the block above the top block
+			int y = FindTopSolidBlock(column.x, column.z);
+			if (y >= 0 && y < CHUNK_HEIGHT && BiomeGenerator::BiomeHasSnow(GetBiome(column)) &&
+			    chunk->GetBlockLight({ lx, y, lz }) < 10) {
+				Int3 top = { column.x, y, column.z };
+				Int3 below = { column.x, y - 1, column.z };
+				BlockType atId = chunk->GetBlock({ lx, y, lz });
+				BlockType belowId = chunk->GetBlock({ lx, y - 1, lz });
+				const auto& belowProps = Blocks::blockProperties[belowId];
+
+				if (weatherSystem.IsRaining() && atId == BLOCK_AIR && belowId != BLOCK_AIR && belowId != BLOCK_ICE &&
+				    belowProps.isOpaqueCube && belowProps.material.isSolid)
+					SetBlock(top, BLOCK_SNOW_LAYER);
+
+				if (belowId == BLOCK_WATER_STILL && chunk->GetMeta({ lx, y - 1, lz }) == 0)
+					SetBlock(below, BLOCK_ICE);
+			}
+		}
+
+		// 80 random block ticks
+		for (int i = 0; i < 80; i++) {
+			distHashCounter = distHashCounter * 3 + 1013904223;
+			uint32_t randomBlockPos = distHashCounter >> 2;
+			int posX = int(randomBlockPos & 15);
+			int posZ = int((randomBlockPos >> 8) & 15);
+			int posY = int((randomBlockPos >> 16) & 127);
+			auto block = chunk->GetBlock({ posX, posY, posZ });
+			if (!Blocks::blockProperties[block].ticksOnLoad)
+				continue;
+			if (auto func = Blocks::blockBehaviors[block].onTick) {
+				Int3 worldPos = { chunkOrigin.x + posX, posY, chunkOrigin.z + posZ };
+				func(*this, worldPos, chunk->GetMeta({ posX, posY, posZ }), this->rand);
 			}
 		}
 	}
