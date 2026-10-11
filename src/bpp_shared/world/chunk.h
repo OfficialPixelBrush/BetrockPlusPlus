@@ -206,6 +206,13 @@ struct Chunk {
 		int block = int(GetBlockLight(_pos));
 		return CrossPlatform::Math::Min(15, CrossPlatform::Math::Max(sky, block));
 	}
+	bool HasBlock(BlockType _type) {
+		for (auto& sc : subChunks) {
+			if (sc.HasBlock(_type))
+				return true;
+		}
+		return false;
+	}
 
 	void FillRegion(Int3 _a, Int3 _b, BlockType _type = BLOCK_AIR, uint8_t _meta = 0);
 	inline void FillColumn(int _ya, int _yb, Int2 xz, BlockType _type = BLOCK_AIR, uint8_t _meta = 0) {
