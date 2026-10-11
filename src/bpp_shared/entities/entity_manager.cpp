@@ -37,6 +37,13 @@ void EntityManager::RemoveEntity(EntityId _id) {
 
 	std::shared_ptr<Entity> entity = *it;
 
+	// Remove player
+	if (entity->type == EntityType::PLAYER)
+		std::erase_if(players, [&](const std::weak_ptr<Entity>& _w) {
+			auto p = _w.lock();
+			return !p || p == entity;
+		});
+
 	// Remove from its bucket
 	Int2 cpos{ entity->bucketPos.x, entity->bucketPos.y };
 	auto containerIt = entityContainers.find(cpos);

@@ -720,46 +720,37 @@ void PlayerAction(Packet::PlayerAction& _pkt, PlayerSession& _session, EntityTra
 	// Broadcast what we were sent to players who can see this player
 }
 
-void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
+void Respawn(Packet::Respawn& /*_pkt*/, PlayerSession& _session, Server& _server) {
 	GlobalLogger().info << "Respawned Player " << _session.username << "!\n";
-	auto targetDim = _pkt.dimension;
 
-	// Send a respawn packet to confirm
+	constexpr Dimension targetDim = Dimension::Overworld;
+	const bool changingDim = _session.dimension != targetDim;
+
 	Packet::Respawn pkt;
 	pkt.dimension = targetDim;
 	pkt.Serialize(_session.stream);
 
-	// Detach the old entity from whatever dimension it died in
-	auto& oldEntity = _session.entity;
-	auto oldWorld = _server.GetWorldForDimension(Dimension(_session.dimension));
+	// Unregister the dead entity from the world it died in
+	auto oldWorld = _server.GetWorldForDimension(_session.dimension);
+	oldWorld->entityManager.RemoveEntity(_session.entity->id);
+	_session.entity->session = nullptr;
 
-	// unregister the old entity
-	oldWorld->entityManager.RemoveEntity(oldEntity->id);
-	oldEntity->session = nullptr;
-
-	// Build the replacement entity
 	auto newEntity = std::make_shared<EntityMPPlayer>();
 	newEntity->session = &_session;
-	newEntity->id = oldEntity->id;
-	newEntity->dim = targetDim;
-
+	newEntity->id = _session.entity->id;
 	_session.entity = newEntity;
 
-	// Force a refresh
-	_session.dimension = targetDim;
-	_session.entityTracker = targetDim == Dimension::Overworld ? &_server.overworldEntityTracker
-	                                                           : &_server.hellEntityTracker;
-	// Get our spawn point. If we have a valid bed spawn in this dimension, prefer it.
+	if (changingDim)
+		_server.ResetDimensionState(_session, targetDim);
+
 	auto world = _server.GetWorldForDimension(targetDim);
 	Int3 spawn = {};
 	bool bedPositionFindFailed = true;
-	if (targetDim == Dimension::Overworld && _session.hasBedSpawn) {
-		// TODO: Make this a shared func
+	if (_session.hasBedSpawn) {
 		Int3 headPos = _session.spawnPosition.WithOffset(Direction::Value::Down);
 		auto bedDir = GetDirectionFromMeta(BLOCK_BED, world->GetMetadata(headPos));
 		Int3 footPos = headPos.WithOffset(Direction::Opposite(bedDir));
 		auto sleepPositions = Blocks::GetBedApproachSpots(*world, headPos, footPos);
-
 		if (!sleepPositions.empty()) {
 			bedPositionFindFailed = false;
 			spawn = sleepPositions[0];
@@ -773,25 +764,29 @@ void Respawn(Packet::Respawn& _pkt, PlayerSession& _session, Server& _server) {
 	}
 	Vec3 spawnLocation = { double(spawn.x) + 0.5, double(spawn.y) + 0.01, double(spawn.z) + 0.5 };
 
-	// Position the new entity then register it
 	newEntity->Teleport(spawnLocation);
-	world->entityManager.AddEntity(_session.entity, newEntity->id);
+	world->entityManager.AddEntity(newEntity, newEntity->id); // registers in exactly one world
 
-	// Update our session position
 	_session.position.pos = spawnLocation;
 	_session.pendingTeleport = spawnLocation;
 	_session.pendingPosition.reset();
 
-	// Tell our client to tp
+	if (changingDim) {
+		_session.connState = ConnectionState::WaitingForSpawnChunks;
+		return;
+	}
+
 	Packet::PlayerPositionAndRotation tpPkt;
-	tpPkt.position.x = spawnLocation.x;
-	tpPkt.position.y = spawnLocation.y;
-	tpPkt.cameraY = spawnLocation.y + PLAYER_EYE_HEIGHT;
-	tpPkt.position.z = spawnLocation.z;
+	tpPkt.position = { spawnLocation.x, spawnLocation.y + PLAYER_EYE_HEIGHT, spawnLocation.z };
+	tpPkt.cameraY = spawnLocation.y;
 	tpPkt.yaw = 0;
 	tpPkt.pitch = 0;
 	tpPkt.onGround = false;
 	tpPkt.Serialize(_session.stream);
+
+	Packet::SetTime stPkt;
+	stPkt.time = world->elapsedTicks;
+	stPkt.Serialize(_session.stream);
 }
 
 void UpdateSign(Packet::UpdateSign& _pkt, PlayerSession& /*_session*/, WorldManager& _world,

@@ -16,6 +16,14 @@ bool PlayerEntity::AttackEntityFrom(Entity* _entity, int _damage) {
 	return success;
 }
 
+void PlayerEntity::OnEnterPortal() {
+	if (this->portalCooldown > 0) {
+		this->portalCooldown = 10;
+		return;
+	} 
+	this->isInPortal = true;
+}
+
 SleepFailureReason PlayerEntity::TrySleep(Int3 _pos) {
 	if (this->isSleeping)
 		return SleepFailureReason::ALREADY_SLEEPING;
@@ -104,6 +112,11 @@ void PlayerEntity::OnDismountEntity() {
 	return;
 }
 
+void PlayerEntity::UsePortal() {
+	// stub
+	return;
+}
+
 bool PlayerEntity::PickupItem(ItemStack& /*_stack*/, EntityId /*_entityId*/) {
 	return true;
 }
@@ -115,6 +128,31 @@ void PlayerEntity::DropInventory() {
 void PlayerEntity::Tick() {
 	MobileEntity::Tick();
 
+	// Portal counters
+	if (this->isInPortal) {
+		auto lockVehicle = vehicle.lock();
+		if (lockVehicle)
+			this->UnmountEntity();
+
+		this->timeInPortal += 0.0125f;
+		if (this->timeInPortal >= 1.0f) {
+			this->timeInPortal = 1.0f;
+			this->portalCooldown = 10;
+			this->UsePortal();
+		}
+
+		this->isInPortal = false;
+	} else {
+		this->timeInPortal -= 0.05f;
+		this->timeInPortal = std::max(0.0f, timeInPortal);
+	}
+
+	if (this->portalCooldown > 0)
+		this->portalCooldown--;
+
+	this->portalCooldown = std::max(0, this->portalCooldown);
+
+	// Sleeping counters
 	if (isSleeping) {
 		ticksInBed++;
 	} else {

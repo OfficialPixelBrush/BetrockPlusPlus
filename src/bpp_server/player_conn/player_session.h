@@ -42,10 +42,16 @@ struct PendingBlockBreak {
 	bool clientBreakMissed = false;
 };
 
+class Server;
 struct PlayerSession {
 	bp_player apiPlayer;
 	NetworkStream stream;
 	ClientPosition position;
+	Server* server = nullptr;
+
+	// Nether spawn finding
+	bool pendingPortalPlacement = false;
+	bool portalAreaLoaded = false;
 
 	// What block we are currently breaking, if any
 	std::optional<PendingBlockBreak> pendingBlockBreak = std::nullopt;
@@ -62,6 +68,7 @@ struct PlayerSession {
 
 	// rotation.x = yaw, rotation.y = pitch
 	Float2 rotation = { 0.0f, 0.0f };
+
 	// Bed respawn point. Only meaningful when hasBedSpawn is true.
 	Int3 spawnPosition;
 	bool hasBedSpawn = false;

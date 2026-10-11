@@ -185,7 +185,7 @@ bool WorldManager::IsMaterialInAabb(AABB _collider, Material _material) {
 			const int lx = x & 15;
 			const int lz = z & 15;
 			for (int y = minY; y < maxY; y++) {
-				BlockType blockId = this->GetBlockId({ lx, y, lz });
+				BlockType blockId = chunk->GetBlock({ lx, y, lz });
 				const auto& block = Blocks::blockProperties[blockId];
 				if (block.material == _material) {
 					return true;
@@ -214,7 +214,7 @@ bool WorldManager::IsLiquidInAabb(AABB _collider) {
 			const int lx = x & 15;
 			const int lz = z & 15;
 			for (int y = minY; y < maxY; y++) {
-				BlockType blockId = this->GetBlockId({ lx, y, lz });
+				BlockType blockId = chunk->GetBlock({ lx, y, lz });
 				const auto& block = Blocks::blockProperties[blockId];
 				if (block.material.isLiquid) {
 					return true;

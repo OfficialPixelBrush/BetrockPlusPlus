@@ -12,6 +12,16 @@
 #include "networking/network_stream.h"
 #include "networking/packets.h"
 
+void EntityMPPlayer::UsePortal() {
+	if (!this->session || !this->session->server)
+		return;
+
+	if (this->dim == Dimension::Overworld)
+		this->session->server->SendPlayerToDimension(Dimension::Nether, *this->session);
+	else
+		this->session->server->SendPlayerToDimension(Dimension::Overworld, *this->session);
+}
+
 SleepFailureReason EntityMPPlayer::TrySleep(Int3 _pos) {
 	if (!this->session)
 		return SleepFailureReason::OTHER;
@@ -412,8 +422,22 @@ void EntityMPPlayer::Move(Vec3& _velocity) {
 	Entity::Move(_velocity);
 }
 
+void EntityMPPlayer::OnEnterPortal() {
+	PlayerEntity::OnEnterPortal();
+	
+	// Force close gui
+	if (this->session) {
+		if (session->activeInteraction) 
+			session->activeInteraction->OnInteractionClosed(*session->entity);
+		PacketUtilities::CloseContainer(*session);
+	}
+}
+
 void EntityMPPlayer::Tick() {
 	if (!session)
+		return;
+
+	if (session->connState == ConnectionState::WaitingForSpawnChunks)
 		return;
 
 	if (!movedThisTick) {

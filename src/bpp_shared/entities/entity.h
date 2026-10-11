@@ -192,6 +192,7 @@ struct Entity {
 	virtual void UpdateEntityPhysicsState();
 	virtual void OnMountEntity();
 	virtual void OnDismountEntity();
+	virtual void OnEnterPortal();
 	float GetEntityBrightnessValue();
 	void MountEntity(std::shared_ptr<Entity> _entity);
 	void UnmountEntity();
