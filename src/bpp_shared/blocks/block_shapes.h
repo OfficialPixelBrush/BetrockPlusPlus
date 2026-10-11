@@ -425,13 +425,13 @@ inline AABB WallSignAabb(uint8_t _meta) {
 	constexpr double signTop = 25.0 / 32.0;
 	constexpr double wallOffset = 2.0 / 16.0;
 	switch (dir) {
-	case Direction::Value::North:
+	case Cardinal::Value::North:
 		return { 0.0, signBottom, 1.0 - wallOffset, 1.0, signTop, 1.0 };
-	case Direction::Value::South:
+	case Cardinal::Value::South:
 		return { 0.0, signBottom, 0.0, 1.0, signTop, wallOffset };
-	case Direction::Value::West:
+	case Cardinal::Value::West:
 		return { 1.0 - wallOffset, signBottom, 0.0, 1.0, signTop, 1.0 };
-	case Direction::Value::East:
+	case Cardinal::Value::East:
 		return { 0.0, signBottom, 0.0, wallOffset, signTop, 1.0 };
 	default:
 		return {};

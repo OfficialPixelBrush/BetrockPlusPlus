@@ -28,7 +28,7 @@ void RegisterPortalBehaviors();
 
 // Defined in common.cpp
 bool IsReplaceable(WorldManager& _world, Int3 _pos);
-bool IsSupported(WorldManager& _world, Int3 _pos, Direction::Value _dir);
+bool IsSupported(WorldManager& _world, Int3 _pos, Cardinal::Value _dir);
 
 // Defined in plants.cpp
 void TryGrowTree(WorldManager& _world, Int3 _pos);

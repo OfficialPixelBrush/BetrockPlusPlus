@@ -64,11 +64,11 @@ int WorldManager::GetBlockLightValue(Int3 _wpos, bool _offsetNonFullBlocks) {
 		auto blockId = this->GetBlockId(_wpos);
 		if (blockId == BLOCK_SLAB || blockId == BLOCK_FARMLAND || blockId == BLOCK_STAIRS_WOOD ||
 		    blockId == BLOCK_STAIRS_WOOD) {
-			int yP = GetBlockLightValue(_wpos.WithOffset(Direction::Value::Up), false);
-			int xP = GetBlockLightValue(_wpos.WithOffset(Direction::Value::East), false);
-			int xM = GetBlockLightValue(_wpos.WithOffset(Direction::Value::West), false);
-			int zP = GetBlockLightValue(_wpos.WithOffset(Direction::Value::South), false);
-			int zM = GetBlockLightValue(_wpos.WithOffset(Direction::Value::North), false);
+			int yP = GetBlockLightValue(_wpos.WithOffset(Cardinal::Value::Up), false);
+			int xP = GetBlockLightValue(_wpos.WithOffset(Cardinal::Value::East), false);
+			int xM = GetBlockLightValue(_wpos.WithOffset(Cardinal::Value::West), false);
+			int zP = GetBlockLightValue(_wpos.WithOffset(Cardinal::Value::South), false);
+			int zM = GetBlockLightValue(_wpos.WithOffset(Cardinal::Value::North), false);
 
 			if (xP > yP)
 				yP = xP;
@@ -1292,8 +1292,8 @@ void WorldManager::InitSpawn() {
 
 void WorldManager::PropagateChunkLightBorders(Int32_2 _cpos) {
 	// Iterate through our chunk borders
-	const Direction::Value dirs[4] = { Direction::Value::West, Direction::Value::East, Direction::Value::North,
-		                               Direction::Value::South };
+	const Cardinal::Value dirs[4] = { Cardinal::Value::West, Cardinal::Value::East, Cardinal::Value::North,
+		                               Cardinal::Value::South };
 	const Int32_2 bpos = _cpos * CHUNK_WIDTH;
 	for (auto dir : dirs) {
 		Chunk* neighborChunk = GetChunkRaw(_cpos.WithOffset(dir));
@@ -1305,25 +1305,25 @@ void WorldManager::PropagateChunkLightBorders(Int32_2 _cpos) {
 			// Pick the border column of this chunk facing direction i
 			int lx, lz, nx, nz;
 			switch (dir) {
-			case Direction::Value::West:
+			case Cardinal::Value::West:
 				lx = 0;
 				lz = t;
 				nx = CHUNK_WIDTH - 1;
 				nz = t;
 				break;
-			case Direction::Value::East:
+			case Cardinal::Value::East:
 				lx = CHUNK_WIDTH - 1;
 				lz = t;
 				nx = 0;
 				nz = t;
 				break;
-			case Direction::Value::North:
+			case Cardinal::Value::North:
 				lx = t;
 				lz = 0;
 				nx = t;
 				nz = CHUNK_WIDTH - 1;
 				break;
-			case Direction::Value::South:
+			case Cardinal::Value::South:
 			default:
 				lx = t;
 				lz = CHUNK_WIDTH - 1;
@@ -1372,8 +1372,8 @@ void WorldManager::NotifyNeighborsOfUpdate(Int3 _globalPos, BlockType _blockId) 
 		return;
 	}
 	// Update our six neighbors.
-	const Direction::Value dirs[6] = { Direction::Value::West, Direction::Value::East,  Direction::Value::Down,
-		                               Direction::Value::Up,   Direction::Value::North, Direction::Value::South };
+	const Cardinal::Value dirs[6] = { Cardinal::Value::West, Cardinal::Value::East,  Cardinal::Value::Down,
+		                               Cardinal::Value::Up,   Cardinal::Value::North, Cardinal::Value::South };
 
 	// Notify neighbors
 	for (auto dir : dirs) {

@@ -31,10 +31,10 @@ bool CanBlockCatchFire(WorldManager& _world, Int3 _pos) {
 }
 
 bool CanNeighborBurn(WorldManager& _world, Int3 _pos) {
-	static constexpr std::array<Direction::Value, 6> ALL_DIRS = { Direction::Value::West,  Direction::Value::East,
-		                                                          Direction::Value::Down,  Direction::Value::Up,
-		                                                          Direction::Value::North, Direction::Value::South };
-	for (Direction::Value dir : ALL_DIRS) {
+	static constexpr std::array<Cardinal::Value, 6> ALL_DIRS = { Cardinal::Value::West,  Cardinal::Value::East,
+		                                                          Cardinal::Value::Down,  Cardinal::Value::Up,
+		                                                          Cardinal::Value::North, Cardinal::Value::South };
+	for (Cardinal::Value dir : ALL_DIRS) {
 		if (CanBlockCatchFire(_world, _pos.WithOffset(dir)))
 			return true;
 	}
@@ -42,7 +42,7 @@ bool CanNeighborBurn(WorldManager& _world, Int3 _pos) {
 }
 
 bool CanFireStay(WorldManager& _world, Int3 _pos) {
-	return _world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::Down)) || CanNeighborBurn(_world, _pos);
+	return _world.IsBlockNormalCube(_pos.WithOffset(Cardinal::Value::Down)) || CanNeighborBurn(_world, _pos);
 }
 
 static void RegisterFlammable(BlockType _block, int _encouragement, int _ability) {
@@ -62,9 +62,9 @@ static int GetChanceOfNeighborsEncouragingFire(WorldManager& _world, Int3 _pos) 
 	if (!_world.IsAirBlock(_pos))
 		return 0;
 
-	static constexpr std::array<Direction::Value, 6> ALL_DIRS = { Direction::Value::West,  Direction::Value::East,
-		                                                          Direction::Value::Down,  Direction::Value::Up,
-		                                                          Direction::Value::North, Direction::Value::South };
+	static constexpr std::array<Cardinal::Value, 6> ALL_DIRS = { Cardinal::Value::West,  Cardinal::Value::East,
+		                                                          Cardinal::Value::Down,  Cardinal::Value::Up,
+		                                                          Cardinal::Value::North, Cardinal::Value::South };
 	int maxChance = 0;
 	for (auto dir : ALL_DIRS) {
 		maxChance = GetChanceToEncourageFire(_world, _pos.WithOffset(dir), maxChance);
@@ -141,13 +141,13 @@ void RegisterFireBehaviors() {
 	// This is awful
 	blockBehaviors[BLOCK_FIRE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
 	                                       Java::Random& _random) -> void {
-		const bool onNetherrack = _world.GetBlockId(_pos.WithOffset(Direction::Value::Down)) == BLOCK_NETHERRACK;
+		const bool onNetherrack = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::Down)) == BLOCK_NETHERRACK;
 
 		auto CanRainSeeAroundPosition = [&](Int3 _checkPos) -> bool {
-			return _world.CanRainHitSpot(_checkPos) || _world.CanRainHitSpot(_checkPos.WithOffset(Direction::Value::East)) ||
-			       _world.CanRainHitSpot(_checkPos.WithOffset(Direction::Value::West)) ||
-			       _world.CanRainHitSpot(_checkPos.WithOffset(Direction::Value::North)) ||
-			       _world.CanRainHitSpot(_checkPos.WithOffset(Direction::Value::South));
+			return _world.CanRainHitSpot(_checkPos) || _world.CanRainHitSpot(_checkPos.WithOffset(Cardinal::Value::East)) ||
+			       _world.CanRainHitSpot(_checkPos.WithOffset(Cardinal::Value::West)) ||
+			       _world.CanRainHitSpot(_checkPos.WithOffset(Cardinal::Value::North)) ||
+			       _world.CanRainHitSpot(_checkPos.WithOffset(Cardinal::Value::South));
 		};
 
 		if (!onNetherrack && CanRainSeeAroundPosition(_pos)) {
@@ -163,24 +163,24 @@ void RegisterFireBehaviors() {
 
 		// Die out if none of our neighbors can burn
 		if (!onNetherrack && !CanNeighborBurn(_world, _pos)) {
-			if (!_world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::Down)) || meta > 3)
+			if (!_world.IsBlockNormalCube(_pos.WithOffset(Cardinal::Value::Down)) || meta > 3)
 				_world.SetBlock(_pos, BLOCK_AIR);
 			return;
 		}
 
 		// Die out with a 25% chance if fully aged and the block under us can't catch fire
-		if (!onNetherrack && !CanBlockCatchFire(_world, _pos.WithOffset(Direction::Value::Down)) && meta == 15 &&
+		if (!onNetherrack && !CanBlockCatchFire(_world, _pos.WithOffset(Cardinal::Value::Down)) && meta == 15 &&
 		    _random.NextInt(4) == 0) {
 			_world.SetBlock(_pos, BLOCK_AIR);
 			return;
 		}
 
-		TryCatchBlockOnFire(_world, _pos.WithOffset(Direction::Value::East), 300, meta);
-		TryCatchBlockOnFire(_world, _pos.WithOffset(Direction::Value::West), 300, meta);
-		TryCatchBlockOnFire(_world, _pos.WithOffset(Direction::Value::Down), 250, meta);
-		TryCatchBlockOnFire(_world, _pos.WithOffset(Direction::Value::Up), 250, meta);
-		TryCatchBlockOnFire(_world, _pos.WithOffset(Direction::Value::North), 300, meta);
-		TryCatchBlockOnFire(_world, _pos.WithOffset(Direction::Value::South), 300, meta);
+		TryCatchBlockOnFire(_world, _pos.WithOffset(Cardinal::Value::East), 300, meta);
+		TryCatchBlockOnFire(_world, _pos.WithOffset(Cardinal::Value::West), 300, meta);
+		TryCatchBlockOnFire(_world, _pos.WithOffset(Cardinal::Value::Down), 250, meta);
+		TryCatchBlockOnFire(_world, _pos.WithOffset(Cardinal::Value::Up), 250, meta);
+		TryCatchBlockOnFire(_world, _pos.WithOffset(Cardinal::Value::North), 300, meta);
+		TryCatchBlockOnFire(_world, _pos.WithOffset(Cardinal::Value::South), 300, meta);
 
 		for (int x = _pos.x - 1; x <= _pos.x + 1; x++) {
 			for (int z = _pos.z - 1; z <= _pos.z + 1; z++) {

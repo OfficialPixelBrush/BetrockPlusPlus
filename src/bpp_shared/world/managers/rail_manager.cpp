@@ -10,10 +10,10 @@
 #include "world.h"
 #include <algorithm>
 
-Int3 RailManager::FindRailConnection(WorldManager& _world, Int3 _pos, Direction::Value _dir) {
+Int3 RailManager::FindRailConnection(WorldManager& _world, Int3 _pos, Cardinal::Value _dir) {
 	// Order here matters!
 	Int3 base = _pos.WithOffset(_dir);
-	Direction::Value offsets[3] = { Direction::Value::None, Direction::Value::Up, Direction::Value::Down };
+	Cardinal::Value offsets[3] = { Cardinal::Value::None, Cardinal::Value::Up, Cardinal::Value::Down };
 	for (size_t i = 0; i < 3; i++) {
 		Int3 checkPos = base.WithOffset(offsets[i]);
 		if (RailManager::IsRail(_world.GetBlockId(checkPos)))
@@ -23,11 +23,11 @@ Int3 RailManager::FindRailConnection(WorldManager& _world, Int3 _pos, Direction:
 }
 
 // TODO: Could this be turned into an array too?
-std::vector<Direction::Value> RailManager::GetVerifiedConnections(WorldManager& _world, Int3 _pos) {
+std::vector<Cardinal::Value> RailManager::GetVerifiedConnections(WorldManager& _world, Int3 _pos) {
 	auto shape = GetRailShape(_world.GetMetadata(_pos), _world.GetBlockId(_pos));
 	auto implied = GetImpliedConnections(shape);
 
-	std::vector<Direction::Value> verified;
+	std::vector<Cardinal::Value> verified;
 	for (auto dir : implied) {
 		Int3 farPos = FindRailConnection(_world, _pos, dir);
 		if (farPos == _pos)
@@ -48,7 +48,7 @@ std::vector<Direction::Value> RailManager::GetVerifiedConnections(WorldManager& 
 	return verified;
 }
 
-static Direction::Value GetCheckDir(Int3 _pos, Int3 _connectionPos) {
+static Cardinal::Value GetCheckDir(Int3 _pos, Int3 _connectionPos) {
 	Int3 connectionPosModified = _connectionPos;
 	connectionPosModified.y = _pos.y;
 	auto d = connectionPosModified - _pos;
@@ -56,10 +56,10 @@ static Direction::Value GetCheckDir(Int3 _pos, Int3 _connectionPos) {
 	// This is cancerous
 	Vec3 deltaDouble = { double(d.x), double(d.y), double(d.z) };
 	auto deltaDir = deltaDouble.GetFacingDirections()[0];
-	return Direction::Opposite(deltaDir);
+	return Cardinal::Opposite(deltaDir);
 }
 
-bool RailManager::CanConnect(WorldManager& _world, Int3 _pos, Direction::Value _dir) {
+bool RailManager::CanConnect(WorldManager& _world, Int3 _pos, Cardinal::Value _dir) {
 	Int3 connectionPos = FindRailConnection(_world, _pos, _dir);
 	if (connectionPos == _pos)
 		return false;
@@ -75,7 +75,7 @@ bool RailManager::CanConnect(WorldManager& _world, Int3 _pos, Direction::Value _
 	return neighborConnections.size() < 2;
 }
 
-bool RailManager::IsActuallyConnected(WorldManager& _world, Int3 _pos, Direction::Value _dir) {
+bool RailManager::IsActuallyConnected(WorldManager& _world, Int3 _pos, Cardinal::Value _dir) {
 	Int3 connectionPos = FindRailConnection(_world, _pos, _dir);
 	if (connectionPos == _pos)
 		return false;
@@ -91,7 +91,7 @@ bool RailManager::IsActuallyConnected(WorldManager& _world, Int3 _pos, Direction
 int RailManager::GetAdjacentTrackCount(WorldManager& _world, Int3 _pos) {
 	int count = 0;
 	for (auto dir :
-	     { Direction::Value::North, Direction::Value::South, Direction::Value::East, Direction::Value::West }) {
+	     { Cardinal::Value::North, Cardinal::Value::South, Cardinal::Value::East, Cardinal::Value::West }) {
 		if (FindRailConnection(_world, _pos, dir) != _pos)
 			count++;
 	}
@@ -124,18 +124,18 @@ static Blocks::RailShape ResolveCleanShape(bool _cn, bool _cs, bool _ce, bool _c
 static Blocks::RailShape ApplySlope(WorldManager& _world, Int3 _pos, Blocks::RailShape _shape) {
 	if (_shape == Blocks::RailShape::FlatNorthSouth) {
 		if (RailManager::IsRail(
-		        _world.GetBlockId(_pos.WithOffset(Direction::Value::North).WithOffset(Direction::Value::Up))))
+		        _world.GetBlockId(_pos.WithOffset(Cardinal::Value::North).WithOffset(Cardinal::Value::Up))))
 			_shape = Blocks::RailShape::AscendingNorth;
 		if (RailManager::IsRail(
-		        _world.GetBlockId(_pos.WithOffset(Direction::Value::South).WithOffset(Direction::Value::Up))))
+		        _world.GetBlockId(_pos.WithOffset(Cardinal::Value::South).WithOffset(Cardinal::Value::Up))))
 			_shape = Blocks::RailShape::AscendingSouth;
 	}
 	if (_shape == Blocks::RailShape::FlatEastWest) {
 		if (RailManager::IsRail(
-		        _world.GetBlockId(_pos.WithOffset(Direction::Value::East).WithOffset(Direction::Value::Up))))
+		        _world.GetBlockId(_pos.WithOffset(Cardinal::Value::East).WithOffset(Cardinal::Value::Up))))
 			_shape = Blocks::RailShape::AscendingEast;
 		if (RailManager::IsRail(
-		        _world.GetBlockId(_pos.WithOffset(Direction::Value::West).WithOffset(Direction::Value::Up))))
+		        _world.GetBlockId(_pos.WithOffset(Cardinal::Value::West).WithOffset(Cardinal::Value::Up))))
 			_shape = Blocks::RailShape::AscendingWest;
 	}
 	return _shape;
@@ -144,10 +144,10 @@ static Blocks::RailShape ApplySlope(WorldManager& _world, Int3 _pos, Blocks::Rai
 Blocks::RailShape RailManager::DetermineRailShape(WorldManager& _world, Int3 _pos, BlockType _block) {
 	bool canCurve = RailManager::RailCanCurve(_block);
 
-	auto cn = CanConnect(_world, _pos, Direction::Value::North);
-	auto cs = CanConnect(_world, _pos, Direction::Value::South);
-	auto ce = CanConnect(_world, _pos, Direction::Value::East);
-	auto cw = CanConnect(_world, _pos, Direction::Value::West);
+	auto cn = CanConnect(_world, _pos, Cardinal::Value::North);
+	auto cs = CanConnect(_world, _pos, Cardinal::Value::South);
+	auto ce = CanConnect(_world, _pos, Cardinal::Value::East);
+	auto cw = CanConnect(_world, _pos, Cardinal::Value::West);
 
 	Blocks::RailShape shape = ResolveCleanShape(cn, cs, ce, cw, canCurve);
 
@@ -187,20 +187,20 @@ Blocks::RailShape RailManager::DetermineRailShape(WorldManager& _world, Int3 _po
 }
 
 Blocks::RailShape RailManager::DetermineRailShapeWithAddition(WorldManager& _world, Int3 _pos, BlockType _block,
-                                                              Direction::Value _newDir) {
+                                                              Cardinal::Value _newDir) {
 	bool cn = false, cs = false, ce = false, cw = false;
-	auto mark = [&](Direction::Value _dir) {
+	auto mark = [&](Cardinal::Value _dir) {
 		switch (_dir) {
-		case Direction::Value::North:
+		case Cardinal::Value::North:
 			cn = true;
 			break;
-		case Direction::Value::South:
+		case Cardinal::Value::South:
 			cs = true;
 			break;
-		case Direction::Value::East:
+		case Cardinal::Value::East:
 			ce = true;
 			break;
-		case Direction::Value::West:
+		case Cardinal::Value::West:
 			cw = true;
 			break;
 		default:
@@ -235,7 +235,7 @@ bool RailManager::IsRailPowered(WorldManager& _world, Int3 _pos) {
 
 static bool IsRailDirectlyPowered(WorldManager& _world, Int3 _pos) {
 	return RedstoneManager::IsPositionPowered(_world, _pos) ||
-	       RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up));
+	       RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Cardinal::Value::Up));
 }
 
 // Axis a rail runs along; 0 = along Z, 1 = along X
@@ -333,7 +333,7 @@ static bool SearchPoweredLine(WorldManager& _world, Int3 _pos, uint8_t _meta, bo
 
 	if (IsFeedingRail(_world, _pos, _forward, _depth, axis))
 		return true;
-	return alsoCheckBelow && IsFeedingRail(_world, _pos.WithOffset(Direction::Value::Down), _forward, _depth, axis);
+	return alsoCheckBelow && IsFeedingRail(_world, _pos.WithOffset(Cardinal::Value::Down), _forward, _depth, axis);
 }
 
 void RailManager::UpdateRailPower(WorldManager& _world, Int3 _pos, BlockType _block) {
@@ -352,9 +352,9 @@ void RailManager::UpdateRailPower(WorldManager& _world, Int3 _pos, BlockType _bl
 	// SetMeta notifies our neighbours, which is what makes the next rail in the line re-check itself
 	_world.SetMeta(_pos, shouldBePowered ? uint8_t(shape | 8) : shape);
 
-	_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Direction::Value::Down), BLOCK_RAIL_POWERED);
+	_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Cardinal::Value::Down), BLOCK_RAIL_POWERED);
 	if (shape >= 2 && shape <= 5)
-		_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Direction::Value::Up), BLOCK_RAIL_POWERED);
+		_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Cardinal::Value::Up), BLOCK_RAIL_POWERED);
 }
 
 static uint8_t EncodeMeta(WorldManager& _world, Int3 _pos, BlockType _block, Blocks::RailShape _shape) {
@@ -380,7 +380,7 @@ void RailManager::RefreshRail(WorldManager& _world, Int3 _pos, BlockType _block,
 
 		auto neighborBlock = _world.GetBlockId(neighborPos);
 		auto neighborShape = DetermineRailShapeWithAddition(_world, neighborPos, neighborBlock,
-		                                                    Direction::Opposite(dir));
+		                                                    Cardinal::Opposite(dir));
 		uint8_t neighborMeta = EncodeMeta(_world, neighborPos, neighborBlock, neighborShape);
 		_world.SetMeta(neighborPos, neighborMeta);
 

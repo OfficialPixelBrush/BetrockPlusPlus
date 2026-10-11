@@ -19,7 +19,7 @@ struct ArtProfile {
 
 struct PaintingEntity : public Entity {
 	ArtProfile art = {};
-	Direction::Value direction = Direction::Value::None;
+	Cardinal::Value direction = Cardinal::Value::None;
 	TickTime tickCounter = 0;
 	Int3 blockCoordinates = {};
 	std::string validPaintingNames[25] = { "Kebab",   "Aztec",     "Alban",        "Aztec2",        "Bomb",
@@ -37,7 +37,7 @@ struct PaintingEntity : public Entity {
 		SetDirection(direction);
 	}
 
-	PaintingEntity(Int3 _blockPos, Direction::Value _direction) : Entity() {
+	PaintingEntity(Int3 _blockPos, Cardinal::Value _direction) : Entity() {
 		type = EntityType::PAINTING;
 		width = 0.5f;
 		height = 0.5f;
@@ -49,7 +49,7 @@ struct PaintingEntity : public Entity {
 
 	std::optional<Tag> SerializeToNbt() override;
 	void LoadFromNbt(Tag& _nbt) override;
-	void SetDirection(Direction::Value _direction);
+	void SetDirection(Cardinal::Value _direction);
 	bool OnValidSurface();
 
 	bool CanBeCollidedWith() override {

@@ -62,7 +62,7 @@ static void TryLavaHarden(WorldManager& _world, Int3 _pos) {
 
 	// Check above
 	if (!canHarden)
-		canHarden = _world.GetMaterial(_pos.WithOffset(Direction::Value::Up)).type == MaterialType::Water;
+		canHarden = _world.GetMaterial(_pos.WithOffset(Cardinal::Value::Up)).type == MaterialType::Water;
 
 	// We can harden
 	if (canHarden) {
@@ -99,8 +99,8 @@ static bool IsOpenForFlow(WorldManager& _world, Int3 _pos, MaterialType _fluidMa
 	return !BlocksFlow(block) && (material.type != _fluidMaterialType || _world.GetMetadata(_pos) != 0);
 }
 
-static constexpr Direction::Value FLOW_DIR[4] = { Direction::Value::West, Direction::Value::East,
-	                                              Direction::Value::North, Direction::Value::South };
+static constexpr Cardinal::Value FLOW_DIR[4] = { Cardinal::Value::West, Cardinal::Value::East,
+	                                              Cardinal::Value::North, Cardinal::Value::South };
 
 static int CalculateFlowCost(WorldManager& _world, Int3 _pos, int _depth, int _cameFrom,
                              MaterialType _fluidMaterialType) {
@@ -114,7 +114,7 @@ static int CalculateFlowCost(WorldManager& _world, Int3 _pos, int _depth, int _c
 		if (!IsOpenForFlow(_world, neighborPos, _fluidMaterialType))
 			continue;
 
-		if (!BlocksFlow(_world.GetBlockId(neighborPos.WithOffset(Direction::Value::Down))))
+		if (!BlocksFlow(_world.GetBlockId(neighborPos.WithOffset(Cardinal::Value::Down))))
 			return _depth;
 
 		if (_depth >= 4)
@@ -138,7 +138,7 @@ static void FlowingFluidTick(WorldManager& _world, Int3 _pos, BlockType _flowing
                              MaterialType _fluid, int _tickRate, Java::Random& _random) {
 	const bool isLava = _fluid == MaterialType::Lava;
 	const int decayStep = (isLava && _world.GetDimension() != Dimension::Nether) ? 2 : 1;
-	const Int3 belowPos = _pos.WithOffset(Direction::Value::Down);
+	const Int3 belowPos = _pos.WithOffset(Cardinal::Value::Down);
 
 	int level = GetFlowDecay(_world, _pos, _fluid);
 	if (level < 0)
@@ -166,7 +166,7 @@ static void FlowingFluidTick(WorldManager& _world, Int3 _pos, BlockType _flowing
 			newLevel = -1;
 
 		// Fed from above
-		int above = GetFlowDecay(_world, _pos.WithOffset(Direction::Value::Up), _fluid);
+		int above = GetFlowDecay(_world, _pos.WithOffset(Cardinal::Value::Up), _fluid);
 		if (above >= 0)
 			newLevel = above >= 8 ? above : above + 8;
 
@@ -223,7 +223,7 @@ static void FlowingFluidTick(WorldManager& _world, Int3 _pos, BlockType _flowing
 		Int3 neighborPos = _pos.WithOffset(FLOW_DIR[i]);
 		if (!IsOpenForFlow(_world, neighborPos, _fluid))
 			continue;
-		if (!BlocksFlow(_world.GetBlockId(neighborPos.WithOffset(Direction::Value::Down))))
+		if (!BlocksFlow(_world.GetBlockId(neighborPos.WithOffset(Cardinal::Value::Down))))
 			costs[i] = 0;
 		else
 			costs[i] = CalculateFlowCost(_world, neighborPos, 1, i, _fluid);
@@ -265,8 +265,8 @@ static Vec3 GetFluidFlowVector(WorldManager& _world, Int3 _pos) {
 	int myFlowContribution = getEffectiveFlowDecay(_world, _pos, waterMaterial);
 
 	// Same as FLOW_DIR, so could maybe be reused for that?
-	static constexpr Direction::Value NEIGHBOR_BLOCKS[4] = { Direction::Value::West, Direction::Value::East,
-		                                                     Direction::Value::North, Direction::Value::South };
+	static constexpr Cardinal::Value NEIGHBOR_BLOCKS[4] = { Cardinal::Value::West, Cardinal::Value::East,
+		                                                     Cardinal::Value::North, Cardinal::Value::South };
 	// Get the contribution of our horizontal neighbors
 	for (int i = 0; i < 4; i++) {
 		Int3 neighborPos = _pos.WithOffset(NEIGHBOR_BLOCKS[i]);
@@ -276,7 +276,7 @@ static Vec3 GetFluidFlowVector(WorldManager& _world, Int3 _pos) {
 		if (neighborFlowContribution < 0) {
 			if (!_world.GetMaterial(neighborPos).isSolid) {
 				// Check the block below us to see if its water, if it is, STRONGLY pull down
-				int belowFlowContribution = getEffectiveFlowDecay(_world, neighborPos.WithOffset(Direction::Value::Down),
+				int belowFlowContribution = getEffectiveFlowDecay(_world, neighborPos.WithOffset(Cardinal::Value::Down),
 				                                                  waterMaterial);
 				if (belowFlowContribution >= 0) {
 					flowDifference = belowFlowContribution - (myFlowContribution - 8);
@@ -304,21 +304,21 @@ static Vec3 GetFluidFlowVector(WorldManager& _world, Int3 _pos) {
 	if (_world.GetMetadata(_pos) >= 8) {
 		bool nearWall = false;
 
-		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::North)))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Cardinal::Value::North)))
 			nearWall = true;
-		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::South)))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Cardinal::Value::South)))
 			nearWall = true;
-		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::West)))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Cardinal::Value::West)))
 			nearWall = true;
-		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::East)))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Cardinal::Value::East)))
 			nearWall = true;
-		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::Up).Offset(Direction::Value::North)))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Cardinal::Value::Up).Offset(Cardinal::Value::North)))
 			nearWall = true;
-		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::Up).Offset(Direction::Value::South)))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Cardinal::Value::Up).Offset(Cardinal::Value::South)))
 			nearWall = true;
-		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::Up).Offset(Direction::Value::West)))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Cardinal::Value::Up).Offset(Cardinal::Value::West)))
 			nearWall = true;
-		if (!nearWall && isFluidWall(_pos.WithOffset(Direction::Value::Up).Offset(Direction::Value::East)))
+		if (!nearWall && isFluidWall(_pos.WithOffset(Cardinal::Value::Up).Offset(Cardinal::Value::East)))
 			nearWall = true;
 
 		if (nearWall) {
@@ -413,12 +413,12 @@ void RegisterFluidBehaviors() {
 			p.z += _random.NextInt(3) - 1;
 			BlockType id = _world.GetBlockId(p);
 			if (id == BLOCK_AIR) {
-				if (IsBurningMaterial(_world, p.WithOffset(Direction::Value::West)) ||
-				    IsBurningMaterial(_world, p.WithOffset(Direction::Value::East)) ||
-				    IsBurningMaterial(_world, p.WithOffset(Direction::Value::North)) ||
-				    IsBurningMaterial(_world, p.WithOffset(Direction::Value::South)) ||
-				    IsBurningMaterial(_world, p.WithOffset(Direction::Value::Down)) ||
-				    IsBurningMaterial(_world, p.WithOffset(Direction::Value::Up))) {
+				if (IsBurningMaterial(_world, p.WithOffset(Cardinal::Value::West)) ||
+				    IsBurningMaterial(_world, p.WithOffset(Cardinal::Value::East)) ||
+				    IsBurningMaterial(_world, p.WithOffset(Cardinal::Value::North)) ||
+				    IsBurningMaterial(_world, p.WithOffset(Cardinal::Value::South)) ||
+				    IsBurningMaterial(_world, p.WithOffset(Cardinal::Value::Down)) ||
+				    IsBurningMaterial(_world, p.WithOffset(Cardinal::Value::Up))) {
 					_world.SetBlock(p, BLOCK_FIRE);
 					return;
 				}

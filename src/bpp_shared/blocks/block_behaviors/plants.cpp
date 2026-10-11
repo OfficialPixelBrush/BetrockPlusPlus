@@ -64,7 +64,7 @@ void TryGrowTree(WorldManager& _world, Int3 _pos) {
 }
 
 static void TryTallPlantGrowth(WorldManager& _world, Int3 _pos, uint8_t _meta, BlockType _block) {
-	if (_world.GetBlockId(_pos.WithOffset(Direction::Value::Up)) != BLOCK_AIR)
+	if (_world.GetBlockId(_pos.WithOffset(Cardinal::Value::Up)) != BLOCK_AIR)
 		return;
 
 	bool canContinue = true;
@@ -73,14 +73,14 @@ static void TryTallPlantGrowth(WorldManager& _world, Int3 _pos, uint8_t _meta, B
 	while (canContinue) {
 		if (height >= 3)
 			return;
-		if (_world.GetBlockId(checkPos.Offset(Direction::Value::Down)) == _block) {
+		if (_world.GetBlockId(checkPos.Offset(Cardinal::Value::Down)) == _block) {
 			height++;
 			continue;
 		}
 		canContinue = false;
 	}
 	if (_meta >= 15) {
-		_world.SetBlock(_pos.WithOffset(Direction::Value::Up), _block);
+		_world.SetBlock(_pos.WithOffset(Cardinal::Value::Up), _block);
 
 		// So we dont regrow instantly
 		// Also updates the new plant block
@@ -94,14 +94,14 @@ static float GetCropGrowthRate(WorldManager& _world, Int3 _pos) {
 	float rate = 1.0f;
 
 	// Check each axis to see if there is wheat there
-	BlockType north = _world.GetBlockId(_pos.WithOffset(Direction::Value::North));
-	BlockType south = _world.GetBlockId(_pos.WithOffset(Direction::Value::South));
-	BlockType west = _world.GetBlockId(_pos.WithOffset(Direction::Value::West));
-	BlockType east = _world.GetBlockId(_pos.WithOffset(Direction::Value::East));
-	BlockType nw = _world.GetBlockId(_pos.WithOffset(Direction::Value::North).Offset(Direction::Value::West));
-	BlockType ne = _world.GetBlockId(_pos.WithOffset(Direction::Value::North).Offset(Direction::Value::East));
-	BlockType se = _world.GetBlockId(_pos.WithOffset(Direction::Value::South).Offset(Direction::Value::East));
-	BlockType sw = _world.GetBlockId(_pos.WithOffset(Direction::Value::South).Offset(Direction::Value::West));
+	BlockType north = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::North));
+	BlockType south = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::South));
+	BlockType west = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::West));
+	BlockType east = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::East));
+	BlockType nw = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::North).Offset(Cardinal::Value::West));
+	BlockType ne = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::North).Offset(Cardinal::Value::East));
+	BlockType se = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::South).Offset(Cardinal::Value::East));
+	BlockType sw = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::South).Offset(Cardinal::Value::West));
 
 	const bool wheatOnXAxis = (west == BLOCK_CROP_WHEAT || east == BLOCK_CROP_WHEAT);
 	const bool wheatOnZAxis = (north == BLOCK_CROP_WHEAT || south == BLOCK_CROP_WHEAT);
@@ -288,7 +288,7 @@ void RegisterPlantBehaviors() {
 		TryTallPlantGrowth(_world, _pos, _meta, BLOCK_SUGARCANE);
 	};
 
-	auto onPlantPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+	auto onPlantPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Cardinal::Value _face, BlockType _blockId,
 	                       uint8_t _meta) -> bool {
 		if (CanGenericPlantSurviveAt(_world, _pos)) {
 			return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
@@ -296,7 +296,7 @@ void RegisterPlantBehaviors() {
 		return false;
 	};
 
-	auto onCactusPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
+	auto onCactusPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Cardinal::Value _face,
 	                        BlockType _blockId, uint8_t _meta) -> bool {
 		if (CanCactusSurviveAt(_world, _pos)) {
 			return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
@@ -493,7 +493,7 @@ void RegisterPlantBehaviors() {
 		GenericBreak(_world, _pos, _destroyer);
 	};
 	blockBehaviors[BLOCK_LEAVES].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
+	                                                Cardinal::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
 		// So leaves placed by players dont decay
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, /*meta=*/_meta & 0b11);
 	};

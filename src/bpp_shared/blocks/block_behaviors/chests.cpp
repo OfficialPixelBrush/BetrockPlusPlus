@@ -33,8 +33,8 @@ namespace Blocks {
 
 static bool CanPlaceChest(WorldManager& _world, Int3 _pos) {
 	// If any of the block surrounding us are double chests we cannot be placed
-	Direction::Value directions[4] = { Direction::Value::East, Direction::Value::West, Direction::Value::North,
-		                               Direction::Value::South };
+	Cardinal::Value directions[4] = { Cardinal::Value::East, Cardinal::Value::West, Cardinal::Value::North,
+		                               Cardinal::Value::South };
 
 	auto isDoubleChest = [&](Int3 _npos) -> bool {
 		if (_world.GetBlockId(_npos) != BLOCK_CHEST)
@@ -59,7 +59,7 @@ bool CanOpenChest(WorldManager& _world, Int3 _pos) {
 		return false;
 
 	// Is there a block above us?
-	if (_world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::Up)))
+	if (_world.IsBlockNormalCube(_pos.WithOffset(Cardinal::Value::Up)))
 		return false;
 
 	// Check if we are a double chest
@@ -82,7 +82,7 @@ bool CanOpenChest(WorldManager& _world, Int3 _pos) {
 		if (!partnerChest)
 			return false;
 
-		if (_world.IsBlockNormalCube(partnerChest->position.WithOffset(Direction::Value::Up)))
+		if (_world.IsBlockNormalCube(partnerChest->position.WithOffset(Cardinal::Value::Up)))
 			return false;
 	}
 
@@ -92,7 +92,7 @@ bool CanOpenChest(WorldManager& _world, Int3 _pos) {
 void RegisterChestBehaviors() {
 	// Chest
 	blockBehaviors[BLOCK_CHEST].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                               Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
+	                                               Cardinal::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
 		if (!CanPlaceChest(_world, _pos))
 			return false;
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);

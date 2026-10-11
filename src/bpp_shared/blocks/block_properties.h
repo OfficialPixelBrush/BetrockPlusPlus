@@ -20,7 +20,7 @@ namespace Blocks {
 bool CanSugarcaneSurviveAt(WorldAccess& _world, Int3 _pos);
 bool CanCakeSurviveAt(WorldAccess& _world, Int3 _pos);
 bool CanCropsSurviveAt(WorldAccess& _world, Int3 _pos);
-bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, Direction::Value _face);
+bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, Cardinal::Value _face);
 float GetFluidPercentAir(uint8_t _meta);
 void BreakAndDropBlock(WorldManager& _world, Int3 _pos);
 void BreakAndDropBlockWithChance(WorldManager& _world, Int3 _pos, float _chance);

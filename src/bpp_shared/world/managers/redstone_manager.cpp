@@ -35,9 +35,9 @@ bool RedstoneManager::CheckTorchBurnout(WorldManager& _world, Int3 _pos, bool _l
 }
 
 static bool IsPoweredByAttachedLeverOrButton(WorldManager& _world, Int3 _pos) {
-	static constexpr Direction::Value ALL_DIRS[6] = {
-		Direction::Value::North, Direction::Value::South, Direction::Value::East,
-		Direction::Value::West,  Direction::Value::Up,    Direction::Value::Down,
+	static constexpr Cardinal::Value ALL_DIRS[6] = {
+		Cardinal::Value::North, Cardinal::Value::South, Cardinal::Value::East,
+		Cardinal::Value::West,  Cardinal::Value::Up,    Cardinal::Value::Down,
 	};
 	for (auto dir : ALL_DIRS) {
 		Int3 neighborPos = _pos.WithOffset(dir);
@@ -162,8 +162,8 @@ PowerProfile RedstoneManager::GetBlockPowerProfile(WorldManager& _world, Int3 _p
 	}
 
 	// Is a powered pressure plate above us?
-	auto above = _world.GetBlockId(_pos.WithOffset(Direction::Value::Up));
-	auto aboveMeta = _world.GetMetadata(_pos.WithOffset(Direction::Value::Up));
+	auto above = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::Up));
+	auto aboveMeta = _world.GetMetadata(_pos.WithOffset(Cardinal::Value::Up));
 	if (above == BLOCK_PRESSURE_PLATE_STONE || above == BLOCK_PRESSURE_PLATE_WOOD) {
 		if (aboveMeta == 1)
 			return { true, true };
@@ -224,16 +224,16 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 	//auto thisMeta = _world.GetMetadata(_pos);
 
 	// Is the block under us being hard powered?
-	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Direction::Value::Down)).hardPowered)
+	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Cardinal::Value::Down)).hardPowered)
 		return 15;
 
 	// Is the block above us being hard powered?
-	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Direction::Value::Up)).hardPowered)
+	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Cardinal::Value::Up)).hardPowered)
 		return 15;
 
 	// Can the block above us power us?
-	if (RedstoneManager::GetComponentProfile(_world.GetBlockId(_pos.WithOffset(Direction::Value::Up)),
-	                                         _world.GetMetadata(_pos.WithOffset(Direction::Value::Up)))
+	if (RedstoneManager::GetComponentProfile(_world.GetBlockId(_pos.WithOffset(Cardinal::Value::Up)),
+	                                         _world.GetMetadata(_pos.WithOffset(Cardinal::Value::Up)))
 	        .powerBelow)
 		return 15;
 
@@ -332,16 +332,16 @@ static int GetDustPowerLevel(WorldManager& _world, Int3 _pos) {
 
 bool RedstoneManager::IsPositionPowered(WorldManager& _world, Int3 _pos) {
 	// Is the block under us being powered?
-	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Direction::Value::Down)).powered)
+	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Cardinal::Value::Down)).powered)
 		return true;
 
 	// Is the block above us being powered?
-	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Direction::Value::Up)).powered)
+	if (RedstoneManager::GetBlockPowerProfile(_world, _pos.WithOffset(Cardinal::Value::Up)).powered)
 		return true;
 
 	// Can the block above us power us?
-	if (RedstoneManager::GetComponentProfile(_world.GetBlockId(_pos.WithOffset(Direction::Value::Up)),
-	                                         _world.GetMetadata(_pos.WithOffset(Direction::Value::Up)))
+	if (RedstoneManager::GetComponentProfile(_world.GetBlockId(_pos.WithOffset(Cardinal::Value::Up)),
+	                                         _world.GetMetadata(_pos.WithOffset(Cardinal::Value::Up)))
 	        .powerBelow)
 		return true;
 
@@ -556,17 +556,17 @@ void RedstoneManager::RefreshWireAt(WorldManager& _world, Int3 _pos) {
 	SolveRedstoneNetwork(_world, _pos);
 }
 
-bool RedstoneManager::GetProfileInDirection(const ComponentProfile _profile, const Direction::Value _dir) {
+bool RedstoneManager::GetProfileInDirection(const ComponentProfile _profile, const Cardinal::Value _dir) {
 	switch(_dir) {
-		case Direction::Value::North:
+		case Cardinal::Value::North:
 			return _profile.powerNZ;
-		case Direction::Value::South:
+		case Cardinal::Value::South:
 			return _profile.powerZ;
-		case Direction::Value::West:
+		case Cardinal::Value::West:
 			return _profile.powerNX;
-		case Direction::Value::East:
+		case Cardinal::Value::East:
 			return _profile.powerX;	
-		case Direction::Value::Down:
+		case Cardinal::Value::Down:
 			return _profile.powerBelow;	
 		default:
 			return false;
@@ -582,7 +582,7 @@ bool IsValidPoweringComponent(BlockType _block) {
 
 bool RedstoneManager::IsRepeaterInputPowered(WorldManager& _world, Int3 _pos, uint8_t _meta) {
 	const auto dir = GetDirectionFromMeta(BLOCK_REDSTONE_REPEATER_OFF, _meta & 3);
-	Int3 inputPos = _pos.WithOffset(Direction::Opposite(dir));
+	Int3 inputPos = _pos.WithOffset(Cardinal::Opposite(dir));
 	auto block = _world.GetBlockId(inputPos);
 	auto meta = _world.GetMetadata(inputPos);
 	if (IsValidPoweringComponent(block) && GetProfileInDirection(RedstoneManager::GetComponentProfile(block, meta), dir))
