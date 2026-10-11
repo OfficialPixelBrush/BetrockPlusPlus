@@ -144,7 +144,7 @@ bool WorldManager::IsAabbInFluidLevel(AABB _collider, Material _material) {
 
 	for (int x = minX; x < maxX; x++) {
 		for (int z = minZ; z < maxZ; z++) {
-			Chunk* chunk = GetChunkRaw({x/CHUNK_WIDTH,z/CHUNK_WIDTH});
+			Chunk* chunk = GetChunkRaw({ x >> 4, z >> 4 });
 			if (!IsChunkValid(chunk))
 				continue;
 			const int lx = x & 15;
@@ -179,7 +179,7 @@ bool WorldManager::IsMaterialInAabb(AABB _collider, Material _material) {
 	// We are looking to see if the materials match
 	for (int x = minX; x < maxX; x++) {
 		for (int z = minZ; z < maxZ; z++) {
-			Chunk* chunk = GetChunkRaw({x/CHUNK_WIDTH,z/CHUNK_WIDTH});
+			Chunk* chunk = GetChunkRaw({ x >> 4, z >> 4 });
 			if (!IsChunkValid(chunk))
 				continue;
 			const int lx = x & 15;
@@ -208,7 +208,7 @@ bool WorldManager::IsLiquidInAabb(AABB _collider) {
 	// Check every block within the collider
 	for (int x = minX; x < maxX; x++) {
 		for (int z = minZ; z < maxZ; z++) {
-			Chunk* chunk = GetChunkRaw({x/CHUNK_WIDTH,z/CHUNK_WIDTH});
+			Chunk* chunk = GetChunkRaw({ x >> 4, z >> 4 });
 			if (!IsChunkValid(chunk))
 				continue;
 			const int lx = x & 15;
