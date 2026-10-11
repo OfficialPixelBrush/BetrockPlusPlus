@@ -176,8 +176,12 @@ static void OnMushroomTick(WorldManager& _world, Int3 _pos, uint8_t /*_meta*/, J
 	int cy = _pos.y + _random.NextInt(2) - _random.NextInt(2);
 	int cz = _pos.z + _random.NextInt(3) - 1;
 	Int3 nPos = { cx, cy, cz };
-	if (_world.IsAirBlock(nPos) && CanMushroomSurviveAt(_world, nPos))
+	if (_world.IsAirBlock(nPos) && CanMushroomSurviveAt(_world, nPos)) {
+		// Vanilla quirk!
+		_random.NextInt(3);
+		_random.NextInt(3);
 		_world.SetBlock(nPos, thisBlock);
+	}
 }
 
 void RegisterPlantBehaviors() {

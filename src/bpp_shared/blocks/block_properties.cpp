@@ -139,6 +139,8 @@ bool CanGenericPlantSurviveAt(WorldAccess& _world, Int3 _pos) {
 }
 
 bool CanMushroomSurviveAt(WorldAccess& _world, Int3 _pos) {
+	if (_pos.y < 0 || _pos.y >= CHUNK_HEIGHT)
+		return false;
 	auto lightLevel = _world.GetBlockLightRaw(_pos);
 	auto belowBlock = _world.GetBlockId({ _pos.x, _pos.y - 1, _pos.z });
 	bool canGrowOnBlock = blockProperties[belowBlock].isOpaqueCube;
