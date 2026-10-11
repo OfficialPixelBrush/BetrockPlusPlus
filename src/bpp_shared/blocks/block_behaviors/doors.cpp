@@ -64,18 +64,18 @@ static void BreakDoor(WorldManager& _world, Int3 _pos, BlockType _doorType) {
 	auto meta = _world.GetMetadata(_pos);
 	if (meta & 8) {
 		// Offset post down
-		_pos.Offset(Direction::Value::Down);
+		_pos.Offset(Cardinal::Value::Down);
 		// We are the top of the door
 		if (_world.GetBlockId(_pos) != _doorType) {
 			// Below us is not the bottom of a door! This is bad!
-			_world.SetBlock(_pos.WithOffset(Direction::Value::Up), BLOCK_AIR);
+			_world.SetBlock(_pos.WithOffset(Cardinal::Value::Up), BLOCK_AIR);
 			return;
 		}
 	}
 	// Since we're now guaranteed to be
 	// pointing at the bottom of the door,
 	// we can continue like this
-	Int3 top = _pos.WithOffset(Direction::Value::Up);
+	Int3 top = _pos.WithOffset(Cardinal::Value::Up);
 	if (_world.GetBlockId(top) == _doorType && (_world.GetMetadata(top) & 8)) {
 		_world.SetBlock(top, BLOCK_AIR);
 	}
@@ -91,7 +91,7 @@ static void NeighborUpdateDoor(WorldManager& _world, Int3 _pos, BlockType _block
 
 	if (meta & 8) {
 		// If the bottom half is gone then break
-		const Int3 below = _pos.WithOffset(Direction::Value::Down);
+		const Int3 below = _pos.WithOffset(Cardinal::Value::Down);
 		if (_world.GetBlockId(below) != myType) {
 			BreakDoor(_world, _pos, myType);
 			return;
@@ -102,8 +102,8 @@ static void NeighborUpdateDoor(WorldManager& _world, Int3 _pos, BlockType _block
 	}
 
 	// If the top half is gone or we don't have support then break
-	const Int3 above = _pos.WithOffset(Direction::Value::Up);
-	if (_world.GetBlockId(above) != myType || !_world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::Down))) {
+	const Int3 above = _pos.WithOffset(Cardinal::Value::Up);
+	if (_world.GetBlockId(above) != myType || !_world.IsBlockNormalCube(_pos.WithOffset(Cardinal::Value::Down))) {
 		BreakDoor(_world, _pos, myType);
 		return;
 	}
@@ -138,45 +138,45 @@ void RegisterDoorBehaviors() {
 		    ToggleTrapdoor(_world, _pos, _triggeringSession);
 		    return false;
 		},
-		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
+		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer, Cardinal::Value _face,
 		                    BlockType /*_blockId*/, uint8_t /*_meta*/) -> bool {
 		    // Doors can only be placed against the sides of blocks
-		    if (_face == Direction::Value::Up || _face == Direction::Value::Down)
+		    if (_face == Cardinal::Value::Up || _face == Cardinal::Value::Down)
 			    return false;
 
 		    if (!IsReplaceable(_world, _pos))
 			    return false;
 
 		    return GenericPlace(_world, _pos, _placer, _face, BLOCK_TRAPDOOR,
-		                        GetMetaFromDirection(BLOCK_TRAPDOOR, Direction::Opposite(_face)));
+		                        GetMetaFromDirection(BLOCK_TRAPDOOR, Cardinal::Opposite(_face)));
 		},
 	};
 
-	auto onDoorPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+	auto onDoorPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Cardinal::Value _face, BlockType _blockId,
 	                      uint8_t /*_meta*/) -> bool {
 		// Doors can only be placed by clicking the top face of a block
-		if (_face != Direction::Value::Up)
+		if (_face != Cardinal::Value::Up)
 			return false;
 
 		// _pos is already the target cell
 		const Int3 placePos = _pos;
-		const Int3 abovePos = placePos.WithOffset(Direction::Value::Up);
+		const Int3 abovePos = placePos.WithOffset(Cardinal::Value::Up);
 
 		// Is this placement valid?
 		if (!_world.InBounds(abovePos.y))
 			return false;
-		if (!_world.IsBlockNormalCube(placePos.WithOffset(Direction::Value::Down)))
+		if (!_world.IsBlockNormalCube(placePos.WithOffset(Cardinal::Value::Down)))
 			return false;
 		if (!IsReplaceable(_world, placePos) || !IsReplaceable(_world, abovePos))
 			return false;
 
-		auto facing = Direction::FromAngle(_placer.rotationYaw);
+		auto facing = Cardinal::FromAngle(_placer.rotationYaw);
 
-		const Int3 left = placePos.WithOffset(Direction::ToLeft(facing));
-		const Int3 leftTop = left.WithOffset(Direction::Value::Up);
+		const Int3 left = placePos.WithOffset(Cardinal::ToLeft(facing));
+		const Int3 leftTop = left.WithOffset(Cardinal::Value::Up);
 
-		const Int3 right = placePos.WithOffset(Direction::ToRight(facing));
-		const Int3 rightTop = right.WithOffset(Direction::Value::Up);
+		const Int3 right = placePos.WithOffset(Cardinal::ToRight(facing));
+		const Int3 rightTop = right.WithOffset(Cardinal::Value::Up);
 
 		const int leftSolidBlocks = (_world.IsBlockNormalCube(left) ? 1 : 0) +
 		                            (_world.IsBlockNormalCube(leftTop) ? 1 : 0);
@@ -194,7 +194,7 @@ void RegisterDoorBehaviors() {
 		}
 
 		if (hingeOnRight)
-			facing = Direction::ToLeft(facing);
+			facing = Cardinal::ToLeft(facing);
 
 		uint8_t meta = GetMetaFromDirection(_blockId, facing);
 		if (hingeOnRight)

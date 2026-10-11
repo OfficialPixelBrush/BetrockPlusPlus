@@ -208,7 +208,7 @@ void ServerBlock::Initialize() {
 				meta = _world.GetMetadata(headPos);
 			}
 			auto bedDir = GetDirectionFromMeta(BLOCK_BED, meta);
-			Int3 footPos = headPos.WithOffset(Direction::Opposite(bedDir));
+			Int3 footPos = headPos.WithOffset(Cardinal::Opposite(bedDir));
 
 			Vec3 explosionCenter = {
 				(headPos.x + footPos.x) / 2.0 + 0.5,

@@ -152,8 +152,8 @@ bool PlaceInExistingPortal(WorldManager& _world, Entity& _entity) {
 		return false;
 
 	// TP our entity to the center of the portal
-	const Direction::Value neighbors[4] = { Direction::Value::West, Direction::Value::East, Direction::Value::North,
-		                              Direction::Value::South };
+	const Cardinal::Value neighbors[4] = { Cardinal::Value::West, Cardinal::Value::East, Cardinal::Value::North,
+		                              Cardinal::Value::South };
 	const double offsets[4][2] = { { -0.5, 0.0 }, { 0.5, 0.0 }, { 0.0, -0.5 }, { 0.0, 0.5 } };
 
 	Vec3 targetPos = portalPos + 0.5;

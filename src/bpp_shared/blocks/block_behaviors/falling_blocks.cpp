@@ -43,7 +43,7 @@ void RegisterFallingBlockBehaviors() {
 	};
 	blockBehaviors[BLOCK_GRAVEL].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
 	                                         Java::Random& /*_random*/) -> void {
-		const Int3 below = _pos.WithOffset(Direction::Value::Down);
+		const Int3 below = _pos.WithOffset(Cardinal::Value::Down);
 
 		if (!Blocks::CanFallAt(_world, below) || _pos.y < 0)
 			return;
@@ -61,7 +61,7 @@ void RegisterFallingBlockBehaviors() {
 			_world.SetBlock(_pos, BLOCK_AIR, 0);
 
 			Int3 landing = _pos;
-			while (Blocks::CanFallAt(_world, landing.WithOffset(Direction::Value::Down)) && landing.y > 0)
+			while (Blocks::CanFallAt(_world, landing.WithOffset(Cardinal::Value::Down)) && landing.y > 0)
 				landing.y--;
 
 			if (landing.y > 0)

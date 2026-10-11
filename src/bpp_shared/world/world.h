@@ -162,8 +162,8 @@ public:
 	}
 
 	bool IsOpenGroundSpot(Int3 _pos) {
-		return IsBlockNormalCube(_pos.WithOffset(Direction::Value::Down)) && IsAirBlock(_pos) &&
-		       IsAirBlock(_pos.WithOffset(Direction::Value::Up));
+		return IsBlockNormalCube(_pos.WithOffset(Cardinal::Value::Down)) && IsAirBlock(_pos) &&
+		       IsAirBlock(_pos.WithOffset(Cardinal::Value::Up));
 	}
 
 	void DoExplosion(Entity* _exploder, Vec3 _position, float _size, bool _doFire) {

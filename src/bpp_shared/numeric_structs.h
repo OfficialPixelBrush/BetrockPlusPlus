@@ -218,60 +218,60 @@ struct TriNumber {
 		return std::sqrt(x * x + y * y + z * z);
 	}
 
-	auto Offset(const Direction::Value _direction, const T _value = 1) {
+	auto Offset(const Cardinal::Value _direction, const T _value = 1) {
 		switch (_direction) {
-		case Direction::Value::None:
+		case Cardinal::Value::None:
 			break;
-		case Direction::Value::North:
+		case Cardinal::Value::North:
 			z -= _value;
 			break;
-		case Direction::Value::South:
+		case Cardinal::Value::South:
 			z += _value;
 			break;
-		case Direction::Value::East:
+		case Cardinal::Value::East:
 			x += _value;
 			break;
-		case Direction::Value::West:
+		case Cardinal::Value::West:
 			x -= _value;
 			break;
-		case Direction::Value::Up:
+		case Cardinal::Value::Up:
 			y += _value;
 			break;
-		case Direction::Value::Down:
+		case Cardinal::Value::Down:
 			y -= _value;
 			break;
 		}
 		return *this;
 	}
 
-	auto WithOffset(const Direction::Value _direction, const T _value = 1) const {
+	auto WithOffset(const Cardinal::Value _direction, const T _value = 1) const {
 		TriNumber<T> result = *this;
 		return result.Offset(_direction, _value);
 	}
 
 	// Returns the directions that the vector is pointing towards
-	std::array<Direction::Value, 3> GetFacingDirections() {
+	std::array<Cardinal::Value, 3> GetFacingDirections() {
 		// Within a reasonable, 3-dimensional world,
 		// a vector should only ever point in, at most, three directions
-		std::array<Direction::Value, 3> dirs;
+		std::array<Cardinal::Value, 3> dirs;
 		int8_t dirIndex = 0;
 		T length = Length();
 		TriNumber<T> checkVec = { x / length, y / length, z / length };
 		if (checkVec == TriNumber<T>{ 0, 0, 0 })
-			return { Direction::Value::None, Direction::Value::None, Direction::Value::None };
+			return { Cardinal::Value::None, Cardinal::Value::None, Cardinal::Value::None };
 
 		if (checkVec.x > 0)
-			dirs[dirIndex++] = (Direction::Value::East);
+			dirs[dirIndex++] = (Cardinal::Value::East);
 		else if (checkVec.x < 0)
-			dirs[dirIndex++] = (Direction::Value::West);
+			dirs[dirIndex++] = (Cardinal::Value::West);
 		if (checkVec.z > 0)
-			dirs[dirIndex++] = (Direction::Value::South);
+			dirs[dirIndex++] = (Cardinal::Value::South);
 		else if (checkVec.z < 0)
-			dirs[dirIndex++] = (Direction::Value::North);
+			dirs[dirIndex++] = (Cardinal::Value::North);
 		if (checkVec.y > 0)
-			dirs[dirIndex++] = (Direction::Value::Up);
+			dirs[dirIndex++] = (Cardinal::Value::Up);
 		else if (checkVec.y < 0)
-			dirs[dirIndex++] = (Direction::Value::Down);
+			dirs[dirIndex++] = (Cardinal::Value::Down);
 		// NOTE: If dirIndex is ever > 3, someone is
 		// trying to make this codebase support 4 or more dimensions.
 		// So as long as that doesn't happen,
@@ -442,29 +442,29 @@ struct BiNumber {
 		return x * y;
 	}
 
-	auto Offset(const Direction::Value _direction, const T _value = 1) {
+	auto Offset(const Cardinal::Value _direction, const T _value = 1) {
 		switch (_direction) {
-		case Direction::Value::None:
+		case Cardinal::Value::None:
 			break;
-		case Direction::Value::Up:
-		case Direction::Value::North:
+		case Cardinal::Value::Up:
+		case Cardinal::Value::North:
 			z -= _value;
 			break;
-		case Direction::Value::Down:
-		case Direction::Value::South:
+		case Cardinal::Value::Down:
+		case Cardinal::Value::South:
 			z += _value;
 			break;
-		case Direction::Value::East:
+		case Cardinal::Value::East:
 			x += _value;
 			break;
-		case Direction::Value::West:
+		case Cardinal::Value::West:
 			x -= _value;
 			break;
 		}
 		return *this;
 	}
 
-	auto WithOffset(const Direction::Value _direction, const T _value = 1) const {
+	auto WithOffset(const Cardinal::Value _direction, const T _value = 1) const {
 		BiNumber<T> result = *this;
 		return result.Offset(_direction, _value);
 	}

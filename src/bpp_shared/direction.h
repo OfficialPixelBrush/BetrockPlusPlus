@@ -9,8 +9,9 @@
 #include "./helpers/java/java_math.h"
 #include <string_view>
 
-namespace Direction {
+namespace Cardinal {
 
+// Cardinal Directions
 enum class Value : uint8_t {
 	// Do NOT change this order!
 	// This order allows us to get the
@@ -116,5 +117,72 @@ constexpr std::string_view Str(const Value _dir) {
 		return "INVALID";
 	}
 }
-
 } // namespace Direction
+
+namespace Axis {
+// Axis Directions
+enum class Value : uint8_t {
+	NorthSouth = 0,
+	EastWest = 1,
+	UpDown = 2,
+	None,
+};
+
+constexpr Value ToLeft(const Value _axis) {
+	switch (_axis) {
+	case Value::NorthSouth:
+		return Value::EastWest;
+	case Value::EastWest:
+		return Value::NorthSouth;
+	default:
+		return _axis;
+	}
+}
+
+constexpr Value ToRight(const Value _axis) {
+	return ToLeft(_axis);
+}
+
+constexpr Value FromAngle(const float _yaw) {
+	switch (Cardinal::FromAngle(_yaw)) {
+	case Cardinal::Value::East:
+		return Value::EastWest;
+	case Cardinal::Value::South:
+		return Value::NorthSouth;
+	case Cardinal::Value::West:
+		return Value::EastWest;
+	case Cardinal::Value::North:
+		return Value::NorthSouth;
+	default:
+		return Value::None;
+	}
+}
+
+
+constexpr bool IsHorizontal(const Value _axis) {
+	switch (_axis) {
+	case Value::NorthSouth:
+	case Value::EastWest:
+		return true;
+	default:
+		return false;
+	}
+}
+
+constexpr bool IsVertical(const Value _axis) {
+	return _axis == Value::UpDown;
+}
+
+constexpr std::string_view Str(const Value _axis) {
+	switch (_axis) {
+	case Value::NorthSouth:
+		return "North/South";
+	case Value::EastWest:
+		return "East/West";
+	case Value::UpDown:
+		return "Up/Down";
+	default:
+		return "INVALID";
+	}
+}
+}

@@ -36,8 +36,8 @@ namespace Blocks {
 
 std::vector<Int3> GetBedApproachSpots(WorldManager& _world, Int3 _headPos, Int3 _footPos) {
 	std::vector<Int3> spots;
-	Direction::Value dirs[4] = { Direction::Value::North, Direction::Value::South, Direction::Value::East,
-		                         Direction::Value::West };
+	Cardinal::Value dirs[4] = { Cardinal::Value::North, Cardinal::Value::South, Cardinal::Value::East,
+		                         Cardinal::Value::West };
 	for (Int3 bedPos : { _headPos, _footPos }) {
 		for (auto dir : dirs) {
 			Int3 candidate = bedPos.WithOffset(dir);
@@ -53,8 +53,8 @@ std::vector<Int3> GetBedApproachSpots(WorldManager& _world, Int3 _headPos, Int3 
 }
 
 static bool IsValidSpawnBlock(WorldManager& _world, Int3 _pos) {
-	return _world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::Down)) && !_world.IsBlockNormalCube(_pos) &&
-	       !_world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::Up)) && !_world.GetMaterial(_pos).isLiquid;
+	return _world.IsBlockNormalCube(_pos.WithOffset(Cardinal::Value::Down)) && !_world.IsBlockNormalCube(_pos) &&
+	       !_world.IsBlockNormalCube(_pos.WithOffset(Cardinal::Value::Up)) && !_world.GetMaterial(_pos).isLiquid;
 }
 
 bool TriggerNightmareSpawns(WorldManager& _world, PlayerEntity& _player, Int3 _headPos, Int3 _footPos) {
@@ -143,7 +143,7 @@ bool TrySpawnNightmare(WorldManager& _world, PlayerEntity& _player) {
 
 	auto headMeta = _world.GetMetadata(headPos);
 	auto bedDir = GetDirectionFromMeta(BLOCK_BED, headMeta);
-	Int3 footPos = headPos.WithOffset(Direction::Opposite(bedDir));
+	Int3 footPos = headPos.WithOffset(Cardinal::Opposite(bedDir));
 	return TriggerNightmareSpawns(_world, _player, headPos, footPos);
 }
 
@@ -155,9 +155,9 @@ void RegisterBedBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_BED].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                             Direction::Value _face, BlockType _blockId, uint8_t /*_meta*/) -> bool {
+	                                             Cardinal::Value _face, BlockType _blockId, uint8_t /*_meta*/) -> bool {
 		// Beds can only be placed by clicking the top face of a block
-		if (_face != Direction::Value::Up)
+		if (_face != Cardinal::Value::Up)
 			return false;
 
 		// _pos is already the target cell
@@ -165,12 +165,12 @@ void RegisterBedBehaviors() {
 		if (!_world.InBounds(placePos.y))
 			return false;
 
-		const auto dir = Direction::FromAngle(_placer.rotationYaw);
+		const auto dir = Cardinal::FromAngle(_placer.rotationYaw);
 		const Int3 headPos = placePos.WithOffset(dir);
 
 		// Is this placement valid?
-		if (!_world.IsBlockNormalCube(placePos.WithOffset(Direction::Value::Down)) ||
-		    !_world.IsBlockNormalCube(headPos.WithOffset(Direction::Value::Down)))
+		if (!_world.IsBlockNormalCube(placePos.WithOffset(Cardinal::Value::Down)) ||
+		    !_world.IsBlockNormalCube(headPos.WithOffset(Cardinal::Value::Down)))
 			return false;
 		if (!IsReplaceable(_world, placePos) || !IsReplaceable(_world, headPos))
 			return false;
@@ -188,7 +188,7 @@ void RegisterBedBehaviors() {
 		if (meta & 0b1000) {
 			// We are the head of the bed
 			// Offset one down
-			_pos.Offset(Direction::Opposite(dir));
+			_pos.Offset(Cardinal::Opposite(dir));
 			if (_world.GetBlockId(_pos) != BLOCK_BED)
 				// The foot is not a bed block!
 				return;

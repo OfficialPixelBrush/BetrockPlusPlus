@@ -115,7 +115,7 @@ void RegisterMiscBehaviors() {
 	};
 
 	// Shared overrides
-	auto onFurnaceDispenserPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
+	auto onFurnaceDispenserPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Cardinal::Value _face,
 	                                  BlockType _blockId, uint8_t /*_meta*/) -> bool {
 		int meta[] = { 2, 5, 3, 4 };
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
@@ -123,10 +123,10 @@ void RegisterMiscBehaviors() {
 
 	// Fence
 	blockBehaviors[BLOCK_FENCE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                               Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
-		const bool fenceBelow = (_world.GetBlockId(_pos.WithOffset(Direction::Value::Down)) == BLOCK_FENCE);
+	                                               Cardinal::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
+		const bool fenceBelow = (_world.GetBlockId(_pos.WithOffset(Cardinal::Value::Down)) == BLOCK_FENCE);
 
-		if (!fenceBelow && !_world.GetMaterial(_pos.WithOffset(Direction::Value::Down)).isSolid)
+		if (!fenceBelow && !_world.GetMaterial(_pos.WithOffset(Cardinal::Value::Down)).isSolid)
 			return false;
 
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
@@ -134,11 +134,11 @@ void RegisterMiscBehaviors() {
 
 	// Slabs
 	blockBehaviors[BLOCK_SLAB].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                              Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
-		auto sourcePos = _pos.WithOffset(Direction::Opposite(_face));
+	                                              Cardinal::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
+		auto sourcePos = _pos.WithOffset(Cardinal::Opposite(_face));
 		auto sourceBlock = _world.GetBlockId(sourcePos);
 		auto sourceMeta = _world.GetMetadata(sourcePos);
-		if (sourceBlock == BLOCK_SLAB && _face == Direction::Value::Up && sourceMeta == _meta) {
+		if (sourceBlock == BLOCK_SLAB && _face == Cardinal::Value::Up && sourceMeta == _meta) {
 			// Vanilla does this weird but this seems to match its behavior
 			auto slabPlacePos = CanPlace(_world, _pos, _placer, _face, BLOCK_SLAB, _meta);
 			if (slabPlacePos != Int3{ -1, -1, -1 }) {
@@ -169,7 +169,7 @@ void RegisterMiscBehaviors() {
 	};
 	blockBehaviors[BLOCK_SNOW_LAYER].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                            BlockType /*_blockId*/) -> void {
-		const BlockType below = _world.GetBlockId(_pos.WithOffset(Direction::Value::Down));
+		const BlockType below = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::Down));
 		const bool canStay = (below != BLOCK_AIR) && Blocks::blockProperties[below].isOpaqueCube &&
 		                     Blocks::blockProperties[below].material.isSolid;
 		if (!canStay)
@@ -194,13 +194,13 @@ void RegisterMiscBehaviors() {
 	blockBehaviors[BLOCK_ICE].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& /*_destroyer*/) {
 		// Ice will turn into water if there is something solid under it
 		// Or if there is a liquid under it lol
-		auto belowMaterial = _world.GetMaterial(_pos.WithOffset(Direction::Value::Down));
+		auto belowMaterial = _world.GetMaterial(_pos.WithOffset(Cardinal::Value::Down));
 		if (belowMaterial.isSolid || belowMaterial.isLiquid)
 			_world.SetBlock(_pos, BLOCK_WATER_FLOWING);
 	};
 
 	// Pumpkin
-	auto onPumpkinPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
+	auto onPumpkinPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Cardinal::Value _face,
 	                         BlockType _blockId, uint8_t /*_meta*/) -> bool {
 		int meta[] = { 2, 3, 0, 1 };
 		auto belowBlockMaterial = _world.GetMaterial({ _pos.x, _pos.y - 1, _pos.z });
@@ -252,7 +252,7 @@ void RegisterMiscBehaviors() {
 	};
 
 	// Stairs
-	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+	auto onStairPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Cardinal::Value _face, BlockType _blockId,
 	                       uint8_t /*_meta*/) -> bool {
 		int meta[] = { 2, 1, 3, 0 };
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta[GetDirectionFromYaw(_placer.rotationYaw, 4)]);
@@ -309,22 +309,22 @@ void RegisterMiscBehaviors() {
 			BreakAndDropBlock(_world, _pos);
 	};
 	blockBehaviors[BLOCK_LADDER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                Direction::Value _face, BlockType _blockId,
+	                                                Cardinal::Value _face, BlockType _blockId,
 	                                                uint8_t /*_meta*/) -> bool {
 		Int3 targetPos = _pos;
-		const Int3 sourceBlock = _pos.WithOffset(Direction::Opposite(_face));
+		const Int3 sourceBlock = _pos.WithOffset(Cardinal::Opposite(_face));
 		if (_world.GetBlockId(sourceBlock) == BLOCK_SNOW_LAYER)
 			targetPos = sourceBlock;
 
-		static constexpr std::array<Direction::Value, 4> CHECK_ORDER = {
-			Direction::Value::North, Direction::Value::South, Direction::Value::West, Direction::Value::East
+		static constexpr std::array<Cardinal::Value, 4> CHECK_ORDER = {
+			Cardinal::Value::North, Cardinal::Value::South, Cardinal::Value::West, Cardinal::Value::East
 		};
 
-		if (Direction::IsHorizontal(_face) && IsSupported(_world, _pos, _face)) {
+		if (Cardinal::IsHorizontal(_face) && IsSupported(_world, _pos, _face)) {
 			return GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_LADDER, _face));
 		}
 
-		for (Direction::Value dir : CHECK_ORDER) {
+		for (Cardinal::Value dir : CHECK_ORDER) {
 			if (IsSupported(_world, _pos, dir)) {
 				return GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_LADDER, dir));
 			}
