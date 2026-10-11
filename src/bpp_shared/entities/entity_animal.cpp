@@ -12,5 +12,5 @@ bool AnimalEntity::CanSpawnAt() {
 	auto fd = MathHelper::FloorDouble;
 	Int3 footPos = { fd(position.x), fd(collider.minY), fd(position.z) };
 	return world->GetBlockId({ footPos.x, footPos.y - 1, footPos.z }) == BLOCK_GRASS &&
-	       world->GetBlockLightFull(footPos) > 8 && MobileEntity::CanSpawnAt();
+	       world->GetBlockLightRaw(footPos) > 8 && MobileEntity::CanSpawnAt();
 }

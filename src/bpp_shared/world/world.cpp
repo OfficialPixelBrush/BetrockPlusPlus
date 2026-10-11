@@ -111,7 +111,9 @@ void WorldManager::UpdateSkylightOffset() {
 		transformedAngle = 1.0f;
 
 	transformedAngle = 1.0f - transformedAngle;
-	// TODO: Weather?
+	transformedAngle = float(double(transformedAngle) * (1.0 - double(weatherSystem.rainStrength * 5.0f) / 16.0));
+	transformedAngle = float(double(transformedAngle) *
+	                         (1.0 - double(weatherSystem.thunderStrength * weatherSystem.rainStrength * 5.0f) / 16.0));
 	transformedAngle = 1.0f - transformedAngle;
 
 	this->skylightOffset = int(transformedAngle * 11.0f);
