@@ -32,7 +32,7 @@
 namespace Blocks {
 
 void TryCreatePortal(WorldManager& _world, Int3 _pos) {
-	if (_world.GetBlockId(_pos.WithOffset(Direction::Value::Down)) != BLOCK_OBSIDIAN)
+	if (_world.GetBlockId(_pos.WithOffset(Cardinal::Value::Down)) != BLOCK_OBSIDIAN)
 		return;
 
 	bool isXAligned = (_world.GetBlockId(_pos + Int3{ 1, -1, 0 }) == BLOCK_OBSIDIAN ||
