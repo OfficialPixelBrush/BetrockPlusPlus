@@ -77,7 +77,7 @@ static void TryCatchBlockOnFire(WorldManager& _world, Int3 _pos, int _chance, ui
 	auto found = flammables.find(thisBlock);
 
 	int ability = found == flammables.end() ? 0 : found->second.abilityToCatch;
-	auto rand = _world.rand;
+	auto& rand = _world.rand;
 
 	if (rand.NextInt(_chance) >= ability)
 		return;
@@ -152,6 +152,7 @@ void RegisterFireBehaviors() {
 
 		if (!onNetherrack && CanRainSeeAroundPosition(_pos)) {
 			_world.SetBlock(_pos, BLOCK_AIR);
+			return;
 		}
 
 		const int meta = _world.GetMetadata(_pos);
