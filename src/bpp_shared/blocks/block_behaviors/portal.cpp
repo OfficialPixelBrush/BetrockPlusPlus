@@ -115,20 +115,20 @@ static void GetConnectedPortals(WorldManager& _world, Int3 _pos, std::unordered_
 	if (_world.GetBlockId(_pos) != BLOCK_NETHER_PORTAL)
 		return;
 
-	bool xAligned = _world.GetBlockId(_pos.WithOffset(Direction::Value::West)) == BLOCK_NETHER_PORTAL ||
-	                _world.GetBlockId(_pos.WithOffset(Direction::Value::East)) == BLOCK_NETHER_PORTAL;
-	bool zAligned = _world.GetBlockId(_pos.WithOffset(Direction::Value::North)) == BLOCK_NETHER_PORTAL ||
-	                _world.GetBlockId(_pos.WithOffset(Direction::Value::South)) == BLOCK_NETHER_PORTAL;
+	bool xAligned = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::West)) == BLOCK_NETHER_PORTAL ||
+	                _world.GetBlockId(_pos.WithOffset(Cardinal::Value::East)) == BLOCK_NETHER_PORTAL;
+	bool zAligned = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::North)) == BLOCK_NETHER_PORTAL ||
+	                _world.GetBlockId(_pos.WithOffset(Cardinal::Value::South)) == BLOCK_NETHER_PORTAL;
 	if (xAligned == zAligned)
 		return;
 
 	if (!_portals.insert(_pos).second)
 		return; // already visited
 
-	auto neighbors = xAligned ? std::array<Direction::Value, 4>{ Direction::Value::East, Direction::Value::West,
-		                                                         Direction::Value::Up, Direction::Value::Down }
-	                          : std::array<Direction::Value, 4>{ Direction::Value::Up, Direction::Value::Down,
-		                                                         Direction::Value::North, Direction::Value::South };
+	auto neighbors = xAligned ? std::array<Cardinal::Value, 4>{ Cardinal::Value::East, Cardinal::Value::West,
+		                                                         Cardinal::Value::Up, Cardinal::Value::Down }
+	                          : std::array<Cardinal::Value, 4>{ Cardinal::Value::Up, Cardinal::Value::Down,
+		                                                         Cardinal::Value::North, Cardinal::Value::South };
 
 	for (auto offset : neighbors)
 		GetConnectedPortals(_world, _pos.WithOffset(offset), _portals);
@@ -139,10 +139,10 @@ void RegisterPortalBehaviors() {
 	blockBehaviors[BLOCK_NETHER_PORTAL].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                               BlockType /*_blockId*/) -> void {
 		BlockType thisBlock = BLOCK_NETHER_PORTAL;
-		bool xAligned = _world.GetBlockId(_pos.WithOffset(Direction::Value::West)) == thisBlock ||
-		                _world.GetBlockId(_pos.WithOffset(Direction::Value::East)) == thisBlock;
-		bool zAligned = _world.GetBlockId(_pos.WithOffset(Direction::Value::North)) == thisBlock ||
-		                _world.GetBlockId(_pos.WithOffset(Direction::Value::South)) == thisBlock;
+		bool xAligned = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::West)) == thisBlock ||
+		                _world.GetBlockId(_pos.WithOffset(Cardinal::Value::East)) == thisBlock;
+		bool zAligned = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::North)) == thisBlock ||
+		                _world.GetBlockId(_pos.WithOffset(Cardinal::Value::South)) == thisBlock;
 		if ((xAligned && zAligned) || (!xAligned && !zAligned)) {
 			_world.SetBlock(_pos, BLOCK_AIR);
 		}
@@ -156,8 +156,8 @@ void RegisterPortalBehaviors() {
 
 	// Remove the existing portals that depend on this obsidian
 	blockBehaviors[BLOCK_OBSIDIAN].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
-		Direction::Value neighbors[6] = { Direction::Value::East,  Direction::Value::West, Direction::Value::North,
-			                              Direction::Value::South, Direction::Value::Up,   Direction::Value::Down };
+		Cardinal::Value neighbors[6] = { Cardinal::Value::East,  Cardinal::Value::West, Cardinal::Value::North,
+			                              Cardinal::Value::South, Cardinal::Value::Up,   Cardinal::Value::Down };
 		for (auto offset : neighbors) {
 			auto checkPos = _pos.WithOffset(offset);
 			auto checkBlock = _world.GetBlockId(checkPos);
@@ -176,8 +176,8 @@ void RegisterPortalBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_NETHER_PORTAL].onBlockRemoval = [](WorldManager& _world, Int3 _pos) -> void {
-		Direction::Value neighbors[6] = { Direction::Value::East,  Direction::Value::West, Direction::Value::North,
-			                              Direction::Value::South, Direction::Value::Up,   Direction::Value::Down };
+		Cardinal::Value neighbors[6] = { Cardinal::Value::East,  Cardinal::Value::West, Cardinal::Value::North,
+			                              Cardinal::Value::South, Cardinal::Value::Up,   Cardinal::Value::Down };
 		for (auto offset : neighbors) {
 			auto checkPos = _pos.WithOffset(offset);
 			auto checkBlock = _world.GetBlockId(checkPos);

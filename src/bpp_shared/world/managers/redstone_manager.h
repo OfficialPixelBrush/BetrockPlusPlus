@@ -48,7 +48,7 @@ PowerProfile GetBlockPowerProfile(WorldManager& _world, Int3 _pos);
 bool IsPositionPowered(WorldManager& _world, Int3 _pos);
 void PruneTorchUpdates(WorldManager& _world);
 bool CheckTorchBurnout(WorldManager& _world, Int3 _pos, bool _logUpdate);
-bool GetProfileInDirection(const ComponentProfile _profile, const Direction::Value _dir);
+bool GetProfileInDirection(const ComponentProfile _profile, const Cardinal::Value _dir);
 
 inline bool CanProvidePower(BlockType _block) {
 	// Repeaters are excluded for some reason in vanilla
@@ -91,15 +91,15 @@ inline ComponentProfile GetComponentProfile(BlockType _blockId, uint8_t _meta) {
 	}
 	case BLOCK_REDSTONE_TORCH_ON: {
 		switch (GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _meta)) {
-		case Direction::Value::North:
+		case Cardinal::Value::North:
 			return ComponentProfile{ true, true, false, true, true };
-		case Direction::Value::South:
+		case Cardinal::Value::South:
 			return ComponentProfile{ true, true, true, false, true };
-		case Direction::Value::East:
+		case Cardinal::Value::East:
 			return ComponentProfile{ true, false, true, true, true };
-		case Direction::Value::West:
+		case Cardinal::Value::West:
 			return ComponentProfile{ false, true, true, true, true };
-		case Direction::Value::Up:
+		case Cardinal::Value::Up:
 			return ComponentProfile{ true, true, true, true, false };
 		default:
 			return {};
@@ -117,13 +117,13 @@ inline ComponentProfile GetComponentProfile(BlockType _blockId, uint8_t _meta) {
 	}
 	case BLOCK_REDSTONE_REPEATER_ON: {
 		switch (GetDirectionFromMeta(BLOCK_REDSTONE_REPEATER_ON, _meta)) {
-		case Direction::Value::North:
+		case Cardinal::Value::North:
 			return ComponentProfile{ false, false, false, true, false }; // outputs -Z
-		case Direction::Value::East:
+		case Cardinal::Value::East:
 			return ComponentProfile{ true, false, false, false, false }; // outputs +X
-		case Direction::Value::South:
+		case Cardinal::Value::South:
 			return ComponentProfile{ false, false, true, false, false }; // outputs +Z
-		case Direction::Value::West:
+		case Cardinal::Value::West:
 			return ComponentProfile{ false, true, false, false, false }; // outputs -X
 		default:
 			return {};
@@ -136,15 +136,15 @@ inline ComponentProfile GetComponentProfile(BlockType _blockId, uint8_t _meta) {
 		if (!(_meta & 0b1000))
 			return {};
 		switch (GetDirectionFromMeta(BLOCK_LEVER, _meta)) {
-		case Direction::Value::North:
+		case Cardinal::Value::North:
 			return ComponentProfile{ true, true, false, true, true };
-		case Direction::Value::South:
+		case Cardinal::Value::South:
 			return ComponentProfile{ true, true, true, false, true };
-		case Direction::Value::East:
+		case Cardinal::Value::East:
 			return ComponentProfile{ true, false, true, true, true };
-		case Direction::Value::West:
+		case Cardinal::Value::West:
 			return ComponentProfile{ false, true, true, true, true };
-		case Direction::Value::Up:
+		case Cardinal::Value::Up:
 			return ComponentProfile{ true, true, true, true, false };
 		default:
 			return {};
@@ -154,15 +154,15 @@ inline ComponentProfile GetComponentProfile(BlockType _blockId, uint8_t _meta) {
 		if (!(_meta & 0b1000))
 			return {};
 		switch (GetDirectionFromMeta(BLOCK_BUTTON_STONE, _meta)) {
-		case Direction::Value::North:
+		case Cardinal::Value::North:
 			return ComponentProfile{ true, true, false, true, true };
-		case Direction::Value::South:
+		case Cardinal::Value::South:
 			return ComponentProfile{ true, true, true, false, true };
-		case Direction::Value::East:
+		case Cardinal::Value::East:
 			return ComponentProfile{ true, false, true, true, true };
-		case Direction::Value::West:
+		case Cardinal::Value::West:
 			return ComponentProfile{ false, true, true, true, true };
-		case Direction::Value::Up:
+		case Cardinal::Value::Up:
 			return ComponentProfile{ true, true, true, true, false };
 		default:
 			return {};

@@ -197,8 +197,8 @@ void MineBlock(Packet::MineBlock& _pkt, PlayerSession& _session, WorldManager& _
 	switch (_pkt.status) {
 	case PacketData::MineStatus::DIGGING_STARTED: {
 		// invoke fire extinguish if matched
-		Direction::Value clickFace = FaceDirectionToDirection(_pkt.face);
-		if (clickFace != Direction::Value::None) {
+		Cardinal::Value clickFace = FaceDirectionToDirection(_pkt.face);
+		if (clickFace != Cardinal::Value::None) {
 			Int3 adjacentPos = packetPos.WithOffset(clickFace);
 			if (_world.GetBlockId(adjacentPos) == BLOCK_FIRE) {
 				if (auto fn = Blocks::blockBehaviors[BLOCK_FIRE].onBlockClicked) {
@@ -747,9 +747,9 @@ void Respawn(Packet::Respawn& /*_pkt*/, PlayerSession& _session, Server& _server
 	Int3 spawn = {};
 	bool bedPositionFindFailed = true;
 	if (_session.hasBedSpawn) {
-		Int3 headPos = _session.spawnPosition.WithOffset(Direction::Value::Down);
+		Int3 headPos = _session.spawnPosition.WithOffset(Cardinal::Value::Down);
 		auto bedDir = GetDirectionFromMeta(BLOCK_BED, world->GetMetadata(headPos));
-		Int3 footPos = headPos.WithOffset(Direction::Opposite(bedDir));
+		Int3 footPos = headPos.WithOffset(Cardinal::Opposite(bedDir));
 		auto sleepPositions = Blocks::GetBedApproachSpots(*world, headPos, footPos);
 		if (!sleepPositions.empty()) {
 			bedPositionFindFailed = false;

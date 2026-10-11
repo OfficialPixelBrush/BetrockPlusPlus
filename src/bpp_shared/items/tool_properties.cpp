@@ -322,7 +322,7 @@ void OnToolFinishMining(ItemStack* _stack, BlockType _targetBlock) {
 	}
 }
 
-void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/, Direction::Value /*_face*/) {
+void UseHoe(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/, Cardinal::Value /*_face*/) {
 	BlockType type = _world.GetBlockId(_pos);
 	if (type != BLOCK_GRASS && type != BLOCK_DIRT)
 		return;
@@ -416,7 +416,7 @@ void UseFishingRod(PlayerSession& _session, ItemStack* _stack, Entity& /*_target
 	}
 }
 
-void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Direction::Value /*_face*/) {
+void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Cardinal::Value /*_face*/) {
 	float reach = 5.0f;
 	auto pe = dynamic_cast<PlayerEntity*>(&_user);
 	if (!pe) {
@@ -445,7 +445,7 @@ void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _us
 	_stack->DecrementCount(1);
 }
 
-void UseMinecart(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/, Direction::Value /*_face*/) {
+void UseMinecart(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/, Cardinal::Value /*_face*/) {
 	if (!RailManager::IsRail(_world.GetBlockId(_pos)))
 		return;
 
@@ -464,7 +464,7 @@ void UseMinecart(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_
 	_stack->DecrementCount(1);
 }
 
-void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Direction::Value /*_face*/) {
+void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Cardinal::Value /*_face*/) {
 	float reach = 5.0f;
 	auto pe = dynamic_cast<PlayerEntity*>(&_user);
 	if (!pe) {
@@ -492,7 +492,7 @@ void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _
 	}
 }
 
-void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Direction::Value /*_face*/) {
+void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Cardinal::Value /*_face*/) {
 	float reach = 5.0f;
 	auto pe = dynamic_cast<PlayerEntity*>(&_user);
 	if (!pe) {
@@ -524,7 +524,7 @@ void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Enti
 	_stack->id = Items::Id::BUCKET;
 }
 
-void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Direction::Value /*_face*/) {
+void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _user, Cardinal::Value /*_face*/) {
 	float reach = 5.0f;
 	auto pe = dynamic_cast<PlayerEntity*>(&_user);
 	if (!pe) {
@@ -551,7 +551,7 @@ void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entit
 	_stack->id = Items::Id::BUCKET;
 }
 
-void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/, Direction::Value _face) {
+void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/, Cardinal::Value _face) {
 	_pos.Offset(_face);
 	_world.SetBlock(_pos, BLOCK_FIRE);
 	HarmTool(_stack, 1);
@@ -603,7 +603,7 @@ void UseBucketOnEntity(WorldManager& /*_world*/, Entity& _targetEntity, ItemStac
 	_stack->id = BUCKET_MILK;
 }
 
-void TestSetGoal(WorldManager& _world, ItemStack* /*_stack*/, Int3 _pos, Direction::Value /*_face*/) {
+void TestSetGoal(WorldManager& _world, ItemStack* /*_stack*/, Int3 _pos, Cardinal::Value /*_face*/) {
 	Int3 topPos = _pos;
 	topPos.y += 1;
 	_world.SetBlock(topPos, BLOCK_AIR);

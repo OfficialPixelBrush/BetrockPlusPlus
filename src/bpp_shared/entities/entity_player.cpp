@@ -52,16 +52,16 @@ SleepFailureReason PlayerEntity::TrySleep(Int3 _pos) {
 	float offsetZ = 0.5f;
 
 	switch (dir) {
-	case Direction::Value::South:
+	case Cardinal::Value::South:
 		offsetZ = 0.9f;
 		break;
-	case Direction::Value::West:
+	case Cardinal::Value::West:
 		offsetX = 0.1f;
 		break;
-	case Direction::Value::North:
+	case Cardinal::Value::North:
 		offsetZ = 0.1f;
 		break;
-	case Direction::Value::East:
+	case Cardinal::Value::East:
 		offsetX = 0.9f;
 		break;
 	default:
@@ -87,7 +87,7 @@ void PlayerEntity::WakeUp(bool /*_confirmSpawn*/) {
 	this->ticksInBed = 0;
 
 	auto bedDir = GetDirectionFromMeta(BLOCK_BED, world->GetMetadata(this->bedPosition));
-	Int3 footPos = this->bedPosition.WithOffset(Direction::Opposite(bedDir));
+	Int3 footPos = this->bedPosition.WithOffset(Cardinal::Opposite(bedDir));
 	auto sleepPositions = Blocks::GetBedApproachSpots(*this->world, this->bedPosition, footPos);
 	if (!sleepPositions.empty()) {
 		Int3 wakeupSpot = sleepPositions[0];

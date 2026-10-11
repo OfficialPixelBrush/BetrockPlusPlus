@@ -11,13 +11,13 @@
 #include <algorithm>
 #include <cmath>
 
-void PaintingEntity::SetDirection(Direction::Value _direction) {
+void PaintingEntity::SetDirection(Cardinal::Value _direction) {
 	this->direction = _direction;
 	float halfWidth = this->art.sizeX;
 	float halfHeight = this->art.sizeY;
 	float halfDepth = this->art.sizeX;
 
-	if (_direction == Direction::Value::East || _direction == Direction::Value::West) {
+	if (_direction == Cardinal::Value::East || _direction == Cardinal::Value::West) {
 		halfWidth = 0.5f;
 	} else {
 		halfDepth = 0.5f;
@@ -30,19 +30,19 @@ void PaintingEntity::SetDirection(Direction::Value _direction) {
 	Vec3 centerPos = { this->blockCoordinates.x + 0.5, this->blockCoordinates.y + 0.5, this->blockCoordinates.z + 0.5 };
 	float wallOffset = 0.5625f;
 	switch (_direction) {
-	case Direction::Value::North:
+	case Cardinal::Value::North:
 		centerPos.z -= wallOffset;
 		centerPos.x -= GetArtSize(art.sizeX);
 		break;
-	case Direction::Value::West:
+	case Cardinal::Value::West:
 		centerPos.x -= wallOffset;
 		centerPos.z += GetArtSize(art.sizeX);
 		break;
-	case Direction::Value::South:
+	case Cardinal::Value::South:
 		centerPos.z += wallOffset;
 		centerPos.x += GetArtSize(art.sizeX);
 		break;
-	case Direction::Value::East:
+	case Cardinal::Value::East:
 		centerPos.x += wallOffset;
 		centerPos.z -= GetArtSize(art.sizeX);
 		break;
@@ -72,9 +72,9 @@ bool PaintingEntity::OnValidSurface() {
 	Int3 blockPos = blockCoordinates;
 	float halfArtWidth = float(art.sizeX) / 32.0f;
 
-	if (direction == Direction::Value::North || direction == Direction::Value::South) {
+	if (direction == Cardinal::Value::North || direction == Cardinal::Value::South) {
 		blockPos.x = MathHelper::FloorDouble(position.x - double(halfArtWidth));
-	} else if (direction == Direction::Value::East || direction == Direction::Value::West) {
+	} else if (direction == Cardinal::Value::East || direction == Cardinal::Value::West) {
 		blockPos.z = MathHelper::FloorDouble(position.z - double(halfArtWidth));
 	}
 
@@ -83,7 +83,7 @@ bool PaintingEntity::OnValidSurface() {
 	for (int col = 0; col < artWidthBlocks; ++col) {
 		for (int row = 0; row < artHeightBlocks; ++row) {
 			Material material;
-			if (direction == Direction::Value::East || direction == Direction::Value::West) {
+			if (direction == Cardinal::Value::East || direction == Cardinal::Value::West) {
 				// wall runs along Z at the fixed anchor X
 				material = world->GetMaterial({ blockCoordinates.x, blockPos.y + row, blockPos.z + col });
 			} else {
@@ -110,7 +110,7 @@ void PaintingEntity::LoadFromNbt(Tag& _nbt) {
 	Entity::LoadFromNbt(_nbt);
 	this->direction = _nbt.Has("Dir") ? FromPaintingDirectionToDirection(
 	                                        static_cast<PacketData::PaintingDirection>(_nbt.compound["Dir"].GetByte()))
-	                                  : Direction::Value::North;
+	                                  : Cardinal::Value::North;
 	art = _nbt.Has("Motive") ? GetArtProfile(_nbt.compound["Motive"].stringValue) : GetArtProfile("Kebab");
 	if (_nbt.Has("TileX") && _nbt.Has("TileY") && _nbt.Has("TileZ")) {
 		this->blockCoordinates.x = _nbt.Get("TileX").intValue;

@@ -40,7 +40,7 @@ static void PlayNoteblock(WorldManager& _world, Int3 _pos) {
 	if (!noteblockTe)
 		return;
 
-	BlockType belowBlock = _world.GetBlockId(_pos.WithOffset(Direction::Value::Down));
+	BlockType belowBlock = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::Down));
 	switch (Blocks::blockProperties[belowBlock].material.type) {
 	case MaterialType::Wood:
 		_world.PlayNoteAt(_pos, PacketData::NoteInstrument::BASS, noteblockTe->note);
@@ -158,27 +158,27 @@ static void DispenseItemFromDispenser(WorldManager& _world, Int3 _pos, uint8_t _
 }
 
 static bool CanRedstoneComponentStay(WorldManager& _world, Int3 _pos) {
-	return _world.IsBlockNormalCube(_pos.Offset(Direction::Value::Down));
+	return _world.IsBlockNormalCube(_pos.Offset(Cardinal::Value::Down));
 }
 
 static bool TorchHasAnySupport(WorldManager& _world, Int3 _pos) {
-	for (auto face : { Direction::Value::East, Direction::Value::West, Direction::Value::South, Direction::Value::North,
-	                   Direction::Value::Up }) {
+	for (auto face : { Cardinal::Value::East, Cardinal::Value::West, Cardinal::Value::South, Cardinal::Value::North,
+	                   Cardinal::Value::Up }) {
 		if (CanTorchAttachTo(_world, _pos, face))
 			return true;
 	}
 	return false;
 }
 
-static bool PlaceTorchLike(WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
+static bool PlaceTorchLike(WorldManager& _world, Int3 _pos, Entity& _placer, Cardinal::Value _face,
                            BlockType _blockId) {
 	Int3 target = _pos;
-	Direction::Value attachFace = _face;
+	Cardinal::Value attachFace = _face;
 
 	// Snow forces meta 0
-	if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER) {
-		target = _pos.WithOffset(Direction::Opposite(_face));
-		attachFace = Direction::Value::Down;
+	if (_world.GetBlockId(_pos.WithOffset(Cardinal::Opposite(_face))) == BLOCK_SNOW_LAYER) {
+		target = _pos.WithOffset(Cardinal::Opposite(_face));
+		attachFace = Cardinal::Value::Down;
 	}
 
 	// Is there any support nearby?
@@ -191,12 +191,12 @@ static bool PlaceTorchLike(WorldManager& _world, Int3 _pos, Entity& _placer, Dir
 }
 
 static void NotifyAttachedSupportBlock(WorldManager& _world, Int3 _pos, BlockType _blockId, uint8_t _meta) {
-	Direction::Value dir = GetDirectionFromMeta(_blockId, _meta);
-	Int3 support = _pos.WithOffset(Direction::Opposite(dir));
+	Cardinal::Value dir = GetDirectionFromMeta(_blockId, _meta);
+	Int3 support = _pos.WithOffset(Cardinal::Opposite(dir));
 
-	static constexpr Direction::Value ALL_DIRS[6] = {
-		Direction::Value::North, Direction::Value::South, Direction::Value::East,
-		Direction::Value::West,  Direction::Value::Up,    Direction::Value::Down,
+	static constexpr Cardinal::Value ALL_DIRS[6] = {
+		Cardinal::Value::North, Cardinal::Value::South, Cardinal::Value::East,
+		Cardinal::Value::West,  Cardinal::Value::Up,    Cardinal::Value::Down,
 	};
 	for (auto d : ALL_DIRS) {
 		if (d == dir)
@@ -233,13 +233,13 @@ static void SetPressurePlateState(WorldManager& _world, Int3 _pos, BlockType _ty
 	if (triggered && !powered) {
 		_world.SetMeta(_pos, 1);
 		_world.NotifyNeighborsOfUpdate(_pos, _type);
-		_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Direction::Value::Down), _type);
+		_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Cardinal::Value::Down), _type);
 	}
 
 	if (!triggered && powered) {
 		_world.SetMeta(_pos, 0);
 		_world.NotifyNeighborsOfUpdate(_pos, _type);
-		_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Direction::Value::Down), _type);
+		_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Cardinal::Value::Down), _type);
 	}
 
 	if (triggered) {
@@ -299,10 +299,10 @@ void RegisterRedstoneBehaviors() {
 		    blockBehaviors[BLOCK_BUTTON_STONE].onBlockClicked(_world, _pos, _triggeringSession);
 		    return false;
 		},
-		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Direction::Value _face,
+		.onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Cardinal::Value _face,
 		                    BlockType _blockId, uint8_t /*_meta*/) -> bool {
 		    // Buttons can only be placed against the sides of blocks
-		    if (_face == Direction::Value::Up || _face == Direction::Value::Down)
+		    if (_face == Cardinal::Value::Up || _face == Cardinal::Value::Down)
 			    return false;
 		    if (!IsReplaceable(_world, _pos))
 			    return false;
@@ -345,7 +345,7 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_TORCH_ON].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                           Direction::Value _face, BlockType _blockId,
+	                                                           Cardinal::Value _face, BlockType _blockId,
 	                                                           uint8_t /*_meta*/) -> bool {
 		return PlaceTorchLike(_world, _pos, _placer, _face, _blockId);
 	};
@@ -356,12 +356,12 @@ void RegisterRedstoneBehaviors() {
 			return; // Already valid
 
 		// Matches vanilla order
-		static constexpr std::array<Direction::Value, 5> CHECK_ORDER = { Direction::Value::East, Direction::Value::West,
-			                                                             Direction::Value::South,
-			                                                             Direction::Value::North, Direction::Value::Up };
+		static constexpr std::array<Cardinal::Value, 5> CHECK_ORDER = { Cardinal::Value::East, Cardinal::Value::West,
+			                                                             Cardinal::Value::South,
+			                                                             Cardinal::Value::North, Cardinal::Value::Up };
 
 		// Attach to the first support block we find
-		for (Direction::Value face : CHECK_ORDER) {
+		for (Cardinal::Value face : CHECK_ORDER) {
 			if (CanTorchAttachTo(_world, _pos, face)) {
 				_world.SetMeta(_pos, GetMetaFromDirection(BLOCK_REDSTONE_TORCH_ON, face));
 				return;
@@ -393,7 +393,7 @@ void RegisterRedstoneBehaviors() {
 			return;
 		}
 
-		Int3 supportPos = _pos.WithOffset(Direction::Opposite(dir));
+		Int3 supportPos = _pos.WithOffset(Cardinal::Opposite(dir));
 		if (RedstoneManager::GetBlockPowerProfile(_world, supportPos).powered) {
 			_world.SetBlock(_pos, BLOCK_REDSTONE_TORCH_OFF, _meta);
 			RedstoneManager::CheckTorchBurnout(_world, _pos, /*_logUpdate=*/true);
@@ -405,11 +405,11 @@ void RegisterRedstoneBehaviors() {
 		if (CanTorchAttachTo(_world, _pos, dir))
 			return; // Already valid
 
-		static constexpr std::array<Direction::Value, 5> CHECK_ORDER = { Direction::Value::East, Direction::Value::West,
-			                                                             Direction::Value::South,
-			                                                             Direction::Value::North, Direction::Value::Up };
+		static constexpr std::array<Cardinal::Value, 5> CHECK_ORDER = { Cardinal::Value::East, Cardinal::Value::West,
+			                                                             Cardinal::Value::South,
+			                                                             Cardinal::Value::North, Cardinal::Value::Up };
 
-		for (Direction::Value face : CHECK_ORDER) {
+		for (Cardinal::Value face : CHECK_ORDER) {
 			if (CanTorchAttachTo(_world, _pos, face)) {
 				_world.SetMeta(_pos, GetMetaFromDirection(BLOCK_REDSTONE_TORCH_OFF, face));
 				return;
@@ -440,7 +440,7 @@ void RegisterRedstoneBehaviors() {
 			return;
 		}
 
-		Int3 supportPos = _pos.WithOffset(Direction::Opposite(dir));
+		Int3 supportPos = _pos.WithOffset(Cardinal::Opposite(dir));
 		if (!RedstoneManager::GetBlockPowerProfile(_world, supportPos).powered &&
 		    !RedstoneManager::CheckTorchBurnout(_world, _pos, /*_logUpdate=*/false)) {
 			_world.SetBlock(_pos, BLOCK_REDSTONE_TORCH_ON, _meta);
@@ -448,9 +448,9 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                               Direction::Value _face, BlockType _blockId,
+	                                                               Cardinal::Value _face, BlockType _blockId,
 	                                                               uint8_t /*_meta*/) -> bool {
-		const auto dir = Direction::FromAngle(_placer.rotationYaw);
+		const auto dir = Cardinal::FromAngle(_placer.rotationYaw);
 		auto meta = GetMetaFromDirection(BLOCK_REDSTONE_REPEATER_OFF, dir);
 		if (!CanRedstoneComponentStay(_world, _pos) || !GenericPlace(_world, _pos, _placer, _face, _blockId, meta))
 			return false;
@@ -462,7 +462,7 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                  Direction::Value _face, BlockType _blockId,
+	                                                  Cardinal::Value _face, BlockType _blockId,
 	                                                  uint8_t _meta) -> bool {
 		if (!CanRedstoneComponentStay(_world, _pos) || !GenericPlace(_world, _pos, _placer, _face, _blockId, _meta))
 			return false;
@@ -522,24 +522,24 @@ void RegisterRedstoneBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_REDSTONE_REPEATER_ON].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                              Direction::Value _face, BlockType _blockId,
+	                                                              Cardinal::Value _face, BlockType _blockId,
 	                                                              uint8_t _meta) -> bool {
 		return blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockPlaced(_world, _pos, _placer, _face, _blockId, _meta);
 	};
 
 	blockBehaviors[BLOCK_LEVER].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                               Direction::Value _face, BlockType _blockId,
+	                                               Cardinal::Value _face, BlockType _blockId,
 	                                               uint8_t /*_meta*/) -> bool {
-		if (_world.GetBlockId(_pos.WithOffset(Direction::Opposite(_face))) == BLOCK_SNOW_LAYER)
+		if (_world.GetBlockId(_pos.WithOffset(Cardinal::Opposite(_face))) == BLOCK_SNOW_LAYER)
 			return false;
 
-		if (_face == Direction::Value::Down || _face == Direction::Value::None)
+		if (_face == Cardinal::Value::Down || _face == Cardinal::Value::None)
 			return false;
-		if (!_world.IsBlockNormalCube(_pos.WithOffset(Direction::Opposite(_face))))
+		if (!_world.IsBlockNormalCube(_pos.WithOffset(Cardinal::Opposite(_face))))
 			return false;
 
 		uint8_t meta = GetMetaFromDirection(BLOCK_LEVER, _face);
-		if (_face == Direction::Value::Up)
+		if (_face == Cardinal::Value::Up)
 			meta = 5 + _world.rand.NextInt(2);
 
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, meta);
@@ -551,12 +551,12 @@ void RegisterRedstoneBehaviors() {
 			return; // Already valid
 
 		// Matches vanilla order
-		static constexpr std::array<Direction::Value, 5> CHECK_ORDER = { Direction::Value::East, Direction::Value::West,
-			                                                             Direction::Value::South,
-			                                                             Direction::Value::North, Direction::Value::Up };
+		static constexpr std::array<Cardinal::Value, 5> CHECK_ORDER = { Cardinal::Value::East, Cardinal::Value::West,
+			                                                             Cardinal::Value::South,
+			                                                             Cardinal::Value::North, Cardinal::Value::Up };
 
 		// Attach to the first support block we find
-		for (Direction::Value face : CHECK_ORDER) {
+		for (Cardinal::Value face : CHECK_ORDER) {
 			if (CanTorchAttachTo(_world, _pos, face)) {
 				_world.SetMeta(_pos, GetMetaFromDirection(BLOCK_LEVER, face));
 				return;
@@ -590,7 +590,7 @@ void RegisterRedstoneBehaviors() {
 	},
 
 	blockBehaviors[BLOCK_TORCH].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                               Direction::Value _face, BlockType _blockId,
+	                                               Cardinal::Value _face, BlockType _blockId,
 	                                               uint8_t /*_meta*/) -> bool {
 		return PlaceTorchLike(_world, _pos, _placer, _face, _blockId);
 	};
@@ -601,12 +601,12 @@ void RegisterRedstoneBehaviors() {
 			return; // Already valid
 
 		// Matches vanilla order
-		static constexpr std::array<Direction::Value, 5> CHECK_ORDER = { Direction::Value::East, Direction::Value::West,
-			                                                             Direction::Value::South,
-			                                                             Direction::Value::North, Direction::Value::Up };
+		static constexpr std::array<Cardinal::Value, 5> CHECK_ORDER = { Cardinal::Value::East, Cardinal::Value::West,
+			                                                             Cardinal::Value::South,
+			                                                             Cardinal::Value::North, Cardinal::Value::Up };
 
 		// Attach to the first support block we find
-		for (Direction::Value face : CHECK_ORDER) {
+		for (Cardinal::Value face : CHECK_ORDER) {
 			if (CanTorchAttachTo(_world, _pos, face)) {
 				_world.SetMeta(_pos, GetMetaFromDirection(BLOCK_TORCH, face));
 				return;
@@ -643,12 +643,12 @@ void RegisterRedstoneBehaviors() {
 		auto meta = _world.GetMetadata(_pos);
 		if (meta > 0) {
 			_world.NotifyNeighborsOfUpdate(_pos, BLOCK_PRESSURE_PLATE_WOOD);
-			_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Direction::Value::Down), BLOCK_PRESSURE_PLATE_WOOD);
+			_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Cardinal::Value::Down), BLOCK_PRESSURE_PLATE_WOOD);
 		}
 	};
 
 	blockBehaviors[BLOCK_PRESSURE_PLATE_WOOD].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                             Direction::Value _face, BlockType _blockId,
+	                                                             Cardinal::Value _face, BlockType _blockId,
 	                                                             uint8_t _meta) -> bool {
 		if (!CanRedstoneComponentStay(_world, _pos) || !GenericPlace(_world, _pos, _placer, _face, _blockId, _meta))
 			return false;
@@ -681,12 +681,12 @@ void RegisterRedstoneBehaviors() {
 		auto meta = _world.GetMetadata(_pos);
 		if (meta > 0) {
 			_world.NotifyNeighborsOfUpdate(_pos, BLOCK_PRESSURE_PLATE_STONE);
-			_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Direction::Value::Down), BLOCK_PRESSURE_PLATE_STONE);
+			_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Cardinal::Value::Down), BLOCK_PRESSURE_PLATE_STONE);
 		}
 	};
 
 	blockBehaviors[BLOCK_PRESSURE_PLATE_STONE].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                              Direction::Value _face, BlockType _blockId,
+	                                                              Cardinal::Value _face, BlockType _blockId,
 	                                                              uint8_t _meta) -> bool {
 		if (!CanRedstoneComponentStay(_world, _pos) || !GenericPlace(_world, _pos, _placer, _face, _blockId, _meta))
 			return false;
@@ -734,14 +734,14 @@ void RegisterRedstoneBehaviors() {
 			return;
 
 		if (RedstoneManager::IsPositionPowered(_world, _pos) ||
-		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up)))
+		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Cardinal::Value::Up)))
 			_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_DISPENSER, 4);
 	};
 
 	blockBehaviors[BLOCK_DISPENSER].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
 	                                            Java::Random& /*_random*/) -> void {
 		if (RedstoneManager::IsPositionPowered(_world, _pos) ||
-		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up)))
+		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Cardinal::Value::Up)))
 			DispenseItemFromDispenser(_world, _pos, _meta);
 	};
 
@@ -760,7 +760,7 @@ void RegisterRedstoneBehaviors() {
 	blockBehaviors[BLOCK_NOTEBLOCK].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
 	                                            Java::Random& /*_random*/) -> void {
 		if (RedstoneManager::IsPositionPowered(_world, _pos) ||
-		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up)))
+		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Cardinal::Value::Up)))
 			PlayNoteblock(_world, _pos);
 	};
 
@@ -770,7 +770,7 @@ void RegisterRedstoneBehaviors() {
 			return;
 
 		if (RedstoneManager::IsPositionPowered(_world, _pos) ||
-		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Direction::Value::Up)))
+		    RedstoneManager::IsPositionPowered(_world, _pos.WithOffset(Cardinal::Value::Up)))
 			blockBehaviors[BLOCK_NOTEBLOCK].onTick(_world, _pos, 0, _world.rand);
 	};
 

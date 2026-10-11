@@ -19,7 +19,7 @@ struct RayCastResult {
 	bool hit = false;
 	Block hitBlock = {};
 	Int3 blockPosition = {};
-	Direction::Value face = Direction::Value::None;
+	Cardinal::Value face = Cardinal::Value::None;
 	Vec3 hitPosition = {};
 };
 

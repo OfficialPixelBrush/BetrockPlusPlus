@@ -16,11 +16,11 @@
  * 
  * @param _type Block type
  * @param _meta Metadata value
- * @return Direction::Value 
+ * @return Cardinal::Value 
  */
-Direction::Value GetDirectionFromMeta(const BlockType _type, const uint8_t _meta);
-uint8_t GetMetaFromDirection(const BlockType _type, const Direction::Value _dir);
-Direction::Value FaceDirectionToDirection(const PacketData::FaceDirection _face);
-PacketData::FaceDirection DirectionToFaceDirection(const Direction::Value _dir);
-Direction::Value FromPaintingDirectionToDirection(const PacketData::PaintingDirection _value);
-PacketData::PaintingDirection FromDirectionToPaintingDirection(const Direction::Value _dir);
+Cardinal::Value GetDirectionFromMeta(const BlockType _type, const uint8_t _meta);
+uint8_t GetMetaFromDirection(const BlockType _type, const Cardinal::Value _dir);
+Cardinal::Value FaceDirectionToDirection(const PacketData::FaceDirection _face);
+PacketData::FaceDirection DirectionToFaceDirection(const Cardinal::Value _dir);
+Cardinal::Value FromPaintingDirectionToDirection(const PacketData::PaintingDirection _value);
+PacketData::PaintingDirection FromDirectionToPaintingDirection(const Cardinal::Value _dir);

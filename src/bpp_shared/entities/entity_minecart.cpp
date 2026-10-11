@@ -171,7 +171,7 @@ std::optional<Vec3> MinecartEntity::GetClosestPositionAlongRail(Vec3 _position) 
 	auto fd = MathHelper::FloorDouble;
 	Int3 blockPos = { fd(_position.x), fd(_position.y), fd(_position.z) };
 
-	if (RailManager::IsRail(this->world->GetBlockId(blockPos.WithOffset(Direction::Value::Down)))) {
+	if (RailManager::IsRail(this->world->GetBlockId(blockPos.WithOffset(Cardinal::Value::Down)))) {
 		blockPos.y--;
 	}
 
@@ -264,7 +264,7 @@ void MinecartEntity::Tick() {
 	auto fd = MathHelper::FloorDouble;
 	Int3 blockPos = { fd(position.x), fd(position.y), fd(position.z) };
 
-	if (RailManager::IsRail(this->world->GetBlockId(blockPos.WithOffset(Direction::Value::Down)))) {
+	if (RailManager::IsRail(this->world->GetBlockId(blockPos.WithOffset(Cardinal::Value::Down)))) {
 		blockPos.y--;
 	}
 

@@ -37,7 +37,7 @@ void FallingBlockEntity::Tick() {
 		bool placeable = blockPosition.y > 0 && blockPosition.y < CHUNK_HEIGHT &&
 		                 (target == BLOCK_AIR || Blocks::blockProperties[target].material.isLiquid);
 
-		bool unsupported = Blocks::CanFallAt(*this->world, blockPosition.WithOffset(Direction::Value::Down));
+		bool unsupported = Blocks::CanFallAt(*this->world, blockPosition.WithOffset(Cardinal::Value::Down));
 
 		if (!placeable || unsupported) {
 			this->DropItemAtEntity(this->block, 1);
