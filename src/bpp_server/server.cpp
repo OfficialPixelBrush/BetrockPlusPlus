@@ -560,6 +560,10 @@ void Server::SaveLevelFile() {
 	curLevelData.randomSeed = gameRuntime.world.seed;
 	curLevelData.spawnPoint = gameRuntime.world.spawnPoint;
 	curLevelData.time = gameRuntime.world.elapsedTicks;
+	curLevelData.raining = gameRuntime.world.weatherSystem.isRaining;
+	curLevelData.rainTime = gameRuntime.world.weatherSystem.rainTimer;
+	curLevelData.thundering = gameRuntime.world.weatherSystem.isThundering;
+	curLevelData.thunderTime = gameRuntime.world.weatherSystem.thunderTimer;
 	gameRuntime.saveManager.SaveLevelFile(curLevelData);
 }
 
@@ -630,9 +634,7 @@ bool Server::BeginTickSample(SampleMode _mode, int _ticks, PlayerSession& _reque
 	return true;
 }
 void Server::Tick() {
-	// Wait for the previous tick's write flushes to finish. The main thread
-	// owns the session write buffers for the duration of the tick; the write
-	// thread may only touch them after Tick has submitted its flushes.
+	// Wait for the previous tick's write flushes to finish
 	using Clock = std::chrono::steady_clock;
 	Clock::time_point totalStart{};
 	if (samplingStartsNextTick) {
@@ -736,6 +738,17 @@ void Server::Tick() {
 	// Dispatch block changes
 	ChunkBroadcaster::BroadcastBlockChanges(*this, localBlockChanges, Dimension::Overworld, gameRuntime.world);
 	ChunkBroadcaster::BroadcastBlockChanges(*this, localBlockChangesHell, Dimension::Nether, gameRuntime.worldHell);
+
+	// Send weather updates
+	auto currentWeather = gameRuntime.world.weatherSystem.GetWeatherState();
+	if (currentWeather != this->lastSentWeather) {
+		this->lastSentWeather = currentWeather;
+		Packet::GameEvent pkt;
+		pkt.eventId = PacketData::GameEvent::STOP_RAINING;
+		if (currentWeather == Weather::Raining || currentWeather == Weather::Thundering)
+			pkt.eventId = PacketData::GameEvent::START_RAINING;
+		overworldEntityTracker.SendPacketToAllPlayers(pkt);
+	}
 
 	// Disconnect timed-out clients; the removed sessions are returned so we
 	// can send their last packets (e.g. a disconnect reason) before they die

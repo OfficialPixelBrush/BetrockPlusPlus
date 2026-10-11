@@ -153,7 +153,14 @@ public:
 	}
 
 	bool CanRainHitSpot(Int3 _pos) {
-		return CanBlockSeeSky(_pos) && weatherSystem.isRaining;
+		if (!weatherSystem.IsRaining())
+			return false;
+		if (!CanBlockSeeSky(_pos))
+			return false;
+		if (FindTopSolidBlock(_pos.x, _pos.z) > _pos.y)
+			return false;
+		auto biome = biomeGenerator.GetBiomeAtPoint({ _pos.x, _pos.z });
+		return biomeGenerator.BiomeHasSnow(biome) ? false : biomeGenerator.BiomeHasLightning(biome);
 	}
 
 	bool IsNight() const {
@@ -172,7 +179,7 @@ public:
 			onExplosion(_position, _size, result, _exploder);
 	}
 
-	bool CanBlockSeeSky(const Int3 _pos) {
+	bool CanBlockSeeSky(Int3 _pos) {
 		auto chunk = GetChunkRaw({ _pos.x >> 4, _pos.z >> 4 });
 		if (!chunk)
 			return false;

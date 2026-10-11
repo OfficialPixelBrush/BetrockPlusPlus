@@ -111,12 +111,17 @@ struct Runtime {
 
 		// Initialize save data with our world objects
 		saveManager.LoadLevelData();
-		world.InitWorldSeed(saveManager.GetLevelData().randomSeed);
-		worldHell.InitWorldSeed(saveManager.GetLevelData().randomSeed);
+		auto& thisLevelData = saveManager.GetLevelData();
+		world.InitWorldSeed(thisLevelData.randomSeed);
+		worldHell.InitWorldSeed(thisLevelData.randomSeed);
 
 		// World time
-		world.elapsedTicks = saveManager.GetLevelData().time;
-		worldHell.elapsedTicks = saveManager.GetLevelData().time;
+		world.elapsedTicks = thisLevelData.time;
+		worldHell.elapsedTicks = thisLevelData.time;
+
+		// Initialize weather
+		world.weatherSystem.SetRaining(thisLevelData.rainTime);
+		world.weatherSystem.SetThundering(thisLevelData.thunderTime);
 
 		// Bind the region managers with the world objects
 		world.regionManager = &overworldRegionManager;

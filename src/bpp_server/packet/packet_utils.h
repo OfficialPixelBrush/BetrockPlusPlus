@@ -12,6 +12,14 @@
 #include <vector>
 
 namespace PacketUtilities {
+inline void SendWeatherToPlayer(PlayerSession& _session, Weather _weather) {
+	Packet::GameEvent pkt;
+	pkt.eventId = PacketData::GameEvent::STOP_RAINING;
+	if (_weather == Weather::Raining || _weather == Weather::Thundering)
+		pkt.eventId = PacketData::GameEvent::START_RAINING;
+	pkt.Serialize(_session.stream);
+}
+
 inline void SendInventory(PlayerSession& _session, WindowId _windowId, Inventory& _inventory) {
 	std::vector<ItemStack> items;
 	for (auto& item : _inventory.slots) {

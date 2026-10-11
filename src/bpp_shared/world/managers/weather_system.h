@@ -18,5 +18,38 @@ struct WeatherSystem {
 	bool isThundering : 1 = false;
 	void Init(int32_t _rainTimer = 0, int32_t _thunderTimer = 0, bool _isRaining = false, bool _isThundering = false);
 	void Tick(Java::Random& _rand);
-	Weather GetActive() const noexcept;
+
+	float rainStrength = 0.0f, prevRainStrength = 0.0f;
+	float thunderStrength = 0.0f, prevThunderStrength = 0.0f;
+
+	bool IsRaining() const {
+		float weightedStrength = prevRainStrength + (rainStrength - prevRainStrength);
+		return weightedStrength > 0.2f;
+	}
+	bool IsThundering() const {
+		float weightedStrengthRain = prevRainStrength + (rainStrength - prevRainStrength);
+		float weightedStrength = prevThunderStrength + (thunderStrength - prevThunderStrength);
+
+		return weightedStrength * weightedStrengthRain > 0.9f;
+	}
+	void SetRaining(int _timer) {
+		isRaining = true;
+		rainStrength = 1.0f;
+		rainTimer = _timer;
+	}
+	void SetThundering(int _timer) {
+		isRaining = true;
+		isThundering = true;
+		rainStrength = 1.0f;
+		thunderStrength = 1.0f;
+		thunderTimer = _timer;
+	}
+
+	Weather GetWeatherState() const {
+		if (IsThundering())
+			return Weather::Thundering;
+		if (IsRaining())
+			return Weather::Raining;
+		return Weather::Clear;
+	}
 };
