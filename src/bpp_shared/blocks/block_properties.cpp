@@ -123,11 +123,11 @@ bool CanSugarcaneSurviveAt(WorldAccess& _world, Int3 _pos) {
 }
 
 bool CanCakeSurviveAt(WorldAccess& _world, Int3 _pos) {
-	return _world.GetMaterial(_pos.Offset(Direction::Value::Down)).isSolid;
+	return _world.GetMaterial(_pos.Offset(Cardinal::Value::Down)).isSolid;
 }
 
 bool CanCropsSurviveAt(WorldAccess& _world, Int3 _pos) {
-	return _world.GetBlockId(_pos.Offset(Direction::Value::Down)) == BLOCK_FARMLAND;
+	return _world.GetBlockId(_pos.Offset(Cardinal::Value::Down)) == BLOCK_FARMLAND;
 }
 
 bool CanGenericPlantSurviveAt(WorldAccess& _world, Int3 _pos) {
@@ -171,15 +171,15 @@ bool CanCactusSurviveAt(WorldAccess& _world, Int3 _pos) {
  * @return false The torch cannot be placed
  */
 // ^^ Why is this one function so elaborated on? lol
-bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, Direction::Value _face) {
+bool CanTorchAttachTo(WorldManager& _world, Int3 _pos, Cardinal::Value _face) {
 	// Torches cannot be placed on the ceiling
-	if (_face == Direction::Value::Down)
+	if (_face == Cardinal::Value::Down)
 		return false;
 	// Get supporting block
-	Int3 support = _pos.WithOffset(Direction::Opposite(_face));
+	Int3 support = _pos.WithOffset(Cardinal::Opposite(_face));
 	return _world.GetBlockId(support) != BLOCK_ICE &&
 	       (_world.IsBlockNormalCube(support) ||
-	        (_face == Direction::Value::Up && _world.GetBlockId(support) == BLOCK_FENCE));
+	        (_face == Cardinal::Value::Up && _world.GetBlockId(support) == BLOCK_FENCE));
 }
 
 // Some fluid specific stuff

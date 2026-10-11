@@ -339,7 +339,7 @@ private:
 };
 
 struct BedBuilder {
-	BedBuilder facing(Direction::Value _direction) const {
+	BedBuilder facing(Cardinal::Value _direction) const {
 		BedBuilder b = *this;
 		b.direction = _direction;
 		return b;
@@ -358,17 +358,17 @@ struct BedBuilder {
 	Block asBlock() const {
 		uint8_t data;
 		switch (direction) {
-		case Direction::Value::South:
+		case Cardinal::Value::South:
 		default:
 			data = 0;
 			break;
-		case Direction::Value::West:
+		case Cardinal::Value::West:
 			data = 1;
 			break;
-		case Direction::Value::North:
+		case Cardinal::Value::North:
 			data = 2;
 			break;
-		case Direction::Value::East:
+		case Cardinal::Value::East:
 			data = 3;
 			break;
 		}
@@ -384,7 +384,7 @@ struct BedBuilder {
 
 private:
 	BlockType id = BLOCK_BED;
-	Direction::Value direction = Direction::Value::South;
+	Cardinal::Value direction = Cardinal::Value::South;
 	bool occupied_ = false;
 	bool head_ = false;
 };
@@ -629,7 +629,7 @@ private:
 };
 
 struct TrapdoorBuilder {
-	TrapdoorBuilder facing(Direction::Value _direction) const {
+	TrapdoorBuilder facing(Cardinal::Value _direction) const {
 		TrapdoorBuilder b = *this;
 		b.direction = _direction;
 		return b;
@@ -643,17 +643,17 @@ struct TrapdoorBuilder {
 	Block asBlock() const {
 		uint8_t data;
 		switch (direction) {
-		case Direction::Value::East:
+		case Cardinal::Value::East:
 		default:
 			data = 0;
 			break;
-		case Direction::Value::West:
+		case Cardinal::Value::West:
 			data = 1;
 			break;
-		case Direction::Value::North:
+		case Cardinal::Value::North:
 			data = 2;
 			break;
-		case Direction::Value::South:
+		case Cardinal::Value::South:
 			data = 3;
 			break;
 		}
@@ -667,14 +667,14 @@ struct TrapdoorBuilder {
 
 private:
 	BlockType id = BLOCK_TRAPDOOR;
-	Direction::Value direction = Direction::Value::South;
+	Cardinal::Value direction = Cardinal::Value::South;
 	bool open_ = false;
 };
 
 struct PumpkinBuilder {
 	constexpr explicit PumpkinBuilder(BlockType _id) : id(_id) {}
 
-	PumpkinBuilder facing(Direction::Value _direction) const {
+	PumpkinBuilder facing(Cardinal::Value _direction) const {
 		PumpkinBuilder b = *this;
 		b.direction = _direction;
 		return b;
@@ -683,17 +683,17 @@ struct PumpkinBuilder {
 	Block asBlock() const {
 		uint8_t data;
 		switch (direction) {
-		case Direction::Value::South:
+		case Cardinal::Value::South:
 		default:
 			data = 0;
 			break;
-		case Direction::Value::West:
+		case Cardinal::Value::West:
 			data = 1;
 			break;
-		case Direction::Value::North:
+		case Cardinal::Value::North:
 			data = 2;
 			break;
-		case Direction::Value::East:
+		case Cardinal::Value::East:
 			data = 3;
 			break;
 		}
@@ -705,13 +705,13 @@ struct PumpkinBuilder {
 
 private:
 	BlockType id;
-	Direction::Value direction = Direction::Value::South;
+	Cardinal::Value direction = Cardinal::Value::South;
 };
 
 struct RepeaterBuilder {
 	constexpr explicit RepeaterBuilder(BlockType _id) : id(_id) {}
 
-	RepeaterBuilder facing(Direction::Value _direction) const {
+	RepeaterBuilder facing(Cardinal::Value _direction) const {
 		RepeaterBuilder b = *this;
 		b.direction = _direction;
 		return b;
@@ -729,17 +729,17 @@ struct RepeaterBuilder {
 	Block asBlock() const {
 		uint8_t data;
 		switch (direction) {
-		case Direction::Value::North:
+		case Cardinal::Value::North:
 		default:
 			data = 0;
 			break;
-		case Direction::Value::East:
+		case Cardinal::Value::East:
 			data = 1;
 			break;
-		case Direction::Value::South:
+		case Cardinal::Value::South:
 			data = 2;
 			break;
-		case Direction::Value::West:
+		case Cardinal::Value::West:
 			data = 3;
 			break;
 		}
@@ -752,7 +752,7 @@ struct RepeaterBuilder {
 
 private:
 	BlockType id;
-	Direction::Value direction = Direction::Value::North;
+	Cardinal::Value direction = Cardinal::Value::North;
 	uint8_t delay_ = 0;
 };
 

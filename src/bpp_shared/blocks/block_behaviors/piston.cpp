@@ -215,7 +215,7 @@ static void Retract(WorldManager& _world, Int3 _pos) {
 }
 
 // Had to port this SPECIFICALLY for pistons, thanks notch
-static bool IsProvidingPowerTo(WorldManager& _world, Int3 _src, Direction::Value _dir) {
+static bool IsProvidingPowerTo(WorldManager& _world, Int3 _src, Cardinal::Value _dir) {
 	const BlockType id = _world.GetBlockId(_src);
 	if (id == BLOCK_AIR)
 		return false;
@@ -228,22 +228,22 @@ static bool IsProvidingPowerTo(WorldManager& _world, Int3 _src, Direction::Value
 	switch (id) {
 	case BLOCK_REDSTONE_TORCH_ON: {
 		// Powers every side except the block it's attached to
-		Direction::Value adir = Direction::Value::None;
+		Cardinal::Value adir = Cardinal::Value::None;
 		switch (meta) {
 		case 1:
-			adir = Direction::Value::West;
+			adir = Cardinal::Value::West;
 			break;
 		case 2:
-			adir = Direction::Value::East;
+			adir = Cardinal::Value::East;
 			break;
 		case 3:
-			adir = Direction::Value::North;
+			adir = Cardinal::Value::North;
 			break;
 		case 4:
-			adir = Direction::Value::South;
+			adir = Cardinal::Value::South;
 			break;
 		case 5:
-			adir = Direction::Value::Down;
+			adir = Cardinal::Value::Down;
 			break;
 		default:
 			break;
@@ -260,32 +260,32 @@ static bool IsProvidingPowerTo(WorldManager& _world, Int3 _src, Direction::Value
 		// Only powers the block it's facing
 		switch (meta & 3) {
 		case 0:
-			return _dir == Direction::Value::North;
+			return _dir == Cardinal::Value::North;
 		case 1:
-			return _dir == Direction::Value::East;
+			return _dir == Cardinal::Value::East;
 		case 2:
-			return _dir == Direction::Value::South;
+			return _dir == Cardinal::Value::South;
 		default:
-			return _dir == Direction::Value::West;
+			return _dir == Cardinal::Value::West;
 		}
 	case BLOCK_REDSTONE: {
 		if (meta == 0)
 			return false;
-		if (_dir == Direction::Value::Down)
+		if (_dir == Cardinal::Value::Down)
 			return true; // Dust always powers the block it sits on
-		if (Direction::IsVertical(_dir))
+		if (Cardinal::IsVertical(_dir))
 			return false;
 		auto c = RedstoneManager::GetRedstoneDustConnectivity(_world, _src);
 		if (!c.powerX && !c.powerNX && !c.powerZ && !c.powerNZ)
 			return true; // A dot powers all sides
 		// A line powers the block it points into, unless it also turns sideways
-		if (_dir == Direction::Value::East)
+		if (_dir == Cardinal::Value::East)
 			return c.powerNX && !c.powerZ && !c.powerNZ;
-		if (_dir == Direction::Value::West)
+		if (_dir == Cardinal::Value::West)
 			return c.powerX && !c.powerZ && !c.powerNZ;
-		if (_dir == Direction::Value::South)
+		if (_dir == Cardinal::Value::South)
 			return c.powerNZ && !c.powerX && !c.powerNX;
-		if (_dir == Direction::Value::North)
+		if (_dir == Cardinal::Value::North)
 			return c.powerZ && !c.powerX && !c.powerNX;
 		return false;
 	}
@@ -301,16 +301,16 @@ static bool ShouldPistonBePowered(WorldManager& _world, Int3 _pos, int _orientat
 			continue;
 		const auto dir = GetDirectionFromMeta(BLOCK_PISTON, side);
 		Int3 src = _pos.WithOffset(dir);
-		if (IsProvidingPowerTo(_world, src, Direction::Opposite(dir)))
+		if (IsProvidingPowerTo(_world, src, Cardinal::Opposite(dir)))
 			return true;
 	}
 
 	// Anything that would power the block above the piston
-	const Int3 above = _pos.WithOffset(Direction::Value::Up);
+	const Int3 above = _pos.WithOffset(Cardinal::Value::Up);
 	for (int side = 1; side < 6; side++) {
 		const auto dir = GetDirectionFromMeta(BLOCK_PISTON, side);
 		Int3 src = above.WithOffset(dir);
-		if (IsProvidingPowerTo(_world, src, Direction::Opposite(dir)))
+		if (IsProvidingPowerTo(_world, src, Cardinal::Opposite(dir)))
 			return true;
 	}
 
@@ -361,7 +361,7 @@ void RegisterPistonBehaviors() {
 	};
 
 	// Pistons
-	auto onPistonPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face,
+	auto onPistonPlace = [](WorldManager& _world, Int3 _pos, Entity& _placer, Cardinal::Value _face,
 	                        BlockType _blockId, uint8_t /*_meta*/) -> bool {
 		uint8_t orientation;
 

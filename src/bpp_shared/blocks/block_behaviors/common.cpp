@@ -38,8 +38,8 @@ bool IsReplaceable(WorldManager& _world, Int3 _pos) {
 	       existing == BLOCK_SNOW_LAYER;
 };
 
-bool IsSupported(WorldManager& _world, Int3 _pos, Direction::Value _dir) {
-	Int3 support = _pos.WithOffset(Direction::Opposite(_dir));
+bool IsSupported(WorldManager& _world, Int3 _pos, Cardinal::Value _dir) {
+	Int3 support = _pos.WithOffset(Cardinal::Opposite(_dir));
 	return _world.IsBlockNormalCube(support);
 };
 
@@ -52,14 +52,14 @@ void GenericBreak(WorldManager& _world, Int3 _pos, Entity& /*_destroyer*/) {
 }
 
 // Returns the position the block could be placed at; (-1, -1, -1) if invalid
-Int3 CanPlace(WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Direction::Value _face, BlockType _blockId,
+Int3 CanPlace(WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Cardinal::Value _face, BlockType _blockId,
               uint8_t _meta) {
 	Int3 invalid = { -1, -1, -1 };
 	if (!_world.InBounds(_pos.y))
 		return invalid;
 
 	BlockType existing = _world.GetBlockId(_pos);
-	Int3 sourceBlock = _pos.WithOffset(Direction::Opposite(_face));
+	Int3 sourceBlock = _pos.WithOffset(Cardinal::Opposite(_face));
 
 	// Check if we can replace snow
 	Int3 targetPos = _pos;
@@ -93,7 +93,7 @@ Int3 CanPlace(WorldManager& _world, Int3 _pos, Entity& /*_placer*/, Direction::V
 	return targetPos;
 }
 
-bool GenericPlace(WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+bool GenericPlace(WorldManager& _world, Int3 _pos, Entity& _placer, Cardinal::Value _face, BlockType _blockId,
                   uint8_t _meta) {
 	Int3 placePos = CanPlace(_world, _pos, _placer, _face, _blockId, _meta);
 

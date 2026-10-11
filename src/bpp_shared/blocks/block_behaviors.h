@@ -22,9 +22,9 @@ struct PlayerSession;
 
 namespace Blocks {
 
-bool GenericPlace(WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+bool GenericPlace(WorldManager& _world, Int3 _pos, Entity& _placer, Cardinal::Value _face, BlockType _blockId,
                   uint8_t _meta);
-Int3 CanPlace(WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+Int3 CanPlace(WorldManager& _world, Int3 _pos, Entity& _placer, Cardinal::Value _face, BlockType _blockId,
               uint8_t _meta);
 void GenericBreak(WorldManager& _world, Int3 _pos, Entity& _destroyer);
 void GenericExplode(WorldManager& _world, Int3 _pos);
@@ -67,7 +67,7 @@ struct BlockBehavior {
 
 	// Called when block is placed by a player
 	// Returns if the placement was successful
-	bool (*onBlockPlaced)(WorldManager& _world, Int3 _pos, Entity& _placer, Direction::Value _face, BlockType _blockId,
+	bool (*onBlockPlaced)(WorldManager& _world, Int3 _pos, Entity& _placer, Cardinal::Value _face, BlockType _blockId,
 	                      uint8_t _meta) = GenericPlace;
 
 	// Called when player breaks the block

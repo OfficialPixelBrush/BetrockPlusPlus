@@ -55,7 +55,7 @@ void EntityMPPlayer::WakeUp(bool _confirmSpawn) {
 
 	if (_confirmSpawn) {
 		session->hasBedSpawn = true;
-		session->spawnPosition = this->bedPosition.WithOffset(Direction::Value::Up);
+		session->spawnPosition = this->bedPosition.WithOffset(Cardinal::Value::Up);
 	}
 
 	Packet::Animation anim;

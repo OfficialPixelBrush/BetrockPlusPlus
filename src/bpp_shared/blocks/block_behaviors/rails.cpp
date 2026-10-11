@@ -34,19 +34,19 @@ static void UpdateRail(WorldManager& _world, Int3 _pos, BlockType _block) {
 }
 
 static bool CanRailStay(WorldManager& _world, Int3 _pos, BlockType _block) {
-	if (!_world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::Down)))
+	if (!_world.IsBlockNormalCube(_pos.WithOffset(Cardinal::Value::Down)))
 		return false;
 
 	auto shape = RailManager::GetRailShape(_world.GetMetadata(_pos), _block);
 	switch (shape) {
 	case Blocks::RailShape::AscendingEast:
-		return _world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::East));
+		return _world.IsBlockNormalCube(_pos.WithOffset(Cardinal::Value::East));
 	case Blocks::RailShape::AscendingWest:
-		return _world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::West));
+		return _world.IsBlockNormalCube(_pos.WithOffset(Cardinal::Value::West));
 	case Blocks::RailShape::AscendingNorth:
-		return _world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::North));
+		return _world.IsBlockNormalCube(_pos.WithOffset(Cardinal::Value::North));
 	case Blocks::RailShape::AscendingSouth:
-		return _world.IsBlockNormalCube(_pos.WithOffset(Direction::Value::South));
+		return _world.IsBlockNormalCube(_pos.WithOffset(Cardinal::Value::South));
 	default:
 		return true;
 	}
@@ -69,7 +69,7 @@ void RegisterRailBehaviors() {
 
 	// Rails!
 	blockBehaviors[BLOCK_RAIL].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                              Direction::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
+	                                              Cardinal::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
 		if (!CanRailStay(_world, _pos, BLOCK_RAIL))
 			return false;
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
@@ -88,7 +88,7 @@ void RegisterRailBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_RAIL_DETECTOR].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                       Direction::Value _face, BlockType _blockId,
+	                                                       Cardinal::Value _face, BlockType _blockId,
 	                                                       uint8_t _meta) -> bool {
 		if (!CanRailStay(_world, _pos, BLOCK_RAIL_DETECTOR))
 			return false;
@@ -107,7 +107,7 @@ void RegisterRailBehaviors() {
 	};
 
 	blockBehaviors[BLOCK_RAIL_POWERED].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
-	                                                      Direction::Value _face, BlockType _blockId,
+	                                                      Cardinal::Value _face, BlockType _blockId,
 	                                                      uint8_t _meta) -> bool {
 		if (!CanRailStay(_world, _pos, BLOCK_RAIL_POWERED))
 			return false;

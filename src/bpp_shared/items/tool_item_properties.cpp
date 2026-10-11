@@ -230,7 +230,7 @@ void RegisterAll() {
 	itemBehavior[MUSHROOM_STEW].onUse = EatFood;
 
 	itemBehavior[SUGARCANE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/,
-	                                        Direction::Value _face) {
+	                                        Cardinal::Value _face) {
 		Int3 placePos = _pos.WithOffset(_face);
 		if (!Blocks::CanSugarcaneSurviveAt(_world, placePos))
 			return;
@@ -241,7 +241,7 @@ void RegisterAll() {
 
 	// Happy 23rd Birthday to me! (Pixel Brush)
 	itemBehavior[CAKE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/,
-	                                   Direction::Value _face) {
+	                                   Cardinal::Value _face) {
 		Int3 placePos = _pos.WithOffset(_face);
 		if (!Blocks::CanCakeSurviveAt(_world, placePos))
 			return;
@@ -251,7 +251,7 @@ void RegisterAll() {
 	};
 
 	itemBehavior[SEEDS_WHEAT].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/,
-	                                          Direction::Value _face) {
+	                                          Cardinal::Value _face) {
 		Int3 placePos = _pos.WithOffset(_face);
 		if (!Blocks::CanCropsSurviveAt(_world, placePos))
 			return;
@@ -261,8 +261,8 @@ void RegisterAll() {
 	};
 
 	itemBehavior[PAINTING].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/,
-	                                       Direction::Value _face) {
-		if (_face == Direction::Value::Down || _face == Direction::Value::Up)
+	                                       Cardinal::Value _face) {
+		if (_face == Cardinal::Value::Down || _face == Cardinal::Value::Up)
 			return;
 
 		PaintingEntity painting(_pos, _face);
@@ -275,9 +275,9 @@ void RegisterAll() {
 	};
 
 	itemBehavior[SIGN].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                   Direction::Value _face) {
+	                                   Cardinal::Value _face) {
 		Int3 placePos = _pos.WithOffset(_face);
-		if (_face == Direction::Value::Up) {
+		if (_face == Cardinal::Value::Up) {
 			int meta = MathHelper::FloorDouble(((_user.rotationYaw + 180.0f) / 360.0f) * 16.0f + 0.5f) & 0xF;
 			_world.SetBlock(placePos, BLOCK_SIGN_STANDING, meta);
 		} else {
@@ -286,7 +286,7 @@ void RegisterAll() {
 		_stack->DecrementCount(1);
 	};
 
-	auto onDoorPlace = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Direction::Value _face) {
+	auto onDoorPlace = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user, Cardinal::Value _face) {
 		BlockType targetBlockType;
 		targetBlockType = _stack->id == DOOR_WOOD ? BLOCK_DOOR_WOOD : BLOCK_DOOR_IRON;
 		Int3 placePosition = _pos.WithOffset(_face);
@@ -299,7 +299,7 @@ void RegisterAll() {
 	itemBehavior[DOOR_IRON].onBlockUse = onDoorPlace;
 
 	itemBehavior[REDSTONE_REPEATER].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                                Direction::Value _face) {
+	                                                Cardinal::Value _face) {
 		Int3 placePos = _pos.WithOffset(_face);
 		if (Blocks::blockBehaviors[BLOCK_REDSTONE_REPEATER_OFF].onBlockPlaced(_world, placePos, _user, _face,
 		                                                                      BLOCK_REDSTONE_REPEATER_OFF, 0))
@@ -307,21 +307,21 @@ void RegisterAll() {
 	};
 
 	itemBehavior[REDSTONE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                       Direction::Value _face) {
+	                                       Cardinal::Value _face) {
 		Int3 placePos = _pos.WithOffset(_face);
 		if (Blocks::blockBehaviors[BLOCK_REDSTONE].onBlockPlaced(_world, placePos, _user, _face, BLOCK_REDSTONE, 0))
 			_stack->DecrementCount(1);
 	};
 
 	itemBehavior[BED].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& _user,
-	                                  Direction::Value _face) {
+	                                  Cardinal::Value _face) {
 		Int3 placePos = _pos.WithOffset(_face);
 		if (Blocks::blockBehaviors[BLOCK_BED].onBlockPlaced(_world, placePos, _user, _face, BLOCK_BED, 0))
 			_stack->DecrementCount(1);
 	};
 
 	itemBehavior[DYE].onBlockUse = [](WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/,
-	                                  Direction::Value /*_face*/) {
+	                                  Cardinal::Value /*_face*/) {
 		// Bonemeal has metadata 15
 		if (_stack->data != 15)
 			return;
@@ -348,14 +348,14 @@ void RegisterAll() {
 			auto& random = _world.rand;
 
 			for (size_t i = 0; i < 128; i++) {
-				Int3 pos = _pos.WithOffset(Direction::Value::Up);
+				Int3 pos = _pos.WithOffset(Cardinal::Value::Up);
 				bool validWalk = true;
 
 				for (size_t step = 0; step < (i / 16); step++) {
 					pos.x += random.NextInt(3) - 1;
 					pos.y += (random.NextInt(3) - 1) * random.NextInt(3) / 2;
 					pos.z += random.NextInt(3) - 1;
-					if (_world.GetBlockId(pos.WithOffset(Direction::Value::Down)) != BLOCK_GRASS ||
+					if (_world.GetBlockId(pos.WithOffset(Cardinal::Value::Down)) != BLOCK_GRASS ||
 					    _world.IsBlockNormalCube(pos)) {
 						validWalk = false;
 						break; // abort the attempt

@@ -10,7 +10,7 @@
 
 struct AABBIntercept {
 	Vec3 point;
-	Direction::Value face = Direction::Value::None;
+	Cardinal::Value face = Cardinal::Value::None;
 };
 
 struct AABB {
@@ -21,8 +21,8 @@ struct AABB {
 		const double mins[3] = { minX, minY, minZ };
 		const double maxs[3] = { maxX, maxY, maxZ };
 		// Vanilla side ids 4/5 (x), 0/1 (y), 2/3 (z)
-		const Direction::Value minFaces[3] = { Direction::Value::West, Direction::Value::Down, Direction::Value::North };
-		const Direction::Value maxFaces[3] = { Direction::Value::East, Direction::Value::Up, Direction::Value::South };
+		const Cardinal::Value minFaces[3] = { Cardinal::Value::West, Cardinal::Value::Down, Cardinal::Value::North };
+		const Cardinal::Value maxFaces[3] = { Cardinal::Value::East, Cardinal::Value::Up, Cardinal::Value::South };
 
 		std::optional<AABBIntercept> best;
 		double bestDist = 0.0;
