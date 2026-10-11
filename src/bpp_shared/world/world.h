@@ -111,7 +111,7 @@ public:
 	void PropagateChunkLightBorders(Int32_2 _cpos);
 	BlockType GetFirstUncoveredBlock(int _wx, int _wz);
 	int FindTopSolidBlock(int _wx, int _wz) override;
-	void SetMeta(const Int3 _wpos, const uint8_t _metadata = 0);
+	void SetMeta(const Int3 _wpos, const uint8_t _metadata = 0, const bool _updateNeighbors = true);
 	void SetBlock(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata = 0,
 	              const bool _keepTileEntity = false, const bool _updateNeighbors = true) override;
 	void SetBlockRaw(const Int3 _wpos, const BlockType _blockType, const uint8_t _metadata = 0);

@@ -406,7 +406,8 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players, bool _advan
 		if (_profiler)
 			_profiler->Record(TickTask::BlockEntityTicks, Clock::now() - start);
 		start = _profiler ? Clock::now() : Clock::time_point{};
-		weatherSystem.Tick(rand);
+		if (!isHell)
+			weatherSystem.Tick(rand);
 		if (_profiler)
 			_profiler->Record(TickTask::Environment, Clock::now() - start);
 		// Saving
@@ -938,7 +939,7 @@ void WorldManager::PopulateReady(int _maxPopulates) {
 	}
 }
 
-void WorldManager::SetMeta(const Int3 _wpos, const uint8_t _metadata) {
+void WorldManager::SetMeta(const Int3 _wpos, const uint8_t _metadata, const bool _updateNeighbors) {
 	if (!InBounds(_wpos.y))
 		return;
 	Int32_2 cp{ _wpos.x >> 4, _wpos.z >> 4 };
@@ -951,7 +952,8 @@ void WorldManager::SetMeta(const Int3 _wpos, const uint8_t _metadata) {
 	chunk->SetMeta(local, _metadata);
 
 	// Update our neighbors
-	this->NotifyNeighborsOfUpdate(_wpos, blockId);
+	if (_updateNeighbors)
+		this->NotifyNeighborsOfUpdate(_wpos, blockId);
 
 	// Callback for the client and server to know about this block update
 	if (onBlockUpdate && (oldMeta != _metadata && Blocks::blockProperties[blockId].notifySelfOnMetaChange))

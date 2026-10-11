@@ -18,23 +18,16 @@ void WeatherSystem::Init(int32_t _rainTimer, int32_t _thunderTimer, bool _isRain
 // This could be useful later down the line for the client,
 // so it doesn't need to do a weather check every tick.
 void WeatherSystem::Tick(Java::Random& _rand) {
-	// Rain
-	rainTimer--;
-	if (rainTimer <= 0) {
-		isRaining = !isRaining;
-		if (isRaining)
-			rainTimer = 12000 + _rand.NextInt(24000 - 12000 + 1);
-		else
-			rainTimer = 12000 + _rand.NextInt(180000 - 12000 + 1);
-	}
-	// Thunder
-	thunderTimer--;
 	if (thunderTimer <= 0) {
+		thunderTimer = isThundering ? _rand.NextInt(12000) + 3600 : _rand.NextInt(168000) + 12000;
+	} else if (--thunderTimer <= 0) {
 		isThundering = !isThundering;
-		if (isThundering)
-			thunderTimer = 3600 + _rand.NextInt(15600 - 3600 + 1);
-		else
-			thunderTimer = 12000 + _rand.NextInt(180000 - 12000 + 1);
+	}
+
+	if (rainTimer <= 0) {
+		rainTimer = isRaining ? _rand.NextInt(12000) + 12000 : _rand.NextInt(168000) + 12000;
+	} else if (--rainTimer <= 0) {
+		isRaining = !isRaining;
 	}
 }
 

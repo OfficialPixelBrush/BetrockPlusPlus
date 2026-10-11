@@ -104,12 +104,12 @@ void RegisterFireBehaviors() {
 	RegisterFlammable(BLOCK_PLANKS, 5, 20);
 	RegisterFlammable(BLOCK_FENCE, 5, 20);
 	RegisterFlammable(BLOCK_STAIRS_WOOD, 5, 20);
-	RegisterFlammable(BLOCK_LOG, 5, 20);
-	RegisterFlammable(BLOCK_LEAVES, 5, 20);
-	RegisterFlammable(BLOCK_BOOKSHELF, 5, 20);
-	RegisterFlammable(BLOCK_TNT, 5, 20);
-	RegisterFlammable(BLOCK_TALLGRASS, 5, 20);
-	RegisterFlammable(BLOCK_WOOL, 5, 20);
+	RegisterFlammable(BLOCK_LOG, 5, 5);
+	RegisterFlammable(BLOCK_LEAVES, 30, 60);
+	RegisterFlammable(BLOCK_BOOKSHELF, 30, 20);
+	RegisterFlammable(BLOCK_TNT, 15, 100);
+	RegisterFlammable(BLOCK_TALLGRASS, 60, 100);
+	RegisterFlammable(BLOCK_WOOL, 30, 60);
 
 	// Placement
 	blockBehaviors[BLOCK_FIRE].onBlockAdded = [](WorldManager& _world, Int3 _pos) -> void {
@@ -157,8 +157,7 @@ void RegisterFireBehaviors() {
 
 		const int meta = _world.GetMetadata(_pos);
 		if (meta < 15)
-			_world.SetBlock(_pos, BLOCK_FIRE, meta + _random.NextInt(3) / 2, /*KeepTE=*/false,
-			                /*updateNeighbors*/ false);
+			_world.SetMeta(_pos, meta + _random.NextInt(3) / 2, /*updateNeighbors*/ false);
 
 		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_FIRE, 40);
 
