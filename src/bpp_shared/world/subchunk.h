@@ -111,22 +111,9 @@ struct SubChunk {
 	}
 	// Check if this block exists anywhere in the subchunk
 	bool HasBlock(BlockType _type) {
-		// Check fill first
-		if (blockFill == _type)
-			return true;
-		// No blocks allocated, skip
 		if (!blocks)
-			return false;
-		// Check over subchunk contents
-		for (uint8_t x = 0; x < SIZE; x++) {
-		for (uint8_t z = 0; z < SIZE; z++) {
-		for (uint8_t y = 0; y < SIZE; y++) {
-			if ((*blocks)[LocalIndex({x,y,z})] == _type)
-				return true;
-		}
-		}
-		}
-		return false;
+			return blockFill == _type;
+		return std::find(blocks->begin(), blocks->end(), _type) != blocks->end();
 	}
 	void FillRegion(Int3 _posA, Int3 _posB, BlockType _type = BLOCK_AIR, uint8_t _meta = 0);
 

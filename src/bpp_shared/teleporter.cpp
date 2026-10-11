@@ -112,6 +112,8 @@ bool PlaceInExistingPortal(WorldManager& _world, Entity& _entity) {
 			Chunk* chunk = _world.GetChunkRaw({ cx, cz });
 			if (!_world.IsChunkValid(chunk))
 				continue;
+			if (!chunk->HasBlock(BLOCK_NETHER_PORTAL))
+				continue;
 
 			// Clip the search box to this chunk
 			const int x0 = std::max(minX, cx * CHUNK_WIDTH), x1 = std::min(maxX, cx * CHUNK_WIDTH + (CHUNK_WIDTH-1));
