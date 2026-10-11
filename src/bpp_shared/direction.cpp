@@ -1,15 +1,22 @@
+/*
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-only
+ * 
+*/
+
 #include "direction.h"
 
 // Cardinal Directions
 namespace Cardinal {
-constexpr Value Opposite(const Value _dir) {
+Value Opposite(const Value _dir) noexcept {
 	if (_dir == Value::None)
 		return Value::None;
 	return static_cast<Value>(static_cast<uint8_t>(_dir) ^ 1);
 }
 
 // Rotating around the vertical (Y) axis, as seen from above.
-constexpr Value ToLeft(const Value _dir) {
+Value ToLeft(const Value _dir) noexcept {
 	switch (_dir) {
 	case Value::North:
 		return Value::West;
@@ -24,7 +31,7 @@ constexpr Value ToLeft(const Value _dir) {
 	}
 }
 
-constexpr Value ToRight(const Value _dir) {
+Value ToRight(const Value _dir) noexcept {
 	switch (_dir) {
 	case Value::North:
 		return Value::East;
@@ -39,7 +46,7 @@ constexpr Value ToRight(const Value _dir) {
 	}
 }
 
-constexpr Value FromAngle(const float _yaw) {
+Value FromAngle(const float _yaw) noexcept {
 	switch (MathHelper::FloorDouble((_yaw + 180.0f) * 4.0f / 360.0f - 0.5f) & 0b11) {
 	case 0:
 		return Value::East;
@@ -54,7 +61,7 @@ constexpr Value FromAngle(const float _yaw) {
 	}
 }
 
-constexpr bool IsHorizontal(const Value _dir) {
+bool IsHorizontal(const Value _dir) noexcept {
 	switch (_dir) {
 	case Value::North:
 	case Value::South:
@@ -66,7 +73,7 @@ constexpr bool IsHorizontal(const Value _dir) {
 	}
 }
 
-constexpr bool IsVertical(const Value _dir) {
+bool IsVertical(const Value _dir) noexcept {
 	switch (_dir) {
 	case Value::Up:
 	case Value::Down:
@@ -76,7 +83,7 @@ constexpr bool IsVertical(const Value _dir) {
 	}
 }
 
-constexpr Axis::Value ToAxis(const Value _dir) {
+Axis::Value ToAxis(const Value _dir) noexcept {
 	switch (_dir) {
 	case Value::North:
 		return Axis::Value::NorthSouth;
@@ -95,7 +102,7 @@ constexpr Axis::Value ToAxis(const Value _dir) {
 	}
 }
 
-constexpr std::string_view Str(const Value _dir) {
+std::string_view Str(const Value _dir) noexcept {
 	switch (_dir) {
 	case Value::North:
 		return "North";
@@ -118,7 +125,7 @@ constexpr std::string_view Str(const Value _dir) {
 
 // Axis Directions
 namespace Axis {
-constexpr Value ToLeft(const Value _axis) {
+Value ToLeft(const Value _axis) noexcept {
 	switch (_axis) {
 	case Value::NorthSouth:
 		return Value::EastWest;
@@ -129,11 +136,11 @@ constexpr Value ToLeft(const Value _axis) {
 	}
 }
 
-constexpr Value ToRight(const Value _axis) {
+Value ToRight(const Value _axis) noexcept {
 	return ToLeft(_axis);
 }
 
-constexpr Value FromAngle(const float _yaw) {
+Value FromAngle(const float _yaw) noexcept {
 	switch (Cardinal::FromAngle(_yaw)) {
 	case Cardinal::Value::East:
 		return Value::EastWest;
@@ -149,7 +156,7 @@ constexpr Value FromAngle(const float _yaw) {
 }
 
 
-constexpr bool IsHorizontal(const Value _axis) {
+bool IsHorizontal(const Value _axis) noexcept {
 	switch (_axis) {
 	case Value::NorthSouth:
 	case Value::EastWest:
@@ -159,11 +166,24 @@ constexpr bool IsHorizontal(const Value _axis) {
 	}
 }
 
-constexpr bool IsVertical(const Value _axis) {
+bool IsVertical(const Value _axis) noexcept {
 	return _axis == Value::UpDown;
 }
 
-constexpr std::string_view Str(const Value _axis) {
+std::array<Cardinal::Value, 2> ToCardinal(const Value _dir) noexcept {
+	switch (_dir) {
+	case Value::NorthSouth:
+		return {Cardinal::Value::North, Cardinal::Value::South};
+	case Value::EastWest:
+		return {Cardinal::Value::East, Cardinal::Value::West};
+	case Value::UpDown:
+		return {Cardinal::Value::Up, Cardinal::Value::Down};
+	default:
+		return {Cardinal::Value::None, Cardinal::Value::None};
+	}
+}
+
+std::string_view Str(const Value _axis) noexcept {
 	switch (_axis) {
 	case Value::NorthSouth:
 		return "North/South";

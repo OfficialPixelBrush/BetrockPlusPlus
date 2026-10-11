@@ -18,24 +18,22 @@ bool PlaceInExistingPortal(WorldManager& _world, Entity& _entity);
 bool CreatePortal(WorldManager& _world, Entity& _entity);
 
 namespace {
-// TODO: Turn facing into an Enum, so we can avoid this sorta stuff, especially because a lot of parts of the code,
-// especially redstone manager have their own unique ways of doing this themselves, which is stupid.
-Int2 FacingToAxis(int _facing) {
-	int ax = _facing % 2;
-	int az = 1 - ax;
-	if (_facing % 4 >= 2) {
-		ax = -ax;
-		az = -az;
-	}
-	return { ax, az };
+constexpr Cardinal::Value PORTAL_FACINGS[4] = { Cardinal::Value::South, Cardinal::Value::East,
+	                                            Cardinal::Value::North, Cardinal::Value::West };
+
+constexpr Cardinal::Value HORIZONTAL_DIRS[4] = { Cardinal::Value::West, Cardinal::Value::East,
+	                                             Cardinal::Value::North, Cardinal::Value::South };
+Int3 PortalPoint(Int3 _base, Cardinal::Value _axis, int _w, int _h, int _depth = 0) {
+	return _base.WithOffset(_axis, _w - 1)
+	    .WithOffset(Cardinal::ToLeft(_axis), _depth)
+	    .WithOffset(Cardinal::Value::Up, _h);
 }
 
-bool HasRoomForPortal(WorldManager& _world, Int3 _base, Int2 _axis, int _depth) {
+bool HasRoomForPortal(WorldManager& _world, Int3 _base, Cardinal::Value _axis, int _depth) {
 	for (int d = 0; d < _depth; d++) {
 		for (int w = 0; w < 4; w++) {
 			for (int h = -1; h < 4; h++) {
-				Int3 p = { _base.x + (w - 1) * _axis.x + d * _axis.z, _base.y + h,
-					       _base.z + (w - 1) * _axis.z - d * _axis.x };
+				Int3 p = PortalPoint(_base, _axis, w, h, d);
 				if (h < 0) {
 					if (!_world.GetMaterial(p).isSolid)
 						return false;
@@ -50,7 +48,7 @@ bool HasRoomForPortal(WorldManager& _world, Int3 _base, Int2 _axis, int _depth) 
 }
 
 bool FindPortalSite(WorldManager& _world, const Vec3& _origin, int _startFacing, int _facingCount, int _depth,
-                    Int3& _bestPos, int& _bestFacing) {
+                    Int3& _bestPos, Cardinal::Value& _bestFacing) {
 	const Int2 center = {
 		MathHelper::FloorDouble(_origin.x),
 		MathHelper::FloorDouble(_origin.z)
@@ -71,9 +69,9 @@ bool FindPortalSite(WorldManager& _world, const Vec3& _origin, int _startFacing,
 					y--;
 
 				for (int f = _startFacing; f < _startFacing + _facingCount; f++) {
-					int facing = _facingCount == 4 ? f % 4 : f % 2;
+					const Cardinal::Value facing = PORTAL_FACINGS[_facingCount == 4 ? f % 4 : f % 2];
 					// Vanilla quirk: one blocked facing skips the remaining facings at this Y
-					if (!HasRoomForPortal(_world, { x, y, z }, FacingToAxis(facing), _depth))
+					if (!HasRoomForPortal(_world, { x, y, z }, facing, _depth))
 						break;
 
 					const double dy = y + 0.5 - _origin.y;
@@ -151,17 +149,12 @@ bool PlaceInExistingPortal(WorldManager& _world, Entity& _entity) {
 	if (closest < 0.0)
 		return false;
 
-	// TP our entity to the center of the portal
-	const Cardinal::Value neighbors[4] = { Cardinal::Value::West, Cardinal::Value::East, Cardinal::Value::North,
-		                              Cardinal::Value::South };
-	const double offsets[4][2] = { { -0.5, 0.0 }, { 0.5, 0.0 }, { 0.0, -0.5 }, { 0.0, 0.5 } };
-
+	// TP our entity to the center of the portal, nudged half a block
+	// towards each neighbouring portal block
 	Vec3 targetPos = portalPos + 0.5;
-	for (int i = 0; i < 4; i++) {
-		if (_world.GetBlockId(portalPos.WithOffset(neighbors[i])) == BLOCK_NETHER_PORTAL) {
-			targetPos.x += offsets[i][0];
-			targetPos.z += offsets[i][1];
-		}
+	for (auto dir : HORIZONTAL_DIRS) {
+		if (_world.GetBlockId(portalPos.WithOffset(dir)) == BLOCK_NETHER_PORTAL)
+			targetPos.Offset(dir, 0.5);
 	}
 
 	_entity.velocity = {};
@@ -170,43 +163,33 @@ bool PlaceInExistingPortal(WorldManager& _world, Entity& _entity) {
 }
 
 bool CreatePortal(WorldManager& _world, Entity& _entity) {
-	Int3 bestPos = {
+	Int3 base = {
 		MathHelper::FloorDouble(_entity.position.x),
 		MathHelper::FloorDouble(_entity.position.y),
 		MathHelper::FloorDouble(_entity.position.z)
 	};
-	int bestFacing = 0;
+	Cardinal::Value axis = PORTAL_FACINGS[0];
 	const int startFacing = _world.rand.NextInt(4);
 
-	bool foundSite = FindPortalSite(_world, _entity.position, startFacing, 4, 3, bestPos, bestFacing) ||
-	                 FindPortalSite(_world, _entity.position, startFacing, 2, 1, bestPos, bestFacing);
-
-	Int2 axis = FacingToAxis(bestFacing);
-	// TODO: Couldn't bestPos be reused for this, since it's only used once for the operation above?
-	Int3 base = bestPos;
+	bool foundSite = FindPortalSite(_world, _entity.position, startFacing, 4, 3, base, axis) ||
+	                 FindPortalSite(_world, _entity.position, startFacing, 2, 1, base, axis);
 
 	if (!foundSite) {
 		base.y = std::clamp(base.y, 70, 118);
 		for (int side = -1; side <= 1; side++) {
 			for (int w = 1; w < 3; w++) {
 				for (int h = -1; h < 3; h++) {
-					Int3 p = { base.x + (w - 1) * axis.x + side * axis.z, base.y + h,
-						       base.z + (w - 1) * axis.z - side * axis.x };
-					_world.SetBlock(p, h < 0 ? BLOCK_OBSIDIAN : BLOCK_AIR);
+					_world.SetBlock(PortalPoint(base, axis, w, h, side), h < 0 ? BLOCK_OBSIDIAN : BLOCK_AIR);
 				}
 			}
 		}
 	}
 
-	auto framePos = [&](int _w, int _h) -> Int3 {
-		return { base.x + (_w - 1) * axis.x, base.y + _h, base.z + (_w - 1) * axis.z };
-	};
-
 	// Place everything without neighbour updates
 	for (int w = 0; w < 4; w++) {
 		for (int h = -1; h < 4; h++) {
 			bool isFrame = w == 0 || w == 3 || h == -1 || h == 3;
-			_world.SetBlock(framePos(w, h), isFrame ? BLOCK_OBSIDIAN : BLOCK_NETHER_PORTAL, /*meta=*/0,
+			_world.SetBlock(PortalPoint(base, axis, w, h), isFrame ? BLOCK_OBSIDIAN : BLOCK_NETHER_PORTAL, /*meta=*/0,
 			                /*keepTileEntity=*/false, /*updateNeighbors=*/false);
 		}
 	}
@@ -214,7 +197,7 @@ bool CreatePortal(WorldManager& _world, Entity& _entity) {
 	// Notify neighbors
 	for (int w = 0; w < 4; w++) {
 		for (int h = -1; h < 4; h++) {
-			Int3 p = framePos(w, h);
+			Int3 p = PortalPoint(base, axis, w, h);
 			_world.NotifyNeighborsOfUpdate(p, _world.GetBlockId(p));
 		}
 	}

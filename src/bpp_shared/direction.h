@@ -8,7 +8,7 @@
 #pragma once
 #include "./helpers/java/java_math.h"
 #include <string_view>
-
+#include <array>
 namespace Axis {
 // Axis Directions
 enum class Value : uint8_t {
@@ -17,16 +17,7 @@ enum class Value : uint8_t {
 	UpDown = 2,
 	None,
 };
-inline constexpr Value ALL[3]        = { Value::NorthSouth, Value::EastWest, Value::UpDown };
-inline constexpr Value HORIZONTAL[2] = { Value::NorthSouth, Value::EastWest };
-
-constexpr Value ToLeft(const Value _axis);
-constexpr Value ToRight(const Value _axis);
-constexpr Value FromAngle(const float _yaw);
-constexpr bool IsHorizontal(const Value _axis);
-constexpr bool IsVertical(const Value _axis);
-constexpr std::string_view Str(const Value _axis);
-} // namespace Axis
+}
 
 namespace Cardinal {
 // Cardinal Directions
@@ -45,12 +36,26 @@ enum class Value : uint8_t {
 inline constexpr Value ALL[6]        = { Value::North, Value::South, Value::East, Value::West, Value::Up, Value::Down };
 inline constexpr Value HORIZONTAL[4] = { Value::North, Value::South, Value::East, Value::West };
 
-constexpr Value Opposite(const Value _dir);
-constexpr Value ToLeft(const Value _dir);
-constexpr Value ToRight(const Value _dir);
-constexpr Value FromAngle(const float _yaw);
-constexpr bool IsHorizontal(const Value _dir);
-constexpr bool IsVertical(const Value _dir);
-constexpr Axis::Value ToAxis(const Value _dir);
-constexpr std::string_view Str(const Value _dir);
+Value Opposite(const Value _dir) noexcept;
+Value ToLeft(const Value _dir) noexcept;
+Value ToRight(const Value _dir) noexcept;
+Value FromAngle(const float _yaw) noexcept;
+bool IsHorizontal(const Value _dir) noexcept;
+bool IsVertical(const Value _dir) noexcept;
+Axis::Value ToAxis(const Value _dir) noexcept;
+std::string_view Str(const Value _dir) noexcept;
 } // namespace Cardinal
+
+namespace Axis {
+// Axis Directions
+inline constexpr Value ALL[3]        = { Value::NorthSouth, Value::EastWest, Value::UpDown };
+inline constexpr Value HORIZONTAL[2] = { Value::NorthSouth, Value::EastWest };
+
+Value ToLeft(const Value _axis) noexcept;
+Value ToRight(const Value _axis) noexcept;
+Value FromAngle(const float _yaw) noexcept;
+bool IsHorizontal(const Value _axis) noexcept;
+bool IsVertical(const Value _axis) noexcept;
+std::array<Cardinal::Value, 2> ToCardinal(const Value _axis) noexcept;
+std::string_view Str(const Value _axis) noexcept;
+} // namespace Axis
