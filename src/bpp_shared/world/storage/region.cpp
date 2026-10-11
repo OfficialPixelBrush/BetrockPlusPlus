@@ -172,26 +172,26 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& _chunk,
 	lastUpdate.longValue = _timestamp;
 
 	// Byte array, blocks
-	Tag blocks;
-	blocks.type = TAG_BYTEARRAY;
-	blocks.name = "Blocks";
-	blocks.byteArray.resize((CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT), 0);
+	Tag blocksTag;
+	blocksTag.type = TAG_BYTEARRAY;
+	blocksTag.name = "Blocks";
+	blocksTag.byteArray.resize((CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT), 0);
 
 	// Nibble arrays (4 bits per block, so half the size of blocks array)
-	Tag data;
-	data.type = TAG_BYTEARRAY;
-	data.name = "Data";
-	data.byteArray.resize((CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT) / 2, 0);
+	Tag dataTag;
+	dataTag.type = TAG_BYTEARRAY;
+	dataTag.name = "Data";
+	dataTag.byteArray.resize((CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT) / 2, 0);
 
-	Tag blockLight;
-	blockLight.type = TAG_BYTEARRAY;
-	blockLight.name = "BlockLight";
-	blockLight.byteArray.resize((CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT) / 2, 0);
+	Tag blockLightTag;
+	blockLightTag.type = TAG_BYTEARRAY;
+	blockLightTag.name = "BlockLight";
+	blockLightTag.byteArray.resize((CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT) / 2, 0);
 
-	Tag skyLight;
-	skyLight.type = TAG_BYTEARRAY;
-	skyLight.name = "SkyLight";
-	skyLight.byteArray.resize((CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT) / 2, 0);
+	Tag skyLightTag;
+	skyLightTag.type = TAG_BYTEARRAY;
+	skyLightTag.name = "SkyLight";
+	skyLightTag.byteArray.resize((CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT) / 2, 0);
 
 	// HeightMap, one byte per (x,z) column
 	Tag heightMap;
@@ -201,19 +201,34 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& _chunk,
 	std::copy(std::begin(_chunk->heightMap), std::end(_chunk->heightMap), heightMap.byteArray.data());
 
 	// Put blocks in there
-	for (int x = 0; x < CHUNK_WIDTH; x++) {
-		for (int z = 0; z < CHUNK_WIDTH; z++) {
-			for (int y = 0; y < CHUNK_HEIGHT; y++) {
-				size_t idx = size_t(y + (z * CHUNK_HEIGHT) + (x * CHUNK_HEIGHT * CHUNK_WIDTH));
-				blocks.byteArray[idx] = _chunk->GetBlock({ x, y, z });
-				if (y % 2 == 0) {
-					data.byteArray[idx / 2] |= (_chunk->GetMeta({ x, y, z }));
-					skyLight.byteArray[idx / 2] |= _chunk->GetSkyLight({ x, y, z });
-					blockLight.byteArray[idx / 2] |= _chunk->GetBlockLight({ x, y, z });
-				} else {
-					data.byteArray[idx / 2] |= (_chunk->GetMeta({ x, y, z }) << 4);
-					skyLight.byteArray[idx / 2] |= (_chunk->GetSkyLight({ x, y, z }) << 4);
-					blockLight.byteArray[idx / 2] |= (_chunk->GetBlockLight({ x, y, z }) << 4);
+	{
+		int8_t* const blocksOut = blocksTag.byteArray.data();
+		int8_t* const dataOut = dataTag.byteArray.data();
+		int8_t* const skyLightOut = skyLightTag.byteArray.data();
+		int8_t* const blockLightOut = blockLightTag.byteArray.data();
+		for (int x = 0; x < CHUNK_WIDTH; x++) {
+			for (int z = 0; z < CHUNK_WIDTH; z++) {
+				for (int s = 0; s < SUB_CHUNK_COUNT; s++) {
+					const SubChunk& sub = _chunk->subChunks[size_t(s)];
+					const SubChunk::BlockLayer* bl = sub.blocks.get();
+					const SubChunk::NibbleLayer* ml = sub.meta.get();
+					const SubChunk::NibbleLayer* bll = sub.blockLight.get();
+					const SubChunk::NibbleLayer* sl = sub.skyLight.get();
+					const int8_t blockFill = int8_t(sub.blockFill);
+					const uint8_t mf = sub.metaFill, blf = sub.blockLightFill, sf = sub.skyLightFill;
+					for (int ly = 0; ly < SUB_CHUNK_SIZE; ly++) {
+						const int y = s * SUB_CHUNK_SIZE + ly;
+						const size_t idx = size_t(y + (z * CHUNK_HEIGHT) + (x * CHUNK_HEIGHT * CHUNK_WIDTH));
+						const int li = SubChunk::LocalIndex({ x, y, z });
+						blocksOut[idx] = bl ? int8_t((*bl)[size_t(li)]) : blockFill;
+						const uint8_t meta = ml ? SubChunk::GetNibble(*ml, li) : mf;
+						const uint8_t skyLight = sl ? SubChunk::GetNibble(*sl, li) : sf;
+						const uint8_t blockLight = bll ? SubChunk::GetNibble(*bll, li) : blf;
+						const uint8_t shift = (y & 1) ? 4u : 0u;
+						dataOut[idx / 2] = int8_t(dataOut[idx / 2] | (meta << shift));
+						skyLightOut[idx / 2] = int8_t(skyLightOut[idx / 2] | (skyLight << shift));
+						blockLightOut[idx / 2] = int8_t(blockLightOut[idx / 2] | (blockLight << shift));
+					}
 				}
 			}
 		}
@@ -243,10 +258,10 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& _chunk,
 	level.compound["zPos"] = zPos;
 	level.compound["TerrainPopulated"] = populated;
 	level.compound["LastUpdate"] = lastUpdate;
-	level.compound["Blocks"] = blocks;
-	level.compound["Data"] = data;
-	level.compound["BlockLight"] = blockLight;
-	level.compound["SkyLight"] = skyLight;
+	level.compound["Blocks"] = blocksTag;
+	level.compound["Data"] = dataTag;
+	level.compound["BlockLight"] = blockLightTag;
+	level.compound["SkyLight"] = skyLightTag;
 	level.compound["HeightMap"] = heightMap;
 	level.compound["Entities"] = entitiesTag;
 	level.compound["TileEntities"] = tileEntities;
@@ -344,31 +359,34 @@ std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8
 	std::copy(heightMap.begin(), heightMap.end(), chunk->heightMap);
 
 	// Load all of our block data
+	const int8_t* const blocksIn = blocks.data();
+	const int8_t* const dataIn = data.data();
+	const int8_t* const blightIn = blockLight.data();
+	const int8_t* const skyIn = skyLight.data();
+	bool any = false;
 	for (int y = 0; y < CHUNK_HEIGHT; y++) {
+		SubChunk& sub = chunk->subChunks[size_t(y >> 4)];
+		const unsigned shift = (y & 1) ? 4u : 0u;
 		for (int x = 0; x < CHUNK_WIDTH; x++) {
 			for (int z = 0; z < CHUNK_WIDTH; z++) {
 				size_t idx = size_t(y + (z * CHUNK_HEIGHT) + (x * CHUNK_HEIGHT * CHUNK_WIDTH));
-				BlockType thisBlock = BlockType(blocks[idx]);
-
 				// Make sure this block is valid
-				if (!Items::IsBlock(thisBlock)) {
+				BlockType thisBlock = BlockType(blocksIn[idx]);
+				if (!Items::IsBlock(thisBlock))
 					continue;
-				}
-				chunk->SetBlockRaw({ x, y, z }, BlockType(blocks[idx]));
-				if (y % 2 == 0) {
-					chunk->SetMetaRaw({ x, y, z }, data[idx / 2] & 0xF);
-					chunk->SetBlockLight({ x, y, z }, blockLight[idx / 2] & 0xF);
-					chunk->SetSkyLight({ x, y, z }, skyLight[idx / 2] & 0xF);
-				} else {
-					chunk->SetMetaRaw({ x, y, z }, (data[idx / 2] >> 4) & 0xF);
-					chunk->SetBlockLight({ x, y, z }, (blockLight[idx / 2] >> 4) & 0xF);
-					chunk->SetSkyLight({ x, y, z }, (skyLight[idx / 2] >> 4) & 0xF);
-				}
+				any = true;
+				const int li = SubChunk::LocalIndex({ x, y, z });
+				sub.SetBlock(li, thisBlock);
+				sub.SetMeta(li, uint8_t((uint8_t(dataIn[idx / 2]) >> shift) & 0xF));
+				sub.SetBlockLight(li, uint8_t((uint8_t(blightIn[idx / 2]) >> shift) & 0xF));
+				sub.SetSkyLight(li, uint8_t((uint8_t(skyIn[idx / 2]) >> shift) & 0xF));
 			}
 		}
 		if ((y & (SUB_CHUNK_SIZE - 1)) == SUB_CHUNK_SIZE - 1)
 			chunk->TryToCompactSubChunk(y / SUB_CHUNK_SIZE);
 	}
+	if (any)
+		chunk->isModified = true;
 
 	// Load our entities
 	chunk->entityTags = std::move(entities);
