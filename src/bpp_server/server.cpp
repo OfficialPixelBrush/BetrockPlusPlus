@@ -108,7 +108,6 @@ void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
 		dest.z *= 8.0;
 	}
 	_session.entity->Teleport(dest);
-	_session.inventory.activeHotbarSlot = 0;
 	_session.pendingPortalPlacement = true;
 	_session.portalAreaLoaded = false;
 
@@ -125,6 +124,9 @@ void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
 	sh.health = _session.entity->health;
 	sh.Serialize(_session.stream);
 	PacketUtilities::SendInventory(_session, 0, _session.inventory);
+
+	_session.entity->wasMetadataUpdated = true;
+	_session.inventory.activeHotbarSlot = 0;
 }
 
 void Server::IndexAddChunk(PlayerSession& _session, const Int32_2& _pos) {
