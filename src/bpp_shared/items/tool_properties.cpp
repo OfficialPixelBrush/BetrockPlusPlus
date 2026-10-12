@@ -553,7 +553,8 @@ void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entit
 
 void UseFlintAndSteel(WorldManager& _world, ItemStack* _stack, Int3 _pos, Entity& /*_user*/, Cardinal::Value _face) {
 	_pos.Offset(_face);
-	_world.SetBlock(_pos, BLOCK_FIRE);
+	if (_world.GetBlockId(_pos) == BLOCK_AIR)
+		_world.SetBlock(_pos, BLOCK_FIRE);
 	HarmTool(_stack, 1);
 }
 
