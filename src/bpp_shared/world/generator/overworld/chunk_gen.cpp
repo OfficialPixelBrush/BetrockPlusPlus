@@ -268,6 +268,7 @@ void OverworldGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
 	                                        Int32_2{ _max.x, _max.z }, Vec2{ 1.121, 1.121 }, 0.5);
 	depthNoiseGen.GenerateOctaves(depthNoiseField, Int32_2{ _cpos.x, _cpos.z }, Int32_2{ _max.x, _max.z },
 	                              Vec2{ 200.0, 200.0 }, 0.5);
+	// TODO: Ideally skip low/high value calculation for regions that are only high/low noise
 	selectorNoiseGen.GenerateOctaves(selectorNoiseField, Vec3{ double(_cpos.x), double(_cpos.y), double(_cpos.z) },
 	                                 _max, Vec3{ horiScale / 80.0, vertScale / 160.0, horiScale / 80.0 });
 	lowNoiseGen.GenerateOctaves(lowNoiseField, Vec3{ double(_cpos.x), double(_cpos.y), double(_cpos.z) }, _max,
@@ -323,10 +324,11 @@ void OverworldGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
 			const double elevationOffset = double(_max.y) / 2.0 + depthNoise * 4.0;
 			++xzIndex;
 
+			const double dividedContinentalness = 12.0 / continentalness;
 			for (int32_t iY = 0; iY < _max.y; ++iY) {
 				// Sample 3D noises
 				double terrainDensity = 0.0;
-				double densityOffset = (double(iY) - elevationOffset) * 12.0 / continentalness;
+				double densityOffset = (double(iY) - elevationOffset) * dividedContinentalness;
 				if (densityOffset < 0.0) {
 					densityOffset *= 4.0;
 				}
@@ -341,7 +343,7 @@ void OverworldGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
 				} else if (selectorNoise > 1.0) {
 					terrainDensity = highNoise;
 				} else {
-					terrainDensity = lowNoise + (highNoise - lowNoise) * selectorNoise;
+					terrainDensity = Lerp(selectorNoise, lowNoise, highNoise);
 				}
 
 				terrainDensity -= densityOffset;
@@ -717,9 +719,14 @@ bool OverworldGenerator::PopulateChunk(Chunk& _chunk, WorldWrapper& _world) {
 		for (int32_t z = blockZ + 8; z < blockZ + 8 + CHUNK_WIDTH; ++z) {
 			int32_t topY = _world.FindTopSolidBlock(x, z);
 			double temp = _world.GetTemperatureAt(x, z) - double(topY - 64) / 64.0 * 0.3;
-			if (temp < 0.5 && topY > 0 && topY < CHUNK_HEIGHT && _world.GetBlockId({ x, topY, z }) == BLOCK_AIR &&
-			    _world.GetBlockId({ x, topY - 1, z }) != BLOCK_ICE && IsSolid(_world.GetBlockId({ x, topY - 1, z }))) {
-				_world.SetBlock({ x, topY, z }, BLOCK_SNOW_LAYER);
+			if (temp < 0.5 && topY > 0 && topY < CHUNK_HEIGHT) {
+				const auto topBlock = _world.GetBlockId({ x, topY, z });
+				if (topBlock != BLOCK_AIR)
+					continue;
+				const auto belowBlock = _world.GetBlockId({ x, topY - 1, z });
+				if (belowBlock != BLOCK_ICE && IsSolid(belowBlock)) {
+					_world.SetBlock({ x, topY, z }, BLOCK_SNOW_LAYER);
+				}
 			}
 		}
 	}
