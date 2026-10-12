@@ -29,9 +29,11 @@ void NoiseSimplex::InitPermTable(Java::Random& _rand) {
 void NoiseSimplex::GenerateNoise(std::span<double> _noiseField, Vec2 _offset, Int32_2 _size, Vec2 _scale,
                                  double _amplitude) {
 	const int32_t maxX = _size.x;
-	// Max height is CHUNK_WIDTH, min is 1
+	// Max Y is CHUNK_WIDTH, min is 1
 	const int32_t maxY = _size.y;
 	if (maxX <= 0 || maxY <= 0)
+		return;
+	if (maxY > CHUNK_HEIGHT) [[unlikely]]
 		return;
 
 	const gen_float scaleX = _scale.x;
