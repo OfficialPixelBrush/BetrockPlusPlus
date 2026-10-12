@@ -13,7 +13,7 @@ option(BETACRAFT_HEARTBEAT "Ping the Betacraft server list (requires libcurl and
 option(CRASH_LOGGING "Lets the server catch crashes and create crash reports" ON)
 option(EXPERIMENTAL "Experimental or work-in-progress features/changes" OFF)
 set(GENERATION_PRECISION "DOUBLE" CACHE STRING "Reduces perlin and simplex noise precision (all values other than DOUBLE are experimental and not really supported)")
-set_property(CACHE GENERATION_PRECISION PROPERTY STRINGS "DOUBLE" "FLOAT" "INT64" "INT32")
+set_property(CACHE GENERATION_PRECISION PROPERTY STRINGS "DOUBLE" "FLOAT" "LONG" "INT")
 
 option(BUILD_SERVER "Build as server" ON)
 option(SDL_VENDORED "Use vendored (locally built) SDL library" ON)
