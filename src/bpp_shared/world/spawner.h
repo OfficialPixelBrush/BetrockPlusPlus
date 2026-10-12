@@ -24,7 +24,7 @@ struct SpawnEntry {
 };
 
 struct SpawnCategory {
-	const std::vector<SpawnEntry> GetSpawnSpawnListForBiome(Biome _biome) {
+	const std::vector<SpawnEntry>& GetSpawnSpawnListForBiome(const Biome _biome) {
 		switch (_biome) {
 		case BIOME_FOREST:
 		case BIOME_TAIGA:
