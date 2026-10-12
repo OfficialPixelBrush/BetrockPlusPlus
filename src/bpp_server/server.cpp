@@ -39,6 +39,7 @@
 #endif
 
 #include "../bpp_utilities/compression_test.h"
+#include "../bpp_utilities/gen_test.h"
 
 #include "server.h"
 #include "version.h"
@@ -433,6 +434,9 @@ void Server::Startup() {
 		}
 		GlobalLogger().info << "Loading spawn.. 100%\n";
 	};
+
+	// Benchmark gen speed
+	//ChunkBenchmark::PerformChunkGenSpeedTest(gameRuntime.world);
 
 	GlobalLogger().info << "Loading spawn chunks for Overworld: (" << totalSpawnChunks << ")\n";
 	loadSpawnChunks(gameRuntime.world);

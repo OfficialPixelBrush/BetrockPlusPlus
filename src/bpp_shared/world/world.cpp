@@ -831,11 +831,24 @@ void WorldManager::PumpPipeline(const std::vector<ClientPosition>& _players) {
 			// The placeholder chunk in the map will be replaced by this one when we push to genDoneQueue
 			auto chunk = std::make_shared<Chunk>();
 			chunk->cpos = _pos;
+			// The generators are cached per thread, so rebuild them if the world seed has changed since this
+			// thread last generated a chunk (e.g. switching worlds, or the chunk-gen benchmark cycling seeds).
+			const int64_t genSeed = this->seed;
 			if (isHell) {
-				thread_local NetherGenerator tlGen(this->seed);
+				thread_local NetherGenerator tlGen(genSeed);
+				thread_local int64_t tlGenSeed = genSeed;
+				if (tlGenSeed != genSeed) {
+					tlGen = NetherGenerator(genSeed);
+					tlGenSeed = genSeed;
+				}
 				tlGen.GenerateChunk(*chunk);
 			} else {
-				thread_local OverworldGenerator tlGen(this->seed);
+				thread_local OverworldGenerator tlGen(genSeed);
+				thread_local int64_t tlGenSeed = genSeed;
+				if (tlGenSeed != genSeed) {
+					tlGen = OverworldGenerator(genSeed);
+					tlGenSeed = genSeed;
+				}
 				tlGen.GenerateChunk(*chunk);
 			}
 			chunk->isModified = true;
