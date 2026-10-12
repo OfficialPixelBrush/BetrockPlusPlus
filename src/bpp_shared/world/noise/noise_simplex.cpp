@@ -28,9 +28,10 @@ void NoiseSimplex::InitPermTable(Java::Random& _rand) {
 
 void NoiseSimplex::GenerateNoise(std::span<double> _noiseField, Vec2 _offset, Int32_2 _size, Vec2 _scale,
                                  double _amplitude) {
-	const int32_t width = _size.x;
-	const int32_t height = _size.y;
-	if (width <= 0 || height <= 0)
+	const int32_t maxX = _size.x;
+	// Max height is CHUNK_WIDTH, min is 1
+	const int32_t maxY = _size.y;
+	if (maxX <= 0 || maxY <= 0)
 		return;
 
 	const gen_float scaleX = _scale.x;
@@ -46,16 +47,16 @@ void NoiseSimplex::GenerateNoise(std::span<double> _noiseField, Vec2 _offset, In
 	// x0 cannot be precomputed because the simplex skew depends on x,
 	// but y0/y0a/y0b can be partially derived once the x-dependent
 	// skew is known.
-	std::vector<gen_float> yPositions(height);
+	std::array<gen_float, CHUNK_WIDTH> yPositions;
 
-	for (int32_t y = 0; y < height; ++y) {
+	for (int32_t y = 0; y < maxY; ++y) {
 		yPositions[y] = (offsetY + gen_float(y)) * scaleY + coordinate.y;
 	}
 
-	for (int32_t x = 0; x < width; ++x) {
+	for (int32_t x = 0; x < maxX; ++x) {
 		const gen_float xPos = (offsetX + gen_float(x)) * scaleX + coordinate.x;
-		double* out = output + static_cast<size_t>(x) * height;
-		for (int32_t y = 0; y < height; ++y) {
+		double* out = output + static_cast<size_t>(x) * maxY;
+		for (int32_t y = 0; y < maxY; ++y) {
 			const gen_float yPos = yPositions[y];
 
 			// Skew the input space.
