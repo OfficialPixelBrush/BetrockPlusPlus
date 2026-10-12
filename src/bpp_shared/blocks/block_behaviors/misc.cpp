@@ -191,12 +191,15 @@ void RegisterMiscBehaviors() {
 			_world.SetBlock(_pos, BLOCK_WATER_FLOWING);
 		}
 	};
-	blockBehaviors[BLOCK_ICE].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& /*_destroyer*/) {
+	blockBehaviors[BLOCK_ICE].onBlockDestroyedByPlayer = [](WorldManager& _world, Int3 _pos, Entity& _destroyer) {
 		// Ice will turn into water if there is something solid under it
 		// Or if there is a liquid under it lol
 		auto belowMaterial = _world.GetMaterial(_pos.WithOffset(Cardinal::Value::Down));
-		if (belowMaterial.isSolid || belowMaterial.isLiquid)
+		if (belowMaterial.isSolid || belowMaterial.isLiquid) {
 			_world.SetBlock(_pos, BLOCK_WATER_FLOWING);
+			return;
+		}
+		GenericBreak(_world, _pos, _destroyer);
 	};
 
 	// Pumpkin
