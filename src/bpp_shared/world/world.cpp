@@ -718,14 +718,30 @@ void WorldManager::SeedChunkLighting(Int32_2 _pos) {
 		}
 	}
 
-	// Block light emitters
-	for (int x = 0; x < CHUNK_WIDTH; ++x)
-		for (int z = 0; z < CHUNK_WIDTH; ++z)
-			for (int y = 0; y < CHUNK_HEIGHT; ++y) {
-				BlockType id = chunk->GetBlock({ x, y, z });
-				if (Blocks::blockProperties[id].lightEmission > 0)
-					lightManager.ScheduleLightUpdate({ bx + x, y, bz + z }, LightType::Block);
-			}
+	// Determine Block light emitters
+	// NOTE: Not a fan of this std::vector,
+	// but idk really what'd be a good default or max size for this 
+	std::vector<BlockType> emitters;
+	for (int8_t i = BLOCK_AIR; i < BLOCK_MAX; ++i) {
+    	auto& entry = Blocks::blockProperties[i];
+		if (entry.lightEmission > 0)
+			emitters.push_back(BlockType(i));
+	}
+
+	// Schedule light updates for all of those
+	for (int s = 0; s < SUB_CHUNK_COUNT; ++s) {
+		const SubChunk& sc = chunk->subChunks[s];
+		if (std::none_of(emitters.begin(), emitters.end(), [&](BlockType t){ return sc.HasBlock(t); }))
+			continue;
+		// Fall through to precise search
+		for (int x = 0; x < CHUNK_WIDTH; ++x)
+			for (int z = 0; z < CHUNK_WIDTH; ++z)
+				for (int y = (s*SUB_CHUNK_SIZE); y < (s*SUB_CHUNK_SIZE)+(SUB_CHUNK_SIZE-1); ++y) {
+					BlockType id = chunk->GetBlock({ x, y, z });
+					if (Blocks::blockProperties[id].lightEmission > 0)
+						lightManager.ScheduleLightUpdate({ bx + x, y, bz + z }, LightType::Block);
+				}
+	}
 	PropagateChunkLightBorders(_pos);
 }
 
