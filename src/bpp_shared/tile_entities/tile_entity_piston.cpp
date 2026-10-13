@@ -7,6 +7,7 @@
 
 #include "tile_entity_piston.h"
 #include "world.h"
+#include "chunk.h"
 
 static constexpr int PISTON_DX[6] = { 0, 0, 0, 0, -1, 1 };
 static constexpr int PISTON_DY[6] = { -1, 1, 0, 0, 0, 0 };

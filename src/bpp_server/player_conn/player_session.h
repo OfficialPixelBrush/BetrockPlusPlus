@@ -15,6 +15,7 @@
 #include "inventory/inventory_interaction.h"
 #include "items.h"
 #include "nbt/nbt.h"
+#include "networking/connection_state.h"
 #include "networking/network_stream.h"
 #include "world/client_pos.h"
 #include "world/world.h"
@@ -25,14 +26,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
-enum class ConnectionState : uint8_t {
-	Handshaking,
-	LoggingIn,
-	VerifyingUsername, // Online-mode auth check is in flight on a worker thread
-	WaitingForSpawnChunks,
-	Playing
-};
 
 // Used to track when we are breaking a block
 struct PendingBlockBreak {

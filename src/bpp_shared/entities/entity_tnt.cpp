@@ -5,6 +5,7 @@
  *
  */
 #include "entity_tnt.h"
+#include "world.h"
 
 static Tag SetByte(std::string _name, int8_t _value) {
 	Tag byteTag;
@@ -13,6 +14,12 @@ static Tag SetByte(std::string _name, int8_t _value) {
 	byteTag.byteValue = _value;
 
 	return byteTag;
+}
+
+void TntEntity::Explode() {
+	if (!world)
+		return;
+	world->DoExplosion(nullptr, this->position, /*power=*/4.0f, /*doFire=*/false);
 }
 
 void TntEntity::Tick() {

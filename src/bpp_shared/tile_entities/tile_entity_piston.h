@@ -7,6 +7,7 @@
 
 #pragma once
 #include "tile_entity_base.h"
+#include "aabb.h"
 
 struct TileEntityPistonMoving : TileEntity {
 	BlockType storedBlock = BLOCK_AIR;

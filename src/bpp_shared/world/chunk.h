@@ -14,7 +14,6 @@
 #include "helpers/math_helper.h"
 #include "helpers/packed_array.h"
 #include "nbt/nbt.h"
-#include "tile_entities/tile_entity.h"
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -75,6 +74,8 @@ enum class ChunkState : uint8_t {
 	Populated,
 	Unloading
 };
+
+struct TileEntity;
 
 // TODO: Check viability of "full chunks", for faster access.
 // Basically how stuff worked before SubChunks,

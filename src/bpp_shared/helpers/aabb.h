@@ -7,6 +7,7 @@
 
 #pragma once
 #include <vector>
+#include "numeric_structs.h"
 
 struct AABBIntercept {
 	Vec3 point;

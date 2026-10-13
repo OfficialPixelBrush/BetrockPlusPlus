@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <memory>
+
 // A 16x16x16 slice of a Chunk. Chunks are stored as a vertical stack of these.
 struct SubChunk {
 	static constexpr int SIZE = SUB_CHUNK_SIZE;
