@@ -1,11 +1,14 @@
 /*
  * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
 
 #include "addon_impl.h"
+#include "addon.h"
+#include "server.h"
 #include "base_structs.h"
 #include "blocks.h"
 #include "logger.h"
@@ -120,6 +123,31 @@ void SetPlayerData(const bp_api* _api, bp_player* _player, void* _data) {
 	_player->addonData[InternalGetAddon(_api)] = _data;
 }
 
+bool ExecuteAddonCommand(const bp_api* _api, bp_player* _sender, const char* _command) noexcept {
+	try {
+		if (!_api || !_api->internal || !_command) return false;
+
+		Addon* addon = InternalGetAddon(_api);
+		if (!addon || !addon->server) return false;
+		Server* server = addon->server;
+		if (!server->CanExecuteCommands()) return false;
+
+		std::shared_ptr<PlayerSession> sender;
+		if (_sender) {
+			for (const auto& session : server->GetPlayers()) {
+				if (session && &session->apiPlayer == _sender) {
+					sender = session;
+					break;
+				}
+			}
+			if (!sender) return false;
+		}
+
+		return server->ExecuteCommand(_command, sender.get());
+	} catch (...) { return false; }
+}
+
+
 bp_api MakeAddonAPI() {
 	return bp_api{
 		.version = ADDON_API_VERSION,
@@ -129,6 +157,7 @@ bp_api MakeAddonAPI() {
 		.player = { .sendMessage = PlayerSendMessage, .kick = PlayerKick, .getUsername = PlayerGetUsername, .getEntity = PlayerGetEntity, },
 		.entity = { .getPosition = EntityGetPosition, .setPosition = EntitySetPosition, .getWorld = EntityGetWorld },
 		.world = { .setBlock = SetBlock, .getBlock = GetBlock, .sendBlockUpdate = SendBlockUpdate },
-		.data = { .setPlayer = SetPlayerData, .getPlayer = GetPlayerData }
+		.data = { .setPlayer = SetPlayerData, .getPlayer = GetPlayerData },
+		.commands = { .execute = ExecuteAddonCommand }
 	};
 }
