@@ -217,6 +217,17 @@ void OverworldGenerator::GenerateTerrain(Chunk& _chunk) {
 				    (terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 1)] -
 				     corner110) *
 				    verticalLerpStep;
+				
+				const bool allAir =	corner000 <= 0.0 &&
+									corner010 <= 0.0 &&
+									corner100 <= 0.0 &&
+									corner110 <= 0.0 &&
+									corner001 <= 0.0 &&
+									corner011 <= 0.0 &&
+									corner101 <= 0.0 &&
+									corner111 <= 0.0;
+				if (allAir)
+					continue;
 
 				// Interpolate the 1/4th scale noise
 				for (int32_t subY = 0; subY < 8; ++subY) {
