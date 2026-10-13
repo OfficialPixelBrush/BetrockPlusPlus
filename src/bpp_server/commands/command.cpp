@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
 */
@@ -8,12 +9,31 @@
 #include "../../bpp_shared/helpers/identifiers.h"
 #include "../server.h"
 #include "items.h"
+#include "command_manager.h"
 #include <algorithm>
 #include <string>
 
 bool IsOperator(PlayerSession& _session, Server& _server) {
 	return std::find(_server.operatorUsernames.begin(), _server.operatorUsernames.end(), _session.username) !=
 	       _server.operatorUsernames.end();
+}
+
+bool IsOperator(const CommandContext& _ctx) {
+	return !_ctx.sender || (_ctx.server && IsOperator(*_ctx.sender, *_ctx.server));
+}
+
+void SendCommandFeedback(PlayerSession* _recipient, const std::string& _message) {
+	if (_recipient) {
+		if (!_recipient->stream.IsConnected())
+			return;
+		SendChat(*_recipient, _message);
+		return;
+	}
+	GlobalLogger().Log(StripFormatting(_message), LOG_MESSAGE);
+}
+
+void SendFeedback(const CommandContext& _ctx, const std::string& _message) {
+	SendCommandFeedback(_ctx.sender, _message);
 }
 
 ItemStack ParseItemStack(const std::string& _itemArg, std::optional<int> _count) {
@@ -52,18 +72,38 @@ ItemStack ParseItemStack(const std::string& _itemArg, std::optional<int> _count)
 	return item;
 }
 
-void SendChunkedList(PlayerSession& _session, const std::string& _header, const std::vector<std::string>& _entries) {
-	SendChat(_session, _header);
+void SendChunkedList(const CommandContext& _ctx, const std::string& _header,
+                     const std::vector<std::string>& _entries) {
+	SendFeedback(_ctx, _header);
 	std::string line = "§7";
 	for (size_t i = 0; i < _entries.size(); i++) {
-		auto& entry = _entries[i];
-		const std::string suffix = (i < (_entries.size() - 1)) ? ", " : "";
+		const auto& entry = _entries[i];
+		const std::string suffix = i + 1 < _entries.size() ? ", " : "";
 		if (line.size() + entry.size() + suffix.size() > 64 && line != "§7") {
-			SendChat(_session, line);
+			SendFeedback(_ctx, line);
 			line = "§7";
 		}
 		line += entry + suffix;
 	}
 	if (line != "§7")
-		SendChat(_session, line);
+		SendFeedback(_ctx, line);
 }
+
+std::optional<std::string> ResolveCommandTargetName(const strategos::CmdNode& _cmd, const CommandContext& _ctx) {
+	if (auto name = _cmd.get_arg<std::string>("username"))
+		return name;
+	if (_ctx.session)
+		return _ctx.session->username;
+	return std::nullopt;
+}
+
+std::expected<Vec3, std::string> ResolveCommandPosition(const CommandContext& _ctx,
+                                                         const strategos::Vec3& _position) {
+	const bool relative = _position.is_relative(strategos::Axis::X) ||
+	                      _position.is_relative(strategos::Axis::Y) ||
+	                      _position.is_relative(strategos::Axis::Z);
+	if (relative && !_ctx.session)
+		return std::unexpected(ERROR_RELATIVE_REQUIRES_PLAYER);
+	return ResolveCmdVec3(_position, _ctx.session ? _ctx.session->position.pos : Vec3{});
+}
+

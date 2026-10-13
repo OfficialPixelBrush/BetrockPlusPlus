@@ -73,8 +73,14 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
 		++_session.recentChatMessageCount;
 
 	GlobalLogger().chat << "<" << _session.username << "> " << _pkt.message << "\n";
-	if (_pkt.message.size() > 0 && _pkt.message[0] == '/') {
-		_cmdMgr.Parse(_pkt.message, _session, _world, _transferDimension);
+	if (!_pkt.message.empty() && _pkt.message.front() == '/') {
+		CommandContext ctx;
+		ctx.session = &_session;
+		ctx.sender = &_session;
+		ctx.world = &_world;
+		ctx.server = &_server;
+		ctx.transferDimension = _transferDimension;
+		_cmdMgr.Parse(_pkt.message, ctx);
 		return;
 	}
 

@@ -58,6 +58,40 @@ Server::Server() : gameRuntime(), addonManager(this), config("server.properties"
 	// TODO: If seed is 0, have it generate a new seed
 	gameRuntime.Init(config.GetAsString("level-name", "world"), config.GetAsString("level-seed", "0"),
 	                 config.GetAsNumber("view-distance", 8));
+	commandManager.Init(this);
+}
+
+bool Server::CanExecuteCommands() const noexcept {
+	if (std::this_thread::get_id() != commandThreadId)
+		return false;
+	return !stopped && !shutdownRequested.load();
+}
+
+bool Server::ExecuteCommand(std::string_view command, PlayerSession* sender) noexcept {
+	if (!CanExecuteCommands()) return false;
+
+	try {
+		std::shared_ptr<PlayerSession> owned;
+		if (sender) {
+			for (const auto& player : players) {
+				if (player.get() == sender) {
+					owned = player;
+					break;
+				}
+			}
+			if (!owned || !owned->stream.IsConnected() || owned->connState != ConnectionState::Playing ||
+			    !owned->entity)
+				return false;
+		}
+
+		CommandContext ctx;
+		ctx.sender = sender;
+		ctx.session = sender;
+		ctx.world = sender ? GetWorldForDimension(sender->dimension) : &gameRuntime.world;
+		ctx.server = this;
+
+		return commandManager.Parse(command, ctx);
+	} catch (...) { return false; }
 }
 
 Server::~Server() {
@@ -280,9 +314,6 @@ void Server::Startup() {
 		                    << "To change this, set \"online-mode\" to \"true\" in the server.properties file.\n";
 	}
 #endif
-
-	// Setup commands
-	commandManager.Init(this);
 
 	// Load addons
 	addonManager.Load();
@@ -620,19 +651,25 @@ void Server::QueueTickSteps(int _steps) {
 		pendingTickSteps += _steps;
 }
 
-bool Server::BeginTickSample(SampleMode _mode, int _ticks, PlayerSession& _requester) {
+bool Server::BeginTickSample(SampleMode mode, int ticks, PlayerSession* requester) {
 	if (pendingSampleMode != SampleMode::None || activeSampleMode != SampleMode::None)
 		return false;
-	for (const auto& session : players) {
-		if (session.get() == &_requester) {
-			sampleRequester = session;
-			break;
+	sampleRequester.reset();
+	sampleToConsole = requester == nullptr;
+	if (requester) {
+		for (const auto& session : players) {
+			if (session.get() == requester && session->connState == ConnectionState::Playing) {
+				sampleRequester = session;
+				break;
+			}
+		}
+		if (sampleRequester.expired()) {
+			sampleToConsole = false;
+			return false;
 		}
 	}
-	if (sampleRequester.expired())
-		return false;
-	pendingSampleMode = _mode;
-	requestedSampleTicks = _ticks;
+	pendingSampleMode = mode;
+	requestedSampleTicks = ticks;
 	collectedSampleTicks = 0;
 	samplingStartsNextTick = true;
 	return true;
@@ -810,8 +847,10 @@ void Server::Tick() {
 		++collectedSampleTicks;
 		if (collectedSampleTicks >= requestedSampleTicks) {
 			auto requester = sampleRequester.lock();
-			const bool connected = requester &&
-			    std::any_of(players.begin(), players.end(), [&](const auto& player) { return player == requester; });
+			const bool connected = sampleToConsole || (requester &&
+			    std::any_of(players.begin(), players.end(), [&](const auto& player) {
+				    return player == requester && player->connState == ConnectionState::Playing;
+			    }));
 			if (connected) {
 				if (activeSampleMode == SampleMode::Health) {
 					const std::array<std::pair<TickTask, const char*>, 11> tasks = {{
@@ -830,7 +869,8 @@ void Server::Tick() {
 					for (const auto& [task, name] : tasks) {
 						const double mean = std::chrono::duration<double, std::milli>(tickProfiler.Get(task)).count() /
 						                    collectedSampleTicks;
-						SendChat(*requester, std::format("§7{}: {:.2f} ms/tick", name, mean));
+						SendCommandFeedback(sampleToConsole ? nullptr : requester.get(),
+						                    std::format("§7{}: {:.2f} ms/tick", name, mean));
 					}
 				} else {
 					std::vector<std::pair<TickEntityKey, TickProfiler::EntitySample>> entities(
