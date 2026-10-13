@@ -220,6 +220,7 @@ struct Chunk {
 		return n;
 	}
 
+	// TODO: Maybe accept multiple blocks?
 	inline std::vector<Int3> FindBlocks(BlockType _type) const {
 		std::vector<Int3> positions;
 		positions.reserve(size_t(CountBlock(_type)));
