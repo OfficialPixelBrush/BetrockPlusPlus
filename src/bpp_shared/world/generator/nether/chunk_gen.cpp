@@ -186,13 +186,13 @@ void NetherGenerator::GenerateTerrain(Chunk& _chunk) {
 				     corner110) *
 				    verticalLerpStep;
 				
-				const bool allAir =	corner000 <= 0.0 ||
-									corner010 <= 0.0 ||
-									corner100 <= 0.0 ||
-									corner110 <= 0.0 ||
-									corner001 <= 0.0 ||
-									corner011 <= 0.0 ||
-									corner101 <= 0.0 ||
+				const bool allAir =	corner000 <= 0.0 &&
+									corner010 <= 0.0 &&
+									corner100 <= 0.0 &&
+									corner110 <= 0.0 &&
+									corner001 <= 0.0 &&
+									corner011 <= 0.0 &&
+									corner101 <= 0.0 &&
 									corner111 <= 0.0;
 				if (allAir)
 					continue;
