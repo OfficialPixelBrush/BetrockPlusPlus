@@ -34,6 +34,7 @@ void CommandManager::Init(Server* _server) {
 	RegisterAddon(dispatcher);
 	RegisterTick(dispatcher);
 	RegisterWeather(dispatcher);
+	RegisterExecute(dispatcher);
 	GlobalLogger().info << "Registered " << dispatcher.root().children.size() << " command(s)!" << "\n";
 }
 
