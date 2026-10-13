@@ -137,6 +137,8 @@ std::unique_ptr<T> CopyLayer(const std::unique_ptr<T>& _src) {
 void SubChunk::AllocBlocks() {
 	blocks = std::make_unique_for_overwrite<BlockLayer>();
 	blocks->fill(blockFill);
+	blockCounts = std::make_unique<BlockCountTable>(); // value-initialised to zero
+	(*blockCounts)[size_t(blockFill)] = uint16_t(VOLUME);
 }
 
 void SubChunk::AllocMeta() {
@@ -165,11 +167,11 @@ void SubChunk::FillRegion(Int3 _a, Int3 _b, BlockType _type, uint8_t _meta) {
 		if (!blocks)
 			AllocBlocks();
 		if (fullFootprint) {
-			std::fill_n(blocks->data() + size_t(_a.y) * SIZE * SIZE, size_t(_b.y - _a.y + 1) * SIZE * SIZE, _type);
+			FillBlockSpan(size_t(_a.y) * SIZE * SIZE, size_t(_b.y - _a.y + 1) * SIZE * SIZE, _type);
 		} else {
 			for (int y = _a.y; y <= _b.y; y++)
 				for (int z = _a.z; z <= _b.z; z++)
-					std::fill_n(blocks->data() + LocalIndex({ _a.x, y, z }), size_t(_b.x - _a.x + 1), _type);
+					FillBlockSpan(size_t(LocalIndex({ _a.x, y, z })), size_t(_b.x - _a.x + 1), _type);
 		}
 	}
 
@@ -245,13 +247,12 @@ bool SubChunk::CompactBlocks() {
 		return false;
 
 	const BlockType first = (*blocks)[0];
-	for (size_t i = 1; i < size_t(VOLUME); i++) {
-		if ((*blocks)[i] != first)
-			return false;
-	}
+	if ((*blockCounts)[size_t(first)] != VOLUME)
+		return false;
 
 	blockFill = first;
 	blocks.reset();
+	blockCounts.reset();
 	return true;
 }
 
@@ -277,6 +278,7 @@ bool SubChunk::Compact() {
 
 void SubChunk::Reset() {
 	blocks.reset();
+	blockCounts.reset();
 	meta.reset();
 	blockLight.reset();
 	skyLight.reset();
@@ -288,6 +290,7 @@ void SubChunk::Reset() {
 
 void SubChunk::CopyFrom(const SubChunk& _other) {
 	blocks = CopyLayer(_other.blocks);
+	blockCounts = CopyLayer(_other.blockCounts);
 	meta = CopyLayer(_other.meta);
 	blockLight = CopyLayer(_other.blockLight);
 	skyLight = CopyLayer(_other.skyLight);
