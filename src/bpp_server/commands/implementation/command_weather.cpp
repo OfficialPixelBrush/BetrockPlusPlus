@@ -56,10 +56,10 @@ std::string GetWeather(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
 	const auto& weather = Overworld(ctx).weatherSystem;
 
-	SendChat(*ctx.session, std::format("§eWeather: {}", WeatherName(weather.GetWeatherState())));
-	SendChat(*ctx.session, std::format("§eRain {} in {}", weather.isRaining ? "stops" : "starts",
+	SendFeedback(ctx, std::format("§eWeather: {}", WeatherName(weather.GetWeatherState())));
+	SendFeedback(ctx, std::format("§eRain {} in {}", weather.isRaining ? "stops" : "starts",
 	                                   FormatTicks(weather.rainTimer)));
-	SendChat(*ctx.session, std::format("§eThunder {} in {}", weather.isThundering ? "stops" : "starts",
+	SendFeedback(ctx, std::format("§eThunder {} in {}", weather.isThundering ? "stops" : "starts",
 	                                   FormatTicks(weather.thunderTimer)));
 	return "";
 }
@@ -72,7 +72,7 @@ std::string SetWeather(void* _userData, Weather _target) {
 	const auto& weather = world.weatherSystem;
 	int32_t duration = _target == Weather::Thundering ? std::min(weather.rainTimer, weather.thunderTimer)
 	                                                  : weather.rainTimer;
-	SendChat(*ctx.session, std::format("§eSet weather to {} for {}", WeatherName(_target), FormatTicks(duration)));
+	SendFeedback(ctx, std::format("§eSet weather to {} for {}", WeatherName(_target), FormatTicks(duration)));
 	return "";
 }
 

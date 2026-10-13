@@ -13,6 +13,7 @@ namespace {
 
 std::string TeleportToSpawn(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
+	if (!ctx.session || !ctx.session->entity) return ERROR_PLAYER_REQUIRED;
 	Int32_3 ipos = ctx.world->GetSpawnPoint(false);
 	ipos.y = ctx.world->GetHeightValue(ipos.x, ipos.z);
 

@@ -12,7 +12,7 @@ namespace {
 
 std::string ShowLoaded(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	SendChat(*ctx.session, "§e" + std::to_string(ctx.world->chunks.size()));
+	SendFeedback(ctx, "§e" + std::to_string(ctx.world->chunks.size()));
 	return "";
 }
 

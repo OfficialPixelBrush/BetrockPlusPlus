@@ -16,6 +16,7 @@ namespace {
 
 std::string GiveItem(const strategos::CmdNode& _cmd, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
+	if (!ctx.session) return ERROR_PLAYER_REQUIRED;
 	auto itemArg = _cmd.get_arg<std::string>("item");
 	if (!itemArg)
 		return "Missing item id!";
@@ -34,7 +35,7 @@ std::string GiveItem(const strategos::CmdNode& _cmd, void* _userData) {
 	if (!Items::IsValidId(item.id))
 		return std::to_string(item.id) + " is not a valid item id!";
 
-	SendChat(*ctx.session, "§eGave " + IdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
+	SendFeedback(ctx, "§eGave " + IdToLabel(item.id) + " (" + std::to_string(item.id) + ":" +
 	                           std::to_string(item.data) + ") x" + std::to_string(item.count) + " to " +
 	                           ctx.session->username);
 
@@ -45,9 +46,10 @@ std::string GiveItem(const strategos::CmdNode& _cmd, void* _userData) {
 
 std::string ClearOwnInventory(const strategos::CmdNode& /*_cmd*/, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
+	if (!ctx.session) return ERROR_PLAYER_REQUIRED;
 	const auto count = ctx.session->inventory.Clear();
 	PacketUtilities::SendInventory(*ctx.session, ctx.session->openWindowId, ctx.session->inventory);
-	SendChat(*ctx.session, std::format("§eRemoved {} Item(s) from player {}", count, ctx.session->username));
+	SendFeedback(ctx, std::format("§eRemoved {} Item(s) from player {}", count, ctx.session->username));
 	return "";
 }
 
@@ -63,7 +65,7 @@ std::string ClearOtherInventory(const strategos::CmdNode& _cmd, void* _userData)
 
 	const auto count = target->inventory.Clear();
 	PacketUtilities::SendInventory(*target, target->openWindowId, target->inventory);
-	SendChat(*ctx.session, std::format("§eRemoved {} Item(s) from player {}", count, *playerName));
+	SendFeedback(ctx, std::format("§eRemoved {} Item(s) from player {}", count, *playerName));
 	return "";
 }
 

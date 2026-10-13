@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
 */
@@ -14,15 +15,13 @@
 
 namespace {
 
-std::string TargetName(const strategos::CmdNode& _cmd, CommandContext& _ctx) {
-	if (auto name = _cmd.get_arg<std::string>("username"))
-		return *name;
-	return _ctx.session->username;
-}
 
 std::string OpPlayer(const strategos::CmdNode& _cmd, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	std::string name = TargetName(_cmd, ctx);
+	auto targetName = ResolveCmdTargetName(_cmd, ctx);
+	if (!targetName) return ERROR_PLAYER_NAME_REQUIRED;
+	std::string name = *targetName;
+
 	if (!IsValidUsername(name))
 		return "Invalid username!";
 	auto it = std::find(ctx.server->operatorUsernames.begin(), ctx.server->operatorUsernames.end(), name);
@@ -31,20 +30,23 @@ std::string OpPlayer(const strategos::CmdNode& _cmd, void* _userData) {
 	ctx.server->operatorUsernames.push_back(name);
 	if (!ctx.server->SaveOperators())
 		return "Failed to save ops!";
-	SendChat(*ctx.session, std::format("{} has been opped!", name));
+	SendFeedback(ctx, std::format("{} has been opped!", name));
 	return "";
 }
 
 std::string DeopPlayer(const strategos::CmdNode& _cmd, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	std::string name = TargetName(_cmd, ctx);
+	auto targetName = ResolveCmdTargetName(_cmd, ctx);
+	if (!targetName) return ERROR_PLAYER_NAME_REQUIRED;
+	std::string name = *targetName;
+
 	auto it = std::find(ctx.server->operatorUsernames.begin(), ctx.server->operatorUsernames.end(), name);
 	if (it == ctx.server->operatorUsernames.end())
 		return "User is not an operator!";
 	ctx.server->operatorUsernames.erase(it);
 	if (!ctx.server->SaveOperators())
 		return "Failed to save ops!";
-	SendChat(*ctx.session, std::format("{} has been deopped!", name));
+	SendFeedback(ctx, std::format("{} has been deopped!", name));
 	return "";
 }
 

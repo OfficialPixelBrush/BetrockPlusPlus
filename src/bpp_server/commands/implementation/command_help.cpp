@@ -24,14 +24,14 @@ void CollectUsages(const strategos::Node& _node, const std::string& _prefix, std
 }
 
 bool CanSeeCommand(const strategos::Node& _cmd, CommandContext& _ctx) {
-	return !_cmd.requiresOperator || IsOperator(*_ctx.session, *_ctx.server);
+	return !_cmd.requiresOperator || IsOperator(_ctx);
 }
 
 std::string ListCommands(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
 	const auto& commands = ctx.dispatcher->root().children;
 
-	SendChat(*ctx.session, "§7-- All commands --");
+	SendFeedback(ctx, "§7-- All commands --");
 	std::string line = "§7";
 	bool first = true;
 	for (const auto& cmd : commands) {
@@ -41,14 +41,14 @@ std::string ListCommands(const strategos::CmdNode&, void* _userData) {
 			line += ", ";
 		first = false;
 		if (line.size() + cmd.name.size() > MAX_CHAT_LINE_SIZE) {
-			SendChat(*ctx.session, line);
+			SendFeedback(ctx, line);
 			line = "§7" + cmd.name;
 		} else {
 			line += cmd.name;
 		}
 	}
 	if (line != "§7")
-		SendChat(*ctx.session, line);
+		SendFeedback(ctx, line);
 	return "";
 }
 
@@ -63,16 +63,16 @@ std::string HelpCommand(const strategos::CmdNode& _cmd, void* _userData) {
 			continue;
 		if (!CanSeeCommand(cmd, ctx))
 			return ERROR_PERMISSIONS;
-		SendChat(*ctx.session, "§7" + cmd.name + ": " + cmd.description);
+		SendFeedback(ctx, "§7" + cmd.name + ": " + cmd.description);
 		std::vector<std::string> usages;
 		CollectUsages(cmd, "", usages);
 		for (const auto& usage : usages) {
 			std::string line = "/" + usage;
 			if (line.size() > cmd.name.size() + 1) // more than "/name"
-				SendChat(*ctx.session, "§7" + line);
+				SendFeedback(ctx, "§7" + line);
 		}
 		if (cmd.requiresOperator)
-			SendChat(*ctx.session, "§7(Requires operator)");
+			SendFeedback(ctx, "§7(Requires operator)");
 		return "";
 	}
 	return "Command not found!";

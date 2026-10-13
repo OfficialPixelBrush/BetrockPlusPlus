@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025-2026, jwaxy <jwaxy.is-a.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
 */
@@ -99,6 +100,8 @@ std::string SummonEntity(const strategos::CmdNode& _cmd, void* _userData) {
 	auto entityType = _cmd.get_arg<std::string>("entityType");
 	if (!entityType)
 		return ERROR_REASON_PARAMETERS;
+	if (!ctx.session)
+		return ERROR_PLAYER_REQUIRED;
 
 	Vec3 spawnPos = ctx.session->position.pos;
 	spawnPos.y += 1.0; // Spawn above the player
@@ -114,7 +117,7 @@ std::string SummonEntity(const strategos::CmdNode& _cmd, void* _userData) {
 
 	ctx.world->entityManager.AddEntity(entity);
 
-	SendChat(*ctx.session, std::format("§eSpawned entity at {}!", spawnPos.Str()));
+	SendFeedback(ctx, std::format("§eSpawned entity at {}!", spawnPos.Str()));
 	return "";
 }
 
@@ -125,7 +128,9 @@ std::string SummonEntityAtPos(const strategos::CmdNode& _cmd, void* _userData) {
 	if (!entityType || !pos)
 		return ERROR_REASON_PARAMETERS;
 
-	Vec3 ePos = ResolveCmdVec3(*pos, ctx.session->position.pos);
+	auto position = ResolveCmdPos(ctx, *pos);
+	if (!position) return position.error();
+	Vec3 ePos = *position;
 	auto eTypeEnum = GetEntityTypeFromString(*entityType);
 	if (eTypeEnum == EntityType::NONE)
 		return "Unknown entity: " + *entityType;
@@ -137,7 +142,7 @@ std::string SummonEntityAtPos(const strategos::CmdNode& _cmd, void* _userData) {
 
 	ctx.world->entityManager.AddEntity(entity);
 
-	SendChat(*ctx.session, std::format("§eSpawned entity at {}!", ePos.Str()));
+	SendFeedback(ctx, std::format("§eSpawned entity at {}!", ePos.Str()));
 	return "";
 }
 
