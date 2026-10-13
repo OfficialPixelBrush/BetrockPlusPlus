@@ -7,6 +7,7 @@
 */
 
 #include "tile_entity_dispenser.h"
+#include "chunk.h"
 
 void TileEntityDispenser::Tick(WorldManager& /*_world*/) {
 	if (chunk && inventory.isModified) {

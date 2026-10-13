@@ -6,6 +6,7 @@
 */
 
 #include "noise_simplex.h"
+#include "constants.h"
 #include "noise_generator.h"
 
 #include <algorithm>

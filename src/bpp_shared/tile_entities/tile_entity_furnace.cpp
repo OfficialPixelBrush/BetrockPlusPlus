@@ -7,6 +7,8 @@
 */
 
 #include "tile_entity_furnace.h"
+#include "chunk.h"
+#include "world.h"
 
 static ItemStack GetSmeltingResult(ItemId& _input) {
 	switch (_input) {

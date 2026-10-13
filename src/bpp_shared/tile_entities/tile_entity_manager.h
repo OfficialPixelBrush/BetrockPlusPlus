@@ -5,7 +5,7 @@
  *
 */
 #pragma once
-#include "tile_entity.h"
+#include "tile_entity_base.h"
 #include <memory>
 #include <vector>
 

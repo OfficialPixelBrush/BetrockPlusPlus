@@ -7,6 +7,7 @@
 
 #pragma once
 #include "numeric_structs.h"
+#include "biomes.h"
 #include <functional>
 #include <memory>
 #include <unordered_set>
@@ -16,6 +17,7 @@ class WorldManager;
 struct Chunk;
 struct ClientPosition;
 struct MobEntity;
+struct Entity;
 
 struct SpawnEntry {
 	std::shared_ptr<MobEntity> entityPtrShared;

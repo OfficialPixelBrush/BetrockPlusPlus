@@ -39,9 +39,5 @@ struct TntEntity : public Entity {
 		return !isDead;
 	}
 
-	void Explode() {
-		if (!world)
-			return;
-		world->DoExplosion(nullptr, this->position, /*power=*/4.0f, /*doFire=*/false);
-	}
+	void Explode();
 };

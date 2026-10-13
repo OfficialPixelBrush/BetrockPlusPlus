@@ -22,11 +22,12 @@
 #include "internal.h"
 #include "items/item_properties.h"
 #include "logger.h"
-#include "numeric_structs.h"
-#include "packet_data.h"
 #include "managers/rail_manager.h"
 #include "managers/redstone_manager.h"
 #include "managers/tick_scheduler.h"
+#include "numeric_structs.h"
+#include "packet_data.h"
+#include "player_conn/player_session.h"
 #include "tile_entities/tile_entity.h"
 #include "world.h"
 
@@ -319,9 +320,8 @@ void RegisterMiscBehaviors() {
 		if (_world.GetBlockId(sourceBlock) == BLOCK_SNOW_LAYER)
 			targetPos = sourceBlock;
 
-		static constexpr std::array<Cardinal::Value, 4> CHECK_ORDER = {
-			Cardinal::Value::North, Cardinal::Value::South, Cardinal::Value::West, Cardinal::Value::East
-		};
+		static constexpr std::array<Cardinal::Value, 4> CHECK_ORDER = { Cardinal::Value::North, Cardinal::Value::South,
+			                                                            Cardinal::Value::West, Cardinal::Value::East };
 
 		if (Cardinal::IsHorizontal(_face) && IsSupported(_world, _pos, _face)) {
 			return GenericPlace(_world, _pos, _placer, _face, _blockId, GetMetaFromDirection(BLOCK_LADDER, _face));
