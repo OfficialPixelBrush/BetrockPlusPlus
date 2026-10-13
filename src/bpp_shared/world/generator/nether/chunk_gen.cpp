@@ -162,7 +162,7 @@ void NetherGenerator::GenerateTerrain(Chunk& _chunk) {
 	for (int32_t sampleX = 0; sampleX < 4; ++sampleX) {
 		for (int32_t sampleZ = 0; sampleZ < 4; ++sampleZ) {
 			for (int32_t sampleY = 0; sampleY < 16; ++sampleY) {
-				double verticalLerpStep = 0.125;
+				const double verticalLerpStep = 0.125;
 
 				// Get noise cube corners
 				double corner000 = terrainNoiseField[size_t(((sampleX + 0) * MAX.z + sampleZ + 0) * MAX.y + sampleY + 0)];
@@ -185,30 +185,19 @@ void NetherGenerator::GenerateTerrain(Chunk& _chunk) {
 				    (terrainNoiseField[size_t(((sampleX + 1) * MAX.z + sampleZ + 1) * MAX.y + sampleY + 1)] -
 				     corner110) *
 				    verticalLerpStep;
-				
-				const bool allAir =	corner000 <= 0.0 &&
-									corner010 <= 0.0 &&
-									corner100 <= 0.0 &&
-									corner110 <= 0.0 &&
-									corner001 <= 0.0 &&
-									corner011 <= 0.0 &&
-									corner101 <= 0.0 &&
-									corner111 <= 0.0;
-				if (allAir)
-					continue;
 
 				// Interpolate the 1/4th scale noise
 				for (int32_t subY = 0; subY < 8; ++subY) {
-					double horizontalLerpStep = 0.25;
+					const double horizontalLerpStep = 0.25;
 					double terrainX0 = corner000;
 					double terrainX1 = corner010;
-					double terrainStepX0 = (corner100 - corner000) * horizontalLerpStep;
-					double terrainStepX1 = (corner110 - corner010) * horizontalLerpStep;
+					const double terrainStepX0 = (corner100 - corner000) * horizontalLerpStep;
+					const double terrainStepX1 = (corner110 - corner010) * horizontalLerpStep;
 
 					for (int32_t subX = 0; subX < 4; ++subX) {
 						Int3 bpos{ (subX + sampleX * 4), ((sampleY * 8) + subY), (sampleZ * 4) };
 						double terrainDensity = terrainX0;
-						double densityStepZ = (terrainX1 - terrainX0) * horizontalLerpStep;
+						const double densityStepZ = (terrainX1 - terrainX0) * horizontalLerpStep;
 
 						for (int32_t subZ = 0; subZ < 4; ++subZ) {
 							// Here the actual block is determined
@@ -216,7 +205,7 @@ void NetherGenerator::GenerateTerrain(Chunk& _chunk) {
 							BlockType blockType = BLOCK_AIR;
 
 							// Place lava in empty space below Nether lava level
-							int32_t yLevel = sampleY * 8 + subY;
+							const int32_t yLevel = sampleY * 8 + subY;
 							if (yLevel < NETHER_LAVA_LEVEL)
 								blockType = BLOCK_LAVA_STILL;
 
@@ -253,8 +242,8 @@ void NetherGenerator::GenerateTerrain(Chunk& _chunk) {
  * @param max Defines the area of the terrainMap
  */
 void NetherGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
-	double horiScale = 684.412;
-	double vertScale = 2053.236;
+	const double horiScale = 684.412;
+	const double vertScale = 2053.236;
 
 	{
 		Vec3 vecCpos = Vec3{ double(_cpos.x), double(_cpos.y), double(_cpos.z) };
@@ -272,7 +261,7 @@ void NetherGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
 	// Used to iterate 2D Noise maps (depth, continentalness)
 	size_t xzIndex = 0;
 	// Reserve stuff
-	std::vector<double> netherDensityOffset(size_t(_max.y));
+	std::array<double, MAX.y> netherDensityOffset;
 
 	for (int iY = 0; iY < _max.y; ++iY) {
 		netherDensityOffset[size_t(iY)] = std::cos(double(iY) * JavaMath::PI * 6.0 / double(_max.y)) * 2.0;
@@ -315,13 +304,13 @@ void NetherGenerator::GenerateTerrainNoise(Int3 _cpos, Int3 _max) {
 			for (int32_t iY = 0; iY < _max.y; ++iY) {
 				// Sample 3D noises
 				double terrainDensity = 0.0;
-				double densityOffset = netherDensityOffset[iY];
+				const double densityOffset = netherDensityOffset[iY];
 				// Sample low noise
-				double lowNoise = lowNoiseField[xyzIndex] / 512.0;
+				const double lowNoise = lowNoiseField[xyzIndex] / 512.0;
 				// Sample high noise
-				double highNoise = highNoiseField[xyzIndex] / 512.0;
+				const double highNoise = highNoiseField[xyzIndex] / 512.0;
 				// Sample selector noise
-				double selectorNoise = (selectorNoiseField[xyzIndex] / 10.0 + 1.0) / 2.0;
+				const double selectorNoise = (selectorNoiseField[xyzIndex] / 10.0 + 1.0) / 2.0;
 				if (selectorNoise < 0.0) {
 					terrainDensity = lowNoise;
 				} else if (selectorNoise > 1.0) {
