@@ -719,16 +719,14 @@ void WorldManager::SeedChunkLighting(Int32_2 _pos) {
 	}
 
 	// Determine Block light emitters
-	// NOTE: Not a fan of this std::vector,
-	// but idk really what'd be a good default or max size for this 
 	for (int8_t i = BLOCK_AIR; i < BLOCK_MAX; ++i) {
 		if (Blocks::blockProperties[i].lightEmission <= 0)
 			continue;
 		// Schedule light updates for all of those
 		for (const auto& pos : chunk->FindBlocks(BlockType(i)))
 			lightManager.ScheduleLightUpdate(pos, LightType::Block);
-		PropagateChunkLightBorders(_pos);
 	}
+	PropagateChunkLightBorders(_pos);
 }
 
 void WorldManager::UpdateLoadRadius(const std::vector<ClientPosition>& _players) {
