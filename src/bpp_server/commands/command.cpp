@@ -89,7 +89,7 @@ void SendChunkedList(const CommandContext& _ctx, const std::string& _header,
 		SendFeedback(_ctx, line);
 }
 
-std::optional<std::string> ResolveCommandTargetName(const strategos::CmdNode& _cmd, const CommandContext& _ctx) {
+std::optional<std::string> ResolveCmdTargetName(const strategos::CmdNode& _cmd, const CommandContext& _ctx) {
 	if (auto name = _cmd.get_arg<std::string>("username"))
 		return name;
 	if (_ctx.session)
@@ -97,7 +97,7 @@ std::optional<std::string> ResolveCommandTargetName(const strategos::CmdNode& _c
 	return std::nullopt;
 }
 
-std::expected<Vec3, std::string> ResolveCommandPosition(const CommandContext& _ctx,
+std::expected<Vec3, std::string> ResolveCmdPos(const CommandContext& _ctx,
                                                          const strategos::Vec3& _position) {
 	const bool relative = _position.is_relative(strategos::Axis::X) ||
 	                      _position.is_relative(strategos::Axis::Y) ||

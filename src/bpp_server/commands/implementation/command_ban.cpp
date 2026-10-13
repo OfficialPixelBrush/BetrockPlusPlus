@@ -37,7 +37,7 @@ bool IsValidIpAddress(const std::string& _ip) {
 
 std::string BanPlayer(const strategos::CmdNode& _cmd, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	auto targetName = ResolveCommandTargetName(_cmd, ctx);
+	auto targetName = ResolveCmdTargetName(_cmd, ctx);
 	if (!targetName)
 		return ERROR_PLAYER_NAME_REQUIRED;
 	std::string name = *targetName;
@@ -58,7 +58,7 @@ std::string BanPlayer(const strategos::CmdNode& _cmd, void* _userData) {
 
 std::string PardonPlayer(const strategos::CmdNode& _cmd, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	auto targetName = ResolveCommandTargetName(_cmd, ctx);
+	auto targetName = ResolveCmdTargetName(_cmd, ctx);
 	if (!targetName)
 		return ERROR_PLAYER_NAME_REQUIRED;
 	std::string name = *targetName;
