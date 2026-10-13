@@ -12,12 +12,13 @@
 #include "client_socket.h"
 #include "input.h"
 #include "logger.h"
+#include "networking/connection_state.h"
 #include "networking/network_stream.h"
 #include "packet/client_packet_dispatcher.h"
 #include "packet/handle_client_packet.h"
 #include "renderer.h"
-#include "window.h"
 #include "runtime.h"
+#include "window.h"
 
 class Client {
 public:
