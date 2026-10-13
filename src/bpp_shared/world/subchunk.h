@@ -149,6 +149,37 @@ struct SubChunk {
 		std::fill_n(p, _count, _type);
 		(*blockCounts)[size_t(_type)] += uint16_t(_count);
 	}
+	// Finds blocks in subchunk-local space
+	// Appends the subchunk-local position of every voxel of this type. Returns how many were added.
+	inline int FindBlocks(BlockType _type, std::vector<Int3>& _out, int _yOffset = 0) const {
+		// If we have none of that block skip
+		const int count = CountBlock(_type);
+		if (count == 0)
+			return 0;
+		_out.reserve(_out.size() + size_t(count));
+		// Just blockFill, so we send every block coordinate
+		if (!blocks) {
+			for (int i = 0; i < VOLUME; i++)
+				_out.push_back({ i & 15, _yOffset + (i >> 8), (i >> 4) & 15 });
+			return count;
+		}
+		// Look for positions of blocks
+		int found = 0;
+		const BlockLayer& layer = *blocks;
+		for (int i = 0; i < VOLUME && found < count; i++) {
+			if (layer[size_t(i)] != _type)
+				continue;
+			_out.push_back({ i & 15, _yOffset + (i >> 8), (i >> 4) & 15 });
+			found++;
+		}
+		return found;
+	}
+
+	inline std::vector<Int3> FindBlocks(BlockType _type) const {
+		std::vector<Int3> out;
+		FindBlocks(_type, out);
+		return out;
+	}
 	void FillRegion(Int3 _posA, Int3 _posB, BlockType _type = BLOCK_AIR, uint8_t _meta = 0);
 
 	// Allocates a layer holding its current fill value in every voxel. Only meant for null layers

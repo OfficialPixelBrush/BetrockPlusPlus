@@ -213,7 +213,20 @@ struct Chunk {
 		}
 		return false;
 	}
+	inline int CountBlock(BlockType _type) const {
+		int n = 0;
+		for (const auto& sc : subChunks)
+			n += sc.CountBlock(_type);
+		return n;
+	}
 
+	inline std::vector<Int3> FindBlocks(BlockType _type) const {
+		std::vector<Int3> positions;
+		positions.reserve(size_t(CountBlock(_type)));
+		for (size_t s = 0; s < subChunks.size(); s++)
+			subChunks[s].FindBlocks(_type, positions, int(s) * SUB_CHUNK_SIZE);
+		return positions;
+	}
 	void FillRegion(Int3 _a, Int3 _b, BlockType _type = BLOCK_AIR, uint8_t _meta = 0);
 	inline void FillColumn(int _ya, int _yb, Int2 xz, BlockType _type = BLOCK_AIR, uint8_t _meta = 0) {
 		FillRegion({ xz.x, _ya, xz.z }, { xz.x, _yb, xz.z }, _type, _meta);
