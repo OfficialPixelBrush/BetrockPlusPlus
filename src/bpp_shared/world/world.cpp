@@ -722,6 +722,8 @@ void WorldManager::SeedChunkLighting(Int32_2 _pos) {
 	for (int8_t i = BLOCK_AIR; i < BLOCK_MAX; ++i) {
 		if (Blocks::blockProperties[i].lightEmission <= 0)
 			continue;
+		if (!chunk->HasBlock(BlockType(i)))
+			continue;
 		// Schedule light updates for all of those
 		for (const auto& pos : chunk->FindBlocks(BlockType(i)))
 			lightManager.ScheduleLightUpdate(pos, LightType::Block);

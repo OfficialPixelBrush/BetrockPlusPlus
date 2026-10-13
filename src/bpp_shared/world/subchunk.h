@@ -174,7 +174,6 @@ struct SubChunk {
 		}
 		return found;
 	}
-
 	inline std::vector<Int3> FindBlocks(BlockType _type) const {
 		std::vector<Int3> out;
 		FindBlocks(_type, out);
