@@ -107,6 +107,7 @@ bool PlaceInExistingPortal(WorldManager& _world, Entity& _entity) {
 	double closest = -1.0;
 	Int3 portalPos = {};
 
+	auto startupStart = std::chrono::steady_clock::now();
 	for (int cx = minX >> 4; cx <= maxX >> 4; cx++) {
 		for (int cz = minZ >> 4; cz <= maxZ >> 4; cz++) {
 			Chunk* chunk = _world.GetChunkRaw({ cx, cz });
@@ -146,6 +147,12 @@ bool PlaceInExistingPortal(WorldManager& _world, Entity& _entity) {
 			}
 		}
 	}
+	float startupMs = std::chrono::duration<float, std::micro>(
+		std::chrono::steady_clock::now() - startupStart
+	).count();
+
+	GlobalLogger().info << "Portal found ("
+						<< std::setprecision(4) << startupMs << "ms)\n";
 
 	// Didn't find anything
 	if (closest < 0.0)

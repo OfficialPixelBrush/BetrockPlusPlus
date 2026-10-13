@@ -206,8 +206,8 @@ struct Chunk {
 		int block = int(GetBlockLight(_pos));
 		return CrossPlatform::Math::Min(15, CrossPlatform::Math::Max(sky, block));
 	}
-	bool HasBlock(BlockType _type) {
-		for (auto& sc : subChunks) {
+	bool HasBlock(BlockType _type) const {
+		for (const auto& sc : subChunks) {
 			if (sc.HasBlock(_type))
 				return true;
 		}
