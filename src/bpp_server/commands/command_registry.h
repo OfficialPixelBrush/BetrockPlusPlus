@@ -17,7 +17,6 @@ void RegisterSpawn(strategos::BrigadierContext& _dispatcher);
 void RegisterSeed(strategos::BrigadierContext& _dispatcher);
 void RegisterGive(strategos::BrigadierContext& _dispatcher);
 void RegisterList(strategos::BrigadierContext& _dispatcher);
-void RegisterLoaded(strategos::BrigadierContext& _dispatcher);
 void RegisterDimension(strategos::BrigadierContext& _dispatcher);
 void RegisterVersion(strategos::BrigadierContext& _dispatcher);
 void RegisterSummon(strategos::BrigadierContext& _dispatcher);

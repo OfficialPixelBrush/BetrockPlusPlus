@@ -20,7 +20,6 @@ void CommandManager::Init(Server* _server) {
 	RegisterSpawn(dispatcher);
 	RegisterGive(dispatcher);
 	RegisterList(dispatcher);
-	RegisterLoaded(dispatcher);
 	RegisterDimension(dispatcher);
 	RegisterVersion(dispatcher);
 	RegisterSummon(dispatcher);
