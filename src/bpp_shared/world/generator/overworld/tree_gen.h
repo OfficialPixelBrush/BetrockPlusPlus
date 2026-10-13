@@ -59,7 +59,8 @@ private:
 	static constexpr int32_t branchDensity = 1;
 	int32_t maximumTreeHeight = 12;
 	int32_t trunkThickness = 4;
-	std::vector<BranchPos> branchStartEnd;
+	// branchStartEnd is always at most 15 entries large
+	std::array<BranchPos, 15> branchStartEnd;
 
 	bool ValidPlacement();
 	void GenerateBranchPositions();

@@ -105,7 +105,7 @@ bool GenerateTree(WorldAccess& _world, Java::Random& _rand, Int3 _pos, bool _bir
  * @param pTrunkShape Determines the trunk shape
  */
 void BigTree::Configure(double _pTreeHeight, double _pBranchLength, double _pTrunkShape) {
-	branchStartEnd.clear();
+	branchStartEnd = {};
 	totalHeight = 0;
 	// Default Java
 	maximumTreeHeight = Java::DoubleToInt32(_pTreeHeight * 12.0);
@@ -162,14 +162,14 @@ void BigTree::GenerateBranchPositions() {
 		branchesPerLayer = 1;
 	}
 
-	// NOTE: branchCapacity is always 22
+	// NOTE: branchCapacity is always 32
 	/*
 	const int branchCapacity = static_cast<size_t>(branchesPerLayer * totalHeight);
 	if (branchCapacity <= 0)
 		throw "Branch capacity is 0!";
 	*/
 
-	std::array<BranchPos, 22> candidateBranches;
+	std::array<BranchPos, 32> candidateBranches;
 	int32_t currentY = basePos.y + totalHeight - trunkThickness;
 	int32_t branchCount = 1;
 	int32_t targetY = basePos.y + height;
@@ -219,10 +219,7 @@ void BigTree::GenerateBranchPositions() {
 			--currentY;
 		}
 
-		branchStartEnd = std::vector<BranchPos>(branchCount);
 		std::copy(candidateBranches.begin(), candidateBranches.begin() + branchCount, branchStartEnd.begin());
-		// Not present in OG Code, but probably good to do
-		branchStartEnd.shrink_to_fit();
 		return;
 	}
 }
