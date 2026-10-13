@@ -38,6 +38,10 @@ void CommandManager::Init(Server* _server) {
 	GlobalLogger().info << "Registered " << dispatcher.root().children.size() << " command(s)!" << "\n";
 }
 
+std::vector<strategos::Suggestion> CommandManager::Suggest(std::string_view input, bool canOperate,
+		std::span<const std::string> players) const {
+	return dispatcher.suggest(input, canOperate, players);
+}
 
 bool CommandManager::Parse(std::string_view line, CommandContext& ctx) {
 	ctx.server = server;

@@ -57,10 +57,14 @@ void RegisterOp(strategos::BrigadierContext& _dispatcher) {
 	                            .describe("Grants a player's operator privileges")
 	                            .op()
 	                            .executes(OpPlayer)
-	                            .then(strategos::Node::string("username").executes(OpPlayer)));
+	                            .then(strategos::Node::string("username")
+	                                      .suggests(strategos::SuggestionSource::Players)
+	                                      .executes(OpPlayer)));
 	_dispatcher.add_command(strategos::Node::literal("deop")
 	                            .describe("Revokes a player's operator privileges")
 	                            .op()
 	                            .executes(DeopPlayer)
-	                            .then(strategos::Node::string("username").executes(DeopPlayer)));
+	                            .then(strategos::Node::string("username")
+	                                      .suggests(strategos::SuggestionSource::Players)
+	                                      .executes(DeopPlayer)));
 }

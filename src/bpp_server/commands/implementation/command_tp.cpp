@@ -80,6 +80,9 @@ void RegisterTeleport(strategos::BrigadierContext& _dispatcher) {
 	                            .op()
 	                            .then(strategos::Node::vec3("pos").executes(TpSelfCoords))
 	                            .then(strategos::Node::string("player")
+                            			  .suggests(strategos::SuggestionSource::Players)
 	                                      .then(strategos::Node::vec3("pos").executes(TpPlayerCoords))
-	                                      .then(strategos::Node::string("target").executes(TpPlayerTarget))));
+	                                      .then(strategos::Node::string("target")
+	                                                .suggests(strategos::SuggestionSource::Players)
+													.executes(TpPlayerTarget))));
 }

@@ -140,17 +140,22 @@ void RegisterBan(strategos::BrigadierContext& _dispatcher) {
 	                            .describe("Bans a player from the server")
 	                            .op()
 	                            .executes(BanPlayer)
-	                            .then(strategos::Node::string("username").executes(BanPlayer)));
+	                            .then(strategos::Node::string("username")
+	                                      .suggests(strategos::SuggestionSource::Players)
+	                                      .executes(BanPlayer)));
 	_dispatcher.add_command(strategos::Node::literal("pardon")
 	                            .describe("Removes a player from the ban list")
 	                            .op()
 	                            .executes(PardonPlayer)
-	                            .then(strategos::Node::string("username").executes(PardonPlayer)));
+	                            .then(strategos::Node::string("username")
+	                                      .suggests(strategos::SuggestionSource::Players)
+	                                      .executes(PardonPlayer)));
 	_dispatcher.add_command(strategos::Node::literal("ban-ip")
 	                            .describe("Bans an IP address, or a connected player's IP, from the server")
 	                            .op()
-	                            .then(strategos::Node::string("target").executes(BanIp)));
-	/*
+	                            .then(strategos::Node::string("target")
+	                                      .suggests(strategos::SuggestionSource::Players)
+	                                      .executes(BanIp)));	/*
 	_dispatcher.add_command(strategos::Node::literal("pardon-ip")
 	                            .describe("Removes an IP address from the ban list")
 	                            .op()

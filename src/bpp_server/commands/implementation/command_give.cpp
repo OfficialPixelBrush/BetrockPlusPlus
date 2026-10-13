@@ -81,5 +81,7 @@ void RegisterGive(strategos::BrigadierContext& _dispatcher) {
 	                            .describe("Give yourself a block or item")
 	                            .op()
 	                            .executes(ClearOwnInventory)
-	                            .then(strategos::Node::string("player").executes(ClearOtherInventory)));
+	                            .then(strategos::Node::string("player")
+	                                      .suggests(strategos::SuggestionSource::Players)
+	                                      .executes(ClearOtherInventory)));
 }

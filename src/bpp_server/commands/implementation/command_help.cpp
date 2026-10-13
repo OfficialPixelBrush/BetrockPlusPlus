@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
 */
@@ -84,5 +85,7 @@ void RegisterHelp(strategos::BrigadierContext& _dispatcher) {
 	_dispatcher.add_command(strategos::Node::literal("help")
 	                            .describe("Lists commands or helps with command")
 	                            .executes(ListCommands)
-	                            .then(strategos::Node::string("command").executes(HelpCommand)));
+	                            .then(strategos::Node::string("command")
+	                                      .suggests(strategos::SuggestionSource::Commands)
+	                                      .executes(HelpCommand)));
 }

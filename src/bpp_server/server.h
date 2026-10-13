@@ -28,6 +28,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "packet/packet_dispatcher.h"
 #include "player_conn/player_session.h"
 #include "player_conn/server_pconnstate_manager.h"
+#include "console/server_console.h"
 #include "runtime.h"
 #include "server_socket.h"
 #include "strings/ucs2.h"
@@ -250,7 +251,10 @@ private:
 	AddonManager addonManager;
 	bool stopped = false;
 	Config config;
+	ServerConsole serverConsole;
+	std::vector<std::string> playerNamesSnapshot;
 	double tickRate = 20.0;
+	std::thread::id commandThreadId{};
 	bool tickFrozen = false;
 	int pendingTickSteps = 0;
 	TickProfiler tickProfiler;
@@ -259,6 +263,7 @@ private:
 	int requestedSampleTicks = 0;
 	int collectedSampleTicks = 0;
 	std::weak_ptr<PlayerSession> sampleRequester;
+	bool sampleToConsole = false;
 	bool samplingStartsNextTick = false;
 
 	// Flushes session write buffers off the main tick thread.

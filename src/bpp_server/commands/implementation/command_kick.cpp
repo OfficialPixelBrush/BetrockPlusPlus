@@ -39,5 +39,7 @@ void RegisterKick(strategos::BrigadierContext& _dispatcher) {
 	                            .describe("Forcefully disconnects the named player")
 	                            .op()
 	                            .executes(KickPlayer)
-	                            .then(strategos::Node::string("username").executes(KickPlayer)));
+	                            .then(strategos::Node::string("username")
+	                                      .suggests(strategos::SuggestionSource::Players)
+	                                      .executes(KickPlayer)));
 }

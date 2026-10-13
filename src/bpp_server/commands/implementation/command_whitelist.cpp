@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
 */
@@ -116,9 +117,14 @@ void RegisterWhitelist(strategos::BrigadierContext& _dispatcher) {
 	    strategos::Node::literal("whitelist")
 	        .describe("Adjust the servers whitelist/allowlist")
 	        .op()
-	        .then(strategos::Node::literal("add").then(strategos::Node::string("username").executes(WhitelistAdd)))
-	        .then(strategos::Node::literal("remove").then(strategos::Node::string("username").executes(WhitelistRemove)))
-	        .then(strategos::Node::literal("list").executes(WhitelistList))
+	        .then(strategos::Node::literal("add")
+	                  .then(strategos::Node::string("username")
+	                            .suggests(strategos::SuggestionSource::Players)
+	                            .executes(WhitelistAdd)))
+	        .then(strategos::Node::literal("remove")
+	                  .then(strategos::Node::string("username")
+	                            .suggests(strategos::SuggestionSource::Players)
+	                            .executes(WhitelistRemove)))	        .then(strategos::Node::literal("list").executes(WhitelistList))
 	        .then(strategos::Node::literal("reload").executes(WhitelistReload))
 	        .then(strategos::Node::literal("on").executes(WhitelistOn))
 	        .then(strategos::Node::literal("off").executes(WhitelistOff)));

@@ -492,7 +492,10 @@ void Server::Startup() {
 }
 
 void Server::Run() {
+	commandThreadId = std::this_thread::get_id();
 	Startup();
+	serverConsole.UpdatePlayerNames(playerNamesSnapshot);
+	serverConsole.Start(commandManager);
 	using Clock = std::chrono::steady_clock;
 
 	std::chrono::nanoseconds avgTotalTickDuration{ 0 };
@@ -559,6 +562,7 @@ void Server::Run() {
 	}
 
 	// Shutdown was requested. Save and clean up on the main thread
+	serverConsole.Stop();
 	Stop();
 	shutdownRequested.store(false); // Unblock the ctrl handler thread
 }
@@ -567,6 +571,7 @@ void Server::Stop() {
 	if (stopped)
 		return;
 	stopped = true;
+	serverConsole.Stop();
 
 #ifdef BETACRAFT_HEARTBEAT
 	betacraftHeartbeat.Stop();
@@ -691,6 +696,16 @@ void Server::Tick() {
 		totalStart = Clock::now();
 	auto offTickStart = Clock::now();
 	writePool.wait();
+
+	std::vector<std::string> queuedCommands;
+	serverConsole.DrainCommands(queuedCommands);
+
+	for (const auto& command : queuedCommands) {
+		if (shutdownRequested.load())
+			break;
+		ExecuteCommand(command, nullptr);
+	}
+
 	if (sampling)
 		tickProfiler.Record(TickTask::OffTickTasks, Clock::now() - offTickStart);
 	std::chrono::nanoseconds autosaveElapsed{ 0 };
@@ -878,22 +893,53 @@ void Server::Tick() {
 					std::sort(entities.begin(), entities.end(), [](const auto& a, const auto& b) {
 						return a.second.elapsed > b.second.elapsed;
 					});
-					SendChat(*requester, "§7Entity tick cost (top 10):");
+					SendCommandFeedback(sampleToConsole ? nullptr : requester.get(), "§7Entity tick cost (top 10):");
 					for (size_t i = 0; i < std::min<size_t>(10, entities.size()); ++i) {
 						const auto& [key, sample] = entities[i];
-						SendChat(*requester, std::format("§7dim {} entity {} type {}: {} ticks, {:.3f} ms",
-						                                    int(static_cast<int8_t>(key.dimension)),
-						                                    int32_t(key.id), int(static_cast<uint8_t>(key.type)),
-						                                    sample.count,
-						                                    std::chrono::duration<double, std::milli>(sample.elapsed).count()));
+						SendCommandFeedback(sampleToConsole ? nullptr : requester.get(),
+						                   std::format("§7dim {} entity {} type {}: {} ticks, {:.3f} ms",
+						                            int(static_cast<int8_t>(key.dimension)), int32_t(key.id),
+						                            int(static_cast<uint8_t>(key.type)), sample.count,
+						                            std::chrono::duration<double, std::milli>(sample.elapsed).count()));
 					}
 				}
 			}
 			activeSampleMode = SampleMode::None;
 			tickProfiler.Reset();
 			sampleRequester.reset();
+			sampleToConsole = false;
 			requestedSampleTicks = collectedSampleTicks = 0;
 		}
+	}
+
+	size_t eligibleCount = 0;
+	bool namesChanged = false;
+
+	for (const auto& session : players) {
+		if (!session || !session->stream.IsConnected() || session->connState != ConnectionState::Playing ||
+		    !session->entity)
+			continue;
+		if (eligibleCount >= playerNamesSnapshot.size() ||
+		    playerNamesSnapshot[eligibleCount] != session->username)
+			namesChanged = true;
+		++eligibleCount;
+	}
+
+	if (eligibleCount != playerNamesSnapshot.size())
+		namesChanged = true;
+
+	if (namesChanged) {
+		std::vector<std::string> names;
+		names.reserve(eligibleCount);
+
+		for (const auto& session : players) {
+			if (session && session->stream.IsConnected() && session->connState == ConnectionState::Playing &&
+			    session->entity)
+				names.push_back(session->username);
+		}
+
+		playerNamesSnapshot = std::move(names);
+		serverConsole.UpdatePlayerNames(playerNamesSnapshot);
 	}
 }
 
