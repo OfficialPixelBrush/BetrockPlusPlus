@@ -6,8 +6,17 @@
 */
 
 #pragma once
+#include "assets.h"
+#include "camera.h"
 #include "client_pos.h"
+#include "client_socket.h"
+#include "input.h"
 #include "logger.h"
+#include "networking/network_stream.h"
+#include "packet/client_packet_dispatcher.h"
+#include "packet/handle_client_packet.h"
+#include "renderer.h"
+#include "window.h"
 #include "runtime.h"
 
 class Client {
@@ -23,5 +32,20 @@ private:
 	static constexpr int MAX_TICKS_PER_FRAME = 10;
 
 	void Tick();
+	void ProcessIncoming();
+
+	Window window;
+	Input input;
+	Renderer renderer;
+	Camera camera;
+	AssetManager assetManager;
 	float accumulator = 0.0f;
+
+	// Network
+	std::string targetIP = "127.0.0.1";
+	int targetPort = 25565;
+	int clientSocket = -1;
+	ConnectionState connectionState = ConnectionState::Handshaking;
+	std::optional<NetworkStream> stream;
+	std::chrono::steady_clock::time_point lastPacketTime = std::chrono::steady_clock::now();
 };
