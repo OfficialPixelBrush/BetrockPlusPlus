@@ -37,7 +37,7 @@ void NetherGenerator::GenerateChunk(Chunk& _chunk) {
 	rand.SetSeed(int64_t(_chunk.cpos.x) * 341873128712L + int64_t(_chunk.cpos.z) * 132897987541L);
 
 	// Allocate empty chunk
-	_chunk.Clear();
+	//_chunk.Clear();
 	// Generate the Terrain, minus any caves, as just stone
 	GenerateTerrain(_chunk);
 	// Replace some of the stone with Biome-appropriate blocks
@@ -45,7 +45,7 @@ void NetherGenerator::GenerateChunk(Chunk& _chunk) {
 	// Carve caves
 	caver.GenerateCavesForChunk(_chunk, seed);
 	// Generate heightmap
-	_chunk.GenerateHeightMap();
+	//_chunk.GenerateHeightMap();
 
 	_chunk.isModified = true;
 }

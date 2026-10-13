@@ -41,7 +41,7 @@ void OverworldGenerator::GenerateChunk(Chunk& _chunk) {
 	rand.SetSeed(int64_t(_chunk.cpos.x) * 341873128712L + int64_t(_chunk.cpos.z) * 132897987541L);
 
 	// Allocate empty chunk
-	_chunk.Clear();
+	//_chunk.Clear();
 
 	// Generate Biomes
 	biomeGen.GenerateBiomeMap(biomeMap, temperature, humidity, weirdness,
@@ -64,7 +64,7 @@ void OverworldGenerator::GenerateChunk(Chunk& _chunk) {
 	// Carve caves
 	caver.GenerateCavesForChunk(_chunk, seed);
 	// Generate heightmap
-	_chunk.GenerateHeightMap();
+	//_chunk.GenerateHeightMap();
 
 	_chunk.isModified = true;
 }
@@ -179,11 +179,15 @@ void OverworldGenerator::GenerateTerrain(Chunk& _chunk) {
 	// Generate 4x16x4 low resolution noise map
 	GenerateTerrainNoise(Int3{ _chunk.cpos.x * 4, 0, _chunk.cpos.z * 4 }, MAX);
 
+	// Fill subchunks with water
+	_chunk.FillSlices(0, WATER_LEVEL-1, BLOCK_WATER_STILL);
+
+	// Write water surface
 	for (int32_t x = 0; x < CHUNK_WIDTH; ++x) {
 		for (int32_t z = 0; z < CHUNK_WIDTH; ++z) {
-			const bool frozen = temperature[size_t(x * CHUNK_WIDTH + z)] < 0.5;
-			_chunk.FillColumn(0, WATER_LEVEL - 2, Int2{ x, z }, BLOCK_WATER_STILL);
-			_chunk.SetBlockRaw(Int3{ x, WATER_LEVEL - 1, z }, frozen ? BLOCK_ICE : BLOCK_WATER_STILL);
+			if (temperature[size_t(x * CHUNK_WIDTH + z)] < 0.5)
+				continue;
+			_chunk.SetBlockRaw(Int3{ x, WATER_LEVEL - 1, z }, BLOCK_ICE);
 		}
 	}
 
