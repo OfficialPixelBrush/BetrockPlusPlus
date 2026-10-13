@@ -186,8 +186,7 @@ void OverworldGenerator::GenerateTerrain(Chunk& _chunk) {
 	for (int32_t x = 0; x < CHUNK_WIDTH; ++x) {
 		for (int32_t z = 0; z < CHUNK_WIDTH; ++z) {
 			if (temperature[size_t(x * CHUNK_WIDTH + z)] < 0.5)
-				continue;
-			_chunk.SetBlockRaw(Int3{ x, WATER_LEVEL - 1, z }, BLOCK_ICE);
+				_chunk.SetBlockRaw(Int3{ x, WATER_LEVEL - 1, z }, BLOCK_ICE);
 		}
 	}
 
