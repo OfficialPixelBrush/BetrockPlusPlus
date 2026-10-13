@@ -162,11 +162,14 @@ void BigTree::GenerateBranchPositions() {
 		branchesPerLayer = 1;
 	}
 
-	const size_t branchCapacity = static_cast<size_t>(branchesPerLayer * totalHeight);
+	// NOTE: branchCapacity is always 22
+	/*
+	const int branchCapacity = static_cast<size_t>(branchesPerLayer * totalHeight);
 	if (branchCapacity <= 0)
 		throw "Branch capacity is 0!";
+	*/
 
-	std::vector<BranchPos> candidateBranches(branchCapacity);
+	std::array<BranchPos, 22> candidateBranches;
 	int32_t currentY = basePos.y + totalHeight - trunkThickness;
 	int32_t branchCount = 1;
 	int32_t targetY = basePos.y + height;
