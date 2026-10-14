@@ -31,3 +31,4 @@ void RegisterAddon(strategos::BrigadierContext& _dispatcher);
 void RegisterTick(strategos::BrigadierContext& _dispatcher);
 void RegisterWeather(strategos::BrigadierContext& _dispatcher);
 void RegisterExecute(strategos::BrigadierContext& _dispatcher);
+void RegisterChat(strategos::BrigadierContext& _dispatcher);

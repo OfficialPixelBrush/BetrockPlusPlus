@@ -29,6 +29,10 @@ std::string ListAddons(const strategos::CmdNode&, void* _userData) {
 	return "";
 }
 
+// TODO: Add reload addon
+// TODO: Add enable addon
+// TODO: Add disable addon
+
 } // namespace
 
 void RegisterAddon(strategos::BrigadierContext& _dispatcher) {
