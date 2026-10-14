@@ -246,6 +246,7 @@ set(SHARED_SOURCES
 # Server-specific source code
 set(SERVER_SOURCES
     src/bpp_server/server.cpp
+    src/bpp_server/console/server_console.cpp
     src/bpp_server/gamerules.cpp
     src/bpp_server/internet/online_auth.cpp
     src/bpp_server/internet/betacraft_heartbeat.cpp
@@ -314,6 +315,20 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_BUILD_TYPE MATCHES "^(Debug|RelW
 endif()
 
 if(BUILD_SERVER)
+find_package(replxx CONFIG QUIET)
+if(NOT replxx_FOUND)
+    include(FetchContent)
+    set(REPLXX_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(REPLXX_BUILD_PACKAGE OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(
+        replxx
+        GIT_REPOSITORY https://github.com/AmokHuginnsson/replxx.git
+        GIT_TAG        release-0.0.4
+        GIT_SHALLOW    TRUE
+    )
+    FetchContent_MakeAvailable(replxx)
+endif()
+target_link_libraries(BetrockPlusPlus PRIVATE replxx::replxx)
 # Server mode
     target_compile_definitions(BetrockPlusPlus PRIVATE
         BUILD_SERVER

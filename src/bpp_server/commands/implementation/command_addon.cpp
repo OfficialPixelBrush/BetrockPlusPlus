@@ -25,7 +25,7 @@ std::string ListAddons(const strategos::CmdNode&, void* _userData) {
 			continue;
 		addonLabels.push_back(std::format("{} ({}, {})", addon->info.name, addon->info.id, addon->info.version));
 	}
-	SendChunkedList(*ctx.session, std::format("§7-- {} Active Addon(s) --", addons.size()), addonLabels);
+	SendChunkedList(ctx, std::format("§7-- {} Active Addon(s) --", addons.size()), addonLabels);
 	return "";
 }
 

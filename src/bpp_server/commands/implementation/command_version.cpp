@@ -13,8 +13,8 @@ namespace {
 
 std::string ShowVersion(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	SendChat(*ctx.session,
-	        std::string{"§eCurrent "} + std::string(PROJECT_NAME) + " version is " + std::string(PROJECT_VERSION_FULL_STRING));
+	SendFeedback(ctx, std::string{"§eCurrent "} + std::string(PROJECT_NAME) + " version is " +
+	    	std::string(PROJECT_VERSION_FULL_STRING));
 	return "";
 }
 

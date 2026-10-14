@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -76,11 +77,27 @@ void Logger::Log(std::string _message, LogLevel _level) {
 	}
 }
 
+void Logger::SetTerminalSink(std::function<void(const char*, int)> sink) {
+	std::lock_guard lock(terminalMutex);
+	terminalSink = std::move(sink);
+}
+
+void Logger::WriteTerminal(std::string message, bool toStderr) {
+	std::lock_guard lock(terminalMutex);
+	if (terminalSink) {
+		terminalSink(message.data(), static_cast<int>(message.size()));
+	} else if (toStderr) {
+		std::cerr << message;
+	} else {
+		std::cout << message;
+	}
+}
+
 // Log a chat message
 void Logger::ChatMessage(std::string _message) {
 	std::string time = GetCurrentTimeString();
 	if (logLevelTerminal & LOG_CHAT) {
-		std::cout << time << " " << HandleFormattingCodes(_message) << "\n";
+		WriteTerminal(time + " " + HandleFormattingCodes(_message) + "\n");
 	}
 	if (logLevelText & LOG_CHAT) {
 		logFile << time << " " << _message << "\n";
@@ -91,7 +108,7 @@ void Logger::ChatMessage(std::string _message) {
 void Logger::Message(std::string _message) {
 	std::string time = GetCurrentTimeString();
 	if (logLevelTerminal & LOG_MESSAGE) {
-		std::cout << time << " " << _message << "\n";
+		WriteTerminal(time + " " + _message + "\n");
 	}
 	if (logLevelText & LOG_MESSAGE) {
 		logFile << time << " " << _message << "\n";
@@ -103,7 +120,7 @@ void Logger::Info(std::string _message) {
 	std::string time = GetCurrentTimeString();
 	std::string header = "[INFO]";
 	if (logLevelTerminal & LOG_INFO) {
-		std::cout << time << " \x1b[1;30;107m" << header << "\x1b[0m " << _message << "\n";
+		WriteTerminal(time + " \x1b[1;30;107m" + header + "\x1b[0m " + _message + "\n");
 	}
 	if (logLevelText & LOG_INFO) {
 		logFile << time << " " << header << " " << _message << "\n";
@@ -115,7 +132,7 @@ void Logger::Warning(std::string _message) {
 	std::string time = GetCurrentTimeString();
 	std::string header = "[WARNING]";
 	if (logLevelTerminal & LOG_WARNING) {
-		std::cerr << time << " \x1b[1;30;43m" << header << "\x1b[0;33m " << _message << "\x1b[0m" << "\n";
+		WriteTerminal(time + " \x1b[1;30;43m" + header + "\x1b[0;33m " + _message + "\x1b[0m\n", true);
 	}
 	if (logLevelText & LOG_WARNING) {
 		logFile << time << " " << header << " " << _message << "\n";
@@ -127,7 +144,7 @@ void Logger::Error(std::string _message) {
 	std::string time = GetCurrentTimeString();
 	std::string header = "[ERROR]";
 	if (logLevelTerminal & LOG_ERROR) {
-		std::cerr << time << " \x1b[1;30;101m" << header << "\x1b[0;31m " << _message << "\x1b[0m" << "\n";
+		WriteTerminal(time + " \x1b[1;30;101m" + header + "\x1b[0;31m " + _message + "\x1b[0m\n", true);
 	}
 	if (logLevelText & LOG_ERROR) {
 		logFile << time << " " << header << " " << _message << "\n";
@@ -139,7 +156,7 @@ void Logger::Debug(std::string _message) {
 	std::string time = GetCurrentTimeString();
 	std::string header = "[DEBUG]";
 	if (logLevelTerminal & LOG_DEBUG) {
-		std::cerr << time << " \x1b[1;30;46m" << header << "\x1b[0m " << _message << "\n";
+		WriteTerminal(time + " \x1b[1;30;46m" + header + "\x1b[0m " + _message + "\n", true);
 	}
 	if (logLevelText & LOG_DEBUG) {
 		logFile << time << " " << header << " " << _message << "\n";

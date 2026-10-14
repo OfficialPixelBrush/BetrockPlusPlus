@@ -12,7 +12,7 @@ namespace {
 
 std::string GetTime(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	SendChat(*ctx.session, "§eCurrent Time is " + std::to_string(ctx.world->elapsedTicks) + " (Day " +
+	SendFeedback(ctx, "§eCurrent Time is " + std::to_string(ctx.world->elapsedTicks) + " (Day " +
 	                           std::to_string(int64_t(std::floor(ctx.world->elapsedTicks / DAY_LENGTH))) + ")");
 	return "";
 }
@@ -27,7 +27,7 @@ std::string SetTime(const strategos::CmdNode& _cmd, void* _userData) {
 	} catch (...) {
 		return ERROR_REASON_PARAMETERS;
 	}
-	SendChat(*ctx.session, "§eSet time to " + std::to_string(ctx.world->elapsedTicks));
+	SendFeedback(ctx, "§eSet time to " + std::to_string(ctx.world->elapsedTicks));
 	return "";
 }
 
@@ -41,7 +41,7 @@ std::string AddTime(const strategos::CmdNode& _cmd, void* _userData) {
 	} catch (...) {
 		return ERROR_REASON_PARAMETERS;
 	}
-	SendChat(*ctx.session, "§eSet time to " + std::to_string(ctx.world->elapsedTicks));
+	SendFeedback(ctx, "§eSet time to " + std::to_string(ctx.world->elapsedTicks));
 	return "";
 }
 

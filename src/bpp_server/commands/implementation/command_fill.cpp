@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
 */
@@ -34,8 +35,12 @@ std::string FillArea(const strategos::CmdNode& _cmd, void* _userData) {
 	if (item.id >= BLOCK_MAX || item.id < 0)
 		return "Invalid Block Id!";
 
-	Vec3 from = ResolveCmdVec3(*fromCmd, ctx.session->position.pos);
-	Vec3 to = ResolveCmdVec3(*toCmd, ctx.session->position.pos);
+	auto fromResult = ResolveCmdPos(ctx, *fromCmd);
+	if (!fromResult) return fromResult.error();
+	auto toResult = ResolveCmdPos(ctx, *toCmd);
+	if (!toResult) return toResult.error();
+	Vec3 from = *fromResult;
+	Vec3 to = *toResult;
 	Int3 pos0{ static_cast<int32_t>(std::floor(from.x)), static_cast<int32_t>(std::floor(from.y)),
 		       static_cast<int32_t>(std::floor(from.z)) };
 	Int3 pos1{ static_cast<int32_t>(std::floor(to.x)), static_cast<int32_t>(std::floor(to.y)),
@@ -57,12 +62,12 @@ std::string FillArea(const strategos::CmdNode& _cmd, void* _userData) {
 	int64_t depth = int64_t(maxPos.z - minPos.z) + 1;
 	int64_t volume = width * height * depth;
 
-	SendChat(*ctx.session, std::format("Attempting to fill {} block(s)...", volume));
+	SendFeedback(ctx, std::format("Attempting to fill {} block(s)...", volume));
 
 	auto fillStart = std::chrono::steady_clock::now();
 	ctx.world->FillVolume(minPos, maxPos, static_cast<BlockType>(item.id.value), static_cast<uint8_t>(item.data));
 	float fillSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - fillStart).count();
-	SendChat(*ctx.session, std::format("Filled {} block(s) in {:.2f} seconds!", volume, fillSeconds));
+	SendFeedback(ctx, std::format("Filled {} block(s) in {:.2f} seconds!", volume, fillSeconds));
 	return "";
 }
 
