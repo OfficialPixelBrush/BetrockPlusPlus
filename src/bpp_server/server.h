@@ -161,7 +161,7 @@ public:
 	bool BeginTickSample(SampleMode _mode, int _ticks, PlayerSession* _requester);
 	void ResetDimensionState(PlayerSession& _session, Dimension _dim);
 	void SendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _entity);
-	void SendPlayerToDimension(Dimension _dim, PlayerSession& _session);
+	void SendPlayerToDimension(Dimension _dim, PlayerSession& _session, std::optional<Vec3> _destOverride = std::nullopt);
 
 	// Entity trackers are so we can send entity updates to players and vice versa.
 	EntityTracker overworldEntityTracker;

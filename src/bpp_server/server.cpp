@@ -128,14 +128,16 @@ void Server::ResetDimensionState(PlayerSession& _session, Dimension _dim) {
 	chunkSender.subRegionFlight.erase(&_session);
 }
 
-void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
+void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session, std::optional<Vec3> _destOverride) {
 	if (_dim == _session.dimension)
 		return;
 
 	ResetDimensionState(_session, _dim);
 
 	Vec3 dest = _session.entity->position;
-	if (_dim == Dimension::Nether) {
+	if (_destOverride) {
+		dest = *_destOverride;
+	} else if (_dim == Dimension::Nether) {
 		dest.x /= 8.0;
 		dest.z /= 8.0;
 	} else {
@@ -143,7 +145,7 @@ void Server::SendPlayerToDimension(Dimension _dim, PlayerSession& _session) {
 		dest.z *= 8.0;
 	}
 	_session.entity->Teleport(dest);
-	_session.pendingPortalPlacement = true;
+	_session.pendingPortalPlacement = !_destOverride.has_value();;
 	_session.portalAreaLoaded = false;
 
 	Packet::Respawn pkt;
