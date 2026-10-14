@@ -44,14 +44,13 @@ std::string TellMessage(const strategos::CmdNode& _cmd, void* _userData) {
 
 } // namespace
 
-// TODO: Must allow strings with spaces!
 void RegisterChat(strategos::BrigadierContext& _dispatcher) {
 	_dispatcher.add_command(strategos::Node::literal("say")
 	                            .describe("Sends a message in the chat to other players")
-	                            .then(strategos::Node::string("message").executes(SayMessage)));
+	                            .then(strategos::Node::greedy_string("message").executes(SayMessage)));
 	_dispatcher.add_command(strategos::Node::literal("tell")
 	                            .describe("Sends a private message to one player")
 								// TODO: Should accept a list of players, maybe?
 	                            .then(strategos::Node::string("username")
-	                            .then(strategos::Node::string("message").executes(TellMessage))));
+	                            .then(strategos::Node::greedy_string("message").executes(TellMessage))));
 }
