@@ -28,6 +28,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "packet/packet_dispatcher.h"
 #include "player_conn/player_session.h"
 #include "player_conn/server_pconnstate_manager.h"
+#include "console/server_console.h"
 #include "runtime.h"
 #include "server_socket.h"
 #include "strings/ucs2.h"
@@ -35,6 +36,7 @@ extern std::atomic<bool> shutdownRequested;
 #include "world/world_event_broadcaster.h"
 #include "tick_profiler.h"
 #include <chrono>
+#include <string_view>
 #include <memory>
 #include <thread>
 #include <unordered_set>
@@ -142,6 +144,9 @@ public:
 		return _dim == Dimension::Nether ? &this->gameRuntime.worldHell : &this->gameRuntime.world;
 	}
 
+	bool CanExecuteCommands() const noexcept;
+	bool ExecuteCommand(std::string_view _command, PlayerSession* _sender = nullptr) noexcept;
+
 	EntityTracker* GetEntityTrackerForDimension(Dimension _dim) {
 		return _dim == Dimension::Nether ? &this->hellEntityTracker : &this->overworldEntityTracker;
 	}
@@ -153,7 +158,7 @@ public:
 	bool ToggleTickFreeze();
 	void QueueTickSteps(int _steps);
 	enum class SampleMode : uint8_t { None, Health, Entities };
-	bool BeginTickSample(SampleMode _mode, int _ticks, PlayerSession& _requester);
+	bool BeginTickSample(SampleMode _mode, int _ticks, PlayerSession* _requester);
 	void ResetDimensionState(PlayerSession& _session, Dimension _dim);
 	void SendEntityToDimension(Dimension _dim, std::shared_ptr<Entity> _entity);
 	void SendPlayerToDimension(Dimension _dim, PlayerSession& _session);
@@ -246,7 +251,10 @@ private:
 	AddonManager addonManager;
 	bool stopped = false;
 	Config config;
+	ServerConsole serverConsole;
+	std::vector<std::string> playerNamesSnapshot;
 	double tickRate = 20.0;
+	std::thread::id commandThreadId{};
 	bool tickFrozen = false;
 	int pendingTickSteps = 0;
 	TickProfiler tickProfiler;
@@ -255,6 +263,7 @@ private:
 	int requestedSampleTicks = 0;
 	int collectedSampleTicks = 0;
 	std::weak_ptr<PlayerSession> sampleRequester;
+	bool sampleToConsole = false;
 	bool samplingStartsNextTick = false;
 
 	// Flushes session write buffers off the main tick thread.

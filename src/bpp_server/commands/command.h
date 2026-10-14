@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
 */
@@ -14,8 +15,14 @@
 #include "ucs2.h"
 #include <optional>
 #include <string>
+#include <expected>
+#include <vector>
+
 
 #define ERROR_OPERATOR "Only operators can use this command!"
+#define ERROR_PLAYER_REQUIRED "This command requires a player context. Use execute <player> <command>."
+#define ERROR_PLAYER_NAME_REQUIRED "A player name is required from a non-player sender."
+#define ERROR_RELATIVE_REQUIRES_PLAYER "Relative coordinates require a player context."
 #define ERROR_CREATIVE "Only creative players can use this command!"
 #define ERROR_PERMISSIONS "You lack the required permissions for this command!"
 #define ERROR_WHITELIST "Only whitelisted players can use this command!"
@@ -31,10 +38,17 @@
 #define MAX_CHAT_MESSAGE_SIZE 119
 
 class Server;
+struct CommandContext;
 
 bool IsOperator(PlayerSession& _session, Server& _server);
+bool IsOperator(const CommandContext& _ctx);
+void SendCommandFeedback(PlayerSession* _recipient, const std::string& _message);
+void SendFeedback(const CommandContext& _ctx, const std::string& _message);
 ItemStack ParseItemStack(const std::string& _itemArg, std::optional<int> _count = std::nullopt);
-void SendChunkedList(PlayerSession& _session, const std::string& _header, const std::vector<std::string>& _entries);
+void SendChunkedList(const CommandContext& _ctx, const std::string& _header,
+                     const std::vector<std::string>& _entries);
+std::optional<std::string> ResolveCmdTargetName(const strategos::CmdNode& _cmd, const CommandContext& _ctx);
+std::expected<Vec3, std::string> ResolveCmdPos(const CommandContext& _ctx, const strategos::Vec3& _position);
 
 inline void SendChat(PlayerSession& _session, const std::string& _message) {
 	std::u16string ucs2 = ToUCS2(_message);

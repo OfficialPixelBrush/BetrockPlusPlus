@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
 */
@@ -19,7 +20,6 @@ void CommandManager::Init(Server* _server) {
 	RegisterSpawn(dispatcher);
 	RegisterGive(dispatcher);
 	RegisterList(dispatcher);
-	RegisterLoaded(dispatcher);
 	RegisterDimension(dispatcher);
 	RegisterVersion(dispatcher);
 	RegisterSummon(dispatcher);
@@ -33,27 +33,32 @@ void CommandManager::Init(Server* _server) {
 	RegisterAddon(dispatcher);
 	RegisterTick(dispatcher);
 	RegisterWeather(dispatcher);
+	RegisterExecute(dispatcher);
 	GlobalLogger().info << "Registered " << dispatcher.root().children.size() << " command(s)!" << "\n";
 }
 
-void CommandManager::Parse(std::string& _cmdString, PlayerSession& _session, WorldManager& _world,
-                           std::function<void(PlayerSession&)> _transferDimension) noexcept {
-	std::string_view line = _cmdString;
+std::vector<strategos::Suggestion> CommandManager::Suggest(std::string_view input, bool canOperate,
+		std::span<const std::string> players) const {
+	return dispatcher.suggest(input, canOperate, players);
+}
+
+bool CommandManager::Parse(std::string_view line, CommandContext& ctx) {
+	ctx.server = server;
+	ctx.manager = this;
+	ctx.dispatcher = &dispatcher;
+	ctx.executionSucceeded = true;
+	while (!line.empty() && line.front() == ' ')
+		line.remove_prefix(1);
 	if (!line.empty() && line.front() == '/')
 		line.remove_prefix(1);
-
-	if (line.empty()) {
-		SendChat(_session, "§c" ERROR_REASON_NO_CMD);
-		return;
-	}
-
-	CommandContext ctx{ &_session, &_world, server, std::move(_transferDimension), &dispatcher };
-
+	while (!line.empty() && line.front() == ' ')
+		line.remove_prefix(1);
 	try {
-		auto result = dispatcher.execute(line, &ctx, [](void* _userData) {
-			auto& c = CmdCtx(_userData);
-			return IsOperator(*c.session, *c.server);
-		});
+		if (line.empty()) {
+			SendFeedback(ctx, "§c" ERROR_REASON_NO_CMD);
+			return false;
+		}
+		auto result = dispatcher.execute(line, &ctx, [](void* userData) { return IsOperator(CmdCtx(userData)); });
 		if (!result) {
 			const auto& err = result.error();
 			std::string message = err.message;
@@ -61,12 +66,20 @@ void CommandManager::Parse(std::string& _cmdString, PlayerSession& _session, Wor
 				message = ERROR_OPERATOR;
 			else if (err.error == strategos::ParseError::UnknownCommand && err.position == 0)
 				message = ERROR_REASON_NO_EXIST;
-			SendChat(_session, "§c" + message);
-			return;
+			SendFeedback(ctx, "§c" + message);
+			return false;
 		}
-		if (!result->empty())
-			SendChat(_session, "§c" + *result);
+		if (!result->empty()) {
+			SendFeedback(ctx, "§c" + *result);
+			return false;
+		}
+		return ctx.executionSucceeded;
 	} catch (const std::exception& e) {
 		GlobalLogger().info << e.what() << " on /" << std::string(line) << "\n";
+		SendFeedback(ctx, "§c" ERROR_REASON_ERROR);
+	} catch (...) {
+		GlobalLogger().error << "Non-standard exception on /" << std::string(line) << "\n";
+		SendFeedback(ctx, "§c" ERROR_REASON_ERROR);
 	}
+	return false;
 }

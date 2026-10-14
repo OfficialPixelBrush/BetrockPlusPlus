@@ -76,7 +76,7 @@ std::string ShowStats(const strategos::CmdNode&, void* _userData) {
 		std::format("§7Avg. MSPT: {:.2f} ms", ctx.server->averageTickMs)
 	};
 	for (const auto& line : lines)
-		SendChat(*ctx.session, line);
+		SendFeedback(ctx, line);
 	return "";
 }
 

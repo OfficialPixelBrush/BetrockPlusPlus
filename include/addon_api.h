@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -83,6 +84,10 @@ struct bp_api {
 		void (*setPlayer)(const bp_api* api, bp_player* player, void* _data);
 		void* (*getPlayer)(const bp_api* api, bp_player* player);
 	} data;
+
+	struct {
+		bool (*execute)(const bp_api* api, bp_player* sender, const char* command);
+	} commands;
 };
 
 typedef struct {

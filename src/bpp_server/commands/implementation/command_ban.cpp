@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025-2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
 */
@@ -15,12 +16,6 @@
 #include <sstream>
 
 namespace {
-
-std::string TargetName(const strategos::CmdNode& _cmd, CommandContext& _ctx) {
-	if (auto name = _cmd.get_arg<std::string>("username"))
-		return *name;
-	return _ctx.session->username;
-}
 
 bool IsValidIpAddress(const std::string& _ip) {
 	std::stringstream stream(_ip);
@@ -42,7 +37,10 @@ bool IsValidIpAddress(const std::string& _ip) {
 
 std::string BanPlayer(const strategos::CmdNode& _cmd, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	std::string name = TargetName(_cmd, ctx);
+	auto targetName = ResolveCmdTargetName(_cmd, ctx);
+	if (!targetName)
+		return ERROR_PLAYER_NAME_REQUIRED;
+	std::string name = *targetName;
 	if (!IsValidUsername(name))
 		return "Invalid username!";
 	auto it = std::find(ctx.server->bannedUsernames.begin(), ctx.server->bannedUsernames.end(), name);
@@ -54,20 +52,23 @@ std::string BanPlayer(const strategos::CmdNode& _cmd, void* _userData) {
 	// Boot them immediately if they're currently online.
 	if (auto target = ctx.server->GetSessionByUsername(name))
 		ctx.server->DisconnectPlayer("You are banned from this server!", *target);
-	SendChat(*ctx.session, std::format("{} has been banned!", name));
+	SendFeedback(ctx, std::format("{} has been banned!", name));
 	return "";
 }
 
 std::string PardonPlayer(const strategos::CmdNode& _cmd, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
-	std::string name = TargetName(_cmd, ctx);
+	auto targetName = ResolveCmdTargetName(_cmd, ctx);
+	if (!targetName)
+		return ERROR_PLAYER_NAME_REQUIRED;
+	std::string name = *targetName;
 	auto it = std::find(ctx.server->bannedUsernames.begin(), ctx.server->bannedUsernames.end(), name);
 	if (it == ctx.server->bannedUsernames.end())
 		return "User is not banned!";
 	ctx.server->bannedUsernames.erase(it);
 	if (!ctx.server->SaveBannedPlayers())
 		return "Failed to save banned players!";
-	SendChat(*ctx.session, std::format("{} has been pardoned!", name));
+	SendFeedback(ctx, std::format("{} has been pardoned!", name));
 	return "";
 }
 
@@ -95,7 +96,7 @@ std::string BanIp(const strategos::CmdNode& _cmd, void* _userData) {
 		if (player->ipAddress == ip)
 			ctx.server->DisconnectPlayer("Your IP address is banned from this server!", *player);
 	}
-	SendChat(*ctx.session, std::format("{} has been IP banned!", ip));
+	SendFeedback(ctx, std::format("{} has been IP banned!", ip));
 	return "";
 }
 
@@ -121,14 +122,14 @@ std::string PardonIp(const strategos::CmdNode& _cmd, void* _userData) {
 std::string BanListPlayers(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
 	const auto& names = ctx.server->bannedUsernames;
-	SendChunkedList(*ctx.session, std::format("§7-- {} Banned Player(s) --", names.size()), names);
+	SendChunkedList(ctx, std::format("§7-- {} Banned Player(s) --", names.size()), names);
 	return "";
 }
 
 std::string BanListIps(const strategos::CmdNode&, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
 	const auto& ips = ctx.server->bannedIps;
-	SendChunkedList(*ctx.session, std::format("§7-- {} Banned IP(s) --", ips.size()), ips);
+	SendChunkedList(ctx, std::format("§7-- {} Banned IP(s) --", ips.size()), ips);
 	return "";
 }
 
@@ -139,17 +140,22 @@ void RegisterBan(strategos::BrigadierContext& _dispatcher) {
 	                            .describe("Bans a player from the server")
 	                            .op()
 	                            .executes(BanPlayer)
-	                            .then(strategos::Node::string("username").executes(BanPlayer)));
+	                            .then(strategos::Node::string("username")
+	                                      .suggests(strategos::SuggestionSource::Players)
+	                                      .executes(BanPlayer)));
 	_dispatcher.add_command(strategos::Node::literal("pardon")
 	                            .describe("Removes a player from the ban list")
 	                            .op()
 	                            .executes(PardonPlayer)
-	                            .then(strategos::Node::string("username").executes(PardonPlayer)));
+	                            .then(strategos::Node::string("username")
+	                                      .suggests(strategos::SuggestionSource::Players)
+	                                      .executes(PardonPlayer)));
 	_dispatcher.add_command(strategos::Node::literal("ban-ip")
 	                            .describe("Bans an IP address, or a connected player's IP, from the server")
 	                            .op()
-	                            .then(strategos::Node::string("target").executes(BanIp)));
-	/*
+	                            .then(strategos::Node::string("target")
+	                                      .suggests(strategos::SuggestionSource::Players)
+	                                      .executes(BanIp)));	/*
 	_dispatcher.add_command(strategos::Node::literal("pardon-ip")
 	                            .describe("Removes an IP address from the ban list")
 	                            .op()

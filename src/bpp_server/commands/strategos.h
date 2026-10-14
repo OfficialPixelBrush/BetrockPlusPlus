@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
 */
@@ -35,6 +36,7 @@ enum class NodeType : uint8_t {
 	Literal = 0,
 	Root,
 	String,
+	GreedyString,
 	Integer,
 	Float,
 	Boolean,
@@ -95,6 +97,18 @@ struct EnumSettings {
 	std::vector<std::string> values;
 };
 
+enum class SuggestionSource : uint8_t {
+	None,
+	Players,
+	Commands,
+	NestedCommand,
+};
+
+struct Suggestion {
+	size_t start;
+	std::string text;
+};
+
 // Settings are used to specify metadata like constraints for a node.
 using NodeSettings = std::variant<std::monostate, IntSettings, FloatSettings, EnumSettings>;
 
@@ -105,10 +119,9 @@ struct Node {
 	ActionFunc action;
 	std::string description;
 	bool requiresOperator = false;
+	SuggestionSource suggestionSource = SuggestionSource::None;
 
-	// Contiguous memory layout.
-	// String children always sit last: String matches any token, and find_matching_child
-	// returns the first hit, so literals / vec3 / numbers must be tried first.
+	// catchall string nodes follow typed or literal children so matches win.
 	std::vector<Node> children;
 
 	Node& executes(ActionFunc fn) {
@@ -126,12 +139,18 @@ struct Node {
 		return *this;
 	}
 
+	Node& suggests(SuggestionSource source) {
+		suggestionSource = source;
+		return *this;
+	}
+
 	Node& then(Node child) {
-		if (child.type == NodeType::String) {
+		if (child.type == NodeType::String || child.type == NodeType::GreedyString) {
 			children.push_back(std::move(child));
 		} else {
-			auto it = std::find_if(children.begin(), children.end(),
-			                       [](const Node& n) { return n.type == NodeType::String; });
+			auto it = std::find_if(children.begin(), children.end(), [](const Node& n) {
+				return n.type == NodeType::String || n.type == NodeType::GreedyString;
+			});
 			children.insert(it, std::move(child));
 		}
 		return *this;
@@ -143,6 +162,10 @@ struct Node {
 
 	static inline Node string(std::string name) {
 		return { NodeType::String, std::move(name) };
+	}
+
+	static inline Node greedy_string(std::string name) {
+		return { NodeType::GreedyString, std::move(name) };
 	}
 
 	static inline Node integer(std::string name, int min, int max) {
@@ -251,6 +274,49 @@ public:
 		return rootNode;
 	}
 
+	// LLM disclosure
+	[[nodiscard]] auto suggest(std::string_view input, bool canOperate,
+	                           std::span<const std::string> players) const -> std::vector<Suggestion> {
+		size_t base = 0;
+		while (base < input.size() && input[base] == ' ')
+			++base;
+		if (base < input.size() && input[base] == '/') {
+			++base;
+			while (base < input.size() && input[base] == ' ')
+				++base;
+		}
+		const auto command = input.substr(base);
+		const bool trailingSpace = !command.empty() && command.back() == ' ';
+		std::vector<std::string_view> tokens;
+		std::vector<size_t> offsets;
+		for (size_t pos = 0; pos < command.size();) {
+			while (pos < command.size() && command[pos] == ' ')
+				++pos;
+			if (pos == command.size())
+				break;
+			const size_t start = pos;
+			while (pos < command.size() && command[pos] != ' ')
+				++pos;
+			tokens.push_back(command.substr(start, pos - start));
+			offsets.push_back(base + start);
+		}
+		std::string_view prefix;
+		size_t replaceStart = input.size();
+		size_t completed = tokens.size();
+		if (!trailingSpace && !tokens.empty()) {
+			prefix = tokens.back();
+			replaceStart = offsets.back();
+			--completed;
+		}
+		auto result = suggest_at(rootNode, tokens, offsets, completed, prefix, replaceStart, canOperate, players, 0);
+		std::ranges::sort(result, {}, &Suggestion::text);
+		result.erase(std::unique(result.begin(), result.end(), [](const Suggestion& lhs, const Suggestion& rhs) {
+			return lhs.start == rhs.start && lhs.text == rhs.text;
+		}), result.end());
+		return result;
+	}
+	// End LLM disclosure
+
 	[[nodiscard]] auto execute(std::string_view cmdline, void* user_data = nullptr,
 	                           PermissionFunc canOperate = nullptr) const -> ActionResult {
 		auto tokens = tokenize(cmdline);
@@ -304,7 +370,7 @@ public:
 			if (lacksOperator())
 				return operatorError();
 
-			if (!parse_node_value(*matched_node, tokens, token_idx, consumed, cmd_node.data)) {
+			if (!parse_node_value(*matched_node, tokens, token_idx, consumed, cmdline, cmd_node.data)) {
 				return std::unexpected(ErrorInfo{ .error = ParseError::InvalidToken,
 				                                  .message = std::format("Invalid value for '{}'", matched_node->name),
 				                                  .position = token_idx });
@@ -329,6 +395,108 @@ public:
 	}
 
 private:
+	// LLM Disclosure
+	[[nodiscard]] auto suggest_at(const Node& root, std::span<const std::string_view> tokens,
+	                             std::span<const size_t> offsets, size_t completed, std::string_view prefix,
+	                             size_t replaceStart, bool canOperate, std::span<const std::string> players,
+	                             unsigned depth) const -> std::vector<Suggestion> {
+		std::vector<Suggestion> output;
+		const Node* current = &root;
+		size_t index = 0;
+		while (index < completed) {
+			auto [node, consumed] = find_matching_child(*current, tokens.first(completed), index);
+			if (!node)
+				return output;
+			if (node->type == NodeType::Vec3 && consumed != 2)
+				return output;
+			if (node->type == NodeType::GreedyString && node->suggestionSource == SuggestionSource::NestedCommand) {
+				if (depth < 16)
+					return suggest_nested(tokens.subspan(index), offsets.subspan(index), completed - index, prefix,
+					                      replaceStart, canOperate, players, depth + 1);
+				return output;
+			}
+			if (node->type != NodeType::GreedyString) {
+				CmdNodeData ignored;
+				if (!parse_node_value(*node, tokens.first(completed), index, consumed, {}, ignored))
+					return output;
+			}
+			if (index == 0 && node->requiresOperator && !canOperate)
+				return output;
+			current = node;
+			index += 1 + consumed;
+		}
+
+		for (const auto& child : current->children) {
+			if (index == 0 && child.requiresOperator && !canOperate)
+				continue;
+			if (child.type == NodeType::Literal) {
+				append_candidate(output, child.name, prefix, replaceStart);
+				if (!prefix.empty() && child.name == prefix)
+					break;
+				continue;
+			}
+			const bool typedMatch = !prefix.empty() && child.type != NodeType::String &&
+			                        child.type != NodeType::GreedyString && matches_node_type(child, prefix);
+			if (child.type == NodeType::Enum) {
+				for (const auto& value : std::get<EnumSettings>(child.settings).values)
+					append_candidate(output, value, prefix, replaceStart);
+			} else if (child.type == NodeType::Boolean) {
+				append_candidate(output, "true", prefix, replaceStart);
+				append_candidate(output, "false", prefix, replaceStart);
+			}
+			switch (child.suggestionSource) {
+			case SuggestionSource::Players:
+				for (const auto& player : players)
+					append_candidate(output, player, prefix, replaceStart);
+				break;
+			case SuggestionSource::Commands:
+				for (const auto& command : rootNode.children)
+					if (!command.requiresOperator || canOperate)
+						append_candidate(output, command.name, prefix, replaceStart);
+				break;
+			case SuggestionSource::NestedCommand:
+				if (child.type == NodeType::GreedyString && depth < 16) {
+					auto nested = suggest_nested({}, {}, 0, prefix, replaceStart, canOperate, players, depth + 1);
+					output.insert(output.end(), nested.begin(), nested.end());
+				}
+				break;
+			case SuggestionSource::None:
+				break;
+			}
+			if (typedMatch)
+				break;
+		}
+		return output;
+	}
+
+	[[nodiscard]] auto suggest_nested(std::span<const std::string_view> tokens,
+	                                 std::span<const size_t> offsets, size_t completed, std::string_view prefix,
+	                                 size_t replaceStart, bool canOperate, std::span<const std::string> players,
+	                                 unsigned depth) const -> std::vector<Suggestion> {
+		std::vector<std::string_view> normalizedTokens(tokens.begin(), tokens.end());
+		std::vector<size_t> normalizedOffsets(offsets.begin(), offsets.end());
+		if (!prefix.empty() && prefix.front() == '/') {
+			prefix.remove_prefix(1);
+			++replaceStart;
+		} else if (completed > 0 && !normalizedTokens.empty() && normalizedTokens.front().starts_with('/')) {
+			normalizedTokens.front().remove_prefix(1);
+			if (normalizedTokens.front().empty()) {
+				normalizedTokens.erase(normalizedTokens.begin());
+				if (!normalizedOffsets.empty())
+					normalizedOffsets.erase(normalizedOffsets.begin());
+				--completed;
+			}
+		}
+		return suggest_at(rootNode, normalizedTokens, normalizedOffsets, completed, prefix, replaceStart,
+		                  canOperate, players, depth);
+	}
+
+	static void append_candidate(std::vector<Suggestion>& output, std::string_view value,
+	                             std::string_view prefix, size_t start) {
+		if (value.starts_with(prefix))
+			output.push_back({ start, std::string(value) });
+	} // End LLM disclosure
+
 	[[nodiscard]] static auto tokenize(std::string_view input) -> std::vector<std::string_view> {
 		std::vector<std::string_view> tokens;
 		auto parts = input | std::views::split(' ');
@@ -363,6 +531,7 @@ private:
 			return node.name == token;
 
 		case NodeType::String:
+		case NodeType::GreedyString:
 			return true;
 
 		case NodeType::Integer:
@@ -389,14 +558,16 @@ private:
 
 	[[nodiscard]] static auto get_consumed_tokens(const Node& node, std::span<const std::string_view> tokens,
 	                                              size_t token_idx) -> size_t {
-		if (node.type == NodeType::Vec3 && tokens.size() > token_idx + 2) {
+		if (node.type == NodeType::GreedyString)
+		return tokens.size() - token_idx - 1;
+		if (node.type == NodeType::Vec3 && tokens.size() > token_idx + 2)
 			return 2;
-		}
 		return 0;
 	}
 
 	[[nodiscard]] static auto parse_node_value(const Node& node, std::span<const std::string_view> tokens,
-	                                           size_t token_idx, size_t consumed, CmdNodeData& data) -> bool {
+	                                           size_t token_idx, size_t consumed, std::string_view original,
+	                                           CmdNodeData& data) -> bool {
 		const auto& token = tokens[token_idx];
 
 		switch (node.type) {
@@ -407,6 +578,12 @@ private:
 		case NodeType::String:
 			data = std::string(token);
 			return true;
+			
+		case NodeType::GreedyString: {
+			const size_t offset = static_cast<size_t>(token.data() - original.data());
+			data = std::string(original.substr(offset));
+			return true;
+		}
 
 		case NodeType::Integer: {
 			if (auto val = parse_int(token)) {
