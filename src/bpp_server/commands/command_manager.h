@@ -25,7 +25,7 @@ struct CommandContext {
 	const strategos::BrigadierContext* dispatcher = nullptr;
 	PlayerSession* sender = nullptr;
 	CommandManager* manager = nullptr;
-	unsigned executionDepth = 0;
+	uint8_t executionDepth = 0;
 	bool executionSucceeded = true;
 };
 
