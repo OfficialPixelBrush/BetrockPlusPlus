@@ -18,7 +18,7 @@ void RegisterSeed(strategos::BrigadierContext& _dispatcher);
 void RegisterGive(strategos::BrigadierContext& _dispatcher);
 void RegisterList(strategos::BrigadierContext& _dispatcher);
 void RegisterDimension(strategos::BrigadierContext& _dispatcher);
-void RegisterVersion(strategos::BrigadierContext& _dispatcher);
+void RegisterAbout(strategos::BrigadierContext& _dispatcher);
 void RegisterSummon(strategos::BrigadierContext& _dispatcher);
 void RegisterStats(strategos::BrigadierContext& _dispatcher);
 void RegisterFill(strategos::BrigadierContext& _dispatcher);

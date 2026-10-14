@@ -21,7 +21,7 @@ void CommandManager::Init(Server* _server) {
 	RegisterGive(dispatcher);
 	RegisterList(dispatcher);
 	RegisterDimension(dispatcher);
-	RegisterVersion(dispatcher);
+	RegisterAbout(dispatcher);
 	RegisterSummon(dispatcher);
 	RegisterStats(dispatcher);
 	RegisterFill(dispatcher);
