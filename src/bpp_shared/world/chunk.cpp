@@ -105,7 +105,8 @@ namespace {
 std::unique_ptr<SubChunk::NibbleLayer> MakeNibbleLayer(uint8_t _fill) {
 	// Every byte is about to be overwritten, so skip the zeroing
 	auto layer = std::make_unique_for_overwrite<SubChunk::NibbleLayer>();
-	layer->fill(uint8_t(((_fill & 0xF) << 4) | (_fill & 0xF)));
+	const uint8_t packed = uint8_t(((_fill & 0xF) << 4) | (_fill & 0xF));
+	layer->data.fill(packed);
 	return layer;
 }
 
@@ -114,16 +115,13 @@ bool CompactNibbleLayer(std::unique_ptr<SubChunk::NibbleLayer>& _layer, uint8_t&
 	if (!_layer)
 		return false;
 
-	// Most layers are mixed, so this usually exits within a few voxels
-	const uint8_t first = (*_layer)[0];
-	if ((first >> 4) != (first & 0xF))
-		return false;
-	for (size_t i = 1; i < SubChunk::NIBBLE_BYTES; i++) {
-		if ((*_layer)[i] != first)
+	const uint8_t first = _layer->Get(0);
+	for (size_t i = 1; i < SubChunk::VOLUME; i++) {
+		if (_layer->Get(i) != first)
 			return false;
 	}
 
-	_fill = first & 0xF;
+	_fill = first;
 	_layer.reset();
 	return true;
 }
@@ -180,8 +178,8 @@ void SubChunk::FillRegion(Int3 _a, Int3 _b, BlockType _type, uint8_t _meta) {
 			AllocMeta();
 		if (fullFootprint) {
 			const uint8_t packed = uint8_t(_meta | (_meta << 4));
-			std::memset(meta->data() + size_t(_a.y) * SIZE * SIZE / 2, packed,
-			            size_t(_b.y - _a.y + 1) * SIZE * SIZE / 2);
+			std::memset(meta->data.data() + size_t(_a.y) * SIZE * SIZE / 2, packed,
+            	size_t(_b.y - _a.y + 1) * SIZE * SIZE / 2);
 		} else {
 			for (int y = _a.y; y <= _b.y; y++)
 				for (int z = _a.z; z <= _b.z; z++)
