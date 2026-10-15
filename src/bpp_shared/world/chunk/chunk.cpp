@@ -45,8 +45,7 @@ void Chunk::GenerateSkylightMap() {
 	const int bulkStart = CrossPlatform::Math::Min(CHUNK_HEIGHT,
 	                                               (GetHighestPoint() + SUB_CHUNK_SIZE - 1) & ~(SUB_CHUNK_SIZE - 1));
 
-	for (int i = bulkStart / SUB_CHUNK_SIZE; i < SUB_CHUNK_COUNT; i++)
-		subChunks[size_t(i)].FillSkyLight(15);
+	FillSkyLightSlices(bulkStart / SUB_CHUNK_SIZE, 15);
 
 	for (int x = 0; x < CHUNK_WIDTH; x++) {
 		for (int z = 0; z < CHUNK_WIDTH; z++) {
@@ -63,6 +62,7 @@ void Chunk::GenerateSkylightMap() {
 		}
 	}
 	isModified = true;
+	// Flat chunks stay flat until they've settled, see ConvertToSubChunks()
 	Compact();
 }
 
@@ -94,6 +94,8 @@ void Chunk::Clear() {
 	isTerrainPopulated = false;
 	isModified = false;
 	climateBaked = false;
+	if (flat)
+		flat->Reset();
 	for (auto& sub : subChunks)
 		sub.Reset();
 	std::memset(heightMap, 0, sizeof(heightMap));
@@ -131,6 +133,85 @@ std::unique_ptr<T> CopyLayer(const std::unique_ptr<T>& _src) {
 	return _src ? std::make_unique<T>(*_src) : nullptr;
 }
 } // namespace
+
+namespace {
+// Fills one slice's blocks from flat storage. A slice that's all one block type just gets a fill
+void CompactSliceBlocks(const FlatChunk& _g, int _slice, SubChunk& _sub) {
+	const BlockType* types = _g.block.data() + size_t(_slice) * SubChunk::VOLUME;
+	const BlockType first = types[0];
+	if (std::all_of(types + 1, types + SubChunk::VOLUME, [first](BlockType _b) { return _b == first; })) {
+		_sub.blockFill = first;
+		return;
+	}
+	_sub.blocks = std::make_unique_for_overwrite<SubChunk::BlockLayer>();
+	std::copy_n(types, SubChunk::VOLUME, _sub.blocks->types.begin());
+	_sub.blocks->counts.fill(0);
+	for (BlockType b : _sub.blocks->types)
+		++_sub.blocks->counts[size_t(b)];
+}
+
+// Same for one of the nibble arrays. Both layouts store two nibbles per byte, so a slice of the flat
+// array is a ready made layer. Returns true if the slice is uniform, with its value in _fill.
+// Otherwise allocates _layer and returns false.
+bool CompactSliceNibbles(const FlatChunk::NibbleArray& _src, int _slice, std::unique_ptr<SubChunk::NibbleLayer>& _layer,
+                         uint8_t& _fill) {
+	constexpr size_t BYTES = SubChunk::VOLUME / 2;
+	const uint8_t* bytes = _src.data.data() + size_t(_slice) * BYTES;
+	const uint8_t first = bytes[0];
+	if ((first & 0x0Fu) == (first >> 4) &&
+	    std::all_of(bytes + 1, bytes + BYTES, [first](uint8_t _b) { return _b == first; })) {
+		_fill = uint8_t(first & 0x0Fu);
+		return true;
+	}
+	_layer = std::make_unique_for_overwrite<SubChunk::NibbleLayer>();
+	std::copy_n(bytes, BYTES, _layer->data.begin());
+	return false;
+}
+
+// Compacts flat storage into _out, overwriting whatever was there. Doesn't touch _g
+void CompactFlatInto(const FlatChunk& _g, std::array<SubChunk, SUB_CHUNK_COUNT>& _out) {
+	for (int s = 0; s < SUB_CHUNK_COUNT; s++) {
+		SubChunk& sub = _out[size_t(s)];
+		sub.Reset();
+		CompactSliceBlocks(_g, s, sub);
+		uint8_t fill = 0;
+		if (CompactSliceNibbles(_g.meta, s, sub.meta, fill))
+			sub.metaFill = fill;
+		if (CompactSliceNibbles(_g.blockLight, s, sub.blockLight, fill))
+			sub.blockLightFill = fill;
+		if (CompactSliceNibbles(_g.skyLight, s, sub.skyLight, fill))
+			sub.skyLightFill = fill;
+	}
+}
+} // namespace
+
+void Chunk::AllocGenStorage() {
+	// Nothing in subchunks matters once we're flat, make sure nothing stale is hanging around
+	for (auto& sub : subChunks)
+		sub.Reset();
+	flat = std::make_shared<FlatChunk>();
+}
+
+void Chunk::ConvertToSubChunks() {
+	if (!flat)
+		return;
+	// Fill the subchunks before dropping the arrays, so there's never a moment with neither
+	CompactFlatInto(*flat, subChunks);
+	flat.reset();
+}
+
+void Chunk::FillSkyLightSlices(int _firstSlice, uint8_t _val) {
+	_firstSlice = CrossPlatform::Math::Max(_firstSlice, 0);
+	if (_firstSlice >= SUB_CHUNK_COUNT)
+		return;
+	if (flat) {
+		FlatChunk::FillNibbleSpan(flat->skyLight, size_t(_firstSlice) * SubChunk::VOLUME,
+		                         size_t(SUB_CHUNK_COUNT - _firstSlice) * SubChunk::VOLUME, _val);
+		return;
+	}
+	for (int i = _firstSlice; i < SUB_CHUNK_COUNT; i++)
+		subChunks[size_t(i)].FillSkyLight(_val);
+}
 
 void SubChunk::AllocBlocks() {
 	blocks = std::make_unique_for_overwrite<BlockLayer>();
@@ -202,12 +283,33 @@ bool ClampChunkBox(Int3 _a, Int3 _b, Int3& _lo, Int3& _hi) {
 		    CrossPlatform::Math::Min(hiZ, CHUNK_WIDTH - 1) };
 	return true;
 }
+
+// Calls _f(startIndex, count) for every contiguous run of voxels in a chunk-local box.
+// A box covering whole slices is a single run.
+template <typename F>
+void ForEachFlatRun(Int3 _lo, Int3 _hi, F&& _f) {
+	if (_lo.x == 0 && _hi.x == CHUNK_WIDTH - 1 && _lo.z == 0 && _hi.z == CHUNK_WIDTH - 1) {
+		_f(size_t(FlatChunk::Index({ 0, _lo.y, 0 })), size_t(_hi.y - _lo.y + 1) * CHUNK_AREA);
+		return;
+	}
+	for (int y = _lo.y; y <= _hi.y; y++)
+		for (int z = _lo.z; z <= _hi.z; z++)
+			_f(size_t(FlatChunk::Index({ _lo.x, y, z })), size_t(_hi.x - _lo.x + 1));
+}
 } // namespace
 
 void Chunk::FillRegion(Int3 _a, Int3 _b, BlockType _type, uint8_t _meta) {
 	Int3 lo, hi;
 	if (!ClampChunkBox(_a, _b, lo, hi))
 		return;
+	if (flat) {
+		ForEachFlatRun(lo, hi, [&](size_t _start, size_t _count) {
+			flat->FillBlockSpan(_start, _count, _type);
+			FlatChunk::FillNibbleSpan(flat->meta, _start, _count, _meta);
+		});
+		isModified = true;
+		return;
+	}
 	for (int sub = lo.y >> 4; sub <= (hi.y >> 4); sub++) {
 		const int base = sub * SUB_CHUNK_SIZE;
 		const int y0 = CrossPlatform::Math::Max(lo.y, base) - base;
@@ -222,6 +324,13 @@ void Chunk::FillBlockLightRegion(Int3 _a, Int3 _b, uint8_t _val) {
 	if (!ClampChunkBox(_a, _b, lo, hi))
 		return;
 	_val &= 0xF;
+	if (flat) {
+		ForEachFlatRun(lo, hi, [&](size_t _start, size_t _count) {
+			FlatChunk::FillNibbleSpan(flat->blockLight, _start, _count, _val);
+		});
+		isModified = true;
+		return;
+	}
 	const bool fullFootprint = lo.x == 0 && hi.x == CHUNK_WIDTH - 1 && lo.z == 0 && hi.z == CHUNK_WIDTH - 1;
 	for (int sub = lo.y >> 4; sub <= (hi.y >> 4); sub++) {
 		const int base = sub * SUB_CHUNK_SIZE;
@@ -309,15 +418,25 @@ void SubChunk::CopyFrom(const SubChunk& _other) {
 
 bool Chunk::TryToCompactSubChunk(int _index) {
 	assert(_index >= 0 && _index < SUB_CHUNK_COUNT);
+	if (flat)
+		return false;
 	return subChunks[size_t(_index)].Compact();
 }
 
 void Chunk::Compact() {
+	if (flat)
+		return;
 	for (auto& sub : subChunks)
 		sub.Compact();
 }
 
 void Chunk::CopyStorageFrom(const Chunk& _other) {
+	// Copies are always compact, that's what gets saved
+	flat.reset();
+	if (_other.flat) {
+		CompactFlatInto(*_other.flat, subChunks);
+		return;
+	}
 	for (size_t i = 0; i < subChunks.size(); i++)
 		subChunks[i].CopyFrom(_other.subChunks[i]);
 }

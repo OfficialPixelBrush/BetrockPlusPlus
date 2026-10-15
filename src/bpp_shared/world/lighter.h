@@ -8,7 +8,7 @@
 // Lighter used by the main world.
 #pragma once
 #include "blocks/block_properties.h"
-#include "chunk.h"
+#include "chunk/chunk.h"
 #include <climits>
 #include <cstdint>
 #include <numeric_structs.h>

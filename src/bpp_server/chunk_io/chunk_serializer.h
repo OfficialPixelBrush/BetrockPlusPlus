@@ -7,14 +7,15 @@
 */
 
 #pragma once
-#include "chunk.h"
-#include "subchunk.h"
+#include "chunk/chunk.h"
+#include "chunk/subchunk.h"
 #include <libdeflate.h>
 #include <vector>
 
 namespace ChunkSerializer {
-inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _xmax = CHUNK_WIDTH, int _ymin = 0,
-                                      int _ymax = CHUNK_HEIGHT, int _zmin = 0, int _zmax = CHUNK_WIDTH) {
+inline std::vector<uint8_t> SerializeFrom(const Chunk& _chunk, const FlatChunk* _flat, int _xmin = 0,
+                                          int _xmax = CHUNK_WIDTH, int _ymin = 0, int _ymax = CHUNK_HEIGHT,
+                                          int _zmin = 0, int _zmax = CHUNK_WIDTH) {
 	const int sizeX = _xmax - _xmin;
 	const int sizeY = _ymax - _ymin;
 	const int sizeZ = _zmax - _zmin;
@@ -37,33 +38,49 @@ inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _x
 	};
 
 	int i = 0;
-	for (int x = _xmin; x < _xmax; x++) {
-		for (int z = _zmin; z < _zmax; z++) {
-			for (int y = _ymin; y < _ymax;) {
-				const int slabEnd = CrossPlatform::Math::Min(_ymax, (y | (SUB_CHUNK_SIZE - 1)) + 1);
-				const SubChunk& sub = _chunk.subChunks[size_t(y >> 4)];
+	if (_flat) {
+		for (int x = _xmin; x < _xmax; x++) {
+			for (int z = _zmin; z < _zmax; z++) {
+				for (int y = _ymin; y < _ymax; y++, i++) {
+					const int idx = FlatChunk::Index({ x, y, z });
+					blockData[i] = uint8_t(_flat->GetBlock(idx));
+					// The buffer is zero-initialised, so a zero meta needs no write
+					if (const uint8_t meta = _flat->GetMeta(idx))
+						packNibble(metaData[i >> 1], meta, i & 1);
+					packNibble(blockLight[i >> 1], _flat->GetBlockLight(idx), i & 1);
+					packNibble(skyLight[i >> 1], _flat->GetSkyLight(idx), i & 1);
+				}
+			}
+		}
+	} else {
+		for (int x = _xmin; x < _xmax; x++) {
+			for (int z = _zmin; z < _zmax; z++) {
+				for (int y = _ymin; y < _ymax;) {
+					const int slabEnd = CrossPlatform::Math::Min(_ymax, (y | (SUB_CHUNK_SIZE - 1)) + 1);
+					const SubChunk& sub = _chunk.subChunks[size_t(y >> 4)];
 
-				const SubChunk::BlockLayer* blockLayer = sub.blocks.get();
-				const SubChunk::NibbleLayer* metaLayer = sub.meta.get();
-				const SubChunk::NibbleLayer* blockLightLayer = sub.blockLight.get();
-				const SubChunk::NibbleLayer* skyLightLayer = sub.skyLight.get();
-				const uint8_t blockFill = uint8_t(sub.blockFill);
-				const uint8_t metaFill = sub.metaFill;
-				const uint8_t blockLightFill = sub.blockLightFill;
-				const uint8_t skyLightFill = sub.skyLightFill;
+					const SubChunk::BlockLayer* blockLayer = sub.blocks.get();
+					const SubChunk::NibbleLayer* metaLayer = sub.meta.get();
+					const SubChunk::NibbleLayer* blockLightLayer = sub.blockLight.get();
+					const SubChunk::NibbleLayer* skyLightLayer = sub.skyLight.get();
+					const uint8_t blockFill = uint8_t(sub.blockFill);
+					const uint8_t metaFill = sub.metaFill;
+					const uint8_t blockLightFill = sub.blockLightFill;
+					const uint8_t skyLightFill = sub.skyLightFill;
 
-				for (; y < slabEnd; y++, i++) {
-					const int idx = SubChunk::LocalIndex({ x, y, z });
-					blockData[i] = blockLayer ? uint8_t(blockLayer->types[size_t(idx)]) : blockFill;
-					// The buffer is zero-initialised, so a zero meta fill needs no write
-					if (metaLayer)
-						packNibble(metaData[i >> 1], metaLayer->Get(idx), i & 1);
-					else if (metaFill != 0)
-						packNibble(metaData[i >> 1], metaFill, i & 1);
-					packNibble(blockLight[i >> 1],
-					           blockLightLayer ? blockLightLayer->Get(idx) : blockLightFill, i & 1);
-					packNibble(skyLight[i >> 1],
-					           skyLightLayer ? skyLightLayer->Get(idx) : skyLightFill, i & 1);
+					for (; y < slabEnd; y++, i++) {
+						const int idx = SubChunk::LocalIndex({ x, y, z });
+						blockData[i] = blockLayer ? uint8_t(blockLayer->types[size_t(idx)]) : blockFill;
+						// The buffer is zero-initialised, so a zero meta fill needs no write
+						if (metaLayer)
+							packNibble(metaData[i >> 1], metaLayer->Get(idx), i & 1);
+						else if (metaFill != 0)
+							packNibble(metaData[i >> 1], metaFill, i & 1);
+						packNibble(blockLight[i >> 1],
+						           blockLightLayer ? blockLightLayer->Get(idx) : blockLightFill, i & 1);
+						packNibble(skyLight[i >> 1],
+						           skyLightLayer ? skyLightLayer->Get(idx) : skyLightFill, i & 1);
+					}
 				}
 			}
 		}
@@ -83,5 +100,11 @@ inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _x
 		return {};
 	compressed.resize(actualSize);
 	return compressed;
+}
+
+inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _xmax = CHUNK_WIDTH, int _ymin = 0,
+                                      int _ymax = CHUNK_HEIGHT, int _zmin = 0, int _zmax = CHUNK_WIDTH) {
+	// Same thread as the caller, so nothing can convert the chunk under us
+	return SerializeFrom(_chunk, _chunk.flat.get(), _xmin, _xmax, _ymin, _ymax, _zmin, _zmax);
 }
 } // namespace ChunkSerializer

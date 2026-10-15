@@ -6,7 +6,7 @@
 */
 
 #include "chunk_gen.h"
-#include "chunk.h"
+#include "chunk/chunk.h"
 
 /**
  * @brief Construct a new Beta 1.7.3 Nether Generator

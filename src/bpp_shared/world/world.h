@@ -16,7 +16,7 @@
 #include "blocks.h"
 #include "blocks/block_behaviors.h"
 #include "blocks/block_properties_behaviors.h"
-#include "chunk.h"
+#include "chunk/chunk.h"
 #include "client_pos.h"
 #include "dimensions.h"
 #include "entities/entity_manager.h"
@@ -127,6 +127,9 @@ public:
 	void UpdateLoadRadius(const std::vector<ClientPosition>& _players);
 	void PumpPipeline(const std::vector<ClientPosition>& _players);
 	void PopulateReady(int _maxPopulates = 16);
+	// Swaps a populated chunk's flat generation arrays for compacted subchunks, once nothing is going to
+	// populate into it anymore
+	void TryConvertToSubChunks(Int32_2 _pos);
 	void DrainLoadQueue();
 	void DropInventory(Inventory& inventory, Int3 _wpos);
 	void UpdateSkylightOffset();
