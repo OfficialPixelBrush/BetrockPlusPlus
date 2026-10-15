@@ -13,23 +13,25 @@ struct SubChunk {
 	static constexpr int VOLUME = SIZE * SIZE * SIZE;
 	static constexpr int NIBBLE_BYTES = VOLUME / 2;
 
-	using BlockLayer = std::array<BlockType, VOLUME>;
+	struct BlockLayer {
+		std::array<BlockType, SUB_CHUNK_SIZE * SUB_CHUNK_SIZE * SUB_CHUNK_SIZE> types;
+		std::array<uint16_t, BLOCK_MAX> counts;
+	};
+
 	using NibbleLayer = std::array<uint8_t, NIBBLE_BYTES>;
-	using BlockCountTable = std::array<uint16_t, BLOCK_MAX>;
 
 	// Null = uniform, see the matching fill below
 	std::unique_ptr<BlockLayer> blocks;
 	// Invariant: non-null exactly when blocks is non-null
-	std::unique_ptr<BlockCountTable> blockCounts;
 	std::unique_ptr<NibbleLayer> meta;
 	std::unique_ptr<NibbleLayer> blockLight;
 	std::unique_ptr<NibbleLayer> skyLight;
 
 	// What a null layer reads as. Defaults to air, no meta, no block light and full sky light.
 	BlockType blockFill = BLOCK_AIR;
-	uint8_t metaFill = 0;
-	uint8_t blockLightFill = 0;
-	uint8_t skyLightFill = 15;
+	uint8_t metaFill : 4 = 0;
+	uint8_t blockLightFill : 4 = 0;
+	uint8_t skyLightFill : 4 = 15;
 
 	// Takes chunk-relative coordinates, only the low 4 bits of y are used.
 	static inline int LocalIndex(Int3 _pos) {
@@ -47,7 +49,7 @@ struct SubChunk {
 
 	// Reads. Take a local index, see LocalIndex()
 	inline BlockType GetBlock(int _idx) const {
-		return blocks ? (*blocks)[size_t(_idx)] : blockFill;
+		return blocks ? blocks->types[size_t(_idx)] : blockFill;
 	}
 	inline uint8_t GetMeta(int _idx) const {
 		return meta ? GetNibble(*meta, _idx) : metaFill;
@@ -66,11 +68,11 @@ struct SubChunk {
 				return;
 			AllocBlocks();
 		}
-		BlockType& slot = (*blocks)[size_t(_idx)];
+		BlockType& slot = blocks->types[size_t(_idx)];
 		if (slot == _val)
 			return;
-		--(*blockCounts)[size_t(slot)];
-		++(*blockCounts)[size_t(_val)];
+		--blocks->counts[size_t(slot)];
+		++blocks->counts[size_t(_val)];
 		slot = _val;
 	}
 	inline void SetMeta(int _idx, uint8_t _val) {
@@ -103,7 +105,6 @@ struct SubChunk {
 	// Sets every voxel in the slice, releasing that layer's storage
 	inline void FillBlocks(BlockType _val) {
 		blocks.reset();
-		blockCounts.reset();
 		blockFill = _val;
 	}
 	inline void FillMeta(uint8_t _val) {
@@ -118,24 +119,19 @@ struct SubChunk {
 		skyLight.reset();
 		skyLightFill = _val & 0x0Fu;
 	}
-	// Recounts the block layer from scratch. Only needed if something writes to `blocks`
-	// directly (e.g. bulk-loading from disk) instead of going through SetBlock/FillRegion.
+	// Recounts the block layer from scratch. Only needed if something writes to block types
 	void RebuildBlockCounts() {
-		if (!blocks) {
-			blockCounts.reset();
+		if (!blocks)
 			return;
-		}
-		if (!blockCounts)
-			blockCounts = std::make_unique<BlockCountTable>();
-		blockCounts->fill(0);
-		for (BlockType b : *blocks)
-			++(*blockCounts)[size_t(b)];
+		blocks->counts.fill(0);
+		for (BlockType b : blocks->types)
+			++blocks->counts[size_t(b)];
 	}
 	// Number of voxels of this type in the slice
 	inline int CountBlock(BlockType _type) const {
 		if (!blocks)
 			return blockFill == _type ? VOLUME : 0;
-		return (*blockCounts)[size_t(_type)];
+		return blocks->counts[size_t(_type)];
 	}
 	// Check if this block exists anywhere in the subchunk. O(1)
 	inline bool HasBlock(BlockType _type) const {
@@ -143,11 +139,11 @@ struct SubChunk {
 	}
 	// Overwrites a contiguous run of the block layer, keeping the counts in sync. Layer must be allocated.
 	inline void FillBlockSpan(size_t _start, size_t _count, BlockType _type) {
-		BlockType* p = blocks->data() + _start;
+		BlockType* p = blocks->types.data() + _start;
 		for (size_t i = 0; i < _count; i++)
-			--(*blockCounts)[size_t(p[i])];
+			--blocks->counts[size_t(p[i])];
 		std::fill_n(p, _count, _type);
-		(*blockCounts)[size_t(_type)] += uint16_t(_count);
+		blocks->counts[size_t(_type)] += uint16_t(_count);
 	}
 	// Finds blocks in subchunk-local space
 	// Appends the subchunk-local position of every voxel of this type. Returns how many were added.
@@ -167,7 +163,7 @@ struct SubChunk {
 		int found = 0;
 		const BlockLayer& layer = *blocks;
 		for (int i = 0; i < VOLUME && found < count; i++) {
-			if (layer[size_t(i)] != _type)
+			if (layer.types[size_t(i)] != _type)
 				continue;
 			_out.push_back({ i & 15, _yOffset + (i >> 8), (i >> 4) & 15 });
 			found++;
@@ -203,9 +199,8 @@ struct SubChunk {
 
 	// Bytes of layer storage currently allocated, not counting sizeof(SubChunk) itself
 	inline size_t GetHeapUsage() const {
-		return (blocks ? sizeof(BlockLayer) : 0) + (blockCounts ? sizeof(BlockCountTable) : 0) +
-		       (meta ? sizeof(NibbleLayer) : 0) + (blockLight ? sizeof(NibbleLayer) : 0) +
-		       (skyLight ? sizeof(NibbleLayer) : 0);
+		return (blocks ? sizeof(BlockLayer) : 0) + (meta ? sizeof(NibbleLayer) : 0) +
+		       (blockLight ? sizeof(NibbleLayer) : 0) + (skyLight ? sizeof(NibbleLayer) : 0);
 	}
 	inline bool HasAnyLayer() const {
 		return blocks || meta || blockLight || skyLight;

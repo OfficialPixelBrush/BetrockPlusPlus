@@ -220,7 +220,7 @@ std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& _chunk,
 						const int y = s * SUB_CHUNK_SIZE + ly;
 						const size_t idx = size_t(y + (z * CHUNK_HEIGHT) + (x * CHUNK_HEIGHT * CHUNK_WIDTH));
 						const int li = SubChunk::LocalIndex({ x, y, z });
-						blocksOut[idx] = bl ? int8_t((*bl)[size_t(li)]) : blockFill;
+						blocksOut[idx] = bl ? int8_t(bl->types[size_t(li)]) : blockFill;
 						const uint8_t meta = ml ? SubChunk::GetNibble(*ml, li) : mf;
 						const uint8_t skyLight = sl ? SubChunk::GetNibble(*sl, li) : sf;
 						const uint8_t blockLight = bll ? SubChunk::GetNibble(*bll, li) : blf;
