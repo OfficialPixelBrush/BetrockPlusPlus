@@ -186,7 +186,7 @@ void SubChunk::FillRegion(Int3 _a, Int3 _b, BlockType _type, uint8_t _meta) {
 			for (int y = _a.y; y <= _b.y; y++)
 				for (int z = _a.z; z <= _b.z; z++)
 					for (int x = _a.x; x <= _b.x; x++)
-						SetNibble(*meta, LocalIndex({ x, y, z }), _meta);
+						meta->Set(LocalIndex({ x, y, z }), _meta);
 		}
 	}
 }

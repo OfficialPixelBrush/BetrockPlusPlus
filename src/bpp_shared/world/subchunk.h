@@ -11,14 +11,13 @@
 struct SubChunk {
 	static constexpr int SIZE = SUB_CHUNK_SIZE;
 	static constexpr int VOLUME = SIZE * SIZE * SIZE;
-	static constexpr int NIBBLE_BYTES = VOLUME / 2;
 
 	struct BlockLayer {
-		std::array<BlockType, SUB_CHUNK_SIZE * SUB_CHUNK_SIZE * SUB_CHUNK_SIZE> types;
+		std::array<BlockType, VOLUME> types;
 		std::array<uint16_t, BLOCK_MAX> counts;
 	};
 
-	using NibbleLayer = std::array<uint8_t, NIBBLE_BYTES>;
+	using NibbleLayer = PackedArray<VOLUME, 4>;
 
 	// Null = uniform, see the matching fill below
 	std::unique_ptr<BlockLayer> blocks;
@@ -38,27 +37,18 @@ struct SubChunk {
 		return ((_pos.y & (SIZE - 1)) * SIZE * SIZE) + (_pos.z * SIZE) + _pos.x;
 	}
 
-	static inline uint8_t GetNibble(const NibbleLayer& _layer, int _idx) {
-		const uint8_t byte = _layer[size_t(_idx >> 1)];
-		return (_idx & 1) ? uint8_t(byte >> 4) : uint8_t(byte & 0x0Fu);
-	}
-	static inline void SetNibble(NibbleLayer& _layer, int _idx, uint8_t _val) {
-		uint8_t& byte = _layer[size_t(_idx >> 1)];
-		byte = (_idx & 1) ? uint8_t((byte & 0x0Fu) | ((_val & 0x0Fu) << 4)) : uint8_t((byte & 0xF0u) | (_val & 0x0Fu));
-	}
-
 	// Reads. Take a local index, see LocalIndex()
 	inline BlockType GetBlock(int _idx) const {
 		return blocks ? blocks->types[size_t(_idx)] : blockFill;
 	}
 	inline uint8_t GetMeta(int _idx) const {
-		return meta ? GetNibble(*meta, _idx) : metaFill;
+		return meta ? meta->Get(_idx) : metaFill;
 	}
 	inline uint8_t GetBlockLight(int _idx) const {
-		return blockLight ? GetNibble(*blockLight, _idx) : blockLightFill;
+		return blockLight ? blockLight->Get(_idx) : blockLightFill;
 	}
 	inline uint8_t GetSkyLight(int _idx) const {
-		return skyLight ? GetNibble(*skyLight, _idx) : skyLightFill;
+		return skyLight ? skyLight->Get(_idx) : skyLightFill;
 	}
 
 	// Writes. A layer is only allocated when the value differs from what it currently reads as
@@ -82,7 +72,7 @@ struct SubChunk {
 				return;
 			AllocMeta();
 		}
-		SetNibble(*meta, _idx, _val);
+		meta->Set(_idx, _val);
 	}
 	inline void SetBlockLight(int _idx, uint8_t _val) {
 		_val &= 0x0Fu;
@@ -91,7 +81,7 @@ struct SubChunk {
 				return;
 			AllocBlockLight();
 		}
-		SetNibble(*blockLight, _idx, _val);
+		blockLight->Set(_idx, _val);
 	}
 	inline void SetSkyLight(int _idx, uint8_t _val) {
 		_val &= 0x0Fu;
@@ -100,7 +90,7 @@ struct SubChunk {
 				return;
 			AllocSkyLight();
 		}
-		SetNibble(*skyLight, _idx, _val);
+		skyLight->Set(_idx, _val);
 	}
 	// Sets every voxel in the slice, releasing that layer's storage
 	inline void FillBlocks(BlockType _val) {
