@@ -136,9 +136,9 @@ std::unique_ptr<T> CopyLayer(const std::unique_ptr<T>& _src) {
 
 void SubChunk::AllocBlocks() {
 	blocks = std::make_unique_for_overwrite<BlockLayer>();
-	blocks->fill(blockFill);
-	blockCounts = std::make_unique<BlockCountTable>(); // value-initialised to zero
-	(*blockCounts)[size_t(blockFill)] = uint16_t(VOLUME);
+	blocks->types.fill(blockFill);
+	blocks->counts.fill(0);
+	blocks->counts[size_t(blockFill)] = uint16_t(VOLUME);
 }
 
 void SubChunk::AllocMeta() {
@@ -246,26 +246,37 @@ bool SubChunk::CompactBlocks() {
 	if (!blocks)
 		return false;
 
-	const BlockType first = (*blocks)[0];
-	if ((*blockCounts)[size_t(first)] != VOLUME)
+	const BlockType first = blocks->types[0];
+	if (blocks->counts[size_t(first)] != VOLUME)
 		return false;
 
 	blockFill = first;
 	blocks.reset();
-	blockCounts.reset();
 	return true;
 }
 
 bool SubChunk::CompactMeta() {
-	return CompactNibbleLayer(meta, metaFill);
+	uint8_t fill;
+	if (!CompactNibbleLayer(meta, fill))
+		return false;
+	metaFill = fill;
+	return true;
 }
 
 bool SubChunk::CompactBlockLight() {
-	return CompactNibbleLayer(blockLight, blockLightFill);
+	uint8_t fill;
+	if (!CompactNibbleLayer(blockLight, fill))
+		return false;
+	blockLightFill = fill;
+	return true;
 }
 
 bool SubChunk::CompactSkyLight() {
-	return CompactNibbleLayer(skyLight, skyLightFill);
+	uint8_t fill;
+	if (!CompactNibbleLayer(skyLight, fill))
+		return false;
+	skyLightFill = fill;
+	return true;
 }
 
 bool SubChunk::Compact() {
@@ -278,7 +289,6 @@ bool SubChunk::Compact() {
 
 void SubChunk::Reset() {
 	blocks.reset();
-	blockCounts.reset();
 	meta.reset();
 	blockLight.reset();
 	skyLight.reset();
@@ -290,7 +300,6 @@ void SubChunk::Reset() {
 
 void SubChunk::CopyFrom(const SubChunk& _other) {
 	blocks = CopyLayer(_other.blocks);
-	blockCounts = CopyLayer(_other.blockCounts);
 	meta = CopyLayer(_other.meta);
 	blockLight = CopyLayer(_other.blockLight);
 	skyLight = CopyLayer(_other.skyLight);

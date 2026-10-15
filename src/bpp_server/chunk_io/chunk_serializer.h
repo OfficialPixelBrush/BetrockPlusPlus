@@ -54,7 +54,7 @@ inline std::vector<uint8_t> Serialize(const Chunk& _chunk, int _xmin = 0, int _x
 
 				for (; y < slabEnd; y++, i++) {
 					const int idx = SubChunk::LocalIndex({ x, y, z });
-					blockData[i] = blockLayer ? uint8_t((*blockLayer)[size_t(idx)]) : blockFill;
+					blockData[i] = blockLayer ? uint8_t(blockLayer->types[size_t(idx)]) : blockFill;
 					// The buffer is zero-initialised, so a zero meta fill needs no write
 					if (metaLayer)
 						packNibble(metaData[i >> 1], SubChunk::GetNibble(*metaLayer, idx), i & 1);
