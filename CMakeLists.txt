@@ -205,6 +205,7 @@ set(SHARED_SOURCES
     src/bpp_shared/pathfinding/pathfinder.cpp
     src/bpp_shared/teleporter.cpp
     src/bpp_shared/direction.cpp
+    src/bpp_shared/gamerules.cpp
 
     # Generation
     src/bpp_shared/world/noise/noise_generator.cpp
@@ -246,7 +247,6 @@ set(SHARED_SOURCES
 # Server-specific source code
 set(SERVER_SOURCES
     src/bpp_server/server.cpp
-    src/bpp_server/gamerules.cpp
     src/bpp_server/internet/online_auth.cpp
     src/bpp_server/internet/betacraft_heartbeat.cpp
     src/bpp_server/packet/handle_packet.cpp
