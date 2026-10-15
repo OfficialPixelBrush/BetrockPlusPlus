@@ -469,7 +469,7 @@ void Server::Startup() {
 	};
 
 	// Benchmark gen speed
-	ChunkBenchmark::PerformChunkGenSpeedTest(gameRuntime.world);
+	//ChunkBenchmark::PerformChunkGenSpeedTest(gameRuntime.world);
 
 	GlobalLogger().info << "Loading spawn chunks for Overworld: (" << totalSpawnChunks << ")\n";
 	loadSpawnChunks(gameRuntime.world);

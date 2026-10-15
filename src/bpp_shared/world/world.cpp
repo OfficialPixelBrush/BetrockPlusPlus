@@ -10,7 +10,7 @@
 #include "world.h"
 #include "blocks.h"
 #include "blocks/block_behaviors.h"
-#include "chunk/chunk.h"
+#include "chunk.h"
 #include "direction.h"
 #include "entities/entity_item.h"
 #include "generator/nether/chunk_gen.h"
@@ -833,9 +833,6 @@ void WorldManager::PumpPipeline(const std::vector<ClientPosition>& _players) {
 			// The placeholder chunk in the map will be replaced by this one when we push to genDoneQueue
 			auto chunk = std::make_shared<Chunk>();
 			chunk->cpos = _pos;
-			// Terrain generation works on plain flat arrays, the chunk gets compacted into
-			// subchunks once it has been populated, see TryConvertToSubChunks()
-			chunk->AllocGenStorage();
 			// The generators are cached per thread, so rebuild them if the world seed has changed since this
 			// thread last generated a chunk (e.g. switching worlds, or the chunk-gen benchmark cycling seeds).
 			const int64_t genSeed = this->seed;
@@ -919,14 +916,9 @@ void WorldManager::PopulateReady(int _maxPopulates) {
 	// Try and match beta's population order its finicky lol
 	std::vector<Int32_2> ordered;
 	ordered.reserve(chunks.size());
-	// Populated chunks that haven't been compacted yet, they might be done with population by now
-	std::vector<Int32_2> flatPopulated;
 	for (auto& [pos, chunk] : chunks) {
-		if (chunk->isTerrainPopulated) {
-			if (chunk->IsFlat())
-				flatPopulated.push_back(pos);
+		if (chunk->isTerrainPopulated)
 			continue;
-		}
 		// Only consider chunks that could possibly be ready
 		// This excludes border chunks on the positive X and Z axes since their population needs neighbors that can't exist
 		if (!chunks.contains({ pos.x + 1, pos.z }) || !chunks.contains({ pos.x, pos.z + 1 }) ||
@@ -988,34 +980,6 @@ void WorldManager::PopulateReady(int _maxPopulates) {
 		wrapper.FreeChunkRegion();
 		FlushBleedWrites();
 	}
-
-	// Now that this tick's population is over, compact whatever it finished with. This also covers
-	// chunks that were waiting on a neighbour that was just populated.
-	for (const Int32_2& pos : flatPopulated)
-		TryConvertToSubChunks(pos);
-	for (const Int32_2& pos : populatedThisTick)
-		TryConvertToSubChunks(pos);
-}
-
-// Population of a chunk writes into itself and the chunks at +x/+z of it, and now and then bleeds a bit
-// towards -x/-z. A chunk is done being generated once it and the chunks whose population reaches into
-// it from the negative side have been populated, so that's when we swap its flat arrays for subchunks.
-// Doing it early is never wrong, since every Chunk accessor works in both forms. It only means the
-// writes that show up afterwards have to allocate layers again.
-void WorldManager::TryConvertToSubChunks(Int32_2 _pos) {
-	Chunk* chunk = GetChunkRaw(_pos);
-	if (!chunk || !chunk->IsFlat() || !chunk->isTerrainPopulated || chunk->inUse.load())
-		return;
-	for (int dx = -1; dx <= 0; dx++) {
-		for (int dz = -1; dz <= 0; dz++) {
-			if (dx == 0 && dz == 0)
-				continue;
-			const Chunk* neighbour = GetChunkRaw({ _pos.x + dx, _pos.z + dz });
-			if (neighbour && !neighbour->isTerrainPopulated)
-				return;
-		}
-	}
-	chunk->ConvertToSubChunks();
 }
 
 void WorldManager::SetMeta(const Int3 _wpos, const uint8_t _metadata, const bool _updateNeighbors) {
