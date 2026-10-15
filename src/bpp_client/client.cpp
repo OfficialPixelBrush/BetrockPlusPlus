@@ -344,9 +344,10 @@ int Client::Run() {
 		if (ticksRan >= MAX_TICKS_PER_FRAME)
 			accumulator = 0.0f;
 
-		glm::vec2 cameraInput{};
-		cameraInput.y = input.IsKeyDown(SDL_SCANCODE_W) - input.IsKeyDown(SDL_SCANCODE_S);
+		glm::vec3 cameraInput{};
+		cameraInput.z = input.IsKeyDown(SDL_SCANCODE_W) - input.IsKeyDown(SDL_SCANCODE_S);
 		cameraInput.x = input.IsKeyDown(SDL_SCANCODE_D) - input.IsKeyDown(SDL_SCANCODE_A);
+		cameraInput.y = input.IsKeyDown(SDL_SCANCODE_SPACE) - input.IsKeyDown(SDL_SCANCODE_LSHIFT);
 		camera.Move(cameraInput, delta);
 		constexpr float SENSITIVITY = 0.6f;
 		camera.UpdateLook(input.GetMouseDelta() * SENSITIVITY);
