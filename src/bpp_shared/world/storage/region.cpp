@@ -7,7 +7,7 @@
 */
 
 #include "region.h"
-#include "chunk/chunk.h"
+#include "chunk.h"
 #include "logger.h"
 #include "nbt/nbt.h"
 #include "tile_entities/tile_entity.h"
@@ -144,9 +144,6 @@ std::shared_ptr<Chunk> Region::GetChunk(Int32_2 _cpos) {
 
 std::vector<uint8_t> Region::EncodeNbtData(const std::shared_ptr<Chunk>& _chunk, int64_t _timestamp,
                                            std::shared_ptr<const std::vector<Tag>> _entities) {
-	// This reads subchunks directly. Saves are always of a snapshot, which is never flat
-	assert(!_chunk->IsFlat());
-
 	// Build a compound tag representing a chunk level entry
 	Tag root;
 	root.type = TAG_COMPOUND;

@@ -21,7 +21,6 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
-#include "flat_chunk.h"
 #include "subchunk.h"
 #include <memory>
 #include <numeric_structs.h>
@@ -65,12 +64,6 @@
 // This can result in more significant memory fragmentation, though there are
 // several kinds of data we use that are bigger contributors to this.
 //
-// Chunks that are still being generated or populated use a second form of storage instead: a FlatChunk,
-// which is just four plain arrays. Terrain gen and population hammer individual blocks, and it's
-// much cheaper to do that without layers and counts to maintain. Once a chunk has settled,
-// ConvertToSubChunks() compacts it into the layout above and frees the arrays.
-// All of the accessors below work in either form, so callers don't need to care which one they have.
-//
 // Kind regards, Pixel Brush
 
 enum class ChunkState : uint8_t {
@@ -83,6 +76,10 @@ enum class ChunkState : uint8_t {
 	Unloading
 };
 
+// TODO: Check viability of "full chunks", for faster access.
+// Basically how stuff worked before SubChunks,
+// for those that prefer that system for the performance gain.
+// Plus we could fall back to those if all 8 subchunks are filled anyways.
 struct Chunk {
 	static constexpr int VOLUME = CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH;
 	static_assert(CHUNK_HEIGHT % SUB_CHUNK_SIZE == 0, "CHUNK_HEIGHT must be a multiple of SUB_CHUNK_SIZE");
@@ -93,14 +90,7 @@ struct Chunk {
 
 	// Block, light and metadata storage, bottom to top. Every slice is always present, but the layers
 	// inside it (blocks, meta, block light, sky light) are only allocated once they need to hold data.
-	// Only valid while !IsFlat(), see below.
 	std::array<SubChunk, SUB_CHUNK_COUNT> subChunks;
-
-	// Flat storage used while the chunk is being generated and populated. When non-null it holds
-	// all of the chunk's blocks, meta and light and subChunks is unused. Null once converted, or for
-	// chunks that were loaded from disk. Only the main thread may change this, but it's a shared_ptr
-	// so a worker that grabbed a copy (see PinGenStorage) can keep reading it after it's converted.
-	std::shared_ptr<FlatChunk> flat;
 
 	std::atomic<ChunkState> state{ ChunkState::Unloaded };
 	uint8_t heightMap[CHUNK_AREA] = {};
@@ -124,40 +114,14 @@ struct Chunk {
 		return _y >= 0 && _y < CHUNK_HEIGHT;
 	}
 
-	inline bool IsFlat() const {
-		return flat != nullptr;
-	}
-	// Starts the chunk off in flat storage (air, no meta, no block light, full sky light).
-	// Meant for fresh chunks that are about to be generated.
-	void AllocGenStorage();
-	// Compacts the flat storage into subchunks, freeing every uniform layer, then frees the flat arrays.
-	// Does nothing if the chunk isn't flat. Main thread only, and not while a WorldWrapper has the chunk.
-	void ConvertToSubChunks();
-	// Hold on to this when reading flat storage from another thread, so it can't be freed under you.
-	// Null if the chunk is already in subchunk form.
-	inline std::shared_ptr<const FlatChunk> PinGenStorage() const {
-		return flat;
-	}
-	// Direct access for hot loops, like the terrain generators. Only valid while IsFlat()
-	inline FlatChunk& Flat() {
-		assert(flat);
-		return *flat;
-	}
-	inline const FlatChunk& Flat() const {
-		assert(flat);
-		return *flat;
-	}
-
-	// Normal subchunk return, null if _y is out of bounds. Not valid while IsFlat()
+	// Normal subchunk return, null if _y is out of bounds
 	inline SubChunk* GetSubChunk(int _y) {
-		assert(!flat);
 		if (InBounds(_y))
 			return &subChunks[size_t(_y >> 4)];
 		return nullptr;
 	}
 	// Const subchunk return
 	inline const SubChunk* GetSubChunk(int _y) const {
-		assert(!flat);
 		if (InBounds(_y))
 			return &subChunks[size_t(_y >> 4)];
 		return nullptr;
@@ -186,16 +150,10 @@ struct Chunk {
 	}
 	// Raw Setters: Doesn't flag as modified + no bounds check
 	inline void SetBlockRaw(Int3 _pos, BlockType _id) {
-		if (flat)
-			flat->SetBlock(FlatChunk::Index(_pos), _id);
-		else
-			subChunks[size_t(_pos.y >> 4)].SetBlock(SubChunk::LocalIndex(_pos), _id);
+		subChunks[size_t(_pos.y >> 4)].SetBlock(SubChunk::LocalIndex(_pos), _id);
 	}
 	inline void SetMetaRaw(Int3 _pos, uint8_t _meta) {
-		if (flat)
-			flat->SetMeta(FlatChunk::Index(_pos), _meta);
-		else
-			subChunks[size_t(_pos.y >> 4)].SetMeta(SubChunk::LocalIndex(_pos), _meta);
+		subChunks[size_t(_pos.y >> 4)].SetMeta(SubChunk::LocalIndex(_pos), _meta);
 	}
 	// Safe setters
 	inline void SetBlock(Int3 _pos, BlockType _id) {
@@ -213,48 +171,34 @@ struct Chunk {
 	inline void SetBlockLight(Int3 _pos, uint8_t _val) {
 		if (!InBounds(_pos.y))
 			return;
-		if (flat)
-			flat->SetBlockLight(FlatChunk::Index(_pos), _val);
-		else
-			subChunks[size_t(_pos.y >> 4)].SetBlockLight(SubChunk::LocalIndex(_pos), _val);
+		subChunks[size_t(_pos.y >> 4)].SetBlockLight(SubChunk::LocalIndex(_pos), _val);
 		isModified = true;
 	}
 	inline void SetSkyLight(Int3 _pos, uint8_t _val) {
 		if (!InBounds(_pos.y))
 			return;
-		if (flat)
-			flat->SetSkyLight(FlatChunk::Index(_pos), _val);
-		else
-			subChunks[size_t(_pos.y >> 4)].SetSkyLight(SubChunk::LocalIndex(_pos), _val);
+		subChunks[size_t(_pos.y >> 4)].SetSkyLight(SubChunk::LocalIndex(_pos), _val);
 		isModified = true;
 	}
 	// Getters
 	inline BlockType GetBlock(Int3 _pos) const {
 		if (!InBounds(_pos.y))
 			return BLOCK_AIR;
-		if (flat)
-			return flat->GetBlock(FlatChunk::Index(_pos));
 		return subChunks[size_t(_pos.y >> 4)].GetBlock(SubChunk::LocalIndex(_pos));
 	}
 	inline uint8_t GetMeta(Int3 _pos) const {
 		if (!InBounds(_pos.y))
 			return 0;
-		if (flat)
-			return flat->GetMeta(FlatChunk::Index(_pos));
 		return subChunks[size_t(_pos.y >> 4)].GetMeta(SubChunk::LocalIndex(_pos));
 	}
 	inline uint8_t GetBlockLight(Int3 _pos) const {
 		if (!InBounds(_pos.y))
 			return 0;
-		if (flat)
-			return flat->GetBlockLight(FlatChunk::Index(_pos));
 		return subChunks[size_t(_pos.y >> 4)].GetBlockLight(SubChunk::LocalIndex(_pos));
 	}
 	inline uint8_t GetSkyLight(Int3 _pos) const {
 		if (!InBounds(_pos.y))
 			return 0;
-		if (flat)
-			return flat->GetSkyLight(FlatChunk::Index(_pos));
 		return subChunks[size_t(_pos.y >> 4)].GetSkyLight(SubChunk::LocalIndex(_pos));
 	}
 	inline int GetBlockLightValue(Int3 _pos, int _skySubtracted) const {
@@ -262,10 +206,7 @@ struct Chunk {
 		int block = int(GetBlockLight(_pos));
 		return CrossPlatform::Math::Min(15, CrossPlatform::Math::Max(sky, block));
 	}
-	// O(1) with subchunks, but a scan while the chunk is flat
 	bool HasBlock(BlockType _type) const {
-		if (flat)
-			return flat->HasBlock(_type);
 		for (const auto& sc : subChunks) {
 			if (sc.HasBlock(_type))
 				return true;
@@ -273,8 +214,6 @@ struct Chunk {
 		return false;
 	}
 	inline int CountBlock(BlockType _type) const {
-		if (flat)
-			return flat->CountBlock(_type);
 		int n = 0;
 		for (const auto& sc : subChunks)
 			n += sc.CountBlock(_type);
@@ -285,10 +224,6 @@ struct Chunk {
 	inline std::vector<Int3> FindBlocks(BlockType _type) const {
 		std::vector<Int3> positions;
 		positions.reserve(size_t(CountBlock(_type)));
-		if (flat) {
-			flat->FindBlocks(_type, positions);
-			return positions;
-		}
 		for (size_t s = 0; s < subChunks.size(); s++)
 			subChunks[s].FindBlocks(_type, positions, int(s) * SUB_CHUNK_SIZE);
 		return positions;
@@ -303,8 +238,6 @@ struct Chunk {
 
 	void FillBlockLightRegion(Int3 _a, Int3 _b, uint8_t _val);
 	void RecalculateSkyLightColumn(Int2 _pos);
-	// Sets the sky light of every voxel in slices _firstSlice and up
-	void FillSkyLightSlices(int _firstSlice, uint8_t _val);
 
 	int GetHighestPoint() const;
 	bool CanBlockSeeSky(Int3 _pos) const;
@@ -316,16 +249,14 @@ struct Chunk {
 
 	// Compacts each layer of slice _index (blocks, meta, block light, sky light) on its own, freeing
 	// every layer that is uniform. Returns true if at least one layer was freed. Compact() does this
-	// for every slice. Both do nothing while the chunk is flat, that's what ConvertToSubChunks() is for.
+	// for every slice.
 	bool TryToCompactSubChunk(int _index);
 	void Compact();
-	// Deep copies blocks, light and meta. The result is always in subchunk form, even if _other is flat
+	// Deep copies blocks, light and meta
 	void CopyStorageFrom(const Chunk& _other);
 
-	// Number of slices with at least one layer allocated. A flat chunk counts as fully allocated
+	// Number of slices with at least one layer allocated
 	inline int AllocatedSubChunks() const {
-		if (flat)
-			return SUB_CHUNK_COUNT;
 		int n = 0;
 		for (const auto& sub : subChunks)
 			n += sub.HasAnyLayer() ? 1 : 0;
@@ -334,8 +265,6 @@ struct Chunk {
 	// Approximate heap + inline footprint. Prefer this over sizeof(Chunk) now that storage is lazy.
 	inline size_t GetMemoryUsage() const {
 		size_t bytes = sizeof(Chunk);
-		if (flat)
-			bytes += sizeof(FlatChunk);
 		for (const auto& sub : subChunks)
 			bytes += sub.GetHeapUsage();
 		return bytes;

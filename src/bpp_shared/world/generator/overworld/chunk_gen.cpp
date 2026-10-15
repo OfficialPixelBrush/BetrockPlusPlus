@@ -6,7 +6,7 @@
 */
 
 #include "chunk_gen.h"
-#include "chunk/chunk.h"
+#include "chunk.h"
 #include "generator/overworld/biome_gen.h"
 #include "generator/overworld/tree_gen.h"
 #include "tree_gen.h"

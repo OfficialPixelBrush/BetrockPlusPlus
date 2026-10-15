@@ -6,7 +6,7 @@
 */
 
 #include "biome_gen.h"
-#include "chunk/chunk.h"
+#include "chunk.h"
 
 // This one does nothing. DO NOT USE!
 BiomeGenerator::BiomeGenerator() {}
