@@ -109,7 +109,9 @@ struct ChunkSender {
 			pc.pos = p;
 			pc.chunkRef = chunkRef;
 			// Task owns a shared_ptr for the duration of serialization only.
-			pc.data = pool.submit_task([chunkRef]() { return ChunkSerializer::Serialize(*chunkRef); });
+			pc.data = pool.submit_task([chunkRef, flat = chunkRef->PinGenStorage()]() {
+				return ChunkSerializer::SerializeFrom(*chunkRef, flat.get());
+			});
 			queue.push_back(std::move(pc));
 			_session.sentChunks.insert(p);
 			++submitted;
@@ -158,8 +160,9 @@ struct ChunkSender {
 		psr.header.size.z = static_cast<uint8_t>(zmax - zmin);
 		if (_chunkRef) {
 			std::shared_ptr<const Chunk> ref = _chunkRef;
-			psr.data = pool.submit_task([ref, xmin, xmax, ymin, ymax, zmin, zmax]() {
-				return ChunkSerializer::Serialize(*ref, xmin, xmax + 1, ymin, ymax + 1, zmin, zmax + 1);
+			psr.data = pool.submit_task([ref, flat = ref->PinGenStorage(), xmin, xmax, ymin, ymax, zmin, zmax]() {
+				return ChunkSerializer::SerializeFrom(*ref, flat.get(), xmin, xmax + 1, ymin, ymax + 1, zmin,
+				                                      zmax + 1);
 			});
 		}
 		subRegionFlight[&_session].push_back(std::move(psr));

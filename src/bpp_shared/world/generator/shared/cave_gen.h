@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "chunk.h"
+#include "chunk/chunk.h"
 #include "constants.h"
 #include "java_random.h"
 #include "numeric_structs.h"

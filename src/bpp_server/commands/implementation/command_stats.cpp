@@ -8,7 +8,7 @@
 #include "../command.h"
 #include "../command_manager.h"
 #include "../command_registry.h"
-#include "chunk.h"
+#include "chunk/chunk.h"
 #include "server.h"
 #include <array>
 #include <format>

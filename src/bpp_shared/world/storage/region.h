@@ -6,7 +6,7 @@
  *
 */
 #pragma once
-#include "chunk.h"
+#include "chunk/chunk.h"
 #include "helpers/byteswap_compat.h"
 #include "helpers/file_handle.h"
 #include "numeric_structs.h"
