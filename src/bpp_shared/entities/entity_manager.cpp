@@ -81,9 +81,9 @@ void EntityManager::AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEn
 		return;
 	}
 	// TODO: Run this on gamerule change too?
-	if (IsAnimal(_entity->type) && !gamerules.spawnAnimals)
+	if (IsAnimal(_entity->type) && !Gamerule::Get<bool>(Gamerule::Id::SpawnMobs))
 		return;
-	if (IsMonster(_entity->type) && !gamerules.spawnMonsters)
+	if (IsMonster(_entity->type) && !Gamerule::Get<bool>(Gamerule::Id::SpawnMonsters))
 		return;
 	_entity->id = _forceEntityId == -1 ? GetNextEntityId()
 	                                   : _forceEntityId; // Assign an ID if we weren't forced to use one
