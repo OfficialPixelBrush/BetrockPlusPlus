@@ -32,7 +32,22 @@ std::string GetGamerule(const strategos::CmdNode& _cmd, void* _userData) {
 	return "";
 }
 // TODO
-std::string ListGamerules(const strategos::CmdNode& /*_cmd*/, void* /*_userData*/) {
+std::string ListGamerules(const strategos::CmdNode& /*_cmd*/, void* _userData) {
+	auto& ctx = CmdCtx(_userData);
+	const auto gamerules = Gamerule::GetAll();
+	SendFeedback(ctx, std::format("§7-- {} Gamerule(s) --", gamerules.size()));
+	std::string line = "§7";
+	size_t index = 0;
+	for (const auto& [id, entry] : gamerules) {
+		// entry.name, entry.value
+		if (line.size() + entry.name.size() > 64) {
+			SendFeedback(ctx, line);
+			line = "§7";
+		}
+		line += entry.name + ((index < (gamerules.size() - 1)) ? ", " : "");
+		index++;
+	}
+	SendFeedback(ctx, line);
 	//auto& ctx = CmdCtx(_userData);
 	//SendFeedback(ctx, std::to_string(Gamerule::Get<bool>(*gameruleName)));
 	return "";
