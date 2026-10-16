@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -296,12 +297,13 @@ static bool PortalAreaReady(WorldManager& _world, const Vec3& _pos) {
 void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server& _server) {
 	WorldManager& sessionWorld = _session.dimension == Dimension::Nether ? _server.gameRuntime.worldHell
 	                                                                     : _server.gameRuntime.world;
+	_session.position.viewDistanceOverride = _session.pendingPortalPlacement
+	                                            ? PORTAL_SEARCH_CHUNK_RADIUS + 1
+	                                            : (_session.portalAreaLoaded ? 0 : 3);
 	_server.chunkSender.Enqueue(_session, sessionWorld, _server.flushChunkCount);
 	_server.chunkSender.Flush(_session);
 
 	if (_session.pendingPortalPlacement) {
-		// Load the search area
-		_session.position.viewDistanceOverride = PORTAL_SEARCH_CHUNK_RADIUS + 1;
 		if (!PortalAreaReady(sessionWorld, _session.position.pos))
 			return;
 
@@ -311,10 +313,6 @@ void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server&
 		_session.pendingPortalPlacement = false;
 		_session.portalAreaLoaded = true;
 	}
-
-	// Force a tiny view distance for players trying to spawn in
-	if (!_session.portalAreaLoaded)
-		_session.position.viewDistanceOverride = 3;
 
 	// Spawn chunk radius; 3 chunks in each direction
 	int spawnChunkX = int(std::floor(_session.position.pos.x)) >> 4;
