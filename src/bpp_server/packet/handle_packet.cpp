@@ -28,6 +28,7 @@
 #include <cstring>
 #include <iomanip>
 #include <memory>
+#include "gamerules.h"
 
 static bool IsValidActionInSpawnRadius(PlayerSession& _session, Server& _server, Int3 _pos, WorldManager& _world) {
 	// TODO: Make this configurable and more intuitive
@@ -793,6 +794,9 @@ void Respawn(Packet::Respawn& /*_pkt*/, PlayerSession& _session, Server& _server
 	Packet::SetTime stPkt;
 	stPkt.time = world->elapsedTicks;
 	stPkt.Serialize(_session.stream);
+
+	if (Gamerule::Get<bool>(Gamerule::Id::KeepInventory))
+		PacketUtilities::SendInventory(_session, 0, _session.inventory);
 }
 
 void UpdateSign(Packet::UpdateSign& _pkt, PlayerSession& /*_session*/, WorldManager& _world,

@@ -24,21 +24,40 @@ struct Registry {
 
     Registry() {
         rules.resize(static_cast<size_t>(Id::Max));
-        Register(Id::Pvp,             "pvp",             true);
-        Register(Id::Nightmares,      "nightmares",      true);
-        Register(Id::KeepInventory,   "keepInventory",   false);
-        Register(Id::ExplodingBeds,   "explodingBeds",   true);
-        Register(Id::DoBlockDrops,    "doBlockDrops",    true);
-        Register(Id::DoEntityDrops,   "doEntityDrops",   true);
-        Register(Id::SpawnMobs,       "spawnMobs",       true);
-        Register(Id::SpawnMonsters,   "spawnMonsters",   true);
-        Register(Id::MobGriefing,     "mobGriefing",     true);
-        Register(Id::DoDaylightCycle, "doDaylightCycle", true);
-        Register(Id::DoWeatherCycle,  "doWeatherCycle",  true);
-        Register(Id::DoFireTick,      "doFireTick",      true);
-        Register(Id::DrowningDamage,  "drowningDamage",  true);
-        Register(Id::FallDamage,      "fallDamage",      true);
-        Register(Id::FireDamage,      "fireDamage",      true);
+        // Drops
+        //Register(Id::BlockDrops, "block_drops", true);
+        //Register(Id::EntityDrops, "entity_drops", true);
+        //Register(Id::MobDrops, "mob_drops", true);
+        // Misc
+        //Register(Id::MaxMinecartSpeed, "max_minecart_speed", 8);
+        Register(Id::TntExplodes, "tnt_explodes", true);
+        Register(Id::Nightmares, "nightmares", true);
+        Register(Id::NetherBedsExplode, "nether_beds_explode", true);
+        // Mobs
+        //Register(Id::ForgiveDeadPlayers, "forgive_dead_players", true);
+        //Register(Id::MobGriefing, "mob_griefing", true);
+        // Player
+        //Register(Id::AllowEnteringNetherUsingPortals, "allow_entering_nether_using_portals", true);
+        //Register(Id::DrowningDamage, "drowning_damage", true);
+        //Register(Id::FallDamage, "fall_damage", true);
+        //Register(Id::FireDamage, "fire_damage", true);
+        //Register(Id::ImmediateRespawn, "immediate_respawn", false);
+        Register(Id::KeepInventory, "keep_inventory", false);
+        //Register(Id::PlayerMovementCheck, "player_movement_check", true);
+        //Register(Id::PlayersSleepingPercentage, "players_sleeping_percentage", 100);
+        //Register(Id::Pvp, "pvp", true);
+        Register(Id::RespawnRadius, "respawn_radius", 10);
+        // Spawning
+        Register(Id::SpawnMobs, "spawn_mobs", true);
+        Register(Id::SpawnMonsters, "spawn_monsters", true);
+        // World Updates
+        //Register(Id::AdvanceTime, "advance_time", true);
+        Register(Id::AdvanceWeather, "advance_weather", true);
+        //Register(Id::FireSpread, "fire_spread", true);
+        //Register(Id::LavaSourceConversion, "lava_source_conversion", false);
+        //Register(Id::MaxSnowAccumulationHeight, "max_snow_accumulation_height", 3);
+        //Register(Id::RandomTickSpeed, "random_tick_speed", 3);
+        //Register(Id::WaterSourceConversion, "water_source_conversion", true);
     }
 
     Entry* Find(Id _id) {
