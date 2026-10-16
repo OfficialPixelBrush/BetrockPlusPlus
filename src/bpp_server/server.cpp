@@ -1089,7 +1089,7 @@ void Server::ProcessSleeping(Dimension _dimension) {
 		return;
 
 	bool spawnedNightmare = false;
-	if (gamerules.nightmares) {
+	if (Gamerule::Get("nightmares") {
 		for (auto& session : sleepingSessions)
 			spawnedNightmare |= Blocks::TrySpawnNightmare(*world, *session->entity);
 	}
