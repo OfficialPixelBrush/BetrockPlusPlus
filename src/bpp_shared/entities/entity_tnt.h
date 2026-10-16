@@ -42,6 +42,8 @@ struct TntEntity : public Entity {
 	void Explode() {
 		if (!world)
 			return;
+		if (!Gamerule::Get<bool>(Gamerule::Id::TntExplodes))
+			return
 		world->DoExplosion(nullptr, this->position, /*power=*/4.0f, /*doFire=*/false);
 	}
 };

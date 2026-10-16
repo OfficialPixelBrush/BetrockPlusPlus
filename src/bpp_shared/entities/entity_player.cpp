@@ -7,6 +7,7 @@
 #include "entity_player.h"
 #include "direction_fixer.h"
 #include "entity_item.h"
+#include "gamerules.h"
 #include "logger/logger.h"
 
 bool PlayerEntity::AttackEntityFrom(Entity* _entity, int _damage) {
@@ -174,7 +175,8 @@ void PlayerEntity::OnDeath(Entity* _killer) {
 
 	this->forceVelocityUpdate = true;
 
-	this->DropInventory();
+	if (!Gamerule::Get<bool>(Gamerule::Id::KeepInventory))
+		this->DropInventory();
 }
 
 bool PlayerEntity::DropItem(ItemStack _stack) {
