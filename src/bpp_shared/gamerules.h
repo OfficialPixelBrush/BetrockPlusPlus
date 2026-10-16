@@ -86,5 +86,6 @@ bool Remove(const std::string& _name);
 // Conversion to and from string/id (SLOW!)
 std::string ToString(const Gamerule::Id _id);
 Gamerule::Id ToId(const std::string& _name);
-const std::map<Id, Entry>& GetAll();
+const std::vector<Entry>& GetAll();
+const std::map<std::string, Id, std::less<>>& GetAllNames();
 };
