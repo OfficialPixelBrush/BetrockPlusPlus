@@ -109,13 +109,8 @@ Id ToId(const std::string& _name) {
     return it == r.byName.end() ? Id::Invalid : it->second;
 }
 
-std::vector<Entry> GetAll() {
-    auto& r = R();
-    std::vector<Entry> out;
-    out.reserve(r.rules.size());
-    for (const auto& [id, entry] : r.rules)
-        out.push_back(entry);
-    return out;
+const std::map<Id, Entry>& GetAll() {
+    return R().rules;
 }
 
 } // namespace Gamerule
