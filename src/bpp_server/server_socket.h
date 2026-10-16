@@ -57,7 +57,8 @@ inline int CreateServerSocket(int _port) {
 		GlobalLogger().error << "**** FAILED TO BIND SOCKET! ****" << "\n";
 		return -1;
 	}
-	listen(serverSocket, 8);
+	// feels unsafe. did you know it was only 5 in 4.4BSD!? Maybe set to like 128/512.
+	listen(serverSocket, SOMAXCONN);
 
 #if defined(_WIN32) || defined(_WIN64)
 	u_long mode = 1;

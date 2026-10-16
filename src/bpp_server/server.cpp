@@ -610,18 +610,21 @@ void Server::SaveLevelFile() {
 }
 
 void Server::AcceptNewPlayers() {
-	std::string clientIp;
-	auto clientSocket = ServerSocketManager::CreateClientSocket(serverSocket, &clientIp);
-	if (clientSocket < 0)
-		return;
-	auto session = std::make_shared<PlayerSession>(clientSocket, gameRuntime);
-	if (players.size() >= maximumPlayers) {
-		DisconnectPlayer("Server is full!", *session);
-		return;
-	}
-	session->ipAddress = clientIp;
-	session->server = this;
-	players.push_back(std::move(session));
+    constexpr int K_MAX_ACCEPTS_PER_TICK = 16;
+    for (int i = 0; i < K_MAX_ACCEPTS_PER_TICK; ++i) {
+        std::string clientIp;
+        auto clientSocket = ServerSocketManager::CreateClientSocket(serverSocket, &clientIp);
+        if (clientSocket < 0)
+            return; // queue is empty
+        auto session = std::make_shared<PlayerSession>(clientSocket, gameRuntime);
+        if (players.size() >= maximumPlayers) {
+            DisconnectPlayer("Server is full!", *session);
+            continue; // keep draining so rejected clients get their kick message promptly
+        }
+        session->ipAddress = clientIp;
+        session->server = this;
+        players.push_back(std::move(session));
+    }
 }
 
 void Server::StopTimeout(float _secondsUntilShutdown) {
@@ -713,6 +716,7 @@ void Server::Tick() {
 	std::chrono::nanoseconds autosaveElapsed{ 0 };
 	auto networkStart = Clock::now();
 	AcceptNewPlayers();
+	chunkSender.BeginTick();
 
 	std::vector<ClientPosition> overworldPositions;
 	std::vector<ClientPosition> netherPositions;
@@ -1144,11 +1148,11 @@ std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {
 			SendGlobalChatMessage("§e" + session->username + " left the game.");
 
 			const bp_player_leave_event event{ &session->apiPlayer };
-				                             addonManager.Broadcast(&bp_addon_events::playerLeave, event);
+			addonManager.Broadcast(&bp_addon_events::playerLeave, event);
 
 			if (session->entity->entityManager)
 				session->entity->entityManager->RemoveEntity(session->entity->id);
-			                             }
+		}
 		IndexRemoveSession(*session);
 		chunkSender.Remove(*session);
 	}
