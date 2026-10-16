@@ -12,26 +12,66 @@
 
 namespace {
 
-std::string SetGamerule(const strategos::CmdNode& _cmd, void* /*_userData*/) {
-	//auto& ctx = CmdCtx(_userData);
-	auto gameruleName = _cmd.get_arg<std::string>("gamerule");
-	if (!gameruleName)
-		return "Gamerule doesn't exist!";
-	// TODO: Convert to needed type
-	//Gamerule::Set(gameruleName)
-	//SendFeedback(std::to_string())
-	return "";
+std::string ValueToString(const Gamerule::Value& _v) {
+    return std::visit([](const auto& x) -> std::string {
+        using T = std::decay_t<decltype(x)>;
+        if constexpr (std::is_same_v<T, bool>)
+            return x ? "true" : "false";
+        else if constexpr (std::is_same_v<T, std::string>)
+            return x;
+        else
+            return std::to_string(x);
+    }, _v);
 }
+
+// Parses _text into the same type _current holds
+std::optional<Gamerule::Value> ParseLike(const Gamerule::Value& _current, const std::string& _text) {
+    return std::visit([&](const auto& cur) -> std::optional<Gamerule::Value> {
+        using T = std::decay_t<decltype(cur)>;
+        if constexpr (std::is_same_v<T, bool>) {
+            if (_text == "true")  return Gamerule::Value{true};
+            if (_text == "false") return Gamerule::Value{false};
+            return std::nullopt;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            return Gamerule::Value{_text};
+        } else {
+            T out{};
+            const char* end = _text.data() + _text.size();
+            auto [ptr, ec] = std::from_chars(_text.data(), end, out);
+            if (ec != std::errc{} || ptr != end)
+                return std::nullopt;
+            return Gamerule::Value{out};
+        }
+    }, _current);
+}
+
+std::string SetGamerule(const strategos::CmdNode& _cmd, void* _userData) {
+    auto& ctx = CmdCtx(_userData);
+    auto gameruleName = _cmd.get_arg<std::string>("name");
+    auto valueText = _cmd.get_arg<std::string>("value");
+    if (!gameruleName || Gamerule::ToId(*gameruleName) == Gamerule::Id::Invalid)
+        return "Gamerule doesn't exist!";
+    if (!valueText)
+        return "Missing value!";
+
+    const auto parsed = ParseLike(Gamerule::GetRaw(*gameruleName), *valueText);
+    if (!parsed || !Gamerule::SetRaw(*gameruleName, *parsed))
+        return "Invalid value for this gamerule!";
+
+    SendFeedback(ctx, std::format("Gamerule {} is now: {}", *gameruleName, ValueToString(*parsed)));
+    return "";
+}
+
 std::string GetGamerule(const strategos::CmdNode& _cmd, void* _userData) {
-	auto& ctx = CmdCtx(_userData);
-	auto gameruleName = _cmd.get_arg<std::string>("gamerule");
-	if (!gameruleName)
-		return "Gamerule doesn't exist!";
-	// TODO: Figure out needed type
-	SendFeedback(ctx, std::to_string(Gamerule::Get<bool>(*gameruleName)));
-	return "";
+    auto& ctx = CmdCtx(_userData);
+    auto gameruleName = _cmd.get_arg<std::string>("name");
+    if (!gameruleName || Gamerule::ToId(*gameruleName) == Gamerule::Id::Invalid)
+        return "Gamerule doesn't exist!";
+
+    SendFeedback(ctx, std::format("Gamerule {} is: {}", *gameruleName, ValueToString(Gamerule::GetRaw(*gameruleName))));
+    return "";
 }
-// TODO
+
 std::string ListGamerules(const strategos::CmdNode& /*_cmd*/, void* _userData) {
 	auto& ctx = CmdCtx(_userData);
 	const auto gamerules = Gamerule::GetAllNames();
@@ -47,8 +87,6 @@ std::string ListGamerules(const strategos::CmdNode& /*_cmd*/, void* _userData) {
 		index++;
 	}
 	SendFeedback(ctx, line);
-	//auto& ctx = CmdCtx(_userData);
-	//SendFeedback(ctx, std::to_string(Gamerule::Get<bool>(*gameruleName)));
 	return "";
 }
 
@@ -61,7 +99,7 @@ void RegisterGamerule(strategos::BrigadierContext& _dispatcher) {
 	        .describe("Lists, queries, or changes gamerules")
 	        .op()
 	        .then(strategos::Node::literal("list").executes(ListGamerules))
-	        .then(strategos::Node::string("gamerule")
-	                  .executes(GetGamerule)
-	                  .then(strategos::Node::string("value").executes(SetGamerule))));
+	        .then(strategos::Node::string("name")
+				.executes(GetGamerule)
+				.then(strategos::Node::string("value").executes(SetGamerule))));
 }

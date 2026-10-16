@@ -6,9 +6,9 @@
 */
 
 #pragma once
-#include <any>
 #include <string>
 #include <map>
+#include <variant>
 
 namespace Gamerule {
 
@@ -40,49 +40,55 @@ enum class Id {
 	// aka ones added via commands or similar.
 	// They'll all be after this index! 
 	Max,
-	// NOTE: Should NEVER be used! Only there to indicate invalid value!!!!
+	// NOTE: Should NEVER be used! Only there to indicate non-existent gamerule!!!!
 	Invalid
 };
 
+using Value = std::variant<
+	bool,
+	int32_t, // Should we allow 64-bit ints ?
+	double,
+	std::string // Do we need strings for any gamerules?
+>;
+
 struct Entry {
 	std::string name;
-	std::any value;
+	Value value;
 };
 
-std::any GetRaw(const Id _id);
-std::any GetRaw(const std::string& _name);
-bool SetRaw(const Id _id, const std::any& _value);
-bool SetRaw(const std::string& _name, const std::any& _value);
+Value GetRaw(const Id _id);
+Value GetRaw(const std::string& _name);
+bool SetRaw(const Id _id, const Value& _value);
+bool SetRaw(const std::string& _name, const Value& _value);
 
-// TODO: Maybe narrow this with std::variant?
 // Access via ID
 template <typename T>
 T Get(const Id _id, const T& _default = T{}) {
-    const std::any v = GetRaw(_id);
-    if (const T* p = std::any_cast<T>(&v))
+    const Value v = GetRaw(_id);
+    if (const T* p = std::get_if<T>(&v))
         return *p;
     return _default;
 }
 template <typename T>
 bool Set(const Id _id, const T& _value) {
     using Stored = std::conditional_t<std::is_convertible_v<T, std::string>, std::string, T>;
-    return SetRaw(_id, std::any{Stored(_value)});
+    return SetRaw(_id, Value{Stored(_value)});
 }
 // Access via string
 template <typename T>
 T Get(const std::string& _name, const T& _default = T{}) {
-    const std::any v = GetRaw(_name);
-    if (const T* p = std::any_cast<T>(&v))
+    const Value v = GetRaw(_name);
+    if (const T* p = std::get_if<T>(&v))
         return *p;
     return _default;
 }
 template <typename T>
 bool Set(const std::string& _name, const T& _value) {
     using Stored = std::conditional_t<std::is_convertible_v<T, std::string>, std::string, T>;
-    return SetRaw(_name, std::any{Stored(_value)});
+    return SetRaw(_name, Value{Stored(_value)});
 }
 // Add and remove for Addon system
-bool Add(const std::string& _name, const std::any& _value);
+bool Add(const std::string& _name, const Value& _value);
 bool Remove(const std::string& _name);
 // Conversion to and from string/id (SLOW!)
 std::string ToString(const Gamerule::Id _id);
