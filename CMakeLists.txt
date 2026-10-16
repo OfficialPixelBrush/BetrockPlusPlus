@@ -278,6 +278,7 @@ set(CLIENT_SOURCES
     src/bpp_client/renderer.cpp
     src/bpp_client/camera.cpp
     src/bpp_client/assets.cpp
+    src/bpp_client/entities/entity_sp_player.cpp
     src/bpp_client/packet/handle_client_packet.cpp
     src/bpp_client/packet/client_packet_dispatcher.cpp
 

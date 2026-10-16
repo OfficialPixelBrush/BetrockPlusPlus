@@ -14,12 +14,25 @@ extern std::atomic<bool> shutdownRequested;
 #include <SDL3/SDL_events.h>
 
 // This window size seems really random but its the size beta uses
-Client::Client() : window({ 854, 480 }, "Betrock++", { WindowMode::WINDOWED_RESIZABLE }), renderer(window), stream(-1) {
+Client::Client()
+    : window({ 854, 480 }, "Betrock++", { WindowMode::WINDOWED_RESIZABLE }), renderer(window, &world), stream(-1) {
 	window.SetCursorCapture(true);
 	GlobalLogger().info << "Client initialized\n";
 }
 
 void Client::Tick() {
+	playerEntity.playerInput = {
+		.forward = input.IsKeyDown(SDL_SCANCODE_W),
+		.backward = input.IsKeyDown(SDL_SCANCODE_S),
+		.left = input.IsKeyDown(SDL_SCANCODE_A),
+		.right = input.IsKeyDown(SDL_SCANCODE_D),
+		.jump = input.IsKeyDown(SDL_SCANCODE_SPACE),
+		.sprint = input.IsKeyDown(SDL_SCANCODE_LCTRL),
+		.sneak = input.IsKeyDown(SDL_SCANCODE_LSHIFT),
+	};
+	playerEntity.Tick();
+	camera.position = playerEntity.position.WithOffset(Cardinal::Value::Up, playerEntity.GetEyeHeight());
+
 	// Process packets sent by the server
 	this->ProcessIncoming();
 
@@ -133,6 +146,9 @@ void Client::ProcessIncoming() {
 		case PacketId::Chunk: {
 			Packet::ChunkData resp;
 			resp.Deserialize(*this->stream);
+
+			//TODO(for aids): Decompress and transfer the chunk data to the world manager
+
 			//GlobalLogger().info << "Server sent chunk data: " << resp.pos << "\n";
 			break;
 		}
@@ -344,11 +360,6 @@ int Client::Run() {
 		if (ticksRan >= MAX_TICKS_PER_FRAME)
 			accumulator = 0.0f;
 
-		glm::vec3 cameraInput{};
-		cameraInput.z = input.IsKeyDown(SDL_SCANCODE_W) - input.IsKeyDown(SDL_SCANCODE_S);
-		cameraInput.x = input.IsKeyDown(SDL_SCANCODE_D) - input.IsKeyDown(SDL_SCANCODE_A);
-		cameraInput.y = input.IsKeyDown(SDL_SCANCODE_SPACE) - input.IsKeyDown(SDL_SCANCODE_LSHIFT);
-		camera.Move(cameraInput, delta);
 		constexpr float SENSITIVITY = 0.6f;
 		camera.UpdateLook(input.GetMouseDelta() * SENSITIVITY);
 		renderer.Render(camera, accumulator / TICK_DELTA);

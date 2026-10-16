@@ -8,8 +8,10 @@
 #pragma once
 #include "assets.h"
 #include "camera.h"
+#include "world.h"
 #include "client_pos.h"
 #include "client_socket.h"
+#include "entities/entity_sp_player.h"
 #include "input.h"
 #include "logger.h"
 #include "networking/connection_state.h"
@@ -41,6 +43,8 @@ private:
 	Camera camera;
 	AssetManager assetManager;
 	float accumulator = 0.0f;
+	WorldManager world;
+	EntitySPPlayer playerEntity;
 
 	// Network
 	std::string targetIP = "127.0.0.1";

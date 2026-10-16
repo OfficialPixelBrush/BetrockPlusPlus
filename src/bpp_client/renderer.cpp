@@ -12,7 +12,6 @@
 #include "logger.h"
 #include "renderers/blocks/mapping.h"
 #include "window.h"
-#include "world/generator/overworld/chunk_gen.h"
 #include <SDL3/SDL_surface.h>
 #include <SDL3/SDL_video.h>
 #include <cstdint>
@@ -188,19 +187,15 @@ void BuildCube(Chunk& _chunk, std::vector<Vertex>& _vertices, std::vector<uint16
 }
 
 struct VsParams {
-	glm::mat4 mvp;
+	glm::mat4 viewProj;
+	glm::mat4 model = glm::mat4(1.0f);
 };
 VsParams CalculateVsParams(Camera& _camera, float _aspect) {
 	glm::mat4 viewProj = _camera.GetViewProj(_aspect);
-
-	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::scale(model, glm::vec3(0.08f, 0.08f, 0.08f));
-	model = glm::translate(model, glm::vec3(-8.0f, -32.0f, 0.0f));
-
-	return { .mvp = viewProj * model };
+	return { viewProj };
 }
 
-Renderer::Renderer(Window& _window) : window(_window) {
+Renderer::Renderer(Window& _window, WorldManager* _world) : window(_window), world(_world) {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Required for macOS
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -229,23 +224,6 @@ Renderer::Renderer(Window& _window) : window(_window) {
 	terrainTexView = sg_make_view(sg_view_desc{ .texture = { .image = terrainTex } });
 
 	// Setup rendering
-	Chunk* chunk = new Chunk();
-	OverworldGenerator generator(123);
-	generator.GenerateChunk(*chunk);
-
-	MeshData meshData = GenerateChunkMesh(*chunk);
-	delete chunk;
-
-	mesh.vertexBuffer = sg_make_buffer(
-	    sg_buffer_desc{ .data = { meshData.vertices.data(), meshData.vertices.size() * sizeof(Vertex) } });
-
-	mesh.indexBufffer = sg_make_buffer(
-	    sg_buffer_desc{ .usage = { .index_buffer = true },
-	                    .data = { meshData.indices.data(), meshData.indices.size() * sizeof(uint16_t) } });
-	mesh.indexCount = meshData.indices.size();
-
-	printf("vertices=%zu indices=%zu\n", meshData.vertices.size(), meshData.indices.size());
-
 	sg_pipeline_desc desc{};
 	desc.layout.buffers[0].stride = sizeof(Vertex);
 
@@ -259,6 +237,26 @@ Renderer::Renderer(Window& _window) : window(_window) {
 	desc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
 
 	pipeline = sg_make_pipeline(&desc);
+
+	//TODO: This should be done on demand
+	for (const auto& [chunkPos, chunk] : world->chunks) {
+		if (!chunk->isTerrainPopulated || chunkMeshes.find(chunkPos) != chunkMeshes.end())
+			continue;
+
+		MeshData meshData = GenerateChunkMesh(*chunk);
+		Mesh mesh{};
+
+		mesh.vertexBuffer = sg_make_buffer(
+		    sg_buffer_desc{ .data = { meshData.vertices.data(), meshData.vertices.size() * sizeof(Vertex) } });
+
+		mesh.indexBufffer = sg_make_buffer(
+		    sg_buffer_desc{ .usage = { .index_buffer = true },
+		                    .data = { meshData.indices.data(), meshData.indices.size() * sizeof(uint16_t) } });
+		mesh.indexCount = meshData.indices.size();
+
+		printf("vertices=%zu indices=%zu\n", meshData.vertices.size(), meshData.indices.size());
+		chunkMeshes[chunkPos] = mesh;
+	}
 }
 
 Renderer::~Renderer() {
@@ -289,16 +287,21 @@ void Renderer::Render(Camera& _camera, int _partialTicks) {
 
 	sg_apply_pipeline(pipeline);
 
-	sg_bindings bindings{};
-	bindings.vertex_buffers[0] = mesh.vertexBuffer;
-	bindings.index_buffer = mesh.indexBufffer;
-	bindings.samplers[0] = sampler;
-	bindings.views[0] = terrainTexView;
-	sg_apply_bindings(bindings);
+	for (const auto& [chunkPos, mesh] : chunkMeshes) {
+		sg_bindings bindings{};
+		bindings.vertex_buffers[0] = mesh.vertexBuffer;
+		bindings.index_buffer = mesh.indexBufffer;
+		bindings.samplers[0] = sampler;
+		bindings.views[0] = terrainTexView;
+		sg_apply_bindings(bindings);
 
-	sg_apply_uniforms(0, SG_RANGE(vsParams));
+		vsParams.model = glm::translate(glm::mat4(1.0f),
+		                                glm::vec3(chunkPos.x * CHUNK_WIDTH, 0, chunkPos.y * CHUNK_WIDTH));
 
-	sg_draw(0, mesh.indexCount, 1);
+		sg_apply_uniforms(0, SG_RANGE(vsParams));
+
+		sg_draw(0, mesh.indexCount, 1);
+	}
 
 	sg_end_pass();
 

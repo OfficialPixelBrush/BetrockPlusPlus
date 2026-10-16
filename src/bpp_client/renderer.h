@@ -8,10 +8,13 @@
 #pragma once
 
 #include "camera.h"
+#include "numeric_structs.h"
 #include "sokol_gfx.h"
 #include "window.h"
+#include "world.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_video.h>
+#include <unordered_map>
 #include <vector>
 
 struct Vertex {
@@ -31,17 +34,19 @@ struct Mesh {
 
 class Renderer {
 public:
-	explicit Renderer(Window& _window);
+	explicit Renderer(Window& _window, WorldManager* _world);
 	~Renderer();
 
 	void Render(Camera& _camera, int _partialTicks);
 
 private:
 	Window& window;
+	WorldManager* world;
+	std::unordered_map<Int2, Mesh> chunkMeshes;
+	int viewDistance = 2;
 	SDL_GLContext glContext;
 
 	sg_pipeline pipeline;
-	Mesh mesh;
 	sg_sampler sampler;
 	sg_image terrainTex;
 	sg_view terrainTexView;

@@ -3,7 +3,8 @@
 
 #pragma sokol @vs vs
 layout(binding = 0) uniform vs_params {
-	mat4 mvp;
+	mat4 viewProj;
+	mat4 model;
 };
 
 in vec3 pos;
@@ -12,7 +13,7 @@ in vec2 texcoord0;
 out vec2 uv;
 
 void main() {
-	gl_Position = mvp * vec4(pos, 1.0);
+	gl_Position = viewProj * model * vec4(pos, 1.0);
 	uv = texcoord0;
 }
 #pragma sokol @end
