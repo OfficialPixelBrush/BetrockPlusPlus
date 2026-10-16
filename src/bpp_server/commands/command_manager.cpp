@@ -35,6 +35,7 @@ void CommandManager::Init(Server* _server) {
 	RegisterWeather(dispatcher);
 	RegisterExecute(dispatcher);
 	RegisterChat(dispatcher);
+	RegisterGamerule(dispatcher);
 	GlobalLogger().info << "Registered " << dispatcher.root().children.size() << " command(s)!" << "\n";
 }
 
