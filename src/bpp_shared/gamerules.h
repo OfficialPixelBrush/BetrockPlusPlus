@@ -13,7 +13,6 @@
 namespace Gamerule {
 
 enum class Id {
-	Invalid,
 	// Gameplay
 	Pvp,
 	Nightmares,
@@ -40,7 +39,9 @@ enum class Id {
 	// This will mostly be used by later added gamerules,
 	// aka ones added via commands or similar.
 	// They'll all be after this index! 
-	Max
+	Max,
+	// NOTE: Should NEVER be used! Only there to indicate invalid value!!!!
+	Invalid
 };
 
 struct Entry {
