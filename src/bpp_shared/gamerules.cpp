@@ -17,7 +17,7 @@ struct Registry {
     std::map<std::string, Id, std::less<>> byName;
     int nextCustom = static_cast<int>(Id::Max);
 
-    void Register(Id _id, const std::string& _name, Value _value) {
+    void Register(Id _id, const std::string& _name, Type _value) {
         rules[static_cast<size_t>(_id)] = Entry{_name, std::move(_value)};
         byName[_name] = _id;
     }
@@ -58,12 +58,12 @@ Registry& R() {
 } // namespace
 
 // Access via ID
-Value GetRaw(const Id _id) {
+Type GetRaw(const Id _id) {
     const Entry* e = R().Find(_id);
-    return e ? e->value : Value{};
+    return e ? e->value : Type{};
 }
 
-bool SetRaw(const Id _id, const Value& _value) {
+bool SetRaw(const Id _id, const Type& _value) {
     Entry* e = R().Find(_id);
     if (!e)
         return false;
@@ -75,14 +75,14 @@ bool SetRaw(const Id _id, const Value& _value) {
 }
 
 // Access via string
-Value GetRaw(const std::string& _name) {
+Type GetRaw(const std::string& _name) {
     return GetRaw(ToId(_name));
 }
-bool SetRaw(const std::string& _name, const Value& _value) {
+bool SetRaw(const std::string& _name, const Type& _value) {
     return SetRaw(ToId(_name), _value);
 }
 
-bool Add(const std::string& _name, const Value& _value) {
+bool Add(const std::string& _name, const Type& _value) {
     auto& r = R();
     if (r.byName.contains(_name))
         return false;

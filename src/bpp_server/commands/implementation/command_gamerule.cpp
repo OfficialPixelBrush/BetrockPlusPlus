@@ -12,7 +12,7 @@
 
 namespace {
 
-std::string ValueToString(const Gamerule::Value& _v) {
+std::string ValueToString(const Gamerule::Type& _v) {
     return std::visit([](const auto& x) -> std::string {
         using T = std::decay_t<decltype(x)>;
         if constexpr (std::is_same_v<T, bool>)
@@ -25,22 +25,22 @@ std::string ValueToString(const Gamerule::Value& _v) {
 }
 
 // Parses _text into the same type _current holds
-std::optional<Gamerule::Value> ParseLike(const Gamerule::Value& _current, const std::string& _text) {
-    return std::visit([&](const auto& cur) -> std::optional<Gamerule::Value> {
+std::optional<Gamerule::Type> ParseLike(const Gamerule::Type& _current, const std::string& _text) {
+    return std::visit([&](const auto& cur) -> std::optional<Gamerule::Type> {
         using T = std::decay_t<decltype(cur)>;
         if constexpr (std::is_same_v<T, bool>) {
-            if (_text == "true")  return Gamerule::Value{true};
-            if (_text == "false") return Gamerule::Value{false};
+            if (_text == "true")  return Gamerule::Type{true};
+            if (_text == "false") return Gamerule::Type{false};
             return std::nullopt;
         } else if constexpr (std::is_same_v<T, std::string>) {
-            return Gamerule::Value{_text};
+            return Gamerule::Type{_text};
         } else {
             T out{};
             const char* end = _text.data() + _text.size();
             auto [ptr, ec] = std::from_chars(_text.data(), end, out);
             if (ec != std::errc{} || ptr != end)
                 return std::nullopt;
-            return Gamerule::Value{out};
+            return Gamerule::Type{out};
         }
     }, _current);
 }
