@@ -12,6 +12,7 @@
 #include <ostream>
 #include <sstream>
 #include <vector>
+#include <optional>
 
 #if defined(__has_include)
 #if __has_include(<glm/glm.hpp>)
