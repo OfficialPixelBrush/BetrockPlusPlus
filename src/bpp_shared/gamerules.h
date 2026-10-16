@@ -44,7 +44,7 @@ enum class Id {
 	Invalid
 };
 
-using Value = std::variant<
+using Type = std::variant<
 	bool,
 	int32_t, // Should we allow 64-bit ints ?
 	double,
@@ -53,18 +53,18 @@ using Value = std::variant<
 
 struct Entry {
 	std::string name;
-	Value value;
+	Type value;
 };
 
-Value GetRaw(const Id _id);
-Value GetRaw(const std::string& _name);
-bool SetRaw(const Id _id, const Value& _value);
-bool SetRaw(const std::string& _name, const Value& _value);
+Type GetRaw(const Id _id);
+Type GetRaw(const std::string& _name);
+bool SetRaw(const Id _id, const Type& _value);
+bool SetRaw(const std::string& _name, const Type& _value);
 
 // Access via ID
 template <typename T>
 T Get(const Id _id, const T& _default = T{}) {
-    const Value v = GetRaw(_id);
+    const Type v = GetRaw(_id);
     if (const T* p = std::get_if<T>(&v))
         return *p;
     return _default;
@@ -72,12 +72,12 @@ T Get(const Id _id, const T& _default = T{}) {
 template <typename T>
 bool Set(const Id _id, const T& _value) {
     using Stored = std::conditional_t<std::is_convertible_v<T, std::string>, std::string, T>;
-    return SetRaw(_id, Value{Stored(_value)});
+    return SetRaw(_id, Type{Stored(_value)});
 }
 // Access via string
 template <typename T>
 T Get(const std::string& _name, const T& _default = T{}) {
-    const Value v = GetRaw(_name);
+    const Type v = GetRaw(_name);
     if (const T* p = std::get_if<T>(&v))
         return *p;
     return _default;
@@ -85,10 +85,10 @@ T Get(const std::string& _name, const T& _default = T{}) {
 template <typename T>
 bool Set(const std::string& _name, const T& _value) {
     using Stored = std::conditional_t<std::is_convertible_v<T, std::string>, std::string, T>;
-    return SetRaw(_name, Value{Stored(_value)});
+    return SetRaw(_name, Type{Stored(_value)});
 }
 // Add and remove for Addon system
-bool Add(const std::string& _name, const Value& _value);
+bool Add(const std::string& _name, const Type& _value);
 bool Remove(const std::string& _name);
 // Conversion to and from string/id (SLOW!)
 std::string ToString(const Gamerule::Id _id);
