@@ -11,7 +11,6 @@
 // It handles all world-related operations and provides a simple interface for the rest of the code to interact with the world.
 #pragma once
 #include "BS_thread_pool.hpp"
-#include "addon/addon_impl.h"
 #include "base_structs.h"
 #include "blocks.h"
 #include "blocks/block_behaviors.h"
@@ -25,10 +24,10 @@
 #include "helpers/explosion.h"
 #include "java_math.h"
 #include "lighter.h"
-#include "packet_data.h"
 #include "managers/tick_scheduler.h"
-#include "tile_entities/tile_entity_manager.h"
 #include "managers/weather_system.h"
+#include "packet_data.h"
+#include "tile_entities/tile_entity_manager.h"
 #include "world/spawner.h"
 #include "world/storage/region_manager.h"
 #include "world_access.h"
@@ -40,6 +39,10 @@
 #include <mutex>
 #include <unordered_map>
 #include <vector>
+
+#ifdef BUILD_SERVER
+#include "addon/addon_impl.h"
+#endif
 
 struct PendingBlock {
 	Block block{ BLOCK_AIR, 0 };
@@ -55,22 +58,32 @@ constexpr TickTime NIGHT_END_TICK = 23458;
 
 class WorldManager : public WorldAccess {
 private:
-	Int32_2 lastChunkPos = {0,0};
+	Int32_2 lastChunkPos = { 0, 0 };
 	std::shared_ptr<Chunk>* lastChunkSlot = nullptr;
 	std::unordered_map<Int32_2, std::vector<std::pair<Int3, Block>>> pendingBleedWrites;
 	std::mutex genDoneMutex;
 	std::deque<std::shared_ptr<Chunk>> genDoneQueue;
 	TileEntityManager tileEntityManager;
 	EntitySpawner entitySpawner;
-	enum class DeferredUpdateType : uint8_t { Neighbors, Redstone };
-	struct DeferredUpdate { DeferredUpdateType type; Int3 position; BlockType block; BlockType oldBlock; };
+	enum class DeferredUpdateType : uint8_t {
+		Neighbors,
+		Redstone
+	};
+	struct DeferredUpdate {
+		DeferredUpdateType type;
+		Int3 position;
+		BlockType block;
+		BlockType oldBlock;
+	};
 	std::deque<DeferredUpdate> deferredUpdates;
 	bool frozen = false;
 	bool replayingDeferred = false;
 	static BiomeGenerator biomeGenerator;
 
 public:
+#ifdef BUILD_SERVER
 	bp_world apiWorld;
+#endif
 	BS::thread_pool<> pool{ 2 };
 	RegionManager* regionManager = nullptr;
 	TickTime elapsedTicks = 0;
@@ -90,7 +103,13 @@ public:
 	Dimension thisDimension = Dimension::Overworld;
 	WeatherSystem weatherSystem;
 
-	WorldManager(bool _pIsHell = false) : apiWorld(this), isHell(_pIsHell) {
+	WorldManager(bool _pIsHell = false)
+#ifdef BUILD_SERVER
+	    : apiWorld(this), isHell(_pIsHell)
+#else
+	    : isHell(_pIsHell)
+#endif
+	{
 		entityManager.world = this;
 		tickScheduler.world = this;
 		if (isHell)
@@ -139,7 +158,9 @@ public:
 	void RemoveTileEntity(Int3 _pos);
 	void SetViewRadius(int _viewRadius);
 	void NotifyNeighborsOfUpdate(Int3 _globalPos, BlockType _blockId);
-	void SetFrozen(bool _frozen) noexcept { frozen = _frozen; }
+	void SetFrozen(bool _frozen) noexcept {
+		frozen = _frozen;
+	}
 	// For creating a fresh tile entity for generation etc
 	void CreateTileEntity(std::shared_ptr<TileEntity> _tileEntity);
 	// For registering a tile entity that already exists in the world (e.g. loaded from disk)
