@@ -6,8 +6,6 @@
 */
 #include "gamerules.h"
 #include <map>
-#include <unordered_map>
-#include <type_traits>
 #include <string>
 #include <vector>
 
@@ -19,9 +17,9 @@ struct Registry {
     std::map<std::string, Id, std::less<>> byName;
     int nextCustom = static_cast<int>(Id::Max);
 
-    void Register(Id id, const std::string& name, std::any value) {
-        rules[static_cast<size_t>(id)] = Entry{name, std::move(value)};
-        byName[name] = id;
+    void Register(Id _id, const std::string& _name, Value _value) {
+        rules[static_cast<size_t>(_id)] = Entry{_name, std::move(_value)};
+        byName[_name] = _id;
     }
 
     Registry() {
@@ -59,33 +57,32 @@ Registry& R() {
 
 } // namespace
 
-// TODO: Maybe narrow this with std::variant?
 // Access via ID
-std::any GetRaw(const Id _id) {
+Value GetRaw(const Id _id) {
     const Entry* e = R().Find(_id);
-    return e ? e->value : std::any{};
+    return e ? e->value : Value{};
 }
 
-bool SetRaw(const Id _id, const std::any& _value) {
+bool SetRaw(const Id _id, const Value& _value) {
     Entry* e = R().Find(_id);
     if (!e)
         return false;
-    // Reject type changes#
-    if (e->value.has_value() && e->value.type() != _value.type())
+    // Reject type changes
+    if (e->value.index() != _value.index())
         return false;
     e->value = _value;
     return true;
 }
 
 // Access via string
-std::any GetRaw(const std::string& _name) {
+Value GetRaw(const std::string& _name) {
     return GetRaw(ToId(_name));
 }
-bool SetRaw(const std::string& _name, const std::any& _value) {
+bool SetRaw(const std::string& _name, const Value& _value) {
     return SetRaw(ToId(_name), _value);
 }
 
-bool Add(const std::string& _name, const std::any& _value) {
+bool Add(const std::string& _name, const Value& _value) {
     auto& r = R();
     if (r.byName.contains(_name))
         return false;
