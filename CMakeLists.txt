@@ -134,6 +134,7 @@ set(SHARED_SOURCES
     src/bpp_shared/entities/entity.cpp
     src/bpp_shared/entities/entity_item.cpp
     src/bpp_shared/entities/entity_player.cpp
+    src/bpp_shared/entities/entity_living.cpp
     src/bpp_shared/entities/entity_mobile.cpp
     src/bpp_shared/entities/entity_manager.cpp
     src/bpp_shared/entities/entity_pig.cpp
