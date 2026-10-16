@@ -1,8 +1,15 @@
-// gamerules.cpp
+/*
+ * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+*/
 #include "gamerules.h"
 #include <map>
 #include <unordered_map>
+#include <type_traits>
 #include <string>
+#include <vector>
 
 namespace Gamerule {
 namespace {
@@ -100,6 +107,15 @@ Id ToId(const std::string& _name) {
     auto& r = R();
     auto it = r.byName.find(_name);
     return it == r.byName.end() ? Id::Invalid : it->second;
+}
+
+std::vector<Entry> GetAll() {
+    auto& r = R();
+    std::vector<Entry> out;
+    out.reserve(r.rules.size());
+    for (const auto& [id, entry] : r.rules)
+        out.push_back(entry);
+    return out;
 }
 
 } // namespace Gamerule

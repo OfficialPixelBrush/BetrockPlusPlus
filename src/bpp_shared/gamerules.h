@@ -85,4 +85,6 @@ bool Remove(const std::string& _name);
 // Conversion to and from string/id (SLOW!)
 std::string ToString(const Gamerule::Id _id);
 Gamerule::Id ToId(const std::string& _name);
+// Very slow!
+std::vector<Entry> GetAll();
 };
