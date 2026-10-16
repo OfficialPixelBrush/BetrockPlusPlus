@@ -20,6 +20,7 @@
 #include "items/tool_properties.h"
 #include "pathfinding/pathfinder.hpp"
 #include "tile_entities/tile_entity.h"
+#include "gamerules.h"
 
 namespace ServerBlock {
 BlockBehavior blockBehaviors[BLOCK_MAX] = {};
@@ -198,7 +199,7 @@ void ServerBlock::Initialize() {
 			return false;
 		// TODO: Only make beds explode if the gamerule is set (maybe make them global?)
 		// Intentional game design (trademark)
-		if (_world.thisDimension != Dimension::Overworld) {
+		if (_world.thisDimension != Dimension::Overworld && Gamerule::Get<bool>(Gamerule::Id::NetherBedsExplode)) {
 			// TODO: Probably deduplicate this via blockBehaviors[BLOCK_BED].onBlockDestroyedByPlayer
 			Int3 headPos = _position;
 			auto meta = _world.GetMetadata(headPos);

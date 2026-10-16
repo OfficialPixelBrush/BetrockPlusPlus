@@ -6,6 +6,7 @@
 */
 #include "weather_system.h"
 #include <algorithm> 
+#include "gamerules.h"
 
 void WeatherSystem::Init(int32_t _rainTimer, int32_t _thunderTimer, bool _isRaining, bool _isThundering) {
 	rainTimer = _rainTimer;
@@ -18,6 +19,8 @@ void WeatherSystem::Init(int32_t _rainTimer, int32_t _thunderTimer, bool _isRain
 }
 
 void WeatherSystem::Tick(Java::Random& _rand) {
+	if (!Gamerule::Get<bool>(Gamerule::Id::AdvanceWeather))
+		return;
 	if (thunderTimer <= 0) {
 		thunderTimer = isThundering ? _rand.NextInt(12000) + 3600 : _rand.NextInt(168000) + 12000;
 	} else if (--thunderTimer <= 0) {

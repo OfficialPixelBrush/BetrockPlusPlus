@@ -9,29 +9,47 @@
 #include <string>
 #include <map>
 #include <variant>
+#include <vector>
 
 namespace Gamerule {
 
+// Since Beta lacks gamerules, a lot of these have been lifted
+// from the modern game both in name and functionality.
 enum class Id {
-	// Gameplay
-	Pvp,
+	// Drops
+	BlockDrops,
+	EntityDrops,
+	MobDrops,
+	// Misc
+	MaxMinecartSpeed,
+	TntExplodes,
 	Nightmares,
-	KeepInventory,
-	ExplodingBeds,
-	DoBlockDrops,
-	DoEntityDrops,
-	// Spawning
-	SpawnMobs,
-	SpawnMonsters,
+	NetherBedsExplode,
+	// Mobs
+	ForgiveDeadPlayers,
 	MobGriefing,
-	// Ticking
-	DoDaylightCycle,
-	DoWeatherCycle,
-	DoFireTick,
-	// Damage
+	// Player
+	AllowEnteringNetherUsingPortals,
 	DrowningDamage,
 	FallDamage,
 	FireDamage,
+	ImmediateRespawn,
+	KeepInventory,
+	PlayerMovementCheck,
+	PlayersSleepingPercentage,
+	Pvp,
+	RespawnRadius,
+	// Spawning
+	SpawnMobs,
+	SpawnMonsters,
+	// World Updates
+	AdvanceTime,
+	AdvanceWeather,
+	FireSpread,
+	LavaSourceConversion,
+	MaxSnowAccumulationHeight,
+	RandomTickSpeed,
+	WaterSourceConversion,
 
 	// NOTE: Last entry!
 	// This value is not used by any of our gamerules

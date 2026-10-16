@@ -40,6 +40,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <vector>
+#include "gamerules.h"
 
 struct PendingBlock {
 	Block block{ BLOCK_AIR, 0 };
@@ -293,8 +294,9 @@ public:
 			return spawnPoint;
 		int sx = this->spawnPoint.x;
 		int sz = this->spawnPoint.z;
-		sx += rand.NextInt(20) - 10;
-		sz += rand.NextInt(20) - 10;
+		const int32_t radius = Gamerule::Get<int32_t>(Gamerule::Id::RespawnRadius);
+		sx += rand.NextInt(radius*2) - radius;
+		sz += rand.NextInt(radius*2) - radius;
 		int sy = FindTopSolidBlock(sx, sz);
 		return { sx, sy, sz };
 	}
