@@ -123,7 +123,7 @@ public:
 	// Send a message to all players
 	void SendGlobalChatMessage(std::string _message) {
 		for (auto& other : players) {
-			if (other && other->connState != ConnectionState::Playing)
+			if (!other || other->connState != ConnectionState::Playing)
 				continue;
 			Packet::ChatMessage reply;
 			reply.message = _message;
