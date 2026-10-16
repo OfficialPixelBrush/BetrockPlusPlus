@@ -612,18 +612,21 @@ void Server::SaveLevelFile() {
 }
 
 void Server::AcceptNewPlayers() {
-	std::string clientIp;
-	auto clientSocket = ServerSocketManager::CreateClientSocket(serverSocket, &clientIp);
-	if (clientSocket < 0)
-		return;
-	auto session = std::make_shared<PlayerSession>(clientSocket, gameRuntime);
-	if (players.size() >= maximumPlayers) {
-		DisconnectPlayer("Server is full!", *session);
-		return;
-	}
-	session->ipAddress = clientIp;
-	session->server = this;
-	players.push_back(std::move(session));
+    constexpr int K_MAX_ACCEPTS_PER_TICK = 16;
+    for (int i = 0; i < K_MAX_ACCEPTS_PER_TICK; ++i) {
+        std::string clientIp;
+        auto clientSocket = ServerSocketManager::CreateClientSocket(serverSocket, &clientIp);
+        if (clientSocket < 0)
+            return; // queue is empty
+        auto session = std::make_shared<PlayerSession>(clientSocket, gameRuntime);
+        if (players.size() >= maximumPlayers) {
+            DisconnectPlayer("Server is full!", *session);
+            continue; // keep draining so rejected clients get their kick message promptly
+        }
+        session->ipAddress = clientIp;
+        session->server = this;
+        players.push_back(std::move(session));
+    }
 }
 
 void Server::StopTimeout(float _secondsUntilShutdown) {
@@ -715,6 +718,7 @@ void Server::Tick() {
 	std::chrono::nanoseconds autosaveElapsed{ 0 };
 	auto networkStart = Clock::now();
 	AcceptNewPlayers();
+	chunkSender.BeginTick();
 
 	std::vector<ClientPosition> overworldPositions;
 	std::vector<ClientPosition> netherPositions;
@@ -1131,27 +1135,29 @@ std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {
 	// Force disconnect players that quit
 	std::vector<std::shared_ptr<PlayerSession>> removed;
 	players.erase(std::remove_if(players.begin(), players.end(),
-	                             [&](const auto& _s) {
-		                             if (!_s->stream.IsConnected()) {
-			                             if (_s->entity) {
-				                             GlobalLogger().info << "Disconnected client " << _s->username
-				                                                 << " with entity id " << _s->entity->id << "\n";
-				                             SendGlobalChatMessage("§e" + _s->username + " left the game.");
-
-				                             const bp_player_leave_event event{ &_s->apiPlayer };
-				                             addonManager.Broadcast(&bp_addon_events::playerLeave, event);
-
-				                             if (_s->entity->entityManager)
-					                             _s->entity->entityManager->RemoveEntity(_s->entity->id);
-			                             }
-			                             IndexRemoveSession(*_s);
-			                             chunkSender.Remove(*_s);
-			                             removed.push_back(_s);
-			                             return true;
-		                             }
-		                             return false;
+	                             [&removed](const auto& session) {
+		                             if (session->stream.IsConnected())
+			                             return false;
+		                             removed.push_back(session);
+		                             return true;
 	                             }),
 	              players.end());
+
+	for (auto& session : removed) {
+		if (session->entity) {
+			GlobalLogger().info << "Disconnected client " << session->username
+			                    << " with entity id " << session->entity->id << "\n";
+			SendGlobalChatMessage("§e" + session->username + " left the game.");
+
+			const bp_player_leave_event event{ &session->apiPlayer };
+			addonManager.Broadcast(&bp_addon_events::playerLeave, event);
+
+			if (session->entity->entityManager)
+				session->entity->entityManager->RemoveEntity(session->entity->id);
+		}
+		IndexRemoveSession(*session);
+		chunkSender.Remove(*session);
+	}
 	return removed;
 };
 

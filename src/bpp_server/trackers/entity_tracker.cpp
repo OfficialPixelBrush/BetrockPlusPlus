@@ -521,11 +521,13 @@ void EntityTracker::DespawnEntityForViewers(EntityId _entityId, TrackedEntry& _e
 }
 
 void EntityTracker::SendPacketToPlayersInTrackedEntry(Packet::BasePacket& _pkt, TrackedEntry& _trackedEntry) {
-	for (auto& playerId : _trackedEntry.visibleTo) {
-		auto session = server->GetSessionById(playerId);
-		if (!session)
-			continue;
-		_pkt.Serialize(session->stream);
+	for (EntityId playerId : _trackedEntry.visibleTo) {
+		auto playerIt = trackedEntities.find(playerId);
+		if (playerIt == trackedEntities.end()) continue;
+
+		auto* player = dynamic_cast<EntityMPPlayer*>(playerIt->second.entity);
+		if (!player || !player->session) continue;
+		_pkt.Serialize(player->session->stream);
 	}
 }
 
@@ -547,12 +549,7 @@ void EntityTracker::SendPacketToViewers(Packet::BasePacket& _pkt, EntityId _id) 
 	auto* entry = GetTrackerForEntityId(_id);
 	if (!entry)
 		return; // entity isn't tracked
-	for (EntityId viewerId : entry->visibleTo) {
-		auto session = server->GetSessionById(viewerId);
-		if (!session)
-			continue;
-		_pkt.Serialize(session->stream);
-	}
+	SendPacketToPlayersInTrackedEntry(_pkt, *entry);
 }
 
 void EntityTracker::SendMetadataState(TrackedEntry& _trackedEntry, std::shared_ptr<PlayerSession> _targetSession) {

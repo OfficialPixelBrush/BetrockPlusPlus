@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -24,7 +25,7 @@ struct ChunkSender {
 	// One result slot per in-flight chunk.
 	struct PendingChunk {
 		Int32_2 pos;
-		std::future<std::vector<uint8_t>> data; // async compression result
+		std::shared_future<Packet::ChunkData> data; // shared!! async compression result
 		std::weak_ptr<Chunk> chunkRef;          // world may unload; lock only when flushing
 	};
 
@@ -44,13 +45,22 @@ struct ChunkSender {
 
 	BS::thread_pool<> pool{ 2 };
 
+	// reuse chunk packets across clients for 1 tick.
+	std::unordered_map<const Chunk*, std::shared_future<Packet::ChunkData>> tickPackets;
+
+	void BeginTick() {
+		tickPackets.clear();
+	}
+
 	size_t Enqueue(PlayerSession& _session, WorldManager& _world, int _batchSize = -1) {
 		if (_batchSize < 0)
 			_batchSize = static_cast<int>(pool.get_thread_count()) * 2;
 		int cx = int(std::floor(_session.position.pos.x)) >> 4;
 		int cz = int(std::floor(_session.position.pos.z)) >> 4;
 
-		int radius = _world.GetViewRadius();
+		int radius = _session.position.viewDistanceOverride
+		                 ? std::min(_session.position.viewDistanceOverride, _world.GetViewRadius())
+		                 : _world.GetViewRadius();
 
 		std::vector<Int32_2> toSend;
 		for (int dx = -radius; dx <= radius; dx++) {
@@ -102,14 +112,23 @@ struct ChunkSender {
 		// Rebuild toSend, excluding chunks that already have an in-flight job.
 		int submitted = 0;
 		for (auto& p : toSend) {
-			if (_batchSize > 0 && submitted >= _batchSize)
+			if (_batchSize > 0 && queue.size() >= static_cast<size_t>(_batchSize))
 				break;
 			PendingChunk pc;
 			std::shared_ptr<Chunk> chunkRef = _world.chunks.at(p);
 			pc.pos = p;
 			pc.chunkRef = chunkRef;
-			// Task owns a shared_ptr for the duration of serialization only.
-			pc.data = pool.submit_task([chunkRef]() { return ChunkSerializer::Serialize(*chunkRef); });
+			auto [packet, inserted] = tickPackets.try_emplace(chunkRef.get());
+			if (inserted) {
+				packet->second = pool.submit_task([chunkRef]() {
+					Packet::ChunkData data;
+					data.pos.x = chunkRef->cpos.x * CHUNK_WIDTH;
+					data.pos.z = chunkRef->cpos.z * CHUNK_WIDTH;
+					data.compressedData = ChunkSerializer::Serialize(*chunkRef);
+					return data;
+				}).share();
+			}
+			pc.data = packet->second;
 			queue.push_back(std::move(pc));
 			_session.sentChunks.insert(p);
 			++submitted;
@@ -183,19 +202,13 @@ struct ChunkSender {
 				continue;
 			}
 
-			auto compressed = pc.data.get();
-
 			Packet::SetChunkVisibility vis;
 			vis.pos.x = pc.pos.x;
 			vis.pos.z = pc.pos.z;
 			vis.visible = true;
 			vis.Serialize(_session.stream);
 
-			Packet::ChunkData data;
-			data.pos.x = pc.pos.x * 16;
-			data.pos.z = pc.pos.z * 16;
-			data.compressedData = std::move(compressed);
-			data.Serialize(_session.stream);
+			pc.data.get().Serialize(_session.stream);
 
 			_session.flushedChunks.insert(pc.pos);
 			_session.newlyFlushed.push_back(pc.pos);
