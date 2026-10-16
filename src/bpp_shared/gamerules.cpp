@@ -15,16 +15,17 @@ namespace Gamerule {
 namespace {
 
 struct Registry {
-    std::map<Id, Entry> rules;
-    std::unordered_map<std::string, Id> byName;
+    std::vector<Entry> rules;
+    std::map<std::string, Id, std::less<>> byName;
     int nextCustom = static_cast<int>(Id::Max);
 
     void Register(Id id, const std::string& name, std::any value) {
-        rules[id] = Entry{name, std::move(value)};
+        rules[static_cast<size_t>(id)] = Entry{name, std::move(value)};
         byName[name] = id;
     }
 
     Registry() {
+        rules.resize(static_cast<size_t>(Id::Max));
         Register(Id::Pvp,             "pvp",             true);
         Register(Id::Nightmares,      "nightmares",      true);
         Register(Id::KeepInventory,   "keepInventory",   false);
@@ -41,6 +42,13 @@ struct Registry {
         Register(Id::FallDamage,      "fallDamage",      true);
         Register(Id::FireDamage,      "fireDamage",      true);
     }
+
+    Entry* Find(Id _id) {
+        const auto i = static_cast<size_t>(_id);
+        if (i >= rules.size() || rules[i].name.empty())
+            return nullptr;
+        return &rules[i];
+    }
 };
 
 // Function-local static avoids static-init-order problems across TUs
@@ -54,20 +62,18 @@ Registry& R() {
 // TODO: Maybe narrow this with std::variant?
 // Access via ID
 std::any GetRaw(const Id _id) {
-    auto& r = R();
-    auto it = r.rules.find(_id);
-    return it == r.rules.end() ? std::any{} : it->second.value;
+    const Entry* e = R().Find(_id);
+    return e ? e->value : std::any{};
 }
 
 bool SetRaw(const Id _id, const std::any& _value) {
-    auto& r = R();
-    auto it = r.rules.find(_id);
-    if (it == r.rules.end())
+    Entry* e = R().Find(_id);
+    if (!e)
         return false;
-    // Reject type changes
-    if (it->second.value.has_value() && it->second.value.type() != _value.type())
+    // Reject type changes#
+    if (e->value.has_value() && e->value.type() != _value.type())
         return false;
-    it->second.value = _value;
+    e->value = _value;
     return true;
 }
 
@@ -83,7 +89,9 @@ bool Add(const std::string& _name, const std::any& _value) {
     auto& r = R();
     if (r.byName.contains(_name))
         return false;
-    r.Register(static_cast<Id>(r.nextCustom++), _name, _value);
+    const Id id = static_cast<Id>(r.rules.size());
+    r.rules.push_back(Entry{_name, _value});
+    r.byName[_name] = id;
     return true;
 }
 
@@ -92,15 +100,14 @@ bool Remove(const std::string& _name) {
     auto it = r.byName.find(_name);
     if (it == r.byName.end())
         return false;
-    r.rules.erase(it->second);
+    r.rules[static_cast<size_t>(it->second)] = Entry{};  // tombstone
     r.byName.erase(it);
     return true;
 }
 
 std::string ToString(const Id _id) {
-    auto& r = R();
-    auto it = r.rules.find(_id);
-    return it == r.rules.end() ? "" : it->second.name;
+    const Entry* e = R().Find(_id);
+    return e ? e->name : "";
 }
 
 Id ToId(const std::string& _name) {
@@ -109,8 +116,12 @@ Id ToId(const std::string& _name) {
     return it == r.byName.end() ? Id::Invalid : it->second;
 }
 
-const std::map<Id, Entry>& GetAll() {
+const std::vector<Entry>& GetAll() {
     return R().rules;
+}
+
+const std::map<std::string, Id, std::less<>>& GetAllNames() {
+    return R().byName;
 }
 
 } // namespace Gamerule
