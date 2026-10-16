@@ -233,8 +233,10 @@ void Server::LoadConfig() {
 	betacraftHeartbeat.Load(config, serverPort);
 #endif
 	//motd = config.GetAsString("motd");
-	gamerules.spawnAnimals = config.GetAsBoolean("spawn-animals", true);
-	gamerules.spawnMonsters = config.GetAsBoolean("spawn-monsters", true);
+	const bool spawnAnimals = config.GetAsBoolean("spawn-animals", true);
+	Gamerule::Set(Gamerule::Id::SpawnMobs, spawnAnimals);
+	const bool spawnMonsters = config.GetAsBoolean("spawn-monsters", true);
+	Gamerule::Set(Gamerule::Id::SpawnMonsters, spawnMonsters);
 	maximumPlayers = config.GetAsNumber<uint16_t>("max-players", 20);
 	//maximumThreads = config.GetAsNumber<int32_t>("max-generator-threads");
 	useWhitelist = config.GetAsBoolean("white-list");
@@ -1089,7 +1091,7 @@ void Server::ProcessSleeping(Dimension _dimension) {
 		return;
 
 	bool spawnedNightmare = false;
-	if (gamerules.nightmares) {
+	if (Gamerule::Get<bool>(Gamerule::Id::Nightmares)) {
 		for (auto& session : sleepingSessions)
 			spawnedNightmare |= Blocks::TrySpawnNightmare(*world, *session->entity);
 	}
