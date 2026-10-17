@@ -23,6 +23,7 @@ namespace Logger {
 // clang-format on
 	void Init();
 	void Close();
+	void Flush();
 
 	void Log(std::string _message, LogLevel _level = LOG_MESSAGE);
 	void SetTerminalSink(std::function<void(const char*, int)> _sink);

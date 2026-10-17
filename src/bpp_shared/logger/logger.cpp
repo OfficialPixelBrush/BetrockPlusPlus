@@ -68,14 +68,27 @@ void Init() {
 
 	logFile.open(logFilePath, std::ios::out | std::ios::app);
 
+	// TODO: Make log file optional?
+	// Maybe for systems without a disk,
+	// or only limited/slow disk I/O?
 	if (!logFile.is_open()) {
 		throw std::runtime_error("Failed to open log file");
 	}
 }
 
+// Manual flush.
+// Best to run this at regular intervals,
+// or for important messages, like warnings or errors
+void Flush() {
+    if (logFile.is_open())
+		logFile.flush();
+}
+
 void Close() {
-	if (logFile.is_open())
-		logFile.close();
+	Flush();
+	if (!logFile.is_open())
+		return;
+	logFile.close();
 }
 
 void SetTerminalSink(std::function<void(const char*, int)> sink) {
@@ -126,6 +139,7 @@ void WriteWarning(std::string _message) {
 	}
 	if (logLevelText & LOG_WARNING) {
 		logFile << time << " " << header << " " << _message << "\n";
+		Flush();
 	}
 }
 
@@ -138,6 +152,7 @@ void WriteError(std::string _message) {
 	}
 	if (logLevelText & LOG_ERROR) {
 		logFile << time << " " << header << " " << _message << "\n";
+		Flush();
 	}
 }
 
