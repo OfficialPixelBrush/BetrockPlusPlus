@@ -17,6 +17,18 @@
 
 namespace fs = std::filesystem;
 
+std::ofstream logFile;
+std::mutex terminalMutex;
+std::function<void(const char*, int)> terminalSink;
+
+#ifndef NDEBUG
+LogLevel logLevelText = LOG_ALL;
+#else
+LogLevel logLevelText = LOG_ALL;
+#endif
+
+LogLevel logLevelTerminal = LOG_ALL;
+
 std::string Logger::GetCurrentTimeString(bool _fileFormat) {
 	auto now = std::chrono::system_clock::now();
 	auto inTimeT = std::chrono::system_clock::to_time_t(now);
@@ -25,32 +37,35 @@ std::string Logger::GetCurrentTimeString(bool _fileFormat) {
 	if (_fileFormat)
 		ss << std::put_time(std::localtime(&inTimeT), "%Y-%m-%d-%H-%M-%S");
 	else
-#ifdef LOGGER_SHORT_TIME
+		#ifdef LOGGER_SHORT_TIME
 		ss << std::put_time(std::localtime(&in_time_t), "%H:%M:%S");
-#else
-		ss << std::put_time(std::localtime(&inTimeT), "%Y-%m-%d %H:%M:%S");
-#endif
+	#else
+	ss << std::put_time(std::localtime(&inTimeT), "%Y-%m-%d %H:%M:%S");
+	#endif
 	return ss.str();
 }
 
-Logger::Logger()
-    : msg(*this, LOG_MESSAGE), chat(*this, LOG_CHAT), info(*this, LOG_INFO), warn(*this, LOG_WARNING),
-      error(*this, LOG_ERROR), debug(*this, LOG_DEBUG) {
-	if (logLevelText != LOG_NONE) {
-		fs::path logDir = "logs";
+Logger::Init() {
+	if (logLevelText == LOG_NONE)
+		return;
+	fs::path logDir = "logs";
 
-		if (!fs::exists(logDir)) {
-			fs::create_directories(logDir);
-		}
-
-		fs::path logFilePath = logDir / (GetCurrentTimeString(true) + ".log");
-
-		logFile.open(logFilePath, std::ios::out | std::ios::app);
-
-		if (!logFile.is_open()) {
-			throw std::runtime_error("Failed to open log file");
-		}
+	if (!fs::exists(logDir)) {
+		fs::create_directories(logDir);
 	}
+
+	fs::path logFilePath = logDir / (GetCurrentTimeString(true) + ".log");
+
+	logFile.open(logFilePath, std::ios::out | std::ios::app);
+
+	if (!logFile.is_open()) {
+		throw std::runtime_error("Failed to open log file");
+	}
+}
+
+void Logger::Close() {
+	if (logFile.is_open())
+		logFile.close();
 }
 
 // Log a message with the passed Level
@@ -161,9 +176,4 @@ void Logger::Debug(std::string _message) {
 	if (logLevelText & LOG_DEBUG) {
 		logFile << time << " " << header << " " << _message << "\n";
 	}
-}
-
-Logger& GlobalLogger() {
-	static Logger logger;
-	return logger;
 }

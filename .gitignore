@@ -58,3 +58,4 @@ ops.txt
 /.vscode
 banned-ips.txt
 banned-players.txt
+*.kate-swp
