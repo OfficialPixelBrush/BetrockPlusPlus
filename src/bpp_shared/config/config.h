@@ -31,6 +31,12 @@ public:
 	// get the value at key or a the default mapped_type if key doesn't exist
 	std::string_view Get(const std::string& _key) noexcept;
 
+	// true if the key exists (even if its value is empty)
+	bool Has(const std::string& _key) {
+		std::shared_lock lock(propertiesMutex);
+		return properties.find(_key) != properties.end();
+	}
+
 	// get the value at key as string, or _default if the key doesn't exist
 	std::string GetAsString(const std::string& _key, std::string _default = "") {
 		std::shared_lock lock(propertiesMutex);

@@ -9,41 +9,9 @@
 #include "../command_registry.h"
 #include "version.h"
 #include "gamerules.h"
+#include "server.h"
 
 namespace {
-
-std::string ValueToString(const Gamerule::Type& _v) {
-    return std::visit([](const auto& x) -> std::string {
-        using T = std::decay_t<decltype(x)>;
-        if constexpr (std::is_same_v<T, bool>)
-            return x ? "true" : "false";
-        else if constexpr (std::is_same_v<T, std::string>)
-            return x;
-        else
-            return std::to_string(x);
-    }, _v);
-}
-
-// Parses _text into the same type _current holds
-std::optional<Gamerule::Type> ParseLike(const Gamerule::Type& _current, const std::string& _text) {
-    return std::visit([&](const auto& cur) -> std::optional<Gamerule::Type> {
-        using T = std::decay_t<decltype(cur)>;
-        if constexpr (std::is_same_v<T, bool>) {
-            if (_text == "true")  return Gamerule::Type{true};
-            if (_text == "false") return Gamerule::Type{false};
-            return std::nullopt;
-        } else if constexpr (std::is_same_v<T, std::string>) {
-            return Gamerule::Type{_text};
-        } else {
-            T out{};
-            const char* end = _text.data() + _text.size();
-            auto [ptr, ec] = std::from_chars(_text.data(), end, out);
-            if (ec != std::errc{} || ptr != end)
-                return std::nullopt;
-            return Gamerule::Type{out};
-        }
-    }, _current);
-}
 
 std::string SetGamerule(const strategos::CmdNode& _cmd, void* _userData) {
     auto& ctx = CmdCtx(_userData);
@@ -54,11 +22,13 @@ std::string SetGamerule(const strategos::CmdNode& _cmd, void* _userData) {
     if (!valueText)
         return "Missing value!";
 
-    const auto parsed = ParseLike(Gamerule::GetRaw(*gameruleName), *valueText);
+    const auto parsed = Gamerule::ParseLike(Gamerule::GetRaw(*gameruleName), *valueText);
     if (!parsed || !Gamerule::SetRaw(*gameruleName, *parsed))
         return "Invalid value for this gamerule!";
 
-    SendFeedback(ctx, std::format("Gamerule {} is now: {}", *gameruleName, ValueToString(*parsed)));
+    SendFeedback(ctx, std::format("Gamerule {} is now: {}", *gameruleName, Gamerule::ValueToString(*parsed)));
+    if (ctx.server && !ctx.server->PersistGamerule(*gameruleName))
+        return "Gamerule changed, but saving it to gamerules.txt failed!";
     return "";
 }
 
@@ -68,7 +38,7 @@ std::string GetGamerule(const strategos::CmdNode& _cmd, void* _userData) {
     if (!gameruleName || Gamerule::ToId(*gameruleName) == Gamerule::Id::Invalid)
         return "Gamerule doesn't exist!";
 
-    SendFeedback(ctx, std::format("Gamerule {} is: {}", *gameruleName, ValueToString(Gamerule::GetRaw(*gameruleName))));
+    SendFeedback(ctx, std::format("Gamerule {} is: {}", *gameruleName, Gamerule::ValueToString(Gamerule::GetRaw(*gameruleName))));
     return "";
 }
 

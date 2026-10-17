@@ -45,7 +45,7 @@
 #include "version.h"
 #include <chrono>
 
-Server::Server() : gameRuntime(), addonManager(this), config("server.properties") {
+Server::Server() : gameRuntime(), addonManager(this), config("server.properties"), gamerulesConfig("gamerules.txt") {
 	ServerBlock::Initialize();
 	LoadConfig();
 
@@ -248,6 +248,33 @@ void Server::LoadConfig() {
 		LoadWhitelist();
 		Logger::Info << "Whitelist enabled!\n";
 	}
+	// Loaded last so gamerules.txt takes priority over the legacy spawn-animals/spawn-monsters keys
+	LoadGamerules();
+}
+
+void Server::LoadGamerules() {
+	if (!gamerulesConfig.LoadFromDisk()) {
+		// No gamerules.txt yet, create it from the current (default) values
+		Gamerule::WriteToConfig(gamerulesConfig);
+		gamerulesConfig.SaveToDisk();
+		return;
+	}
+	// Add any gamerules that are missing from the file (e.g. ones added in an update)
+	if (Gamerule::ReadFromConfig(gamerulesConfig)) {
+		Gamerule::WriteToConfig(gamerulesConfig);
+		gamerulesConfig.SaveToDisk();
+	}
+}
+
+bool Server::PersistGamerule(const std::string& _name) {
+	if (Gamerule::ToId(_name) == Gamerule::Id::Invalid)
+		return false;
+	gamerulesConfig.Set(_name, Gamerule::ValueToString(Gamerule::GetRaw(_name)));
+	if (!gamerulesConfig.SaveKeyToDisk(_name)) {
+		Logger::Error << "Failed to persist gamerule '" << _name << "' to gamerules.txt\n";
+		return false;
+	}
+	return true;
 }
 
 void Server::LoadWhitelist() {
