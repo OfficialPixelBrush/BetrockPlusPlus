@@ -111,7 +111,11 @@ void ServerConsole::Stop() {
 #if defined(_WIN32)
 	else {
 		while (!readerDone.load()) {
+#if defined(__MINGW32__) && defined(__WINPTHREADS_VERSION)
+			CancelSynchronousIo(pthread_gethandle(reader.native_handle()));
+#else
 			CancelSynchronousIo(reader.native_handle());
+#endif
 			std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		}
 	}

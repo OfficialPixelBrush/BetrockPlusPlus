@@ -451,6 +451,9 @@ endif()
 
 if(CRASH_LOGGING)
     target_compile_definitions(BetrockPlusPlus PRIVATE CRASH_LOGGING)
+    if(WIN32)
+        target_link_libraries(BetrockPlusPlus PRIVATE dbghelp)
+    endif()
 endif()
 
 # Add some extra warnings
