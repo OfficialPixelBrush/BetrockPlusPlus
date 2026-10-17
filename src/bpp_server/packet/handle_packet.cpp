@@ -73,7 +73,7 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
 	if (_session.recentChatMessageCount < _session.recentChatMessageTimes.size())
 		++_session.recentChatMessageCount;
 
-	Logger::Chat << "<" << _session.username << "> " << _pkt.message << "\n";
+	Logger::Message << "<" << _session.username << "> " << _pkt.message << "\n";
 	if (!_pkt.message.empty() && _pkt.message.front() == '/') {
 		CommandContext ctx;
 		ctx.session = &_session;

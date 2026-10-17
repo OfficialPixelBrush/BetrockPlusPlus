@@ -14,12 +14,14 @@
 #include <mutex>
 
 namespace Logger {
+// clang-format off
 	extern LogStream Message;
-	extern LogStream Chat;
 	extern LogStream Info;
 	extern LogStream Warning;
 	extern LogStream Error;
 	extern LogStream Debug;
+// clang-format on
+	void Init();
 	void Close();
 
 	void Log(std::string _message, LogLevel _level = LOG_MESSAGE);
