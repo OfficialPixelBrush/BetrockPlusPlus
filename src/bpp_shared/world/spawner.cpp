@@ -16,11 +16,21 @@
 #include "entities/entity_skeleton.h"
 #include "entities/entity_slime.h"
 #include "entities/entity_spider.h"
+#include "entities/entity_squid.h"
 #include "entities/entity_zombie.h"
 #include "world.h"
 
 EntitySpawner::EntitySpawner() {
-	// Passive (need to make this biome dependent)
+	// Water
+	SpawnCategory water;
+	water.spawnMaterial = Material::Water();
+	water.spawnListDefault = { { std::make_shared<SquidEntity>(), []() { return std::make_shared<SquidEntity>(); },
+		                         10 } };
+	water.spawnListForest = water.spawnListDefault;
+	water.cap = 5;
+	categories.push_back(water);
+
+	// Passive
 	SpawnCategory passive;
 	passive.spawnListDefault = {
 		{ std::make_shared<PigEntity>(), []() { return std::make_shared<PigEntity>(); }, 10 },
@@ -81,7 +91,11 @@ static std::optional<SpawnEntry> PickWeighted(Java::Random& _rand, SpawnCategory
 	return std::nullopt;
 }
 
-static bool IsValidSpawnBlock(WorldManager& _world, Int3 _pos) {
+static bool IsValidSpawnBlock(WorldManager& _world, Int3 _pos, Material& _material) {
+	if (_material.type == MaterialType::Water) {
+		// This check technically means squids can spawn in lava lol
+		return _world.GetMaterial(_pos).isLiquid && !_world.IsBlockNormalCube({ _pos.x, _pos.y + 1, _pos.z });
+	}
 	return _world.IsBlockNormalCube({ _pos.x, _pos.y - 1, _pos.z }) && !_world.IsBlockNormalCube(_pos) &&
 	       !_world.GetMaterial(_pos).isLiquid && !_world.IsBlockNormalCube({ _pos.x, _pos.y + 1, _pos.z });
 }
@@ -120,7 +134,8 @@ void EntitySpawner::TrySpawnEntities(WorldManager& _world, const std::vector<Cli
 				               _world.rand.NextInt(CHUNK_HEIGHT),
 				               cpos.z * CHUNK_WIDTH + _world.rand.NextInt(CHUNK_WIDTH) };
 
-			if (_world.IsBlockNormalCube(anchorPos) || _world.GetMaterial(anchorPos).isSolid)
+			// The anchor must not be a solid cube, and its material must be the category's spawn material
+			if (_world.IsBlockNormalCube(anchorPos) || _world.GetMaterial(anchorPos) != category.spawnMaterial)
 				continue; // Discard this chunk
 
 			auto biome = _world.GetBiome({ cpos.x << 4, cpos.z << 4 });
@@ -137,7 +152,7 @@ void EntitySpawner::TrySpawnEntities(WorldManager& _world, const std::vector<Cli
 					pos.x += _world.rand.NextInt(6) - _world.rand.NextInt(6);
 					pos.z += _world.rand.NextInt(6) - _world.rand.NextInt(6);
 
-					if (!IsValidSpawnBlock(_world, pos))
+					if (!IsValidSpawnBlock(_world, pos, category.spawnMaterial))
 						continue;
 					if (_world.entityManager.GetClosestPlayerWithin(pos, 24.0) != nullptr)
 						continue;
@@ -145,7 +160,7 @@ void EntitySpawner::TrySpawnEntities(WorldManager& _world, const std::vector<Cli
 						continue;
 
 					// Reused template instance
-					auto candidate = picked.value().entityPtrShared;
+					auto& candidate = picked.value().entityPtrShared;
 					candidate->world = &_world;
 					candidate->entityManager = &_world.entityManager;
 

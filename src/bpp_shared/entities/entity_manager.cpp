@@ -24,6 +24,7 @@
 #include "entity_spider.h"
 #include "entity_tnt.h"
 #include "entity_zombie.h"
+#include "entity_squid.h"
 #include "gamerules.h"
 #include "world.h"
 
@@ -409,6 +410,11 @@ void EntityManager::CreateEntityFromNbt(Tag& _nbt) {
 		TntEntity entity;
 		entity.LoadFromNbt(_nbt);
 		AddEntity(std::make_shared<TntEntity>(entity));
+	}
+	if (id == "Squid") {
+		SquidEntity entity;
+		entity.LoadFromNbt(_nbt);
+		AddEntity(std::make_shared<SquidEntity>(entity));
 	}
 }
 

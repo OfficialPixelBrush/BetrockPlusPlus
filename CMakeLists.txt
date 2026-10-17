@@ -121,6 +121,8 @@ file(GLOB COMMAND_SOURCES
 # Shared source-code
 set(SHARED_SOURCES
     # Shared files
+
+    # Tile entities
     src/bpp_shared/tile_entities/tile_entity_manager.cpp
     src/bpp_shared/tile_entities/tile_entity_base.cpp
     src/bpp_shared/tile_entities/tile_entity_sign.cpp
@@ -131,6 +133,10 @@ set(SHARED_SOURCES
     src/bpp_shared/tile_entities/tile_entity_jukebox.cpp
     src/bpp_shared/tile_entities/tile_entity_noteblock.cpp
     src/bpp_shared/tile_entities/tile_entity_piston.cpp
+
+    # Entities
+    src/bpp_shared/pathfinding/pathfinder.cpp
+    src/bpp_shared/entities/entity_squid.cpp
     src/bpp_shared/entities/entity.cpp
     src/bpp_shared/entities/entity_item.cpp
     src/bpp_shared/entities/entity_player.cpp
@@ -156,10 +162,14 @@ set(SHARED_SOURCES
     src/bpp_shared/entities/entity_throwable.cpp
     src/bpp_shared/entities/entity_slime.cpp
     src/bpp_shared/entities/entity_tnt.cpp
+
+    # Utilities
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/strings/ucs2.cpp
     src/bpp_shared/strings/labels.cpp
     src/bpp_shared/networking/network_stream.cpp
+
+    # World
     src/bpp_shared/world/chunk.cpp
     src/bpp_shared/world/world_wrapper.cpp
     src/bpp_shared/world/world.cpp
@@ -171,6 +181,8 @@ set(SHARED_SOURCES
     src/bpp_shared/world/managers/tick_scheduler.cpp
     src/bpp_shared/world/managers/redstone_manager.cpp
     src/bpp_shared/world/managers/rail_manager.cpp
+
+    # Blocks
     src/bpp_shared/blocks/block_properties_behaviors.cpp
     src/bpp_shared/blocks/block_behaviors.cpp
     src/bpp_shared/blocks/block_behaviors/common.cpp
@@ -188,10 +200,14 @@ set(SHARED_SOURCES
     src/bpp_shared/blocks/block_behaviors/drops.cpp
     src/bpp_shared/blocks/block_behaviors/piston.cpp
     src/bpp_shared/blocks/block_properties.cpp
+
+    # Items
     src/bpp_shared/items/item_map.cpp
     src/bpp_shared/items/item_properties.cpp
     src/bpp_shared/items/tool_properties.cpp
     src/bpp_shared/items/tool_item_properties.cpp
+
+    # Inventory interactions
     src/bpp_shared/inventory/inventory_interaction.cpp
     src/bpp_shared/inventory/interactions/chest.cpp
     src/bpp_shared/inventory/interactions/large_chest.cpp
@@ -200,9 +216,12 @@ set(SHARED_SOURCES
     src/bpp_shared/inventory/interactions/player.cpp
     src/bpp_shared/inventory/interactions/crafting_table.cpp
     src/bpp_shared/inventory/interactions/dispenser.cpp
+
+    # Crafting
     src/bpp_shared/crafting/recipe_manager.cpp
     src/bpp_shared/crafting/vanilla_recipes.cpp
-    src/bpp_shared/pathfinding/pathfinder.cpp
+
+    # Msc
     src/bpp_shared/teleporter.cpp
     src/bpp_shared/direction.cpp
     src/bpp_shared/gamerules.cpp
