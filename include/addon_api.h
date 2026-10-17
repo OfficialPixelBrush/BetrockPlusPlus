@@ -21,6 +21,9 @@ typedef struct bp_api bp_api;
 typedef struct bp_player bp_player;
 typedef struct bp_entity bp_entity;
 typedef struct bp_world bp_world;
+typedef struct bp_cmd_draft bp_cmd_draft;
+typedef struct bp_cmd_node bp_cmd_node;
+typedef struct bp_cmd_arg bp_cmd_arg;
 
 typedef struct {
 	double x;
@@ -44,6 +47,8 @@ typedef struct {
 	int8_t id;
 	uint8_t meta;
 } bp_block;
+
+typedef const char* (*bp_cmd_action_fn)(const bp_cmd_arg* arg, void* user_data);
 
 struct bp_api {
 	uint32_t version;
@@ -86,6 +91,11 @@ struct bp_api {
 	} data;
 
 	struct {
+		bp_cmd_node* (*makeLiteral)(const char* literal);
+		bp_cmd_node* (*makeString)(const char* string);
+		void (*setAction)(bp_cmd_node* node, bp_cmd_action_fn action);
+		void (*addChild)(bp_cmd_node* parent, bp_cmd_node** child);
+		void (*registerCommand)(const bp_api* api, bp_cmd_node** root);
 		bool (*execute)(const bp_api* api, bp_player* sender, const char* command);
 	} commands;
 };

@@ -8,10 +8,11 @@
 
 #include "addon_impl.h"
 #include "addon.h"
-#include "server.h"
+#include "addon_api.h"
 #include "base_structs.h"
 #include "blocks.h"
 #include "logger.h"
+#include "server.h"
 
 static constexpr Addon* InternalGetAddon(const bp_api* _api) {
 	return static_cast<Addon*>(_api->internal);
@@ -123,14 +124,90 @@ void SetPlayerData(const bp_api* _api, bp_player* _player, void* _data) {
 	_player->addonData[InternalGetAddon(_api)] = _data;
 }
 
+bp_cmd_node* CreateCmdLiteral(const char* _literal) {
+	if (!_literal)
+		return nullptr;
+
+	return new bp_cmd_node{ .node = strategos::Node::literal(_literal) };
+}
+
+bp_cmd_node* CreateCmdString(const char* _string) {
+	if (!_string)
+		return nullptr;
+
+	return new bp_cmd_node{ .node = strategos::Node::string(_string) };
+}
+
+void CmdNodeSetAction(bp_cmd_node* _node, bp_cmd_action_fn _action) {
+	if (!_node || !_action)
+		return;
+
+	_node->node.executes([_action](const strategos::CmdNode& _ctx, void* _userData) -> std::string {
+		bp_cmd_arg arg{ _ctx };
+		const char* result = _action(&arg, _userData);
+		return result ? result : "";
+	});
+}
+
+// Not necessarily happy with this limitation
+
+//TODO: Re-design the addon command api
+
+// The best idea I(jwaxy) have is to move to a builder pattern
+// Where bp_cmd_nodes store the children instead of strategos::Node and store it as a vector of pointers
+// So users of the API can mix and match addChild, setAction without worrying about doing a wrong order
+// And when the node tree is finalized, registerCommand can traverse recursively from the root node,
+// and create the correct pure strategos tree to be registered as a command
+#define NULL_NODE_HINT                                                                                                 \
+	" (Hint: addChild() consumes the child node! Do whatever you want with nodes before adding them as children, not after!)\n"
+
+void CmdNodeAddChild(bp_cmd_node* _parent, bp_cmd_node** _child) {
+	if (!_parent) {
+		Logger::Error << "Got null parent in bp_api::commands.addChild()!" NULL_NODE_HINT;
+		return;
+	}
+
+	if (!_child || !*_child) {
+		Logger::Error << "Got null child in bp_api::commands.addChild()!";
+		return;
+	}
+
+	if (_parent == *_child) {
+		Logger::Error << "Cannot add a node as its own child!\n";
+		return;
+	}
+
+	std::unique_ptr<bp_cmd_node> owned(*_child);
+	*_child = nullptr;
+
+	_parent->node.then(std::move(owned->node));
+}
+
+void RegisterCommand(const bp_api* _api, bp_cmd_node** _root) {
+	if (!_root || !*_root) {
+		Logger::Error << "Got null root node in bp_api::commands.registerCommand()!\n" NULL_NODE_HINT;
+		return;
+	}
+
+	Addon* addon = InternalGetAddon(_api);
+
+	std::unique_ptr<bp_cmd_node> owned(*_root);
+	*_root = nullptr;
+
+	addon->server->GetCommandManager().Dispatcher().add_command(std::move(owned->node));
+}
+
 bool ExecuteAddonCommand(const bp_api* _api, bp_player* _sender, const char* _command) noexcept {
 	try {
-		if (!_api || !_api->internal || !_command) return false;
+		if (!_api || !_api->internal || !_command)
+			return false;
 
 		Addon* addon = InternalGetAddon(_api);
-		if (!addon || !addon->server) return false;
+		if (!addon || !addon->server)
+			return false;
 		Server* server = addon->server;
-		if (!server->CanExecuteCommands()) return false;
+		if (!server->CanExecuteCommands())
+			return false;
 
 		std::shared_ptr<PlayerSession> sender;
 		if (_sender) {
@@ -140,13 +217,15 @@ bool ExecuteAddonCommand(const bp_api* _api, bp_player* _sender, const char* _co
 					break;
 				}
 			}
-			if (!sender) return false;
+			if (!sender)
+				return false;
 		}
 
 		return server->ExecuteCommand(_command, sender.get());
-	} catch (...) { return false; }
+	} catch (...) {
+		return false;
+	}
 }
-
 
 bp_api MakeAddonAPI() {
 	return bp_api{
@@ -158,6 +237,13 @@ bp_api MakeAddonAPI() {
 		.entity = { .getPosition = EntityGetPosition, .setPosition = EntitySetPosition, .getWorld = EntityGetWorld },
 		.world = { .setBlock = SetBlock, .getBlock = GetBlock, .sendBlockUpdate = SendBlockUpdate },
 		.data = { .setPlayer = SetPlayerData, .getPlayer = GetPlayerData },
-		.commands = { .execute = ExecuteAddonCommand }
+		.commands = {
+			.makeLiteral = CreateCmdLiteral,
+			.makeString = CreateCmdString,
+			.setAction = CmdNodeSetAction,
+			.addChild = CmdNodeAddChild,
+			.registerCommand = RegisterCommand,
+			.execute = ExecuteAddonCommand
+		}
 	};
 }
