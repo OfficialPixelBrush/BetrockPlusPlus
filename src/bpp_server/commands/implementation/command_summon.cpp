@@ -20,6 +20,7 @@
 #include "entities/entity_slime.h"
 #include "entities/entity_spider.h"
 #include "entities/entity_zombie.h"
+#include "entities/entity_squid.h"
 #include "networking/packets.h"
 #include <memory>
 #include <utility>
@@ -50,6 +51,9 @@ EntityType GetEntityTypeFromString(std::string _name) {
 	}
 	if (_name == "chicken") {
 		return EntityType::CHICKEN;
+	}
+	if (_name == "squid") {
+		return EntityType::SQUID;
 	}
 	if (_name == "boat") {
 		return EntityType::BOAT;
@@ -84,6 +88,8 @@ std::shared_ptr<Entity> GetEntityShared(EntityType _type) {
 		return std::make_shared<PigEntity>();
 	case EntityType::CHICKEN:
 		return std::make_shared<ChickenEntity>();
+	case EntityType::SQUID:
+		return std::make_shared<SquidEntity>();
 	case EntityType::BOAT:
 		return std::make_shared<BoatEntity>();
 	case EntityType::MINECART:
