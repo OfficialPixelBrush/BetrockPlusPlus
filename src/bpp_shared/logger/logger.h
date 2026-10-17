@@ -13,11 +13,6 @@
 #include <functional>
 #include <mutex>
 
-// For targets with small terminals
-#if defined(__3DS__)
-#define LOGGER_SHORT_TIME
-#endif
-
 namespace Logger {
 	extern LogStream Message;
 	extern LogStream Chat;
@@ -25,11 +20,8 @@ namespace Logger {
 	extern LogStream Warning;
 	extern LogStream Error;
 	extern LogStream Debug;
-	void Init();
 	void Close();
 
-	std::string GetCurrentTimeString(bool _fileFormat = false);
 	void Log(std::string _message, LogLevel _level = LOG_MESSAGE);
 	void SetTerminalSink(std::function<void(const char*, int)> _sink);
-
 };

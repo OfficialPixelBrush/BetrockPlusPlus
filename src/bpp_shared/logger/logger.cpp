@@ -13,6 +13,20 @@
 
 namespace Logger {
 
+// For targets with small terminals
+#if defined(__3DS__)
+#define LOGGER_SHORT_TIME
+#endif
+
+#ifndef NDEBUG
+LogLevel logLevelText = LOG_ALL;
+#else
+LogLevel logLevelText = LOG_ALL;
+#endif
+
+LogLevel logLevelTerminal = LOG_ALL;
+
+// Streams
 LogStream Message(LOG_MESSAGE);
 LogStream Chat(LOG_CHAT);
 LogStream Info(LOG_INFO);
@@ -26,15 +40,7 @@ std::ofstream logFile;
 std::mutex terminalMutex;
 std::function<void(const char*, int)> terminalSink;
 
-#ifndef NDEBUG
-LogLevel logLevelText = LOG_ALL;
-#else
-LogLevel logLevelText = LOG_ALL;
-#endif
-
-LogLevel logLevelTerminal = LOG_ALL;
-
-std::string GetCurrentTimeString(bool _fileFormat) {
+std::string GetCurrentTimeString(bool _fileFormat = false) {
 	auto now = std::chrono::system_clock::now();
 	auto inTimeT = std::chrono::system_clock::to_time_t(now);
 
@@ -43,7 +49,7 @@ std::string GetCurrentTimeString(bool _fileFormat) {
 		ss << std::put_time(std::localtime(&inTimeT), "%Y-%m-%d-%H-%M-%S");
 	else
 		#ifdef LOGGER_SHORT_TIME
-		ss << std::put_time(std::localtime(&in_time_t), "%H:%M:%S");
+		ss << std::put_time(std::localtime(&inTimeT), "%H:%M:%S");
 	#else
 	ss << std::put_time(std::localtime(&inTimeT), "%Y-%m-%d %H:%M:%S");
 	#endif
@@ -90,7 +96,7 @@ void WriteTerminal(std::string _message, bool _toStderr = false) {
 }
 
 // Log a chat message
-void WriteChatMessage(std::string _message) {
+void WriteChat(std::string _message) {
 	std::string time = GetCurrentTimeString();
 	if (logLevelTerminal & LOG_CHAT) {
 		WriteTerminal(time + " " + HandleFormattingCodes(_message) + "\n");
@@ -163,7 +169,7 @@ void WriteDebug(std::string _message) {
 void Log(std::string _message, LogLevel _level) {
 	switch (_level) {
 	case LOG_CHAT:
-		WriteChatMessage(_message);
+		WriteChat(_message);
 		break;
 	case LOG_INFO:
 		WriteInfo(_message);
