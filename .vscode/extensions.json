@@ -1,7 +1,7 @@
 {
   "recommendations": [
     "ms-vscode.cmake-tools",
-    "llvm-vscode-extensions.vscode-clangd",
+    "llvm-vs-code-extensions.vscode-clangd",
     "cschlosser.doxdocgen",
     "vadimcn.vscode-lldb"
   ],
