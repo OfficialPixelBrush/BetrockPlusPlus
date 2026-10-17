@@ -29,7 +29,7 @@ void SendCommandFeedback(PlayerSession* _recipient, const std::string& _message)
 		SendChat(*_recipient, _message);
 		return;
 	}
-	Logger::Message << StripFormatting(_message) << "\n";
+	Logger::LogStyled(_message);
 }
 
 void SendFeedback(const CommandContext& _ctx, const std::string& _message) {

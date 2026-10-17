@@ -129,7 +129,7 @@ public:
 			reply.message = _message;
 			reply.Serialize(other->stream);
 		}
-		Logger::Message << StripFormatting(_message) << "\n";
+		Logger::LogStyled(_message);
 	}
 
 	const std::vector<std::shared_ptr<PlayerSession>>& GetPlayers() noexcept {

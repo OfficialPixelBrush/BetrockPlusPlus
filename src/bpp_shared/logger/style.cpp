@@ -66,12 +66,16 @@ std::string FormatToStyle(int8_t _format) {
 // Translate the passed string with Minecraft-style formatters into ASCII Escape sequence colors
 std::string HandleFormattingCodes(const std::string& _input) {
 	std::string output;
+	output.reserve(_input.size() + 16);
 	for (size_t i = 0; i < _input.size(); ++i) {
-		// Check if first character is §
-		if (_input[i] == '\xC2' && _input[i + 1] == '\xA7' && i + 2 < _input.size()) {
-			output += FormatToStyle(_input[i + 2]); // Replace § and the next character
-			++i;                                    // Skip the next character
-			++i;                                    // Skip the next character
+		// Check for § (UTF-8: C2 A7) followed by a code character
+		if (i + 2 < _input.size() && _input[i] == '\xC2' && _input[i + 1] == '\xA7') {
+			const char code = _input[i + 2];
+			const bool isColor = (code >= '0' && code <= '9') || (code >= 'a' && code <= 'f');
+			if (isColor)
+				output += STYLE_RESET;
+			output += FormatToStyle(code);
+			i += 2; // Skip § and the code character
 		} else {
 			output += _input[i];
 		}
