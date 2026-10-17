@@ -5,6 +5,9 @@
  *
 */
 #include "gamerules.h"
+#include "config/config.h"
+#include "logger.h"
+#include <charconv>
 #include <map>
 #include <string>
 #include <vector>
@@ -138,6 +141,69 @@ const std::vector<Entry>& GetAll() {
 
 const std::map<std::string, Id, std::less<>>& GetAllNames() {
     return R().byName;
+}
+
+std::string ValueToString(const Type& _value) {
+    return std::visit([](const auto& x) -> std::string {
+        using T = std::decay_t<decltype(x)>;
+        if constexpr (std::is_same_v<T, bool>)
+            return x ? "true" : "false";
+        else if constexpr (std::is_same_v<T, std::string>)
+            return x;
+        else
+            return std::to_string(x);
+    }, _value);
+}
+
+std::optional<Type> ParseLike(const Type& _current, std::string_view _text) {
+    return std::visit([&](const auto& cur) -> std::optional<Type> {
+        using T = std::decay_t<decltype(cur)>;
+        if constexpr (std::is_same_v<T, bool>) {
+            if (_text == "true")  return Type{true};
+            if (_text == "false") return Type{false};
+            return std::nullopt;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            return Type{std::string(_text)};
+        } else {
+            T out{};
+            const char* end = _text.data() + _text.size();
+            auto [ptr, ec] = std::from_chars(_text.data(), end, out);
+            if (ec != std::errc{} || ptr != end)
+                return std::nullopt;
+            return Type{out};
+        }
+    }, _current);
+}
+
+bool ReadFromConfig(Config& _config) {
+    bool missing = false;
+    for (Entry& e : R().rules) {
+        if (e.name.empty())
+            continue; // unregistered / tombstone
+        if (!_config.Has(e.name)) {
+            missing = true;
+            continue;
+        }
+        std::string text = _config.GetAsString(e.name);
+        // Config only trims the front of values, so drop stray trailing whitespace (e.g. CRLF files)
+        text.erase(text.find_last_not_of(" \t\r\n\f\v") + 1);
+        const auto parsed = ParseLike(e.value, text);
+        if (!parsed) {
+            Logger::Warning << "Invalid value '" << text << "' for gamerule '" << e.name
+                            << "' in gamerules.txt, keeping " << ValueToString(e.value) << "\n";
+            continue;
+        }
+        e.value = *parsed;
+    }
+    return missing;
+}
+
+void WriteToConfig(Config& _config) {
+    for (const Entry& e : R().rules) {
+        if (e.name.empty())
+            continue;
+        _config.Set(e.name, ValueToString(e.value));
+    }
 }
 
 } // namespace Gamerule

@@ -188,6 +188,8 @@ public:
 	void ReloadWhitelist();
 	void SaveLevelFile();
 
+	bool PersistGamerule(const std::string& _name);
+
 private:
 	bool whitelistLoaded = false;
 	friend bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, WorldManager& _sessionWorld,
@@ -212,6 +214,7 @@ private:
 
 	// Config file stuff
 	void LoadConfig();
+	void LoadGamerules();
 
 	// Chunk-session index helpers
 	void IndexAddChunk(PlayerSession& _session, const Int32_2& _pos);
@@ -251,6 +254,7 @@ private:
 	AddonManager addonManager;
 	bool stopped = false;
 	Config config;
+	Config gamerulesConfig;
 	ServerConsole serverConsole;
 	std::vector<std::string> playerNamesSnapshot;
 	double tickRate = 20.0;

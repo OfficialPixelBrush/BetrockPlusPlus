@@ -7,9 +7,14 @@
 
 #pragma once
 #include <string>
+#include <cstdint>
 #include <map>
+#include <optional>
+#include <string_view>
 #include <variant>
 #include <vector>
+
+class Config;
 
 namespace Gamerule {
 
@@ -113,4 +118,11 @@ std::string ToString(const Gamerule::Id _id);
 Gamerule::Id ToId(const std::string& _name);
 const std::vector<Entry>& GetAll();
 const std::map<std::string, Id, std::less<>>& GetAllNames();
+
+std::string ValueToString(const Type& _value);
+// Parses _text into the same type _current holds. nullopt on failure.
+std::optional<Type> ParseLike(const Type& _current, std::string_view _text);
+
+bool ReadFromConfig(Config& _config);
+void WriteToConfig(Config& _config);
 };
