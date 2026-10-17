@@ -24,7 +24,7 @@ struct SpawnEntry {
 };
 
 struct SpawnCategory {
-	const std::vector<SpawnEntry>& GetSpawnSpawnListForBiome(const Biome _biome) {
+	std::vector<SpawnEntry>& GetSpawnSpawnListForBiome(const Biome _biome) {
 		switch (_biome) {
 		case BIOME_FOREST:
 		case BIOME_TAIGA:
@@ -39,6 +39,7 @@ struct SpawnCategory {
 	std::vector<SpawnEntry> spawnListForest = {};
 	std::vector<SpawnEntry> spawnListNether = {};
 	int cap = 15;
+	Material spawnMaterial = Material::Air();
 };
 
 // For spawning entities in the world like mobs and animals

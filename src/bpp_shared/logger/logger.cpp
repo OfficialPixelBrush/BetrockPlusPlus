@@ -7,6 +7,7 @@
 */
 #include "logger.h"
 #include "style.h"
+#include "strings/ucs2.h"
 
 // Reference for Escape Codes
 // https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
@@ -118,6 +119,17 @@ void WriteMessage(std::string _message) {
 	}
 }
 
+// Log a message with formatting codes
+void WriteStyledMessage(const std::string& _message) {
+	std::string time = GetCurrentTimeString();
+	if (logLevelTerminal & LOG_MESSAGE) {
+		WriteTerminal(time + " " + HandleFormattingCodes(_message) + "\n");
+	}
+	if (logLevelText & LOG_MESSAGE) {
+		logFile << time << " " << StripFormatting(_message) << "\n";
+	}
+}
+
 // Log a message with an INFO header
 void WriteInfo(std::string _message) {
 	std::string time = GetCurrentTimeString();
@@ -187,5 +199,9 @@ void Log(std::string _message, LogLevel _level) {
 		WriteMessage(_message);
 		break;
 	}
+}
+
+void LogStyled(const std::string& _message) {
+	WriteStyledMessage(_message);
 }
 };

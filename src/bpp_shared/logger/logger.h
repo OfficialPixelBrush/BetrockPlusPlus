@@ -26,5 +26,6 @@ namespace Logger {
 	void Flush();
 
 	void Log(std::string _message, LogLevel _level = LOG_MESSAGE);
+	void LogStyled(const std::string& _message);
 	void SetTerminalSink(std::function<void(const char*, int)> _sink);
 };
