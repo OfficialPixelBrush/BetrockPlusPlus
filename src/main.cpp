@@ -175,6 +175,7 @@ void InitCrashHandler(std::string _platformString) {
 #endif
 
 int main(int argc, char** argv) {
+	Logger::Init();
 	std::string platformString = std::format("{} ({}, {})", PLATFORM_NAME, BUILD_MODE, ARCH_NAME);
 #ifdef CRASH_LOGGING
 	InitCrashHandler(platformString);

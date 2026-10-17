@@ -28,7 +28,6 @@ LogLevel logLevelTerminal = LOG_ALL;
 
 // Streams
 LogStream Message(LOG_MESSAGE);
-LogStream Chat(LOG_CHAT);
 LogStream Info(LOG_INFO);
 LogStream Warning(LOG_WARNING);
 LogStream Error(LOG_ERROR);
@@ -95,17 +94,6 @@ void WriteTerminal(std::string _message, bool _toStderr = false) {
 	}
 }
 
-// Log a chat message
-void WriteChat(std::string _message) {
-	std::string time = GetCurrentTimeString();
-	if (logLevelTerminal & LOG_CHAT) {
-		WriteTerminal(time + " " + HandleFormattingCodes(_message) + "\n");
-	}
-	if (logLevelText & LOG_CHAT) {
-		logFile << time << " " << _message << "\n";
-	}
-}
-
 // Log a message without a header
 void WriteMessage(std::string _message) {
 	std::string time = GetCurrentTimeString();
@@ -168,9 +156,6 @@ void WriteDebug(std::string _message) {
 // Log a message with the passed Level
 void Log(std::string _message, LogLevel _level) {
 	switch (_level) {
-	case LOG_CHAT:
-		WriteChat(_message);
-		break;
 	case LOG_INFO:
 		WriteInfo(_message);
 		break;
