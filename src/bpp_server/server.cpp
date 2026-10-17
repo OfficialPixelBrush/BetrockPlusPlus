@@ -949,6 +949,8 @@ void Server::Tick() {
 		playerNamesSnapshot = std::move(names);
 		serverConsole.UpdatePlayerNames(playerNamesSnapshot);
 	}
+	// Flush logger output to file, if applicable
+	Logger::Flush();
 }
 
 void Server::OnPlayerBlockBreak(PlayerSession& _session, WorldManager& _world) {
