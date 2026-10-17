@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "../commands/strategos.h"
 #include "addon_api.h"
 #include "inventory/item_stack.h"
 #include <unordered_map>
@@ -30,6 +31,17 @@ struct bp_player {
 
 struct bp_world {
 	WorldManager* manager;
+};
+
+// This is a bit confusing
+// Forgive me(jwaxy) for being bad at naming things
+
+struct bp_cmd_node {
+	strategos::Node node;
+};
+
+struct bp_cmd_arg {
+	strategos::CmdNode cmdNode;
 };
 
 namespace AddonHelper {

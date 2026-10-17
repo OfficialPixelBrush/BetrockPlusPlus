@@ -177,7 +177,7 @@ void OnPlayerMove(const bp_api* api, bp_player_move_event* ev) {
 
 	if (counter++ > 50) {
 		ev->from.y *= 5; // do a funny
-		ev->to.y *= 5; // do a funny
+		ev->to.y *= 5;   // do a funny
 		counter = 0;
 	}
 }
@@ -216,8 +216,42 @@ void WriteSave(const bp_api* api) {
 	fclose(file);
 }
 
+const char* loadByName(const bp_cmd_arg* arg, void* userdata) {
+	//TODO: Get actual argument
+	return "Loaded by name!";
+}
+
+const char* loadById(const bp_cmd_arg* arg, void* userdata) {
+	//TODO: Get actual argument
+	return "Loaded by id!";
+}
+
+void RegisterCommands(const bp_api* api) {
+	bp_cmd_node* root = api->commands.makeLiteral("test");
+	bp_cmd_node* load = api->commands.makeLiteral("load");
+
+	bp_cmd_node* id = api->commands.makeLiteral("id");
+	bp_cmd_node* idArg = api->commands.makeString("id");
+
+	bp_cmd_node* name = api->commands.makeLiteral("name");
+	bp_cmd_node* nameArg = api->commands.makeString("name");
+
+	api->commands.setAction(idArg, loadById);
+	api->commands.setAction(nameArg, loadByName);
+
+	api->commands.addChild(id, &idArg);
+	api->commands.addChild(name, &nameArg);
+
+	api->commands.addChild(load, &id);
+	api->commands.addChild(load, &name);
+
+	api->commands.addChild(root, &load);
+	api->commands.registerCommand(api, &root);
+}
+
 void OnLoad(const bp_api* api, const bp_addon_load* ev) {
 	LoadSave(api);
+	RegisterCommands(api);
 	api->log.info(api, "Test addon loaded!");
 }
 
