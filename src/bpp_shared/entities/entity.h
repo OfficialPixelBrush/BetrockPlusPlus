@@ -195,6 +195,7 @@ struct Entity {
 	float GetEntityBrightnessValue();
 	void MountEntity(std::shared_ptr<Entity> _entity);
 	void UnmountEntity();
+	bool IsWet();
 
 	virtual bool CanBePushed() {
 		return false;
@@ -203,8 +204,6 @@ struct Entity {
 	virtual bool CanBeCollidedWith() {
 		return false;
 	}
-
-	bool IsWet();
 
 	virtual std::optional<AABB> GetMoverCollisionOverride(Entity& /*_candidate*/) {
 		return std::nullopt;

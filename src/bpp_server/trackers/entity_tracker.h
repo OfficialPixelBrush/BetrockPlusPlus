@@ -65,7 +65,7 @@ struct EntityTracker {
 		                                       EntityType::SHEEP,         EntityType::WOLF,     EntityType::ZOMBIE,
 		                                       EntityType::ZOMBIE_PIGMAN, EntityType::SKELETON, EntityType::CREEPER,
 		                                       EntityType::SPIDER,        EntityType::GHAST,    EntityType::SLIME,
-		                                       EntityType::GIANT_ZOMBIE,  EntityType::PLAYER };
+		                                       EntityType::GIANT_ZOMBIE,  EntityType::PLAYER,   EntityType::SQUID };
 
 	TickTime forceTeleportTicks = 400; // 20 seconds
 	Java::Random rand;

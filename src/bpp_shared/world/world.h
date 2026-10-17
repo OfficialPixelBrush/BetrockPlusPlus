@@ -154,6 +154,16 @@ public:
 			onNotePlay(_pos, _instrumentState, _pitchDirection);
 	}
 
+	// Check if this AABB is spawnable
+	bool IsAABBClear(AABB& _collider) {
+		auto entities = entityManager.GetEntitiesWithinAabb(_collider);
+		for (auto& entity : entities) {
+			if (!entity->isDead && entity->preventEntitySpawning)
+				return false;
+		}
+		return true;
+	}
+
 	bool CanRainHitSpot(Int3 _pos) {
 		if (!weatherSystem.IsRaining())
 			return false;
