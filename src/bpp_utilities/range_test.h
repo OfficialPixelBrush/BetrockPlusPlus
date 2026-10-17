@@ -23,6 +23,6 @@ namespace Test {
             min = _value;
         if (_value > max)
             max = _value;
-        GlobalLogger().info << std::format("{} | min:{} | max:{}, avg:{}, (-)={}\n", _value, min, max, double(total)/double(count), hasNegatives);
+        Logger::Info << std::format("{} | min:{} | max:{}, avg:{}, (-)={}\n", _value, min, max, double(total)/double(count), hasNegatives);
     }
 }

@@ -38,7 +38,7 @@ bool Authentication::IsRegisteredUsername(std::string _serverId, std::string _us
 		return true;
 	CURL* curl = curl_easy_init();
 	if (!curl) {
-		GlobalLogger().error << "Failed to initialize libcurl for username verification.\n";
+		Logger::Error << "Failed to initialize libcurl for username verification.\n";
 		return false;
 	}
 	std::string url = std::format("{}/checkserver.jsp?user={}&serverId={}", baseUrl, _username, _serverId);

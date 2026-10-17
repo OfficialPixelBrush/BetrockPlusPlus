@@ -325,7 +325,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 		bool willCorrect = (wasClearBefore && (residualTooLarge || !clearNow)) || movedWrong;
 
 		if (movedWrong)
-			GlobalLogger().warn << "Client " << session->username << " moved wrongly!\n";
+			Logger::Warning << "Client " << session->username << " moved wrongly!\n";
 
 		if (willCorrect) {
 			Vec3 safeRollback = { lastPosition.x, lastPosition.y + ROLLBACK_NUDGE, lastPosition.z };

@@ -9,6 +9,7 @@
 #include "bpp_server/server.h"
 #include "bpp_shared/helpers/hardware.h"
 #include "bpp_shared/helpers/java/java_math.h"
+#include "bpp_shared/logger/logger.h"
 #include "logger.h"
 #include "platforms.h"
 #include "quick_arg_parser.hpp"
@@ -150,24 +151,22 @@ void InitCrashHandler(std::string _platformString) {
 		                       .appVersion = std::string(PROJECT_VERSION_FULL_STRING),
 		                       .buildConfig = _platformString };
 	config.onCrash = [](const CrashCatch::CrashContext& _ctx) {
-		auto& log = GlobalLogger();
-
-		log.error << "========== CRASH ==========\n";
-		log.error << "Signal/Code: " << _ctx.signalOrCode << "\n";
+		Logger::Error << "========== CRASH ==========\n";
+		Logger::Error << "Signal/Code: " << _ctx.signalOrCode << "\n";
 
 		if (!_ctx.logFilePath.empty()) {
-			log.error << "Crash report: " << _ctx.logFilePath << "\n";
+			Logger::Error << "Crash report: " << _ctx.logFilePath << "\n";
 
 			std::ifstream file(_ctx.logFilePath);
 			if (!file) {
-				GlobalLogger().error << "Failed to open crash report file!\n";
+				Logger::Error << "Failed to open crash report file!\n";
 				return;
 			}
 
 			std::string line;
 
 			while (std::getline(file, line)) {
-				GlobalLogger().error << line << "\n";
+				Logger::Error << line << "\n";
 			}
 		}
 	};
@@ -192,7 +191,7 @@ int main(int argc, char** argv) {
 	// Init the sine table
 	MathHelper::InitSinTable();
 	// We're ready to roll
-	GlobalLogger().info << "Running on " << platformString << "\n";
+	Logger::Info << "Running on " << platformString << "\n";
 #if defined(_WIN32) || defined(_WIN64)
 	SetConsoleCtrlHandler(consoleCtrlHandler, TRUE);
 #endif
@@ -202,7 +201,7 @@ int main(int argc, char** argv) {
 	// Initialize libcurl before the server starts its thread pools. First-login
 	// curl_easy_init() would otherwise do this unsafely and can block SIGTERM.
 	if (!CurlRuntimeInit())
-		GlobalLogger().warn << "libcurl global init failed; online-mode auth and Betacraft heartbeat may not work.\n";
+		Logger::Warning << "libcurl global init failed; online-mode auth and Betacraft heartbeat may not work.\n";
 	InstallProcessSignalHandlers();
 #if !defined(_WIN32) && !defined(_WIN64)
 	BlockStopSignals();
@@ -224,6 +223,6 @@ int main(int argc, char** argv) {
 	Client client;
 	client.Run();
 #endif
-
+	Logger::Close();
 	return 0;
 }

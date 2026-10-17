@@ -192,7 +192,7 @@ bool Entity::IsWet() {
 
 void Entity::MountEntity(std::shared_ptr<Entity> _entity) {
 	if (!entityManager) {
-		GlobalLogger().warn << "Tried to mount an entity before being initialized!\n";
+		Logger::Warning << "Tried to mount an entity before being initialized!\n";
 		return;
 	}
 	auto entityPtr = _entity.get();

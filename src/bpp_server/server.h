@@ -71,7 +71,7 @@ public:
 	void SavePlayer(const std::string& _username) {
 		auto PlayerSession = GetSessionByUsername(_username);
 		if (!PlayerSession) {
-			GlobalLogger().error << "Failed to save player data for " << _username << "!\n";
+			Logger::Error << "Failed to save player data for " << _username << "!\n";
 			return;
 		}
 
@@ -129,7 +129,7 @@ public:
 			reply.message = _message;
 			reply.Serialize(other->stream);
 		}
-		GlobalLogger().msg << StripFormatting(_message) << "\n";
+		Logger::Message << StripFormatting(_message) << "\n";
 	}
 
 	const std::vector<std::shared_ptr<PlayerSession>>& GetPlayers() noexcept {

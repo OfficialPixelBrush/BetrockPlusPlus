@@ -77,7 +77,7 @@ void EntityManager::RemoveEntity(EntityId _id) {
 
 void EntityManager::AddEntity(std::shared_ptr<Entity> _entity, EntityId _forceEntityId) {
 	if (!world) {
-		GlobalLogger().error << "Attempted to add an entity before EntityManager was bound to a world!\n";
+		Logger::Error << "Attempted to add an entity before EntityManager was bound to a world!\n";
 		return;
 	}
 	// TODO: Run this on gamerule change too?

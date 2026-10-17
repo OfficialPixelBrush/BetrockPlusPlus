@@ -26,7 +26,7 @@ RegionManager::~RegionManager() {
 
 bool RegionManager::Initialize(const std::string& _folderPath) {
 	if (!std::filesystem::is_directory(_folderPath)) {
-		GlobalLogger().error << "Tried to initialize region manager with an invalid directory!\n";
+		Logger::Error << "Tried to initialize region manager with an invalid directory!\n";
 		return false; // No region folder
 	}
 	mFolderPath = _folderPath;
@@ -247,7 +247,7 @@ std::shared_ptr<Region> RegionManager::LoadRegion(Int32_2 _rpos) {
 
 	if (!RegionExists(_rpos)) {
 		if (!CreateRegion(_rpos)) {
-			GlobalLogger().error << "Failed to create region file for " << _rpos.x << "," << _rpos.z << "\n";
+			Logger::Error << "Failed to create region file for " << _rpos.x << "," << _rpos.z << "\n";
 			return nullptr;
 		}
 	}

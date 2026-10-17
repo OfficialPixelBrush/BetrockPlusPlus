@@ -73,7 +73,7 @@ void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,
 	if (_session.recentChatMessageCount < _session.recentChatMessageTimes.size())
 		++_session.recentChatMessageCount;
 
-	GlobalLogger().chat << "<" << _session.username << "> " << _pkt.message << "\n";
+	Logger::Chat << "<" << _session.username << "> " << _pkt.message << "\n";
 	if (!_pkt.message.empty() && _pkt.message.front() == '/') {
 		CommandContext ctx;
 		ctx.session = &_session;
@@ -716,7 +716,7 @@ void PlayerAction(Packet::PlayerAction& _pkt, PlayerSession& _session, EntityTra
 		entity->UpdateMetadata(entity->flags.isSneaking, false);
 		break;
 	case PacketData::PlayerAction::STOP_SLEEPING: {
-		GlobalLogger().debug << "STOP_SLEEPING: waking up " << _session.username << " from position "
+		Logger::Debug << "STOP_SLEEPING: waking up " << _session.username << " from position "
 		                     << entity->position << " (isSleeping=" << entity->isSleeping << ")\n";
 		entity->WakeUp();
 		break;
@@ -728,7 +728,7 @@ void PlayerAction(Packet::PlayerAction& _pkt, PlayerSession& _session, EntityTra
 }
 
 void Respawn(Packet::Respawn& /*_pkt*/, PlayerSession& _session, Server& _server) {
-	GlobalLogger().info << "Respawned Player " << _session.username << "!\n";
+	Logger::Info << "Respawned Player " << _session.username << "!\n";
 
 	constexpr Dimension targetDim = Dimension::Overworld;
 	const bool changingDim = _session.dimension != targetDim;

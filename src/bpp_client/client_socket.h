@@ -46,7 +46,7 @@ inline int Connect(const std::string& _host, uint16_t _port) {
 
 	addrinfo* resolved = nullptr;
 	if (getaddrinfo(_host.c_str(), std::to_string(_port).c_str(), &hints, &resolved) != 0) {
-		GlobalLogger().error << "**** FAILED TO RESOLVE HOST: " << _host << " ****" << "\n";
+		Logger::Error << "**** FAILED TO RESOLVE HOST: " << _host << " ****" << "\n";
 		return -1;
 	}
 
@@ -69,7 +69,7 @@ inline int Connect(const std::string& _host, uint16_t _port) {
 	freeaddrinfo(resolved);
 
 	if (clientSocket < 0) {
-		GlobalLogger().error << "**** FAILED TO CONNECT TO " << _host << ":" << _port << " ****" << "\n";
+		Logger::Error << "**** FAILED TO CONNECT TO " << _host << ":" << _port << " ****" << "\n";
 		return -1;
 	}
 

@@ -360,7 +360,7 @@ void WorldManager::Tick(const std::vector<ClientPosition>& _players, bool _advan
 			_profiler->Record(TickTask::Environment, Clock::now() - environmentStart);
 	}
 	if (!regionManager) {
-		GlobalLogger().error << "No region manager while trying to Tick!\n";
+		Logger::Error << "No region manager while trying to Tick!\n";
 		return;
 	}
 	if (_advanceSimulation) {
@@ -552,9 +552,9 @@ void WorldManager::Shutdown() {
 	if (!regionManager)
 		return;
 	if (isHell) {
-		GlobalLogger().info << "Saving chunks for level -1\n";
+		Logger::Info << "Saving chunks for level -1\n";
 	} else {
-		GlobalLogger().info << "Saving chunks for level 0\n";
+		Logger::Info << "Saving chunks for level 0\n";
 	}
 
 	// Make sure lighting is up to date

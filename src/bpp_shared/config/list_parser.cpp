@@ -30,10 +30,10 @@ std::vector<std::string> ListParser::Read(Target _target) {
 	const std::string path{ TARGET_PATHS[size_t(_target)] };
 	std::ifstream file(path);
 	if (!file) {
-		GlobalLogger().warn << path << " doesn't exist! Creating it..." << "\n";
+		Logger::Warning << path << " doesn't exist! Creating it..." << "\n";
 		std::ofstream createFile(path);
 		if (!createFile)
-			GlobalLogger().error << "Failed to create " << path << "\n";
+			Logger::Error << "Failed to create " << path << "\n";
 		return {};
 	}
 	for (std::string username; std::getline(file, username);) {
@@ -50,14 +50,14 @@ bool ListParser::Write(const std::vector<std::string>& _list, Target _target) {
 	const std::string path{ TARGET_PATHS[size_t(_target)] };
 	std::ofstream file(path);
 	if (!file) {
-		GlobalLogger().error << "Failed to open " << path << " for writing\n";
+		Logger::Error << "Failed to open " << path << " for writing\n";
 		return false;
 	}
 	for (const auto& entry : _list)
 		file << entry << '\n';
 	file.flush();
 	if (!file) {
-		GlobalLogger().error << "Failed to write " << path << "\n";
+		Logger::Error << "Failed to write " << path << "\n";
 		return false;
 	}
 	return true;

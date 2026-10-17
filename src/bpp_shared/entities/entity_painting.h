@@ -155,7 +155,7 @@ struct PaintingEntity : public Entity {
 		if (title == "Stage")
 			return { "Stage", 32, 32, 64, 128 };
 		// Default fallback, in case shit fucks up bad
-		GlobalLogger().warn << "Invalid painting requested: " << title << "!\n";
+		Logger::Warning << "Invalid painting requested: " << title << "!\n";
 		return { "Kebab", 16, 16, 0, 0 };
 	}
 };

@@ -36,7 +36,7 @@ void CommandManager::Init(Server* _server) {
 	RegisterExecute(dispatcher);
 	RegisterChat(dispatcher);
 	RegisterGamerule(dispatcher);
-	GlobalLogger().info << "Registered " << dispatcher.root().children.size() << " command(s)!" << "\n";
+	Logger::Info << "Registered " << dispatcher.root().children.size() << " command(s)!" << "\n";
 }
 
 std::vector<strategos::Suggestion> CommandManager::Suggest(std::string_view input, bool canOperate,
@@ -77,10 +77,10 @@ bool CommandManager::Parse(std::string_view line, CommandContext& ctx) {
 		}
 		return ctx.executionSucceeded;
 	} catch (const std::exception& e) {
-		GlobalLogger().info << e.what() << " on /" << std::string(line) << "\n";
+		Logger::Info << e.what() << " on /" << std::string(line) << "\n";
 		SendFeedback(ctx, "§c" ERROR_REASON_ERROR);
 	} catch (...) {
-		GlobalLogger().error << "Non-standard exception on /" << std::string(line) << "\n";
+		Logger::Error << "Non-standard exception on /" << std::string(line) << "\n";
 		SendFeedback(ctx, "§c" ERROR_REASON_ERROR);
 	}
 	return false;

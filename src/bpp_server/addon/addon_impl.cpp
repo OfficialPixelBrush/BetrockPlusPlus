@@ -19,17 +19,17 @@ static constexpr Addon* InternalGetAddon(const bp_api* _api) {
 
 void LogInfo(const bp_api* _api, const char* _message) {
 	Addon* addon = InternalGetAddon(_api);
-	GlobalLogger().info << "[" << addon->info.name << "] " << _message << "\n";
+	Logger::Info << "[" << addon->info.name << "] " << _message << "\n";
 }
 
 void LogWarning(const bp_api* _api, const char* _message) {
 	Addon* addon = InternalGetAddon(_api);
-	GlobalLogger().warn << "[" << addon->info.name << "] " << _message << "\n";
+	Logger::Warning << "[" << addon->info.name << "] " << _message << "\n";
 }
 
 void LogError(const bp_api* _api, const char* _message) {
 	Addon* addon = InternalGetAddon(_api);
-	GlobalLogger().error << "[" << addon->info.name << "] " << _message << "\n";
+	Logger::Error << "[" << addon->info.name << "] " << _message << "\n";
 }
 
 int GetPlayerCount(const bp_api* _api) {

@@ -113,18 +113,18 @@ void BetacraftHeartbeat::Start() {
 	if (socket.empty()) {
 		const std::string ip = FetchPublicIp();
 		if (ip.empty()) {
-			GlobalLogger().error << "Betacraft heartbeat is enabled but betacraft-socket is empty and public IP "
+			Logger::Error << "Betacraft heartbeat is enabled but betacraft-socket is empty and public IP "
 			                        "lookup failed. Set betacraft-socket to host:port.\n";
 			running.store(false);
 			enabled = false;
 			return;
 		}
 		socket = ip + ":" + std::to_string(serverPort);
-		GlobalLogger().info << "Betacraft heartbeat socket auto-detected as " << socket << "\n";
+		Logger::Info << "Betacraft heartbeat socket auto-detected as " << socket << "\n";
 	}
 
 	if (privateKey.empty()) {
-		GlobalLogger().warn << "Betacraft heartbeat has no private key. Contact Moresteck on the Betacraft Discord "
+		Logger::Warning << "Betacraft heartbeat has no private key. Contact Moresteck on the Betacraft Discord "
 		                       "to verify this address, then set betacraft-private-key.\n";
 	}
 
@@ -173,7 +173,7 @@ std::string BetacraftHeartbeat::FetchPublicIp() {
 bool BetacraftHeartbeat::PostJson(const std::string& _url, const std::string& _json, std::string& _response) {
 	CURL* curl = curl_easy_init();
 	if (!curl) {
-		GlobalLogger().error << "Failed to initialize libcurl for Betacraft heartbeat.\n";
+		Logger::Error << "Failed to initialize libcurl for Betacraft heartbeat.\n";
 		return false;
 	}
 
@@ -201,11 +201,11 @@ bool BetacraftHeartbeat::PostJson(const std::string& _url, const std::string& _j
 	CurlRestoreStopSignals();
 
 	if (res != CURLE_OK) {
-		GlobalLogger().warn << "Betacraft heartbeat request failed: " << curl_easy_strerror(res) << "\n";
+		Logger::Warning << "Betacraft heartbeat request failed: " << curl_easy_strerror(res) << "\n";
 		return false;
 	}
 	if (httpCode >= 400) {
-		GlobalLogger().warn << "Betacraft heartbeat HTTP " << httpCode << ": " << _response << "\n";
+		Logger::Warning << "Betacraft heartbeat HTTP " << httpCode << ": " << _response << "\n";
 		return false;
 	}
 	return true;
@@ -245,7 +245,7 @@ bool BetacraftHeartbeat::SendUpdate(const BetacraftHeartbeatSnapshot& _snapshot)
 
 	std::string message;
 	if (!ResponseOk(response, message)) {
-		GlobalLogger().warn << "Betacraft heartbeat rejected: " << (message.empty() ? response : message) << "\n";
+		Logger::Warning << "Betacraft heartbeat rejected: " << (message.empty() ? response : message) << "\n";
 		return false;
 	}
 	return true;
@@ -257,14 +257,14 @@ bool BetacraftHeartbeat::SendIcon() {
 
 	std::ifstream file(iconPath, std::ios::binary);
 	if (!file) {
-		GlobalLogger().warn << "Betacraft server icon not found: " << iconPath << "\n";
+		Logger::Warning << "Betacraft server icon not found: " << iconPath << "\n";
 		return false;
 	}
 	std::ostringstream buffer;
 	buffer << file.rdbuf();
 	const std::string bytes = buffer.str();
 	if (bytes.size() > kMaxIconBytes) {
-		GlobalLogger().error << "Betacraft server icon is too large (64 KiB max, recommended 128x128 PNG).\n";
+		Logger::Error << "Betacraft server icon is too large (64 KiB max, recommended 128x128 PNG).\n";
 		return false;
 	}
 
@@ -280,10 +280,10 @@ bool BetacraftHeartbeat::SendIcon() {
 
 	std::string message;
 	if (!ResponseOk(response, message)) {
-		GlobalLogger().warn << "Betacraft icon update failed: " << (message.empty() ? response : message) << "\n";
+		Logger::Warning << "Betacraft icon update failed: " << (message.empty() ? response : message) << "\n";
 		return false;
 	}
-	GlobalLogger().info << "Betacraft server icon updated.\n";
+	Logger::Info << "Betacraft server icon updated.\n";
 	return true;
 }
 
@@ -300,7 +300,7 @@ void BetacraftHeartbeat::ThreadMain() {
 
 		if (SendUpdate(local)) {
 			if (failsInARow != 0)
-				GlobalLogger().info << "Betacraft server list ping succeeded (" << socket << ").\n";
+				Logger::Info << "Betacraft server list ping succeeded (" << socket << ").\n";
 			failsInARow = 0;
 			if (!iconSent) {
 				iconSent = true;
@@ -309,7 +309,7 @@ void BetacraftHeartbeat::ThreadMain() {
 		} else {
 			++failsInARow;
 			if (failsInARow <= 5)
-				GlobalLogger().warn << "Failed to ping the Betacraft server list. Check betacraft-* settings in "
+				Logger::Warning << "Failed to ping the Betacraft server list. Check betacraft-* settings in "
 				                       "server.properties.\n";
 		}
 

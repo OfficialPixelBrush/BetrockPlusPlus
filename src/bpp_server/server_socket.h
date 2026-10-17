@@ -54,7 +54,7 @@ inline int CreateServerSocket(int _port) {
 	addr.sin_port = htons(_port);
 	addr.sin_addr.s_addr = INADDR_ANY;
 	if (bind(serverSocket, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
-		GlobalLogger().error << "**** FAILED TO BIND SOCKET! ****" << "\n";
+		Logger::Error << "**** FAILED TO BIND SOCKET! ****" << "\n";
 		return -1;
 	}
 	// feels unsafe. did you know it was only 5 in 4.4BSD!? Maybe set to like 128/512.

@@ -10,16 +10,13 @@
 #include <iostream>
 #include <sstream>
 
-class Logger;
-
 class LogStream {
 private:
-	Logger& logger;
 	LogLevel level;
 	std::stringstream buffer;
 
 public:
-	LogStream(Logger& _logger, LogLevel _level);
+	LogStream(LogLevel _level);
 
 	template <typename T>
 	LogStream& operator<<(const T& _value) {

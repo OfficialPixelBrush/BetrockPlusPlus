@@ -495,7 +495,7 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		break;
 	}
 	default:
-		GlobalLogger().warn << "Unhandled entity type: " << int(_entityEntry.entity->type) << "\n";
+		Logger::Warning << "Unhandled entity type: " << int(_entityEntry.entity->type) << "\n";
 		return;
 	}
 	_entityEntry.visibleTo.insert(_playerId);

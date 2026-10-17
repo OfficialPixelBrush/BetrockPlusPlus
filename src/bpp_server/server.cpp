@@ -51,10 +51,10 @@ Server::Server() : gameRuntime(), addonManager(this), config("server.properties"
 
 	serverSocket = ServerSocketManager::CreateServerSocket(serverPort);
 	if (serverSocket < 0) {
-		GlobalLogger().error << "**** FAILED TO CREATE SERVER SOCKET!" << "\n";
+		Logger::Error << "**** FAILED TO CREATE SERVER SOCKET!" << "\n";
 		exit(1);
 	}
-	GlobalLogger().info << "Server initialized on port " << serverPort << "\n";
+	Logger::Info << "Server initialized on port " << serverPort << "\n";
 	// TODO: If seed is 0, have it generate a new seed
 	gameRuntime.Init(config.GetAsString("level-name", "world"), config.GetAsString("level-seed", "0"),
 	                 config.GetAsNumber("view-distance", 8));
@@ -246,7 +246,7 @@ void Server::LoadConfig() {
 	bannedIps = ListParser::Read(ListParser::Target::BannedIps);
 	if (useWhitelist) {
 		LoadWhitelist();
-		GlobalLogger().info << "Whitelist enabled!\n";
+		Logger::Info << "Whitelist enabled!\n";
 	}
 }
 
@@ -271,12 +271,12 @@ void Server::SetWhitelistEnabled(bool _enabled, bool _persist) {
 	if (!_enabled)
 		UnloadWhitelist();
 	if (changed)
-		GlobalLogger().info << (useWhitelist ? "Whitelist enabled!\n" : "Whitelist disabled!\n");
+		Logger::Info << (useWhitelist ? "Whitelist enabled!\n" : "Whitelist disabled!\n");
 	if (!_persist)
 		return;
 	config.Set("white-list", useWhitelist ? "true" : "false");
 	if (!config.SaveKeyToDisk("white-list"))
-		GlobalLogger().error << "Failed to persist white-list to server.properties\n";
+		Logger::Error << "Failed to persist white-list to server.properties\n";
 }
 
 bool Server::SaveWhitelist() {
@@ -306,12 +306,12 @@ void Server::ReloadWhitelist() {
 
 void Server::Startup() {
 	auto startupStart = std::chrono::steady_clock::now();
-	GlobalLogger().info << "Initializing server startup.. \n";
+	Logger::Info << "Initializing server startup.. \n";
 
 	// Init auth
 #ifdef ONLINE_MODE_AUTHENTICATION
 	if (!auth.onlineMode) {
-		GlobalLogger().warn << "**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!\n"
+		Logger::Warning << "**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!\n"
 		                    << "The server will make no attempt to authenticate usernames. Beware.\n"
 		                    << "While this makes the game possible to play without internet access,\n"
 		                    << "it also opens up the ability for hackers to connect with any username they choose.\n"
@@ -403,10 +403,10 @@ void Server::Startup() {
 	// Get spawn ready
 	int spawnChunkDistance = this->spawnChunkRadius;
 	int totalSpawnChunks = (spawnChunkDistance + spawnChunkDistance + 1) * (spawnChunkDistance + spawnChunkDistance + 1);
-	GlobalLogger().info << "Server spawn is "
+	Logger::Info << "Server spawn is "
 	                    << Int2(int(gameRuntime.world.spawnPoint.x), int(gameRuntime.world.spawnPoint.z)) << "\n";
 
-	GlobalLogger().info << "Preparing spawn chunks..\n";
+	Logger::Info << "Preparing spawn chunks..\n";
 	// Push every single spawn chunk to get ready for generation
 	std::unordered_set<Int32_2> wanted;
 	for (int dx = -spawnChunkDistance; dx <= spawnChunkDistance; dx++) {
@@ -459,7 +459,7 @@ void Server::Startup() {
 			// Update load percentage every second
 			if (std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count() >= 1.0f) {
 				int percentLoaded = int((float(loadedChunks) / float(totalSpawnChunks)) * 100.0f);
-				GlobalLogger().info << "Loading spawn.. " << percentLoaded << "%\n";
+				Logger::Info << "Loading spawn.. " << percentLoaded << "%\n";
 				start = std::chrono::steady_clock::now();
 			}
 
@@ -467,13 +467,13 @@ void Server::Startup() {
 			if (loadedChunks >= totalSpawnChunks)
 				break;
 		}
-		GlobalLogger().info << "Loading spawn.. 100%\n";
+		Logger::Info << "Loading spawn.. 100%\n";
 	};
 
 	// Benchmark gen speed
 	//ChunkBenchmark::PerformChunkGenSpeedTest(gameRuntime.world);
 
-	GlobalLogger().info << "Loading spawn chunks for Overworld: (" << totalSpawnChunks << ")\n";
+	Logger::Info << "Loading spawn chunks for Overworld: (" << totalSpawnChunks << ")\n";
 	loadSpawnChunks(gameRuntime.world);
 
 	/*
@@ -485,11 +485,11 @@ void Server::Startup() {
 	ChunkBenchmark::Print(result);
 	*/
 
-	GlobalLogger().info << "Loading spawn chunks for Hell: (" << totalSpawnChunks << ")\n";
+	Logger::Info << "Loading spawn chunks for Hell: (" << totalSpawnChunks << ")\n";
 	loadSpawnChunks(gameRuntime.worldHell);
 
 	float startupSeconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - startupStart).count();
-	GlobalLogger().info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";
+	Logger::Info << "Startup Complete. (" << std::setprecision(4) << startupSeconds << "s)\n";
 #ifdef BETACRAFT_HEARTBEAT
 	betacraftHeartbeat.Start();
 #endif
@@ -523,7 +523,7 @@ void Server::Run() {
 		/*
 		if (ticks % (TICKS_PER_SECOND * 60 * 5) == 0) {
 			TrimMemory();
-			GlobalLogger().debug << "Trimmed!\n";
+			Logger::Debug << "Trimmed!\n";
 		}
 		*/
 
@@ -553,7 +553,7 @@ void Server::Run() {
 		if (Clock::now() > nextTickTime + MAX_TICK_CATCH_UP * period) {
 			auto overshoot = std::chrono::duration<double, std::milli>(Clock::now() - nextTickTime).count();
 			nextTickTime = Clock::now();
-			GlobalLogger().warn << "Can't keep up with ticks! (tick avg " << averageTickMs << "ms, overshoot "
+			Logger::Warning << "Can't keep up with ticks! (tick avg " << averageTickMs << "ms, overshoot "
 			                    << overshoot << "ms, budget "
 			                    << std::chrono::duration<double, std::milli>(period).count() << "ms)\n";
 		}
@@ -580,7 +580,7 @@ void Server::Stop() {
 #ifdef BETACRAFT_HEARTBEAT
 	betacraftHeartbeat.Stop();
 #endif
-	GlobalLogger().info << "Server shutting down...\n";
+	Logger::Info << "Server shutting down...\n";
 	for (auto& session : players) {
 		connStateManager.DisconnectPlayer(*session, "Server Closed", *this);
 		session->stream.FlushWriteBufferBlocking();
@@ -1119,7 +1119,7 @@ std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {
 		if (session->connState == ConnectionState::Playing) {
 			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - session->lastPacketTime).count();
 			if (elapsed > timeoutSeconds) {
-				GlobalLogger().info << "Player " << session->username << " timed out\n";
+				Logger::Info << "Player " << session->username << " timed out\n";
 				connStateManager.DisconnectPlayer(*session, "Connection timed out.", *this);
 			}
 		} else {
@@ -1127,7 +1127,7 @@ std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {
 			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - session->lastPacketTime).count();
 			if (elapsed > timeoutSeconds) {
 				session->stream.SetConnected(false);
-				GlobalLogger().info << "Disconnected dataless stream. (Most likely a prober!)\n";
+				Logger::Info << "Disconnected dataless stream. (Most likely a prober!)\n";
 			}
 		}
 	}
@@ -1145,7 +1145,7 @@ std::vector<std::shared_ptr<PlayerSession>> Server::DisconnectClients() {
 
 	for (auto& session : removed) {
 		if (session->entity) {
-			GlobalLogger().info << "Disconnected client " << session->username
+			Logger::Info << "Disconnected client " << session->username
 			                    << " with entity id " << session->entity->id << "\n";
 			SendGlobalChatMessage("§e" + session->username + " left the game.");
 
