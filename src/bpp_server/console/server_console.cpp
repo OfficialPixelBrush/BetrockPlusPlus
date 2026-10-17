@@ -1,17 +1,18 @@
 /*
  * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
+ * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
 #include "server.h"
 
-#include <span>
-#include <chrono>
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <cstdlib>
 #include <memory>
+#include <span>
 #include <string_view>
 #include <utility>
 
@@ -61,14 +62,15 @@ int CodePointCount(std::string_view text) {
 			++count;
 	return count;
 }
-}
+} // namespace
 
 ServerConsole::~ServerConsole() {
 	Stop();
 }
 
 void ServerConsole::Start(const CommandManager& _commands) {
-	if (reader.joinable()) return;
+	if (reader.joinable())
+		return;
 	commands = &_commands;
 	stopping.store(false);
 
@@ -87,9 +89,8 @@ void ServerConsole::Start(const CommandManager& _commands) {
 
 		impl->editor.bind_key(replxx::Replxx::KEY::control('C'), cancel);
 		impl->editor.bind_key(replxx::Replxx::KEY::meta(replxx::Replxx::KEY::control('C')), cancel);
-		impl->editor.set_completion_callback([this](const std::string& input, int& contextLen) {
-			return Complete(input, contextLen);
-		});
+		impl->editor.set_completion_callback(
+		    [this](const std::string& input, int& contextLen) { return Complete(input, contextLen); });
 
 		Logger::SetTerminalSink([this](const char* data, int length) {
 			if (impl)
@@ -106,8 +107,22 @@ void ServerConsole::Stop() {
 		return;
 	}
 	stopping.store(true);
-	if (interactive && impl)
+	if (interactive && impl) {
+		// Queue the Ctrl-C that makes input() bail
 		impl->editor.emulate_key_press(replxx::Replxx::KEY::control('C'));
+#if defined(_WIN32)
+		// Windows workaround
+		HANDLE in = GetStdHandle(STD_INPUT_HANDLE);
+		INPUT_RECORD rec{};
+		rec.EventType = KEY_EVENT;
+		rec.Event.KeyEvent.bKeyDown = TRUE;
+		rec.Event.KeyEvent.wRepeatCount = 1;
+		rec.Event.KeyEvent.wVirtualKeyCode = VK_SPACE;
+		rec.Event.KeyEvent.uChar.UnicodeChar = L' ';
+		DWORD written = 0;
+		WriteConsoleInputW(in, &rec, 1, &written);
+#endif
+	}
 #if defined(_WIN32)
 	else {
 		while (!readerDone.load()) {
@@ -117,6 +132,10 @@ void ServerConsole::Stop() {
 	}
 #endif
 	reader.join();
+#if defined(_WIN32)
+	if (interactive)
+		FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE)); // drop the injected space
+#endif
 	Logger::SetTerminalSink({});
 	impl.reset();
 	interactive = false;
@@ -162,7 +181,6 @@ void ServerConsole::QueueLine(std::string line) {
 	if (!stopping.load())
 		commandQueue.push_back(std::move(line));
 }
-
 
 void ServerConsole::ReaderLoop() {
 	if (interactive) {
