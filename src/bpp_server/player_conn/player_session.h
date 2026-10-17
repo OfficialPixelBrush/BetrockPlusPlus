@@ -139,7 +139,7 @@ struct PlayerSession {
 			return;
 
 		if (_nbt.type != TAG_COMPOUND) {
-			GlobalLogger().error << "Player NBT data is not a compound tag!\n";
+			Logger::Error << "Player NBT data is not a compound tag!\n";
 			return;
 		}
 

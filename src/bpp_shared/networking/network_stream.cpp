@@ -213,7 +213,7 @@ void NetworkStream::ReadEntityMetadata(std::vector<PacketData::EntityMetadata::D
 			break;
 		}
 		default:
-			GlobalLogger().warn << "NetworkStream::ReadEntityMetadata: Unknown metadata type "
+			Logger::Warning << "NetworkStream::ReadEntityMetadata: Unknown metadata type "
 			                    << static_cast<int>(type);
 			break;
 		}
@@ -257,7 +257,7 @@ void NetworkStream::WriteEntityMetadata(const std::vector<PacketData::EntityMeta
 			Write(std::get<Int32_3>(entry.value).z);
 			break;
 		default:
-			GlobalLogger().warn << "NetworkStream::WriteEntityMetadata: Unknown metadata type "
+			Logger::Warning << "NetworkStream::WriteEntityMetadata: Unknown metadata type "
 			                    << static_cast<int>(entry.type);
 			break;
 		}

@@ -78,7 +78,7 @@ struct Tag {
 			doubleValue = _value;
 			break;
 		default:
-			GlobalLogger().warn << "Tried to use numeric setter on non-numeric NBT type " << type << "!\n";
+			Logger::Warning << "Tried to use numeric setter on non-numeric NBT type " << type << "!\n";
 			break;
 		}
 	}
@@ -87,7 +87,7 @@ struct Tag {
 		if (type == TAG_STRING)
 			stringValue = _value;
 		else
-			GlobalLogger().warn << "Tried to use string setter on non-string NBT type " << type << "!\n";
+			Logger::Warning << "Tried to use string setter on non-string NBT type " << type << "!\n";
 	}
 
 	// Typed getters; throw if wrong type
@@ -144,7 +144,7 @@ struct Tag {
 	const Tag& Get(const std::string& _key) const {
 		auto it = compound.find(_key);
 		if (it == compound.end()) {
-			GlobalLogger().error << "Tried to access a NBT tag that doesn't exist! (" << _key << ")\n";
+			Logger::Error << "Tried to access a NBT tag that doesn't exist! (" << _key << ")\n";
 			throw std::runtime_error("NBT tag doesn't exist!");
 		}
 		return it->second;
@@ -153,7 +153,7 @@ struct Tag {
 private:
 	void Expect(TagType _t) const {
 		if (type != _t) {
-			GlobalLogger().error << "Unexpected NBT type in getter! '" << _t << "'. Expected: '" << type << "'\n";
+			Logger::Error << "Unexpected NBT type in getter! '" << _t << "'. Expected: '" << type << "'\n";
 			throw std::runtime_error("Unexpected NBT type!");
 		}
 	}

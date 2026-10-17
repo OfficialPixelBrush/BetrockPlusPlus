@@ -62,7 +62,7 @@ void PlayerConnStateManager::HandleHandshake(PlayerSession& _session, Server& _s
 	// so we shouldn't use the PreLogin username to identification.
 	// This works on Vanilla Beta 1.7.3, so we should replicate this.
 	if (incoming.username.starts_with("^@"))
-		GlobalLogger().info << "Modified client! Provided mods: " << incoming.username << '\n';
+		Logger::Info << "Modified client! Provided mods: " << incoming.username << '\n';
 
 	// Authentication
 	_session.serverId = "-";
@@ -136,7 +136,7 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 		return;
 	}
 
-	GlobalLogger().info << "Player " << _session.username << " is logging in.\n";
+	Logger::Info << "Player " << _session.username << " is logging in.\n";
 
 #ifdef ONLINE_MODE_AUTHENTICATION
 	if (_server.auth.onlineMode) {
@@ -229,7 +229,7 @@ void PlayerConnStateManager::FinishLogin(PlayerSession& _session, Server& _serve
 	_session.position.pos.y += 0.01;
 
 	// Log that we logged in!
-	GlobalLogger().info << "Player " << _session.username << " logged in with entity ID " << _session.entity->id
+	Logger::Info << "Player " << _session.username << " logged in with entity ID " << _session.entity->id
 	                    << " at (" << _session.position.pos.x << ", " << _session.position.pos.y << ", "
 	                    << _session.position.pos.z << ")\n";
 
@@ -270,7 +270,7 @@ void PlayerConnStateManager::DisconnectPlayer(PlayerSession& _session, const std
 	_session.stream.FlushWriteBuffer();
 	_session.stream.SetConnected(false);
 	_session.server = nullptr;
-	GlobalLogger().info << "Player " << _session.username << " disconnected: " << _reason << "\n";
+	Logger::Info << "Player " << _session.username << " disconnected: " << _reason << "\n";
 }
 
 static constexpr int PORTAL_SEARCH_CHUNK_RADIUS = 8; // 128 blocks
@@ -334,12 +334,12 @@ void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server&
 	int percent = std::ceil((float(loadedChunks) / float(totalSpawnChunks)) * 100.0f);
 
 	if (loadedChunks % (totalSpawnChunks / 4) == 0)
-		GlobalLogger().info << "Spawn chunks: " << percent << "%\n";
+		Logger::Info << "Spawn chunks: " << percent << "%\n";
 
 	if (loadedChunks < totalSpawnChunks)
 		return;
 
-	GlobalLogger().info << "Spawn chunks sent.\n";
+	Logger::Info << "Spawn chunks sent.\n";
 
 	Packet::PlayerPositionAndRotation pos;
 	pos.position = { _session.position.pos.x, _session.position.pos.y + PLAYER_EYE_HEIGHT, _session.position.pos.z };
@@ -366,7 +366,7 @@ void PlayerConnStateManager::WaitForSpawnChunks(PlayerSession& _session, Server&
 	tPkt.time = sessionWorld.elapsedTicks;
 	tPkt.Serialize(_session.stream);
 
-	GlobalLogger().info << "Client connected\n";
+	Logger::Info << "Client connected\n";
 	_session.connState = ConnectionState::Playing;
 
 	// Register our entity with the world

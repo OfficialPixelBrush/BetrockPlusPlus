@@ -118,7 +118,7 @@ std::shared_ptr<Chunk> Region::GetChunk(Int32_2 _cpos) {
 
 	// Guard against corrupt/zero length before subtracting
 	if (length < 1) {
-		GlobalLogger().warn << "Invalid chunk length: " << length << "\n";
+		Logger::Warning << "Invalid chunk length: " << length << "\n";
 		return nullptr;
 	}
 
@@ -129,7 +129,7 @@ std::shared_ptr<Chunk> Region::GetChunk(Int32_2 _cpos) {
 		return nullptr;
 
 	if (format != CompressorFormat::REGION_ZLIB) {
-		GlobalLogger().warn << "Unsupported compression format: " << int(format) << "\n";
+		Logger::Warning << "Unsupported compression format: " << int(format) << "\n";
 		return nullptr;
 	}
 
@@ -317,7 +317,7 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& _rawDat
 		}
 
 		if (result != LIBDEFLATE_INSUFFICIENT_SPACE) {
-			GlobalLogger().warn << "Decompression failed!\n";
+			Logger::Warning << "Decompression failed!\n";
 			libdeflate_free_decompressor(decompressor);
 			return std::make_shared<Chunk>();
 		}

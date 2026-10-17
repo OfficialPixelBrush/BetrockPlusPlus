@@ -24,7 +24,7 @@ struct ThrowableEntity : public Entity {
 	ThrowableEntity(std::shared_ptr<MobileEntity> _owner) : Entity() {
 		this->InitThrowable();
 		if (!_owner) {
-			GlobalLogger().error << "Spawned throwable with invalid entity pointer!\n";
+			Logger::Error << "Spawned throwable with invalid entity pointer!\n";
 			return;
 		}
 		this->owner = _owner;

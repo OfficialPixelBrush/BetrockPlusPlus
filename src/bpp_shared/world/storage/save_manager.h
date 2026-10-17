@@ -120,9 +120,9 @@ struct SaveManager {
 		if (!sessionLock.Acquire(saveDirectory + "/session.lock"))
 			return LevelInitFailureReason::INVALID_LOCK;
 		if (!std::filesystem::exists(saveDirectory + "/level.dat")) {
-			GlobalLogger().warn << "level.dat couldn't be found!\n";
+			Logger::Warning << "level.dat couldn't be found!\n";
 			if (!std::filesystem::exists(saveDirectory + "/level.dat_old")) {
-				GlobalLogger().warn << "level.dat_old couldn't be found!\n";
+				Logger::Warning << "level.dat_old couldn't be found!\n";
 				return LevelInitFailureReason::LEVELDAT_FAILURE;
 			}
 			std::filesystem::copy_file(saveDirectory + "/level.dat_old", saveDirectory + "/level.dat");
@@ -143,7 +143,7 @@ struct SaveManager {
 		necessaryFolders += std::filesystem::create_directories(saveDirectory + "/DIM-1/region");
 		necessaryFolders += std::filesystem::create_directories(saveDirectory + "/data");
 		if (necessaryFolders)
-			GlobalLogger().warn << "Failed to load " << necessaryFolders
+			Logger::Warning << "Failed to load " << necessaryFolders
 			                    << " necessary folder(s) for level " + _pSaveName + ".\n";
 
 		return LevelInitFailureReason::SUCCESS;
@@ -181,7 +181,7 @@ struct SaveManager {
 
 		auto CheckAndAssignDefault = [&](std::string tagName, TagType type, auto defaultValue) {
 			if (!data.compound.count(tagName)) {
-				GlobalLogger().warn << "Tag " << tagName << " not found in level.dat!\n";
+				Logger::Warning << "Tag " << tagName << " not found in level.dat!\n";
 				Tag tag{ .type = type, .name = tagName };
 				tag.Set(defaultValue);
 				data.compound[tagName] = tag;
@@ -545,9 +545,9 @@ struct SaveManager {
 			std::filesystem::rename(tmpPath, finalPath);
 			return true;
 		} catch (const std::exception& e) {
-			GlobalLogger().error << "Failed to save player NBT for " << _playerName << ": " << e.what() << "\n";
+			Logger::Error << "Failed to save player NBT for " << _playerName << ": " << e.what() << "\n";
 		} catch (...) {
-			GlobalLogger().error << "Failed to save player NBT for " << _playerName << ": unknown exception\n";
+			Logger::Error << "Failed to save player NBT for " << _playerName << ": unknown exception\n";
 		}
 		return false;
 	}

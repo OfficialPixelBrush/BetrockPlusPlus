@@ -47,9 +47,9 @@ void AddonManager::Load() {
 	std::error_code ec;
 
 	if (!std::filesystem::is_directory(addonDir, ec)) {
-		GlobalLogger().warn << addonDir.string() << " doesn't exist! Creating it..." << "\n";
+		Logger::Warning << addonDir.string() << " doesn't exist! Creating it..." << "\n";
 		if (!std::filesystem::create_directories(addonDir, ec) && ec) {
-			GlobalLogger().error << "Failed to create " << addonDir.string() << ": " << ec.message() << "\n";
+			Logger::Error << "Failed to create " << addonDir.string() << ": " << ec.message() << "\n";
 		}
 		return; // nothing to load
 	}
@@ -62,13 +62,13 @@ void AddonManager::Load() {
 		void* handle = dlopen(addonPath.c_str(), RTLD_NOW | RTLD_LOCAL);
 
 		if (!handle) {
-			GlobalLogger().error << "Error loading addon '" << addonPath.string() << "': " << dlerror() << "\n";
+			Logger::Error << "Error loading addon '" << addonPath.string() << "': " << dlerror() << "\n";
 			continue;
 		}
 
 		auto addonFn = reinterpret_cast<bp_addon_fn>(dlsym(handle, "bp_addon"));
 		if (!addonFn) {
-			GlobalLogger().error << "Invalid addon (no symbol export): '" << addonPath.string() << "'\n";
+			Logger::Error << "Invalid addon (no symbol export): '" << addonPath.string() << "'\n";
 			dlclose(handle);
 			continue;
 		}
@@ -85,7 +85,7 @@ void AddonManager::Load() {
 		if (addon->info.events.addonLoad)
 			addon->info.events.addonLoad(&addon->api, {});
 
-		GlobalLogger().info << "Loaded addon '" << addon->info.id << "'\n";
+		Logger::Info << "Loaded addon '" << addon->info.id << "'\n";
 
 		addons.push_back(std::move(addon));
 	}
@@ -98,7 +98,7 @@ AddonManager::~AddonManager() {
 		if (addon->info.events.addonUnload)
 			addon->info.events.addonUnload(&addon->api, {});
 
-		GlobalLogger().info << "Unloaded addon '" << addon->info.id << "'\n";
+		Logger::Info << "Unloaded addon '" << addon->info.id << "'\n";
 
 		dlclose(addon->dynHandle);
 	}

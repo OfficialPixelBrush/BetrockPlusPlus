@@ -26,7 +26,7 @@ struct ArrowEntity : public Entity {
 	ArrowEntity(std::shared_ptr<MobileEntity> _owner) : Entity() {
 		this->InitArrowEntity();
 		if (!_owner) {
-			GlobalLogger().error << "Spawned arrow with invalid entity pointer!\n";
+			Logger::Error << "Spawned arrow with invalid entity pointer!\n";
 			return;
 		}
 		this->owner = _owner;

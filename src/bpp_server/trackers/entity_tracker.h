@@ -160,7 +160,7 @@ struct EntityTracker {
 		default:
 			return { 0, 0, false };
 
-			GlobalLogger().warn << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) +
+			Logger::Warning << "EntityTracker: no tracking profile for entity type '" + std::to_string(int(type)) +
 			                           "'\n";
 		}
 	}

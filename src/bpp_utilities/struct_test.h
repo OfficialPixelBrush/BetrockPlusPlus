@@ -15,14 +15,14 @@
 #include "world/generator/overworld/chunk_gen.h"
 
 void PrintStructSizes() {
-	GlobalLogger().debug << "Chunk: " << sizeof(Chunk) << " Bytes (includes " << SUB_CHUNK_COUNT << " x "
+	Logger::Debug << "Chunk: " << sizeof(Chunk) << " Bytes (includes " << SUB_CHUNK_COUNT << " x "
 	                     << sizeof(SubChunk) << " Byte sub-chunk headers)\n";
-	GlobalLogger().debug << "SubChunk layers, allocated independently: Blocks (types + counts) " << sizeof(SubChunk::BlockLayer)
+	Logger::Debug << "SubChunk layers, allocated independently: Blocks (types + counts) " << sizeof(SubChunk::BlockLayer)
 	                     << " Bytes, Meta/BlockLight/SkyLight " << sizeof(SubChunk::NibbleLayer) << " Bytes each\n";
-	GlobalLogger().debug << "RegionManager: " << sizeof(RegionManager) << " Bytes\n";
-	GlobalLogger().debug << "Region: " << sizeof(Region) << " Bytes\n";
-	GlobalLogger().debug << "Entity: " << sizeof(Entity) << " Bytes\n";
-	GlobalLogger().debug << "PlayerSession: " << sizeof(PlayerSession) << " Bytes\n";
-	GlobalLogger().debug << "OverworldGenerator: " << sizeof(OverworldGenerator) << " Bytes\n";
-	GlobalLogger().debug << "NetherGenerator: " << sizeof(NetherGenerator) << " Bytes\n";
+	Logger::Debug << "RegionManager: " << sizeof(RegionManager) << " Bytes\n";
+	Logger::Debug << "Region: " << sizeof(Region) << " Bytes\n";
+	Logger::Debug << "Entity: " << sizeof(Entity) << " Bytes\n";
+	Logger::Debug << "PlayerSession: " << sizeof(PlayerSession) << " Bytes\n";
+	Logger::Debug << "OverworldGenerator: " << sizeof(OverworldGenerator) << " Bytes\n";
+	Logger::Debug << "NetherGenerator: " << sizeof(NetherGenerator) << " Bytes\n";
 }

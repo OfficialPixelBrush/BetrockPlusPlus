@@ -12,7 +12,6 @@
 #include <fstream>
 #include <functional>
 #include <mutex>
-#include <string_view>
 
 // For targets with small terminals
 #if defined(__3DS__)
@@ -20,13 +19,12 @@
 #endif
 
 namespace Logger {
-
-	LogStream msg;
-	LogStream chat;
-	LogStream info;
-	LogStream warn;
-	LogStream error;
-	LogStream debug;
+	extern LogStream Message;
+	extern LogStream Chat;
+	extern LogStream Info;
+	extern LogStream Warning;
+	extern LogStream Error;
+	extern LogStream Debug;
 	void Init();
 	void Close();
 

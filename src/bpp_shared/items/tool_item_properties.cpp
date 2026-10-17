@@ -381,7 +381,7 @@ void RegisterAll() {
 	// TODO: Implement maps properly
 #ifdef EXPERIMENTAL
 	itemBehavior[MAP].onStartHolding = [](ItemStack* _stack, PlayerSession& _session) {
-		GlobalLogger().debug << "Started holding a map!\n";
+		Logger::Debug << "Started holding a map!\n";
 	};
 
 	itemBehavior[MAP].whileHeld = [](ItemStack* _stack, PlayerSession& _session, Server& _server) {
@@ -431,7 +431,7 @@ void RegisterAll() {
 	};
 
 	itemBehavior[MAP].onStopHolding = [](ItemStack* _stack) {
-		GlobalLogger().debug << "No longer holding a map!\n";
+		Logger::Debug << "No longer holding a map!\n";
 	};
 #endif
 };

@@ -91,7 +91,7 @@ void ServerConsole::Start(const CommandManager& _commands) {
 			return Complete(input, contextLen);
 		});
 
-		GlobalLogger().SetTerminalSink([this](const char* data, int length) {
+		Logger::SetTerminalSink([this](const char* data, int length) {
 			if (impl)
 				impl->editor.write(data, length);
 		});
@@ -102,7 +102,7 @@ void ServerConsole::Start(const CommandManager& _commands) {
 
 void ServerConsole::Stop() {
 	if (!reader.joinable()) {
-		GlobalLogger().SetTerminalSink({});
+		Logger::SetTerminalSink({});
 		return;
 	}
 	stopping.store(true);
@@ -117,7 +117,7 @@ void ServerConsole::Stop() {
 	}
 #endif
 	reader.join();
-	GlobalLogger().SetTerminalSink({});
+	Logger::SetTerminalSink({});
 	impl.reset();
 	interactive = false;
 }

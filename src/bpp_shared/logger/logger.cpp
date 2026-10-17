@@ -7,13 +7,18 @@
 */
 #include "logger.h"
 #include "style.h"
-#include <chrono>
-#include <filesystem>
-#include <iomanip>
-#include <iostream>
 
 // Reference for Escape Codes
 // https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
+
+namespace Logger {
+
+LogStream Message(LOG_MESSAGE);
+LogStream Chat(LOG_CHAT);
+LogStream Info(LOG_INFO);
+LogStream Warning(LOG_WARNING);
+LogStream Error(LOG_ERROR);
+LogStream Debug(LOG_DEBUG);
 
 namespace fs = std::filesystem;
 
@@ -29,7 +34,7 @@ LogLevel logLevelText = LOG_ALL;
 
 LogLevel logLevelTerminal = LOG_ALL;
 
-std::string Logger::GetCurrentTimeString(bool _fileFormat) {
+std::string GetCurrentTimeString(bool _fileFormat) {
 	auto now = std::chrono::system_clock::now();
 	auto inTimeT = std::chrono::system_clock::to_time_t(now);
 
@@ -45,7 +50,7 @@ std::string Logger::GetCurrentTimeString(bool _fileFormat) {
 	return ss.str();
 }
 
-Logger::Init() {
+void Init() {
 	if (logLevelText == LOG_NONE)
 		return;
 	fs::path logDir = "logs";
@@ -63,53 +68,29 @@ Logger::Init() {
 	}
 }
 
-void Logger::Close() {
+void Close() {
 	if (logFile.is_open())
 		logFile.close();
 }
 
-// Log a message with the passed Level
-void Logger::Log(std::string _message, LogLevel _level) {
-	switch (_level) {
-	case LOG_CHAT:
-		ChatMessage(_message);
-		break;
-	case LOG_INFO:
-		Info(_message);
-		break;
-	case LOG_WARNING:
-		Warning(_message);
-		break;
-	case LOG_ERROR:
-		Error(_message);
-		break;
-	case LOG_DEBUG:
-		Debug(_message);
-		break;
-	default:
-		Message(_message);
-		break;
-	}
-}
-
-void Logger::SetTerminalSink(std::function<void(const char*, int)> sink) {
+void SetTerminalSink(std::function<void(const char*, int)> sink) {
 	std::lock_guard lock(terminalMutex);
 	terminalSink = std::move(sink);
 }
 
-void Logger::WriteTerminal(std::string message, bool toStderr) {
+void WriteTerminal(std::string _message, bool _toStderr = false) {
 	std::lock_guard lock(terminalMutex);
 	if (terminalSink) {
-		terminalSink(message.data(), static_cast<int>(message.size()));
-	} else if (toStderr) {
-		std::cerr << message;
+		terminalSink(_message.data(), static_cast<int>(_message.size()));
+	} else if (_toStderr) {
+		std::cerr << _message;
 	} else {
-		std::cout << message;
+		std::cout << _message;
 	}
 }
 
 // Log a chat message
-void Logger::ChatMessage(std::string _message) {
+void WriteChatMessage(std::string _message) {
 	std::string time = GetCurrentTimeString();
 	if (logLevelTerminal & LOG_CHAT) {
 		WriteTerminal(time + " " + HandleFormattingCodes(_message) + "\n");
@@ -120,7 +101,7 @@ void Logger::ChatMessage(std::string _message) {
 }
 
 // Log a message without a header
-void Logger::Message(std::string _message) {
+void WriteMessage(std::string _message) {
 	std::string time = GetCurrentTimeString();
 	if (logLevelTerminal & LOG_MESSAGE) {
 		WriteTerminal(time + " " + _message + "\n");
@@ -131,7 +112,7 @@ void Logger::Message(std::string _message) {
 }
 
 // Log a message with an INFO header
-void Logger::Info(std::string _message) {
+void WriteInfo(std::string _message) {
 	std::string time = GetCurrentTimeString();
 	std::string header = "[INFO]";
 	if (logLevelTerminal & LOG_INFO) {
@@ -143,7 +124,7 @@ void Logger::Info(std::string _message) {
 }
 
 // Log a warning
-void Logger::Warning(std::string _message) {
+void WriteWarning(std::string _message) {
 	std::string time = GetCurrentTimeString();
 	std::string header = "[WARNING]";
 	if (logLevelTerminal & LOG_WARNING) {
@@ -155,7 +136,7 @@ void Logger::Warning(std::string _message) {
 }
 
 // Log an error
-void Logger::Error(std::string _message) {
+void WriteError(std::string _message) {
 	std::string time = GetCurrentTimeString();
 	std::string header = "[ERROR]";
 	if (logLevelTerminal & LOG_ERROR) {
@@ -167,7 +148,7 @@ void Logger::Error(std::string _message) {
 }
 
 // Log Debug Data
-void Logger::Debug(std::string _message) {
+void WriteDebug(std::string _message) {
 	std::string time = GetCurrentTimeString();
 	std::string header = "[DEBUG]";
 	if (logLevelTerminal & LOG_DEBUG) {
@@ -177,3 +158,28 @@ void Logger::Debug(std::string _message) {
 		logFile << time << " " << header << " " << _message << "\n";
 	}
 }
+
+// Log a message with the passed Level
+void Log(std::string _message, LogLevel _level) {
+	switch (_level) {
+	case LOG_CHAT:
+		WriteChatMessage(_message);
+		break;
+	case LOG_INFO:
+		WriteInfo(_message);
+		break;
+	case LOG_WARNING:
+		WriteWarning(_message);
+		break;
+	case LOG_ERROR:
+		WriteError(_message);
+		break;
+	case LOG_DEBUG:
+		WriteDebug(_message);
+		break;
+	default:
+		WriteMessage(_message);
+		break;
+	}
+}
+};

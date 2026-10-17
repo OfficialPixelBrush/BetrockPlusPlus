@@ -21,12 +21,12 @@ bool recreateTempDir(const fs::path& _dir) {
 	std::error_code ec;
 	fs::remove_all(_dir, ec);
 	if (ec) {
-		GlobalLogger().error << "Failed to remove directory: " << ec.message() << '\n';
+		Logger::Error << "Failed to remove directory: " << ec.message() << '\n';
 		return false;
 	}
 	fs::create_directories(_dir, ec);
 	if (ec) {
-		GlobalLogger().error << "Failed to create directory: " << ec.message() << '\n';
+		Logger::Error << "Failed to create directory: " << ec.message() << '\n';
 		return false;
 	}
 	return true;
@@ -165,7 +165,7 @@ bool convertAlphaLevel(std::string& _dir) {
 
 		auto chunkData = decompressChunk(compressedChunk, compressedSize, decompressedSize);
 		if (!chunkData) {
-			GlobalLogger().warn << "Failed to decompress alpha chunk, skipping.\n";
+			Logger::Warning << "Failed to decompress alpha chunk, skipping.\n";
 			return nullptr;
 		}
 		uint8_t* pdata = reinterpret_cast<uint8_t*>(chunkData.get());
@@ -174,7 +174,7 @@ bool convertAlphaLevel(std::string& _dir) {
 		Region region;
 		auto chunkFromNBT = region.DecodeDecompressedNbtData(nbtData);
 		if (!chunkFromNBT) {
-			GlobalLogger().warn << "Failed to decode NBT for alpha chunk, skipping.\n";
+			Logger::Warning << "Failed to decode NBT for alpha chunk, skipping.\n";
 			return nullptr;
 		}
 		chunkFromNBT->isModified = true;
@@ -251,7 +251,7 @@ bool convertAlphaLevel(std::string& _dir) {
 	constexpr size_t FLUSH_BATCH_SIZE = 200;
 
 	// Convert overworld
-	GlobalLogger().info << "Converting overworld...\n";
+	Logger::Info << "Converting overworld...\n";
 	size_t sinceFlush = 0;
 	size_t chunksProcessed = 0;
 	for (auto& chunkPath : result) {
@@ -274,14 +274,14 @@ bool convertAlphaLevel(std::string& _dir) {
 		chunksProcessed++;
 
 		if (chunksProcessed % 100 == 0 || chunksProcessed >= result.size()) {
-			GlobalLogger().info << "Processed " << chunksProcessed << "/" << result.size() << "\n";
+			Logger::Info << "Processed " << chunksProcessed << "/" << result.size() << "\n";
 		}
 	}
 	world.DrainLoadQueue();
 	world.SaveChunks(/*saveIfEntities=*/true);
 
 	// Convert nether
-	GlobalLogger().info << "Converting nether...\n";
+	Logger::Info << "Converting nether...\n";
 	sinceFlush = 0;
 	chunksProcessed = 0;
 	for (auto& chunkPath : netherResult) {
@@ -304,7 +304,7 @@ bool convertAlphaLevel(std::string& _dir) {
 		chunksProcessed++;
 
 		if (chunksProcessed % 100 == 0 || chunksProcessed >= netherResult.size()) {
-			GlobalLogger().info << "Processed " << chunksProcessed << "/" << netherResult.size() << "\n";
+			Logger::Info << "Processed " << chunksProcessed << "/" << netherResult.size() << "\n";
 		}
 	}
 	hellWorld.DrainLoadQueue();
@@ -334,26 +334,26 @@ bool convertAlphaLevel(std::string& _dir) {
 	ec.clear();
 	fs::remove_all(oldDir, ec);
 	if (ec) {
-		GlobalLogger().error << "Failed to clear old backup directory '" << oldDir << "': " << ec.message() << "\n";
+		Logger::Error << "Failed to clear old backup directory '" << oldDir << "': " << ec.message() << "\n";
 		return false;
 	}
 
 	ec.clear();
 	fs::rename(_dir, oldDir, ec);
 	if (ec) {
-		GlobalLogger().error << "Failed to rename original world to '" << oldDir << "': " << ec.message() << "\n";
+		Logger::Error << "Failed to rename original world to '" << oldDir << "': " << ec.message() << "\n";
 		return false;
 	}
 
 	ec.clear();
 	fs::rename(tempDir, _dir, ec);
 	if (ec) {
-		GlobalLogger().error << "Failed to rename converted world into place: " << ec.message() << "\n";
+		Logger::Error << "Failed to rename converted world into place: " << ec.message() << "\n";
 		// Try to restore the original so we don't leave the world directory missing entirely.
 		std::error_code restoreEc;
 		fs::rename(oldDir, _dir, restoreEc);
 		if (restoreEc) {
-			GlobalLogger().error << "Failed to restore original world after failed conversion! Your original "
+			Logger::Error << "Failed to restore original world after failed conversion! Your original "
 			                        "world is at '"
 			                     << oldDir << "'.\n";
 		}
@@ -380,12 +380,12 @@ bool convertBetrockServerLevel(std::string& _dir) {
 	world.regionManager = &regionManager;
 
 	if (!fs::exists(srcRegion)) {
-		GlobalLogger().error << "Invalid Betrock level file!\n";
+		Logger::Error << "Invalid Betrock level file!\n";
 		return false;
 	}
 
 	if (!regionManager.Initialize("ConvertedWorld/region")) {
-		GlobalLogger().error << "Failed to initialize overworld region manager for conversion!\n";
+		Logger::Error << "Failed to initialize overworld region manager for conversion!\n";
 		return false;
 	}
 
@@ -393,7 +393,7 @@ bool convertBetrockServerLevel(std::string& _dir) {
 		fs::copy(srcPlayers, "ConvertedWorld/players",
 		         fs::copy_options::recursive | fs::copy_options::overwrite_existing);
 	} else {
-		GlobalLogger().warn << "No Betrock player files found!\n";
+		Logger::Warning << "No Betrock player files found!\n";
 	}
 
 	auto blockIndexToPosition = [](int32_t _index) -> Int3 {
@@ -548,7 +548,7 @@ bool convertBetrockServerLevel(std::string& _dir) {
 		}
 	}
 
-	GlobalLogger().info << "Found " << chunkCoords.size() << " OLD format chunks to convert.\n";
+	Logger::Info << "Found " << chunkCoords.size() << " OLD format chunks to convert.\n";
 
 	// Save all our old format chunks
 	int count = 0;
@@ -571,7 +571,7 @@ bool convertBetrockServerLevel(std::string& _dir) {
 		}
 	}
 
-	GlobalLogger().info << "Converted! Now converting V2 format chunks..\n";
+	Logger::Info << "Converted! Now converting V2 format chunks..\n";
 
 	// V2 chunks
 	chunkCoords.clear();
@@ -589,7 +589,7 @@ bool convertBetrockServerLevel(std::string& _dir) {
 		}
 	}
 
-	GlobalLogger().info << "Found " << chunkCoords.size() << " V2 format chunks to convert.\n";
+	Logger::Info << "Found " << chunkCoords.size() << " V2 format chunks to convert.\n";
 
 	// Save all our V2 format chunks
 	for (auto& cpos : chunkCoords) {
@@ -610,12 +610,12 @@ bool convertBetrockServerLevel(std::string& _dir) {
 			}
 		}
 	}
-	GlobalLogger().info << "Finishing up..\n";
+	Logger::Info << "Finishing up..\n";
 
 	// Save
 	world.Shutdown();
 
-	GlobalLogger().info << "Done!\n";
+	Logger::Info << "Done!\n";
 
 	return true;
 }

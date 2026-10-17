@@ -185,7 +185,7 @@ bool PacketDispatcher::Dispatch(PacketId _packetId, PlayerSession& _session, Wor
 		return false; // session is dead; stop processing
 	}
 	default:
-		GlobalLogger().warn << "UNHANDLED packet 0x" << std::hex << static_cast<int>(_packetId) << "\n";
+		Logger::Warning << "UNHANDLED packet 0x" << std::hex << static_cast<int>(_packetId) << "\n";
 		_server.connStateManager.DisconnectPlayer(_session, "Unknown packet", _server);
 		return false;
 	}

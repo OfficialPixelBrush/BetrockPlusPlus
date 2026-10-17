@@ -68,7 +68,7 @@ public:
 			return InvMap::HOTBAR;
 		if (_slot >= 9 && _slot <= 35)
 			return InvMap::INVENTORY;
-		GlobalLogger().error << "Invalid Inventory area slot! (" << _slot << ")\n";
+		Logger::Error << "Invalid Inventory area slot! (" << _slot << ")\n";
 		return InvMap::INVALID; // Fallback,
 	}
 

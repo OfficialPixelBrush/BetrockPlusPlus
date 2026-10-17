@@ -25,7 +25,7 @@ void RecipeManager::AddShapelessRecipe(std::span<const ItemKey> _items, ItemStac
 	[[unlikely]]
 	if (!inserted) {
 		it->second = _output;
-		GlobalLogger().warn << "Overwriting existing shapeless recipe for output item " << _output << "\n";
+		Logger::Warning << "Overwriting existing shapeless recipe for output item " << _output << "\n";
 	}
 }
 
@@ -37,12 +37,12 @@ void RecipeManager::AddShapedRecipe(std::initializer_list<std::string_view> _row
 	size_t y = 0;
 	for (auto row : _rows) {
 		if (y >= 3) {
-			GlobalLogger().warn << "Recipe has more than 3 rows. Skipping extra rows.";
+			Logger::Warning << "Recipe has more than 3 rows. Skipping extra rows.";
 			break;
 		}
 
 		if (row.size() > 3) {
-			GlobalLogger().warn << "Recipe row has more than 3 columns. Skipping extra columns.";
+			Logger::Warning << "Recipe row has more than 3 columns. Skipping extra columns.";
 			row = row.substr(0, 3);
 		}
 
@@ -60,7 +60,7 @@ void RecipeManager::AddShapedRecipe(std::initializer_list<std::string_view> _row
 			}
 
 			if (mappedItem.id == Items::Id::INVALID) {
-				GlobalLogger().warn << "Unknown recipe symbol '" << c << "'. Skipping recipe.";
+				Logger::Warning << "Unknown recipe symbol '" << c << "'. Skipping recipe.";
 				return;
 			}
 
@@ -75,7 +75,7 @@ void RecipeManager::AddShapedRecipe(std::initializer_list<std::string_view> _row
 	[[unlikely]]
 	if (!inserted) {
 		it->second = _output;
-		GlobalLogger().warn << "Overwriting existing shaped recipe for output item " << _output << "\n";
+		Logger::Warning << "Overwriting existing shaped recipe for output item " << _output << "\n";
 	}
 }
 
@@ -174,7 +174,7 @@ ShapelessRecipeKey RecipeManager::MakeShapelessKey(std::span<const ItemKey> _ite
 			continue;
 		}
 		if (key.count >= key.items.size()) {
-			GlobalLogger().error << "Shapeless recipe has more than 9 valid items!\n";
+			Logger::Error << "Shapeless recipe has more than 9 valid items!\n";
 			break;
 		}
 		key.items[key.count++] = NormalizeItemMetadata(item);

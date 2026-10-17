@@ -36,13 +36,13 @@ struct Runtime {
 		recipeManager.AddVanillaRecipes();
 		world.entityManager.nextEntityId = &sharedEntityId;
 		worldHell.entityManager.nextEntityId = &sharedEntityId;
-		GlobalLogger().info << "New game runtime created!\n";
+		Logger::Info << "New game runtime created!\n";
 	}
 
 	void SetViewDistance(int _renderDistance) {
 		world.SetViewRadius(_renderDistance);
 		worldHell.SetViewRadius(_renderDistance);
-		GlobalLogger().info << "Render distance set to " << _renderDistance << " chunks!\n";
+		Logger::Info << "Render distance set to " << _renderDistance << " chunks!\n";
 	}
 
 	void CloseCurrentWorld() {
@@ -62,37 +62,37 @@ struct Runtime {
 		currentLevelPath = _levelPath;
 		world.SetViewRadius(_renderDistance);
 		worldHell.SetViewRadius(_renderDistance);
-		GlobalLogger().info << "Render distance set to " << _renderDistance << " chunks!\n";
+		Logger::Info << "Render distance set to " << _renderDistance << " chunks!\n";
 
 		// Setup our save
 		bool newSave = false;
 		auto initResult = saveManager.Initialize(_levelPath);
 		if (initResult != LevelInitFailureReason::SUCCESS) {
 			auto tryNewSave = [&]() -> void {
-				GlobalLogger().warn << "**** FAILED TO LOAD WORLD DATA! Attempting to create new world... \n";
+				Logger::Warning << "**** FAILED TO LOAD WORLD DATA! Attempting to create new world... \n";
 				newSave = true;
 				if (!saveManager.CreateNewWorld({ .randomSeed = (_seedOverride != "")
 				                                                    ? saveManager.SeedFromString(_seedOverride)
 				                                                    : Java::Random().NextLong() })) {
-					GlobalLogger().error << "**** FAILED TO CREATE NEW WORLD! \n";
+					Logger::Error << "**** FAILED TO CREATE NEW WORLD! \n";
 					exit(1);
 				}
-				GlobalLogger().info << "New world created successfully. \n";
+				Logger::Info << "New world created successfully. \n";
 			};
 
 			if (initResult == LevelInitFailureReason::ALPHA_FORMATTED) {
-				GlobalLogger().info << "Alpha Formatted world detected! Attempting to convert...\n";
+				Logger::Info << "Alpha Formatted world detected! Attempting to convert...\n";
 				saveManager.Release();
 				auto conversionResult = Utilities::convertAlphaLevel(_levelPath);
 
 				if (!conversionResult) {
 					// We failed to convert
-					GlobalLogger().info << "Failed to convert Alpha world! Falling back.\n";
+					Logger::Info << "Failed to convert Alpha world! Falling back.\n";
 					tryNewSave();
 				} else {
 					// Re-init our level
 					if (saveManager.Initialize(_levelPath) != LevelInitFailureReason::SUCCESS) {
-						GlobalLogger().error << "Converted level failed to load!";
+						Logger::Error << "Converted level failed to load!";
 						tryNewSave();
 					}
 				}
@@ -137,6 +137,6 @@ struct Runtime {
 		}
 		worldHell.spawnPoint = world.spawnPoint; // Interestingly the world spawn doesn't have the /= or *= 8 stuff
 
-		GlobalLogger().info << "Game runtime initialized!\n";
+		Logger::Info << "Game runtime initialized!\n";
 	}
 };

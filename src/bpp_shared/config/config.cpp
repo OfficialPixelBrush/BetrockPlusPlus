@@ -38,7 +38,7 @@ bool Config::LoadFromDisk() noexcept {
 	std::ifstream file(this->path);
 
 	if (!file.is_open()) {
-		GlobalLogger().warn << "**** Error opening properties file (load). Attempting to create new file...\n";
+		Logger::Warning << "**** Error opening properties file (load). Attempting to create new file...\n";
 		return false;
 	}
 
@@ -54,7 +54,7 @@ bool Config::LoadFromDisk() noexcept {
 
 		auto delimiterPos = line.find('=');
 		if (delimiterPos == std::string::npos) {
-			GlobalLogger().error << "**** Invalid line in properties file: " << line << "\n";
+			Logger::Error << "**** Invalid line in properties file: " << line << "\n";
 			continue;
 		}
 
@@ -74,7 +74,7 @@ bool Config::LoadFromDisk() noexcept {
 bool Config::SaveToDisk() const noexcept {
 	std::ofstream file(this->path);
 	if (!file.is_open()) {
-		GlobalLogger().error << "**** Error opening properties file (save). \n";
+		Logger::Error << "**** Error opening properties file (save). \n";
 		return false;
 	}
 
@@ -83,11 +83,11 @@ bool Config::SaveToDisk() const noexcept {
 			file << key << "=" << value << "\n";
 		}
 	} catch (const std::exception& e) {
-		GlobalLogger().error << "**** Error while writing properties file: " << e.what() << "\n";
+		Logger::Error << "**** Error while writing properties file: " << e.what() << "\n";
 		return false;
 	}
 
-	GlobalLogger().info << "Properties file saved successfully.\n";
+	Logger::Info << "Properties file saved successfully.\n";
 	file.close();
 	return true;
 }
@@ -129,13 +129,13 @@ bool Config::SaveKeyToDisk(const std::string& _key) {
 
 	std::ofstream out(this->path);
 	if (!out.is_open()) {
-		GlobalLogger().error << "**** Error opening properties file (save key).\n";
+		Logger::Error << "**** Error opening properties file (save key).\n";
 		return false;
 	}
 	for (const auto& l : lines)
 		out << l << '\n';
 	if (!out) {
-		GlobalLogger().error << "**** Error while writing properties file\n";
+		Logger::Error << "**** Error while writing properties file\n";
 		return false;
 	}
 	return true;
