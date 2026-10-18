@@ -305,8 +305,10 @@ public:
 		int sx = this->spawnPoint.x;
 		int sz = this->spawnPoint.z;
 		const int32_t radius = Gamerule::Get<int32_t>(Gamerule::Id::RespawnRadius);
-		sx += rand.NextInt(radius*2) - radius;
-		sz += rand.NextInt(radius*2) - radius;
+		if (radius > 0) {
+			sx += rand.NextInt(radius*2) - radius;
+			sz += rand.NextInt(radius*2) - radius;
+		}
 		int sy = FindTopSolidBlock(sx, sz);
 		return { sx, sy, sz };
 	}
