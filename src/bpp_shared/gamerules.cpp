@@ -164,6 +164,17 @@ std::optional<Type> ParseLike(const Type& _current, std::string_view _text) {
             return std::nullopt;
         } else if constexpr (std::is_same_v<T, std::string>) {
             return Type{std::string(_text)};
+        } else if constexpr (std::is_floating_point_v<T>) {
+            // std::from_chars for floating point is unavailable on macOS < 26
+            if (_text.empty() || std::isspace(static_cast<unsigned char>(_text.front())))
+                return std::nullopt;
+            const std::string str(_text);
+            char* endPtr = nullptr;
+            errno = 0;
+            const double val = std::strtod(str.c_str(), &endPtr);
+            if (endPtr != str.c_str() + str.size() || errno == ERANGE || !std::isfinite(val))
+                return std::nullopt;
+            return Type{static_cast<T>(val)};
         } else {
             T out{};
             const char* end = _text.data() + _text.size();
