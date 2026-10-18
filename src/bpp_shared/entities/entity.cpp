@@ -8,6 +8,7 @@
 #include "entity_item.h"
 #include "entity_manager.h"
 #include "entity_player.h"
+#include "entity_lightning_bolt.h"
 #include "packet_data.h"
 #include "world/world.h"
 #include <algorithm>
@@ -31,6 +32,14 @@ void Entity::OnPlayerInteract(PlayerEntity* /*_entity*/) {
 void Entity::OnEnterPortal() {
 	// stub
 	return;
+}
+
+void Entity::OnStruckByLightning(LightningEntity& _bolt) {
+	if (!isImmuneToFire)
+		AttackEntityFrom(nullptr, 5);
+	fireTicks++;
+	if (fireTicks == 0)
+		fireTicks = 300;
 }
 
 void Entity::DropItemAtEntity(ItemId _itemId, ItemAmount _count, ItemDamage _data, int _pickupTime) {
