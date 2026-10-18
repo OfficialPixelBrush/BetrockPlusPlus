@@ -26,6 +26,9 @@
 #include "world/world.h"
 
 struct EntityTracker;
+// _margin pads the protected radius (for placements that can spill past the target block)
+bool IsValidActionInSpawnRadius(PlayerSession& _session, Server& _server, Int3 _pos, WorldManager& _world,
+                                int _margin = 0);
 namespace HandlePacket {
 void KeepAlive(Packet::KeepAlive& /*pkt*/, PlayerSession& _session);
 void ChatMessage(Packet::ChatMessage& _pkt, PlayerSession& _session,

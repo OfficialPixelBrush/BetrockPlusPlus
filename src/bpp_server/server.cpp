@@ -398,6 +398,15 @@ void Server::Startup() {
 		};
 	};
 
+	auto registerSpawnProtection = [this](WorldManager& _world) {
+		_world.canModifyBlock = [this, &_world](Entity& _entity, Int3 _pos) {
+			auto* player = dynamic_cast<EntityMPPlayer*>(&_entity);
+			return !player || !player->session || IsValidActionInSpawnRadius(*player->session, *this, _pos, _world);
+		};
+	};
+	registerSpawnProtection(gameRuntime.world);
+	registerSpawnProtection(gameRuntime.worldHell);
+
 	gameRuntime.world.onBlockUpdate = makeBlockUpdateCallback(Dimension::Overworld, chunkBlockChanges);
 	gameRuntime.worldHell.onBlockUpdate = makeBlockUpdateCallback(Dimension::Nether, chunkBlockChangesHell);
 

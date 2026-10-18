@@ -84,6 +84,11 @@ public:
 	std::function<void(PendingBlock, Int32_2)> onBlockUpdate;
 	std::function<void(PacketData::WorldEvent, Int3, int32_t, PlayerSession*)> onWorldEvent;
 	std::function<void(Int3, int8_t, int8_t)> onNotePlay;
+	// Lets the server veto an entity (player) modifying a block, e.g. for spawn protection
+	std::function<bool(Entity&, Int3)> canModifyBlock;
+	bool CanModify(Entity& _entity, Int3 _pos) const {
+		return !canModifyBlock || canModifyBlock(_entity, _pos);
+	}
 	std::unordered_map<Int32_2, std::shared_ptr<Chunk>> chunks;
 	Java::Random rand;
 	int64_t seed = 0;

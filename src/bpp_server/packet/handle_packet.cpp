@@ -30,9 +30,11 @@
 #include <memory>
 #include "gamerules.h"
 
-static bool IsValidActionInSpawnRadius(PlayerSession& _session, Server& _server, Int3 _pos, WorldManager& _world) {
-	// TODO: Make this configurable and more intuitive
-	const int spawnProtection = 16;
+bool IsValidActionInSpawnRadius(PlayerSession& _session, Server& _server, Int3 _pos, WorldManager& _world,
+                                int _margin) {
+	const int spawnProtection = Gamerule::Get<int32_t>(Gamerule::Id::SpawnProtectionRadius) + _margin;
+	if (spawnProtection <= 0)
+		return true;
 	if (IsOperator(_session, _server))
 		return true;
 
@@ -364,6 +366,17 @@ void PlaceBlock(Packet::PlaceBlock& _pkt, PlayerSession& _session, WorldManager&
 
 	if (!heldItem) {
 		return;
+	}
+
+	// Items skip the block placement check below
+	if (Items::itemBehavior[heldItem->id].onBlockUse && _pkt.face != PacketData::FaceDirection::INVALID_USE) {
+		const Int3 target = position.WithOffset(FaceDirectionToDirection(_pkt.face));
+		if (!IsValidActionInSpawnRadius(_session, _server, target, _world, 1)) {
+			resyncBlock(position);
+			resyncBlock(target);
+			PacketUtilities::SendSlot(_session, 0, _session.inventory.activeHotbarSlot + 36, heldItem);
+			return;
+		}
 	}
 
 	// NOTE:
