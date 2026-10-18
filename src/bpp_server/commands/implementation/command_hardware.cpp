@@ -32,7 +32,7 @@ std::string FormatCpu(const HardwareInfo& _info) {
 		                                  : std::format("{:.0f} MHz", _info.cpuMhz);
 	}
 	if (!details.empty())
-		line += std::format(" @ {}", details);
+		line += std::format(" {}", details);
 	return line;
 }
 
