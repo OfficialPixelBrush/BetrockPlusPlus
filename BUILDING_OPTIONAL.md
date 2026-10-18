@@ -16,6 +16,7 @@ Here's a list of all optional flags and their default state:
 | `CRASH_LOGGING`                                             | `ON`          |
 | [`BETACRAFT_HEARTBEAT`](#betacraft-server-list-heartbeat)   | `ON`          |
 | [`EXPERIMENTAL`](#experimental)                             | `OFF`         |
+| [`HARDWARE_INFO`](#hardware-info)                           | `ON`          |
 | [`GENERATION_PRECISION`](#terrain-precision)                | `DOUBLE`      |
 
 ### Online Mode Authentication
@@ -52,10 +53,15 @@ Experimental features are **off by default**. This flag enables experimental or 
 
 Right now, this includes:
 
-- `/dim` command
-- Flint and Steel usage
+- Held map items (and their crafting recipe)
 
 Simply add `-DEXPERIMENTAL=ON` to the first build command, if you'd like to enable it.
+
+### Hardware Info
+
+Hardware Info is **on by default**. It adds the operator-only `/hardware` command, which shows the operating system, kernel, CPU (model, thread count, max clock speed) and total memory and swap of the machine the server runs on. Values that can't be determined are left out or shown as `Unknown`.
+
+Simply add `-DHARDWARE_INFO=OFF` to the first build command, if you'd rather not have it, or run it on a system where the necessary endpoints being poked at could cause issues, like on some embedded systems.
 
 ### Terrain Precision
 
