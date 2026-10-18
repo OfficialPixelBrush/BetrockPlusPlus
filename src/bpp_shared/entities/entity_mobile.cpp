@@ -184,10 +184,11 @@ void MobileEntity::ResolveEntityCollision(Entity& _other) {
 }
 
 void MobileEntity::TickPhysics() {
-	if (inWater || inLava) {
+	bool currentlyInLava = world->IsMaterialInAabb(GetLavaCollider(), Material::Lava());
+	if (inWater || currentlyInLava) {
 		// Water and lava movement
 		auto oldY = position.y;
-		double friction = 0.8;
+		double friction = inWater ? double(0.8) : double(0.5);
 		ApplyInput(0.02f);
 		Move(this->velocity);
 		velocity *= friction;
@@ -467,11 +468,13 @@ void MobileEntity::Tick() {
 	}
 
 	// Jump code
+	// Vanilla does this check here again with the current collider
+	bool isCurrentlyInLava = world->IsMaterialInAabb(GetLavaCollider(), Material::Lava());
 	if (jumping) {
 		if (inWater || inLava) {
-			velocity.y += 0.04;
+			velocity.y += double(0.04);
 		} else if (onGround) {
-			velocity.y = 0.42;
+			velocity.y = double(0.42);
 		}
 	}
 

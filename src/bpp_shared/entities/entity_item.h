@@ -25,10 +25,10 @@ struct ItemEntity : public Entity {
 		this->Teleport(_position);
 
 		// This stuff is mostly randomized
-		rotationYaw = rand.NextDouble() * 360.0;
-		velocity.x = rand.NextDouble() * 0.2 - 0.1;
+		rotationYaw = float(rand.NextDouble() * 360.0);
+		velocity.x = float(rand.NextDouble() * 0.2 - 0.1);
 		velocity.y = 0.2;
-		velocity.z = rand.NextDouble() * 0.2 - 0.1;
+		velocity.z = float(rand.NextDouble() * 0.2 - 0.1);
 	}
 	void OnCollideWithPlayer(PlayerEntity& _entity) override;
 	void Tick() override;
