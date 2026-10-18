@@ -78,6 +78,7 @@ inline bool CanTriggerRedstoneUpdate(BlockType _block) {
 	case BLOCK_REDSTONE_TORCH_OFF:
 	case BLOCK_REDSTONE_REPEATER_ON:
 	case BLOCK_REDSTONE_REPEATER_OFF:
+	case BLOCK_RAIL_DETECTOR:
 		return true;
 	default:
 		return false;
@@ -88,6 +89,11 @@ inline ComponentProfile GetComponentProfile(BlockType _blockId, uint8_t _meta) {
 	switch (_blockId) {
 	case BLOCK_REDSTONE: {
 		return ComponentProfile{ true, true, true, true, false };
+	}
+	case BLOCK_RAIL_DETECTOR: {
+		if (_meta & 8)
+			return ComponentProfile{ true, true, true, true, false };
+		return {};
 	}
 	case BLOCK_REDSTONE_TORCH_ON: {
 		switch (GetDirectionFromMeta(BLOCK_REDSTONE_TORCH_ON, _meta)) {

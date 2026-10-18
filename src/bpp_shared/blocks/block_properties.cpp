@@ -468,6 +468,7 @@ void RegisterBlockProperties() {
 		.isCollidable = false,
 		.isOpaqueCube = false,
 		.isNormalCube = false,
+		.ticksOnLoad = true
 	};
 
 	// Sticky Piston Base

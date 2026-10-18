@@ -29,6 +29,31 @@
 
 namespace Blocks {
 
+static void SetDetectorRailState(WorldManager& _world, Int3 _pos, uint8_t _meta) {
+	bool powered = (_meta & 8) != 0;
+	bool detectedMinecart = false;
+	float inset = 0.125f;
+	AABB detectorBox = { _pos.x + inset, _pos.y, _pos.z + inset, _pos.x + 1 - inset, _pos.y + 0.25, _pos.z + 1 - inset };
+	EntityType type = EntityType::MINECART;
+	auto minecarts = _world.entityManager.GetEntitiesWithinAabbOfType(detectorBox, type);
+	detectedMinecart = minecarts.size() > 0;
+
+	if (detectedMinecart && !powered) {
+		_world.SetMeta(_pos, _meta | 8);
+		_world.NotifyNeighborsOfUpdate(_pos, BLOCK_RAIL_DETECTOR);
+		_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Cardinal::Value::Down), BLOCK_RAIL_DETECTOR);
+	}
+
+	if (!detectedMinecart && powered) {
+		_world.SetMeta(_pos, _meta & 7);
+		_world.NotifyNeighborsOfUpdate(_pos, BLOCK_RAIL_DETECTOR);
+		_world.NotifyNeighborsOfUpdate(_pos.WithOffset(Cardinal::Value::Down), BLOCK_RAIL_DETECTOR);
+	}
+
+	if (detectedMinecart)
+		_world.tickScheduler.ScheduleUpdateTick(_pos, BLOCK_RAIL_DETECTOR, 20);
+}
+
 static void UpdateRail(WorldManager& _world, Int3 _pos, BlockType _block) {
 	RailManager::RefreshRail(_world, _pos, _block);
 }
@@ -67,7 +92,7 @@ void RegisterRailBehaviors() {
 		.getCollider = EmptyCollider,
 	};
 
-	// Rails!
+	// Rail
 	blockBehaviors[BLOCK_RAIL].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                              Cardinal::Value _face, BlockType _blockId, uint8_t _meta) -> bool {
 		if (!CanRailStay(_world, _pos, BLOCK_RAIL))
@@ -87,6 +112,7 @@ void RegisterRailBehaviors() {
 		UpdateRail(_world, _pos, BLOCK_RAIL);
 	};
 
+	// Detector Rail
 	blockBehaviors[BLOCK_RAIL_DETECTOR].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                                       Cardinal::Value _face, BlockType _blockId,
 	                                                       uint8_t _meta) -> bool {
@@ -94,6 +120,7 @@ void RegisterRailBehaviors() {
 			return false;
 		return GenericPlace(_world, _pos, _placer, _face, _blockId, _meta);
 	};
+
 	blockBehaviors[BLOCK_RAIL_DETECTOR].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                               BlockType /*_blockId*/) -> void {
 		if (!CanRailStay(_world, _pos, BLOCK_RAIL_DETECTOR)) {
@@ -106,6 +133,21 @@ void RegisterRailBehaviors() {
 		UpdateRail(_world, _pos, BLOCK_RAIL_DETECTOR);
 	};
 
+	// Detector update behavior
+	blockBehaviors[BLOCK_RAIL_DETECTOR].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos,
+	                                                                   Entity& _entity) -> void {
+		auto meta = _world.GetMetadata(_pos);
+		if ((meta & 8) == 0)
+			SetDetectorRailState(_world, _pos, meta);
+	};
+
+	blockBehaviors[BLOCK_RAIL_DETECTOR].onTick = [](WorldManager& _world, Int3 _pos, uint8_t _meta,
+	                                                Java::Random& /*_random*/) -> void {
+		if ((_meta & 8) != 0)
+			SetDetectorRailState(_world, _pos, _meta);	
+	};
+		
+	// Powered rail
 	blockBehaviors[BLOCK_RAIL_POWERED].onBlockPlaced = [](WorldManager& _world, Int3 _pos, Entity& _placer,
 	                                                      Cardinal::Value _face, BlockType _blockId,
 	                                                      uint8_t _meta) -> bool {
