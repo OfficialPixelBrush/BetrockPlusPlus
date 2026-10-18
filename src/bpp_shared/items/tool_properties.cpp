@@ -439,6 +439,10 @@ void UseBoat(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _us
 		result.blockPosition.y--;
 	}
 
+	if (!_world.CanModify(_user, result.blockPosition)) {
+		return;
+	}
+
 	boat.Teleport(
 	    { result.blockPosition.x + 0.5f, result.blockPosition.y + 1.0f + boat.yOffset, result.blockPosition.z + 0.5f });
 	_world.entityManager.AddEntity(std::make_shared<BoatEntity>(boat));
@@ -482,6 +486,10 @@ void UseBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entity& _
 		return;
 	}
 
+	if (!_world.CanModify(_user, result.blockPosition)) {
+		return;
+	}
+
 	// Accept water or lava
 	if (result.hitBlock.type == BLOCK_WATER_FLOWING || result.hitBlock.type == BLOCK_WATER_STILL) {
 		_world.SetBlock(result.blockPosition, BLOCK_AIR);
@@ -511,8 +519,8 @@ void UseWaterBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Enti
 
 	Int3 placePos = result.blockPosition.WithOffset(result.face);
 	auto m = _world.GetMaterial(placePos);
-	if (m.isSolid) {
-		return; // can't place into solid ground
+	if (m.isSolid || !_world.CanModify(_user, placePos)) {
+		return; // can't place into solid ground or protected area
 	}
 
 	if (_world.GetDimension() == Dimension::Nether) {
@@ -543,8 +551,8 @@ void UseLavaBucket(WorldManager& _world, ItemStack* _stack, Int3 /*_pos*/, Entit
 
 	Int3 placePos = result.blockPosition.WithOffset(result.face);
 	auto m = _world.GetMaterial(placePos);
-	if (m.isSolid) {
-		return; // can't place into solid ground
+	if (m.isSolid || !_world.CanModify(_user, placePos)) {
+		return; // can't place into solid ground or protected area
 	}
 
 	_world.SetBlock(placePos, BLOCK_LAVA_FLOWING);

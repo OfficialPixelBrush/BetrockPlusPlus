@@ -30,6 +30,7 @@ enum class Id {
 	TntExplodes,
 	Nightmares,
 	NetherBedsExplode,
+	SpawnProtectionRadius,
 	// Mobs
 	ForgiveDeadPlayers,
 	MobGriefing,

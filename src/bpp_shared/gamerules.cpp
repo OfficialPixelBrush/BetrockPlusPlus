@@ -36,6 +36,7 @@ struct Registry {
         Register(Id::TntExplodes, "tnt_explodes", true);
         Register(Id::Nightmares, "nightmares", true);
         Register(Id::NetherBedsExplode, "nether_beds_explode", true);
+        Register(Id::SpawnProtectionRadius, "spawn_protection_radius", 16);
         // Mobs
         //Register(Id::ForgiveDeadPlayers, "forgive_dead_players", true);
         //Register(Id::MobGriefing, "mob_griefing", true);
