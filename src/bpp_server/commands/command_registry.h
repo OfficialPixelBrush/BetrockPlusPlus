@@ -34,3 +34,4 @@ void RegisterExecute(strategos::BrigadierContext& _dispatcher);
 void RegisterChat(strategos::BrigadierContext& _dispatcher);
 void RegisterGamerule(strategos::BrigadierContext& _dispatcher);
 void RegisterCrash(strategos::BrigadierContext& _dispatcher);
+void RegisterHardware(strategos::BrigadierContext& _dispatcher);
