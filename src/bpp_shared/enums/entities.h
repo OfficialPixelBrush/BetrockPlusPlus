@@ -43,4 +43,7 @@ enum class EntityType : int8_t {
 	SQUID,
 	WOLF,
 	PAINTING,
+
+	// MSC
+	LIGHTNING_BOLT
 };

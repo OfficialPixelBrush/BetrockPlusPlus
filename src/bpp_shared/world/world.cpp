@@ -10,6 +10,7 @@
 #include "world.h"
 #include "blocks.h"
 #include "blocks/block_behaviors.h"
+#include "entities/entity_lightning_bolt.h"
 #include "chunk.h"
 #include "direction.h"
 #include "entities/entity_item.h"
@@ -453,6 +454,21 @@ void WorldManager::PerformRandomTicks(const std::vector<ClientPosition>& _player
 
 	for (auto& [cpos, chunk] : wanted) {
 		Int2 chunkOrigin = { cpos.x * 16, cpos.z * 16 };
+
+		// Lightning
+		if (rand.NextInt(100000) == 0 && weatherSystem.IsRaining() && weatherSystem.IsThundering()) {
+			distHashCounter = distHashCounter * 3 + 1013904223;
+			uint32_t r = distHashCounter >> 2;
+			int lx = int(r & 15);
+			int lz = int((r >> 8) & 15);
+			Int2 column = { chunkOrigin.x + lx, chunkOrigin.z + lz };
+			int y = FindTopSolidBlock(column.x, column.z);
+			if (CanRainHitSpot({ column.x, y, column.z })) {
+				auto lEntityRegular = LightningEntity(this, { double(column.x), double(y), double(column.z) });
+				std::shared_ptr<LightningEntity> lightningEntity = std::make_shared<LightningEntity>(lEntityRegular);
+				entityManager.AddEntity(lightningEntity);
+			}
+		}
 
 		// Snowfall and freezing
 		if (!isHell && rand.NextInt(16) == 0) {

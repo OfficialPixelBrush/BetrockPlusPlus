@@ -157,6 +157,8 @@ struct EntityTracker {
 		case EntityType::PAINTING:
 			// Paintings never move so there's nothing to resync
 			return { 128, INT_MAX, false };
+		case EntityType::LIGHTNING_BOLT:
+			return { 512, INT_MAX, false };
 		default:
 			return { 0, 0, false };
 

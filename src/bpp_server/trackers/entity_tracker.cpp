@@ -422,6 +422,14 @@ void EntityTracker::SpawnEntityForPlayer(EntityId _playerId, TrackedEntry& _enti
 		pkt.Serialize(pSession->stream);
 		break;
 	}
+	case EntityType::LIGHTNING_BOLT: {
+		Packet::LightningBolt pkt;
+		pkt.entityType = 1;
+		pkt.entityId = _entityEntry.entity->id;
+		pkt.position = QuantizePosition(_entityEntry.entity->position);
+		pkt.Serialize(pSession->stream);
+		break;
+	}
 	case EntityType::FALLING_SAND: {
 		Packet::SpawnObject pkt;
 		pkt.entityId = _entityEntry.entity->id;

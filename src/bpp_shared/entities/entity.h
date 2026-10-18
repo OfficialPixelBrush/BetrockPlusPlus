@@ -63,6 +63,7 @@ const float SNEAK_SPEED_MODIFIER = 0.3f;
 
 struct PlayerEntity;
 struct EntityManager;
+struct LightningEntity;
 
 // TODO: Reorder some of these. Having a bunch of bools
 // like this between bigger types is bad for alignment
@@ -242,6 +243,13 @@ struct Entity {
 		double cosPitch = std::cos(pitchRad);
 		return { -std::sin(yawRad) * cosPitch, -std::sin(pitchRad), std::cos(yawRad) * cosPitch };
 	}
+
+	Int3 GetPositionAsBlockPosition(Vec3& _position) {
+		auto fd = MathHelper::FloorDouble;
+		return { fd(_position.x), fd(_position.y), fd(_position.z) };
+	}
+
+	virtual void OnStruckByLightning(LightningEntity& _bolt);
 
 	void Teleport(Vec3 _newpos, Vec2 _newrot = { 0, 0 }) {
 		position.x = _newpos.x;

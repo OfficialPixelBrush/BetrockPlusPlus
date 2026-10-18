@@ -520,6 +520,7 @@ std::optional<std::string> EntityManager::GetEntityNbtId(EntityType _type) {
 	case EntityType::FIREBALL:
 	case EntityType::THROWN_EGG:
 	case EntityType::FISHING_BOBBER:
+	case EntityType::LIGHTNING_BOLT:
 	default:
 		return std::nullopt;
 	}
