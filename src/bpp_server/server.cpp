@@ -197,7 +197,7 @@ void Server::LoadConfig() {
 		    { "view-distance", "10" },
 		    { "white-list", "false" },
 		    //{"server-ip", ""},
-		    //{"motd", "A Minecraft Server"},
+		    //{"motd", "A Betrock++ Server"},
 		    //{"pvp", "true"},
 		    // use a random device to seed another prng that gives us our seed
 		    { "level-seed", std::to_string(std::mt19937(std::random_device()())()) },

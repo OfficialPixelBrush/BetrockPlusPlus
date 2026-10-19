@@ -5,7 +5,7 @@
 [![Pull requests](https://img.shields.io/github/issues-pr/OfficialPixelBrush/BetrockPlusPlus)](https://github.com/OfficialPixelBrush/BetrockPlusPlus/pulls)
 [![OpenBeta](https://img.shields.io/badge/OpenBeta-Discord-purple)](https://discord.gg/JHTz2HSKrf)
 
-A full, from-scratch reimplementation of Minecraft Beta 1.7.3 into C++.
+A full, from-scratch reimplementation of Beta 1.7.3 into C++.
 
 ## Goals
 
@@ -58,10 +58,10 @@ For anyone curious in how to use the addon C ABI, check our [addon_api.h](./incl
 
 ## Related projects
 
-- Beta++ by JcbbcEnjoyer: Minecraft Beta 1.7.3 Client written in C++
+- Beta++ by JcbbcEnjoyer: Beta 1.7.3 Client written in C++
 - [Technical Beta Wiki](https://officialpixelbrush.github.io/beta-wiki): Technical protocol and implementation reference (any findings are documented here)
-- [LibreProg](https://github.com/OfficialPixelBrush/LibreProg): Fully FOSS Minecraft Beta 1.7.3 textures, sounds, etc. (will be used for default textures for Client)
-- [LegacyMcServer](https://github.com/OfficialPixelBrush/LegacyMcServer): Minecraft Beta 1.7.3 Server written in C++ (some code was adopted from this)
+- [LibreProg](https://github.com/OfficialPixelBrush/LibreProg): Fully FOSS Beta 1.7.3 textures, sounds, etc. (will be used for default textures for Client)
+- [LegacyMcServer](https://github.com/OfficialPixelBrush/LegacyMcServer): Beta 1.7.3 Server written in C++ (some code was adopted from this)
 
 ## Credits
 

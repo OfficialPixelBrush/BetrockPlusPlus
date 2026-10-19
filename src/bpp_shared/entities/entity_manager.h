@@ -26,7 +26,7 @@ struct EntityContainer {
 
 // For ticking all entities and keeping track of them in the world
 struct EntityManager {
-	EntityId* nextEntityId = nullptr; // Minecraft seems to reserve 0 and 1
+	EntityId* nextEntityId = nullptr; // Vanilla seems to reserve 0 and 1
 	std::vector<std::shared_ptr<Entity>> entities;
 	std::vector<std::weak_ptr<Entity>> players;
 	std::unordered_map<Int2, EntityContainer> entityContainers;

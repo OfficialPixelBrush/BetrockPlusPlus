@@ -53,7 +53,7 @@ inline const std::array<std::string, 8> GEN_TEST_SEEDS = {
 	"3257840388504953787", // Pack.png
 	"Gargamel",
 	"Glacier",
-    "2409838883250561605", // (From Minecraft Seeds Tumblr)
+    "2409838883250561605",
     "worstseedever",
     "JASON",
     "Doom",
