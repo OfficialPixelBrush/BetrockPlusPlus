@@ -212,7 +212,7 @@ int main(int argc, char** argv) {
 #endif
 	// For testing REMOVE LATER!
 	TextNBTifier tnbt;
-	tnbt.RunTest();
+	//tnbt.RunTest();
 
 	Server serv;
 	if (args.enableWhitelist)
