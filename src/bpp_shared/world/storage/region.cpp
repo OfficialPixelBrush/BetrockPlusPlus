@@ -328,10 +328,8 @@ std::shared_ptr<Chunk> Region::DecodeNbtData(const std::vector<uint8_t>& _rawDat
 	return DecodeDecompressedNbtData(decompressed);
 }
 
-std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(const std::vector<uint8_t>& _decompressedData) {
-	// _decompressedData isn't const from NBTParser's point of view, but we don't mutate the caller's copy.
-	std::vector<uint8_t> decompressed = _decompressedData;
-	NBTParser parser(decompressed.data(), int64_t(decompressed.size()));
+std::shared_ptr<Chunk> Region::DecodeDecompressedNbtData(std::vector<uint8_t>& _decompressedData) {
+	NBTParser parser(_decompressedData.data(), int64_t(_decompressedData.size()));
 	const Tag& lvl = parser.root.Get("Level");
 
 	int32_t cx = lvl.Get("xPos").GetInt();
