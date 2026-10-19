@@ -5,7 +5,7 @@
 [![Pull requests](https://img.shields.io/github/issues-pr/OfficialPixelBrush/BetrockPlusPlus)](https://github.com/OfficialPixelBrush/BetrockPlusPlus/pulls)
 [![OpenBeta](https://img.shields.io/badge/OpenBeta-Discord-purple)](https://discord.gg/JHTz2HSKrf)
 
-A full, from-scratch reimplementation of Beta 1.7.3 into C++.
+A full, from-scratch reimplementation of Beta 1.7.x into C++.
 
 ## Goals
 
