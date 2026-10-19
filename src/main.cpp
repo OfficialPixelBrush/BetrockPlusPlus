@@ -42,6 +42,8 @@
 #include <signal.h>
 #endif
 
+#include "nbt/nbt_textifier.h" // FOR TESTING
+
 Server* server;
 std::atomic<bool> shutdownRequested{ false };
 
@@ -209,8 +211,9 @@ int main(int argc, char** argv) {
 #endif
 #endif
 	// For testing REMOVE LATER!
-	// std::string path = "world_betrock_old";
-	// Utilities::convertBetrockServerLevel(/*path=*/path);
+	TextNBTifier tnbt;
+	tnbt.RunTest();
+
 	Server serv;
 	if (args.enableWhitelist)
 		serv.SetWhitelistEnabled(true, false);
