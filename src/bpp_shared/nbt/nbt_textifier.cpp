@@ -4,3 +4,4 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
 */
+#include "nbt_textifier.h"
