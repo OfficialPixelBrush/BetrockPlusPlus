@@ -168,11 +168,8 @@ set(SHARED_SOURCES
     src/bpp_shared/entities/entity_tnt.cpp
     src/bpp_shared/entities/entity_lightning_bolt.cpp
 
-    # Utilities
-    src/bpp_shared/enums/biomes.cpp
-    src/bpp_shared/strings/ucs2.cpp
-    src/bpp_shared/strings/labels.cpp
-    src/bpp_shared/networking/network_stream.cpp
+    # NBT
+    src/bpp_shared/nbt/nbt_textifier.cpp
 
     # World
     src/bpp_shared/world/chunk.cpp
@@ -266,6 +263,10 @@ set(SHARED_SOURCES
     src/bpp_shared/helpers/explosion.cpp
     src/bpp_shared/helpers/hardware.cpp
     src/bpp_shared/helpers/direction_fixer.cpp
+    src/bpp_shared/enums/biomes.cpp
+    src/bpp_shared/strings/ucs2.cpp
+    src/bpp_shared/strings/labels.cpp
+    src/bpp_shared/networking/network_stream.cpp
 )
 
 # Server-specific source code
