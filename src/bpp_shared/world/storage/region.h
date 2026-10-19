@@ -68,7 +68,7 @@ public:
 	std::vector<uint8_t> EncodeNbtData(const std::shared_ptr<Chunk>& _chunk, int64_t _timestamp,
 	                                   std::shared_ptr<const std::vector<Tag>> _entities);
 	std::shared_ptr<Chunk> DecodeNbtData(const std::vector<uint8_t>& _rawData);
-	std::shared_ptr<Chunk> DecodeDecompressedNbtData(const std::vector<uint8_t>& _decompressedData);
+	std::shared_ptr<Chunk> DecodeDecompressedNbtData(std::vector<uint8_t>& _decompressedData);
 
 private:
 	//std::array<std::shared_ptr<Chunk>, REGION_AREA> chunks;
