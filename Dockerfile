@@ -98,7 +98,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /data
 COPY --from=builder /src/build/BetrockPlusPlus /usr/local/bin/BetrockPlusPlus
 
-# Minecraft Beta 1.7.3 default port
 EXPOSE 25565/tcp
 
 ENTRYPOINT ["/usr/local/bin/BetrockPlusPlus"]

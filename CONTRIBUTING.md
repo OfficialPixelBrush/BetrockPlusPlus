@@ -10,7 +10,7 @@ Generally, we're perfectly fine with adding code that was created with the help 
 
 What we _don't_ want are slop-commits that just rewrite stuff for the sake of rewriting it. We don't want or need a 505k line mega-commit that adds 26 new files, that all have duplicated functionality, or break other parts of the code.
 
-Keep it reasonable, don't overdo it. This is supposed to be a learning-exercise and fun project for whoever wants to get involved, and to foster a better understanding of how Beta Minecraft works. This project doesn't need to be finished overnight in a half-broken state that nobody understands.
+Keep it reasonable, don't overdo it. This is supposed to be a learning-exercise and fun project for whoever wants to get involved, and to foster a better understanding of how Beta works. This project doesn't need to be finished overnight in a half-broken state that nobody understands.
 
 At the very least keep out the 500 line long comments that explain stuff for the sake of explaining it. The code should speak for itself!
 

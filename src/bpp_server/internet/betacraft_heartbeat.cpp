@@ -90,7 +90,7 @@ void BetacraftHeartbeat::Load(Config& _config, int _serverPort) {
 	if (!enabled)
 		return;
 
-	name = Truncate(_config.GetAsString("betacraft-name", "A Minecraft server"), kMaxNameLen);
+	name = Truncate(_config.GetAsString("betacraft-name", "A Betrock++ server"), kMaxNameLen);
 	description = Truncate(_config.GetAsString("betacraft-description", ""), kMaxDescriptionLen);
 	privateKey = _config.GetAsString("betacraft-private-key", "");
 	category = _config.GetAsString("betacraft-category", "beta");

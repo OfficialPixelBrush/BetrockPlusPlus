@@ -9,7 +9,7 @@
 
 // Some helper functions to provide reliable
 // conversion from and to UTF-8 and UCS-2,
-// as it's needed by Minecraft for various things,
+// as it's needed for various things,
 // such as NBT and Packet data
 
 std::string ToUTF8(std::u16string _str);
@@ -22,7 +22,7 @@ inline std::string StripFormatting(const std::string& _str) {
 	for (size_t i = 0; i < _str.size(); i++) {
 		unsigned char c = static_cast<unsigned char>(_str[i]);
 
-		// Minecraft formatting code: § followed by one code character
+		// Formatting code: § followed by one code character
 		if (c == 0xA7 && i + 1 < _str.size()) {
 			i++;
 			continue;

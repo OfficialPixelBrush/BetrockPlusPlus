@@ -631,7 +631,7 @@ endif()
 # Set up CPack for AppImage
 set(CPACK_PACKAGE_NAME "BetrockPlusPlus")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Betrock++ - Minecraft Beta 1.7.3-compatible Server and Client")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Betrock++ - Beta 1.7.3-compatible Server and Client")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 

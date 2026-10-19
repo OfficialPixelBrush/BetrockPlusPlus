@@ -6,7 +6,7 @@
 */
 
 // This file is primarily used by commands, so someone doesn't need to remember all the ids
-// The labels chosen here will match those used by modern Minecraft,
+// The labels chosen here will match those used by modern Vanilla,
 // as those are the ones most people are likely to know best.
 // It will deviate a little if the modern label doesn't fit the old block (e.g. "oak_planks" VS just "planks")
 
