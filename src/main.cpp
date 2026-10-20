@@ -265,6 +265,6 @@ int main(int argc, char** argv) {
 #endif
 	Logger::Close();
 	// Platform-specific Close
-	Platform::Close();
+	Platform::Shutdown();
 	return 0;
 }
