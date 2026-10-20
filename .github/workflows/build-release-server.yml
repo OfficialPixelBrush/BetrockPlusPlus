@@ -180,7 +180,7 @@ jobs:
   # ---------------------------------------------------------------------
   # Linux x86_64 (glibc) - native
   # ---------------------------------------------------------------------
-  linux-x86_64:
+  linux-glibc-x86_64:
     needs: check-version
     runs-on: ubuntu-22.04 # glibc 2.35, matches BUILDING.md's stated minimum
     steps:
@@ -226,18 +226,18 @@ jobs:
           mkdir -p "$out"
           cp build/$BINARY_NAME "$out"/
           cp README.md LICENSE "$out"/
-          (cd "$out" && zip -r "../${BINARY_NAME}-Server-linux-x86_64.zip" .)
+          (cd "$out" && zip -r "../${BINARY_NAME}-Server-linux-glibc-x86_64.zip" .)
 
       - uses: actions/upload-artifact@v4
         with:
-          name: linux-x86_64
-          path: ${{ env.BINARY_NAME }}-Server-linux-x86_64.zip
+          name: linux-glibc-x86_64
+          path: ${{ env.BINARY_NAME }}-Server-linux-glibc-x86_64.zip
 
   # ---------------------------------------------------------------------
   # Linux aarch64 (glibc) - native GH-hosted arm64 Linux runner (no
   # cross-compilation needed)
   # ---------------------------------------------------------------------
-  linux-aarch64:
+  linux-glibc-aarch64:
     needs: check-version
     runs-on: ubuntu-22.04-arm
     steps:
@@ -283,12 +283,12 @@ jobs:
           mkdir -p "$out"
           cp build/$BINARY_NAME "$out"/
           cp README.md LICENSE "$out"/
-          (cd "$out" && zip -r "../${BINARY_NAME}-Server-linux-aarch64.zip" .)
+          (cd "$out" && zip -r "../${BINARY_NAME}-Server-linux-glibc-aarch64.zip" .)
 
       - uses: actions/upload-artifact@v4
         with:
-          name: linux-aarch64
-          path: ${{ env.BINARY_NAME }}-Server-linux-aarch64.zip
+          name: linux-glibc-aarch64
+          path: ${{ env.BINARY_NAME }}-Server-linux-glibc-aarch64.zip
 
   # ---------------------------------------------------------------------
   # Linux x86_64 (musl / Alpine)
@@ -339,6 +339,55 @@ jobs:
         with:
           name: linux-musl-x86_64
           path: ${{ env.BINARY_NAME }}-Server-linux-musl-x86_64.zip
+
+  # ---------------------------------------------------------------------
+  # Linux aarch64 (musl / Alpine)
+  #
+  # GitHub doesn't support JavaScript actions (checkout, upload-artifact)
+  # inside Alpine containers on arm64 runners, so instead of `container:` we
+  # check out on the host and run the build inside `docker run alpine`.
+  # ---------------------------------------------------------------------
+  linux-musl-aarch64:
+    needs: check-version
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build inside Alpine container
+        run: |
+          docker run --rm \
+            -e LIBDEFLATE_VERSION -e BINARY_NAME \
+            -v "$PWD:/work" -w /work \
+            alpine:3.22 sh -euxc '
+              apk add --no-cache build-base cmake ninja git zip curl-dev openssl-dev linux-headers
+
+              git clone --depth 1 --branch "v${LIBDEFLATE_VERSION}" https://github.com/ebiggers/libdeflate.git /tmp/libdeflate
+              cmake -S /tmp/libdeflate -B /tmp/libdeflate/build -G Ninja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_PREFIX=/usr/local \
+                -DLIBDEFLATE_BUILD_STATIC_LIB=ON \
+                -DLIBDEFLATE_BUILD_SHARED_LIB=OFF \
+                -DLIBDEFLATE_BUILD_GZIP=OFF
+              cmake --build /tmp/libdeflate/build --parallel
+              cmake --install /tmp/libdeflate/build
+
+              cmake -S . -B build -G Ninja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DBUILD_SERVER=ON \
+                -DCMAKE_PREFIX_PATH=/usr/local
+              cmake --build build --parallel
+
+              out=package
+              mkdir -p "$out"
+              cp "build/$BINARY_NAME" "$out"/
+              cp README.md LICENSE "$out"/
+              (cd "$out" && zip -r "../${BINARY_NAME}-Server-linux-musl-aarch64.zip" .)
+            '
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-musl-aarch64
+          path: ${{ env.BINARY_NAME }}-Server-linux-musl-aarch64.zip
 
   # ---------------------------------------------------------------------
   # macOS arm64 (Apple Silicon / M-series) - native GH-hosted arm64 runner
@@ -403,9 +452,10 @@ jobs:
       - check-version
       - windows-x64
       - windows-arm64
-      - linux-x86_64
-      - linux-aarch64
+      - linux-glibc-x86_64
+      - linux-glibc-aarch64
       - linux-musl-x86_64
+      - linux-musl-aarch64
       - macos-arm64
     runs-on: ubuntu-latest
     steps:
