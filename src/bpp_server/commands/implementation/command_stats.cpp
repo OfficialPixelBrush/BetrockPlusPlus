@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
 */
 
-#include "../../../bpp_shared/helpers/hardware.h"
+#include "../../../bpp_shared/platform/memory.h"
 #include "../command.h"
 #include "../command_manager.h"
 #include "../command_registry.h"

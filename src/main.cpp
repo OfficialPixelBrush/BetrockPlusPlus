@@ -7,11 +7,12 @@
 */
 
 #include "bpp_server/server.h"
-#include "bpp_shared/helpers/hardware.h"
+#include "bpp_shared/platform/memory.h"
 #include "bpp_shared/helpers/java/java_math.h"
 #include "bpp_shared/logger/logger.h"
+#include "bpp_shared/platform/platform.h"
 #include "logger.h"
-#include "platforms.h"
+#include "bpp_shared/platform/platform_label.h"
 #include "quick_arg_parser.hpp"
 #include "version.h"
 #include <atomic>
@@ -37,7 +38,7 @@
 #include "bpp_utilities/utilities.h"
 #include <format>
 #include <thread>
-#if !defined(_WIN32) && !defined(_WIN64)
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(PS2)
 #include <pthread.h>
 #include <signal.h>
 #endif
@@ -75,7 +76,7 @@ static void SignalHandler(int /*sig*/) {
 	shutdownRequested.store(true);
 }
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(PS2)
 static void BlockStopSignals() {
 	sigset_t set;
 	sigemptyset(&set);
@@ -98,7 +99,7 @@ static void SignalWatchThread() {
 #endif
 
 static void InstallProcessSignalHandlers() {
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64) || defined(PS2)
 	std::signal(SIGINT, SignalHandler);
 	std::signal(SIGTERM, SignalHandler);
 #else
@@ -177,12 +178,14 @@ void InitCrashHandler(std::string _platformString) {
 #endif
 
 int main(int argc, char** argv) {
+	// Platform-specific Init
+	Platform::Init();
 	Logger::Init();
 	std::string platformString = std::format("{} ({}, {})", PLATFORM_NAME, BUILD_MODE, ARCH_NAME);
 #ifdef CRASH_LOGGING
 	InitCrashHandler(platformString);
 #endif
-#if !defined(_WIN32) && !defined(_WIN64)
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(PS2)
 	// Block before any other threads so they inherit this mask; sigwait in
 	// SignalWatchThread is then the only consumer of SIGINT/SIGTERM.
 	BlockStopSignals();
@@ -206,7 +209,7 @@ int main(int argc, char** argv) {
 	if (!CurlRuntimeInit())
 		Logger::Warning << "libcurl global init failed; online-mode auth and Betacraft heartbeat may not work.\n";
 	InstallProcessSignalHandlers();
-#if !defined(_WIN32) && !defined(_WIN64)
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(PS2)
 	BlockStopSignals();
 #endif
 #endif
@@ -261,5 +264,7 @@ int main(int argc, char** argv) {
 	client.Run();
 #endif
 	Logger::Close();
+	// Platform-specific Close
+	Platform::Close();
 	return 0;
 }

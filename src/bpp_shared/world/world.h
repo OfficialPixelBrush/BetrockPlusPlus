@@ -125,11 +125,11 @@ public:
 	void FillVolume(Int3 _posA, Int3 _posB, BlockType _type = BLOCK_AIR, uint8_t _meta = 0);
 	void NotifyRegionChanged(Chunk& _chunk, Int3 _localMin, Int3 _localMax);
 	void DrainGenQueue();
-	bool IsLiquidInAabb(AABB _collider);
+	bool IsLiquidInAabb(const AABB& _collider);
 	void InitSpawn();
-	bool HandleFluidAcceleration(AABB _collider, Material _material, Entity& _entity);
-	bool IsMaterialInAabb(AABB _collider, Material _material);
-	bool IsAabbInFluidLevel(AABB _collider, Material _material);
+	bool HandleFluidAcceleration(const AABB& _collider, const Material& _material, Entity& _entity);
+	bool IsMaterialInAabb(const AABB& _collider, const Material& _material);
+	bool IsAabbInFluidLevel(const AABB& _collider, const Material& _material);
 	void UpdateLoadRadius(const std::vector<ClientPosition>& _players);
 	void PumpPipeline(const std::vector<ClientPosition>& _players);
 	void PopulateReady(int _maxPopulates = 16);
@@ -377,7 +377,7 @@ public:
 		return false;
 	}
 
-	bool AABBinValidChunks(AABB _collider) {
+	bool AABBinValidChunks(const AABB& _collider) {
 		int minCX = MathHelper::FloorDouble(_collider.minX) >> 4;
 		int maxCX = MathHelper::FloorDouble(_collider.maxX + 1.0) >> 4;
 		int minCZ = MathHelper::FloorDouble(_collider.minZ) >> 4;
