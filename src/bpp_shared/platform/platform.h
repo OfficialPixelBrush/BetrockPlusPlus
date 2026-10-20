@@ -15,5 +15,5 @@ namespace Platform {
 // Run at program start. Used for initializing network stack, etc.
 bool Init() { return true; }
 // Run at the end of the program. Can be used for clean-up of network stack, etc.
-bool Close() { return true; }
+void Shutdown() {}
 }
