@@ -37,6 +37,22 @@ static inline const char* dlerror() {
 	SetLastError(0);
 	return buf;
 }
+#elif defined(PS2)
+// The PS2 has no dynamic loader: addons are unsupported, loading always fails.
+#define RTLD_NOW 0
+#define RTLD_LOCAL 0
+static inline void* dlopen(const char*, int) {
+	return nullptr;
+}
+static inline void* dlsym(void*, const char*) {
+	return nullptr;
+}
+static inline int dlclose(void*) {
+	return 0;
+}
+static inline const char* dlerror() {
+	return "dynamic loading is not supported on the PlayStation 2";
+}
 #else
 #include <dlfcn.h>
 #endif

@@ -1,0 +1,6 @@
+-U__INT32_TYPE__ -D__INT32_TYPE__=int
+-U__UINT32_TYPE__ "-D__UINT32_TYPE__=unsigned int"
+-U__INT_LEAST32_TYPE__ -D__INT_LEAST32_TYPE__=int
+-U__UINT_LEAST32_TYPE__ "-D__UINT_LEAST32_TYPE__=unsigned int"
+-U__INT_FAST32_TYPE__ -D__INT_FAST32_TYPE__=int
+-U__UINT_FAST32_TYPE__ "-D__UINT_FAST32_TYPE__=unsigned int"

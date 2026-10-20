@@ -21,7 +21,7 @@
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#else
+#elif !defined(PS2)
 #include <poll.h>
 #include <unistd.h>
 #endif
@@ -35,7 +35,9 @@ ServerConsole::ServerConsole() = default;
 // entire class needs serious review, thank you -AR
 namespace {
 bool HasInteractiveTerminal() {
-#if defined(_WIN32)
+#if defined(PS2)
+	return false; // no terminal on the console
+#elif defined(_WIN32)
 	DWORD inputMode = 0;
 	DWORD outputMode = 0;
 
@@ -197,7 +199,11 @@ void ServerConsole::ReaderLoop() {
 		readerDone.store(true);
 		return;
 	}
-#if defined(_WIN32)
+#if defined(PS2)
+	// No stdin on the PS2: idle until shutdown so Stop() can join us.
+	while (!stopping.load())
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+#elif defined(_WIN32)
 	HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
 	std::string line;
 	char buffer[256];

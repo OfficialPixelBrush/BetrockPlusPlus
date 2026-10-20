@@ -71,6 +71,15 @@ bp_entity* PlayerGetEntity(bp_player* _player) {
 	return &_player->session->entity->apiEntity;
 }
 
+#if defined(PS2)
+// The PS2 toolchain's compiler crashes on by-value structs of doubles, and addons
+// cannot be loaded on the PS2 anyway (no dynamic loader), so these are inert stubs.
+bp_vec3 EntityGetPosition(bp_entity*) {
+	return {};
+}
+
+void EntitySetPosition(bp_entity*, bp_vec3) {}
+#else
 bp_vec3 EntityGetPosition(bp_entity* _entity) {
 	return { _entity->entity->position.x, _entity->entity->position.y, _entity->entity->position.z };
 }
@@ -78,6 +87,7 @@ bp_vec3 EntityGetPosition(bp_entity* _entity) {
 void EntitySetPosition(bp_entity* _entity, bp_vec3 _pos) {
 	_entity->entity->Teleport({ _pos.x, _pos.y, _pos.z });
 }
+#endif
 
 bp_world* EntityGetWorld(bp_entity* _entity) {
 	return &_entity->entity->world->apiWorld;
