@@ -10,6 +10,7 @@
 #include "../server.h"
 #include "items.h"
 #include "command_manager.h"
+#include "../entities/entity_mp_player.h"
 #include <algorithm>
 #include <string>
 
@@ -97,13 +98,88 @@ std::optional<std::string> ResolveCmdTargetName(const strategos::CmdNode& _cmd, 
 	return std::nullopt;
 }
 
+std::expected<std::vector<CommandTarget>, std::string> ResolveCmdTargets(std::string_view _target,
+                                                                        const CommandContext& _ctx) {
+	if (_target.empty() || _target.front() != '@') {
+		auto player = _ctx.server->GetSessionByUsername(std::string(_target));
+		if (!player || !player->entity || player->entity->isDead ||
+		    player->connState != ConnectionState::Playing || !player->stream.IsConnected())
+			return std::unexpected(std::string(_target) + " is not connected!");
+
+		return std::vector<CommandTarget>{ { player->entity.get(), player.get() } };
+	}
+
+	// stub square bracket parsing
+	std::string_view selector = _target;
+	const size_t bracket = selector.find('[');
+
+	if (bracket != std::string_view::npos) {
+		if (selector.back() != ']' || selector.find('[', bracket + 1) != std::string_view::npos ||
+		    selector.find(']', bracket) != selector.size() - 1)
+			return std::unexpected("Malformed selector");
+		selector = selector.substr(0, bracket);
+	} else if (selector.find(']') != std::string_view::npos) {
+		return std::unexpected("Malformed selector");
+	}
+
+	const bool known = selector == "@p" || selector == "@r" || selector == "@a" ||
+	                   selector == "@e" || selector == "@s" || selector == "@n";
+
+	if (!known) return std::unexpected("Unknown selector");
+	if (!_ctx.world) return std::vector<CommandTarget>{};
+
+	const auto fromEntity = [](Entity* _entity) {
+		auto* player = dynamic_cast<EntityMPPlayer*>(_entity);
+		return CommandTarget{ _entity, player ? player->session : nullptr };
+	};
+
+	std::vector<CommandTarget> eligible;
+	if (selector == "@a" || selector == "@r" || selector == "@p") {
+		for (const auto& session : _ctx.server->GetPlayers()) {
+			if (!session || !session->stream.IsConnected() ||
+				session->connState != ConnectionState::Playing ||
+			    !session->entity || session->entity->isDead ||
+			    _ctx.server->GetWorldForDimension(session->dimension) != _ctx.world)
+				continue;
+			eligible.push_back({ session->entity.get(), session.get() });
+		}
+	} else if (selector == "@e" || selector == "@n") {
+		for (const auto& entity : _ctx.world->entityManager.entities)
+			if (entity && !entity->isDead) eligible.push_back(fromEntity(entity.get()));
+	} else if (selector == "@s" && _ctx.executionEntity && !_ctx.executionEntity->isDead &&
+	           _ctx.executionEntity->world == _ctx.world) {
+		eligible.push_back(fromEntity(_ctx.executionEntity));
+	}
+
+	if (selector == "@r") {
+		if (eligible.empty())
+			return eligible;
+		auto* tracker = _ctx.server->GetEntityTrackerForDimension(_ctx.world->thisDimension);
+		return std::vector<CommandTarget>{ eligible[static_cast<size_t>(tracker->rand.NextInt(
+			static_cast<int32_t>(eligible.size())))] };
+	}
+
+	if (selector == "@p" || selector == "@n") {
+		const Vec3 origin = _ctx.executionEntity ? _ctx.executionEntity->position : Vec3{};
+		std::sort(eligible.begin(), eligible.end(), [&origin](const CommandTarget& _a, const CommandTarget& _b) {
+			const auto distance = [&origin](Entity* _entity) {
+				const double x = _entity->position.x - origin.x;
+				const double y = _entity->position.y - origin.y;
+				const double z = _entity->position.z - origin.z;
+
+				return x * x + y * y + z * z;
+			};
+			const double da = distance(_a.entity), db = distance(_b.entity);
+			return da == db ? _a.entity->id < _b.entity->id : da < db;
+		});
+		if (eligible.size() > 1) eligible.resize(1);
+	}
+	return eligible;
+}
+
 std::expected<Vec3, std::string> ResolveCmdPos(const CommandContext& _ctx,
-                                                         const strategos::Vec3& _position) {
-	const bool relative = _position.is_relative(strategos::Axis::X) ||
-	                      _position.is_relative(strategos::Axis::Y) ||
-	                      _position.is_relative(strategos::Axis::Z);
-	if (relative && !_ctx.session)
-		return std::unexpected(ERROR_RELATIVE_REQUIRES_PLAYER);
-	return ResolveCmdVec3(_position, _ctx.session ? _ctx.session->position.pos : Vec3{});
+                                              const strategos::Vec3& _position) {
+	const Vec3 origin = _ctx.executionEntity ? _ctx.executionEntity->position : Vec3{};
+	return ResolveCmdVec3(_position, origin);
 }
 
