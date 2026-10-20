@@ -13,7 +13,7 @@
 #include "blocks/block_builder.h"
 #include "blocks/block_properties_behaviors.h"
 
-struct WorldManager;
+class WorldManager;
 struct RailManager {
 	// Awe shit, here we go again
 	// Rails have a LOT of logic that goes on so
