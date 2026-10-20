@@ -199,7 +199,6 @@ void Server::LoadConfig() {
 		    //{"server-ip", ""},
 		    //{"motd", "A Betrock++ Server"},
 		    //{"pvp", "true"},
-		    // use a random device to seed another prng that gives us our seed
 		    { "level-seed", std::to_string(std::mt19937(std::random_device()())()) },
 		    { "spawn-animals", "true" },
 		    { "spawn-monsters", "true" },
@@ -207,6 +206,7 @@ void Server::LoadConfig() {
 		    //{"allow-nether",true},
 		    { "max-players", "20" },
 		    { "online-mode", "false" },
+		    { "allow-floodgate-prefix", "false" }
 #ifdef BETACRAFT_HEARTBEAT
 		    { "betacraft-heartbeat", "false" },
 		    { "betacraft-name", "A Betrock++ Server" },

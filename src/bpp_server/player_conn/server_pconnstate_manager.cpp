@@ -94,7 +94,7 @@ void PlayerConnStateManager::HandleLogin(PlayerSession& _session, Server& _serve
 		return;
 	}
 	// Check if the username contains any invalid characters
-	if (!IsValidUsername(incoming.username)) {
+	if (!IsValidUsername(incoming.username, _server.config.GetAsBoolean("allow-floodgate-prefix"))) {
 		DisconnectPlayer(_session, "Invalid username!", _server, false);
 		return;
 	}
