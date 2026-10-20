@@ -52,6 +52,8 @@ public:
 	void ResetTimeout();
 	void ProcessIncoming(PlayerSession& _session);
 
+	Config config;
+	Config gamerulesConfig;
 private:
 	int serverViewRadius = 8;
 	int spawnChunkRadius = 5;
@@ -253,8 +255,6 @@ private:
 	CommandManager commandManager;
 	AddonManager addonManager;
 	bool stopped = false;
-	Config config;
-	Config gamerulesConfig;
 	ServerConsole serverConsole;
 	std::vector<std::string> playerNamesSnapshot;
 	double tickRate = 20.0;
