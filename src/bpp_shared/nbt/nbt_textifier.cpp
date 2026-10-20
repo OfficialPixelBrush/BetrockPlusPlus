@@ -85,33 +85,35 @@ Tag TextNBTifier::LinkTag(std::vector<Token>* _tokens, int64_t& _stepper, std::s
 			_tagName = token.tokenText;
 			return {};
 		}
-		if (_tagName != "" && previousToken.identifier == COLON) {
-			Tag stringTag;
-			stringTag.type = TAG_STRING;
-			stringTag.name = _tagName;
-			stringTag.stringValue = token.tokenText;
-			_tagName = "";
-			return stringTag;
-		}
-		if (previousToken.identifier == COMMA || previousToken.identifier == LIST_BEGIN) {
-			Tag stringTag;
-			stringTag.type = TAG_STRING;
-			stringTag.name = "";
-			stringTag.stringValue = token.tokenText;
-			_tagName = "";
-			return stringTag;
-		}
-		Throw("Invalid use of string literal!");
-		break;
+
+		const bool isCompoundValue = previousToken.identifier == COLON;
+		const bool isListElement = previousToken.identifier == COMMA || previousToken.identifier == LIST_BEGIN;
+		if (!isCompoundValue && !isListElement)
+			Throw("Invalid use of string literal '" + token.tokenText + "' at token " + std::to_string(_stepper) + "!");
+
+		Tag stringTag;
+		stringTag.type = TAG_STRING;
+		stringTag.name = isCompoundValue ? _tagName : "";
+		stringTag.stringValue = token.tokenText;
+		_tagName = "";
+		return stringTag;
 	}
 	case NUMBER_LITERAL: {
+		if (nextToken.identifier == COLON) {
+			_tagName = token.tokenText;
+			return {};
+		}
+
+		const bool isCompoundValue = previousToken.identifier == COLON;
+		const bool isListElement = previousToken.identifier == COMMA || previousToken.identifier == LIST_BEGIN ||
+		                           previousToken.identifier == ARRAY_PREFIX;
+		if (!isCompoundValue && !isListElement)
+			Throw("Invalid use of numeric literal '" + token.tokenText + "' at token " + std::to_string(_stepper) + "!");
+
 		Tag numberTag;
 		numberTag.type = token.type;
-		numberTag.name = _tagName;
+		numberTag.name = isCompoundValue ? _tagName : "";
 		SetNumberFromText(numberTag, token.tokenText);
-		if (_tagName == "" && previousToken.identifier != COMMA && previousToken.identifier != LIST_BEGIN &&
-		    previousToken.identifier != ARRAY_PREFIX)
-			Throw("Numeric Literal expected an identifier!");
 		_tagName = "";
 		return numberTag;
 	}
