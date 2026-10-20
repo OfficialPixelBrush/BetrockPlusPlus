@@ -261,7 +261,6 @@ set(SHARED_SOURCES
     # Utilities
     src/bpp_utilities/utilities.cpp
     src/bpp_shared/helpers/explosion.cpp
-    src/bpp_shared/helpers/hardware.cpp
     src/bpp_shared/helpers/direction_fixer.cpp
     src/bpp_shared/enums/biomes.cpp
     src/bpp_shared/strings/ucs2.cpp
@@ -295,10 +294,6 @@ set(SERVER_SOURCES
     ${COMMAND_SOURCES}
 )
 
-if(HARDWARE_INFO)
-    list(APPEND SERVER_SOURCES src/bpp_shared/helpers/hardware_info.cpp)
-endif()
-
 # Client-specific source code
 set(CLIENT_SOURCES
     src/bpp_client/client.cpp
@@ -308,10 +303,30 @@ set(CLIENT_SOURCES
     src/bpp_client/single_header_impl/sokol_gfx.cpp
 )
 
+# Platform-specific source code
+if(WIN32)
+    file(GLOB PLATFORM_SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/src/bpp_shared/platform/win32/*.cpp"
+    )
+elseif(APPLE)
+    file(GLOB PLATFORM_SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/src/bpp_shared/platform/apple/*.cpp"
+    )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "PS2")
+    file(GLOB PLATFORM_SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/src/bpp_shared/platform/ps2/*.cpp"
+    )
+else(UNIX)
+    file(GLOB PLATFORM_SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/src/bpp_shared/platform/unix/*.cpp"
+    )
+endif()
+
 # Shared code
 add_executable(BetrockPlusPlus
     src/main.cpp
     ${SHARED_SOURCES}
+    ${PLATFORM_SOURCES}
 )
 
 # macOS strips debugger/profiler attach entitlements on every rebuild

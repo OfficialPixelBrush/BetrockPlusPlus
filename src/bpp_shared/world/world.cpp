@@ -137,7 +137,7 @@ float WorldManager::GetCelestialAngle() {
 	return timePercent;
 }
 
-bool WorldManager::IsAabbInFluidLevel(AABB _collider, Material _material) {
+bool WorldManager::IsAabbInFluidLevel(const AABB& _collider, const Material& _material) {
 	int minX = MathHelper::FloorDouble(_collider.minX);
 	int maxX = MathHelper::FloorDouble(_collider.maxX + 1.0);
 	int minY = MathHelper::FloorDouble(_collider.minY);
@@ -170,7 +170,7 @@ bool WorldManager::IsAabbInFluidLevel(AABB _collider, Material _material) {
 	return false;
 }
 
-bool WorldManager::IsMaterialInAabb(AABB _collider, Material _material) {
+bool WorldManager::IsMaterialInAabb(const AABB& _collider, const Material& _material) {
 	int minX = MathHelper::FloorDouble(_collider.minX);
 	int maxX = MathHelper::FloorDouble(_collider.maxX + 1.0);
 	int minY = MathHelper::FloorDouble(_collider.minY);
@@ -200,7 +200,7 @@ bool WorldManager::IsMaterialInAabb(AABB _collider, Material _material) {
 }
 
 // TODO: Duplicated code, merge with IsMaterialInAabb and IsAabbInFluidLevel
-bool WorldManager::IsLiquidInAabb(AABB _collider) {
+bool WorldManager::IsLiquidInAabb(const AABB& _collider) {
 	int minX = MathHelper::FloorDouble(_collider.minX);
 	int maxX = MathHelper::FloorDouble(_collider.maxX + 1.0);
 	int minY = MathHelper::FloorDouble(_collider.minY);
@@ -228,7 +228,7 @@ bool WorldManager::IsLiquidInAabb(AABB _collider) {
 	return false;
 }
 
-bool WorldManager::HandleFluidAcceleration(AABB _collider, Material _material, Entity& _entity) {
+bool WorldManager::HandleFluidAcceleration(const AABB& _collider, const Material& _material, Entity& _entity) {
 	// Handles the fluid push physics, only counts fluids of the same material
 	// Returns whether the entity is in the material
 	// This is almost entirely used for water

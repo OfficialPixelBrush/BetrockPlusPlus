@@ -7,7 +7,7 @@
 */
 #pragma once
 #include "logger.h"
-#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__) || defined(PS2)
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -97,9 +97,15 @@ inline int CreateClientSocket(int _socket = -1, std::string* _outIp = nullptr) {
 #endif
 
 	if (_outIp) {
+#if defined(PS2)
+		// lwIP on the PS2 only offers the legacy inet_ntoa
+		if (const char* ip = inet_ntoa(clientAddr.sin_addr))
+			*_outIp = ip;
+#else
 		char ipBuffer[INET_ADDRSTRLEN] = {};
 		if (inet_ntop(AF_INET, &clientAddr.sin_addr, ipBuffer, sizeof(ipBuffer)))
 			*_outIp = ipBuffer;
+#endif
 	}
 
 	return clientSocket;

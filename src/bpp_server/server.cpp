@@ -27,7 +27,7 @@
 #include <climits>
 #include <string>
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__) || defined(PS2)
 #include <fcntl.h>
 #include <iomanip>
 #include <netinet/in.h>

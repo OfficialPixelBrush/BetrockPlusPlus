@@ -11,6 +11,8 @@
 #define PLATFORM_NAME "Windows"
 #elif defined(__APPLE__)
 #define PLATFORM_NAME "macOS"
+#elif defined(PS2)
+#define PLATFORM_NAME "PlayStation 2"
 #elif defined(__ANDROID__)
 #define PLATFORM_NAME "Android"
 #elif defined(__HAIKU__)
@@ -38,6 +40,8 @@
 #define ARCH_NAME "ARM64"
 #elif defined(__arm__) || defined(_M_ARM)
 #define ARCH_NAME "ARM"
+#elif defined(PS2)
+#define ARCH_NAME "MIPS R5900"
 #elif defined(__riscv)
 #define ARCH_NAME "RISC-V"
 #elif defined(__powerpc64__) || defined(__ppc64__)

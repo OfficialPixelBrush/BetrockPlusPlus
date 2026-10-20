@@ -11,7 +11,7 @@
 #include <atomic>
 #include <csignal>
 #include <curl/curl.h>
-#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__) || defined(PS2)
 #include <pthread.h>
 #include <signal.h>
 #endif
