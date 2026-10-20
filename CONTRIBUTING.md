@@ -1,6 +1,6 @@
 # Contributing
 
-Simply fork the [`main` branch](https://github.com/OfficialPixelBrush/BetrockPlusPlus/tree/main) and commit whatever changes you want to make.
+Simply fork the [`main` branch](https://github.com/OpenBetaGroup/BetrockPlusPlus/tree/main) and commit whatever changes you want to make.
 
 Ensure your fork is up-to-date with the `main` branch, then make a pull request. Keep your changes localized to what needs to be changed to reduce the chance of merge conflicts!
 

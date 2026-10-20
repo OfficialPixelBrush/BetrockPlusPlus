@@ -485,7 +485,7 @@ jobs:
             echo "::error::Could not determine the previous tag for ${TAG_NAME}."
             exit 1
           fi
-          echo "body=**Full Changelog**: https://github.com/OfficialPixelBrush/BetrockPlusPlus/compare/${PREVIOUS_TAG}...${TAG_NAME}" >> "$GITHUB_OUTPUT"
+          echo "body=**Full Changelog**: https://github.com/OpenBetaGroup/BetrockPlusPlus/compare/${PREVIOUS_TAG}...${TAG_NAME}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/download-artifact@v4
         with:
