@@ -1,7 +1,7 @@
 name: Build & Release Server
 
 # Manual-only. Lets you type the release notes at trigger-time and builds
-# the SERVER (BUILD_SERVER=ON) for all 7 targets, then publishes one
+# the SERVER (BUILD_SERVER=ON) for all 8 targets, then publishes one
 # GitHub Release with all the binaries attached.
 on:
   workflow_dispatch:
@@ -291,6 +291,56 @@ jobs:
           path: ${{ env.BINARY_NAME }}-Server-linux-aarch64.zip
 
   # ---------------------------------------------------------------------
+  # Linux x86_64 (musl / Alpine)
+  # ---------------------------------------------------------------------
+  linux-musl-x86_64:
+    needs: check-version
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:3.22
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain + dependencies
+        run: |
+          apk add --no-cache build-base cmake ninja git zip curl-dev openssl-dev linux-headers
+
+      - name: Build & install libdeflate (static)
+        run: |
+          git clone --depth 1 --branch "v${LIBDEFLATE_VERSION}" https://github.com/ebiggers/libdeflate.git /tmp/libdeflate
+          cmake -S /tmp/libdeflate -B /tmp/libdeflate/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DLIBDEFLATE_BUILD_STATIC_LIB=ON \
+            -DLIBDEFLATE_BUILD_SHARED_LIB=OFF \
+            -DLIBDEFLATE_BUILD_GZIP=OFF
+          cmake --build /tmp/libdeflate/build --parallel
+          cmake --install /tmp/libdeflate/build
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SERVER=ON \
+            -DCMAKE_PREFIX_PATH=/usr/local
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Package
+        run: |
+          out=package
+          mkdir -p "$out"
+          cp build/$BINARY_NAME "$out"/
+          cp README.md LICENSE "$out"/
+          (cd "$out" && zip -r "../${BINARY_NAME}-Server-linux-musl-x86_64.zip" .)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-musl-x86_64
+          path: ${{ env.BINARY_NAME }}-Server-linux-musl-x86_64.zip
+
+  # ---------------------------------------------------------------------
   # macOS arm64 (Apple Silicon / M-series) - native GH-hosted arm64 runner
   # ---------------------------------------------------------------------
   macos-arm64:
@@ -355,9 +405,28 @@ jobs:
       - windows-arm64
       - linux-x86_64
       - linux-aarch64
+      - linux-musl-x86_64
       - macos-arm64
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag_name }}
+          fetch-depth: 0
+
+      - name: Generate full changelog link
+        id: changelog
+        shell: bash
+        env:
+          TAG_NAME: ${{ inputs.tag_name }}
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 "${TAG_NAME}^" 2>/dev/null || true)
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "::error::Could not determine the previous tag for ${TAG_NAME}."
+            exit 1
+          fi
+          echo "body=**Full Changelog**: https://github.com/OfficialPixelBrush/BetrockPlusPlus/compare/${PREVIOUS_TAG}...${TAG_NAME}" >> "$GITHUB_OUTPUT"
+
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -367,6 +436,7 @@ jobs:
         with:
           tag_name: ${{ inputs.tag_name }}
           name: ${{ inputs.release_name || inputs.tag_name }}
+          body: ${{ steps.changelog.outputs.body }}
           draft: ${{ inputs.draft }}
           prerelease: ${{ inputs.prerelease }}
           files: artifacts/**/*.zip
