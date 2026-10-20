@@ -206,7 +206,7 @@ void Server::LoadConfig() {
 		    //{"allow-nether",true},
 		    { "max-players", "20" },
 		    { "online-mode", "false" },
-		    { "allow-floodgate-prefix", "false" }
+		    { "allow-floodgate-prefix", "false" },
 #ifdef BETACRAFT_HEARTBEAT
 		    { "betacraft-heartbeat", "false" },
 		    { "betacraft-name", "A Betrock++ Server" },
