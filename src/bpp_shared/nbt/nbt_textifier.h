@@ -9,28 +9,6 @@
 #include "nbt_tag.h"
 #include <cctype>
 
-namespace {
-enum TokenIdentifier : uint8_t {
-	COMPOUND_BEGIN, // {
-	COMPOUND_END,   // }
-	LIST_BEGIN,     // [
-	LIST_END,       // ]
-	COLON, // :
-	COMMA, // , 
-	ARRAY_PREFIX, // B; I; L;
-	STRING_LITERAL,
-	NUMBER_LITERAL, // e.g., "1b", "300s", "1.5f", "42"
-	INVALID
-};
-
-struct Token {
-	TokenIdentifier identifier = INVALID;
-	
-	// This isn't just a char because tokens can be strings
-	std::string tokenText = "";
-};
-}
-
 struct NBTTextifier {
 	// Converts an NBT compound to a string
 	
@@ -41,109 +19,59 @@ struct TextNBTifier {
 	std::string nbtString;
 	int64_t stepper = 0;
 
-	void RunTest() {
-		nbtString = R"---({
-						"name": "Alex",
-						"cool array": [
-							["apple", "banana"],
-							["carrot"]
-						],
-						"weapon_stats": {
-							"id": minecraft:diamond_sword,
-							"damage": 7.5f,
-							"crit_chance": 0.2d,
-							"durability": 1561s,
-							"is_broken": 0b
-						},
-						"custom_array": [I; 550, -200, 1000],
-						"escaped_text": "Line 1 \\\\ Line 2 with \"quotes\""
-					})---";
-
+	Tag Parse(std::string _string) {
+		nbtString = _string;
 		stepper = 0;
 		std::vector<Token> tokens;
 		tokens.clear();
 		Lex(&tokens, stepper);
 
-		for (auto& token : tokens) {
-			Logger::Debug << "identifier: " << uint8_t(token.identifier) << " | Text: " << token.tokenText << "\n";
-		}
+		stepper = 0;
+		return Link(&tokens);
 	}
 
 private:
-	bool IsArrayIdentifier() {
-		const char lowerChar = std::tolower(Peek());
-		SkipWhitespace();
-		Advance();
-		const char higherChar = std::tolower(Peek());
-		bool isArrayIdentifier = higherChar == ';' && (lowerChar == 'b' || lowerChar == 'i');
-		if (!isArrayIdentifier)
-			stepper--;
-		return isArrayIdentifier;
+	enum TokenIdentifier : uint8_t {
+		COMPOUND_BEGIN, // {
+		COMPOUND_END,   // }
+		LIST_BEGIN,     // [
+		LIST_END,       // ]
+		COLON,          // :
+		COMMA,          // ,
+		ARRAY_PREFIX,   // B; I; L;
+		STRING_LITERAL,
+		NUMBER_LITERAL, // e.g., "1b", "300s", "1.5f", "42"
+		INVALID
+	};
+
+	struct Token {
+		TokenIdentifier identifier = INVALID;
+		std::string tokenText = "";
+		TagType type = TAG_END;
+	};
+
+	// Linker
+	Tag Link(std::vector<Token>* _tokens);
+	Tag LinkTag(std::vector<Token>* _tokens, int64_t& _stepper, std::string& _tagName);
+	Tag LinkList(std::vector<Token>* _tokens, int64_t& _stepper, std::string _name);
+	Tag LinkCompound(std::vector<Token>* _tokens, int64_t& _stepper, std::string _name);
+	void SetNumberFromText(Tag& _tag, std::string _text);
+
+	// Lexer
+	void Lex(std::vector<Token>* _tokens, int64_t& _stepper);
+	void LexToken(std::vector<Token>* _tokens, int64_t& _stepper);
+	void LexLiteral(std::vector<Token>* _tokens, int64_t& _stepper);
+	void LexList(std::vector<Token>* _tokens, int64_t& _stepper);
+	bool IsArrayIdentifier(std::vector<Token>* _tokens, int64_t& _stepper);
+	void LexCompound(std::vector<Token>* _tokens, int64_t& _stepper);
+
+	bool IsBreakChar(const char _char) {
+		return _char == ':' || _char == ',';
 	}
 
-	void Lex(std::vector<Token>* _tokens, int64_t& _stepper) {
-		while (IndexInBounds(stepper)) {
-			SkipWhitespace();
-			LexToken(_tokens, _stepper);
-		}
-	}
-
-	void LexToken(std::vector<Token>* _tokens, int64_t& _stepper) {
-		if (Peek() == '{') {
-			LexCompound(_tokens, _stepper);
-		}
-		if (Peek() == '}' || Peek() == ']')
-			return;
-
-		Advance();
-	}
-
-	void LexList(std::vector<Token>* _tokens, int64_t& _stepper) {
-		bool isSpecialList = false;
-		TagType listType = TAG_END;
-		int64_t length = 0;
-
-		if (Peek() != '[') {
-			Throw("Tried to parse an invalid list!");
-		}
-
-		_tokens->push_back({ .identifier = LIST_BEGIN, .tokenText = std::string(1, Peek()) });
-		Advance();
-		SkipWhitespace();
-		isSpecialList = IsArrayIdentifier();
-
-		while (IndexInBounds(stepper) && Peek() != ']') {
-			SkipWhitespace();
-			LexToken(_tokens, _stepper);
-		}
-
-		if (Peek() != ']') {
-			Throw("Missing closing brace for list!");
-		}
-
-		_tokens->push_back({ .identifier = LIST_END, .tokenText = std::string(1, Peek()) });
-		Advance();
-	}
-
-	void LexCompound(std::vector<Token>* _tokens, int64_t& _stepper) {
-		if (Peek() != '{') {
-			Throw("Tried to parse an invalid compound!");
-		}
-
-		_tokens->push_back({ .identifier = COMPOUND_BEGIN, .tokenText = std::string(1, Peek()) });
-		Advance();
-
-		while (IndexInBounds(stepper) && Peek() != '}') {
-			SkipWhitespace();
-			LexToken(_tokens, _stepper);
-		}
-
-		if (Peek() != '}') {
-			Throw("Missing closing brace for compound!");
-		}
-
-		_tokens->push_back({ .identifier = COMPOUND_END, .tokenText = std::string(1, Peek()) });
-		Advance();
+	bool IsDigit(const char _char) {
+		return _char == '0' || _char == '1' || _char == '2' || _char == '3' || _char == '4' || _char == '5' ||
+		       _char == '6' || _char == '7' || _char == '8' || _char == '9' || _char == '.';
 	}
 
 	// NOTE: These don't have safety! Be careful!
@@ -184,9 +112,12 @@ private:
 	}
 
 	// Skips until a non-whitespace character is provided
-	void SkipWhitespace() {
+	// Returns true if it skipped characters
+	bool SkipWhitespace() {
+		int64_t savedStep = stepper;
 		while (std::isspace(nbtString[stepper])) {
 			stepper++;
 		}
+		return savedStep != stepper;
 	}
 };
