@@ -540,6 +540,8 @@ void Server::Run() {
 
 	std::chrono::nanoseconds avgTotalTickDuration{ 0 };
 	int avgTickCount = 0;
+	auto tpsWindowStart = Clock::now();
+	int tpsWindowTicks = 0;
 	uint64_t ticks = 0;
 	auto nextTickTime = Clock::now();
 
@@ -553,19 +555,20 @@ void Server::Run() {
 		// Sample and print average Tick data
 		avgTotalTickDuration += (tickEnd - tickStart);
 		++avgTickCount;
-
-		// NOTE: Currently unused, doesn't really do anything meaningful.
-		// Trim excess every 5 minutes
-		/*
-		if (ticks % (TICKS_PER_SECOND * 60 * 5) == 0) {
-			TrimMemory();
-			Logger::Debug << "Trimmed!\n";
-		}
-		*/
+		++tpsWindowTicks;
 
 		if (ticks % (TICKS_PER_SECOND * 2) == 0) {
+			const auto now = Clock::now();
+			const double wallSec = std::chrono::duration<double>(now - tpsWindowStart).count();
+
 			averageTickMs = std::chrono::duration<double, std::milli>(avgTotalTickDuration).count() /
-			                double(avgTickCount);
+			double(avgTickCount);
+			// Skip the first sample (ticks == 0): its window only covers one tick
+			if (ticks > 0 && wallSec > 0.0)
+				averageTickPerSecond = double(tpsWindowTicks) / wallSec;
+
+			tpsWindowStart = now;
+			tpsWindowTicks = 0;
 			avgTotalTickDuration = std::chrono::nanoseconds{ 0 };
 			avgTickCount = 0;
 		}
