@@ -8,6 +8,8 @@
 #include "../command_manager.h"
 #include "../command_registry.h"
 #include "version.h"
+#include <format>
+#include "platform/platform_label.h"
 
 namespace {
 
@@ -17,6 +19,7 @@ std::string ShowAbout(const strategos::CmdNode&, void* _userData) {
 	SendFeedback(ctx, std::string{"Open-source Beta 1.7.3 server written in C++23"});
 	SendFeedback(ctx, std::string{"https://github.com/OfficialPixelBrush/BetrockPlusPlus"});
 	SendFeedback(ctx, std::string{"§7Licensed under the GNU AGPL v3.0 (AGPL-3.0-only)"});
+	SendFeedback(ctx, std::format("§7Compiled for {} ({}) in {} mode", PLATFORM_NAME, ARCH_NAME, BUILD_MODE));
 	return "";
 }
 
