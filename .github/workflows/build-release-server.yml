@@ -409,9 +409,12 @@ jobs:
       - macos-arm64
     runs-on: ubuntu-latest
     steps:
+      # Check out the exact commit this workflow was dispatched on (the same
+      # one every build job built). The tag may not exist yet, so don't try
+      # to check it out by name.
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag_name }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Generate full changelog link
@@ -420,7 +423,14 @@ jobs:
         env:
           TAG_NAME: ${{ inputs.tag_name }}
         run: |
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 "${TAG_NAME}^" 2>/dev/null || true)
+          # If the tag already exists, compare against the tag before it;
+          # otherwise the newest existing tag reachable from HEAD is the
+          # previous release.
+          if git rev-parse -q --verify "refs/tags/${TAG_NAME}" >/dev/null; then
+            PREVIOUS_TAG=$(git describe --tags --abbrev=0 "${TAG_NAME}^" 2>/dev/null || true)
+          else
+            PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || true)
+          fi
           if [ -z "$PREVIOUS_TAG" ]; then
             echo "::error::Could not determine the previous tag for ${TAG_NAME}."
             exit 1
@@ -435,6 +445,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.tag_name }}
+          # Creates the tag at the built commit if it doesn't exist yet.
+          target_commitish: ${{ github.sha }}
           name: ${{ inputs.release_name || inputs.tag_name }}
           body: ${{ steps.changelog.outputs.body }}
           draft: ${{ inputs.draft }}
