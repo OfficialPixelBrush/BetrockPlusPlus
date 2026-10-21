@@ -87,7 +87,8 @@ bool MobileEntity::FollowPath() {
 	jumping = false;
 
 	// Mobs bob/hop while in water or lava
-	if ((inWater || inLava) && rand.NextFloat() < 0.8f) {
+	bool isCurrentlyInLava = world->IsMaterialInAabb(GetLavaCollider(), Material::Lava());
+	if ((inWater || isCurrentlyInLava) && rand.NextFloat() < 0.8f) {
 		jumping = true;
 	}
 
@@ -469,10 +470,9 @@ void MobileEntity::Tick() {
 
 	// Jump code
 	// Vanilla does this check here again with the current collider
-	// TODO: This is currently unused, please check?
 	bool isCurrentlyInLava = world->IsMaterialInAabb(GetLavaCollider(), Material::Lava());
 	if (jumping) {
-		if (inWater || inLava) {
+		if (inWater || isCurrentlyInLava) {
 			velocity.y += double(0.04);
 		} else if (onGround) {
 			velocity.y = double(0.42);
