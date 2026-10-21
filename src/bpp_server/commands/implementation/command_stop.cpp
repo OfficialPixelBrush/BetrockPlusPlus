@@ -34,7 +34,7 @@ std::string StopInSeconds(const strategos::CmdNode& _cmd, void* _userData) {
 		return ERROR_REASON_PARAMETERS;
 
 	float timeout = *seconds;
-	static constexpr float MAX_TIMEOUT = UINT16_MAX / Server::TICKS_PER_SECOND;
+	static const float MAX_TIMEOUT = float(UINT16_MAX) / float(ctx.server->GetTickRate());
 	if (timeout > MAX_TIMEOUT)
 		return std::format("Exceeds max timeout! ({} seconds)", MAX_TIMEOUT);
 

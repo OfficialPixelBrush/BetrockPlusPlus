@@ -405,6 +405,8 @@ void RegisterFluidBehaviors() {
 	};
 	blockBehaviors[BLOCK_LAVA_STILL].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
 	                                             Java::Random& _random) -> void {
+		if (!Gamerule::Get<bool>(Gamerule::Id::FireSpread))
+			return;
 		Int3 p = _pos;
 		int tries = _random.NextInt(3);
 		for (int i = 0; i < tries; i++) {

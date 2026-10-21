@@ -26,11 +26,15 @@ std::unordered_map<BlockType, BurnProfile> flammables;
 namespace Blocks {
 
 bool CanBlockCatchFire(WorldManager& _world, Int3 _pos) {
+	if (!Gamerule::Get<bool>(Gamerule::Id::FireSpread))
+		return false;
 	BlockType id = _world.GetBlockId(_pos);
 	return flammables.find(id) != flammables.end();
 }
 
 bool CanNeighborBurn(WorldManager& _world, Int3 _pos) {
+	if (!Gamerule::Get<bool>(Gamerule::Id::FireSpread))
+		return false;
 	static constexpr std::array<Cardinal::Value, 6> ALL_DIRS = { Cardinal::Value::West,  Cardinal::Value::East,
 		                                                          Cardinal::Value::Down,  Cardinal::Value::Up,
 		                                                          Cardinal::Value::North, Cardinal::Value::South };
@@ -59,7 +63,7 @@ static int GetChanceToEncourageFire(WorldManager& _world, Int3 _pos, int _min) {
 }
 
 static int GetChanceOfNeighborsEncouragingFire(WorldManager& _world, Int3 _pos) {
-	if (!_world.IsAirBlock(_pos))
+	if (!_world.IsAirBlock(_pos) || !Gamerule::Get<bool>(Gamerule::Id::FireSpread))
 		return 0;
 
 	static constexpr std::array<Cardinal::Value, 6> ALL_DIRS = { Cardinal::Value::West,  Cardinal::Value::East,
@@ -73,6 +77,8 @@ static int GetChanceOfNeighborsEncouragingFire(WorldManager& _world, Int3 _pos) 
 }
 
 static void TryCatchBlockOnFire(WorldManager& _world, Int3 _pos, int _chance, uint8_t _meta) {
+	if (!Gamerule::Get<bool>(Gamerule::Id::FireSpread))
+		return;
 	auto thisBlock = _world.GetBlockId(_pos);
 	auto found = flammables.find(thisBlock);
 
@@ -141,6 +147,8 @@ void RegisterFireBehaviors() {
 	// This is awful
 	blockBehaviors[BLOCK_FIRE].onTick = [](WorldManager& _world, Int3 _pos, uint8_t /*_meta*/,
 	                                       Java::Random& _random) -> void {
+		if (!Gamerule::Get<bool>(Gamerule::Id::FireSpread))
+			return;
 		const bool onNetherrack = _world.GetBlockId(_pos.WithOffset(Cardinal::Value::Down)) == BLOCK_NETHERRACK;
 
 		auto CanRainSeeAroundPosition = [&](Int3 _checkPos) -> bool {

@@ -18,7 +18,7 @@ void LightningEntity::TryCatchFire() {
 
 	if (!this->world->AABBinValidChunks(colliderAsBlock.Expand(10.0, 0.0, 10.0)))
 		return;
-
+	
 	// Set this block on fire
 	if (world->GetBlockId(bpos) == BLOCK_AIR && Blocks::CanFireStay(*world, bpos)) {
 		world->SetBlock(bpos, BLOCK_FIRE);
@@ -27,9 +27,9 @@ void LightningEntity::TryCatchFire() {
 	// Try and set surrounding blocks on fire
 	for (int fireTry = 0; fireTry < 4; fireTry++) {
 		Int3 newPos = bpos;
-		newPos.x + rand.NextInt(3) - 1;
-		newPos.y + rand.NextInt(3) - 1;
-		newPos.z + rand.NextInt(3) - 1;
+		newPos.x += rand.NextInt(3) - 1;
+		newPos.y += rand.NextInt(3) - 1;
+		newPos.z += rand.NextInt(3) - 1;
 
 		if (world->GetBlockId(newPos) == BLOCK_AIR && Blocks::CanFireStay(*world, newPos)) {
 			world->SetBlock(newPos, BLOCK_FIRE);

@@ -171,7 +171,6 @@ public:
 	// Performance metric
 	double averageTickMs = 0.0;
 	double averageTickPerSecond = 0.0;
-	static constexpr int TICKS_PER_SECOND = 20;
 	// Whitelist and Operator storage
 	bool useWhitelist = false;
 	std::vector<std::string> whitelistedUsernames = {};

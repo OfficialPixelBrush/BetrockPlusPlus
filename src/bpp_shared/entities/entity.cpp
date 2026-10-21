@@ -34,7 +34,7 @@ void Entity::OnEnterPortal() {
 	return;
 }
 
-void Entity::OnStruckByLightning(LightningEntity& _bolt) {
+void Entity::OnStruckByLightning(LightningEntity& /*_bolt*/) {
 	if (!isImmuneToFire)
 		AttackEntityFrom(nullptr, 5);
 	fireTicks++;

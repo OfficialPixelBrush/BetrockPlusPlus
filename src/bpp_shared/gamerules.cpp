@@ -58,7 +58,7 @@ struct Registry {
         // World Updates
         //Register(Id::AdvanceTime, "advance_time", true);
         Register(Id::AdvanceWeather, "advance_weather", true);
-        //Register(Id::FireSpread, "fire_spread", true);
+        Register(Id::FireSpread, "fire_spread", true);
         //Register(Id::LavaSourceConversion, "lava_source_conversion", false);
         //Register(Id::MaxSnowAccumulationHeight, "max_snow_accumulation_height", 3);
         //Register(Id::RandomTickSpeed, "random_tick_speed", 3);

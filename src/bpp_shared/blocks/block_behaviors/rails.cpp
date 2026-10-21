@@ -138,7 +138,7 @@ void RegisterRailBehaviors() {
 
 	// Detector update behavior
 	blockBehaviors[BLOCK_RAIL_DETECTOR].onEntityCollidedWithBlock = [](WorldManager& _world, Int3 _pos,
-	                                                                   Entity& _entity) -> void {
+	                                                                   Entity& /*_entity*/) -> void {
 		auto meta = _world.GetMetadata(_pos);
 		if ((meta & 8) == 0)
 			SetDetectorRailState(_world, _pos, meta);

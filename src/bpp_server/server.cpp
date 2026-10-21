@@ -45,7 +45,7 @@
 #include "version.h"
 #include <chrono>
 
-Server::Server() : gameRuntime(), addonManager(this), config("server.properties"), gamerulesConfig("gamerules.txt") {
+Server::Server() : config("server.properties"), gamerulesConfig("gamerules.txt"), gameRuntime(), addonManager(this) {
 	ServerBlock::Initialize();
 	LoadConfig();
 
@@ -557,7 +557,9 @@ void Server::Run() {
 		++avgTickCount;
 		++tpsWindowTicks;
 
-		if (ticks % (TICKS_PER_SECOND * 2) == 0) {
+		const double interval = GetTickRate() * 2.0;
+		// Note: std::fmod is gross, but we kinda have to do this :p
+		if (interval > 0.0 && std::fmod(static_cast<double>(ticks), interval) < 1e-9) {
 			const auto now = Clock::now();
 			const double wallSec = std::chrono::duration<double>(now - tpsWindowStart).count();
 
@@ -669,7 +671,7 @@ void Server::AcceptNewPlayers() {
 }
 
 void Server::StopTimeout(float _secondsUntilShutdown) {
-	shutdownTimer = static_cast<uint16_t>(_secondsUntilShutdown * static_cast<float>(TICKS_PER_SECOND));
+	shutdownTimer = static_cast<uint16_t>(_secondsUntilShutdown * static_cast<float>(GetTickRate()));
 }
 
 void Server::ResetTimeout() {
@@ -888,7 +890,7 @@ void Server::Tick() {
 		shutdownRequested.store(true);
 
 #ifdef BETACRAFT_HEARTBEAT
-	if (betacraftHeartbeat.Enabled() && gameRuntime.world.tickScheduler.currentTick % TICKS_PER_SECOND == 0) {
+	if (betacraftHeartbeat.Enabled() && gameRuntime.world.tickScheduler.currentTick % GetTickRate() == 0) {
 		BetacraftHeartbeatSnapshot snap;
 		snap.maxPlayers = maximumPlayers;
 		if (snap.maxPlayers < 0)
