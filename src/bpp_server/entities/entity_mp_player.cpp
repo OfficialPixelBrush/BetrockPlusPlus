@@ -335,16 +335,10 @@ void EntityMPPlayer::HandlePositionChecks() {
 			Logger::Warning << "Client " << session->username << " moved wrongly!\n";
 
 		if (willCorrect) {
-			// Only nudge up if we are inside a collider
 			Vec3 safeRollback = lastPosition;
 			AABB rollbackCollider = collider.Offset(safeRollback.x - position.x, safeRollback.y - position.y,
 			                                        safeRollback.z - position.z);
-			if (!world
-			         ->GetCollidingBoundingBoxes(rollbackCollider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE,
-			                                                             -CLEAR_CHECK_TOLERANCE),
-			                                     /*_mover=*/nullptr)
-			         .empty())
-				safeRollback.y += ROLLBACK_NUDGE;
+			safeRollback.y += ROLLBACK_NUDGE;
 			ticksSinceTeleportSent = 0;
 
 			// TP our player back
