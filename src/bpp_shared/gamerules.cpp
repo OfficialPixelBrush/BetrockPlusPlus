@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, jomner <github.com/jomner>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -39,7 +40,7 @@ struct Registry {
         Register(Id::SpawnProtectionRadius, "spawn_protection_radius", 16);
         // Mobs
         //Register(Id::ForgiveDeadPlayers, "forgive_dead_players", true);
-        //Register(Id::MobGriefing, "mob_griefing", true);
+        Register(Id::MobGriefing, "mob_griefing", true);
         // Player
         //Register(Id::AllowEnteringNetherUsingPortals, "allow_entering_nether_using_portals", true);
         //Register(Id::DrowningDamage, "drowning_damage", true);
