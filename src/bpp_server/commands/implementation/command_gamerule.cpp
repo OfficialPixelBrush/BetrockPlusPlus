@@ -34,11 +34,16 @@ std::string SetGamerule(const strategos::CmdNode& _cmd, void* _userData) {
 
 std::string GetGamerule(const strategos::CmdNode& _cmd, void* _userData) {
     auto& ctx = CmdCtx(_userData);
-    auto gameruleName = _cmd.get_arg<std::string>("name");
-    if (!gameruleName || Gamerule::ToId(*gameruleName) == Gamerule::Id::Invalid)
+    const auto gameruleName = _cmd.get_arg<std::string>("name");
+    if (!gameruleName || Gamerule::ToId(*gameruleName) == Gamerule::Id::Invalid) {
+		return "Gamerule doesn't exist!";
+	}
+	const auto entry = Gamerule::GetEntry(*gameruleName);
+	if (!entry) {
         return "Gamerule doesn't exist!";
-
-    SendFeedback(ctx, std::format("Gamerule {} is: {}", *gameruleName, Gamerule::ValueToString(Gamerule::GetRaw(*gameruleName))));
+	}
+    SendFeedback(ctx, std::format("Gamerule {} is: {}", *gameruleName, Gamerule::ValueToString(entry->value)));
+    SendFeedback(ctx, std::format("§7{}", entry->description));
     return "";
 }
 

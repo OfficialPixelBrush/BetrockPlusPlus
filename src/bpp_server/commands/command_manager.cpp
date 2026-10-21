@@ -36,9 +36,7 @@ void CommandManager::Init(Server* _server) {
 	RegisterExecute(dispatcher);
 	RegisterChat(dispatcher);
 	RegisterGamerule(dispatcher);
-#ifdef HARDWARE_INFO
 	RegisterHardware(dispatcher);
-#endif
 	//RegisterCrash(dispatcher);
 	Logger::Info << "Registered " << dispatcher.root().children.size() << " command(s)!" << "\n";
 }

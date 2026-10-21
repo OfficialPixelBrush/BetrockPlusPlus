@@ -12,7 +12,6 @@ option(ONLINE_MODE_AUTHENTICATION "Allows authentication with Mojang servers (re
 option(BETACRAFT_HEARTBEAT "Ping the Betacraft server list (requires libcurl and nlohmann_json)" OFF)
 option(CRASH_LOGGING "Lets the server catch crashes and create crash reports" ON)
 option(EXPERIMENTAL "Experimental or work-in-progress features/changes" OFF)
-option(HARDWARE_INFO "Adds the operator-only /hardware command" ON)
 set(GENERATION_PRECISION "DOUBLE" CACHE STRING "Reduces perlin and simplex noise precision (all values other than DOUBLE are experimental and not really supported)")
 set_property(CACHE GENERATION_PRECISION PROPERTY STRINGS "DOUBLE" "FLOAT" "LONG" "INT")
 
@@ -118,9 +117,6 @@ configure_file(
 file(GLOB COMMAND_SOURCES
     "src/bpp_server/commands/implementation/command_*.cpp"
 )
-if(NOT HARDWARE_INFO)
-    list(FILTER COMMAND_SOURCES EXCLUDE REGEX "command_hardware\\.cpp$")
-endif()
 
 # Shared source-code
 set(SHARED_SOURCES
@@ -382,10 +378,6 @@ target_link_libraries(BetrockPlusPlus PRIVATE replxx::replxx)
     target_sources(BetrockPlusPlus PRIVATE
         ${SERVER_SOURCES}
     )
-    
-    if(HARDWARE_INFO)
-        target_compile_definitions(BetrockPlusPlus PRIVATE HARDWARE_INFO)
-    endif()
 
     if(ONLINE_MODE_AUTHENTICATION OR BETACRAFT_HEARTBEAT)
         find_package(CURL REQUIRED)

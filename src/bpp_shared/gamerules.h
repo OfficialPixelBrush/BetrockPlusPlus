@@ -34,6 +34,7 @@ enum class Id {
 	// Mobs
 	ForgiveDeadPlayers,
 	MobGriefing,
+	AccurateDespawnRules,
 	// Player
 	AllowEnteringNetherUsingPortals,
 	DrowningDamage,
@@ -77,9 +78,15 @@ using Type = std::variant<
 
 struct Entry {
 	std::string name;
+	std::string description;
 	Type value;
 };
 
+// TODO: Maybe ok to pass by value?
+// Just wanna avoid the RARE race-condition where an addon-added gamerule gets removed as its being printed,
+// and then we run into a nullptr Entry as we're printing the info to the client.
+Entry* GetEntry(const Id _id);
+Entry* GetEntry(const std::string& _name);
 Type GetRaw(const Id _id);
 Type GetRaw(const std::string& _name);
 bool SetRaw(const Id _id, const Type& _value);
@@ -126,4 +133,4 @@ std::optional<Type> ParseLike(const Type& _current, std::string_view _text);
 
 bool ReadFromConfig(Config& _config);
 void WriteToConfig(Config& _config);
-};
+} // namespace Gamerule

@@ -44,7 +44,8 @@ void SlimeEntity::Tick() {
 	// NOTE:
 	// Notch is a dummy. Also this applies for ghast and squids too,
 	// They never increment their age so we reset it every tick
-	this->age = 0;
+	if (Gamerule::Get<bool>(Gamerule::Id::AccurateDespawnRules))
+		this->age = 0;
 	HostileEntity::Tick();
 
 	if (this->isDead && this->deathTime >= 20 && this->health == 0 && this->size > 1)

@@ -21,8 +21,8 @@ struct Registry {
     std::map<std::string, Id, std::less<>> byName;
     int nextCustom = static_cast<int>(Id::Max);
 
-    void Register(Id _id, const std::string& _name, Type _value) {
-        rules[static_cast<size_t>(_id)] = Entry{_name, std::move(_value)};
+    void Register(Id _id, const std::string& _name, const std::string& _description, Type _value) {
+        rules[static_cast<size_t>(_id)] = Entry{_name, _description, std::move(_value)};
         byName[_name] = _id;
     }
 
@@ -33,36 +33,37 @@ struct Registry {
         //Register(Id::EntityDrops, "entity_drops", true);
         //Register(Id::MobDrops, "mob_drops", true);
         // Misc
-        //Register(Id::MaxMinecartSpeed, "max_minecart_speed", 8);
-        Register(Id::TntExplodes, "tnt_explodes", true);
-        Register(Id::Nightmares, "nightmares", true);
-        Register(Id::NetherBedsExplode, "nether_beds_explode", true);
-        Register(Id::SpawnProtectionRadius, "spawn_protection_radius", 16);
+        //Register(Id::MaxMinecartSpeed, "max_minecart_speed", "The limit of how fast a minecart can move per tick", 8);
+        Register(Id::TntExplodes, "tnt_explodes", "If TNT can explode", true);
+        Register(Id::Nightmares, "nightmares", "If monsters can spawn near a sleeping player", true);
+        Register(Id::NetherBedsExplode, "nether_beds_explode", "If beds should explode in the nether", true);
+        Register(Id::SpawnProtectionRadius, "spawn_protection_radius", "How large the radius in which blocks can't be placed is", 16);
         // Mobs
-        //Register(Id::ForgiveDeadPlayers, "forgive_dead_players", true);
-        Register(Id::MobGriefing, "mob_griefing", true);
+        //Register(Id::ForgiveDeadPlayers, "forgive_dead_players", "If aggro'd mobs forgive a player after dying", true);
+        Register(Id::MobGriefing, "mob_griefing", "If mobs can damage the environment (e.g. creeper explosions destroying blocks)", true);
+        Register(Id::AccurateDespawnRules, "accurate_despawn_rules", "If squids, ghasts and slimes should never despawn", false);
         // Player
-        Register(Id::AllowEnteringNetherUsingPortals, "allow_entering_nether_using_portals", true);
-        Register(Id::DrowningDamage, "drowning_damage", true);
-        Register(Id::FallDamage, "fall_damage", true);
-        Register(Id::FireDamage, "fire_damage", true);
-        //Register(Id::ImmediateRespawn, "immediate_respawn", false);
-        Register(Id::KeepInventory, "keep_inventory", false);
-        Register(Id::PlayerMovementCheck, "player_movement_check", true);
-        //Register(Id::PlayersSleepingPercentage, "players_sleeping_percentage", 100);
-        //Register(Id::Pvp, "pvp", true);
-        Register(Id::RespawnRadius, "respawn_radius", 10);
+        Register(Id::AllowEnteringNetherUsingPortals, "allow_entering_nether_using_portals", "If players should be able to travel to the Nether via a Portal from the Overworld", true);
+        Register(Id::DrowningDamage, "drowning_damage", "If players should take drowning damage", true);
+        Register(Id::FallDamage, "fall_damage", "If players should take fall damage", true);
+        Register(Id::FireDamage, "fire_damage", "If players should take fire damage", true);
+        //Register(Id::ImmediateRespawn, "immediate_respawn", "If a player should be respawned immediately instead of getting the death screen first", false);
+        Register(Id::KeepInventory, "keep_inventory", "If players should keep their inventory after dying instead of dropping it", false);
+        Register(Id::PlayerMovementCheck, "player_movement_check", "If the server should do movement checks on players (anti-cheat)", true);
+        //Register(Id::PlayersSleepingPercentage, "players_sleeping_percentage", "What percentage of players needs to be asleep for the server to skip to the next morning", 100);
+        //Register(Id::Pvp, "pvp", "If players are able to damage one another", true);
+        Register(Id::RespawnRadius, "respawn_radius", "In what radius from world spawn players are able to spawn at", 10);
         // Spawning
-        Register(Id::SpawnMobs, "spawn_mobs", true);
-        Register(Id::SpawnMonsters, "spawn_monsters", true);
+        Register(Id::SpawnMobs, "spawn_mobs", "If mobs should spawn (e.g. pigs, sheep, cows)", true);
+        Register(Id::SpawnMonsters, "spawn_monsters", "If monsters should spawn (e.g. zombies, creepers)", true);
         // World Updates
-        //Register(Id::AdvanceTime, "advance_time", true);
-        Register(Id::AdvanceWeather, "advance_weather", true);
-        Register(Id::FireSpread, "fire_spread", true);
-        //Register(Id::LavaSourceConversion, "lava_source_conversion", false);
-        //Register(Id::MaxSnowAccumulationHeight, "max_snow_accumulation_height", 3);
+        //Register(Id::AdvanceTime, "advance_time", "If the time of day should advance", true);
+        Register(Id::AdvanceWeather, "advance_weather", "If the weather ticks should advance", true);
+        Register(Id::FireSpread, "fire_spread", "If fire should spread", true);
+        //Register(Id::LavaSourceConversion, "lava_source_conversion", "If lava should be able to form new source blocks", false);
+        //Register(Id::MaxSnowAccumulationHeight, "max_snow_accumulation_height", "How much snow layers are allowed to accumulate", 3);
         //Register(Id::RandomTickSpeed, "random_tick_speed", 3);
-        //Register(Id::WaterSourceConversion, "water_source_conversion", true);
+        //Register(Id::WaterSourceConversion, "water_source_conversion", "If lava should be able to form new source blocks", true);
     }
 
     Entry* Find(Id _id) {
@@ -82,6 +83,10 @@ Registry& R() {
 } // namespace
 
 // Access via ID
+Entry* GetEntry(const Id _id) {
+    return R().Find(_id);
+}
+
 Type GetRaw(const Id _id) {
     const Entry* e = R().Find(_id);
     return e ? e->value : Type{};
@@ -99,6 +104,9 @@ bool SetRaw(const Id _id, const Type& _value) {
 }
 
 // Access via string
+Entry* GetEntry(const std::string& _name) {
+    return GetEntry(ToId(_name));
+}
 Type GetRaw(const std::string& _name) {
     return GetRaw(ToId(_name));
 }
@@ -106,12 +114,12 @@ bool SetRaw(const std::string& _name, const Type& _value) {
     return SetRaw(ToId(_name), _value);
 }
 
-bool Add(const std::string& _name, const Type& _value) {
+bool Add(const std::string& _name, const std::string& _description, const Type& _value) {
     auto& r = R();
     if (r.byName.contains(_name))
         return false;
     const Id id = static_cast<Id>(r.rules.size());
-    r.rules.push_back(Entry{_name, _value});
+    r.rules.push_back(Entry{_name, _description, _value});
     r.byName[_name] = id;
     return true;
 }

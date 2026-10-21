@@ -18,5 +18,4 @@ struct HardwareInfo {
 	uint64_t swapTotalBytes = 0;
 };
 
-// Only compiled when HARDWARE_INFO is enabled (see BUILDING_OPTIONAL.md)
 HardwareInfo QueryHardwareInfo();

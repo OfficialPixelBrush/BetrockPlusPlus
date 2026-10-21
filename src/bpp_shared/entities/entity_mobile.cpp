@@ -469,6 +469,7 @@ void MobileEntity::Tick() {
 
 	// Jump code
 	// Vanilla does this check here again with the current collider
+	// TODO: This is currently unused, please check?
 	bool isCurrentlyInLava = world->IsMaterialInAabb(GetLavaCollider(), Material::Lava());
 	if (jumping) {
 		if (inWater || inLava) {
