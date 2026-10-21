@@ -69,7 +69,7 @@ void EntityMPPlayer::WakeUp(bool _confirmSpawn) {
 	session->position.pos = this->position;
 	session->pendingTeleport = this->position;
 	Packet::PlayerPositionAndRotation pos;
-	pos.rotation = session->rotation; // what the client last told us, so they keep facing the same way
+	pos.rotation = session->rotation;
 	pos.onGround = false;
 	pos.position = { this->position.x, this->position.y + PLAYER_EYE_HEIGHT, this->position.z };
 	pos.cameraY = this->position.y; // This is backwards, thanks notch
@@ -153,8 +153,6 @@ bool EntityMPPlayer::PickupItem(ItemStack& _stack, EntityId _entityId) {
 static constexpr double CLEAR_CHECK_TOLERANCE = 0.05;
 static constexpr double ROLLBACK_NUDGE = 0.06;
 static constexpr int32_t TELEPORT_RESEND_TICKS = 20;
-// Position corrections are sent as PlayerPositionAndRotation like vanilla does. Newer clients connecting through
-// ViaLegacy get the eye height as their feet height from a plain PlayerPosition, so they could never catch up.
 
 void EntityMPPlayer::HandlePositionChecks() {
 	if (isDead || !world)
@@ -196,8 +194,6 @@ void EntityMPPlayer::HandlePositionChecks() {
 		const int checkRange = 32;
 
 		if (dist > 0.0625 || !world->AABBinValidChunks(this->collider.Expand(checkRange, checkRange, checkRange))) {
-			// Like vanilla, ignore movement until the client has caught up with our teleport. Re-sending it every
-			// tick floods clients that keep moving while it is in flight (e.g. through ViaProxy), so they never do
 			session->pendingPosition.reset();
 			if (++ticksSinceTeleportSent < TELEPORT_RESEND_TICKS)
 				return;
@@ -339,8 +335,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 			Logger::Warning << "Client " << session->username << " moved wrongly!\n";
 
 		if (willCorrect) {
-			// Only nudge up if the spot we roll back to is itself inside a block. Nudging every time made repeated
-			// corrections lift players on top of blocks whose shape differs on newer clients (fences, chests, ...)
+			// Only nudge up if we are inside a collider
 			Vec3 safeRollback = lastPosition;
 			AABB rollbackCollider = collider.Offset(safeRollback.x - position.x, safeRollback.y - position.y,
 			                                        safeRollback.z - position.z);
@@ -358,14 +353,14 @@ void EntityMPPlayer::HandlePositionChecks() {
 			// Wait until our client catches up
 			session->pendingTeleport = safeRollback;
 			Packet::PlayerPositionAndRotation pkt;
-			pkt.rotation = session->rotation; // what the client last told us, so they keep facing the same way
+			pkt.rotation = session->rotation;
 			pkt.onGround = onGround;
 			pkt.position = { safeRollback.x, safeRollback.y + PLAYER_EYE_HEIGHT, safeRollback.z };
 			pkt.cameraY = safeRollback.y; // This is backwards, thanks notch
 			pkt.Serialize(session->stream);
 		}
 
-		// Moved successfully
+		// We moved successfully!
 		// Walking code
 		if (!willCorrect && canTriggerWalking && !(onGround && flags.isSneaking) && vehicle.expired()) {
 			Vec3 walkedDelta = this->position - lastPosition; // actual final displacement this tick
