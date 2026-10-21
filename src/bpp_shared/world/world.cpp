@@ -317,8 +317,21 @@ std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area, Ent
 				if (!Blocks::blockProperties[blockId].isCollidable)
 					continue;
 				uint8_t blockMeta = chunk->GetMeta({ localX, y, localZ });
-				// Offset local collider to world coordinates
-				CollisionShape worldCollider = Blocks::blockBehaviors[blockId].getCollider(blockMeta).Offset(x, y, z);
+				CollisionShape worldCollider;
+				if (blockId == BLOCK_PISTON_MOVING) {
+					// Moving pistons get a special case
+					// They use a full block collider instead of the multi segment collider
+					auto* te = GetTileEntityAs<TileEntityPistonMoving>({ x, y, z });
+					if (!te)
+						continue;
+					float p = te->lastProgress;
+					if (te->extending)
+						p = 1.0f - p;
+					if (auto box = te->GetCollider(p).GetBounds(); box && box->Intersects(_area))
+						collidingBoxes.push_back(*box);
+					continue;
+				}
+				worldCollider = Blocks::blockBehaviors[blockId].getCollider(blockMeta).Offset(x, y, z);
 				for (auto& box : worldCollider.boxes)
 					if (box.Intersects(_area))
 						collidingBoxes.push_back(box);

@@ -31,6 +31,8 @@ void SquidEntity::OnDeath(Entity* /*_killer*/) {
 }
 
 void SquidEntity::Tick() {
+	// Despawn quirk :p
+	this->age = 0;
 	AnimalEntity::Tick();
 
 	// Rotation here is basically the "phase" of the squids cycle

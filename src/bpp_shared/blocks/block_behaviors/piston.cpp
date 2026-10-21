@@ -51,8 +51,8 @@ static bool CanPushBlock(WorldManager& _world, BlockType _block, Int3 _pos, bool
 	}
 
 	auto props = Blocks::blockProperties[_block];
-	if (props.hardness == -1.0f || props.material.mobilityFlag == 2 ||
-	    (!_allowBreakable && props.material.mobilityFlag == 1))
+	int8_t mobilityFlag = props.pushMobilityOverride >= 0 ? props.pushMobilityOverride : props.material.mobilityFlag;
+	if (props.hardness == -1.0f || mobilityFlag == 2 || (!_allowBreakable && mobilityFlag == 1))
 		return false;
 
 	// If there is a tile entity here then refuse
@@ -77,7 +77,10 @@ static bool CanExtend(WorldManager& _world, Int3 _pos) {
 			if (!CanPushBlock(_world, blockId, checkPos))
 				return false;
 
-			if (Blocks::blockProperties[blockId].material.mobilityFlag != 1) {
+			auto props = Blocks::blockProperties[blockId];
+			int8_t mobilityFlag = props.pushMobilityOverride >= 0 ? props.pushMobilityOverride
+			                                                      : props.material.mobilityFlag;
+			if (mobilityFlag != 1) {
 				if (pushCount >= MAX_PUSH_COUNT)
 					return false; // Too many blocks
 
@@ -126,8 +129,10 @@ static bool TryExtend(WorldManager& _world, Int3 _pos) {
 		if (blockId != BLOCK_AIR) {
 			if (!CanPushBlock(_world, blockId, endPos))
 				return false;
-
-			if (Blocks::blockProperties[blockId].material.mobilityFlag != 1) {
+			auto props = Blocks::blockProperties[blockId];
+			int8_t mobilityFlag = props.pushMobilityOverride >= 0 ? props.pushMobilityOverride
+			                                                      : props.material.mobilityFlag;
+			if (mobilityFlag != 1) {
 				if (pushCount >= MAX_PUSH_COUNT)
 					return false; // Too many blocks
 
@@ -191,9 +196,11 @@ static void Retract(WorldManager& _world, Int3 _pos) {
 				wasMoving = true;
 			}
 		}
-
+		auto props = Blocks::blockProperties[pullId];
+		int8_t mobilityFlag = props.pushMobilityOverride >= 0 ? props.pushMobilityOverride
+		                                                      : props.material.mobilityFlag;
 		bool cantPull = wasMoving || pullId == BLOCK_AIR || !CanPushBlock(_world, pullId, pullPos, false) ||
-		                (Blocks::blockProperties[pullId].material.mobilityFlag != 0 && pullId != BLOCK_PISTON &&
+		                (mobilityFlag != 0 && pullId != BLOCK_PISTON &&
 		                 pullId != BLOCK_PISTON_STICKY);
 		if (cantPull) {
 			if (!wasMoving) {

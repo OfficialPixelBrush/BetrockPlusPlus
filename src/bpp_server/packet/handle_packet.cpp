@@ -113,6 +113,9 @@ static bool HandlePlayerMove(Vec3 _to, PlayerSession& _session, Server& _server)
 		return true;
 	}
 
+	if (_session.entity)
+		_session.position.pos = _session.entity->position;
+
 	bp_player_move_event event{ .player = &_session.apiPlayer,
 		                        .from = { _session.position.pos.x, _session.position.pos.y, _session.position.pos.z },
 		                        .to = { _to.x, _to.y, _to.z },
@@ -135,9 +138,6 @@ static bool HandlePlayerMove(Vec3 _to, PlayerSession& _session, Server& _server)
 
 	_session.position.pos = { event.from.x, event.from.y, event.from.z };
 	_session.pendingPosition = finalTo;
-
-	if (_session.entity)
-		_session.entity->position = _session.position.pos;
 
 	return true;
 }
