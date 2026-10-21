@@ -29,7 +29,64 @@ inline constexpr int RAIL_MATRIX[10][2][3] = {
 
 void MinecartEntity::DropAsItems() {
 	DropItemAtEntity(Items::MINECART, 1);
+	if (cartType == MinecartType::Chest) {
+		for (auto& stack : cargo) {
+			if (stack.id != Items::Id::INVALID && stack.count > 0)
+				DropItemAtEntity(stack.id, stack.count, stack.data);
+			stack = {};
+		}
+		DropItemAtEntity(BLOCK_CHEST, 1);
+	} else if (cartType == MinecartType::Furnace) {
+		DropItemAtEntity(BLOCK_FURNACE, 1);
+	}
 	isDead = true;
+}
+
+void MinecartEntity::LoadFromNbt(Tag& _nbt) {
+	MobileEntity::LoadFromNbt(_nbt);
+	int32_t savedType = _nbt.Has("Type") ? _nbt.Get("Type").GetInt() : 0;
+	cartType = (savedType == 1 || savedType == 2) ? MinecartType(savedType) : MinecartType::Empty;
+
+	if (cartType == MinecartType::Furnace) {
+		pushX = _nbt.Has("PushX") ? _nbt.Get("PushX").GetDouble() : 0.0;
+		pushZ = _nbt.Has("PushZ") ? _nbt.Get("PushZ").GetDouble() : 0.0;
+		fuel = _nbt.Has("Fuel") ? _nbt.Get("Fuel").GetShort() : 0;
+	} else if (cartType == MinecartType::Chest && _nbt.Has("Items")) {
+		for (auto& item : _nbt.Get("Items").GetList()) {
+			int slot = uint8_t(item.Get("Slot").GetByte());
+			if (slot < int(cargo.size()))
+				cargo[size_t(slot)] = { item.Get("id").GetShort(), item.Get("Count").GetByte(),
+					                    item.Get("Damage").GetShort() };
+		}
+	}
+}
+
+std::optional<Tag> MinecartEntity::SerializeToNbt() {
+	auto tag = MobileEntity::SerializeToNbt();
+	if (!tag)
+		return std::nullopt;
+
+	tag->compound["Type"] = Tag{ .type = TAG_INT, .name = "Type", .intValue = int32_t(cartType) };
+	if (cartType == MinecartType::Furnace) {
+		tag->compound["PushX"] = Tag{ .type = TAG_DOUBLE, .name = "PushX", .doubleValue = pushX };
+		tag->compound["PushZ"] = Tag{ .type = TAG_DOUBLE, .name = "PushZ", .doubleValue = pushZ };
+		tag->compound["Fuel"] = Tag{ .type = TAG_SHORT, .name = "Fuel", .shortValue = fuel };
+	} else if (cartType == MinecartType::Chest) {
+		Tag items{ .type = TAG_LIST, .name = "Items", .longValue = 0, .listType = TAG_COMPOUND };
+		for (size_t slot = 0; slot < cargo.size(); slot++) {
+			const auto& stack = cargo[slot];
+			if (stack.id == Items::Id::INVALID)
+				continue;
+			Tag item{ .type = TAG_COMPOUND, .name = "", .longValue = 0 };
+			item.compound["Slot"] = Tag{ .type = TAG_BYTE, .name = "Slot", .byteValue = int8_t(slot) };
+			item.compound["id"] = Tag{ .type = TAG_SHORT, .name = "id", .shortValue = stack.id };
+			item.compound["Count"] = Tag{ .type = TAG_BYTE, .name = "Count", .byteValue = stack.count };
+			item.compound["Damage"] = Tag{ .type = TAG_SHORT, .name = "Damage", .shortValue = stack.data };
+			items.list.push_back(item);
+		}
+		tag->compound["Items"] = items;
+	}
+	return tag;
 }
 
 void MinecartEntity::ResolveEntityCollision(Entity& _other) {

@@ -8,6 +8,8 @@
 
 #include "entity.h"
 #include "entity_player.h"
+#include "inventory/item_stack.h"
+#include <array>
 
 enum class MinecartType : int8_t {
 	Empty = 0,
@@ -24,6 +26,12 @@ struct MinecartEntity : public MobileEntity {
 	double desiredPitch = 0.0;
 	double turnProgress = 0.0;
 	bool isInReverse : 1 = false;
+
+	// Saved like vanilla: chest carts keep their 27 slots, furnace carts their fuel and push direction
+	std::array<ItemStack, 27> cargo{};
+	int16_t fuel = 0;
+	double pushX = 0.0;
+	double pushZ = 0.0;
 
 	MinecartEntity() : MobileEntity() {
 		type = EntityType::MINECART;
@@ -62,6 +70,8 @@ struct MinecartEntity : public MobileEntity {
 	bool AttackEntityFrom(Entity* _entity, int _damage) override;
 	void Tick() override;
 	void OnPlayerInteract(PlayerEntity* _entity) override;
+	std::optional<Tag> SerializeToNbt() override;
+	void LoadFromNbt(Tag& _nbt) override;
 	std::optional<Vec3> GetClosestPositionAlongRail(Vec3 _position);
 	void UpdateYaw(const Vec3& _prevPos, float _prevYaw);
 
