@@ -441,7 +441,7 @@ void RegisterBlockProperties() {
 	blockProperties[BlockType::BLOCK_BED] = {
 		.material = Material::Cloth(),
 		.hardness = 0.2f,
-		.pushMobilityOverride = 1,
+		.pushMobilityOverride = PushabilityFlag::NoPush,
 		.lightOpacity = 0,
 		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
@@ -453,7 +453,7 @@ void RegisterBlockProperties() {
 	blockProperties[BlockType::BLOCK_RAIL_POWERED] = {
 		.material = Material::Circuits(),
 		.hardness = 0.7f,
-		.pushMobilityOverride = 0,
+		.pushMobilityOverride = PushabilityFlag::Normal,
 		.lightOpacity = 0,
 		.stepSound = StepSound::Stone,
 		.isCollidable = false,
@@ -465,7 +465,7 @@ void RegisterBlockProperties() {
 	blockProperties[BlockType::BLOCK_RAIL_DETECTOR] = {
 		.material = Material::Circuits(),
 		.hardness = 0.7f,
-		.pushMobilityOverride = 0,
+		.pushMobilityOverride = PushabilityFlag::Normal,
 		.lightOpacity = 0,
 		.stepSound = StepSound::Stone,
 		.isCollidable = false,
@@ -826,7 +826,7 @@ void RegisterBlockProperties() {
 		.material = Material::Wood(),
 		.hardness = 3.0f,
 		.resistance = 3.0f,
-		.pushMobilityOverride = 1,
+		.pushMobilityOverride = PushabilityFlag::NoPush,
 		.lightOpacity = 0,
 		.stepSound = StepSound::Wood,
 		.isOpaqueCube = false,
@@ -849,7 +849,7 @@ void RegisterBlockProperties() {
 	blockProperties[BlockType::BLOCK_RAIL] = {
 		.material = Material::Circuits(),
 		.hardness = 0.7f,
-		.pushMobilityOverride = 0,
+		.pushMobilityOverride = PushabilityFlag::Normal,
 		.lightOpacity = 0,
 		.stepSound = StepSound::Stone,
 		.isCollidable = false,
@@ -894,7 +894,7 @@ void RegisterBlockProperties() {
 	// Stone Pressure Plate
 	blockProperties[BlockType::BLOCK_PRESSURE_PLATE_STONE] = { .material = Material::Rock(),
 		                                                       .hardness = 0.5f,
-		                                                       .pushMobilityOverride = 1,
+		                                                       .pushMobilityOverride = PushabilityFlag::NoPush,
 		                                                       .lightOpacity = 0,
 		                                                       .stepSound = StepSound::Stone,
 		                                                       .isCollidable = false,
@@ -906,7 +906,7 @@ void RegisterBlockProperties() {
 	blockProperties[BlockType::BLOCK_DOOR_IRON] = {
 		.material = Material::Iron(),
 		.hardness = 5.0f,
-		.pushMobilityOverride = 1,
+		.pushMobilityOverride = PushabilityFlag::NoPush,
 		.lightOpacity = 0,
 		.stepSound = StepSound::Stone,
 		.isOpaqueCube = false,
@@ -917,7 +917,7 @@ void RegisterBlockProperties() {
 	// Wooden Pressure Plate
 	blockProperties[BlockType::BLOCK_PRESSURE_PLATE_WOOD] = { .material = Material::Wood(),
 		                                                      .hardness = 0.5f,
-		                                                      .pushMobilityOverride = 1,
+		                                                      .pushMobilityOverride = PushabilityFlag::NoPush,
 		                                                      .lightOpacity = 0,
 		                                                      .stepSound = StepSound::Wood,
 		                                                      .isCollidable = false,

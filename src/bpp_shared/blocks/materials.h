@@ -88,10 +88,11 @@ enum class MaterialType : uint8_t {
 	Piston,
 };
 
-enum PushabilityFlag : uint8_t {
+enum PushabilityFlag : int8_t {
 	Normal = 0,
 	NoPush = 1,
 	Immovable = 2,
+	Invalid = -1
 };
 
 struct Material {
@@ -297,7 +298,6 @@ struct Material {
 		m.type = MaterialType::SnowBlock;
 		m.mapColor = MapColor::Snow();
 		m.isHarvestable = false;
-		m.isOpaque = false;
 		return m;
 	}
 
