@@ -1,0 +1,47 @@
+
+name: Reject AI-attributed commits
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Detect AI-attributed commits and close PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          patterns='(claude([ -]?code)?|anthropic|openai|codex|grok|xai|cursor|copilot|github copilot|aider|cline|roo code|windsurf|gemini|devin)'
+
+          commits=$(gh api --paginate \
+            "repos/$GH_REPO/pulls/$PR_NUMBER/commits" \
+            --jq '.[] | [
+              .commit.author.name,
+              .commit.author.email,
+              .commit.committer.name,
+              .commit.committer.email,
+              .commit.message,
+              .author.login,
+              .committer.login
+            ] | map(select(. != null)) | join(" ")')
+
+          if printf '%s\n' "$commits" | grep -Eiq "$patterns"; then
+            echo "AI attribution detected. Closing PR #$PR_NUMBER."
+
+            gh pr close "$PR_NUMBER" \
+              --repo "$GH_REPO" \
+              --comment "Closed automatically: one or more commits contain AI-tool attribution. Please read our [AI Policy in the CONTRIBUTING.md file](https://github.com/OpenBetaGroup/BetrockPlusPlus/blob/main/CONTRIBUTING.md#ai-policy) before submitting!"
+          else
+            echo "No matching AI attribution found."
+          fi
