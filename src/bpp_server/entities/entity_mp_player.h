@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, jomner <github.com/jomner>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -15,6 +16,7 @@ struct EntityMPPlayer : public PlayerEntity {
 	EntityHealth lastNotifiedHealth = health;
 	bool movedThisTick : 1 = false;
 	int ticksInAir = 0;
+	int32_t ticksSinceTeleportSent = 0;
 	double accumulatedUpDistance = 0.0;
 	double simulatedFallDistance = 0.0;
 	Vec3 firstUpPosition = {};
