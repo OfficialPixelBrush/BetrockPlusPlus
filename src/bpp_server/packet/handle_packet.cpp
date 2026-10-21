@@ -3,6 +3,7 @@
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
  * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
  * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
+ * Copyright (c) 2026, jomner <github.com/jomner>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -121,7 +122,8 @@ static bool HandlePlayerMove(Vec3 _to, PlayerSession& _session, Server& _server)
 	const Vec3 finalTo = { event.to.x, event.to.y, event.to.z };
 
 	if (event.cancel || finalTo != _to) {
-		Packet::PlayerPosition pkt;
+		Packet::PlayerPositionAndRotation pkt;
+		pkt.rotation = _session.rotation;
 		pkt.onGround = _session.entity ? _session.entity->onGround : true;
 		pkt.position = { finalTo.x, finalTo.y + PLAYER_EYE_HEIGHT, finalTo.z };
 		pkt.cameraY = finalTo.y; // This is backwards, thanks notch

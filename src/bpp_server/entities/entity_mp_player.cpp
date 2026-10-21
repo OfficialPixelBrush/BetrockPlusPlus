@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, jomner <github.com/jomner>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -67,7 +68,8 @@ void EntityMPPlayer::WakeUp(bool _confirmSpawn) {
 	this->Teleport(this->position, { rotationYaw, rotationPitch });
 	session->position.pos = this->position;
 	session->pendingTeleport = this->position;
-	Packet::PlayerPosition pos;
+	Packet::PlayerPositionAndRotation pos;
+	pos.rotation = session->rotation; // what the client last told us, so they keep facing the same way
 	pos.onGround = false;
 	pos.position = { this->position.x, this->position.y + PLAYER_EYE_HEIGHT, this->position.z };
 	pos.cameraY = this->position.y; // This is backwards, thanks notch
@@ -150,6 +152,9 @@ bool EntityMPPlayer::PickupItem(ItemStack& _stack, EntityId _entityId) {
 
 static constexpr double CLEAR_CHECK_TOLERANCE = 0.05;
 static constexpr double ROLLBACK_NUDGE = 0.06;
+static constexpr int32_t TELEPORT_RESEND_TICKS = 20;
+// Position corrections are sent as PlayerPositionAndRotation like vanilla does. Newer clients connecting through
+// ViaLegacy get the eye height as their feet height from a plain PlayerPosition, so they could never catch up.
 
 void EntityMPPlayer::HandlePositionChecks() {
 	if (isDead || !world)
@@ -191,11 +196,17 @@ void EntityMPPlayer::HandlePositionChecks() {
 		const int checkRange = 32;
 
 		if (dist > 0.0625 || !world->AABBinValidChunks(this->collider.Expand(checkRange, checkRange, checkRange))) {
-			// Player isn't at the teleported position or we are out of bounds, so send another tp packet
-			// Also reset our position
+			// Like vanilla, ignore movement until the client has caught up with our teleport. Re-sending it every
+			// tick floods clients that keep moving while it is in flight (e.g. through ViaProxy), so they never do
+			session->pendingPosition.reset();
+			if (++ticksSinceTeleportSent < TELEPORT_RESEND_TICKS)
+				return;
+			ticksSinceTeleportSent = 0;
+			// Still not there, so send another tp packet and reset our position
 			this->Teleport(*session->pendingTeleport, { rotationYaw, rotationPitch });
 			session->position.pos = *session->pendingTeleport;
-			Packet::PlayerPosition pkt;
+			Packet::PlayerPositionAndRotation pkt;
+			pkt.rotation = session->rotation; // what the client last told us, so they keep facing the same way
 			pkt.onGround = onGround;
 			pkt.position = { position.x, position.y + PLAYER_EYE_HEIGHT, position.z };
 			pkt.cameraY = position.y; // This is backwards, thanks notch
@@ -328,14 +339,26 @@ void EntityMPPlayer::HandlePositionChecks() {
 			Logger::Warning << "Client " << session->username << " moved wrongly!\n";
 
 		if (willCorrect) {
-			Vec3 safeRollback = { lastPosition.x, lastPosition.y + ROLLBACK_NUDGE, lastPosition.z };
+			// Only nudge up if the spot we roll back to is itself inside a block. Nudging every time made repeated
+			// corrections lift players on top of blocks whose shape differs on newer clients (fences, chests, ...)
+			Vec3 safeRollback = lastPosition;
+			AABB rollbackCollider = collider.Offset(safeRollback.x - position.x, safeRollback.y - position.y,
+			                                        safeRollback.z - position.z);
+			if (!world
+			         ->GetCollidingBoundingBoxes(rollbackCollider.Expand(-CLEAR_CHECK_TOLERANCE, -CLEAR_CHECK_TOLERANCE,
+			                                                             -CLEAR_CHECK_TOLERANCE),
+			                                     /*_mover=*/nullptr)
+			         .empty())
+				safeRollback.y += ROLLBACK_NUDGE;
+			ticksSinceTeleportSent = 0;
 
 			// TP our player back
 			this->Teleport(safeRollback, { rotationYaw, rotationPitch });
 			session->position.pos = safeRollback;
 			// Wait until our client catches up
 			session->pendingTeleport = safeRollback;
-			Packet::PlayerPosition pkt;
+			Packet::PlayerPositionAndRotation pkt;
+			pkt.rotation = session->rotation; // what the client last told us, so they keep facing the same way
 			pkt.onGround = onGround;
 			pkt.position = { safeRollback.x, safeRollback.y + PLAYER_EYE_HEIGHT, safeRollback.z };
 			pkt.cameraY = safeRollback.y; // This is backwards, thanks notch
