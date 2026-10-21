@@ -127,6 +127,10 @@ void PlayerEntity::DropInventory() {
 }
 
 void PlayerEntity::Tick() {
+	// NOTE: This needs to be done before the MobileEntity parent stuff is ticked,
+	// since drowning damage is dealt there.
+	canBreatheUnderwater = !Gamerule::Get<bool>(Gamerule::Id::DrowningDamage);
+	isImmuneToFire = !Gamerule::Get<bool>(Gamerule::Id::FireDamage);
 	MobileEntity::Tick();
 
 	// Portal counters

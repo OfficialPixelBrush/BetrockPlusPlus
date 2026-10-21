@@ -17,10 +17,18 @@ void EntityMPPlayer::UsePortal() {
 	if (!this->session || !this->session->server)
 		return;
 
-	if (this->dim == Dimension::Overworld)
-		this->session->server->SendPlayerToDimension(Dimension::Nether, *this->session);
-	else
-		this->session->server->SendPlayerToDimension(Dimension::Overworld, *this->session);
+	switch(this->dim) {
+		case Dimension::Overworld:
+			if (!Gamerule::Get<bool>(Gamerule::Id::AllowEnteringNetherUsingPortals))
+				return;
+			this->session->server->SendPlayerToDimension(Dimension::Nether, *this->session);
+			break;
+		case Dimension::Nether:
+			this->session->server->SendPlayerToDimension(Dimension::Overworld, *this->session);
+			break;
+		default:
+			return;
+	}
 }
 
 SleepFailureReason EntityMPPlayer::TrySleep(Int3 _pos) {
@@ -156,6 +164,9 @@ static constexpr int32_t TELEPORT_RESEND_TICKS = 20;
 
 void EntityMPPlayer::HandlePositionChecks() {
 	if (isDead || !world)
+		return;
+
+	if (!Gamerule::Get<bool>(Gamerule::Id::PlayerMovementCheck))
 		return;
 
 	this->velocity = {};
@@ -294,15 +305,17 @@ void EntityMPPlayer::HandlePositionChecks() {
 		onGround = savedOnGround;
 
 		// Deal fall damage
-		if (inWater)
-			fallDistance = 0;
-		if (onGround) {
-			if (fallDistance > FALL_DAMAGE_FLOOR) {
-				AttackEntityFrom(nullptr, int(std::ceil(fallDistance - FALL_DAMAGE_FLOOR)));
+		if (Gamerule::Get<bool>(Gamerule::Id::FallDamage)) {
+			if (inWater)
+				fallDistance = 0;
+			if (onGround) {
+				if (fallDistance > FALL_DAMAGE_FLOOR) {
+					AttackEntityFrom(nullptr, int(std::ceil(fallDistance - FALL_DAMAGE_FLOOR)));
+				}
+				fallDistance = 0;
+			} else if (delta.y < 0) {
+				fallDistance -= delta.y;
 			}
-			fallDistance = 0;
-		} else if (delta.y < 0) {
-			fallDistance -= delta.y;
 		}
 
 		auto resolvedDelta = delta;
@@ -336,8 +349,6 @@ void EntityMPPlayer::HandlePositionChecks() {
 
 		if (willCorrect) {
 			Vec3 safeRollback = lastPosition;
-			AABB rollbackCollider = collider.Offset(safeRollback.x - position.x, safeRollback.y - position.y,
-			                                        safeRollback.z - position.z);
 			safeRollback.y += ROLLBACK_NUDGE;
 			ticksSinceTeleportSent = 0;
 

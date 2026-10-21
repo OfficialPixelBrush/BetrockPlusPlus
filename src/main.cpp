@@ -193,7 +193,7 @@ int main(int argc, char** argv) {
 #endif
 	InstallProcessSignalHandlers();
 	// Parse CLI Args
-	Args args{ { argc, argv } };
+	//Args args{ { argc, argv } };
 	// Init the sine table
 	MathHelper::InitSinTable();
 	// We're ready to roll
@@ -251,8 +251,8 @@ int main(int argc, char** argv) {
 	// })---");
 
 	Server serv;
-	if (args.enableWhitelist)
-		serv.SetWhitelistEnabled(true, false);
+	//if (args.enableWhitelist)
+	//	serv.SetWhitelistEnabled(true, false);
 	server = &serv;
 	server->Run();
 #if defined(ONLINE_MODE_AUTHENTICATION) || defined(BETACRAFT_HEARTBEAT)

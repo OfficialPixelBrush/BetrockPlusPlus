@@ -42,13 +42,13 @@ struct Registry {
         //Register(Id::ForgiveDeadPlayers, "forgive_dead_players", true);
         Register(Id::MobGriefing, "mob_griefing", true);
         // Player
-        //Register(Id::AllowEnteringNetherUsingPortals, "allow_entering_nether_using_portals", true);
-        //Register(Id::DrowningDamage, "drowning_damage", true);
-        //Register(Id::FallDamage, "fall_damage", true);
-        //Register(Id::FireDamage, "fire_damage", true);
+        Register(Id::AllowEnteringNetherUsingPortals, "allow_entering_nether_using_portals", true);
+        Register(Id::DrowningDamage, "drowning_damage", true);
+        Register(Id::FallDamage, "fall_damage", true);
+        Register(Id::FireDamage, "fire_damage", true);
         //Register(Id::ImmediateRespawn, "immediate_respawn", false);
         Register(Id::KeepInventory, "keep_inventory", false);
-        //Register(Id::PlayerMovementCheck, "player_movement_check", true);
+        Register(Id::PlayerMovementCheck, "player_movement_check", true);
         //Register(Id::PlayersSleepingPercentage, "players_sleeping_percentage", 100);
         //Register(Id::Pvp, "pvp", true);
         Register(Id::RespawnRadius, "respawn_radius", 10);
