@@ -1,0 +1,204 @@
+name: CI
+
+# Compile-check only: does the server build on every supported platform?
+# (Releases are handled separately by build-release-server.yml.)
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  # Same toolchain assumptions as build-release-server.yml / BUILDING.md
+  LINUX_GCC_VERSION: "13"
+  LIBDEFLATE_VERSION: "1.23"
+  BINARY_NAME: BetrockPlusPlus
+
+permissions:
+  contents: read
+
+# A new push to the same branch/PR cancels the previous, now-outdated run.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------
+  # Windows x86_64 (MSVC + vcpkg)
+  # ---------------------------------------------------------------------
+  windows:
+    name: Windows x86_64
+    runs-on: windows-2022
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}\vcpkg
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\.vcpkg-cache
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use runner-preinstalled vcpkg
+        shell: pwsh
+        run: |
+          Copy-Item -Recurse "$env:VCPKG_INSTALLATION_ROOT" "$env:VCPKG_ROOT"
+          & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat"
+          New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      # vcpkg's binary cache: compiled packages are reused between runs
+      - name: Cache vcpkg binary packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: vcpkg-bincache-x64-windows-static-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+          restore-keys: vcpkg-bincache-x64-windows-static-
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_SERVER=ON
+          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake"
+          -DVCPKG_TARGET_TRIPLET=x64-windows-static
+          -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+  # ---------------------------------------------------------------------
+  # Linux x86_64 (glibc)
+  # ---------------------------------------------------------------------
+  linux-glibc:
+    name: Linux (glibc) x86_64
+    runs-on: ubuntu-22.04 # glibc 2.35 = BUILDING.md minimum
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain + dependencies
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            git cmake ninja-build \
+            gcc-${LINUX_GCC_VERSION} g++-${LINUX_GCC_VERSION} \
+            libcurl4-openssl-dev
+
+      - name: Build & install libdeflate (static)
+        run: |
+          git clone --depth 1 --branch "v${LIBDEFLATE_VERSION}" https://github.com/ebiggers/libdeflate.git /tmp/libdeflate
+          cmake -S /tmp/libdeflate -B /tmp/libdeflate/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DCMAKE_C_COMPILER=gcc-${LINUX_GCC_VERSION} \
+            -DLIBDEFLATE_BUILD_STATIC_LIB=ON \
+            -DLIBDEFLATE_BUILD_SHARED_LIB=OFF \
+            -DLIBDEFLATE_BUILD_GZIP=OFF
+          cmake --build /tmp/libdeflate/build -j"$(nproc)"
+          sudo cmake --install /tmp/libdeflate/build
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SERVER=ON \
+            -DCMAKE_PREFIX_PATH=/usr/local \
+            -DCMAKE_C_COMPILER=gcc-${LINUX_GCC_VERSION} \
+            -DCMAKE_CXX_COMPILER=g++-${LINUX_GCC_VERSION}
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+  # ---------------------------------------------------------------------
+  # Linux x86_64 (musl / Alpine)
+  # ---------------------------------------------------------------------
+  linux-musl:
+    name: Linux (musl) x86_64
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:3.22
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain + dependencies
+        run: apk add --no-cache build-base cmake ninja git curl-dev openssl-dev linux-headers
+
+      - name: Build & install libdeflate (static)
+        run: |
+          git clone --depth 1 --branch "v${LIBDEFLATE_VERSION}" https://github.com/ebiggers/libdeflate.git /tmp/libdeflate
+          cmake -S /tmp/libdeflate -B /tmp/libdeflate/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DLIBDEFLATE_BUILD_STATIC_LIB=ON \
+            -DLIBDEFLATE_BUILD_SHARED_LIB=OFF \
+            -DLIBDEFLATE_BUILD_GZIP=OFF
+          cmake --build /tmp/libdeflate/build --parallel
+          cmake --install /tmp/libdeflate/build
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SERVER=ON \
+            -DCMAKE_PREFIX_PATH=/usr/local
+
+      - name: Build
+        run: cmake --build build --parallel
+
+  # ---------------------------------------------------------------------
+  # macOS arm64 (Apple Silicon)
+  # ---------------------------------------------------------------------
+  macos:
+    name: macOS arm64
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain + dependencies
+        run: |
+          brew update
+          brew install ninja llvm curl
+
+      - name: Build & install libdeflate (static)
+        run: |
+          LLVM_PREFIX="$(brew --prefix llvm)"
+          git clone --depth 1 --branch "v${LIBDEFLATE_VERSION}" https://github.com/ebiggers/libdeflate.git /tmp/libdeflate
+          cmake -S /tmp/libdeflate -B /tmp/libdeflate/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DCMAKE_C_COMPILER="$LLVM_PREFIX/bin/clang" \
+            -DLIBDEFLATE_BUILD_STATIC_LIB=ON \
+            -DLIBDEFLATE_BUILD_SHARED_LIB=OFF \
+            -DLIBDEFLATE_BUILD_GZIP=OFF
+          cmake --build /tmp/libdeflate/build -j"$(sysctl -n hw.ncpu)"
+          sudo cmake --install /tmp/libdeflate/build
+
+      - name: Configure
+        run: |
+          LLVM_PREFIX="$(brew --prefix llvm)"
+          CURL_PREFIX="$(brew --prefix curl)"
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SERVER=ON \
+            -DCMAKE_PREFIX_PATH="/usr/local;${CURL_PREFIX}" \
+            -DCMAKE_C_COMPILER="$LLVM_PREFIX/bin/clang" \
+            -DCMAKE_CXX_COMPILER="$LLVM_PREFIX/bin/clang++"
+
+      - name: Build
+        run: cmake --build build -j"$(sysctl -n hw.ncpu)"
+
+  # ---------------------------------------------------------------------
+  # Single required status check for branch protection
+  # ---------------------------------------------------------------------
+  ci-ok:
+    name: CI passed
+    if: always()
+    needs: [windows, linux-glibc, linux-musl, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any build failed
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "::error::At least one platform failed to build."
+            exit 1
+          fi
