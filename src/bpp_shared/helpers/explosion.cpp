@@ -1,9 +1,12 @@
 /*
  * Copyright (c) 2026, Aidan <JcbbcEnjoyer>
+ * Copyright (c) 2026, jomner <github.com/jomner>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
 */
 
+#include "entities/entity_mob.h"
+#include "gamerules.h"
 #include "raycast.h"
 #include "world.h"
 
@@ -57,6 +60,10 @@ std::unordered_set<Int3> DoExplosion(WorldManager& _world, Entity* _exploder, Ve
 			}
 		}
 	}
+
+	// Mobs (creepers) leave blocks alone when mob_griefing is off, but still hurt and push entities
+	if (dynamic_cast<MobEntity*>(_exploder) && !Gamerule::Get<bool>(Gamerule::Id::MobGriefing))
+		destroyedBlockPositions.clear();
 
 	// Damage entities
 	auto expandedExplosionSize = _size * 2.0f;
