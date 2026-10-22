@@ -25,6 +25,7 @@
 #include <format>
 #include <future>
 #include <climits>
+#include <cstdint>
 #include <string>
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__HAIKU__) || defined(PS2)
@@ -594,7 +595,7 @@ void Server::Run() {
 		if (Clock::now() > nextTickTime + MAX_TICK_CATCH_UP * period) {
 			auto overshoot = std::chrono::duration<double, std::milli>(Clock::now() - nextTickTime).count();
 			nextTickTime = Clock::now();
-			Logger::Warning << "Can't keep up with ticks! (tick avg " << averageTickMs << "ms, overshoot "
+			Logger::Warning << "Can't keep up with ticks! (tick avg " << averageTickMs.load() << "ms, overshoot "
 			                    << overshoot << "ms, budget "
 			                    << std::chrono::duration<double, std::milli>(period).count() << "ms)\n";
 		}
@@ -671,11 +672,17 @@ void Server::AcceptNewPlayers() {
 }
 
 void Server::StopTimeout(float _secondsUntilShutdown) {
-	shutdownTimer = static_cast<uint16_t>(_secondsUntilShutdown * static_cast<float>(GetTickRate()));
+	// Garbage or "now" means stop right away. (A timer of 0 means "no shutdown pending", so it can't express this.)
+	if (!std::isfinite(_secondsUntilShutdown) || _secondsUntilShutdown <= 0.0f) {
+		shutdownRequested.store(true);
+		return;
+	}
+	const double ticks = std::ceil(static_cast<double>(_secondsUntilShutdown) * GetTickRate());
+	shutdownTimer.store(static_cast<uint16_t>(std::clamp(ticks, 2.0, static_cast<double>(UINT16_MAX))));
 }
 
 void Server::ResetTimeout() {
-	shutdownTimer = 0;
+	shutdownTimer.store(0);
 }
 
 void Server::SetTickRate(double _rate) {
@@ -884,9 +891,9 @@ void Server::Tick() {
 
 	// TODO: This is rather fragile!
 	// Countdown
-	if (shutdownTimer > 1)
+	if (shutdownTimer.load() > 1)
 		shutdownTimer--;
-	if (shutdownTimer == 1)
+	if (shutdownTimer.load() == 1)
 		shutdownRequested.store(true);
 
 #ifdef BETACRAFT_HEARTBEAT

@@ -57,7 +57,7 @@ public:
 private:
 	int serverViewRadius = 8;
 	int spawnChunkRadius = 5;
-	uint16_t shutdownTimer = 0;
+	std::atomic<uint16_t> shutdownTimer{ 0 };
 
 public:
 #ifdef ONLINE_MODE_AUTHENTICATION
@@ -169,8 +169,8 @@ public:
 	EntityTracker overworldEntityTracker;
 	EntityTracker hellEntityTracker;
 	// Performance metric
-	double averageTickMs = 0.0;
-	double averageTickPerSecond = 0.0;
+	std::atomic<double> averageTickMs{ 0.0 };
+	std::atomic<double> averageTickPerSecond{ 0.0 };
 	// Whitelist and Operator storage
 	bool useWhitelist = false;
 	std::vector<std::string> whitelistedUsernames = {};
