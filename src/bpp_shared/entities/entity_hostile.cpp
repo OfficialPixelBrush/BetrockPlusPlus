@@ -19,8 +19,8 @@ std::shared_ptr<Entity> HostileEntity::FindPlayerToAttack() {
 	return candidate;
 }
 
-bool HostileEntity::AttackEntityFrom(Entity* _entity, int _damage) {
-	if (MobileEntity::AttackEntityFrom(_entity, _damage)) {
+bool HostileEntity::AttackEntityFrom(Entity* _entity, int _damage, DamageType _type) {
+	if (MobileEntity::AttackEntityFrom(_entity, _damage, _type)) {
 		if (_entity != this->passenger.lock().get() && _entity != this->vehicle.lock().get()) {
 			if (_entity && _entity != this) {
 				this->attackTarget = entityManager->GetEntityByIdShared(_entity->id);
@@ -36,7 +36,7 @@ void HostileEntity::TryAttackEntity(Entity& _target, float _distance) {
 	if (attackTime <= 0 && _distance < 2.0f && _target.collider.maxY > collider.minY &&
 	    _target.collider.minY < collider.maxY) {
 		attackTime = 20;
-		_target.AttackEntityFrom(this, attackStrength);
+		_target.AttackEntityFrom(this, attackStrength, DamageType::Punch);
 	}
 }
 

@@ -50,7 +50,7 @@ struct BoatEntity : public Entity {
 			fallDistance -= _movedY;
 	}
 
-	bool AttackEntityFrom(Entity* _entity, int _damage) override;
+	bool AttackEntityFrom(Entity* _entity, int _damage, DamageType _type) override;
 	void Tick() override;
 	void OnPlayerInteract(PlayerEntity* _entity) override;
 

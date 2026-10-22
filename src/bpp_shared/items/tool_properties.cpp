@@ -129,8 +129,8 @@ EntityHealth CalculateDamage(ToolType _type, ToolLevel _level) {
 	return BaseToolDamage(_type) + (int(_level) * 2);
 }
 
-static bool InflictDamage(Entity& _targetEntity, Entity& _sourceEntity, EntityHealth _damage) {
-	return _targetEntity.AttackEntityFrom(&_sourceEntity, _damage);
+static bool InflictDamage(Entity& _targetEntity, Entity& _sourceEntity, EntityHealth _damage, DamageType _type) {
+	return _targetEntity.AttackEntityFrom(&_sourceEntity, _damage, _type);
 }
 
 bool IsEffective(ToolType _type, BlockType _block) {
@@ -255,7 +255,7 @@ void AttackWithItem(Entity& _targetEntity, Entity& _sourceEntity, ItemStack* _st
 	EntityHealth damage = 1;
 	if (toolProperties.contains(_stack->id))
 		damage = CalculateDamage(toolProperties[_stack->id].type, MaterialToLevel(toolProperties[_stack->id].material));
-	InflictDamage(_targetEntity, _sourceEntity, damage);
+	InflictDamage(_targetEntity, _sourceEntity, damage, DamageType::Item);
 
 	// ItemSword.hitEntity damages 1; ItemTool.hitEntity damages 2
 	int durabilityLoss = 1;

@@ -16,7 +16,7 @@ struct PigEntity : public AnimalEntity {
 	}
 	~PigEntity() = default;
 	bool TryDespawn() override;
-	void OnDeath(Entity* _killer) override;
+	void OnDeath(Entity* _killer, DamageType _type) override;
 	void OnPlayerInteract(PlayerEntity* _entity) override;
 	void EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;
 	bool DecodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;

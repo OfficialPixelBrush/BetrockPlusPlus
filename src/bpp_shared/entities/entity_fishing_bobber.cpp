@@ -124,7 +124,7 @@ void FishingBobberEntity::Tick() {
 	}
 
 	if (hitEntity && (!blockHit.hit || closest < start.Distance(blockHit.hitPosition))) {
-		if (hitEntity->AttackEntityFrom(player.get(), 0)) {
+		if (hitEntity->AttackEntityFrom(player.get(), 0, DamageType::None)) {
 			hookedEntity = entityManager->GetEntityByIdShared(hitEntity->id);
 			velocity = {};
 			position = end;

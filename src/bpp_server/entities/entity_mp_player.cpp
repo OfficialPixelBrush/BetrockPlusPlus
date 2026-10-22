@@ -310,7 +310,7 @@ void EntityMPPlayer::HandlePositionChecks() {
 				fallDistance = 0;
 			if (onGround) {
 				if (fallDistance > FALL_DAMAGE_FLOOR) {
-					AttackEntityFrom(nullptr, int(std::ceil(fallDistance - FALL_DAMAGE_FLOOR)));
+					AttackEntityFrom(nullptr, int(std::ceil(fallDistance - FALL_DAMAGE_FLOOR)), DamageType::Fall);
 				}
 				fallDistance = 0;
 			} else if (delta.y < 0) {
@@ -423,11 +423,11 @@ void EntityMPPlayer::DropInventory() {
 	}
 }
 
-void EntityMPPlayer::OnDeath(Entity* _killer) {
+void EntityMPPlayer::OnDeath(Entity* _killer, DamageType _type) {
 	if (this->isSleeping)
 		this->WakeUp();
 
-	PlayerEntity::OnDeath(_killer);
+	PlayerEntity::OnDeath(_killer, _type);
 
 	// Hehe
 	if (session && (session->username == "wAidanJC" || session->username == "PixelBrushArt")) {
@@ -495,7 +495,7 @@ void EntityMPPlayer::Tick() {
 
 	// If we fell out of the world then die
 	if (position.y < -64.0)
-		OnDeath(nullptr);
+		OnDeath(nullptr, DamageType::Void);
 
 	if (this->lastNotifiedHealth != GetHeartsHealth()) {
 		Packet::SetHealth healthPkt;

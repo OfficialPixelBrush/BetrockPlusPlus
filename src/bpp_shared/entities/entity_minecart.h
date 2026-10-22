@@ -59,7 +59,7 @@ struct MinecartEntity : public MobileEntity {
 			fallDistance -= _movedY;
 	}
 
-	bool AttackEntityFrom(Entity* _entity, int _damage) override;
+	bool AttackEntityFrom(Entity* _entity, int _damage, DamageType _type) override;
 	void Tick() override;
 	void OnPlayerInteract(PlayerEntity* _entity) override;
 	std::optional<Vec3> GetClosestPositionAlongRail(Vec3 _position);

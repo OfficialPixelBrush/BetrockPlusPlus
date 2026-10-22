@@ -47,7 +47,7 @@ public:
 	virtual void TickPhysics();
 	virtual void ResolveEntityPushes();
 	virtual void Tick() override;
-	virtual void OnDeath(Entity* _killer);
+	virtual void OnDeath(Entity* _killer, DamageType _type);
 	virtual void SetGoal(std::optional<Int3> _goal);
 	virtual bool onLadder();
 	virtual void UpdateAIState() {}
@@ -61,7 +61,7 @@ public:
 	bool FollowPath();
 	void DealDamage(int _damage);
 	int GetArmorValue();
-	virtual bool AttackEntityFrom(Entity* _entity, int _damage) override;
+	virtual bool AttackEntityFrom(Entity* _entity, int _damage, DamageType _type = DamageType::None) override;
 	std::optional<Tag> SerializeToNbt() override;
 	void LoadFromNbt(Tag& _nbt) override;
 	virtual bool IsMovementBlocked() {

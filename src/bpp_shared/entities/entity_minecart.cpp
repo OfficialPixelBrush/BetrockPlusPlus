@@ -129,11 +129,11 @@ void MinecartEntity::ResolveEntityPushes() {
 	}
 }
 
-bool MinecartEntity::AttackEntityFrom(Entity* _entity, int _damage) {
+bool MinecartEntity::AttackEntityFrom(Entity* _entity, int _damage, DamageType _type) {
 	if (isDead)
 		return true;
 
-	Entity::AttackEntityFrom(_entity, _damage);
+	Entity::AttackEntityFrom(_entity, _damage, _type);
 
 	shakeTimer = 10;
 	damageTaken += _damage * 10;

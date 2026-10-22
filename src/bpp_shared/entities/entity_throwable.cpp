@@ -139,7 +139,7 @@ void ThrowableEntity::Tick() {
 	if (blockHit.hit || hitEntity) {
 		if (hitEntity) {
 			// We dont do any damage but this will trigger the entity to be "irritated" at you
-			hitEntity->AttackEntityFrom(ownerPtr.get(), 0);
+			hitEntity->AttackEntityFrom(ownerPtr.get(), 0, DamageType::None);
 		}
 
 		this->OnHit(this->position);

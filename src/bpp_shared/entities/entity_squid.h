@@ -22,7 +22,7 @@ struct SquidEntity : public AnimalEntity {
 	~SquidEntity() = default;
 	void UpdateAIState() override;
 	bool CanSpawnAt() override;
-	void OnDeath(Entity* _killer) override;
+	void OnDeath(Entity* _killer, DamageType _type) override;
 	void Tick() override;
 	void TickPhysics() override {
 		Move(this->velocity);

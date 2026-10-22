@@ -37,7 +37,7 @@ void SlimeEntity::OnCollideWithPlayer(PlayerEntity& _player) {
 	float distance = float(std::sqrt(dx * dx + dy * dy + dz * dz));
 
 	if (distance < 0.6 * this->size)
-		_player.AttackEntityFrom(this, this->size);
+		_player.AttackEntityFrom(this, this->size, DamageType::Punch);
 }
 
 void SlimeEntity::Tick() {
@@ -52,7 +52,7 @@ void SlimeEntity::Tick() {
 		SplitSlime();
 }
 
-void SlimeEntity::OnDeath(Entity* /*_killer*/) {
+void SlimeEntity::OnDeath(Entity* /*_killer*/, DamageType /*_type*/) {
 	if (this->size == 1)
 		DropItemAtEntity(Items::SLIME, 1);
 }

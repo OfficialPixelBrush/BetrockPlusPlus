@@ -6,7 +6,7 @@
  */
 #include "entity_creeper.h"
 
-void CreeperEntity::OnDeath(Entity* _killer) {
+void CreeperEntity::OnDeath(Entity* _killer, DamageType /*_type*/) {
 	// Drop gunpowder or a music disk if killed by a skeleton
 	auto targetItem = Items::Id::GUNPOWDER;
 	int itemCount = this->rand.NextInt(3);
