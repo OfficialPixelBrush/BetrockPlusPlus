@@ -11,6 +11,7 @@
 #include "server.h"
 #include "base_structs.h"
 #include "blocks.h"
+#include "version.h"
 #include "logger.h"
 
 static constexpr Addon* InternalGetAddon(const bp_api* _api) {
@@ -49,6 +50,38 @@ bp_player* GetPlayerAt(const bp_api* _api, int _index) {
 		return nullptr;
 
 	return &player->apiPlayer;
+}
+
+void ServerStop(const bp_api* _api, float _timeout) {
+	if (!_api || !_api->internal)
+		return;
+	Addon* addon = InternalGetAddon(_api);
+	if (!addon->server)
+		return;
+	addon->server->StopTimeout(_timeout);
+}
+
+double ServerGetTpsAverage(const bp_api* _api) {
+	if (!_api || !_api->internal)
+		return 0.0;
+	Addon* addon = InternalGetAddon(_api);
+	if (!addon->server)
+		return 0.0;
+	const double tps = addon->server->averageTickPerSecond.load();
+	return tps > 0.0 ? tps : addon->server->GetTickRate();
+}
+
+double ServerGetMsptAverage(const bp_api* _api) {
+	if (!_api || !_api->internal)
+		return 0.0;
+	Addon* addon = InternalGetAddon(_api);
+	if (!addon->server)
+		return 0.0;
+	return addon->server->averageTickMs.load();
+}
+
+const char* ServerGetVersion() {
+	return PROJECT_VERSION_FULL_STRING.data();
 }
 
 void PlayerSendMessage(bp_player* _player, const char* _message) {
@@ -153,7 +186,7 @@ bp_api MakeAddonAPI() {
 		.version = ADDON_API_VERSION,
 		.internal = nullptr, // Set by the addon manager
 		.log = { .info = LogInfo, .warning = LogWarning, .error = LogError },
-		.server = { .getPlayerCount = GetPlayerCount, .getPlayerAt = GetPlayerAt },
+		.server = { .getPlayerCount = GetPlayerCount, .getPlayerAt = GetPlayerAt, .stop = ServerStop, .getMsptAverage = ServerGetMsptAverage, .getTpsAverage = ServerGetTpsAverage, .getVersion = ServerGetVersion },
 		.player = { .sendMessage = PlayerSendMessage, .kick = PlayerKick, .getUsername = PlayerGetUsername, .getEntity = PlayerGetEntity, },
 		.entity = { .getPosition = EntityGetPosition, .setPosition = EntitySetPosition, .getWorld = EntityGetWorld },
 		.world = { .setBlock = SetBlock, .getBlock = GetBlock, .sendBlockUpdate = SendBlockUpdate },

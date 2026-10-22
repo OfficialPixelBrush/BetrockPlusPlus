@@ -143,8 +143,7 @@ struct Args : MainArguments<Args> {
 #include "CrashCatch.hpp"
 void InitCrashHandler(std::string _platformString) {
 	CrashCatch::Config config{ .dumpFolder = "./",
-		                       // TODO: Apparently enableTextLog only affects stuff on Windows? TEST!!!
-		                       .enableTextLog = false,
+		                       .enableTextLog = true,
 		                       .autoTimestamp = true,
 #if defined(BUILD_SERVER)
 		                       .showCrashDialog = false,
@@ -157,20 +156,34 @@ void InitCrashHandler(std::string _platformString) {
 		Logger::Error << "========== CRASH ==========\n";
 		Logger::Error << "Signal/Code: " << _ctx.signalOrCode << "\n";
 
+		// Pull the report into memory so it can be both printed and handed to addons.
+		std::string report;
+		std::string reportPath;
 		if (!_ctx.logFilePath.empty()) {
-			Logger::Error << "Crash report: " << _ctx.logFilePath << "\n";
+			reportPath = _ctx.logFilePath.string();
+			Logger::Error << "Crash report: " << reportPath << "\n";
 
 			std::ifstream file(_ctx.logFilePath);
-			if (!file) {
+			if (file) {
+				std::ostringstream buffer;
+				buffer << file.rdbuf();
+				report = buffer.str();
+				Logger::Error << report << "\n";
+			} else {
 				Logger::Error << "Failed to open crash report file!\n";
-				return;
 			}
+		}
 
-			std::string line;
-
-			while (std::getline(file, line)) {
-				Logger::Error << line << "\n";
+		try {
+			if (server) {
+				std::string versionString(PROJECT_VERSION_FULL_STRING);
+				const bp_crash_event event{ .crash_log = report.data(),
+					                        .crash_log_path = reportPath.data(),
+					                        .version_string = versionString.data() };
+				server->GetAddonManager().Broadcast(&bp_addon_events::crash, event);
 			}
+		} catch (...) {
+			Logger::Error << "An addon threw while handling the crash event!\n";
 		}
 	};
 	CrashCatch::initialize(config);
