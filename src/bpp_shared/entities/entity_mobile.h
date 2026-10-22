@@ -9,7 +9,7 @@
 #include "entity.h"
 #include "inventory/item_stack.h"
 #include "numeric_structs.h"
-#include "pathfinding/pathfinder.hpp"
+#include "pathfinding/pathfinder.h"
 #include <optional>
 #include <vector>
 

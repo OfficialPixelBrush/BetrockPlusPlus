@@ -18,7 +18,7 @@
 #include "inventory/interactions/furnace.h"
 #include "inventory/interactions/large_chest.h"
 #include "items/tool_properties.h"
-#include "pathfinding/pathfinder.hpp"
+#include "pathfinding/pathfinder.h"
 #include "tile_entities/tile_entity.h"
 #include "gamerules.h"
 

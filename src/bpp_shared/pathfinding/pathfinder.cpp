@@ -13,7 +13,7 @@
 
 #include "blocks/block_properties.h"
 #include "numeric_structs.h"
-#include "pathfinder.hpp"
+#include "pathfinder.h"
 
 Node* Pathfinder::OpenNode(Int3 _pos) {
 	auto [it, inserted] = nodes.try_emplace(_pos);
