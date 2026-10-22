@@ -18,18 +18,17 @@ enum SleepFailureReason : uint8_t {
 
 struct FishingBobberEntity;
 struct PlayerEntity : public MobileEntity {
-	std::weak_ptr<FishingBobberEntity> fishingBobber;
-	bool isSleeping : 1 = false;
-	bool isInPortal : 1 = false;
-	float timeInPortal = 0.0f;
-	int portalCooldown = 0;
-
 	// Position of the bed (headboard) the player is currently sleeping in.
 	// Only meaningful while isSleeping is true.
 	Int3 bedPosition{ 0, 0, 0 };
+	Vec3 spawnPos = {};
+	std::weak_ptr<FishingBobberEntity> fishingBobber;
 	// Also called "SleepTimer" in the player save
 	TickTime ticksInBed = 0;
-	Vec3 spawnPos = {};
+	float timeInPortal = 0.0f;
+	int portalCooldown = 0;
+	bool isSleeping : 1 = false;
+	bool isInPortal : 1 = false;
 	PlayerEntity() : MobileEntity() {
 		type = EntityType::PLAYER;
 		width = 0.6f;
@@ -37,13 +36,13 @@ struct PlayerEntity : public MobileEntity {
 		stepHeight = 0.5f;
 	}
 	~PlayerEntity() = default;
-	bool AttackEntityFrom(Entity* _entity, int _damage) override;
+	bool AttackEntityFrom(Entity* _entity, int _damage, DamageType _type) override;
 	virtual void OnEnterPortal() override;
 	virtual void Tick() override;
 	virtual bool PickupItem(ItemStack& _stack, EntityId _entityId);
 	virtual bool DropItem(ItemStack _stack);
 	virtual void DropInventory();
-	virtual void OnDeath(Entity* _killer) override;
+	virtual void OnDeath(Entity* _killer, DamageType _type) override;
 	virtual void OnMountEntity() override;
 	virtual void OnDismountEntity() override;
 	virtual SleepFailureReason TrySleep(Int3 _pos);

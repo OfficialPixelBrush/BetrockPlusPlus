@@ -18,6 +18,7 @@
 #include "nbt/nbt.h"
 #include "numeric_structs.h"
 #include "packet_data.h"
+#include "damage_types.h"
 #include <optional>
 #include <vector>
 
@@ -266,7 +267,7 @@ struct Entity {
 		RebuildCollider();
 	}
 
-	virtual bool AttackEntityFrom(Entity* _entity, int _damage) {
+	virtual bool AttackEntityFrom(Entity* _entity, int _damage, DamageType _type) {
 		beenAttacked = true;
 		forceVelocityUpdate = true;
 		return false;

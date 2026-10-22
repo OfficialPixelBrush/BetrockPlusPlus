@@ -263,7 +263,7 @@ void RegisterPlantBehaviors() {
 
 	blockBehaviors[BLOCK_CACTUS].onEntityCollidedWithBlock = [](WorldManager& /*_world*/, Int3 /*_pos*/,
 	                                                            Entity& _entity) -> void {
-		_entity.AttackEntityFrom(nullptr, 1);
+		_entity.AttackEntityFrom(nullptr, 1, DamageType::Cactus);
 	};
 	blockBehaviors[BLOCK_CROP_WHEAT].onNeighborBlockChange = [](WorldManager& _world, Int3 _pos,
 	                                                            BlockType /*_blockId*/) -> void {

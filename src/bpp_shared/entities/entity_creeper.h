@@ -23,7 +23,7 @@ struct CreeperEntity : public HostileEntity {
 	}
 	~CreeperEntity() = default;
 
-	void OnDeath(Entity* _killer) override;
+	void OnDeath(Entity* _killer, DamageType _type) override;
 	void Tick() override;
 	void TryAttackEntity(Entity& _target, float _distance) override;
 	void OnTargetLostSight(Entity& _target, float _distance) override;

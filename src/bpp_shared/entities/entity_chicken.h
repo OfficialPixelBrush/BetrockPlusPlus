@@ -17,7 +17,7 @@ struct ChickenEntity : public AnimalEntity {
 		RollEggTimer();
 	}
 	~ChickenEntity() = default;
-	void OnDeath(Entity* _killer) override;
+	void OnDeath(Entity* _killer, DamageType _type) override;
 	void UpdateFallState(float _movedY) override;
 	void RollEggTimer() {
 		ticksUntilEgg = uint32_t(this->rand.NextInt(6000) + 6000);

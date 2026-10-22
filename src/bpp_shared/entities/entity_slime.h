@@ -19,7 +19,7 @@ struct SlimeEntity : public HostileEntity {
 	}
 	~SlimeEntity() = default;
 	void Tick() override;
-	void OnDeath(Entity* _killer) override;
+	void OnDeath(Entity* _killer, DamageType _type) override;
 	void UpdateAIState() override;
 	void EncodeMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;
 	bool DecodeMetadata(const std::vector<PacketData::EntityMetadata::DataEntry>& _metadata) override;

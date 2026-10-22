@@ -10,8 +10,8 @@
 #include "gamerules.h"
 #include "logger/logger.h"
 
-bool PlayerEntity::AttackEntityFrom(Entity* _entity, int _damage) {
-	auto success = MobileEntity::AttackEntityFrom(_entity, _damage);
+bool PlayerEntity::AttackEntityFrom(Entity* _entity, int _damage, DamageType _type) {
+	auto success = MobileEntity::AttackEntityFrom(_entity, _damage, _type);
 	if (success && isSleeping)
 		WakeUp();
 	return success;
@@ -165,8 +165,9 @@ void PlayerEntity::Tick() {
 	}
 }
 
-void PlayerEntity::OnDeath(Entity* _killer) {
-	MobileEntity::OnDeath(_killer);
+void PlayerEntity::OnDeath(Entity* _killer, DamageType _type) {
+	MobileEntity::OnDeath(_killer, _type);
+	// TODO: Pass death cause to C ABI
 
 	// Shrink to the "squished corpse" hitbox
 	SetSize({ 0.2f, 0.2f });

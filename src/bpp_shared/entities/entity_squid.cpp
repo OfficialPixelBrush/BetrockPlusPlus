@@ -22,7 +22,7 @@ void SquidEntity::UpdateAIState() {
 	}
 }
 
-void SquidEntity::OnDeath(Entity* /*_killer*/) {
+void SquidEntity::OnDeath(Entity* /*_killer*/, DamageType /*_type*/) {
 	int itemCount = this->rand.NextInt(3) + 1;
 
 	for (int i = 0; i < itemCount; i++) {

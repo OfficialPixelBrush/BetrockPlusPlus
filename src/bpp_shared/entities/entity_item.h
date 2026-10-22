@@ -43,8 +43,8 @@ struct ItemEntity : public Entity {
 		// Returns the collider we use to detect if we are in lava
 		return collider;
 	}
-	bool AttackEntityFrom(Entity* _entity, int _damage) override {
-		Entity::AttackEntityFrom(_entity, _damage);
+	bool AttackEntityFrom(Entity* _entity, int _damage, DamageType _type) override {
+		Entity::AttackEntityFrom(_entity, _damage, _type);
 		health -= _damage;
 		if (health <= 0)
 			isDead = true;

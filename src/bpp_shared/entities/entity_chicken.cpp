@@ -6,7 +6,7 @@
  */
 #include "entity_chicken.h"
 
-void ChickenEntity::OnDeath(Entity* /*_killer*/) {
+void ChickenEntity::OnDeath(Entity* /*_killer*/, DamageType /*_type*/) {
 	// Drop 0-2 feathers
 	auto targetItem = Items::Id::FEATHER;
 	int itemCount = this->rand.NextInt(3);

@@ -21,7 +21,8 @@ MobileEntity::MobileEntity() {
 	preventEntitySpawning = true;
 }
 
-void MobileEntity::OnDeath(Entity* /*_killer*/) {
+// TODO: Pass those into API as needed :p
+void MobileEntity::OnDeath(Entity* /*_killer*/, DamageType /*_type*/) {
 	health = 0;
 }
 
@@ -377,7 +378,7 @@ int MobileEntity::GetArmorValue() {
 	return totalMaxDurability == 0 ? 0 : (totalProtection - 1) * totalRemainingDurability / totalMaxDurability + 1;
 }
 
-bool MobileEntity::AttackEntityFrom(Entity* _entity, int _damage) {
+bool MobileEntity::AttackEntityFrom(Entity* _entity, int _damage, DamageType _type) {
 	age = 0;
 	if (health <= 0)
 		return false;
@@ -419,7 +420,7 @@ bool MobileEntity::AttackEntityFrom(Entity* _entity, int _damage) {
 	}
 
 	if (health <= 0) {
-		OnDeath(_entity);
+		OnDeath(_entity, _type);
 	}
 
 	return true;
@@ -436,14 +437,14 @@ void MobileEntity::Tick() {
 
 	// Suffocation
 	if (HeadInOpaqueBlock()) {
-		AttackEntityFrom(nullptr, 1);
+		AttackEntityFrom(nullptr, 1, DamageType::Suffocation);
 	}
 
 	// Drowning
 	if (HeadInWater() && !canBreatheUnderwater) {
 		air--;
 		if (air <= -20) {
-			AttackEntityFrom(nullptr, 2);
+			AttackEntityFrom(nullptr, 2, DamageType::Drown);
 			air = 0;
 		}
 	} else {

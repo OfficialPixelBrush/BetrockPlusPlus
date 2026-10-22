@@ -36,7 +36,7 @@ void Entity::OnEnterPortal() {
 
 void Entity::OnStruckByLightning(LightningEntity& /*_bolt*/) {
 	if (!isImmuneToFire)
-		AttackEntityFrom(nullptr, 5);
+		AttackEntityFrom(nullptr, 5, DamageType::Lightning);
 	fireTicks++;
 	if (fireTicks == 0)
 		fireTicks = 300;
@@ -151,7 +151,7 @@ void Entity::UpdateEntityPhysicsState() {
 			fireTicks = std::max(0, fireTicks - 4);
 		} else {
 			if (fireTicks % 20 == 0)
-				AttackEntityFrom(nullptr, 1);
+				AttackEntityFrom(nullptr, 1, DamageType::Burn);
 			fireTicks--;
 		}
 	}
@@ -159,7 +159,7 @@ void Entity::UpdateEntityPhysicsState() {
 	// Returns if we are in lava
 	inLava = world->IsMaterialInAabb(GetLavaCollider(), Material::Lava());
 	if (inLava && !isImmuneToFire) {
-		AttackEntityFrom(nullptr, 4);
+		AttackEntityFrom(nullptr, 4, DamageType::Lava);
 		fireTicks = 600;
 	}
 
@@ -168,7 +168,7 @@ void Entity::UpdateEntityPhysicsState() {
 	bool inFire = inLava || world->IsMaterialInAabb(GetFireCollider(), Material::Fire());
 	if (inFire) {
 		if (!isImmuneToFire)
-			AttackEntityFrom(nullptr, 1); // dealFireDamage
+			AttackEntityFrom(nullptr, 1, DamageType::Burn); // dealFireDamage
 		if (!wet && !isImmuneToFire) {
 			// Count up through the grace period; catch fire when it reaches 0
 			// While already burning this cancels the decrement above, so fire keeps us lit
@@ -492,7 +492,7 @@ void Entity::Move(Vec3& _velocity) {
 void Entity::UpdateFallState(float _movedY) {
 	if (onGround) {
 		if (fallDistance > FALL_DAMAGE_FLOOR) {
-			AttackEntityFrom(nullptr, int(std::ceil(fallDistance - FALL_DAMAGE_FLOOR)));
+			AttackEntityFrom(nullptr, int(std::ceil(fallDistance - FALL_DAMAGE_FLOOR)), DamageType::Fall);
 		}
 		fallDistance = 0;
 	} else if (_movedY < 0) {

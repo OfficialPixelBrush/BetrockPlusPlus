@@ -21,11 +21,11 @@ void BoatEntity::DropAsItems() {
 	isDead = true;
 }
 
-bool BoatEntity::AttackEntityFrom(Entity* _entity, int _damage) {
+bool BoatEntity::AttackEntityFrom(Entity* _entity, int _damage, DamageType _type) {
 	if (isDead)
 		return true;
 
-	Entity::AttackEntityFrom(_entity, _damage);
+	Entity::AttackEntityFrom(_entity, _damage, _type);
 
 	forwardDirection = -forwardDirection;
 	shakeTimer = 10;

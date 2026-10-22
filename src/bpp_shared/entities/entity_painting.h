@@ -94,7 +94,7 @@ struct PaintingEntity : public Entity {
 			KillAndDropPainting();
 	}
 
-	bool AttackEntityFrom(Entity* /*_entity*/, int /*_damage*/) override {
+	bool AttackEntityFrom(Entity* /*_entity*/, int /*_damage*/, DamageType /*_type*/) override {
 		KillAndDropPainting();
 		return true;
 	}

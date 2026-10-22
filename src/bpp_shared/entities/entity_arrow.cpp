@@ -149,7 +149,7 @@ void ArrowEntity::Tick() {
 	}
 
 	if (hitEntity) {
-		if (hitEntity->AttackEntityFrom(ownerPtr.get(), 4)) {
+		if (hitEntity->AttackEntityFrom(ownerPtr.get(), 4, DamageType::Arrow)) {
 			this->isDead = true;
 		} else {
 			// Bounce off

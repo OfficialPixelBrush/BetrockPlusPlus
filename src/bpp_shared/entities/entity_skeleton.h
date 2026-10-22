@@ -15,6 +15,6 @@ struct SkeletonEntity : public HostileEntity {
 		burnInDaylight = true;
 	}
 	~SkeletonEntity() = default;
-	void OnDeath(Entity* _killer) override;
+	void OnDeath(Entity* _killer, DamageType _type) override;
 	void TryAttackEntity(Entity& _target, float _distance) override;
 };
