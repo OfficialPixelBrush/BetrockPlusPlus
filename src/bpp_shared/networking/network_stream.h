@@ -27,32 +27,6 @@
 #include <type_traits>
 #include <vector>
 
-template <typename T>
-inline T ByteswapAny(T _value) {
-	static_assert(std::is_trivially_copyable_v<T>, "byteswap_any: only trivially copyable types allowed");
-	if constexpr (sizeof(T) == 1) {
-		return _value;
-	} else if constexpr (sizeof(T) == 2) {
-		uint16_t tmp;
-		std::memcpy(&tmp, &_value, 2);
-		tmp = __builtin_bswap16(tmp);
-		std::memcpy(&_value, &tmp, 2);
-	} else if constexpr (sizeof(T) == 4) {
-		uint32_t tmp;
-		std::memcpy(&tmp, &_value, 4);
-		tmp = __builtin_bswap32(tmp);
-		std::memcpy(&_value, &tmp, 4);
-	} else if constexpr (sizeof(T) == 8) {
-		uint64_t tmp;
-		std::memcpy(&tmp, &_value, 8);
-		tmp = __builtin_bswap64(tmp);
-		std::memcpy(&_value, &tmp, 8);
-	} else {
-		static_assert(sizeof(T) <= 8, "byteswap_any: unsupported type size");
-	}
-	return _value;
-}
-
 class NetworkStream {
 public:
 	// Max time FlushWriteBufferBlocking() will let a single send() block for
@@ -87,7 +61,7 @@ public:
 		              "NetworkStream::Read<T>: use Read<std::string>() or Read<std::string>() for string types");
 		T buffer{};
 		ReadBytes(reinterpret_cast<uint8_t*>(&buffer), sizeof(T));
-		return ByteswapAny(buffer);
+		return FromBigEndian(buffer);
 	}
 
 	template <typename T = int>
@@ -96,7 +70,7 @@ public:
 			int8_t boolData = static_cast<int8_t>(_data);
 			WriteBytes(reinterpret_cast<const uint8_t*>(&boolData), sizeof(int8_t));
 		} else {
-			T networkData = ByteswapAny(_data);
+			T networkData = ToBigEndian(_data);
 			WriteBytes(reinterpret_cast<const uint8_t*>(&networkData), sizeof(T));
 		}
 	}

@@ -12,6 +12,7 @@
 #include "nbt/nbt.h"
 #include "tile_entities/tile_entity.h"
 #include <cstdint>
+#include "helpers/byteswap_compat.h"
 #include <fstream>
 #include <libdeflate.h>
 #include <memory>
@@ -62,7 +63,7 @@ void Region::AddChunk(std::shared_ptr<Chunk> _chunk, int64_t _timestamp,
 	file.seekp(chosenOffset * SECTOR_SIZE);
 
 	// 4-byte big-endian length
-	uint32_t lengthBE = __builtin_bswap32(payloadLength);
+	uint32_t lengthBE = ToBigEndian(payloadLength);
 	file.write(reinterpret_cast<char*>(&lengthBE), 4);
 
 	// 1-byte compression type
@@ -89,7 +90,7 @@ void Region::AddChunk(std::shared_ptr<Chunk> _chunk, int64_t _timestamp,
 	// Write updated header entry to file
 	file.seekp(index * 4);
 	uint32_t entry = (chosenOffset << 8) | uint8_t(sectorsNeeded);
-	entry = __builtin_bswap32(entry);
+	entry = ToBigEndian(entry);
 	file.write(reinterpret_cast<char*>(&entry), 4);
 	file.flush();
 }
@@ -114,7 +115,7 @@ std::shared_ptr<Chunk> Region::GetChunk(Int32_2 _cpos) {
 	file.read(reinterpret_cast<char*>(&length), 4);
 	if (file.fail())
 		return nullptr;
-	length = __builtin_bswap32(length);
+	length = FromBigEndian(length);
 
 	// Guard against corrupt/zero length before subtracting
 	if (length < 1) {

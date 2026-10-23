@@ -58,6 +58,11 @@ endif()
 
 project(Betrock++ VERSION 0.2.11)
 
+# Drop fortify for Alpine
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND EXISTS "/usr/include/fortify/stdio.h")
+    add_compile_options(-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0)
+endif()
+
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
     message(STATUS "No build type specified, defaulting to RelWithDebInfo")
@@ -486,6 +491,11 @@ target_link_libraries(BetrockPlusPlus
     PRIVATE
     $<IF:$<TARGET_EXISTS:libdeflate::libdeflate_shared>,libdeflate::libdeflate_shared,libdeflate::libdeflate_static>
 )
+
+# TODO: Ideally we do a test to see if we need to manually link in atomics as a library
+if(NOT WIN32 AND NOT APPLE)
+    target_link_libraries(BetrockPlusPlus PRIVATE atomic)
+endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Haiku")
     target_link_libraries(BetrockPlusPlus PRIVATE network)

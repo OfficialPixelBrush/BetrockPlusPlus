@@ -898,7 +898,8 @@ void Server::Tick() {
 		shutdownRequested.store(true);
 
 #ifdef BETACRAFT_HEARTBEAT
-	if (betacraftHeartbeat.Enabled() && gameRuntime.world.tickScheduler.currentTick % GetTickRate() == 0) {
+	// TODO: This WILL cause issues!! FIND A BETTER WAY TO DO THIS!!!!!!
+	if (betacraftHeartbeat.Enabled() && std::fmod(static_cast<double>(gameRuntime.world.tickScheduler.currentTick), GetTickRate())  < 1e-9) {
 		BetacraftHeartbeatSnapshot snap;
 		snap.maxPlayers = maximumPlayers;
 		if (snap.maxPlayers < 0)
