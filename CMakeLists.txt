@@ -454,7 +454,10 @@ target_link_libraries(BetrockPlusPlus
     $<IF:$<TARGET_EXISTS:libdeflate::libdeflate_shared>,libdeflate::libdeflate_shared,libdeflate::libdeflate_static>
 )
 
-target_link_libraries(BetrockPlusPlus PRIVATE atomic)
+# TODO: Ideally we do a test to see if we need to manually link in atomics as a library
+if(NOT WIN32 AND NOT APPLE)
+    target_link_libraries(BetrockPlusPlus PRIVATE atomic)
+endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Haiku")
     target_link_libraries(BetrockPlusPlus PRIVATE network)
