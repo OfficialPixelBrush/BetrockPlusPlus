@@ -59,7 +59,7 @@ public:
 		for (int i = 0; i < 1024; i++) {
 			uint32_t entry;
 			file.read(reinterpret_cast<char*>(&entry), 4);
-			entry = __builtin_bswap32(entry);
+			entry = BppByteswapIfLittleEndian(entry);
 			regionHeader[i].numberOfSectors = entry & 0xFF; // bottom 1 byte
 			regionHeader[i].offset = entry >> 8;            // top 3 bytes
 		}

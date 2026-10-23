@@ -127,7 +127,7 @@ std::string NetworkStream::ReadString16() {
 	std::u16string result(len, u'\0');
 	for (uint16_t i = 0; i < len; i++) {
 		// byteswap each UTF-16 unit, then widen to wchar_t
-		result[i] = static_cast<char16_t>(__builtin_bswap16(buf[i]));
+		result[i] = static_cast<char16_t>(BppByteswapIfLittleEndian(buf[i]));
 	}
 	return ToUTF8(result);
 }

@@ -31,6 +31,8 @@ inline T ByteswapAny(T _value) {
 	static_assert(std::is_trivially_copyable_v<T>, "byteswap_any: only trivially copyable types allowed");
 	if constexpr (sizeof(T) == 1) {
 		return _value;
+	} else if (!BppHostIsLittleEndian()) {
+		return _value;
 	} else if constexpr (sizeof(T) == 2) {
 		uint16_t tmp;
 		std::memcpy(&tmp, &_value, 2);
