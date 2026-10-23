@@ -23,28 +23,25 @@ using __uint128_t = std::_Unsigned128;
 
 template <typename T>
 inline T ByteswapAny(T _value) {
-	static_assert(std::is_trivially_copyable_v<T>, "byteswap_any: only trivially copyable types allowed");
-	if constexpr (sizeof(T) == 1) {
-		return _value;
-	} else if constexpr (sizeof(T) == 2) {
-		uint16_t tmp;
-		std::memcpy(&tmp, &_value, 2);
-		tmp = __builtin_bswap16(_value);
-		std::memcpy(&_value, &tmp, 2);
-	} else if constexpr (sizeof(T) == 4) {
-		uint32_t tmp;
-		std::memcpy(&tmp, &_value, 4);
-		tmp = __builtin_bswap32(tmp);
-		std::memcpy(&_value, &tmp, 4);
-	} else if constexpr (sizeof(T) == 8) {
-		uint64_t tmp;
-		std::memcpy(&tmp, &_value, 8);
-		tmp = __builtin_bswap64(tmp);
-		std::memcpy(&_value, &tmp, 8);
-	} else {
-		static_assert(sizeof(T) <= 8, "byteswap_any: unsupported type size");
-	}
-	return _value;
+    static_assert(std::is_trivially_copyable_v<T>,
+                  "byteswap_any: only trivially copyable types allowed");
+
+    if constexpr (sizeof(T) == 1) {
+        return _value;
+    } else if constexpr (sizeof(T) == 2) {
+        auto tmp = std::bit_cast<uint16_t>(_value);
+        return std::bit_cast<T>(__builtin_bswap16(tmp));
+    } else if constexpr (sizeof(T) == 4) {
+        auto tmp = std::bit_cast<uint32_t>(_value);
+        return std::bit_cast<T>(__builtin_bswap32(tmp));
+    } else if constexpr (sizeof(T) == 8) {
+        auto tmp = std::bit_cast<uint64_t>(_value);
+        return std::bit_cast<T>(__builtin_bswap64(tmp));
+    } else {
+        static_assert(sizeof(T) == 1 || sizeof(T) == 2 ||
+                      sizeof(T) == 4 || sizeof(T) == 8,
+                      "byteswap_any: unsupported type size");
+    }
 }
 
 template <typename T>
