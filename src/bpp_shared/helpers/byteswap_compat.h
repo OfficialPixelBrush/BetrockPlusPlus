@@ -29,7 +29,7 @@ inline T ByteswapAny(T _value) {
 	} else if constexpr (sizeof(T) == 2) {
 		uint16_t tmp;
 		std::memcpy(&tmp, &_value, 2);
-		tmp = __builtin_bswap16(tmp);
+		tmp = __builtin_bswap16(_value);
 		std::memcpy(&_value, &tmp, 2);
 	} else if constexpr (sizeof(T) == 4) {
 		uint32_t tmp;
