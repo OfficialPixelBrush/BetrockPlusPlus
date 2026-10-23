@@ -41,6 +41,11 @@
 #define BPP_HAS_SO_RCVTIMEO 1
 #endif
 
+// SO_SNDTIMEO. Same story as SO_RCVTIMEO: not available in the console SDKs.
+#if !defined(BPP_PLATFORM_CONSOLE)
+#define BPP_HAS_SO_SNDTIMEO 1
+#endif
+
 // listen() backlog. SOMAXCONN isn't reliably defined by the console SDKs.
 #if defined(BPP_PLATFORM_CONSOLE)
 #define BPP_LISTEN_BACKLOG 8

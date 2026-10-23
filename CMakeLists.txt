@@ -493,7 +493,7 @@ target_link_libraries(BetrockPlusPlus
 )
 
 # TODO: Ideally we do a test to see if we need to manually link in atomics as a library
-if(NOT WIN32 AND NOT APPLE)
+if(NOT WIN32 AND NOT APPLE AND UNIX AND LINUX)
     target_link_libraries(BetrockPlusPlus PRIVATE atomic)
 endif()
 

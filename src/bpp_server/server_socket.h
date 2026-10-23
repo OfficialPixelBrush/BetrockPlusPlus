@@ -25,6 +25,10 @@
 
 #include <string>
 
+#ifndef INET_ADDRSTRLEN
+#define INET_ADDRSTRLEN 16 // "255.255.255.255" + NUL
+#endif
+
 namespace ServerSocketManager {
 inline void CloseSocket(int _socket) {
 #if defined(_WIN32) || defined(_WIN64)

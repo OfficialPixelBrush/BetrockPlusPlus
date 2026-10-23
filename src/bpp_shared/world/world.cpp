@@ -291,8 +291,8 @@ std::vector<AABB> WorldManager::GetCollidingBoundingBoxes(const AABB& _area, Ent
 	int minZ = Java::DoubleToInt32(std::floor(_area.minZ));
 	int maxZ = Java::DoubleToInt32(std::floor(_area.maxZ + 1.0));
 
-	int startY = CrossPlatform::Math::Max(0, minY - 1);
-	int endY = CrossPlatform::Math::Min(127, maxY);
+	int startY = std::max<int>(0, minY - 1);
+	int endY = std::min<int>(127, maxY);
 
 	// Iterate for our potential grid
 	for (int x = minX; x < maxX; x++) {
@@ -740,8 +740,8 @@ void WorldManager::SeedChunkLighting(Int32_2 _pos) {
 				int neighborH = GetHeightValue(nx, nz);
 				if (neighborH == thisH)
 					continue;
-				int minY = CrossPlatform::Math::Min(thisH, neighborH);
-				int maxY = CrossPlatform::Math::Max(thisH, neighborH);
+				int minY = std::min<int>(thisH, neighborH);
+				int maxY = std::max<int>(thisH, neighborH);
 				lightManager.ScheduleLightRegion({ nx, minY, nz }, { nx, maxY, nz }, LightType::Sky);
 			}
 		}
@@ -1125,14 +1125,14 @@ void WorldManager::SetBlock(const Int3 _wpos, const BlockType _blockType, const 
 		// Always re-evaluate the edited block and its 4 horizontal neighbours
 		lightManager.ScheduleLightUpdate(pos, LightType::Sky);
 		lightManager.ScheduleLightUpdate(pos, LightType::Block);
-		int extendedBottom = CrossPlatform::Math::Min(newHeight, oldHeight);
+		int extendedBottom = std::min<int>(newHeight, oldHeight);
 		while (extendedBottom > 0 &&
 		       Blocks::blockProperties[chunk->GetBlock({ localXz.x, extendedBottom - 1, localXz.z })].lightOpacity == 0)
 			--extendedBottom;
 
 		if (newHeight != oldHeight) {
 			lightManager.ScheduleLightRegion({ pos.x - 1, extendedBottom, pos.z - 1 },
-			                                 { pos.x + 1, CrossPlatform::Math::Max(newHeight, oldHeight), pos.z + 1 },
+			                                 { pos.x + 1, std::max<int>(newHeight, oldHeight), pos.z + 1 },
 			                                 LightType::Sky);
 		}
 	}
@@ -1209,12 +1209,12 @@ void WorldManager::NotifyRegionChanged(Chunk& _chunk, Int3 _localMin, Int3 _loca
 }
 
 void WorldManager::FillVolume(Int3 _posA, Int3 _posB, BlockType _type, uint8_t _meta) {
-	const Int3 mn{ CrossPlatform::Math::Min(_posA.x, _posB.x),
-		           CrossPlatform::Math::Max(CrossPlatform::Math::Min(_posA.y, _posB.y), 0),
-		           CrossPlatform::Math::Min(_posA.z, _posB.z) };
-	const Int3 mx{ CrossPlatform::Math::Max(_posA.x, _posB.x),
-		           CrossPlatform::Math::Min(CrossPlatform::Math::Max(_posA.y, _posB.y), CHUNK_HEIGHT - 1),
-		           CrossPlatform::Math::Max(_posA.z, _posB.z) };
+	const Int3 mn{ std::min<int>(_posA.x, _posB.x),
+		           std::max<int>(std::min<int>(_posA.y, _posB.y), 0),
+		           std::min<int>(_posA.z, _posB.z) };
+	const Int3 mx{ std::max<int>(_posA.x, _posB.x),
+		           std::min<int>(std::max<int>(_posA.y, _posB.y), CHUNK_HEIGHT - 1),
+		           std::max<int>(_posA.z, _posB.z) };
 	if (mn.y > mx.y)
 		return;
 
@@ -1240,10 +1240,10 @@ void WorldManager::FillVolume(Int3 _posA, Int3 _posB, BlockType _type, uint8_t _
 
 			// This chunk's share of the box, chunk-local and inclusive
 			const int baseX = cx * CHUNK_WIDTH, baseZ = cz * CHUNK_WIDTH;
-			const int x0 = CrossPlatform::Math::Max(mn.x, baseX) - baseX;
-			const int x1 = CrossPlatform::Math::Min(mx.x, baseX + CHUNK_WIDTH - 1) - baseX;
-			const int z0 = CrossPlatform::Math::Max(mn.z, baseZ) - baseZ;
-			const int z1 = CrossPlatform::Math::Min(mx.z, baseZ + CHUNK_WIDTH - 1) - baseZ;
+			const int x0 = std::max<int>(mn.x, baseX) - baseX;
+			const int x1 = std::min<int>(mx.x, baseX + CHUNK_WIDTH - 1) - baseX;
+			const int z0 = std::max<int>(mn.z, baseZ) - baseZ;
+			const int z1 = std::min<int>(mx.z, baseZ + CHUNK_WIDTH - 1) - baseZ;
 
 			// Blocks
 			if (x0 == 0 && x1 == CHUNK_WIDTH - 1 && z0 == 0 && z1 == CHUNK_WIDTH - 1)
