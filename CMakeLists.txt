@@ -454,6 +454,8 @@ target_link_libraries(BetrockPlusPlus
     $<IF:$<TARGET_EXISTS:libdeflate::libdeflate_shared>,libdeflate::libdeflate_shared,libdeflate::libdeflate_static>
 )
 
+target_link_libraries(BetrockPlusPlus PRIVATE atomic)
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Haiku")
     target_link_libraries(BetrockPlusPlus PRIVATE network)
 endif()
